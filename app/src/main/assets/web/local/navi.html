@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Navigation – Panoptes</title>
+    <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0A2238">
+    <script src="../shared/theme.js?v=13"></script>
+    <script src="../shared/kartenquelle.js?v=5"></script>
+    <script src="../shared/app-shell.js?v=pn24"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn10">
+    <style>
+        .navi-page .main-content { padding: 0; }
+        .navi { position: relative; margin: 0 28px 28px; height: calc(100vh - 190px); min-height: 460px;
+                border-radius: 20px; overflow: hidden; border: 1px solid var(--sm-line); }
+        #nMap { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #0b2236; z-index: 0; }   /* eigene Ebene: Kartenquelle-Hinweis bleibt in der Karte, Panel bleibt bedienbar */
+        .n-panel { position: absolute; top: 14px; left: 14px; width: 360px; max-height: calc(100% - 28px); overflow-y: auto;
+                   background: rgba(7, 26, 43, .92); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+                   border: 1px solid var(--sm-line); border-radius: 18px; padding: 16px; box-sizing: border-box; z-index: 5;
+                   box-shadow: 0 12px 32px rgba(0, 0, 0, .35);
+                   /* Das Feld ist immer dunkel (liegt auf der dunklen Karte): Textfarben fest dunkel-Design,
+                      sonst sind sie im hellen Design kaum lesbar. */
+                   --on-surface: #e6f1f4; --on-surface-variant: #a9c7ce; --outline: #6f8f99; color: var(--on-surface); }
+        .n-search { display: flex; align-items: center; background: rgba(255, 255, 255, .07); border: 1px solid var(--sm-line);
+                    border-radius: 14px; padding: 0 12px; }
+        .n-search svg { width: 20px; height: 20px; color: var(--sm-aqua); flex: none; }
+        .n-search input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; color: var(--on-surface);
+                          font: 600 16px var(--family-body, sans-serif); padding: 13px 10px; }
+        .n-search button { background: transparent; border: 0; color: var(--outline); font-size: 18px; cursor: pointer; padding: 6px; }
+        .n-results { list-style: none; margin: 8px 0 0; padding: 0; }
+        .n-fav { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; }
+        .n-fav button { border: 1px solid var(--sm-line); background: rgba(255,255,255,.06); color: var(--on-surface); border-radius: 999px;
+                        padding: 6px 12px; font: 600 13px var(--family-body, sans-serif); cursor: pointer; }
+        .n-results li { padding: 10px 8px; border-radius: 10px; cursor: pointer; font-size: 14px; color: var(--on-surface); }
+        .n-results li:hover, .n-results li:focus { background: rgba(95, 214, 230, .1); outline: 0; }
+        .n-results li small { display: block; color: var(--outline); font-size: 12px; margin-top: 2px;
+                              white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .n-row { display: flex; align-items: center; margin-top: 12px; font-size: 13px; color: var(--on-surface-variant); }
+        .n-row label { margin-right: 8px; }
+        .n-row select { background: rgba(255, 255, 255, .07); color: var(--on-surface); border: 1px solid var(--sm-line);
+                        border-radius: 10px; padding: 6px 8px; font: 600 13px var(--family-body, sans-serif); }
+        .n-row .grow { flex: 1; }
+        .n-dest { margin-top: 14px; }
+        .n-dest h3 { font-family: var(--family-display); font-size: 18px; margin: 0; color: var(--on-surface); }
+        .n-dest p { margin: 2px 0 0; color: var(--on-surface-variant); font-size: 13px; }
+        .n-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-gap: 8px; margin-top: 12px; }
+        .n-tile { background: rgba(4, 16, 27, .45); border-radius: 12px; padding: 10px 12px; }
+        .n-tile .k { font-size: 11.5px; color: var(--outline); font-weight: 600; }
+        .n-tile .v { font-family: var(--family-display); font-size: 20px; font-weight: 700; color: var(--on-surface); margin-top: 3px; }
+        .n-tile .v small { font-size: 12px; color: var(--on-surface-variant); margin-left: 2px; }
+        .n-tile .v.ok { color: var(--sm-lime); } .n-tile .v.warn { color: var(--status-warning); }
+        .n-btns { display: flex; flex-wrap: wrap; margin-top: 12px; }
+        .n-btns > * { margin: 0 8px 8px 0; }
+        .nbtn { border: 1px solid var(--sm-line); background: rgba(255, 255, 255, .075); color: var(--on-surface); border-radius: 12px;
+                padding: 11px 14px; font: 600 13.5px var(--family-body, sans-serif); cursor: pointer; display: inline-flex; align-items: center; }
+        .nbtn svg { width: 16px; height: 16px; margin-right: 8px; }
+        .nbtn.lime { background: var(--sm-lime); color: #1d2a00; border-color: transparent; }
+        .nbtn:disabled { opacity: .5; cursor: default; }
+        .n-stops { list-style: none; margin: 10px 0 0; padding: 0; }
+        .n-stops li { display: flex; align-items: flex-start; padding: 9px 0; border-top: 1px solid var(--sm-line); font-size: 13px; color: var(--on-surface); }
+        .n-stops .no { width: 24px; height: 24px; border-radius: 50%; background: var(--sm-lime); color: #1d2a00; flex: none;
+                       display: flex; align-items: center; justify-content: center; font: 700 12px var(--family-display); margin-right: 10px; }
+        .n-stops small { display: block; color: var(--outline); font-size: 12px; margin-top: 2px; }
+        details.n-turns { margin-top: 10px; font-size: 13px; color: var(--on-surface-variant); }
+        details.n-turns summary { cursor: pointer; color: var(--sm-aqua); font-weight: 600; padding: 6px 0; }
+        details.n-turns ol { margin: 6px 0 0; padding-left: 20px; max-height: 240px; overflow-y: auto; }
+        details.n-turns li { padding: 3px 0; }
+        .n-msg { margin-top: 10px; font-size: 13px; color: var(--on-surface-variant); }
+        .n-msg.err { color: var(--status-danger); }
+        .n-warn { margin-top: 8px; font-size: 12px; color: var(--status-warning); }
+        .n-busy { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--sm-aqua); border-right-color: transparent;
+                  border-radius: 50%; animation: n-spin .8s linear infinite; vertical-align: -2px; margin-right: 8px; }
+        @keyframes n-spin { to { transform: rotate(360deg); } }
+        .pn-marker-dest { border-color: #FF8A6B; color: #FF8A6B; border-radius: 50%; }
+        .pn-marker-stop { border-color: var(--sm-lime); color: #1d2a00; background: var(--sm-lime); border-radius: 50%; }
+        .pn-marker-free { border-color: var(--sm-lime); color: var(--sm-lime); }
+        .pn-marker-busy { border-color: var(--status-warning); color: var(--status-warning); }
+        .n-uw { background: rgba(4, 16, 27, .55); border: 1px solid var(--sm-line); border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
+        .n-uw .hd { display: flex; align-items: center; font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--outline); }
+        .n-uw .hd .grow { flex: 1; }
+        .n-uw .chip { border-radius: 999px; padding: 3px 10px; font: 700 12px var(--family-body, sans-serif); letter-spacing: 0; text-transform: none; }
+        .n-uw .chip.passt { background: var(--sm-lime); color: #1d2a00; }
+        .n-uw .chip.knapp { background: var(--status-warning); color: #2a1a00; }
+        .n-uw .chip.reicht_nicht { background: var(--status-danger); color: #fff; }
+        .n-uw .big { font-family: var(--family-display); font-size: 20px; font-weight: 700; color: var(--on-surface); margin-top: 8px; }
+        .n-uw .big small { font-size: 13px; font-weight: 600; color: var(--on-surface-variant); margin-left: 6px; }
+        .n-uw .pr-act { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        .n-uw .ln { font-size: 12.5px; color: var(--on-surface-variant); margin-top: 4px; }
+        .n-uw .bar { position: relative; height: 8px; border-radius: 4px; background: rgba(255, 255, 255, .08); margin-top: 10px; }
+        .n-uw .bar i { position: absolute; top: 0; bottom: 0; left: 0; border-radius: 4px; background: var(--sm-aqua); }
+        .n-uw .bar b { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--on-surface); }
+        .n-uw .bar u { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--status-danger); text-decoration: none; }
+        .n-uw .ln.warn { color: var(--status-warning); font-weight: 600; }
+        .n-uw details { margin-top: 8px; font-size: 12.5px; }
+        .n-uw details summary { cursor: pointer; color: var(--sm-aqua); font-weight: 600; }
+        .n-fg { background: rgba(4, 16, 27, .72); border: 1px solid var(--sm-aqua); border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
+        .n-fg h3 { margin: 0 0 6px; font: 700 15px var(--family-display); color: var(--on-surface); }
+        .n-fg p { margin: 0 0 6px; font-size: 13px; line-height: 1.45; color: var(--on-surface-variant); }
+        .n-fg .pr-act { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+        .n-fg-weg { margin-top: 10px; font-size: 12px; }
+        .n-fg-weg a { color: var(--sm-aqua); cursor: pointer; }
+        @media (max-width: 720px) {
+            .navi { margin: 0 0 0; border-radius: 0; border-left: 0; border-right: 0; height: calc(100vh - 230px); min-height: 520px; }
+            .n-panel { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 55%; }
+        }
+        [data-android-embed="1"] .navi { height: 100vh; margin: 0; border-radius: 0; }
+    </style>
+</head>
+<body class="navi-page">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="M3 11.5 21 3l-8.5 18-2-7.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+    <symbol id="i-flash" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+</svg>
+<div class="app-layout">
+    <div id="app-shell-mount"></div>
+    <main class="main-content">
+        <div class="navi">
+            <div id="nMap"></div>
+            <section class="n-panel" aria-label="Navigation">
+                <div class="n-fg" id="nFg" hidden></div>
+                <div class="n-uw" id="nPr" hidden></div>
+                <div class="n-uw" id="nUw" hidden></div>
+                <div class="n-search">
+                    <svg><use href="#i-search"/></svg>
+                    <input id="nQuery" type="search" autocomplete="off" placeholder="Wohin?" data-i18n-attr="placeholder:navi.where">
+                    <button type="button" id="nClear" aria-label="Leeren" hidden>×</button>
+                </div>
+                <div class="n-fav" id="nFav" hidden></div>
+                <ul class="n-results" id="nResults"></ul>
+                <div class="n-row">
+                    <label for="nArrive" data-i18n="navi.arrive_min">Ankommen mit mind.</label>
+                    <select id="nArrive"><option value="5">5 %</option><option value="10" selected>10 %</option><option value="20">20 %</option><option value="30">30 %</option></select>
+                    <span class="grow"></span>
+                    <button class="nbtn" type="button" id="nNearby"><svg><use href="#i-flash"/></svg><span data-i18n="navi.nearby">Säulen in der Nähe</span></button>
+                </div>
+                <div id="nOut"></div>
+                <div class="n-fg-weg" id="nFgWeg" hidden><a role="button" tabindex="0" data-i18n="navi.fg_weg">Freigabe „Ortssuche und Routen“ zurücknehmen</a></div>
+            </section>
+        </div>
+    </main>
+</div>
+<div id="toastContainer" class="toast-container"></div>
+
+<script src="../shared/auth.js"></script>
+<script src="../shared/pwa-init.js?v=index1"></script>
+<script src="../shared/core.js?v=pn5"></script>
+<script src="../shared/panoptes-map.js?v=12"></script>
+<script src="../shared/einstellungen.js?v=pn8"></script>
+<script>
+(function () {
+    'use strict';
+    function $(id) { return document.getElementById(id); }
+    function t(key, fallback, vars) { return window.PanoptesShell ? PanoptesShell.tr(key, fallback, vars) : fallback; }
+    function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+    function lang() { return (window.BYD && BYD.i18n && BYD.i18n.getLang && BYD.i18n.getLang()) || 'de'; }
+    function fmt(v, dg) { try { return Number(v).toLocaleString(lang(), { minimumFractionDigits: dg || 0, maximumFractionDigits: dg || 0 }); } catch (e) { return Number(v).toFixed(dg || 0); } }
+    function dur(min) { min = Math.round(min || 0); return min >= 60 ? Math.floor(min / 60) + ' h ' + ('0' + (min % 60)).slice(-2) : min + ' min'; }
+    function toast(msg, ok) { if (window.BYD && BYD.utils && BYD.utils.toast) BYD.utils.toast(msg, ok ? 'success' : 'error'); }
+    function post(url, body) {
+        return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+            .then(function (r) {
+                if (r.status === 429) throw new Error(t('navi.rate', 'Zu viele Anfragen – bitte 2 Minuten warten.'));
+                return r.text().then(function (txt) {
+                    try { return JSON.parse(txt); }
+                    catch (e) { throw new Error(t('navi.slow', 'Der Planer hat nicht rechtzeitig geantwortet. Bitte nochmal versuchen.')); }
+                });
+            });
+    }
+
+    // ---------------- Freigabe „Ortssuche und Routen“ (0.1.10, Regel 2: Standard aus, eine Einwilligung).
+    // Suche, Route und Säulen in der Nähe gehen über den Kern an den Routenplaner – mit Suchtext, Auto-Standort,
+    // Ziel und Akkustand. Erst nach ausdrücklichem „Erlauben“ auf diesem Gerät; „Ins Auto senden“ bleibt lokal.
+    var FG = {
+        KEY: 'pn.navi.freigabe',
+        warte: null,
+        an: function () { try { return localStorage.getItem(this.KEY) === 'ja'; } catch (e) { return false; } },
+        setzen: function (an) {
+            try { if (an) localStorage.setItem(this.KEY, 'ja'); else localStorage.removeItem(this.KEY); } catch (e) {}
+            $('nFgWeg').hidden = !this.an();
+            return this.an() === !!an;
+        },
+        frag: function () {
+            var self = this;
+            if (this.an()) return Promise.resolve(true);
+            if (this.warte) return this.warte;
+            var box = $('nFg');
+            box.innerHTML = '<h3>' + esc(t('navi.fg_titel', 'Ortssuche und Routen')) + '</h3>'
+                + '<p>' + esc(t('navi.fg_text', 'Für Suche, Route und Säulen in der Nähe fragt Panoptes den Routenplaner (byd.serveone.at). Dabei gehen hinaus: dein Suchtext, der Standort des Autos, das Ziel und der Akkustand.')) + '</p>'
+                + '<p>' + esc(t('navi.fg_text2', 'Ohne Freigabe geht nichts hinaus. „Ins Auto senden“ braucht sie nicht. Die Freigabe gilt für dieses Gerät bzw. diesen Browser und lässt sich unten auf dieser Seite zurücknehmen.')) + '</p>'
+                + '<div class="pr-act"><button class="nbtn" type="button" id="nFgJa">' + esc(t('navi.fg_ja', 'Erlauben')) + '</button>'
+                + '<button class="nbtn ghost" type="button" id="nFgNein">' + esc(t('navi.fg_nein', 'Nicht jetzt')) + '</button></div>';
+            box.hidden = false;
+            this.warte = new Promise(function (fertig) {
+                function ende(ok) { box.hidden = true; box.innerHTML = ''; self.warte = null; fertig(ok); }
+                $('nFgJa').onclick = function () { ende(self.setzen(true)); };
+                $('nFgNein').onclick = function () { ende(false); };
+            });
+            try { box.scrollIntoView({ block: 'nearest' }); } catch (e) {}
+            return this.warte;
+        },
+        init: function () {
+            var self = this;
+            $('nFgWeg').hidden = !this.an();
+            $('nFgWeg').firstElementChild.onclick = function () {
+                if (window.confirm(t('navi.fg_weg_frage', 'Freigabe zurücknehmen? Danach fragt Panoptes den Routenplaner erst wieder, wenn du es erlaubst.'))) self.setzen(false);
+            };
+        }
+    };
+    // Planer-Abfragen nur mit Freigabe; ohne Freigabe ein klarer Hinweis statt einer Anfrage.
+    function planer(url, body) {
+        return FG.frag().then(function (ok) {
+            if (!ok) throw new Error(t('navi.fg_aus', 'Ohne Freigabe „Ortssuche und Routen“ fragt Panoptes den Routenplaner nicht.'));
+            return post(url, body);
+        });
+    }
+
+    // ---------------- Unterwegs („Reicht es noch?“, Kern GET /api/navi/unterwegs). Nur lesen, nie ein Befehl.
+    var UW = {
+        grund: null, store: null,
+        STUFE: { passt: ['navi.uw_ok', 'Reicht'], knapp: ['navi.uw_tight', 'Wird knapp'], reicht_nicht: ['navi.uw_no', 'Reicht nicht'] },
+        laden: function () {
+            var self = this;
+            if (document.hidden) return;
+            fetch('/api/navi/unterwegs', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (d) { self.zeige(d); }).catch(function () { self.zeige(null); });
+        },
+        zeige: function (d) {
+            var box = $('nUw');
+            // 0.1.9: Unterwegs-Hilfe ist eine Datenfreigabe (planner.unterwegs, Standard aus) – dann ein Hinweis mit Link
+            if (d && !d.aktiv && d.grund === 'aus') {
+                box.hidden = false;
+                if (this.grund === 'aus') return;
+                this.grund = 'aus';
+                box.innerHTML = '<div class="hd"><span>' + esc(t('navi.uw_title', 'Unterwegs')) + '</span></div>'
+                    + '<div class="ln">' + esc(t('navi.uw_aus', '„Reicht es noch?“ ist ausgeschaltet. Einschalten kannst du die Unterwegs-Hilfe unter System → Datenfreigaben; dort steht, was dafür an den Routenplaner geht.')) + '</div>'
+                    + '<div class="ln"><a href="system.html#datenschutz" style="color:var(--sm-aqua);font-weight:600">' + esc(t('datenfreigaben.titel', 'Datenfreigaben')) + '</a></div>';
+                return;
+            }
+            if (!d || (!d.aktiv && d.grund !== 'kein_schluessel')) { box.hidden = true; this.grund = d && d.grund; return; }
+            box.hidden = false;
+            if (!d.aktiv) {   // kein Mitglieds-Schlüssel: Einrichtung einmal zeichnen
+                if (this.grund === 'kein_schluessel') return;
+                this.grund = 'kein_schluessel';
+                box.innerHTML = '<div class="hd"><span>' + esc(t('navi.uw_title', 'Unterwegs')) + '</span></div>'
+                    + '<div class="ln">' + esc(t('navi.uw_nokey', 'Für „Reicht es noch?“ muss Panoptes mit dem Routenplaner verbunden sein. Dann zeigt diese Karte während der Fahrt, ob der Akku bis zum nächsten Stopp reicht.')) + '</div>'
+                    + '<div class="ln"><a href="system.html#planerKarte" style="color:var(--sm-aqua);font-weight:600">' + esc(t('system.planer_connect', 'Mit Routenplaner verbinden')) + '</a></div>'
+                    + '<div id="nUwSet"></div>';
+                this.einstellungen();
+                return;
+            }
+            var det = box.querySelector('details');
+            if (this.grund === null && det && det.open) return;   // nicht unter den Fingern neu zeichnen
+            this.grund = null;
+            var st = this.STUFE[d.stufe] || ['', ''];
+            var n = d.naechsterStopp || {};
+            var ziel = n.istZiel ? t('navi.uw_dest', 'Ziel') : (n.name || t('navi.uw_stop', 'Nächster Stopp'));
+            var dPP = Number(d.delta) || 0;
+            var abw = Math.round((Number(d.faktor || 1) - 1) * 100);
+            function pct(v) { return Math.max(0, Math.min(100, Number(v) || 0)); }
+            var html = '<div class="hd"><span>' + esc(t('navi.uw_title', 'Unterwegs')) + '</span><span class="grow"></span>'
+                + (st[0] ? '<span class="chip ' + esc(d.stufe) + '">' + esc(t(st[0], st[1])) + '</span>' : '') + '</div>'
+                + '<div class="big">' + esc(t('navi.uw_arrive', 'Ankunft mit ca. {p} %', { p: fmt(d.prognoseProzent) }))
+                + '<small>' + esc(ziel) + (n.km != null ? ' · ' + esc(t('navi.uw_km', 'noch {km} km', { km: fmt(n.km) })) : '') + '</small></div>'
+                + '<div class="bar"><i style="width:' + pct(d.istProzent) + '%"></i>'
+                + '<b style="left:' + pct(d.sollProzent) + '%" title="' + esc(t('navi.uw_plan_mark', 'Plan')) + '"></b>'
+                + (d.reserve > 0 ? '<u style="left:' + pct(d.reserve) + '%" title="' + esc(t('navi.uw_reserve_mark', 'Reserve')) + '"></u>' : '') + '</div>'
+                + '<div class="ln">' + esc(t('navi.uw_now', 'Jetzt {i} %, laut Plan {s} % ({d} Prozentpunkte)', {
+                    i: fmt(d.istProzent), s: fmt(d.sollProzent), d: (dPP > 0 ? '+' : '') + fmt(dPP, 1) })) + '</div>'
+                + '<div class="ln">' + esc(abw === 0 ? t('navi.uw_cons_eq', 'Verbrauch wie geplant')
+                    : t(abw > 0 ? 'navi.uw_cons_hi' : 'navi.uw_cons_lo', abw > 0 ? 'Verbrauch {x} % über Plan' : 'Verbrauch {x} % unter Plan', { x: Math.abs(abw) }))
+                + (d.reserve > 0 ? ' · ' + esc(t('navi.uw_reserve', 'Reserve {r} %', { r: fmt(d.reserve) })) : '') + '</div>'
+                + this.belegung(n) + this.kurve(d.verlauf, d.reserve)
+                + '<details><summary>' + esc(t('navi.uw_settings', 'Einstellungen')) + '</summary><div id="nUwSet"></div></details>';
+            box.innerHTML = html;
+            box.querySelector('details').addEventListener('toggle', function () { if (this.open) UW.einstellungen(); });
+        },
+        // Belegung des nächsten Stopps (Kern: nur < 60 km, kein Ziel). voll → Ausweich-Säule nennen.
+        belegung: function (n) {
+            var b = n && n.belegung;
+            if (!b || !b.gefunden || !b.statusBekannt) return '';
+            var name = n.name || t('navi.uw_stop', 'Nächster Stopp');
+            if (b.voll) {
+                var a = b.ausweich;
+                return '<div class="ln warn">' + esc(t('navi.uw_full', '{s} ist gerade voll', { s: name }))
+                    + (a && a.name ? ' · ' + esc(t('navi.uw_alt', 'Ausweich-Säule: {name} · {km} km weiter', { name: a.name, km: fmt(a.km, 1) }))
+                        + (a.frei != null ? ' (' + esc(t('navi.uw_free', '{n} frei', { n: a.frei })) + ')' : '') : '') + '</div>';
+            }
+            return '<div class="ln">' + esc(t('navi.uw_occ', '{s}: {f} von {p} Ladepunkten frei', { s: name, f: b.frei, p: b.ladepunkte }))
+                + (b.defekt > 0 ? ' · ' + esc(t('navi.uw_broken', '{n} defekt', { n: b.defekt })) : '') + '</div>';
+        },
+        // Soll gegen Ist über die km (Kern verlauf, ≤ 50 Punkte). Erst ab 2 Punkten.
+        kurve: function (v, reserve) {
+            if (!Array.isArray(v) || v.length < 2) return '';
+            var W = 300, H = 90, P = 4, maxKm = 0, lo = 100, hi = 0;
+            v.forEach(function (p) {
+                maxKm = Math.max(maxKm, Number(p.km) || 0);
+                [p.soll, p.ist].forEach(function (x) { if (x != null && isFinite(x)) { lo = Math.min(lo, x); hi = Math.max(hi, x); } });
+            });
+            if (reserve > 0) lo = Math.min(lo, reserve);
+            lo = Math.max(0, Math.floor(lo / 10) * 10); hi = Math.min(100, Math.ceil(hi / 10) * 10);
+            if (hi <= lo) hi = lo + 10;
+            if (!(maxKm > 0)) return '';
+            function x(km) { return (P + (W - 2 * P) * km / maxKm).toFixed(1); }
+            function y(pc) { return (P + (H - 2 * P) * (1 - (pc - lo) / (hi - lo))).toFixed(1); }
+            function linie(k) {
+                return v.filter(function (p) { return p[k] != null && isFinite(p[k]); })
+                    .map(function (p, i) { return (i ? 'L' : 'M') + x(p.km) + ' ' + y(p[k]); }).join(' ');
+            }
+            var res = reserve > 0 ? '<line x1="' + P + '" x2="' + (W - P) + '" y1="' + y(reserve) + '" y2="' + y(reserve) + '" stroke="var(--status-danger)" stroke-dasharray="3 3" stroke-width="1"/>' : '';
+            return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="' + H + '" style="margin-top:10px;display:block" role="img" aria-label="'
+                + esc(t('navi.uw_curve', 'Ladestand laut Plan und tatsächlich über die Strecke')) + '">'
+                + res
+                + '<path d="' + linie('soll') + '" fill="none" stroke="var(--on-surface-variant)" stroke-width="1.5" stroke-dasharray="5 3"/>'
+                + '<path d="' + linie('ist') + '" fill="none" stroke="var(--sm-aqua)" stroke-width="2.2"/>'
+                + '<text x="' + (W - P) + '" y="' + (H - 2) + '" text-anchor="end" font-size="10" fill="var(--outline)">' + esc(fmt(maxKm) + ' km') + '</text>'
+                + '<text x="' + P + '" y="11" font-size="10" fill="var(--outline)">' + esc(hi + ' %') + '</text>'
+                + '</svg><div class="ln"><span style="color:var(--sm-aqua)">━</span> ' + esc(t('navi.uw_leg_ist', 'tatsächlich'))
+                + ' &nbsp; <span>┅</span> ' + esc(t('navi.uw_leg_soll', 'laut Plan')) + '</div>';
+        },
+        einstellungen: function () {
+            var self = this, ziel = $('nUwSet');
+            if (!ziel || !window.PanoptesEinstellungen) return;
+            (this.store ? Promise.resolve(this.store) : PanoptesEinstellungen.laden()).then(function (s) {
+                if (!s) return;
+                self.store = s;
+                // 0.1.9.1 (F3): kein Mitglieds-Schlüssel-Feld mehr; verbunden wird über System → Routenplaner
+                // 0.1.10 (Kern 5): Reserve = laden.ankunftSocMin (Gruppe „laden“, planner.reserve ist entfallen)
+                if (s.feld('laden.ankunftSocMin')) s.zeichne(ziel, { gruppe: 'laden', nur: ['laden.ankunftSocMin'] });
+                // alter Mitglieds-Schlüssel noch gesetzt: kein Feld mehr, nur der Hinweis auf den neuen Weg
+                var mt = s.feld('planner.memberToken') && s.wert('planner.memberToken');
+                if (mt && mt.gesetzt) {
+                    var h = document.createElement('div');
+                    h.className = 'ln';
+                    h.innerHTML = esc(t('navi.uw_altzugang', 'Du nutzt noch den alten Zugang mit Mitglieds-Schlüssel. Bitte verbinde Panoptes neu mit dem Routenplaner.'))
+                        + ' <a href="system.html#planerKarte" style="color:var(--sm-aqua);font-weight:600">' + esc(t('system.planer_connect', 'Mit Routenplaner verbinden')) + '</a>';
+                    ziel.appendChild(h);
+                }
+            });
+        },
+        start: function () {
+            var self = this;
+            this.laden();
+            setInterval(function () { self.laden(); }, 15000);
+            document.addEventListener('visibilitychange', function () { if (!document.hidden) self.laden(); });
+        }
+    };
+
+    // ---------------- Route vom Planer (Kern 4: GET /api/navi/planer-route, POST …/annehmen | …/ablehnen {id}).
+    // Annehmen setzt die Route nur für „Reicht es noch?“ – es geht dabei nichts ans Navi im Auto.
+    var PR = {
+        id: null, laeuft: false, meldung: null,
+        laden: function () {
+            var self = this;
+            if (document.hidden || this.laeuft) return;
+            fetch('/api/navi/planer-route', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (d) { self.zeige(d); }).catch(function () { self.zeige(null); });
+        },
+        zeige: function (d) {
+            var box = $('nPr');
+            // nichts anbieten: kein Planer, Netz weg, nichts da, schon angenommen/abgelehnt
+            if (!d || !d.vorhanden || d.status === 'angenommen' || !d.id) { box.hidden = true; this.id = null; return; }
+            if (this.id === d.id && !box.hidden) return;
+            this.id = d.id;
+            var z = d.ziel || {}, stopps = (d.stopps || []).filter(function (s) { return s && s.art === 'laden'; });
+            var info = [];
+            if (typeof d.km === 'number') info.push(fmt(d.km) + ' km');
+            info.push(stopps.length === 1 ? t('navi.pr_stop1', '1 Ladestopp') : t('navi.pr_stops', '{n} Ladestopps', { n: stopps.length }));
+            if (typeof d.ankunftAkku === 'number') info.push(t('navi.pr_arrive', 'Ankunft mit {p} % Akku', { p: fmt(d.ankunftAkku) }));
+            var h = '<div class="hd"><span>' + esc(t('navi.pr_title', 'Route vom Routenplaner')) + '</span></div>'
+                + '<div class="big">' + esc(z.name || d.name || '–') + '</div>'
+                + '<div class="ln">' + esc(info.join(' · ')) + '</div>';
+            // Wegpunkte (Zwischenziele Z1…Z5 und Ladestopps L in Fahrreihenfolge); ohne Zwischenziele wie bisher die Ladestopps
+            var wp = d.wegpunkte && d.wegpunkte.length ? d.wegpunkte : null;
+            if (wp) h += '<div class="ln">' + esc(wp.map(function (w) {
+                return (w.art === 'zwischenziel' ? t('navi.pr_zwischenziel', 'Zwischenziel') : t('navi.pr_ladestopp', 'Laden')) + ' ' + (w.name || w.nr || '?');
+            }).join(' → ')) + '</div>';
+            else if (stopps.length) h += '<div class="ln">' + esc(stopps.map(function (s) { return s.name || '?'; }).join(' → ')) + '</div>';
+            h += '<div class="ln">' + esc(t('navi.pr_explain', 'Übernehmen heißt: Panoptes prüft unterwegs, ob der Akku bis zum Ziel reicht. Ans Navi im Auto geht dabei nichts.')) + '</div>'
+                + '<div class="pr-act"><button class="nbtn lime" type="button" data-pr="annehmen">' + esc(t('navi.pr_accept', 'Übernehmen')) + '</button>'
+                + '<button class="nbtn" type="button" data-pr="ablehnen">' + esc(t('navi.pr_reject', 'Ablehnen')) + '</button></div>'
+                + '<div class="ln" id="nPrMsg">' + esc(this.meldung || '') + '</div>';
+            this.meldung = null;
+            box.innerHTML = h;
+            box.hidden = false;
+            var self = this;
+            Array.prototype.forEach.call(box.querySelectorAll('[data-pr]'), function (b) {
+                b.onclick = function () { self.antwort(b.getAttribute('data-pr'), d.id); };
+            });
+        },
+        GRUND: {
+            anderer_stand: ['navi.pr_err_changed', 'Die Route hat sich im Planer inzwischen geändert. Bitte die neue Fassung ansehen.'],
+            netz: ['navi.pr_err_net', 'Der Routenplaner ist gerade nicht erreichbar. Bitte später nochmal.'],
+            kein_planer: ['navi.pr_err_noplaner', 'Panoptes ist mit keinem Routenplaner verbunden.']
+        },
+        antwort: function (was, id) {
+            var self = this, box = $('nPr'), msg = $('nPrMsg');
+            Array.prototype.forEach.call(box.querySelectorAll('[data-pr]'), function (b) { b.disabled = true; });
+            this.laeuft = true;
+            post('/api/navi/planer-route/' + was, { id: id }).then(function (d) {
+                self.laeuft = false;
+                if (d && d.ok) {
+                    if (was === 'annehmen' && d.hinweis === 'unterwegs_aus') {
+                        box.innerHTML = '<div class="hd"><span>' + esc(t('navi.pr_title', 'Route vom Routenplaner')) + '</span></div>'
+                            + '<div class="ln">' + esc(t('navi.pr_ok_off', 'Route übernommen. Überwacht wird sie erst, wenn die Unterwegs-Hilfe eingeschaltet ist.')) + '</div>'
+                            + '<div class="ln"><a href="system.html#datenschutz" style="color:var(--sm-aqua);font-weight:600">' + esc(t('datenfreigaben.titel', 'Datenfreigaben')) + '</a></div>';
+                        return;
+                    }
+                    toast(was === 'annehmen' ? t('navi.pr_ok', 'Route übernommen.') : t('navi.pr_rejected', 'Route abgelehnt.'), true);
+                    box.hidden = true; self.id = null;
+                    if (was === 'annehmen') UW.laden();
+                    return;
+                }
+                var g = self.GRUND[d && d.grund];
+                if (msg) msg.textContent = g ? t(g[0], g[1]) : t('navi.pr_err', 'Das hat nicht geklappt. Bitte nochmal versuchen.');
+                Array.prototype.forEach.call(box.querySelectorAll('[data-pr]'), function (b) { b.disabled = false; });
+                // neue Fassung holen und die Meldung darüber stehen lassen
+                if (d && d.grund === 'anderer_stand') { self.id = null; self.meldung = msg && msg.textContent; self.laden(); }
+            }).catch(function (e) {
+                self.laeuft = false;
+                if (msg) msg.textContent = (e && e.message) || t('navi.pr_err', 'Das hat nicht geklappt. Bitte nochmal versuchen.');
+                Array.prototype.forEach.call(box.querySelectorAll('[data-pr]'), function (b) { b.disabled = false; });
+            });
+        },
+        start: function () {
+            var self = this;
+            this.laden();
+            setInterval(function () { self.laden(); }, 30000);
+            document.addEventListener('visibilitychange', function () { if (!document.hidden) self.laden(); });
+        }
+    };
+
+    var N = window.Navi = {
+        status: null, map: null, dest: null, plan: null, searchTimer: null, searchGen: 0,
+
+        car: function () {
+            var g = this.status && this.status.gps;
+            return g && g.hasLocation ? { lat: g.lat, lng: g.lng, heading: g.heading || 0 } : null;
+        },
+        soc: function () {
+            var s = this.status && this.status.soc;
+            return s && typeof s.percent === 'number' ? s.percent : null;
+        },
+
+        fromStatus: function (st) {
+            this.status = st;
+            var c = this.car();
+            if (c && this.map) this.map.setCar({ lng: c.lng, lat: c.lat, heading: c.heading });
+        },
+
+        // ---------- Ortssuche (Planer, POST – Suchtext steht in keiner URL)
+        search: function (q) {
+            var self = this, gen = ++this.searchGen;
+            var list = $('nResults');
+            if (q.length < 3) { list.innerHTML = ''; return; }
+            planer('/api/navi/orte', { q: q, limit: 6 }).then(function (d) {
+                if (gen !== self.searchGen) return;
+                list.innerHTML = '';
+                var orte = (d && d.orte) || [];
+                if (!orte.length) { list.innerHTML = '<li class="n-msg">' + esc(t('navi.nothing', 'Nichts gefunden')) + '</li>'; return; }
+                orte.forEach(function (o) {
+                    var li = document.createElement('li');
+                    li.tabIndex = 0;
+                    li.innerHTML = esc(o.kurz || o.name) + '<small>' + esc(o.name) + '</small>';
+                    li.onclick = li.onkeydown = function (e) {
+                        if (e.type === 'keydown' && e.key !== 'Enter') return;
+                        self.choose({ name: o.kurz || o.name, full: o.name, lat: o.lat, lng: o.lon });
+                    };
+                    list.appendChild(li);
+                });
+            }).catch(function (e) {
+                if (gen === self.searchGen) list.innerHTML = '<li class="n-msg err">' + esc(e.message || t('navi.offline', 'Planer nicht erreichbar')) + '</li>';
+            });
+        },
+
+        choose: function (dest) {
+            this.dest = dest;
+            $('nResults').innerHTML = '';
+            $('nQuery').value = dest.name;
+            $('nClear').hidden = false;
+            this.map.setMarkers([{ lat: dest.lat, lng: dest.lng, kind: 'dest', label: '◎', title: dest.full || dest.name }]);
+            this.route();
+        },
+
+        clear: function () {
+            this.dest = null; this.plan = null;
+            $('nQuery').value = ''; $('nClear').hidden = true; $('nResults').innerHTML = ''; $('nOut').innerHTML = '';
+            this.map.setLines([]); this.map.setMarkers([]);
+            this.map.flyToCar();
+        },
+
+        // ---------- Route (Planer: Route, Ladestopps, Ankunfts-Akku)
+        route: function () {
+            var self = this, car = this.car(), dest = this.dest;
+            var out = $('nOut');
+            if (!dest) return;
+            if (!car) {
+                out.innerHTML = this.destHtml() + '<div class="n-msg err">' + esc(t('navi.no_car', 'Kein Standort vom Auto – nur „Ins Auto senden“ möglich.')) + '</div>' + this.sendHtml(false);
+                this.wireSend();
+                this.map.fit([[dest.lng, dest.lat]]);
+                return;
+            }
+            out.innerHTML = this.destHtml() + '<div class="n-msg"><span class="n-busy"></span>' + esc(t('navi.calc', 'Route, Säulen und Preise werden gerechnet … (lange Strecken bis zu 2 Minuten)')) + '</div>';
+            var soc = this.soc();
+            planer('/api/navi/plan', {
+                start: [+car.lat.toFixed(5), +car.lng.toFixed(5)], ziel: [+dest.lat.toFixed(5), +dest.lng.toFixed(5)],
+                soc_start: soc !== null ? Math.round(soc) : 80, soc_ziel_min: +$('nArrive').value, fahrzeug: null
+            }).then(function (d) {
+                if (self.dest !== dest) return;
+                if (!d || d.fehler || !d.route) throw new Error((d && d.fehler) || t('navi.offline', 'Planer nicht erreichbar'));
+                self.plan = d;
+                self.draw(d);
+            }).catch(function (e) {
+                if (self.dest !== dest) return;
+                out.innerHTML = self.destHtml() + '<div class="n-msg err">' + esc(e.message) + '</div>' + self.sendHtml(false);
+                self.wireSend();
+            });
+        },
+
+        destHtml: function () {
+            var d = this.dest;
+            return '<div class="n-dest"><h3>' + esc(d.name) + '</h3>' + (d.full && d.full !== d.name ? '<p>' + esc(d.full) + '</p>' : '') + '</div>';
+        },
+        sendHtml: function (withStop) {
+            return '<div class="n-btns"><button class="nbtn lime" type="button" id="nSend"><svg><use href="#i-send"/></svg>'
+                + esc(t('navi.send', 'Ziel ins Auto')) + '</button>'
+                + (withStop ? '<button class="nbtn" type="button" id="nSendStop"><svg><use href="#i-flash"/></svg>' + esc(t('navi.send_stop', 'Ersten Ladestopp ins Auto')) + '</button>' : '')
+                + '</div>';
+        },
+        wireSend: function () {
+            var self = this;
+            var b = $('nSend'); if (b) b.onclick = function () { self.send(self.dest.name, self.dest.lat, self.dest.lng, b); };
+            var s = $('nSendStop');
+            if (s && this.plan && this.plan.stopps && this.plan.stopps.length) {
+                var st = this.plan.stopps[0].saeule;
+                s.onclick = function () { self.send(st.name, st.lat, st.lon, s); };
+            }
+        },
+
+        draw: function (d) {
+            var self = this;
+            var geo = (d.route.geometrie || []).map(function (p) { return [p[1], p[0]]; });
+            var panel = document.querySelector('.n-panel');
+            // Route nicht unter dem Bedienfeld verstecken (Handy: unten, sonst links).
+            var pad = window.innerWidth > 720
+                ? { top: 50, right: 60, bottom: 40, left: panel.offsetWidth + 50 }
+                : { top: 40, right: 50, bottom: Math.min(panel.offsetHeight, document.getElementById('nMap').offsetHeight * 0.55) + 20, left: 30 };
+            this.map.setLines([{ coords: geo, color: '#5FD6E6' }], { fit: true, padding: pad });
+            var ms = [{ lat: this.dest.lat, lng: this.dest.lng, kind: 'dest', label: '◎', title: this.dest.name }];
+            (d.stopps || []).forEach(function (st, i) {
+                ms.push({ lat: st.saeule.lat, lng: st.saeule.lon, kind: 'stop', label: String(i + 1), title: st.saeule.name });
+            });
+            this.map.setMarkers(ms);
+
+            var arrive = d.soc_ankunft;
+            var cost = d.kosten && d.kosten.basis && d.kosten.basis.gesamt;
+            var h = this.destHtml() + '<div class="n-tiles">'
+                + '<div class="n-tile"><div class="k">' + esc(t('navi.km', 'Strecke')) + '</div><div class="v">' + fmt(d.route.km, d.route.km < 20 ? 1 : 0) + '<small>km</small></div></div>'
+                + '<div class="n-tile"><div class="k">' + esc(t('navi.time', 'Fahrzeit')) + '</div><div class="v">' + esc(dur(d.route.minuten)) + '</div></div>'
+                + '<div class="n-tile"><div class="k">' + esc(t('navi.arrive', 'Ankunft mit')) + '</div><div class="v ' + (arrive >= 20 ? 'ok' : 'warn') + '">' + fmt(arrive) + '<small>%</small></div></div>'
+                + '<div class="n-tile"><div class="k">' + esc(t('navi.stops', 'Ladestopps')) + '</div><div class="v">' + (d.stopps || []).length
+                + (cost ? '<small> · ' + fmt(cost, 2) + ' €</small>' : '') + '</div></div></div>';
+            if (d.stopps && d.stopps.length) {
+                h += '<ul class="n-stops">';
+                d.stopps.forEach(function (st, i) {
+                    var s = st.saeule;
+                    h += '<li><span class="no">' + (i + 1) + '</span><span>' + esc(s.name) + ' · ' + esc(s.kw || '?') + ' kW'
+                        + '<small>km ' + fmt(s.km_auf_route) + ' · ' + fmt(st.soc_vorher) + ' → ' + fmt(st.soc_nachher) + ' % · ~' + fmt(st.ladedauer_min) + ' min'
+                        + (s.preis_live_ct_kwh ? ' · ' + fmt(s.preis_live_ct_kwh) + ' ct/kWh' : '') + '</small></span></li>';
+                });
+                h += '</ul>';
+            }
+            (d.warnungen || []).filter(function (w) { return w.indexOf('deckt nicht alle') < 0; }).slice(0, 2).forEach(function (w) {
+                h += '<div class="n-warn">' + esc(w) + '</div>';
+            });
+            h += this.sendHtml(d.stopps && d.stopps.length);
+            var turns = d.route.manoever || [];
+            if (turns.length) {
+                h += '<details class="n-turns"><summary>' + esc(t('navi.turns', 'Abbiegehinweise ({n})', { n: turns.length })) + '</summary><ol>';
+                turns.forEach(function (m) { h += '<li>' + esc(m.text) + (m.km ? ' <small>(' + fmt(m.km, 1) + ' km)</small>' : '') + '</li>'; });
+                h += '</ol></details>';
+            }
+            $('nOut').innerHTML = h;
+            this.wireSend();
+        },
+
+        // ---------- Ziel ans Navi im Auto (BYD-Navi über /api/telenav/navigate;
+        // ist das Auto aus, wird es beim nächsten Start angeboten)
+        send: function (name, lat, lng, btn) {
+            if (!window.confirm(t('navi.confirm_send', '„{name}“ ans Navi im Auto schicken?', { name: name }))) return;
+            if (btn) btn.disabled = true;
+            post('/api/telenav/navigate', { name: name, lat: lat, lng: lng, replace: true }).then(function (d) {
+                var ok = !!(d && d.success);
+                toast(ok ? (d.queued ? t('navi.queued', 'Auto ist aus – das Ziel wird beim nächsten Start angeboten.') : t('navi.sent', 'Ziel ist im Navi des Autos.'))
+                         : ((d && (d.error || d.message)) || t('navi.send_fail', 'Konnte das Ziel nicht ans Auto schicken.')), ok);
+            }).catch(function () { toast(t('navi.send_fail', 'Konnte das Ziel nicht ans Auto schicken.'), false); })
+              .then(function () { if (btn) btn.disabled = false; });
+        },
+
+        // ---------- Ladesäulen rund ums Auto (live belegt/frei in AT)
+        nearby: function () {
+            var self = this, c = this.car() || (this.map && this.map.map ? { lat: this.map.map.getCenter().lat, lng: this.map.map.getCenter().lng } : null);
+            if (!c) return;
+            var btn = $('nNearby'); btn.disabled = true;
+            planer('/api/navi/umkreis', { lat: +c.lat.toFixed(4), lon: +c.lng.toFixed(4), radius: 10, kwh: 20, nur_frei: 0, nur_mit_preis: 0, min_kw: 0 })
+                .then(function (d) {
+                    var ms = [];
+                    // Außerhalb AT liefert der Planer auch weit entfernte AT-Stationen: nur den abgefragten Kreis nehmen.
+                    ((d && d.stationen) || []).filter(function (s) { return !(s.entfernung_km > 10); }).slice(0, 60).forEach(function (s) {
+                        var known = s.status_bekannt;
+                        ms.push({ lat: s.lat, lng: s.lon, kind: known ? (s.frei > 0 ? 'free' : 'busy') : 'ac',
+                                  label: s.kw >= 50 ? 'DC' : 'AC',
+                                  title: s.name + ' · ' + (s.kw || '?') + ' kW' + (known ? ' · ' + s.frei + '/' + s.ladepunkte + ' ' + t('navi.free', 'frei') : '') });
+                    });
+                    if (self.dest) ms.push({ lat: self.dest.lat, lng: self.dest.lng, kind: 'dest', label: '◎', title: self.dest.name });
+                    self.map.setMarkers(ms);
+                    toast(t('navi.nearby_n', '{n} Säulen im Umkreis von 10 km', { n: ms.length - (self.dest ? 1 : 0) }), true);
+                }).catch(function (e) { toast(e.message || t('navi.offline', 'Planer nicht erreichbar'), false); })
+                .then(function () { btn.disabled = false; });
+        },
+
+        init: function () {
+            var self = this;
+            this.map = PanoptesMap.create($('nMap'), { zoom: 13, pitch: 45, followCar: true });
+            var p = PanoptesShell.profile();
+            if (p) this.map.setAppearance({ modelId: p.modelId, color: p.color });
+            document.addEventListener('panoptes:profile', function () {
+                var pr = PanoptesShell.profile(); self.map.setAppearance({ modelId: pr.modelId, color: pr.color });
+            });
+            // Tippen auf die Karte setzt das Ziel dorthin.
+            this.map.onClick(function (ll) {
+                self.choose({ name: t('navi.pin', 'Punkt auf der Karte'), full: ll.lat.toFixed(5) + ', ' + ll.lng.toFixed(5), lat: ll.lat, lng: ll.lng });
+            });
+            $('nQuery').addEventListener('input', function () {
+                var q = this.value.trim();
+                $('nClear').hidden = !q;
+                clearTimeout(self.searchTimer);
+                self.searchTimer = setTimeout(function () { self.search(q); }, 350);
+            });
+            $('nClear').onclick = function () { self.clear(); };
+            $('nArrive').onchange = function () { if (self.dest) self.route(); };
+            // „Ankommen mit mind.“ aus laden.ankunftSocMin vorbelegen (vom Auto; null = Standard des Planers)
+            if (window.PanoptesEinstellungen) PanoptesEinstellungen.laden().then(function (st) {
+                var w = st && st.feld('laden.ankunftSocMin') ? st.wert('laden.ankunftSocMin').wert : null;
+                if (typeof w !== 'number') return;
+                var sel = $('nArrive'), da = false;
+                for (var i = 0; i < sel.options.length; i++) if (+sel.options[i].value === w) da = true;
+                if (!da) { var o = document.createElement('option'); o.value = String(w); o.textContent = w + ' %'; sel.appendChild(o); }
+                sel.value = String(w);
+            });
+            $('nNearby').onclick = function () { self.nearby(); };
+        }
+    };
+
+    var origRefresh = BYD.core.refreshStatus.bind(BYD.core);
+    BYD.core.refreshStatus = function () {
+        return origRefresh().then(function (st) { if (st) N.fromStatus(st); return st; });
+    };
+    BYD.i18n.init().then(function () {
+        BYD.core.init();
+        N.init();
+        // 0.1.12: Favoriten aus der Ortsliste (GET /api/orte, eigenschaften.favorit) als Schnellziele; bleibt im Auto
+        fetch('/api/orte', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }).then(function (d) {
+            var fav = ((d && d.liste) || []).filter(function (o) { return o.eigenschaften && o.eigenschaften.favorit && typeof o.lat === 'number'; });
+            var box = $('nFav');
+            if (!fav.length) return;
+            fav.forEach(function (o) {
+                var b = document.createElement('button'); b.type = 'button'; b.textContent = '★ ' + o.name;
+                b.onclick = function () { N.choose({ name: o.name, full: o.name, lat: o.lat, lng: o.lon }); };
+                box.appendChild(b);
+            });
+            box.hidden = false;
+        });
+        FG.init();
+        $('nQuery').placeholder = t('navi.where', 'Wohin?');
+        UW.start();
+        PR.start();
+    });
+})();
+</script>
+</body>
+</html>

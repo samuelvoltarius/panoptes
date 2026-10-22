@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Telegram-Meldungen - Panoptes</title>
+    <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0A2238">
+    <script src="../shared/theme.js?v=13"></script>
+    <script src="../shared/app-shell.js?v=pn24"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn10">
+    <style>
+        .tg-page .main-content { padding: 0; }
+        .tw { padding: 0 28px 60px; max-width: 1100px; box-sizing: border-box; }
+        .tw-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-gap: 16px; }
+        .gc { background: var(--sm-card); border: 1px solid var(--sm-line); border-radius: 20px; padding: 20px; min-width: 0; }
+        .gc.wide { grid-column: span 2; }
+        .gc h2 { font-family: var(--family-display); font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+                 color: var(--outline); margin: 0 0 6px; }
+        .gc .lead { color: var(--on-surface-variant); font-size: 13.5px; margin: 0 0 14px; line-height: 1.5; }
+        .state { display: flex; align-items: center; }
+        .state .big { font-family: var(--family-display); font-size: 24px; font-weight: 700; color: var(--on-surface); margin-left: 12px; }
+        .state .pn-dot { width: 12px; height: 12px; }
+        .sub { color: var(--on-surface-variant); font-size: 13.5px; margin-top: 6px; }
+        .row { display: flex; align-items: center; padding: 12px 0; border-top: 1px solid var(--sm-line); }
+        .row.first { border-top: 0; }
+        .row .txt { flex: 1; min-width: 0; padding-right: 12px; }
+        .row .txt b { display: block; font-weight: 600; color: var(--on-surface); font-size: 14.5px; }
+        .row .txt small { display: block; color: var(--outline); font-size: 12.5px; margin-top: 2px; line-height: 1.45; }
+        .row.locked { opacity: .55; }
+        .sw { position: relative; width: 46px; height: 28px; flex: none; }
+        .sw input { opacity: 0; width: 0; height: 0; position: absolute; }
+        .sw i { position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: 999px; background: rgba(255, 255, 255, .12);
+                transition: background .2s; cursor: pointer; }
+        .sw i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #EAF6F8; transition: transform .2s; }
+        .sw input:checked + i { background: var(--sm-lime); }
+        .sw input:checked + i::after { transform: translateX(18px); background: #1d2a00; }
+        .sw input:disabled + i { cursor: not-allowed; }
+        .sw input:focus-visible + i { outline: 2px solid var(--sm-aqua); outline-offset: 2px; }
+        .gbtn { border: 1px solid var(--sm-line); background: rgba(255, 255, 255, .075); color: var(--on-surface); border-radius: 12px;
+                padding: 10px 14px; font: 600 13.5px var(--family-body, sans-serif); cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
+        .gbtn.lime { background: var(--sm-lime); color: #1d2a00; border-color: transparent; }
+        .gbtn.danger { color: var(--status-error, #ff8a80); }
+        .gbtn.small { padding: 6px 10px; font-size: 12.5px; }
+        .gbtn:disabled { opacity: .5; cursor: default; }
+        .actions { display: flex; flex-wrap: wrap; align-items: center; margin-top: 14px; }
+        .actions > * { margin: 0 10px 8px 0; }
+        .note { font-size: 12.5px; color: var(--on-surface-variant); line-height: 1.5; }
+        .note.ok { color: var(--sm-lime); }
+        .note.err { color: var(--status-error, #ff8a80); }
+        .note a, .lead a, .steps a { color: var(--sm-aqua); }
+        /* Einrichtung in drei Schritten */
+        .stepbar { display: flex; margin: 4px 0 18px; }
+        .stepbar .sb { flex: 1; display: flex; align-items: center; min-width: 0; color: var(--outline); font-size: 12.5px; font-weight: 600; }
+        .stepbar .sb span.n { flex: none; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--sm-line); display: flex;
+                               align-items: center; justify-content: center; margin-right: 8px; }
+        .stepbar .sb.on { color: var(--on-surface); }
+        .stepbar .sb.on span.n { border-color: var(--sm-aqua); color: var(--sm-aqua); }
+        .stepbar .sb.done span.n { background: var(--sm-lime); color: #1d2a00; border-color: transparent; }
+        .stepbar .sb .l { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .steps { margin: 0 0 14px; padding-left: 20px; color: var(--on-surface); font-size: 14px; line-height: 1.6; }
+        .steps li { margin-bottom: 4px; }
+        .steps code, .note code, .lead code { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; background: rgba(255, 255, 255, .07);
+                                              border-radius: 6px; padding: 1px 6px; }
+        .field { display: flex; flex-wrap: wrap; align-items: center; }
+        .field input[type=password], .field input[type=text] { flex: 1; min-width: 200px; background: rgba(255, 255, 255, .07); border: 1px solid var(--sm-line);
+                     border-radius: 12px; color: var(--on-surface); font: 500 14px 'JetBrains Mono', monospace; padding: 11px 12px; margin: 0 10px 8px 0; }
+        .pin { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700; letter-spacing: 2px; color: var(--sm-aqua);
+               text-align: center; padding: 14px 8px; border: 1px dashed rgba(95, 214, 230, .5); border-radius: 14px; margin: 6px 0 8px;
+               white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -webkit-user-select: all; user-select: all; }
+        @media (max-width: 420px) { .pin { font-size: 21px; letter-spacing: 1px; } }
+        .who { display: flex; align-items: center; padding: 12px 14px; border-radius: 14px; background: rgba(255, 255, 255, .05); margin: 4px 0 6px; }
+        .who b { color: var(--on-surface); }
+        .who small { display: block; color: var(--outline); font-size: 12.5px; }
+        .times { display: flex; align-items: center; flex-wrap: wrap; }
+        .times input[type=time] { background: rgba(255, 255, 255, .07); border: 1px solid var(--sm-line); border-radius: 10px; color: var(--on-surface);
+                                  font: 600 14px var(--family-body, sans-serif); padding: 7px 8px; margin: 4px 8px 4px 0; }
+        .times input:disabled { opacity: .45; }
+        details.more { margin-top: 10px; }
+        details.more summary { cursor: pointer; color: var(--on-surface-variant); font-size: 13px; }
+        .dlg-back { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, .6); z-index: 9000;
+                    display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; }
+        .dlg { background: var(--sm-card); border: 1px solid var(--sm-line); border-radius: 20px; padding: 22px; max-width: 460px; width: 100%;
+               box-sizing: border-box; box-shadow: 0 20px 60px rgba(0, 0, 0, .5); }
+        .dlg h3 { margin: 0 0 10px; font-family: var(--family-display); font-size: 18px; color: var(--on-surface); }
+        .dlg p { margin: 0 0 10px; color: var(--on-surface-variant); font-size: 14px; line-height: 1.55; }
+        [hidden] { display: none !important; }
+        @media (max-width: 860px) { .tw-grid { grid-template-columns: minmax(0, 1fr); } .gc.wide { grid-column: span 1; } }
+        @media (max-width: 720px) { .tw { padding: 0 16px 24px; } .stepbar .sb .l { display: none; } }
+    </style>
+</head>
+<body class="tg-page">
+<div class="app-layout">
+    <div id="app-shell-mount"></div>
+    <main class="main-content">
+        <div class="tw">
+        <section class="tw-grid">
+
+            <!-- ============ Einrichtung ============ -->
+            <article class="gc wide" id="setupCard">
+                <h2 data-i18n="tgp.setup_title">Einrichtung</h2>
+                <div class="state"><i class="pn-dot" id="stDot"></i><span class="big" id="stText">…</span></div>
+                <div class="sub" id="stSub">&nbsp;</div>
+
+                <div class="stepbar" style="margin-top:16px">
+                    <div class="sb" id="sb1"><span class="n">1</span><span class="l" data-i18n="tgp.step1_short">Bot anlegen</span></div>
+                    <div class="sb" id="sb2"><span class="n">2</span><span class="l" data-i18n="tgp.step2_short">Koppeln</span></div>
+                    <div class="sb" id="sb3"><span class="n">3</span><span class="l" data-i18n="tgp.step3_short">Fertig</span></div>
+                </div>
+
+                <!-- Schritt 1: Bot bei BotFather anlegen, Schlüssel eintragen -->
+                <div id="step1" hidden>
+                    <p class="lead" data-i18n="tgp.step1_lead">Panoptes schickt dir Meldungen über deinen eigenen Telegram-Bot. Den legst du in zwei Minuten selbst an – kostenlos, ohne Programmieren.</p>
+                    <ol class="steps">
+                        <li data-i18n-html="tgp.bf1">Öffne in Telegram den Chat mit <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a> (das offizielle Telegram-Konto mit blauem Haken).</li>
+                        <li data-i18n-html="tgp.bf2">Schick ihm <code>/newbot</code>.</li>
+                        <li data-i18n-html="tgp.bf3">Gib einen Namen ein, z. B. <code>Mein Auto</code>, und danach einen Benutzernamen, der auf <code>bot</code> endet, z. B. <code>meinauto_panoptes_bot</code>.</li>
+                        <li data-i18n-html="tgp.bf4">BotFather antwortet mit einem langen Schlüssel (Token), der so aussieht: <code>123456789:AAH…</code>. Kopiere ihn und füge ihn hier ein.</li>
+                    </ol>
+                    <div class="field">
+                        <input type="password" id="token" autocomplete="off" spellcheck="false" placeholder="123456789:AAH…" aria-label="Token">
+                        <button class="gbtn small" type="button" id="tokenEye" data-i18n="tgp.show">Zeigen</button>
+                    </div>
+                    <div class="actions">
+                        <button class="gbtn lime" type="button" id="tokenSave" data-i18n="tgp.token_save">Prüfen und speichern</button>
+                        <span class="note" id="tokenMsg"></span>
+                    </div>
+                    <p class="note" data-i18n="tgp.token_private">Der Schlüssel bleibt verschlüsselt im Auto. Wer ihn hat, kann deinen Bot steuern – gib ihn niemandem weiter.</p>
+                </div>
+
+                <!-- Schritt 2: Koppeln -->
+                <div id="step2" hidden>
+                    <div class="who" id="botWho"><div><b id="botName">—</b><small id="botHandle">—</small></div></div>
+                    <p class="lead" data-i18n="tgp.step2_lead">Jetzt verbindest du den Bot mit deinem Telegram, damit nur du die Meldungen bekommst und Befehle schicken darfst.</p>
+                    <div class="actions" id="pairStartRow">
+                        <button class="gbtn lime" type="button" id="pairStart" data-i18n="tgp.pair_start">Kopplung starten</button>
+                    </div>
+                    <div id="pairBox" hidden>
+                        <div class="actions">
+                            <a class="gbtn lime" id="pairLink" href="#" target="_blank" rel="noopener" data-i18n="tgp.pair_open">In Telegram öffnen und „Start“ tippen</a>
+                        </div>
+                        <p class="note" data-i18n="tgp.pair_or">Geht der Link nicht (z. B. am Autoschirm), schick dem Bot diese Nachricht vom Handy:</p>
+                        <div class="pin" id="pinValue">— — —</div>
+                        <p class="note" id="pinCountdown"></p>
+                        <p class="note" data-i18n="tgp.pair_wait">Diese Seite merkt von selbst, wenn es geklappt hat.</p>
+                    </div>
+                    <span class="note" id="pairMsg"></span>
+                </div>
+
+                <!-- Schritt 3: Fertig -->
+                <div id="step3" hidden>
+                    <div class="who"><div><b id="ownerName">—</b><small id="ownerHandle">—</small></div></div>
+                    <p class="lead" data-i18n-html="tgp.step3_lead">Fertig. Schreib dem Bot <code>/hilfe</code>, um alle Befehle zu sehen – oder schick dir gleich eine Probe.</p>
+                    <div class="actions">
+                        <button class="gbtn lime" type="button" id="testBtn" data-i18n="tgp.test">Testnachricht schicken</button>
+                        <span class="note" id="testMsg"></span>
+                    </div>
+                </div>
+
+                <details class="more" id="moreBox" hidden>
+                    <summary data-i18n="tgp.more">Bot wechseln oder entfernen</summary>
+                    <div class="actions">
+                        <button class="gbtn" type="button" id="unpairBtn" data-i18n="tgp.unpair">Anderes Telegram koppeln</button>
+                        <button class="gbtn danger" type="button" id="clearBtn" data-i18n="tgp.clear">Bot entfernen</button>
+                    </div>
+                    <p class="note" data-i18n="tgp.more_hint">„Anderes Telegram koppeln“ behält den Bot und löst nur die Verbindung zu deinem Konto. „Bot entfernen“ löscht auch den Schlüssel.</p>
+                </details>
+            </article>
+
+            <!-- ============ Meldungen ============ -->
+            <article class="gc" id="alertsCard">
+                <h2 data-i18n="tgp.alerts_title">Meldungen</h2>
+                <p class="lead" data-i18n="tgp.alerts_lead">Was dir der Bot von selbst schickt. Jede Art einzeln.</p>
+                <div id="alertRows"></div>
+                <p class="note" data-i18n="tgp.kat_hinweis">Jede Kategorie einzeln ein oder aus. Ausgeschaltete Meldungen stehen trotzdem im Verlauf, nur die Nachricht entfällt.</p>
+            </article>
+
+            <!-- ============ Ruhezeiten ============ -->
+            <article class="gc" id="quietCard">
+                <h2 data-i18n="tgp.quiet_title">Ruhezeit</h2>
+                <p class="lead" data-i18n="tgp.quiet_lead">Nachts nur das Wichtige: In der Ruhezeit kommen nur Alarme – jemand ganz nah am Auto, Abschreckung, Ladefehler, schwache Starterbatterie und wenn sich der Wächter schlafen legt.</p>
+                <div class="row first">
+                    <div class="txt"><b data-i18n="tgp.quiet_on">Ruhezeit einschalten</b></div>
+                    <label class="sw"><input type="checkbox" id="qOn"><i></i></label>
+                </div>
+                <div class="row">
+                    <div class="txt"><b data-i18n="tgp.quiet_from_to">Von – bis</b>
+                        <small data-i18n="tgp.quiet_hint">Uhrzeit des Autos. Geht auch über Mitternacht.</small></div>
+                    <div class="times"><input type="time" id="qFrom" value="22:00"><span class="note">–</span>&nbsp;<input type="time" id="qTo" value="07:00"></div>
+                </div>
+                <div class="actions">
+                    <button class="gbtn lime" type="button" id="qSave" data-i18n="tgp.save">Speichern</button>
+                    <span class="note" id="qMsg"></span>
+                </div>
+            </article>
+
+            <!-- ============ Fernbefehle ============ -->
+            <article class="gc" id="remoteCard">
+                <h2 data-i18n="tgp.remote_title">Fernbefehle</h2>
+                <p class="lead" data-i18n="tgp.remote_lead">Was du dem Auto per Telegram sagen darfst. Ausgeschaltete Befehle beantwortet der Bot mit einem Hinweis.</p>
+                <div id="remoteRows"></div>
+            </article>
+
+            <!-- ============ Sprache und Dienst ============ -->
+            <article class="gc" id="langCard">
+                <h2 data-i18n="tgp.lang_title">Sprache und Betrieb</h2>
+                <div class="row first">
+                    <div class="txt"><b data-i18n="tgp.lang">Sprache des Bots</b>
+                        <small data-i18n="tgp.lang_hint">Der Bot spricht dieselbe Sprache wie Panoptes. Standard ist Deutsch; ändern kannst du sie in den Einstellungen der App.</small></div>
+                    <b id="langName" style="color:var(--on-surface)">Deutsch</b>
+                </div>
+                <div class="row">
+                    <div class="txt"><b data-i18n="tgp.autostart">Auch bei abgestelltem Auto erreichbar</b>
+                        <small data-i18n="tgp.autostart_hint">Der Bot startet von selbst, wenn du das Auto abstellst. Ohne das kommen Befehle nur an, solange das Auto an ist.</small></div>
+                    <label class="sw"><input type="checkbox" id="autoStart"><i></i></label>
+                </div>
+                <p class="note" id="alwaysOn" hidden data-i18n="tgp.always_on">Der Bot ist in der App unter „Dienste“ dauerhaft eingeschaltet – er läuft also immer, egal wie dieser Schalter steht.</p>
+            </article>
+
+        </section>
+        </div>
+    </main>
+</div>
+<!-- Pflichttext E (PFLICHTTEXTE_WAECHTER.md): einmal bestätigen beim Einschalten von
+     „Bilder und Videos an Telegram senden“; wer es schon an hat, sieht ihn einmal zur Kenntnis. -->
+<div class="dlg-back" id="mediaDlg" hidden role="dialog" aria-modal="true" aria-labelledby="mediaDlgTitle">
+    <div class="dlg">
+        <h3 id="mediaDlgTitle" data-i18n="tgp.share_title">Bilder und Videos an Telegram</h3>
+        <p data-i18n="tgp.share_body">Auf dieser Aufnahme sind Menschen oder Kennzeichen erkennbar. Gib sie nur an Polizei, Versicherung oder Gericht weiter und stell sie nicht in soziale Netze.</p>
+        <p data-i18n="tgp.share_telegram">Beim Senden an Telegram liegt das Video auf den Servern von Telegram, nicht mehr nur bei dir.</p>
+        <div class="actions">
+            <button class="gbtn lime" type="button" id="mediaOk" data-i18n="tgp.share_confirm">Trotzdem senden</button>
+            <button class="gbtn" type="button" id="mediaCancel" data-i18n="tgp.share_cancel">Abbrechen</button>
+            <button class="gbtn lime" type="button" id="mediaSeen" hidden data-i18n="tgp.share_seen">Verstanden</button>
+        </div>
+    </div>
+</div>
+<div id="toastContainer" class="toast-container"></div>
+
+<script src="../shared/auth.js"></script>
+<script src="../shared/pwa-init.js?v=index1"></script>
+<script src="../shared/core.js?v=pn5"></script>
+<script>
+// ES5 (Chrome 58 / Android 7.1 am Autoschirm).
+(function () {
+    'use strict';
+    function $(id) { return document.getElementById(id); }
+    function t(k, f, v) { return window.PanoptesShell ? PanoptesShell.tr(k, f, v) : f; }
+    function toast(m, ok) { if (window.BYD && BYD.utils && BYD.utils.toast) BYD.utils.toast(m, ok ? 'success' : 'error'); }
+    function getJson(url) { return fetch(url, { cache: 'no-store' }).then(function (r) { return r.json(); }); }
+    function post(url, body) {
+        return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) })
+            .then(function (r) { return r.json(); });
+    }
+    function msg(id, text, kind) { var el = $(id); el.textContent = text || ''; el.className = 'note' + (kind ? ' ' + kind : ''); }
+
+    // Meldungsarten: Schlüssel wie /api/telegram/status bzw. /preferences.
+    var ALERTS = [
+        ['motionText',          'tgp.a_motion',       'Wächter-Ereignisse',        'tgp.a_motion_hint',       'Wenn jemand am geparkten Auto ist: Uhrzeit, Kamera, was erkannt wurde. Die Aufnahme holst du bei Bedarf mit /aufnahme.'],
+        ['videoUploads',        'tgp.a_video',        'Bilder und Videos an Telegram senden', 'tgp.a_video_hint', 'Standard aus. Schickt Bilder und Aufnahmen von selbst mit. Darauf sind oft fremde Menschen zu sehen – die Dateien liegen dann auf den Servern von Telegram.'],
+        ['criticalAlerts',      'tgp.a_critical',     'Abschreckung und Alarme',   'tgp.a_critical_hint',     'Jemand ganz nah am Auto, Speicher voll, Fehler.'],
+        ['parkingMessages',     'tgp.a_parking',      'Parkprotokoll',             'tgp.a_parking_hint',      '„Abgestellt“ und „Zurück am Auto“ (mit Rundum-Bild nur, wenn Bilder und Videos an sind).'],
+        ['chargingAlerts',      'tgp.a_charging',     'Laden',                     'tgp.a_charging_hint',     'Laden fertig und Ladefehler.'],
+        ['batteryAlerts',       'tgp.a_battery',      'Starterbatterie (12 V)',    'tgp.a_battery_hint',      'Warnt, bevor das Auto nicht mehr anspringt.'],
+        ['guardStopAlerts',     'tgp.a_guardstop',    'Wächter legt sich schlafen', 'tgp.a_guardstop_hint',   'Mit Grund, z. B. Ladestand oder Starterbatterie zu niedrig.'],
+        ['healthAlerts',        'tgp.a_health',       'Wächter-Gesundheit',        'tgp.a_health_hint',       'Wenn der Wächter eine Weile nicht aufpassen konnte: „repariert“ oder „braucht Hilfe“.'],
+        ['tyreAlerts',          'tgp.a_tyre',         'Reifendruck',               'tgp.a_tyre_hint',         'Zu wenig Luft oder ein Reifen verliert Druck.'],
+        ['updateAlerts',        'tgp.a_update',       'Updates',                   'tgp.a_update_hint',       'Neue Version eingespielt oder zurückgenommen.'],
+        ['connectivityUpdates', 'tgp.a_link',         'Neuer Fernzugang-Link',     'tgp.a_link_hint',         'Wenn sich die Adresse ändert, unter der du Panoptes erreichst.']
+    ];
+    // Fernbefehle: Schlüssel wie telegram.remote.
+    var REMOTE = [
+        ['guard',    'tgp.r_guard',    'Wächter wecken / schlafen legen', 'tgp.r_guard_hint',    '/waechter an · /waechter aus'],
+        ['camera',   'tgp.r_camera',   'Kamerabild und Aufnahmen',        'tgp.r_camera_hint',   '/kamera · /aufnahmen'],
+        ['location', 'tgp.r_location', 'Standort',                        'tgp.r_location_hint', '/wo – zeigt, wo das Auto steht'],
+        ['charging', 'tgp.r_charging', 'Ladestand',                       'tgp.r_charging_hint', '/laden – nur lesen'],
+        ['services', 'tgp.r_services', 'Dienste und Fernzugang',          'tgp.r_services_hint', '/dienste · /fernzugang – für Fortgeschrittene'],
+        ['backup',   'tgp.r_backup',   'Sicherung schicken',              'tgp.r_backup_hint',   '/sicherung – Datei mit deinen Einstellungen'],
+        ['cloud',    'tgp.r_cloud',    'Befehle über das BYD-Konto',      'tgp.r_cloud_hint',    'Kommt später, Standard aus. Dann nur mit Rückfrage im Chat und nur bei ausgeschaltetem Auto. Aufsperren gibt es nie.']
+    ];
+    var LANGS = { de: 'Deutsch', en: 'English', fr: 'Français', it: 'Italiano', es: 'Español', nl: 'Nederlands', pl: 'Polski',
+                  pt: 'Português', 'pt-BR': 'Português (Brasil)', cs: 'Čeština', hu: 'Magyar', tr: 'Türkçe', ru: 'Русский', uk: 'Українська' };
+
+    function row(container, id, title, hint, first, locked) {
+        var r = document.createElement('div');
+        r.className = 'row' + (first ? ' first' : '') + (locked ? ' locked' : '');
+        r.innerHTML = '<div class="txt"><b></b><small></small></div><label class="sw"><input type="checkbox"><i></i></label>';
+        r.querySelector('b').textContent = title;
+        r.querySelector('small').textContent = hint;
+        var inp = r.querySelector('input');
+        inp.id = id;
+        if (locked) inp.disabled = true;
+        container.appendChild(r);
+        return inp;
+    }
+
+    // 0.1.11: Kategorien aus dem Kern (GET /api/telegram/kategorien) – eine Quelle, nur Ein/Aus, Stufe = Sortierung.
+    // Ohne diese API (älterer Kern) bleibt die feste Liste unten der Rückfall.
+    var KAT = null;
+    var GRUPPEN = { waechter: ['tgp.gruppe.waechter', 'Wächter'], fahrzeug: ['tgp.gruppe.fahrzeug', 'Fahrzeug'], laden: ['tgp.gruppe.laden', 'Laden'],
+                    parken: ['tgp.gruppe.parken', 'Parken'], system: ['tgp.gruppe.system', 'System'] };
+    function buildKategorien(liste) {
+        var a = $('alertRows');
+        a.innerHTML = '';
+        var gruppe = null, erste = true;
+        liste.forEach(function (k) {
+            if (k.gruppe !== gruppe) {
+                gruppe = k.gruppe;
+                var h = document.createElement('h3');
+                h.className = 'tg-gruppe';
+                h.style.cssText = 'margin:14px 0 4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--outline,#8aa)';
+                h.textContent = GRUPPEN[gruppe] ? t(GRUPPEN[gruppe][0], GRUPPEN[gruppe][1]) : gruppe;
+                a.appendChild(h);
+                erste = true;
+            }
+            var inp = row(a, 'k_' + k.id.replace(/\./g, '_'), k.label || k.id, k.note || '', erste, false);
+            erste = false;
+            inp.checked = !!k.an;
+            inp.onchange = function () {
+                // Bilder/Videos: nur nach Pflichttext E (Kern verlangt die Quittung, Weg wie bisher über videoUploads)
+                if (k.bestaetigung === 'telegramMedien' && inp.checked) {
+                    if (!(last && last.mediaNoticeAckAt > 0)) {
+                        inp.checked = false;
+                        askMedia(function () { inp.checked = true; savePref({ videoUploads: true }, inp); });
+                        return;
+                    }
+                    savePref({ videoUploads: true }, inp);
+                    return;
+                }
+                var kat = {}; kat[k.id] = inp.checked;
+                savePref({ kategorien: kat }, inp);
+            };
+        });
+    }
+    function ladeKategorien() {
+        return fetch('/api/telegram/kategorien', { cache: 'no-store' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .catch(function () { return null; })
+            .then(function (d) {
+                if (d && d.success && d.kategorien && d.kategorien.length) { KAT = d.kategorien; buildKategorien(KAT); return true; }
+                return false;
+            });
+    }
+
+    function buildRows() {
+        var a = $('alertRows');
+        ALERTS.forEach(function (x, i) {
+            var inp = row(a, 'a_' + x[0], t(x[1], x[2]), t(x[3], x[4]), i === 0, false);
+            inp.onchange = function () {
+                var body = {}; body[x[0]] = inp.checked;
+                // Einschalten von Bildern/Videos nur nach Pflichttext E (einmal).
+                if (x[0] === 'videoUploads' && inp.checked && !(last && last.mediaNoticeAckAt > 0)) {
+                    inp.checked = false;
+                    askMedia(function () { inp.checked = true; savePref({ videoUploads: true }, inp); });
+                    return;
+                }
+                savePref(body, inp);
+            };
+        });
+        var r = $('remoteRows');
+        REMOTE.forEach(function (x, i) {
+            var inp = row(r, 'r_' + x[0], t(x[1], x[2]), t(x[3], x[4]), i === 0, x[0] === 'cloud');
+            inp.onchange = function () {
+                var rem = {}; rem[x[0]] = inp.checked;
+                savePref({ remote: rem }, inp);
+            };
+        });
+    }
+
+    function savePref(body, inp) {
+        inp.disabled = true;
+        post('/api/telegram/preferences', body).then(function (d) {
+            var ok = d && d.success;
+            // Server verlangt die Quittung des Pflichthinweises (409 bestaetigung_fehlt): nichts gespeichert,
+            // Hinweis noch einmal zeigen und erst danach einschalten.
+            if (!ok && d && d.error === 'bestaetigung_fehlt' && body.videoUploads === true) {
+                inp.checked = false;
+                if (last) last.mediaNoticeAckAt = 0;
+                askMedia(function () { inp.checked = true; savePref({ videoUploads: true }, inp); });
+                return;
+            }
+            toast(ok ? t('tgp.saved', 'Gespeichert') : t('tgp.save_fail', 'Konnte nicht speichern'), ok);
+            if (!ok) inp.checked = !inp.checked;
+        }).catch(function () {
+            inp.checked = !inp.checked;
+            toast(t('tgp.save_fail', 'Konnte nicht speichern'), false);
+        }).then(function () { inp.disabled = false; });
+    }
+
+    // ---------------- Pflichttext E: Bilder und Videos an Telegram
+    // mode 'ask': Einschalten bestätigen (Trotzdem senden / Abbrechen).
+    // mode 'seen': schon eingeschaltet, einmal zur Kenntnis (Verstanden).
+    // In beiden Fällen wird nur mediaNoticeAckAt gespeichert, nie videoUploads.
+    function showMediaDlg(mode, onOk) {
+        $('mediaOk').hidden = mode !== 'ask';
+        $('mediaCancel').hidden = mode !== 'ask';
+        $('mediaSeen').hidden = mode !== 'seen';
+        $('mediaDlg').hidden = false;
+        function close() { $('mediaDlg').hidden = true; }
+        function ack(then) {
+            post('/api/telegram/media-notice/ack').then(function (d) {
+                if (last && d && d.mediaNoticeAckAt) last.mediaNoticeAckAt = d.mediaNoticeAckAt;
+                if (then) then();
+            }).catch(function () { toast(t('tgp.save_fail', 'Konnte nicht speichern'), false); });
+        }
+        $('mediaOk').onclick = function () { close(); ack(onOk); };
+        $('mediaSeen').onclick = function () { close(); ack(null); };
+        $('mediaCancel').onclick = close;
+        (mode === 'ask' ? $('mediaOk') : $('mediaSeen')).focus();
+    }
+    function askMedia(onOk) { showMediaDlg('ask', onOk); }
+    var mediaSeenShown = false;
+    function maybeShowMediaSeen(s) {
+        if (mediaSeenShown || !s.paired || !s.videoUploads || s.mediaNoticeAckAt > 0) return;
+        mediaSeenShown = true;
+        showMediaDlg('seen', null);
+    }
+
+    // ---------------- Zustand / Schritte
+    var last = null;
+    function paint(s) {
+        last = s;
+        var step = !s.configured ? 1 : (!s.paired ? 2 : 3);
+        $('step1').hidden = step !== 1;
+        $('step2').hidden = step !== 2;
+        $('step3').hidden = step !== 3;
+        $('moreBox').hidden = step === 1;
+        for (var i = 1; i <= 3; i++) {
+            $('sb' + i).className = 'sb' + (i < step || step === 3 ? ' done' : '') + (i === step ? ' on' : '');
+        }
+        var dot = $('stDot');
+        if (step === 3) {
+            $('stText').textContent = t('tgp.st_ready', 'Telegram-Meldungen sind an');
+            $('stSub').textContent = t('tgp.st_ready_sub', 'Gekoppelt mit {name}.', { name: s.ownerFirstName || (s.ownerUsername ? '@' + s.ownerUsername : '') });
+            dot.className = 'pn-dot ok';
+        } else if (step === 2) {
+            $('stText').textContent = t('tgp.st_pair', 'Fast fertig – noch koppeln');
+            $('stSub').textContent = t('tgp.st_pair_sub', 'Der Bot ist da, kennt dich aber noch nicht.');
+            dot.className = 'pn-dot aq';
+        } else {
+            $('stText').textContent = t('tgp.st_none', 'Noch nicht eingerichtet');
+            $('stSub').textContent = t('tgp.st_none_sub', 'Drei kurze Schritte, dann meldet sich dein Auto bei dir.');
+            dot.className = 'pn-dot';
+        }
+        $('botName').textContent = s.botFirstName || s.botUsername || t('tgp.bot', 'Dein Bot');
+        $('botHandle').textContent = s.botUsername ? '@' + s.botUsername : '';
+        $('ownerName').textContent = s.ownerFirstName || t('tgp.owner', 'Gekoppelt');
+        $('ownerHandle').textContent = (s.ownerUsername ? '@' + s.ownerUsername : '') + (s.botUsername ? '  ·  ' + t('tgp.via', 'über @{bot}', { bot: s.botUsername }) : '');
+        if (step === 2 && s.pendingPin && s.pendingPinExpiresAt) showPin(s.pendingPin, s.pendingPinExpiresAt);
+
+        // Meldungen + Fernbefehle
+        // Schalter, die dieses Panoptes noch nicht kennt (Schlüssel fehlt in der Antwort), nicht falsch als „aus“ zeigen.
+        if (!KAT) ALERTS.forEach(function (x) {
+            var el = $('a_' + x[0]);
+            if (!el) return;
+            var da = Object.prototype.hasOwnProperty.call(s, x[0]);
+            var zeile = el.parentNode && el.parentNode.parentNode;
+            if (zeile) zeile.style.display = da ? '' : 'none';
+            el.checked = !!s[x[0]];
+        });
+        var rem = s.remote || {};
+        REMOTE.forEach(function (x) { var el = $('r_' + x[0]); if (el) el.checked = !!rem[x[0]]; });
+        // Ruhezeit
+        var q = s.quietHours || {};
+        $('qOn').checked = !!q.enabled;
+        $('qFrom').value = q.from || '22:00';
+        $('qTo').value = q.to || '07:00';
+        $('qFrom').disabled = $('qTo').disabled = !q.enabled;
+        // Sprache, Betrieb
+        var lang = s.language || 'de';
+        $('langName').textContent = LANGS[lang] || LANGS[lang.split('-')[0]] || lang;
+        $('autoStart').checked = !!s.autoStartAccOff;
+        $('alwaysOn').hidden = !s.daemonAlwaysOn;
+        // Ohne Kopplung gibt es noch nichts einzustellen.
+        var dim = step !== 3;
+        ['alertsCard', 'quietCard', 'remoteCard'].forEach(function (id) { $(id).style.opacity = dim ? '.6' : ''; });
+    }
+
+    function load() {
+        return getJson('/api/telegram/status').then(function (s) { paint(s); maybeShowMediaSeen(s); }).catch(function () {
+            $('stText').textContent = t('tgp.load_fail', 'Konnte den Stand nicht laden');
+        });
+    }
+
+    // ---------------- Schritt 1: Schlüssel
+    var TOKEN_ERR = {
+        token_empty: ['tgp.e_empty', 'Bitte zuerst den Schlüssel von BotFather einfügen.'],
+        token_format: ['tgp.e_format', 'Das sieht nicht wie ein Bot-Schlüssel aus. Er hat Ziffern, einen Doppelpunkt und dann Buchstaben.'],
+        token_rejected: ['tgp.e_rejected', 'Telegram kennt diesen Schlüssel nicht. Bitte noch einmal bei BotFather kopieren (Befehl /mybots → API Token).'],
+        unreachable: ['tgp.e_unreachable', 'Telegram ist vom Auto aus gerade nicht erreichbar. Hat das Auto Internet? Später noch einmal probieren.']
+    };
+    function saveToken() {
+        var tok = $('token').value.replace(/\s+/g, '');
+        if (!tok) { msg('tokenMsg', t(TOKEN_ERR.token_empty[0], TOKEN_ERR.token_empty[1]), 'err'); return; }
+        $('tokenSave').disabled = true;
+        msg('tokenMsg', t('tgp.checking', 'Prüfe bei Telegram …'));
+        post('/api/telegram/token', { token: tok }).then(function (d) {
+            if (d && d.success) {
+                $('token').value = '';
+                msg('tokenMsg', t('tgp.token_ok', 'Passt! Weiter mit Schritt 2.'), 'ok');
+                load();
+            } else {
+                var e = TOKEN_ERR[d && d.code] || null;
+                msg('tokenMsg', e ? t(e[0], e[1]) : ((d && d.error) || t('tgp.save_fail', 'Konnte nicht speichern')), 'err');
+            }
+        }).catch(function () { msg('tokenMsg', t(TOKEN_ERR.unreachable[0], TOKEN_ERR.unreachable[1]), 'err'); })
+          .then(function () { $('tokenSave').disabled = false; });
+    }
+
+    // ---------------- Schritt 2: Koppeln
+    var pinTimer = null, pollTimer = null;
+    function showPin(pin, expiresAt) {
+        $('pairBox').hidden = false;
+        $('pairStartRow').hidden = true;
+        $('pinValue').textContent = '/koppeln ' + pin;
+        var bot = last && last.botUsername;
+        $('pairLink').href = bot ? 'https://t.me/' + encodeURIComponent(bot) + '?start=' + pin : '#';
+        $('pairLink').hidden = !bot;
+        if (pinTimer) clearInterval(pinTimer);
+        function tick() {
+            var left = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+            var mm = Math.floor(left / 60), ss = left % 60;
+            if (left > 0) {
+                $('pinCountdown').textContent = t('tgp.pin_left', 'Gilt noch {time} Minuten.', { time: mm + ':' + (ss < 10 ? '0' : '') + ss });
+            } else {
+                $('pinCountdown').textContent = t('tgp.pin_gone', 'Abgelaufen – bitte neu starten.');
+                clearInterval(pinTimer); pinTimer = null;
+                $('pairStartRow').hidden = false; $('pairBox').hidden = true;
+            }
+        }
+        tick();
+        pinTimer = setInterval(tick, 1000);
+        startPoll();
+    }
+    function startPairing() {
+        $('pairStart').disabled = true;
+        post('/api/telegram/pin').then(function (d) {
+            if (d && d.success) showPin(d.pin, d.expiresAt);
+            else msg('pairMsg', t('tgp.pin_fail', 'Konnte keine Kopplung starten.'), 'err');
+        }).catch(function () { msg('pairMsg', t('tgp.pin_fail', 'Konnte keine Kopplung starten.'), 'err'); })
+          .then(function () { $('pairStart').disabled = false; });
+    }
+    function startPoll() {
+        if (pollTimer) return;
+        pollTimer = setInterval(function () {
+            getJson('/api/telegram/status').then(function (s) {
+                if (s.paired) {
+                    clearInterval(pollTimer); pollTimer = null;
+                    if (pinTimer) { clearInterval(pinTimer); pinTimer = null; }
+                    toast(t('tgp.paired', 'Gekoppelt!'), true);
+                    paint(s);
+                }
+            }).catch(function () {});
+        }, 3000);
+    }
+
+    // ---------------- Schritt 3: Test
+    var TEST = {
+        ok: ['tgp.t_ok', 'Gesendet – schau in Telegram nach.', 'ok'],
+        no_owner: ['tgp.t_no_owner', 'Erst koppeln, dann testen.', 'err'],
+        daemon_down: ['tgp.t_down', 'Der Bot-Dienst lief nicht und wird gerade gestartet. In 20 Sekunden noch einmal probieren.', 'err'],
+        send_failed: ['tgp.t_failed', 'Telegram hat die Nachricht nicht angenommen. Hat das Auto Internet?', 'err']
+    };
+    function sendTest() {
+        $('testBtn').disabled = true;
+        msg('testMsg', t('tgp.t_sending', 'Schicke …'));
+        post('/api/telegram/test').then(function (d) {
+            var e = TEST[d && d.code] || TEST.send_failed;
+            msg('testMsg', t(e[0], e[1]), e[2]);
+        }).catch(function () { msg('testMsg', t(TEST.send_failed[0], TEST.send_failed[1]), 'err'); })
+          .then(function () { $('testBtn').disabled = false; });
+    }
+
+    // ---------------- Ruhezeit
+    function saveQuiet() {
+        $('qSave').disabled = true;
+        post('/api/telegram/preferences', { quietHours: { enabled: $('qOn').checked, from: $('qFrom').value, to: $('qTo').value } })
+            .then(function (d) {
+                msg('qMsg', d && d.success ? t('tgp.saved', 'Gespeichert') : t('tgp.save_fail', 'Konnte nicht speichern'), d && d.success ? 'ok' : 'err');
+                load();
+            }).catch(function () { msg('qMsg', t('tgp.save_fail', 'Konnte nicht speichern'), 'err'); })
+            .then(function () { $('qSave').disabled = false; });
+    }
+
+    // Texte mit Links/Code: core.js übersetzt nur reinen Text. Die Werte kommen
+    // aus unserem eigenen Katalog (web/i18n), nie aus Nutzereingaben.
+    function hydrateHtml() {
+        var nodes = document.querySelectorAll('[data-i18n-html]');
+        for (var i = 0; i < nodes.length; i++) {
+            var k = nodes[i].getAttribute('data-i18n-html');
+            var v = (window.BYD && BYD.i18n && BYD.i18n.t) ? BYD.i18n.t(k) : null;
+            if (v && v !== k) nodes[i].innerHTML = v;
+        }
+    }
+
+    BYD.i18n.init().then(function () {
+        BYD.core.init();
+        hydrateHtml();
+        ladeKategorien().then(function (ok) { if (!ok) buildRows(); load(); });
+        $('tokenSave').onclick = saveToken;
+        $('token').onkeydown = function (e) { if (e.keyCode === 13) saveToken(); };
+        $('tokenEye').onclick = function () {
+            var inp = $('token'); var show = inp.type === 'password';
+            inp.type = show ? 'text' : 'password';
+            this.textContent = show ? t('tgp.hide', 'Verbergen') : t('tgp.show', 'Zeigen');
+        };
+        $('pairStart').onclick = startPairing;
+        $('testBtn').onclick = sendTest;
+        $('qOn').onchange = function () { $('qFrom').disabled = $('qTo').disabled = !this.checked; };
+        $('qSave').onclick = saveQuiet;
+        $('autoStart').onchange = function () { savePref({ autoStartAccOff: this.checked }, this); };
+        $('unpairBtn').onclick = function () {
+            if (!window.confirm(t('tgp.confirm_unpair', 'Verbindung zu deinem Telegram lösen? Danach koppelst du neu.'))) return;
+            post('/api/telegram/owner/clear').then(load);
+        };
+        $('clearBtn').onclick = function () {
+            if (!window.confirm(t('tgp.confirm_clear', 'Bot wirklich entfernen? Der Schlüssel wird gelöscht, Meldungen kommen keine mehr.'))) return;
+            post('/api/telegram/clear').then(load);
+        };
+    });
+})();
+</script>
+</body>
+</html>

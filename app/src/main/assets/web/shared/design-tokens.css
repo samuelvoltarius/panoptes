@@ -1,0 +1,178 @@
+/* SurfMate-Look (Entwurf design/mockup/start.html, freigegeben 20.10.2026):
+ * Ozean #0A2238 -> Petrol #0B5C66, Aqua #5FD6E6 (Info/Akzent), Limette #B5F23D (Energie/Hauptaktion).
+ * Variablennamen bleiben (M3-Schema), damit alle Seiten mitziehen. Von Hand gepflegt.
+ * Schriften: Sora (Ueberschriften/Zahlen), Manrope (Text) - SIL OFL 1.1, Lizenz in fonts/.
+ */
+@font-face { font-family: 'Sora'; font-style: normal; font-display: swap; font-weight: 100 800;
+    src: url('fonts/sora-latin-wght.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Sora'; font-style: normal; font-display: swap; font-weight: 100 800;
+    src: url('fonts/sora-latin-ext-wght.woff2') format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: 'Manrope'; font-style: normal; font-display: swap; font-weight: 200 800;
+    src: url('fonts/manrope-latin-wght.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Manrope'; font-style: normal; font-display: swap; font-weight: 200 800;
+    src: url('fonts/manrope-latin-ext-wght.woff2') format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+
+:root {
+    --primary: #B5F23D;
+    --on-primary: #1D2A00;
+    --primary-container: #2C4700;
+    --on-primary-container: #DDFAA0;
+    --secondary: #A9C7CE;
+    --on-secondary: #0E2E36;
+    --secondary-container: #1E4250;
+    --on-secondary-container: #D2EEF3;
+    --tertiary: #5FD6E6;
+    --on-tertiary: #002A33;
+    --tertiary-container: #0B5C66;
+    --on-tertiary-container: #C9F5FB;
+    --error: #FF8A6B;
+    --on-error: #3D0B00;
+    --error-container: #5C1A0B;
+    --on-error-container: #FFD9CE;
+    --background: #071A2B;
+    --on-background: #EAF6F8;
+    --surface: #0A2238;
+    --on-surface: #EAF6F8;
+    --surface-variant: #1F4256;
+    --on-surface-variant: #A9C7CE;
+    --surface-dim: #071A2B;
+    --surface-bright: #20455C;
+    --surface-container-lowest: #05131F;
+    --surface-container-low: #0C2539;
+    --surface-container: #0F2B40;
+    --surface-container-high: #133248;
+    --surface-container-highest: #183A52;
+    --outline: #6E8E97;
+    --outline-variant: #1F4256;
+    --inverse-surface: #EAF6F8;
+    --inverse-on-surface: #0A2238;
+    --inverse-primary: #4E7F00;
+    --scrim: #000000;
+    --status-success: #B5F23D;
+    --status-warning: #FFC266;
+    --status-danger: #FF8A6B;
+    --status-info: #5FD6E6;
+    --status-success-container: rgba(181, 242, 61, 0.14);
+    --status-warning-container: rgba(255, 194, 102, 0.14);
+    --status-danger-container: rgba(255, 138, 107, 0.14);
+    --status-info-container: rgba(95, 214, 230, 0.14);
+
+    /* Shape */
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --radius-xl: 24px;
+    --radius-2xl: 28px;
+    --radius-full: 9999px;
+
+    /* Spacing */
+    --page-pad-x: 24px;
+    --page-pad-y: 20px;
+    --card-gap: 12px;
+    --card-pad: 20px;
+    --card-pad-hero: 24px;
+    --tile-min-h: 128px;
+
+    /* Type */
+    --family-sans: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --family-display: 'Sora', 'Manrope', system-ui, sans-serif;
+    --family-mono: ui-monospace, 'SF Mono', 'Roboto Mono', monospace;
+    --tracking-display: 0;
+    --tracking-headline: 0;
+    --tracking-title: 0;
+    --tracking-label: 0;
+
+    /* Motion */
+    --duration-short: 180ms;
+    --duration-med: 240ms;
+    --duration-long: 320ms;
+    --easing-standard: cubic-bezier(0.2, 0.0, 0.0, 1.0);
+    --easing-emphasized: cubic-bezier(0.05, 0.7, 0.1, 1.0);
+    --easing-decel: cubic-bezier(0.0, 0.0, 0.2, 1.0);
+
+    /* Elevation (dark defaults) */
+    --shadow-sm: 0 1px 2px rgba(2, 10, 18, 0.35);
+    --shadow-md: 0 6px 18px rgba(2, 10, 18, 0.40);
+    --shadow-lg: 0 14px 40px rgba(2, 10, 18, 0.50);
+
+    /* SurfMate-Extras */
+    --sm-ocean: #0A2238;
+    --sm-teal: #0B5C66;
+    --sm-aqua: #5FD6E6;
+    --sm-lime: #B5F23D;
+    --sm-line: rgba(160, 230, 240, 0.12);
+    --sm-card: rgba(255, 255, 255, 0.045);
+    --sm-page-bg: radial-gradient(1200px 700px at 85% -10%, rgba(11, 92, 102, 0.55), transparent 60%), radial-gradient(900px 600px at -10% 110%, rgba(95, 214, 230, 0.10), transparent 60%), linear-gradient(160deg, #0A2238, #071A2B 70%);
+    /* Legacy aliases (do not use in new code) */
+    --bg-base: var(--surface);
+    --bg-surface: var(--surface-container);
+    --bg-elevated: var(--surface-container-high);
+    --bg-hover: var(--surface-container-highest);
+    --text-primary: var(--on-surface);
+    --text-secondary: var(--on-surface-variant);
+    --text-muted: var(--outline);
+    --brand-primary: var(--primary);
+    --brand-secondary: var(--tertiary);
+    --success: var(--status-success);
+    --warning: var(--status-warning);
+    --danger: var(--status-danger);
+}
+
+:root[data-theme="light"] {
+    --primary: #4E7F00;
+    --on-primary: #FFFFFF;
+    --primary-container: #D7F59A;
+    --on-primary-container: #152200;
+    --secondary: #3D6470;
+    --on-secondary: #FFFFFF;
+    --secondary-container: #D2EEF3;
+    --on-secondary-container: #082A33;
+    --tertiary: #00758A;
+    --on-tertiary: #FFFFFF;
+    --tertiary-container: #C9F5FB;
+    --on-tertiary-container: #00262E;
+    --error: #B3361B;
+    --on-error: #FFFFFF;
+    --error-container: #FFDAD0;
+    --on-error-container: #3D0B00;
+    --background: #EEF6F8;
+    --on-background: #0A2238;
+    --surface: #F6FBFC;
+    --on-surface: #0A2238;
+    --surface-variant: #D5E6EA;
+    --on-surface-variant: #3A5862;
+    --surface-dim: #D9E7EB;
+    --surface-bright: #FFFFFF;
+    --surface-container-lowest: #FFFFFF;
+    --surface-container-low: #F0F7F9;
+    --surface-container: #E8F2F5;
+    --surface-container-high: #E0EDF1;
+    --surface-container-highest: #D7E7EC;
+    --outline: #5F7C86;
+    --outline-variant: #BCD3DA;
+    --inverse-surface: #0A2238;
+    --inverse-on-surface: #EAF6F8;
+    --inverse-primary: #B5F23D;
+    --scrim: #000000;
+    --status-success: #3F7A00;
+    --status-warning: #9A5B00;
+    --status-danger: #B3361B;
+    --status-info: #00758A;
+    --status-success-container: rgba(63, 122, 0, 0.12);
+    --status-warning-container: rgba(154, 91, 0, 0.12);
+    --status-danger-container: rgba(179, 54, 27, 0.12);
+    --status-info-container: rgba(0, 117, 138, 0.12);
+
+    --sm-line: rgba(10, 34, 56, 0.10);
+    --sm-card: rgba(255, 255, 255, 0.75);
+    --sm-page-bg: linear-gradient(160deg, #F6FBFC, #E3F0F4 70%);
+
+    /* Elevation (light variant — softer shadows on light surface) */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.10);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.14);
+}

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Testfunktionen – Panoptes</title>
+    <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0A2238">
+    <meta name="robots" content="noindex">
+    <script src="../shared/theme.js?v=13"></script>
+    <script src="../shared/app-shell.js?v=pn24"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn10">
+    <style>
+        .tf { padding: 0 28px 60px; max-width: 720px; box-sizing: border-box; }
+        .tc { background: var(--sm-card); border: 1px solid var(--sm-line); border-radius: 20px; padding: 20px; margin-bottom: 16px; }
+        .tc h2 { font-family: var(--family-display); font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--outline); margin: 0 0 6px; }
+        .tc p { color: var(--on-surface-variant); font-size: 13.5px; margin: 0 0 12px; }
+        .tc .big { font-family: var(--family-display); font-size: 20px; font-weight: 700; color: var(--on-surface); margin: 6px 0 12px; }
+        .tc .big.on { color: var(--status-warning); }
+        .tbtn { border: 1px solid var(--sm-line); background: rgba(255, 255, 255, .075); color: var(--on-surface); border-radius: 12px;
+                padding: 11px 16px; font: 600 14px var(--family-body, sans-serif); cursor: pointer; margin: 0 8px 8px 0; }
+        .tbtn.lime { background: var(--sm-lime); color: #1d2a00; border-color: transparent; }
+        .tbtn:disabled { opacity: .5; cursor: default; }
+        @media (max-width: 720px) { .tf { padding: 0 16px 24px; } }
+    </style>
+</head>
+<body>
+<div class="app-layout">
+    <div id="app-shell-mount"></div>
+    <main class="main-content">
+        <div class="tf">
+            <article class="tc">
+                <h2 data-i18n="testf.title">Testfunktionen</h2>
+                <p data-i18n="testf.lead">Nur zum Ausprobieren. Alles hier schaltet sich von selbst wieder ab.</p>
+            </article>
+            <article class="tc" id="bz">
+                <h2 data-i18n="testf.radar_title">Blitzer in allen Ländern (24 h)</h2>
+                <p data-i18n="testf.radar_lead">Normal warnt Panoptes beim Fahren nur in Österreich vor Blitzern. Hier kannst du es für 24 Stunden in allen Ländern einschalten. Hinweis am Bildschirm; ob dazu ein Ton kommt, stellst du unter System → Blitzer ein. In vielen Ländern sind Blitzer-Warnungen beim Fahren verboten; du bist selbst verantwortlich.</p>
+                <div class="big" id="bzState">…</div>
+                <button class="tbtn lime" type="button" id="bzOn" data-i18n="testf.radar_on">24 h einschalten</button>
+                <button class="tbtn" type="button" id="bzOff" data-i18n="testf.off">Aus</button>
+                <p id="bzNa" hidden data-i18n="testf.na">Diese Testfunktion kommt mit dem nächsten Update.</p>
+            </article>
+        </div>
+    </main>
+</div>
+<div id="toastContainer" class="toast-container"></div>
+
+<script src="../shared/auth.js"></script>
+<script src="../shared/pwa-init.js?v=index1"></script>
+<script src="../shared/core.js?v=pn5"></script>
+<script>
+(function () {
+    'use strict';
+    // Versteckt (7× auf die Version unter „Über Panoptes“). Nur mit Login; der Daemon sperrt
+    // Kopplungs-Zugänge (403). Nicht im Einstellungs-Schema. Kein Befehl ans Auto.
+    function $(id) { return document.getElementById(id); }
+    function t(k, f, v) { return window.PanoptesShell ? PanoptesShell.tr(k, f, v) : f; }
+    function toast(m, ok) { if (window.BYD && BYD.utils && BYD.utils.toast) BYD.utils.toast(m, ok ? 'success' : 'error'); }
+    var bis = 0, uhr = null;
+
+    function zeige(d) {
+        var an = !!(d && d.an && d.bis && d.bis > Date.now());
+        bis = an ? d.bis : 0;
+        clearInterval(uhr);
+        function tick() {
+            var rest = Math.max(0, bis - Date.now());
+            if (bis && rest <= 0) { laden(); return; }
+            var h = Math.floor(rest / 3600000), m = Math.floor(rest % 3600000 / 60000);
+            $('bzState').textContent = bis ? t('testf.radar_left', 'An, noch {h} h {m} min', { h: h, m: m }) : t('testf.radar_off', 'Aus (nur Österreich)');
+            $('bzState').className = 'big' + (bis ? ' on' : '');
+        }
+        tick();
+        if (bis) uhr = setInterval(tick, 30000);
+        $('bzOff').disabled = !an;
+    }
+    function laden() {
+        fetch('/api/test/blitzer', { cache: 'no-store' }).then(function (r) {
+            if (r.status === 404 || r.status === 403) return null;
+            return r.ok ? r.json() : null;
+        }).then(function (d) {
+            if (!d) { $('bzNa').hidden = false; $('bzOn').disabled = $('bzOff').disabled = true; $('bzState').textContent = ''; return; }
+            zeige(d);
+        }, function () {});
+    }
+    function setze(an) {
+        $('bzOn').disabled = $('bzOff').disabled = true;
+        fetch('/api/test/blitzer', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ an: an }) })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (d) { if (!d) toast(t('testf.fail', 'Das hat nicht geklappt.'), false); },
+                  function () { toast(t('testf.fail', 'Das hat nicht geklappt.'), false); })
+            .then(function () { $('bzOn').disabled = false; laden(); });   // echten Stand zurücklesen
+    }
+
+    BYD.i18n.init().then(function () {
+        BYD.core.init();
+        $('bzOn').onclick = function () { setze(true); };
+        $('bzOff').onclick = function () { setze(false); };
+        laden();
+    });
+})();
+</script>
+</body>
+</html>

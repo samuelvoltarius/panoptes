@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title data-i18n="app.dashboard_title">Start – Panoptes</title>
+    <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="../shared/app-icon-dark.webp">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0A2238">
+    <script src="../shared/theme.js?v=13"></script>
+    <script src="../shared/kartenquelle.js?v=5"></script>
+    <script src="../shared/app-shell.js?v=pn24"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn10">
+    <style>
+        /* Startseite nach design/mockup/start.html */
+        .home-page .main-content { padding: 0; }
+        .home { padding: 0 28px 60px; max-width: 1320px; width: 100%; box-sizing: border-box; }
+        .home-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-gap: 16px; }
+        .hc { background: var(--sm-card); border: 1px solid var(--sm-line); border-radius: 20px; padding: 20px;
+              position: relative; overflow: hidden; min-width: 0; }
+        .hc h2 { font-family: var(--family-display); font-size: 13px; font-weight: 600; letter-spacing: .08em;
+                 text-transform: uppercase; color: var(--outline); margin: 0 0 14px; display: flex; align-items: center; }
+        .hc h2 .more { margin-left: auto; text-transform: none; letter-spacing: 0; color: var(--sm-aqua);
+                       font-weight: 600; font-size: 13px; text-decoration: none; }
+        .c-7 { grid-column: span 7; } .c-5 { grid-column: span 5; } .c-12 { grid-column: span 12; }
+
+        /* Pegel (Ladestand) */
+        .c-hero { display: grid; grid-template-columns: 180px minmax(0, 1fr); grid-gap: 26px; align-items: center; padding: 26px;
+                  background: linear-gradient(135deg, rgba(11, 92, 102, .45), rgba(10, 34, 56, .35)); }
+        .gauge { width: 180px; height: 220px; border-radius: 90px 90px 34px 34px; position: relative; overflow: hidden;
+                 background: rgba(4, 16, 27, .55); border: 1px solid rgba(95, 214, 230, .25); box-shadow: inset 0 0 40px rgba(0, 0, 0, .35); }
+        .gauge .water { position: absolute; left: 0; right: 0; bottom: 0; height: var(--lvl, 0%);
+                        background: linear-gradient(180deg, #43c9db, #0B5C66); transition: height .8s ease; }
+        .gauge .wave { position: absolute; left: 0; width: 200%; height: 26px; bottom: calc(var(--lvl, 0%) - 13px);
+                       animation: pn-surf 6s linear infinite; transition: bottom .8s ease; }
+        .gauge .wave.b { opacity: .45; animation-duration: 9s; bottom: calc(var(--lvl, 0%) - 9px); }
+        @keyframes pn-surf { to { transform: translateX(-50%); } }
+        @media (prefers-reduced-motion: reduce) { .gauge .wave { animation: none; } }
+        .gauge.low .water { background: linear-gradient(180deg, #ffb15e, #8a4b14); }
+        .gauge.low .wave path { fill: #ffb15e; }
+        .gauge.crit .water { background: linear-gradient(180deg, #FF8A6B, #7a2414); }
+        .gauge.crit .wave path { fill: #FF8A6B; }
+        .gauge .val { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column;
+                      align-items: center; justify-content: center; text-shadow: 0 2px 14px rgba(0, 0, 0, .45); }
+        .gauge .val b { font-family: var(--family-display); font-size: 48px; font-weight: 700; letter-spacing: -.03em; line-height: 1; color: #fff; }
+        .gauge .val b small { font-size: 24px; }
+        .gauge .val span { font-size: 13px; line-height: 1.3; color: #E8FBFD; opacity: .85; margin-top: 4px;
+                           max-width: 100%; box-sizing: border-box; padding: 0 16px; text-align: center; }
+        .gauge .bolt { position: absolute; top: 18px; left: 50%; margin-left: -12px; width: 24px; height: 24px; color: var(--sm-lime);
+                       display: none; filter: drop-shadow(0 0 6px rgba(181, 242, 61, .6)); }
+        .gauge.charging .bolt { display: block; animation: pn-pulse 1.6s ease-in-out infinite; }
+        @keyframes pn-pulse { 50% { opacity: .45; } }
+        .h-state { display: flex; align-items: center; font-size: 14px; color: var(--on-surface-variant); margin-bottom: 6px; }
+        .h-state .pn-dot { margin-right: 10px; }
+        .h-range { font-family: var(--family-display); font-size: 56px; font-weight: 700; letter-spacing: -.03em; line-height: 1; color: var(--on-surface); }
+        .h-range small { font-size: 22px; color: var(--on-surface-variant); font-weight: 600; margin-left: 4px; }
+        .h-band { color: var(--on-surface-variant); font-size: 14px; margin: 8px 0 18px; }
+        .band-bar { height: 8px; border-radius: 8px; background: rgba(255, 255, 255, .08); position: relative; margin-bottom: 18px; max-width: 420px; }
+        .band-bar i { position: absolute; top: 0; bottom: 0; border-radius: 8px;
+                      background: linear-gradient(90deg, rgba(95, 214, 230, .35), rgba(181, 242, 61, .55)); }
+        .band-bar em { position: absolute; top: -4px; width: 4px; height: 16px; border-radius: 2px; background: var(--sm-lime); margin-left: -2px; }
+        .band-bar u { position: absolute; top: -3px; width: 2px; height: 14px; background: var(--on-surface-variant); opacity: .7; text-decoration: none; }
+        .chips { display: flex; flex-wrap: wrap; }
+        .chips .pn-pill { margin: 0 8px 8px 0; }
+        .home [hidden] { display: none !important; }
+        .h-charge { display: none; margin-top: 4px; padding: 10px 14px; border-radius: 12px; font-weight: 600; font-size: 14px;
+                    background: rgba(181, 242, 61, .12); color: var(--sm-lime); border: 1px solid rgba(181, 242, 61, .3); }
+        .h-charge.on { display: inline-block; }
+
+        /* Schnellaktionen */
+        .acts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-gap: 10px; }
+        .act { border: 1px solid var(--sm-line); background: rgba(255, 255, 255, .075); color: var(--on-surface); border-radius: 16px;
+               padding: 14px 6px; display: flex; flex-direction: column; align-items: center; font: 600 13px var(--family-body, sans-serif);
+               cursor: pointer; text-decoration: none; text-align: center; -webkit-tap-highlight-color: transparent; }
+        .act svg { width: 24px; height: 24px; color: var(--sm-aqua); margin-bottom: 8px; }
+        .act.primary { background: var(--sm-lime); color: #1d2a00; border-color: transparent; }
+        .act.primary svg { color: #1d2a00; }
+        .act.pending { opacity: .5; pointer-events: none; }
+        .act:active { transform: scale(.97); }
+        .acts.custom { margin-top: 10px; }
+
+        /* Karte */
+        .map { height: 300px; border-radius: 12px; position: relative; overflow: hidden; background: linear-gradient(135deg, #0d2c40, #103b48); }
+        .row { display: flex; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+        .row > * { margin: 4px 10px 0 0; }
+        .row .grow { flex: 1; }
+        .hbtn { border: 1px solid var(--sm-line); background: rgba(255, 255, 255, .075); color: var(--on-surface); border-radius: 12px;
+                padding: 10px 14px; font: 600 13px var(--family-body, sans-serif); cursor: pointer; display: inline-flex; align-items: center; text-decoration: none; }
+        .hbtn.lime { background: var(--sm-lime); color: #1d2a00; border-color: transparent; }
+        .muted { color: var(--on-surface-variant); font-size: 13px; }
+        /* Zustand */
+        .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-gap: 10px; }
+        .stat { background: rgba(4, 16, 27, .35); border-radius: 12px; padding: 14px; min-width: 0; text-decoration: none; color: inherit; display: block; }
+        .stat .k { font-size: 12px; color: var(--outline); font-weight: 600; }
+        .stat .v { font-family: var(--family-display); font-size: 19px; font-weight: 600; margin-top: 6px; color: var(--on-surface);
+                   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .stat .v.ok { color: var(--sm-lime); } .stat .v.warn { color: var(--status-warning); } .stat .v.alert { color: var(--status-danger); }
+        .stat .s { font-size: 12px; color: var(--on-surface-variant); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* Laden & Kosten, Fahrten */
+        .big { font-family: var(--family-display); font-size: 30px; font-weight: 700; letter-spacing: -.02em; color: var(--on-surface); }
+        .spark { width: 100%; height: 70px; margin-top: 6px; display: block; }
+        .list { list-style: none; margin: 0; padding: 0; }
+        .list li { display: flex; align-items: center; padding: 11px 0; border-top: 1px solid var(--sm-line); font-size: 14px; color: var(--on-surface); }
+        .list li:first-child { border-top: 0; }
+        .list .ic { width: 34px; height: 34px; border-radius: 10px; background: rgba(95, 214, 230, .12); display: flex; align-items: center;
+                    justify-content: center; color: var(--sm-aqua); flex: none; margin-right: 12px; }
+        .list .ic svg { width: 18px; height: 18px; }
+        .list .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .list .t small { display: block; color: var(--outline); font-size: 12px; }
+        .list .r { margin-left: auto; padding-left: 10px; text-align: right; font-family: var(--family-display); font-weight: 600; white-space: nowrap; }
+        .list .r small { display: block; font-family: var(--family-body, sans-serif); font-weight: 500; color: var(--outline); font-size: 12px; }
+        .list .empty { color: var(--on-surface-variant); font-size: 13px; }
+        a.li { color: inherit; text-decoration: none; display: contents; }
+
+        @media (max-width: 980px) { .c-7, .c-5 { grid-column: span 12; } }
+        @media (max-width: 720px) {
+            .home { padding: 0 16px 24px; }
+            .c-hero { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; }
+            .h-state, .chips { justify-content: center; }
+            .band-bar { margin-left: auto; margin-right: auto; width: 100%; }
+            .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .h-range { font-size: 48px; }
+        }
+        [data-android-embed="1"] .home { padding-top: 16px; }
+    </style>
+</head>
+<body class="home-page">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+    <symbol id="i-flash" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="9.5" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+    <symbol id="i-snow" viewBox="0 0 24 24"><path d="M12 2v20M3.5 7l17 10M20.5 7l-17 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-trunk" viewBox="0 0 24 24"><path d="M4 18V9l3-4h10l3 4v9H4zM4 9h16M10 13h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+    <symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="18" cy="6" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 18H15a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-nav" viewBox="0 0 24 24"><path d="M3 11 22 2l-9 19-2-8-8-2Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+</svg>
+<div class="app-layout">
+    <div id="app-shell-mount"></div>
+
+    <main class="main-content">
+        <!-- 0.1.10: ruhige Karte „Wo hast du geladen?“ nur bei jetztZeigen (Auto in P); kein Ton, kein Popup -->
+        <div class="hc" id="hNachfrage" style="display:none;margin:0 0 14px;padding:16px 18px;"></div>
+        <div class="home">
+        <section class="home-grid">
+
+            <!-- Ladestand als Pegel -->
+            <article class="hc c-7 c-hero">
+                <div class="gauge" id="hGauge" style="--lvl:0%">
+                    <div class="water"></div>
+                    <svg class="wave b" viewBox="0 0 400 26" preserveAspectRatio="none"><path d="M0 13 Q25 0 50 13 T100 13 T150 13 T200 13 T250 13 T300 13 T350 13 T400 13 V26 H0z" fill="#2fb4c8"/></svg>
+                    <svg class="wave" viewBox="0 0 400 26" preserveAspectRatio="none"><path d="M0 13 Q25 2 50 13 T100 13 T150 13 T200 13 T250 13 T300 13 T350 13 T400 13 V26 H0z" fill="#43c9db"/></svg>
+                    <svg class="bolt" viewBox="0 0 24 24"><use href="#i-flash"/></svg>
+                    <div class="val"><b id="hSoc">--<small>%</small></b><span id="hKwh">&nbsp;</span></div>
+                </div>
+                <div class="hero-txt">
+                    <div class="h-state"><i class="pn-dot" id="hStateDot"></i><span id="hState" data-i18n="home.waiting">Warte auf das Auto …</span></div>
+                    <div class="h-range"><span id="hRange">--</span><small id="hRangeUnit">km</small></div>
+                    <div class="h-band" id="hBand">&nbsp;</div>
+                    <div class="band-bar" id="hBandBar" hidden><i id="hBandSpan"></i><u id="hBandCar" title=""></u><em id="hBandMark"></em></div>
+                    <div class="h-charge" id="hCharge"></div>
+                    <div class="chips">
+                        <span class="pn-pill" id="hGear" hidden></span>
+                        <span class="pn-pill" id="h12v" hidden></span>
+                        <span class="pn-pill" id="hOdo" hidden></span>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Schnellaktionen -->
+            <article class="hc c-5">
+                <h2 data-i18n="home.quick">Schnell</h2>
+                <div class="acts">
+                    <button class="act primary" type="button" onclick="Home.command(this,'/api/vehicle/lock',null,'home.confirm_lock')"><svg><use href="#i-lock"/></svg><span data-i18n="home.lock">Zusperren</span></button>
+                    <button class="act" type="button" id="hClimateBtn" onclick="Home.climate(this)"><svg><use href="#i-snow"/></svg><span id="hClimateLabel" data-i18n="home.climate_on">Vorklimatisieren</span></button>
+                    <button class="act" type="button" onclick="Home.command(this,'/api/vehicle/flash',null,'home.confirm_flash')"><svg><use href="#i-flash"/></svg><span data-i18n="home.flash">Blinken</span></button>
+                    <button class="act" type="button" onclick="Home.command(this,'/api/vehicle/find-car',null,'home.confirm_find')"><svg><use href="#i-pin"/></svg><span data-i18n="home.find">Finden</span></button>
+                    <button class="act" type="button" onclick="Home.command(this,'/api/vehicle/trunk',{action:'open'},'home.confirm_trunk')"><svg><use href="#i-trunk"/></svg><span data-i18n="home.trunk">Kofferraum</span></button>
+                </div>
+                <!-- Eigene Knöpfe (GET /api/quick-controls), erst sichtbar, wenn es welche gibt -->
+                <div class="acts custom" id="hCustom" hidden></div>
+            </article>
+
+            <!-- Standort -->
+            <article class="hc c-7">
+                <h2><span data-i18n="home.location">Standort</span><a class="more" href="navi.html" data-i18n="home.to_map">Zur Karte</a></h2>
+                <div class="map" id="hMap"></div>
+                <div class="row">
+                    <span class="muted grow" id="hGps">&nbsp;</span>
+                    <button class="hbtn" type="button" onclick="Home.openDirections()"><svg width="16" height="16" style="margin-right:8px"><use href="#i-nav"/></svg><span data-i18n="home.navigate">Hinnavigieren</span></button>
+                    <a class="hbtn lime" href="navi.html"><svg width="16" height="16" style="margin-right:8px"><use href="#i-route"/></svg><span data-i18n="home.plan_route">Ziel planen</span></a>
+                </div>
+            </article>
+
+            <!-- Laden & Kosten -->
+            <article class="hc c-5">
+                <h2><span data-i18n="home.charging">Laden &amp; Kosten</span><a class="more" href="charging.html" data-i18n="home.details">Details</a></h2>
+                <div class="big" id="hMonthCost">--</div>
+                <div class="muted" id="hMonthInfo">&nbsp;</div>
+                <svg class="spark" id="hSpark" viewBox="0 0 300 70" preserveAspectRatio="none">
+                    <defs><linearGradient id="hSparkG" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#B5F23D" stop-opacity=".45"/><stop offset="1" stop-color="#B5F23D" stop-opacity="0"/></linearGradient></defs>
+                    <path id="hSparkFill" d="" fill="url(#hSparkG)"/>
+                    <path id="hSparkLine" d="" fill="none" stroke="#B5F23D" stroke-width="2"/>
+                </svg>
+                <ul class="list" id="hChargeList"><li class="empty">&nbsp;</li></ul>
+            </article>
+
+            <!-- Zustand -->
+            <article class="hc c-7">
+                <h2><span data-i18n="home.condition">Zustand</span><a class="more" href="vehicle-control.html" data-i18n="home.to_control">Steuerung</a></h2>
+                <div class="stats">
+                    <div class="stat"><div class="k" data-i18n="home.doors">Türen</div><div class="v" id="sDoors">--</div><div class="s" id="sDoorsS">&nbsp;</div></div>
+                    <div class="stat"><div class="k" data-i18n="home.windows">Fenster</div><div class="v" id="sWin">--</div><div class="s" id="sWinS">&nbsp;</div></div>
+                    <div class="stat"><div class="k" data-i18n="home.climate">Klima</div><div class="v" id="sClim">--</div><div class="s" id="sClimS">&nbsp;</div></div>
+                    <div class="stat"><div class="k" data-i18n="home.tyres">Reifen</div><div class="v" id="sTyre">--</div><div class="s" id="sTyreS">&nbsp;</div></div>
+                    <a class="stat" href="events.html"><div class="k" data-i18n="home.guard_today">Wächter heute</div><div class="v" id="sGuard">--</div><div class="s" id="sGuardS">&nbsp;</div></a>
+                    <div class="stat"><div class="k" data-i18n="home.soh">Akku-Gesundheit</div><div class="v" id="sSoh">--</div><div class="s" id="sSohS">&nbsp;</div></div>
+                </div>
+            </article>
+
+            <!-- Letzte Fahrten -->
+            <article class="hc c-5">
+                <h2><span data-i18n="home.trips">Letzte Fahrten</span><a class="more" href="trips.html" data-i18n="home.logbook">Fahrtenbuch</a></h2>
+                <ul class="list" id="hTrips"><li class="empty">&nbsp;</li></ul>
+            </article>
+        </section>
+        </div>
+    </main>
+</div>
+<div id="toastContainer" class="toast-container"></div>
+
+<script src="../shared/auth.js"></script>
+<script src="../shared/pwa-init.js?v=index1"></script>
+<script src="../shared/core.js?v=pn5"></script>
+<script src="../shared/panoptes-map.js?v=12"></script>
+<script src="../shared/laden-nachfrage.js?v=1"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var go = function () { if (window.PanoptesNachfrage) PanoptesNachfrage.init(document.getElementById('hNachfrage'), { nurJetzt: true }); };
+        if (window.BYD && BYD.i18n && BYD.i18n.init) BYD.i18n.init().then(go, go); else go();
+    });
+</script>
+<script>
+(function () {
+    'use strict';
+
+    function $(id) { return document.getElementById(id); }
+    function t(key, fallback, vars) {
+        if (window.PanoptesShell) return PanoptesShell.tr(key, fallback, vars);
+        return fallback;
+    }
+    function setText(id, v) { var el = $(id); if (el && el.textContent !== v) el.textContent = v; }
+    function setCls(id, base, extra) { var el = $(id); if (el) el.className = base + (extra ? ' ' + extra : ''); }
+    function num(v) { return typeof v === 'number' && isFinite(v); }
+    function lang() { return (window.BYD && BYD.i18n && BYD.i18n.getLang && BYD.i18n.getLang()) || 'de'; }
+    function fmt(v, digits) {
+        try { return Number(v).toLocaleString(lang(), { minimumFractionDigits: digits || 0, maximumFractionDigits: digits || 0 }); }
+        catch (e) { return Number(v).toFixed(digits || 0); }
+    }
+    function money(v, cur) { return fmt(v, 2) + ' ' + (cur || '€'); }
+    function distUnit() { return (window.BYD && BYD.units && BYD.units.distLabel) ? BYD.units.distLabel() : 'km'; }
+    function distVal(km) { return (window.BYD && BYD.units && BYD.units.distVal) ? BYD.units.distVal(km) : km; }
+    function ago(ts) {
+        var s = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+        if (s < 90) return t('home.ago_now', 'gerade eben');
+        var m = Math.round(s / 60);
+        if (m < 60) return t('home.ago_min', 'vor {n} min', { n: m });
+        var h = Math.round(m / 60);
+        if (h < 36) return t('home.ago_h', 'vor {n} h', { n: h });
+        return t('home.ago_d', 'vor {n} Tagen', { n: Math.round(h / 24) });
+    }
+    function dayLabel(ts) {
+        var d = new Date(ts), now = new Date();
+        var today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        var hm = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+        if (ts >= today) return t('home.today', 'Heute') + ', ' + hm;
+        if (ts >= today - 86400000) return t('home.yesterday', 'Gestern') + ', ' + hm;
+        return d.getDate() + '.' + (d.getMonth() + 1) + '., ' + hm;
+    }
+    function toast(msg, ok) { if (window.BYD && BYD.utils && BYD.utils.toast) BYD.utils.toast(msg, ok ? 'success' : 'error'); }
+
+    var Home = window.Home = {
+        status: null,
+        vstate: null,
+        range: null,
+        map: null,
+
+        // ---------------- Ladestand, Reichweite, Zustand der Fahrt
+        fromStatus: function (st) {
+            if (!st) return;
+            this.status = st;
+            var soc = st.soc && num(st.soc.percent) ? st.soc.percent : null;
+            var g = $('hGauge');
+            if (soc !== null) {
+                g.style.setProperty('--lvl', Math.max(3, Math.min(100, soc)) + '%');
+                $('hSoc').innerHTML = Math.round(soc) + '<small>%</small>';
+                g.className = 'gauge' + (soc <= 15 ? ' crit' : soc <= 25 ? ' low' : '')
+                    + (st.charging && st.charging.charging ? ' charging' : '');
+                var cap = (st.soh && num(st.soh.estimatedCapacityKwh) && st.soh.estimatedCapacityKwh > 0)
+                    ? st.soh.estimatedCapacityKwh
+                    : (PanoptesShell.profile().batteryKwh || 0);
+                setText('hKwh', cap > 0 ? t('home.kwh_of', '{a} von {b} kWh (geschätzt)', { a: fmt(cap * soc / 100, 1), b: fmt(cap, 1) }) : '');
+            }
+            this.renderState();
+            this.renderRange();
+
+            var bat = st.battery || {};
+            var v = Number(bat.voltage);
+            var el = $('h12v');
+            if (bat.available !== false && !bat.isStale && v > 0) { el.textContent = '12 V · ' + fmt(v, 1) + ' V'; el.hidden = false; }
+            else el.hidden = true;
+
+            var soh = st.soh || {};
+            if (num(soh.percent)) {
+                setText('sSoh', Math.round(soh.percent) + ' %');
+                setCls('sSoh', 'v', soh.percent >= 90 ? 'ok' : soh.percent >= 75 ? '' : 'warn');
+                setText('sSohS', num(soh.estimatedCapacityKwh) ? t('home.soh_cap', '{n} kWh nutzbar', { n: fmt(soh.estimatedCapacityKwh, 1) }) : '');
+            }
+
+            // Laden live
+            var c = st.charging || {};
+            var ch = $('hCharge');
+            if (c.charging) {
+                var bits = [];
+                var p = Number(c.powerKw || c.chargingPowerKW || 0);
+                if (p > 0 && c.powerSource !== 'nominalPlaceholder') bits.push((c.isEstimated ? '~' : '') + fmt(p, 1) + ' kW');
+                if (c.timeToFullMin > 0) bits.push(t('home.full_in', 'voll in {t}', { t: Math.floor(c.timeToFullMin / 60) + ' h ' + (c.timeToFullMin % 60) + ' min' }));
+                if (c.sessionKwh > 0) bits.push('+' + fmt(c.sessionKwh, 1) + ' kWh');
+                ch.textContent = t('home.charging_now', 'Lädt') + (bits.length ? ' · ' + bits.join(' · ') : '');
+                ch.className = 'h-charge on';
+            } else ch.className = 'h-charge';
+
+            // Karte
+            var gps = st.gps || {};
+            if (gps.hasLocation && num(gps.lat) && num(gps.lng)) {
+                if (this.map) this.map.setCar({ lng: gps.lng, lat: gps.lat, heading: num(gps.heading) ? gps.heading : 0 });
+                var when = gps.lastUpdate ? ago(gps.lastUpdate) : '';
+                var live = !(gps.isStale || gps.isCached || gps.isFixStale);
+                setText('hGps', (live ? t('home.gps_live', 'GPS live') : t('home.gps_last', 'Letzte Position') + (when ? ' · ' + when : '')));
+            } else {
+                setText('hGps', t('home.gps_none', 'Noch keine Position'));
+            }
+        },
+
+        renderState: function () {
+            var st = this.status || {};
+            var vs = this.vstate || {};
+            var rec = st.recordingStatus || {};
+            var c = st.charging || {};
+            var powerOn = typeof st.acc === 'boolean' ? st.acc : rec.accOn === true;
+            var gear = String(rec.gear || st.gear || '').toUpperCase();
+            if (!/^(P|R|N|D|M|S)$/.test(gear) || (!powerOn && gear !== 'P')) gear = '';
+            var parts = [], dot = '';
+            if (c.fault) { parts.push(t('home.st_fault', 'Ladefehler')); dot = 'warn'; }
+            else if (c.charging) { parts.push(t('home.st_charging', 'Lädt')); dot = 'ok'; }
+            else if (powerOn && /^(D|M|S|R)$/.test(gear)) { parts.push(t('home.st_driving', 'Unterwegs')); dot = 'aq'; }
+            else if (powerOn) { parts.push(t('home.st_ready', 'Eingeschaltet')); dot = 'aq'; }
+            else if (c.plugged) { parts.push(t('home.st_plugged', 'Angesteckt')); dot = 'ok'; }
+            else { parts.push(t('home.st_parked', 'Geparkt')); dot = 'ok'; }
+            var doors = vs.doors || {};
+            if (doors.overall === 1) parts.push(t('home.st_locked', 'abgeschlossen'));
+            else if (doors.overall === 2) { parts.push(t('home.st_unlocked', 'offen')); dot = 'warn'; }
+            var cl = vs.climate || {};
+            if (cl.remoteClimateActive === true || cl.acOn === true) parts.push(t('home.st_ac_on', 'Klima an'));
+            else if (typeof cl.acOn === 'boolean') parts.push(t('home.st_ac_off', 'Klima aus'));
+            setText('hState', parts.join(' · '));
+            setCls('hStateDot', 'pn-dot', dot);
+            var stateEl = $('pnState');
+            if (stateEl) stateEl.textContent = parts[0] || '';
+            var gEl = $('hGear');
+            if (gear) { gEl.textContent = t('home.gear', 'Gang') + ' ' + gear; gEl.hidden = false; } else gEl.hidden = true;
+        },
+
+        // Persönliche Reichweite (aus den eigenen Fahrten) mit Spanne; sonst die des Autos.
+        renderRange: function () {
+            var st = this.status || {};
+            var rng = st.range || {};
+            var carKm = rng.totalRangeKm > 0 ? rng.totalRangeKm : (rng.elecRangeKm > 0 ? rng.elecRangeKm : 0);
+            var r = this.range;
+            var unit = distUnit();
+            setText('hRangeUnit', unit);
+            if (r && r.predictedRangeKm > 0) {
+                setText('hRange', fmt(distVal(r.predictedRangeKm)));
+                var lo = r.lowerBoundKm, hi = r.upperBoundKm;
+                var band = t('home.range_from_trips', 'Deine Reichweite aus {n} Fahrten', { n: r.sampleCount || 0 });
+                if (lo > 0 && hi > 0) band += ' · ' + t('home.range_span', 'Spanne {a}–{b} {u}', { a: fmt(distVal(lo)), b: fmt(distVal(hi)), u: unit });
+                if (carKm > 0) band += ' · ' + t('home.range_car', 'Auto zeigt {n} {u}', { n: fmt(distVal(carKm)), u: unit });
+                setText('hBand', band);
+                if (lo > 0 && hi > 0) {
+                    var max = Math.max(hi, carKm, r.predictedRangeKm) * 1.1;
+                    var pct = function (v) { return Math.max(0, Math.min(100, v / max * 100)) + '%'; };
+                    $('hBandSpan').style.left = pct(lo);
+                    $('hBandSpan').style.right = (100 - parseFloat(pct(hi))) + '%';
+                    $('hBandMark').style.left = pct(r.predictedRangeKm);
+                    var u = $('hBandCar');
+                    if (carKm > 0) { u.style.left = pct(carKm); u.hidden = false; u.title = t('home.range_car', 'Auto zeigt {n} {u}', { n: fmt(distVal(carKm)), u: unit }); }
+                    else u.hidden = true;
+                    $('hBandBar').hidden = false;
+                }
+            } else if (carKm > 0) {
+                setText('hRange', fmt(distVal(carKm)));
+                setText('hBand', t('home.range_car_only', 'Reichweite laut Auto'));
+                $('hBandBar').hidden = true;
+            }
+        },
+
+        loadRange: function () {
+            var self = this;
+            fetch('/api/trips/range', { cache: 'no-store' }).then(function (r) { return r.json(); })
+                .then(function (d) { if (d && d.success && d.range) { self.range = d.range; self.renderRange(); } })
+                .catch(function () {});
+        },
+
+        // ---------------- Türen, Fenster, Klima, Reifen
+        fromVehicleState: function (d) {
+            if (!d || d.success !== true) return;
+            this.vstate = d;
+            var doors = d.doors || {}, open = d.doorOpen || {};
+            var openNames = [];
+            var names = { lf: t('home.door_lf', 'Fahrer'), rf: t('home.door_rf', 'Beifahrer'), lr: t('home.door_lr', 'hinten links'),
+                          rr: t('home.door_rr', 'hinten rechts'), trunk: t('home.door_trunk', 'Kofferraum'), hood: t('home.door_hood', 'Motorhaube') };
+            for (var k in names) if (open[k] === true) openNames.push(names[k]);
+            if (d.trunk && d.trunk.open === true && openNames.indexOf(names.trunk) < 0) openNames.push(names.trunk);
+            if (openNames.length) {
+                setText('sDoors', t('home.open', 'Offen')); setCls('sDoors', 'v', 'alert'); setText('sDoorsS', openNames.join(', '));
+            } else if (doors.overall === 1) {
+                setText('sDoors', t('home.closed', 'Zu')); setCls('sDoors', 'v', 'ok');
+                setText('sDoorsS', doors.scope && doors.scope !== 'vehicle' ? t('home.driver_locked', 'Fahrertür verriegelt') : t('home.all_locked', 'verriegelt'));
+            } else if (doors.overall === 2) {
+                setText('sDoors', t('home.unlocked', 'Offen')); setCls('sDoors', 'v', 'warn'); setText('sDoorsS', t('home.not_locked', 'nicht verriegelt'));
+            }
+            var w = d.windows || {}, known = 0, openW = 0;
+            ['lf', 'rf', 'lr', 'rr'].forEach(function (k) { var v = w[k]; if (num(v) && v >= 0 && v <= 100) { known++; if (v > 0) openW++; } });
+            var roofOpen = num(w.sunroof) && w.sunroof > 0 && w.sunroof <= 100;
+            if (known) {
+                if (openW || roofOpen) {
+                    setText('sWin', t('home.open', 'Offen')); setCls('sWin', 'v', 'warn');
+                    setText('sWinS', t('home.windows_open', '{n} offen', { n: openW + (roofOpen ? 1 : 0) }));
+                } else {
+                    setText('sWin', t('home.windows_closed', 'Geschlossen')); setCls('sWin', 'v', 'ok');
+                    setText('sWinS', known === 4 ? t('home.all_four', 'alle 4') : t('home.known_n', '{n} gemeldet', { n: known }));
+                }
+            }
+            var cl = d.climate || {};
+            var acOn = cl.remoteClimateActive === true || cl.acOn === true;
+            if (typeof cl.acOn === 'boolean' || typeof cl.remoteClimateActive === 'boolean') {
+                setText('sClim', acOn ? t('home.on', 'An') : t('home.off', 'Aus')); setCls('sClim', 'v', acOn ? 'ok' : '');
+                var temps = [];
+                if (num(cl.insideTempC) && cl.insideTempC > 0) temps.push(t('home.inside', 'innen {n} °C', { n: Math.round(cl.insideTempC) }));
+                if (num(cl.outsideTempC)) temps.push(t('home.outside', 'außen {n} °C', { n: Math.round(cl.outsideTempC) }));
+                setText('sClimS', temps.join(' · ') || (cl.remoteClimateActive ? t('home.remote', 'aus der Ferne') : ''));
+            }
+            this.climateOn = acOn;
+            setText('hClimateLabel', acOn ? t('home.climate_off', 'Klima aus') : t('home.climate_on', 'Vorklimatisieren'));
+            $('hClimateLabel').removeAttribute('data-i18n');
+
+            var ty = d.tyres || {};
+            if (ty.available) {
+                var lim = ty.limits || { frontLow: 234, frontHigh: 310, rearLow: 234, rearHigh: 310, criticalLow: 152 };
+                var worst = 0, pressures = [], tempsT = [];
+                ['fl', 'fr', 'rl', 'rr'].forEach(function (k, i) {
+                    var c = ty[k];
+                    if (!c || c.available === false || c.signalState === 1) return;
+                    var lo = i < 2 ? lim.frontLow : lim.rearLow, hi = i < 2 ? lim.frontHigh : lim.rearHigh, s = 0;
+                    if (c.airLeakState >= 1 || (c.kPa > 0 && c.kPa <= lim.criticalLow)) s = 2;
+                    else if ((c.kPa > 0 && (c.kPa < lo || c.kPa > hi)) || c.pressureState >= 1) s = 1;
+                    worst = Math.max(worst, s);
+                    if (c.kPa > 0) pressures.push(c.kPa);
+                    if (num(c.temperatureC)) tempsT.push(c.temperatureC);
+                });
+                if (pressures.length) {
+                    setText('sTyre', worst === 2 ? t('home.tyre_alert', 'Druck zu niedrig') : worst === 1 ? t('home.tyre_warn', 'Prüfen') : t('home.tyre_ok', 'In Ordnung'));
+                    setCls('sTyre', 'v', worst === 2 ? 'alert' : worst === 1 ? 'warn' : 'ok');
+                    var pmin = Math.min.apply(null, pressures), pmax = Math.max.apply(null, pressures);
+                    var pv = function (kPa) {
+                        return (window.BYD && BYD.units && BYD.units.pressureVal) ? BYD.units.pressureVal(kPa) : fmt(kPa / 100, 2);
+                    };
+                    var pu = (window.BYD && BYD.units && BYD.units.pressureLabel) ? BYD.units.pressureLabel() : 'bar';
+                    setText('sTyreS', (pmin === pmax ? pv(pmin) : pv(pmin) + '–' + pv(pmax)) + ' ' + pu
+                        + (tempsT.length ? ' · ' + Math.round(Math.max.apply(null, tempsT)) + ' °C' : ''));
+                }
+            }
+            var odo = d.odometer || {};
+            var oEl = $('hOdo');
+            if (num(odo.totalKm) && odo.totalKm > 0) { oEl.textContent = fmt(distVal(odo.totalKm)) + ' ' + distUnit(); oEl.hidden = false; }
+            this.renderState();
+        },
+
+        loadVehicleState: function () {
+            var self = this;
+            fetch('/api/vehicle/state', { cache: 'no-store' }).then(function (r) { return r.json(); })
+                .then(function (d) { self.fromVehicleState(d); }).catch(function () {});
+        },
+
+        loadGuard: function () {
+            fetch('/api/recordings/stats').then(function (r) { return r.json(); }).then(function (d) {
+                if (!d || !d.success || d.indexUnavailable) return;
+                var by = d.byType || {};
+                var sentry = (by.sentry && by.sentry.todayCount) || d.sentryTodayCount || 0;
+                var prox = (by.proximity && by.proximity.todayCount) || d.proximityTodayCount || 0;
+                setText('sGuard', fmt(sentry + prox));
+                setCls('sGuard', 'v', prox > 0 ? 'warn' : '');
+                setText('sGuardS', prox > 0 ? t('home.guard_near', '{n} mal jemand nah dran', { n: prox })
+                                            : t('home.guard_events', 'Ereignisse · nichts Wichtiges'));
+            }).catch(function () {});
+        },
+
+        // ---------------- Laden & Kosten (dieser Monat) + letzte Ladungen
+        loadCharging: function () {
+            var now = new Date();
+            var from = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+            fetch('/api/charging/summary?from=' + from, { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+                var s = d && d.summary;
+                if (!s) return;
+                var months = t('home.months', 'Jänner,Februar,März,April,Mai,Juni,Juli,August,September,Oktober,November,Dezember').split(',');
+                setText('hMonthCost', money(s.periodCost || 0));
+                setText('hMonthInfo', t('home.month_info', '{m} bisher · {k} kWh · {p} €/kWh im Schnitt', {
+                    m: months[now.getMonth()] || '', k: fmt(s.periodEnergyKwh || 0), p: fmt(s.avgCostPerKwh || 0, 2) }));
+                // Kosten je Tag, aufsummiert über den Monat
+                var days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+                var perDay = [];
+                for (var i = 0; i < days; i++) perDay.push(0);
+                (s.daily || []).forEach(function (x) {
+                    var di = new Date(x.day).getDate() - 1;
+                    if (di >= 0 && di < days) perDay[di] += x.cost || 0;
+                });
+                var cum = [], acc = 0, today = now.getDate();
+                for (var j = 0; j < today; j++) { acc += perDay[j]; cum.push(acc); }
+                var max = Math.max(acc, 1), pts = [];
+                for (var q = 0; q < cum.length; q++) {
+                    var x = cum.length > 1 ? q / (days - 1) * 300 : 0;
+                    pts.push(x.toFixed(1) + ' ' + (64 - cum[q] / max * 56).toFixed(1));
+                }
+                if (pts.length) {
+                    $('hSparkLine').setAttribute('d', 'M' + pts.join(' L'));
+                    var lastX = pts[pts.length - 1].split(' ')[0];
+                    $('hSparkFill').setAttribute('d', 'M' + pts.join(' L') + ' L' + lastX + ' 70 L0 70z');
+                }
+            }).catch(function () {});
+
+            fetch('/api/charging?limit=2', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+                var list = $('hChargeList');
+                var ss = (d && d.sessions) || [];
+                list.textContent = '';
+                if (!ss.length) { list.innerHTML = '<li class="empty"></li>'; list.firstChild.textContent = t('home.no_charges', 'Noch keine Ladungen'); return; }
+                ss.forEach(function (c) {
+                    var li = document.createElement('li');
+                    var ic = document.createElement('span'); ic.className = 'ic';
+                    ic.innerHTML = '<svg><use href="' + (c.isDc ? '#i-flash' : '#i-plug') + '"/></svg>';
+                    var tx = document.createElement('span'); tx.className = 't';
+                    tx.textContent = (c.placeLabel ? c.placeLabel.split(',')[0] : t('home.charge', 'Ladung')) + ' · ' + (c.isDc ? 'DC' : 'AC');
+                    var r = document.createElement('span'); r.className = 'r';
+                    r.textContent = num(c.cost) ? money(c.cost, c.currency) : '--';
+                    var sm = document.createElement('small');
+                    sm.textContent = (num(c.energyAdded) ? fmt(c.energyAdded, 1) + ' kWh · ' : '') + dayLabel(c.startTime);
+                    r.appendChild(sm);
+                    li.appendChild(ic); li.appendChild(tx); li.appendChild(r);
+                    list.appendChild(li);
+                });
+                Home.markers(ss);
+            }).catch(function () {});
+        },
+
+        loadTrips: function () {
+            fetch('/api/trips?days=30&limit=3', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+                var list = $('hTrips');
+                var tr = (d && d.trips) || [];
+                list.textContent = '';
+                if (!tr.length) { list.innerHTML = '<li class="empty"></li>'; list.firstChild.textContent = t('home.no_trips', 'Noch keine Fahrten'); return; }
+                tr.forEach(function (x) {
+                    var li = document.createElement('li');
+                    li.style.cursor = 'pointer';
+                    li.onclick = function () { location.href = 'trips.html#trip-' + x.id; };
+                    var ic = document.createElement('span'); ic.className = 'ic'; ic.innerHTML = '<svg><use href="#i-route"/></svg>';
+                    var tx = document.createElement('span'); tx.className = 't';
+                    tx.textContent = dayLabel(x.startTime);
+                    var sm1 = document.createElement('small');
+                    var mins = Math.round((x.durationSeconds || 0) / 60);
+                    sm1.textContent = mins + ' min' + (num(x.overallScore) && x.overallScore > 0 ? ' · ' + t('home.score', 'Fahrstil {n}', { n: Math.round(x.overallScore) }) : '');
+                    tx.appendChild(sm1);
+                    var r = document.createElement('span'); r.className = 'r';
+                    r.textContent = fmt(distVal(x.distanceKm || 0), 1) + ' ' + distUnit();
+                    var sm = document.createElement('small');
+                    var bits = [];
+                    if (x.distanceKm > 0.5 && num(x.energyPerKm) && x.energyPerKm > 0) bits.push(fmt(x.energyPerKm * 100, 1) + ' kWh/100 km');
+                    if (num(x.tripCost) && x.tripCost > 0) bits.push(money(x.tripCost, x.currency));
+                    sm.textContent = bits.join(' · ') || ' ';
+                    r.appendChild(sm);
+                    li.appendChild(ic); li.appendChild(tx); li.appendChild(r);
+                    list.appendChild(li);
+                });
+            }).catch(function () {});
+        },
+
+        loadCustom: function () {
+            fetch('/api/quick-controls').then(function (r) { return r.json(); }).then(function (d) {
+                var grid = $('hCustom');
+                var bs = (d && d.success && d.buttons) || [];
+                grid.textContent = '';
+                bs.forEach(function (b) {
+                    if (!b || !b.id) return;
+                    var el = document.createElement('button');
+                    el.type = 'button'; el.className = 'act';
+                    el.innerHTML = '<svg><use href="#i-star"/></svg>';
+                    var sp = document.createElement('span'); sp.textContent = b.label || b.id; el.appendChild(sp);
+                    el.onclick = function () { Home.command(el, '/api/quick-controls/fire/' + encodeURIComponent(b.id), null, 'home.confirm_custom', b.label || b.id); };
+                    grid.appendChild(el);
+                });
+                grid.hidden = !grid.children.length;
+            }).catch(function () {});
+        },
+
+        markers: function (sessions) {
+            if (!this.map) return;
+            var ms = [];
+            (sessions || []).forEach(function (c) {
+                if (num(c.lat) && num(c.lng)) ms.push({ lat: c.lat, lng: c.lng, label: c.isDc ? 'DC' : 'AC', kind: c.isDc ? 'dc' : 'ac', title: c.placeLabel || '' });
+            });
+            this.map.setMarkers(ms);
+        },
+
+        // ---------------- Befehle
+        // Jeder Befehl ans Auto nur nach Rückfrage (Alfreds Regel 21.10.: nie versehentlich auslösen).
+        command: function (btn, url, payload, confirmKey, name) {
+            if (!btn || btn.classList.contains('pending')) return;
+            var FRAGEN = {
+                'home.confirm_trunk': 'Kofferraum öffnen?',
+                'home.confirm_lock': 'Auto jetzt zusperren?',
+                'home.confirm_flash': 'Licht jetzt blinken lassen?',
+                'home.confirm_find': 'Auto suchen? Es blinkt und hupt.',
+                'home.confirm_custom': '„{name}“ jetzt ausführen?',
+                'home.confirm_climate_off': 'Klima ausschalten?',
+                'home.confirm_climate': 'Klima jetzt für 20 Minuten auf 22 °C einschalten?'
+            };
+            var key = confirmKey || 'home.confirm_generic';
+            var q = t(key, FRAGEN[key] || 'Befehl ans Auto senden?', { name: name || '' });
+            if (!window.confirm(q)) return;
+            btn.classList.add('pending');
+            fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload ? JSON.stringify(payload) : undefined })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    var ok = !!(d && d.success);
+                    toast((d && (d.message || d.error)) || (ok ? t('home.sent', 'Befehl gesendet') : t('home.failed', 'Hat nicht geklappt')), ok);
+                    setTimeout(function () { Home.loadVehicleState(); }, 800);
+                })
+                .catch(function () { toast(t('home.failed', 'Hat nicht geklappt'), false); })
+                .then(function () { btn.classList.remove('pending'); });
+        },
+
+        // Klima nur nach Rückfrage (aus der Ferne läuft es 20 min).
+        climate: function (btn) {
+            if (this.climateOn) {
+                this.command(btn, '/api/vehicle/climate', { action: 'power_off' }, 'home.confirm_climate_off');
+                return;
+            }
+            this.command(btn, '/api/vehicle/climate', { action: 'power_on', temp: 22, remoteDurationMinutes: 20 }, 'home.confirm_climate');
+        },
+
+        openDirections: function () {
+            var g = this.status && this.status.gps;
+            if (!g || !g.hasLocation) { toast(t('home.gps_none', 'Noch keine Position'), false); return; }
+            // 0.1.9: Handy geo:-Link, sonst Auswahl OSM/Google mit Hinweis (app-shell.js PanoptesNaviLink)
+            if (window.PanoptesNaviLink) PanoptesNaviLink.oeffnen(g.lat, g.lng, 'ziel');
+        },
+
+        initMap: function () {
+            var self = this;
+            if (!window.PanoptesMap) return;
+            this.map = PanoptesMap.create($('hMap'), { zoom: 15.5, pitch: 50, bearing: -18, cooperative: true,
+                onReady: function () { if (self.status) self.fromStatus(self.status); } });
+            var p = PanoptesShell.profile();
+            if (p && (p.modelId || p.color)) this.map.setAppearance({ modelId: p.modelId, color: p.color });
+            document.addEventListener('panoptes:profile', function (e) {
+                var pr = (e && e.profile) || PanoptesShell.profile();
+                self.map.setAppearance({ modelId: pr.modelId, color: pr.color });
+            });
+        }
+    };
+
+    // core.js liest /status regelmäßig; wir hängen uns daran.
+    var origRefresh = BYD.core.refreshStatus.bind(BYD.core);
+    BYD.core.refreshStatus = function () {
+        return origRefresh().then(function (st) { if (st) Home.fromStatus(st); return st; });
+    };
+
+    function slowLoop() {
+        if (document.hidden) return;
+        Home.loadVehicleState();
+    }
+
+    BYD.i18n.init().then(function () {
+        BYD.core.init();
+        Home.initMap();
+        Home.loadRange();
+        Home.loadVehicleState();
+        Home.loadGuard();
+        Home.loadCharging();
+        Home.loadTrips();
+        Home.loadCustom();
+        setInterval(slowLoop, 6000);
+        setInterval(function () { if (!document.hidden) { Home.loadGuard(); Home.loadRange(); } }, 60000);
+        setInterval(function () { if (!document.hidden) { Home.loadCharging(); Home.loadTrips(); } }, 300000);
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) slowLoop(); });
+    });
+})();
+</script>
+</body>
+</html>

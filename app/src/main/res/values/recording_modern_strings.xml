@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="recording_library_loading">Getting your clips</string>
+    <string name="recording_library_refreshing">Updating your clips</string>
+    <string name="recording_library_loading_more">Fetching more clips</string>
+    <string name="recording_library_page_error">More clips won\'t load right now.</string>
+    <string name="recording_library_page_unavailable">More clips can\'t be reached right now.</string>
+    <string name="recording_library_refresh_error">Update failed. You still see the clips from before.</string>
+    <string name="recording_library_fatal_title">Clips won\'t open</string>
+    <string name="recording_library_fatal_body">Check that the recording service is running and the storage is connected. Then try again.</string>
+    <string name="recording_library_select">Pick clips</string>
+    <string name="recording_library_open_filters">Narrow down clips</string>
+    <string name="recording_library_clear_search">Erase the place search</string>
+    <string name="recording_preview_details">Clip info</string>
+    <string name="cd_expand_recording_details">Show clip info</string>
+    <string name="cd_collapse_recording_details">Hide clip info</string>
+    <string name="recording_item_description">%1$s, %2$s, %3$s. Open clip.</string>
+    <string name="recording_item_selection_description">%1$s, %2$s, %3$s. Status: %4$s</string>
+    <string name="recording_item_selected_action">Chosen. Double-tap to undo.</string>
+    <string name="recording_item_not_selected_action">Not chosen. Double-tap to choose.</string>
+    <string name="recording_item_select">Choose %1$s</string>
+    <string name="recording_item_deselect">Remove %1$s from the selection</string>
+    <string name="cd_pause">Pause</string>
+    <string name="cd_player_unmute">Sound on</string>
+    <string name="cd_player_mute_audio">Sound off</string>
+    <string name="video_player_buffering">Video is loading</string>
+    <string name="video_player_error_title">This clip won\'t play</string>
+    <string name="video_player_error_body">The file may be missing, or the storage was unplugged.</string>
+    <string name="video_player_retry">Try again</string>
+    <string name="video_player_next">Next clip</string>
+    <string name="video_timeline_empty">Timeline: nothing detected.</string>
+    <string name="video_timeline_events">Timeline with %1$d detections. Tap to jump to the nearest one.</string>
+    <string name="video_timeline_selected">%1$s at %2$s</string>
+</resources>

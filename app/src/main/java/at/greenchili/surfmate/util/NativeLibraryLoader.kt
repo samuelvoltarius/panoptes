@@ -1,0 +1,110 @@
+package at.greenchili.surfmate.util
+
+import android.util.Log
+import java.io.File
+
+/**
+ * Loads native libraries for daemon processes.
+ * 
+ * Extracted from CameraDaemon for reuse across daemons.
+ */
+object NativeLibraryLoader {
+    
+    private const val TAG = "NativeLibraryLoader"
+    
+    /**
+     * Load system libraries required for camera operations.
+     * 
+     * @return true if all critical libraries loaded successfully
+     */
+    fun loadSystemLibraries(): Boolean {
+        var success = true
+        
+        val systemLibs = listOf(
+            "nativehelper",
+            "cutils",
+            "utils",
+            "binder",
+            "gui",
+            "bmmcamera"
+        )
+        
+        for (lib in systemLibs) {
+            try {
+                System.loadLibrary(lib)
+                Log.d(TAG, "Loaded system library: $lib")
+            } catch (e: Throwable) {
+                Log.w(TAG, "Could not load system library $lib: ${e.message}")
+                // Non-critical - continue
+            }
+        }
+        
+        return success
+    }
+    
+    /**
+     * Load native encoder library.
+     * 
+     * @return true if native encoder is available
+     */
+    fun loadNativeEncoder(): Boolean {
+        return try {
+            System.loadLibrary("nativeencoder")
+            Log.i(TAG, "Native encoder loaded")
+            true
+        } catch (e: Throwable) {
+            Log.w(TAG, "Native encoder NOT available: ${e.message}")
+            false
+        }
+    }
+    
+    /**
+     * Load native encoder from a specific path.
+     * 
+     * @param nativeLibDir Directory containing native libraries
+     * @return true if native encoder is available
+     */
+    fun loadNativeEncoderFromPath(nativeLibDir: String): Boolean {
+        // Try OpenH264 first
+        val openh264Paths = listOf(
+            "$nativeLibDir/libopenh264.so",
+            at.greenchili.surfmate.util.DaemonStorage.rebase("/data/user_de/0/com.android.shell/surfmate/libopenh264.so"),
+            "/system/lib64/libopenh264.so",
+            "/system/lib/libopenh264.so"
+        )
+        
+        for (path in openh264Paths) {
+            if (File(path).exists()) {
+                try {
+                    System.load(path)
+                    Log.i(TAG, "Loaded OpenH264 from: $path")
+                    break
+                } catch (e: Throwable) {
+                    Log.w(TAG, "Failed to load OpenH264 from $path: ${e.message}")
+                }
+            }
+        }
+        
+        // Try native encoder
+        val encoderPaths = listOf(
+            "$nativeLibDir/libnativeencoder.so",
+            at.greenchili.surfmate.util.DaemonStorage.rebase("/data/user_de/0/com.android.shell/surfmate/libnativeencoder.so")
+        )
+        
+        for (path in encoderPaths) {
+            if (File(path).exists()) {
+                try {
+                    System.load(path)
+                    Log.i(TAG, "Loaded native encoder from: $path")
+                    return true
+                } catch (e: Throwable) {
+                    Log.w(TAG, "Failed to load native encoder from $path: ${e.message}")
+                }
+            }
+        }
+        
+        // Fallback to loadLibrary
+        return loadNativeEncoder()
+    }
+    
+}

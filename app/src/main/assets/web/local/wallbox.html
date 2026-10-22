@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Wallbox – Panoptes</title>
+    <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0A2238">
+    <meta name="robots" content="noindex">
+    <script src="../shared/theme.js?v=13"></script>
+    <script src="../shared/app-shell.js?v=pn24"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn10">
+    <style>
+        .wb { padding: 0 28px 60px; max-width: 760px; box-sizing: border-box; }
+        .tc { background: var(--sm-card); border: 1px solid var(--sm-line); border-radius: 20px; padding: 20px; margin-bottom: 16px; }
+        .tc h2 { font-family: var(--family-display); font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--outline); margin: 0 0 6px; }
+        .tc p, .tc label, .hint { color: var(--on-surface-variant); font-size: 13.5px; }
+        .tc label { display: block; margin: 12px 0 4px; }
+        [hidden] { display: none !important; }
+        .tc input[type=text], .tc input[type=password], .tc input[type=number], .tc input[type=time], .tc input[type=datetime-local], .tc select, .tc textarea {
+            width: 100%; box-sizing: border-box; background: rgba(255,255,255,.06); color: var(--on-surface); border: 1px solid var(--sm-line);
+            border-radius: 10px; padding: 10px 12px; font: 14px var(--family-body, sans-serif); }
+        .tc textarea { min-height: 120px; font-family: monospace; font-size: 12.5px; }
+        .tc input.kurz { width: 110px; display: inline-block; }
+        .reihe { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+        .tbtn { border: 1px solid var(--sm-line); background: rgba(255,255,255,.075); color: var(--on-surface); border-radius: 12px;
+                padding: 11px 16px; font: 600 14px var(--family-body, sans-serif); cursor: pointer; }
+        .tbtn.lime { background: var(--sm-lime); color: #1d2a00; border-color: transparent; }
+        .tbtn.an { outline: 2px solid var(--sm-lime); }
+        .tbtn:disabled { opacity: .5; cursor: default; }
+        .lp { border-top: 1px solid var(--sm-line); padding-top: 14px; margin-top: 14px; }
+        .lp h3 { margin: 0 0 4px; font: 700 17px var(--family-display); color: var(--on-surface); }
+        .werte { color: var(--on-surface); font-size: 14px; }
+        .warn { color: var(--status-warning); font-size: 13.5px; margin: 8px 0 0; }
+        .log { font-size: 12.5px; color: var(--on-surface-variant); margin: 0; padding-left: 18px; }
+        #dlg { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: center; justify-content: center; z-index: 50; }
+        #dlg .box { background: var(--sm-card); border: 1px solid var(--sm-line); border-radius: 20px; padding: 22px; max-width: 420px; margin: 16px; }
+        #dlg .box p { color: var(--on-surface); font-size: 16px; margin: 0 0 16px; }
+        .feld2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+        details.erweitert { margin-top: 14px; }
+        details.erweitert summary { cursor: pointer; color: var(--sm-aqua); font-weight: 600; font-size: 13.5px; }
+        .aw { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin: 10px 0 4px; }
+        .aw button { text-align: left; border: 1px solid var(--sm-line); background: rgba(255,255,255,.05); color: var(--on-surface);
+                     border-radius: 14px; padding: 12px 14px; font: 600 14px var(--family-body, sans-serif); cursor: pointer; min-height: 64px; }
+        .aw button small { display: block; font-weight: 400; font-size: 12px; color: var(--on-surface-variant); margin-top: 4px; }
+        .aw button.an { outline: 2px solid var(--sm-lime); }
+        .aw .cloud { color: var(--status-warning); }
+        .schritt { font: 700 12px var(--family-display); letter-spacing: .06em; text-transform: uppercase; color: var(--sm-aqua); margin: 18px 0 2px; }
+        @media (max-width: 720px) { .wb { padding: 0 16px 24px; } .feld2 { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+<div class="app-layout">
+    <div id="app-shell-mount"></div>
+    <main class="main-content">
+        <div class="wb">
+            <article class="tc">
+                <h2 data-i18n="wallbox.title">Wallbox</h2>
+                <p data-i18n="wallbox.lead2">Deine Wallbox anzeigen und – nur nach deiner Freigabe je Ladepunkt – steuern: über evcc, Home Assistant, Tuya oder direkt (go-e, Shelly, KEBA, Modbus, openWB, Easee, Zaptec). Zugangsdaten bleiben verschlüsselt im Auto. Während der Fahrt ist Steuern gesperrt.</p>
+            </article>
+
+            <article class="tc" id="setup">
+                <h2 data-i18n="wallbox.setup">Einrichtung</h2>
+                <div class="schritt" data-i18n="wallbox.s1">1 · Welche Wallbox hast du?</div>
+                <div class="aw" id="adapterWahl"></div>
+                <p class="hint" id="adapterVoraus"></p>
+                <div class="schritt" id="s2Titel" hidden data-i18n="wallbox.s2">2 · Angaben</div>
+                <label for="quelle" data-i18n="wallbox.source" style="display:none">Quelle</label>
+                <select id="quelle" hidden>
+                    <option value="" data-i18n="wallbox.source_none">Keine Wallbox</option>
+                    <option value="evcc">evcc</option>
+                    <option value="ha">Home Assistant</option>
+                    <option value="tuya">Tuya</option>
+                    <option value="direkt" data-i18n="wallbox.source_direct">Wallbox direkt (go-e, KEBA, openWB, Modbus, Shelly, Easee, Zaptec)</option>
+                </select>
+                <div id="tuyaFelder" hidden>
+                    <label for="tuyaZugang" data-i18n="wallbox.tuya_access">Zugang</label>
+                    <select id="tuyaZugang">
+                        <option value="lan" data-i18n="wallbox.tuya_lan">Lokal im Heimnetz (empfohlen)</option>
+                        <option value="cloud" data-i18n="wallbox.tuya_cloud">Tuya Cloud (eigenes Entwicklerprojekt)</option>
+                    </select>
+                    <p class="hint" data-i18n="wallbox.tuya_lan_hint">Lokal: Geräte-ID, local_key und IP im Heimnetz. Panoptes im Auto erreicht die Wallbox nur über deinen eigenen VPN.</p>
+                    <div id="tuyaCloudFelder" hidden>
+                        <label for="tuyaRegion" data-i18n="wallbox.tuya_region">Rechenzentrum</label>
+                        <select id="tuyaRegion">
+                            <option value="eu">Europa</option><option value="eu-west">Europa West</option>
+                            <option value="us">USA West</option><option value="us-east">USA Ost</option>
+                            <option value="cn">China</option><option value="in">Indien</option>
+                        </select>
+                        <label for="tuyaClient" data-i18n="wallbox.tuya_client">Access ID (Client-ID)</label>
+                        <input type="text" id="tuyaClient" autocomplete="off" spellcheck="false">
+                        <label for="tuyaSecret" data-i18n="wallbox.tuya_secret">Access Secret</label>
+                        <input type="password" id="tuyaSecret" autocomplete="new-password">
+                        <p class="hint" id="tuyaSecretGesetzt" hidden data-i18n="wallbox.secret_kept">Gespeichert – leer lassen zum Behalten.</p>
+                        <p class="warn" data-i18n="wallbox.tuya_consent_text">Über die Tuya Cloud gehen Status und Befehle deiner Wallbox an Server von Tuya (nicht an Panoptes), solange du das eingeschaltet lässt. Tuya speichert diese Daten nach eigenen Regeln. Ausschalten beendet das sofort.</p>
+                        <label><input type="checkbox" id="tuyaEinw"> <span data-i18n="wallbox.tuya_consent">Ich willige ein, dass meine Wallbox-Daten über die Tuya Cloud laufen.</span></label>
+                    </div>
+                    <div id="tuyaForm">
+                        <div class="feld2">
+                            <div><label for="tTitel" data-i18n="wallbox.f_titel">Name</label><input type="text" id="tTitel" placeholder="Wallbox"></div>
+                            <div><label for="tId" data-i18n="wallbox.f_geraeteid">Geräte-ID</label><input type="text" id="tId" autocomplete="off" spellcheck="false"></div>
+                            <div id="tIpZeile"><label for="tIp" data-i18n="wallbox.f_ip">IP im Heimnetz</label><input type="text" id="tIp" autocomplete="off" spellcheck="false" placeholder="192.168.1.50"></div>
+                            <div id="tVerZeile"><label for="tVer" data-i18n="wallbox.f_version">Protokollversion</label>
+                                <select id="tVer"><option value="3.3">3.3</option><option value="3.4">3.4</option><option value="3.5">3.5</option></select></div>
+                            <div id="tKeyZeile"><label for="tKey">local_key</label><input type="password" id="tKey" autocomplete="new-password">
+                                <p class="hint" id="tKeyGesetzt" hidden data-i18n="wallbox.secret_kept">Gespeichert – leer lassen zum Behalten.</p></div>
+                            <div><label for="tModell" data-i18n="wallbox.f_modell">Modell</label>
+                                <select id="tModell"><option value="" data-i18n="wallbox.f_modell_auto">Automatisch erkennen</option></select></div>
+                        </div>
+                        <p class="hint" data-i18n="wallbox.tuya_form_hint">Geräte-ID und local_key findest du z. B. mit dem Tuya-IoT-Konto oder tinytuya. Erkennt Panoptes das Modell nicht, zeigt es nur die Datenpunkte an und steuert nichts.</p>
+                    </div>
+                    <p class="hint" id="tuyaMehrere" hidden data-i18n="wallbox.mehrere_json">Mehrere Wallboxen eingerichtet – bitte unter „Erweitert“ bearbeiten.</p>
+                    <details class="erweitert" id="tuyaErweitert"><summary data-i18n="wallbox.erweitert">Erweitert (JSON)</summary>
+                        <textarea id="tuyaGeraete" spellcheck="false"></textarea>
+                        <p class="hint" data-i18n="wallbox.tuya_devices_hint">„localKey“ nur zum Ändern eintragen; gespeichert wird er verschlüsselt im Auto. Ohne „modell“ oder „zuordnung“ zeigt Panoptes nur die Datenpunkte an.</p>
+                        <label><input type="checkbox" id="tuyaJsonNutzen"> <span data-i18n="wallbox.json_nutzen">Beim Speichern dieses JSON statt des Formulars verwenden</span></label>
+                    </details>
+                </div>
+                <div id="direktFelder" hidden>
+                    <div id="direktForm">
+                        <div class="feld2">
+                            <div><label for="d_titel" data-i18n="wallbox.f_titel">Name</label><input type="text" id="d_titel" placeholder="Wallbox"></div>
+                            <div data-fuer="goe shelly keba modbus openwb"><label for="d_adresse" id="d_adresseLabel" data-i18n="wallbox.f_adresse">Adresse im Heimnetz (IP)</label><input type="text" id="d_adresse" autocomplete="off" spellcheck="false" placeholder="192.168.1.50"></div>
+                            <div data-fuer="shelly"><label for="d_kanal" data-i18n="wallbox.f_kanal">Kanal am Shelly</label>
+                                <select id="d_kanal"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></div>
+                            <div data-fuer="modbus"><label for="d_modell" data-i18n="wallbox.f_modell">Modell</label><select id="d_modell"></select></div>
+                            <div data-fuer="openwb"><label for="d_nummer" data-i18n="wallbox.f_nummer">Ladepunkt-Nummer in openWB</label>
+                                <select id="d_nummer"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
+                            <div data-fuer="easee zaptec"><label for="d_geraeteId" data-i18n="wallbox.f_seriennummer">Seriennummer bzw. Geräte-ID</label><input type="text" id="d_geraeteId" autocomplete="off" spellcheck="false"></div>
+                            <div data-fuer="shelly openwb easee zaptec"><label for="d_benutzer" id="d_benutzerLabel" data-i18n="wallbox.f_benutzer">Benutzer</label><input type="text" id="d_benutzer" autocomplete="off" spellcheck="false"></div>
+                            <div data-fuer="shelly openwb easee zaptec"><label for="d_passwort" data-i18n="wallbox.f_passwort">Passwort</label><input type="password" id="d_passwort" autocomplete="new-password">
+                                <p class="hint" id="d_passwortGesetzt" hidden data-i18n="wallbox.secret_kept">Gespeichert – leer lassen zum Behalten.</p></div>
+                        </div>
+                        <details class="erweitert" data-fuer="modbus"><summary data-i18n="wallbox.f_mehr">Weitere Angaben (nur falls nötig)</summary>
+                            <div class="feld2">
+                                <div><label for="d_port">Port</label><input type="number" id="d_port" min="1" max="65535" placeholder="502"></div>
+                                <div><label for="d_einheit" data-i18n="wallbox.f_einheit">Modbus-Geräteadresse (Unit-ID)</label><input type="number" id="d_einheit" min="0" max="255" placeholder="1"></div>
+                            </div>
+                        </details>
+                        <div data-fuer="easee zaptec">
+                            <p class="warn" id="d_einwText"></p>
+                            <label><input type="checkbox" id="d_einw"> <span id="d_einwLabel"></span></label>
+                        </div>
+                    </div>
+                    <p class="hint" id="direktMehrere" hidden data-i18n="wallbox.mehrere_json">Mehrere Wallboxen eingerichtet – bitte unter „Erweitert“ bearbeiten.</p>
+                    <details class="erweitert" id="direktErweitert"><summary data-i18n="wallbox.erweitert">Erweitert (JSON)</summary>
+                    <label for="direktGeraete" data-i18n="wallbox.direct_devices">Geräte (JSON)</label>
+                    <textarea id="direktGeraete" spellcheck="false"></textarea>
+                    <label><input type="checkbox" id="direktJsonNutzen"> <span data-i18n="wallbox.json_nutzen">Beim Speichern dieses JSON statt des Formulars verwenden</span></label>
+                    <p class="hint" data-i18n="wallbox.direct_hint">adapter: „goe“ (lokale API in der go-e-App einschalten), „keba“ (UDP, IP), „openwb“ (IP, „nummer“ = Ladepunkt), „modbus“ (IP + „modell“ aus der Modbus-Tabelle) oder „shelly“ (Kanal 0–3). Nur Adressen im Heimnetz bzw. über deinen eigenen VPN.</p>
+                    <p class="warn" data-i18n="wallbox.direct_cloud_consent">Easee und Zaptec gehen nur über die Server des Herstellers: Status und Befehle deiner Wallbox laufen dann über Easee bzw. Zaptec (nie über Panoptes). Das passiert nur, wenn du beim Gerät „einwilligung“: true setzt; „false“ beendet es sofort.</p>
+                    <p class="warn" data-i18n="wallbox.shelly_hint">Shelly schaltet nur die Stromzufuhr ein und aus – nur für Ladegeräte bis zum Nennstrom des Shelly.</p>
+                    </details>
+                </div>
+                <div id="felder" hidden>
+                    <label for="url" data-i18n="wallbox.url">Adresse</label>
+                    <input type="text" id="url" autocomplete="off" spellcheck="false" placeholder="http://192.168.1.20:7070">
+                    <p class="hint" data-i18n="wallbox.url_hint">Im Heimnetz oder über deinen eigenen VPN (z. B. Tailscale).</p>
+                    <label for="geheim" id="geheimLabel" data-i18n="wallbox.key_evcc">API-Schlüssel (nur falls nötig)</label>
+                    <input type="password" id="geheim" autocomplete="new-password">
+                    <p class="hint" id="geheimGesetzt" hidden data-i18n="wallbox.secret_kept">Gespeichert – leer lassen zum Behalten.</p>
+                    <label><input type="checkbox" id="oeffentlich"> <span data-i18n="wallbox.public">Adresse im Internet erlauben (nur https)</span></label>
+                    <p class="hint" data-i18n="wallbox.public_hint">Dann gehen deine Zugangsdaten übers Internet an diese Adresse. Nie an Panoptes-Server.</p>
+                    <div id="haFelder" hidden>
+                        <div class="reihe"><button class="tbtn" type="button" id="btnVorschlag" data-i18n="wallbox.ha_suggest">Wallbox-Entitäten vorschlagen</button></div>
+                        <p class="hint" data-i18n="wallbox.ha_suggest_hint">Liest einmal die Entitäten deines Home Assistant (nur lesend) und trägt passende vor. Bitte prüfen, dann speichern.</p>
+                        <div id="haForm">
+                        <label for="ha_titel" data-i18n="wallbox.f_titel">Name</label><input type="text" id="ha_titel" placeholder="Wallbox">
+                        <div class="feld2">
+                            <div><label for="ha_laedt" data-i18n="wallbox.rolle_laedt">Lädt gerade (Sensor)</label><input type="text" id="ha_laedt" list="haListe_laedt" autocomplete="off" spellcheck="false" placeholder="—"><datalist id="haListe_laedt"></datalist></div>
+                            <div><label for="ha_leistung" data-i18n="wallbox.rolle_leistung">Ladeleistung (Sensor)</label><input type="text" id="ha_leistung" list="haListe_leistung" autocomplete="off" spellcheck="false" placeholder="—"><datalist id="haListe_leistung"></datalist></div>
+                            <div><label for="ha_modus" data-i18n="wallbox.rolle_modus">Ein/Aus bzw. Modus (switch/select)</label><input type="text" id="ha_modus" list="haListe_modus" autocomplete="off" spellcheck="false" placeholder="—"><datalist id="haListe_modus"></datalist></div>
+                            <div><label for="ha_strom" data-i18n="wallbox.rolle_strom">Ladestrom in A (number)</label><input type="text" id="ha_strom" list="haListe_strom" autocomplete="off" spellcheck="false" placeholder="—"><datalist id="haListe_strom"></datalist></div>
+                            <div><label for="ha_ziel" data-i18n="wallbox.rolle_ziel">Ladegrenze in % (number)</label><input type="text" id="ha_ziel" list="haListe_ziel" autocomplete="off" spellcheck="false" placeholder="—"><datalist id="haListe_ziel"></datalist></div>
+                            <div><label for="ha_startzeit" data-i18n="wallbox.rolle_startzeit">Startzeit (time)</label><input type="text" id="ha_startzeit" list="haListe_startzeit" autocomplete="off" spellcheck="false" placeholder="—"><datalist id="haListe_startzeit"></datalist></div>
+                        </div>
+                        <div id="haModusOpt" hidden>
+                            <p class="hint" data-i18n="wallbox.ha_modus_opt">Bei einer Auswahl-Entität (select): Welche Option entspricht welchem Lademodus? Leer = gibt es nicht.</p>
+                            <div class="feld2">
+                                <div><label for="ho_aus" data-i18n="wallbox.mode_aus">Aus</label><input type="text" id="ho_aus"></div>
+                                <div><label for="ho_sofort" data-i18n="wallbox.mode_sofort">Sofort</label><input type="text" id="ho_sofort"></div>
+                                <div><label for="ho_minpv" data-i18n="wallbox.mode_minpv">Min+PV</label><input type="text" id="ho_minpv"></div>
+                                <div><label for="ho_pv" data-i18n="wallbox.mode_pv">PV</label><input type="text" id="ho_pv"></div>
+                            </div>
+                        </div>
+                        </div>
+                        <p class="hint" id="haMehrere" hidden data-i18n="wallbox.mehrere_json">Mehrere Wallboxen eingerichtet – bitte unter „Erweitert“ bearbeiten.</p>
+                        <details class="erweitert" id="haErweitert"><summary data-i18n="wallbox.erweitert">Erweitert (JSON)</summary>
+                            <textarea id="haMap" spellcheck="false"></textarea>
+                            <label><input type="checkbox" id="haJsonNutzen"> <span data-i18n="wallbox.json_nutzen">Beim Speichern dieses JSON statt des Formulars verwenden</span></label>
+                        </details>
+                    </div>
+                </div>
+                <div class="reihe">
+                    <button class="tbtn" type="button" id="btnTest" data-i18n="wallbox.test_lesen">3 · Status lesen (Test, ändert nichts)</button>
+                    <button class="tbtn lime" type="button" id="btnSave" data-i18n="wallbox.save_schritt">4 · Speichern</button>
+                </div>
+            </article>
+
+            <article class="tc">
+                <h2 data-i18n="wallbox.status">Ladepunkte</h2>
+                <p class="warn" id="sperre" hidden></p>
+                <p id="statusText"></p>
+                <div id="lps"></div>
+            </article>
+
+            <article class="tc">
+                <h2 data-i18n="wallbox.log">Protokoll</h2>
+                <ul class="log" id="log"></ul>
+            </article>
+        </div>
+    </main>
+</div>
+<div id="dlg" role="dialog" aria-modal="true">
+    <div class="box">
+        <h2 data-i18n="wallbox.confirm_title" style="margin:0 0 10px">Bitte bestätigen</h2>
+        <p id="dlgText"></p>
+        <div class="reihe">
+            <button class="tbtn lime" type="button" id="dlgJa" data-i18n="wallbox.yes">Ja, ausführen</button>
+            <button class="tbtn" type="button" id="dlgNein" data-i18n="wallbox.cancel">Abbrechen</button>
+        </div>
+    </div>
+</div>
+<div id="toastContainer" class="toast-container"></div>
+
+<script src="../shared/auth.js"></script>
+<script src="../shared/pwa-init.js?v=index1"></script>
+<script src="../shared/core.js?v=pn5"></script>
+<script>
+(function () {
+    'use strict';
+    // Wallbox-Testseite (Kern 6, WALLBOX_VERTRAG v1). Die Sicherheit steckt im Daemon: Freigabe je Ladepunkt,
+    // Bestätigungs-Kennung (409 → Dialog → Wiederholung), Fahrt-Sperre (423), Protokoll. Diese Seite zeigt nur an.
+    function $(id) { return document.getElementById(id); }
+    function t(k, f, v) { return window.PanoptesShell ? PanoptesShell.tr(k, f, v) : f; }
+    function toast(m, ok) { if (window.BYD && BYD.utils && BYD.utils.toast) BYD.utils.toast(m, ok ? 'success' : 'error'); }
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+    var MODI = ['aus', 'sofort', 'minpv', 'pv'];
+    var MODUS_TEXT = { aus: 'Aus', sofort: 'Sofort', minpv: 'Min+PV', pv: 'PV' };
+    var FEHLER = {
+        nicht_eingerichtet: 'Noch keine Wallbox eingerichtet.', nicht_erreichbar: 'Nicht erreichbar.',
+        anmeldung: 'Anmeldung abgelehnt – Schlüssel bzw. Token prüfen.', adresse_gesperrt: 'Diese Adresse ist nicht erlaubt.',
+        adresse_oeffentlich: 'Die Adresse liegt im Internet – erst erlauben (nur https).', adresse_ungueltig: 'Adresse ungültig.',
+        nicht_freigegeben: 'Steuern für diesen Ladepunkt ist nicht erlaubt.', wert_ungueltig: 'Ungültiger Wert.',
+        nicht_unterstuetzt: 'Das kann diese Wallbox nicht.', fahrt: 'Während der Fahrt nur Anzeige.',
+        fahrzustand_unbekannt: 'Fahrzustand unbekannt – Steuern gesperrt.', token_fehlt: 'Zugangs-Token fehlt.',
+        einstellung_ungueltig: 'Einstellung ungültig.', einwilligung_fehlt: 'Für die Tuya Cloud fehlt deine Einwilligung.',
+        tuya_schluessel_fehlt: 'local_key fehlt.', tuya_schluessel_format: 'Der local_key hat 16 Zeichen.',
+        tuya_keine_antwort: 'Die Wallbox antwortet nicht – local_key oder Protokollversion prüfen.',
+        tuya_schluessel: 'local_key passt nicht.', tuya_zuordnung_fehlt: 'Unbekanntes Modell – erst Datenpunkte zuordnen.',
+        tuya_variante: 'Diese Tuya-Variante wird noch nicht unterstützt.',
+        shelly_anmeldung: 'Shelly mit Anmeldung (Gen2+) wird noch nicht unterstützt – Anmeldung am Shelly ausschalten oder über Home Assistant.',
+        keba_port_belegt: 'Port 7090 ist belegt (läuft evcc auf demselben Gerät?).',
+        modbus_failsafe: 'Die Wallbox erwartet einen Dauer-Herzschlag (Watchdog) – nur Anzeige. Watchdog am Gerät abschalten oder evcc nutzen.',
+        modbus_erst_einschalten: 'Ladestrom erst nach dem Einschalten änderbar.',
+        modbus_modell_unbekannt: 'Modbus-Modell unbekannt – bitte ein Modell aus der Tabelle wählen.',
+        modbus_register: 'Die Wallbox kennt dieses Register nicht – falsches Modell?',
+        modbus_abgelehnt: 'Die Wallbox hat den Befehl abgelehnt.',
+        openwb_keine_daten: 'Keine openWB-Daten auf diesem MQTT-Broker – Adresse oder Ladepunkt-Nummer prüfen.',
+        openwb_profil_fehlt: 'openWB liefert kein Ladeprofil für diesen Ladepunkt.',
+        cloud_zu_viele_anfragen: 'Der Hersteller-Server bremst gerade (zu viele Anfragen) – bitte später erneut.'
+    };
+    var HINWEISE = {
+        nur_ein_aus: 'Nur Ein/Aus – kein Ladestrom.', keba_rfid: 'Die KEBA verlangt eine RFID-Karte – Starten geht nur mit Karte.',
+        modbus_failsafe: 'Watchdog aktiv – nur Anzeige.', openwb1_modus_global: 'openWB 1.x: Der Lademodus gilt für alle Ladepunkte dieser openWB.',
+        openwb_gesperrt: 'In openWB gesperrt – Panoptes hebt die Sperre nicht auf.'
+    };
+    function modusText(m) { return t('wallbox.mode_' + m, MODUS_TEXT[m] || m); }
+    function fehlerText(code) { return t('wallbox.err_' + code, FEHLER[code] || t('wallbox.err', 'Fehler: {code}', { code: code }), { code: code }); }
+    var konfig = null, status = null;
+
+    function api(methode, pfad, rumpf) {
+        return fetch(pfad, { method: methode, cache: 'no-store', headers: { 'Content-Type': 'application/json' },
+            body: rumpf ? JSON.stringify(rumpf) : undefined })
+            .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { d._status = r.status; return d; }); });
+    }
+
+    // ---------------------------------------------------------------- Einrichtung
+    function zeigeTuya() {
+        var t = konfig && konfig.tuya ? konfig.tuya : { zugang: 'lan', cloud: {}, geraete: [] };
+        $('tuyaZugang').value = t.zugang || 'lan';
+        $('tuyaCloudFelder').hidden = $('tuyaZugang').value !== 'cloud';
+        var c = t.cloud || {};
+        $('tuyaRegion').value = c.region || 'eu';
+        $('tuyaClient').value = c.clientId || '';
+        $('tuyaSecret').value = '';
+        $('tuyaSecretGesetzt').hidden = !c.secretGesetzt;
+        $('tuyaEinw').checked = !!c.einwilligung;
+        var g = (t.geraete || []).map(function (d) { var o = {}; for (var k in d) if (k !== 'localKeyGesetzt') o[k] = d[k]; return o; });
+        var mehrere = g.length > 1;
+        $('tuyaForm').hidden = mehrere; $('tuyaMehrere').hidden = !mehrere;
+        $('tuyaErweitert').open = mehrere; $('tuyaJsonNutzen').checked = mehrere;
+        var d0 = (t.geraete || [])[0] || {};
+        $('tTitel').value = d0.titel || ''; $('tId').value = d0.geraeteId || ''; $('tIp').value = d0.ip || '';
+        $('tVer').value = d0.version || '3.3'; $('tKey').value = ''; $('tKeyGesetzt').hidden = !d0.localKeyGesetzt;
+        $('tModell').value = d0.modell || '';
+        var lan = $('tuyaZugang').value !== 'cloud';
+        $('tIpZeile').hidden = !lan; $('tVerZeile').hidden = !lan; $('tKeyZeile').hidden = !lan;
+        if (!g.length) g = [{ schluessel: 'wallbox', titel: 'Wallbox', geraeteId: '', ip: '192.168.1.…', version: '3.3', localKey: '', modell: null, zuordnung: null }];
+        $('tuyaGeraete').value = JSON.stringify(g, null, 2);
+    }
+    // Formular → ein Tuya-Gerät (bestehende Felder wie zuordnung bleiben erhalten)
+    function tuyaAusFormular() {
+        var alt = (konfig && konfig.tuya && konfig.tuya.geraete && konfig.tuya.geraete[0]) || {};
+        var d = {}; for (var k in alt) if (k !== 'localKeyGesetzt') d[k] = alt[k];
+        d.schluessel = d.schluessel || 'wallbox';
+        d.titel = $('tTitel').value.trim() || 'Wallbox';
+        d.geraeteId = $('tId').value.trim();
+        if ($('tuyaZugang').value !== 'cloud') { d.ip = $('tIp').value.trim(); d.version = $('tVer').value; }
+        var key = $('tKey').value.trim();
+        if (key) d.localKey = key; else delete d.localKey;   // leer = behalten
+        d.modell = $('tModell').value || null;
+        return [d];
+    }
+    // Home Assistant: ein Ladepunkt als Formular
+    var HA_ROLLEN = ['laedt', 'leistung', 'modus', 'strom', 'ziel', 'startzeit'];
+    function haFormularSetzen(lp) {
+        lp = lp || {};
+        $('ha_titel').value = lp.titel || '';
+        HA_ROLLEN.forEach(function (r) { $('ha_' + r).value = lp[r] || ''; });
+        var o = lp.modusOptionen || {};
+        ['aus', 'sofort', 'minpv', 'pv'].forEach(function (m) { $('ho_' + m).value = o[m] || ''; });
+        haModusOptZeigen();
+    }
+    function haModusOptZeigen() { $('haModusOpt').hidden = !/^(input_)?select\./.test($('ha_modus').value.trim()); }
+    function haAusFormular() {
+        var alt = (konfig && konfig.ha && konfig.ha.ladepunkte && konfig.ha.ladepunkte[0]) || {};
+        var lp = {}; for (var k in alt) lp[k] = alt[k];
+        lp.schluessel = lp.schluessel || 'wallbox';
+        lp.titel = $('ha_titel').value.trim() || 'Wallbox';
+        HA_ROLLEN.forEach(function (r) { var v = $('ha_' + r).value.trim(); lp[r] = v || null; });
+        var o = {};
+        ['aus', 'sofort', 'minpv', 'pv'].forEach(function (m) { var v = $('ho_' + m).value.trim(); if (v) o[m] = v; });
+        lp.modusOptionen = o;
+        return [lp];
+    }
+    function haKandidaten(kand) {
+        HA_ROLLEN.forEach(function (r) {
+            var dl = $('haListe_' + r); dl.innerHTML = '';
+            ((kand && kand[r]) || []).forEach(function (c) {
+                var o = document.createElement('option'); o.value = c.entity_id;
+                o.label = (c.name || c.entity_id) + (c.zustand ? ' · ' + c.zustand + (c.einheit ? ' ' + c.einheit : '') : '');
+                dl.appendChild(o);
+            });
+        });
+    }
+    function tuyaModelleLaden() {
+        return fetch('../shared/wallbox-tuya-modelle.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+            (d.modelle || []).forEach(function (m) {
+                var o = document.createElement('option'); o.value = m.id; o.textContent = m.name || m.id; $('tModell').appendChild(o);
+            });
+        }).catch(function () {});
+    }
+    // ---------------------------------------------------------------- 0.1.12: Einrichtung für Laien (wallbox-adapter.json)
+    var ADAPTER = [], adapterId = null, MODBUS = [];
+    var CLOUD_HOST = { easee: 'api.easee.com', zaptec: 'api.zaptec.com' };
+    function adapterNach(id) { for (var i = 0; i < ADAPTER.length; i++) if (ADAPTER[i].id === id) return ADAPTER[i]; return null; }
+    function adapterAusKonfig() {
+        if (!konfig || !konfig.quelle) return null;
+        if (konfig.quelle !== 'direkt') return konfig.quelle;
+        var g = konfig.direkt && konfig.direkt.geraete && konfig.direkt.geraete[0];
+        return g ? g.adapter : 'goe';
+    }
+    function zeichneAdapter() {
+        var box = $('adapterWahl'); box.innerHTML = '';
+        var liste = [{ id: '', name: t('wallbox.source_none', 'Keine Wallbox') }].concat(ADAPTER);
+        liste.forEach(function (a) {
+            var b = document.createElement('button'); b.type = 'button';
+            if ((adapterId || '') === a.id) b.className = 'an';
+            b.textContent = a.id ? t('wallbox.ad_' + a.id, a.name) : a.name;
+            var sm = document.createElement('small');
+            if (a.zugang === 'cloud' || a.einwilligung === true) { sm.className = 'cloud'; sm.textContent = t('wallbox.ad_cloud', 'über Hersteller-Server'); }
+            else if (a.art === 'bruecke') sm.textContent = t('wallbox.ad_bruecke', 'über eine Brücke');
+            else if (a.id) sm.textContent = t('wallbox.ad_lan', 'direkt im Heimnetz');
+            b.appendChild(sm);
+            b.onclick = function () { waehleAdapter(a.id); };
+            box.appendChild(b);
+        });
+    }
+    function waehleAdapter(id) {
+        adapterId = id || null;
+        var a = adapterNach(id);
+        $('quelle').value = a ? a.quelle : '';
+        $('adapterVoraus').textContent = a && a.voraussetzung ? t('wallbox.vor_' + a.id, a.voraussetzung) : '';
+        $('s2Titel').hidden = !a;
+        zeichneAdapter();
+        zeigeFelder();
+    }
+    function direktFormSetzen() {
+        var id = adapterId;
+        [].forEach.call(document.querySelectorAll('#direktForm [data-fuer]'), function (el) {
+            el.hidden = el.getAttribute('data-fuer').split(' ').indexOf(id) < 0;
+        });
+        var alle = (konfig && konfig.direkt && konfig.direkt.geraete) || [];
+        var g = alle[0] && alle[0].adapter === id ? alle[0] : {};
+        var mehrere = alle.length > 1;
+        $('direktForm').hidden = mehrere; $('direktMehrere').hidden = !mehrere;
+        $('direktErweitert').open = mehrere; $('direktJsonNutzen').checked = mehrere;
+        $('d_titel').value = g.titel || '';
+        $('d_adresse').value = g.adresse || '';
+        $('d_adresse').placeholder = id === 'goe' ? 'http://192.168.1.50' : '192.168.1.50';
+        $('d_kanal').value = String(g.kanal || 0);
+        $('d_nummer').value = String(g.nummer || 1);
+        $('d_modell').value = g.modell || (MODBUS[0] ? MODBUS[0].id : '');
+        $('d_port').value = g.port || ''; $('d_einheit').value = g.einheit != null ? g.einheit : '';
+        $('d_geraeteId').value = g.geraeteId || '';
+        $('d_benutzer').value = g.benutzer || '';
+        $('d_passwort').value = ''; $('d_passwortGesetzt').hidden = !g.passwortGesetzt;
+        $('d_benutzerLabel').textContent = (id === 'easee' || id === 'zaptec') ? t('wallbox.f_konto', 'Konto (E-Mail bzw. Benutzername)')
+            : (id === 'shelly' ? t('wallbox.f_benutzer_shelly', 'Benutzer (nur Shelly Gen1 mit Anmeldung)') : t('wallbox.f_benutzer_optional', 'Benutzer (nur falls eingerichtet)'));
+        var a = adapterNach(id), name = a ? a.name.replace(/\s*\(Cloud\)\s*/, '') : '';
+        $('d_einwText').textContent = t('wallbox.einw_text', 'Bei {name} laufen Status und Befehle deiner Wallbox über die Server von {name} ({host}), nie über Panoptes. {name} speichert diese Daten nach eigenen Regeln. Ausschalten beendet das sofort.', { name: name, host: CLOUD_HOST[id] || '' });
+        $('d_einwLabel').textContent = t('wallbox.einw_label', 'Ich willige ein, dass diese Wallbox über {name} läuft.', { name: name });
+        $('d_einw').checked = !!g.einwilligung;
+    }
+    function direktAusFormular() {
+        var id = adapterId, alle = (konfig && konfig.direkt && konfig.direkt.geraete) || [];
+        var alt = alle[0] && alle[0].adapter === id ? alle[0] : {};
+        var cloud = id === 'easee' || id === 'zaptec';
+        var d = { schluessel: alt.schluessel || 'wallbox', titel: $('d_titel').value.trim() || 'Wallbox', adapter: id };
+        if (!cloud) {
+            d.adresse = $('d_adresse').value.trim();
+            if (!d.adresse) return { fehler: 'adresse_ungueltig' };
+        }
+        if (id === 'shelly') d.kanal = parseInt($('d_kanal').value, 10);
+        if (id === 'openwb') d.nummer = parseInt($('d_nummer').value, 10);
+        if (id === 'modbus') {
+            d.modell = $('d_modell').value || null;
+            if ($('d_port').value) d.port = parseInt($('d_port').value, 10);
+            if ($('d_einheit').value !== '') d.einheit = parseInt($('d_einheit').value, 10);
+        }
+        if (cloud) {
+            d.geraeteId = $('d_geraeteId').value.trim();
+            d.einwilligung = $('d_einw').checked;
+        }
+        if (['shelly', 'openwb', 'easee', 'zaptec'].indexOf(id) >= 0) {
+            d.benutzer = $('d_benutzer').value.trim();
+            var pw = $('d_passwort').value;
+            if (pw) d.passwort = pw;   // leer = behalten
+        }
+        return { geraet: d };
+    }
+    function adapterLaden() {
+        var a = fetch('../shared/wallbox-adapter.json', { cache: 'no-store' }).then(function (r) { return r.json(); })
+            .then(function (d) { ADAPTER = (d.adapter || []).filter(function (x) { return x.stand === 'fertig'; }); }).catch(function () {});
+        var m = fetch('../shared/wallbox-modbus-modelle.json', { cache: 'no-store' }).then(function (r) { return r.json(); })
+            .then(function (d) {
+                MODBUS = d.modelle || [];
+                MODBUS.forEach(function (x) { var o = document.createElement('option'); o.value = x.id; o.textContent = x.name || x.id; $('d_modell').appendChild(o); });
+            }).catch(function () {});
+        return Promise.all([a, m]);
+    }
+
+    function zeigeFelder() {
+        var q = $('quelle').value;
+        if (q === 'direkt') direktFormSetzen();
+        $('tuyaFelder').hidden = q !== 'tuya';
+        if (q === 'tuya') zeigeTuya();
+        $('direktFelder').hidden = q !== 'direkt';
+        if (q === 'direkt') {
+            var dg = konfig && konfig.direkt && konfig.direkt.geraete && konfig.direkt.geraete.length ? konfig.direkt.geraete.map(function (d) {
+                var o = {}; for (var k in d) if (k !== 'passwortGesetzt') o[k] = d[k]; return o;
+            }) : [{ schluessel: 'wallbox', titel: 'Wallbox', adapter: 'goe', adresse: 'http://192.168.1.…', kanal: 0 }];
+            $('direktGeraete').value = JSON.stringify(dg, null, 2);
+        }
+        $('felder').hidden = !q || q === 'tuya' || q === 'direkt';
+        $('haFelder').hidden = q !== 'ha';
+        var s = q && konfig ? konfig[q] : null;
+        $('url').value = s ? s.url || '' : '';
+        $('url').placeholder = q === 'ha' ? 'http://192.168.1.20:8123' : 'http://192.168.1.20:7070';
+        $('oeffentlich').checked = !!(s && s.oeffentlichErlaubt);
+        $('geheim').value = '';
+        $('geheimLabel').textContent = q === 'ha' ? t('wallbox.key_ha', 'Zugangs-Token') : t('wallbox.key_evcc', 'API-Schlüssel (nur falls nötig)');
+        $('geheimGesetzt').hidden = !(s && (s.apiKeyGesetzt || s.tokenGesetzt));
+        if (q === 'ha') {
+            var lps = konfig && konfig.ha && konfig.ha.ladepunkte && konfig.ha.ladepunkte.length ? konfig.ha.ladepunkte : [{
+                schluessel: 'wallbox', titel: 'Wallbox', laedt: 'binary_sensor.…', leistung: 'sensor.…', modus: 'select.…',
+                modusOptionen: { aus: '', sofort: '', minpv: '', pv: '' }, ziel: 'number.…', startzeit: null }];
+            $('haMap').value = JSON.stringify(lps, null, 2);
+            var mehrereHa = konfig && konfig.ha && konfig.ha.ladepunkte && konfig.ha.ladepunkte.length > 1;
+            $('haForm').hidden = !!mehrereHa; $('haMehrere').hidden = !mehrereHa;
+            $('haErweitert').open = !!mehrereHa; $('haJsonNutzen').checked = !!mehrereHa;
+            haFormularSetzen(konfig && konfig.ha && konfig.ha.ladepunkte ? konfig.ha.ladepunkte[0] : null);
+        }
+    }
+    function formular() {
+        var q = $('quelle').value || null;
+        var b = { quelle: q };
+        if (!q) return b;
+        if (q === 'direkt') {
+            if ($('direktJsonNutzen').checked) {
+                try { b.direkt = { geraete: JSON.parse($('direktGeraete').value || '[]') }; }
+                catch (e) { toast(fehlerText('einstellung_ungueltig'), false); return null; }
+            } else {
+                var r = direktAusFormular();
+                if (r.fehler) { toast(fehlerText(r.fehler), false); return null; }
+                b.direkt = { geraete: [r.geraet] };
+            }
+            return b;
+        }
+        if (q === 'tuya') {
+            var t = { zugang: $('tuyaZugang').value, cloud: { region: $('tuyaRegion').value, clientId: $('tuyaClient').value.trim(),
+                einwilligung: $('tuyaEinw').checked } };
+            var sec = $('tuyaSecret').value.trim();
+            if (sec) t.cloud.secret = sec;
+            if ($('tuyaJsonNutzen').checked) {
+                try {
+                    t.geraete = JSON.parse($('tuyaGeraete').value || '[]').map(function (d) {
+                        if (d.localKey === '') delete d.localKey;   // leer = behalten
+                        return d;
+                    });
+                } catch (e) { toast(fehlerText('einstellung_ungueltig'), false); return null; }
+            } else t.geraete = tuyaAusFormular();
+            b.tuya = t;
+            return b;
+        }
+        var s = { url: $('url').value.trim(), oeffentlichErlaubt: $('oeffentlich').checked };
+        var g = $('geheim').value.trim();
+        if (g) s[q === 'ha' ? 'token' : 'apiKey'] = g;
+        if (q === 'ha') {
+            if ($('haJsonNutzen').checked) {
+                try { s.ladepunkte = JSON.parse($('haMap').value || '[]'); }
+                catch (e) { toast(fehlerText('einstellung_ungueltig'), false); return null; }
+            } else s.ladepunkte = haAusFormular();
+        }
+        b[q] = s;
+        return b;
+    }
+    function ladeKonfig() {
+        return api('GET', '/api/wallbox/einstellungen').then(function (d) {
+            if (!d.ok) return;
+            konfig = d;
+            $('quelle').value = d.quelle || '';
+            adapterId = adapterAusKonfig();
+            waehleAdapter(adapterId);
+        });
+    }
+
+    // ---------------------------------------------------------------- Status
+    function zeige(d) {
+        status = d;
+        var sp = d.steuernGesperrt;
+        $('sperre').hidden = !sp;
+        $('sperre').textContent = sp ? fehlerText(sp) : '';
+        $('statusText').textContent = d.fehler ? fehlerText(d.fehler) : (d.evccVersion ? 'evcc ' + d.evccVersion : '');
+        var html = '';
+        (d.ladepunkte || []).forEach(function (lp) {
+            var f = lp.faehigkeiten || {};
+            var werte = [];
+            if (lp.laedt != null) werte.push(lp.laedt ? t('wallbox.charging', 'Lädt') : t('wallbox.not_charging', 'Lädt nicht'));
+            if (lp.leistungW != null) werte.push((lp.leistungW / 1000).toFixed(1) + ' kW');
+            if (lp.modus) werte.push(t('wallbox.mode', 'Lademodus') + ': ' + modusText(lp.modus));
+            if (lp.zielSoc != null) werte.push(t('wallbox.limit', 'Ladegrenze') + ': ' + lp.zielSoc + ' %');
+            if (lp.stromA != null) werte.push(t('wallbox.current', 'Ladestrom') + ': ' + lp.stromA + ' A');
+            if (lp.fahrzeug) werte.push(lp.fahrzeug + (lp.fahrzeugSoc != null ? ' ' + lp.fahrzeugSoc + ' %' : ''));
+            if (lp.plan) werte.push(t('wallbox.plan', 'Ladeplan') + ': ' + (lp.plan.art === 'ziel_bis'
+                ? lp.plan.soc + ' % ' + t('wallbox.plan_until', 'bis') + ' ' + new Date(lp.plan.zeit).toLocaleString()
+                : t('wallbox.start_at', 'Start um') + ' ' + lp.plan.zeit));
+            html += '<div class="lp" data-id="' + esc(lp.id) + '"><h3>' + esc(lp.titel) + '</h3><div class="werte">' + werte.map(esc).join(' · ') + '</div>';
+            if (lp.hinweis) html += '<p class="hint">' + esc(t('wallbox.hint_' + lp.hinweis, HINWEISE[lp.hinweis] || lp.hinweis)) + '</p>';
+            if (lp.zuordnung === 'erkannt') html += '<p class="hint">' + esc(t('wallbox.tuya_detected', 'Automatisch erkannt: {modell}', { modell: lp.modell })) + '</p>';
+            if (lp.rohDps) {
+                var roh = Object.keys(lp.rohDps).map(function (k) { return k + '=' + JSON.stringify(lp.rohDps[k]); }).join(', ');
+                html += '<p class="hint">' + esc(t('wallbox.tuya_unknown', 'Unbekanntes Modell – nur Anzeige. Datenpunkte:')) + ' ' + esc(roh) + '</p></div>';
+                return;
+            }
+            if (lp.art !== 'wallbox') {
+                html += '<p class="hint">' + esc(t('wallbox.heating', 'Kein Fahrzeug-Ladepunkt – nur Anzeige.')) + '</p></div>';
+                return;
+            }
+            if (!lp.steuernFrei) {
+                html += '<div class="reihe"><button class="tbtn" type="button" data-frei="1"' + (sp ? ' disabled' : '') + '>'
+                    + esc(t('wallbox.allow', 'Steuern erlauben')) + '</button></div></div>';
+                return;
+            }
+            if (!sp) {
+                html += '<div class="reihe">';
+                (f.modus || []).forEach(function (m) {
+                    html += '<button class="tbtn' + (lp.modus === m ? ' an' : '') + '" type="button" data-modus="' + m + '">' + esc(modusText(m)) + '</button>';
+                });
+                html += '</div>';
+                if (f.ziel) {
+                    html += '<div class="reihe"><span class="hint">' + esc(t('wallbox.limit', 'Ladegrenze')) + '</span><input class="kurz" type="number" min="'
+                        + lp.zielMin + '" max="' + lp.zielMax + '" step="5" value="' + (lp.zielSoc != null ? lp.zielSoc : 80) + '" data-zielwert>'
+                        + '<button class="tbtn" type="button" data-ziel="1">' + esc(t('wallbox.set', 'Setzen')) + '</button></div>';
+                }
+                if (f.strom) {
+                    html += '<div class="reihe"><span class="hint">' + esc(t('wallbox.current', 'Ladestrom')) + '</span><input class="kurz" type="number" min="'
+                        + f.strom.min + '" max="' + f.strom.max + '" step="1" value="' + (lp.stromA != null ? lp.stromA : f.strom.min) + '" data-stromwert>'
+                        + '<span class="hint">A</span><button class="tbtn" type="button" data-strom="1">' + esc(t('wallbox.set', 'Setzen')) + '</button></div>';
+                }
+                if (f.plan === 'ziel_bis') {
+                    html += '<div class="reihe"><span class="hint">' + esc(t('wallbox.plan', 'Ladeplan')) + '</span><input class="kurz" type="number" min="20" max="100" step="5" value="80" data-plansoc>'
+                        + '<span class="hint">% ' + esc(t('wallbox.plan_until', 'bis')) + '</span><input type="datetime-local" data-planzeit style="width:auto">'
+                        + '<button class="tbtn" type="button" data-plan="1">' + esc(t('wallbox.set', 'Setzen')) + '</button>'
+                        + (lp.plan ? '<button class="tbtn" type="button" data-planweg="1">' + esc(t('wallbox.plan_delete', 'Plan löschen')) + '</button>' : '') + '</div>';
+                } else if (f.plan === 'start_um') {
+                    html += '<div class="reihe"><span class="hint">' + esc(t('wallbox.start_at', 'Start um')) + '</span><input type="time" data-startzeit style="width:auto" value="'
+                        + esc(lp.plan ? lp.plan.zeit : '') + '"><button class="tbtn" type="button" data-start="1">' + esc(t('wallbox.set', 'Setzen')) + '</button></div>';
+                }
+            }
+            html += '<div class="reihe"><button class="tbtn" type="button" data-zurueck="1">' + esc(t('wallbox.revoke', 'Erlaubnis zurücknehmen')) + '</button></div></div>';
+        });
+        $('lps').innerHTML = html;
+    }
+    function ladeStatus() {
+        return api('GET', '/api/wallbox/status').then(zeige).then(ladeLog);
+    }
+    function ladeLog() {
+        return api('GET', '/api/wallbox/protokoll').then(function (d) {
+            $('log').innerHTML = (d.eintraege || []).slice(0, 15).map(function (e) {
+                return '<li>' + esc(new Date(e.zeit).toLocaleString()) + ' – ' + esc(e.ladepunkt) + ' ' + esc(e.aktion) + ' '
+                    + esc(typeof e.wert === 'object' && e.wert ? JSON.stringify(e.wert) : e.wert) + ' → ' + esc(e.ergebnis) + '</li>';
+            }).join('');
+        });
+    }
+
+    // ---------------------------------------------------------------- Bestätigen + Steuern
+    function frageText(f) {
+        var w = f.aktion === 'modus' ? modusText(f.wert) : f.wert && typeof f.wert === 'object' ? (f.wert.soc ? f.wert.soc + ' %, ' : '') + f.wert.zeit : f.wert;
+        return t('wallbox.q_' + f.aktion, {
+            modus: '{titel}: Lademodus auf {wert} stellen?', ziel: '{titel}: Ladegrenze auf {wert} % stellen?',
+            strom: '{titel}: Ladestrom auf {wert} A stellen?', plan: '{titel}: Ladeplan setzen ({wert})?', plan_loeschen: '{titel}: Ladeplan löschen?',
+            freigabe: '{titel}: Steuern über Panoptes erlauben? Du kannst es jederzeit zurücknehmen.'
+        }[f.aktion] || '{titel}: {wert}?', { titel: f.titel, wert: w });
+    }
+    function bestaetige(text) {
+        return new Promise(function (ja) {
+            $('dlgText').textContent = text;
+            $('dlg').style.display = 'flex';
+            $('dlgJa').onclick = function () { $('dlg').style.display = 'none'; ja(true); };
+            $('dlgNein').onclick = function () { $('dlg').style.display = 'none'; ja(false); };
+        });
+    }
+    function zweistufig(pfad, rumpf) {
+        return api('POST', pfad, rumpf).then(function (d) {
+            if (d._status !== 409 || d.grund !== 'bestaetigung_noetig') return d;
+            return bestaetige(frageText(d.frage)).then(function (ok) {
+                if (!ok) return null;
+                rumpf.bestaetigung = d.bestaetigung;
+                return api('POST', pfad, rumpf);
+            });
+        }).then(function (d) {
+            if (!d) return;
+            if (d.ok && d.uebernommen === null) toast(t('wallbox.unchecked', 'Gesendet – die Wallbox meldet den Wert nicht zurück.'), true);
+            else if (d.ok) toast(d.uebernommen === false ? t('wallbox.differs', 'Gesendet, aber die Wallbox meldet einen anderen Wert.') : t('wallbox.done', 'Übernommen'), d.uebernommen !== false);
+            else toast(fehlerText(d.grund || 'unbekannt'), false);
+        }, function () { toast(fehlerText('nicht_erreichbar'), false); }).then(ladeStatus);   // echten Stand zurücklesen
+    }
+    $('lps').addEventListener('click', function (ev) {
+        var b = ev.target.closest('button');
+        var box = ev.target.closest('.lp');
+        if (!b || !box) return;
+        var id = box.getAttribute('data-id');
+        if (b.hasAttribute('data-frei')) return zweistufig('/api/wallbox/freigabe', { ladepunkt: id, an: true });
+        if (b.hasAttribute('data-zurueck')) return zweistufig('/api/wallbox/freigabe', { ladepunkt: id, an: false });
+        if (b.hasAttribute('data-modus')) return zweistufig('/api/wallbox/steuern', { ladepunkt: id, aktion: 'modus', wert: b.getAttribute('data-modus') });
+        if (b.hasAttribute('data-strom')) return zweistufig('/api/wallbox/steuern', { ladepunkt: id, aktion: 'strom', wert: parseInt(box.querySelector('[data-stromwert]').value, 10) });
+        if (b.hasAttribute('data-ziel')) return zweistufig('/api/wallbox/steuern', { ladepunkt: id, aktion: 'ziel', wert: parseInt(box.querySelector('[data-zielwert]').value, 10) });
+        if (b.hasAttribute('data-plan')) {
+            var z = box.querySelector('[data-planzeit]').value;
+            if (!z) return toast(fehlerText('wert_ungueltig'), false);
+            return zweistufig('/api/wallbox/steuern', { ladepunkt: id, aktion: 'plan',
+                wert: { soc: parseInt(box.querySelector('[data-plansoc]').value, 10), zeit: new Date(z).toISOString() } });
+        }
+        if (b.hasAttribute('data-planweg')) return zweistufig('/api/wallbox/steuern', { ladepunkt: id, aktion: 'plan_loeschen', wert: null });
+        if (b.hasAttribute('data-start')) return zweistufig('/api/wallbox/steuern', { ladepunkt: id, aktion: 'plan', wert: { zeit: box.querySelector('[data-startzeit]').value } });
+    });
+
+    BYD.i18n.init().then(function () {
+        BYD.core.init();
+        $('quelle').onchange = zeigeFelder;
+        $('tuyaZugang').onchange = function () {
+            var cloud = $('tuyaZugang').value === 'cloud';
+            $('tuyaCloudFelder').hidden = !cloud;
+            $('tIpZeile').hidden = cloud; $('tVerZeile').hidden = cloud; $('tKeyZeile').hidden = cloud;
+        };
+        $('ha_modus').addEventListener('input', haModusOptZeigen);
+        $('btnTest').onclick = function () {
+            var b = formular(); if (!b) return;
+            api('POST', '/api/wallbox/test', b).then(function (d) {
+                if (d.ok === false) { toast(fehlerText(d.grund), false); return; }
+                zeige(d);
+                toast(d.erreichbar ? t('wallbox.test_ok', 'Verbindung klappt.') : fehlerText(d.fehler), !!d.erreichbar);
+            });
+        };
+        $('btnVorschlag').onclick = function () {
+            var b = formular(); if (!b) return;
+            api('POST', '/api/wallbox/ha/vorschlag', b).then(function (d) {
+                if (!d.ok) { toast(fehlerText(d.grund), false); return; }
+                $('haMap').value = JSON.stringify([d.vorschlag], null, 2);
+                haKandidaten(d.kandidaten);
+                var v = d.vorschlag || {};
+                HA_ROLLEN.forEach(function (r) { if (v[r] && !$('ha_' + r).value.trim()) $('ha_' + r).value = v[r]; });
+                if (!$('ha_titel').value.trim()) $('ha_titel').value = v.titel || 'Wallbox';
+                haModusOptZeigen();
+                toast(t('wallbox.ha_suggest_done', 'Vorschlag eingetragen – bitte prüfen und speichern.'), true);
+            });
+        };
+        $('btnSave').onclick = function () {
+            var b = formular(); if (!b) return;
+            api('POST', '/api/wallbox/einstellungen', b).then(function (d) {
+                if (!d.ok) { toast(fehlerText(d.grund), false); return; }
+                toast(t('wallbox.saved', 'Gespeichert'), true);
+                konfig = d; adapterId = adapterAusKonfig(); waehleAdapter(adapterId); ladeStatus();
+            });
+        };
+        Promise.all([tuyaModelleLaden(), adapterLaden()]).then(function () { zeichneAdapter(); return ladeKonfig(); }).then(ladeStatus);
+        setInterval(function () { if (!document.hidden && $('dlg').style.display !== 'flex') ladeStatus(); }, 15000);
+    });
+})();
+</script>
+</body>
+</html>

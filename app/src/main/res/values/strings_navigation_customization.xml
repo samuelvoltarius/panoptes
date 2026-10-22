@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_navigation_title">Menu</string>
+    <string name="settings_navigation_subtitle">Pick which extra pages stay in the menu on the left.</string>
+    <string name="settings_navigation_fixed_hint">Home, System and About Panoptes are always there.</string>
+    <string name="settings_navigation_reset">Back to standard</string>
+    <string name="settings_navigation_reset_done">Menu is back to standard</string>
+    <string name="settings_navigation_shown">visible</string>
+    <string name="settings_navigation_hidden">not visible</string>
+    <string name="settings_navigation_option_state">%1$s, %2$s in the menu</string>
+</resources>

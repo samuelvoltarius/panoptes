@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "hinweis": "Belegte Fähigkeiten je Modell/DiLink (Regel 1: nur Belegtes, alles andere bleibt unbekannt). Neue Meldungen aus der Community hier ergänzen, ohne Codeänderung. dilink null = für diese Meldung nicht erhoben, gilt für das Modell. Die eigene Angabe des Nutzers (faehigkeiten.ueberCarPlay/ueberAndroidAuto) geht immer vor.",
+  "eintraege": [
+    {
+      "modell": "seagull",
+      "dilink": null,
+      "merkmal": "ueberProjektion",
+      "projektion": "carplay",
+      "wert": "ja",
+      "quelle": "Alfred, Alltag: Panoptes-Blitzer-Band über laufendem CarPlay sichtbar (Dolphin Surf), ohne Test",
+      "datum": "2026-10-22"
+    }
+  ],
+  "projektion_pakete": {
+    "hinweis": "Paketnamen der Projektion je Art (installiert = projektion.<art> ja; im Vordergrund = Projektion aktiv). Erweiterbar ohne Codeänderung.",
+    "carplay": [
+      {
+        "paket": "com.byd.carplay.ui",
+        "quelle": "PAKET_INVENTUR_SURF.md, /system/app/Carplay (Dolphin Surf, DiLink 3)",
+        "datum": "2026-10-22"
+      }
+    ],
+    "androidauto": [
+      {
+        "paket": "com.byd.androidauto",
+        "quelle": "PAKET_INVENTUR_SURF.md, /system/app/AndroidAutoNew (Dolphin Surf, DiLink 3)",
+        "datum": "2026-10-22"
+      },
+      {
+        "paket": "com.google.android.projection.gearhead",
+        "quelle": "Google, offizieller Paketname von Android Auto",
+        "datum": "2026-10-22"
+      }
+    ]
+  }
+}

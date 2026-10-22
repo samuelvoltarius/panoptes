@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title data-i18n="app.recordings_title">Aufnahmen – Panoptes</title>
+    <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
+    <script src="../shared/theme.js?v=13"></script>
+    <script src="../shared/app-shell.js?v=pn24"></script>
+    <!--
+      Bottom-tab manifest. 5 tabs grouping the settings cards:
+        Status      — live recording status pill
+        Capture     — recording mode + proximity guard triggers
+        Quality     — video quality + telemetry overlay
+        OEM Dashcam — OEM forward-sensor pipeline + native DVR control
+        Storage     — storage size + BYD CDR auto-cleanup
+      i18n keys live under "recording.tab_*" in web/i18n/*.json.
+    -->
+    <script>
+        // Capture is the default tab — owns the recording-mode picker, OEM
+        // Dashcam card, and Native DVR control. Status is read-only and
+        // was the previous default; that hid the OEM Dashcam toggle behind
+        // a tab the user had to discover.
+        window.OT_TABS = [
+            { id: 'capture', label: 'Capture', i18n: 'recording.tab_capture', svg: '<path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/>' },
+            { id: 'status',  label: 'Status',  i18n: 'recording.tab_status',  svg: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="currentColor"/>', readOnly: true },
+            { id: 'quality', label: 'Quality', i18n: 'recording.tab_quality', svg: '<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>' },
+            { id: 'oem',     label: 'Dashcam',   i18n: 'recording.tab_oem', svg: '<rect x="3" y="6" width="14" height="12" rx="2"/><path d="M17 10l4-2v8l-4-2"/><circle cx="10" cy="12" r="2.5"/>' },
+            { id: 'storage', label: 'Storage', i18n: 'recording.tab_storage', svg: '<line x1="22" x2="2" y1="12" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>' }
+        ];
+    </script>
+    <script src="../shared/app-tabs.js"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn10">
+    <script src="../shared/vendor/jmuxer-2.0.4.min.js"></script>
+    <script src="../shared/SotaPlayer.js?v=13"></script>
+    <script src="../shared/Decoder.js"></script>
+    <script src="../shared/YUVCanvas.js"></script>
+    <script src="../shared/Player.js"></script>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <!-- App shell sidebar (rendered by ../shared/app-shell.js) -->
+        <div id="app-shell-mount"></div>
+        <!-- Main Content -->
+        <main class="main-content" aria-busy="true" inert style="pointer-events:none">
+            <div class="mobile-header">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+                    </svg>
+                </button>
+                <span style="font-weight:600;" data-i18n="nav.recordings">Aufnahmen</span>
+                <div style="width:40px;"></div>
+            </div>
+
+            <header class="page-header">
+                <h1 class="page-title" data-i18n="recording.page_title">Aufnahme-Einstellungen</h1>
+            </header>
+
+            <div class="page-body">
+                <!-- Recording Status -->
+                <div class="card" data-tab="status">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+                            <span data-i18n="recording.status_title">Aufnahme-Status</span>
+                        </div>
+                        <span class="status-badge inactive" id="recStatusBadge" data-i18n="recording.status_idle">RUHT</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-box" style="margin-top:0;">
+                            <div class="info-row"><span class="label" data-i18n="recording.current_state">Gerade jetzt</span><span class="value" id="recState" data-i18n="common.idle">Ruht</span></div>
+                            <div class="info-row">
+                                <span class="label" data-i18n="recording.recordings_today">Aufnahmen heute</span>
+                                <a href="events.html" class="value link-value" id="recToday">0 →</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recording Mode (ACC ON) -->
+                <div class="card" data-tab="capture">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/>
+                            </svg>
+                            <span data-i18n="recording.mode_title">Wann aufgenommen wird (ACC an)</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="setting-row" style="border-bottom:none;padding-bottom:12px;">
+                            <div class="setting-info">
+                                <div class="setting-name" data-i18n="recording.select_mode">Modus wählen</div>
+                                <div class="setting-desc" data-i18n="recording.select_mode_desc">Lege fest, wann beim Fahren aufgenommen wird</div>
+                            </div>
+                        </div>
+                        <div class="mode-selector" role="radiogroup" data-i18n-attr="aria-label:recording.mode_picker_aria" aria-label="Aufnahmemodus">
+                            <label class="mode-option">
+                                <input type="radio" name="recordingMode" value="NONE" checked onchange="RecSettings.onModeChange('NONE')">
+                                <div class="mode-card mode-card-default">
+                                    <span class="mode-icon" aria-hidden="true">
+                                        <!-- "Off / disabled" — circle with a slash.
+                                             width/height attrs are REQUIRED for the
+                                             head-unit Chrome 58 WebView, which
+                                             collapses unsized SVGs inside an
+                                             inline-flex parent to 0x0. -->
+                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                                    </span>
+                                    <span class="mode-body">
+                                        <span class="mode-name" data-i18n="recording.mode_none_name">Aus (Standard)</span>
+                                        <span class="mode-desc" data-i18n="recording.mode_none_desc">Keine Aufnahme. Spart Akku und Leistung</span>
+                                    </span>
+                                    <span class="mode-radio" aria-hidden="true"></span>
+                                </div>
+                            </label>
+                            <label class="mode-option">
+                                <input type="radio" name="recordingMode" value="CONTINUOUS" onchange="RecSettings.onModeChange('CONTINUOUS')">
+                                <div class="mode-card">
+                                    <span class="mode-icon" aria-hidden="true">
+                                        <!-- Camcorder body — "always recording" glyph -->
+                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/><circle cx="9" cy="12" r="1.5" fill="currentColor"/></svg>
+                                    </span>
+                                    <span class="mode-body">
+                                        <span class="mode-name" data-i18n="recording.mode_continuous_name">Immer</span>
+                                        <span class="mode-desc" data-i18n="recording.mode_continuous_desc">Nimmt immer auf, solange die Kameras laufen</span>
+                                    </span>
+                                    <span class="mode-radio" aria-hidden="true"></span>
+                                </div>
+                            </label>
+                            <label class="mode-option">
+                                <input type="radio" name="recordingMode" value="DRIVE_MODE" onchange="RecSettings.onModeChange('DRIVE_MODE')">
+                                <div class="mode-card">
+                                    <span class="mode-icon" aria-hidden="true">
+                                        <!-- Steering wheel — "while driving" glyph -->
+                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2"/><path d="M12 2v8"/><path d="M4.93 10.93 10 14"/><path d="M19.07 10.93 14 14"/></svg>
+                                    </span>
+                                    <span class="mode-body">
+                                        <span class="mode-name" data-i18n="recording.mode_drive_name">Beim Fahren</span>
+                                        <span class="mode-desc" data-i18n="recording.mode_drive_desc">Nimmt nur beim Fahren auf (Gang D, R, S oder M)</span>
+                                    </span>
+                                    <span class="mode-radio" aria-hidden="true"></span>
+                                </div>
+                            </label>
+                            <label class="mode-option">
+                                <input type="radio" name="recordingMode" value="PROXIMITY_GUARD" onchange="RecSettings.onModeChange('PROXIMITY_GUARD')">
+                                <div class="mode-card">
+                                    <span class="mode-icon" aria-hidden="true">
+                                        <!-- Shield with radar arc — "guards perimeter" glyph -->
+                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12a3 3 0 0 1 3-3"/><path d="M12 15a3 3 0 0 0 3-3"/></svg>
+                                    </span>
+                                    <span class="mode-body">
+                                        <span class="mode-name" data-i18n="recording.mode_proximity_name">Annäherung</span>
+                                        <span class="mode-desc" data-i18n="recording.mode_proximity_desc">Nimmt auf, wenn etwas dem Auto nahe kommt</span>
+                                    </span>
+                                    <span class="mode-radio" aria-hidden="true"></span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recording Layout -->
+                <div class="card" data-tab="capture">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>
+                            </svg>
+                            <span data-i18n="recording.layout_title">Bildaufteilung</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-name">
+                                    <span data-i18n="recording.layout_label">Anordnung der Kameras</span>
+                                    <span class="setting-badge" data-i18n="recording.applies_live">Gilt sofort</span>
+                                </div>
+                                <div class="setting-desc" data-i18n="recording.layout_desc">„Standard“ zeigt die vier 360-Kameras in einem 2×2-Raster. „Fahrtkamera“ zeigt oben die Straße vor dem Auto und darunter die 360-Kameras links, hinten und rechts. Die Fahrdaten bleiben in beiden Fällen im Bild.</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="btn-group btn-group-vertical" id="recLayoutBtns">
+                                    <button class="btn-toggle active" data-value="standard" onclick="RecSettings.setRecordingLayout('standard')">
+                                        <span class="tier-name" data-i18n="recording.layout_standard">Standard (Raster)</span>
+                                    </button>
+                                    <button class="btn-toggle" data-value="dashcam" onclick="RecSettings.setRecordingLayout('dashcam')">
+                                        <span class="tier-name" data-i18n="recording.layout_dashcam">Fahrtkamera (vorne + Seiten)</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="setting-row" style="border-bottom:none;" id="dashcamWindshieldRow">
+                            <div class="setting-info">
+                                <div class="setting-name" data-i18n="recording.layout_use_windshield_label">Windschutzkamera oben verwenden</div>
+                                <div class="setting-desc" id="dashcamWindshieldDesc" data-i18n="recording.layout_use_windshield_desc">Wenn das Auto eine Windschutzkamera hat, liefert sie das obere Bild. Lässt sich ihr Stream nicht öffnen, nimmt Panoptes die 360-Frontkamera.</div>
+                                <div class="setting-desc" id="windshieldCameraInfo" style="display:none;"></div>
+                            </div>
+                            <div class="setting-control">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="dashcamUseWindshield" onchange="RecSettings.toggleDashcamWindshield()">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Proximity Guard Settings (shown when PROXIMITY_GUARD selected) -->
+                <div class="card" data-tab="capture" id="proximitySettingsCard" style="display:none;">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            </svg>
+                            <span data-i18n="recording.proximity_settings_title">Einstellungen für „Annäherung“</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-name" data-i18n="recording.trigger_sensitivity">Empfindlichkeit</div>
+                                <div class="setting-desc" data-i18n="recording.trigger_sensitivity_desc">Wann die Aufnahme beginnt</div>
+                            </div>
+                            <div class="setting-control">
+                                <select class="select-input" id="triggerLevel" onchange="RecSettings.markDirty()">
+                                    <option value="RED" data-i18n="recording.trigger_red">🔴 Nur sehr nah (0–0,5 m)</option>
+                                    <option value="YELLOW_RED" data-i18n="recording.trigger_yellow_red">🟡 Mittel und nah (0–0,8 m)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-name" data-i18n="recording.pre_event_buffer">Vorlauf</div>
+                                <div class="setting-desc" data-i18n="recording.pre_event_buffer_desc">So viele Sekunden vorher</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="slider-control">
+                                    <span class="slider-value" id="preRecordValue">5s</span>
+                                    <input type="range" class="slider" id="preRecordSlider" min="2" max="15" step="1" value="5" oninput="RecSettings.updatePreRecord(this.value)">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-name" data-i18n="recording.post_event_buffer">Nachlauf</div>
+                                <div class="setting-desc" data-i18n="recording.post_event_buffer_desc">Sekunden Aufnahme, nachdem der Radar nichts mehr sieht</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="slider-control">
+                                    <span class="slider-value" id="postRecordValue">10s</span>
+                                    <input type="range" class="slider" id="postRecordSlider" min="5" max="30" step="1" value="10" oninput="RecSettings.updatePostRecord(this.value)">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="timeline-visual">
+                            <div class="timeline-segment pre">
+                                <span class="timeline-label"><span data-i18n="recording.timeline_pre">DAVOR</span> <span id="timelinePre">5s</span></span>
+                            </div>
+                            <div class="timeline-segment event">
+                                <span class="timeline-label" data-i18n="recording.timeline_event">⚠️ AUSLÖSER</span>
+                            </div>
+                            <div class="timeline-segment post">
+                                <span class="timeline-label"><span data-i18n="recording.timeline_post">DANACH</span> <span id="timelinePost">10s</span></span>
+                            </div>
+                        </div>
+                        <div class="info-box-note">
+                            <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                            <div class="info-note" data-i18n="recording.timeline_note">
+                                ℹ️ Die Aufnahme läuft weiter, wenn der Radar im Nachlauf erneut etwas erkennt
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Place Tagging (reverse geocoding) — Capture tab.
+                     Per-flow split: this controls the "recording" flow only
+                     (dashcam continuous + drive-mode + proximity guard).
+                     Surveillance.html exposes the matching surveillance
+                     toggles. The custom Nominatim URL is shared between
+                     both surfaces (advanced sub-section). -->
+                <div class="card" data-tab="capture">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                <circle cx="12" cy="10" r="3"/>
+                            </svg>
+                            <span data-i18n="recording.geocoding_title">Ortsnamen</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-name" data-i18n="recording.geocoding_enabled_name">Aufnahmen der Fahrtkamera mit Ortsnamen versehen</div>
+                                <div class="setting-desc" data-i18n="recording.geocoding_enabled_desc">Macht aus dem GPS-Punkt, an dem ein Clip beginnt, einen Stadtteil- oder Ortsnamen und speichert ihn beim Clip. Standardmäßig aus.</div>
+                            </div>
+                            <div class="setting-control">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="geocodingEnabled" onchange="RecSettings.toggleGeocodingEnabled()">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-name" data-i18n="recording.geocoding_online_name">Namen online suchen</div>
+                                <div class="setting-desc" data-i18n="recording.geocoding_online_desc">Wenn das Gerät einen Ort nicht selbst benennen kann, fragt es OpenStreetMap Nominatim. Gesendet werden nur die Startkoordinaten und deine Gerätesprache.</div>
+                            </div>
+                            <div class="setting-control">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="geocodingOnline" disabled onchange="RecSettings.toggleGeocodingOnline()">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="setting-row" style="border-bottom:none;">
+                            <div class="setting-info" style="flex:1 1 auto;">
+                                <div class="setting-name" data-i18n="recording.geocoding_custom_url_name">Eigene Nominatim-Adresse</div>
+                                <div class="setting-desc" data-i18n="recording.geocoding_custom_url_desc">Optional. Trage einen eigenen Server ein, um den öffentlichen OSM-Dienst zu umgehen. Der Wächter nutzt ihn ebenfalls.</div>
+                            </div>
+                            <div class="setting-control">
+                                <input type="url" id="geocodingCustomUrl" class="text-input" inputmode="url" placeholder="https://nominatim.example.com" disabled onchange="RecSettings.saveGeocodingCustomUrl()" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OEM Dashcam — recording-mode picker.
+                     Off | Continuous | Smart. Smart = follow whatever the
+                     pano dashcam is doing (Drive Mode / Continuous /
+                     Proximity Guard). Identical card to the surveillance
+                     page; only the explanatory text differs because each
+                     page binds to a different pano flow. -->
+                <div class="card" data-tab="oem" id="oemDashcamCard">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 17h18l-3-9H6l-3 9z"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/>
+                                <path d="M9 8V5a3 3 0 0 1 6 0v3"/>
+                            </svg>
+                            <span data-i18n="oem_dashcam.title">Dashcam des Autos</span>
+                        </div>
+                        <span class="status-badge inactive" id="oemPipelineBadge" data-i18n="oem_dashcam.status_idle" role="status" aria-live="polite" aria-atomic="true" style="opacity:0;">Wartet</span>
+                    </div>
+                    <div class="card-body">
+                        <!-- Camera-ID-unset state. -->
+                        <div class="setting-row" id="oemDashcamIdUnsetRow" style="display:none;">
+                            <div class="setting-info">
+                                <div class="setting-name" data-i18n="oem_dashcam.id_unset_title">Kameranummer nicht gewählt</div>
+                                <div class="setting-desc" data-i18n="oem_dashcam.id_unset_desc">Gehe zu Diagnose → Kameraprobe und wähle, welche AVMCamera-Nummer die vordere Dashcam ist. Bei Auto ist es die Nummer der Rundumkamera, getauscht zwischen 0 und 1. Bei Seal und Han hat die Rundumkamera die 1, die Dashcam des Autos also die 0.</div>
+                            </div>
+                        </div>
+
+                        <div class="setting-row" id="oemRecordingModeRow" style="border-bottom:none;padding-bottom:12px;">
+                            <div class="setting-info">
+                                <div class="setting-name" data-i18n="oem_dashcam.recording_mode_title">Beim Fahren</div>
+                                <div class="setting-desc" data-i18n="oem_dashcam.recording_mode_desc">Legt fest, wann die Frontkamera dvr_*.mp4 speichert, neben den cam_*.mp4 der Rundumkamera.</div>
+                            </div>
+                        </div>
+                        <div class="mode-selector" role="radiogroup" aria-busy="true" data-hydrating="true" data-i18n-attr="aria-label:oem_dashcam.mode_picker_aria_recording" aria-label="Dashcam des Autos: beim Fahren" aria-controls="oemPipelineStatusHint">
+                            <label class="mode-option">
+                                <input type="radio" name="oemRecordingMode" value="off" checked onchange="RecSettings.setOemRecordingMode('off')" aria-describedby="oemModeDesc_off">
+                                <div class="mode-card mode-card-active">
+                                    <span class="mode-icon" aria-hidden="true">
+                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                                    </span>
+                                    <span class="mode-body">
+                                        <span class="mode-name" data-i18n="oem_dashcam.mode_off">Aus</span>
+                                        <span class="mode-desc" id="oemModeDesc_off" data-i18n="oem_dashcam.mode_off_desc_recording">Die Frontkamera des Autos nimmt nicht auf. Die Rundumkamera schreibt wie gewohnt cam_*.mp4.</span>
+                                    </span>
+                                    <span class="mode-radio" aria-hidden="true"></span>
+                                </div>
+                            </label>
+                            <label class="mode-option">
+                                <input type="radio" name="oemRecordingMode" value="continuous" onchange="RecSettings.setOemRecordingMode('continuous')" aria-describedby="oemModeDesc_continuous">
+                                <div class="mode-card">
+                                    <span class="mode-icon" aria-hidden="true">
+                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/><circle cx="9" cy="12" r="1.5" fill="currentColor"/></svg>
+                                    </span>
+                                    <span class="mode-body">
+                                        <span class="mode-name" data-i18n="oem_dashcam.mode_continuous">Dauerbetrieb</span>
+                                        <span class="mode-desc" id="oemModeDesc_continuous" data-i18n="oem_dashcam.mode_continuous_desc_recording">Schreibt dvr_*.mp4, solange Panoptes läuft, egal was die Rundumkamera macht.</span>
+                                    </span>
+                                    <span class="mode-radio" aria-hidden="true"></span>
+                                </div>
+                            </label>
+                            <label class="mode-option">
+                                <input type="radio" name="oemRecordingMode" value="smart" onchange="RecSettings.setOemRecordingMode('smart')" aria-describedby="oemModeDesc_smart">
+                                <div class="mode-card">
+                                    <span class="mode-icon" aria-hidden="true">
+                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M16.24 7.76l2.83-2.83"/><circle cx="12" cy="12" r="3"/></svg>
+                                    </span>
+                                    <span class="mode-body">
+                                        <span class="mode-name" data-i18n="oem_dashcam.mode_smart">Intelligent</span>
+                                        <span class="mode-desc" id="oemModeDesc_smart" data-i18n="oem_dashcam.mode_smart_desc_recording">Macht mit, was die Rundumkamera macht: Nimmt sie auf (Fahrmodus, Dauerbetrieb oder jemand nah), nimmt auch dvr_*.mp4 auf. Hört sie auf, hört auch diese auf.</span>
+                                    </span>
+                                    <span class="mode-radio" aria-hidden="true"></span>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Per-pipeline telemetry overlay. Pano has its own
+                             toggle on the Quality tab; this controls only OEM
+                             clips. -->
+                        <div class="setting-row" id="oemTelemetryOverlayRow">
+                            <div class="setting-info">
+                                <div class="setting-name" data-i18n="oem_dashcam.telemetry_overlay">Fahrdaten ins Video einblenden</div>
+                                <div class="setting-desc" data-i18n="oem_dashcam.telemetry_overlay_desc">Brennt Tempo, GPS und Uhrzeit fest in dvr_*.mp4 ein. Unabhängig von der Einstellung der Rundumkamera.</div>
+                            </div>
+                            <div class="setting-control">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="oemTelemetryOverlay" onchange="RecSettings.toggleOemTelemetryOverlay()">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- OEM-clip field picker; separate selection from the pano flow. -->
+                        <div class="setting-row telemetry-fields" id="telemetryFieldsOemDashcam" style="display:none;">
+                            <div class="setting-info" style="width:100%;">
+                                <div class="setting-name" data-i18n="recording.telemetry_fields_label">Das wird eingeblendet</div>
+                                <div class="setting-desc" data-i18n="oem_dashcam.telemetry_fields_desc">Wähle, was im Video der Auto-Dashcam angezeigt wird.</div>
+                                <div class="telemetry-fields-grid" id="telemetryFieldsOemDashcamGrid"></div>
+                            </div>
+                        </div>
+
+                        <div class="setting-row" id="oemPipelineStatusRow" style="border-bottom:none;">
+                            <div class="setting-info" style="flex:1 1 auto;">
+                                <div class="setting-name" id="oemPipelineStatus" data-i18n="oem_dashcam.status_idle">Wartet</div>
+                                <div class="setting-desc" id="oemPipelineStatusHint" data-i18n="oem_dashcam.status_hint_off">Wähle oben Dauerbetrieb oder Intelligent, um die Aufnahme mit der Frontkamera des Autos einzuschalten.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Native DVR (com.byd.cdr) — sits below the OEM Dashcam
+                     toggle on the dedicated OEM tab. Hidden entirely when
+                     the package isn't installed (some trims don't ship
+                     the OEM dashcam app at all). RecSettings.loadNativeDvr()
+                     hits /api/oem-dashcam/native-dvr/status on init and
+                     toggles #nativeDvrCard.style.display accordingly. -->
+                <div class="card" data-tab="oem" id="nativeDvrCard" style="display:none;">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="2" y="6" width="20" height="12" rx="2"/>
+                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M7 6V4"/><path d="M17 6V4"/>
+                            </svg>
+                            <span data-i18n="oem_dashcam.native_dvr_title">Eingebaute DVR-App des Autos (com.byd.cdr)</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="setting-row" style="border-bottom:none;">
+                            <div class="setting-info" style="flex:1 1 auto;">
+                                <div class="setting-desc" data-i18n="oem_dashcam.native_dvr_explainer">Die Dashcam-App von BYD speichert nach /sdcard/DCIM/BYDCam und greift bei jedem Einschalten (ACC ON) auf AVMCamera zu. Schalte sie aus, damit Panoptes die Kamera allein nutzen kann.</div>
+                                <div class="setting-name" id="nativeDvrStatusLabel" style="margin-top:8px;" data-i18n="oem_dashcam.native_dvr_status_enabled">Stand: an</div>
+                            </div>
+                            <div class="setting-control">
+                                <button class="btn btn-primary" id="nativeDvrToggleBtn" onclick="RecSettings.toggleNativeDvr()" data-i18n="oem_dashcam.native_dvr_disable">Eingebautes DVR ausschalten</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Video Quality -->
+                <div class="card" data-tab="quality">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/></svg>
+                            <span data-i18n="recording.video_quality_title">Bildqualität</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-name">
+                                    <span data-i18n="recording.recording_quality">Aufnahmequalität</span>
+                                </div>
+                                <div class="setting-desc" data-i18n="recording.recording_quality_desc">Höhere Stufen behalten mehr Details, brauchen aber mehr Platz. Das Bild ist ein Mosaik aus vier Kameras (je 1280×960), zusammen 2560×1920.</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="btn-group btn-group-vertical" id="recQualityBtns">
+                                    <button class="btn-toggle" data-value="ECONOMY"  onclick="RecSettings.setRecordingQuality('ECONOMY')">
+                                        <span class="tier-name"  data-i18n="recording.tier_economy">Sparsam</span>
+                                    </button>
+                                    <button class="btn-toggle" data-value="STANDARD" onclick="RecSettings.setRecordingQuality('STANDARD')">
+                                        <span class="tier-name"  data-i18n="recording.tier_standard">Standard</span>
+                                    </button>
+                                    <button class="btn-toggle active" data-value="HIGH" onclick="RecSettings.setRecordingQuality('HIGH')">
+                                        <span class="tier-name"  data-i18n="recording.tier_high">Hoch</span>
+                                    </button>
+                                    <button class="btn-toggle" data-value="PREMIUM" onclick="RecSettings.setRecordingQuality('PREMIUM')">
+                                        <span class="tier-name"  data-i18n="recording.tier_premium">Sehr hoch</span>
+                                    </button>
+                                    <button class="btn-toggle" data-value="MAX" onclick="RecSettings.setRecordingQuality('MAX')">
+                                        <span class="tier-name"  data-i18n="recording.tier_max">Maximal</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-name">
+                                    <span data-i18n="recording.codec">Videoformat</span>
+                                </div>
+                                <div class="setting-desc" data-i18n="recording.codec_desc">H.265 macht die Dateien etwa halb so groß</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="btn-group" id="codecBtns">
+                                    <button class="btn-toggle active" data-value="H264" onclick="RecSettings.setCodec('H264')">H.264</button>
+                                    <button class="btn-toggle" data-value="H265" onclick="RecSettings.setCodec('H265')">H.265</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-name">
+                                    <span data-i18n="recording.camera_fps">Kamera-FPS</span>
+                                </div>
+                                <div class="setting-desc" data-i18n="recording.camera_fps_desc">Bilder pro Sekunde für Aufnahmen und den Wächter.</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="btn-group" id="fpsBtns">
+                                    <button class="btn-toggle" data-value="10" onclick="RecSettings.setFps(10)">10</button>
+                                    <button class="btn-toggle active" data-value="15" onclick="RecSettings.setFps(15)">15</button>
+                                    <button class="btn-toggle" data-value="20" onclick="RecSettings.setFps(20)">20</button>
+                                    <button class="btn-toggle" data-value="25" onclick="RecSettings.setFps(25)">25</button>
+                                    <button class="btn-toggle" data-value="30" onclick="RecSettings.setFps(30)">30</button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Clip Duration — shared key (recording.segmentDurationMinutes)
+                             read by BOTH the ACC-on dashcam and ACC-off / OEM
+                             surveillance axes, so this one control governs both. -->
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-name">
+                                    <span data-i18n="recording.clip_duration">Länge der Clips</span>
+                                    <span class="setting-badge" data-i18n="recording.applies_next_rotation">Ab dem nächsten Clip</span>
+                                </div>
+                                <div class="setting-desc" data-i18n="recording.clip_duration_desc">Wie lang jedes gespeicherte Videostück ist. Das gilt beim Fahren (ACC an) und für den Wächter beim Parken (ACC aus), ab dem nächsten Stück.</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="btn-group" id="clipDurationBtns">
+                                    <button class="btn-toggle active" data-value="2" onclick="RecSettings.setClipDuration(2)" data-i18n="recording.clip_2min">2 Min.</button>
+                                    <button class="btn-toggle" data-value="5" onclick="RecSettings.setClipDuration(5)" data-i18n="recording.clip_5min">5 Min.</button>
+                                    <button class="btn-toggle" data-value="10" onclick="RecSettings.setClipDuration(10)" data-i18n="recording.clip_10min">10 Min.</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="info-box-note">
+                            <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            <div class="info-note" data-i18n="recording.clip_duration_warning">
+                                Längere Clips ergeben weniger, aber größere Dateien. Ein Clip wird aber erst gesichert, wenn er zu Ende ist. Fällt plötzlich der Strom aus (z. B. wenn bei einem Aufprall die Batterie getrennt wird), kann der laufende Clip verloren gehen. Bei 10 Minuten sind es bis zu 10 Minuten Material, bei 2 Minuten nur 2. Bleib bei 2 Minuten, wenn dein Auto unvermittelt Strom verlieren kann.
+                            </div>
+                        </div>
+                        <div class="info-box">
+                            <div class="info-row">
+                                <span class="label" data-i18n="recording.active_estimate">Mit deinen Einstellungen</span>
+                                <span class="value" id="activeEstimate">— Mbps · — / hr · ~—</span>
+                            </div>
+                            <div class="info-row" style="font-size: 0.85em; opacity: 0.7;">
+                                <span class="label" data-i18n="recording.native_resolution">Original</span>
+                                <span class="value" id="nativeResolution">2560×1920 mosaic · 4 × 1280×960 cameras</span>
+                            </div>
+                            <div class="info-row" id="fpsClampRow" style="display: none; font-size: 0.85em;">
+                                <span class="label" data-i18n="recording.fps_actual">Gemessene FPS</span>
+                                <span class="value" id="fpsActual">—</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fisheye Correction (Fitzgibbon division-model rectifier).
+                     Applies to BOTH ACC-on dashcam recordings AND ACC-off
+                     surveillance clips — single shared key in unified config
+                     (recording.rectifyStrength) read by both pipelines.
+                     Hidden on dilink4 cars: those receive a clean 2x2 mosaic
+                     from the HAL natively and the legacy-mode rectify shader
+                     branch is not exercised. -->
+                <div class="card" data-tab="quality" id="rectifyCard">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="9"/>
+                                <path d="M3 12h18"/>
+                                <path d="M12 3c2.5 3 2.5 15 0 18"/>
+                                <path d="M12 3c-2.5 3-2.5 15 0 18"/>
+                            </svg>
+                            <span data-i18n="recording.rectify_title">Fischaugen-Korrektur</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="setting-row" style="border-bottom:none;">
+                            <div class="setting-info">
+                                <div class="setting-name" data-i18n="recording.rectify_label">Stärke</div>
+                                <div class="setting-desc" data-i18n="recording.rectify_desc">Glättet die Fischaugen-Wölbung, die an den Bildrändern von Aufnahmen und Wächter-Clips übrig bleibt. 0 = aus (rohes Kamerabild). Höhere Werte ziehen die Ränder nach innen.</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="slider-control">
+                                    <span class="slider-value" id="rectifyValue" data-i18n="common.disabled">Aus</span>
+                                    <input type="range" class="slider" id="rectifySlider" min="0" max="100" step="1" value="0" oninput="RecSettings.updateRectifyStrength(this.value)">
+                                </div>
+                                <!-- Range labels constrained to the slider track width
+                                     (120px, matching .slider in styles.css) and shifted
+                                     right past the value-label gutter (70px label + 12px
+                                     gap) so "Off"/"Max" sit directly under the track
+                                     ends instead of flushing to the row edges. -->
+                                <div class="slider-range-labels" style="width:120px;margin-left:auto;padding:0;">
+                                    <span data-i18n="recording.rectify_min">Aus</span>
+                                    <span data-i18n="recording.rectify_max">Maximal</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Telemetry Overlay -->
+                <div class="card" data-tab="quality">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                            </svg>
+                            <span data-i18n="recording.telemetry_overlay_title">Fahrdaten im Video</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- No divider: the field picker below is a sub-control of
+                             this toggle, and :last-child now binds to the picker. -->
+                        <div class="setting-row" style="border-bottom:none;">
+                            <div class="setting-info">
+                                <div class="setting-name" data-i18n="recording.telemetry_show_label">Ins Video einblenden</div>
+                                <div class="setting-desc" data-i18n="recording.telemetry_show_desc">Blendet Autodaten in Fahrt-Aufnahmen und manuelle Aufnahmen ein, die bei ACC an entstehen</div>
+                            </div>
+                            <div class="setting-control">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="telemetryOverlayEnabled" onchange="RecSettings.toggleTelemetryOverlay()">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Field picker for the ACC-on (trips/manual) flow. Grid is
+                             populated from /api/settings/telemetry-overlay's catalog by
+                             RecSettings.renderTelemetryFields('accOn', ...). -->
+                        <div class="setting-row telemetry-fields" id="telemetryFieldsAccOn" style="display:none;">
+                            <div class="setting-info" style="width:100%;">
+                                <div class="setting-name" data-i18n="recording.telemetry_fields_label">Das wird eingeblendet</div>
+                                <div class="setting-desc" data-i18n="recording.telemetry_fields_desc">Wähle, was die Einblendung in Fahrt-Aufnahmen und manuellen Aufnahmen zeigt.</div>
+                                <div class="telemetry-fields-grid" id="telemetryFieldsAccOnGrid"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cabin Audio -->
+                <div class="card" data-tab="quality">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                <line x1="12" y1="19" x2="12" y2="23"/>
+                                <line x1="8" y1="23" x2="16" y2="23"/>
+                            </svg>
+                            <span data-i18n="recording.audio_title">Ton im Innenraum</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="setting-row" style="border-bottom:none;">
+                            <div class="setting-info">
+                                <div class="setting-name" data-i18n="recording.audio_label">Ton im Innenraum aufnehmen</div>
+                                <div class="setting-desc" data-i18n="recording.audio_desc">Nimmt das Mikrofon im Innenraum zum Video auf. Nur bei ACC an (Immer, Beim Fahren, Annäherung). Nie, während der Wächter aufpasst.</div>
+                            </div>
+                            <div class="setting-control">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="audioRecordingEnabled" onchange="RecSettings.toggleAudioRecording()">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Storage -->
+                <div class="card" data-tab="storage">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="22" x2="2" y1="12" y2="12"/>
+                                <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+                                <line x1="6" x2="6.01" y1="16" y2="16"/><line x1="10" x2="10.01" y1="16" y2="16"/>
+                            </svg>
+                            <span data-i18n="recording.storage_title">Speicherort der Aufnahmen</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Storage Location Selection -->
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-name" data-i18n="trip.settings.storage_location">Speicherort</div>
+                                <div class="setting-desc" data-i18n="recording.storage_location_desc">Wähle, wo Aufnahmen gespeichert werden</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="btn-group" id="recStorageTypeBtns">
+                                    <button class="btn-toggle active" data-value="INTERNAL" onclick="RecSettings.setStorageType('INTERNAL')" data-i18n="trip.settings.storage_internal">Im Gerät</button>
+                                    <button class="btn-toggle" data-value="SD_CARD" onclick="RecSettings.setStorageType('SD_CARD')" id="btnRecSdCard" data-i18n="trip.settings.storage_sd">SD-Karte</button>
+                                    <button class="btn-toggle" data-value="USB" onclick="RecSettings.setStorageType('USB')" id="btnRecUsb" data-i18n="trip.settings.storage_usb">USB-Stick</button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Storage fallback banner: shown when the configured
+                             external volume is unavailable/full and recordings
+                             are actually landing on internal storage. Without
+                             this, a fallback is silent and the user assumes
+                             clips are on the SD/USB they chose. -->
+                        <div class="storage-fallback-banner" id="recStorageFallbackBanner" style="display:none;" role="status" aria-live="polite">
+                            <span class="sd-status-dot" style="background:#f0a020;"></span>
+                            <span id="recStorageFallbackText" data-i18n="recording.storage_fallback_internal">SD/USB nicht da. Es wird im internen Speicher gespeichert</span>
+                        </div>
+                        <!-- SD Card Status -->
+                        <div class="sd-card-status" id="recSdCardStatus" style="display:none;">
+                            <div class="sd-status-row">
+                                <span class="sd-status-dot" id="recSdStatusDot"></span>
+                                <span class="sd-status-text" id="recSdStatusText" data-i18n="recording.sd_checking">SD-Karte: wird gesucht …</span>
+                            </div>
+                            <div class="sd-space-info" id="recSdSpaceInfo" style="display:none;">
+                                <span id="recSdFree" data-i18n="recording.dash_free">-- frei</span> / <span id="recSdTotal" data-i18n="recording.dash_total">-- gesamt</span>
+                            </div>
+                        </div>
+                        <!-- USB Drive Status -->
+                        <div class="sd-card-status" id="recUsbStatus" style="display:none;">
+                            <div class="sd-status-row">
+                                <span class="sd-status-dot" id="recUsbStatusDot"></span>
+                                <span class="sd-status-text" id="recUsbStatusText" data-i18n="recording.usb_checking">USB: wird gesucht …</span>
+                            </div>
+                            <div class="sd-space-info" id="recUsbSpaceInfo" style="display:none;">
+                                <span id="recUsbFree" data-i18n="recording.dash_free">-- frei</span> / <span id="recUsbTotal" data-i18n="recording.dash_total">-- gesamt</span>
+                            </div>
+                        </div>
+                        <div class="setting-row" style="border-bottom:none;padding-bottom:8px;">
+                            <div class="setting-info">
+                                <div class="setting-name" data-i18n="trip.settings.storage_usage">Belegter Platz</div>
+                                <div class="setting-desc" id="recStoragePath" data-i18n="recording.storage_path_default">Aufnahmen liegen in Panoptes/recordings</div>
+                            </div>
+                        </div>
+                        <div class="storage-bar">
+                            <div class="storage-fill" id="storageFill" style="width: 0%"></div>
+                        </div>
+                        <div class="storage-info">
+                            <span id="storageUsed" data-i18n="recording.dash_used">-- belegt</span>
+                            <span id="storageLimit" data-i18n="recording.dash_limit">-- Grenze</span>
+                        </div>
+                        <div class="setting-row" style="margin-top:16px;">
+                            <div class="setting-info">
+                                <div class="setting-name" data-i18n="recording.storage_limit">Speichergrenze</div>
+                                <div class="setting-desc" data-i18n="recording.storage_limit_desc">Die ältesten Aufnahmen werden automatisch gelöscht, wenn die Grenze erreicht ist</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="slider-control">
+                                    <span class="slider-value" id="recLimitValue">500 MB</span>
+                                    <input type="range" class="slider" id="recLimitSlider" min="100" max="100000" step="100" value="500" oninput="RecSettings.updateRecLimit(this.value)">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slider-range-labels">
+                            <span id="recLimitMin">100 MB</span>
+                            <span id="recLimitMax">100 GB</span>
+                        </div>
+                        <!-- Combined-limit advisory: this volume's Σ limits exceed
+                             what it can hold. Rendered by shared/storage-budget.js;
+                             text is set at runtime (no data-i18n — the key varies
+                             by severity and interpolates live numbers). -->
+                        <div class="storage-fallback-banner" id="recBudgetBanner" style="display:none;" role="status" aria-live="polite">
+                            <span class="sd-status-dot" style="background:#f0a020;"></span>
+                            <span data-budget-text></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BYD Dashcam Cleanup (shown when SD card selected) -->
+                <div class="card" data-tab="storage" id="cdrCleanupCard" style="display:none;">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                            </svg>
+                            <span data-i18n="recording.cdr_title">Automatisch aufräumen: BYD-Fahrtkamera</span>
+                            <span class="status-badge" id="cdrCleanupBadge" data-i18n="status.off">Aus</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-name" data-i18n="recording.cdr_auto_delete">Alte Fahrtkamera-Dateien automatisch löschen</div>
+                                <div class="setting-desc" data-i18n="recording.cdr_auto_delete_desc">Schafft Platz auf der SD-Karte, indem die ältesten BYD-Kameraaufnahmen gelöscht werden</div>
+                            </div>
+                            <div class="setting-control">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="cdrCleanupEnabled" disabled onchange="RecSettings.toggleCdrCleanup()">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Recommend banner (shown only when API says recommendAutoCleanup) -->
+                        <div class="info-box-warning" id="cdrRecommendBanner" style="display:none;">
+                            <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            <div class="info-row" style="color:var(--warning);">
+                                <span class="label" data-i18n="recording.cdr_recommend_label_v2">Empfohlen</span>
+                                <span class="value" data-i18n="recording.cdr_recommend_text">Panoptes speichert auf der SD-Karte. Schalte das Aufräumen ein, damit sie nie voll wird.</span>
+                            </div>
+                        </div>
+                        <!-- CDR Status -->
+                        <div class="info-box" id="cdrInfoBox">
+                            <div class="info-row"><span class="label" data-i18n="recording.cdr_path">Ordner der Fahrtkamera</span><span class="value" id="cdrPath">--</span></div>
+                            <div class="info-row"><span class="label" data-i18n="recording.cdr_usage">Platz der Fahrtkamera</span><span class="value" id="cdrUsage">--</span></div>
+                            <div class="info-row"><span class="label" data-i18n="recording.cdr_files">Dateien</span><span class="value" id="cdrFileCount">--</span></div>
+                            <div class="info-row"><span class="label" data-i18n="recording.cdr_protected">Geschützt</span><span class="value" id="cdrProtected">--</span></div>
+                            <div class="info-row"><span class="label" data-i18n="recording.cdr_deletable">Kann gelöscht werden</span><span class="value" id="cdrDeletable">--</span></div>
+                            <div class="info-row"><span class="label" data-i18n="recording.cdr_bg_monitor">Läuft im Hintergrund</span><span class="value" id="cdrMonitoring">--</span></div>
+                            <div class="info-row"><span class="label" data-i18n="recording.cdr_last_cleanup">Zuletzt aufgeräumt</span><span class="value" id="cdrLastCleanup">--</span></div>
+                        </div>
+                        <div class="setting-row" style="margin-top:12px;">
+                            <div class="setting-info">
+                                <div class="setting-name" data-i18n="recording.cdr_reserved">Platz für Panoptes</div>
+                                <div class="setting-desc" data-i18n="recording.cdr_reserved_desc">So viel bleibt auf der SD-Karte frei</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="slider-control">
+                                    <span class="slider-value" id="cdrReservedValue">2 GB</span>
+                                    <input type="range" class="slider" id="cdrReservedSlider" disabled min="100" max="20000" step="100" value="2000" oninput="RecSettings.updateCdrReserved(this.value)">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-name" data-i18n="recording.cdr_protect_recent">Neue Dateien schützen</div>
+                                <div class="setting-desc" data-i18n="recording.cdr_protect_recent_desc">Dateien, die neuer sind, werden nicht gelöscht</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="slider-control">
+                                    <span class="slider-value" id="cdrProtectedValue">24h</span>
+                                    <input type="range" class="slider" id="cdrProtectedSlider" disabled min="0" max="168" step="12" value="24" oninput="RecSettings.updateCdrProtected(this.value)">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-name" data-i18n="recording.cdr_min_keep">Mindestens behalten</div>
+                                <div class="setting-desc" data-i18n="recording.cdr_min_keep_desc">So viele der neuesten Dateien bleiben immer erhalten</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="slider-control">
+                                    <span class="slider-value" id="cdrMinKeepValue">10</span>
+                                    <input type="range" class="slider" id="cdrMinKeepSlider" disabled min="0" max="100" step="5" value="10" oninput="RecSettings.updateCdrMinKeep(this.value)">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Manual Cleanup Button -->
+                        <button class="btn btn-danger" id="cdrCleanupNow" disabled style="width:100%;margin-top:12px;" onclick="RecSettings.triggerCdrCleanup()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            <span data-i18n="recording.cdr_cleanup_now_v2">Jetzt aufräumen</span>
+                        </button>
+                        <!-- Stats -->
+                        <div class="info-box" style="margin-top:12px;">
+                            <div class="info-row"><span class="label" data-i18n="recording.cdr_total_freed">Insgesamt frei geworden</span><span class="value" id="cdrTotalFreed">--</span></div>
+                            <div class="info-row"><span class="label" data-i18n="recording.cdr_files_deleted">Gelöschte Dateien</span><span class="value" id="cdrTotalDeleted">--</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Manual Recording -->
+            </div>
+        </main>
+
+        <!-- Fixed Footer Bar -->
+        <div class="footer-bar" id="footerBar">
+            <button class="btn btn-primary" id="btnApply" disabled onclick="RecSettings.saveSettings()" data-i18n="common.apply_changes">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                Änderungen übernehmen
+            </button>
+        </div>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="../shared/auth.js"></script>
+    <script src="../shared/core.js?v=pn5"></script>
+    <script src="../shared/settings-hydration.js?v=1"></script>
+    <script src="../shared/storage-budget.js?v=8"></script>
+    <script src="../shared/recording.js?v=budget18"></script>
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+        BYD.i18n.init().then(function () {
+            BYD.core.init();
+            return RecSettings.init();
+        }).catch(function (error) {
+            console.error('Failed to initialize recording settings:', error);
+            if (BYD.utils && BYD.utils.unlockSettingsHydration) BYD.utils.unlockSettingsHydration();
+        });
+    </script>
+</body>
+</html>

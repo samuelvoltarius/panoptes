@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "_hinweis": "Modbus-TCP-Wallboxen (WALLBOX_VERTRAG §4c). Nur belegte Registerkarten. Geräte mit aktivem Failsafe/Watchdog erwarten einen Dauer-Herzschlag; das kann Panoptes im Auto nicht leisten → dann nur Anzeige (Watchdog am Gerät abschalten oder evcc nutzen). Modelle mit Pflicht-Herzschlag (z. B. Alfen, Webasto Next, Mennekes) sind deshalb nicht aufgenommen.",
+  "_schema": {
+    "register": {
+      "status": {"fc": "3|4", "reg": 0, "typ": "u16|u32|i16|i32|f32", "laedt": [], "verbunden": []},
+      "verbunden": {"fc": 3, "reg": 0, "typ": "u32", "bit": 2},
+      "leistung": {"fc": 3, "reg": 0, "typ": "u32", "faktorW": 1},
+      "strom": {"fc": 3, "reg": 0, "typ": "u16", "faktor": 1, "schreibFc": "6|16", "min": 6, "max": 16},
+      "failsafe": {"fc": 3, "reg": 0, "typ": "u16"}
+    },
+    "schalter": "strom_null (Aus = Strom 0, Sofort = Mindeststrom)"
+  },
+  "modelle": [
+    {
+      "id": "keba-p40-modbus",
+      "name": "KEBA KeContact P40 (Modbus TCP)",
+      "hersteller": "KEBA",
+      "einheit": 255,
+      "port": 502,
+      "beleg": "22.10.2026: evcc charger/keba-modbus.go (MIT, evcc.io) – Register 1000 Ladezustand (3 = lädt), 1004 Kabelzustand (Bit 2 = Auto), 1020 Leistung mW, 5004 Ladestrom mA (P40: 0 = gesperrt), 1602 Failsafe-Timeout; Vorlage templates/definition/charger/keba-modbus.yaml (Unit 255). P30 nicht: dessen Freigabe-Register 5014 ist nur beschreibbar.",
+      "register": {
+        "status": {"fc": 3, "reg": 1000, "typ": "u32", "laedt": [3]},
+        "verbunden": {"fc": 3, "reg": 1004, "typ": "u32", "bit": 2},
+        "leistung": {"fc": 3, "reg": 1020, "typ": "u32", "faktorW": 0.001},
+        "strom": {"fc": 3, "reg": 5004, "typ": "u16", "faktor": 1000, "schreibFc": 6, "min": 6, "max": 32},
+        "failsafe": {"fc": 3, "reg": 1602, "typ": "u32"}
+      },
+      "schalter": "strom_null"
+    },
+    {
+      "id": "heidelberg-energy-control",
+      "name": "Heidelberg/Amperfied Energy Control (über Modbus-TCP-Gateway)",
+      "hersteller": "Heidelberg / Amperfied",
+      "einheit": 1,
+      "port": 502,
+      "beleg": "22.10.2026: evcc charger/heidelberg-ec.go (MIT, evcc.io) nach Amperfied-Registertabelle EC_ModBus_register_table_20210222 – Input 5 Fahrzeugstatus (6/7 = lädt, 4–7 = Auto), Input 14 Leistung W, Holding 261 Ladestrom in 0,1 A (0 = gesperrt), Holding 257 Watchdog-Timeout. RS485 → braucht ein Modbus-TCP-Gateway; Box im Follower-Modus (DIP S5/4 OFF), Modbus-ID per DIP S4.",
+      "register": {
+        "status": {"fc": 4, "reg": 5, "typ": "u16", "laedt": [6, 7], "verbunden": [4, 5, 6, 7]},
+        "leistung": {"fc": 4, "reg": 14, "typ": "u16", "faktorW": 1},
+        "strom": {"fc": 3, "reg": 261, "typ": "u16", "faktor": 10, "schreibFc": 16, "min": 6, "max": 16},
+        "failsafe": {"fc": 3, "reg": 257, "typ": "u16"}
+      },
+      "schalter": "strom_null"
+    }
+  ]
+}

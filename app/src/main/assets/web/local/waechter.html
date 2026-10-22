@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Wächter – Panoptes</title>
+    <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0A2238">
+    <script src="../shared/theme.js?v=13"></script>
+    <script src="../shared/app-shell.js?v=pn24"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn10">
+    <style>
+        .guard-page .main-content { padding: 0; }
+        .gw { padding: 0 28px 60px; max-width: 1100px; box-sizing: border-box; }
+        .gw-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-gap: 16px; }
+        .gc { background: var(--sm-card); border: 1px solid var(--sm-line); border-radius: 20px; padding: 20px; min-width: 0; }
+        .gc.wide { grid-column: span 2; }
+        .gc h2 { font-family: var(--family-display); font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+                 color: var(--outline); margin: 0 0 6px; }
+        .gc .lead { color: var(--on-surface-variant); font-size: 13.5px; margin: 0 0 14px; }
+        .state { display: flex; align-items: center; }
+        .state .big { font-family: var(--family-display); font-size: 26px; font-weight: 700; color: var(--on-surface); margin-left: 12px; }
+        .state .pn-dot { width: 12px; height: 12px; }
+        .sub { color: var(--on-surface-variant); font-size: 13.5px; margin-top: 6px; }
+        .sub.warn { color: var(--status-warning); }
+        .gbtn { border: 1px solid var(--sm-line); background: rgba(255, 255, 255, .075); color: var(--on-surface); border-radius: 12px;
+                padding: 10px 14px; font: 600 13.5px var(--family-body, sans-serif); cursor: pointer; text-decoration: none; display: inline-flex; }
+        .gbtn.lime { background: var(--sm-lime); color: #1d2a00; border-color: transparent; }
+        .gbtn.small { padding: 6px 10px; font-size: 12.5px; }
+        .actions { display: flex; flex-wrap: wrap; align-items: center; margin-top: 14px; }
+        .actions > * { margin: 0 10px 8px 0; }
+        .note { font-size: 12.5px; color: var(--on-surface-variant); }
+        .note.warn { color: var(--status-warning); }
+        @media (max-width: 860px) { .gw-grid { grid-template-columns: minmax(0, 1fr); } .gc.wide { grid-column: span 1; } }
+        @media (max-width: 720px) { .gw { padding: 0 16px 24px; } }
+    </style>
+</head>
+<body class="guard-page">
+<div class="app-layout">
+    <div id="app-shell-mount"></div>
+    <main class="main-content">
+        <div class="gw">
+        <section class="gw-grid">
+            <!-- Zustand -->
+            <article class="gc">
+                <h2 data-i18n="guard.now">Gerade</h2>
+                <div class="state"><i class="pn-dot" id="gDot"></i><span class="big" id="gState">…</span></div>
+                <div class="sub" id="gSub">&nbsp;</div>
+                <div class="sub warn" id="gStop" hidden></div>
+                <div class="sub warn" id="gHealth" hidden></div>
+                <div class="actions">
+                    <a class="gbtn" href="events.html" data-i18n="guard.to_clips">Aufnahmen ansehen</a>
+                    <a class="gbtn" href="live-view.html" data-i18n="guard.to_live">Kameras live</a>
+                </div>
+            </article>
+
+            <!-- Aufnahme: Pflichtwahl (Text C) + private Orte -->
+            <article class="gc">
+                <h2 data-i18n="guard.rec_title">Aufnahme</h2>
+                <div class="sub" id="tNow"></div>
+                <div id="tBox"></div>
+                <div id="tZones" hidden></div>
+                <div class="sub warn" id="tRet" hidden>
+                    <span data-i18n="guard.ret_unlimited">Aufbewahrung: unbegrenzt (nur Speicherplatz). Empfohlen: 72 h.</span>
+                    <div class="actions"><button class="gbtn lime" type="button" id="tRetBtn" data-i18n="guard.ret_set72">Auf 72 h stellen</button></div>
+                </div>
+                <div id="tKeep"></div>
+                <p class="note" id="tFps" hidden></p>
+                <p class="note" id="tNa" hidden data-i18n="guard.stop_unavailable">Diese Einstellung kommt mit dem nächsten App-Update.</p>
+            </article>
+
+            <!-- Abschreckung -->
+            <article class="gc">
+                <h2 data-i18n="guard.deter_title">Abschreckung</h2>
+                <p class="lead" data-i18n="guard.deter_lead">Was passiert, wenn jemand dem geparkten Auto zu nah kommt.</p>
+                <div id="dBox"></div>
+                <p class="note"><a href="surveillance.html" style="color:var(--sm-aqua)" data-i18n="guard.advanced">Erweitert: Text, Bild, Dauer, Empfindlichkeit</a></p>
+            </article>
+
+            <!-- Wächter stoppt, wenn … -->
+            <article class="gc wide">
+                <h2 data-i18n="guard.stop_title">Wächter stoppt, wenn …</h2>
+                <p class="lead" data-i18n="guard.stop_lead">Damit die Batterien geschont werden. Jede Bedingung lässt sich einzeln ein- und ausschalten.</p>
+                <div id="sBox"></div>
+                <div id="sAuto"></div>
+                <p class="note"><a href="surveillance.html#safe-zones" style="color:var(--sm-aqua)" data-i18n="guard.stop_quiet_link">Ruhezonen festlegen</a></p>
+            </article>
+        </section>
+        </div>
+    </main>
+</div>
+<div id="toastContainer" class="toast-container"></div>
+
+<script src="../shared/auth.js"></script>
+<script src="../shared/pwa-init.js?v=index1"></script>
+<script src="../shared/core.js?v=pn5"></script>
+<script src="../shared/guard-trigger.js?v=pn9"></script>
+<script src="../shared/einstellungen.js?v=pn8"></script>
+<script>
+(function () {
+    'use strict';
+    function $(id) { return document.getElementById(id); }
+    function t(k, f, v) { return window.PanoptesShell ? PanoptesShell.tr(k, f, v) : f; }
+    function toast(m, ok) { if (window.BYD && BYD.utils && BYD.utils.toast) BYD.utils.toast(m, ok ? 'success' : 'error'); }
+    var REASONS = { soc: 'guard.reason_soc', v12: 'guard.reason_v12', park: 'guard.reason_park', window: 'guard.reason_window', quietzone: 'guard.reason_quiet' };
+    var REASON_DE = { soc: 'Fahrakku zu leer', v12: 'Starterbatterie zu schwach', park: 'lange geparkt', window: 'Ruhezeit', quietzone: 'Ruhezone' };
+
+    // ---------------- Zustand
+    function loadState() {
+        fetch('/api/surveillance/status', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+            var s = d && d.status || {};
+            var dot = '', txt;
+            if (s.safeZoneSuppressed || s.inSafeZone) { txt = t('guard.st_quiet', 'Ruhezone – Wächter pausiert'); dot = 'aq'; }
+            else if (s.zustand === 'startet') { txt = t('guard.st_starting', 'Wächter startet gerade …'); dot = 'warn'; }
+            else if (s.zustand === 'unterdrueckt' && !s.guardStopActive) { txt = t('guard.st_paused', 'Wächter pausiert'); dot = 'aq'; }
+            else if (s.enabled && s.active) { txt = t('guard.st_active', 'Wächter passt auf'); dot = 'ok'; }
+            else if (s.enabled) { txt = t('guard.st_ready', 'Bereit – startet beim Abstellen'); dot = 'aq'; }
+            else { txt = t('guard.st_off', 'Wächter ist aus'); }
+            $('gState').textContent = txt;
+            $('gDot').className = 'pn-dot' + (dot ? ' ' + dot : '');
+            $('gSub').textContent = s.totalEventsToday != null ? t('guard.today', 'Heute {n} Aufnahmen', { n: s.totalEventsToday }) : '';
+            // 0.1.9.1: ohne gespeicherte Wahl nimmt der Wächter nur bei Erschütterung auf (Kern status.waechterAusloeser)
+            if (s.waechterAusloeser === 'nicht_gewaehlt') $('gSub').textContent += ($('gSub').textContent ? ' · ' : '')
+                + t('guard.trigger_unset', 'Noch nicht gewählt, wann er aufnehmen soll – bis dahin nur bei Erschütterung.');
+            var st = $('gStop');
+            if (s.guardStopActive) {
+                st.textContent = t('guard.stopped_because', 'Gestoppt: {r}', { r: t(REASONS[s.guardStopReason] || 'x', REASON_DE[s.guardStopReason] || s.guardStopReason || '') });
+                st.hidden = false;
+            } else st.hidden = true;
+            kameraFps(s.kameraFps);
+        }).catch(function () {});
+    }
+
+    // Kamera-fps (kern 8f28644, status.kameraFps, nur lesen): nur gemessene Werte zeigen, sonst nichts
+    function kameraFps(k) {
+        var box = $('tFps');
+        if (!box) return;
+        if (!k || k.verarbeitet == null) { box.hidden = true; return; }
+        var txt = t('guard.fps_now', 'Kamera gerade: {v} Bilder pro Sekunde ausgewertet', { v: k.verarbeitet });
+        if (k.geliefert != null && k.geliefert !== k.verarbeitet) txt += ' ' + t('guard.fps_delivered', '(Kamera liefert {g})', { g: k.geliefert });
+        if (k.drosselAktiv) txt += ' · ' + t('guard.fps_throttle', 'Panoptes bremst selbst, weil die Kamera die Rate nicht einstellen lässt.');
+        box.textContent = txt;
+        box.hidden = false;
+    }
+
+    // ---------------- Gesundheit (kern 71c1ca7, GET /api/surveillance/gesundheit, nur lesen)
+    var BEFUND = {
+        nicht_scharf: ['guard.h_not_armed', 'Wächter sollte aufpassen, ist aber nicht scharf'],
+        keine_bilder: ['guard.h_no_frames', 'Keine Kamerabilder'],
+        ki_fehlt: ['guard.h_no_ai', 'Erkennung nicht geladen'],
+        mqtt_getrennt: ['guard.h_mqtt', 'Verbindung zum Broker getrennt'],
+        telemetrie_alt: ['guard.h_telemetry', 'Fahrzeugdaten veraltet']
+    };
+    function loadHealth() {
+        fetch('/api/surveillance/gesundheit', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (g) {
+            var el = $('gHealth');
+            if (!g || g.ok !== false || !g.befunde || !g.befunde.length) { el.hidden = true; return; }
+            var liste = g.befunde.map(function (b) { var k = BEFUND[b.code || b] || [null, b.code || b]; return k[0] ? t(k[0], k[1]) : k[1]; });
+            el.textContent = t('guard.h_title', 'Panoptes kümmert sich: {l}', { l: liste.join(' · ') });
+            el.hidden = false;
+        }).catch(function () {});
+    }
+
+    // ---------------- Einstellungen aus dem Schema (Kern, EINSTELLUNGEN_SCHEMA.md v1.1)
+    var TRIG = 'surveillance.triggerMode', ZONES = 'surveillance.privateZones';
+    var store = null, trig = null, gewaehlt = null;
+
+    function standort() {
+        return fetch('/status', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (st) {
+            var g = (st && st.gps) || {};
+            return g.hasLocation ? { lat: Number(g.lat), lng: Number(g.lng) } : null;
+        });
+    }
+    function optTitel(f, wert) {
+        var o = ((f && f.optionen) || []).filter(function (x) { return x.wert === wert; })[0];
+        return o ? (o.titel || wert) : wert;
+    }
+    function zeigeZonen() {
+        var w = store.wert(TRIG);
+        $('tZones').hidden = !(gewaehlt === 'ai_private' || (w.gesetzt && w.wert === 'ai_private'));
+    }
+    function trigJetzt() {
+        var f = store.feld(TRIG), w = store.wert(TRIG);
+        if (!f) return;
+        var now = w.wirksam || w.wert;
+        $('tNow').textContent = w.gesetzt
+            ? t('guard.trig_now', 'Gerade gilt: {m}', { m: optTitel(f, now) })
+            : t('guard.trig_unset', 'Noch nicht gewählt. Bis dahin gilt das bisherige Verhalten: {m}.', { m: optTitel(f, now || 'ai_everywhere') });
+    }
+    function trigZeichnen() {
+        var f = store.feld(TRIG), w = store.wert(TRIG);
+        if (!f) { $('tBox').innerHTML = ''; return; }
+        var blocked = {};
+        (f.optionen || []).forEach(function (o) { if (o.gesperrt) blocked[o.wert] = o.gesperrtGrund || true; });
+        var zonen = store.wert(ZONES).wert;
+        gewaehlt = null;
+        trig = PanoptesTrigger.render($('tBox'), {
+            value: w.gesetzt ? w.wert : null,
+            blocked: blocked,
+            mitAus: (f.optionen || []).some(function (o) { return o.wert === 'aus'; }),
+            privatePlaces: Array.isArray(zonen) ? zonen.length : 0,
+            onChange: function (v) { gewaehlt = v; zeigeZonen(); },
+            onPlaces: function () {
+                gewaehlt = 'ai_private'; zeigeZonen();
+                $('tZones').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            },
+            onSave: function (v) {
+                return store.speichern({ 'surveillance.triggerMode': v }, [TRIG]).then(function (r) {
+                    if (!r.ok) { toast(PanoptesEinstellungen.fehlerText(r.veraltet ? 'veraltet' : r.fehler[TRIG]), false); throw new Error('x'); }
+                    toast(t('guard.saved', 'Gespeichert'), true);
+                    trigZeichnen();
+                });
+            }
+        });
+        trigJetzt();
+        zeigeZonen();
+    }
+    // Aufbewahrung nicht gesetzt oder 0 = unbegrenzt (Alt-Installation). Empfehlung 72 h, ein Knopf setzt sie.
+    var RET = 'surveillance.clipRetentionHours';
+    function retHinweis() {
+        var f = store.feld(RET), w = store.wert(RET);
+        $('tRet').hidden = !f || f.nurLesend || Number(w.wert) > 0;
+    }
+    function setze72() {
+        $('tRetBtn').disabled = true;
+        store.speichern({ 'surveillance.clipRetentionHours': 72 }).then(function (r) {
+            toast(r.ok ? t('guard.saved', 'Gespeichert') : PanoptesEinstellungen.fehlerText(r.veraltet ? 'veraltet' : r.fehler[RET]), r.ok);
+            $('tRetBtn').disabled = false;
+        });
+    }
+
+    function ladeEinstellungen() {
+        PanoptesEinstellungen.laden().then(function (s) {
+            if (!s) {
+                $('tNa').hidden = false;
+                $('dBox').textContent = $('sBox').textContent = t('guard.stop_unavailable', 'Diese Einstellung kommt mit dem nächsten App-Update.');
+                return;
+            }
+            store = s;
+            trigZeichnen();
+            store.zeichne($('tKeep'), { gruppe: 'waechter', abschnitt: 'aufnahme', ohne: [TRIG, ZONES], einschalten: { 'surveillance.clipRetentionHours': 72 } });
+            retHinweis();
+            store.beiAenderung(retHinweis);
+            store.zeichne($('tZones'), { gruppe: 'waechter', abschnitt: 'aufnahme', nur: [ZONES], immer: [ZONES], standort: standort,
+                nachSpeichern: function (f) {
+                    if (f.key === ZONES && trig) { var z = store.wert(ZONES).wert; trig.setPrivatePlaces(Array.isArray(z) ? z.length : 0); trigJetzt(); }
+                } });
+            store.zeichne($('dBox'), { gruppe: 'waechter', abschnitt: 'abschreckung' });
+            store.zeichne($('sBox'), { gruppe: 'waechter', abschnitt: 'stopp' });
+            store.zeichne($('sAuto'), { gruppe: 'auto' });
+        });
+    }
+
+    BYD.i18n.init().then(function () {
+        BYD.core.init();
+        loadState(); loadHealth(); ladeEinstellungen();
+        $('tRetBtn').onclick = setze72;
+        setInterval(function () { if (!document.hidden) { loadState(); loadHealth(); } }, 30000);
+    });
+})();
+</script>
+</body>
+</html>

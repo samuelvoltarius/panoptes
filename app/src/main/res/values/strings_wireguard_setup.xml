@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wgsetup_title">Set up WireGuard</string>
+    <string name="wgsetup_explainer">Links the car to your home network via WireGuard. Addresses listed in AllowedIPs, such as your Home Assistant server, go through the link. All other traffic goes the usual way. Use the client (peer) file from your router, for example from OPNsense, Fritz!Box or wg-easy.</string>
+
+    <string name="wgsetup_status_loading">Looking up the state...</string>
+    <string name="wgsetup_status_none">Nothing saved yet</string>
+    <string name="wgsetup_status_stopped">Saved, but off. Switch it on under Services.</string>
+    <string name="wgsetup_status_connected">Linked to %1$s</string>
+    <string name="wgsetup_status_connecting">Linking to %1$s...</string>
+    <string name="wgsetup_status_reloading">Loading the new settings...</string>
+    <string name="wgsetup_status_error">Problem: %1$s</string>
+    <string name="wgsetup_status_unavailable">No state available, the service doesn\'t answer</string>
+    <string name="wgsetup_handshake_seconds">Last contact %1$ds ago</string>
+    <string name="wgsetup_handshake_minutes">Last contact %1$dm ago</string>
+    <string name="wgsetup_handshake_hours">Last contact %1$dh ago</string>
+    <string name="wgsetup_handshake_none">No contact yet</string>
+    <string name="wgsetup_detail_address">Own address: %1$s</string>
+    <string name="wgsetup_detail_routes">Goes through the link: %1$s</string>
+
+    <string name="wgsetup_expose">Open Panoptes over WireGuard</string>
+    <string name="wgsetup_expose_warning">Anyone on the link who can reach the car\'s address can open the login page. Limit access on the WireGuard server.</string>
+    <string name="wgsetup_expose_url">Address: %1$s</string>
+    <string name="wgsetup_expose_failed">This setting didn\'t change</string>
+
+    <string name="wgsetup_config_hint">Paste your WireGuard file here ([Interface] … [Peer] …)</string>
+    <string name="wgsetup_key_note">The private key stays in the car and is never shown again. Saving a new file replaces the old one.</string>
+
+    <string name="wgsetup_paste">Insert</string>
+    <string name="wgsetup_import">Pick file</string>
+    <string name="wgsetup_phone">Do it on your phone</string>
+    <string name="wgsetup_delete">Remove file</string>
+
+    <string name="wgsetup_clipboard_empty">Nothing in the clipboard</string>
+    <string name="wgsetup_import_failed">That file wouldn\'t open</string>
+    <string name="wgsetup_import_too_large">That file is too big</string>
+    <string name="wgsetup_import_no_qr">No QR code in that picture</string>
+    <string name="wgsetup_imported">Loaded. Check the text, then tap Save.</string>
+
+    <string name="wgsetup_phone_title">Continue on your phone</string>
+    <string name="wgsetup_phone_steps">Scan the code and sign in. Then upload or paste the file from your router. Your phone must be able to reach the car: same WLAN, the car hotspot, or an active tunnel.</string>
+    <string name="wgsetup_phone_lan_note">Only do this in your own WLAN or the car hotspot.</string>
+    <string name="wgsetup_phone_no_url">No address yet. Put the car on a WLAN, switch on the hotspot or start a tunnel first.</string>
+
+    <string name="wgsetup_empty">Paste or pick a file first</string>
+    <string name="wgsetup_saved">WireGuard file stored</string>
+    <string name="wgsetup_delete_title">Remove the WireGuard file?</string>
+    <string name="wgsetup_delete_message">The saved file and its private key are erased, and the link is switched off.</string>
+    <string name="wgsetup_deleted">WireGuard file removed</string>
+    <string name="wgsetup_delete_failed">The file couldn\'t be removed</string>
+</resources>

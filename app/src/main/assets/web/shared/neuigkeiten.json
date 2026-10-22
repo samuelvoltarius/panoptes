@@ -1,0 +1,179 @@
+{
+  "hinweis": "Was ist neu – eine Quelle für Web, Mittelschirm und Release-Notes (version.json). Je Version 3–5 kurze Zeilen in Alltagssprache, alle fünf Sprachen. Nur aufnehmen, was wirklich in dieser Version steckt.",
+  "versionen": [
+    {
+      "version": "0.1.7",
+      "versionCode": 8,
+      "de": [
+        "Andere Geräte, zum Beispiel das EV-Cockpit, verbinden sich jetzt mit einem Tipp: Die Anfrage erscheint hier, am Bildschirm im Auto und in Telegram.",
+        "Panoptes lässt sich mit deinem Routenplaner-Konto verbinden. Unterwegs siehst du dann, ob die Ladung bis zum Ziel reicht.",
+        "Die Hinweise zur Nutzung musst du einmal bestätigen."
+      ],
+      "en": [
+        "Other devices, such as the EV Cockpit, now connect with one tap: the request shows up here, on the car screen and in Telegram.",
+        "Panoptes can connect to your route planner account. On the road you then see whether your charge will last to your destination.",
+        "You need to confirm the usage notes once."
+      ],
+      "fr": [
+        "Les autres appareils, comme l’EV Cockpit, se connectent désormais d’un seul geste : la demande apparaît ici, sur l’écran de la voiture et dans Telegram.",
+        "Panoptes peut se connecter à votre compte du planificateur d’itinéraire. En route, vous voyez alors si la charge suffit jusqu’à destination.",
+        "Vous devez confirmer une fois les remarques d’utilisation."
+      ],
+      "it": [
+        "Gli altri dispositivi, ad esempio l’EV Cockpit, ora si collegano con un solo tocco: la richiesta compare qui, sullo schermo dell’auto e in Telegram.",
+        "Panoptes si può collegare al tuo account del pianificatore di percorso. In viaggio vedi così se la carica basta fino alla meta.",
+        "Devi confermare una volta le note d’uso."
+      ],
+      "nl": [
+        "Andere apparaten, zoals de EV Cockpit, verbinden nu met één tik: het verzoek verschijnt hier, op het scherm in de auto en in Telegram.",
+        "Panoptes kan verbinden met je routeplanner-account. Onderweg zie je dan of de lading tot je bestemming reikt.",
+        "Je moet de gebruiksopmerkingen één keer bevestigen."
+      ]
+    },
+    {
+      "version": "0.1.8",
+      "versionCode": 11,
+      "de": [
+        "Du wählst selbst, woher die Karte kommt: Community-Karte, OpenStreetMap oder gar keine Karte.",
+        "Blitzer auf der Karte – nur in Österreich, Standard aus, mit Rechtshinweis.",
+        "Alles, was Daten nach außen schickt, ist jetzt standardmäßig aus."
+      ],
+      "en": [
+        "You choose where the map comes from: community map, OpenStreetMap or no map at all.",
+        "Speed cameras on the map – Austria only, off by default, with a legal notice.",
+        "Everything that sends data out is now off by default."
+      ],
+      "fr": [
+        "Vous choisissez d’où vient la carte : carte communautaire, OpenStreetMap ou pas de carte du tout.",
+        "Radars sur la carte – uniquement en Autriche, désactivé par défaut, avec avertissement juridique.",
+        "Tout ce qui envoie des données vers l’extérieur est désormais désactivé par défaut."
+      ],
+      "it": [
+        "Scegli tu da dove arriva la mappa: mappa della community, OpenStreetMap o nessuna mappa.",
+        "Autovelox sulla mappa – solo in Austria, disattivato per impostazione predefinita, con avviso legale.",
+        "Tutto ciò che invia dati all’esterno ora è disattivato per impostazione predefinita."
+      ],
+      "nl": [
+        "Je kiest zelf waar de kaart vandaan komt: communitykaart, OpenStreetMap of helemaal geen kaart.",
+        "Flitsers op de kaart – alleen in Oostenrijk, standaard uit, met juridische melding.",
+        "Alles wat gegevens naar buiten stuurt, staat nu standaard uit."
+      ]
+    },
+    {
+      "version": "0.1.8.1",
+      "versionCode": 12,
+      "de": [
+        "Neue Darstellung „Leicht“: Am Bildschirm im Auto läuft Panoptes flüssiger (Karten in 2D, weniger Effekte)."
+      ],
+      "en": [
+        "New “Light” display: Panoptes runs more smoothly on the car screen (2D maps, fewer effects)."
+      ],
+      "fr": [
+        "Nouvel affichage « Léger » : Panoptes est plus fluide sur l’écran de la voiture (cartes en 2D, moins d’effets)."
+      ],
+      "it": [
+        "Nuova visualizzazione «Leggera»: Panoptes è più fluido sullo schermo dell’auto (mappe in 2D, meno effetti)."
+      ],
+      "nl": [
+        "Nieuwe weergave „Licht”: Panoptes loopt vloeiender op het scherm in de auto (kaarten in 2D, minder effecten)."
+      ]
+    },
+    {
+      "version": "0.1.9",
+      "versionCode": 14,
+      "de": [
+        "Route vom Routenplaner übernehmen: Panoptes prüft dann unterwegs, ob der Akku bis zum Ziel reicht.",
+        "System → Datenfreigaben: Jede Freigabe schaltest du einzeln ein und wieder aus.",
+        "Im Wächter lässt sich einstellen, wie viele Kamera-Bilder pro Sekunde ausgewertet werden.",
+        "Aufsperren über Panoptes gibt es nicht mehr.",
+        "Einheitliche Begriffe, z. B. „Akku“ und „Reichweite (geschätzt)“."
+      ],
+      "en": [
+        "Take over a route from the route planner: Panoptes then checks on the road whether the battery lasts to the destination.",
+        "System → Data sharing: you turn each item on and off separately.",
+        "In the Guardian you can set how many camera frames per second are analysed.",
+        "Unlocking via Panoptes no longer exists.",
+        "Consistent terms, e.g. “Battery” and “Range (estimated)”."
+      ],
+      "fr": [
+        "Reprendre un itinéraire du planificateur : Panoptes vérifie alors en route si la batterie suffit jusqu’à destination.",
+        "Système → Partage de données : chaque partage s’active et se désactive séparément.",
+        "Dans le Gardien, vous pouvez régler combien d’images de caméra par seconde sont analysées.",
+        "Le déverrouillage via Panoptes n’existe plus.",
+        "Termes harmonisés, p. ex. « Batterie » et « Autonomie (estimée) »."
+      ],
+      "it": [
+        "Riprendere un percorso dal pianificatore: Panoptes verifica poi in viaggio se la batteria basta fino alla destinazione.",
+        "Sistema → Condivisione dati: ogni condivisione si attiva e disattiva singolarmente.",
+        "Nel Guardiano puoi impostare quanti fotogrammi al secondo vengono analizzati.",
+        "Lo sblocco tramite Panoptes non esiste più.",
+        "Termini uniformi, ad es. «Batteria» e «Autonomia (stimata)»."
+      ],
+      "nl": [
+        "Route uit de routeplanner overnemen: Panoptes controleert dan onderweg of de accu tot de bestemming reikt.",
+        "Systeem → Gegevens delen: elke deling zet je afzonderlijk aan en uit.",
+        "In de Bewaker stel je in hoeveel camerabeelden per seconde worden geanalyseerd.",
+        "Ontgrendelen via Panoptes bestaat niet meer.",
+        "Eenduidige begrippen, bijv. „Accu” en „Bereik (geschat)”."
+      ]
+    },
+    {
+      "version": "0.1.9.1",
+      "versionCode": 15,
+      "de": [
+        "Das Blitzer-Band ist größer und steht oben in der Mitte; dazu wählbar ein Ton (aus, Hinweiston, Ansage).",
+        "Wächter: neue Wahl „Wächter aus“. Ohne Wahl nimmt er nur bei Erschütterung auf.",
+        "Jede Einstellung steht nur noch an einem Ort."
+      ],
+      "en": [
+        "The speed camera band is larger and sits at the top centre; a sound is also selectable (off, chime, voice).",
+        "Guardian: new choice “Guardian off”. Without a choice it only records on impact.",
+        "Every setting is now in one place only."
+      ],
+      "fr": [
+        "Le bandeau radar est plus grand et placé en haut au centre ; un son est aussi réglable (désactivé, signal, annonce).",
+        "Gardien : nouveau choix « Gardien désactivé ». Sans choix, il n’enregistre qu’en cas de choc.",
+        "Chaque réglage ne se trouve plus qu’à un seul endroit."
+      ],
+      "it": [
+        "La fascia autovelox è più grande e si trova in alto al centro; si può anche scegliere un suono (spento, segnale, annuncio).",
+        "Guardiano: nuova scelta «Guardiano spento». Senza scelta registra solo in caso di urto.",
+        "Ogni impostazione si trova ora in un solo posto."
+      ],
+      "nl": [
+        "De flitserbalk is groter en staat bovenaan in het midden; er is ook een geluid te kiezen (uit, signaal, gesproken).",
+        "Bewaker: nieuwe keuze „Bewaker uit”. Zonder keuze neemt hij alleen op bij een schok.",
+        "Elke instelling staat nu op één plek."
+      ]
+    },
+    {
+      "version": "0.1.10",
+      "versionCode": 16,
+      "de": [
+        "Neuer Einrichtungsassistent am Bildschirm im Auto – Schritt für Schritt, jederzeit unter System neu startbar.",
+        "„Wo ich lade“: Ladekarten, bevorzugte Netze und Stecker sind im Auto gespeichert und gelten für jede Planung.",
+        "Einstellungen aus Overdrive übernehmen, falls vorhanden – mit Vorschau, nichts ohne deine Zustimmung."
+      ],
+      "en": [
+        "New setup assistant on the car screen – step by step, can be restarted any time under System.",
+        "“Where I charge”: charging cards, preferred networks and connectors are saved in the car and apply to every plan.",
+        "Take over settings from Overdrive if present – with a preview, nothing without your consent."
+      ],
+      "fr": [
+        "Nouvel assistant d’installation sur l’écran de la voiture – étape par étape, relançable à tout moment sous Système.",
+        "« Où je recharge » : cartes de recharge, réseaux préférés et prises sont enregistrés dans la voiture et valent pour chaque planification.",
+        "Reprendre des réglages d’Overdrive s’il est présent – avec aperçu, rien sans votre accord."
+      ],
+      "it": [
+        "Nuovo assistente di configurazione sullo schermo dell’auto – passo dopo passo, riavviabile in qualsiasi momento in Sistema.",
+        "«Dove ricarico»: carte di ricarica, reti preferite e prese sono salvate nell’auto e valgono per ogni pianificazione.",
+        "Riprendere impostazioni da Overdrive, se presente – con anteprima, nulla senza il tuo consenso."
+      ],
+      "nl": [
+        "Nieuwe installatieassistent op het scherm in de auto – stap voor stap, altijd opnieuw te starten onder Systeem.",
+        "„Waar ik laad”: laadpassen, voorkeursnetwerken en stekkers worden in de auto opgeslagen en gelden voor elke planning.",
+        "Instellingen uit Overdrive overnemen als die er is – met voorbeeld, niets zonder jouw toestemming."
+      ]
+    }
+  ]
+}

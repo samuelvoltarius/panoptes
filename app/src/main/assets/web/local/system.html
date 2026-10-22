@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>System – Panoptes</title>
+    <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
+    <script src="../shared/theme.js?v=13"></script>
+    <script src="../shared/kartenquelle.js?v=5"></script>
+    <script src="../shared/app-shell.js?v=pn24"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn10">
+    <style>
+        .sys-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .sys-stat { background: var(--bg-elevated); border-radius: 8px; padding: 10px 12px; min-width: 0; }
+        .sys-stat .label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .sys-stat .value { font-size: 15px; font-weight: 600; font-family: var(--family-mono); color: var(--text-primary); margin-top: 2px; overflow-wrap: anywhere; }
+        @media (max-width: 540px) { .sys-grid { grid-template-columns: 1fr; } }
+
+        .sys-field { display: flex; gap: 8px; margin-top: 14px; align-items: stretch; }
+        .sys-field input {
+            flex: 1; min-width: 0; padding: 10px 14px; background: var(--bg-elevated);
+            border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary);
+            font: 14px var(--family-mono);
+        }
+        .sys-field input:focus { outline: none; border-color: var(--brand-primary); }
+
+        .sys-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border-subtle); }
+        .sys-row:last-child { border-bottom: none; }
+        .sys-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; background: var(--text-muted); }
+        .sys-dot.on { background: var(--status-success); }
+        .sys-dot.wait { background: var(--status-warning); }
+        .sys-info { flex: 1; min-width: 0; }
+        .sys-name { font-weight: 600; font-size: 14px; color: var(--text-primary); }
+        .sys-meta { font-size: 12px; color: var(--text-muted); font-family: var(--family-mono); }
+        .sys-note { font-size: 12px; color: var(--text-muted); margin-top: 10px; line-height: 1.5; }
+        .sys-warn {
+            border: 1px solid var(--status-warning); border-radius: 8px; padding: 12px 14px;
+            margin-top: 12px; font-size: 13px; line-height: 1.5; color: var(--text-primary);
+            background: var(--status-warning-container, var(--bg-elevated));
+        }
+        .sys-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <div id="app-shell-mount"></div>
+        <main class="main-content">
+            <div class="mobile-header">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+                    </svg>
+                </button>
+                <span style="font-weight:600;" data-i18n="nav.system">System</span>
+                <div style="width:40px;"></div>
+            </div>
+            <header class="page-header">
+                <h1 class="page-title" data-i18n="nav.system">System</h1>
+                <div class="header-actions">
+                    <div class="header-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <span id="currentTime">--:--</span>
+                    </div>
+                </div>
+            </header>
+            <div class="page-body">
+
+                <!-- ===== Tailscale ===== -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                            <span data-i18n="system.tailscale_title">Fernzugang (Tailscale)</span>
+                        </div>
+                        <span class="card-badge" id="tsBadge">--</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="sys-grid">
+                            <div class="sys-stat"><div class="label" data-i18n="system.address">Adresse</div><div class="value" id="tsIp">--</div></div>
+                            <div class="sys-stat"><div class="label" data-i18n="system.tailnet_name">Name im Tailnet</div><div class="value" id="tsDns">--</div></div>
+                            <div class="sys-stat"><div class="label" data-i18n="system.other_devices">Andere Geräte</div><div class="value" id="tsPeers">--</div></div>
+                        </div>
+                        <div class="sys-field">
+                            <input id="tsHostname" maxlength="63" placeholder="surfmate" autocomplete="off" spellcheck="false">
+                            <button class="btn btn-primary" onclick="SystemPage.saveHostname()" data-i18n="system.save_hostname">Gerätename speichern</button>
+                        </div>
+                        <div class="sys-note" data-i18n="system.hostname_note">Kleinbuchstaben, Ziffern und Bindestrich. Die Tailnet-Adresse bleibt beim Umbenennen gleich, nur der Name ändert sich.</div>
+                        <div class="sys-warn" id="tsLogin" style="display:none;">
+                            <span data-i18n="system.login_waiting">Tailscale wartet auf eine Anmeldung:</span> <a id="tsLoginUrl" href="#" target="_blank" rel="noopener" data-i18n="system.login_open">Anmeldelink öffnen</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== Gerät koppeln (Kopplungs-Code, getrennt vom Login) ===== -->
+                <div class="card" id="kopplung">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="6" width="9" height="12" rx="2"/><rect x="15" y="4" width="7" height="16" rx="2"/><path d="M11 12h4"/></svg>
+                            <span data-i18n="system.pair_title">Gerät koppeln</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="pairReq" style="display:none;margin-bottom:16px;"></div>
+                        <div class="sys-note" data-i18n="system.pair_lead">Damit z. B. das EV-Cockpit Panoptes-Einstellungen anzeigen und ändern kann. Fernzugang, Passwort und Anschlüsse bleiben für gekoppelte Geräte gesperrt.</div>
+                        <div class="sys-actions">
+                            <button class="btn btn-primary" id="pairBtn" type="button" data-i18n="system.pair_btn">Neues Gerät koppeln</button>
+                        </div>
+                        <div id="pairOut" style="display:none;margin-top:12px;">
+                            <div id="pairCode" style="font:700 30px/1.2 var(--family-display, monospace);letter-spacing:.18em;color:var(--on-surface);"></div>
+                            <div class="sys-note" id="pairValid"></div>
+                            <div id="pairQr" style="margin-top:12px;"></div>
+                            <div class="sys-note" id="pairLinkBox" style="display:none;word-break:break-all;">
+                                <span data-i18n="system.pair_link">Oder diesen Link im anderen Gerät öffnen:</span>
+                                <a id="pairLink" href="#" rel="noopener"></a>
+                            </div>
+                        </div>
+                        <div id="pairList" style="display:none;margin-top:16px;">
+                            <div class="sys-name" data-i18n="system.paired_title">Gekoppelte Geräte</div>
+                            <div id="pairRows"></div>
+                            <div class="sys-note" id="pairDays"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== Home Assistant (HA_VERTRAG.md §7): Knopf öffnet den Einrichtungs-Assistenten in HA, Freigabe danach per Prüfzahl ===== -->
+                <div class="card" id="homeassistant" style="display:none;">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><circle cx="12" cy="13" r="2"/><path d="M12 15v6M9.5 17.5 12 15l2.5 2.5"/></svg>
+                            <span data-i18n="system.ha_title">Home Assistant</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="sys-note" style="margin-top:0;" data-i18n="system.ha_lead">Zeigt Panoptes in Home Assistant an. Nach dem Klick fragt Home Assistant nach der Adresse unten; danach erlaubst du die Verbindung hier mit der Prüfzahl.</div>
+                        <div class="sys-actions" style="justify-content:flex-start;">
+                            <a class="btn btn-primary" id="haLink" href="https://my.home-assistant.io/redirect/config_flow_start/?domain=panoptes" target="_blank" rel="noopener noreferrer" data-i18n="system.ha_connect">Mit Home Assistant verbinden</a>
+                        </div>
+                        <div class="sys-name" style="margin-top:14px;" data-i18n="system.ha_address">Panoptes-Adresse für Home Assistant</div>
+                        <div class="sys-field" style="margin-top:6px;">
+                            <input id="haAddr" readonly spellcheck="false" style="font-size:18px;font-weight:700;">
+                            <button class="btn" id="haCopy" type="button" data-i18n="system.ha_copy">Kopieren</button>
+                        </div>
+                        <div class="sys-note" data-i18n="system.ha_reach">Home Assistant muss Panoptes erreichen: gleiches WLAN oder Tailscale.</div>
+                    </div>
+                </div>
+
+                <!-- ===== Routenplaner-Konto (Geräte-Fluss des Planers, API_FUER_SURFMATE.md §6) ===== -->
+                <div class="card" id="planerKarte" style="display:none;">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
+                            <span data-i18n="system.planer_title">Routenplaner-Konto</span>
+                        </div>
+                        <span class="card-badge" id="planerBadge">--</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="sys-note" id="planerText"></div>
+                        <div id="planerCode" style="display:none;margin-top:12px;">
+                            <div id="planerCodeTxt" style="font:700 30px/1.2 var(--family-display, monospace);letter-spacing:.12em;color:var(--on-surface);"></div>
+                            <div id="planerQr" style="margin-top:12px;"></div>
+                            <div class="sys-note" style="word-break:break-all;"><a id="planerLink" href="#" target="_blank" rel="noopener"></a></div>
+                            <div class="sys-note" id="planerValid"></div>
+                        </div>
+                        <div class="sys-actions">
+                            <button class="btn btn-primary" id="planerBtn" type="button"></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== App-Updates (Kern: /api/appupdate/*, Kanal + Modus aus dem Einstellungs-Schema, Gruppe „update“) ===== -->
+                <!-- ===== Anzeige (0.1.8.1): Darstellung im Auto leicht/voll, sofort wirksam (app-shell.js PanoptesDarstellung) ===== -->
+                <div class="card" id="anzeige"><a id="faehigkeiten"></a>
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                            <span data-i18n="settings.anzeige.darstellung.title">Darstellung im Auto</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="sys-note" style="margin-top:0;" data-i18n="settings.anzeige.darstellung.help">Leicht schont den Bildschirm im Auto: Karten in 2D, ohne Unschärfe-Effekte und Dauer-Animationen. Voll zeigt alles, kostet am Display aber spürbar Leistung.</div>
+                        <div id="anzeigeWahl"></div>
+                        <!-- 0.1.9.1: Blitzer-Band am Bildschirm im Auto (anzeige.bandGroesse/bandPosition, Kern-Schema) -->
+                        <div id="anzeigeBand"></div>
+                    </div>
+                </div>
+
+                <!-- ===== Einrichtung (0.1.10, WIZARD Teil B): „Noch offen“ + „Einrichtung erneut starten“ (nur §0 /api/einrichtung) ===== -->
+                <div class="card" id="einrichtung" style="display:none;">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                            <span data-i18n="einr.titel">Einrichtung</span>
+                        </div>
+                    </div>
+                    <div class="card-body" id="einrichtungInhalt"></div>
+                </div>
+                <!-- 0.1.14: Notzugang für die Fernwartung (Kern 7) – nur im Auto bzw. mit Login, nie über die Kopplung -->
+                <div class="card" id="notzugang" style="display:none;">
+                    <div class="card-header"><div class="card-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <span data-i18n="notz.titel">Notzugang für die Fernwartung</span>
+                    </div></div>
+                    <div class="card-body" id="notzugangInhalt"></div>
+                </div>
+                <!-- 0.1.13: Systemeingriffe (stay_on, Doze) mit Zurücksetzen vor der Deinstallation -->
+                <div class="card" id="eingriffe" style="display:none;">
+                    <div class="card-header"><div class="card-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+                        <span data-i18n="eingr.titel">Systemeingriffe</span>
+                    </div></div>
+                    <div class="card-body" id="eingriffeInhalt"></div>
+                </div>
+                <!-- 0.1.10.1: Overdrive-Umzug Stufe 2 – Verlauf übernehmen (Kern 5); unsichtbar ohne Overdrive-Daten bzw. ohne Login -->
+                <div class="card" id="umzug" style="display:none;">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            <span data-i18n="od_verlauf.titel">Verlauf aus Overdrive übernehmen</span>
+                        </div>
+                    </div>
+                    <div class="card-body" id="umzugInhalt"></div>
+                </div>
+
+                <!-- ===== Datenfreigaben (0.1.9, Regel 2): übrige Felder der Kern-Gruppe „datenschutz“, je Kategorie einzeln, Standard aus.
+                     Die Kartenquelle hat ihre eigene Karte darunter. Sichtbar nur, wenn der Kern die Gruppe kennt. ===== -->
+                <div class="card" id="datenschutz" style="display:none;">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            <span data-i18n="datenfreigaben.titel">Datenfreigaben</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="sys-note" style="margin-top:0;" data-i18n="datenfreigaben.lead">Was Daten nach außen schickt, ist standardmäßig aus. Jede Freigabe schaltest du hier einzeln ein und jederzeit wieder aus.</div>
+                        <div id="datenschutzFelder" style="margin-top:10px;"></div>
+                        <div id="datenschutzEinwilligungen"></div>
+                    </div>
+                </div>
+
+                <!-- ===== Kartenquelle (0.1.8, Datenschutz): woher die Karten ihre Bilder laden; Standard „keine“, je Gerät gespeichert ===== -->
+                <div class="card" id="kartenquelle">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>
+                            <span data-i18n="kartenquelle.karte_titel">Kartenquelle</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="sys-note" style="margin-top:0;" data-i18n="kartenquelle.text">Für die Karte lädt Panoptes Kartenbilder aus dem Netz. Die gewählte Quelle sieht deine IP-Adresse und den Kartenausschnitt, also ungefähr, wo dein Auto steht. Solange du nichts wählst, bleibt die Karte leer und es geht nichts raus.</div>
+                        <div class="sys-note" data-kq-geraet data-i18n="kartenquelle.geraet">Die Wahl gilt für dieses Gerät bzw. diesen Browser.</div>
+                        <div id="kartenquelleWahl" style="margin-top:10px;"></div>
+                    </div>
+                </div>
+
+                <!-- ===== Blitzer-Anzeige (0.1.8): Kern-Feld speedcam.enabled, Standard aus, Einschalten nur mit Rechtshinweis ===== -->
+                <div class="card" id="blitzer" style="display:none;">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="13" height="10" rx="2"/><circle cx="9.5" cy="12" r="2.5"/><path d="M16 10l5-3v10l-5-3"/></svg>
+                            <span data-i18n="speedcam.karte_titel">Blitzer auf der Karte</span>
+                        </div>
+                    </div>
+                    <div class="card-body" id="blitzerInhalt"></div>
+                </div>
+
+                <!-- ===== Energie (Kern-Schema-Gruppe „energie“, ab 0.1.8): wie sparsam Panoptes im Stand arbeitet ===== -->
+                <div class="card" id="energie" style="display:none;">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="16" height="10" rx="2"/><path d="M21 11v2"/><path d="M7 10v4M11 10v4"/></svg>
+                            <span data-i18n="system.energie_title">Energie</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="sys-note" style="margin-top:0;" data-i18n="system.energie_lead">Wie oft Panoptes im Stand GPS liest und das Auto weckt. Sparsam schont die Starterbatterie.</div>
+                        <div id="energieFelder" style="margin-top:10px;"></div>
+                    </div>
+                </div>
+
+                <div class="card" id="updates" style="display:none;">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+                            <span data-i18n="system.upd_title">App-Updates</span>
+                        </div>
+                        <span class="card-badge" id="updBadge">--</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="sys-grid">
+                            <div class="sys-stat"><div class="label" data-i18n="system.upd_installed">Installiert</div><div class="value" id="updNow">--</div></div>
+                            <div class="sys-stat"><div class="label" data-i18n="system.upd_available">Verfügbar</div><div class="value" id="updNew">--</div></div>
+                            <div class="sys-stat"><div class="label" data-i18n="system.upd_checked">Zuletzt gesucht</div><div class="value" id="updLast">--</div></div>
+                        </div>
+                        <div id="updNotes" style="display:none;margin-top:12px;">
+                            <div class="sys-name" id="updNotesTitle"></div>
+                            <ul id="updNotesList" style="margin:6px 0 0;padding-left:20px;font-size:13px;line-height:1.5;"></ul>
+                        </div>
+                        <div class="sys-note" id="updState"></div>
+                        <div id="updProgress" style="display:none;margin-top:10px;">
+                            <div style="height:8px;border-radius:4px;background:var(--bg-elevated);overflow:hidden;"><div id="updBar" style="height:100%;width:0;background:var(--brand-primary);transition:width .4s;"></div></div>
+                        </div>
+                        <div id="updSettings" style="margin-top:12px;"></div>
+                        <div class="sys-actions">
+                            <button class="btn" id="updSearch" type="button" data-i18n="system.upd_search">Jetzt suchen</button>
+                            <button class="btn btn-primary" id="updInstall" type="button" style="display:none;" data-i18n="system.upd_install">Installieren</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== Tunnels & services ===== -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v6"/><path d="M5.6 7.6a8 8 0 1 0 12.8 0"/></svg>
+                            <span data-i18n="system.tunnels_title">Tunnel &amp; Dienste</span>
+                        </div>
+                        <button class="btn" onclick="SystemPage.refresh()" data-i18n="system.refresh">Aktualisieren</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="daemonList"><div class="sys-meta" data-i18n="common.loading">Lädt …</div></div>
+                        <div class="sys-warn" id="tsConfirm" style="display:none;">
+                            <strong data-i18n="system.confirm_off_title">Fernzugang wirklich abschalten?</strong>
+                            <div style="margin-top:6px;" data-i18n="system.confirm_off_body">Diese Seite läuft sehr wahrscheinlich über Tailscale. Danach ist Panoptes nur noch am Auto selbst oder über einen anderen Tunnel erreichbar.</div>
+                            <div class="sys-actions">
+                                <button class="btn" onclick="SystemPage.cancelTsOff()" data-i18n="common.cancel">Abbrechen</button>
+                                <button class="btn btn-primary" onclick="SystemPage.confirmTsOff()" data-i18n="system.turn_off">Abschalten</button>
+                            </div>
+                        </div>
+                        <div class="sys-note" data-i18n="system.services_note">Einschalten wirkt innerhalb von etwa 30 Sekunden, Ausschalten sofort.</div>
+                    </div>
+                </div>
+
+                <!-- ===== Core services (read-only) ===== -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg>
+                            <span data-i18n="system.core_title">Kerndienste</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="coreList"><div class="sys-meta" data-i18n="common.loading">Lädt …</div></div>
+                        <div class="sys-note" data-i18n="system.core_note">Kamera, Wächter und ACC-Wächter laufen immer. Der Kameradienst trägt auch diese Weboberfläche.</div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="../shared/auth.js"></script>
+    <script src="../shared/core.js?v=pn5"></script>
+    <script src="../shared/system.js?v=2"></script>
+    <script src="../shared/vendor/qrcode-generator-1.4.4.js"></script>
+    <script src="../shared/einstellungen.js?v=pn8"></script>
+    <script src="../shared/app-updates.js?v=3"></script>
+    <script src="../shared/blitzer.js?v=5"></script>
+    <script src="../shared/einrichtung-web.js?v=7"></script>
+    <script src="../shared/overdrive-verlauf.js?v=1"></script>
+    <script src="../shared/notzugang.js?v=1"></script>
+    <script>
+        (function () {
+            if (window.PanoptesDarstellung) {
+                var ab = document.getElementById('anzeigeWahl');
+                PanoptesDarstellung.waehler(ab);
+                // nach dem Kern-Abgleich und nach dem Laden der Texte neu zeichnen
+                PanoptesDarstellung.abgleichen().then(function () { PanoptesDarstellung.waehler(ab); });
+                if (window.BYD && BYD.i18n && BYD.i18n.onChange) BYD.i18n.onChange(function () { PanoptesDarstellung.waehler(ab); });
+                setTimeout(function () { PanoptesDarstellung.waehler(ab); }, 1500);
+                if (location.hash === '#anzeige') { var an = document.getElementById('anzeige'); if (an) an.scrollIntoView(); }
+            }
+            var box = document.getElementById('kartenquelleWahl');
+            if (box && window.PanoptesKartenquelle) PanoptesKartenquelle.waehler(box);
+            if (location.hash === '#kartenquelle') { var k = document.getElementById('kartenquelle'); if (k) k.scrollIntoView(); }
+        })();
+    </script>
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+        BYD.i18n.init().then(function () {
+            BYD.core.init();
+            SystemPage.init();
+            Kopplung.init();
+            Planer.init();
+            if (window.PanoptesEinrichtung) PanoptesEinrichtung.init(document.getElementById('einrichtung'), document.getElementById('einrichtungInhalt'));
+            if (window.PanoptesODVerlauf) PanoptesODVerlauf.init(document.getElementById('umzug'), document.getElementById('umzugInhalt'));
+            if (window.PanoptesNotzugang) PanoptesNotzugang.init(document.getElementById('notzugang'), document.getElementById('notzugangInhalt'));
+            if (window.PanoptesEingriffe) PanoptesEingriffe.init(document.getElementById('eingriffe'), document.getElementById('eingriffeInhalt'));
+            if (window.PanoptesUpdates) PanoptesUpdates.init();
+            // Energie: nur zeigen, wenn das Schema die Gruppe kennt (ab Kern ed96f8e)
+            if (window.PanoptesEinstellungen) PanoptesEinstellungen.laden().then(function (store) {
+                var dsFelder = store ? store.felder('datenschutz').filter(function (f) { return f.key !== 'karte.quelle'; }) : [];
+                if (dsFelder.length) {
+                    document.getElementById('datenschutz').style.display = '';
+                    var dsBox = document.getElementById('datenschutzFelder');
+                    store.zeichne(dsBox, { gruppe: 'datenschutz', ohne: ['karte.quelle'] });   // Felder ohne Pflicht-Bestätigung
+                    // Felder mit Pflicht-Bestätigung (Regel 2) zeichnet der Einwilligungs-Baustein (blitzer.js)
+                    dsFelder.forEach(function (f) {
+                        if (!f.bestaetigung || !window.PanoptesEinwilligung) return;
+                        var sub = document.createElement('div');
+                        sub.setAttribute('data-einwilligung', f.key);
+                        document.getElementById('datenschutzEinwilligungen').appendChild(sub);
+                        PanoptesEinwilligung.zeichne(sub, store, f.key);
+                    });
+                    if (location.hash === '#datenschutz') document.getElementById('datenschutz').scrollIntoView();
+                }
+                var bandKeys = store ? ['anzeige.bandGroesse', 'anzeige.bandPosition', 'faehigkeiten.ueberCarPlay', 'faehigkeiten.ueberAndroidAuto'].filter(function (k) { return store.feld(k); }) : [];
+                if (bandKeys.length) store.zeichne(document.getElementById('anzeigeBand'), { gruppe: store.feld(bandKeys[0]).gruppe, nur: bandKeys });
+                if (store && store.feld('speedcam.enabled') && window.PanoptesBlitzer) {
+                    document.getElementById('blitzer').style.display = '';
+                    PanoptesBlitzer.zeichne(document.getElementById('blitzerInhalt'), store);
+                    if (location.hash === '#blitzer') document.getElementById('blitzer').scrollIntoView();
+                }
+                if (!store || !store.feld('energie.profil')) return;
+                document.getElementById('energie').style.display = '';
+                store.zeichne(document.getElementById('energieFelder'), { gruppe: 'energie' });
+                if (location.hash === '#energie') document.getElementById('energie').scrollIntoView();
+            }, function () {});
+            HomeAssistant.init();
+        });
+
+        // Routenplaner-Konto: Panoptes holt sich beim Planer einen eigenen Geräte-Schlüssel.
+        // Der Mensch bestätigt am Handy auf /ev/verbinden. Nur Anzeige und Start/Trennen, kein Befehl ans Auto.
+        var Planer = {
+            stand: null, timer: null, uhr: null, bis: 0, letzter: null,
+            t: function (k, f, v) { return window.PanoptesShell ? PanoptesShell.tr(k, f, v) : f; },
+            toast: function (m, k) { if (window.BYD && BYD.utils && BYD.utils.toast) BYD.utils.toast(m, k); },
+            // 0.1.9 (Kern 188e86c): Ein einzelner fehlgeschlagener Abruf (Netz zum Auto kurz weg, 5xx) lässt den
+            // letzten bekannten Zustand stehen. Nur 404/403 (Kern ohne Planer bzw. kein Recht) blendet die Karte aus.
+            laden: function () {
+                var self = this;
+                return fetch('/api/planer/verbindung', { cache: 'no-store' }).then(function (r) {
+                    if (r.status === 404 || r.status === 403) return { _aus: true };
+                    if (!r.ok) throw new Error('http ' + r.status);
+                    return r.json();
+                }).then(function (d) {
+                    if (d && d._aus) { document.getElementById('planerKarte').style.display = 'none'; self.stopp(); return null; }
+                    document.getElementById('planerKarte').style.display = '';
+                    self.letzter = d;
+                    self.zeige(d);
+                    return d;
+                }, function () {
+                    self.abfrageWeiter();   // weiter versuchen, solange der Code gilt
+                    return self.letzter;
+                });
+            },
+            stopp: function () { clearInterval(this.timer); this.timer = null; },
+            // Während „wartet“ alle 3 s nachsehen – solange gueltigBis in der Zukunft liegt, auch nach Fehlern.
+            abfrageWeiter: function () {
+                var self = this;
+                if (this.stand === 'wartet' && this.bis > Date.now()) {
+                    if (!this.timer) this.timer = setInterval(function () {
+                        if (self.stand !== 'wartet' || self.bis <= Date.now()) { self.stopp(); if (self.stand === 'wartet') self.laden(); return; }
+                        if (!document.hidden) self.laden();
+                    }, 3000);
+                } else this.stopp();
+            },
+            zeige: function (d) {
+                var self = this, st = d.status || 'getrennt';
+                this.stand = st;
+                var badge = document.getElementById('planerBadge'), txt = document.getElementById('planerText');
+                var box = document.getElementById('planerCode'), btn = document.getElementById('planerBtn');
+                box.style.display = st === 'wartet' ? '' : 'none';
+                clearInterval(this.uhr);
+                if (st === 'verbunden') {
+                    badge.textContent = self.t('system.planer_on', 'Verbunden');
+                    txt.textContent = self.t('system.planer_on_text', 'Verbunden mit deinem Konto. Panoptes meldet Ladestand und Verbrauch an den Routenplaner.')
+                        + (d.name ? ' (' + d.name + ')' : '');
+                    btn.textContent = self.t('system.planer_disconnect', 'Trennen');
+                    btn.className = 'btn';
+                } else if (st === 'wartet') {
+                    badge.textContent = self.t('system.planer_wait', 'Wartet');
+                    txt.textContent = self.t('system.planer_wait_text', 'Öffne den Link am Handy und bestätige.');
+                    document.getElementById('planerCodeTxt').textContent = d.code_anzeige || '';
+                    var a = document.getElementById('planerLink');
+                    a.href = d.link || '#'; a.textContent = d.link || '';
+                    var qr = document.getElementById('planerQr');
+                    if (d.link && qr.getAttribute('data-link') !== d.link && typeof window.qrcode === 'function') {
+                        try {
+                            var q = window.qrcode(0, 'M'); q.addData(d.link); q.make();
+                            qr.innerHTML = '<div style="display:inline-block;background:#fff;padding:10px;border-radius:12px;">' + q.createSvgTag(5, 0) + '</div>';
+                            qr.setAttribute('data-link', d.link);
+                        } catch (e) {}
+                    }
+                    var bis = Number(d.gueltigBis) || 0, v = document.getElementById('planerValid');
+                    self.bis = bis;
+                    var netz = Number(d.netzFehler) || 0;
+                    var tick = function () {
+                        var rest = Math.max(0, Math.round((bis - Date.now()) / 1000));
+                        v.textContent = (bis ? self.t('system.planer_valid', 'Noch {m}:{s} gültig.', { m: Math.floor(rest / 60), s: ('0' + (rest % 60)).slice(-2) }) : '')
+                            + (netz > 0 ? ' ' + self.t('system.planer_netz_wartet', 'Netz gestört, Panoptes versucht es weiter …') : '');
+                    };
+                    tick(); this.uhr = setInterval(tick, 1000);
+                    btn.textContent = self.t('system.planer_new_code', 'Neuen Code holen');
+                    btn.className = 'btn';
+                } else {
+                    badge.textContent = self.t('system.planer_off', 'Nicht verbunden');
+                    txt.textContent = st === 'nicht_gespeichert' ? self.t('system.planer_unsaved', 'Erlaubt, aber Panoptes konnte den Schlüssel nicht speichern. Bitte noch einmal verbinden.')
+                        : st === 'abgelehnt' ? self.t('system.planer_denied', 'Die Verbindung wurde abgelehnt.')
+                        : st === 'abgelaufen' ? (d.grund === 'netz' ? self.t('system.planer_expired_netz', 'Der Code ist abgelaufen: Panoptes kam zuletzt nicht ans Netz. Bitte prüfe die Verbindung und versuch es noch einmal.')
+                            : d.grund === 'freigabe_kam_nicht' ? self.t('system.planer_expired_keine_freigabe', 'Der Code ist abgelaufen, ohne dass jemand am Routenplaner erlaubt hat. Bitte noch einmal.')
+                            : d.grund === 'planer' ? self.t('system.planer_expired_planer', 'Der Routenplaner hat den Code als abgelaufen gemeldet. Bitte noch einmal.')
+                            : self.t('system.planer_expired', 'Der Code ist abgelaufen. Bitte noch einmal.'))
+                        : self.t('system.planer_off_text', 'Verbinde Panoptes mit deinem Routenplaner-Konto. Dann siehst du unterwegs, ob die Ladung reicht.');
+                    if (txt.getAttribute('data-hinweis') === '1') {
+                        txt.textContent += ' ' + self.t('system.planer_remove_hint', 'Zum vollständigen Entfernen auf /ev/ unter „Meine Geräte“ löschen.');
+                    }
+                    btn.textContent = self.t('system.planer_connect', 'Mit Routenplaner verbinden');
+                    btn.className = 'btn btn-primary';
+                }
+                if (st !== 'wartet') { this.bis = 0; var pv = document.getElementById('planerValid'); if (pv) pv.textContent = ''; }
+                this.abfrageWeiter();
+            },
+            knopf: function () {
+                var self = this, btn = document.getElementById('planerBtn');
+                if (this.stand === 'verbunden') {
+                    if (!window.confirm(self.t('system.planer_confirm', 'Panoptes vom Routenplaner-Konto trennen?'))) return;
+                    btn.disabled = true;
+                    fetch('/api/planer/trennen', { method: 'POST' }).then(function (r) { return r.json(); })
+                        .then(function (d) {
+                            if (d && d.ok) {
+                                self.toast(self.t('system.planer_disconnected', 'Getrennt.'), 'success');
+                                if (d.hinweis === 'am_planer_entfernen') document.getElementById('planerText').setAttribute('data-hinweis', '1');
+                            } else self.toast(self.t('system.req_fail', 'Das hat nicht geklappt.'), 'error');
+                        },
+                              function () { self.toast(self.t('system.req_fail', 'Das hat nicht geklappt.'), 'error'); })
+                        .then(function () { btn.disabled = false; self.laden(); });
+                    return;
+                }
+                btn.disabled = true;
+                fetch('/api/planer/verbinden', { method: 'POST' }).then(function (r) { return r.json().then(function (d) { return d || {}; }, function () { return {}; }); })
+                    .then(function (d) {
+                        if (!d.ok) self.toast(d.grund === 'ratenlimit' ? self.t('system.planer_rate', 'Zu viele Versuche. Bitte in ein paar Minuten noch einmal.')
+                            : self.t('system.planer_unreachable', 'Der Routenplaner ist gerade nicht erreichbar.'), 'error');
+                    }, function () { self.toast(self.t('system.planer_unreachable', 'Der Routenplaner ist gerade nicht erreichbar.'), 'error'); })
+                    .then(function () { btn.disabled = false; self.laden(); });
+            },
+            init: function () {
+                var self = this;
+                document.getElementById('planerBtn').onclick = function () { self.knopf(); };
+                this.laden().then(function (d) {
+                    if (d && location.hash === '#planerKarte') document.getElementById('planerKarte').scrollIntoView();
+                });
+            }
+        };
+
+        // Home Assistant (HA_VERTRAG.md §7): Der My-HA-Link kann keine Adresse mitgeben, deshalb steht sie hier zum Kopieren.
+        // Kein Kern-Aufruf nötig; die Freigabe läuft danach über die Kopplungs-Anfrage mit Prüfzahl.
+        // Feature-Schalter: Der Verbindungsweg für Home Assistant ist noch nicht entschieden (Koordination 21.10.,
+        // INTEGRATION_HA_WEGE.md). Bis dahin bleibt die Karte unsichtbar. Zum Testen im Browser:
+        // localStorage['pn.test.ha'] = '1'.
+        var HA_KARTE_AN = false;
+        var HomeAssistant = {
+            symbol: function () {
+                return '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px;" aria-label="Home Assistant"><path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><circle cx="12" cy="13" r="2"/></svg>';
+            },
+            init: function () {
+                var an = HA_KARTE_AN;
+                try { an = an || localStorage.getItem('pn.test.ha') === '1'; } catch (e) {}
+                if (!an) return;
+                document.getElementById('homeassistant').style.display = '';
+                var inp = document.getElementById('haAddr'), btn = document.getElementById('haCopy');
+                var t = function (k, f) { return window.PanoptesShell ? PanoptesShell.tr(k, f) : f; };
+                var h = location.hostname, lokal = !h || h === '127.0.0.1' || h === 'localhost' || h === '::1';
+                // Am Auto-Display (127.0.0.1) taugt die eigene Adresse nicht für HA: dann den Tailnet-Namen, sonst ehrlich „unbekannt“.
+                (lokal ? Kopplung.adresse() : Promise.resolve(location.origin)).then(function (a) {
+                    inp.value = a || '';
+                    if (!a) inp.placeholder = t('system.ha_addr_unknown', 'Hier unbekannt – diese Seite am Handy oder PC öffnen');
+                    btn.disabled = !a;
+                });
+                btn.onclick = function () {
+                    var ok = function () { if (window.BYD && BYD.utils && BYD.utils.toast) BYD.utils.toast(t('system.ha_copied', 'Adresse kopiert'), 'success'); };
+                    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(inp.value).then(ok, function () { inp.select(); });
+                    else { inp.select(); try { if (document.execCommand('copy')) ok(); } catch (e) {} }
+                };
+                if (location.hash === '#homeassistant') document.getElementById('homeassistant').scrollIntoView();
+            }
+        };
+
+        // Kopplungs-Code: 10 min gültig, einmal verwendbar (Kern, POST /api/kopplung/code).
+        var Kopplung = {
+            timer: null,
+            t: function (k, f, v) { return window.PanoptesShell ? PanoptesShell.tr(k, f, v) : f; },
+            esc: function (x) { var d = document.createElement('div'); d.textContent = x == null ? '' : String(x); return d.innerHTML; },
+            datum: function (ms) {
+                if (!ms) return '–';
+                try { return new Date(ms).toLocaleString(BYD.i18n.getLang(), { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+                catch (e) { return new Date(ms).toLocaleString(); }
+            },
+            // Gekoppelte Geräte (Kern GET /api/kopplungen, nur mit Login). Widerrufen nur nach Rückfrage.
+            liste: function () {
+                var self = this;
+                fetch('/api/kopplungen', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+                    var box = document.getElementById('pairList');
+                    if (!d || !Array.isArray(d.geraete)) { box.style.display = 'none'; return; }
+                    box.style.display = '';
+                    var rows = document.getElementById('pairRows');
+                    if (!d.geraete.length) {
+                        rows.innerHTML = '<div class="sys-meta">' + self.esc(self.t('system.paired_none', 'Noch kein Gerät gekoppelt.')) + '</div>';
+                    } else {
+                        rows.innerHTML = d.geraete.map(function (g) {
+                            return '<div class="sys-row"><span class="sys-dot ' + (g.abgelaufen ? '' : 'on') + '"></span>'
+                                + '<div class="sys-info"><div class="sys-name">' + (g.art === 'homeassistant' ? HomeAssistant.symbol() : '')
+                                + self.esc(g.name || self.t('system.paired_noname', 'Gerät ohne Namen'))
+                                + (g.abgelaufen ? ' · ' + self.esc(self.t('system.paired_expired', 'abgelaufen')) : '') + '</div>'
+                                + '<div class="sys-meta">' + self.esc(self.t('system.paired_meta', 'Gekoppelt {a} · zuletzt {z}', { a: self.datum(g.angelegt), z: self.datum(g.zuletzt) })) + '</div></div>'
+                                + '<button class="btn" type="button" data-id="' + self.esc(g.id) + '" data-name="' + self.esc(g.name || '') + '">'
+                                + self.esc(self.t('system.paired_remove', 'Entfernen')) + '</button></div>';
+                        }).join('');
+                        Array.prototype.forEach.call(rows.querySelectorAll('button[data-id]'), function (b) {
+                            b.onclick = function () { self.widerrufen(b.getAttribute('data-id'), b.getAttribute('data-name'), b); };
+                        });
+                    }
+                    document.getElementById('pairDays').textContent = d.gueltigOhneNutzungTage
+                        ? self.t('system.paired_days', 'Ein gekoppeltes Gerät verliert den Zugang, wenn es {n} Tage nicht benutzt wurde.', { n: d.gueltigOhneNutzungTage }) : '';
+                }).catch(function () { document.getElementById('pairList').style.display = 'none'; });
+            },
+            widerrufen: function (id, name, btn) {
+                var self = this;
+                if (!window.confirm(self.t('system.paired_confirm', '„{n}“ wirklich entkoppeln? Das Gerät kommt danach nicht mehr an Panoptes, bis es neu gekoppelt wird.', { n: name || id }))) return;
+                btn.disabled = true;
+                fetch('/api/kopplung/widerrufen', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) })
+                    .then(function (r) { return r.json().then(function (d) { return { s: r.status, d: d || {} }; }, function () { return { s: r.status, d: {} }; }); })
+                    .then(function (r) {
+                        var toast = window.BYD && BYD.utils && BYD.utils.toast;
+                        if (r.d.ok) { if (toast) BYD.utils.toast(self.t('system.paired_revoked', 'Entkoppelt'), 'success'); }
+                        else if (r.d.grund === 'nicht_gespeichert') { if (toast) BYD.utils.toast(self.t('system.paired_unsaved', 'Sofort gesperrt, aber nicht gespeichert: Nach einem Neustart von Panoptes gilt die Kopplung wieder. Bitte noch einmal widerrufen.'), 'warning'); }
+                        else if (toast) BYD.utils.toast(self.t('system.paired_fail', 'Konnte nicht entkoppeln.'), 'error');
+                    }).catch(function () {
+                        if (window.BYD && BYD.utils && BYD.utils.toast) BYD.utils.toast(self.t('system.paired_fail', 'Konnte nicht entkoppeln.'), 'error');
+                    }).then(function () { self.liste(); });
+            },
+            // ---- Wartende Anfragen (Kopplung per Anfrage + 1 Tipp, KOPPLUNG_ANFRAGE.md). Alle 3 s, solange sichtbar.
+            anfragenDa: true,
+            anfragen: function () {
+                var self = this;
+                if (document.hidden || !this.anfragenDa) return;
+                fetch('/api/kopplung/anfragen', { cache: 'no-store' }).then(function (r) {
+                    if (r.status === 404 || r.status === 403) { self.anfragenDa = false; return null; }
+                    return r.ok ? r.json() : null;
+                }).then(function (d) { if (d) self.zeigeAnfragen(d.anfragen || []); }).catch(function () {});
+            },
+            zeigeAnfragen: function (liste) {
+                var self = this, box = document.getElementById('pairReq');
+                var ids = liste.map(function (a) { return a.ref; }).join(',');   // ref (v1.1), nie die Abhol-id
+                if (ids === this._ids) return;   // nicht unter dem Finger neu zeichnen
+                this._ids = ids;
+                box.style.display = liste.length ? '' : 'none';
+                box.innerHTML = liste.map(function (a) {
+                    return '<div class="sys-warn" style="display:block;padding:14px;">'
+                        + '<div style="font-weight:700;font-size:15px;">' + (a.art === 'homeassistant' ? HomeAssistant.symbol() + self.esc(self.t('system.req_title_ha', 'Home Assistant „{n}“ will sich verbinden', { n: a.geraet || '?' }))
+                            : self.esc(self.t('system.req_title', '„{n}“ will sich verbinden', { n: a.geraet || '?' }))) + '</div>'
+                        + '<div class="sys-note" style="margin-top:4px;">' + self.esc(self.t('system.req_check', 'Stimmt die Zahl mit der auf dem Gerät überein?')) + '</div>'
+                        + '<div style="font:700 40px/1.2 var(--family-display, monospace);letter-spacing:.25em;margin:8px 0;">' + self.esc(a.pruefzahl) + '</div>'
+                        + '<div class="sys-actions">'
+                        + '<button class="btn btn-primary" type="button" style="min-width:140px;min-height:48px;font-size:16px;" data-req="' + self.esc(a.ref) + '" data-was="erlauben">' + self.esc(self.t('system.req_allow', 'Erlauben')) + '</button> '
+                        + '<button class="btn" type="button" style="min-width:140px;min-height:48px;font-size:16px;" data-req="' + self.esc(a.ref) + '" data-was="ablehnen">' + self.esc(self.t('system.req_deny', 'Ablehnen')) + '</button>'
+                        + '</div></div>';
+                }).join('');
+                Array.prototype.forEach.call(box.querySelectorAll('button[data-req]'), function (b) {
+                    b.onclick = function () { self.entscheide(b.getAttribute('data-req'), b.getAttribute('data-was')); };
+                });
+            },
+            entscheide: function (ref, was) {
+                var self = this, toast = function (m, k) { if (window.BYD && BYD.utils && BYD.utils.toast) BYD.utils.toast(m, k); };
+                Array.prototype.forEach.call(document.querySelectorAll('#pairReq button'), function (b) { b.disabled = true; });
+                fetch('/api/kopplung/anfrage/' + encodeURIComponent(ref) + '/' + was, { method: 'POST' })
+                    .then(function (r) { return r.json().then(function (d) { return d || {}; }, function () { return {}; }); })
+                    .then(function (d) {
+                        if (d.ok) toast(was === 'erlauben' ? self.t('system.req_allowed', 'Erlaubt. Das Gerät verbindet sich jetzt.') : self.t('system.req_denied', 'Abgelehnt.'), 'success');
+                        else if (d.grund === 'schon_entschieden') toast(self.t('system.req_done', 'Wurde schon entschieden.'), 'info');
+                        else if (d.grund === 'abgelaufen') toast(self.t('system.req_expired', 'Die Anfrage ist abgelaufen. Bitte am Gerät neu starten.'), 'warning');
+                        else toast(self.t('system.req_fail', 'Das hat nicht geklappt.'), 'error');
+                    }, function () { toast(self.t('system.req_fail', 'Das hat nicht geklappt.'), 'error'); })
+                    .then(function () { self._ids = null; self.anfragen(); setTimeout(function () { self.liste(); }, 3000); });
+            },
+            // ---- Link + QR für den Code-Weg: <Adresse>/system.html#koppeln=<code>
+            adresse: function () {
+                var h = location.hostname;
+                if (h && h !== '127.0.0.1' && h !== 'localhost' && h !== '::1') return Promise.resolve(location.origin);
+                return fetch('/api/system/tailscale', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; })
+                    .then(function (d) {
+                        var ts = d && (d.tailscale || d);
+                        var dns = ts && (ts.dnsName || '').replace(/\.$/, '');
+                        return dns ? 'https://' + dns : null;
+                    }, function () { return null; });
+            },
+            zeigeQr: function (code) {
+                var qrBox = document.getElementById('pairQr'), lb = document.getElementById('pairLinkBox');
+                qrBox.innerHTML = ''; lb.style.display = 'none';
+                this.adresse().then(function (basis) {
+                    if (!basis) return;
+                    var link = basis + '/system.html#koppeln=' + encodeURIComponent(code);
+                    var a = document.getElementById('pairLink');
+                    a.href = link; a.textContent = link;
+                    lb.style.display = '';
+                    if (typeof window.qrcode === 'function') {
+                        try {
+                            var q = window.qrcode(0, 'M');
+                            q.addData(link);
+                            q.make();
+                            qrBox.innerHTML = '<div style="display:inline-block;background:#fff;padding:10px;border-radius:12px;">' + q.createSvgTag(5, 0) + '</div>';
+                        } catch (e) {}
+                    }
+                });
+            },
+            init: function () {
+                var self = this, btn = document.getElementById('pairBtn');
+                this.liste();
+                this.anfragen();
+                setInterval(function () { self.anfragen(); }, 3000);
+                document.addEventListener('visibilitychange', function () { if (!document.hidden) self.anfragen(); });
+                if (location.hash === '#kopplung') setTimeout(function () { var k = document.getElementById('kopplung'); if (k) k.scrollIntoView(); }, 300);
+                btn.onclick = function () {
+                    btn.disabled = true;
+                    fetch('/api/kopplung/code', { method: 'POST' }).then(function (r) {
+                        if (!r.ok) throw new Error('http ' + r.status);
+                        return r.json();
+                    }).then(function (d) {
+                        if (!d || !d.code) throw new Error('leer');
+                        self.zeige(d.code, Number(d.gueltigBis) || (Date.now() + 600000));
+                    }).catch(function () {
+                        if (window.BYD && BYD.utils && BYD.utils.toast) BYD.utils.toast(self.t('system.pair_fail', 'Konnte keinen Code erzeugen.'), 'error');
+                    }).then(function () { btn.disabled = false; });
+                };
+            },
+            zeige: function (code, bis) {
+                var self = this;
+                document.getElementById('pairOut').style.display = '';
+                document.getElementById('pairCode').textContent = code;
+                this.zeigeQr(code);
+                clearInterval(this.timer);
+                function tick() {
+                    var rest = Math.max(0, Math.round((bis - Date.now()) / 1000));
+                    var el = document.getElementById('pairValid');
+                    if (rest <= 0) {
+                        document.getElementById('pairCode').textContent = '';
+                        document.getElementById('pairQr').innerHTML = '';
+                        document.getElementById('pairLinkBox').style.display = 'none';
+                        self.liste();
+                        el.textContent = self.t('system.pair_expired', 'Abgelaufen. Bei Bedarf einen neuen Code erzeugen.');
+                        clearInterval(self.timer);
+                        return;
+                    }
+                    el.textContent = self.t('system.pair_valid', 'Am anderen Gerät eingeben oder den QR-Code scannen. Noch {m}:{s} gültig, nur einmal verwendbar.',
+                        { m: Math.floor(rest / 60), s: ('0' + (rest % 60)).slice(-2) });
+                }
+                tick();
+                this.timer = setInterval(tick, 1000);
+            }
+        };
+    </script>
+</body>
+</html>

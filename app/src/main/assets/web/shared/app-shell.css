@@ -1,0 +1,241 @@
+/*
+ * Panoptes — Web-Shell (nach design/mockup/start.html, freigegeben 20.10.2026).
+ *
+ * Schmale Leiste mit fünf Bereichen (Start, Fahren, Wächter, Auto, System), Kopfzeile
+ * mit Gruß/Fahrzeug und Status-Pillen, darunter die Seiten des Bereichs als Reiter.
+ * Am Handy (<= 720 px) wird die Leiste zur Leiste unten.
+ *
+ * Die Regeln hängen an html[data-pn-shell] (von app-shell.js gesetzt), damit sie die
+ * älteren .sidebar-Regeln in styles.css sicher überstimmen. In der Android-App
+ * (data-android-embed) bringt die App ihre eigene Leiste und Kopfzeile mit.
+ */
+
+html[data-pn-shell] { --sidebar-width: 92px; --pn-rail-h: 0px; }
+
+/* === LEISTE ===================================================== */
+html[data-pn-shell] .sidebar.pn-rail {
+    width: 92px;
+    transform: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 18px 0;
+    overflow: visible;
+    background: rgba(4, 16, 27, .35);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    border-right: 1px solid var(--sm-line);
+    z-index: 300;
+}
+html[data-pn-shell] .sidebar.pn-rail::before { display: none; }
+:root[data-theme="light"] html[data-pn-shell] .sidebar.pn-rail,
+html[data-pn-shell][data-theme="light"] .sidebar.pn-rail { background: rgba(255, 255, 255, .7); }
+.pn-brand { display: block; margin-bottom: 14px; }
+.pn-brand img { width: 46px; height: 46px; border-radius: 12px; display: block; }
+.pn-rail-nav { display: flex; flex-direction: column; align-items: center; flex: 1; width: 100%; }
+.pn-rail-nav > * + * { margin-top: 6px; }
+.pn-rail-spacer { flex: 1; }
+.pn-rail-link {
+    width: 76px; padding: 10px 0 8px; border-radius: 16px;
+    display: flex; flex-direction: column; align-items: center;
+    color: var(--on-surface-variant); opacity: .78; text-decoration: none;
+    font: 600 11.5px/1.2 var(--family-body, 'Manrope', system-ui, sans-serif); letter-spacing: .01em;
+    -webkit-tap-highlight-color: transparent;
+    transition: background .15s ease, color .15s ease, opacity .15s ease;
+}
+.pn-rail-link svg { width: 24px; height: 24px; margin-bottom: 5px; }
+.pn-rail-link:hover { background: rgba(95, 214, 230, .07); opacity: 1; }
+.pn-rail-link.on {
+    color: var(--on-surface); opacity: 1;
+    background: linear-gradient(180deg, rgba(95, 214, 230, .18), rgba(95, 214, 230, .06));
+}
+.pn-rail-link.on svg { color: var(--sm-aqua); }
+.pn-rail-link:focus-visible { outline: 2px solid var(--sm-aqua); outline-offset: 2px; }
+
+/* Die alten Kopfzeilen der Seiten (Burger-Menü) braucht es im Browser nicht mehr. */
+html[data-pn-shell] .main-content > .mobile-header,
+html[data-pn-shell] .sidebar-overlay { display: none !important; }
+
+/* === KOPFZEILE ================================================== */
+.pn-head { padding: 22px 28px 0; max-width: 1320px; width: 100%; box-sizing: border-box; }
+.pn-top { display: flex; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
+.pn-top > * { margin-bottom: 4px; }
+.pn-top h1 {
+    font-family: var(--family-display, 'Sora', system-ui, sans-serif);
+    font-weight: 700; font-size: 26px; letter-spacing: -.01em; margin: 0; color: var(--on-surface);
+}
+.pn-top-sub { color: var(--on-surface-variant); font-size: 14px; margin-top: 2px; }
+.pn-top-sub #pnState:not(:empty)::before { content: " · "; }
+.pn-top-grow { flex: 1; min-width: 12px; }
+.pn-pills { display: flex; flex-wrap: wrap; }
+.pn-pills > * { margin: 0 0 6px 8px; }
+.pn-pill {
+    display: inline-flex; align-items: center; padding: 7px 12px; border-radius: 999px;
+    font-size: 12.5px; font-weight: 600; white-space: nowrap; text-decoration: none;
+    background: var(--sm-card); border: 1px solid var(--sm-line); color: var(--on-surface-variant);
+}
+.pn-pill:hover { color: var(--on-surface); }
+.pn-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--outline); margin-right: 7px; flex: none; }
+.pn-dot.ok { background: var(--sm-lime); box-shadow: 0 0 0 4px rgba(181, 242, 61, .15); }
+.pn-dot.aq { background: var(--sm-aqua); }
+.pn-dot.warn { background: var(--status-warning); }
+.pn-pill[hidden] { display: none !important; }
+.pn-top[data-conn="lost"] .pn-pills::before {
+    content: "Keine Verbindung zum Auto"; display: inline-flex; align-items: center;
+    margin: 0 0 6px 8px; padding: 7px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 700;
+    background: var(--status-danger-container); color: var(--status-danger); border: 1px solid rgba(255, 138, 107, .35);
+}
+
+/* Reiter des aktiven Bereichs */
+.pn-subnav {
+    display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    margin: 0 -4px 6px; padding: 0 4px 6px;
+}
+.pn-subnav::-webkit-scrollbar { display: none; }
+.pn-tab {
+    flex: none; margin-right: 8px; padding: 8px 14px; border-radius: 12px;
+    font-size: 13.5px; font-weight: 600; text-decoration: none; white-space: nowrap;
+    color: var(--on-surface-variant); border: 1px solid transparent;
+}
+.pn-tab:hover { background: var(--sm-card); color: var(--on-surface); }
+.pn-tab.on { background: var(--sm-card); border-color: var(--sm-line); color: var(--on-surface); box-shadow: inset 0 -2px 0 var(--sm-aqua); }
+
+/* === FÄHIGKEITEN: Tacho-/Head-up-Anzeige nur, wenn das Auto es kann ======= */
+html[data-cap-cluster="0"] [data-needs~="cluster"],
+html[data-cap-hud="0"] [data-needs~="hud"] { display: none !important; }
+
+/* === KARTE (panoptes-map.js) ===================================== */
+.pn-marker { min-width: 26px; height: 26px; padding: 0 4px; box-sizing: border-box; border-radius: 9px; background: #0A2238;
+             border: 2px solid var(--sm-aqua); display: flex; align-items: center; justify-content: center; color: var(--sm-aqua);
+             font: 700 11px var(--family-display, sans-serif); box-shadow: 0 2px 8px rgba(0, 0, 0, .35); cursor: default; }
+.pn-marker-start { border-color: var(--sm-lime); color: var(--sm-lime); border-radius: 50%; }
+.pn-marker-end { border-color: var(--status-danger); color: var(--status-danger); border-radius: 50%; }
+.pn-mode-ctrl .pn-mode-btn { width: 29px; height: 29px; font: 700 11px var(--family-display, sans-serif); color: #EAF6F8; letter-spacing: .02em; }
+.pn-mode-ctrl .pn-mode-btn:hover { color: var(--sm-aqua); }
+.pn-map-unavailable { display: flex; align-items: center; justify-content: center; color: var(--on-surface-variant); font-size: 14px; }
+.maplibregl-ctrl-group { background: rgba(10, 34, 56, .85) !important; border: 1px solid var(--sm-line); }
+.maplibregl-ctrl-group button span { filter: invert(1); }
+.maplibregl-ctrl-attrib { background: rgba(10, 34, 56, .7) !important; color: var(--outline); }
+.maplibregl-ctrl-attrib a { color: var(--on-surface-variant); }
+
+/* === HANDY: LEISTE UNTEN ======================================== */
+@media (max-width: 720px) {
+    html[data-pn-shell] { --sidebar-width: 0px; --pn-rail-h: 64px; }
+    html[data-pn-shell] .sidebar.pn-rail {
+        top: auto; bottom: 0; left: 0; right: 0; width: auto; height: auto;
+        flex-direction: row; padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+        border-right: 0; border-top: 1px solid var(--sm-line);
+        background: rgba(4, 16, 27, .88);
+    }
+    html[data-pn-shell][dir="rtl"] .sidebar.pn-rail { right: 0; left: 0; border-left: 0; }
+    .pn-brand, .pn-rail-spacer { display: none; }
+    .pn-rail-nav { flex-direction: row; justify-content: space-around; }
+    .pn-rail-nav > * + * { margin-top: 0; }
+    .pn-rail-link { width: auto; flex: 1; font-size: 10.5px; padding: 6px 0 4px; }
+    html[data-pn-shell] .main-content { margin-left: 0; margin-right: 0; padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+    html[data-pn-shell] #bydThemePicker { display: none !important; }
+    html[data-pn-shell] .bottom-tabs { bottom: calc(64px + env(safe-area-inset-bottom)) !important; }
+    .pn-head { padding: 16px 16px 0; }
+    .pn-top h1 { font-size: 22px; }
+    .pn-pills { width: 100%; margin-top: 6px; }
+    .pn-pills > * { margin: 0 6px 6px 0; }
+    .pn-top[data-conn="lost"] .pn-pills::before { margin: 0 6px 6px 0; }
+}
+
+/* === ANDROID-APP: eigene Leiste + Kopfzeile ====================== */
+[data-android-embed="1"] .pn-head { display: none !important; }
+[data-android-embed="1"] .sidebar.pn-rail { display: none !important; }
+[data-android-embed="1"] .main-content { padding-bottom: 0 !important; }
+
+/* === GLASS TOP APP BAR (opt-in) ================================ */
+/* Pages that want a Material 3 expressive top app bar add
+   <header class="app-bar">…</header> as the first child of .main-content.
+   The header sticks to the top of the scroll area with a translucent blur
+   so content scrolls "behind" it. */
+.app-bar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    height: var(--app-bar-height, 64px);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    background: var(--bg-glass);
+    -webkit-backdrop-filter: saturate(180%) blur(16px);
+    backdrop-filter: saturate(180%) blur(16px);
+    border-bottom: 1px solid var(--outline-variant);
+}
+
+.app-bar::after {
+    /* The same 3px accent stripe under the app bar, so a page that mounts
+       its own app bar still carries the brand identity. */
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -3px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary) 0%, var(--tertiary) 100%);
+    pointer-events: none;
+}
+
+.app-bar-title {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: var(--tracking-headline, -0.015em);
+    color: var(--on-surface);
+    margin: 0;
+}
+
+.app-bar-spacer {
+    flex: 1;
+}
+
+.app-bar-actions {
+    display: flex;
+    align-items: center;
+}
+
+.app-bar-actions > * + * {
+    /* gap: replaced with margin so it works on Chrome 58 where flex `gap`
+       was not supported. */
+    margin-left: 8px;
+}
+
+/* === NO-FLASH BOOTSTRAP ======================================== */
+html.shell-ready { visibility: visible; }
+
+/* === MOTION VOCABULARY: PAGE FADE ============================== */
+/* Web counterpart of native's MaterialFadeThrough. Pages opt in by adding
+   class="page-enter" to .main-content; the next animation frame promotes
+   it to .page-enter-active for the fade-in. */
+.page-enter {
+    opacity: 0;
+}
+
+.page-enter-active {
+    opacity: 1;
+    transition: opacity var(--duration-med, 240ms) var(--easing-decel, cubic-bezier(0.0, 0.0, 0.2, 1.0));
+}
+
+/* === ICON-TEXT SPACING: SHELL OVERRIDES ========================
+ * Tighten the leading-icon → label spacing on shell-rendered pages so
+ * the SVG never crowds the text. Scoped to [data-app-shell="1"] (set
+ * by app-shell.js mount()) so dev-only / login pages that opt out
+ * keep their stock spacing. !important because per-page CSS sometimes
+ * overrides .card-title gap and we want one consistent rhythm.
+ */
+[data-app-shell="1"] .card-title { gap: 12px !important; }
+[data-app-shell="1"] .card-title > svg { margin-right: 6px !important; }
+[data-app-shell="1"] .info-box-note > .info-icon,
+[data-app-shell="1"] .info-box-warning > .info-icon { margin-right: 12px !important; }
+[data-app-shell="1"] .tier-card { gap: 16px !important; }
+[data-app-shell="1"] .tier-card > .tier-icon { margin-right: 8px !important; }
+[data-app-shell="1"] .credit-row { gap: 16px !important; }
+[data-app-shell="1"] .credit-row > .credit-avatar { margin-right: 4px !important; }
+
+/* Chromium 74 (DiLink 3) kann backdrop-filter nicht: halbtransparente Leisten ohne Weichzeichner werden
+   unruhig, darum dort deckend. Neuere Browser behalten das Glas. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    html[data-pn-shell] .sidebar.pn-rail { background: var(--bg-base, #0A2238); }
+    .app-bar, .bottom-tabs { background: var(--bg-base, #0A2238); }
+}

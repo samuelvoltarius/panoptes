@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="dashboard_modern_gap">12dp</dimen>
+    <dimen name="dashboard_modern_card_padding">16dp</dimen>
+    <dimen name="dashboard_modern_radius">8dp</dimen>
+    <dimen name="dashboard_modern_touch_target">48dp</dimen>
+    <dimen name="dashboard_modern_action_min_height">72dp</dimen>
+    <dimen name="dashboard_modern_metric_gap">12dp</dimen>
+    <dimen name="dashboard_modern_qr_size">184dp</dimen>
+
+    <!-- Hero-card split: the metrics column against the vehicle render beside
+         it. Both fragment_dashboard variants apply the pair twice — once to the
+         render row, once to the content row — and they have to agree or the
+         metrics run under the car. -->
+    <item name="dashboard_hero_body_weight" format="float" type="dimen">60</item>
+    <item name="dashboard_hero_art_weight" format="float" type="dimen">40</item>
+
+    <!-- Ribbon's share of the same split. Wider than the render column so the
+         line work still sweeps in behind the car. -->
+    <item name="dashboard_hero_ribbon_body_weight" format="float" type="dimen">45</item>
+    <item name="dashboard_hero_ribbon_art_weight" format="float" type="dimen">55</item>
+
+    <dimen name="dashboard_hero_ribbon_portrait_max_height">96dp</dimen>
+    <dimen name="dashboard_hero_ribbon_portrait_shift_y">10dp</dimen>
+
+    <!-- Measurement ceiling for the ribbon backdrop, not a display height. The
+         nodpi bitmap measures at 900 x 400dp and would stretch the card on the
+         first pass. ImageView honours maxHeight only while a dimension is
+         unresolved, so the second pass ignores this and the ribbon fills the
+         card. Any value under the card's ~216dp content height works. -->
+    <dimen name="dashboard_hero_backdrop_measure_cap">40dp</dimen>
+
+    <!-- Ribbon opacity. Dark line work has to sit well back on the light
+         surface; values-night runs it at full strength. -->
+    <item name="dashboard_hero_ribbon_alpha" format="float" type="dimen">0.3</item>
+
+    <string name="dashboard_modern_vehicle_status">Vehicle status</string>
+    <string name="dashboard_modern_updating">Refreshing car status</string>
+    <string name="dashboard_modern_vehicle_unavailable">No car data right now</string>
+    <string name="dashboard_modern_vehicle_connected">Car connected</string>
+    <string name="dashboard_modern_battery">Battery</string>
+    <string name="dashboard_modern_range">Range estimate</string>
+    <string name="dashboard_modern_personalized_range">Your range</string>
+    <string name="dashboard_modern_vehicle_range">Car\'s estimate</string>
+    <string name="dashboard_modern_breakdown_ev">Electric %1$d %2$s</string>
+    <string name="dashboard_modern_breakdown_fuel">Fuel %1$d %2$s</string>
+    <string name="dashboard_modern_breakdown_fuel_pct">Fuel %1$d %2$s (%3$.0f%%)</string>
+    <string name="dashboard_modern_percent">%1$.0f%%</string>
+    <string name="dashboard_modern_distance">%1$d %2$s</string>
+    <string name="dashboard_modern_charging">Charging</string>
+    <string name="dashboard_modern_plugged_in">Plugged in</string>
+    <string name="dashboard_modern_charge_complete">Fully charged</string>
+    <string name="dashboard_modern_charge_fault">Charging has a problem</string>
+    <string name="dashboard_modern_charge_power">%1$.1f kW</string>
+    <string name="dashboard_modern_charge_power_estimated">~%1$.1f kW</string>
+    <string name="dashboard_modern_charge_power_label">Power</string>
+    <string name="dashboard_modern_charge_eta_label">Time left</string>
+    <string name="dashboard_modern_charge_session_label">This charge</string>
+    <string name="dashboard_modern_charge_session">%1$.1f kWh</string>
+    <string name="dashboard_modern_minutes">%1$d min</string>
+    <string name="dashboard_modern_hours_minutes">%1$d h %2$d min</string>
+    <string name="dashboard_modern_storage_summary">%1$s used · %2$s free</string>
+    <string name="dashboard_modern_storage_unavailable">Storage not available</string>
+    <string name="dashboard_modern_clips_today">%1$d clips today</string>
+    <string name="dashboard_modern_recordings_unavailable">Clips not available</string>
+    <string name="dashboard_modern_recent_activity">Latest activity</string>
+    <string name="dashboard_modern_activity_loading">Fetching latest activity</string>
+    <string name="dashboard_modern_no_activity">Nothing happened lately</string>
+    <string name="dashboard_modern_activity_unavailable">Latest activity can\'t be loaded</string>
+    <string name="dashboard_ai_insight_kicker">Ask Panoptes</string>
+    <string name="dashboard_ai_insight_default_title">Car summary</string>
+    <string name="dashboard_ai_insight_open">Show the whole summary</string>
+    <string name="dashboard_ai_insight_collapse">Show less</string>
+    <string name="dashboard_modern_quick_actions">Shortcuts</string>
+    <string name="dashboard_modern_remote_details">Connection details</string>
+    <string name="dashboard_modern_expand_remote">Show remote access info</string>
+    <string name="dashboard_modern_collapse_remote">Hide remote access info</string>
+</resources>

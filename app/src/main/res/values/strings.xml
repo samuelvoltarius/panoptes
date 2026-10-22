@@ -1,0 +1,1939 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">Panoptes</string>
+
+    <!-- Accessibility Service -->
+    <string name="accessibility_service_description">Keeps Panoptes watching your car in the background. It never reads or touches what is on the screen.</string>
+
+    <!-- Recording Mode Labels -->
+
+    <!-- Proximity Guard Settings Labels -->
+
+    <!-- Quality Settings Labels -->
+
+    <!-- Storage Labels -->
+
+    <!-- Recording Status Labels -->
+
+    <!-- Event Types -->
+
+    <!-- Filter Labels -->
+
+    <!-- Storage Breakdown -->
+
+    <!-- Recording Controls -->
+
+    <!-- Slider Range Labels -->
+
+    <!-- ============================================================
+         i18n string extraction (Step 1: Layouts)
+         ============================================================ -->
+
+    <!-- Drawer menu -->
+
+    <!-- Common buttons / labels -->
+    <string name="action_cancel">Cancel</string>
+    <string name="action_clear_plain">Empty</string>
+    <string name="action_select_all">Choose all</string>
+    <string name="action_select_all_short">All</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_share">Share</string>
+    <string name="action_create_evidence_pack">Make evidence pack</string>
+    <string name="action_share_evidence_pack">Send evidence pack</string>
+    <string name="action_done">FINISHED</string>
+    <string name="action_remind_me_later">ASK ME LATER</string>
+    <string name="action_retry">Try again</string>
+    <string name="action_run">Start</string>
+    <string name="action_clear_output">Wipe output</string>
+
+    <!-- Nav header -->
+
+    <!-- Common content descriptions -->
+    <string name="cd_camera">Camera</string>
+    <string name="cd_qr">QR</string>
+    <string name="cd_qr_code">QR code</string>
+    <string name="cd_show_hide_token">Show or hide token</string>
+    <string name="cd_copy_token">Copy token</string>
+    <string name="cd_copy_url">Copy link</string>
+    <string name="cd_clear_logs">Empty the log</string>
+    <string name="cd_expand_collapse">Open or close</string>
+    <string name="cd_recording_status">Recording state</string>
+    <string name="cd_trip_tracking_status">Logbook state</string>
+    <string name="cd_mic_status">Microphone state</string>
+    <string name="cd_replay_status">Instant replay state</string>
+    <string name="cd_video_thumbnail">Video preview</string>
+    <string name="cd_play">Start playback</string>
+    <string name="cd_back">Back</string>
+    <string name="cd_play_pause">Play or pause</string>
+    <string name="cd_player_prev">Previous clip</string>
+    <string name="cd_player_next">Next clip</string>
+    <string name="cd_player_maximize">Full screen</string>
+    <string name="cd_player_minimize">Leave full screen</string>
+    <string name="cd_player_mute">Sound on or off</string>
+    <string name="cd_player_quadrant_all">All cameras</string>
+    <string name="cd_player_quadrant_front">Front camera only</string>
+    <string name="cd_player_quadrant_right">Right camera only</string>
+    <string name="cd_player_quadrant_rear">Rear camera only</string>
+    <string name="cd_player_quadrant_left">Left camera only</string>
+    <string name="cd_delete">Delete</string>
+    <string name="cd_share">Share</string>
+    <string name="cd_expand">Open up</string>
+    <string name="cd_configure">Adjust</string>
+    <string name="cd_download_log">Save the log</string>
+    <string name="cd_reset">Start over</string>
+    <string name="cd_battery">Battery</string>
+    <string name="cd_step_completed">Step done</string>
+    <string name="cd_permission_granted">Allowed</string>
+
+    <!-- overlay_status -->
+    <string name="overlay_rec_inactive_label">REC</string>
+    <string name="overlay_trip_inactive_label">LOG</string>
+    <string name="overlay_mic_inactive_label">MIC</string>
+    <string name="overlay_replay_label" translatable="false">CLIP</string>
+    <!-- Quick-action chips revealed by tapping the REC pill: switch
+         recording mode without opening the app. Short labels read fine
+         cross-locale (matches existing REC/MIC/TRIP precedent), so
+         translatable=false to avoid bloating the i18n catalog. The
+         _cd content-descriptions are real prose and ARE translatable —
+         they go through the NLLB pipeline like every other a11y string. -->
+    <string name="overlay_mode_off_label" translatable="false">OFF</string>
+    <string name="overlay_mode_continuous_label" translatable="false">CONT</string>
+    <string name="overlay_mode_drive_label" translatable="false">DRIVE</string>
+    <string name="overlay_mode_proximity_label" translatable="false">PROX</string>
+    <string name="overlay_mode_off_cd">Recording off</string>
+    <string name="overlay_mode_continuous_cd">Always recording</string>
+    <string name="overlay_mode_drive_cd">Records while driving</string>
+    <string name="overlay_mode_proximity_cd">Records when someone gets close</string>
+    <string name="overlay_recording_mode_failed">Couldn\'t switch the recording mode</string>
+    <string name="overlay_recording_mode_failed_fmt">Couldn\'t switch the recording mode: %1$s</string>
+
+    <!-- item_log_entry placeholders (timestamp/tag/message are runtime, but these are
+         placeholder/preview text used at design time and visible in some empty states) -->
+    <string name="log_entry_default_timestamp">12:34:56</string>
+    <string name="log_entry_default_tag">[TAG]</string>
+    <string name="log_entry_default_message">Your log line shows up here</string>
+
+    <!-- item_safe_location -->
+
+    <!-- item_daemon_card -->
+    <string name="daemon_card_default_name">Service name</string>
+    <string name="daemon_card_default_status">Status text</string>
+    <string name="daemon_card_subprocesses">SIDE TASKS</string>
+
+    <!-- item_time_window -->
+
+    <!-- fragment_logs_panel -->
+    <string name="logs_panel_title">Log</string>
+
+    <!-- activity_main_new / activity_main-land -->
+    <string name="url_connecting">Reaching out…</string>
+    <!-- Shown when an external link can't open (no browser on the head unit):
+         the URL is copied to the clipboard instead. %1$s = the URL. -->
+    <string name="url_copied_no_browser">No browser here, so the link was copied: %1$s</string>
+
+    <!-- dialog_tailscale_settings -->
+    <string name="tailscale_generate_login_url">Get a sign-in link</string>
+    <string name="tailscale_scan_to_login">Scan to sign in</string>
+    <string name="tailscale_qr_waiting">Waiting for the sign-in link…</string>
+    <string name="tailscale_enable_proxy">Send MQTT through Tailscale</string>
+    <string name="tailscale_proxy_explainer">Sends MQTT through Tailscale, so you can reach a private broker in your own tailnet. No port forwarding needed.</string>
+    <string name="tailscale_enable_https">Offer the web page over HTTPS</string>
+    <string name="tailscale_https_explainer">Makes the start page available only inside your tailnet, at a trusted https://…ts.net address. MagicDNS and HTTPS certificates must already be switched on in the Tailscale admin console.</string>
+    <string name="toast_tailscale_https_enabled">HTTPS in your tailnet is on</string>
+    <string name="toast_tailscale_https_disabled">HTTPS in your tailnet is off</string>
+    <string name="toast_tailscale_https_save_failed">HTTPS didn\'t change. Start Tailscale and sign in, switch on MagicDNS and HTTPS certificates, and check that port 443 has no other Serve rule.</string>
+    <string name="tailscale_enable_adb">Allow ADB from afar via Tailscale</string>
+    <string name="tailscale_adb_explainer">Makes ADB reachable inside your tailnet, not on the public internet. Any tailnet device with an approved ADB key gets full shell access to this car screen. ADB already accepts connections from your local network, and switching this off does not change that.</string>
+    <string name="tailscale_adb_endpoint">adb connect %1$s</string>
+    <string name="tailscale_adb_endpoint_copied">Address copied</string>
+    <string name="toast_tailscale_adb_enabled">Remote ADB is on in your tailnet</string>
+    <string name="toast_tailscale_adb_disabled">Remote ADB is off</string>
+    <string name="toast_tailscale_adb_save_failed">The remote ADB setting didn\'t change</string>
+    <string name="tailscale_proxy_warning">While this is on, MQTT to public brokers (HiveMQ, AWS IoT and the like) will not work, because Tailscale only reaches your tailnet. Saving restarts the service.</string>
+
+    <!-- Camera ingestion mode selector -->
+    <string name="camera_mode_title">Camera input</string>
+    <string name="camera_mode_subtitle">Choose the option that fits your car screen. Default suits older panoramic cameras. DiLink 4 uses the AVM SurfaceTexture path. DiLink 5 uses the SA8155P qcarcam_test bridge.</string>
+    <string name="camera_mode_option_default">Default — fits Seal, Atto, Dolphin (most cars)</string>
+    <string name="camera_mode_option_dilink4">DiLink 4 — newer Han / Tang versions</string>
+    <string name="camera_mode_option_dilink5">DiLink 5 — for Sealion 7 / SA8155P</string>
+    <string name="camera_mode_current_default">Now: Default</string>
+    <string name="camera_mode_current_dilink4">Now: DiLink 4</string>
+    <string name="camera_mode_current_dilink5">Now: DiLink 5</string>
+    <string name="camera_mode_save">Save and restart</string>
+    <string name="camera_mode_hint">Switching the mode restarts the camera service. If the picture looks wrong (squashed, missing corners, red overlay), try the other mode.</string>
+
+    <!-- DiLink 5 native camera order (only visible in DiLink 5 mode) -->
+    <string name="camera_dilink5_mapping_title">Camera order for DiLink 5</string>
+    <string name="camera_dilink5_mapping_subtitle">The camera IDs are listed as front, right, rear, left. Leave it on Auto, unless the raw previews clearly show a different order for this car.</string>
+    <string name="camera_dilink5_mapping_current_auto">Now: Auto / model default</string>
+    <string name="camera_dilink5_mapping_current_format">Now: %1$s</string>
+    <string name="camera_dilink5_mapping_auto">Auto — the model\'s default</string>
+    <string name="camera_dilink5_mapping_standard">Normal — 0,1,2,3</string>
+    <string name="camera_dilink5_mapping_opposite">Front and rear, left and right swapped — 2,3,0,1</string>
+    <string name="camera_dilink5_mapping_shark">Shark / DMO — IDs 8,9,5,4</string>
+    <string name="camera_dilink5_mapping_hint">The swapped-pairs option is only a guess for the symptom seen. Check all four previews before you apply it. Saving restarts the camera service.</string>
+    <string name="camera_dilink5_mapping_unchanged">This camera order is already chosen.</string>
+
+    <!-- DiLink 4 compatibility options (only effective in DiLink 4 mode) -->
+    <string name="camera_dilink4_tweaks_title">Tweaks for DiLink 4</string>
+    <string name="camera_dilink4_tweaks_subtitle">Per-car adjustments for the DiLink 4 path. They only work when DiLink 4 is selected above.</string>
+    <string name="camera_dilink4_save">Use these</string>
+    <string name="camera_dilink4_hint">Switch on only what your car needs. Restarting the camera service applies the change.</string>
+    <string name="camera_dilink4_passive_apa_label">Passive APA port 0</string>
+    <string name="camera_dilink4_passive_apa_subtitle">Leaves the car\'s own panorama output alone and records preview port 0 as it comes. Use this if forced panorama control opens the red calibration screen. Some models then show two views instead of four.</string>
+    <string name="camera_dilink4_red_mask_label">Hide red calibration overlay (GL)</string>
+    <string name="camera_dilink4_red_mask_subtitle">Adds a shader step that spots the bright-red pixels of the HAL message \"calibration failed\" and swaps them for a neighbouring pixel (or grey, if the banner is too big to repair). Looks only: the real calibration state stays as it is.</string>
+
+    <!-- dialog_camera_selection -->
+    <string name="camera_selection_title">Pick a camera</string>
+    <string name="camera_selection_subtitle">Choose where the panoramic picture comes from</string>
+    <string name="camera_current_auto">Now: Auto</string>
+    <string name="camera_option_auto">Auto (found at startup)</string>
+    <string name="camera_option_0">Camera 0 — Atto versions</string>
+    <string name="camera_option_1">Camera 1 — Seal (standard)</string>
+    <string name="camera_option_2">Camera 2</string>
+    <string name="camera_option_3">Camera 3</string>
+    <string name="camera_option_4">Camera 4</string>
+    <string name="camera_option_5">Camera 5</string>
+    <string name="camera_selection_hint">Auto picks the right camera for your model at every start. Camera 1 = BYD Seal, camera 0 = Atto. After you change the camera ID, restart the service so it takes effect.</string>
+
+    <!-- OEM Dashcam camera ID picker (Phase 5: separate forward-sensor pipeline) -->
+    <string name="camera_oem_dashcam_title">ID of the car\'s own drive camera</string>
+    <string name="camera_oem_dashcam_hint">Choose the AVMCamera ID that points to the front drive-camera sensor. It is the opposite of the panorama: Seal/Han panorama = 1 → drive camera = 0; Atto / Tang panorama = 0 → drive camera = 1. Leave on Auto and Panoptes picks.</string>
+    <string name="camera_oem_dashcam_auto_resolved">Auto — uses ID %1$d (panorama is ID %2$d)</string>
+    <string name="camera_oem_dashcam_auto_unavailable">Auto — panorama ID is %1$d, so the drive camera can\'t be worked out</string>
+    <string name="camera_oem_dashcam_save">Save</string>
+    <string name="camera_concurrent_probe_label">Test two cameras at once on the next start</string>
+    <string name="camera_concurrent_probe_subtitle">A one-off check that opens both cameras together, to see whether this car can run panorama and drive camera side by side. It runs once at the next restart while parked. Keep it OFF unless clips look wrong. It isn\'t needed and can briefly interrupt a running recording.</string>
+    <string name="camera_decoupled_lane_label">Separate encoder path (reverse-camera fix)</string>
+    <string name="camera_decoupled_lane_subtitle">Copies each camera frame before encoding, so a stuck recording can never starve the car\'s own reverse-camera picture. Only for the older camera mode. Uses about 60 MB of GPU memory and one extra GPU pass per frame. Applies after the next camera restart (ignition cycle or service restart).</string>
+
+    <!-- Dashcam-side camera labels — REVERSE of the pano labels above. The
+         OEM dashcam id is the opposite of the pano id, so the helpful
+         "this is what your trim should pick" hint flips between the two
+         dialogs. Without these strings the dashcam picker re-used the pano
+         labels and told Seal owners to pick "Camera 1 — Seal" for their
+         dashcam, which is the pano camera, not the dashcam. -->
+    <string name="camera_oem_option_0">Camera 0 — for Seal / Han (default)</string>
+    <string name="camera_oem_option_1">Camera 1 — for Atto / Tang</string>
+
+    <!-- Camera pairing card (visual mirror of the pano + OEM dashcam ID
+         pickers below it; additive — the pickers remain the source of
+         truth and CameraWizardCoach still drives them directly) -->
+    <string name="camera_pair_title">Which feed is which?</string>
+    <string name="camera_pair_pano_label">360° view</string>
+    <string name="camera_pair_dashcam_label">Front drive camera</string>
+    <string name="camera_pair_swap">Switch</string>
+    <string name="camera_pair_value_manual">Camera %1$d · Set by hand</string>
+    <string name="camera_pair_value_auto">Automatic · Camera %1$d</string>
+    <string name="camera_pair_hint">The previews follow your ID choices. If the two pictures look mixed up, tap Switch. It swaps both IDs and saves right away. Need a specific ID? Open the manual camera IDs below.</string>
+    <string name="cd_camera_pair_swap">Switch the 360° and drive camera IDs</string>
+    <string name="camera_advanced_ids_toggle">Set camera IDs by hand — advanced</string>
+
+    <!-- Camera wizard coach: pairing-first step (replaces the two-radio-group
+         walkthrough when the pairing card is present) -->
+    <string name="onboarding_camera_pair_title">Are the cameras paired right?</string>
+    <string name="onboarding_camera_pair_body">These tiles show which camera feeds the 360° view and which one is the front drive camera. If the two pictures look swapped, tap Switch to swap and save both IDs. Then carry on.</string>
+    <string name="onboarding_camera_pair_primary">Looks right — save and restart</string>
+    <string name="onboarding_camera_pair_secondary">Choose IDs by hand</string>
+
+    <!-- Section header separating the role/slice-calibration workflow from
+         the camera-ID pickers above it -->
+    <string name="camera_section_slice_calibration">Roles and 360° slice setup — advanced</string>
+
+    <!-- Clarified titles/captions for the two ID picker cards inside the
+         camera-mapping dialog. New strings (the legacy camera_selection_*
+         strings stay untouched for dialog_camera_selection.xml). Each
+         caption names the pipeline its ID feeds and what it does NOT
+         affect — the pano-vs-dashcam-vs-windshield mixups were the top
+         confusion in this dialog. -->
+    <string name="camera_ids_pano_title">360° view source</string>
+    <string name="camera_ids_pano_caption">The camera the 360° pipeline opens. It feeds the 2×2 mosaic used for recording (cam_*.mp4), Guardian and live cameras. The pairing card above shows the same choice.</string>
+    <string name="camera_ids_oem_title">Front drive camera source</string>
+    <string name="camera_ids_oem_caption">The camera the car\'s own drive-camera recorder opens for dvr_*.mp4 clips. It is separate from the windshield role below, which only changes the top strip of the drive-camera layout.</string>
+
+    <!-- Per-role explainer under the role-mapping spinner. Set from Kotlin
+         when the selected role changes; distinguishes direct-camera roles
+         (windshield / cabin) from the four pano slice roles. -->
+    <string name="camera_role_explainer_slice">Slice setup: chooses which part of the 360° mosaic shows this direction. It does not change which camera is opened.</string>
+    <string name="camera_role_explainer_windshield">Windshield role: the picture used as the top strip of the drive-camera layout and for windshield streaming. Independent of the front drive camera ID above.</string>
+    <string name="camera_role_explainer_cabin">Cabin role: an optional interior picture for layouts and streaming.</string>
+
+    <!-- Camera mapping dialog (multi-vehicle role-to-slice routing) -->
+    <string name="camera_mapping_title">Camera assignment</string>
+    <string name="camera_role_label">Assign roles</string>
+    <string name="camera_candidate_previous">Earlier</string>
+    <string name="camera_candidate_next">Next</string>
+    <string name="camera_preview_unavailable">No preview yet. Try another candidate, or reopen this dialog once the service has restarted.</string>
+    <string name="camera_mapping_save">Save assignment</string>
+    <string name="camera_mapping_clear">Remove role</string>
+    <string name="camera_mapping_saved">Camera assignment saved.</string>
+    <string name="camera_mapping_cleared">Camera role removed.</string>
+    <string name="camera_mapping_summary_format">Panorama stream: camera %1$d · %2$dx%3$d</string>
+    <string name="camera_mapping_summary_probing">Panorama stream: searching automatically (old mode)</string>
+    <string name="camera_mapping_current_format">Assigned now: %1$s</string>
+    <string name="camera_mapping_current_none">Assigned now: Auto / default</string>
+    <string name="camera_mapping_hint">By default Panoptes starts the way it always did. Here you can set up the joined panorama strip properly. Look at each raw slice, assign the 360° roles to the slice that really shows front, right, rear and left on your car, and after a restart the service uses that layout for recording, streaming and AI.</string>
+
+    <!-- fragment_dashboard -->
+    <string name="dashboard_scan_to_connect">Scan to link up</string>
+    <string name="dashboard_qr_waiting">Waiting for remote access…</string>
+    <string name="dashboard_daemons_running_default">0/5 running</string>
+    <string name="dashboard_device_id_loading">…</string>
+    <string name="dashboard_access_code">Your access code</string>
+    <string name="dashboard_token_masked">••••••••</string>
+    <string name="dashboard_regenerate_token">Make a new token</string>
+
+    <!-- fragment_recording_controls -->
+
+    <!-- dialog_setup_guide -->
+    <string name="setup_guide_title">First steps</string>
+    <string name="setup_guide_subtitle">Three short steps and you\'re set:</string>
+    <string name="setup_step_one_label">1</string>
+    <string name="setup_step_two_label">2</string>
+    <string name="setup_step_three_label">3</string>
+    <string name="setup_language_title">Choose your language</string>
+    <string name="setup_language_body">Starts with the language of your car screen. Tap to pick another one for the Panoptes app and the web page.</string>
+    <string name="setup_language_button">Pick language</string>
+    <string name="setup_autostart_title">Switch off the auto-start limit</string>
+    <string name="setup_autostart_body">Tap below to open BYD Auto-Start. Find Panoptes in the list and untick it. BYD resets this with every install, so you\'ll need to repeat it after updates.</string>
+    <string name="setup_autostart_button">Go to BYD Auto-Start</string>
+    <string name="setup_autostart_enabling">Turning on autostart…</string>
+    <string name="setup_autostart_enabled">Autostart is on ✓</string>
+    <string name="setup_autostart_failed">Autostart couldn\'t be turned on by itself. BYD Auto-Start is opening so you can do it by hand.</string>
+    <string name="setup_hint_title">After the update</string>
+    <string name="setup_hint_autostart">BYD reset the autostart permission with the install. Without it the app stops in the background.</string>
+    <string name="setup_hint_overlay">“Display over other apps” is not allowed yet. Without it, the Panoptes display on screen is missing.</string>
+    <string name="setup_hint_action">Fix it</string>
+    <string name="setup_hint_later">Later</string>
+    <string name="setup_overlay_title">Show on top of other apps</string>
+    <string name="setup_overlay_body">Switch this on to see a small floating status for recording and the logbook above other apps.</string>
+    <string name="setup_overlay_button">Open overlay settings</string>
+
+    <!-- Onboarding guide (novice track). Parked-only, glanceable. SurfMate is a
+         protected brand name — keep it verbatim. -->
+    <!-- Shared button labels -->
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_back">Back</string>
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_later">Later</string>
+    <string name="onboarding_dismiss">Close</string>
+    <string name="onboarding_exit">Leave tour</string>
+    <string name="onboarding_done_short">Understood</string>
+
+    <!-- Step 0: authorize the daemon (system ADB popup) -->
+    <string name="onboarding_authorize_title">Get Panoptes going</string>
+    <string name="onboarding_authorize_body">Panoptes reads your cameras through a small helper on this device. Android asks once to allow USB debugging. Tap <b>Allow</b> and tick <b>Always allow from this device</b>, so it keeps working after every restart.</string>
+    <string name="onboarding_authorize_button">Give access</string>
+    <string name="onboarding_authorize_waiting_title">Waiting for your OK…</string>
+    <string name="onboarding_authorize_waiting_body">Accept the Android pop-up. Can\'t see it? Maybe it was already allowed, and this goes on by itself.</string>
+    <string name="onboarding_authorize_retry_title">Not connected yet</string>
+    <string name="onboarding_authorize_retry_body">The helper isn\'t running yet. Maybe the Android pop-up was closed. Try again and remember to tick <b>Always allow</b>.</string>
+    <string name="onboarding_authorize_retry_button">Once more</string>
+
+    <!-- Step: choose operating mode (Vehicle ON+OFF vs ON only) -->
+    <string name="onboarding_mode_title">When should Panoptes stay awake?</string>
+    <string name="onboarding_mode_body">Choose what Panoptes does after you switch the car off.\n\n<b>Always on</b> keeps watching while parked. Guardian and background checks stay active, so the car uses a little power overnight.\n\n<b>Drive only</b> shuts Panoptes down completely when you leave. Drive camera, logbook and charging still work while you drive, and everything starts again by itself when you switch the car on. You can change this any time in Settings.</string>
+    <string name="onboarding_mode_on_off_button">Always on</string>
+    <string name="onboarding_mode_on_only_button">Drive only</string>
+    <string name="onboarding_update_title">Look for updates?</string>
+    <string name="onboarding_update_body">Panoptes can check GitHub every 6 hours for a new version. GitHub then sees the car\'s IP address and the time; nothing else is sent. Nothing is installed without you: you decide in Settings whether updates are only shown or installed automatically while parked.\n\nYou can change this any time under System → App updates.</string>
+    <string name="onboarding_update_ja">Yes, check</string>
+    <string name="onboarding_update_nein">No, don\'t check</string>
+    <string name="onboarding_update_speichert">Saving your choice …</string>
+    <string name="onboarding_update_fehler">Your choice could not be saved yet because Panoptes is still starting. Try again, or you will be asked again at the next start.</string>
+    <string name="notif_onscreen_title">On-screen message</string>
+    <string name="notif_onscreen_channel">On-screen messages</string>
+    <string name="notif_roadsense_title">Road watch</string>
+    <string name="notif_roadsense_overlay_text">Hazard notes on screen are active</string>
+    <string name="notif_roadsense_sensing_text">Road sensing is running</string>
+    <string name="notif_network_title">Network and hotspot</string>
+    <string name="notif_location_title">Location active</string>
+    <string name="notif_location_text">GPS location is running</string>
+    <string name="notif_location_channel">Location service</string>
+    <string name="notif_location_channel_desc">GPS location for the Guardian</string>
+    <string name="notif_media_title">Playing sound</string>
+    <string name="notif_media_text">Panoptes rules</string>
+    <string name="notif_media_channel">Media playback</string>
+    <string name="notif_chime_title">Road watch warning</string>
+    <string name="notif_chime_text">Playing a warning tone</string>
+    <string name="notif_vehicle_title">Car</string>
+    <string name="notif_remote_voice_channel">Speak out</string>
+    <string name="notif_status_channel">Status display</string>
+    <string name="notif_status_channel_desc">Display for recording and trip status</string>
+
+    <!-- Camera mapping chapter -->
+    <string name="onboarding_camera_step_label">Cameras · step %1$d of %2$d</string>
+    <string name="onboarding_camera_intro_title">Let\'s get your cameras ready</string>
+    <string name="onboarding_camera_intro_body">Tell Panoptes which camera is your 360° view and which is your drive camera. It takes about a minute, and you can change it later.</string>
+    <string name="onboarding_camera_intro_primary">Begin</string>
+    <string name="onboarding_camera_opening_title">Camera setup is opening…</string>
+    <string name="onboarding_camera_opening_body">A live preview is loading from your cameras. A few seconds, please.</string>
+    <string name="onboarding_camera_pano_title">Here\'s your 360° view</string>
+    <string name="onboarding_camera_pano_body">Use the arrows to find the joined picture with four views. Read it from the BOTTOM: bottom left is the REAR, bottom right is the LEFT side.</string>
+    <string name="onboarding_camera_dashcam_title">Next, find the camera that looks ahead</string>
+    <string name="onboarding_camera_dashcam_body">Click through the cameras with the arrows and stop at the one that shows the windshield or the road ahead. Remember its number, you\'ll pick it next.</string>
+    <string name="onboarding_camera_pick_title">Choose your 360° camera</string>
+    <string name="onboarding_camera_pick_body">In the top card, choose the number of your 360° or normal camera. Unsure? Leave it on AUTO and Panoptes works it out.</string>
+    <string name="onboarding_camera_pick_primary">Next</string>
+    <string name="onboarding_camera_pick_dash_title">Choose your drive camera</string>
+    <string name="onboarding_camera_pick_dash_body">In this card, choose the drive camera number you found before, or leave it on AUTO.</string>
+    <string name="onboarding_camera_save_primary">Save and restart</string>
+    <string name="onboarding_camera_applying_title">Saving — cameras restarting</string>
+    <string name="onboarding_camera_applying_body">The picture goes dark and flickers for about 10 seconds. That\'s normal, just wait.</string>
+    <string name="onboarding_camera_verify_title">Quick look</string>
+    <string name="onboarding_camera_verify_body">Does the 360° view show the joined picture, and does the drive camera show the road ahead? If a picture looks wrong, tap Choose again. Nothing is broken.</string>
+    <string name="onboarding_camera_verify_ok">All good</string>
+    <string name="onboarding_camera_verify_repick">Choose again</string>
+    <string name="onboarding_camera_windshield_title">Front strip on your clips? (optional)</string>
+    <string name="onboarding_camera_windshield_body">For the car\'s own drive-camera layout, with the windshield camera as a strip above your recording: pick Windshield in the role menu, choose the front camera and save. Most owners can skip this.</string>
+    <string name="onboarding_camera_windshield_primary">Show how</string>
+    <string name="onboarding_camera_windshield_skip">Not now</string>
+
+    <!-- Vehicle profile chapter -->
+    <string name="onboarding_vehicle_title">Enter your battery size</string>
+    <string name="onboarding_vehicle_body">Choose your model and the kWh fill in by themselves, or type them yourself (5–120). This makes range and charging estimates accurate. You can skip it and set it later.</string>
+    <string name="onboarding_vehicle_primary">Save battery</string>
+
+    <!-- Dashboard orientation chapter -->
+    <string name="onboarding_dash_tiles_title">Everything at a glance</string>
+    <string name="onboarding_dash_tiles_body">These cards are buttons. Tap them to open Live cameras, Clips, Services or your car.</string>
+    <string name="onboarding_dash_chips_title">Just status here</string>
+    <string name="onboarding_dash_chips_body">The chips at the top show recording, services and your remote access. They refresh by themselves and aren\'t buttons.</string>
+    <string name="onboarding_dash_chips_body_land">Your live status for recording, services and remote access is shown here. It refreshes by itself.</string>
+
+    <!-- Completion -->
+    <string name="onboarding_done_title">All set</string>
+    <string name="onboarding_done_body">Cameras assigned and battery saved. Tap Live cameras to see your pictures, or look through the deeper settings whenever you like.</string>
+    <string name="onboarding_done_primary">All done</string>
+    <string name="onboarding_done_secondary">Look around the settings</string>
+
+    <!-- Expert track (chaptered walkthrough of deeper config; footguns warned, never fired) -->
+    <string name="onboarding_help_cd">Walk-through</string>
+    <string name="onboarding_reset_toast">Setup reset — the guide plays again</string>
+    <string name="onboarding_expert_chapter_label">Part %1$d of %2$d</string>
+    <string name="onboarding_expert_finish">End</string>
+
+    <string name="onboarding_expert_menu_title">Walk-through</string>
+    <string name="onboarding_expert_menu_body">A short walk through the deeper settings: your car profile, connections, Guardian, diagnostics, services and security. Stop whenever you like.</string>
+    <string name="onboarding_expert_menu_start">Begin tour</string>
+
+    <string name="onboarding_expert_vehicle_title">Car profile</string>
+    <string name="onboarding_expert_vehicle_body">Tap the car tile to enter your battery size and model. It makes range and battery health estimates accurate.</string>
+
+    <string name="onboarding_expert_recordings_title">Your clips</string>
+    <string name="onboarding_expert_recordings_body">Switch between Drive camera (continuous and close-by clips) and Guardian (clips from when parked) with this toggle. Each keeps its own library. Tap a clip to play it.</string>
+
+    <string name="onboarding_expert_live_title">Live cameras</string>
+    <string name="onboarding_expert_live_body">Open Live cameras here to see all cameras as they happen. Handy for checking the view before you drive off, or while you\'re parked nearby.</string>
+
+    <string name="onboarding_expert_trips_title">Logbook</string>
+    <string name="onboarding_expert_trips_body">The logbook records every drive: route, distance, time and energy use. So you can look back at where the car has been.</string>
+
+    <string name="onboarding_expert_roadsense_title">Road watch</string>
+    <string name="onboarding_expert_roadsense_body">Road watch uses the car\'s motion sensors and GPS to spot road hazards such as bumps and potholes, and warns you before known ones. Its tabs cover detection, the hazard map, warning sounds and the blind spot view. Turn on the main switch to use any of it.</string>
+
+    <string name="onboarding_expert_blindspot_title">Blind spot view</string>
+    <string name="onboarding_expert_blindspot_body">Switch on the blind spot view in the tab here. When you signal a turn, a side camera picture pops up by itself, left for left and right for right, and goes away shortly after. It only runs while a turn signal is on.</string>
+
+    <string name="onboarding_expert_maps_title">Navigation</string>
+    <string name="onboarding_expert_maps_body">Open the map for full turn-by-turn navigation: search a destination, get the route and live guidance, plus places nearby and any road hazards Road watch has logged along the way. You can also show it on the instrument cluster when you start driving. That switch is in the Map tab of Road watch.</string>
+
+    <string name="onboarding_expert_integrations_title">Connections</string>
+    <string name="onboarding_expert_integrations_body">Link Telegram alerts, the route planner link (ABRP), a smart home link (MQTT) or your BYD account. Each card opens its setup inside the app. The pill at the top turns green when everything is linked.</string>
+    <string name="onboarding_expert_bydcloud_title">Your BYD account unlocks remote control</string>
+    <string name="onboarding_expert_bydcloud_body">Linking your BYD account here lets you lock, flash and honk from your phone. Treat the linked account and the access code as private.</string>
+
+    <string name="onboarding_expert_surveillance_title">Guardian and recording</string>
+    <string name="onboarding_expert_surveillance_body">Tune detection, quality and storage here. These open as pages in the app, served from your car. A blank screen only means the helper is still starting.</string>
+
+    <string name="onboarding_expert_camprobe_title">Camera probe — be careful</string>
+    <string name="onboarding_expert_camprobe_body">This reassigns which physical camera serves each role and restarts the cameras. Change it only if a picture looks wrong. You set this up earlier in the guide.</string>
+    <string name="onboarding_expert_traffic_title">Traffic monitor — needed for remote access</string>
+    <string name="onboarding_expert_traffic_body">BYD\'s built-in traffic monitor stops other apps from using the car\'s own SIM. To reach your car remotely over the BYD SIM, switch it off here. The car screen reboots to apply the change.</string>
+
+    <string name="onboarding_expert_daemons_title">Services — be careful</string>
+    <string name="onboarding_expert_daemons_body">These switches start and stop background services. If you switch Camera, Guardian or Guardian on park OFF, recording stops and stays off until you switch it back on, even after a restart.</string>
+
+    <string name="onboarding_expert_security_title">Protect with a PIN</string>
+    <string name="onboarding_expert_security_body">Set a PIN to lock the app when others use the car. Guardian and recording keep running while the app is locked. A forgotten PIN can only be cleared from a computer over USB.</string>
+    <string name="onboarding_expert_reset_title">Delete data — permanent</string>
+    <string name="onboarding_expert_reset_body">This erases clips, events and settings and cannot be undone. It\'s here for the day you sell the car, not for everyday use.</string>
+
+    <string name="onboarding_expert_done_title">Tour finished</string>
+    <string name="onboarding_expert_done_body">You\'ve now seen the deeper settings. Start this guide again any time with the help button.</string>
+
+    <!-- Language picker (drawer footer + bottom sheet) -->
+    <string name="cd_close">Close</string>
+    <string name="language_picker_title">App language</string>
+    <!-- Subtitle on the language-picker bottom sheet. %1$d is the supported
+         language count (Auto adds an extra row but isn't counted). -->
+    <string name="language_picker_subtitle_fmt">%1$d languages to choose from</string>
+    <!-- Subtitle placeholder while the count is being computed. -->
+    <string name="language_picker_subtitle_pending">Pick a language</string>
+    <string name="language_auto_title">Automatic</string>
+    <!-- %1$s is the native-script name of the locale that "Auto" currently
+         resolves to, e.g. "Auto · English". -->
+    <string name="language_auto_subtitle">Follows the system · %1$s</string>
+    <!-- Drawer footer subtitle when on Auto, e.g. "English · Auto". -->
+    <string name="language_label_auto_fmt">%1$s · Automatic</string>
+
+    <!-- fragment_adb_console -->
+    <string name="adb_prompt">$</string>
+    <string name="adb_command_hint">Type a command…</string>
+    <string name="adb_preset_commands_header">Ready-made commands</string>
+    <string name="adb_output_header">Result</string>
+    <string name="adb_output_ready">$ Waiting for a command…</string>
+    <string name="adb_console_hero_title">ADB console</string>
+    <string name="adb_console_hero_subtitle">Run commands on this device</string>
+
+    <!-- fragment_webview -->
+    <string name="webview_loading">Just a moment…</string>
+    <string name="webview_camera_daemon_not_running">Camera service is off</string>
+    <string name="webview_start_camera_daemon">Start the camera service on the Services screen to open this page.</string>
+
+    <!-- dialog_roi_drawing -->
+
+    <!-- dialog_reset_data -->
+    <string name="reset_title">Delete data</string>
+    <string name="reset_subtitle">Erase collected data by category</string>
+    <string name="reset_warning">This can\'t be undone. Clips, logbook and battery history are deleted for good.</string>
+    <string name="reset_cat_trips">Logbook</string>
+    <string name="reset_cat_trips_desc">Drive history, routes, weekly and monthly totals</string>
+    <string name="reset_cat_soc_history">Charge level and 12 V history</string>
+    <string name="reset_cat_soc_history_desc">Charge level samples, charging sessions, voltage logs</string>
+    <string name="reset_cat_soh">Battery health calibration</string>
+    <string name="reset_cat_soh_desc">Detects the nominal capacity again and re-seeds the estimate from the BMS</string>
+    <string name="reset_cat_abrp_token">ABRP token</string>
+    <string name="reset_cat_abrp_token_desc">Stops sending ABRP data until you pair again</string>
+    <string name="reset_cat_byd_cloud">BYD account login</string>
+    <string name="reset_cat_byd_cloud_desc">User name, login key, VIN. You have to log in again</string>
+    <string name="reset_cat_recordings">Clips (videos)</string>
+    <string name="reset_cat_recordings_desc">All MP4 files in the clips folder</string>
+    <string name="reset_cat_sentry_events">Guardian events</string>
+    <string name="reset_cat_sentry_events_desc">Guardian event clips and JSON side files</string>
+    <string name="reset_cat_proximity">Close-by clips</string>
+    <string name="reset_cat_proximity_desc">Event MP4s triggered by radar</string>
+    <string name="reset_cat_trip_files">Logbook data files</string>
+    <string name="reset_cat_trip_files_desc">JSON data for each drive on the disk</string>
+
+    <!-- fragment_abrp_settings -->
+
+    <!-- fragment_recording_library -->
+    <string name="recording_lib_chip_any">All</string>
+    <string name="recording_lib_chip_person">Person</string>
+    <string name="recording_lib_chip_vehicle">Car</string>
+    <string name="recording_lib_chip_bike">Cyclist</string>
+    <string name="recording_lib_chip_animal">Animal</string>
+    <string name="recording_lib_chip_alert">Warning</string>
+    <string name="recording_lib_chip_critical">Serious</string>
+    <string name="recording_lib_selected_count_zero">None selected</string>
+    <string name="recording_lib_no_recordings">No clips</string>
+
+    <!-- v4 redesign: collapsible filter bar + single-row date jump -->
+    <string name="recording_lib_filter_button">Filter</string>
+    <string name="recording_lib_filter_button_active">Filter · %1$d</string>
+    <string name="recording_lib_filter_sheet_title">Filter clips</string>
+    <string name="recording_lib_filter_apply">Use</string>
+    <string name="recording_lib_filter_reset">Clear</string>
+    <!-- Parking Intelligence: chip shown when the list is narrowed to one park's clips -->
+    <string name="recording_lib_chip_parking_session">This stop</string>
+    <string name="recording_lib_chip_parking_session_at">Parked %1$s</string>
+    <string name="recording_lib_filter_section_what">What</string>
+    <string name="recording_lib_filter_section_severity">How serious</string>
+    <string name="recording_lib_filter_section_type">Type</string>
+    <string name="recording_lib_filter_section_place">Place</string>
+    <string name="recording_lib_filter_section_storage">Storage</string>
+    <!-- Storage filter chip labels (full words; the tile badge uses the short
+         SD/USB/INT forms above). -->
+    <string name="recording_lib_storage_filter_internal">Built-in</string>
+    <string name="recording_lib_storage_filter_sd">SD card</string>
+    <string name="recording_lib_storage_filter_usb">USB</string>
+    <string name="recording_lib_place_search_hint">Search for a place…</string>
+    <string name="recording_lib_chip_type_normal">Regular</string>
+    <string name="recording_lib_chip_type_proximity">Someone close</string>
+    <string name="recording_lib_date_today">Today</string>
+    <string name="recording_lib_date_yesterday">Yesterday</string>
+    <string name="recording_lib_clip_count">%1$d clips</string>
+    <string name="recording_lib_clip_count_one">%1$d clip</string>
+    <string name="recording_lib_pick_date">Choose a date</string>
+    <string name="recording_lib_date_all_days">Every day</string>
+    <string name="cd_clear_date_filter">Show every day</string>
+    <string name="recording_lib_section_morning">Morning</string>
+    <string name="recording_lib_section_afternoon">Afternoon</string>
+    <string name="recording_lib_section_evening">Evening</string>
+    <string name="recording_lib_section_night">Night</string>
+    <string name="cd_previous_day">Day before</string>
+    <string name="cd_next_day">Day after</string>
+    <string name="cd_open_filters">Show filters</string>
+    <string name="cd_clear_filter">Remove filter</string>
+
+    <!-- v5 redesign: SOTA empty state with CTA + tile type badges -->
+    <string name="recording_lib_empty_title">No clips match</string>
+    <string name="recording_lib_empty_body">Try a different date range or other filters.</string>
+    <string name="recording_lib_empty_clear_filters">Remove filters</string>
+    <!-- Shown on the empty-state body when there are zero clips on disk
+         (no filter is active). Sets a friendlier tone than "No recordings match". -->
+    <string name="recording_lib_empty_disk_title">Nothing recorded so far</string>
+    <string name="recording_lib_empty_disk_body">Clips show up here as soon as the drive camera or Guardian saves one.</string>
+    <!-- Shown while the daemon is warming the H2 recording index on cold
+         start. Includes a progress counter when the daemon reports done/total,
+         otherwise a static body. The library re-polls every 1.5s and
+         transitions out automatically once results land. -->
+    <string name="recording_lib_building_index_title">Preparing your clips</string>
+    <string name="recording_lib_building_index_body">Hang on while the service scans your clips.</string>
+    <string name="recording_lib_building_index_progress">%1$d of %2$d clips checked…</string>
+    <!-- Shown when the daemon reports its recordings index is down (the H2
+         store closed underneath it). The clips are still on disk, so this must
+         NOT read as "no recordings" — the library re-polls and recovers on its
+         own once the daemon re-opens the index. -->
+    <string name="recording_lib_index_down_title">Clip list unavailable</string>
+    <string name="recording_lib_index_down_body">Your clips are safe on the disk, but the list can\'t be reached. Trying again by itself…</string>
+    <!-- Tile type badge labels — short, glanceable, mirrors the on-disk
+         filename prefix (cam_/event_/dvr_/proximity_) so power users can
+         map a tile back to its file group at a glance. -->
+    <string name="recording_lib_type_normal">CAM</string>
+    <string name="recording_lib_type_event">EVENT</string>
+    <string name="recording_lib_type_proximity">CLOSE</string>
+    <string name="recording_lib_type_oem">OEM</string>
+    <string name="recording_lib_type_replay">REPLAY</string>
+    <!-- Per-clip storage tag — where the clip actually landed. Surfaces the
+         silent SD→internal fallback (SD bridged behind the USB power rail). -->
+    <string name="recording_lib_storage_sd">SD</string>
+    <string name="recording_lib_storage_usb">USB</string>
+    <string name="recording_lib_storage_internal">INT</string>
+    <!-- Toast shown when a multi-select share is dispatched. -->
+    <string name="toast_share_recordings">Sharing %1$d clips</string>
+
+    <!-- fragment_sentry_config -->
+
+    <!-- fragment_video_player -->
+    <string name="player_title_recording">Clip</string>
+    <string name="player_time_zero">0:00</string>
+    <string name="player_time_separator"> / </string>
+
+    <!-- fragment_daemons -->
+    <string name="daemons_hero_title">Services in the background</string>
+    <!-- Subtitle on the Daemons hero header before the first state arrives. -->
+    <string name="daemons_count_pending">Checking services…</string>
+    <!-- Subtitle on the Daemons hero header. %1$d running, %2$d total. -->
+    <string name="daemons_count_fmt">%1$d of %2$d are on</string>
+    <string name="daemons_wifi_auto_enable_title">Wi&#8209;Fi</string>
+    <string name="daemons_wifi_auto_enable_subtitle">Switches Wi&#8209;Fi on or off right now. While it is off, Panoptes’s Guardian services will not switch it back on.</string>
+    <string name="daemons_wifi_auto_enable_save_failed">Wi&#8209;Fi could not be switched.</string>
+
+    <!-- dialog_time_window -->
+
+    <!-- dialog_update_progress -->
+    <string name="update_preparing">Getting the update ready…</string>
+    <string name="update_percent_zero">0%</string>
+
+    <!-- dialog_battery_health -->
+    <string name="battery_health_title">Battery health</string>
+    <string name="battery_health_subtitle">How fit the battery still is</string>
+    <string name="battery_health_dashes">--</string>
+    <string name="battery_health_waiting">No data yet…</string>
+    <string name="battery_health_source">Source</string>
+    <string name="battery_health_method">How it is worked out</string>
+    <string name="battery_health_capacity">Capacity</string>
+    <string name="battery_health_samples">Readings</string>
+    <string name="battery_health_last_updated">Last update</string>
+    <string name="battery_health_reset">Restart the estimate</string>
+    <string name="battery_health_reset_desc">Deletes all values and starts the estimate over. Use it after a battery swap or if the value looks wrong.</string>
+    <string name="soh_dialog_model_label">Model</string>
+    <string name="soh_dialog_pack_capacity_label">Battery size</string>
+    <string name="soh_dialog_estimated_capacity_label">Capacity today</string>
+    <string name="soh_dialog_calibration_anchor_label">Last adjusted</string>
+    <string name="soh_dialog_source_user">set by you</string>
+    <string name="soh_dialog_source_auto">found automatically</string>
+    <string name="soh_dialog_model_not_selected">Not chosen</string>
+    <string name="soh_dialog_capacity_not_detected">Not found</string>
+    <string name="soh_dialog_calibration_format">%1$.1f%% as of %2$s</string>
+    <string name="soh_dialog_frame_anchor_label">Measured when full</string>
+    <string name="soh_dialog_frame_anchor_format">%1$.2f kWh measured when full (%2$d of %3$d readings)</string>
+    <string name="soh_dialog_frame_anchor_pending_format">%1$.2f kWh measured when full (still collecting: %2$d of %3$d readings)</string>
+    <string name="soh_dialog_frame_mismatch_title">Battery size does not match</string>
+    <string name="soh_dialog_frame_mismatch_format">The car reports %1$.1f kWh at full charge, but the battery size is set to %2$.1f kWh. The number above may come from two different kinds of values (label value vs. usable value) and not from real wear. Try entering %1$.1f kWh, just as the car reports it.</string>
+    <string name="soh_dialog_use_observed_value">Use measured value</string>
+    <string name="soh_dialog_use_observed_value_pending">Saving…</string>
+    <string name="toast_soh_observed_value_saved">Battery size is now %1$.1f kWh.</string>
+    <string name="toast_soh_observed_value_failed">Could not change the battery size (%1$s).</string>
+    <string name="diagnostics_battery_needs_review">Needs a look</string>
+
+    <!-- ============================================================
+         Step 2: Kotlin / Java UI literal extraction
+         ============================================================ -->
+
+    <!-- Notifications -->
+
+    <!-- Toasts / dialogs -->
+
+    <string name="dialog_ok">OK</string>
+
+    <!-- Dynamic format strings -->
+
+    <!-- Plurals -->
+    <plurals name="recordings_deleted_count">
+        <item quantity="one">%d clip removed</item>
+        <item quantity="other">%d clips removed</item>
+    </plurals>
+    <plurals name="delete_recordings_title">
+        <item quantity="one">Remove %d clip</item>
+        <item quantity="other">Remove %d clips</item>
+    </plurals>
+    <plurals name="delete_recordings_message">
+        <item quantity="one">%d clip is gone for good. You can\'t undo it.</item>
+        <item quantity="other">%d clips are gone for good. You can\'t undo it.</item>
+    </plurals>
+
+    <!-- ============================================================
+         Step 2 (continued): MainActivity, fragments, dialogs
+         ============================================================ -->
+
+    <!-- MainActivity -->
+    <string name="toast_updated_to">Now on %1$s</string>
+    <string name="toast_update_install_failed">Installing the update failed: %1$s</string>
+    <string name="toast_checking_for_updates">Looking for updates…</string>
+    <string name="toast_app_up_to_date">You have the latest version (%1$s)</string>
+    <string name="toast_update_check_failed">Could not check for updates: %1$s</string>
+
+    <!-- Update dialog + version picker -->
+    <string name="update_dialog_available_title">New update</string>
+    <string name="update_dialog_subtitle">A newer version is ready</string>
+    <string name="update_dialog_current">Yours: v%1$s</string>
+    <string name="update_dialog_new">Latest: v%1$s</string>
+    <string name="update_dialog_current_label">Yours</string>
+    <string name="update_dialog_new_label">Latest</string>
+    <string name="update_dialog_whats_new">Changes</string>
+    <string name="update_dialog_install_now">Update now</string>
+    <string name="update_dialog_later">Not now</string>
+    <string name="update_picker_title">Pick a version</string>
+    <string name="update_picker_subtitle">Any released version works, newer or older</string>
+    <string name="update_picker_empty">Nothing released yet.</string>
+    <string name="update_picker_current_suffix">%1$s (in use)</string>
+    <string name="update_picker_older_suffix">%1$s (earlier)</string>
+    <!-- Update progress (title + per-step status; no emoji — state icon carries the cue) -->
+    <string name="update_progress_title">Updating Panoptes</string>
+    <string name="update_step_downloading">Fetching the update…</string>
+    <string name="update_step_verifying">Checking the download…</string>
+    <string name="update_step_stopping">Stopping services…</string>
+    <string name="update_step_installing">Installing the update…</string>
+    <string name="update_step_installed">Update done</string>
+    <string name="update_step_restarting">App is restarting…</string>
+    <string name="update_step_queued">Update is starting…</string>
+    <string name="update_error_title">Update did not work</string>
+    <string name="update_error_daemon_down">The camera service is not running. Start it under Services, then try the update again.</string>
+    <string name="update_error_start_failed">The update could not start: %1$s</string>
+    <string name="update_error_lost_headunit">Lost contact with the car before the update finished. Using Remote access? Look in Telegram for the new link, or use the local address.</string>
+    <string name="update_hide">Hide</string>
+
+    <!-- Update channel selector (Settings → About) -->
+    <string name="settings_update_channel_title">Update track</string>
+    <string name="settings_update_channel_alpha">Alpha</string>
+    <string name="settings_update_channel_braveheart">Braveheart</string>
+    <string name="settings_update_channel_alpha_desc">The steady version. Every released version stays available, so you can pick any one to install, even an older one. Best for everyday use.</string>
+    <string name="settings_update_channel_braveheart_desc">The newest versions, delivered as soon as they are ready. You get new features first, but they may be shaky or have bugs. If something breaks, open Services, tap a service’s log, choose “Upload and get a code” and send us the code in the community channels.</string>
+    <string name="settings_update_channel_save_failed">Could not save the update track</string>
+    <string name="settings_update_channel_braveheart_toast">Switched to Braveheart. Versions may be shaky. If something breaks, send us the service log on Discord, GitHub or WhatsApp.</string>
+    <!-- Community / report-a-bug links -->
+    <string name="community_discord_url" translatable="false"></string>
+    <string name="community_github_issues_url" translatable="false"></string>
+    <string name="community_whatsapp_url" translatable="false"></string>
+
+    <string name="toast_storage_permission_required">Clips need access to storage</string>
+    <string name="toast_url_copied_short">Link copied</string>
+    <string name="toast_camera_set_to_auto">Camera is on Auto</string>
+    <string name="toast_failed_to_save_short">Could not save</string>
+    <string name="toast_failed_with_message">Did not work: %1$s</string>
+    <string name="toast_camera_id_set">Camera %1$d chosen. It applies from the next car start.</string>
+    <string name="toast_clearing_camera_config">Clearing camera settings…</string>
+    <string name="toast_restarting_camera_daemon">Restarting camera service…</string>
+    <string name="toast_camera_daemon_restarting">Camera service is restarting and testing every camera</string>
+    <string name="toast_camera_restart_failed">Settings cleared, but the camera service did not restart. Please restart it yourself.</string>
+    <string name="toast_camera_settings_saved_restarting">Saved. Camera service is restarting…</string>
+    <string name="toast_camera_settings_restart_failed">Camera settings are saved, but the camera service did not restart. Please restart it yourself.</string>
+    <string name="toast_failed_with_message_x">Did not work: %1$s</string>
+    <string name="toast_soh_reset_success">Estimate cleared. It starts over with the next readings.</string>
+    <string name="toast_soh_reset_failed_no_daemon">Reset failed: the service does not answer and the file cannot be written</string>
+    <string name="toast_soh_reset_failed_with_message">Reset did not work: %1$s</string>
+    <string name="toast_select_at_least_one_category">Pick at least one item</string>
+    <string name="toast_reset_failed_with_error">Reset did not work: %1$s</string>
+    <string name="toast_traffic_monitor_changing">Traffic monitor: %1$s…</string>
+    <string name="toast_traffic_monitor_persist_failed">Done, but your choice could not be saved. It will be lost after a software update of the car.</string>
+
+    <string name="dialog_close">Close</string>
+    <string name="dialog_reset">Reset</string>
+    <string name="dialog_delete">Delete</string>
+    <string name="dialog_save">Save</string>
+    <string name="dialog_enable">Turn on</string>
+    <string name="dialog_disable">Turn off</string>
+    <string name="dialog_keep_enabled">Keep on</string>
+    <string name="dialog_keep_disabled">Keep off</string>
+    <string name="dialog_regenerate">Create new</string>
+    <string name="dialog_reset_selected">Reset chosen</string>
+
+    <string name="dialog_reset_soh_title">Restart the battery estimate?</string>
+    <string name="dialog_reset_soh_message">This deletes all battery health data and starts the estimate over.\n\nGood reasons:\n• The battery was replaced\n• The value looks wrong\n• You want a fresh start\n\nAfterwards the estimate starts again from the first source it finds: car data, a charge or a live reading.</string>
+
+    <string name="dialog_reset_following_title">Reset these?</string>
+    <string name="dialog_reset_following_message">There is no way back.\n\n%1$s</string>
+    <string name="dialog_reset_complete_title">Reset done</string>
+
+    <string name="dialog_traffic_cannot_check_title">Cannot check yet</string>
+    <string name="dialog_traffic_cannot_check_message">The ADB connection is not ready yet.\n\nThe app needs ADB to manage system apps. Please check:\n\n• USB debugging is on in Developer options\n• You accepted the ADB permission prompt\n\nThis updates by itself as soon as the connection is up.</string>
+
+    <string name="dialog_traffic_disable_title">Turn off BYD Traffic Monitor?</string>
+    <string name="dialog_traffic_disable_message">The BYD Traffic Monitor (com.byd.trafficmonitor) is a built-in app that keeps checking road traffic in the background.\n\nWhy turn it off?\n\n• It uses mobile data, even when parked\n• It uses processor power and battery in the background\n• You do not need it if you use another navigation app\n• It can get in the way of the Drive camera’s network use\n\nIt is safe to turn off. It only removes the traffic colours on the built-in map. Navigation, Bluetooth and everything else in the car keep working.\n\nAfterwards you need a hard reboot (hold the centre console button for 5 seconds).</string>
+
+    <string name="dialog_traffic_enable_title">Turn BYD Traffic Monitor back on?</string>
+    <string name="dialog_traffic_enable_message">The BYD Traffic Monitor is off right now.\n\nTurning it on brings back the traffic colours on the navigation map. It will then run in the background and use mobile data.\n\nAfterwards you need a hard reboot (hold the centre console button for 5 seconds).</string>
+
+    <string name="dialog_traffic_status_title">Traffic monitor: %1$s</string>
+    <string name="dialog_traffic_reboot_message">Done.\n\nNow do a hard reboot:\nHold the centre console button for 5 seconds.</string>
+
+    <string name="traffic_monitor_loading">Traffic monitor: checking…</string>
+    <string name="traffic_monitor_tap_to_check">Traffic monitor – tap to check</string>
+
+    <!-- Reset categories -->
+    <string name="reset_label_trips">Logbook</string>
+    <string name="reset_label_soc_history">Charge level and 12 V battery history</string>
+    <string name="reset_label_soh">Battery health adjustment</string>
+    <string name="reset_label_abrp_token">ABRP token</string>
+    <string name="reset_label_byd_cloud">BYD account login</string>
+    <string name="reset_label_recordings">Clips</string>
+    <string name="reset_label_sentry_events">Guardian clips</string>
+    <string name="reset_label_proximity">“Someone close” clips</string>
+    <string name="reset_label_trip_files">Logbook measurement files</string>
+
+    <!-- ROI dialog -->
+
+    <!-- Sentry config -->
+
+    <!-- Format helpers -->
+
+    <!-- Dashboard -->
+    <string name="toast_access_code_copied">Code copied</string>
+    <string name="dialog_regenerate_token_title">New access code</string>
+    <string name="dialog_regenerate_token_message">The current code stops working and everyone who is signed in gets signed out. Continue?</string>
+    <string name="toast_token_regenerated_logged_out">New code created. Everyone is signed out.</string>
+    <string name="toast_token_regenerated_restart">New code created. The service may need a restart to use it.</string>
+    <string name="toast_token_regenerated_no_notify">New code created, but the service could not be told.</string>
+    <string name="toast_token_regenerated">New code created</string>
+    <string name="dashboard_no_tunnel">Remote access is off</string>
+    <string name="dashboard_starting_tailscale">Starting Tailscale remote access…</string>
+    <string name="dashboard_waiting_url">Waiting for the link…</string>
+    <string name="dashboard_tunnel_failed">Remote access problem</string>
+    <string name="dashboard_tunnel_stopping">Stopping remote access…</string>
+    <string name="dashboard_daemons_running">%1$d/%2$d on</string>
+    <string name="tunnel_label_tailscale">Tailscale</string>
+
+    <!-- Daemon names — shown on the Daemons list and dashboard. -->
+    <string name="daemon_name_camera">Camera service</string>
+    <string name="daemon_name_surveillance">Guardian service</string>
+    <string name="daemon_name_acc_surveillance">Guardian on park</string>
+    <string name="daemon_name_tailscale">Tailscale remote access</string>
+    <string name="daemon_name_telegram">Telegram alerts</string>
+    <string name="daemon_status_running">Running</string>
+    <string name="daemon_status_proxy_on">%1$s • Proxy on</string>
+    <string name="daemon_status_running_uptime">Running • for %1$s</string>
+    <string name="daemon_status_stopped">Off</string>
+    <string name="daemon_status_starting">Starting…</string>
+    <string name="daemon_status_stopping">Stopping…</string>
+    <string name="daemon_status_error">Problem</string>
+    <string name="daemon_status_needs_config">Setup needed</string>
+    <string name="daemon_config_not_logged_in">Not signed in. Tap to set up.</string>
+    <string name="daemon_status_stop_failed">Could not stop: %1$s</string>
+    <string name="daemon_uptime_fmt">Running for %1$s</string>
+    <string name="daemon_subprocess_pid">%1$s (PID: %2$d)</string>
+    <string name="projection_temporarily_unavailable">Projection is not available right now. Please reopen the app.</string>
+    <string name="clip_label_access_code">Access Code</string>
+    <string name="clip_label_url">Link</string>
+
+    <!-- ABRP -->
+
+    <!-- Daemons fragment -->
+    <string name="toast_no_config_needed">%1$s needs no setup</string>
+    <string name="dialog_tailscale_settings_title">Tailscale remote access settings</string>
+    <string name="dialog_tailscale_settings_message">Set up Tailscale</string>
+    <string name="tailscale_failed_login_url">Could not create a sign-in link</string>
+    <string name="tailscale_logged_in_relogin">Signed in. Tap to use a different account</string>
+    <string name="dialog_tailscale_adb_enable_title">Allow ADB from afar?</string>
+    <string name="dialog_tailscale_adb_enable_message">This lets devices on your tailnet reach ADB (port 5555), so you can debug this car screen from afar.\n\nBefore you turn it on:\n• ADB gives FULL control: a tailnet device with an approved key can read data, install apps and change system settings\n• Only your tailnet gets this new route. ADB is not opened to the public internet\n• ADB already accepts connections from your local network, so turning this off does not close ADB completely\n• The connecting computer still needs an approved ADB key\n• Turning on the Wi-Fi hotspot drops the Wi-Fi link, so remote access then relies on mobile data\n\nOnly turn this on for a tailnet you control. You can turn it off any time.</string>
+    <string name="dialog_tailscale_proxy_enable_title">Turn on Tailscale proxy?</string>
+    <string name="dialog_tailscale_proxy_enable_message">MQTT will then travel through Tailscale, so you can reach a private broker in your tailnet without port forwarding.\n\nWhile it is on:\n• MQTT to a broker in your tailnet works (for example Mosquitto on a device in your tailnet)\n• MQTT to public brokers (HiveMQ, AWS IoT and so on) will fail, because Tailscale only reaches your tailnet\n• The Tailscale service restarts to apply the change\n• Other app traffic and the rest of the device are not affected\n\nYou can turn it off any time.</string>
+    <string name="dialog_tailscale_reset_title">Reset Tailscale</string>
+    <string name="dialog_tailscale_reset_message">This will:\n• Stop Tailscale if it is running\n• Remove the Tailscale setup from this device\n• You still need to remove the device in the Tailscale console\n\nYou will have to sign in again.\n\nAre you sure?</string>
+    <string name="toast_resetting_tailscale">Resetting Tailscale…</string>
+    <string name="toast_tailscale_reset_success">Tailscale is reset. Sign in to set it up again.</string>
+    <string name="toast_tailscale_reset_warnings">Tailscale reset (with warnings: %1$s)</string>
+    <string name="toast_tailscale_proxy_enabled">Tailscale proxy is on</string>
+    <string name="toast_tailscale_proxy_disabled">Tailscale proxy is off</string>
+    <string name="toast_tailscale_proxy_save_failed">Could not save the proxy settings</string>
+    <string name="toast_fetching_log">Getting the %1$s log…</string>
+    <string name="toast_log_empty_or_missing">The log is empty or missing</string>
+    <string name="toast_log_empty">The log is empty</string>
+    <string name="toast_daemon_manager_unavailable">The service manager is not ready yet. Try again in a moment.</string>
+    <string name="toast_log_save_failed">Could not save the log: %1$s</string>
+    <string name="toast_log_not_found">The log is missing or cannot be read</string>
+    <string name="log_share_title">%1$s log – %2$s</string>
+    <string name="log_share_chooser">Share the %1$s log</string>
+    <string name="log_header_title">=== %1$s log ===</string>
+    <string name="log_header_source">From: %1$s</string>
+    <string name="log_header_exported">Exported on: %1$s</string>
+    <string name="log_header_truncated">NOTE: Only the last 10000 lines are included (the log has %1$d lines in total)</string>
+
+    <!-- Braveheart log send (upload to Cloudflare or share-sheet) -->
+    <string name="logs_send_title">Send the %1$s log</string>
+    <string name="logs_send_title_plain">Send a service log</string>
+    <string name="logs_send_subtitle">%1$s · pick how to send it to us</string>
+    <string name="logs_send_upload">Upload and get a code</string>
+    <string name="logs_send_upload_desc">Sends the log to us and gives you a short code. The easiest way to get help.</string>
+    <string name="logs_send_share">Share as a file…</string>
+    <string name="logs_send_share_desc">Save the log or send it yourself with the share menu.</string>
+    <string name="logs_uploading_title">Sending the log…</string>
+    <string name="logs_uploading_subtitle">Hiding private data, then sending it safely</string>
+    <string name="logs_uploaded_title">Log sent</string>
+    <string name="logs_uploaded_instructions">Send us this code and tell us what you were doing when it went wrong. Post it on Discord, GitHub Issues or WhatsApp. The links are under About Panoptes.</string>
+    <string name="logs_uploaded_privacy">Private data hidden · the log deletes itself later</string>
+    <string name="logs_copy_code">Copy code</string>
+    <string name="logs_done">Done</string>
+    <string name="placeholder_dash">—</string>
+    <string name="errors_network">Network problem</string>
+
+    <!-- Recording controls -->
+
+    <!-- Recording library -->
+    <string name="toast_cannot_play_video">The video cannot be played: %1$s</string>
+    <string name="dialog_delete_recording_title">Delete clip?</string>
+    <string name="dialog_delete_recording_message">Delete %1$s?\nThere is no way back.</string>
+    <string name="dialog_create_evidence_pack_title">Create an evidence pack?</string>
+    <string name="dialog_create_evidence_pack_message">Panoptes only sends filtered event details to the AI service you set up. The video stays on your device and only goes into the evidence pack you download.</string>
+    <string name="toast_evidence_pack_creating">Building the evidence pack…</string>
+    <string name="toast_evidence_pack_ready">Evidence pack is ready</string>
+    <string name="toast_evidence_pack_unavailable">This clip has not been indexed yet</string>
+    <string name="toast_evidence_pack_failed">Could not build the evidence pack: %1$s</string>
+    <string name="error_unknown">Something went wrong</string>
+    <string name="toast_recording_deleted">Clip deleted</string>
+    <string name="toast_recording_delete_failed">Could not delete the clip</string>
+    <string name="toast_batch_delete_partial">%1$d deleted, %2$d did not work</string>
+    <string name="play_with_chooser">Open with</string>
+
+    <!-- Setup guide -->
+    <string name="setup_version_banner">Now on %1$s. Please confirm autostart again, because BYD resets it with every install.</string>
+    <string name="setup_overlay_already_granted">Already allowed</string>
+
+    <!-- Setup guide — post-setup tips section -->
+    <string name="setup_tips_header">Tips and fixes</string>
+    <string name="setup_traffic_title">Turn off BYD Traffic Monitor</string>
+    <string name="setup_traffic_body">The BYD Traffic Monitor stops other apps from getting online. Turn it off so Panoptes and your other apps can use the network. Afterwards you need a hard reboot.</string>
+    <string name="setup_traffic_button">Open the monitor</string>
+    <string name="setup_camera_fix_title">Black or wrong camera picture?</string>
+    <string name="setup_camera_fix_body">Run the camera test, set Camera ID to 0, tap Save, then restart the camera service. Still wrong? Try Camera ID 1. Do not touch the mapping section.</string>
+
+    <!-- Recording storage path -->
+
+    <!-- MainActivity status -->
+    <string name="camera_current_manual">Now: Camera %1$d (chosen by you)</string>
+    <string name="camera_current_auto_label">Now: Auto</string>
+    <string name="soh_estimation_active">Estimating</string>
+    <string name="soh_no_estimate_yet">Nothing to show yet. Still collecting data.</string>
+
+    <!-- Recording tabs -->
+
+    <!-- Misc -->
+    <string name="recording_lib_selected_count">%1$d chosen</string>
+    <string name="video_player_playback_error">Cannot play this</string>
+    <string name="video_player_no_events">Nothing marked</string>
+    <string name="daemon_configuration_required">Setup needed</string>
+    <string name="daemon_configuration_message">%1$s</string>
+
+    <!-- Navigation graph fragment labels (shown as toolbar/ActionBar titles) -->
+    <string name="nav_page_video_player">Video player</string>
+    <string name="nav_page_telegram">Telegram</string>
+    <string name="nav_page_abrp">Route planner link</string>
+    <string name="nav_page_mqtt">Smart home link</string>
+    <string name="nav_page_byd_cloud">BYD account</string>
+    <string name="nav_page_assistant">Ask Panoptes</string>
+
+    <!-- StatusOverlayService persistent notification (foreground service) -->
+    <string name="status_overlay_notif_title">Panoptes status</string>
+    <string name="status_overlay_notif_text">Status badge is showing</string>
+
+    <!-- DaemonKeepaliveService persistent notification (foreground service)
+         and the group-summary row that collapses SurfMate's three FGS
+         notifications into one shade entry. The summary text is intentionally
+         generic so it stays accurate whether all three services are running
+         or only the keepalive survived an OOM respawn. -->
+    <string name="daemon_keepalive_notif_title">Panoptes is on</string>
+    <string name="daemon_keepalive_notif_text">Keeping an eye on your car</string>
+    <string name="surfmate_status_summary_title">Panoptes</string>
+    <string name="surfmate_status_summary_text">Services are running</string>
+
+    <!-- ============================================================== -->
+    <!-- M3 Revamp: navigation rail + settings sub-rail + theme picker  -->
+    <!-- ============================================================== -->
+
+    <!-- Top-level destinations (navigation rail labels) -->
+    <string name="rail_dashboard">Home</string>
+    <string name="rail_assistant">Ask Panoptes</string>
+    <string name="rail_live">Live cameras</string>
+    <string name="rail_recordings">Clips</string>
+    <string name="rail_vehicle">Controls</string>
+    <string name="rail_projection">Projection</string>
+    <string name="rail_trips">Logbook</string>
+    <string name="rail_parking">Parking log</string>
+    <string name="rail_waechter">Guardian</string>
+    <string name="rail_navi">Navigation</string>
+    <string name="rail_system">System</string>
+    <string name="rail_charging">Charging</string>
+    <string name="rail_automations">Rules</string>
+    <string name="rail_key_mapping">Buttons</string>
+    <string name="rail_seat_positions">Seats</string>
+    <string name="rail_integrations">Connections</string>
+    <string name="rail_diagnostics">Checkup</string>
+    <string name="rail_settings">Settings</string>
+    <string name="rail_expand">Show menu names</string>
+    <string name="rail_collapse">Hide menu names</string>
+
+    <!-- Settings sub-rail -->
+    <string name="settings_section_appearance">Look</string>
+    <string name="settings_section_recording">Clip settings</string>
+    <string name="settings_section_surveillance">Guardian</string>
+    <string name="settings_section_daemons">Services</string>
+    <string name="settings_section_privacy">Privacy and data</string>
+    <string name="settings_section_overlay">Status badges</string>
+    <string name="settings_section_security">Security</string>
+    <string name="settings_overlay_subtitle">Pick which floating status badges stay on screen.</string>
+    <string name="settings_overlay_camera_title">Camera badge</string>
+    <string name="settings_overlay_camera_subtitle">Shows the REC / PROX badge while a clip is being recorded.</string>
+    <string name="settings_overlay_trip_title">Logbook badge</string>
+    <string name="settings_overlay_trip_subtitle">Shows the TRIP badge while a drive is being logged.</string>
+    <string name="settings_overlay_replay_title">Instant clip badge</string>
+    <string name="settings_overlay_replay_subtitle">Shows the CLIP badge: green while a clip is recording, blue for 5 s after saving, red if it fails. Only appears when a button or rule is set up for instant clips.</string>
+    <string name="settings_overlay_roadsense_title">Road watch badge</string>
+    <string name="settings_overlay_roadsense_subtitle">Shows the floating Road watch badge and hazard card while Road watch is on.</string>
+    <string name="settings_overlay_icon_opacity">Icon fade</string>
+    <string name="settings_overlay_icon_opacity_value">%1$d%%</string>
+    <string name="settings_overlay_icon_size">Icon size</string>
+    <string name="settings_overlay_icon_size_value">%1$d</string>
+    <string name="remote_voice_overlay_title">Speak out from afar</string>
+    <string name="remote_voice_mute">Mute the speak-out</string>
+    <string name="remote_voice_unmute">Unmute the speak-out</string>
+    <string name="remote_voice_notification_title">Speak out is on</string>
+    <string name="remote_voice_notification_text">Live sound is coming in from a signed-in Panoptes session</string>
+    <string name="settings_remote_communication_title">Speak out and listen</string>
+    <string name="settings_remote_communication_subtitle">Turn on speak-out, listening in the car and messages from the web page. If “Display over other apps” says “Not allowed yet”, tap it and allow it.</string>
+    <string name="settings_remote_voice_title">Allow speak-out</string>
+    <string name="settings_remote_listener_title" tools:ignore="MissingTranslation">Allow listening in the car</string>
+    <string name="settings_remote_listener_subtitle" tools:ignore="MissingTranslation">Lets signed-in Live cameras and Speak out sessions hear the car’s microphone while the car is on.</string>
+    <string name="settings_remote_audio_channel_title" tools:ignore="MissingTranslation">Voice mode</string>
+    <string name="settings_remote_audio_channel_subtitle" tools:ignore="MissingTranslation">Media keeps the current speaker and microphone paths. Navigation uses the same routing as Di+ and records the microphone at 8 kHz.</string>
+    <string name="settings_remote_audio_channel_media" tools:ignore="MissingTranslation">Media</string>
+    <string name="settings_remote_audio_channel_navigation" tools:ignore="MissingTranslation">Navigation</string>
+    <string name="settings_remote_output_override_title">Use own voice volume</string>
+    <string name="settings_remote_output_override_subtitle">When off, the car volume of the chosen voice mode applies.</string>
+    <string name="settings_remote_output_level">Voice volume</string>
+    <string name="settings_remote_output_car_volume">Same as car</string>
+    <string name="settings_remote_output_default">70%</string>
+    <string name="settings_remote_output_value">%1$d%%</string>
+    <string name="settings_remote_messages_title">Allow messages</string>
+    <string name="settings_remote_overlay_permission">Display over other apps</string>
+    <string name="settings_remote_overlay_checking">Checking</string>
+    <string name="settings_remote_overlay_allowed">Allowed</string>
+    <string name="settings_remote_overlay_required">Not allowed yet</string>
+    <string name="settings_remote_test_speaker">Try the speaker</string>
+    <string name="settings_remote_test_message">Try a message</string>
+    <string name="settings_remote_test_message_body">Messages are working.</string>
+    <string name="settings_remote_speaker_started">Speaker test is running</string>
+    <string name="settings_remote_emergency_title">Emergency stop</string>
+    <string name="settings_remote_emergency_subtitle">Right away stops and blocks speak-out, listening and messages from afar.</string>
+    <string name="settings_remote_save_failed">Could not save these settings</string>
+    <string name="cabin_audio_notification_channel" tools:ignore="MissingTranslation">Listening in the car</string>
+    <string name="cabin_audio_notification_title" tools:ignore="MissingTranslation">Listening in the car is on</string>
+    <string name="cabin_audio_notification_text" tools:ignore="MissingTranslation">The web page is hearing the car’s microphone.</string>
+    <!-- Was "About & updates" — Check for Updates row was removed from
+         the About page, so the menu / rail label is now just "About". -->
+    <string name="settings_section_about">About Panoptes</string>
+
+    <!-- Settings sub-rail (landscape) — overline + a11y -->
+    <string name="settings_subrail_overline">SETTINGS</string>
+    <string name="cd_settings_subrail">Settings submenu</string>
+
+    <!-- Settings → Vehicle data placeholder pane -->
+
+    <!-- Settings → Privacy pane copy -->
+    <string name="settings_privacy_title">Privacy and data</string>
+    <string name="settings_privacy_body">Reset deletes the clip index, saved logins, service state and the settings on this device. It cannot be undone.</string>
+
+    <!-- Settings → About pane copy -->
+    <string name="settings_about_title">About Panoptes</string>
+    <string name="settings_about_version_label">Version</string>
+    <string name="settings_about_package_label">Build</string>
+    <string name="settings_about_vehicle_title">Car and car computer</string>
+    <string name="settings_about_vehicle_subtitle">Version info from this BYD car computer.</string>
+    <string name="settings_about_vehicle_firmware_label">Firmware</string>
+    <string name="settings_about_vehicle_dsp_label">DSP</string>
+    <string name="settings_about_vehicle_mcu_label">MCU</string>
+    <string name="settings_about_vehicle_android_label">Android</string>
+    <string name="settings_about_vehicle_security_patch_label">Android security update</string>
+    <string name="settings_about_vehicle_head_unit_label">Car computer</string>
+    <string name="settings_about_vehicle_vin_label">VIN</string>
+    <string name="settings_about_vehicle_vin_hint">Sensitive number, hidden unless you show it.</string>
+    <string name="settings_about_vehicle_vin_show">Show</string>
+    <string name="settings_about_vehicle_vin_hide">Hide</string>
+    <string name="settings_about_vehicle_vin_show_a11y">Show the VIN</string>
+    <string name="settings_about_vehicle_vin_hide_a11y">Hide the VIN</string>
+    <string name="settings_about_vehicle_vin_hidden_a11y">VIN is hidden</string>
+    <string name="settings_about_vehicle_loading">Fetching&#8230;</string>
+    <string name="settings_about_vehicle_unavailable">Not available</string>
+    <string name="settings_about_check_update_value">Looks for the newest GitHub release and installs it if it is newer.</string>
+    <!-- Backup & Restore (same-device). The backup file contains credentials +
+         the device key, so the copy warns the user to keep it private. -->
+    <string name="settings_backup_export_title">Back up settings</string>
+    <string name="settings_backup_export_value">Saves your settings to a backup file. Keep it private, because it contains your logins.</string>
+    <string name="settings_backup_import_title">Restore from backup</string>
+    <string name="settings_backup_import_value">Loads a backup made on this same car computer.</string>
+    <string name="settings_backup_default_filename">surfmate-backup.json</string>
+    <string name="settings_backup_exporting">Creating the backup…</string>
+    <string name="settings_backup_export_failed">The backup did not work</string>
+    <string name="settings_backup_saved">Backup saved</string>
+    <string name="settings_backup_saved_to">Backup saved in %1$s</string>
+    <string name="settings_backup_save_failed">Could not save the backup</string>
+    <string name="settings_backup_pick_file">Choose a backup to restore</string>
+    <string name="settings_backup_no_files">No backups found. Make one first, or copy a backup .json file into %1$s and try again.</string>
+    <string name="settings_backup_read_failed">That file can\'t be read</string>
+    <string name="settings_backup_invalid_file">That is not a Panoptes backup</string>
+    <string name="settings_backup_restoring">Putting settings back…</string>
+    <string name="settings_backup_restored">Settings are back</string>
+    <string name="settings_backup_restore_failed">Restoring did not work</string>
+    <string name="settings_backup_daemon_down">The camera service has to be running to back up or restore. Start it under Services and try again.</string>
+    <string name="settings_backup_restore_confirm_title">Use this backup?</string>
+    <string name="settings_backup_restore_confirm_msg">Your current Panoptes settings will be replaced by the backup and the services reload. This only works on the same car computer the backup came from.</string>
+    <string name="settings_backup_restore_confirm_btn">Restore now</string>
+    <string name="settings_backup_restart_hint">Settings are back. To be sure all of them apply, restart the camera service (Services → Camera → Restart).</string>
+    <string name="settings_backup_trips_prompt">Add your logbook (distance, energy, cost, scores, start and end places)? Detailed measurements per drive are not included. The file will show where you have been, so keep it private.</string>
+    <string name="settings_backup_settings_only">Settings only</string>
+    <string name="settings_backup_with_trips">Add logbook</string>
+    <!-- Support-development section: tiered options, low-cost first.
+         star → spread → coffee, in that visual order. Copy aims for
+         personality without being corny — short, warm, specific. -->
+    <string name="settings_about_support_section">Made better by people like you</string>
+
+    <string name="settings_about_support_share_title">Tell another owner</string>
+    <string name="settings_about_support_share_value">Every shared link helps another BYD owner find Panoptes.</string>
+    <string name="settings_about_support_share_message">Take a look at Panoptes, an open-source Guardian and drive camera for your BYD: </string>
+    <string name="settings_about_support_share_chooser">Share Panoptes</string>
+    <string name="settings_about_open_link_failed">Could not open the link.</string>
+    <string name="settings_about_open_link_copied">No browser here. Link is on the clipboard: %1$s</string>
+
+    <string name="settings_about_support_kofi_title">Help the next release along</string>
+    <string name="settings_about_support_kofi_value">A coffee on Ko-fi keeps the late-night work going.</string>
+    <string name="settings_about_support_kofi_url" translatable="false"></string>
+    <string name="settings_about_license_title">License</string>
+    <string name="settings_about_license_value">MIT license, open source. Tap to read the full text.</string>
+    <string name="settings_about_source_title">Get the code</string>
+    <string name="settings_about_source_value"></string>
+    <string name="settings_about_license_url" translatable="false"></string>
+    <string name="settings_about_source_url" translatable="false"></string>
+    <string name="settings_about_star_title">Give us a star on GitHub</string>
+    <string name="settings_about_star_value">It\'s quick and it helps.</string>
+    <string name="settings_about_star_url" translatable="false"></string>
+
+    <string name="settings_about_thanks_title">Thank you</string>
+    <string name="settings_about_thanks_subtitle">Made possible by people who helped and chipped in.</string>
+    <string name="settings_about_contributors_title">Helpers</string>
+    <string name="settings_about_supporters_title">Backers</string>
+    <string name="settings_about_thanks_empty">Names show up here as people join in.</string>
+    <string name="settings_about_tier_diamond">Diamond</string>
+    <string name="settings_about_tier_platinum">Platinum</string>
+    <string name="settings_about_tier_gold">Gold</string>
+    <string name="settings_about_tier_silver">Silver</string>
+    <string name="settings_about_tier_bronze">Bronze</string>
+    <!-- %1$d = how many separate times this person has supported -->
+    <string name="settings_about_support_count">Backed %1$d times</string>
+    <string name="settings_about_tiers_explainer">Diamond, platinum, gold, silver and bronze show how much someone has given in total. ×N shows how many times.</string>
+
+    <!-- Settings → General -->
+    <string name="settings_theme_label">Look</string>
+    <string name="settings_theme_auto">Automatic (like the system)</string>
+    <string name="settings_theme_light">Bright</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_language_label">App language</string>
+
+    <!-- Recordings page (header + segmented control + page actions) -->
+    <string name="recordings_title">Clips</string>
+    <string name="recordings_segment_all">Everything</string>
+    <string name="recordings_segment_dashcam">Drive camera</string>
+    <string name="recordings_segment_replays">Rewinds</string>
+    <string name="recordings_segment_surveillance">Guardian</string>
+    <string name="recordings_action_settings">Options</string>
+    <!-- Hero subtitle: "%1$d today · %2$d total · %3$s" where %3$s is a pre-formatted size like "42 GB". -->
+    <string name="recordings_summary_format">%1$d today · %2$d in total · %3$s</string>
+    <!-- Header text when the daemon's recordings index is down. The counters
+         would all be zero and are NOT authoritative, so say so rather than
+         rendering "0 today · 0 total · 0 B" as fact. -->
+    <string name="recordings_summary_index_down">Counts missing: the clip list is not working</string>
+    <!-- Per-segment label with running count, e.g. "Dashcam · 118". -->
+    <string name="recordings_segment_dashcam_count">Drive camera · %d</string>
+    <string name="recordings_segment_replays_count">Rewinds · %d</string>
+    <string name="recordings_segment_surveillance_count">Guardian · %d</string>
+    <string name="recordings_segment_all_count">Everything · %d</string>
+    <!-- Layout-time placeholder for the counts subtitle before the scan completes. -->
+    <string name="recordings_summary_pending">…</string>
+    <!-- Landscape recordings preview placeholder (right pane). -->
+    <string name="recordings_preview_placeholder_title">Pick a clip</string>
+    <string name="recordings_preview_placeholder_body">Tap a clip on the left to watch it.</string>
+    <string name="recording_preview_detected">Spotted</string>
+    <string name="recording_preview_no_detection">Nothing spotted</string>
+    <string name="recording_preview_not_available">—</string>
+    <string name="recording_preview_distance">How close</string>
+    <string name="recording_preview_recorded">Filmed</string>
+    <string name="recording_preview_duration">Length</string>
+    <string name="recording_preview_storage">Saved on</string>
+    <string name="recording_preview_file_size">Size</string>
+    <string name="recording_preview_storage_internal">Built-in</string>
+    <string name="recording_preview_storage_sd">Memory card</string>
+    <string name="recording_preview_storage_usb">USB</string>
+    <string name="recording_preview_storage_unknown">Not known</string>
+    <string name="recording_headline_activity">Activity spotted</string>
+    <string name="recording_headline_motion">Motion spotted</string>
+    <string name="recording_headline_dashcam">Drive camera clip</string>
+    <string name="recording_headline_forward_camera">Front camera clip</string>
+    <string name="recording_headline_replay">Quick rewind</string>
+    <plurals name="recording_headline_person">
+        <item quantity="one">Someone spotted</item>
+        <item quantity="other">%1$d people spotted</item>
+    </plurals>
+    <plurals name="recording_headline_vehicle">
+        <item quantity="one">A car spotted</item>
+        <item quantity="other">%1$d cars spotted</item>
+    </plurals>
+    <plurals name="recording_headline_bike">
+        <item quantity="one">A bike spotted</item>
+        <item quantity="other">%1$d bikes spotted</item>
+    </plurals>
+    <plurals name="recording_headline_animal">
+        <item quantity="one">An animal spotted</item>
+        <item quantity="other">%1$d animals spotted</item>
+    </plurals>
+    <plurals name="recording_actor_person">
+        <item quantity="one">%1$d person</item>
+        <item quantity="other">%1$d people</item>
+    </plurals>
+    <plurals name="recording_actor_vehicle">
+        <item quantity="one">%1$d vehicle</item>
+        <item quantity="other">%1$d vehicles</item>
+    </plurals>
+    <plurals name="recording_actor_bike">
+        <item quantity="one">%1$d bike</item>
+        <item quantity="other">%1$d bikes</item>
+    </plurals>
+    <plurals name="recording_actor_animal">
+        <item quantity="one">%1$d animal</item>
+        <item quantity="other">%1$d animals</item>
+    </plurals>
+    <string name="recording_distance_very_close">Very near</string>
+    <string name="recording_distance_close">Near</string>
+    <string name="recording_distance_mid">Medium distance</string>
+    <string name="recording_distance_far">Distant</string>
+    <string name="cd_recording_more_actions">More options for this clip</string>
+
+    <!-- Diagnostics page -->
+    <string name="diagnostics_section_adb_console">ADB terminal</string>
+    <string name="diagnostics_section_traffic">Data traffic</string>
+    <string name="diagnostics_section_camera_probe">Camera check</string>
+    <string name="diagnostics_section_battery">Battery health</string>
+    <!-- Sub-label used on diagnostics utility cards in landscape (hint to tap). -->
+
+    <!-- SOTA Diagnostics dashboard -->
+    <string name="diagnostics_hero_title">System check</string>
+    <string name="diagnostics_hero_subtitle">Live status, logs and checks for this device.</string>
+    <string name="diagnostics_health_clear">Everything is fine</string>
+    <string name="diagnostics_health_section">Status</string>
+    <string name="diagnostics_health_network">Network</string>
+    <string name="diagnostics_health_storage">Space</string>
+    <string name="diagnostics_health_camera">Camera</string>
+    <string name="diagnostics_health_battery">Battery</string>
+    <string name="diagnostics_metric_pending">—</string>
+    <string name="diagnostics_metric_online">Connected</string>
+    <!-- Network tile: bottom line tunnel state (e.g. "Tunnel · Online"). %1$s is one of
+         tunnel_state_online / tunnel_state_offline / tunnel_state_connecting. -->
+    <string name="diagnostics_network_tunnel_label">Remote access · %1$s</string>
+    <string name="diagnostics_tunnel_state_online">Connected</string>
+    <string name="diagnostics_tunnel_state_offline">Not connected</string>
+    <string name="diagnostics_tunnel_state_connecting">Getting connected</string>
+    <!-- Network top-line fallbacks when no Wi-Fi SSID is available. -->
+    <string name="diagnostics_network_mobile">Mobile data</string>
+    <string name="diagnostics_network_ethernet">Ethernet</string>
+    <string name="diagnostics_network_offline">No connection</string>
+    <!-- Storage tile lines. %1$d clip count, %2$s human-readable used size. -->
+    <string name="diagnostics_storage_used_line">%1$d clips, %2$s taken up</string>
+    <!-- Storage tile bottom line. %1$s human-readable free size. -->
+    <string name="diagnostics_storage_free_line">%1$s left</string>
+    <string name="diagnostics_logs_card_title">Live log</string>
+    <string name="diagnostics_logs_card_subtitle">What running services report right now.</string>
+    <string name="diagnostics_tools_section">Helpers</string>
+    <string name="diagnostics_traffic_subtitle">See how much data is moving right now.</string>
+    <string name="diagnostics_camera_probe_subtitle">Look at the connected camera streams.</string>
+    <string name="diagnostics_adb_subtitle">Open the terminal on this device.</string>
+    <string name="diagnostics_battery_subtitle">Check battery health and cell values.</string>
+    <string name="diagnostics_settings_subtitle">App options, look and language.</string>
+
+    <!-- SOTA Integrations page -->
+    <string name="integrations_hero_title">Connections</string>
+    <string name="integrations_hero_subtitle">Link Panoptes with your services.</string>
+    <string name="integrations_status_unknown">Tap to set up</string>
+    <string name="integrations_status_configured">Set up</string>
+    <string name="integrations_status_not_set_up">Not yet set up</string>
+    <string name="integrations_telegram_desc">Sends trip summaries, motion alerts and SOS messages to your own Telegram bot.</string>
+    <string name="integrations_abrp_desc">Optional, off by default: sends live battery and route data to A Better Routeplanner (Iternio). Panoptes\' own route planner does not need it.</string>
+    <string name="integrations_mqtt_desc">Shares car data with Home Assistant or any MQTT broker.</string>
+    <string name="integrations_byd_cloud_desc">Link your BYD app account to use remote commands such as locking the doors, flashing the lights and honking.</string>
+    <string name="integrations_configure_button">Set up</string>
+
+    <!-- Settings → About / Privacy actions (rows) -->
+    <string name="settings_action_check_update">Look for updates</string>
+    <string name="settings_action_reset_data">Clear data…</string>
+
+    <!-- Content descriptions for rail / segmented controls -->
+    <string name="cd_brand_logo">Panoptes</string>
+
+    <!-- ============================================================== -->
+    <!-- Dashboard SOTA revamp                                            -->
+    <!-- ============================================================== -->
+
+    <!-- Hero card -->
+    <!-- SOTA hero headline. Static identity statement (not a time-of-day
+         greeting) — pairs with the SURFMATE overline above and the live
+         status row of chips below. Locale catalogs auto-translate. -->
+    <string name="dashboard_hero_headline">Guardian awake</string>
+    <string name="dashboard_subtitle_all_systems">Everything is running</string>
+    <string name="dashboard_subtitle_some_offline">%1$d of %2$d services running</string>
+    <string name="dashboard_subtitle_no_tunnel">Remote access not connected</string>
+
+    <!-- Metric tiles -->
+    <string name="dashboard_metric_recordings">Clips today</string>
+    <string name="dashboard_metric_storage">Space used</string>
+    <string name="dashboard_metric_tunnel">Remote access</string>
+    <string name="dashboard_metric_services">Tasks in the background</string>
+    <string name="dashboard_metric_value_pending">—</string>
+    <string name="dashboard_metric_vehicle">Car</string>
+
+    <!-- Hero chips: at-a-glance pills under the greeting that summarize the
+         three most important live signals (tunnel, services, recording). -->
+    <string name="dashboard_chip_recording_active">Filming</string>
+    <string name="dashboard_chip_recording_idle">Resting</string>
+    <string name="dashboard_vehicle_tap_to_set">Tap to choose</string>
+    <string name="dashboard_vehicle_summary">%1$.1f kWh · %2$s</string>
+    <string name="vehicle_dialog_title">Enter battery size</string>
+    <string name="vehicle_dialog_capacity_label">Size</string>
+    <string name="vehicle_dialog_capacity_suffix">kWh</string>
+    <string name="vehicle_dialog_capacity_helper">Between 5 and 120 kWh. Anything under 15 only works for a PHEV.</string>
+    <string name="vehicle_dialog_model_label">Car model</string>
+    <string name="vehicle_model_seagull">BYD Seagull</string>
+    <string name="vehicle_dialog_save">Save</string>
+    <string name="vehicle_dialog_reset">Detect automatically again</string>
+    <string name="vehicle_dialog_invalid_capacity">Please enter 5 to 120 kWh</string>
+    <string name="vehicle_dialog_summary_effective">In use: %1$.1f kWh</string>
+    <string name="vehicle_dialog_summary_calibration">Last calibration: %1$.1f%% on %2$s</string>
+    <string name="vehicle_dialog_soh_unavailable">not available</string>
+    <!-- Combined Recordings+Storage chip: e.g. "8.4 GB used · 12 GB free" -->
+    <string name="dashboard_metric_storage_chip">%1$s taken · %2$s left</string>
+    <string name="dashboard_metric_storage_chip_pending">Space …</string>
+    <string name="dashboard_tunnel_offline">Not connected</string>
+    <string name="dashboard_tunnel_online">Connected</string>
+    <string name="dashboard_tunnel_connecting">Getting connected…</string>
+    <string name="dashboard_tunnel_tile_failed">Failed</string>
+    <string name="dashboard_tunnel_tile_stopping">Shutting down…</string>
+
+    <!-- Quick actions (now rendered as same-size tiles, not chips) -->
+    <string name="dashboard_action_live">Live cameras</string>
+    <string name="dashboard_action_live_subtitle">See the cameras</string>
+    <string name="dashboard_action_recordings">Clips</string>
+    <string name="dashboard_action_settings">Options</string>
+    <string name="dashboard_action_settings_subtitle">Options and app info</string>
+    <string name="dashboard_action_trips">Logbook</string>
+    <string name="dashboard_action_vehicle_control">Controls</string>
+
+    <!-- ============================================================ -->
+    <!-- Settings — SOTA portrait hub + section pages                  -->
+    <!-- ============================================================ -->
+
+    <!-- Hero -->
+    <string name="settings_hero_title">Options</string>
+    <string name="settings_hero_overline">SURFMATE</string>
+    <string name="settings_hero_subtitle">Adjust the look, clips, Guardian and the data on this device.</string>
+
+    <!-- Section overlines -->
+    <string name="settings_overline_preferences">OPTIONS</string>
+    <string name="settings_overline_about_data">YOUR DATA</string>
+
+    <!-- Quick toggles -->
+    <string name="settings_quick_theme_label">Look</string>
+    <string name="settings_quick_language_label">App language</string>
+
+    <!-- Section row subtitles (portrait) -->
+    <string name="settings_section_recording_subtitle">Time before and after, video format, space limits.</string>
+    <string name="settings_section_surveillance_subtitle">Detection zones, times, how sensitive to motion.</string>
+    <string name="settings_section_daemons_subtitle">Background services: Telegram, MQTT.</string>
+
+    <!-- About / data row subtitles -->
+    <string name="settings_about_row_title">About Panoptes</string>
+    <string name="settings_about_row_subtitle">Version, license, ways to support the project.</string>
+    <string name="settings_reset_row_subtitle">Delete clips, events or all cached data.</string>
+
+    <!-- Footer -->
+    <string name="settings_footer_format">Panoptes %1$s · %2$s</string>
+
+    <!-- ============================================================ -->
+    <!-- Appearance pane — SOTA visual theme picker                    -->
+    <!-- ============================================================ -->
+    <string name="settings_appearance_subtitle">Look, language and display options.</string>
+    <string name="settings_theme_active_auto_caption">Automatic matches your system\'s look.</string>
+    <string name="settings_theme_active_light_caption">The bright look is always on.</string>
+    <string name="settings_theme_active_dark_caption">The dark look is always on.</string>
+    <string name="settings_language_count_format">%1$d out of %2$d languages available</string>
+    <string name="settings_language_card_title">Language of the app</string>
+
+    <!-- ============================================================ -->
+    <!-- Vehicle data pane — manifest permissions + integrations       -->
+    <!-- ============================================================ -->
+
+    <!-- ============================================================ -->
+    <!-- Privacy pane — stance + storage summary + reset               -->
+    <!-- ============================================================ -->
+    <string name="settings_privacy_stance_title">Stays on the device</string>
+    <string name="settings_privacy_stance_body">Panoptes runs fully on the car screen. Nothing leaves your car unless you set up remote access or a connection yourself.</string>
+    <string name="settings_privacy_overline_storage">ON THIS DEVICE</string>
+    <string name="settings_privacy_overline_reset">CLEAR DATA</string>
+    <string name="settings_privacy_storage_clips_label">Saved clips</string>
+    <string name="settings_privacy_storage_size_label">Combined size</string>
+    <string name="settings_privacy_storage_unavailable">Not available</string>
+    <string name="settings_privacy_storage_count_format">%1$d clip</string>
+    <string name="settings_privacy_storage_count_format_plural">%1$d clips</string>
+    <string name="settings_privacy_reset_subtitle">Pick what to delete: clips, events, service settings, saved car data…</string>
+
+    <!-- Diagnostics — log verbosity. On the Privacy pane because logs are on-device
+         data and this decides how much gets written. Segment labels are single words;
+         the paragraph below carries the meaning. -->
+    <string name="settings_privacy_overline_diagnostics">FAULT-FINDING</string>
+    <string name="settings_privacy_log_level_label">Logging level</string>
+    <string name="settings_privacy_log_level_debug">Debug</string>
+    <string name="settings_privacy_log_level_info">Normal</string>
+    <string name="settings_privacy_log_level_warn">Problems</string>
+    <string name="settings_privacy_log_level_error">Failures</string>
+
+    <!-- One description per level; swapped as the selection changes. -->
+    <string name="settings_privacy_log_level_debug_desc">Records every ADB command and service check. Use it while hunting a fault. It fills the log files fast, so older entries are dropped sooner.</string>
+    <string name="settings_privacy_log_level_info_desc">Everyday setting. Logs what the app and its services do, without every single command.</string>
+    <string name="settings_privacy_log_level_warn_desc">Logs only problems and failures.</string>
+    <string name="settings_privacy_log_level_error_desc">Logs only failures. Whatever happened before a failure is dropped.</string>
+
+    <!-- Advisory shown at BOTH extremes: verbose costs history, near-silent costs the
+         ability to diagnose anything later. -->
+    <string name="settings_privacy_log_level_note_verbose">Detailed logging is on, so older log history goes sooner.</string>
+    <string name="settings_privacy_log_level_note_quiet">Most logging is off, so a later fault will be harder to track down.</string>
+    <string name="settings_privacy_overline_developer_tools">FOR DEVELOPERS</string>
+    <string name="settings_screenshot_privacy_title">Private screenshots</string>
+    <string name="settings_screenshot_privacy_body">Blurs IP addresses, links, coordinates, places, QR codes, clip thumbnails and camera previews in the app and the web page. It is only a visual help, so check screenshots before you share them.</string>
+    <string name="settings_screenshot_privacy_save_failed">Couldn\'t save the screenshot privacy setting.</string>
+
+    <!-- Settings → Security pane copy + PIN unlock screen.
+         The lock guards the SurfMate UI only. Cam daemon, AccSentry,
+         surveillance, recording, Telegram alerts, status overlay, and the
+         deterrent screen all run independently regardless of this state. -->
+    <string name="settings_security_title">Protection</string>
+    <string name="settings_security_subtitle">Lock Panoptes so passengers and parking attendants need your PIN to open it.</string>
+    <string name="settings_security_stance_title">Locks the screen only</string>
+    <string name="settings_security_stance_body">Guardian, recording, warn-off, alerts and background services keep running while the app is locked. The PIN only protects the Panoptes screen, nothing else.</string>
+    <string name="settings_security_overline_lock">Lock the app</string>
+    <string name="settings_security_overline_recovery">Forgotten PIN</string>
+    <string name="settings_security_toggle_title">Ask for a PIN</string>
+    <string name="settings_security_toggle_subtitle_off">Off. Anyone can open Panoptes.</string>
+    <string name="settings_security_toggle_subtitle_on">On. Panoptes asks for the PIN.</string>
+    <string name="settings_security_change_title">New PIN</string>
+    <string name="settings_security_change_subtitle">Enter your current PIN, then choose a new one.</string>
+    <string name="settings_security_autolock_title">Lock automatically</string>
+    <string name="settings_security_autolock_immediate">Right away</string>
+    <string name="settings_security_autolock_1min">1 minute later</string>
+    <string name="settings_security_autolock_5min">5 minutes later</string>
+    <string name="settings_security_autolock_15min">15 minutes later</string>
+    <string name="settings_security_autolock_never">Don\'t lock on a timer</string>
+    <string name="settings_security_recovery_title">Reset PIN via ADB</string>
+    <string name="settings_security_recovery_body">If you forget the PIN, you can remove it from a computer over USB debugging, without a factory reset. Run this command, then open the app again.</string>
+    <!-- Verbatim ADB command. translatable=false so the i18n pipeline
+         doesn't localize the literal path/command — translators following
+         Crowdin would otherwise risk breaking the only recovery path. -->
+    <string name="settings_security_recovery_command" translatable="false">adb shell touch /data/local/tmp/.surfmate_pin_reset</string>
+    <string name="settings_security_dialog_set_title">Create PIN</string>
+    <string name="settings_security_dialog_set_body">Choose a PIN with 4 to 8 digits. You\'ll need it each time you open the app.</string>
+    <string name="settings_security_dialog_disable_title">Switch off the PIN lock?</string>
+    <string name="settings_security_dialog_disable_body">Enter your current PIN to switch off the app lock.</string>
+    <string name="settings_security_dialog_change_step1_title">Enter your current PIN</string>
+    <string name="settings_security_dialog_change_step1_body">Type your current PIN first. Then you can choose a new one.</string>
+    <string name="settings_security_action_set">Create PIN</string>
+    <string name="settings_security_action_disable">Switch off lock</string>
+    <string name="settings_security_action_continue">Next</string>
+    <string name="settings_security_pin_hint">PIN</string>
+    <string name="settings_security_pin_confirm_hint">Repeat PIN</string>
+    <string name="settings_security_error_length">Use 4 to 8 digits</string>
+    <string name="settings_security_error_numeric">Numbers only</string>
+    <string name="settings_security_error_mismatch">The two PINs differ</string>
+    <string name="settings_security_error_wrong">Incorrect PIN</string>
+    <string name="settings_security_error_locked_out">Too many tries. Wait a moment, then try again.</string>
+    <string name="settings_security_error_persist">The PIN wasn\'t saved. Please try again.</string>
+    <string name="settings_security_toast_set_ok">PIN saved. The app lock is on.</string>
+    <string name="settings_security_toast_disable_ok">The app lock is now off.</string>
+
+    <!-- PIN unlock screen (PinLockActivity). Shown over MainActivity when
+         the app lock is enabled and the session isn\'t fresh. -->
+    <string name="pin_lock_title">Type your PIN</string>
+    <string name="pin_lock_title_unlocked">Open</string>
+    <string name="pin_lock_subtitle_default">Enter your PIN to open Panoptes.</string>
+    <string name="pin_lock_subtitle_wrong">That PIN is wrong. Try again.</string>
+    <string name="pin_lock_subtitle_locked_out">Too many tries. Please wait a little.</string>
+    <!-- %1$s is a formatted countdown like "30s" or "2:45". -->
+    <string name="pin_lock_subtitle_locked_out_countdown">Locked for now. Try again in %1$s.</string>
+    <string name="pin_lock_lockout_seconds">%1$ds</string>
+    <string name="pin_lock_lockout_minutes">%1$d:%2$02d</string>
+    <!-- Lock-screen recovery hint. Two-part: a translatable prose prefix
+         and a translatable=false literal command (reuses the same
+         settings_security_recovery_command resource so a future edit to
+         the command stays in sync across both surfaces). The lock screen
+         concatenates them at runtime via String.format. -->
+    <string name="pin_lock_recovery_hint_prefix">Lost your PIN? Run this on a computer connected to the car:\n%1$s</string>
+    <string name="pin_lock_backspace_cd">Delete last digit</string>
+    <plurals name="pin_lock_dot_a11y">
+        <item quantity="zero">No digits typed</item>
+        <item quantity="one">%1$d digit typed</item>
+        <item quantity="other">%1$d digits typed</item>
+    </plurals>
+
+    <!-- Place tagging (reverse geocoding) — recording row chip fallback. -->
+    <string name="recording_unknown_location">Place unknown</string>
+
+    <!-- ============================================================== -->
+    <!-- Diagnostics health-tile values (Camera + Battery)                -->
+    <!-- ============================================================== -->
+    <!-- Camera tile primary value: %1$d is the probed camera id (0..N). -->
+    <string name="diagnostics_camera_value_camera_n">Camera %1$d</string>
+    <!-- Camera tile primary value when manual override is active. -->
+    <string name="diagnostics_camera_value_camera_n_manual">Camera %1$d (chosen by hand)</string>
+    <string name="diagnostics_camera_value_probing">Checking…</string>
+    <string name="diagnostics_camera_value_offline">Not connected</string>
+    <!-- Battery tile primary value: %1$.0f is the SOH percent (0..100). -->
+    <string name="diagnostics_battery_value_soh">%1$.0f%%</string>
+    <string name="diagnostics_battery_value_pending">Waiting for data</string>
+
+    <!-- Dashboard recordings tile: live-record indicator prefix.
+         %1$d is today's clip count. The leading bullet is the red dot. -->
+    <string name="dashboard_recordings_value_live">● %1$d</string>
+
+    <!-- ============================================================== -->
+    <!-- Dashboard hero subtitle — auto-rotating insights carousel        -->
+    <!-- ============================================================== -->
+    <!-- Each line replaces the static subtitle for ~5s, then cross-fades
+         to the next available insight. Numbers are bolded + tinted in the
+         provider, so translators should keep numeric placeholders intact
+         (do not spell out the digits). -->
+
+    <!-- First-launch welcome — only shown on the very first dashboard visit. -->
+    <string name="dashboard_insight_welcome">Welcome. Panoptes is a second set of eyes for you now.</string>
+
+    <!-- Parking delta. %1$s = absolute SOC delta string ("8%"); %2$s = absolute kWh string ("4 kWh"). -->
+    <string name="dashboard_insight_parked_charged_kwh">Gained %1$s (≈%2$s) while parked</string>
+    <string name="dashboard_insight_parked_charged">Gained %1$s while parked</string>
+    <string name="dashboard_insight_parked_drained_kwh">Spent %1$s (≈%2$s) since parking</string>
+    <string name="dashboard_insight_parked_drained">Spent %1$s since parking</string>
+
+    <!-- Most recent surveillance clip. %1$s = relative time, e.g. "2 hr. ago" / "yesterday". -->
+    <string name="dashboard_insight_last_alert">Last Guardian alert: %1$s</string>
+
+    <!-- Most recent completed charging session in the last 24h.
+         %1$s = energy added (e.g. "12.4 kWh"); %2$s = duration (e.g. "1 hr 45 min"). -->
+    <string name="dashboard_insight_last_charge">Last charging: +%1$s in %2$s</string>
+
+    <!-- Storage milestone. %1$d = clip count; %2$s = total size (e.g. "42 GB"). -->
+    <string name="dashboard_insight_storage_milestone">%1$d clips · %2$s filmed</string>
+
+    <!-- Number formatters used inside other insights. Translators may localize
+         the unit suffix (e.g. "키와트" / "квт·ч") but should leave the float
+         placeholder shape so the bold-ifier still finds the digits. -->
+    <string name="dashboard_insight_kwh_format">%1$.1f kWh</string>
+    <string name="dashboard_insight_percent_format">%1$.1f%%</string>
+    <string name="dashboard_insight_hours_minutes">%1$d h %2$d min</string>
+
+    <!-- Today's clips. -->
+    <plurals name="dashboard_insight_today_clips">
+        <item quantity="one">%1$d new clip today</item>
+        <item quantity="other">%1$d new clips today</item>
+    </plurals>
+
+    <!-- Process uptime. Days form takes (days, hours); hours form takes hours only. -->
+    <plurals name="dashboard_insight_uptime_days_hours">
+        <item quantity="one">Panoptes has run %1$d day and %2$d h</item>
+        <item quantity="other">Panoptes has run %1$d days and %2$d h</item>
+    </plurals>
+    <plurals name="dashboard_insight_uptime_hours">
+        <item quantity="one">Panoptes has run %1$d hour</item>
+        <item quantity="other">Panoptes has run %1$d hours</item>
+    </plurals>
+
+    <string name="unit_minute">min</string>
+    <string name="unit_minute_compact">m</string>
+    <string name="unit_hour_compact">h</string>
+    <string name="unit_second_compact">s</string>
+    <!-- Duration helpers used inside insights (last_charge etc.). -->
+    <plurals name="dashboard_insight_minutes">
+        <item quantity="one">%1$d min</item>
+        <item quantity="other">%1$d min</item>
+    </plurals>
+    <plurals name="dashboard_insight_hours">
+        <item quantity="one">%1$d h</item>
+        <item quantity="other">%1$d h</item>
+    </plurals>
+
+    <!-- ============================================================
+         RoadSense — road-hazard detection feature
+         ============================================================ -->
+    <string name="rail_roadsense">Road watch</string>
+    <string name="rail_hazard_map">Map</string>
+    <string name="roadsense_title">Road watch</string>
+    <string name="roadsense_pill_scanning">Checking</string>
+    <string name="roadsense_pill_idle">Road watch</string>
+    <string name="roadsense_status_idle">Waiting</string>
+    <!-- VEHICLE calibration (suspension-learning) — the green/orange/red dot. Worded
+         about the car, not the route, since that's what maturity actually measures. -->
+    <string name="roadsense_cal_learning">Getting to know your car</string>
+    <string name="roadsense_cal_ready">Car calibrated</string>
+    <string name="roadsense_cal_partial">Getting more accurate</string>
+    <!-- Idle caption — ROUTE coverage (distinct from vehicle calibration). "Clear
+         ahead" only when we've actually mapped this stretch; "New road" when we
+         haven't, so an unsurveyed road isn't mistaken for confirmed-safe. -->
+    <string name="roadsense_clear_ahead">Road ahead is clear</string>
+    <string name="roadsense_road_mapped">Known road · clear</string>
+    <string name="roadsense_road_new">Unfamiliar road · learning</string>
+    <string name="roadsense_unit_meters">m</string>
+    <string name="roadsense_dash_distance">—</string>
+    <string name="roadsense_warn_label">Alert me</string>
+    <string name="roadsense_toggle_audio">Sound</string>
+    <string name="roadsense_toggle_visual">Display</string>
+    <!-- severity / type readouts (formatted at runtime) -->
+    <string name="roadsense_sev_minor">Small</string>
+    <string name="roadsense_sev_moderate">Medium</string>
+    <string name="roadsense_sev_severe">Serious</string>
+    <string name="roadsense_type_breaker">Speed bump</string>
+    <string name="roadsense_type_pothole">Pothole</string>
+    <string name="roadsense_type_hazard">Danger</string>
+    <string name="roadsense_type_rough">Bumpy stretch</string>
+    <!-- "Moderate · Pothole" style line -->
+    <string name="roadsense_hazard_format">%1$s · %2$s</string>
+    <!-- Zone readouts (D-032): cluster of hazards announced as one. -->
+    <!-- "3 bumps ahead" — %1$d = count -->
+    <string name="roadsense_zone_count">%1$d bumps up ahead</string>
+    <!-- "Rough section · 40 m" — %1$d = length in metres -->
+    <string name="roadsense_zone_rough">Bumpy stretch · %1$d m</string>
+    <!-- Calibration-Mode confirm card (R-OVL-6) -->
+    <string name="roadsense_confirm_prompt">Was that a danger?</string>
+    <string name="roadsense_confirm_reject">Not dangerous</string>
+    <string name="roadsense_confirm_accept">Yes, it was</string>
+    <!-- content descriptions -->
+    <string name="roadsense_cd_cal_level">How well the car is calibrated</string>
+    <string name="roadsense_cd_direction">Which way to the next danger</string>
+
+    <!-- Blind Spot overlay labels (native overlay window). -->
+    <string name="blindspot_overlay_left">LEFT</string>
+    <string name="blindspot_overlay_right">RIGHT</string>
+
+    <!-- ============================================================== -->
+    <!-- RoadSense Map (native MapLibre map view + tap-to-verify sheet). -->
+    <!-- ============================================================== -->
+    <string name="roadsense_map_title">Map</string>
+    <string name="roadsense_map_route_clear">Free</string>
+    <string name="roadsense_map_route_unmapped">Not known yet</string>
+    <string name="roadsense_map_back">Go back</string>
+    <string name="roadsense_map_recenter">Center on my position</string>
+    <!-- Tap-to-verify bottom sheet -->
+    <string name="roadsense_map_severity_label">How serious</string>
+    <string name="roadsense_map_type_label">Kind</string>
+    <string name="roadsense_map_type_unknown">Not known</string>
+    <string name="roadsense_map_confirm">Confirm it</string>
+    <string name="roadsense_map_delete">Remove</string>
+    <!-- Status chip labels: candidate / on-device / shared with fleet -->
+    <string name="roadsense_map_status_candidate">Possible</string>
+    <string name="roadsense_map_status_local">On this device</string>
+    <string name="roadsense_map_status_cloud">Shared with others</string>
+    <!-- Meta line: "Moderate · 82% confidence · 3 reports" -->
+    <string name="roadsense_map_meta_format">%1$s · %2$d%% sure · %3$s</string>
+    <!-- "3 reports" / "1 report" -->
+    <plurals name="roadsense_map_reports">
+        <item quantity="one">%1$d warning</item>
+        <item quantity="other">%1$d warnings</item>
+    </plurals>
+    <!-- Snackbar / toast confirmations -->
+    <string name="roadsense_map_confirmed_toast">Danger confirmed</string>
+    <string name="roadsense_map_deleted_toast">Danger removed</string>
+    <string name="roadsense_map_action_failed">Road watch didn\'t respond. Try again.</string>
+    <string name="roadsense_map_no_location">Looking for a GPS signal…</string>
+    <string name="karte_keine_quelle">No map source chosen. Pick one under System → Map source.</string>
+    <!-- Navigation: search + routing + turn-by-turn -->
+    <string name="roadsense_map_search_hint">Where to?</string>
+    <string name="roadsense_map_search_action">Find</string>
+    <string name="roadsense_map_searching">Looking…</string>
+    <string name="roadsense_map_no_results">Nothing found</string>
+    <string name="roadsense_map_search_network">The search service isn\'t responding. Check your internet connection or proxy, then try again.</string>
+    <string name="roadsense_map_pick_destination">Pick a destination</string>
+    <string name="roadsense_map_routing">Looking for a route…</string>
+    <string name="roadsense_map_route_failed">No route found. Try again.</string>
+    <string name="roadsense_map_need_key">To navigate, add a routing key in the Road watch settings.</string>
+    <string name="roadsense_map_route_key_rejected">The routing key was refused. Check it in the Road watch settings.</string>
+    <string name="roadsense_map_route_network">The connection is too slow to find a route. Check your internet and try again.</string>
+    <string name="roadsense_map_route_http">The route service had a problem (%1$d). Try again soon.</string>
+    <string name="roadsense_map_rerouting">You left the route. Finding a new one…</string>
+    <string name="roadsense_map_arrived">You\'re there.</string>
+    <string name="roadsense_map_nav_started">Heading to %1$s</string>
+    <string name="roadsense_map_nav_ended">Navigation stopped</string>
+    <string name="roadsense_map_end_nav">Stop navigation</string>
+    <string name="roadsense_map_zoom_in">Closer</string>
+    <string name="roadsense_map_zoom_out">Further away</string>
+    <!-- Hazard visibility filter -->
+    <string name="roadsense_map_hazards_filter">Which dangers to show</string>
+    <string name="roadsense_map_hazards_all">Show every danger</string>
+    <string name="roadsense_map_hazards_moderate">Medium and serious</string>
+    <string name="roadsense_map_hazards_severe">Serious only</string>
+    <string name="roadsense_map_hazards_hidden">Hide dangers</string>
+    <!-- POI along route (EV charging / fuel) -->
+    <string name="roadsense_map_poi_toggle">Charging and fuel stops</string>
+    <!-- 2D / 3D buildings toggle -->
+    <string name="roadsense_map_dimension_toggle">Flat or 3D buildings</string>
+    <string name="roadsense_map_3d_on">3D buildings shown</string>
+    <string name="roadsense_map_3d_off">3D buildings hidden</string>
+    <string name="roadsense_map_poi_loading">Looking for chargers and fuel stops…</string>
+    <string name="roadsense_map_poi_none">No stops found close by</string>
+    <string name="roadsense_map_poi_need_route">Pick a destination first</string>
+    <!-- POI tap action sheet -->
+    <string name="roadsense_map_stop_added">Stop included</string>
+    <string name="roadsense_map_remove_stop_action">Delete stop</string>
+    <string name="roadsense_map_poi_navigate">Go here</string>
+    <string name="roadsense_map_poi_kind_charging">Charger</string>
+    <string name="roadsense_map_poi_kind_fuel">Petrol station</string>
+    <string name="roadsense_map_poi_charging_generic">Charger</string>
+    <string name="roadsense_map_poi_fuel_generic">Petrol station</string>
+    <string name="roadsense_map_route_switched">Route changed</string>
+    <!-- "then <next maneuver>" preview shown in the maneuver banner -->
+    <string name="roadsense_map_then">after that</string>
+    <!-- Roundabout exit ordinal in the maneuver banner (%1$d = exit number) -->
+    <string name="roadsense_map_exit_n">take exit %1$d</string>
+    <!-- Hazards-along-route pills (%1$d = count) -->
+    <string name="roadsense_map_pill_severe">%1$d serious</string>
+    <string name="roadsense_map_pill_moderate">%1$d medium</string>
+    <string name="roadsense_map_pill_minor">%1$d small</string>
+    <!-- Shown briefly if the basemap can\'t be reached. -->
+    <string name="roadsense_map_offline">No map data without internet</string>
+
+    <!-- Navigation: autocomplete + route options -->
+    <string name="roadsense_map_clear_search">Erase search</string>
+    <!-- Route-options sheet -->
+    <string name="roadsense_map_routes_title">Pick a route</string>
+    <string name="roadsense_map_routes_to">Ways to %1$s</string>
+    <string name="roadsense_map_routes_cancel">Cancel</string>
+    <!-- Per-route row label, %1$d is the 1-based route number. -->
+    <string name="roadsense_map_route_option">Option %1$d</string>
+    <string name="roadsense_map_fastest">Quickest</string>
+    <string name="roadsense_map_start">Start</string>
+
+    <!-- Stops / waypoints in the route-options sheet -->
+    <string name="roadsense_map_your_location">Where you are</string>
+    <string name="roadsense_map_add_stop">Add a stop</string>
+    <string name="roadsense_map_add_stop_hint">Find a stop to add</string>
+    <string name="roadsense_map_stop_removed">Stop deleted</string>
+    <string name="roadsense_map_remove_stop">Delete stop</string>
+    <string name="roadsense_map_move_stop_up">Move this stop up</string>
+    <string name="roadsense_map_move_stop_down">Move this stop down</string>
+    <!-- %1$d is the maximum number of stops allowed. -->
+    <string name="roadsense_map_max_stops">You can add up to %1$d stops</string>
+
+    <!-- Map day/night override (Auto → Light → Dark) -->
+    <string name="roadsense_map_theme_toggle">Map look</string>
+    <string name="roadsense_map_theme_auto">Map look: Automatic</string>
+    <string name="roadsense_map_theme_light">Map look: Bright</string>
+    <string name="roadsense_map_theme_dark">Map look: Dark</string>
+
+    <!-- Saved places (Home / Work / custom favourites) -->
+    <string name="roadsense_map_saved_home">Home</string>
+    <string name="roadsense_map_saved_work">Work</string>
+    <string name="roadsense_map_saved_set_home">Choose Home</string>
+    <string name="roadsense_map_saved_set_work">Choose Work</string>
+    <!-- Short action label for the "save as a custom favourite" button. -->
+    <string name="roadsense_map_saved_favourite">Favourite</string>
+    <string name="roadsense_map_save_place">Keep this place</string>
+    <string name="roadsense_map_save_as_home">Use as Home</string>
+    <string name="roadsense_map_save_as_work">Use as Work</string>
+    <string name="roadsense_map_save_as_custom">Keep as favourite…</string>
+    <string name="roadsense_map_saved_added">Kept</string>
+    <string name="roadsense_map_saved_removed">No longer saved</string>
+    <string name="roadsense_map_saved_remove">Delete</string>
+    <string name="roadsense_map_recent_remove">Drop from recent places</string>
+    <string name="roadsense_map_recent_removed">Dropped from recent places</string>
+    <string name="roadsense_map_custom_label_hint">Name (e.g. Gym, Mum\'s place)</string>
+    <string name="roadsense_map_custom_label_title">Give this place a name</string>
+    <string name="roadsense_map_save">Save</string>
+    <string name="roadsense_map_cancel">Cancel</string>
+    <!-- Place-action sheet (long-press the map or a search result to save/navigate) -->
+    <string name="roadsense_map_dropped_pin">Marked spot</string>
+    <string name="roadsense_map_navigate_here">Go here</string>
+    <string name="carnav_section_header">Send to car</string>
+    <string name="carnav_navigate">Go</string>
+    <string name="carnav_menu_navigate_here">Go here (replaces current route)</string>
+    <string name="carnav_menu_add_stop">Add as a stop</string>
+    <string name="carnav_deferred_prompt_title">Destination offered</string>
+    <string name="carnav_deferred_yes">Take it</string>
+    <string name="carnav_deferred_cancel">No thanks</string>
+    <string name="carnav_save_favourite">Add to favourites</string>
+    <string name="carnav_sending">Sending to the car…</string>
+    <string name="carnav_navigate_ok">Route started</string>
+    <string name="carnav_navigate_fail">The car refused the destination</string>
+    <string name="carnav_saved_ok">Added to favourites</string>
+    <string name="carnav_failed">The car navigation didn\'t answer: %1$s</string>
+    <!-- Shown after tapping an unset Home/Work chip: search picks the place to save. -->
+    <string name="roadsense_map_search_to_save">Find a place to use as %1$s</string>
+    <!-- Shown when re-entering the map with a previously-set trip restored. -->
+    <string name="roadsense_map_trip_restored">Journey brought back</string>
+
+    <!-- Projection screen (cast an app to the driver cluster + live mirror) -->
+    <string name="projection_hero_title">Projection</string>
+    <string name="projection_hero_subtitle">Show an app on the driver display and see the same picture here.</string>
+    <string name="projection_pick_app">Pick an app to show</string>
+    <string name="projection_cast">Send to display</string>
+    <string name="projection_stop">End</string>
+    <string name="projection_cast_failed">That app wouldn\'t go onto the driver display.</string>
+    <string name="projection_dilink5_mode_required">In System, switch the car type to DiLink 5, then restart the camera service.</string>
+    <string name="projection_status_idle">Nothing is being shown.</string>
+    <string name="projection_status_live">Live picture. Tap and swipe to steer the app.</string>
+    <string name="projection_status_preview">Slower preview, this car can\'t show more.</string>
+    <string name="projection_status_none">No app on the display yet. Pick one and send it.</string>
+    <string name="projection_status_unsupported">This car can\'t show the live picture here. The app still runs on the driver display.</string>
+    <string name="projection_status_service_down">The picture service isn\'t ready. Restart the app or the camera service and try again.</string>
+    <string name="projection_note_single_app">The driver display shows one app at a time.</string>
+    <string name="projection_adjust_bounds">Change size</string>
+    <string name="projection_done_adjusting">OK</string>
+    <string name="projection_bounds_hint_idle">Picture area</string>
+    <string name="projection_status_adjust">Drag the frame to move it. Drag a corner to change its size.</string>
+    <!-- Cluster window layout: presets + aspect lock. The box positions the cast app ON the
+         driver cluster; the head-unit view is a live mirror of the whole cluster. -->
+    <string name="projection_window_title">Display area</string>
+    <string name="projection_window_desc">Choose where the app sits on the driver display. Pick a ready-made spot, or change the size and place it yourself.</string>
+    <string name="projection_preset_full">Whole screen</string>
+    <string name="projection_preset_left">Left side</string>
+    <string name="projection_preset_right">Right side</string>
+    <string name="projection_preset_center">Middle</string>
+    <string name="projection_lock_aspect">Keep the display shape</string>
+    <!-- Scaling mode picker -->
+    <string name="projection_scale_title">Picture fit</string>
+    <string name="projection_scale_desc">How the driver display picture fills the preview here.</string>
+    <string name="projection_scale_fit">Whole picture</string>
+    <string name="projection_scale_fill">Fill area</string>
+    <string name="projection_scale_zoom">Closer</string>
+    <!-- Auto-start on ACC-on -->
+    <string name="projection_autostart_title">Start by itself with the car</string>
+    <string name="projection_autostart_desc">Shows the app you used last on the driver display each time the car switches on. The picture here appears once you open this screen.</string>
+    <string name="projection_autostart_need_app">Send an app first, then switch this on.</string>
+    <string name="projection_autostart_conflict_title">Road watch already uses the display</string>
+    <string name="projection_autostart_conflict_body">Road watch is set to show its map on the driver display when the car switches on. The display can only show one thing. Switch that off and use this app instead?</string>
+    <string name="projection_autostart_conflict_confirm">Choose this app</string>
+    <string name="projection_app_uninstalled">This app is gone from the car.</string>
+
+    <!-- ============================================================
+         Network & Hotspot — share the built-in SIM's internet
+         ============================================================ -->
+    <string name="rail_network">Network</string>
+    <string name="network_title">Network &amp; hotspot</string>
+    <string name="network_subtitle">Share the car\'s mobile data with your phone, tablet or laptop.</string>
+    <string name="network_hotspot_title">Car hotspot</string>
+    <string name="network_state_on">On, sharing data</string>
+    <string name="network_state_off">Off</string>
+    <string name="network_state_starting">Turning on...</string>
+    <string name="network_state_stopping">Turning off...</string>
+    <string name="network_ssid_hint">Hotspot name</string>
+    <string name="network_password_hint">Password, 8 to 63 characters</string>
+    <string name="network_ssid_label">Hotspot name</string>
+    <string name="network_password_label">Passcode</string>
+    <string name="network_reveal">Reveal</string>
+    <string name="network_hide">Cover</string>
+    <string name="network_copied">In clipboard</string>
+    <string name="network_credentials_note">The car picks the name and password, so you can\'t change them here. Tap one to copy it.</string>
+    <string name="network_save">Save</string>
+    <string name="network_saved">Stored</string>
+    <string name="network_saved_next_start">Stored. It counts from the next hotspot start.</string>
+    <string name="network_password_invalid">The password needs 8 to 63 characters.</string>
+    <string name="network_ssid_invalid">The name can have 32 characters at most.</string>
+    <string name="network_limit_invalid">Type a whole number of megabytes.</string>
+    <string name="network_value_placeholder">--</string>
+
+    <string name="network_session_section">Right now</string>
+    <string name="network_uptime_label">On for</string>
+    <string name="network_rx_label">Downloaded</string>
+    <string name="network_tx_label">Uploaded</string>
+
+    <string name="network_clients_section">Who is connected</string>
+    <string name="network_clients_empty">Nobody is connected.</string>
+    <!-- IP address, then MAC address -->
+    <string name="network_client_meta_fmt">%1$s - %2$s</string>
+
+    <string name="network_limit_section">Data cap</string>
+    <string name="network_limit_hint">Cap in MB</string>
+    <string name="network_limit_desc">Once this much data has gone through, the hotspot switches itself off and you get an alert. Leave it empty for no cap. It limits the amount, not the speed.</string>
+    <string name="network_reset_usage">Count from zero</string>
+    <string name="network_usage_reset">Counter is at zero</string>
+    <!-- Used so far, then the limit -->
+    <string name="network_usage_fmt">%1$s of %2$s used</string>
+    <string name="network_usage_nolimit_fmt">%1$s used, no cap</string>
+
+    <string name="network_behaviour_section">How it acts</string>
+    <string name="network_keepalive_title">Keep it running</string>
+    <string name="network_keepalive_desc">If the hotspot drops out by itself, it turns back on.</string>
+    <string name="network_autostart_title">Turn on with the car</string>
+    <string name="network_autostart_desc">The hotspot goes on once every time the car switches on.</string>
+
+    <string name="network_proxy_section">Proxy</string>
+    <string name="network_proxy_clients_title">Internet for connected devices (proxy)</string>
+    <string name="network_proxy_clients_desc">Opens the proxy to devices on the hotspot. Each device must be set to use it. Just joining the hotspot is not enough.</string>
+    <!-- Gateway address, then port -->
+    <string name="network_proxy_clients_desc_fmt">Joining the hotspot alone gets a device nowhere. This car can\'t pass internet on by itself, so every device has to be told to use the car\'s proxy.\n\nOn the device, after it has joined:\n1. Open its WLAN settings and edit this network\n2. Set Proxy to Manual\n3. Host name %1$s, port %2$d\n4. Save and start browsing\n\nThe device may still say \"no internet\" and show its own mobile data icon while all is fine, because that check ignores proxies. Apps that skip the WLAN proxy (some streaming and games) won\'t work.</string>
+
+    <string name="network_warn_title">The car drops its WLAN</string>
+    <string name="network_warn_body">The car has only one WLAN chip. It can\'t run a hotspot and sit in another WLAN at once. While the hotspot is on, the car leaves your WLAN and uses its SIM card data, for itself and for every connected device. Your WLAN returns when you switch the hotspot off.</string>
+    <string name="network_warn_continue">Hotspot on</string>
+    <string name="network_warn_cancel">Never mind</string>
+
+    <string name="toast_share_failed">Couldn\'t share</string>
+    <string name="rail_collapse_label">Collapse</string>
+    <!-- Rail category headers -->
+    <string name="rail_section_cameras">Camera views</string>
+    <string name="rail_section_controls">Car</string>
+    <string name="rail_section_driving">Drive</string>
+    <string name="rail_section_automation">Rules</string>
+    <string name="rail_section_system">System</string>
+    <string name="vehicle_dialog_detection">Found by: %1$s</string>
+    <string name="vehicle_dialog_detection_auto">By itself</string>
+    <string name="vehicle_dialog_detection_manual">By hand</string>
+    <string name="vehicle_dialog_value_pending">—</string>
+
+    <string name="roi_tap_to_add_points">Tap to set points (%1$d to %2$d)</string>
+    <string name="remote_setup_title">Set up remote access</string>
+    <string name="remote_setup_why">So you can reach your car in the browser from anywhere.</string>
+    <string name="remote_setup_name_label">Name of your car in Tailscale</string>
+    <string name="remote_setup_show_qr">Show QR code</string>
+    <string name="remote_setup_wait">One moment …</string>
+    <string name="remote_setup_scan">Scan with your phone, sign in to Tailscale, done.</string>
+    <string name="remote_setup_connected">Connected: %1$s · %2$s</string>
+    <string name="remote_setup_key_toggle">I have a key (auth key)</string>
+    <string name="remote_setup_key_hint">For several cars: create a key in the Tailscale admin console and paste it here. It is used once and not stored.</string>
+    <string name="remote_setup_key_use">Sign in with key</string>
+    <string name="remote_setup_key_bad">That is not a Tailscale key (tskey-…).</string>
+    <string name="remote_setup_key_failed">Signing in with the key did not work.</string>
+    <string name="remote_setup_done">Done</string>
+    <string name="remote_setup_skip">Later</string>
+    <string name="remote_setup_start">Set up</string>
+</resources>

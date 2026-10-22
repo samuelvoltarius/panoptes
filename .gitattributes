@@ -1,0 +1,6 @@
+*.sh text eol=lf
+tools/patches/*.patch text eol=lf
+# panoptes-karte: unveränderliche Dateien mit sha256/SRI – nie Zeilenenden umwandeln
+app/src/main/assets/web/shared/vendor/panoptes-karte-* -text
+deploy/server/tiles/lib/panoptes-karte-* -text
+app/src/test/resources/karte/*.json -text

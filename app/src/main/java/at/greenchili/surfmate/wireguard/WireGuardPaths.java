@@ -1,0 +1,34 @@
+package at.greenchili.surfmate.wireguard;
+
+import at.greenchili.surfmate.util.DaemonStorage;
+
+/**
+ * File locations and constants shared by the WireGuard launcher, controller and
+ * the Telegram/web paths.
+ *
+ * <p>Permissions: HOME 0711, CONFIG 0600 (holds the private key), STATUS and
+ * PROXY_FLAG and EXPOSE_FLAG 0644.
+ */
+public final class WireGuardPaths {
+    private WireGuardPaths() {}
+
+    public static final String HOME = DaemonStorage.rebase("/data/user_de/0/com.android.shell/surfmate/.wireguard");
+    public static final String CONFIG = HOME + "/wg0.conf";
+    public static final String STATUS = HOME + "/status.json";
+    public static final String LOG = HOME + "/wireguard.log";
+    public static final String BINARY = HOME + "/wgproxy";
+    public static final String VERSION_FILE = HOME + "/installed_version";
+    public static final String PROXY_FLAG = HOME + "/proxy_enabled";
+    /** Opt-in "dashboard reachable over WireGuard" ("true"/"false"); absent means off. */
+    public static final String EXPOSE_FLAG = HOME + "/expose_dashboard";
+
+    /** Loopback SOCKS5 listener of wgproxy. */
+    public static final int SOCKS_PORT = 8641;
+
+    public static final String PROCESS_NAME = "wgproxy";
+
+    /** wgproxy exits with this code when the config file changed. */
+    public static final int RELOAD_EXIT_CODE = 3;
+
+    public static final String NATIVE_LIB = "libwireguard.so";
+}

@@ -1,0 +1,109 @@
+/*
+ * Panoptes — Anzeige-Modus für das Auto-Display (html[data-anzeige="auto"]).
+ * Große Touch-Ziele (≥ 48 px = 48 dp in der WebView), etwas größere Schrift, kräftigere Nebentexte
+ * für Tag und Nacht, Zurück-Knopf, Ladebalken, Offline-Hinweis und der Fahr-Modus (html[data-fahrt="1"]).
+ */
+html[data-anzeige="auto"] { font-size: 17px; -webkit-tap-highlight-color: rgba(198, 244, 50, .25); }
+html[data-anzeige="auto"] body { font-size: 17px; }
+
+/* Touch-Ziele */
+html[data-anzeige="auto"] .btn,
+html[data-anzeige="auto"] button,
+html[data-anzeige="auto"] .pn-pill,
+html[data-anzeige="auto"] .pn-subnav a,
+html[data-anzeige="auto"] .sidebar a,
+html[data-anzeige="auto"] .pn-rail a,
+html[data-anzeige="auto"] select,
+html[data-anzeige="auto"] input[type="text"],
+html[data-anzeige="auto"] input[type="number"],
+html[data-anzeige="auto"] input[type="password"],
+html[data-anzeige="auto"] input[type="time"] {
+    min-height: 48px;
+}
+html[data-anzeige="auto"] .btn,
+html[data-anzeige="auto"] button { min-width: 48px; padding-left: 18px; padding-right: 18px; font-size: 16px; }
+html[data-anzeige="auto"] .pn-pill { display: inline-flex; align-items: center; padding: 0 16px; }
+html[data-anzeige="auto"] .pn-subnav a { display: inline-flex; align-items: center; padding: 0 18px; }
+html[data-anzeige="auto"] input[type="checkbox"],
+html[data-anzeige="auto"] input[type="radio"] { width: 28px; height: 28px; }
+html[data-anzeige="auto"] label.sw { transform: scale(1.25); transform-origin: right center; }
+
+/* Knöpfe der Wächter-Seite, Suchfeld der Navigation */
+html[data-anzeige="auto"] .gbtn { min-height: 48px; padding-left: 18px; padding-right: 18px; }
+html[data-anzeige="auto"] input[type="search"],
+html[data-anzeige="auto"] #nQuery { min-height: 48px; font-size: 17px; }
+/* Schalter: unsichtbar vergrößerte Trefferfläche (≥ 48 px), ohne das Aussehen zu ändern */
+html[data-anzeige="auto"] label.sw { position: relative; }
+html[data-anzeige="auto"] label.sw::before {
+    content: ""; position: absolute; top: -12px; bottom: -12px; left: -8px; right: -8px;
+}
+
+/* Textlinks und Knöpfe der Startseite, Logo */
+html[data-anzeige="auto"] a.more,
+html[data-anzeige="auto"] .more { display: inline-flex; align-items: center; min-height: 48px; padding: 0 10px; }
+html[data-anzeige="auto"] .hbtn { min-height: 52px; padding-left: 20px; padding-right: 20px; font-size: 16px; }
+html[data-anzeige="auto"] .pn-brand { min-width: 48px; min-height: 48px; }
+
+/* Lesbarkeit: Nebentexte kräftiger (Sonne im Display, Nacht ohne Blendung) */
+html[data-anzeige="auto"] { --text-muted: var(--text-secondary, #b9c9d3); }
+html[data-anzeige="auto"][data-theme="light"] { --text-muted: #3d5260; }
+
+/* Zurück-Knopf in der Kopfzeile */
+.pn-zurueck {
+    display: none; align-items: center; justify-content: center;
+    min-width: 56px; min-height: 56px; margin-right: 12px; padding: 0 16px;
+    border-radius: 16px; border: 1px solid var(--border-color, rgba(255,255,255,.15));
+    background: var(--bg-elevated, rgba(255,255,255,.06)); color: var(--text-primary, #fff);
+    font: 600 16px var(--family-body, sans-serif); cursor: pointer;
+}
+html[data-anzeige="auto"] .pn-zurueck { display: inline-flex; }
+
+/* Ladebalken oben */
+.pn-laden {
+    position: fixed; left: 0; top: 0; height: 4px; width: 0; z-index: 10001;
+    background: var(--sm-lime, #c6f432); transition: width .4s ease, opacity .3s ease; opacity: 0; pointer-events: none;
+}
+.pn-laden.an { opacity: 1; width: 70%; transition: width 6s cubic-bezier(.1, .7, .2, 1); }
+.pn-laden.fertig { opacity: 0; width: 100%; }
+
+/* Hinweisband (offline / Fahrt) */
+.pn-band {
+    position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; z-index: 10000;
+    max-width: 92vw; width: 760px; box-sizing: border-box; padding: 14px 20px; border-radius: 16px;
+    font: 600 16px/1.4 var(--family-body, sans-serif); color: #1d2a00; background: var(--sm-lime, #c6f432);
+    box-shadow: 0 8px 30px rgba(0,0,0,.35); display: none;
+}
+.pn-band.warn { background: var(--status-warning, #f5b942); color: #2a1d00; }
+.pn-band.an { display: block; }
+
+/* Fahr-Modus: keine Eingabefelder, nur das Wichtige */
+html[data-fahrt="1"] input:not([type="checkbox"]):not([type="radio"]),
+html[data-fahrt="1"] textarea,
+html[data-fahrt="1"] select,
+html[data-fahrt="1"] .sys-field,
+html[data-fahrt="1"] [data-nur-stand] { display: none !important; }
+
+.pn-fahrt-sperre {
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 9998; display: none; align-items: center; justify-content: center;
+    background: var(--bg-base, #0a2238); padding: 24px; box-sizing: border-box; text-align: center;
+}
+html[data-fahrt="1"] .pn-fahrt-sperre.aktiv { display: flex; }
+.pn-fahrt-sperre .box { max-width: 560px; }
+.pn-zurueck svg { margin-right: 6px; }
+.pn-fahrt-sperre h2 { font: 700 26px var(--family-display, sans-serif); margin: 0 0 10px; color: var(--text-primary, #fff); }
+.pn-fahrt-sperre p { font-size: 18px; line-height: 1.5; color: var(--text-secondary, #cfe); margin: 0 0 22px; }
+.pn-fahrt-sperre a {
+    display: inline-flex; align-items: center; justify-content: center; min-height: 64px; min-width: 200px;
+    margin: 6px; padding: 0 24px; border-radius: 16px; font: 700 18px var(--family-body, sans-serif);
+    background: var(--sm-lime, #c6f432); color: #1d2a00; text-decoration: none;
+}
+.pn-fahrt-sperre a.zwei { background: var(--bg-elevated, rgba(255,255,255,.08)); color: var(--text-primary, #fff); }
+
+/* Große Displays (z. B. 15,6" 1920×1080): Seiten nicht auf PC-Lesebreite deckeln, sondern die Fläche nutzen.
+   Kleinere Displays (1280×720, Hochformat) bleiben wie sie sind. */
+@media (min-width: 1500px) {
+    html[data-anzeige="auto"] .home,
+    html[data-anzeige="auto"] .pn-head,
+    html[data-anzeige="auto"] .tw,
+    html[data-anzeige="auto"] .gw { max-width: none; }
+}

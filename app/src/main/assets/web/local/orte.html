@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Orte – Panoptes</title>
+    <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0A2238">
+    <meta name="robots" content="noindex">
+    <script src="../shared/theme.js?v=13"></script>
+    <script src="../shared/kartenquelle.js?v=5"></script>
+    <script src="../shared/app-shell.js?v=pn24"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn10">
+    <style>
+        .or { padding: 0 28px 60px; max-width: 980px; box-sizing: border-box; }
+        .tc { background: var(--sm-card); border: 1px solid var(--sm-line); border-radius: 20px; padding: 20px; margin-bottom: 16px; }
+        .tc h2 { font-family: var(--family-display); font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--outline); margin: 0 0 6px; }
+        .tc p, .hint { color: var(--on-surface-variant); font-size: 13.5px; }
+        #orMap { height: 340px; border-radius: 14px; overflow: hidden; position: relative; z-index: 0; background: #0b2236; }
+        .liste { list-style: none; margin: 0; padding: 0; }
+        .liste li { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--sm-line); cursor: pointer; }
+        .liste li:last-child { border-bottom: 0; }
+        .liste li.aktiv b { color: var(--sm-aqua); }
+        .liste .grow { flex: 1; min-width: 0; }
+        .liste small { display: block; color: var(--on-surface-variant); font-size: 12.5px; margin-top: 2px; }
+        .chip { display: inline-block; border-radius: 999px; padding: 2px 9px; font-size: 11.5px; font-weight: 600; margin: 4px 4px 0 0;
+                border: 1px solid var(--sm-line); color: var(--on-surface); }
+        .chip.privat { border-color: #a78bfa; color: #a78bfa; } .chip.ruhezone { border-color: #10b981; color: #10b981; }
+        .chip.tarif { border-color: #f59e0b; color: #f59e0b; } .chip.zuhause { border-color: var(--sm-aqua); color: var(--sm-aqua); }
+        .chip.favorit { border-color: #f472b6; color: #f472b6; }
+        .tc label.fl { display: block; margin: 12px 0 4px; color: var(--on-surface-variant); font-size: 13.5px; }
+        .tc input[type=text], .tc input[type=number] { width: 100%; box-sizing: border-box; background: rgba(255,255,255,.06); color: var(--on-surface);
+            border: 1px solid var(--sm-line); border-radius: 10px; padding: 10px 12px; font: 14px var(--family-body, sans-serif); }
+        .eig { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; }
+        .eig input { margin-top: 3px; width: 20px; height: 20px; }
+        .eig b { color: var(--on-surface); font-size: 14px; } .eig small { display: block; color: var(--on-surface-variant); font-size: 12.5px; }
+        .tarif { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; margin-left: 30px; }
+        .reihe { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 14px; }
+        .tbtn { border: 1px solid var(--sm-line); background: rgba(255,255,255,.075); color: var(--on-surface); border-radius: 12px;
+                padding: 11px 16px; font: 600 14px var(--family-body, sans-serif); cursor: pointer; }
+        .tbtn.lime { background: var(--sm-lime); color: #1d2a00; border-color: transparent; }
+        .tbtn.rot { color: var(--status-danger); }
+        .tbtn:disabled { opacity: .5; cursor: default; }
+        .meld { margin-top: 10px; font-size: 13.5px; color: var(--status-warning); }
+        @media (max-width: 720px) { .or { padding: 0 16px 24px; } .tarif { grid-template-columns: 1fr; margin-left: 0; } }
+    </style>
+</head>
+<body>
+<div class="app-layout">
+    <div id="app-shell-mount"></div>
+    <main class="main-content">
+        <div class="or">
+            <article class="tc">
+                <h2 data-i18n="orte.titel">Orte</h2>
+                <p data-i18n="orte.lead">Eine Liste für alle Orte, an denen Panoptes etwas anders machen soll: privat (nicht aufnehmen), Ruhezone (Wächter aus), Zuhause (Monatsbericht) und Ladepreis. Orte verlassen das Auto nie.</p>
+                <div id="orMap"></div>
+                <p class="hint" data-i18n="orte.karte_hint">Tippe auf die Karte, um die Mitte des gewählten Orts zu setzen.</p>
+            </article>
+            <article class="tc">
+                <h2 data-i18n="orte.liste">Deine Orte</h2>
+                <ul class="liste" id="orListe"></ul>
+                <p class="hint" id="orLeer" hidden data-i18n="orte.leer">Noch keine Orte.</p>
+                <div class="reihe">
+                    <button class="tbtn" type="button" id="orNeuHier" data-i18n="orte.neu_hier">Neuer Ort am Auto</button>
+                    <button class="tbtn" type="button" id="orNeu" data-i18n="orte.neu_karte">Neuer Ort auf der Karte</button>
+                </div>
+                <p class="hint" id="orMax"></p>
+            </article>
+            <article class="tc" id="orEdit" hidden>
+                <h2 id="orEditTitel" data-i18n="orte.bearbeiten">Ort bearbeiten</h2>
+                <label class="fl" for="orName" data-i18n="orte.name">Name</label>
+                <input type="text" id="orName" maxlength="40">
+                <label class="fl" for="orR"><span data-i18n="orte.radius">Radius</span>: <b id="orRWert">80 m</b></label>
+                <input type="range" id="orR" min="15" max="2000" step="5" value="80" style="width:100%">
+                <div class="eig"><input type="checkbox" id="e_privat"><label for="e_privat"><b data-i18n="orte.e_privat">Privat</b><small data-i18n="orte.e_privat_hint">Der Wächter nimmt hier nicht auf.</small></label></div>
+                <div class="eig"><input type="checkbox" id="e_ruhezone"><label for="e_ruhezone"><b data-i18n="orte.e_ruhezone">Ruhezone</b><small data-i18n="orte.e_ruhezone_hint">Der Wächter bleibt hier aus.</small></label></div>
+                <div class="eig"><input type="checkbox" id="e_zuhause"><label for="e_zuhause"><b data-i18n="orte.e_zuhause">Zuhause</b><small data-i18n="orte.e_zuhause_hint">Zählt im Monatsbericht als „zu Hause geladen“.</small></label></div>
+                <div class="eig"><input type="checkbox" id="e_tarif"><label for="e_tarif"><b data-i18n="orte.e_tarif">Ladepreis an diesem Ort</b><small data-i18n="orte.e_tarif_hint">Ladungen hier bekommen diesen Preis.</small></label></div>
+                <div class="tarif" id="orTarif" hidden>
+                    <div><label class="fl" for="t_ac" data-i18n="orte.t_ac">AC je kWh</label><input type="text" id="t_ac" inputmode="decimal"></div>
+                    <div><label class="fl" for="t_dc" data-i18n="orte.t_dc">DC je kWh (leer = wie AC)</label><input type="text" id="t_dc" inputmode="decimal"></div>
+                    <div class="eig"><input type="checkbox" id="t_acg"><label for="t_acg"><b data-i18n="orte.t_ac_gratis">AC gratis</b></label></div>
+                    <div class="eig"><input type="checkbox" id="t_dcg"><label for="t_dcg"><b data-i18n="orte.t_dc_gratis">DC gratis</b></label></div>
+                </div>
+                <div class="eig"><input type="checkbox" id="e_favorit"><label for="e_favorit"><b data-i18n="orte.e_favorit">Navi-Favorit</b><small data-i18n="orte.e_favorit_hint2">Erscheint in der Navigation als Schnellziel.</small></label></div>
+                <div class="reihe">
+                    <button class="tbtn lime" type="button" id="orSpeichern" data-i18n="orte.speichern">Speichern</button>
+                    <button class="tbtn" type="button" id="orAbbrechen" data-i18n="orte.abbrechen">Abbrechen</button>
+                    <span style="flex:1"></span>
+                    <button class="tbtn rot" type="button" id="orLoeschen" data-i18n="orte.loeschen">Ort löschen</button>
+                </div>
+                <div class="meld" id="orMeld"></div>
+            </article>
+        </div>
+    </main>
+</div>
+<div id="toastContainer" class="toast-container"></div>
+
+<script src="../shared/auth.js"></script>
+<script src="../shared/pwa-init.js?v=index1"></script>
+<script src="../shared/core.js?v=pn5"></script>
+<script src="../shared/panoptes-map.js?v=12"></script>
+<script>
+// ES5 (WebView 74). ORTE_VERTRAG v1 (Kern 7): GET/POST /api/orte, PUT/DELETE /api/orte/{id}. Orte verlassen das Auto nie.
+(function () {
+    'use strict';
+    function $(id) { return document.getElementById(id); }
+    function t(k, f, v) { return window.PanoptesShell ? PanoptesShell.tr(k, f, v) : f; }
+    function toast(m, ok) { if (window.BYD && BYD.utils && BYD.utils.toast) BYD.utils.toast(m, ok ? 'success' : 'error'); }
+    function lang() { return (window.BYD && BYD.i18n && BYD.i18n.getLang && BYD.i18n.getLang()) || 'de'; }
+    function zahl(v, d) { try { return Number(v).toLocaleString(lang(), { minimumFractionDigits: d, maximumFractionDigits: d }); } catch (e) { return Number(v).toFixed(d); } }
+    function api(m, url, body) {
+        return fetch(url, { method: m, cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined })
+            .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { j._s = r.status; return j; }); });
+    }
+    var FARBE = { privat: '#a78bfa', ruhezone: '#10b981', tarif: '#f59e0b', zuhause: '#5FD6E6', favorit: '#f472b6' };
+    var EIG = ['privat', 'ruhezone', 'zuhause', 'tarif', 'favorit'];
+    var daten = { liste: [], grenzen: {}, max: 50 };
+    var map = null, edit = null, auto = null;
+
+    function hat(o, e) { var x = o.eigenschaften && o.eigenschaften[e]; return !!x && x !== false; }
+    function farbe(o) { for (var i = 0; i < EIG.length; i++) if (hat(o, EIG[i])) return FARBE[EIG[i]]; return '#9ca3af'; }
+    function preis(v) { var p = Number(String(v || '').trim().replace(',', '.')); return String(v || '').trim() === '' ? null : (isFinite(p) && p >= 0 ? p : NaN); }
+
+    function zeichneKarte() {
+        if (!map) return;
+        var kreise = daten.liste.filter(function (o) { return !edit || o.id !== edit.id; })
+            .map(function (o) { return { lat: o.lat, lng: o.lon, radius: o.r, farbe: farbe(o) }; });
+        if (edit && edit.lat != null) kreise.push({ lat: edit.lat, lng: edit.lon, radius: edit.r, farbe: '#ffffff', gestrichelt: true });
+        map.setKreise(kreise);
+        var punkte = daten.liste.map(function (o) { return { lat: o.lat, lng: o.lon, kind: 'zone', label: o.name, title: o.name + ' · ' + o.r + ' m' }; });
+        map.setMarkers(punkte);
+    }
+
+    function zeichneListe() {
+        var ul = $('orListe'); ul.innerHTML = '';
+        $('orLeer').hidden = daten.liste.length > 0;
+        $('orMax').textContent = t('orte.anzahl', '{n} von {max} Orten', { n: daten.liste.length, max: daten.max });
+        daten.liste.forEach(function (o) {
+            var li = document.createElement('li');
+            if (edit && edit.id === o.id) li.className = 'aktiv';
+            var g = document.createElement('div'); g.className = 'grow';
+            var b = document.createElement('b'); b.textContent = o.name; g.appendChild(b);
+            var s = document.createElement('small'); s.textContent = o.r + ' m'; g.appendChild(s);
+            EIG.forEach(function (e) {
+                if (!hat(o, e)) return;
+                var c = document.createElement('span'); c.className = 'chip ' + e;
+                var txt = e === 'tarif' ? t('orte.chip_tarif', 'Ladepreis') : t('orte.e_' + e, e);
+                if (e === 'tarif') {
+                    var tf = o.eigenschaften.tarif;
+                    txt += ': ' + (tf.acGratis ? t('orte.gratis', 'gratis') : (tf.acRate != null ? zahl(tf.acRate, 2) + ' ' + (tf.waehrung || '€') : '–'));
+                }
+                c.textContent = txt; g.appendChild(c);
+            });
+            li.appendChild(g);
+            li.onclick = function () { bearbeiten(o); };
+            ul.appendChild(li);
+        });
+        $('orNeu').disabled = $('orNeuHier').disabled = daten.liste.length >= daten.max;
+    }
+
+    function laden() {
+        return api('GET', '/api/orte').then(function (d) {
+            if (!d.success) { $('orLeer').hidden = false; $('orLeer').textContent = d.text || t('orte.nicht_verfuegbar', 'Orte gibt es mit einem Panoptes-Update.'); return; }
+            daten.liste = d.liste || []; daten.grenzen = d.grenzen || {}; daten.max = d.max || 50;
+            zeichneListe(); zeichneKarte();
+            if (daten.liste.length && map && !edit) {
+                var pts = []; daten.liste.forEach(function (o) { pts.push([o.lon, o.lat]); });
+                map.fit(pts, 60);
+            }
+        });
+    }
+
+    function radiusGrenzen() {
+        var g = daten.grenzen || {}, min = (g.r && g.r.min) || 15, max = (g.r && g.r.max) || 2000;
+        ['privat', 'ruhezone', 'zuhause', 'tarif'].forEach(function (e) {
+            if ($('e_' + e).checked && g[e]) { min = Math.max(min, g[e].min); max = Math.min(max, g[e].max); }
+        });
+        return { min: min, max: max };
+    }
+    function radiusAnpassen() {
+        var gr = radiusGrenzen(), r = $('orR');
+        r.min = gr.min; r.max = gr.max;
+        if (+r.value < gr.min) r.value = gr.min;
+        if (+r.value > gr.max) r.value = gr.max;
+        $('orRWert').textContent = r.value + ' m';
+        if (edit) { edit.r = +r.value; zeichneKarte(); }
+    }
+
+    function bearbeiten(o) {
+        edit = o ? JSON.parse(JSON.stringify(o)) : { id: null, name: '', lat: null, lon: null, r: 80, eigenschaften: {} };
+        $('orEdit').hidden = false;
+        $('orEditTitel').textContent = o ? t('orte.bearbeiten', 'Ort bearbeiten') : t('orte.neu', 'Neuer Ort');
+        $('orName').value = edit.name || '';
+        var e = edit.eigenschaften || {};
+        ['privat', 'ruhezone', 'zuhause'].forEach(function (k) { $('e_' + k).checked = !!e[k]; });
+        $('e_tarif').checked = !!e.tarif;
+        var tf = e.tarif || {};
+        $('t_ac').value = tf.acRate != null && !tf.acGratis ? zahl(tf.acRate, 2) : '';
+        $('t_dc').value = tf.dcRate != null && !tf.dcGratis ? zahl(tf.dcRate, 2) : '';
+        $('t_acg').checked = !!tf.acGratis; $('t_dcg').checked = !!tf.dcGratis;
+        $('orTarif').hidden = !$('e_tarif').checked;
+        $('e_favorit').checked = !!e.favorit;
+        $('orLoeschen').hidden = !o;
+        $('orMeld').textContent = edit.lat == null ? t('orte.mitte_fehlt', 'Tippe auf die Karte, um die Mitte zu setzen.') : '';
+        $('orR').value = edit.r || 80;
+        radiusAnpassen();
+        zeichneListe(); zeichneKarte();
+        if (map && edit.lat != null) map.fitKreis({ lat: edit.lat, lng: edit.lon, radius: edit.r }, 0.6);
+        try { $('orEdit').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (x) {}
+    }
+    function schliessen() { edit = null; $('orEdit').hidden = true; zeichneListe(); zeichneKarte(); }
+
+    function ausFormular() {
+        var name = $('orName').value.trim();
+        if (!name) return { fehler: t('orte.name_fehlt', 'Bitte einen Namen eingeben.') };
+        if (edit.lat == null) return { fehler: t('orte.mitte_fehlt', 'Tippe auf die Karte, um die Mitte zu setzen.') };
+        var e = {};
+        ['privat', 'ruhezone', 'zuhause'].forEach(function (k) { e[k] = $('e_' + k).checked; });
+        if ($('e_tarif').checked) {
+            var alt = (edit.eigenschaften && edit.eigenschaften.tarif) || {};
+            var ac = $('t_acg').checked ? 0 : preis($('t_ac').value), dc = $('t_dcg').checked ? 0 : preis($('t_dc').value);
+            if (isNaN(ac) || isNaN(dc)) return { fehler: t('orte.preis_ungueltig', 'Preis ungültig.') };
+            if (ac === null && !$('t_acg').checked) return { fehler: t('orte.preis_fehlt', 'Bitte einen AC-Preis eingeben oder „gratis“ wählen.') };
+            if ((ac === 0 && !$('t_acg').checked) || (dc === 0 && !$('t_dcg').checked)) return { fehler: t('orte.null_gratis', '0 bitte als „gratis“ ankreuzen.') };
+            e.tarif = { acRate: ac, dcRate: dc, acGratis: $('t_acg').checked, dcGratis: $('t_dcg').checked, waehrung: alt.waehrung || '€' };
+            if (alt.tarifId) e.tarif.tarifId = alt.tarifId;
+        } else e.tarif = null;
+        e.favorit = $('e_favorit').checked;   // 0.1.12: Favoriten in der Ortsliste (Navi-Schnellziele)
+        return { body: { name: name, lat: edit.lat, lon: edit.lon, r: +$('orR').value, eigenschaften: e } };
+    }
+
+    function fehlerText(d) {
+        if (d && d.text) return d.text + (d.eigenschaft ? ' (' + t('orte.e_' + d.eigenschaft, d.eigenschaft) + ': ' + d.min + '–' + d.max + ' m)' : '');
+        return t('orte.fehler', 'Speichern hat nicht geklappt.');
+    }
+
+    function speichern() {
+        var f = ausFormular();
+        if (f.fehler) { $('orMeld').textContent = f.fehler; return; }
+        $('orSpeichern').disabled = true;
+        var p = edit.id ? api('PUT', '/api/orte/' + encodeURIComponent(edit.id), f.body) : api('POST', '/api/orte', f.body);
+        p.then(function (d) {
+            $('orSpeichern').disabled = false;
+            if (!d.success) { $('orMeld').textContent = fehlerText(d); return; }
+            toast(t('orte.gespeichert', 'Gespeichert'), true);
+            schliessen();
+            return laden();   // zurücklesen
+        }).catch(function () { $('orSpeichern').disabled = false; $('orMeld').textContent = t('orte.fehler', 'Speichern hat nicht geklappt.'); });
+    }
+
+    function loeschen() {
+        if (!edit || !edit.id) return;
+        if (!window.confirm(t('orte.loeschen_frage', '„{name}“ löschen? Ruhezone, privater Bereich und Ladepreis dieses Orts fallen damit weg.', { name: edit.name }))) return;
+        api('DELETE', '/api/orte/' + encodeURIComponent(edit.id) + '?bestaetigt=true').then(function (d) {
+            if (!d.success) { $('orMeld').textContent = fehlerText(d); return; }
+            toast(t('orte.geloescht', 'Gelöscht'), true);
+            schliessen(); laden();
+        });
+    }
+
+    function autoPosition() {
+        return fetch('/status', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (s) {
+            var g = s && s.gps; auto = g && g.hasLocation ? { lat: g.lat, lon: g.lng } : null;
+            if (auto && map) map.setCar({ lat: auto.lat, lng: auto.lon, heading: g.heading || 0 });
+            return auto;
+        }).catch(function () { return null; });
+    }
+
+    BYD.i18n.init().then(function () {
+        BYD.core.init();
+        map = PanoptesMap.create($('orMap'), { zoom: 13, pitch: 0, terrain: false, live: false, followCar: false });
+        map.onClick(function (ll) {
+            if (!edit) return;
+            edit.lat = +ll.lat.toFixed(6); edit.lon = +ll.lng.toFixed(6);
+            $('orMeld').textContent = '';
+            zeichneKarte();
+        });
+        $('orR').oninput = function () { $('orRWert').textContent = this.value + ' m'; if (edit) { edit.r = +this.value; zeichneKarte(); } };
+        ['privat', 'ruhezone', 'zuhause', 'tarif'].forEach(function (k) { $('e_' + k).onchange = function () { $('orTarif').hidden = !$('e_tarif').checked; radiusAnpassen(); }; });
+        $('t_acg').onchange = function () { $('t_ac').disabled = this.checked; };
+        $('t_dcg').onchange = function () { $('t_dc').disabled = this.checked; };
+        $('orNeu').onclick = function () { bearbeiten(null); };
+        $('orNeuHier').onclick = function () {
+            autoPosition().then(function (a) {
+                bearbeiten(null);
+                if (!a) { $('orMeld').textContent = t('orte.kein_gps', 'Kein Standort vom Auto – bitte auf der Karte setzen.'); return; }
+                edit.lat = a.lat; edit.lon = a.lon; $('orMeld').textContent = '';
+                zeichneKarte(); map.fitKreis({ lat: a.lat, lng: a.lon, radius: edit.r }, 0.6);
+            });
+        };
+        $('orSpeichern').onclick = speichern;
+        $('orAbbrechen').onclick = schliessen;
+        $('orLoeschen').onclick = loeschen;
+        autoPosition().then(laden);
+    });
+})();
+</script>
+</body>
+</html>

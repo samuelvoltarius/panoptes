@@ -1,0 +1,159 @@
+diff --git a/wgengine/netstack/netstack.go b/wgengine/netstack/netstack.go
+index 59c2613..813f16c 100644
+--- a/wgengine/netstack/netstack.go
++++ b/wgengine/netstack/netstack.go
+@@ -16,6 +16,7 @@ import (
+ 	"net/netip"
+ 	"runtime"
+ 	"strconv"
++	"strings"
+ 	"sync"
+ 	"sync/atomic"
+ 	"time"
+@@ -119,6 +120,37 @@ func maxInFlightConnectionAttemptsPerClient() int {
+ 
+ var debugNetstack = envknob.RegisterBool("TS_DEBUG_NETSTACK")
+ 
++// localForwardPortsEnv lists ports (comma-separated) for which a tailnet
++// connection to one of this node's own addresses may still be handed to a host
++// service on 127.0.0.1. Empty, the default, refuses all of them.
++var localForwardPortsEnv = envknob.RegisterString("TS_NETSTACK_LOCAL_FORWARD_PORTS")
++
++// localForwardAllowed reports whether a tailnet connection to one of this
++// node's own addresses may be forwarded to the same port on 127.0.0.1.
++//
++// Android head-unit patch. Upstream userspace networking forwards every port
++// that Serve, peerAPI and SSH do not claim to 127.0.0.1:<port>, dialed by
++// tailscaled itself. Every loopback-only service on the device then becomes
++// reachable from any peer, with a 127.0.0.1 source address it cannot tell apart
++// from a local process — including the local API, which is on loopback TCP on
++// this platform (see tailscale-tcp-socket.patch) and trusts such callers fully.
++// Everything meant to be reachable remotely is published through Serve, which
++// is handled before this point, so the raw forward is refused by default.
++func localForwardAllowed(port uint16) bool {
++	return parseLocalForwardPorts(localForwardPortsEnv()).Contains(port)
++}
++
++func parseLocalForwardPorts(s string) set.Set[uint16] {
++	ports := make(set.Set[uint16])
++	for _, f := range strings.Split(s, ",") {
++		p, err := strconv.ParseUint(strings.TrimSpace(f), 10, 16)
++		if err == nil && p != 0 {
++			ports.Add(uint16(p))
++		}
++	}
++	return ports
++}
++
+ var (
+ 	serviceIP   = tsaddr.TailscaleServiceIP()
+ 	serviceIPv6 = tsaddr.TailscaleServiceIPv6()
+@@ -1586,6 +1618,13 @@ func (ns *Impl) acceptTCP(r *tcp.ForwarderRequest) {
+ 			dialIP = ipv4Loopback
+ 		}
+ 	case isTailscaleIP:
++		if !localForwardAllowed(reqDetails.LocalPort) {
++			if debugNetstack() {
++				ns.logf("[v2] netstack: refusing loopback forward of %s", stringifyTEI(reqDetails))
++			}
++			r.Complete(true) // sends a RST
++			return
++		}
+ 		dialIP = ipv4Loopback
+ 	}
+ 	dialAddr := netip.AddrPortFrom(dialIP, uint16(reqDetails.LocalPort))
+@@ -1859,6 +1898,13 @@ func (ns *Impl) acceptUDP(r *udp.ForwarderRequest) {
+ 		}
+ 	}
+ 
++	// Same rule as acceptTCP: forwardUDP would relay a local destination to
++	// 127.0.0.1, so refuse it unless the port is explicitly allowed.
++	if ns.isLocalIP(dstAddr.Addr()) && !localForwardAllowed(dstAddr.Port()) {
++		ep.Close()
++		return
++	}
++
+ 	c := gonet.NewUDPConn(&wq, ep)
+ 	go ns.forwardUDP(c, srcAddr, dstAddr)
+ }
+diff --git a/wgengine/netstack/netstack_test.go b/wgengine/netstack/netstack_test.go
+index da262fc..8db2c24 100644
+--- a/wgengine/netstack/netstack_test.go
++++ b/wgengine/netstack/netstack_test.go
+@@ -1366,3 +1366,76 @@ func TestInjectLoopback(t *testing.T) {
+ 		t.Errorf("got %q, want %q", got, "loopback test")
+ 	}
+ }
++
++func TestParseLocalForwardPorts(t *testing.T) {
++	got := parseLocalForwardPorts(" 22, 8180,,x,0,70000,5555 ")
++	for _, p := range []uint16{22, 8180, 5555} {
++		if !got.Contains(p) {
++			t.Errorf("port %d missing from %v", p, got)
++		}
++	}
++	if len(got) != 3 {
++		t.Errorf("got %v, want exactly 22, 8180 and 5555", got)
++	}
++	if len(parseLocalForwardPorts("")) != 0 {
++		t.Error("empty setting must allow no port")
++	}
++}
++
++// TestLocalAddrNotForwardedToLoopback verifies that a tailnet SYN to one of
++// this node's own addresses is not relayed to 127.0.0.1 unless the port is
++// listed in TS_NETSTACK_LOCAL_FORWARD_PORTS.
++func TestLocalAddrNotForwardedToLoopback(t *testing.T) {
++	const port = 8632
++	for _, tc := range []struct {
++		name     string
++		allow    string
++		wantDial bool
++	}{
++		{"default refuses", "", false},
++		{"other port listed", "5555", false},
++		{"port listed", "5555,8632", true},
++	} {
++		t.Run(tc.name, func(t *testing.T) {
++			envknob.Setenv("TS_NETSTACK_LOCAL_FORWARD_PORTS", tc.allow)
++			defer envknob.Setenv("TS_NETSTACK_LOCAL_FORWARD_PORTS", "")
++
++			impl := makeNetstack(t, func(impl *Impl) {
++				impl.ProcessLocalIPs = true
++			})
++			dials := make(chan string, 4)
++			impl.forwardDialFunc = func(ctx context.Context, network, address string) (net.Conn, error) {
++				dials <- address
++				return nil, fmt.Errorf("test dialer")
++			}
++			impl.lb.Start(ipn.Options{UpdatePrefs: ipn.NewPrefs()})
++			impl.atomicIsLocalIPFunc.Store(looksLikeATailscaleSelfAddress)
++
++			client := netip.MustParseAddr("100.101.102.103")
++			self := netip.MustParseAddr("100.64.1.2")
++			var parsed packet.Parsed
++			parsed.Decode(tcp4syn(t, client, self, 1234, port))
++			if resp, _ := impl.injectInbound(&parsed, impl.tundev, nil); resp != filter.DropSilently {
++				t.Fatalf("got filter outcome %v, want filter.DropSilently", resp)
++			}
++
++			wait := 2 * time.Second
++			if tc.wantDial {
++				wait = 10 * time.Second
++			}
++			select {
++			case addr := <-dials:
++				if !tc.wantDial {
++					t.Fatalf("dialed %s, want no loopback forward", addr)
++				}
++				if want := fmt.Sprintf("127.0.0.1:%d", port); addr != want {
++					t.Fatalf("dialed %s, want %s", addr, want)
++				}
++			case <-time.After(wait):
++				if tc.wantDial {
++					t.Fatal("timed out waiting for the allowed loopback forward")
++				}
++			}
++		})
++	}
++}

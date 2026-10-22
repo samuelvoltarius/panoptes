@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "_hinweis": "Tuya-Wallbox-Modelle (WALLBOX_VERTRAG §4b). Nur belegte Zuordnungen eintragen (Quelle + Datum in 'beleg'). Reihenfolge: eigene Zuordnung > 'modell' > 'erkennung' (alle Regeln müssen passen) > unbekannt (nur lesen, rohe DPs, Steuern erst nach Zuordnung).",
+  "_schema": {
+    "id": "kurzname, [a-z0-9_-]",
+    "name": "Anzeigename",
+    "hersteller": "Hersteller laut Typenschild/App",
+    "beleg": "woher die Zuordnung stammt",
+    "erkennung": {"lan": {"DP-Nummer": "bool | int | text | Regex auf Textwert"}, "cloud": {"Code": "bool | int | text | Regex"}},
+    "dp": {
+      "schalter": {"dp": "DP-Nummer (LAN)", "code": "Cloud-Code"},
+      "strom": {"dp": "", "code": "", "min": 6, "max": 16, "faktor": 1},
+      "status": {"dp": "", "code": "", "laedt": ["Wert, der 'lädt' bedeutet"]},
+      "leistung": {"dp": "", "code": "", "faktorW": 1}
+    }
+  },
+  "modelle": [
+    {
+      "id": "qccdz-standard",
+      "name": "Tuya-Ladegerät (Standardkategorie qccdz)",
+      "hersteller": "verschiedene (viele No-Name-Geräte, u. a. Feyree, Aimiler, Arlec/Deta, Nine, Tera, Ecopoint, Emini, Dowell)",
+      "beleg": "22.10.2026: gleiche DP-Belegung in 9 Gerätedateien von tuya-local (MIT, make-all/tuya-local: feyree_epro32a, aimiler_11kW, aimiler_40a, arlec_ev200dha, nine, tera_w01, ecopoint, emini_16a, dowell_dchs-k7) und Kategorie qccdz in Home Assistant core/tuya (Apache-2.0: switch, charge_cur_set, work_state, power_total). Stromgrenzen je Gerät verschieden (min 6–8 A, max 16–80 A); hier vorsichtig 6–16 A, mehr nur per eigener Zuordnung.",
+      "erkennung": {
+        "lan": {"3": "^charger_", "4": "int", "18": "bool"},
+        "cloud": {"work_state": "^charger_", "charge_cur_set": "int", "switch": "bool"}
+      },
+      "dp": {
+        "schalter": {"dp": "18", "code": "switch"},
+        "strom": {"dp": "4", "code": "charge_cur_set", "min": 6, "max": 16, "faktor": 1},
+        "status": {"dp": "3", "code": "work_state", "laedt": ["charger_charging"]},
+        "leistung": {"dp": "9", "code": "power_total", "faktorW": 1}
+      }
+    }
+  ]
+}

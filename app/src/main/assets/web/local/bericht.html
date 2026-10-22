@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Monatsbericht – Panoptes</title>
+    <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0A2238">
+    <script src="../shared/theme.js?v=13"></script>
+    <script src="../shared/app-shell.js?v=pn24"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn10">
+    <style>
+        .mb-nav { display: flex; align-items: center; flex-wrap: wrap; }
+        .mb-nav > * { margin: 4px 5px; }   /* statt flex-gap (Chromium 74) */
+        .mb-nav h2 { font: 700 20px var(--family-display, sans-serif); margin: 0; min-width: 0; flex: 1; color: var(--text-primary); }
+        .mb-nav .btn { min-width: 44px; min-height: 44px; }
+        .mb-nav .btn:disabled { opacity: .35; }
+        .mb-tag { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .mb-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 14px; }
+        @media (max-width: 860px) { .mb-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 540px) { .mb-grid { grid-template-columns: 1fr; } }
+        .mb-tile { background: var(--bg-elevated); border-radius: 12px; padding: 14px 16px; min-width: 0; }
+        .mb-tile h3 { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin: 0 0 6px; }
+        .mb-big { font: 700 26px/1.2 var(--family-mono, monospace); color: var(--text-primary); overflow-wrap: anywhere; }
+        .mb-big small { font-size: 14px; font-weight: 600; color: var(--text-muted); margin-left: 4px; }
+        .mb-row { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; padding: 4px 0; border-top: 1px solid var(--border-subtle); }
+        .mb-row:first-of-type { margin-top: 8px; }
+        .mb-row span:last-child { font-family: var(--family-mono, monospace); color: var(--text-primary); text-align: right; white-space: nowrap; }
+        .mb-na { color: var(--text-muted) !important; font-family: inherit !important; font-style: italic; }
+        .mb-big .mb-na { font-size: 15px; font-weight: 600; }
+        .mb-delta { font-size: 12px; margin-top: 4px; color: var(--text-muted); }
+        .mb-delta.gut { color: var(--status-success); }
+        .mb-delta.schlecht { color: var(--status-warning); }
+        .mb-note { font-size: 12px; color: var(--text-muted); margin-top: 14px; line-height: 1.5; }
+        .mb-empty { padding: 18px 0; color: var(--text-muted); font-size: 14px; line-height: 1.5; }
+        @media print {
+            .sidebar, .mobile-header, .pn-head, .header-actions, .mb-nav .btn, #mbPrint, .sidebar-overlay, .toast-container { display: none !important; }
+            body, .main-content, .card { background: #fff !important; color: #000 !important; }
+            .mb-tile { background: #f3f6f8 !important; break-inside: avoid; }
+            .mb-big, .mb-row span:last-child, .mb-nav h2 { color: #000 !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <div id="app-shell-mount"></div>
+        <main class="main-content">
+            <div class="mobile-header">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+                    </svg>
+                </button>
+                <span style="font-weight:600;" data-i18n="report.title">Monatsbericht</span>
+                <div style="width:40px;"></div>
+            </div>
+            <div class="page-body">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="mb-nav">
+                            <button class="btn" id="mbPrev" type="button" aria-label="‹">‹</button>
+                            <div style="flex:1;min-width:0;">
+                                <h2 id="mbMonth">--</h2>
+                                <div class="mb-tag" id="mbTag"></div>
+                            </div>
+                            <button class="btn" id="mbNext" type="button" aria-label="›">›</button>
+                            <button class="btn" id="mbPrint" type="button" data-i18n="report.print">Drucken / PDF</button>
+                        </div>
+                        <div id="mbBody"><div class="mb-empty" data-i18n="common.loading">Lädt …</div></div>
+                        <div class="mb-note" data-i18n="report.note">Alles im Auto gerechnet. Der Bericht bleibt bei dir. Werte, die dein Auto nicht liefert, stehen als „nicht verfügbar“ da.</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="../shared/auth.js"></script>
+    <script src="../shared/core.js?v=pn5"></script>
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+
+        // H7 Monatsbericht: nur lesen (GET /api/bericht/monat, NEUBAU2_API_VORSCHLAG.md §3). Kein Befehl ans Auto.
+        // Wahrheitsregel: null heißt „nicht verfügbar“ – nie 0 anzeigen, nie schätzen.
+        var Bericht = {
+            daten: null,
+            t: function (k, f, v) { return window.PanoptesShell ? PanoptesShell.tr(k, f, v) : f; },
+            lang: function () { try { return BYD.i18n.getLang(); } catch (e) { return 'de'; } },
+            esc: function (x) { var d = document.createElement('div'); d.textContent = x == null ? '' : String(x); return d.innerHTML; },
+            da: function (x) { return x !== null && x !== undefined && x !== '' && !(typeof x === 'number' && isNaN(x)); },
+            zahl: function (x, n) {
+                if (!this.da(x)) return null;
+                try { return Number(x).toLocaleString(this.lang(), { minimumFractionDigits: n || 0, maximumFractionDigits: n || 0 }); }
+                catch (e) { return Number(x).toFixed(n || 0); }
+            },
+            geld: function (x, w) {
+                if (!this.da(x)) return null;
+                try { return Number(x).toLocaleString(this.lang(), { style: 'currency', currency: w || 'EUR' }); }
+                catch (e) { return Number(x).toFixed(2) + ' ' + (w || 'EUR'); }
+            },
+            monatName: function (m) {
+                var p = String(m || '').split('-');
+                if (p.length !== 2) return m || '--';
+                try { return new Date(Number(p[0]), Number(p[1]) - 1, 1).toLocaleDateString(this.lang(), { month: 'long', year: 'numeric' }); }
+                catch (e) { return m; }
+            },
+            na: function () { return '<span class="mb-na">' + this.esc(this.t('report.na', 'nicht verfügbar')) + '</span>'; },
+            wert: function (s) { return s === null ? this.na() : '<span>' + this.esc(s) + '</span>'; },
+            reihe: function (label, s) { return '<div class="mb-row"><span>' + this.esc(label) + '</span>' + this.wert(s) + '</div>'; },
+            gross: function (s, einheit) {
+                return s === null ? '<div class="mb-big">' + this.na() + '</div>'
+                    : '<div class="mb-big">' + this.esc(s) + (einheit ? '<small>' + this.esc(einheit) + '</small>' : '') + '</div>';
+            },
+            kachel: function (titel, inhalt) { return '<div class="mb-tile"><h3>' + this.esc(titel) + '</h3>' + inhalt + '</div>'; },
+
+            zeichne: function (d) {
+                var self = this, f = d.fahren || {}, l = d.laden, s = d.standverlust, w = d.waechter, a = d.akku, vm = d.vormonat;
+                this.daten = d;
+                document.getElementById('mbMonth').textContent = this.monatName(d.monat);
+                document.getElementById('mbTag').textContent = d.bisHeute ? this.t('report.so_far', 'Laufender Monat, Stand heute') : '';
+                var i = (d.monate || []).indexOf(d.monat);
+                document.getElementById('mbPrev').disabled = i <= 0;
+                document.getElementById('mbNext').disabled = i < 0 || i >= d.monate.length - 1;
+
+                // Verbrauch gegenüber Vormonat (nur wenn beide Werte da sind; weniger ist besser).
+                var delta = '';
+                if (vm && this.da(vm.kwhPro100km) && this.da(f.kwhPro100km) && vm.kwhPro100km > 0) {
+                    var p = Math.round((f.kwhPro100km - vm.kwhPro100km) / vm.kwhPro100km * 100);
+                    delta = p === 0 ? '<div class="mb-delta">' + this.esc(this.t('report.same', 'wie im Vormonat')) + '</div>'
+                        : '<div class="mb-delta ' + (p < 0 ? 'gut' : 'schlecht') + '">'
+                          + this.esc(this.t(p < 0 ? 'report.less' : 'report.more', p < 0 ? '{n} % weniger als im Vormonat' : '{n} % mehr als im Vormonat', { n: Math.abs(p) })) + '</div>';
+                }
+
+                var h = '<div class="mb-grid">';
+                h += this.kachel(this.t('report.driven', 'Gefahren'), this.gross(this.zahl(f.km, 0), 'km')
+                    + this.reihe(this.t('report.trips', 'Fahrten'), this.zahl(f.fahrten, 0))
+                    + this.reihe(this.t('report.hours', 'Fahrzeit'), this.da(f.stunden) ? this.zahl(f.stunden, 1) + ' h' : null));
+                h += this.kachel(this.t('report.consumption', 'Verbrauch'), this.gross(this.zahl(f.kwhPro100km, 1), 'kWh/100 km') + delta
+                    + this.reihe(this.t('report.energy_used', 'Verbraucht'), this.da(f.kwh) ? this.zahl(f.kwh, 1) + ' kWh' : null));
+                var lh = '';
+                if (!l) lh = this.gross(null);
+                else {
+                    var zu = l.zuhause || {}, un = l.unterwegs || {};
+                    var teil = function (x) {
+                        if (!self.da(x.kwh)) return null;
+                        var k = self.geld(x.kosten, l.waehrung);
+                        return self.zahl(x.kwh, 1) + ' kWh' + (k ? ' · ' + k : '');
+                    };
+                    lh = this.gross(this.da(l.kwh) ? this.zahl(l.kwh, 1) : null, 'kWh')
+                        + this.reihe(this.t('report.charges', 'Ladevorgänge'), this.zahl(l.anzahl, 0))
+                        + this.reihe(this.t('report.home', 'Zuhause'), teil(zu))
+                        + this.reihe(this.t('report.away', 'Unterwegs'), teil(un));
+                    var sum = this.da(zu.kosten) && this.da(un.kosten) ? zu.kosten + un.kosten : null;
+                    lh += this.reihe(this.t('report.cost_total', 'Kosten gesamt'), this.geld(sum, l.waehrung));
+                }
+                h += this.kachel(this.t('report.charged', 'Geladen'), lh);
+                h += this.kachel(this.t('report.standby', 'Standverlust'), this.gross(s && this.da(s.prozent) ? this.zahl(s.prozent, 1) : null, '%')
+                    + this.reihe(this.t('report.standby_kwh', 'Energie im Stand'), s && this.da(s.kwh) ? this.zahl(s.kwh, 1) + ' kWh' : null));
+                h += this.kachel(this.t('report.guard', 'Wächter'), this.gross(w ? this.zahl(w.ereignisse, 0) : null, this.t('report.events', 'Ereignisse'))
+                    + this.reihe(this.t('report.recordings', 'Aufnahmen'), w ? this.zahl(w.aufnahmen, 0) : null));
+                h += this.kachel(this.t('report.battery', 'Akku'), this.gross(a && this.da(a.sohProzent) ? this.zahl(a.sohProzent, 0) : null, '% ' + this.t('report.soh', 'Gesundheit'))
+                    + this.reihe(this.t('report.v12min', 'Starterbatterie, niedrigster Wert'), a && this.da(a.v12Min) ? this.zahl(a.v12Min, 1) + ' V' : null));
+                h += '</div>';
+                document.getElementById('mbBody').innerHTML = h;
+            },
+
+            laden: function (monat) {
+                var self = this;
+                var url = '/api/bericht/monat' + (monat ? '?monat=' + encodeURIComponent(monat) : '');
+                return fetch(url, { cache: 'no-store' }).then(function (r) {
+                    if (r.status === 404) return { fehlt: true };
+                    return r.ok ? r.json() : null;
+                }).then(function (d) {
+                    if (d && d.fehlt) {
+                        document.getElementById('mbBody').innerHTML = '<div class="mb-empty">' + self.esc(self.t('report.missing', 'Der Monatsbericht kommt mit einem späteren Panoptes-Update.')) + '</div>';
+                        document.getElementById('mbPrev').disabled = document.getElementById('mbNext').disabled = true;
+                        return;
+                    }
+                    if (!d || !d.monat) {
+                        document.getElementById('mbBody').innerHTML = '<div class="mb-empty">' + self.esc(self.t('report.fail', 'Der Bericht lässt sich gerade nicht laden.')) + '</div>';
+                        return;
+                    }
+                    self.zeichne(d);
+                    try { history.replaceState(null, '', '#' + d.monat); } catch (e) {}
+                }, function () {
+                    document.getElementById('mbBody').innerHTML = '<div class="mb-empty">' + self.esc(self.t('report.fail', 'Der Bericht lässt sich gerade nicht laden.')) + '</div>';
+                });
+            },
+
+            blaettern: function (schritt) {
+                var d = this.daten;
+                if (!d || !d.monate) return;
+                var i = d.monate.indexOf(d.monat) + schritt;
+                if (i >= 0 && i < d.monate.length) this.laden(d.monate[i]);
+            },
+
+            init: function () {
+                var self = this;
+                document.getElementById('mbPrev').onclick = function () { self.blaettern(-1); };
+                document.getElementById('mbNext').onclick = function () { self.blaettern(1); };
+                document.getElementById('mbPrint').onclick = function () { window.print(); };
+                var m = /^#(\d{4}-\d{2})$/.exec(location.hash);
+                this.laden(m ? m[1] : null);
+            }
+        };
+
+        BYD.i18n.init().then(function () {
+            BYD.core.init();
+            Bericht.init();
+        });
+    </script>
+</body>
+</html>
