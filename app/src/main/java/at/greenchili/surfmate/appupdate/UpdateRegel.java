@@ -98,7 +98,17 @@ public final class UpdateRegel {
         if (!modusAutomatisch || !pruefenAn || ausSeit < 0) return -1;
         if (nichtWeil(l) != null) return -1;
         if (l.verfuegbar.versionCode == l.rueckfallVc) return -1;   // nie dieselbe Version erneut von selbst
+        if (!"stabil".equals(l.verfuegbar.kanal)) return -1;        // Vorabversion nie von selbst (0.1.15)
         return ausSeit + AUTOMATISCH_NACH_MS;
+    }
+
+    /**
+     * Drossel für Fehlschläge im Protokoll: höchstens eine Warnung je installierter Version und Tag (UTC).
+     * Liefert den neuen Schlüssel „Version@Tag“, wenn jetzt gewarnt werden darf, sonst null (nur still protokollieren).
+     */
+    public static String berichtSchluessel(String letzter, String version, long jetztMs) {
+        String neu = (version == null ? "?" : version) + "@" + Math.floorDiv(jetztMs, 86_400_000L);
+        return neu.equals(letzter) ? null : neu;
     }
 
     /**

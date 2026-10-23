@@ -1365,6 +1365,24 @@ public class MqttConnectionManager {
                     for (int p : vd.windowOpenPercent) a.put(p);
                     payload.put("window_open", a);
                 }
+                // 0.1.15 (Kern 8): Verriegelung, Türen/Klappen, Fenster und Stecker als flache Binärschlüssel für
+                // HA-Discovery – dieselben zusammengeführten Werte wie GET /api/vehicle/state (Cockpit), nur bekannte,
+                // ohne Cloud-Abruf aus der Telemetrie.
+                try {
+                    KarosserieTelemetrie.eintragen(payload,
+                            at.greenchili.surfmate.server.VehicleControlApiHandler.sperrStand(vd, false),
+                            at.greenchili.surfmate.server.VehicleControlApiHandler.tuerOffenStand(collector),
+                            at.greenchili.surfmate.server.VehicleControlApiHandler.fensterStand(collector, vd)[1],
+                            vd.chargingGunState);
+                } catch (Throwable ignored) {
+                    // nur Telemetrie: fehlt ein Wert, fehlt die Entität
+                }
+                // 0.1.15: Klima an/aus (0/1 belegt), Verbrauch laut Auto (Langzeitschnitt und letzte Fahrt)
+                if (vd.acStartState == 0 || vd.acStartState == 1) payload.put("climate_on", vd.acStartState);
+                if (Double.isFinite(vd.avgElecConPer100Km) && vd.avgElecConPer100Km > 0 && vd.avgElecConPer100Km < 100)
+                    payload.put("consumption_avg", vd.avgElecConPer100Km);
+                if (Double.isFinite(vd.lastElecConPer100Km) && vd.lastElecConPer100Km > 0 && vd.lastElecConPer100Km < 100)
+                    payload.put("consumption_last_trip", vd.lastElecConPer100Km);
 
                 // Lights
                 putLightTelemetry(payload, vd, diLink5);

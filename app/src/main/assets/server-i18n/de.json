@@ -1789,6 +1789,20 @@
       "mobilfunk": {
         "title": "Updates auch über Mobilfunk laden",
         "help": "Viele Autos sind nur über die eingebaute SIM online, deshalb ist das an. Ein Update hat meist 70 bis 120 MB; die Größe steht vorher in der Meldung. Aus = Panoptes lädt nur, wenn das Auto im WLAN ist. Der Download läuft nur bei geparktem Auto und setzt nach einer Unterbrechung dort fort, wo er war."
+      },
+      "quelle": {
+        "title": "Update-Quelle",
+        "help": "Öffentlich = die offiziellen Panoptes-Versionen auf GitHub, ohne Anmeldung. Eigen = ein anderes GitHub-Repo, z. B. ein eigener Build; bei einem privaten Repo mit Lese-Token. Jede Version wird vor der Installation auf Prüfsumme und Signatur geprüft, egal woher sie kommt.",
+        "oeffentlich": "Öffentlich (Standard)",
+        "eigen": "Eigenes Repo"
+      },
+      "repo": {
+        "title": "Repo für Updates",
+        "help": "GitHub-Repo in der Form besitzer/name. Nur bei „Eigenes Repo“."
+      },
+      "token": {
+        "title": "Lese-Token für das Repo",
+        "help": "Nur für ein privates Repo nötig: ein GitHub-Token, das dieses Repo nur lesen darf. Er wird nur an GitHub geschickt und nie angezeigt."
       }
     },
     "ha": {
@@ -2110,7 +2124,8 @@
       "nicht_eingerichtet": "Der Notzugang ist noch nicht eingerichtet.",
       "startet_nicht": "Der Notzugang startet nicht. Bitte später erneut versuchen.",
       "anmeldung": "Die Anmeldung im Tailnet ist fehlgeschlagen. Bitte den Auth-Key prüfen.",
-      "installieren": "Die Dateien für den Notzugang konnten nicht angelegt werden."
+      "installieren": "Die Dateien für den Notzugang konnten nicht angelegt werden.",
+      "adb_serve": "Der Notzugang ist angemeldet, aber die adb-Weiterleitung (Port 5555) fehlt noch. Der Notzugang versucht es selbst erneut."
     }
   }
 }

@@ -936,13 +936,13 @@ class RoadSenseController @JvmOverloads constructor(
         // every tick regardless of regime so you can arm recording + drop a "real breaker
         // HERE" mark whether driving or stopped. Cheap mtime-gated reads; off the hot path.
         //
-        // BuildConfig.DEBUG gate: the recorder is a DEV/tuning tool, never a shipped feature.
-        // In a release build BuildConfig.DEBUG is a compile-time `false` constant, so R8
+        // BuildConfig.ENTWICKLUNG gate: the recorder is a DEV/tuning tool, never a shipped feature.
+        // In a release build BuildConfig.ENTWICKLUNG is a compile-time `false` constant, so R8
         // dead-strips this whole block — the shipped binary has NO path to start the recorder
         // even if someone flips roadSense.rawRecord in the on-device config (it's a plain JSON
         // file). rawRecord then stays false forever, so every capture site (the `if (rawRecord)`
         // guards in onAccel/onGyro) is also dead. Same posture as Od.authorize's debug bypass.
-        if (at.greenchili.surfmate.BuildConfig.DEBUG) {
+        if (at.greenchili.surfmate.BuildConfig.ENTWICKLUNG) {
             maybeToggleRawRecorder(cfgTick.rawRecord)
             if (rawRecord) maybeConsumeRawMark(now)
         }

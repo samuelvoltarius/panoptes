@@ -30,7 +30,7 @@ public class AppUpdateTest {
 
     @Rule public TemporaryFolder tmp = new TemporaryFolder();
 
-    static final String LATEST = "https://github.com/" + Freigabe.REPO + "/releases/latest/download/version.json";
+    static final String LATEST = "https://github.com/" + UpdateQuelle.STANDARD_REPO + "/releases/latest/download/version.json";
 
     static String vj(int vc, String name, String kanal, String tag, String sha) {
         return "{\"versionCode\":" + vc + ",\"versionName\":\"" + name + "\",\"kanal\":\"" + kanal + "\",\"tag\":\""
@@ -40,14 +40,22 @@ public class AppUpdateTest {
 
     static final String SHA0 = "0000000000000000000000000000000000000000000000000000000000000000";
 
+    /** Freigabe mit der öffentlichen Download-Adresse (wie sie der Dienst ohne Token setzt). */
+    static Freigabe frei(String json) throws Freigabe.Fehler {
+        Freigabe f = Freigabe.lies(json);
+        return f.mitApkUrl("https://github.com/" + UpdateQuelle.STANDARD_REPO + "/releases/download/" + f.tag + "/"
+                + f.apk);
+    }
+
     // ------------------------------------------------------------- Freigabe
 
     @Test
     public void versionJsonWieCi() throws Exception {
         Freigabe f = Freigabe.lies(vj(9, "0.1.8", "stabil", "v0.1.8", SHA0));
         assertEquals(9, f.versionCode);
-        assertEquals("https://github.com/samuelvoltarius/panoptes-releases/releases/download/v0.1.8/panoptes-0.1.8-abc.apk",
-                f.apkUrl());
+        assertNull(f.apkUrl());                            // Adresse kommt nie aus version.json, nur aus der Quelle
+        assertEquals("https://github.com/samuelvoltarius/panoptes/releases/download/v0.1.8/panoptes-0.1.8-abc.apk",
+                frei(vj(9, "0.1.8", "stabil", "v0.1.8", SHA0)).apkUrl());
         assertEquals(0, f.notizen("de").length());
         Freigabe t = Freigabe.lies(vj(10, "0.1.9", "test", "v0.1.9-test.2", SHA0));
         assertEquals("test", t.kanal);
@@ -300,7 +308,7 @@ public class AppUpdateTest {
         netzErsatz = rn;
         AppUpdateDienst d = dienst();
         texte.put(LATEST, vj(9, "0.1.8", "stabil", "v0.1.8", AppUpdateDienst.sha256(q)));
-        Freigabe f = Freigabe.lies(texte.get(LATEST));
+        Freigabe f = frei(texte.get(LATEST));
         d.pruefen();
         d.ausfuehren(f);                                   // 1 Stück, dann Abbruch
         File teil = d.teilDatei(f);
@@ -326,7 +334,7 @@ public class AppUpdateTest {
         AppUpdateDienst d = dienst();
         texte.put(LATEST, vj(9, "0.1.8", "stabil", "v0.1.8", SHA0));
         d.pruefen();
-        Freigabe f = Freigabe.lies(texte.get(LATEST));
+        Freigabe f = frei(texte.get(LATEST));
         d.ausfuehren(f);
         assertEquals(1, rn.stuecke);
         JSONObject s = d.status("de");
@@ -343,7 +351,7 @@ public class AppUpdateTest {
         File alt = new File(dd, "neu-appupdate-7-aaaaaaaaaaaa.apk.part");
         Files.write(alt.toPath(), new byte[5]);
         autoAus = false;                                     // nichts laden, nur aufräumen
-        d.ausfuehren(Freigabe.lies(vj(9, "0.1.8", "stabil", "v0.1.8", SHA0)));
+        d.ausfuehren(frei(vj(9, "0.1.8", "stabil", "v0.1.8", SHA0)));
         assertFalse(alt.exists());
         assertTrue(rn.anfragen.isEmpty());
     }
@@ -381,7 +389,11 @@ public class AppUpdateTest {
         assertEquals("melden", s.getString("modus"));
         assertEquals("stabil", s.getString("kanal"));
         assertTrue(s.isNull("verfuegbar"));
-        d.pruefen();
+        d.pruefen();                                       // Hintergrund: still (0.1.15), Fehler nur im Status-Feld
+        s = d.status("de");
+        assertEquals("nie", s.getString("ergebnis"));
+        assertEquals("nicht_erreichbar", s.getString("fehler"));
+        d.suchen("de");                                    // auf Knopfdruck sichtbar
         s = d.status("de");
         assertEquals("fehler", s.getString("ergebnis"));
         assertEquals("nicht_erreichbar", s.getString("fehler"));
@@ -394,7 +406,7 @@ public class AppUpdateTest {
         File apk = tmp.newFile("x.apk");
         Files.write(apk.toPath(), "nicht die echte apk".getBytes(StandardCharsets.UTF_8));
         texte.put(LATEST, vj(9, "0.1.8", "stabil", "v0.1.8", SHA0));
-        dateien.put(Freigabe.lies(texte.get(LATEST)).apkUrl(), apk);
+        dateien.put(frei(texte.get(LATEST)).apkUrl(), apk);
         d.pruefen();
         JSONObject s = d.status("de");
         assertEquals("verfuegbar", s.getString("ergebnis"));
@@ -404,7 +416,7 @@ public class AppUpdateTest {
         // Anderer Stand → abgelehnt
         assertEquals("anderer_stand", d.installieren(10));
         // sha256 passt nicht → abgebrochen, nichts gestartet, keine Sperre
-        d.ausfuehren(Freigabe.lies(texte.get(LATEST)));
+        d.ausfuehren(frei(texte.get(LATEST)));
         assertEquals("pruefsumme", d.status("de").getString("fehler"));
         assertTrue(gestartet.isEmpty());
         assertFalse(new File(basis, ".deploy.lock").exists());
@@ -418,7 +430,7 @@ public class AppUpdateTest {
         Files.write(apk.toPath(), "kein signaturblock".getBytes(StandardCharsets.UTF_8));
         String sha = AppUpdateDienst.sha256(apk);
         texte.put(LATEST, vj(9, "0.1.8", "stabil", "v0.1.8", sha));
-        Freigabe f = Freigabe.lies(texte.get(LATEST));
+        Freigabe f = frei(texte.get(LATEST));
         dateien.put(f.apkUrl(), apk);
         d.pruefen();
         d.ausfuehren(f);
@@ -447,9 +459,9 @@ public class AppUpdateTest {
         AppUpdateDienst d = dienst();
         cfg.put("kanal", "test");
         texte.put(LATEST, vj(9, "0.1.8", "stabil", "v0.1.8", SHA0));
-        texte.put("https://api.github.com/repos/" + Freigabe.REPO + "/releases?per_page=5",
+        texte.put("https://api.github.com/repos/" + UpdateQuelle.STANDARD_REPO + "/releases?per_page=5",
                 "[{\"tag_name\":\"v0.1.9-test.1\",\"draft\":true},{\"tag_name\":\"v0.1.9-test.0\",\"draft\":false}]");
-        texte.put("https://github.com/" + Freigabe.REPO + "/releases/download/v0.1.9-test.0/version.json",
+        texte.put("https://github.com/" + UpdateQuelle.STANDARD_REPO + "/releases/download/v0.1.9-test.0/version.json",
                 vj(10, "0.1.9", "test", "v0.1.9-test.0", SHA0));
         d.pruefen();
         assertEquals(10, d.status("de").getJSONObject("verfuegbar").getInt("versionCode"));
@@ -497,7 +509,7 @@ public class AppUpdateTest {
         AppUpdateDienst d = dienst();
         String sha = AppUpdateDienst.sha256(apks[0]);
         texte.put(LATEST, vj(9, "0.1.8", "stabil", "v0.1.8", sha));
-        Freigabe f = Freigabe.lies(texte.get(LATEST));
+        Freigabe f = frei(texte.get(LATEST));
         dateien.put(f.apkUrl(), apks[0]);
         d.pruefen();
         assertNull(d.installieren(9));

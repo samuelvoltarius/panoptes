@@ -184,7 +184,7 @@ class DaemonsFragment : Fragment() {
             // build (LOG_CAPTURE) — braveheart keeps DaemonLogger file output so
             // customers can send logs. Plain release/alpha builds strip the
             // calls, so the action stays hidden there.
-            onDownloadLog = if (at.greenchili.surfmate.BuildConfig.DEBUG
+            onDownloadLog = if (at.greenchili.surfmate.BuildConfig.ENTWICKLUNG
                     || at.greenchili.surfmate.BuildConfig.LOG_CAPTURE) {
                 { type -> onDownloadLogClicked(type) }
             } else null

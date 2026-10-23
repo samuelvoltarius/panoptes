@@ -1198,7 +1198,7 @@ public final class RemoteVoiceService extends Service {
         Notification notification = builder
                 .setContentTitle(getString(R.string.remote_voice_notification_title))
                 .setContentText(getString(R.string.remote_voice_notification_text))
-                .setSmallIcon(R.drawable.ic_volume_on)
+                .setSmallIcon(at.greenchili.surfmate.R.drawable.ic_stat_panoptes)
                 .setPriority(Notification.PRIORITY_MIN)
                 .build();
         try {

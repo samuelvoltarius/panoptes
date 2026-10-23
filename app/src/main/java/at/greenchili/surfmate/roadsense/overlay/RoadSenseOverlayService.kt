@@ -898,7 +898,7 @@ class RoadSenseOverlayService : Service() {
         else @Suppress("DEPRECATION") Notification.Builder(this)
         return b.setContentTitle(getString(R.string.notif_roadsense_title))
             .setContentText(getString(R.string.notif_roadsense_overlay_text))
-            .setSmallIcon(R.drawable.ic_roadsense)
+            .setSmallIcon(at.greenchili.surfmate.R.drawable.ic_stat_panoptes)
             .setOngoing(true)
             .setGroup(DaemonKeepaliveService.NOTIFICATION_GROUP_KEY)
             .build()

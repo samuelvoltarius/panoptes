@@ -2,6 +2,7 @@ package at.greenchili.surfmate.appupdate;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
 import org.junit.Rule;
@@ -101,12 +102,16 @@ public class ApkZertifikatTest {
         assertNull(ApkZertifikat.sha256(schreibe(kurz)));
     }
 
-    /** Echte Panoptes-APK am PC (falls vorhanden): Fingerabdruck = Freigabe.ZERTIFIKAT (wie apksigner in der CI). */
+    /**
+     * Echte Panoptes-APK am PC (falls vorhanden): Fingerabdruck ist ein Panoptes-Zertifikat (wie apksigner in der CI).
+     * Kern-Abgaben bis 0.1.14.1 tragen das alte, ab 0.1.15 rotierte das neue (Kern 9).
+     */
     @Test
     public void echteApk() {
         File dir = new File("build/abgabe");
         File[] apks = dir.listFiles((d, n) -> n.startsWith("panoptes-kern-") && n.endsWith(".apk"));
         assumeTrue(apks != null && apks.length > 0);
-        assertEquals(Freigabe.ZERTIFIKAT, ApkZertifikat.sha256(apks[0]));
+        String fp = ApkZertifikat.sha256(apks[0]);
+        assertTrue(fp, Freigabe.zulaessig(fp));
     }
 }

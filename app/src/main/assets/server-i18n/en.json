@@ -1789,6 +1789,20 @@
       "mobilfunk": {
         "title": "Download updates over mobile data too",
         "help": "Many cars are only online through their built-in SIM, so this is on. An update is usually 70 to 120 MB; the size is shown in the notice beforehand. Off = Panoptes only downloads while the car is on Wi-Fi. The download only runs while the car is parked and resumes where it stopped after an interruption."
+      },
+      "quelle": {
+        "title": "Update source",
+        "help": "Public = the official Panoptes versions on GitHub, no sign-in. Own = another GitHub repo, e.g. your own build; for a private repo with a read token. Every version is checked for checksum and signature before installing, wherever it comes from.",
+        "oeffentlich": "Public (default)",
+        "eigen": "Own repo"
+      },
+      "repo": {
+        "title": "Repo for updates",
+        "help": "GitHub repo in the form owner/name. Only with “Own repo”."
+      },
+      "token": {
+        "title": "Read token for the repo",
+        "help": "Only needed for a private repo: a GitHub token that may only read this repo. It is only sent to GitHub and never shown."
       }
     },
     "ha": {
@@ -2110,7 +2124,8 @@
       "nicht_eingerichtet": "The emergency access has not been set up yet.",
       "startet_nicht": "The emergency access does not start. Please try again later.",
       "anmeldung": "Signing in to the tailnet failed. Please check the auth key.",
-      "installieren": "The files for the emergency access could not be created."
+      "installieren": "The files for the emergency access could not be created.",
+      "adb_serve": "The emergency access is signed in, but the adb forwarding (port 5555) is still missing. The emergency access keeps retrying by itself."
     }
   }
 }

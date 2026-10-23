@@ -2546,7 +2546,7 @@ public class StatusOverlayService extends Service {
         return new Notification.Builder(this, CHANNEL_ID)
                 .setContentTitle(textContext.getString(R.string.status_overlay_notif_title))
                 .setContentText(textContext.getString(R.string.status_overlay_notif_text))
-                .setSmallIcon(R.drawable.ic_recording)
+                .setSmallIcon(at.greenchili.surfmate.R.drawable.ic_stat_panoptes)
                 .setContentIntent(pi)
                 .setOngoing(true)
                 .setGroup(at.greenchili.surfmate.services.DaemonKeepaliveService.NOTIFICATION_GROUP_KEY)

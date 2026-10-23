@@ -324,7 +324,7 @@ class RoadSenseImuSidecarService : Service(), SensorEventListener {
         }
         return b.setContentTitle(getString(at.greenchili.surfmate.R.string.notif_roadsense_title))
             .setContentText(getString(at.greenchili.surfmate.R.string.notif_roadsense_sensing_text))
-            .setSmallIcon(R.drawable.ic_diagnostics)
+            .setSmallIcon(at.greenchili.surfmate.R.drawable.ic_stat_panoptes)
             .setOngoing(true)
             .setGroup(DaemonKeepaliveService.NOTIFICATION_GROUP_KEY)
             .build()

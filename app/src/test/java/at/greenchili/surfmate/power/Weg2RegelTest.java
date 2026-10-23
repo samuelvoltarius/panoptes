@@ -7,7 +7,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-/** 0.1.13 (Kern 7): Weg-2-Wächter sendet nur, wenn alle Bedingungen gelten – vor allem Display aus und Auto steht. */
+/** Weg-2-Regel (0.1.13); seit 0.1.15 meldet der Wächter nur noch (kein CONNECT_VPN), die Regel bleibt gleich. */
 public class Weg2RegelTest {
 
     private static Weg2Regel.Lage bereit() {
@@ -78,5 +78,14 @@ public class Weg2RegelTest {
         assertFalse(Weg2Regel.displayAus("Display Power: state=ON\n"));
         assertFalse("unbekannt = nicht aus", Weg2Regel.displayAus("irgendwas"));
         assertFalse(Weg2Regel.displayAus(null));
+    }
+
+    @Test
+    public void waechterSendetNichtMehr() throws Exception {
+        java.io.File f = new java.io.File("src/main/java/at/greenchili/surfmate/power/Weg2Waechter.java");
+        if (!f.isFile()) f = new java.io.File("app/src/main/java/at/greenchili/surfmate/power/Weg2Waechter.java");
+        String s = new String(java.nio.file.Files.readAllBytes(f.toPath()), java.nio.charset.StandardCharsets.UTF_8);
+        assertFalse("0.1.15: kein CONNECT_VPN mehr (Praxisbefund 22.10.)", s.contains("Weg2Regel.befehl()"));
+        assertFalse(s.contains("am broadcast"));
     }
 }

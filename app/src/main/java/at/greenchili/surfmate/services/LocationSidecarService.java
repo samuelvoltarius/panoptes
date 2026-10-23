@@ -311,7 +311,7 @@ public class LocationSidecarService extends Service implements LocationListener 
         return builder
             .setContentTitle(getString(at.greenchili.surfmate.R.string.notif_location_title))
             .setContentText(getString(at.greenchili.surfmate.R.string.notif_location_text))
-            .setSmallIcon(android.R.drawable.ic_menu_mylocation)
+            .setSmallIcon(at.greenchili.surfmate.R.drawable.ic_stat_panoptes)
             .setOngoing(true)
             .setGroup(at.greenchili.surfmate.services.DaemonKeepaliveService.NOTIFICATION_GROUP_KEY)
             .build();
@@ -564,7 +564,7 @@ public class LocationSidecarService extends Service implements LocationListener 
             } else if (Log.isLoggable(TAG, Log.DEBUG)) {
                 // Per-fix logging is runtime opt-in: `setprop log.tag.LocationSidecar DEBUG`
                 // (same pattern as KeepAliveAccessibilityService.onKeyEvent). The old
-                // BuildConfig.DEBUG gate was compile-time: always on in debug builds
+                // BuildConfig.ENTWICKLUNG gate was compile-time: always on in debug builds
                 // (~1 Hz spam) and unreachable in release-type builds — including
                 // braveheart, where logcat survives R8 and this line is actually useful.
                 Log.d(TAG, "Location update (moved=" + String.format("%.1f", distanceMoved) + "m): " + latitude + ", " + longitude);

@@ -315,4 +315,20 @@ public class OverdriveUebernahmeTest {
         for (int i = 0; i < a.length(); i++) m.put(a.getJSONObject(i).getString("id"), a.getJSONObject(i));
         return m;
     }
+    /**
+     * 0.1.15 (Kern 8, Koordination 23.10.): Die Übernahme darf das Abschreckungsbild bzw. Pfade auf Overdrive-Medien
+     * nie übernehmen (bei Projektinhaber zeigte die Abschreckung ein Overdrive-GIF; Ursache war das alte
+     * deploy/migrate-on-car.sh, nicht diese Tabelle – der Test hält das so).
+     */
+    @Test
+    public void keineBildOderMedienPfade() {
+        for (OverdriveUebernahme.Regel r : OverdriveUebernahme.REGELN) {
+            for (String feld : new String[] {r.pfad, r.ziel}) {
+                String f = feld == null ? "" : feld.toLowerCase(java.util.Locale.ROOT);
+                assertFalse(r.id + ": " + feld, f.contains("imagepath") || f.contains("image") || f.contains("gif")
+                        || f.contains("path") || f.contains("pfad") || f.contains("media") || f.contains("asset")
+                        || f.contains("file") || f.contains("datei"));
+            }
+        }
+    }
 }

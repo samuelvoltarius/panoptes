@@ -306,6 +306,33 @@ public final class Katalog {
         Feld mobil = new Feld("update.mobilfunk", Feld.Typ.BOOL);
         mobil.gruppe = "update"; mobil.reihenfolge = 30; mobil.standard = true;
         l.add(mobil);
+        // Update-Quelle (0.1.15): Standard öffentliches Repo ohne Token; „eigen“ = anderes Repo, optional Lese-Token.
+        // Zugangs-Einstellung (Regel B): von gekoppelten Geräten nur lesbar. Signatur + sha256 gelten für jede Quelle.
+        Feld quelle = new Feld("update.quelle", Feld.Typ.AUSWAHL);
+        quelle.gruppe = "update"; quelle.reihenfolge = 40; quelle.standard =
+                at.greenchili.surfmate.appupdate.UpdateQuelle.OEFFENTLICH;
+        quelle.erweitert = true; quelle.nurLesendExtern = true;
+        quelle.optionen.add(new Feld.Option(at.greenchili.surfmate.appupdate.UpdateQuelle.OEFFENTLICH,
+                "settings.update.quelle.oeffentlich"));
+        quelle.optionen.add(new Feld.Option(at.greenchili.surfmate.appupdate.UpdateQuelle.EIGEN,
+                "settings.update.quelle.eigen"));
+        l.add(quelle);
+        Feld repo = new Feld("update.repo", Feld.Typ.TEXT);
+        repo.gruppe = "update"; repo.reihenfolge = 41; repo.standard = null;
+        repo.erweitert = true; repo.nurLesendExtern = true; repo.nullErlaubt = true;
+        repo.nurWenn = obj("key", "update.quelle", "gleich", at.greenchili.surfmate.appupdate.UpdateQuelle.EIGEN);
+        repo.pruefer = v -> {
+            if (!(v instanceof String) || !at.greenchili.surfmate.appupdate.UpdateQuelle.gueltigesRepo((String) v)) {
+                throw new IllegalArgumentException("typ");
+            }
+            return ((String) v).trim();
+        };
+        l.add(repo);
+        Feld token = new Feld("update.token", Feld.Typ.GEHEIM);
+        token.gruppe = "update"; token.reihenfolge = 42;
+        token.erweitert = true; token.nurLesendExtern = true;
+        token.nurWenn = obj("key", "update.quelle", "gleich", at.greenchili.surfmate.appupdate.UpdateQuelle.EIGEN);
+        l.add(token);
         // Fahrtenbuch auf /ev/ ansehen (Planer §8): nur Chiffretext verlässt das Auto; Standard aus
         Feld fb = new Feld("fahrtenbuch.planer", Feld.Typ.BOOL);
         fb.gruppe = "system"; fb.reihenfolge = 25; fb.standard = false; fb.nurLesendExtern = true;

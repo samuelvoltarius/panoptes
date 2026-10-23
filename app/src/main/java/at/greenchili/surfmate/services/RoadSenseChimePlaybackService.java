@@ -311,7 +311,7 @@ public final class RoadSenseChimePlaybackService extends Service {
         return builder
                 .setContentTitle(getString(at.greenchili.surfmate.R.string.notif_chime_title))
                 .setContentText(getString(at.greenchili.surfmate.R.string.notif_chime_text))
-                .setSmallIcon(R.drawable.ic_play_circle)
+                .setSmallIcon(at.greenchili.surfmate.R.drawable.ic_stat_panoptes)
                 .setOngoing(true)
                 .setGroup(DaemonKeepaliveService.NOTIFICATION_GROUP_KEY)
                 .build();

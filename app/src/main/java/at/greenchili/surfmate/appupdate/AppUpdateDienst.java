@@ -17,15 +17,18 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * In-App-Updater (Koordination 21.10.2026, API NEUBAU2_API_VORSCHLAG.md §1): liest {@code version.json} aus dem
- * öffentlichen Repo {@link Freigabe#REPO} <b>ohne Token</b>, lädt die APK, prüft sha256 und Signaturzertifikat und
+ * In-App-Updater (Koordination 21.10.2026, API NEUBAU2_API_VORSCHLAG.md §1): liest {@code version.json} aus der
+ * eingestellten {@link UpdateQuelle} (Standard seit 0.1.15: öffentliches Repo, ohne Token), lädt die APK, prüft sha256
+ * und Signaturzertifikat (für jede Quelle gleich) und
  * übergibt die Installation an {@code update-on-car.sh} (dasselbe Skript wie die Deploy-Sitzung: Sicherung,
  * Totmannschalter 30 min, automatischer Rückfall). Selbstbestätigung erst, wenn die neue Version 3 Prüfungen lang
  * gesund läuft (versionCode, Daemons, Web).
  *
  * <p>Regeln: nie während der Fahrt oder bei Zündung an (siehe {@link UpdateRegel}); nie, solange
  * {@code .deploy.lock} besteht (Deploy-Sitzung oder ein laufendes Update); Modus „melden“ (Standard) installiert
- * nie von selbst. Eine zurückgerollte Version wird nicht automatisch erneut versucht.
+ * nie von selbst. Eine zurückgerollte Version wird nicht automatisch erneut versucht. Vorabversionen (Kanal test)
+ * werden nie automatisch installiert. Fehlschläge (404/401/kein Netz) landen nur im Protokoll, als Warnung höchstens
+ * einmal je Version und Tag ({@link UpdateRegel#berichtSchluessel}); keine Meldung am Display.
  */
 public final class AppUpdateDienst {
 
@@ -55,6 +58,12 @@ public final class AppUpdateDienst {
          * Gesamtgröße der Datei (−1 = unbekannt). Antwortet der Server ohne Range (200), wird {@code teil} von vorn
          * vollständig geschrieben. Standard (ohne Range-Unterstützung): alles auf einmal über {@link #laden}.
          */
+        /**
+         * Lese-Token für die folgenden Abrufe (null = ohne). Geht nur an api.github.com, nie an andere Hosts (auch
+         * nicht nach einer Umleitung zum Datei-Speicher).
+         */
+        default void zugang(String token) { }
+
         default long ladenStueck(String url, File teil, long ab, long laenge, long maxBytes) throws Exception {
             File neu = new File(teil.getPath() + ".neu");
             neu.delete();
@@ -89,6 +98,8 @@ public final class AppUpdateDienst {
         default String netz() { return UpdateRegel.NETZ_UNBEKANNT; }
         /** Neue Version gefunden → Telegram (Kategorie UPDATE), mit Größe, wenn bekannt. */
         default void melde(Freigabe f, long groesseBytes) { }
+        /** Schreibt Werte in den Config-Abschnitt {@code update}; true = gespeichert. */
+        default boolean setzeConfig(java.util.Map<String, Object> werte) { return false; }
     }
 
     private static volatile AppUpdateDienst instance;
@@ -111,11 +122,17 @@ public final class AppUpdateDienst {
     private boolean installiertGerade;
     /** Höchster versionCode, der schon per Telegram gemeldet wurde. */
     private int gemeldetVc;
+    /** {@link UpdateQuelle#kennung()} der letzten Prüfung; wechselt sie, gilt {@link #verfuegbar} nicht mehr. */
+    private String quelleKennung;
+    /** Version@Tag der letzten Warnung im Protokoll (Drossel: eine je Version und Tag). */
+    private String berichtSchluessel;
 
     AppUpdateDienst(Netz netz, Umgebung env) {
         this.netz = netz;
         this.env = env;
+        boolean bestand = standDatei().exists();
         laden();
+        migriereQuelle(bestand);
     }
 
     public static synchronized void start() {
@@ -150,6 +167,9 @@ public final class AppUpdateDienst {
             JSONObject o = new JSONObject();
             try {
                 o.put("kanal", kanal());
+                UpdateQuelle q = quelle();
+                o.put("quelle", q.art);
+                o.put("quelleRepo", q.repo);
                 o.put("modus", automatisch() ? "automatisch" : "melden");
                 o.put("pruefen", pruefenAn());
                 o.put("mobilfunk", !l.nurWlan);
@@ -193,7 +213,7 @@ public final class AppUpdateDienst {
             if (now - letztesSuchen < UpdateRegel.SUCHEN_MIN_ABSTAND_MS) return null;
             letztesSuchen = now;
         }
-        pruefen();
+        pruefen(true);
         return status(sprache);
     }
 
@@ -225,7 +245,7 @@ public final class AppUpdateDienst {
     void takt() {
         long now = env.jetzt();
         // update.pruefen aus (Ersteinrichtung „Nein“): kein Abruf bei GitHub im Hintergrund, nichts von selbst
-        if (pruefenAn() && now - letztePruefung >= UpdateRegel.PRUEF_TAKT_MS) pruefen();
+        if (pruefenAn() && now - letztePruefung >= UpdateRegel.PRUEF_TAKT_MS) pruefen(false);
         Freigabe f;
         synchronized (lock) {
             UpdateRegel.Lage l = lage();
@@ -247,33 +267,52 @@ public final class AppUpdateDienst {
 
     private volatile long groesseCache = -1;
 
-    /** Holt version.json (Kanal stabil: neueste Nicht-Vorabversion; test: zusätzlich neueste Vorabversion). */
+    /** Hintergrund-Prüfung (Fehlschläge bleiben still). */
     void pruefen() {
+        pruefen(false);
+    }
+
+    /**
+     * Holt version.json aus der eingestellten Quelle (Kanal stabil: neueste Nicht-Vorabversion; test: zusätzlich
+     * neueste Vorabversion). {@code manuell} = auf Knopfdruck: nur dann wird ein Fehlschlag als Ergebnis „fehler“
+     * gezeigt. Im Hintergrund bleibt das bisherige Ergebnis stehen, der Fehler geht nur (gedrosselt) ins Protokoll.
+     */
+    void pruefen(boolean manuell) {
         String k = kanal();
+        UpdateQuelle q = quelle();
+        netz.zugang(q.token);
         Freigabe neu = null;
         String err = null;
+        String ursache = null;
         try {
-            neu = Freigabe.lies(netz.text("https://github.com/" + Freigabe.REPO
-                    + "/releases/latest/download/version.json"));
+            neu = q.mitToken() ? ausRelease(q, netz.text(q.latestRelease()))
+                    : mitApk(q, Freigabe.lies(netz.text(q.latestVersionJson())));
         } catch (Freigabe.Fehler e) {
             err = e.grund;
+            ursache = e.getMessage();
         } catch (Exception e) {
-            err = "nicht_erreichbar";
+            err = grundAus(q, e);
+            ursache = e.getMessage();
         }
         if ("test".equals(k)) {
             try {
-                String tag = neuesterTag(netz.text("https://api.github.com/repos/" + Freigabe.REPO
-                        + "/releases?per_page=5"));
+                String tag = neuesterTag(netz.text(q.releasesListe()));
                 if (tag != null) {
-                    Freigabe t = Freigabe.lies(netz.text("https://github.com/" + Freigabe.REPO
-                            + "/releases/download/" + tag + "/version.json"));
+                    Freigabe t = q.mitToken() ? ausRelease(q, netz.text(q.releaseZuTag(tag)))
+                            : mitApk(q, Freigabe.lies(netz.text(q.download(tag, "version.json"))));
                     neu = UpdateRegel.neuere(neu, t);
                     err = null;
                 }
             } catch (Freigabe.Fehler e) {
-                if (neu == null) err = e.grund;
+                if (neu == null) {
+                    err = e.grund;
+                    ursache = e.getMessage();
+                }
             } catch (Exception e) {
-                if (neu == null && err == null) err = "nicht_erreichbar";
+                if (neu == null && err == null) {
+                    err = grundAus(q, e);
+                    ursache = e.getMessage();
+                }
             }
         } else if (neu != null && !"stabil".equals(neu.kanal)) {
             neu = null;   // „latest“ ist nie eine Vorabversion; doppelt hält besser
@@ -283,6 +322,12 @@ public final class AppUpdateDienst {
         boolean melden = false;
         synchronized (lock) {
             letztePruefung = env.jetzt();
+            if (!q.kennung().equals(quelleKennung)) {
+                // andere Quelle als beim letzten Mal: was dort gefunden wurde, gilt nicht mehr
+                verfuegbar = null;
+                groesseCache = -1;
+                quelleKennung = q.kennung();
+            }
             if (neu != null) {
                 verfuegbar = neu;
                 fehler = null;
@@ -294,7 +339,7 @@ public final class AppUpdateDienst {
                 }
             } else {
                 fehler = err == null ? "nicht_erreichbar" : err;
-                ergebnis = "fehler";
+                if (manuell) ergebnis = "fehler";
                 // ein früher gefundenes Update bleibt bekannt (nur nicht frisch bestätigt)
             }
             speichern();
@@ -306,8 +351,92 @@ public final class AppUpdateDienst {
                 logger.warn("melden: " + t.getMessage());
             }
         }
-        logger.info("Prüfung (" + k + "): " + ergebnis + (fehler != null ? " " + fehler : "")
-                + (neu != null ? " → " + neu.versionName + " vC " + neu.versionCode : ""));
+        if (neu != null) {
+            logger.info("Prüfung (" + k + ", " + q.art + "): " + ergebnis + " → " + neu.versionName
+                    + " vC " + neu.versionCode);
+        } else {
+            berichte("Prüfung (" + k + ", " + q.art + " " + q.repo + ") fehlgeschlagen: " + fehler
+                    + (ursache != null ? " (" + ursache + ")" : ""));
+        }
+    }
+
+    /** Ohne Token: die APK liegt unter der öffentlichen Download-Adresse desselben Releases. */
+    private static Freigabe mitApk(UpdateQuelle q, Freigabe f) {
+        return f.mitApkUrl(q.download(f.tag, f.apk));
+    }
+
+    /** Mit Token: version.json und APK als API-Assets der Release-Beschreibung (private Repos). */
+    private Freigabe ausRelease(UpdateQuelle q, String releaseJson) throws Exception {
+        String vj = UpdateQuelle.asset(releaseJson, "version.json");
+        if (vj == null) throw new Freigabe.Fehler("nicht_erreichbar", "Release ohne version.json");
+        Freigabe f = Freigabe.lies(netz.text(vj));
+        String apk = UpdateQuelle.asset(releaseJson, f.apk);
+        if (apk == null) throw new Freigabe.Fehler("nicht_erreichbar", "Release ohne " + f.apk);
+        return f.mitApkUrl(apk);
+    }
+
+    /** 401/403 (oder 404 mit Token, so antwortet GitHub bei fehlendem Recht) → kein_zugang, sonst nicht_erreichbar. */
+    static String grundAus(UpdateQuelle q, Exception e) {
+        String m = e.getMessage() == null ? "" : e.getMessage();
+        if (m.contains("HTTP 401") || m.contains("HTTP 403")) return "kein_zugang";
+        if (m.contains("HTTP 404") && q.mitToken()) return "kein_zugang";
+        return "nicht_erreichbar";
+    }
+
+    /** Fehlschlag ins Protokoll: höchstens eine Warnung je installierter Version und Tag, sonst nur debug. */
+    private void berichte(String text) {
+        String neu;
+        synchronized (lock) {
+            neu = UpdateRegel.berichtSchluessel(berichtSchluessel, env.installierteVersion(), env.jetzt());
+            if (neu != null) {
+                berichtSchluessel = neu;
+                speichern();
+            }
+        }
+        if (neu != null) logger.warn(text);
+        else logger.debug(text);
+    }
+
+    /** Schlüssel der letzten Warnung (Version@Tag), für Tests. */
+    String berichtSchluessel() {
+        synchronized (lock) { return berichtSchluessel; }
+    }
+
+    UpdateQuelle quelle() {
+        return UpdateQuelle.aus(env.config("quelle"), env.config("repo"), env.config("token"));
+    }
+
+    /**
+     * Einmalig (Marke {@code .appupdate-quelle}): Installationen, deren Updater schon vor 0.1.15 lief, behalten die
+     * bisher fest eingebaute Quelle bzw. einen vorhandenen Token; neue Installationen nutzen die öffentliche Quelle.
+     * Scheitert das Speichern, versucht es der nächste Start erneut (die Marke bleibt dann weg).
+     */
+    private void migriereQuelle(boolean bestand) {
+        File marke = new File(env.basis(), ".appupdate-quelle");
+        if (marke.exists()) return;
+        java.util.Map<String, Object> m = UpdateQuelle.migration(env.config("quelle"), env.config("repo"),
+                env.config("token"), bestand);
+        if (!m.isEmpty()) {
+            boolean ok;
+            try {
+                ok = env.setzeConfig(m);
+            } catch (Throwable t) {
+                ok = false;
+            }
+            if (!ok) {
+                logger.warn("Update-Quelle: Übernahme nicht gespeichert, der nächste Start versucht es erneut");
+                return;
+            }
+            logger.info("Update-Quelle: bestehende Installation behält ihre Quelle " + m);
+        }
+        try {
+            //noinspection ResultOfMethodCallIgnored
+            env.basis().mkdirs();
+            //noinspection ResultOfMethodCallIgnored
+            marke.createNewFile();
+        } catch (Exception e) {
+            logger.debug("Update-Quelle: Marke: " + e.getMessage());
+        }
     }
 
     /** Tag der neuesten nicht-Entwurfs-Version aus der GitHub-API-Liste (neueste zuerst). */
@@ -331,6 +460,11 @@ public final class AppUpdateDienst {
         dd.mkdirs();
         File apk = new File(dd, "neu-appupdate-" + f.versionCode + ".apk");
         File teil = teilDatei(f);
+        if (!UpdateQuelle.erlaubteAdresse(f.apkUrl())) {
+            scheitern("nicht_erreichbar", "keine Download-Adresse für " + f.tag, null);
+            return;
+        }
+        netz.zugang(quelle().token);
         try {
             alteTeileWeg(teil);
             boolean fertig;
@@ -349,15 +483,11 @@ public final class AppUpdateDienst {
                 scheitern("pruefsumme", "sha256 " + sha + " ≠ " + f.sha256, teil);
                 return;
             }
-            String cert = ApkZertifikat.sha256(teil);
-            if (!Freigabe.ZERTIFIKAT.equals(cert)) {
-                scheitern("signatur", "Zertifikat " + cert, teil);
-                return;
-            }
-            String inst = env.installiertesZertifikat();
-            if (inst != null && !Freigabe.ZERTIFIKAT.equals(inst)) {
-                // installierte App mit anderem Schlüssel: pm install würde scheitern – Daemons gar nicht erst stoppen
-                scheitern("signatur", "installierte App hat Zertifikat " + inst, teil);
+            // 0.1.15: altes und neues Panoptes-Zertifikat (Rotation mit Lineage), nie zurück von neu auf alt.
+            // Passt es nicht, würde pm install scheitern – Daemons gar nicht erst stoppen.
+            String grund = Freigabe.signaturPasst(ApkZertifikat.sha256(teil), env.installiertesZertifikat());
+            if (grund != null) {
+                scheitern("signatur", grund, teil);
                 return;
             }
             apk.delete();
@@ -482,7 +612,6 @@ public final class AppUpdateDienst {
     }
 
     private void scheitern(String grund, String text, File weg) {
-        logger.warn("Update abgebrochen (" + grund + "): " + text);
         if (weg != null) weg.delete();
         synchronized (lock) {
             phase = null;
@@ -491,6 +620,7 @@ public final class AppUpdateDienst {
             ergebnis = "fehler";
             speichern();
         }
+        berichte("Update abgebrochen (" + grund + "): " + text);
     }
 
     private void setzePhase(String p, Integer pr) {
@@ -581,8 +711,14 @@ public final class AppUpdateDienst {
             letztePruefung = j.optLong("letztePruefung", 0);
             ergebnis = j.optString("ergebnis", "nie");
             fehler = j.isNull("fehler") ? null : j.optString("fehler", null);
+            quelleKennung = j.isNull("quelle") ? null : j.optString("quelle", null);
+            berichtSchluessel = j.isNull("bericht") ? null : j.optString("bericht", null);
             JSONObject v = j.optJSONObject("verfuegbar");
-            if (v != null) verfuegbar = Freigabe.lies(v.toString());
+            String apkUrl = j.isNull("apkUrl") ? null : j.optString("apkUrl", null);
+            // ohne gültige Adresse (Stand vor 0.1.15) gilt der Fund nicht; die nächste Prüfung holt ihn neu
+            if (v != null && UpdateQuelle.erlaubteAdresse(apkUrl)) {
+                verfuegbar = Freigabe.lies(v.toString()).mitApkUrl(apkUrl);
+            }
             groesseCache = j.optLong("groesse", -1);
             gemeldetVc = j.optInt("gemeldetVc", 0);
         } catch (Exception e) {
@@ -596,7 +732,11 @@ public final class AppUpdateDienst {
             j.put("letztePruefung", letztePruefung).put("ergebnis", ergebnis)
                     .put("fehler", fehler == null ? JSONObject.NULL : fehler)
                     .put("verfuegbar", verfuegbar == null ? JSONObject.NULL : verfuegbar.alsJson())
-                    .put("groesse", groesseCache).put("gemeldetVc", gemeldetVc);
+                    .put("groesse", groesseCache).put("gemeldetVc", gemeldetVc)
+                    .put("apkUrl", verfuegbar == null || verfuegbar.apkUrl() == null ? JSONObject.NULL
+                            : verfuegbar.apkUrl())
+                    .put("quelle", quelleKennung == null ? JSONObject.NULL : quelleKennung)
+                    .put("bericht", berichtSchluessel == null ? JSONObject.NULL : berichtSchluessel);
             File f = standDatei();
             File tmp = new File(f.getPath() + ".tmp");
             Files.write(tmp.toPath(), j.toString().getBytes(StandardCharsets.UTF_8));
@@ -623,6 +763,13 @@ public final class AppUpdateDienst {
 
     /** OkHttp mit derselben Proxy-Kette wie der Rest (Proxy zuerst, sonst direkt). */
     static final class OkNetz implements Netz {
+        private volatile String token;
+
+        @Override
+        public void zugang(String token) {
+            this.token = token;
+        }
+
         private okhttp3.OkHttpClient client(long readSec) {
             return new okhttp3.OkHttpClient.Builder()
                     .connectTimeout(20, TimeUnit.SECONDS)
@@ -643,11 +790,24 @@ public final class AppUpdateDienst {
                     .build();
         }
 
-        private static okhttp3.Request anfrage(String url) {
-            return new okhttp3.Request.Builder().url(url)
+        private okhttp3.Request anfrage(String url) {
+            return anfrageBau(url).build();
+        }
+
+        /**
+         * Token nur an https://api.github.com (OkHttp lässt Authorization bei einer Umleitung auf einen anderen Host
+         * weg, der Datei-Speicher bekommt ihn also nie). Asset-Adressen der API liefern mit octet-stream die Datei.
+         */
+        private okhttp3.Request.Builder anfrageBau(String url) {
+            okhttp3.HttpUrl u = okhttp3.HttpUrl.parse(url);
+            boolean api = u != null && "https".equals(u.scheme()) && "api.github.com".equals(u.host());
+            okhttp3.Request.Builder b = new okhttp3.Request.Builder().url(url)
                     .header("User-Agent", "Panoptes-Updater")
-                    .header("Accept", url.contains("api.github.com") ? "application/vnd.github+json" : "*/*")
-                    .build();
+                    .header("Accept", api && url.contains("/releases/assets/") ? "application/octet-stream"
+                            : api ? "application/vnd.github+json" : "*/*");
+            String t = token;
+            if (api && t != null) b.header("Authorization", "Bearer " + t);
+            return b;
         }
 
         @Override
@@ -685,8 +845,7 @@ public final class AppUpdateDienst {
 
         @Override
         public long ladenStueck(String url, File teil, long ab, long laenge, long maxBytes) throws Exception {
-            okhttp3.Request.Builder b = new okhttp3.Request.Builder().url(url)
-                    .header("User-Agent", "Panoptes-Updater")
+            okhttp3.Request.Builder b = anfrageBau(url)
                     .header("Range", "bytes=" + ab + "-" + (ab + laenge - 1));
             try (okhttp3.Response r = client(120).newCall(b.build()).execute()) {
                 if (r.code() == 416) {
@@ -742,8 +901,8 @@ public final class AppUpdateDienst {
 
         @Override
         public long groesse(String url) {
-            try (okhttp3.Response r = client(30).newCall(new okhttp3.Request.Builder().url(url).head()
-                    .header("User-Agent", "Panoptes-Updater").build()).execute()) {
+            if (url == null) return -1;
+            try (okhttp3.Response r = client(30).newCall(anfrageBau(url).head().build()).execute()) {
                 return r.isSuccessful() ? r.body() == null ? -1 : Long.parseLong(
                         r.header("Content-Length", "-1")) : -1;
             } catch (Exception e) {
@@ -838,6 +997,11 @@ public final class AppUpdateDienst {
         }
 
         @Override public long jetzt() { return System.currentTimeMillis(); }
+
+        @Override
+        public boolean setzeConfig(java.util.Map<String, Object> werte) {
+            return at.greenchili.surfmate.config.UnifiedConfigManager.updateValues("update", werte);
+        }
 
         @Override
         public String netz() {

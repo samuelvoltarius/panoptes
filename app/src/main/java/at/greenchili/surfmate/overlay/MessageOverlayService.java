@@ -626,7 +626,7 @@ public final class MessageOverlayService extends Service {
                 ? new Notification.Builder(this, CHANNEL_ID)
                 : new Notification.Builder(this);
         return b.setContentTitle(getString(at.greenchili.surfmate.R.string.notif_onscreen_title))
-                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setSmallIcon(at.greenchili.surfmate.R.drawable.ic_stat_panoptes)
                 .setPriority(Notification.PRIORITY_MIN)
                 .build();
     }

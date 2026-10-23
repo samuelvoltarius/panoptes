@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  0.1.15 (Kern 8): Lint als Pflicht-Gate NUR für NewApi (am Auto Android 10 = API 29, minSdk; Vorfall 0.1.14:
+  InputStream.readAllBytes() API 33 → NoSuchMethodError). Alle übrigen Prüfungen laufen weiter und erscheinen im
+  Bericht, brechen den Bau aber nicht ab (Bestand). Zusammen mit abortOnError = true in app/build.gradle.kts.
+-->
+<lint>
+    <issue id="all" severity="warning" />
+    <issue id="NewApi" severity="fatal" />
+    <!-- androidx-lifecycle-Detektor stürzt in SettingsAboutFragment.kt ab (NPE in
+         NonNullableMutableLiveDataDetector.visitCallExpression) und reißt den ganzen Lint-Lauf mit. Nur er ist aus. -->
+    <issue id="NullSafeMutableLiveData" severity="ignore" />
+</lint>

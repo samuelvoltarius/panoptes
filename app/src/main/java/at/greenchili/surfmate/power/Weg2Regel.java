@@ -56,7 +56,10 @@ public final class Weg2Regel {
         return null;
     }
 
-    /** Der einzige Eingriff: der von der Tailscale-App dafür vorgesehene, exportierte Broadcast (keine Activity). */
+    /**
+     * Der offizielle, exportierte Broadcast der Tailscale-App. Seit 0.1.15 NICHT mehr benutzt: nach BYDs forceStop
+     * beim Abstellen startet er die App nicht (Praxisbefund 22.10.). Bleibt nur zur Dokumentation bzw. für Tests.
+     */
     public static String befehl() {
         return "am broadcast --include-stopped-packages -n " + PAKET + "/.IPNReceiver -a " + PAKET + ".CONNECT_VPN";
     }

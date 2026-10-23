@@ -182,7 +182,7 @@ public final class DaemonLogConfig {
     public static final boolean ABRP_CONFIG = false;
     
     /** SohEstimator - battery SOH estimation */
-    public static final boolean SOH_ESTIMATOR = BuildConfig.DEBUG;
+    public static final boolean SOH_ESTIMATOR = BuildConfig.ENTWICKLUNG;
     
     /** TelemetryDataCollector - telemetry data collection */
     public static final boolean TELEMETRY_DATA_COLLECTOR = false;

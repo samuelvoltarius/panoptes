@@ -5,25 +5,24 @@ import at.greenchili.surfmate.logging.DaemonLogger;
 import org.json.JSONObject;
 
 /**
- * 0.1.13 (Kern 7): Wächter für Weg 2 (fremde Tailscale-App mit Always-on-VPN, die BYD im Stand beendet). Läuft im
- * Kamera-Daemon (Shell-UID), prüft jede Minute nur lesend und sendet höchstens den offiziellen Broadcast der
- * Tailscale-App ({@link Weg2Regel#befehl()}). Fasst weder Panoptes-tailscaled (Weg 1, Regel B) noch die
- * Tailscale-Konfiguration an. Schalter {@code fernzugang.weg2Waechter} (Standard an; wirkt ohnehin nur, wenn der
- * Nutzer die Tailscale-App selbst als Always-on-VPN eingetragen hat).
+ * Wächter für Weg 2 (fremde Tailscale-App mit Always-on-VPN, die BYD beim Abstellen beendet). Läuft im Kamera-Daemon
+ * (Shell-UID) und prüft jede Minute nur lesend.
+ *
+ * <p>0.1.13/0.1.14 sendete er den Broadcast {@code CONNECT_VPN}. Praxisbefund 22.10. 16:11 (Deploy): Nach BYDs
+ * forceStop bringt der Broadcast die App nicht hoch (result=0, kein Prozess, kein tun). Seit 0.1.15 sendet er nichts
+ * mehr und meldet nur noch; der unabhängige zweite Weg ist der Notzugang (NOTZUGANG_KONZEPT.md). Schalter
+ * {@code fernzugang.weg2Waechter} (Standard an, wirkt nur bei Always-on-VPN der Tailscale-App).
  */
 public final class Weg2Waechter {
 
     private static final DaemonLogger logger = DaemonLogger.getInstance("Weg2Waechter");
     private static final long TAKT_MS = 60_000L;
-    private static final long PRUEFEN_NACH_MS = 2 * 60_000L;
 
     private static volatile Thread takt;
     private static volatile JSONObject stand = new JSONObject();
 
     private static boolean warSchonAktiv;
     private static long totSeit;
-    private static long letzterVersuch;
-    private static long pruefenAb;
     private static boolean warGeparkt;
     private static boolean versuchtDiesenPark;
     private static String tag = "";
@@ -76,42 +75,23 @@ public final class Weg2Waechter {
         if (l.autoSteht && !warGeparkt) versuchtDiesenPark = false;   // neuer Park
         warGeparkt = l.autoSteht;
         l.ersterVersuchDiesesParks = !versuchtDiesenPark;
-        l.letzterVersuchMs = letzterVersuch;
         l.versucheHeute = versucheHeute;
         l.fehlschlaegeHeute = fehlschlaegeHeute;
 
-        // Ergebnis eines Versuchs nach 2 min nur lesend auswerten
-        if (pruefenAb > 0 && jetzt >= pruefenAb) {
-            if (lebt) logger.info("Weg 2 wieder da nach CONNECT_VPN");
-            else { fehlschlaegeHeute++; logger.warn("Weg 2 nach CONNECT_VPN weiter tot (" + fehlschlaegeHeute + " heute)"); }
-            pruefenAb = 0;
+        // 0.1.15 (Praxisbefund Deploy 22.10. 16:11): Nach BYDs forceStop beim Abstellen startet CONNECT_VPN die
+        // Tailscale-App NICHT (Broadcast result=0, aber kein Prozess, kein tun). Der Wächter sendet deshalb nie mehr,
+        // er meldet nur noch (Stand + einmal je Park ein Log-Eintrag). Die Wiederbelebung übernimmt der Notzugang.
+        l.displayAus = true;   // nur Meldung: kein dumpsys power nötig
+        String grund = relevant ? Weg2Regel.grund(l) : "kein_always_on";
+        if (relevant && !lebt && grund == null && !versuchtDiesenPark) {
+            versuchtDiesenPark = true;
+            logger.info("Weg 2 (Tailscale-App) seit " + ((jetzt - totSeit) / 60_000L)
+                    + " min tot, Auto steht – nur gemeldet (CONNECT_VPN wirkt nach dem BYD-Kill nicht; Notzugang nutzen)");
         }
-
-        String grund = null;
-        if (relevant && !lebt && pruefenAb == 0) {
-            // Display-Zustand erst lesen, wenn sonst alles passt (dumpsys ist teurer)
-            l.displayAus = true;
-            grund = Weg2Regel.grund(l);
-            if (grund == null) {
-                l.displayAus = Weg2Regel.displayAus(shell("dumpsys power"));
-                grund = Weg2Regel.grund(l);
-            }
-            if (grund == null) {
-                letzterVersuch = jetzt;
-                versucheHeute++;
-                versuchtDiesenPark = true;
-                pruefenAb = jetzt + PRUEFEN_NACH_MS;
-                String r = shell(Weg2Regel.befehl());
-                logger.info("Weg 2 seit " + ((jetzt - totSeit) / 60_000L) + " min tot, Auto steht, Display aus → CONNECT_VPN ("
-                        + r.trim().replaceAll("\\s+", " ") + ")");
-            }
-        } else {
-            grund = Weg2Regel.grund(l);
-        }
-        stand = new JSONObject().put("relevant", relevant).put("lebt", lebt).put("warSchonAktiv", warSchonAktiv)
-                .put("totSeit", totSeit).put("letzterVersuch", letzterVersuch).put("versucheHeute", versucheHeute)
-                .put("fehlschlaegeHeute", fehlschlaegeHeute).put("prozessDa", l.prozessDa)
-                .put("versuchtDiesenPark", versuchtDiesenPark).put("grund", grund == null ? "gesendet" : grund);
+        stand = new JSONObject().put("modus", "nur_melden").put("relevant", relevant).put("lebt", lebt)
+                .put("warSchonAktiv", warSchonAktiv).put("totSeit", totSeit).put("prozessDa", l.prozessDa)
+                .put("gemeldetDiesenPark", versuchtDiesenPark)
+                .put("grund", grund == null ? "tot_gemeldet" : grund);
     }
 
     private static boolean schalterAn() {

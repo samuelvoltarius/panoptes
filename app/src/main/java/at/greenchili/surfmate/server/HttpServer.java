@@ -1431,7 +1431,7 @@ public class HttpServer {
             return true;
         }
 
-        // In-App-Updater aus panoptes-releases (status, suchen, installieren)
+        // In-App-Updater aus der eingestellten Quelle (update.quelle; status, suchen, installieren)
         if (path.startsWith("/api/appupdate/")
                 && AppUpdateApiHandler.handle(method, path, body, out)) {
             return true;
@@ -1440,7 +1440,7 @@ public class HttpServer {
         // App Update API (check, preview, install, progress)
         if (path.startsWith("/api/update/")) {
             // Alter Overdrive-Updater entfernt (Koordination 0.1.9). Updates nur noch über /api/appupdate/*
-            // (GitHub samuelvoltarius/panoptes-releases, sha256 + Zertifikat).
+            // (Quelle einstellbar, Standard öffentliches GitHub-Repo; sha256 + Zertifikat).
             HttpResponse.sendJson(out, 410, "{\"ok\":false,\"grund\":\"entfernt\",\"ersatz\":\"/api/appupdate/status\"}");
             return true;
         }

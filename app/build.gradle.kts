@@ -317,8 +317,8 @@ android {
         // value (e.g. `-PsurfmateVersionName=27.4 -PsurfmateVersionCode=12`)
         // without a source edit per release; the defaults track the current
         // rolling head so a plain local build is still accurate.
-        versionCode = (project.findProperty("surfmateVersionCode") as? String)?.toIntOrNull() ?: 22
-        versionName = (project.findProperty("surfmateVersionName") as? String) ?: "0.1.14.1"
+        versionCode = (project.findProperty("surfmateVersionCode") as? String)?.toIntOrNull() ?: 23
+        versionName = (project.findProperty("surfmateVersionName") as? String) ?: "0.1.15"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
         // Note: abiFilters removed - using splits.abi instead for size optimization
@@ -330,6 +330,14 @@ android {
         // OFF/empty by default (release/debug); diagnose flips them on. Restored from
         // the working build's generated BuildConfig (default-config fields).
         buildConfigField("boolean", "LOG_CAPTURE", "false")
+        // 0.1.15 (Kern 8): Entwicklungs-Stand unabhängig von android:debuggable. Die Auto-/Release-APKs sind
+        // debug-Builds, aber NICHT mehr debuggable (öffentliches Repo: sonst liest jeder per adb run-as die Tokens).
+        // Was bisher an BuildConfig.DEBUG hing, hängt an ENTWICKLUNG – Verhalten bleibt gleich.
+        buildConfigField("boolean", "ENTWICKLUNG", "false")
+        // 0.1.15: Schein-§0 für Screenshots (ScheinEinrichtung) – NICHT an ENTWICKLUNG koppeln, denn die Auto-Build
+        // (debug) hat ENTWICKLUNG = true. Standard aus, nur per -PpanoptesScreenshotModus=true für Emulator-Abnahmen.
+        buildConfigField("boolean", "SCREENSHOT_MODUS",
+            if ((project.findProperty("panoptesScreenshotModus") as? String) == "true") "true" else "false")
     }
 
     buildFeatures {
@@ -340,8 +348,18 @@ android {
     lint {
         // This stops the build from failing due to the old targetSdk 28
         checkReleaseBuilds = false
-        abortOnError = false
         disable += "ExpiredTargetSdkVersion"
+        // 0.1.15 (Kern 8): Gate NewApi (Auto = Android 10/API 29; Vorfall 0.1.14 readAllBytes). lint.xml stuft alle
+        // übrigen Prüfungen auf Warnung herab, damit nur NewApi den Lauf abbricht – Lint läuft weiter vollständig.
+        // Noch NICHT Pflicht (Koordination 23.10.): lintDebug braucht > 6 GB Heap und sehr lange; scharf nur mit
+        // `-PlintGate` (z. B. -Dorg.gradle.jvmargs=-Xmx12g). Pflicht-Gate bleibt bis 0.1.16 MinSdkApiTest.
+        lintConfig = file("lint.xml")
+        fatal += "NewApi"
+        abortOnError = project.hasProperty("lintGate")
+        // androidx-Lifecycle-Detektor stürzt in SettingsAboutFragment.kt ab (NPE) und bricht sonst den ganzen Lauf ab
+        disable += "NullSafeMutableLiveData"
+        // Gate gilt dem App-Code, nicht den androidTest-Quellen (deren Abhängigkeiten offline oft fehlen)
+        ignoreTestSources = true
     }
     
     externalNativeBuild {
@@ -398,6 +416,9 @@ android {
         }
         debug {
             isMinifyEnabled = false
+            // 0.1.15: nicht debuggable (kein run-as, keine Debugger-Anbindung); BuildConfig.DEBUG wird dadurch false.
+            isDebuggable = false
+            buildConfigField("boolean", "ENTWICKLUNG", "true")
             signingConfig = signingConfigs.getByName("panoptes")
 
             // SurfMate: kein fremder Update-Kanal (Updates kommen nur von uns)

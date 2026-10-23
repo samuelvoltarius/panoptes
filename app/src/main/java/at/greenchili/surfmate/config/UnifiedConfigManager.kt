@@ -1348,7 +1348,7 @@ object UnifiedConfigManager {
                     // early-return above gates unchanged loads), so a 2-3Hz writer
                     // makes it the dominant logcat line. Each Log.d is a synchronous
                     // write; gate it out of release builds.
-                    if (at.greenchili.surfmate.BuildConfig.DEBUG) {
+                    if (at.greenchili.surfmate.BuildConfig.ENTWICKLUNG) {
                         Log.d(TAG, "Config loaded from $CONFIG_PATH")
                     }
                     config

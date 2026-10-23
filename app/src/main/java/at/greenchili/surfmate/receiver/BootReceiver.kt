@@ -179,7 +179,7 @@ class BootReceiver : BroadcastReceiver() {
                 // Skip auto-relaunch in debug builds: Android Studio drives its own
                 // launch after install, and racing it makes "Run" abort with the
                 // app already in the foreground.
-                if (at.greenchili.surfmate.BuildConfig.DEBUG) {
+                if (at.greenchili.surfmate.BuildConfig.ENTWICKLUNG) {
                     Log.d(TAG, "MY_PACKAGE_REPLACED — debug build, skipping auto-relaunch (let IDE drive launch)")
                     return
                 }

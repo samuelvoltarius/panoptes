@@ -1795,6 +1795,20 @@
       "mobilfunk": {
         "title": "Updates ook via mobiel internet downloaden",
         "help": "Veel auto's zijn alleen via de ingebouwde simkaart online, daarom staat dit aan. Een update is meestal 70 tot 120 MB; de grootte staat vooraf in de melding. Uit = Panoptes downloadt alleen als de auto op wifi zit. Het downloaden gebeurt alleen als de auto geparkeerd staat en gaat na een onderbreking verder waar het was."
+      },
+      "quelle": {
+        "title": "Updatebron",
+        "help": "Openbaar = de officiële Panoptes-versies op GitHub, zonder aanmelden. Eigen = een andere GitHub-repo, bijv. een eigen build; bij een privé-repo met een leestoken. Elke versie wordt vóór de installatie gecontroleerd op controlesom en handtekening, ongeacht de herkomst.",
+        "oeffentlich": "Openbaar (standaard)",
+        "eigen": "Eigen repo"
+      },
+      "repo": {
+        "title": "Repo voor updates",
+        "help": "GitHub-repo in de vorm eigenaar/naam. Alleen bij ‘Eigen repo’."
+      },
+      "token": {
+        "title": "Leestoken voor de repo",
+        "help": "Alleen nodig voor een privé-repo: een GitHub-token dat alleen deze repo mag lezen. Het wordt alleen naar GitHub gestuurd en nooit getoond."
       }
     },
     "ha": {
@@ -2116,7 +2130,8 @@
       "nicht_eingerichtet": "De noodtoegang is nog niet ingesteld.",
       "startet_nicht": "De noodtoegang start niet. Probeer het later opnieuw.",
       "anmeldung": "Aanmelden bij het tailnet is mislukt. Controleer de auth-key.",
-      "installieren": "De bestanden voor de noodtoegang konden niet worden aangemaakt."
+      "installieren": "De bestanden voor de noodtoegang konden niet worden aangemaakt.",
+      "adb_serve": "De noodtoegang is aangemeld, maar het doorsturen van adb (poort 5555) ontbreekt nog. De noodtoegang probeert het zelf opnieuw."
     }
   }
 }

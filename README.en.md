@@ -6,7 +6,7 @@ Panoptes is a free community app for BYD cars with DiLink 3, 4 and 5. It runs ri
 
 This is the source code. Ready-made versions are available under **[Releases](https://github.com/samuelvoltarius/panoptes/releases/latest)**. More about the project and the installation guide: **[byd.serveone.at/panoptes/](https://byd.serveone.at/panoptes/en/)**.
 
-This tree corresponds exactly to release **v0.1.14.1** (internal commit `dfad145`).
+This tree corresponds exactly to release **v0.1.15** (internal commit `e02194e`).
 
 <p>
   <img src="screenshots/start-display-dunkel.webp" alt="Home on the car screen" width="66%">
@@ -87,7 +87,7 @@ All pictures show sample data, not real vehicle data.
 
 ## Updates
 
-> **Important for 0.1.14.1:** This first public version does **not** update itself. Under System → App updates it shows “update server not reachable”; that is expected for this version and harmless. From **0.1.15** updates come automatically from this repository. Until then, install 0.1.15 once by hand, just like the first time.
+> **If you have 0.1.14.1:** install 0.1.15 **once by hand**, just like the first time (your data is kept). 0.1.14.1 cannot update itself to 0.1.15 because from 0.1.15 on Panoptes is signed with a new, permanent key (APK signature scheme v3 with proof of origin from the old key). From 0.1.15 on, updates come automatically from this repository.
 
 - New versions appear under **[Releases](https://github.com/samuelvoltarius/panoptes/releases)**, with a short list of what's new.
 - Under **System → App updates** you can look for new versions and choose whether Panoptes only tells you or installs by itself. Installing only happens while the car is parked with the ignition off. If a new version does not run properly, Panoptes goes back to the previous one by itself.

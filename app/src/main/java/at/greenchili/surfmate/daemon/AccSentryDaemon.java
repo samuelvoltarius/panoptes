@@ -4183,6 +4183,14 @@ public class AccSentryDaemon {
         log("=== ENTERING SENTRY MODE ===");
         SentryTransitionState transition = latestSentryTransition;
         requestTransitionReconciliation(transition);
+        // 0.1.15: ein von älteren Versionen stammendes stay_on=7 auch in onAndOff zurücknehmen. Der Park-Reaper
+        // (einzige bisherige Rückgabe) läuft nur in onOnly; ohne das blieb das 7 nach dem 0.1.14-Update dauerhaft.
+        // Läuft bei jedem Parken UND beim Daemon-Start im Stand (erste OFF-Beobachtung landet hier).
+        // DiLink 5 ausgenommen wie beim Sichern: dort hat Panoptes nie 7 gesetzt, ein 7 wäre fremd.
+        if (!vehicleOnOnly
+                && !at.greenchili.surfmate.camera.dilink5.DiLink5Platform.isSelected()) {
+            stayOnAltlastZuruecknehmen();
+        }
 
         // GATE (G4c): in onOnly, release the core wakelock HERE — inline on the BYD HAL
         // listener thread — not on the SentrySetup worker below. exitSentryMode()'s
@@ -10669,6 +10677,29 @@ public class AccSentryDaemon {
                 output.add(childPid);
             }
         } catch (Throwable ignored) {}
+    }
+
+    /**
+     * 0.1.15: {@link at.greenchili.surfmate.power.SystemEingriffe#parkSkript()} – nimmt nur ein von Panoptes stammendes
+     * stay_on=7 auf den gesicherten Ursprung (unbekannt → 0) zurück, andere Werte bleiben. Idempotent, nichts
+     * Sichtbares (A+): im Stand ist das Display aus bzw. wird vom Keep-alive ohnehin abgedunkelt. Eigener Thread,
+     * weil enterSentryMode() auf dem HAL-Listener läuft (keine Shell dort).
+     */
+    private static void stayOnAltlastZuruecknehmen() {
+        Thread t = new Thread(() -> {
+            try {
+                String vorher = execShell("settings get global stay_on_while_plugged_in").trim();
+                execShell(at.greenchili.surfmate.power.SystemEingriffe.parkSkript());
+                String nachher = execShell("settings get global stay_on_while_plugged_in").trim();
+                if (!vorher.equals(nachher)) {
+                    log("stay_on_while_plugged_in im Stand zurückgenommen: " + vorher + " -> " + nachher);
+                }
+            } catch (Throwable t2) {
+                log("stay_on-Rücknahme fehlgeschlagen: " + t2.getMessage());
+            }
+        }, "StayOnRueckgabe");
+        t.setDaemon(true);
+        t.start();
     }
 
     private static String execShell(String cmd) {

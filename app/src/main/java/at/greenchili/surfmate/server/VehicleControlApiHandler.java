@@ -734,213 +734,20 @@ public class VehicleControlApiHandler {
         // semantics (1=unlocked, 2=locked) are inverted via cloudLockToApi.
         // The OTA layer reports SDK semantics (1=UNLOCK, 2=LOCK) which we
         // also invert on output.
-        JSONObject doors = new JSONObject();
-        int sdkOverall = -1;
-        if (data.doorLockStatus != null && data.doorLockStatus.length >= 7) {
-            boolean diLink5 =
-                    at.greenchili.surfmate.camera.dilink5.DiLink5Platform.isSelected();
-            doors.put("rf", localLockToApi(data.doorLockStatus[0], diLink5));
-            doors.put("lf", localLockToApi(data.doorLockStatus[1], diLink5));
-            doors.put("rr", localLockToApi(data.doorLockStatus[2], diLink5));
-            doors.put("lr", localLockToApi(data.doorLockStatus[3], diLink5));
-            doors.put("trunk", localLockToApi(data.doorLockStatus[4], diLink5));
-            doors.put("hood", localLockToApi(data.doorLockStatus[5], diLink5));
-            int mappedOverall =
-                    localLockToApi(data.doorLockStatus[6], diLink5);
-            doors.put("overall", mappedOverall);
-            if (mappedOverall == 1 || mappedOverall == 2) {
-                sdkOverall = mappedOverall;
-                doors.put("source", "sdk");
-                doors.put("scope", "vehicle");
-            }
-        }
-
-        // Track which source authoritatively set LF so we can derive `overall`
-        // correctly when cloud is missing. -1 = no authoritative LF yet.
-        int otaLf = -1;
-        int cloudOverall = -1;
-        boolean cloudAvailable = false;
-
-        // PRIMARY: OTA LF fast-path — the same live SDK read the surveillance
-        // lock gate trusts (CameraDaemon.readDoorLockStatus). Works ACC=OFF
-        // with ~1.5s latency; this is the freshest signal we have.
-        try {
-            android.content.Context ctx = at.greenchili.surfmate.daemon.CameraDaemon.getAppContext();
-            if (ctx != null) {
-                Object otaDevice = at.greenchili.surfmate.byd.BydDeviceHelper.getDevice(
-                    "android.hardware.bydauto.ota.BYDAutoOtaDevice", ctx);
-                if (otaDevice != null) {
-                    Object v = at.greenchili.surfmate.byd.BydDeviceHelper.callGetter(
-                        otaDevice, "getLFDoorLockState");
-                    if (v instanceof Number) {
-                        int sdkState = ((Number) v).intValue();
-                        // 1=UNLOCK, 2=LOCK in SDK convention → API: 2=unlocked, 1=locked.
-                        if (sdkState == 2) otaLf = 1;       // LOCKED → API=1
-                        else if (sdkState == 1) otaLf = 2;  // UNLOCKED → API=2
-                    }
-                }
-            }
-        } catch (Throwable t) {
-            logger.debug("ota-lock overlay failed: " + t.getMessage());
-        }
-
-        // FALLBACK: cloud overlay (full 4-door), gated on freshness. A cloud
-        // snapshot older than LOCK_STATE_MAX_AGE_MS is skipped entirely —
-        // hasValidLockState() stays true forever once any door has ever
-        // reported, so without the isLockStateFresh() gate an hours-old
-        // snapshot kept painting all four pills AND won `overall` over the
-        // live OTA read (glance showed "Locked" while the driver door was
-        // open-and-unlocked). Every other lock consumer already pairs the
-        // two checks (BydCloudDataProvider.isLockStateFresh, the listener
-        // replay, refreshLockStateIfStale); this was the odd one out.
-        try {
-            at.greenchili.surfmate.byd.cloud.BydCloudDataProvider provider =
-                    at.greenchili.surfmate.byd.cloud.BydCloudDataProvider.getInstance();
-            // Trigger an on-demand REST refresh if our cached snapshot is
-            // stale. The call is internally rate-limited (30s cooldown) and
-            // runs asynchronously; the *current* snapshot is used to render
-            // this response, but the next request will see fresh data.
-            new Thread(provider::refreshLockStateIfStale, "CloudLockRefresh").start();
-            at.greenchili.surfmate.byd.cloud.VehicleCloudSnapshot cs = provider.getSnapshot();
-            if (cs != null && cs.isLockStateFresh() && cs.hasValidLockState()) {
-                cloudAvailable = true;
-                int lf = cloudLockToApi(cs.leftFrontDoorLock);
-                int rf = cloudLockToApi(cs.rightFrontDoorLock);
-                int lr = cloudLockToApi(cs.leftRearDoorLock);
-                int rr = cloudLockToApi(cs.rightRearDoorLock);
-                if (lf != -1) doors.put("lf", lf);
-                if (rf != -1) doors.put("rf", rf);
-                if (lr != -1) doors.put("lr", lr);
-                if (rr != -1) doors.put("rr", rr);
-                if (cs.isAnyUnlocked()) cloudOverall = 2;
-                else if (cs.isAllLocked()) cloudOverall = 1;
-                if (cloudOverall != -1) {
-                    doors.put("overall", cloudOverall);
-                    doors.put("scope", "vehicle");
-                }
-                doors.put("source", "cloud");
-            }
-        } catch (Exception e) {
-            logger.debug("cloud-lock overlay failed: " + e.getMessage());
-        }
-
-        // Merge: the live OTA read is the primary signal (same priority the
-        // surveillance lock gate uses — OTA first, cloud secondary), so it
-        // always wins the LF cell, and an OTA "unlocked" also wins `overall`:
-        // the driver door being unlocked makes the vehicle unlocked no matter
-        // what the (up to 5-min-old) cloud snapshot claims. Cloud keeps
-        // `overall` only for states OTA cannot see — e.g. all-locked
-        // confirmation or a REAR door left unlocked while LF is locked.
-        if (otaLf != -1) {
-            doors.put("lf", otaLf);
-            if (cloudAvailable) {
-                // Derive `overall` from the MERGED per-door cells, not from
-                // cloud's own unmerged view: cloud's LF cell can lag the OTA
-                // read by seconds (MQTT) to minutes (REST snapshot), and
-                // deriving from cloud's cells let its stale LF flip `overall`
-                // to "unlocked" after the user had already locked up (payload
-                // read lf=locked, overall=unlocked — self-contradictory).
-                int mLf = doors.optInt("lf", -1);
-                int mRf = doors.optInt("rf", -1);
-                int mLr = doors.optInt("lr", -1);
-                int mRr = doors.optInt("rr", -1);
-                boolean anyUnlocked = mLf == 2 || mRf == 2 || mLr == 2 || mRr == 2;
-                boolean allLocked = mLf == 1 && mRf == 1 && mLr == 1 && mRr == 1;
-                if (anyUnlocked) {
-                    // Definitive even with some cells unknown: one unlocked
-                    // door makes the vehicle unlocked.
-                    doors.put("overall", 2);
-                    doors.put("scope", "vehicle");
-                } else if (allLocked) {
-                    doors.put("overall", 1);
-                    doors.put("scope", "vehicle");
-                } else {
-                    // Some doors unknown, none unlocked: OTA still knows the
-                    // driver door — publish that rather than nothing, scoped
-                    // honestly so the UI never claims whole-car state.
-                    doors.put("overall", otaLf);
-                    doors.put("scope", "driver_door");
-                }
-                doors.put("source", "ota+cloud");
-            } else {
-                // No fresh cloud: an OTA reading describes the driver door
-                // only. Keep publishing it as `overall` for compatibility
-                // with the surveillance lock gate, but label the scope
-                // honestly so presentation layers never call it whole-car.
-                if (sdkOverall == -1) {
-                    doors.put("overall", otaLf);
-                    doors.put("scope", "driver_door");
-                    doors.put("source", "ota");
-                } else if (sdkOverall != otaLf) {
-                    // The two layers disagree: OTA is the fresher read, so it wins
-                    // for `overall` — but only the driver door is actually known.
-                    // Keeping the SDK value under scope "vehicle" made the payload
-                    // self-contradictory (lf unlocked, overall locked).
-                    doors.put("overall", otaLf);
-                    doors.put("scope", "driver_door");
-                    doors.put("source", "sdk+ota");
-                } else {
-                    doors.put("scope", "vehicle");
-                    doors.put("source", "sdk+ota");
-                }
-            }
-        }
+        JSONObject doors = sperrStand(data, true);
         response.put("doors", doors);
 
         // Door/lid OPEN state (distinct from lock state above). Live SDK/manager read that
         // works parked; each key is present only when the state is known (open/closed),
         // omitted when the trim doesn't report it — never guessed. Mirrors `windowOpen`.
-        JSONObject doorOpen = new JSONObject();
-        try {
-            int[] ds = collector.readAllDoorOpenStates();
-            String[] doorOpenKeys = {"lf", "rf", "lr", "rr", "hood", "trunk", "fuelCap"};
-            for (int i = 0; i < doorOpenKeys.length && i < ds.length; i++) {
-                if (ds[i] == 0 || ds[i] == 1) doorOpen.put(doorOpenKeys[i], ds[i] == 1);
-            }
-        } catch (Exception e) {
-            logger.debug("doorOpen read failed: " + e.getMessage());
-        }
+        JSONObject doorOpen = tuerOffenStand(collector);
         response.put("doorOpen", doorOpen);
 
         // Exact local percentage stays authoritative. If it is unavailable, use the local
         // open/closed getter and then a fresh cloud snapshot. A coarse OPEN never becomes 100%.
-        JSONObject windows = new JSONObject();
-        JSONObject windowOpen = new JSONObject();
-        VehicleCloudSnapshot cloudWindows = null;
-        try {
-            VehicleCloudSnapshot snapshot =
-                    at.greenchili.surfmate.byd.cloud.BydCloudDataProvider
-                            .getInstance().getSnapshot();
-            if (snapshot != null && snapshot.isWindowStateFresh()) {
-                cloudWindows = snapshot;
-            }
-        } catch (Exception e) {
-            logger.debug("window cloud overlay failed: " + e.getMessage());
-        }
-
-        String[] sideKeys = {"lf", "rf", "lr", "rr"};
-        for (int i = 0; i < sideKeys.length; i++) {
-            int percent = data.windowOpenPercent != null
-                    && data.windowOpenPercent.length > i
-                    ? data.windowOpenPercent[i] : -1;
-            int localState = isValidWindowPercent(percent)
-                    ? -1 : collector.readWindowOpenState(i + 1);
-            int openState = resolveWindowOpenState(
-                    percent, localState, cloudWindowStateAt(cloudWindows, i));
-            if (!isValidWindowPercent(percent) && openState == 0) {
-                percent = 0;
-            }
-            windows.put(sideKeys[i], percent);
-            if (openState >= 0) {
-                windowOpen.put(sideKeys[i], openState == 1);
-            }
-        }
-        if (data.windowOpenPercent != null && data.windowOpenPercent.length >= 5) {
-            windows.put("sunroof", data.windowOpenPercent[4]);
-        }
-        if (data.windowOpenPercent != null && data.windowOpenPercent.length >= 6) {
-            windows.put("sunshade", data.windowOpenPercent[5]);
-        }
+        JSONObject[] fensterPaar = fensterStand(collector, data);
+        JSONObject windows = fensterPaar[0];
+        JSONObject windowOpen = fensterPaar[1];
         response.put("windows", windows);
         response.put("windowOpen", windowOpen);
 
@@ -3746,6 +3553,226 @@ public class VehicleControlApiHandler {
                 || data.isLightKnown(BydVehicleData.LIGHT_KNOWN_DRL)) {
             lights.put("dayTimeLight", data.dayTimeLight);
         }
+    }
+
+    /**
+     * 0.1.15 (Kern 8): Verriegelung wie {@code GET /api/vehicle/state} → doors (OTA-Fahrertür vor Cloud vor SDK;
+     * 1 = verriegelt, 2 = entriegelt, -1 = unbekannt; overall/scope/source). Gleiche Logik für MQTT/HA
+     * ({@link at.greenchili.surfmate.mqtt.KarosserieTelemetrie}); {@code cloudAuffrischen} nur aus der API, die
+     * Telemetrie stößt nie einen Cloud-Abruf an.
+     */
+    public static JSONObject sperrStand(BydVehicleData data, boolean cloudAuffrischen) throws Exception {
+            JSONObject doors = new JSONObject();
+            int sdkOverall = -1;
+            if (data.doorLockStatus != null && data.doorLockStatus.length >= 7) {
+                boolean diLink5 =
+                        at.greenchili.surfmate.camera.dilink5.DiLink5Platform.isSelected();
+                doors.put("rf", localLockToApi(data.doorLockStatus[0], diLink5));
+                doors.put("lf", localLockToApi(data.doorLockStatus[1], diLink5));
+                doors.put("rr", localLockToApi(data.doorLockStatus[2], diLink5));
+                doors.put("lr", localLockToApi(data.doorLockStatus[3], diLink5));
+                doors.put("trunk", localLockToApi(data.doorLockStatus[4], diLink5));
+                doors.put("hood", localLockToApi(data.doorLockStatus[5], diLink5));
+                int mappedOverall =
+                        localLockToApi(data.doorLockStatus[6], diLink5);
+                doors.put("overall", mappedOverall);
+                if (mappedOverall == 1 || mappedOverall == 2) {
+                    sdkOverall = mappedOverall;
+                    doors.put("source", "sdk");
+                    doors.put("scope", "vehicle");
+                }
+            }
+
+            // Track which source authoritatively set LF so we can derive `overall`
+            // correctly when cloud is missing. -1 = no authoritative LF yet.
+            int otaLf = -1;
+            int cloudOverall = -1;
+            boolean cloudAvailable = false;
+
+            // PRIMARY: OTA LF fast-path — the same live SDK read the surveillance
+            // lock gate trusts (CameraDaemon.readDoorLockStatus). Works ACC=OFF
+            // with ~1.5s latency; this is the freshest signal we have.
+            try {
+                android.content.Context ctx = at.greenchili.surfmate.daemon.CameraDaemon.getAppContext();
+                if (ctx != null) {
+                    Object otaDevice = at.greenchili.surfmate.byd.BydDeviceHelper.getDevice(
+                        "android.hardware.bydauto.ota.BYDAutoOtaDevice", ctx);
+                    if (otaDevice != null) {
+                        Object v = at.greenchili.surfmate.byd.BydDeviceHelper.callGetter(
+                            otaDevice, "getLFDoorLockState");
+                        if (v instanceof Number) {
+                            int sdkState = ((Number) v).intValue();
+                            // 1=UNLOCK, 2=LOCK in SDK convention → API: 2=unlocked, 1=locked.
+                            if (sdkState == 2) otaLf = 1;       // LOCKED → API=1
+                            else if (sdkState == 1) otaLf = 2;  // UNLOCKED → API=2
+                        }
+                    }
+                }
+            } catch (Throwable t) {
+                logger.debug("ota-lock overlay failed: " + t.getMessage());
+            }
+
+            // FALLBACK: cloud overlay (full 4-door), gated on freshness. A cloud
+            // snapshot older than LOCK_STATE_MAX_AGE_MS is skipped entirely —
+            // hasValidLockState() stays true forever once any door has ever
+            // reported, so without the isLockStateFresh() gate an hours-old
+            // snapshot kept painting all four pills AND won `overall` over the
+            // live OTA read (glance showed "Locked" while the driver door was
+            // open-and-unlocked). Every other lock consumer already pairs the
+            // two checks (BydCloudDataProvider.isLockStateFresh, the listener
+            // replay, refreshLockStateIfStale); this was the odd one out.
+            try {
+                at.greenchili.surfmate.byd.cloud.BydCloudDataProvider provider =
+                        at.greenchili.surfmate.byd.cloud.BydCloudDataProvider.getInstance();
+                // Trigger an on-demand REST refresh if our cached snapshot is
+                // stale. The call is internally rate-limited (30s cooldown) and
+                // runs asynchronously; the *current* snapshot is used to render
+                // this response, but the next request will see fresh data.
+                if (cloudAuffrischen) {
+                    new Thread(provider::refreshLockStateIfStale, "CloudLockRefresh").start();
+                }
+                at.greenchili.surfmate.byd.cloud.VehicleCloudSnapshot cs = provider.getSnapshot();
+                if (cs != null && cs.isLockStateFresh() && cs.hasValidLockState()) {
+                    cloudAvailable = true;
+                    int lf = cloudLockToApi(cs.leftFrontDoorLock);
+                    int rf = cloudLockToApi(cs.rightFrontDoorLock);
+                    int lr = cloudLockToApi(cs.leftRearDoorLock);
+                    int rr = cloudLockToApi(cs.rightRearDoorLock);
+                    if (lf != -1) doors.put("lf", lf);
+                    if (rf != -1) doors.put("rf", rf);
+                    if (lr != -1) doors.put("lr", lr);
+                    if (rr != -1) doors.put("rr", rr);
+                    if (cs.isAnyUnlocked()) cloudOverall = 2;
+                    else if (cs.isAllLocked()) cloudOverall = 1;
+                    if (cloudOverall != -1) {
+                        doors.put("overall", cloudOverall);
+                        doors.put("scope", "vehicle");
+                    }
+                    doors.put("source", "cloud");
+                }
+            } catch (Exception e) {
+                logger.debug("cloud-lock overlay failed: " + e.getMessage());
+            }
+
+            // Merge: the live OTA read is the primary signal (same priority the
+            // surveillance lock gate uses — OTA first, cloud secondary), so it
+            // always wins the LF cell, and an OTA "unlocked" also wins `overall`:
+            // the driver door being unlocked makes the vehicle unlocked no matter
+            // what the (up to 5-min-old) cloud snapshot claims. Cloud keeps
+            // `overall` only for states OTA cannot see — e.g. all-locked
+            // confirmation or a REAR door left unlocked while LF is locked.
+            if (otaLf != -1) {
+                doors.put("lf", otaLf);
+                if (cloudAvailable) {
+                    // Derive `overall` from the MERGED per-door cells, not from
+                    // cloud's own unmerged view: cloud's LF cell can lag the OTA
+                    // read by seconds (MQTT) to minutes (REST snapshot), and
+                    // deriving from cloud's cells let its stale LF flip `overall`
+                    // to "unlocked" after the user had already locked up (payload
+                    // read lf=locked, overall=unlocked — self-contradictory).
+                    int mLf = doors.optInt("lf", -1);
+                    int mRf = doors.optInt("rf", -1);
+                    int mLr = doors.optInt("lr", -1);
+                    int mRr = doors.optInt("rr", -1);
+                    boolean anyUnlocked = mLf == 2 || mRf == 2 || mLr == 2 || mRr == 2;
+                    boolean allLocked = mLf == 1 && mRf == 1 && mLr == 1 && mRr == 1;
+                    if (anyUnlocked) {
+                        // Definitive even with some cells unknown: one unlocked
+                        // door makes the vehicle unlocked.
+                        doors.put("overall", 2);
+                        doors.put("scope", "vehicle");
+                    } else if (allLocked) {
+                        doors.put("overall", 1);
+                        doors.put("scope", "vehicle");
+                    } else {
+                        // Some doors unknown, none unlocked: OTA still knows the
+                        // driver door — publish that rather than nothing, scoped
+                        // honestly so the UI never claims whole-car state.
+                        doors.put("overall", otaLf);
+                        doors.put("scope", "driver_door");
+                    }
+                    doors.put("source", "ota+cloud");
+                } else {
+                    // No fresh cloud: an OTA reading describes the driver door
+                    // only. Keep publishing it as `overall` for compatibility
+                    // with the surveillance lock gate, but label the scope
+                    // honestly so presentation layers never call it whole-car.
+                    if (sdkOverall == -1) {
+                        doors.put("overall", otaLf);
+                        doors.put("scope", "driver_door");
+                        doors.put("source", "ota");
+                    } else if (sdkOverall != otaLf) {
+                        // The two layers disagree: OTA is the fresher read, so it wins
+                        // for `overall` — but only the driver door is actually known.
+                        // Keeping the SDK value under scope "vehicle" made the payload
+                        // self-contradictory (lf unlocked, overall locked).
+                        doors.put("overall", otaLf);
+                        doors.put("scope", "driver_door");
+                        doors.put("source", "sdk+ota");
+                    } else {
+                        doors.put("scope", "vehicle");
+                        doors.put("source", "sdk+ota");
+                    }
+                }
+            }
+        return doors;
+    }
+
+    /** 0.1.15: Türen/Klappen offen (lf, rf, lr, rr, hood, trunk, fuelCap), nur bekannte – wie die API. */
+    public static JSONObject tuerOffenStand(BydDataCollector collector) throws Exception {
+            JSONObject doorOpen = new JSONObject();
+            try {
+                int[] ds = collector.readAllDoorOpenStates();
+                String[] doorOpenKeys = {"lf", "rf", "lr", "rr", "hood", "trunk", "fuelCap"};
+                for (int i = 0; i < doorOpenKeys.length && i < ds.length; i++) {
+                    if (ds[i] == 0 || ds[i] == 1) doorOpen.put(doorOpenKeys[i], ds[i] == 1);
+                }
+            } catch (Exception e) {
+                logger.debug("doorOpen read failed: " + e.getMessage());
+            }
+        return doorOpen;
+    }
+
+    /** 0.1.15: Fenster {windows (Prozent), windowOpen (offen, nur bekannte)} – wie die API. */
+    public static JSONObject[] fensterStand(BydDataCollector collector, BydVehicleData data) throws Exception {
+            JSONObject windows = new JSONObject();
+            JSONObject windowOpen = new JSONObject();
+            VehicleCloudSnapshot cloudWindows = null;
+            try {
+                VehicleCloudSnapshot snapshot =
+                        at.greenchili.surfmate.byd.cloud.BydCloudDataProvider
+                                .getInstance().getSnapshot();
+                if (snapshot != null && snapshot.isWindowStateFresh()) {
+                    cloudWindows = snapshot;
+                }
+            } catch (Exception e) {
+                logger.debug("window cloud overlay failed: " + e.getMessage());
+            }
+
+            String[] sideKeys = {"lf", "rf", "lr", "rr"};
+            for (int i = 0; i < sideKeys.length; i++) {
+                int percent = data.windowOpenPercent != null
+                        && data.windowOpenPercent.length > i
+                        ? data.windowOpenPercent[i] : -1;
+                int localState = isValidWindowPercent(percent)
+                        ? -1 : collector.readWindowOpenState(i + 1);
+                int openState = resolveWindowOpenState(
+                        percent, localState, cloudWindowStateAt(cloudWindows, i));
+                if (!isValidWindowPercent(percent) && openState == 0) {
+                    percent = 0;
+                }
+                windows.put(sideKeys[i], percent);
+                if (openState >= 0) {
+                    windowOpen.put(sideKeys[i], openState == 1);
+                }
+            }
+            if (data.windowOpenPercent != null && data.windowOpenPercent.length >= 5) {
+                windows.put("sunroof", data.windowOpenPercent[4]);
+            }
+            if (data.windowOpenPercent != null && data.windowOpenPercent.length >= 6) {
+                windows.put("sunshade", data.windowOpenPercent[5]);
+            }
+        return new JSONObject[] {windows, windowOpen};
     }
 
     /**

@@ -1795,6 +1795,20 @@
       "mobilfunk": {
         "title": "Scarica gli aggiornamenti anche con la rete mobile",
         "help": "Molte auto sono online solo tramite la SIM integrata, per questo è attivo. Un aggiornamento pesa di solito da 70 a 120 MB; la dimensione viene mostrata prima. Disattivato = Panoptes scarica solo quando l'auto è in Wi-Fi. Il download avviene solo ad auto parcheggiata e riprende da dove si era interrotto."
+      },
+      "quelle": {
+        "title": "Fonte degli aggiornamenti",
+        "help": "Pubblica = le versioni ufficiali di Panoptes su GitHub, senza accesso. Propria = un altro repository GitHub, ad es. una tua build; per un repository privato con un token di lettura. Ogni versione viene verificata (checksum e firma) prima dell'installazione, qualunque sia la provenienza.",
+        "oeffentlich": "Pubblica (predefinita)",
+        "eigen": "Repository proprio"
+      },
+      "repo": {
+        "title": "Repository per gli aggiornamenti",
+        "help": "Repository GitHub nella forma proprietario/nome. Solo con «Repository proprio»."
+      },
+      "token": {
+        "title": "Token di lettura del repository",
+        "help": "Serve solo per un repository privato: un token GitHub che può solo leggere questo repository. Viene inviato solo a GitHub e non viene mai mostrato."
       }
     },
     "ha": {
@@ -2116,7 +2130,8 @@
       "nicht_eingerichtet": "L'accesso di emergenza non è ancora configurato.",
       "startet_nicht": "L'accesso di emergenza non si avvia. Riprova più tardi.",
       "anmeldung": "L'accesso al tailnet non è riuscito. Controlla la chiave di autenticazione.",
-      "installieren": "Non è stato possibile creare i file per l'accesso di emergenza."
+      "installieren": "Non è stato possibile creare i file per l'accesso di emergenza.",
+      "adb_serve": "L'accesso di emergenza è connesso, ma l'inoltro adb (porta 5555) manca ancora. L'accesso di emergenza riprova da solo."
     }
   }
 }

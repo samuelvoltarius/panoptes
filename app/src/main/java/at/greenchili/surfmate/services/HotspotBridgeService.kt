@@ -103,7 +103,7 @@ class HotspotBridgeService : Service() {
         }
         return b.setContentTitle(getString(at.greenchili.surfmate.R.string.notif_network_title))
             .setContentText(getString(at.greenchili.surfmate.R.string.app_name))
-            .setSmallIcon(R.drawable.ic_play_circle)
+            .setSmallIcon(at.greenchili.surfmate.R.drawable.ic_stat_panoptes)
             .setOngoing(false)
             .setGroup(DaemonKeepaliveService.NOTIFICATION_GROUP_KEY)
             .build()

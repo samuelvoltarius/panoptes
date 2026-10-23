@@ -1795,6 +1795,20 @@
       "mobilfunk": {
         "title": "Télécharger aussi via le réseau mobile",
         "help": "Beaucoup de voitures ne sont en ligne que par leur carte SIM intégrée, c'est pourquoi cette option est activée. Une mise à jour fait en général 70 à 120 Mo ; la taille est indiquée à l'avance. Désactivé = Panoptes ne télécharge que lorsque la voiture est en Wi-Fi. Le téléchargement n'a lieu que voiture garée et reprend là où il s'était arrêté."
+      },
+      "quelle": {
+        "title": "Source des mises à jour",
+        "help": "Publique = les versions officielles de Panoptes sur GitHub, sans connexion. Propre = un autre dépôt GitHub, p. ex. votre propre build ; pour un dépôt privé avec un jeton de lecture. Chaque version est vérifiée (somme de contrôle et signature) avant l'installation, quelle que soit sa provenance.",
+        "oeffentlich": "Publique (par défaut)",
+        "eigen": "Dépôt propre"
+      },
+      "repo": {
+        "title": "Dépôt pour les mises à jour",
+        "help": "Dépôt GitHub sous la forme propriétaire/nom. Uniquement avec « Dépôt propre »."
+      },
+      "token": {
+        "title": "Jeton de lecture du dépôt",
+        "help": "Nécessaire seulement pour un dépôt privé : un jeton GitHub qui peut uniquement lire ce dépôt. Il n'est envoyé qu'à GitHub et n'est jamais affiché."
       }
     },
     "ha": {
@@ -2116,7 +2130,8 @@
       "nicht_eingerichtet": "L'accès de secours n'est pas encore configuré.",
       "startet_nicht": "L'accès de secours ne démarre pas. Veuillez réessayer plus tard.",
       "anmeldung": "La connexion au tailnet a échoué. Veuillez vérifier la clé d'authentification.",
-      "installieren": "Les fichiers de l'accès de secours n'ont pas pu être créés."
+      "installieren": "Les fichiers de l'accès de secours n'ont pas pu être créés.",
+      "adb_serve": "L'accès de secours est connecté, mais le transfert adb (port 5555) manque encore. L'accès de secours réessaie tout seul."
     }
   }
 }

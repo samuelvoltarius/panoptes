@@ -148,7 +148,7 @@ public final class CabinAudioCaptureService extends Service {
         return new Notification.Builder(this, CHANNEL_ID)
                 .setContentTitle(getString(R.string.cabin_audio_notification_title))
                 .setContentText(getString(R.string.cabin_audio_notification_text))
-                .setSmallIcon(R.drawable.ic_overlay_mic_active)
+                .setSmallIcon(at.greenchili.surfmate.R.drawable.ic_stat_panoptes)
                 .setContentIntent(content)
                 .setOngoing(true)
                 .setGroup(DaemonKeepaliveService.NOTIFICATION_GROUP_KEY)

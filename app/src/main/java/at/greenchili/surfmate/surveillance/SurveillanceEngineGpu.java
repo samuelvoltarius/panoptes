@@ -2401,7 +2401,7 @@ public class SurveillanceEngineGpu {
         
         // DIAGNOSTIC: Every 100 frames, check frame validity and inter-frame diff.
         // Only in debug builds — this is pure development tooling.
-        if (at.greenchili.surfmate.BuildConfig.DEBUG && frameCount % 100 == 0) {
+        if (at.greenchili.surfmate.BuildConfig.ENTWICKLUNG && frameCount % 100 == 0) {
             // Sample 16 pixels spread across the frame
             int[] currentSamples = new int[16];
             int[][] sampleCoords = {

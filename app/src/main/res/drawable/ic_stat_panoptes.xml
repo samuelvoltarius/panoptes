@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Panoptes-Logo (geschwungenes P mit Blitz) als einfarbige Silhouette für das kleine Benachrichtigungs-Icon (0.1.15).
+     Gleiche Form wie ic_panoptes_foreground, nur Weiß; Android färbt Small Icons selbst ein. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <group android:pivotX="256" android:pivotY="256" android:scaleX="1.12" android:scaleY="1.12" android:translateY="-6">
+        <path android:pathData="M74,396C148,396 168,318 196,258C228,190 270,132 316,132A124,124 0,0 1,440 256A96,96 0,0 1,344 352A70,70 0,0 1,274 282"
+            android:strokeColor="#FFFFFFFF" android:strokeWidth="56" android:strokeLineCap="round" android:strokeLineJoin="round"/>
+        <path android:fillColor="#FFFFFFFF" android:pathData="M360,214L318,274L344,274L326,324L378,254L350,254L370,214Z"/>
+    </group>
+</vector>

@@ -23,6 +23,9 @@ captures/
 # Signing material. Never commit these.
 *.jks
 *.keystore
+*.p12
+*.pfx
+*.dpapi
 keystore.properties
 
 # Packaged artifacts

@@ -245,6 +245,30 @@ public final class TelemetryFieldCatalog {
         add("key_detection_reminder", "Key Detection",      SENSOR, "enum", null, null, "mdi:key-wireless", true, 0);
         add("smart_key_warn",         "Smart Key Warning",  SENSOR, "enum", null, null, "mdi:key-alert",    true, 0);
 
+        // ---------- 0.1.15 (Kern 8): Karosserie für HA (KarosserieTelemetrie), nur lesend ----------
+        // HA-Bedeutung „an“: lock = entriegelt, door/window = offen, plug = angesteckt.
+        add("unlocked",            "Lock",                BINARY, "lock",   null, null, "mdi:car-key",          false, 0);
+        add("unlocked_lf",         "Lock Front Left",     BINARY, "lock",   null, null, "mdi:car-door-lock",    true,  0);
+        add("unlocked_rf",         "Lock Front Right",    BINARY, "lock",   null, null, "mdi:car-door-lock",    true,  0);
+        add("unlocked_lr",         "Lock Rear Left",      BINARY, "lock",   null, null, "mdi:car-door-lock",    true,  0);
+        add("unlocked_rr",         "Lock Rear Right",     BINARY, "lock",   null, null, "mdi:car-door-lock",    true,  0);
+        add("door_open_lf",        "Door Front Left",     BINARY, "door",   null, null, "mdi:car-door",         false, 0);
+        add("door_open_rf",        "Door Front Right",    BINARY, "door",   null, null, "mdi:car-door",         false, 0);
+        add("door_open_lr",        "Door Rear Left",      BINARY, "door",   null, null, "mdi:car-door",         false, 0);
+        add("door_open_rr",        "Door Rear Right",     BINARY, "door",   null, null, "mdi:car-door",         false, 0);
+        add("trunk_open",          "Trunk",               BINARY, "door",   null, null, "mdi:car-back",         false, 0);
+        add("hood_open",           "Hood",                BINARY, "door",   null, null, "mdi:car-lifted-pickup", true, 0);
+        add("window_open_lf",      "Window Front Left",   BINARY, "window", null, null, "mdi:car-door",         false, 0);
+        add("window_open_rf",      "Window Front Right",  BINARY, "window", null, null, "mdi:car-door",         false, 0);
+        add("window_open_lr",      "Window Rear Left",    BINARY, "window", null, null, "mdi:car-door",         false, 0);
+        add("window_open_rr",      "Window Rear Right",   BINARY, "window", null, null, "mdi:car-door",         false, 0);
+        add("plugged",             "Plugged In",          BINARY, "plug",   null, null, "mdi:ev-plug-type2",    false, 0);
+        add("climate_on",          "Climate",             BINARY, "running", null, null, "mdi:air-conditioner", false, 0);
+        add("consumption_avg",     "Consumption (average)", SENSOR, null, "measurement", "kWh/100 km", "mdi:lightning-bolt", false, 0.1);
+        add("consumption_last_trip", "Consumption (last trip)", SENSOR, null, "measurement", "kWh/100 km", "mdi:lightning-bolt", true, 0.1);
+        add("climate_setpoint",    "Climate Setpoint",    SENSOR, "temperature", "measurement", "°C", "mdi:thermometer", true, 0);
+        add("climate_setpoint_passenger", "Climate Setpoint Passenger", SENSOR, "temperature", "measurement", "°C", "mdi:thermometer", true, 0);
+
         // ---------- Arrays / time: present but not mapped to entities ----------
         add("door_lock",            "Door Lock",            NONE, null, null, null, null, true, 0);
         add("window_open",          "Window Open",          NONE, null, null, null, null, true, 0);

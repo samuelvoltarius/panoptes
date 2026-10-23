@@ -87,4 +87,32 @@ public class SystemEingriffeTest {
         }
         assertFalse(quelle("at/greenchili/surfmate/daemon/AccSentryDaemon.java").contains("svc power stayon false"));
     }
+
+    /**
+     * 0.1.15 (Kern 8): Der Park-Reaper läuft nur in onOnly. Nach dem 0.1.14-Update stand bei Projektinhaber (onAndOff) noch 7.
+     * enterSentryMode – bei jedem Parken und beim Daemon-Start im Stand – nimmt das 7 jetzt auch in onAndOff zurück,
+     * mit demselben parkSkript (echte Shell oben), außer DiLink 5, und nicht auf dem HAL-Listener-Thread.
+     */
+    @Test
+    public void stayOnRueckgabeAuchInOnAndOff() throws Exception {
+        String s = quelle("at/greenchili/surfmate/daemon/AccSentryDaemon.java");
+        int ein = s.indexOf("private static void enterSentryMode()");
+        int aus = s.indexOf("private static void exitSentryMode()");
+        assertTrue(ein > 0 && aus > ein);
+        String enter = s.substring(ein, aus);
+        int aufruf = enter.indexOf("stayOnAltlastZuruecknehmen();");
+        assertTrue("Aufruf in enterSentryMode", aufruf > 0);
+        assertTrue("nach neuer Transition (nicht im „Already in sentry mode“-Zweig)",
+                aufruf > enter.indexOf("requestTransitionReconciliation(transition);"));
+        assertTrue("vor dem onOnly-return", aufruf < enter.indexOf("if (vehicleOnOnly) {"));
+        String wache = enter.substring(enter.lastIndexOf("if (", aufruf), aufruf);
+        assertTrue("nur onAndOff (onOnly hat den Reaper)", wache.contains("!vehicleOnOnly"));
+        assertTrue("DiLink 5 ausgenommen", wache.contains("!at.greenchili.surfmate.camera.dilink5.DiLink5Platform.isSelected()"));
+        int m = s.indexOf("private static void stayOnAltlastZuruecknehmen()");
+        assertTrue(m > 0);
+        String methode = s.substring(m, s.indexOf("private static String execShell(String cmd)", m));
+        assertTrue("gleiches Skript wie der Park-Reaper", methode.contains("SystemEingriffe.parkSkript()"));
+        assertTrue("eigener Thread", methode.contains("new Thread(") && methode.contains(".start();"));
+        assertFalse("setzt nie selbst 7", methode.contains("stay_on_while_plugged_in 7"));
+    }
 }

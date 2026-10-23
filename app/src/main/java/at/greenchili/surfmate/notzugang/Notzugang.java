@@ -70,9 +70,11 @@ public final class Notzugang {
         r.put("eingerichtet", da);
         r.put("an", an(at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig()));
         if (!da) return r;
-        String st = shell("sh " + SKRIPT + " status", 10).trim();
+        String st = shell("sh " + SKRIPT + " status", 15).trim();
         r.put("aufpasser", st.contains("aufpasser=ja"));
         r.put("laeuft", st.contains("tailscaled=ja"));
+        // 0.1.15: ohne serve --tcp 5555 gibt es über den Notzugang kein adb (kein Loopback-Forward im Build)
+        r.put("adbServe", st.contains("adb_serve=ja"));
         String js = shell(ORDNER + "/bin/tailscale --socket " + SOCKET + " status --json 2>/dev/null", 10);
         try {
             JSONObject s = new JSONObject(js);
@@ -80,11 +82,47 @@ public final class Notzugang {
             JSONObject self = s.optJSONObject("Self");
             JSONArray ips = self == null ? null : self.optJSONArray("TailscaleIPs");
             if (ips != null && ips.length() > 0) r.put("ip", ips.optString(0));
-            if (self != null) r.put("name", self.optString("HostName", ""));
+            if (self != null) {
+                r.put("name", self.optString("HostName", ""));
+                schluessel(self, System.currentTimeMillis(), r);
+            }
         } catch (Exception ignored) {
             r.put("zustand", "unbekannt");
         }
         return r;
+    }
+
+    /**
+     * 0.1.15: Tag bzw. Key-Ablauf des eigenen Knotens aus {@code status --json} → Self. Ein getaggter Knoten
+     * ({@code Tags}, z. B. tag:notzugang) hat standardmäßig keinen Key-Ablauf; ein Knoten ohne Tag gehört dem
+     * Nutzer und fällt nach {@code KeyExpiry} aus dem Tailnet, bis jemand ihn neu anmeldet – genau dann, wenn man
+     * den Notzugang braucht. Nur anzeigen, nie selbst etwas am Tailnet ändern.
+     * Felder: tags[], getaggt, keyAblauf (ISO-Zeit oder null = läuft nie ab), keyAblaufTage (abgerundet).
+     */
+    static void schluessel(JSONObject self, long jetztMs, JSONObject r) throws Exception {
+        JSONArray tags = self.optJSONArray("Tags");
+        JSONArray t = new JSONArray();
+        if (tags != null) {
+            for (int i = 0; i < tags.length(); i++) {
+                String s = tags.optString(i, "");
+                if (!s.isEmpty()) t.put(s);
+            }
+        }
+        r.put("tags", t);
+        r.put("getaggt", t.length() > 0);
+        String ab = self.optString("KeyExpiry", "");
+        // Go schreibt den Nullwert als 0001-01-01T00:00:00Z – das heißt „kein Ablauf“
+        if (ab.isEmpty() || ab.startsWith("0001-")) {
+            r.put("keyAblauf", JSONObject.NULL);
+            return;
+        }
+        r.put("keyAblauf", ab);
+        try {
+            long ms = java.time.Instant.parse(ab).toEpochMilli();
+            r.put("keyAblaufTage", Math.floorDiv(ms - jetztMs, 86_400_000L));
+        } catch (Exception ignored) {
+            // unbekanntes Format: Zeit bleibt sichtbar, Tage fehlen
+        }
     }
 
     /**
@@ -124,7 +162,17 @@ public final class Notzugang {
             key.delete();
             shell("rm -f " + key.getAbsolutePath(), 5);
         }
-        return new JSONObject().put("success", true).put("status", status());
+        // 0.1.15: adb-Weiterleitung 5555 setzen und zurücklesen (idempotent; der Aufpasser holt sie sonst nach).
+        // Der Knoten ist angemeldet – kein Fehler, sonst richtet der Nutzer mit neuem Key einen zweiten Knoten ein.
+        boolean serve = serveOk(shell("sh " + SKRIPT + " serve", 30));
+        logger.info("Notzugang adb-Weiterleitung: " + serve);
+        JSONObject r = new JSONObject().put("success", true).put("adbServe", serve);
+        if (!serve) r.put("warnung", "adb_serve");
+        return r.put("status", status());
+    }
+
+    static boolean serveOk(String ausgabe) {
+        return ausgabe != null && ausgabe.contains("serve=ok");
     }
 
     public static JSONObject einschalten() throws Exception {

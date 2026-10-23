@@ -7,7 +7,7 @@ import org.json.JSONObject
 /**
  * Schein-§0 NUR für Screenshots/Abnahme im Emulator (WIZARD_AUFTRAG_NEUBAU: „bis dahin gegen einen Schein-Endpunkt“).
  *
- * Aktiv ausschließlich, wenn BEIDES gilt: Debug-Build (BuildConfig.DEBUG) UND die System-Eigenschaft
+ * Aktiv ausschließlich, wenn BEIDES gilt: Build mit -PpanoptesScreenshotModus=true (BuildConfig.SCREENSHOT_MODUS) UND die System-Eigenschaft
  * `debug.panoptes.einrichtung_schein=1` (nur per `adb shell setprop` im Emulator setzbar). Im Release-Build nie.
  * Antwortet wie der Kern laut §0 (Muster aus EinrichtungApiHandlerTest), schreibt nichts außer im Speicher.
  */
@@ -15,13 +15,13 @@ object ScheinEinrichtung {
     private const val TAG = "ScheinEinrichtung"
 
     fun aktivieren() {
-        if (!at.greenchili.surfmate.BuildConfig.DEBUG) return
+        if (!at.greenchili.surfmate.BuildConfig.SCREENSHOT_MODUS) return
         val an = try {
             val c = Class.forName("android.os.SystemProperties")
             (c.getMethod("get", String::class.java, String::class.java).invoke(null, "debug.panoptes.einrichtung_schein", "0") as String) == "1"
         } catch (_: Throwable) { false }
         if (!an) return
-        Log.w(TAG, "Schein-§0 aktiv (nur Debug + debug.panoptes.einrichtung_schein=1)")
+        Log.w(TAG, "Schein-§0 aktiv (nur Screenshot-Build + debug.panoptes.einrichtung_schein=1)")
         val echt = EinrichtungApi.transport
         EinrichtungApi.transport = { m, p, b -> antwort(m, p, b) ?: echt(m, p, b) }
     }

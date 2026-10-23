@@ -37,9 +37,9 @@ object Od {
         if (!loaded) return false
         if (ready) return true
         // Development builds skip the host check. This branch is compiled out of
-        // release (BuildConfig.DEBUG is a release-time false constant → dead code
+        // release (BuildConfig.ENTWICKLUNG is a release-time false constant → dead code
         // removed by R8), so the shipped binary has no bypass path.
-        if (at.greenchili.surfmate.BuildConfig.DEBUG) { ready = true; return true }
+        if (at.greenchili.surfmate.BuildConfig.ENTWICKLUNG) { ready = true; return true }
         try {
             val d = hostKey(context)
             if (d == null) {

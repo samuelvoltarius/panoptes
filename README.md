@@ -6,7 +6,7 @@ Panoptes ist eine kostenlose Community-App für BYD-Autos mit DiLink 3, 4 und 5.
 
 Hier liegt der Quellcode. Fertige Versionen zum Herunterladen gibt es unter **[Releases](https://github.com/samuelvoltarius/panoptes/releases/latest)**. Mehr zum Projekt und die Installationsanleitung: **[byd.serveone.at/panoptes/](https://byd.serveone.at/panoptes/)**.
 
-Dieser Stand entspricht genau dem Release **v0.1.14.1** (interner Commit `dfad145`).
+Dieser Stand entspricht genau dem Release **v0.1.15** (interner Commit `e02194e`).
 
 <p>
   <img src="screenshots/start-display-dunkel.webp" alt="Startseite am Bildschirm im Auto" width="66%">
@@ -85,7 +85,7 @@ Alle Bilder zeigen Musterdaten, keine echten Fahrzeugdaten.
 
 ## Updates
 
-> **Wichtig für 0.1.14.1:** Diese erste öffentliche Version aktualisiert sich **nicht** von selbst. Unter System → App-Updates steht bei ihr „Update-Server nicht erreichbar“; das ist bei dieser Version normal und schadet nicht. Ab **0.1.15** kommen Updates automatisch aus diesem Repository. Bis dahin installierst du 0.1.15 einmal von Hand, genau wie beim ersten Mal.
+> **Wer 0.1.14.1 hat:** Installiere 0.1.15 **einmal von Hand**, genau wie beim ersten Mal (deine Daten bleiben erhalten). 0.1.14.1 kann sich nicht selbst auf 0.1.15 bringen, weil Panoptes ab 0.1.15 mit einem neuen, dauerhaften Schlüssel signiert ist (APK-Signaturschema v3 mit Herkunftsnachweis vom alten Schlüssel). Ab 0.1.15 kommen Updates automatisch aus diesem Repository.
 
 - Neue Versionen erscheinen unter **[Releases](https://github.com/samuelvoltarius/panoptes/releases)**, mit einer kurzen Liste, was neu ist.
 - Unter **System → App-Updates** kannst du direkt nach neuen Versionen suchen und wählen, ob Panoptes nur meldet oder selbst installiert. Installiert wird nur, wenn das Auto steht und die Zündung aus ist. Läuft eine neue Version nicht sauber, kehrt Panoptes von selbst zur vorigen zurück.

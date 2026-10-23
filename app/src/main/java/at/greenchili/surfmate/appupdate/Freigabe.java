@@ -7,17 +7,48 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 /**
- * Eine veröffentlichte Panoptes-Version laut {@code version.json} im öffentlichen Repo
- * {@code samuelvoltarius/panoptes-releases} (Format: .github/workflows/release.yml).
+ * Eine veröffentlichte Panoptes-Version laut {@code version.json} aus der eingestellten {@link UpdateQuelle}
+ * (Format: .github/workflows/release.yml).
  *
  * <p>Alles wird streng geprüft; ein Feld außerhalb der Form → {@link Fehler}. Der Zertifikats-Fingerabdruck muss
- * genau {@link #ZERTIFIKAT} sein – ein anderer Schlüssel würde Android ohnehin ablehnen, wir melden es vorher.
+ * eines der Panoptes-Zertifikate sein ({@link #zulaessig}) – ein anderer Schlüssel würde Android ohnehin ablehnen,
+ * wir melden es vorher.
+ *
+ * <p>0.1.15 (Kern 8, Signatur-Rotation Kern 9): Ab 0.1.15 sind APKs mit dem Release-Schlüssel {@link #ZERTIFIKAT}
+ * signiert (APK-Signaturschema v3, Lineage {@link #ZERTIFIKAT_ALT} → {@link #ZERTIFIKAT}). Installationen mit dem
+ * alten Schlüssel nehmen solche Updates an; der Updater lässt beide zu, aber nie zurück von neu auf alt.
  */
 public final class Freigabe {
 
-    /** Signaturzertifikat aller Panoptes-APKs (SHA-256, Koordination 21.10.2026). */
-    public static final String ZERTIFIKAT = "02d5a37bf0c1e334f56277af5669efc536fa96921fde0138d7e88dea7d7d8006";
-    public static final String REPO = "samuelvoltarius/panoptes-releases";
+    /** Aktuelles Signaturzertifikat der Panoptes-APKs ab 0.1.15 (Release-Schlüssel „Panoptes“, SHA-256). */
+    public static final String ZERTIFIKAT = "287c31e78288a440be4d23eb59f58e415d77aca54def67e0e6bf271f1959be81";
+    /** Bisheriges Zertifikat bis 0.1.14.1 (Debug-Keystore, Koordination 21.10.2026); in der Lineage enthalten. */
+    public static final String ZERTIFIKAT_ALT = "02d5a37bf0c1e334f56277af5669efc536fa96921fde0138d7e88dea7d7d8006";
+
+    /** Ein Panoptes-Zertifikat (neu oder alt)? */
+    public static boolean zulaessig(String cert) {
+        return ZERTIFIKAT.equals(cert) || ZERTIFIKAT_ALT.equals(cert);
+    }
+
+    /**
+     * Passt die geladene APK zur installierten App? null = ja, sonst Grund. Neu signiert (mit Lineage) passt auf alt
+     * und neu; alt signiert nur auf alt (bzw. unbekannt) – Android lehnt den Rückweg von neu auf alt ab.
+     */
+    public static String signaturPasst(String apkCert, String installiert) {
+        return signaturPasst(apkCert, installiert, ZERTIFIKAT, ZERTIFIKAT_ALT);
+    }
+
+    /** Wie oben, mit eigenem Paar neu/alt (Test mit Wegwerf-Schlüsseln). */
+    static String signaturPasst(String apkCert, String installiert, String neu, String alt) {
+        boolean apkOk = neu.equals(apkCert) || alt.equals(apkCert);
+        if (!apkOk) return "Zertifikat " + apkCert;
+        if (installiert == null) return null;
+        if (!neu.equals(installiert) && !alt.equals(installiert)) return "installierte App hat Zertifikat " + installiert;
+        if (alt.equals(apkCert) && neu.equals(installiert)) {
+            return "APK mit altem Zertifikat auf neu signierter Installation";
+        }
+        return null;
+    }
 
     private static final Pattern HEX64 = Pattern.compile("[0-9a-f]{64}");
     private static final Pattern NAME = Pattern.compile("[0-9]{1,3}(\\.[0-9]{1,3}){1,3}");
@@ -31,17 +62,28 @@ public final class Freigabe {
     public final String apk;
     public final String sha256;
     public final int minVersion;
+    /** Zertifikat laut version.json (zulässig). */
+    public final String zertifikat;
     /** Sprache → Zeilen; leer, wenn version.json keine Notizen trägt. */
     public final JSONObject notizen;
+    /** Download-Adresse der APK; setzt der Dienst je nach {@link UpdateQuelle} (nie aus version.json). */
+    private final String apkAdresse;
 
     public static final class Fehler extends Exception {
         public final String grund;
         Fehler(String grund, String text) { super(text); this.grund = grund; }
     }
 
-    private Freigabe(int vc, String name, String kanal, String tag, String apk, String sha, int minV, JSONObject notizen) {
+    private Freigabe(int vc, String name, String kanal, String tag, String apk, String sha, int minV, String cert,
+                     JSONObject notizen, String apkAdresse) {
         this.versionCode = vc; this.versionName = name; this.kanal = kanal; this.tag = tag; this.apk = apk;
-        this.sha256 = sha; this.minVersion = minV; this.notizen = notizen;
+        this.sha256 = sha; this.minVersion = minV; this.zertifikat = cert; this.notizen = notizen;
+        this.apkAdresse = apkAdresse;
+    }
+
+    /** Dieselbe Freigabe mit der Download-Adresse der APK. */
+    public Freigabe mitApkUrl(String url) {
+        return new Freigabe(versionCode, versionName, kanal, tag, apk, sha256, minVersion, zertifikat, notizen, url);
     }
 
     public static Freigabe lies(String json) throws Fehler {
@@ -66,7 +108,7 @@ public final class Freigabe {
         if ("stabil".equals(kanal) == tag.contains("-test.")) throw new Fehler("nicht_erreichbar", "tag/kanal");
         if (!APK.matcher(apk).matches() || apk.startsWith(".")) throw new Fehler("nicht_erreichbar", "apk");
         if (!HEX64.matcher(sha).matches()) throw new Fehler("pruefsumme", "sha256");
-        if (!ZERTIFIKAT.equals(cert)) throw new Fehler("signatur", "zertifikat " + cert);
+        if (!zulaessig(cert)) throw new Fehler("signatur", "zertifikat " + cert);
         JSONObject notizen = new JSONObject();
         JSONObject n = j.optJSONObject("notizen");
         if (n != null) {
@@ -81,12 +123,12 @@ public final class Freigabe {
                 try { notizen.put(sprache, sauber); } catch (Exception ignored) { }
             }
         }
-        return new Freigabe(vc, name, kanal, tag, apk, sha, Math.max(0, minV), notizen);
+        return new Freigabe(vc, name, kanal, tag, apk, sha, Math.max(0, minV), cert, notizen, null);
     }
 
-    /** Download-Adresse der APK im Release (öffentlich, ohne Token). */
+    /** Download-Adresse der APK (öffentlich oder API-Asset) oder null, wenn noch keine Quelle sie gesetzt hat. */
     public String apkUrl() {
-        return "https://github.com/" + REPO + "/releases/download/" + tag + "/" + apk;
+        return apkAdresse;
     }
 
     /** Notizen in der gewünschten Sprache, sonst en, sonst leer. */
@@ -100,7 +142,7 @@ public final class Freigabe {
         JSONObject o = new JSONObject();
         try {
             o.put("versionCode", versionCode).put("versionName", versionName).put("kanal", kanal).put("tag", tag)
-                    .put("apk", apk).put("sha256", sha256).put("zertifikatSha256", ZERTIFIKAT)
+                    .put("apk", apk).put("sha256", sha256).put("zertifikatSha256", zertifikat)
                     .put("minVersion", minVersion).put("notizen", notizen);
         } catch (Exception ignored) { }
         return o;

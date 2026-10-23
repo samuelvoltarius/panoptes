@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit
  * posture as the sync executor + detached-daemon pattern.
  *
  * Not a production feature. DOUBLE-gated: (1) `roadSense.rawRecord` config flag (default OFF),
- * and (2) the controller only consults that flag inside a `BuildConfig.DEBUG` branch, so in a
+ * and (2) the controller only consults that flag inside a `BuildConfig.ENTWICKLUNG` branch, so in a
  * RELEASE build R8 dead-strips the entire start/capture path — the shipped binary cannot record
  * even if the config key is flipped. Owned by the controller (one instance, lifecycle = the
  * flag). Clock injected for testability.
