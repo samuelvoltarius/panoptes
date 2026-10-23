@@ -1383,6 +1383,7 @@ public class BydDataCollector {
                     .wirelessChargingRightState(latest.wirelessChargingRightState)
                     .wirelessChargingStatus(latest.wirelessChargingStatus)
                     .insideTempC(latest.insideTempC, latest.insideTempReadAt)
+                    .klimaSollwertC(latest.klimaSollwertC, latest.klimaSollwertReadAt)
                     .build();
             snapshot.set(candidate);
             publishAutomationSnapshot(candidate);
@@ -2923,6 +2924,89 @@ public class BydDataCollector {
             return values[index];
         }
         return BydVehicleData.UNAVAILABLE;
+    }
+
+    /** 0.1.16.1: Frist für das Echo der Sitzheizung (Setting-Rail meist < 200 ms, großzügig wegen Weckens). */
+    static final long SITZ_ECHO_MS = 1_500L;
+
+    /**
+     * 0.1.16.1: Wartet, bis {@link #readSeatClimateNow} den Sollwert ({@code soll} 0–2) meldet; pollt alle
+     * 150 ms. {@link #ECHO_OK} | {@link #ECHO_AUS} (lesbar, nicht erreicht) | {@link #ECHO_UNBEKANNT} (nie lesbar,
+     * z. B. Rücksitze oder fehlender Getter).
+     */
+    public int warteAufSitzEcho(boolean heat, int position, int soll, long maxMs) {
+        long ende = System.currentTimeMillis() + Math.max(0L, maxMs);
+        boolean lesbar = false;
+        while (true) {
+            int v = readSeatClimateNow(heat, position);
+            if (v != BydVehicleData.UNAVAILABLE) {
+                lesbar = true;
+                if (v == soll) return ECHO_OK;
+            }
+            if (System.currentTimeMillis() >= ende) return lesbar ? ECHO_AUS : ECHO_UNBEKANNT;
+            try {
+                Thread.sleep(150);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return lesbar ? ECHO_AUS : ECHO_UNBEKANNT;
+            }
+        }
+    }
+
+    /** Echo-Ergebnis: bestätigt. */
+    public static final int ECHO_OK = 1;
+    /** Echo-Ergebnis: Wert lesbar, aber nicht binnen der Frist erreicht. */
+    public static final int ECHO_AUS = 0;
+    /** Echo-Ergebnis: nicht lesbar (Getter fehlt / Sentinel) – keine Aussage. */
+    public static final int ECHO_UNBEKANNT = -1;
+
+    /**
+     * 0.1.16: Wartet, bis {@link #readAcPowerNow()} den Sollzustand meldet (Deploy-Test 23.10.: bei Auto aus
+     * meldet start(0) „0 = ok“, die AC bleibt aber aus; nach dem Einschalten bei Auto an war das Echo nach
+     * spätestens 32 s da). Pollt alle 500 ms.
+     */
+    public int warteAufKlimaEcho(boolean an, long maxMs) {
+        int soll = an ? 1 : 0;
+        long ende = System.currentTimeMillis() + Math.max(0L, maxMs);
+        boolean lesbar = false;
+        while (true) {
+            int v = readAcPowerNow();
+            if (v == 0 || v == 1) {
+                lesbar = true;
+                if (v == soll) return ECHO_OK;
+            }
+            if (System.currentTimeMillis() >= ende) return lesbar ? ECHO_AUS : ECHO_UNBEKANNT;
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return lesbar ? ECHO_AUS : ECHO_UNBEKANNT;
+            }
+        }
+    }
+
+    /**
+     * 0.1.16: Wartet, bis der Fahrer-Sollwert (Drehregler) {@code zielC} zeigt. Nur bei °C-Anzeige
+     * vergleichbar; bei °F oder unlesbar {@link #ECHO_UNBEKANNT}.
+     */
+    public int warteAufSollwertEcho(double zielC, long maxMs) {
+        int ziel = (int) Math.round(zielC);
+        long ende = System.currentTimeMillis() + Math.max(0L, maxMs);
+        boolean lesbar = false;
+        while (true) {
+            int v = readAcSetpointNow(AC_TEMP_AREA_DRIVER);
+            if (v >= AC_SETPOINT_MIN_C && v <= AC_SETPOINT_MAX_C) {
+                lesbar = true;
+                if (v == ziel) return ECHO_OK;
+            }
+            if (System.currentTimeMillis() >= ende) return lesbar ? ECHO_AUS : ECHO_UNBEKANNT;
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return lesbar ? ECHO_AUS : ECHO_UNBEKANNT;
+            }
+        }
     }
 
     /** Live AC power state: 0=off, 1=on, or UNAVAILABLE for every other SDK value. */
@@ -7902,15 +7986,25 @@ public class BydDataCollector {
     }
 
     /**
-     * Read and publish the current poll's one cabin-temperature observation.
+     * Read and publish the current poll's one AC_TEMP_INSIDE observation.
+     *
+     * <p>0.1.16: Der Wert ist bei allen Modellen ohne Beleg der Klima-Sollwert (Drehregler), keine Messung
+     * ({@link KabinenTemperatur}). Er landet dann nur in {@code klimaSollwertC}; {@code insideTempC} bleibt leer,
+     * damit HA, MQTT, Automationen, ABRP und Web keine erfundene Innentemperatur zeigen.
      *
      * @return true only when AC_TEMP_INSIDE answered with a valid raw whole-degree Celsius value
+     *         AND counts as a measurement (the cloud fallback is skipped only then)
      */
     private boolean collectCabinTemperature(BydVehicleData.Builder b) {
         try {
             int raw = readCabinTempC();
             if (raw == Integer.MIN_VALUE) return false;
-            b.insideTempC(raw, System.currentTimeMillis());
+            long jetzt = System.currentTimeMillis();
+            if (!KabinenTemperatur.acTempInsideIstMessung(KabinenTemperatur.aktuellesModell())) {
+                b.klimaSollwertC(raw, jetzt);
+                return false;
+            }
+            b.insideTempC(raw, jetzt);
             return true;
         } catch (Exception e) {
             logger.debug("collectCabinTemperature error: " + e.getMessage());
@@ -11493,7 +11587,9 @@ public class BydDataCollector {
             // event — where it latches and permanently satisfies every "cabin above X" rule.
             // Validating here (rather than re-adding a clip at each consumer) keeps ONE definition
             // of a plausible cabin temperature for both sources.
+            // 0.1.16: tempInCar nur, wenn er beim Modell nachweislich misst (Surf: -129 = kein Fühler).
             if (!cabinTempHalSucceeded && cs.insideTempObservedAt > b.insideTempReadAt
+                    && KabinenTemperatur.cloudTempInCarIstMessung(KabinenTemperatur.aktuellesModell())
                     && cs.hasFreshInsideTemp()
                     && isPlausibleCabinTempC((int) Math.round(cs.insideTempC))) {
                 b.insideTempC(cs.insideTempC, cs.insideTempObservedAt);
@@ -13809,6 +13905,9 @@ public class BydDataCollector {
             String methodName = on ? "start" : "stop";
             Object result = BydDeviceHelper.callGetter(acDevice, methodName, 0);
             boolean success = (result instanceof Integer && ((Integer) result).intValue() == 0);
+            // 0.1.16 (Deploy-Test 23.10.): Rückgabecode immer loggen – „0“ heißt nur „angenommen“,
+            // bei ausgeschaltetem Auto kommt 0 ohne Wirkung. Die Wirkung prüft warteAufKlimaEcho.
+            logger.info("AC " + methodName + "(0) Rückgabe=" + result);
             
             if (!success && result instanceof Integer) {
                 int code = ((Integer) result).intValue();
@@ -17180,8 +17279,18 @@ public class BydDataCollector {
             Object result = BydDeviceHelper.callMethod(settingDevice, "setSeatHeatingState", position, normalizedLevel);
             boolean accepted =
                     result instanceof Integer && ((Integer) result).intValue() == 0;
-            if (!accepted || !dilink5) return accepted;
-            return confirmSeatClimateWrite(true, position, normalizedLevel - 1);
+            if (!accepted) return false;
+            if (dilink5) return confirmSeatClimateWrite(true, position, normalizedLevel - 1);
+            // 0.1.16.1 (Koordination 23.10.): auch ohne DiLink 5 die Wirkung prüfen – der HAL meldet 0 auch,
+            // wenn ein schlafendes Auto den Befehl ignoriert. Lesbar und nicht erreicht = Fehlschlag (der Router
+            // weicht dann nur bei nachweislich ausgeschaltetem Auto auf die Cloud aus); nicht lesbar = HAL glauben.
+            int echo = warteAufSitzEcho(true, position, normalizedLevel - 1, SITZ_ECHO_MS);
+            if (echo == ECHO_AUS) {
+                logger.warn("setSeatHeating(" + position + ", " + level + "): keine Wirkung binnen "
+                        + SITZ_ECHO_MS + " ms – lokal fehlgeschlagen");
+                return false;
+            }
+            return true;
         } catch (Exception e) {
             logger.debug("setSeatHeating failed: " + e.getMessage());
             return false;

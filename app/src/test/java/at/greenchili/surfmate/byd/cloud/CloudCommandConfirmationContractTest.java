@@ -84,7 +84,11 @@ public class CloudCommandConfirmationContractTest {
     @Test
     public void sdkFirstClimateSetsBothLocalZonesAndRejectsCloudClamping() throws Exception {
         String source = readSource("byd/routing/VehicleCommandRouter.java");
-        assertTrue(source.contains("return c.setAcTemperature(0, tempCelsius) && c.setAcPower(true);"));
+        // 0.1.16 (Deploy-Test 23.10.2026): ein Sollwert vor start(0) wird bei ausgeschalteter AC ignoriert –
+        // jetzt erst einschalten, Wirkung prüfen, dann Sollwert mit Echo (CloudKlimaTest prüft die Reihenfolge).
+        String on = source.substring(source.indexOf("public static final class ClimateOnCommand"));
+        assertTrue(on.indexOf("if (!c.setAcPower(true)) return false;")
+                < on.indexOf("if (!c.setAcTemperature(0, tempCelsius)) return false;"));
         assertTrue(source.contains("return isCloudTemperatureRepresentable()"));
         assertTrue(source.contains("tempCelsius == Math.rint(tempCelsius)"));
     }

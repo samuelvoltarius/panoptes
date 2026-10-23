@@ -41,6 +41,7 @@ public final class Katalog {
     public static final List<Gruppe> GRUPPEN = Collections.unmodifiableList(java.util.Arrays.asList(
             new Gruppe("waechter", "waechter", 30),
             new Gruppe("auto", "auto", 40),
+            new Gruppe("camping", "auto", 45),
             new Gruppe(LadenKatalog.ABSCHNITT, "fahren", 50),
             new Gruppe("system", "system", 90),
             new Gruppe("update", "system", 95),
@@ -245,6 +246,13 @@ public final class Katalog {
         unterwegs.gruppe = "datenschutz"; unterwegs.reihenfolge = 15; unterwegs.standard = false;
         unterwegs.nurLesendExtern = true;
         l.add(unterwegs);
+        // 0.1.16 Planer §17: Neuplanung unterwegs – Route, Position (~100 m) und Akku alle 10 min an plan-abweichung
+        // (zustandslos). Eigene Einwilligung, Standard aus, nur sichtbar mit Unterwegs-Hilfe.
+        Feld abweichung = new Feld("planner.abweichung", Feld.Typ.BOOL);
+        abweichung.gruppe = "datenschutz"; abweichung.reihenfolge = 16; abweichung.standard = false;
+        abweichung.nurLesendExtern = true;
+        abweichung.nurWenn = obj("key", "planner.unterwegs", "gleich", true);
+        l.add(abweichung);
         // Vertrag 9 (Planer, 0.1.9): Zustand an den Routenplaner senden – Regel 2, Standard AUS, Einwilligung
         // beim Einschalten (Text planer.zustandEinwilligung.*). Ausschalten löscht am Server.
         Feld zust = new Feld("planner.zustandSenden", Feld.Typ.BOOL);
@@ -298,6 +306,7 @@ public final class Katalog {
         modus.optionen.add(new Feld.Option("melden", "settings.update.modus.melden"));
         modus.optionen.add(new Feld.Option("automatisch", "settings.update.modus.automatisch"));
         l.add(modus);
+        campingFelder(l, k);
         // Prüfen alle 6 h bei GitHub: nicht gesetzt = Bestand = an; die Ersteinrichtung fragt ohne Vorauswahl
         Feld pruefen = new Feld("update.pruefen", Feld.Typ.BOOL);
         pruefen.gruppe = "update"; pruefen.reihenfolge = 5; pruefen.standard = true;
@@ -375,6 +384,60 @@ public final class Katalog {
         }
         l.addAll(LadenKatalog.felder());
         return l;
+    }
+
+    /**
+     * Camping-Modus (0.1.16, CAMPING_PLAN.md 2.1/3/5). Nicht gesetzt = Standard; ausgewertet in
+     * {@code camping.Camping}. In Stufe 2a heizt nichts (Trockenlauf) – die Heizwerte steuern nur Plan und Budget.
+     */
+    private static void campingFelder(List<Feld> l, Kontext k) {
+        int r = 0;
+        Feld w = new Feld("camping.waerme", Feld.Typ.AUSWAHL);
+        w.gruppe = "camping"; w.reihenfolge = r += 10; w.standard = "warm";
+        for (String o : new String[]{"aus", "sparen", "mild", "warm", "sehr_warm"}) {
+            w.optionen.add(new Feld.Option(o, "settings.camping.waerme." + o));
+        }
+        l.add(w);
+        // 0.1.16 Stufe 2b: wie geheizt wird. auto_an = nur lokal bei eingeschaltetem Auto (am Surf belegt);
+        // auto_an_und_cloud = zusätzlich Fernklima-Sitzungen über die BYD-Cloud bei ausgeschaltetem Auto.
+        // Standard Probelauf (Koordination 23.10.2026): echtes Heizen erst nach dem Test mit Projektinhaber bzw. auf
+        // ausdrückliche Wahl – im Freeze 0.1.16 schaltet ohne diese Wahl nichts.
+        Feld weg = new Feld("camping.heizweg", Feld.Typ.AUSWAHL);
+        weg.standard = "probelauf";
+        for (String o : new String[]{"probelauf", "auto_an", "auto_an_und_cloud"}) {
+            weg.optionen.add(new Feld.Option(o, "settings.camping.heizweg." + o));
+        }
+        l.add(camping(weg, r += 5));
+        l.add(camping(zahlOhneStopp("camping.vorheizenMinuten", Feld.Typ.INT, 30, 0.0, 60.0, 5.0, "min"), r += 10));
+        l.add(camping(zahlOhneStopp("camping.morgensHeizen", Feld.Typ.BOOL, false, null, null, null, null), r += 10));
+        Feld weck = new Feld("camping.weckzeit", Feld.Typ.ZEIT);
+        weck.standard = null;
+        l.add(camping(weck, r += 10));
+        l.add(camping(zahlOhneStopp("camping.socGrenze", Feld.Typ.INT, 20, 5.0, 80.0, 1.0, "%"), r += 10));
+        double[] v12 = AkkuChemie.v12Standard(k.akkuChemie);
+        l.add(camping(nullAus(zahlOhneStopp("camping.v12Warnung", Feld.Typ.ZAHL, v12[0], 0.0, 13.5, 0.1, "V")), r += 10));
+        l.add(camping(zahlOhneStopp("camping.hoechstdauerStunden", Feld.Typ.INT, 12, 1.0, 24.0, 1.0, "h"), r += 10));
+        l.add(camping(zahlOhneStopp("camping.waechterBewohnt", Feld.Typ.BOOL, true, null, null, null, null), r += 10));
+        Feld aussen = new Feld("camping.aussenBewegung", Feld.Typ.AUSWAHL);
+        aussen.standard = "nichts";
+        aussen.optionen.add(new Feld.Option("nichts", "settings.camping.aussenBewegung.nichts"));
+        aussen.optionen.add(new Feld.Option("notiz", "settings.camping.aussenBewegung.notiz"));
+        l.add(camping(aussen, r += 10));
+        l.add(camping(zahlOhneStopp("camping.nachtNachSekunden", Feld.Typ.INT, 30, 10.0, 600.0, 10.0, "s"), r += 10));
+    }
+
+    private static Feld camping(Feld f, int reihenfolge) {
+        f.gruppe = "camping";
+        f.abschnitt = null;
+        f.reihenfolge = reihenfolge;
+        return f;
+    }
+
+    private static Feld zahlOhneStopp(String key, Feld.Typ typ, Object std, Double min, Double max,
+                                      Double schritt, String einheit) {
+        Feld f = new Feld(key, typ);
+        f.standard = std; f.min = min; f.max = max; f.schritt = schritt; f.einheit = einheit;
+        return f;
     }
 
     private static Feld zahl(String key, Feld.Typ typ, Object std, Double min, Double max,

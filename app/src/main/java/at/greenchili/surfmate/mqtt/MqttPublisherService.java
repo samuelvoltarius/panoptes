@@ -874,6 +874,8 @@ public class MqttPublisherService implements MqttCallback {
             String bundle = HomeAssistantDiscovery.buildBundle(deviceId, haVin, haModel, haSwVersion,
                     config.topic, snapshot, announcedKeys, config.isControlEnabled());
             if (publishString(topic, bundle, true, 1)) {
+                // 0.1.16: ausgemusterte Innentemperatur-Entitäten dauerhaft "nicht verfügbar"
+                publishString(TelemetryFieldCatalog.ausgemustertTopic(config.topic), "offline", true, 1);
                 discoveryAnnounced = true;
                 chargeCapControlsAnnounced = config.isControlEnabled()
                         && hasVerifiedChargeCapState(snapshot);

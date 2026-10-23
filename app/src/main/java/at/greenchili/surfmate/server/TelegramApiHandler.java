@@ -161,6 +161,7 @@ public class TelegramApiHandler {
         response.put("guardStopAlerts",     UnifiedTelegramConfig.isGuardStopAlerts());
         response.put("healthAlerts",        UnifiedTelegramConfig.isHealthAlerts());
         response.put("updateAlerts",        UnifiedTelegramConfig.isUpdateAlerts());
+        response.put("campingAlerts",       UnifiedTelegramConfig.isCampingAlerts());
         response.put("quietHours",          UnifiedTelegramConfig.getQuietHours());
         response.put("remote",              UnifiedTelegramConfig.getRemote());
         response.put("mediaNoticeAckAt",    UnifiedTelegramConfig.getMediaNoticeAckAt());
@@ -344,6 +345,7 @@ public class TelegramApiHandler {
                 { "guardStopAlerts",     UnifiedTelegramConfig.K_GUARD_STOP_ALERTS },
                 { "healthAlerts",        UnifiedTelegramConfig.K_HEALTH_ALERTS },
                 { "updateAlerts",        UnifiedTelegramConfig.K_UPDATE_ALERTS },
+                { "campingAlerts",       UnifiedTelegramConfig.K_CAMPING_ALERTS },
                 // 0.1.11: die drei Wächter-Kategorien (früher „Stufen“)
                 { "tierNotices",         UnifiedTelegramConfig.K_TIER_NOTICES },
                 { "tierAlerts",          UnifiedTelegramConfig.K_TIER_ALERTS },

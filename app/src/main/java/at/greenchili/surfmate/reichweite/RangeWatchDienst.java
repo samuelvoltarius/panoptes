@@ -50,6 +50,9 @@ public final class RangeWatchDienst {
     /** Plan-Rohdaten für die Neuplanung (Ziel, Fahrzeugprofil). */
     private JSONObject planRoh;
     private final Neuplanung neuplanung = new Neuplanung();
+    // 0.1.16 Planer §17 (Neuplanung unterwegs, nur mit Einwilligung planner.abweichung)
+    private final PlanAbweichung abweichung = new PlanAbweichung();
+    private volatile PlanAbweichung.Befund letzterBefund;
     private final BandRegel band;
     private ScheduledExecutorService exec;
 
@@ -242,7 +245,14 @@ public final class RangeWatchDienst {
             }
         }
         if (l.aktiv) {
+            abweichungPruefen(now, token, planner, l, g.getLatitude(), g.getLongitude(), soc);
             Neuplanung.Vorschlag vs = vorschlag(now, token, planner, l, g.getLatitude(), g.getLongitude(), soc);
+            if (letzterBefund != null) {
+                try {
+                    a.put("abweichung", letzterBefund.alsJson());
+                } catch (Exception ignored) {
+                }
+            }
             if (vs != null) {
                 try {
                     a.put("vorschlag", vs.alsJson());
@@ -258,7 +268,42 @@ public final class RangeWatchDienst {
         }
     }
 
-    /** Neuplanung bei „Reicht nicht“ (≤ 1× je 5 min); einzige Stelle mit Position zum Planer. */
+    /**
+     * 0.1.16, Planer §17: nur mit Einwilligung {@code planner.abweichung}. Höchstens alle 10 min bzw. je 5 pp Akku
+     * Route + gerundete Position + Akku an {@code plan-abweichung} (öffentlich, zustandslos, ohne Schlüssel). Sagt der
+     * Planer {@code neu_planen}, wird mit seiner {@code neu_plan_anfrage} neu geplant und der Vorschlag wie die lokale
+     * Neuplanung angezeigt (nichts automatisch ins Navi; Ablehnen sperrt auch diesen Weg 30 min).
+     */
+    private void abweichungPruefen(long now, String[] token, JSONObject planner, RangeWatch.Lage l,
+                                   double lat, double lon, double soc) {
+        if (!planner.optBoolean("abweichung", false) || planRoh == null) return;
+        if (!abweichung.faellig(now, soc)) return;
+        abweichung.gefragt(now, soc);
+        JSONObject body = PlanAbweichung.anfrage(planRoh, lat, lon, soc, l.reserveWirksam);
+        if (body == null) return;
+        PlanAbweichung.Befund b = PlanAbweichung.auswerten(http("POST", "plan-abweichung", null, body.toString()));
+        letzterBefund = b;
+        if (!b.ok) return;
+        logger.info("Plan-Abweichung: neu_planen=" + b.neuPlanen + " " + b.gruende);
+        if (!b.neuPlanen) {
+            neuplanung.abweichungEntwarnt();
+            return;
+        }
+        if (b.neuPlanAnfrage == null || !neuplanung.abweichungErlaubt(now)) return;
+        JSONObject planBody = PlanAbweichung.planAnfrage(b.neuPlanAnfrage, planRoh.optString("fahrzeug", ""),
+                planner.optString("autoId", ""));
+        // plan ist öffentlich; ein Geräte-Schlüssel (Bereich „auto“) darf plan nicht – dann ohne.
+        String[] k = at.greenchili.surfmate.planer.PlanerSchluessel.KOPF_MITGLIED.equals(token[0]) ? token : null;
+        JSONObject res = http("POST", "plan", k, at.greenchili.surfmate.planer.FahrzeugWahl.einsetzen(
+                at.greenchili.surfmate.laden.LadenVorlieben.inPlanAnfrage(planBody.toString())));
+        if (res == null) return;
+        Neuplanung.Vorschlag v = Neuplanung.auswerten(res, now);
+        v.quelle = Neuplanung.QUELLE_ABWEICHUNG;
+        if (!"keiner".equals(v.art)) neuplanung.ergebnis(v);
+        logger.info("Neuplanung (Abweichung): " + v.art);
+    }
+
+    /** Neuplanung bei „Reicht nicht“ (≤ 1× je 5 min); Position zum Planer nur hier und in abweichungPruefen. */
     private Neuplanung.Vorschlag vorschlag(long now, String[] token, JSONObject planner, RangeWatch.Lage l,
                                            double lat, double lon, double soc) {
         if (neuplanung.faellig(now, l.stufe) && planRoh != null) {
@@ -307,6 +352,8 @@ public final class RangeWatchDienst {
             planKennung = null;
             planRoh = null;
             neuplanung.zuruecksetzen();
+            abweichung.zuruecksetzen();
+            letzterBefund = null;
             return;
         }
         if (k.equals(planKennung) && watch != null) return;
@@ -315,6 +362,8 @@ public final class RangeWatchDienst {
         planKennung = k;
         planRoh = plan;
         neuplanung.zuruecksetzen();
+        abweichung.zuruecksetzen();
+        letzterBefund = null;
         band.zuruecksetzen();
         gemeldeterStopp = -1;
         belegung = null;

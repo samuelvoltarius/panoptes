@@ -345,6 +345,13 @@ public class BydVehicleData {
      * value. Consumers that must not act on stale cabin data compare against this.
      */
     public final long insideTempReadAt;
+    /**
+     * Klima-Sollwert aus {@code Ac.AC_TEMP_INSIDE} (°C) bei Modellen, wo der Wert dem Drehregler folgt statt der
+     * Luft (alle, bis {@link KabinenTemperatur} anderes belegt), sonst NaN. Nie als Innentemperatur verwenden.
+     */
+    public final double klimaSollwertC;
+    /** Beobachtungszeit von {@link #klimaSollwertC} (epoch ms), 0 = nie. */
+    public final long klimaSollwertReadAt;
     public final long timestamp;
     public final String[] availableDevices;
     public final String[] unavailableDevices;
@@ -501,6 +508,8 @@ public class BydVehicleData {
         this.pm25Inside = b.pm25Inside;
         this.pm25Outside = b.pm25Outside;
         this.insideTempReadAt = b.insideTempReadAt;
+        this.klimaSollwertC = b.klimaSollwertC;
+        this.klimaSollwertReadAt = b.klimaSollwertReadAt;
         this.timestamp = b.timestamp;
         this.availableDevices = b.availableDevices;
         this.unavailableDevices = b.unavailableDevices;
@@ -510,6 +519,12 @@ public class BydVehicleData {
     public boolean hasFreshCabinTemperature() {
         if (Double.isNaN(insideTempC) || insideTempReadAt <= 0L) return false;
         return System.currentTimeMillis() - insideTempReadAt <= CABIN_TEMP_MAX_AGE_MS;
+    }
+
+    /** Ob der Klima-Sollwert aus AC_TEMP_INSIDE frisch gelesen ist (gleiches Alter wie früher die Kabinenwerte). */
+    public boolean hasFreshKlimaSollwert() {
+        if (Double.isNaN(klimaSollwertC) || klimaSollwertReadAt <= 0L) return false;
+        return System.currentTimeMillis() - klimaSollwertReadAt <= CABIN_TEMP_MAX_AGE_MS;
     }
 
     /** Cell voltage delta (imbalance indicator) */
@@ -982,6 +997,8 @@ public class BydVehicleData {
                         clusterChargePowerLastObservedKw);
             }
             meta.put("insideTempReadAt", insideTempReadAt);
+            if (!Double.isNaN(klimaSollwertC)) meta.put("klimaSollwertC", klimaSollwertC);
+            meta.put("klimaSollwertReadAt", klimaSollwertReadAt);
             meta.put("enginePowerAtMs", enginePowerAtMs);
             meta.put("clusterChargePowerAtMs", clusterChargePowerAtMs);
             meta.put("chargingStateAtMs", chargingStateAtMs);
@@ -1311,6 +1328,8 @@ public class BydVehicleData {
                         meta.optDouble("insideTempCelsius", b.insideTempCelsius);
                 b.insideTempReadAt =
                         meta.optLong("insideTempReadAt", b.insideTempReadAt);
+                b.klimaSollwertC = meta.optDouble("klimaSollwertC", b.klimaSollwertC);
+                b.klimaSollwertReadAt = meta.optLong("klimaSollwertReadAt", b.klimaSollwertReadAt);
                 b.enginePowerAtMs =
                         meta.optLong("enginePowerAtMs", b.enginePowerAtMs);
                 b.clusterChargePowerAtMs =
@@ -1404,6 +1423,7 @@ public class BydVehicleData {
         // carry-forward look brand new, defeating the whole point of the stamp).
         b.waterTempC = waterTempC; b.outsideTempC = outsideTempC; b.insideTempC = insideTempC;
         b.insideTempReadAt = insideTempReadAt;
+        b.klimaSollwertC = klimaSollwertC; b.klimaSollwertReadAt = klimaSollwertReadAt;
         b.bodyworkBattTempC = bodyworkBattTempC; b.highCellVoltage = highCellVoltage;
         b.lowCellVoltage = lowCellVoltage; b.speedKmh = speedKmh; b.accelPercent = accelPercent;
         b.brakePercent = brakePercent; b.frontMotorSpeed = frontMotorSpeed;
@@ -1556,6 +1576,8 @@ public class BydVehicleData {
         long powerLevelAtMs = 0L;
         long timestamp = System.currentTimeMillis();
         long insideTempReadAt = 0L;
+        double klimaSollwertC = NaN;
+        long klimaSollwertReadAt = 0L;
         String[] availableDevices, unavailableDevices;
 
         // Extended fields
@@ -1636,6 +1658,12 @@ public class BydVehicleData {
             insideTempC = v;
             insideTempCelsius = v;
             insideTempReadAt = observedAtMs;
+            return this;
+        }
+        /** Klima-Sollwert aus AC_TEMP_INSIDE (kein Messwert, siehe {@link KabinenTemperatur}). */
+        public Builder klimaSollwertC(double v, long observedAtMs) {
+            klimaSollwertC = v;
+            klimaSollwertReadAt = observedAtMs;
             return this;
         }
         public Builder bodyworkBattTempC(double v) { bodyworkBattTempC = v; return this; }

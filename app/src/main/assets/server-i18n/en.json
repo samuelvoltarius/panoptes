@@ -150,6 +150,23 @@
     "ai_off_body": "AI detection is not running right now. So nothing is missed, the Guardian records on motion. Panoptes is trying to reload the AI.",
     "guard_stop_title": "Guardian stopped: {0}",
     "guard_stop_resumed": "Guardian is running again",
+    "camping_an": "Camping on",
+    "camping_aus_tipp": "Camping off",
+    "camping_aus_ha": "Camping off (Home Assistant)",
+    "camping_aus_telegram": "Camping off (Telegram)",
+    "camping_aus_losgefahren": "Camping off: driving away",
+    "camping_akku_bald_grenze": "Camping: battery close to the lower limit",
+    "camping_akku_grenze_heizen_aus": "Camping: battery at the lower limit – Panoptes stops heating",
+    "camping_v12_niedrig_heizen_aus": "Camping: 12 V battery weak – Panoptes stops heating",
+    "camping_hoechstdauer_heizen_aus": "Camping: maximum time reached – Panoptes stops heating",
+    "camping_budget_gestreckt": "Camping: battery will not quite last until wake-up – longer pauses",
+    "camping_auto_hat_abgeschaltet": "Camping: the car switched the climate off itself – Panoptes waits for you",
+    "camping_fenster_offen": "Camping: a window was opened",
+    "camping_heizen_fehlgeschlagen": "Camping: heating could not be switched on – Panoptes waits for you",
+    "camping_heizen_aus_fehlgeschlagen": "Camping: heating could not be switched off – please check the car",
+    "camping_cloud_gesperrt_weg2": "Camping: remote access 2 is gone after a cloud session – cloud heating blocked",
+    "camping_weck_grenze": "Camping: maximum number of cloud sessions reached – no more tonight",
+    "camping_tuer_offen": "Camping: {0} opened",
     "guard_stop_reason_soc": "traction battery low",
     "guard_stop_reason_v12": "12 V battery weak",
     "guard_stop_reason_park": "parked for a long time",
@@ -251,6 +268,14 @@
         "label": "AI detection off",
         "note": "The AI model is not running; until it is back, the Guardian records on any motion."
       },
+      "camping_hinweis": {
+        "label": "Camping: notices",
+        "note": "Camping on/off, a door or window opened while camping (guardian occupied, no alarm)."
+      },
+      "camping_warnung": {
+        "label": "Camping: warnings",
+        "note": "Camping: battery close to or at the lower limit, weak 12 V battery, maximum time reached."
+      },
       "surveillance_guard_stop": {
         "label": "Guardian paused / back on",
         "note": "The Guardian pauses to save the battery (low charge, weak 12 V battery, parked too long, quiet times or quiet zones)."
@@ -343,6 +368,24 @@
     }
   },
   "telegram": {
+    "camping": {
+      "status_on": "⛺ *Camping is on*",
+      "status_off": "⛺ *Camping is off.* Can only be switched on when parked (gear P).",
+      "battery": "Battery {0} % · limit {1} %",
+      "interval": "Heating: every {0} min for {1} min · level {2}",
+      "lasts": "Heating lasts until {0}",
+      "trial": "_Trial run: Panoptes does not heat yet in this version._",
+      "not_parked": "Camping only works when parked (gear P).",
+      "state_unknown": "Driving state unknown right now – please try again shortly.",
+      "failed": "Camping cannot be reached right now.",
+      "feedback_ok": "Thanks – applies from the next cycle.",
+      "feedback_wait": "Already adjusted – next change in 30 minutes.",
+      "btn_on": "⛺ Camping on",
+      "btn_off": "Camping off",
+      "btn_cold": "❄ too cold",
+      "btn_fine": "✓ fine",
+      "btn_warm": "☀ too warm"
+    },
     "greeting": {
       "online": "👋 *Panoptes is here.*\nYour car is listening again. Tap /help for all commands."
     },
@@ -372,6 +415,8 @@
       "status": "/status – How your car is doing",
       "guard": "/guardian on · /guardian off – Wake the Guardian or let it sleep",
       "guard_view": "/guardian – Is the Guardian awake?",
+      "camping": "/camping on · /camping off – camping (guardian occupied, battery watched)",
+      "camping_view": "/camping – Is camping on?",
       "camera": "/camera – A picture from every camera, right now",
       "clips": "/clips – Latest clips (e.g. `/clips 12`)",
       "where": "/where – Where the car is parked",
@@ -707,6 +752,10 @@
       "hilfe": "🆘 *Guardian needs help.* Not armed for {0} min, self-repair was not enough. Panoptes is requesting an app restart."
     },
     "kategorie": {
+      "camping": {
+        "label": "Camping",
+        "note": "Camping notices (quiet hours apply) and battery warnings (also during quiet hours)."
+      },
       "waechter_kritisch": {
         "label": "Guard: critical",
         "note": "Someone very close to the car or lingering at it. On by default."
@@ -983,7 +1032,7 @@
     "ac": "Climate control",
     "ac_description": "Whether the climate control is on or off. The car has to be switched on for it to run.",
     "temperature": "Inside temperature",
-    "temperature_description": "The temperature inside the car in °C, whether parked or driving. Not available if the car has no inside sensor. Outside temperature and the dial setting are separate values.",
+    "temperature_description": "The measured temperature inside the car in °C – only with a real cabin sensor. Many BYD have none (e.g. Dolphin Surf: the climate module's value is the dial setpoint). Then the condition is never met. Outside temperature and the climate setpoint are separate values.",
     "outside_temperature": "Outdoor temperature",
     "outside_temperature_description": "The temperature outside in °C. It comes from the outside sensor, or from local weather if there is none. It never uses the inside sensor.",
     "celsius": "Celsius",
@@ -1610,6 +1659,7 @@
       "auto": "Car",
       "system": "System",
       "update": "App updates",
+      "camping": "Camping",
       "energie": "Energy",
       "datenschutz": "Privacy",
       "laden": "Charging"
@@ -1741,6 +1791,10 @@
         "title": "On-the-road help",
         "help": "While you drive, Panoptes fetches your planned route from the route planner every minute and shows whether the battery reaches the next stop. This sends the device key to byd.serveone.at; your position only if it gets tight and a new charging stop is searched. Needs the route planner connection. Off by default."
       },
+      "abweichung": {
+        "title": "Re-plan on the road",
+        "help": "While driving a route you accepted, checks whether you are still on plan: every 10 minutes (or every 5 % battery) the route, your position (rounded to about 100 m) and the battery level go to the route planner at byd.serveone.at, which stores none of it. If you are clearly off plan, Panoptes suggests a new charging stop – never automatically into the navigation. Needs the on-the-road help. Off by default."
+      },
       "vorliebenSenden": {
         "title": "Send charging preferences to the route planner",
         "help": "So /ev/ in the browser knows your charging cards and networks from the car – only together with “Send status”."
@@ -1819,6 +1873,62 @@
       "planer": {
         "title": "View logbook in the route planner",
         "help": "Lets you view your logbook on byd.serveone.at/ev/. It stays in the car: Panoptes sends each page encrypted only, the server can't read it and stores nothing. For this Panoptes checks with the route planner once a minute (a few KB). Needs the route planner connection. Off by default."
+      }
+    },
+    "camping": {
+      "waerme": {
+        "title": "Warmth",
+        "help": "How warm it should get at night. Without a cabin sensor Panoptes heats in intervals based on the outside temperature (every x minutes for y minutes). \"Save\" uses only the seat heating. \"Heating method\" sets how it heats.",
+        "aus": "Off",
+        "sparen": "Save (seat heating only)",
+        "mild": "Mild",
+        "warm": "Warm",
+        "sehr_warm": "Very warm"
+      },
+      "heizweg": {
+        "title": "Heating method",
+        "help": "How Panoptes heats. \"Only when the car is on\" switches the climate locally while the car is on in P. \"Also via the BYD cloud\" starts remote climate sessions when the car is off (10–30 min, at most 12 per night, at least 45 min apart); this wakes the car each time. \"Trial run\" switches nothing and only shows what would happen.",
+        "probelauf": "Trial run (switches nothing)",
+        "auto_an": "Only when the car is on (local)",
+        "auto_an_und_cloud": "Also via the BYD cloud when the car is off"
+      },
+      "vorheizenMinuten": {
+        "title": "Preheat before sleeping",
+        "help": "Heat strongly once when camping starts, for this many minutes. 0 = off."
+      },
+      "morgensHeizen": {
+        "title": "Heat in the morning",
+        "help": "Heat before the wake-up time. The energy for it is set aside in the budget first."
+      },
+      "weckzeit": {
+        "title": "Wake-up time",
+        "help": "The heating should last until then. If the battery is not enough, Panoptes lengthens the pauses automatically."
+      },
+      "socGrenze": {
+        "title": "Battery lower limit",
+        "help": "Heating stops here; a warning comes first. Panoptes never switches the car off."
+      },
+      "v12Warnung": {
+        "title": "12 V warning",
+        "help": "If the starter battery drops below this, heating stops and you get a message. Empty = off."
+      },
+      "hoechstdauerStunden": {
+        "title": "Maximum heating time",
+        "help": "Heating stops after this many hours, with a message."
+      },
+      "waechterBewohnt": {
+        "title": "Guardian \"occupied\"",
+        "help": "While camping: no deterrent (screen, lights, horn) and no shock alarm. Doors and windows are reported quietly."
+      },
+      "aussenBewegung": {
+        "title": "Movement outside",
+        "help": "What the guardian does about movement around the car while camping.",
+        "nichts": "Nothing – guardian rests (saves power)",
+        "notiz": "Guardian runs, but without deterrent"
+      },
+      "nachtNachSekunden": {
+        "title": "Night screen after",
+        "help": "Without a touch the screen turns into the dark night screen after this many seconds."
       }
     },
     "energie": {

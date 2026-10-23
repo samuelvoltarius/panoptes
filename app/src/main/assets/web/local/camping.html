@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Camping – Panoptes</title>
+    <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0A2238">
+    <script src="../shared/theme.js?v=13"></script>
+    <script src="../shared/app-shell.js?v=pn24"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn10">
+    <style>
+        /* Camping (0.1.16, CAMPING_PLAN.md). Chromium 74: kein flex-gap, kein Optional-Chaining, kein Nullish-Operator */
+        .cp-kopf { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+        .cp-kopf > * { margin: 4px 6px; }
+        .cp-kopf h2 { font: 700 22px var(--family-display, sans-serif); margin: 0; color: var(--text-primary); }
+        .cp-sub { font-size: 14px; color: var(--text-muted); margin-top: 2px; }
+        .cp-schalter { min-width: 120px; min-height: 52px; font-size: 17px; font-weight: 700; border-radius: 26px; }
+        .cp-probe { display: inline-block; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px;
+            background: rgba(255,194,102,.16); color: var(--status-warning, #FFC266); margin-top: 8px; }
+        .cp-grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-gap: 12px; margin-top: 14px; }
+        @media (max-width: 860px) { .cp-grid { grid-template-columns: repeat(2, 1fr); } }
+        .cp-tile { background: var(--bg-elevated); border-radius: 12px; padding: 12px 14px; min-width: 0; }
+        .cp-tile h3 { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin: 0 0 4px; }
+        .cp-big { font: 700 24px/1.2 var(--family-mono, monospace); color: var(--text-primary); overflow-wrap: anywhere; }
+        .cp-big small { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-left: 4px; }
+        .cp-klein { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+        .cp-na { color: var(--text-muted); font-style: italic; font-size: 15px; font-weight: 600; font-family: inherit; }
+        .cp-tipps { display: flex; flex-wrap: wrap; margin: 12px -5px 0; }
+        .cp-tipps .btn { flex: 1; min-height: 48px; margin: 5px; font-size: 15px; }
+        .cp-hinweis { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-top: 12px; }
+        .cp-proto { font: 13px var(--family-mono, monospace); color: var(--text-muted); margin-top: 8px; }
+        .cp-proto div { padding: 3px 0; border-top: 1px solid var(--border-subtle); }
+        /* Nachtbildschirm: fast schwarz, große Uhr, keine Töne */
+        #cpNacht { display: none; position: fixed; left: 0; top: 0; right: 0; bottom: 0; z-index: 9999; background: #000; color: #8fa3ab; }
+        #cpNacht.an { display: block; }
+        #cpNacht .n-kopf { position: absolute; top: 3vh; left: 3vw; right: 3vw; display: flex; justify-content: space-between; font-size: 2.4vh; color: #4f6268; }
+        #cpNacht .n-uhr { position: absolute; left: 0; right: 0; top: 18vh; text-align: center; font-size: 26vh; font-weight: 300; line-height: 1; color: #9fb4bb; letter-spacing: -.5vh; }
+        #cpNacht .n-datum { position: absolute; left: 0; right: 0; top: 47vh; text-align: center; font-size: 3.2vh; color: #5f737a; }
+        #cpNacht .n-heiz { position: absolute; left: 0; right: 0; top: 54vh; text-align: center; font-size: 3vh; color: #b98a3c; }
+        #cpNacht .n-leiste { position: absolute; left: 7vw; right: 7vw; bottom: 14vh; display: flex; justify-content: space-between; }
+        #cpNacht .n-w b { display: block; font-size: 5.6vh; font-weight: 400; color: #9fb4bb; }
+        #cpNacht .n-w span { font-size: 2vh; color: #4f6268; text-transform: uppercase; letter-spacing: .1vh; }
+        #cpNacht .n-tipps { position: absolute; bottom: 3vh; left: 0; right: 0; text-align: center; }
+        #cpNacht .n-tipps button { background: none; border: 1px solid #1d2a30; color: #5f737a; border-radius: 999px;
+            font-size: 2.2vh; padding: 1vh 3vw; margin: 0 1vw; }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <div id="app-shell-mount"></div>
+        <main class="main-content">
+            <div class="mobile-header">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+                    </svg>
+                </button>
+                <span style="font-weight:600;" data-i18n="camping.title">Camping</span>
+                <div style="width:40px;"></div>
+            </div>
+            <div class="page-body">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="cp-kopf">
+                            <div style="flex:1;min-width:0;">
+                                <h2 id="cpTitel" data-i18n="camping.off">Camping ist aus</h2>
+                                <div class="cp-sub" id="cpSub"></div>
+                                <div class="cp-probe" id="cpProbe" data-i18n="camping.trial">Probelauf: Panoptes heizt in dieser Version noch nicht – es zeigt nur, was es tun würde.</div>
+                            </div>
+                            <button class="btn btn-primary cp-schalter" id="cpSchalter" type="button" data-i18n="camping.switch_on">Einschalten</button>
+                        </div>
+                        <div id="cpKacheln" class="cp-grid"></div>
+                        <div class="cp-tipps" id="cpTipps" style="display:none;">
+                            <button class="btn" type="button" data-art="zu_kalt" data-i18n="camping.too_cold">Zu kalt</button>
+                            <button class="btn" type="button" data-art="passt" data-i18n="camping.fine">Passt</button>
+                            <button class="btn" type="button" data-art="zu_warm" data-i18n="camping.too_warm">Zu warm</button>
+                            <button class="btn" type="button" id="cpNachtKnopf" data-i18n="camping.night">Nachtbildschirm</button>
+                        </div>
+                        <div class="cp-hinweis" data-i18n="camping.note">Ohne Innenraumfühler zeigt Panoptes keine Innentemperatur. Geheizt wird in Intervallen nach der Außentemperatur. An der Akku-Untergrenze hört das Heizen auf; das Auto schaltet Panoptes nie ab. Beim Losfahren endet Camping. Ersetzt keine Aufsicht – nie Kinder oder Tiere allein im Auto lassen.</div>
+                    </div>
+                </div>
+                <div class="card" style="margin-top:14px;">
+                    <div class="card-body">
+                        <h3 style="margin:0 0 6px;" data-i18n="camping.settings">Einstellungen</h3>
+                        <div id="cpFelder"></div>
+                    </div>
+                </div>
+                <div class="card" style="margin-top:14px;" id="cpProtoKarte">
+                    <div class="card-body">
+                        <h3 style="margin:0;" id="cpProtoTitel" data-i18n="camping.protocol">Probelauf: was Panoptes geschaltet hätte</h3>
+                        <div class="cp-proto" id="cpProto"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <div id="cpNacht" role="dialog" aria-modal="true">
+        <div class="n-kopf"><div id="nKopfL">⛺ Camping</div><div id="nKopfR"></div></div>
+        <div class="n-uhr" id="nUhr">--:--</div>
+        <div class="n-datum" id="nDatum"></div>
+        <div class="n-heiz" id="nHeiz"></div>
+        <div class="n-leiste" id="nLeiste"></div>
+        <div class="n-tipps">
+            <button type="button" data-art="zu_kalt" data-i18n="camping.too_cold">Zu kalt</button>
+            <button type="button" data-art="passt" data-i18n="camping.fine">Passt</button>
+            <button type="button" data-art="zu_warm" data-i18n="camping.too_warm">Zu warm</button>
+        </div>
+    </div>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+    <div id="toastContainer" class="toast-container"></div>
+    <script src="../shared/auth.js"></script>
+    <script src="../shared/core.js?v=pn5"></script>
+    <script src="../shared/einstellungen.js?v=pn8"></script>
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+        // Camping (0.1.16 Stufe 2a). Wahrheitsregel: null = „nicht verfügbar“, nie eine Innentemperatur ohne Fühler.
+        var Camping = {
+            s: null,
+            nachtNach: 30,
+            letzteBeruehrung: Date.now(),
+            imAuto: /PanoptesDisplay/.test(navigator.userAgent || '') || document.documentElement.hasAttribute('data-android-app'),
+            t: function (k, f, v) { return window.PanoptesShell ? PanoptesShell.tr(k, f, v) : f; },
+            lang: function () { try { return BYD.i18n.getLang(); } catch (e) { return 'de'; } },
+            toast: function (m, ok) { if (window.BYD && BYD.utils && BYD.utils.toast) BYD.utils.toast(m, ok ? 'success' : 'error'); },
+            esc: function (x) { var d = document.createElement('div'); d.textContent = x == null ? '' : String(x); return d.innerHTML; },
+            da: function (x) { return x !== null && x !== undefined && !(typeof x === 'number' && isNaN(x)); },
+            zahl: function (x, n) {
+                if (!this.da(x)) return null;
+                try { return Number(x).toLocaleString(this.lang(), { minimumFractionDigits: n || 0, maximumFractionDigits: n || 0 }); }
+                catch (e) { return Number(x).toFixed(n || 0); }
+            },
+            uhr: function (ms) {
+                if (!this.da(ms) || !ms) return null;
+                var d = new Date(ms);
+                return (d.getHours() < 10 ? '0' : '') + d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes();
+            },
+            kachel: function (titel, wert, einheit, klein) {
+                var w = wert === null ? '<span class="cp-na">' + this.esc(this.t('camping.na', 'nicht verfügbar')) + '</span>'
+                    : this.esc(wert) + (einheit ? '<small>' + this.esc(einheit) + '</small>' : '');
+                return '<div class="cp-tile"><h3>' + this.esc(titel) + '</h3><div class="cp-big">' + w + '</div>'
+                    + (klein ? '<div class="cp-klein">' + this.esc(klein) + '</div>' : '') + '</div>';
+            },
+            heizText: function (s) {
+                var z = s.tabelle, b = s.budget;
+                if (!z) return null;
+                var iv = b ? b.intervallMin : z.intervallMin, du = b ? b.dauerMin : z.dauerMin;
+                return this.t('camping.interval', 'alle {i} min für {d} min · Stufe {s}', { i: iv, d: du, s: z.stufe });
+            },
+            zeichne: function (s) {
+                this.s = s;
+                var an = !!s.aktiv;
+                document.getElementById('cpTitel').textContent = an ? this.t('camping.on', 'Camping ist an') : this.t('camping.off', 'Camping ist aus');
+                var sub = '';
+                if (an && s.seit) sub = this.t('camping.since', 'seit {u} · endet beim Losfahren', { u: this.uhr(s.seit) });
+                else if (s.fahrt && s.fahrt !== 'steht') sub = this.t('camping.only_parked', 'Einschalten nur im Stand (Gang P).');
+                document.getElementById('cpSub').textContent = sub;
+                var k = document.getElementById('cpSchalter');
+                k.textContent = an ? this.t('camping.switch_off', 'Ausschalten') : this.t('camping.switch_on', 'Einschalten');
+                document.getElementById('cpTipps').style.display = an ? '' : 'none';
+                var h = '';
+                h += this.kachel(this.t('camping.battery', 'Akku'), this.zahl(s.soc, 0), '%',
+                    this.t('camping.limit', 'Grenze {n} %', { n: s.socGrenze }));
+                var b = s.budget;
+                var reicht = b && b.reichtBisMs ? this.uhr(b.reichtBisMs) : null;
+                var weck = b && b.reichtBisWeck === true ? this.t('camping.wake_ok', 'Weckzeit ✓')
+                    : (b && b.reichtBisWeck === false ? this.t('camping.wake_short', 'reicht nicht bis zur Weckzeit') : '');
+                if (b && b.gestreckt) weck = (weck ? weck + ' · ' : '') + this.t('camping.stretched', 'Pausen verlängert');
+                h += this.kachel(this.t('camping.lasts', 'Heizung reicht bis'), an ? reicht : null, '', an && !b ? this.t('camping.measuring', 'wird gemessen') : weck);
+                var v = s.verbrauch || {};
+                h += this.kachel(this.t('camping.consumption', 'Verbrauch'), v.gemessen ? '−' + this.zahl(v.prozentProStunde, 1) : null, '%/h',
+                    v.gemessen ? this.t('camping.measured', 'gemessen') : this.t('camping.measuring', 'wird gemessen'));
+                var heiz = an ? this.heizText(s) : null;
+                var naechst = an && s.naechsterZyklusMs ? this.t('camping.next', 'nächster Zyklus {u}', { u: this.uhr(s.naechsterZyklusMs) }) : '';
+                if (an && s.sperrGrund) naechst = this.t('camping.blocked_' + s.sperrGrund, this.t('camping.blocked', 'Heizen pausiert'));
+                if (an && s.sitzheizung) heiz = this.t('camping.seat_only', 'nur Sitzheizung');
+                h += this.kachel(this.t('camping.heating', 'Heizen'), heiz, '', naechst);
+                h += this.kachel(this.t('camping.outside', 'Außen'), this.zahl(s.aussenC, 0), '°C', '');
+                h += this.kachel(this.t('camping.v12', 'Bordnetz'), this.zahl(s.v12, 1), 'V', '');
+                document.getElementById('cpKacheln').innerHTML = h;
+                var probe = s.trockenlauf !== false;
+                document.getElementById('cpProbe').style.display = probe ? '' : 'none';
+                document.getElementById('cpProtoTitel').textContent = probe
+                    ? this.t('camping.protocol', 'Probelauf: was Panoptes geschaltet hätte')
+                    : this.t('camping.protocol_real', 'Was Panoptes geschaltet hat');
+                var p = (s.protokoll || []).slice(-10).reverse(), ph = '';
+                for (var i = 0; i < p.length; i++) {
+                    var e = p[i], txt;
+                    if (e.trockenlauf !== false) {
+                        txt = e.aktion === 'ein'
+                            ? this.t('camping.would_on', 'würde einschalten: Stufe {s}, Gebläse {g}', { s: e.stufe, g: e.geblaese })
+                            : this.t('camping.would_off', 'würde ausschalten');
+                    } else {
+                        txt = e.aktion === 'ein'
+                            ? this.t('camping.did_on', 'eingeschaltet: Stufe {s}, Gebläse {g} – {r}', { s: e.stufe, g: e.geblaese, r: e.ergebnis || '' })
+                            : this.t('camping.did_off', 'ausgeschaltet – {r}', { r: e.ergebnis || '' });
+                    }
+                    ph += '<div>' + this.esc(this.uhr(e.zeit)) + ' · ' + this.esc(txt) + '</div>';
+                }
+                document.getElementById('cpProto').innerHTML = ph || '<div>' + this.esc(this.t('camping.protocol_empty', 'noch nichts')) + '</div>';
+                this.nachtZeichnen();
+            },
+            nachtZeichnen: function () {
+                var s = this.s || {}, d = new Date();
+                document.getElementById('nUhr').textContent = this.uhr(d.getTime());
+                try { document.getElementById('nDatum').textContent = d.toLocaleDateString(this.lang(), { weekday: 'long', day: 'numeric', month: 'long' }); } catch (e) {}
+                document.getElementById('nKopfR').textContent = this.da(s.aussenC) ? this.t('camping.outside', 'Außen') + ' ' + this.zahl(s.aussenC, 0) + ' °C' : '';
+                var heiz = this.heizText(s);
+                document.getElementById('nHeiz').textContent = s.aktiv && heiz ? heiz : '';
+                var b = s.budget, v = s.verbrauch || {};
+                var w = function (wert, label) { return '<div class="n-w"><b>' + Camping.esc(wert === null ? '–' : wert) + '</b><span>' + Camping.esc(label) + '</span></div>'; };
+                document.getElementById('nLeiste').innerHTML =
+                    w(this.da(s.soc) ? this.zahl(s.soc, 0) + ' %' : null, this.t('camping.limit', 'Grenze {n} %', { n: s.socGrenze }))
+                    + w(b && b.reichtBisMs ? this.uhr(b.reichtBisMs) : null, this.t('camping.lasts', 'Heizung reicht bis'))
+                    + w(v.gemessen ? '−' + this.zahl(v.prozentProStunde, 1) + ' %/h' : null, this.t('camping.consumption', 'Verbrauch'))
+                    + w(this.da(s.v12) ? this.zahl(s.v12, 1) + ' V' : null, this.t('camping.v12', 'Bordnetz'));
+            },
+            nacht: function (an) {
+                document.getElementById('cpNacht').className = an ? 'an' : '';
+                this.letzteBeruehrung = Date.now();
+                if (an) this.nachtZeichnen();
+            },
+            laden: function () {
+                var self = this;
+                return fetch('/api/camping', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; })
+                    .then(function (s) { if (s) self.zeichne(s); }, function () {});
+            },
+            senden: function (url, body) {
+                var self = this;
+                return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+                    .then(function (r) { return r.json().catch(function () { return {}; }); })
+                    .then(function (r) {
+                        if (r && r.ok === false) {
+                            var f = r.fehler || 'fehler';
+                            self.toast(self.t('camping.err_' + f, self.t('camping.err', 'Hat nicht geklappt')), false);
+                        }
+                        return self.laden().then(function () { return r; });
+                    });
+            },
+            init: function () {
+                var self = this;
+                document.getElementById('cpSchalter').onclick = function () {
+                    self.senden('/api/camping', { an: !(self.s && self.s.aktiv) });
+                };
+                var tipps = document.querySelectorAll('[data-art]');
+                for (var i = 0; i < tipps.length; i++) {
+                    tipps[i].onclick = function (ev) {
+                        ev.stopPropagation();
+                        self.senden('/api/camping/rueckmeldung', { art: this.getAttribute('data-art') }).then(function (r) {
+                            if (r && r.ok) {
+                                self.toast(r.uebernommen ? self.t('camping.feedback_ok', 'Danke – gilt ab dem nächsten Zyklus')
+                                    : self.t('camping.feedback_wait', 'Schon angepasst – nächste Änderung in 30 Minuten'), true);
+                            }
+                        });
+                    };
+                }
+                document.getElementById('cpNachtKnopf').onclick = function () { self.nacht(true); };
+                document.getElementById('cpNacht').onclick = function () { self.nacht(false); };
+                ['click', 'touchstart', 'keydown'].forEach(function (e) {
+                    document.addEventListener(e, function () { self.letzteBeruehrung = Date.now(); }, true);
+                });
+                if (window.PanoptesEinstellungen) PanoptesEinstellungen.laden().then(function (store) {
+                    store.zeichne(document.getElementById('cpFelder'), { gruppe: 'camping' });
+                    var nachtLesen = function () {
+                        try {
+                            var w = store.wert('camping.nachtNachSekunden');
+                            var x = w.wirksam !== undefined && w.wirksam !== null ? w.wirksam : w.wert;
+                            if (x) self.nachtNach = Number(x) || 30;
+                        } catch (e) {}
+                    };
+                    nachtLesen();
+                    store.beiAenderung(nachtLesen);
+                });
+                this.laden();
+                setInterval(function () { self.laden(); }, 30000);
+                setInterval(function () {
+                    if (document.getElementById('cpNacht').className === 'an') { self.nachtZeichnen(); return; }
+                    // Nachtbildschirm nur im Auto und nur bei laufendem Camping
+                    if (self.imAuto && self.s && self.s.aktiv && Date.now() - self.letzteBeruehrung > self.nachtNach * 1000) self.nacht(true);
+                }, 5000);
+                if (/[?&]nacht=1/.test(location.search)) this.nacht(true);
+            }
+        };
+        BYD.i18n.init().then(function () {
+            BYD.core.init();
+            Camping.init();
+        });
+    </script>
+</body>
+</html>

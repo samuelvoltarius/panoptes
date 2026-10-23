@@ -27,7 +27,7 @@ public class TelegramKategorienTest {
     @Test
     public void registryHatAlleTelegramSchalterGenauEinmal() throws Exception {
         List<TelegramKategorien.Kat> k = TelegramKategorien.aus(asset("notifications-categories.json"));
-        assertEquals(13, k.size());
+        assertEquals(14, k.size());   // 0.1.16: + Camping
         java.util.Set<String> keys = new java.util.HashSet<>();
         for (TelegramKategorien.Kat x : k) assertTrue("doppelter Schlüssel " + x.key, keys.add(x.key));
         for (String s : new String[] {UnifiedTelegramConfig.K_TIER_CRITICAL, UnifiedTelegramConfig.K_TIER_ALERTS,
@@ -36,7 +36,7 @@ public class TelegramKategorienTest {
                 UnifiedTelegramConfig.K_PARKING_MESSAGES, UnifiedTelegramConfig.K_CONNECTIVITY,
                 UnifiedTelegramConfig.K_CHARGING_ALERTS, UnifiedTelegramConfig.K_BATTERY_ALERTS,
                 UnifiedTelegramConfig.K_GUARD_STOP_ALERTS, UnifiedTelegramConfig.K_HEALTH_ALERTS,
-                UnifiedTelegramConfig.K_UPDATE_ALERTS}) {
+                UnifiedTelegramConfig.K_UPDATE_ALERTS, UnifiedTelegramConfig.K_CAMPING_ALERTS}) {
             assertTrue("fehlt: " + s, keys.contains(s));
         }
     }

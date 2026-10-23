@@ -483,6 +483,15 @@ public class MqttConnectionManager {
         return expiresAtMs - nowMs;
     }
 
+    /**
+     * 0.1.16: Lokale Klimaanlage gilt als aus, wenn das Auto nicht „an“ ist (power_level &lt; 2 oder unbekannt),
+     * außer bei DiLink 5 (eigene Quelle). Gleiche Regel wie {@code VehicleControlApiHandler} für acOn/fanLevel.
+     */
+    static boolean klimaRuht(BydVehicleData vd, boolean diLink5) {
+        if (diLink5) return false;
+        return !(vd.powerLevel != BydVehicleData.UNAVAILABLE && vd.powerLevel >= 2);
+    }
+
     private static long cabinExpiryAtMs(BydVehicleData data) {
         if (data == null || data.insideTempReadAt <= 0L
                 || (Double.isNaN(data.insideTempC) && Double.isNaN(data.insideTempCelsius))) {
@@ -989,6 +998,15 @@ public class MqttConnectionManager {
                 }
             }
             payload.put("charge_power", chargeKw);
+            // 0.1.16: Schätzung (ringEstimator) getrennt veröffentlichen, damit HA beim DC-Laden ohne Messwert
+            // nicht „lädt nicht“ zeigt. charge_power oben bleibt der gemessene Wert.
+            LadeleistungMqtt leistung = LadeleistungMqtt.aus(isCharging, v2l,
+                    chargingState != null && chargingState.isEstimated,
+                    chargingState != null ? chargingState.chargingPowerKW : Double.NaN,
+                    chargingState != null ? chargingState.powerSource : null);
+            payload.put("charge_power_estimated", leistung.geschaetztKw);
+            payload.put("charge_power_quality", leistung.qualitaet);
+            payload.put("charge_power_source", leistung.quelle);
 
             // Per-session energy is database-owned and must not disappear merely because the raw
             // vehicle snapshot is momentarily unavailable. Publish the resolved value and its
@@ -1378,7 +1396,10 @@ public class MqttConnectionManager {
                     // nur Telemetrie: fehlt ein Wert, fehlt die Entität
                 }
                 // 0.1.15: Klima an/aus (0/1 belegt), Verbrauch laut Auto (Langzeitschnitt und letzte Fahrt)
-                if (vd.acStartState == 0 || vd.acStartState == 1) payload.put("climate_on", vd.acStartState);
+                // 0.1.16 (Deploy-Test 23.10.): nach dem Ausschalten blieben ac_on/climate_on/ac_fan auf dem letzten
+                // Wert stehen. Wie REST (/api/vehicle/state): ohne „Auto an“ läuft die lokale AC nicht → 0.
+                boolean klimaRuht = klimaRuht(vd, diLink5);
+                if (vd.acStartState == 0 || vd.acStartState == 1) payload.put("climate_on", klimaRuht ? 0 : vd.acStartState);
                 if (Double.isFinite(vd.avgElecConPer100Km) && vd.avgElecConPer100Km > 0 && vd.avgElecConPer100Km < 100)
                     payload.put("consumption_avg", vd.avgElecConPer100Km);
                 if (Double.isFinite(vd.lastElecConPer100Km) && vd.lastElecConPer100Km > 0 && vd.lastElecConPer100Km < 100)
@@ -1394,10 +1415,10 @@ public class MqttConnectionManager {
                 }
 
                 // Climate
-                if (vd.acStartState != BydVehicleData.UNAVAILABLE) payload.put("ac_on", vd.acStartState);
+                if (vd.acStartState != BydVehicleData.UNAVAILABLE) payload.put("ac_on", klimaRuht ? 0 : vd.acStartState);
                 if (vd.acCycleMode != BydVehicleData.UNAVAILABLE) payload.put("ac_cycle", vd.acCycleMode);
                 if (vd.acWindMode != BydVehicleData.UNAVAILABLE) payload.put("ac_wind", vd.acWindMode);
-                if (vd.acFanLevel != BydVehicleData.UNAVAILABLE) payload.put("ac_fan", vd.acFanLevel);
+                if (vd.acFanLevel != BydVehicleData.UNAVAILABLE) payload.put("ac_fan", klimaRuht ? 0 : vd.acFanLevel);
                 if (vd.tempUnit != BydVehicleData.UNAVAILABLE) payload.put("temp_unit", vd.tempUnit);
                 // Real dial readback. The climate entity's temperature_state_topic pointed at
                 // `climate_setpoint`, which only ever carried an OPTIMISTIC echo of our own
@@ -1533,6 +1554,14 @@ public class MqttConnectionManager {
             } catch (Exception e) {
                 logger.debug("Car settings snapshot failed: " + e.getMessage());
             }
+        }
+
+        // 0.1.16 Camping (Panoptes-Funktion): Status für HA. Keine Innentemperatur – nur Werte des Modus.
+        try {
+            at.greenchili.surfmate.camping.CampingTelemetrie.eintragen(payload,
+                    at.greenchili.surfmate.camping.Camping.status());
+        } catch (Throwable t) {
+            logger.debug("Camping-Telemetrie: " + t.getMessage());
         }
 
         // Update the cache

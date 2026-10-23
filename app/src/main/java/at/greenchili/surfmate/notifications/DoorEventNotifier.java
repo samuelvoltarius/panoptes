@@ -82,7 +82,9 @@ public final class DoorEventNotifier {
                     + " skipped: no snapshot yet");
             return;
         }
-        if (snap.powerLevel >= BodyworkConstants.POWER_LEVEL_ON) {
+        // 0.1.16: Im Camping (Auto bleibt oft „an“) zählen Türen trotzdem – nur stille Camping-Meldung.
+        boolean camping = at.greenchili.surfmate.camping.Camping.ohneAbschreckung();
+        if (snap.powerLevel >= BodyworkConstants.POWER_LEVEL_ON && !camping) {
             logger.info("door area " + area + " state " + state
                     + " skipped: powerLevel="
                     + BodyworkConstants.powerLevelToString(snap.powerLevel)
@@ -98,6 +100,11 @@ public final class DoorEventNotifier {
         }
 
         boolean opened = state == BodyworkConstants.STATE_OPEN;
+        if (camping) {
+            // Camping „bewohnt“: nur die stille Camping-Meldung beim Öffnen, keine Türwarnung obendrauf
+            if (opened) at.greenchili.surfmate.camping.Camping.tuerGeoeffnet(areaLabel(area));
+            return;
+        }
         String category = opened
                 ? "vehicle.security.door.opened"
                 : "vehicle.security.door.closed";

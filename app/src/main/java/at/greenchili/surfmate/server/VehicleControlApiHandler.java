@@ -899,6 +899,10 @@ public class VehicleControlApiHandler {
         if (data.hasFreshCabinTemperature() && !Double.isNaN(data.insideTempC)) {
             climate.put("insideTempC", data.insideTempC);
         }
+        // 0.1.16: AC_TEMP_INSIDE ist ohne Beleg der Klima-Sollwert (KabinenTemperatur) – eigenes Feld, nie insideTempC.
+        if (data.hasFreshKlimaSollwert()) {
+            climate.put("klimaSollwertC", data.klimaSollwertC);
+        }
         if (data.acWindMode != BydVehicleData.UNAVAILABLE) climate.put("windMode", data.acWindMode);
         if (data.acFanLevel != BydVehicleData.UNAVAILABLE
                 && (diLink5 || vehiclePoweredOn)) {
@@ -1307,6 +1311,47 @@ public class VehicleControlApiHandler {
             if (action == null) action = "";
             VehicleCommand cmd;
             Integer powerOnAutoOffMinutes = null;
+            // 0.1.16 (Koordination 23.10.2026): {"remote": true} = ausdrückliches Fernklima über die BYD-Cloud
+            // (OPENAIR/CLOSEAIR), ohne lokale Seite – nur bei frischem „Auto aus“ (CloudPowerGate).
+            if (req.optBoolean("remote", false)
+                    && ("power_on".equals(action) || "power_off".equals(action))) {
+                VehicleCommand fern;
+                if ("power_on".equals(action)) {
+                    Double t = req.has("temp") ? jsonNumber(req, "temp") : Double.valueOf(25);
+                    Integer dauer = req.has("remoteDurationMinutes")
+                            ? jsonInteger(req, "remoteDurationMinutes") : Integer.valueOf(10);
+                    if (t == null || t.doubleValue() != Math.rint(t.doubleValue())
+                            || t.doubleValue() < 15 || t.doubleValue() > 31) {
+                        sendClimateInputError(out, response, "remote: temp must be a whole number 15..31 C");
+                        return;
+                    }
+                    if (dauer == null || !isValidRemoteClimateDuration(dauer.intValue())) {
+                        sendClimateInputError(out, response,
+                                "remoteDurationMinutes must be 10, 15, 20, 25, or 30");
+                        return;
+                    }
+                    fern = new VehicleCommandRouter.ClimateRemoteOnCommand((int) Math.round(t.doubleValue()),
+                            dauer.intValue());
+                } else {
+                    fern = new VehicleCommandRouter.ClimateRemoteOffCommand();
+                }
+                at.greenchili.surfmate.byd.routing.CloudPowerGate.Decision g =
+                        at.greenchili.surfmate.byd.routing.CloudPowerGate.evaluateLive(fern.name());
+                if (!g.allowed) {
+                    logger.warn("Climate remote " + action + " abgelehnt: " + g);
+                    response.put("success", false);
+                    response.put("path", "CLOUD");
+                    response.put("reason", g.reasonKey);
+                    response.put("message", "Fernklima nur bei frisch belegtem „Auto aus“ (" + g.reasonKey + ")");
+                    HttpResponse.sendJson(out, 409, response.toString());
+                    return;
+                }
+                logger.info("Climate: action=" + action + " remote=true gate=" + g);
+                CommandResult fr = VehicleCommandRouter.getInstance().execute(fern);
+                logger.info("Climate: action=" + action + " remote=true " + fr.outcome + " path=" + fr.path);
+                HttpResponse.sendJson(out, routedResponse(fr, action).toString());
+                return;
+            }
             switch (action) {
                 case "power_on": {
                     double t = 22;

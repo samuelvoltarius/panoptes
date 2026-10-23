@@ -227,4 +227,72 @@ public class NotzugangTest {
         Notzugang.schluessel(new JSONObject().put("KeyExpiry", "2027-04-20T15:08:40Z"), jetzt, r);
         assertEquals(-2, r.getLong("keyAblaufTage"));
     }
+
+    // ------------------------------------------------------------- 0.1.16: Skript ohne Key erneuern
+
+    @Test
+    public void skriptAktualisierenNurWennAnders() throws Exception {
+        File d = tmp.newFolder();
+        File ziel = new File(d, "notzugang.sh");
+        byte[] a = "#!/system/bin/sh\necho alt\n".getBytes(StandardCharsets.UTF_8);
+        byte[] b = "#!/system/bin/sh\necho neu\n".getBytes(StandardCharsets.UTF_8);
+        // nie neu anlegen: ohne Einrichtung bleibt alles, wie es ist
+        assertEquals(Notzugang.NICHT_EINGERICHTET, Notzugang.skriptAktualisieren(b, ziel));
+        assertFalse(ziel.exists());
+        Files.write(ziel.toPath(), a);
+        assertEquals(Notzugang.AKTUALISIERT, Notzugang.skriptAktualisieren(b, ziel));
+        assertEquals("echo neu", new String(Files.readAllBytes(ziel.toPath()), StandardCharsets.UTF_8).trim()
+                .split("\n")[1]);
+        assertEquals("alte Fassung gesichert", new String(a, StandardCharsets.UTF_8),
+                new String(Files.readAllBytes(new File(d, "notzugang.sh.bak").toPath()), StandardCharsets.UTF_8));
+        assertFalse(new File(d, "notzugang.sh.neu").exists());
+        assertEquals(Notzugang.AKTUELL, Notzugang.skriptAktualisieren(b, ziel));
+        assertEquals("installieren", Notzugang.skriptAktualisieren(new byte[0], ziel));
+    }
+
+    @Test
+    public void neuStartetNurDenAufpasserNeu() throws Exception {
+        String s = skript();
+        int a = s.indexOf("  neu)");
+        StringBuilder sb = new StringBuilder();   // ohne Kommentarzeilen
+        for (String z : s.substring(a, s.indexOf(";;", a)).split("\n")) {
+            if (!z.trim().startsWith("#")) sb.append(z).append('\n');
+        }
+        String block = sb.toString();
+        assertTrue(block.contains("aufpasser_laeuft && ") || block.contains("if aufpasser_laeuft; then kill"));
+        assertTrue(block.contains("nohup sh \"$D/notzugang.sh\" lauf"));
+        // der eigene tailscaled bleibt: kein Beenden über eigene(), kein up, kein Key
+        assertFalse(block.contains("eigene"));
+        assertFalse(block.contains(" up"));
+        assertFalse(block.contains("authkey"));
+        assertTrue(block.contains("[ -f \"$D/aus\" ] && { echo aus; exit 0; }"));
+        assertTrue(s.contains("notzugang.sh start|stop|status|serve|neu"));
+    }
+
+    @Test
+    public void neuBeiAusMerkerTutNichts() throws Exception {
+        assumeTrue("sh nicht vorhanden", shDa());
+        File d = ordner("{}", false);
+        Files.write(new File(d, "aus").toPath(), new byte[0]);
+        assertEquals("aus|rc=0", lauf(d, "neu"));
+        assertFalse(new File(d, "aufpasser.pid").exists());
+    }
+
+    @Test
+    public void erneuernOhneKeyBeimStartUndPerApi() throws Exception {
+        File f = new File("src/main/java/at/greenchili/surfmate/notzugang/Notzugang.java");
+        if (!f.isFile()) f = new File("app/" + f.getPath());
+        String k = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8).replace("\r\n", "\n");
+        int st = k.indexOf("public static String starten()");
+        int up = k.indexOf("skriptAusApk()", st);
+        assertTrue("Daemon-Start erneuert das Skript zuerst", up > st && up < k.indexOf("nachErneuern(upd)", st));
+        int ern = k.indexOf("public static synchronized JSONObject skriptErneuern()");
+        String body = k.substring(ern, k.indexOf("\n    }\n", ern));
+        assertFalse("kein up, kein Key", body.contains(" up ") || body.contains("authKey"));
+        File h = new File("src/main/java/at/greenchili/surfmate/server/NotzugangApiHandler.java");
+        if (!h.isFile()) h = new File("app/" + h.getPath());
+        String api = new String(Files.readAllBytes(h.toPath()), StandardCharsets.UTF_8);
+        assertTrue(api.contains("case \"/api/notzugang/aktualisieren\":"));
+        assertTrue(api.contains("r = Notzugang.skriptErneuern();"));
+    }
 }

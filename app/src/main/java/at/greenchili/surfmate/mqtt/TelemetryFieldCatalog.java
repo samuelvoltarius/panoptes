@@ -33,6 +33,27 @@ public final class TelemetryFieldCatalog {
     public static final Set<String> EXCLUDED = Collections.unmodifiableSet(
             new HashSet<>(Arrays.asList("utc", "vd_timestamp")));
 
+    /**
+     * 0.1.16 (Koordination 23.10.2026): Innentemperatur-Entitäten, die bisher den Klima-Sollwert aus
+     * AC_TEMP_INSIDE als Innentemperatur zeigten. Sie werden nicht mehr normal angekündigt, sondern einmalig
+     * als „nicht verfügbar“ (eigenes Verfügbarkeits-Topic, siehe {@link #ausgemustertTopic}), damit HA den
+     * alten Wert nicht weiter anzeigt. Misst ein Modell nachweislich ({@code KabinenTemperatur}), bleiben sie normal.
+     */
+    public static final Set<String> AUSGEMUSTERT = Collections.unmodifiableSet(
+            new HashSet<>(Arrays.asList("inside_temp", "cabin_temp")));
+
+    /** Verfügbarkeits-Topic der ausgemusterten Entitäten; trägt dauerhaft (retained) "offline". */
+    public static String ausgemustertTopic(String baseTopic) {
+        return baseTopic + "/ausgemustert";
+    }
+
+    /** Ob der Schlüssel als ausgemusterte Entität angekündigt wird (kein echter Innenraumfühler). */
+    public static boolean istAusgemustert(String key) {
+        if (!AUSGEMUSTERT.contains(key)) return false;
+        return !at.greenchili.surfmate.byd.KabinenTemperatur.acTempInsideIstMessung(
+                at.greenchili.surfmate.byd.KabinenTemperatur.aktuellesModell());
+    }
+
     /** Immutable metadata for a single telemetry key. */
     public static final class Field {
         public final String key;
@@ -81,6 +102,12 @@ public final class TelemetryFieldCatalog {
         add("power",      "Motor Power",     SENSOR, "power",       MEAS, "kW",   "mdi:flash",              false, 0.1);
         add("target_soc", "Target SOC",      SENSOR, "battery",     MEAS, "%",    "mdi:battery-sync",       false, 1);
         add("charge_power","Charge Power",   SENSOR, "power",       MEAS, "kW",   "mdi:battery-charging",   false, 0.1);
+        // 0.1.16: Schätzung aus der SoC-Steigung, wenn kein Messwert da ist (DC am Surf), plus Qualität/Quelle
+        add("charge_power_estimated", "Charge Power (estimated)", SENSOR, "power", MEAS, "kW",
+                "mdi:battery-charging-outline", false, 0.1);
+        add("charge_power_quality", "Charge Power Quality", SENSOR, "enum", null, null, "mdi:check-decagram",
+                true, 0);
+        add("charge_power_source", "Charge Power Source", SENSOR, "enum", null, null, "mdi:source-branch", true, 0);
         add("speed",      "Speed",           SENSOR, "speed",       MEAS, "km/h", "mdi:speedometer",        false, 0.1);
         add("lat",        "Latitude",        SENSOR, null,          MEAS, "°",    "mdi:latitude",           true,  0.00001);
         add("lon",        "Longitude",       SENSOR, null,          MEAS, "°",    "mdi:longitude",          true,  0.00001);
@@ -282,6 +309,14 @@ public final class TelemetryFieldCatalog {
         // Frische-Nachweis für power_level (Bridge-Sperre, Cockpit): Sekunden der Live-Lesung.
         // Bewusst NICHT in EXCLUDED: jede neue Live-Lesung zählt als Änderung (Lebenszeichen).
         add("power_level_ts",       "Power State Read At",  NONE, null, null, null, null, true, 0);
+        // 0.1.16 Camping (CampingTelemetrie): Panoptes-Funktion, Heizen in Stufe 2a nur Probelauf
+        add("camping_aktiv",             "Camping",                    BINARY, null, null, null, "mdi:tent", false, 0);
+        add("camping_phase",             "Camping Phase",              SENSOR, "enum", null, null, "mdi:tent", false, 0);
+        add("camping_naechster_zyklus",  "Camping Next Heating Cycle", SENSOR, "timestamp", null, null, "mdi:radiator", false, 0);
+        add("camping_reicht_bis",        "Camping Heating Lasts Until", SENSOR, "timestamp", null, null, "mdi:battery-clock", false, 0);
+        add("camping_verbrauch",         "Camping Consumption",        SENSOR, null, MEAS, "%/h", "mdi:battery-arrow-down", false, 0.1);
+        add("camping_intervall",         "Camping Heating Interval",   SENSOR, "duration", null, "min", "mdi:timer-sync", false, 0);
+        add("camping_dauer",             "Camping Heating Duration",   SENSOR, "duration", null, "min", "mdi:timer", false, 0);
         // Zündung (ACC) laut Daemon, nur wenn autoritativ bekannt.
         add("ignition",             "Ignition",             NONE, null, null, null, null, true, 0);
     }
@@ -304,6 +339,7 @@ public final class TelemetryFieldCatalog {
     /** True if this key should produce a read-only HA sensor (registered, mappable, non-time). */
     public static boolean isDiscoverable(String key) {
         if (EXCLUDED.contains(key)) return false;
+        if (istAusgemustert(key)) return false;
         // setting_* keys are surfaced as controllable entities (switch/select/number) via
         // VehicleControlCatalog, not as read-only sensors — skip the sensor component.
         if (key.startsWith("setting_")) return false;

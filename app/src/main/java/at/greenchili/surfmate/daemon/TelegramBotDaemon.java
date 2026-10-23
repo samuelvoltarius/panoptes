@@ -1226,6 +1226,7 @@ public class TelegramBotDaemon {
             case "BATTERY":      return at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.isBatteryAlerts();
             case "GUARD_STOP":   return at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.isGuardStopAlerts();
             case "UPDATE":       return at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.isUpdateAlerts();
+            case "CAMPING":      return at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.isCampingAlerts();
             case "PARKING":      return at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.isParkingMessages();
             case "CRITICAL":
             default:             return criticalAlertsEnabled;

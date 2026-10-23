@@ -61,6 +61,10 @@ public final class NotzugangApiHandler {
                 r = Notzugang.einrichten(req.optString("authKey", ""), req.optString("name", "panoptes-notzugang"));
                 break;
             }
+            case "/api/notzugang/aktualisieren":
+                // 0.1.16: Skript aus dem APK übernehmen, ohne Key (kein up); tailscaled läuft weiter
+                r = Notzugang.skriptErneuern();
+                break;
             case "/api/notzugang/an":
                 r = Notzugang.einschalten();
                 break;

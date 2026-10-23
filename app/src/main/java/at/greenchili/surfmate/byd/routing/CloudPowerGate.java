@@ -22,6 +22,11 @@ import at.greenchili.surfmate.byd.BydVehicleData;
 public final class CloudPowerGate {
 
     public static final long MAX_AGE_MS = 180_000L;
+    /**
+     * 0.1.16 (Koordination 23.10.): CLOSEAIR beendet die Fernsitzung – bei laufendem Auto schaltet es das
+     * Auto ab (Vorfall 13.10.). Dafür muss „Auto aus“ unmittelbar davor belegt sein: höchstens 60 s alt.
+     */
+    public static final long MAX_AGE_KLIMA_AUS_MS = 60_000L;
     /** Tolerated clock skew for a reading stamped slightly in the future. */
     static final long FUTURE_SKEW_MS = 5_000L;
 
@@ -60,7 +65,8 @@ public final class CloudPowerGate {
             return new Decision(false, REASON_STATE_UNKNOWN, -1L);
         }
         long age = nowMs - powerLevelAtMs;
-        if (age > MAX_AGE_MS || age < -FUTURE_SKEW_MS) {
+        long maxAge = isClimateOff(commandName) ? MAX_AGE_KLIMA_AUS_MS : MAX_AGE_MS;
+        if (age > maxAge || age < -FUTURE_SKEW_MS) {
             return new Decision(false, REASON_STATE_STALE, age);
         }
         if (powerLevel != 0) return new Decision(false, REASON_CAR_ON, age);
@@ -89,6 +95,11 @@ public final class CloudPowerGate {
             // the power reading alone still has to prove "off"
         }
         return evaluate(commandName, level, readAt, authoritative, accOn, System.currentTimeMillis());
+    }
+
+    /** Befehle, deren Cloud-Seite CLOSEAIR ist. */
+    static boolean isClimateOff(String commandName) {
+        return "climate-off".equals(commandName) || "climate-remote-off".equals(commandName);
     }
 
     static boolean isUnlock(String commandName) {

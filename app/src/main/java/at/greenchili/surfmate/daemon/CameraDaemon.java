@@ -1086,6 +1086,10 @@ public class CameraDaemon {
         // correct regardless of how the build was installed.
 
 
+        // 0.1.16 Camping vor dem Wächter-Init: hängt nicht von der Kamera-Pipeline ab (Wächter-Eingriff
+        // greift erst, wenn sie läuft) und bleibt so auch erreichbar, falls der Wächter-Start scheitert.
+        startCamping();
+
         // Explicit diagnostic only. The helper consumes its sentinel before
         // entering vendor code and hard-bounds the raw AVMCamera lifecycle, so
         // a crash/wedge cannot repeat the probe on every daemon restart.
@@ -5138,7 +5142,9 @@ public class CameraDaemon {
 
             // Wächter-Stopp: kein Scharfschalten, solange er gilt. Absicht bleibt gemerkt;
             // GuardStopMonitor schaltet über diesen Weg wieder ein, sobald er sich aufhebt.
-            if (at.greenchili.surfmate.surveillance.GuardStopMonitor.blocksArming()) {
+            // 0.1.16: ebenso Camping „bewohnt“ mit Außenbewegung „nichts“.
+            if (at.greenchili.surfmate.surveillance.GuardStopMonitor.blocksArming()
+                    || at.greenchili.surfmate.camping.Camping.blocksArming()) {
                 if (stopStaleSurveillanceEnable(
                         lease, source + " guard-stop lookup")) {
                     return false;
@@ -9330,7 +9336,8 @@ public class CameraDaemon {
         boolean gewollt = surveillanceEnabled
             && at.greenchili.surfmate.config.UnifiedConfigManager.isSurveillanceEnabled();
         boolean unterdrueckt = safeZoneSuppressed
-            || at.greenchili.surfmate.surveillance.GuardStopMonitor.blocksArming();
+            || at.greenchili.surfmate.surveillance.GuardStopMonitor.blocksArming()
+            || at.greenchili.surfmate.camping.Camping.blocksArming();
         return at.greenchili.surfmate.surveillance.ScharfWiederholung.zustand(gewollt, isSentryArmed(), unterdrueckt);
     }
 
@@ -9343,6 +9350,26 @@ public class CameraDaemon {
     public static boolean isSentryArmed() {
         at.greenchili.surfmate.surveillance.GpuSurveillancePipeline p = gpuPipeline;
         return surveillanceEnabled && p != null && p.isSurveillanceMode();
+    }
+
+    /** Anbindung des Camping-Modus (0.1.16) an diesen Daemon – gleicher Wächter-Eingriff wie der Wächter-Stopp. */
+    private static void startCamping() {
+        try {
+            at.greenchili.surfmate.camping.Camping.start(new at.greenchili.surfmate.camping.Camping.Waechter() {
+                public boolean isRunning() {
+                    at.greenchili.surfmate.surveillance.GpuSurveillancePipeline p = gpuPipeline;
+                    return surveillanceEnabled && p != null && p.isSurveillanceMode();
+                }
+                public void stop() {
+                    disableSurveillance();
+                }
+                public void start() {
+                    enableSurveillance();
+                }
+            });
+        } catch (Throwable t) {
+            log("Camping start failed: " + t.getMessage());
+        }
     }
 
     /** Anbindung des Wächter-Stopps an diesen Daemon. */

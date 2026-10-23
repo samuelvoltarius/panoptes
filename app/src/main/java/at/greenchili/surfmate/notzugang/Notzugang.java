@@ -51,17 +51,89 @@ public final class Notzugang {
 
     // ------------------------------------------------------------------ Laufzeit (Daemon, Shell-UID)
 
-    /** Beim Daemon-Start (nach Neustart bzw. Update): nur „start“ aufrufen, wenn eingeschaltet. Idempotent. */
+    /**
+     * Beim Daemon-Start (nach Neustart bzw. Update): ein geändertes Skript aus dem APK übernehmen (0.1.16, ohne Key),
+     * dann nur „start“ aufrufen, wenn eingeschaltet. Idempotent.
+     */
     public static String starten() {
         try {
+            String upd = new File(SKRIPT).isFile() ? skriptAusApk() : NICHT_EINGERICHTET;
             if (!an(at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig())) return "aus";
-            if (!new File(SKRIPT).isFile()) return "nicht_eingerichtet";
-            String r = shell("sh " + SKRIPT + " start", 15).trim();
-            logger.info("Notzugang: " + r);
+            if (!new File(SKRIPT).isFile()) return NICHT_EINGERICHTET;
+            String r = nachErneuern(upd);
+            logger.info("Notzugang: " + r + " (Skript " + upd + ")");
             return r;
         } catch (Throwable t) {
             return "fehler";
         }
+    }
+
+    static final String AKTUELL = "aktuell";
+    static final String AKTUALISIERT = "aktualisiert";
+    static final String NICHT_EINGERICHTET = "nicht_eingerichtet";
+
+    /**
+     * 0.1.16: {@code POST /api/notzugang/aktualisieren} – Skript aus dem APK übernehmen, ohne Auth-Key und ohne
+     * {@code up}. Nach einem App-Update blieb sonst das alte Skript liegen (am Auto 23.10.: adbServe:false, weil das
+     * alte Skript serve nicht kannte). Der eigene tailscaled läuft weiter; nur der Aufpasser startet mit neuem Code.
+     */
+    public static synchronized JSONObject skriptErneuern() throws Exception {
+        if (!new File(SKRIPT).isFile()) return fehler(NICHT_EINGERICHTET);
+        String upd = skriptAusApk();
+        if (!AKTUELL.equals(upd) && !AKTUALISIERT.equals(upd)) return fehler(upd);
+        JSONObject r = new JSONObject().put("success", true).put("skript", upd);
+        if (an(at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig())) r.put("lauf", nachErneuern(upd));
+        return r.put("status", status());
+    }
+
+    /** Eingeschaltet: nach einer Erneuerung Aufpasser neu (tailscaled bleibt) und adb-Weiterleitung sichern. */
+    private static String nachErneuern(String upd) {
+        if (!AKTUALISIERT.equals(upd)) return shell("sh " + SKRIPT + " start", 15).trim();
+        String r = shell("sh " + SKRIPT + " neu", 15).trim();
+        boolean serve = serveOk(shell("sh " + SKRIPT + " serve", 30));
+        return r + (serve ? " serve=ok" : " serve=fehlt");
+    }
+
+    private static String skriptAusApk() {
+        try {
+            android.content.Context c = at.greenchili.surfmate.daemon.CameraDaemon.getAppContext();
+            if (c == null) return "kein_kontext";
+            byte[] neu;
+            try (InputStream in = c.getAssets().open("notzugang/notzugang.sh")) {
+                neu = lesen(in);
+            }
+            String r = skriptAktualisieren(neu, new File(SKRIPT));
+            if (AKTUALISIERT.equals(r)) shell("chmod 755 " + SKRIPT, 5);
+            return r;
+        } catch (Throwable t) {
+            logger.warn("Notzugang Skript erneuern: " + t.getMessage());
+            return "installieren";
+        }
+    }
+
+    /**
+     * Ersetzt {@code ziel} durch {@code neu}, wenn sich der Inhalt unterscheidet (alte Fassung als {@code .bak}).
+     * Legt nichts neu an: ohne Einrichtung bleibt es bei {@link #NICHT_EINGERICHTET}. Atomar über Umbenennen, damit
+     * ein laufender Aufpasser (liest sein Skript nicht nach) und ein Absturz nie eine halbe Datei sehen.
+     */
+    static String skriptAktualisieren(byte[] neu, File ziel) throws java.io.IOException {
+        if (!ziel.isFile()) return NICHT_EINGERICHTET;
+        if (neu == null || neu.length == 0) return "installieren";
+        byte[] alt = Files.readAllBytes(ziel.toPath());
+        if (java.util.Arrays.equals(alt, neu)) return AKTUELL;
+        File tmp = new File(ziel.getPath() + ".neu");
+        Files.write(tmp.toPath(), neu);
+        Files.write(new File(ziel.getPath() + ".bak").toPath(), alt);
+        try {
+            // ersetzt atomar (renameTo überschreibt nicht überall eine vorhandene Datei)
+            Files.move(tmp.toPath(), ziel.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                    java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+        } catch (java.io.IOException e) {
+            //noinspection ResultOfMethodCallIgnored
+            tmp.delete();
+            return "installieren";
+        }
+        return AKTUALISIERT;
     }
 
     public static JSONObject status() throws Exception {

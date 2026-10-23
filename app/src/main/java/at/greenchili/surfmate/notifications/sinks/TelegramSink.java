@@ -74,6 +74,14 @@ public final class TelegramSink implements NotificationBus.Sink {
             // the feature on. Own toggle (parkingMessages, default ON), own
             // photo+URL-button path, never the criticalAlerts lane. Handled
             // BEFORE the INFO drop below.
+            // 0.1.16 Camping: eigener Schalter campingAlerts; Hinweise still (Ruhezeit gilt),
+            // Akku-/12-V-Warnungen auch in der Ruhezeit.
+            if (event.category != null && event.category.startsWith("camping.")) {
+                String text = "⛺ " + md(event.title == null ? "" : event.title);
+                TelegramNotifier.sendMessage(text, "CAMPING",
+                        event.severity != NotificationEvent.Severity.INFO);
+                return;
+            }
             if (event.category != null && event.category.startsWith("parking.")) {
                 forwardParking(event);
                 return;

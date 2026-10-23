@@ -528,6 +528,26 @@ public class SurveillanceIpcServer implements Runnable {
                     break;
                 }
                     
+                case "CAMPING": {
+                    // 0.1.16: Camping aus Telegram (/camping). Panoptes-Funktion, Stufe 2a ohne Heizwirkung.
+                    String aktion = request.optString("aktion", "status");
+                    JSONObject r;
+                    if ("an".equals(aktion)) r = at.greenchili.surfmate.camping.Camping.ein("telegram");
+                    else if ("aus".equals(aktion)) r = at.greenchili.surfmate.camping.Camping.aus("telegram");
+                    else if ("rueckmeldung".equals(aktion)) {
+                        r = at.greenchili.surfmate.camping.Camping.rueckmeldung(request.optString("art", ""));
+                    } else r = null;
+                    if (r != null && !r.optBoolean("ok", false)) {
+                        response.put("success", false);
+                        response.put("fehler", r.optString("fehler", ""));
+                        break;
+                    }
+                    response.put("success", true);
+                    if (r != null) response.put("uebernommen", r.optBoolean("uebernommen", false));
+                    response.put("data", at.greenchili.surfmate.camping.Camping.status());
+                    break;
+                }
+
                 case "STATUS": {
                     // Get surveillance status (from Telegram /status command)
                     // Read from persisted config (not in-memory flag which can get stale)

@@ -83,7 +83,8 @@ public final class ShockMonitor {
                 && at.greenchili.surfmate.monitor.AccMonitor.isAccStateAuthoritative()
                 && !at.greenchili.surfmate.monitor.AccMonitor.isAccOn()
                 && at.greenchili.surfmate.daemon.CameraDaemon.isSentryArmed()
-                && !GuardStopMonitor.blocksArming();
+                && !GuardStopMonitor.blocksArming()
+                && !at.greenchili.surfmate.camping.Camping.ohneAbschreckung();
         synchronized (lock) {
             if (soll && (!aktiv || e != stufe)) {
                 detector = new ShockDetector(e);

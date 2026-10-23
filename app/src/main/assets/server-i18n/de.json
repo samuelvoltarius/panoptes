@@ -150,6 +150,23 @@
     "ai_off_body": "Die KI-Erkennung läuft gerade nicht. Damit nichts verloren geht, nimmt der Wächter bei Bewegung auf. Panoptes versucht, die KI neu zu laden.",
     "guard_stop_title": "Wächter gestoppt: {0}",
     "guard_stop_resumed": "Wächter läuft wieder",
+    "camping_an": "Camping an",
+    "camping_aus_tipp": "Camping aus",
+    "camping_aus_ha": "Camping aus (Home Assistant)",
+    "camping_aus_telegram": "Camping aus (Telegram)",
+    "camping_aus_losgefahren": "Camping aus: losgefahren",
+    "camping_akku_bald_grenze": "Camping: Akku bald an der Untergrenze",
+    "camping_akku_grenze_heizen_aus": "Camping: Akku an der Untergrenze – Panoptes heizt nicht mehr",
+    "camping_v12_niedrig_heizen_aus": "Camping: 12-V-Batterie schwach – Panoptes heizt nicht mehr",
+    "camping_hoechstdauer_heizen_aus": "Camping: Höchstdauer erreicht – Panoptes heizt nicht mehr",
+    "camping_budget_gestreckt": "Camping: Akku reicht nicht ganz bis zur Weckzeit – Pausen werden länger",
+    "camping_auto_hat_abgeschaltet": "Camping: Das Auto hat das Klima selbst abgeschaltet – Panoptes wartet auf dich",
+    "camping_fenster_offen": "Camping: Ein Fenster wurde geöffnet",
+    "camping_heizen_fehlgeschlagen": "Camping: Heizen ließ sich nicht einschalten – Panoptes wartet auf dich",
+    "camping_heizen_aus_fehlgeschlagen": "Camping: Heizen ließ sich nicht ausschalten – bitte am Auto prüfen",
+    "camping_cloud_gesperrt_weg2": "Camping: Fernzugang 2 ist nach einer Cloud-Sitzung weg – Heizen über die Cloud gesperrt",
+    "camping_weck_grenze": "Camping: Höchstzahl an Cloud-Sitzungen erreicht – keine weiteren heute Nacht",
+    "camping_tuer_offen": "Camping: {0} geöffnet",
     "guard_stop_reason_soc": "Fahrakku zu leer",
     "guard_stop_reason_v12": "Starterbatterie zu schwach",
     "guard_stop_reason_park": "lange geparkt",
@@ -251,6 +268,14 @@
         "label": "KI-Erkennung aus",
         "note": "Das KI-Modell läuft nicht; bis es wieder läuft, nimmt der Wächter bei jeder Bewegung auf."
       },
+      "camping_hinweis": {
+        "label": "Camping: Hinweise",
+        "note": "Camping an/aus, Tür oder Fenster geöffnet während Camping (Wächter bewohnt, kein Alarm)."
+      },
+      "camping_warnung": {
+        "label": "Camping: Warnungen",
+        "note": "Camping: Akku nahe oder an der Untergrenze, schwache 12-V-Batterie, Höchstdauer erreicht."
+      },
       "surveillance_guard_stop": {
         "label": "Wächter angehalten / wieder an",
         "note": "Der Wächter pausiert, um die Batterie zu schonen (wenig Ladung, schwache 12-V-Batterie, zu lange geparkt, Ruhezeiten oder Ruhezonen)."
@@ -343,6 +368,24 @@
     }
   },
   "telegram": {
+    "camping": {
+      "status_on": "⛺ *Camping ist an*",
+      "status_off": "⛺ *Camping ist aus.* Einschalten nur im Stand (Gang P).",
+      "battery": "Akku {0} % · Grenze {1} %",
+      "interval": "Heizen: alle {0} min für {1} min · Stufe {2}",
+      "lasts": "Heizung reicht bis {0}",
+      "trial": "_Probelauf: Panoptes heizt in dieser Version noch nicht._",
+      "not_parked": "Camping geht nur im Stand (Gang P).",
+      "state_unknown": "Fahrzustand gerade unbekannt – bitte gleich nochmal.",
+      "failed": "Camping ist gerade nicht erreichbar.",
+      "feedback_ok": "Danke – gilt ab dem nächsten Zyklus.",
+      "feedback_wait": "Schon angepasst – nächste Änderung in 30 Minuten.",
+      "btn_on": "⛺ Camping an",
+      "btn_off": "Camping aus",
+      "btn_cold": "❄ zu kalt",
+      "btn_fine": "✓ passt",
+      "btn_warm": "☀ zu warm"
+    },
     "recording_caption": "🎞 Aufnahme ({0}) · {1} s",
     "recording_caption_no_label": "🎞 Aufnahme · {0} s",
     "recording_label": {
@@ -424,6 +467,8 @@
       "status": "/status – Wie es dem Auto gerade geht",
       "guard": "/waechter an · /waechter aus – Wächter wecken oder schlafen legen",
       "guard_view": "/waechter – Ist der Wächter wach?",
+      "camping": "/camping an · /camping aus – Camping (Wächter bewohnt, Akku im Blick)",
+      "camping_view": "/camping – Läuft Camping?",
       "camera": "/kamera – Ein Bild von allen Kameras, jetzt",
       "clips": "/aufnahmen – Die letzten Aufnahmen (z. B. `/aufnahmen 12`)",
       "where": "/wo – Wo das Auto steht",
@@ -707,6 +752,10 @@
       "hilfe": "🆘 *Wächter braucht Hilfe.* Seit {0} min nicht scharf, Selbstheilung hat nicht gereicht. Panoptes fordert einen App-Neustart an."
     },
     "kategorie": {
+      "camping": {
+        "label": "Camping",
+        "note": "Camping-Hinweise (Ruhezeit gilt) und Akku-Warnungen (auch in der Ruhezeit)."
+      },
       "waechter_kritisch": {
         "label": "Wächter: kritisch",
         "note": "Jemand ganz nah am Auto oder bleibt dort stehen. Standard an."
@@ -983,7 +1032,7 @@
     "ac": "Klimaanlage",
     "ac_description": "Ob die Klimaanlage an oder aus ist. Sie läuft nur, wenn das Auto eingeschaltet ist.",
     "temperature": "Innentemperatur",
-    "temperature_description": "Die Temperatur im Auto in °C, beim Parken und beim Fahren. Nicht verfügbar, wenn das Auto keinen Innensensor hat. Außentemperatur und Reglereinstellung sind eigene Werte.",
+    "temperature_description": "Die gemessene Temperatur im Auto in °C – nur mit echtem Innenraumfühler. Viele BYD haben keinen (z. B. Dolphin Surf: der Wert des Klimamoduls ist der eingestellte Sollwert). Dann ist die Bedingung nie erfüllt. Außentemperatur und eingestellte Klimatemperatur sind eigene Werte.",
     "outside_temperature": "Außentemperatur",
     "outside_temperature_description": "Die Temperatur draußen in °C. Sie kommt vom Außensensor, sonst vom örtlichen Wetter. Der Innensensor wird nie benutzt.",
     "celsius": "Celsius",
@@ -1610,6 +1659,7 @@
       "auto": "Auto",
       "system": "System",
       "update": "App-Updates",
+      "camping": "Camping",
       "energie": "Energie",
       "datenschutz": "Datenschutz",
       "laden": "Laden"
@@ -1741,6 +1791,10 @@
         "title": "Unterwegs-Hilfe",
         "help": "Während der Fahrt holt Panoptes jede Minute deine geplante Route vom Routenplaner und zeigt, ob der Akku bis zum nächsten Stopp reicht. Dafür geht der Geräte-Schlüssel an byd.serveone.at; deine Position nur, wenn es knapp wird und ein neuer Ladestopp gesucht wird. Braucht die Verbindung zum Routenplaner. Standard aus."
       },
+      "abweichung": {
+        "title": "Unterwegs neu planen",
+        "help": "Prüft während der Fahrt mit angenommener Route, ob du noch im Plan liegst: Alle 10 Minuten (bzw. je 5 % Akku) gehen die Route, deine Position (auf etwa 100 m gerundet) und der Akkustand an den Routenplaner auf byd.serveone.at, der nichts davon speichert. Liegst du deutlich daneben, schlägt Panoptes einen neuen Ladestopp vor – nie automatisch ins Navi. Braucht die Unterwegs-Hilfe. Standard aus."
+      },
       "vorliebenSenden": {
         "title": "Lade-Vorlieben an den Routenplaner senden",
         "help": "Damit /ev/ im Browser deine Ladekarten und Ladenetze aus dem Auto kennt – nur zusammen mit „Zustand senden“."
@@ -1819,6 +1873,62 @@
       "planer": {
         "title": "Fahrtenbuch im Routenplaner ansehen",
         "help": "Du kannst dein Fahrtenbuch auf byd.serveone.at/ev/ ansehen. Es bleibt im Auto: Panoptes schickt jede Seite nur verschlüsselt, der Server kann sie nicht lesen und speichert nichts. Dafür fragt Panoptes jede Minute kurz beim Routenplaner nach (wenige KB). Braucht die Verbindung zum Routenplaner. Standard aus."
+      }
+    },
+    "camping": {
+      "waerme": {
+        "title": "Wärme",
+        "help": "Wie warm es nachts werden soll. Ohne Innenraumfühler heizt Panoptes in Intervallen nach der Außentemperatur (alle x Minuten für y Minuten). „Sparen“ nutzt nur die Sitzheizung. Wie geheizt wird, legt „Heizweg“ fest.",
+        "aus": "Aus",
+        "sparen": "Sparen (nur Sitzheizung)",
+        "mild": "Mild",
+        "warm": "Warm",
+        "sehr_warm": "Sehr warm"
+      },
+      "heizweg": {
+        "title": "Heizweg",
+        "help": "Wie Panoptes heizt. „Nur bei Auto an“ schaltet die Klimaanlage lokal, solange das Auto eingeschaltet in P steht. „Auch über die BYD-Cloud“ startet bei ausgeschaltetem Auto Fernklima-Sitzungen (10–30 min, höchstens 12 je Nacht, Abstand mindestens 45 min); das weckt das Auto jedes Mal. „Probelauf“ schaltet nichts und zeigt nur, was passieren würde.",
+        "probelauf": "Probelauf (schaltet nichts)",
+        "auto_an": "Nur bei Auto an (lokal)",
+        "auto_an_und_cloud": "Auch über die BYD-Cloud bei Auto aus"
+      },
+      "vorheizenMinuten": {
+        "title": "Vorheizen vor dem Schlafen",
+        "help": "Beim Einschalten einmal kräftig heizen, so viele Minuten. 0 = aus."
+      },
+      "morgensHeizen": {
+        "title": "Morgens heizen",
+        "help": "Vor der Weckzeit heizen. Die Energie dafür wird im Budget zuerst zurückgelegt."
+      },
+      "weckzeit": {
+        "title": "Weckzeit",
+        "help": "Bis dahin soll die Heizung reichen. Reicht der Akku nicht, verlängert Panoptes die Pausen automatisch."
+      },
+      "socGrenze": {
+        "title": "Akku-Untergrenze",
+        "help": "Hier hört das Heizen auf; vorher kommt eine Warnung. Panoptes schaltet das Auto nie ab."
+      },
+      "v12Warnung": {
+        "title": "12-V-Warnung",
+        "help": "Liegt die Starterbatterie darunter, hört das Heizen auf und es kommt eine Meldung. Leer = aus."
+      },
+      "hoechstdauerStunden": {
+        "title": "Höchstdauer Heizen",
+        "help": "Nach so vielen Stunden hört das Heizen auf, mit Meldung."
+      },
+      "waechterBewohnt": {
+        "title": "Wächter „bewohnt“",
+        "help": "Solange Camping läuft: keine Abschreckung (Bildschirm, Licht, Hupe) und kein Erschütterungsalarm. Türen und Fenster melden sich still."
+      },
+      "aussenBewegung": {
+        "title": "Bewegung draußen",
+        "help": "Was der Wächter bei Bewegung um das Auto tut, solange Camping läuft.",
+        "nichts": "Nichts – Wächter ruht (spart Strom)",
+        "notiz": "Wächter läuft, aber ohne Abschreckung"
+      },
+      "nachtNachSekunden": {
+        "title": "Nachtbildschirm nach",
+        "help": "Ohne Berührung wird der Bildschirm nach so vielen Sekunden zum dunklen Nachtbildschirm."
       }
     },
     "energie": {

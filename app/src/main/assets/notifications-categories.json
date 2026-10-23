@@ -56,6 +56,24 @@
       "note": "The AI model is not running; the Guardian records on motion until it is back (fail-open)."
     },
     {
+      "id": "camping.hinweis",
+      "label": "Camping: notices",
+      "group": "Camping",
+      "defaultEnabled": true,
+      "severity": "info",
+      "defaultClickUrl": "/local/camping.html",
+      "note": "Camping on/off, a door or window opened while camping (guardian occupied, no alarm)."
+    },
+    {
+      "id": "camping.warnung",
+      "label": "Camping: warnings",
+      "group": "Camping",
+      "defaultEnabled": true,
+      "severity": "warn",
+      "defaultClickUrl": "/local/camping.html",
+      "note": "Camping: battery close to or at the lower limit, weak 12 V battery, maximum time reached."
+    },
+    {
       "id": "surveillance.guard_stop",
       "label": "Guardian stopped / resumed",
       "group": "Surveillance",
@@ -194,6 +212,15 @@
   ],
   "telegramHinweis": "Telegram-Kategorien (0.1.11, Koordination): NUR Ein/Aus je Kategorie; stufe dient nur der Sortierung/Anzeige. Eine Quelle für Web, Cockpit und Kern. key = Schlüssel im Abschnitt telegram.",
   "telegram": [
+    {
+      "id": "camping",
+      "key": "campingAlerts",
+      "gruppe": "fahrzeug",
+      "stufe": "info",
+      "standard": true,
+      "label": "Camping",
+      "note": "Camping notices (quiet hours apply) and battery warnings (also during quiet hours)."
+    },
     {
       "id": "waechter.kritisch",
       "key": "tierCritical",

@@ -510,6 +510,16 @@
                 <action android:name="at.greenchili.surfmate.action.AUTOSTART_ENABLE" />
             </intent-filter>
         </receiver>
+        <!-- 0.1.16 BLE-Zählen (GET /api/ble/zaehlen): nur Shell/System (DUMP), nur Anzahl/Typen, schaltet nichts ein. -->
+        <receiver
+            android:name="at.greenchili.surfmate.receiver.BleZaehlReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.DUMP">
+            <intent-filter>
+                <action android:name="at.greenchili.surfmate.BLE_ZAEHLEN" />
+            </intent-filter>
+        </receiver>
 
         <receiver
             android:name="at.greenchili.surfmate.receiver.ProcessRevivalReceiver"

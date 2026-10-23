@@ -156,6 +156,23 @@
     "ai_off_body": "Il riconoscimento con IA al momento non è attivo. Per non perdere nulla, il Guardiano registra al movimento. Panoptes sta cercando di ricaricare l'IA.",
     "guard_stop_title": "Guardiano fermato: {0}",
     "guard_stop_resumed": "Il Guardiano è di nuovo attivo",
+    "camping_an": "Campeggio attivo",
+    "camping_aus_tipp": "Campeggio spento",
+    "camping_aus_ha": "Campeggio spento (Home Assistant)",
+    "camping_aus_telegram": "Campeggio spento (Telegram)",
+    "camping_aus_losgefahren": "Campeggio spento: partenza",
+    "camping_akku_bald_grenze": "Campeggio: batteria vicina al limite minimo",
+    "camping_akku_grenze_heizen_aus": "Campeggio: batteria al limite minimo – Panoptes non riscalda più",
+    "camping_v12_niedrig_heizen_aus": "Campeggio: batteria 12 V debole – Panoptes non riscalda più",
+    "camping_hoechstdauer_heizen_aus": "Campeggio: durata massima raggiunta – Panoptes non riscalda più",
+    "camping_budget_gestreckt": "Campeggio: la batteria non basta del tutto fino alla sveglia – pause più lunghe",
+    "camping_auto_hat_abgeschaltet": "Campeggio: l'auto ha spento il clima da sola – Panoptes aspetta te",
+    "camping_fenster_offen": "Campeggio: è stato aperto un finestrino",
+    "camping_heizen_fehlgeschlagen": "Campeggio: il riscaldamento non si è acceso – Panoptes ti aspetta",
+    "camping_heizen_aus_fehlgeschlagen": "Campeggio: il riscaldamento non si è spento – controlla l'auto",
+    "camping_cloud_gesperrt_weg2": "Campeggio: l'accesso remoto 2 è sparito dopo una sessione cloud – riscaldamento via cloud bloccato",
+    "camping_weck_grenze": "Campeggio: raggiunto il numero massimo di sessioni cloud – nessun'altra stanotte",
+    "camping_tuer_offen": "Campeggio: {0} aperta",
     "guard_stop_reason_soc": "batteria di trazione scarica",
     "guard_stop_reason_v12": "batteria da 12 V debole",
     "guard_stop_reason_park": "parcheggiata da molto tempo",
@@ -257,6 +274,14 @@
         "label": "Rilevamento IA spento",
         "note": "Il modello IA non è attivo; finché non torna, il Guardiano registra a ogni movimento."
       },
+      "camping_hinweis": {
+        "label": "Campeggio: avvisi",
+        "note": "Campeggio attivo/spento, porta o finestrino aperto durante il campeggio (Guardiano abitato, nessun allarme)."
+      },
+      "camping_warnung": {
+        "label": "Campeggio: avvertenze",
+        "note": "Campeggio: batteria vicina o al limite minimo, batteria 12 V debole, durata massima raggiunta."
+      },
       "surveillance_guard_stop": {
         "label": "Guardiano in pausa / di nuovo attivo",
         "note": "Il Guardiano va in pausa per risparmiare la batteria (carica bassa, batteria 12 V debole, parcheggio troppo lungo, ore tranquille o zone tranquille)."
@@ -349,6 +374,24 @@
     }
   },
   "telegram": {
+    "camping": {
+      "status_on": "⛺ *Il campeggio è attivo*",
+      "status_off": "⛺ *Il campeggio è spento.* Si accende solo da fermi (marcia P).",
+      "battery": "Batteria {0} % · limite {1} %",
+      "interval": "Riscaldamento: ogni {0} min per {1} min · livello {2}",
+      "lasts": "Il riscaldamento basta fino alle {0}",
+      "trial": "_Prova: in questa versione Panoptes non riscalda ancora._",
+      "not_parked": "Il campeggio funziona solo da fermi (marcia P).",
+      "state_unknown": "Stato di marcia sconosciuto – riprova tra poco.",
+      "failed": "Il campeggio non è raggiungibile al momento.",
+      "feedback_ok": "Grazie – vale dal prossimo ciclo.",
+      "feedback_wait": "Già regolato – prossima modifica tra 30 minuti.",
+      "btn_on": "⛺ Campeggio on",
+      "btn_off": "Campeggio off",
+      "btn_cold": "❄ troppo freddo",
+      "btn_fine": "✓ va bene",
+      "btn_warm": "☀ troppo caldo"
+    },
     "greeting": {
       "online": "👋 *Panoptes è qui.*\nLa tua auto è di nuovo in ascolto. Tocca /help per vedere tutti i comandi."
     },
@@ -378,6 +421,8 @@
       "status": "/status – Come sta la tua auto",
       "guard": "/guardian on · /guardian off – Sveglia il Guardiano o mettilo a riposo",
       "guard_view": "/guardian – Il Guardiano è sveglio?",
+      "camping": "/camping on · /camping off – campeggio (Guardiano abitato, batteria sorvegliata)",
+      "camping_view": "/camping – Il campeggio è attivo?",
       "camera": "/camera – Un'immagine da ogni telecamera, adesso",
       "clips": "/clips – Ultime registrazioni (ad es. `/clips 12`)",
       "where": "/where – Dove è parcheggiata l'auto",
@@ -713,6 +758,10 @@
       "hilfe": "🆘 *Il Guardiano ha bisogno di aiuto.* Non attivo da {0} min, l’autoriparazione non è bastata. Panoptes richiede un riavvio dell’app."
     },
     "kategorie": {
+      "camping": {
+        "label": "Campeggio",
+        "note": "Avvisi del campeggio (vale l'orario di silenzio) e avvertenze batteria (anche nell'orario di silenzio)."
+      },
       "waechter_kritisch": {
         "label": "Sorveglianza: critico",
         "note": "Qualcuno vicinissimo all'auto o che vi si ferma. Attivo per impostazione predefinita."
@@ -989,7 +1038,7 @@
     "ac": "Climatizzatore",
     "ac_description": "Se il climatizzatore è acceso o spento. L'auto deve essere accesa perché funzioni.",
     "temperature": "Temperatura interna",
-    "temperature_description": "La temperatura dentro l'auto in °C, da parcheggiata o in marcia. Non disponibile se l'auto non ha un sensore interno. La temperatura esterna e l'impostazione della manopola sono valori separati.",
+    "temperature_description": "La temperatura misurata dentro l'auto in °C – solo con un vero sensore interno. Molte BYD non ce l'hanno (es. Dolphin Surf: il valore del modulo clima è il valore impostato). In tal caso la condizione non è mai soddisfatta. La temperatura esterna e quella impostata del clima sono valori separati.",
     "outside_temperature": "Temperatura esterna",
     "outside_temperature_description": "La temperatura fuori in °C. Viene dal sensore esterno, o dal meteo locale se non c'è. Non usa mai il sensore interno.",
     "celsius": "Celsius",
@@ -1616,6 +1665,7 @@
       "auto": "Auto",
       "system": "Sistema",
       "update": "Aggiornamenti dell'app",
+      "camping": "Campeggio",
       "energie": "Energia",
       "datenschutz": "Privacy",
       "laden": "Ricarica"
@@ -1747,6 +1797,10 @@
         "title": "Aiuto in viaggio",
         "help": "Durante la guida Panoptes recupera ogni minuto il percorso pianificato dal pianificatore e mostra se la batteria basta fino alla prossima sosta. Viene inviata la chiave del dispositivo a byd.serveone.at; la tua posizione solo se diventa stretto e si cerca una nuova sosta di ricarica. Richiede il collegamento al pianificatore. Disattivato di serie."
       },
+      "abweichung": {
+        "title": "Ripianificare in viaggio",
+        "help": "Durante un percorso accettato controlla se sei ancora nel piano: ogni 10 minuti (o ogni 5 % di batteria) il percorso, la tua posizione (arrotondata a circa 100 m) e il livello della batteria vanno al pianificatore su byd.serveone.at, che non ne conserva nulla. Se sei chiaramente fuori piano, Panoptes propone una nuova sosta di ricarica – mai automaticamente nel navigatore. Richiede l'aiuto in viaggio. Disattivato per impostazione predefinita."
+      },
       "vorliebenSenden": {
         "title": "Invia le preferenze di ricarica al pianificatore",
         "help": "Così /ev/ nel browser conosce le carte e le reti di ricarica dell'auto – solo insieme a «Invia stato»."
@@ -1825,6 +1879,62 @@
       "planer": {
         "title": "Vedi il diario di viaggio nel pianificatore di percorsi",
         "help": "Puoi vedere il tuo diario di viaggio su byd.serveone.at/ev/. Resta nell'auto: Panoptes invia ogni pagina solo cifrata, il server non può leggerla e non memorizza nulla. Per questo Panoptes interroga brevemente il pianificatore di percorsi ogni minuto (pochi KB). Richiede il collegamento al pianificatore di percorsi. Di serie disattivato."
+      }
+    },
+    "camping": {
+      "waerme": {
+        "title": "Calore",
+        "help": "Quanto caldo deve fare di notte. Senza sensore interno Panoptes riscalda a intervalli in base alla temperatura esterna (ogni x minuti per y minuti). «Risparmio» usa solo il riscaldamento dei sedili. «Modalità di riscaldamento» stabilisce come riscaldare.",
+        "aus": "Spento",
+        "sparen": "Risparmio (solo sedili riscaldati)",
+        "mild": "Mite",
+        "warm": "Caldo",
+        "sehr_warm": "Molto caldo"
+      },
+      "heizweg": {
+        "title": "Modalità di riscaldamento",
+        "help": "Come riscalda Panoptes. «Solo ad auto accesa» comanda il clima localmente finché l'auto è accesa in P. «Anche tramite il cloud BYD» avvia sessioni di clima remoto ad auto spenta (10–30 min, al massimo 12 per notte, almeno 45 min di distanza); ogni volta sveglia l'auto. «Prova» non comanda nulla e mostra solo cosa succederebbe.",
+        "probelauf": "Prova (non comanda nulla)",
+        "auto_an": "Solo ad auto accesa (locale)",
+        "auto_an_und_cloud": "Anche tramite il cloud BYD ad auto spenta"
+      },
+      "vorheizenMinuten": {
+        "title": "Preriscaldare prima di dormire",
+        "help": "All'avvio riscalda forte una volta per questi minuti. 0 = spento."
+      },
+      "morgensHeizen": {
+        "title": "Riscaldare al mattino",
+        "help": "Riscalda prima della sveglia. L'energia necessaria viene riservata per prima nel budget."
+      },
+      "weckzeit": {
+        "title": "Ora della sveglia",
+        "help": "Il riscaldamento deve durare fino ad allora. Se la batteria non basta, Panoptes allunga le pause automaticamente."
+      },
+      "socGrenze": {
+        "title": "Limite minimo della batteria",
+        "help": "Qui il riscaldamento si ferma, dopo un avviso. Panoptes non spegne mai l'auto."
+      },
+      "v12Warnung": {
+        "title": "Avviso 12 V",
+        "help": "Se la batteria di avviamento scende sotto questo valore, il riscaldamento si ferma e arriva un messaggio. Vuoto = spento."
+      },
+      "hoechstdauerStunden": {
+        "title": "Durata massima del riscaldamento",
+        "help": "Dopo queste ore il riscaldamento si ferma, con un messaggio."
+      },
+      "waechterBewohnt": {
+        "title": "Guardiano «abitato»",
+        "help": "Durante il campeggio: nessun deterrente (schermo, luci, clacson) e nessun allarme urti. Porte e finestrini vengono segnalati in silenzio."
+      },
+      "aussenBewegung": {
+        "title": "Movimento all'esterno",
+        "help": "Cosa fa il Guardiano in caso di movimento intorno all'auto durante il campeggio.",
+        "nichts": "Niente – il Guardiano riposa (risparmia energia)",
+        "notiz": "Il Guardiano è attivo, ma senza deterrente"
+      },
+      "nachtNachSekunden": {
+        "title": "Schermo notturno dopo",
+        "help": "Senza tocchi lo schermo diventa lo schermo notturno scuro dopo questi secondi."
       }
     },
     "energie": {

@@ -167,6 +167,13 @@ public final class AutoServiceDebugApiHandler {
             HttpResponse.sendJsonError(out, "Need 'method' param");
             return true;
         }
+        // 0.1.16 (Sicherheit): Per Reflexion nur lesende Methoden – sonst ließe sich jede Aktion ohne Parameter
+        // (start/stop/open/close/lock …) am Auto auslösen. Abgelehnt wird VOR jedem Gerätezugriff.
+        if (!nurLesend(methodName)) {
+            HttpResponse.sendJson(out, 400, new JSONObject().put("ok", false).put("error", "nur_lesend")
+                    .put("method", methodName).toString());
+            return true;
+        }
 
         at.greenchili.surfmate.byd.BydDataCollector collector =
             at.greenchili.surfmate.byd.BydDataCollector.getInstance();
@@ -240,6 +247,13 @@ public final class AutoServiceDebugApiHandler {
         String classFilter = q.get("class");      // null = all
         boolean dumpAll = "all".equals(q.get("mode"));
         String prefix = q.getOrDefault("prefix", "get");
+        // 0.1.16 (Sicherheit): Präfix nur get/is/has (prefix=start würde Aktionen aufrufen); zusätzlich wird unten
+        // jede einzelne Methode mit nurLesend geprüft.
+        if (!lesePraefix(prefix)) {
+            HttpResponse.sendJson(out, 400, new JSONObject().put("ok", false).put("error", "nur_lesend")
+                    .put("prefix", prefix).toString());
+            return true;
+        }
 
         at.greenchili.surfmate.byd.BydDataCollector collector =
             at.greenchili.surfmate.byd.BydDataCollector.getInstance();
@@ -285,6 +299,7 @@ public final class AutoServiceDebugApiHandler {
                 if (m.getParameterCount() != 0) continue;
                 String name = m.getName();
                 if (!name.startsWith(prefix)) continue;
+                if (!nurLesend(name)) continue;
                 if (name.equals("getClass") || name.equals("hashCode") || name.equals("toString")) continue;
                 Class<?> ret = m.getReturnType();
                 if (ret == void.class || ret == Void.class) continue;
@@ -622,6 +637,23 @@ public final class AutoServiceDebugApiHandler {
         o.put("valueHex", "0x" + String.format(Locale.ROOT, "%08X", v));
         o.put("isInvalid", v == AutoServiceBridge.INVALID_VALUE);
         features.put(name, o);
+    }
+
+    private static final java.util.regex.Pattern LESEND =
+            java.util.regex.Pattern.compile("(get|is|has)[A-Z0-9][A-Za-z0-9_]{0,80}");
+
+    /**
+     * 0.1.16: Darf per Reflexion aufgerufen werden? Nur Getter-Namen: {@code get}/{@code is}/{@code has}, danach ein
+     * Großbuchstabe oder eine Ziffer ({@code getDoorLock} ja, {@code start}, {@code setX}, {@code lock},
+     * {@code factoryReset}, {@code getaway} nein).
+     */
+    static boolean nurLesend(String methodName) {
+        return methodName != null && LESEND.matcher(methodName).matches();
+    }
+
+    /** Präfix für probe-getters: muss selbst mit get/is/has beginnen (auch „get“ allein). */
+    static boolean lesePraefix(String prefix) {
+        return prefix != null && prefix.matches("(get|is|has)([A-Z0-9][A-Za-z0-9_]{0,80})?");
     }
 
     private static Integer parseIntParam(Map<String, String> q, String key) {

@@ -101,6 +101,8 @@ public final class UnifiedTelegramConfig {
     public static final String K_BATTERY_ALERTS   = "batteryAlerts";
     public static final String K_GUARD_STOP_ALERTS = "guardStopAlerts";
     public static final String K_UPDATE_ALERTS    = "updateAlerts";
+    /** 0.1.16: Camping-Meldungen (Türen/Fenster still, Akku/12 V auch in der Ruhezeit). */
+    public static final String K_CAMPING_ALERTS   = "campingAlerts";
     /** {enabled, from "HH:MM", to "HH:MM"} – in der Ruhezeit kommt nur Alarm. */
     public static final String K_QUIET_HOURS      = "quietHours";
     /** Zeitweise Ruhe bis (ms, 0 = aus), z. B. aus Home Assistant „Ruhezeit 60 min“. */
@@ -341,6 +343,7 @@ public final class UnifiedTelegramConfig {
     public static boolean isHealthAlerts() { return load().optBoolean(K_HEALTH_ALERTS, true); }
     /** Update eingespielt / zurückgerollt. Std. an. */
     public static boolean isUpdateAlerts()   { return load().optBoolean(K_UPDATE_ALERTS, true); }
+    public static boolean isCampingAlerts()  { return load().optBoolean(K_CAMPING_ALERTS, true); }
 
     public static long getMediaNoticeAckAt() {
         try {

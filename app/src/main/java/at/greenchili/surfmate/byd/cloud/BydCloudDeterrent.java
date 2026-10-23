@@ -67,6 +67,8 @@ public final class BydCloudDeterrent {
      * This method returns immediately — all work happens on a background thread.
      */
     public void onMotionDetected() {
+        // Camping „bewohnt“: nie Licht oder Hupe
+        if (at.greenchili.surfmate.camping.Camping.ohneAbschreckung()) return;
         // Quick checks on the calling thread (no I/O)
         String action = getDeterrentAction();
         if ("silent".equals(action)) {

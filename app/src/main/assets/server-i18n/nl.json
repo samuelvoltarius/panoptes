@@ -156,6 +156,23 @@
     "ai_off_body": "AI-herkenning draait nu niet. Zodat er niets verloren gaat, neemt de Bewaker op bij beweging. Panoptes probeert de AI opnieuw te laden.",
     "guard_stop_title": "Bewaker gestopt: {0}",
     "guard_stop_resumed": "Bewaker werkt weer",
+    "camping_an": "Kamperen aan",
+    "camping_aus_tipp": "Kamperen uit",
+    "camping_aus_ha": "Kamperen uit (Home Assistant)",
+    "camping_aus_telegram": "Kamperen uit (Telegram)",
+    "camping_aus_losgefahren": "Kamperen uit: weggereden",
+    "camping_akku_bald_grenze": "Kamperen: accu bijna op de ondergrens",
+    "camping_akku_grenze_heizen_aus": "Kamperen: accu op de ondergrens – Panoptes verwarmt niet meer",
+    "camping_v12_niedrig_heizen_aus": "Kamperen: 12V-accu zwak – Panoptes verwarmt niet meer",
+    "camping_hoechstdauer_heizen_aus": "Kamperen: maximale duur bereikt – Panoptes verwarmt niet meer",
+    "camping_budget_gestreckt": "Kamperen: accu reikt niet helemaal tot de wektijd – langere pauzes",
+    "camping_auto_hat_abgeschaltet": "Kamperen: de auto heeft de klimaatregeling zelf uitgezet – Panoptes wacht op jou",
+    "camping_fenster_offen": "Kamperen: er is een raam geopend",
+    "camping_heizen_fehlgeschlagen": "Kamperen: verwarmen kon niet worden ingeschakeld – Panoptes wacht op jou",
+    "camping_heizen_aus_fehlgeschlagen": "Kamperen: verwarmen kon niet worden uitgeschakeld – controleer de auto",
+    "camping_cloud_gesperrt_weg2": "Kamperen: toegang op afstand 2 is weg na een cloudsessie – verwarmen via de cloud geblokkeerd",
+    "camping_weck_grenze": "Kamperen: maximaal aantal cloudsessies bereikt – vannacht geen meer",
+    "camping_tuer_offen": "Kamperen: {0} geopend",
     "guard_stop_reason_soc": "hoofdaccu te leeg",
     "guard_stop_reason_v12": "12 V-accu te zwak",
     "guard_stop_reason_park": "lang geparkeerd",
@@ -257,6 +274,14 @@
         "label": "AI-herkenning uit",
         "note": "Het AI-model draait niet; tot het terug is, neemt de Bewaker bij elke beweging op."
       },
+      "camping_hinweis": {
+        "label": "Kamperen: meldingen",
+        "note": "Kamperen aan/uit, deur of raam geopend tijdens het kamperen (bewaker bewoond, geen alarm)."
+      },
+      "camping_warnung": {
+        "label": "Kamperen: waarschuwingen",
+        "note": "Kamperen: accu dicht bij of op de ondergrens, zwakke 12V-accu, maximale duur bereikt."
+      },
       "surveillance_guard_stop": {
         "label": "Bewaker gepauzeerd / weer aan",
         "note": "De Bewaker pauzeert om de accu te sparen (weinig lading, zwakke 12V-accu, te lang geparkeerd, rustige uren of rustzones)."
@@ -349,6 +374,24 @@
     }
   },
   "telegram": {
+    "camping": {
+      "status_on": "⛺ *Kamperen staat aan*",
+      "status_off": "⛺ *Kamperen staat uit.* Alleen in te schakelen bij stilstand (stand P).",
+      "battery": "Accu {0} % · grens {1} %",
+      "interval": "Verwarmen: elke {0} min gedurende {1} min · stand {2}",
+      "lasts": "Verwarming reikt tot {0}",
+      "trial": "_Proefdraaien: Panoptes verwarmt in deze versie nog niet._",
+      "not_parked": "Kamperen werkt alleen bij stilstand (stand P).",
+      "state_unknown": "Rijstatus nu onbekend – probeer het zo opnieuw.",
+      "failed": "Kamperen is nu niet bereikbaar.",
+      "feedback_ok": "Bedankt – geldt vanaf de volgende cyclus.",
+      "feedback_wait": "Al aangepast – volgende wijziging over 30 minuten.",
+      "btn_on": "⛺ Kamperen aan",
+      "btn_off": "Kamperen uit",
+      "btn_cold": "❄ te koud",
+      "btn_fine": "✓ prima",
+      "btn_warm": "☀ te warm"
+    },
     "greeting": {
       "online": "👋 *Panoptes is er.*\nJe auto luistert weer. Tik op /help voor alle commando's."
     },
@@ -378,6 +421,8 @@
       "status": "/status – Hoe het met je auto gaat",
       "guard": "/guardian on · /guardian off – Bewaker wekken of laten slapen",
       "guard_view": "/guardian – Waakt de Bewaker?",
+      "camping": "/camping aan · /camping uit – kamperen (bewaker bewoond, accu in de gaten)",
+      "camping_view": "/camping – Staat kamperen aan?",
       "camera": "/camera – Nu een foto van elke camera",
       "clips": "/clips – Nieuwste opnames (bijv. `/clips 12`)",
       "where": "/where – Waar de auto geparkeerd staat",
@@ -713,6 +758,10 @@
       "hilfe": "🆘 *Bewaker heeft hulp nodig.* Al {0} min niet ingeschakeld, zelfherstel was niet genoeg. Panoptes vraagt om een herstart van de app."
     },
     "kategorie": {
+      "camping": {
+        "label": "Kamperen",
+        "note": "Kampeermeldingen (rusttijd geldt) en accuwaarschuwingen (ook tijdens de rusttijd)."
+      },
       "waechter_kritisch": {
         "label": "Bewaking: kritiek",
         "note": "Iemand vlak bij de auto of blijft er staan. Standaard aan."
@@ -989,7 +1038,7 @@
     "ac": "Klimaatregeling",
     "ac_description": "Of de klimaatregeling aan of uit staat. De auto moet zijn ingeschakeld om hem te laten draaien.",
     "temperature": "Binnentemperatuur",
-    "temperature_description": "De temperatuur in de auto in °C, tijdens het parkeren en het rijden. Niet beschikbaar als de auto geen binnensensor heeft. Buitentemperatuur en de draaiknopinstelling zijn aparte waarden.",
+    "temperature_description": "De gemeten temperatuur in de auto in °C – alleen met een echte binnensensor. Veel BYD's hebben er geen (bijv. Dolphin Surf: de waarde van de klimaatmodule is de ingestelde waarde). Dan wordt de voorwaarde nooit vervuld. Buitentemperatuur en de ingestelde klimaattemperatuur zijn aparte waarden.",
     "outside_temperature": "Buitentemperatuur",
     "outside_temperature_description": "De temperatuur buiten in °C. Komt van de buitensensor, of anders van het lokale weer. De binnensensor wordt nooit gebruikt.",
     "celsius": "Celsius",
@@ -1616,6 +1665,7 @@
       "auto": "Auto",
       "system": "Systeem",
       "update": "App-updates",
+      "camping": "Kamperen",
       "energie": "Energie",
       "datenschutz": "Privacy",
       "laden": "Laden"
@@ -1747,6 +1797,10 @@
         "title": "Hulp onderweg",
         "help": "Tijdens het rijden haalt Panoptes elke minuut je geplande route op bij de routeplanner en laat zien of de accu tot de volgende stop reikt. Daarvoor gaat de apparaatsleutel naar byd.serveone.at; je positie alleen als het krap wordt en er een nieuwe laadstop wordt gezocht. Vereist de verbinding met de routeplanner. Standaard uit."
       },
+      "abweichung": {
+        "title": "Onderweg opnieuw plannen",
+        "help": "Controleert tijdens een geaccepteerde route of je nog op schema ligt: elke 10 minuten (of per 5 % accu) gaan de route, je positie (afgerond op ongeveer 100 m) en de accustand naar de routeplanner op byd.serveone.at, die daar niets van bewaart. Wijk je duidelijk af, dan stelt Panoptes een nieuwe laadstop voor – nooit automatisch in de navigatie. Vereist de onderweg-hulp. Standaard uit."
+      },
       "vorliebenSenden": {
         "title": "Laadvoorkeuren naar de routeplanner sturen",
         "help": "Zodat /ev/ in de browser je laadpassen en laadnetwerken uit de auto kent – alleen samen met ‘Status sturen’."
@@ -1825,6 +1879,62 @@
       "planer": {
         "title": "Ritboek bekijken in de routeplanner",
         "help": "Je kunt je ritboek bekijken op byd.serveone.at/ev/. Het blijft in de auto: Panoptes stuurt elke pagina alleen versleuteld, de server kan hem niet lezen en slaat niets op. Daarvoor vraagt Panoptes elke minuut kort bij de routeplanner na (enkele KB). Vereist de koppeling met de routeplanner. Standaard uit."
+      }
+    },
+    "camping": {
+      "waerme": {
+        "title": "Warmte",
+        "help": "Hoe warm het 's nachts moet worden. Zonder binnensensor verwarmt Panoptes met tussenpozen op basis van de buitentemperatuur (elke x minuten gedurende y minuten). „Zuinig\" gebruikt alleen de stoelverwarming. „Verwarmingswijze\" bepaalt hoe.",
+        "aus": "Uit",
+        "sparen": "Zuinig (alleen stoelverwarming)",
+        "mild": "Mild",
+        "warm": "Warm",
+        "sehr_warm": "Heel warm"
+      },
+      "heizweg": {
+        "title": "Verwarmingswijze",
+        "help": "Hoe Panoptes verwarmt. „Alleen als de auto aan staat\" schakelt de klimaatregeling lokaal zolang de auto aan in P staat. „Ook via de BYD-cloud\" start op afstand klimaatsessies als de auto uit is (10–30 min, hoogstens 12 per nacht, minstens 45 min ertussen); dat maakt de auto elke keer wakker. „Proefdraaien\" schakelt niets en toont alleen wat er zou gebeuren.",
+        "probelauf": "Proefdraaien (schakelt niets)",
+        "auto_an": "Alleen als de auto aan staat (lokaal)",
+        "auto_an_und_cloud": "Ook via de BYD-cloud als de auto uit is"
+      },
+      "vorheizenMinuten": {
+        "title": "Voorverwarmen voor het slapen",
+        "help": "Bij het inschakelen één keer flink verwarmen, zoveel minuten. 0 = uit."
+      },
+      "morgensHeizen": {
+        "title": "'s Ochtends verwarmen",
+        "help": "Verwarmen voor de wektijd. De energie daarvoor wordt eerst in het budget gereserveerd."
+      },
+      "weckzeit": {
+        "title": "Wektijd",
+        "help": "Tot dan moet de verwarming reiken. Is de accu niet genoeg, dan verlengt Panoptes de pauzes automatisch."
+      },
+      "socGrenze": {
+        "title": "Ondergrens accu",
+        "help": "Hier stopt het verwarmen; eerst komt een waarschuwing. Panoptes schakelt de auto nooit uit."
+      },
+      "v12Warnung": {
+        "title": "12V-waarschuwing",
+        "help": "Zakt de startaccu daaronder, dan stopt het verwarmen en komt er een melding. Leeg = uit."
+      },
+      "hoechstdauerStunden": {
+        "title": "Maximale verwarmingsduur",
+        "help": "Na zoveel uur stopt het verwarmen, met een melding."
+      },
+      "waechterBewohnt": {
+        "title": "Bewaker „bewoond\"",
+        "help": "Tijdens het kamperen: geen afschrikking (scherm, licht, claxon) en geen schokalarm. Deuren en ramen worden stil gemeld."
+      },
+      "aussenBewegung": {
+        "title": "Beweging buiten",
+        "help": "Wat de bewaker doet bij beweging rond de auto tijdens het kamperen.",
+        "nichts": "Niets – bewaker rust (bespaart stroom)",
+        "notiz": "Bewaker loopt, maar zonder afschrikking"
+      },
+      "nachtNachSekunden": {
+        "title": "Nachtscherm na",
+        "help": "Zonder aanraking wordt het scherm na zoveel seconden het donkere nachtscherm."
       }
     },
     "energie": {

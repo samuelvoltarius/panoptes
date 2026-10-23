@@ -507,10 +507,21 @@ public final class VehicleCommandRouter {
             // cloud fallback, while localOnlyWhenAwake() keeps an occupied car off the remote
             // path entirely.
             if (!isSdkTemperatureRepresentable()) return false;
-            // Zone 0 is the SDK's main+copilot target. Set it before powering
-            // AC so a failed setpoint write never reports a successful
-            // power-on while silently leaving the old temperature in place.
-            return c.setAcTemperature(0, tempCelsius) && c.setAcPower(true);
+            // 0.1.16 (Deploy-Test 23.10.2026): Ein Sollwert VOR start(0) wird bei ausgeschalteter AC
+            // ignoriert, und bei ausgeschaltetem Auto meldet start(0) „0 = ok“ ohne Wirkung. Darum:
+            // erst einschalten, Wirkung abwarten, dann Sollwert, Echo prüfen. Keine Wirkung = Fehlschlag –
+            // bei Auto aus folgt OPENAIR (Router, CloudPowerGate), bei Auto an nie (localOnlyWhenAwake).
+            if (!c.setAcPower(true)) return false;
+            if (c.warteAufKlimaEcho(true, KLIMA_ECHO_MS) == BydDataCollector.ECHO_AUS) {
+                logger.warn("climate-on: start(0) ohne Wirkung (AC bleibt aus) – lokal fehlgeschlagen");
+                return false;
+            }
+            if (!c.setAcTemperature(0, tempCelsius)) return false;
+            if (c.warteAufSollwertEcho(tempCelsius, SOLLWERT_ECHO_MS) == BydDataCollector.ECHO_AUS) {
+                logger.warn("climate-on: Sollwert " + tempCelsius + " ohne Echo – lokal fehlgeschlagen");
+                return false;
+            }
+            return true;
         }
         public CloudCapabilities.Feature cloudFeature() { return CloudCapabilities.Feature.CLIMATE; }
         // OPENAIR starts a TIMED REMOTE session; on an already-running car the occupant wants
@@ -545,12 +556,72 @@ public final class VehicleCommandRouter {
         public CloudOutcome executeViaCloud(BydCloudClient client, String vin) throws Exception {
             return remoteCommand(client, vin, "CLOSEAIR", null);
         }
-        public boolean executeViaSdk(BydDataCollector c) { return c.setAcPower(false); }
+        public boolean executeViaSdk(BydDataCollector c) {
+            if (!c.setAcPower(false)) return false;
+            // 0.1.16: Wirkung prüfen. Keine Wirkung = Fehlschlag; CLOSEAIR danach nur bei Auto aus und
+            // höchstens 60 s altem Nachweis (CloudPowerGate.MAX_AGE_KLIMA_AUS_MS).
+            if (c.warteAufKlimaEcho(false, KLIMA_ECHO_MS) == BydDataCollector.ECHO_AUS) {
+                logger.warn("climate-off: stop(0) ohne Wirkung (AC läuft weiter) – lokal fehlgeschlagen");
+                return false;
+            }
+            return true;
+        }
         public CloudCapabilities.Feature cloudFeature() { return CloudCapabilities.Feature.CLIMATE; }
         // CLOSEAIR ends the REMOTE conditioning session — on an occupied, running car the
         // vehicle responds by powering itself down. See localOnlyWhenAwake().
         public boolean localOnlyWhenAwake() { return true; }
         public boolean allowCloudFallbackFromMqtt() { return true; }
+    }
+
+    /** 0.1.16: Frist für die Wirkung von start/stop (Deploy-Test: Echo nach spätestens 32 s per REST). */
+    public static final long KLIMA_ECHO_MS = 20_000L;
+    /** 0.1.16: Frist für das Sollwert-Echo nach setAcTemperature. */
+    public static final long SOLLWERT_ECHO_MS = 10_000L;
+
+    /**
+     * 0.1.16 (Koordination 23.10.2026): ausdrückliches Fernklima über die BYD-Cloud ({@code OPENAIR}), ohne
+     * lokale Seite. Nur bei frischem „Auto aus“ ({@link CloudPowerGate}, ≤ 180 s, ACC nicht an); bei wachem
+     * Auto verweigert ({@code CLOUD_ONLY} läuft durch das Gate). Temperatur 15–31 °C ganzzahlig, Dauer
+     * 10/15/20/25/30 min. Die Zuordnung der Cloud-Temperatur zur Strichskala des Surf (25 = Mitte,
+     * 26–33 = Striche 1–8) ist noch nicht gemessen.
+     */
+    public static final class ClimateRemoteOnCommand extends VehicleCommand {
+        public final int tempCelsius;
+        public final int dauerMinuten;
+        public ClimateRemoteOnCommand(int tempCelsius, int dauerMinuten) {
+            this.tempCelsius = tempCelsius;
+            this.dauerMinuten = dauerMinuten;
+        }
+        public String name() { return "climate-remote-on"; }
+        public Capability cloudCapability() { return gueltig() ? Capability.AVAILABLE : Capability.NONE; }
+        public Capability sdkCapability() { return Capability.NONE; }
+        public RoutePreference defaultPreference() { return RoutePreference.CLOUD_ONLY; }
+        public CloudOutcome executeViaCloud(BydCloudClient client, String vin) throws Exception {
+            if (!gueltig()) return CloudOutcome.unsupported();
+            return remoteCommand(client, vin, "OPENAIR",
+                    BydCloudClient.climateStartParams(tempCelsius, dauerMinuten));
+        }
+        public CloudCapabilities.Feature cloudFeature() { return CloudCapabilities.Feature.CLIMATE; }
+        public boolean gueltig() {
+            return tempCelsius >= 15 && tempCelsius <= 31
+                    && (dauerMinuten == 10 || dauerMinuten == 15 || dauerMinuten == 20
+                        || dauerMinuten == 25 || dauerMinuten == 30);
+        }
+    }
+
+    /**
+     * 0.1.16: Fernklima über die Cloud beenden ({@code CLOSEAIR}), ohne lokale Seite. Nur mit höchstens 60 s
+     * altem Nachweis „Auto aus“ ({@link CloudPowerGate#MAX_AGE_KLIMA_AUS_MS}); sonst nie (Vorfall 13.10.2026).
+     */
+    public static final class ClimateRemoteOffCommand extends VehicleCommand {
+        public String name() { return "climate-remote-off"; }
+        public Capability cloudCapability() { return Capability.AVAILABLE; }
+        public Capability sdkCapability() { return Capability.NONE; }
+        public RoutePreference defaultPreference() { return RoutePreference.CLOUD_ONLY; }
+        public CloudOutcome executeViaCloud(BydCloudClient client, String vin) throws Exception {
+            return remoteCommand(client, vin, "CLOSEAIR", null);
+        }
+        public CloudCapabilities.Feature cloudFeature() { return CloudCapabilities.Feature.CLIMATE; }
     }
 
     /**
@@ -593,6 +664,8 @@ public final class VehicleCommandRouter {
 
     public static final class CloseAllWindowsCommand extends VehicleCommand {
         public String name() { return "windows-close-all"; }
+        // 0.1.16.1 Audit SDK_FIRST/CLOUD_FIRST (Koordination 23.10.): bei wachem/besetztem Auto nur lokal, nie Cloud CLOSEWINDOW.
+        public boolean localOnlyWhenAwake() { return true; }
         public Capability cloudCapability() { return Capability.AVAILABLE; }
         public Capability sdkCapability() { return Capability.AVAILABLE; }
         public RoutePreference defaultPreference() { return RoutePreference.SDK_FIRST; }
@@ -627,6 +700,8 @@ public final class VehicleCommandRouter {
         public static final int LOCAL_VENT_PERCENT = 15;
 
         public String name() { return "windows-vent-all"; }
+        // 0.1.16.1 Audit SDK_FIRST/CLOUD_FIRST (Koordination 23.10.): bei wachem/besetztem Auto nur lokal, nie Cloud-Fensterbefehl.
+        public boolean localOnlyWhenAwake() { return true; }
         public Capability cloudCapability() { return Capability.AVAILABLE; }
         public Capability sdkCapability() { return Capability.AVAILABLE; }
         public RoutePreference defaultPreference() { return RoutePreference.CLOUD_FIRST; }
@@ -669,6 +744,8 @@ public final class VehicleCommandRouter {
             this.stopGeneration = stopGeneration;
         }
         public String name() { return "trunk-open"; }
+        // 0.1.16.1 Audit SDK_FIRST/CLOUD_FIRST (Koordination 23.10.): bei wachem/besetztem Auto nur lokal, nie Cloud-Heckklappe.
+        public boolean localOnlyWhenAwake() { return true; }
         public Capability cloudCapability() { return Capability.AVAILABLE; }
         public Capability sdkCapability() { return Capability.AVAILABLE; }
         public RoutePreference defaultPreference() { return RoutePreference.SDK_FIRST; }
@@ -692,6 +769,8 @@ public final class VehicleCommandRouter {
 
     public static final class TrunkCloseCommand extends VehicleCommand {
         public String name() { return "trunk-close"; }
+        // 0.1.16.1 Audit SDK_FIRST/CLOUD_FIRST (Koordination 23.10.): bei wachem/besetztem Auto nur lokal, nie Cloud-Heckklappe.
+        public boolean localOnlyWhenAwake() { return true; }
         public Capability cloudCapability() { return Capability.AVAILABLE; }
         public Capability sdkCapability() { return Capability.AVAILABLE; }
         public RoutePreference defaultPreference() { return RoutePreference.SDK_FIRST; }
@@ -954,6 +1033,9 @@ public final class VehicleCommandRouter {
             this.cloudFallbackSafe = allowCloudFallback;
         }
         public String name() { return "seat-heat"; }
+        // 0.1.16.1 (Koordination 23.10.): bei wachem/besetztem Auto NUR lokal – nie der Cloud-Sammelbefehl
+        // VENTILATIONHEATING (alle Sitzzonen + Lenkrad). Cloud nur bei nachweislich ausgeschaltetem Auto (CloudPowerGate).
+        public boolean localOnlyWhenAwake() { return true; }
         public Capability cloudCapability() {
             return cloudFallbackSafe ? Capability.AVAILABLE : Capability.NONE;
         }
@@ -1013,6 +1095,9 @@ public final class VehicleCommandRouter {
             this.cloudFallbackSafe = allowCloudFallback;
         }
         public String name() { return "seat-vent"; }
+        // 0.1.16.1 (Koordination 23.10.): bei wachem/besetztem Auto NUR lokal – nie der Cloud-Sammelbefehl
+        // VENTILATIONHEATING (alle Sitzzonen + Lenkrad). Cloud nur bei nachweislich ausgeschaltetem Auto (CloudPowerGate).
+        public boolean localOnlyWhenAwake() { return true; }
         public Capability cloudCapability() {
             return cloudFallbackSafe ? Capability.AVAILABLE : Capability.NONE;
         }
@@ -1213,6 +1298,8 @@ public final class VehicleCommandRouter {
         public final boolean on;
         public SteeringWheelHeatCommand(boolean on) { this.on = on; }
         public String name() { return "steering-heat"; }
+        // 0.1.16.1 Audit SDK_FIRST/CLOUD_FIRST (Koordination 23.10.): bei wachem/besetztem Auto nur lokal, nie Cloud-Sammelbefehl VENTILATIONHEATING (Sitze + Lenkrad).
+        public boolean localOnlyWhenAwake() { return true; }
         public Capability cloudCapability() { return Capability.AVAILABLE; }
         public Capability sdkCapability() { return Capability.AVAILABLE; }
         public RoutePreference defaultPreference() { return RoutePreference.SDK_FIRST; }

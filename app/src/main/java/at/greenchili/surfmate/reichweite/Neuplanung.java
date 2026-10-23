@@ -31,11 +31,14 @@ public final class Neuplanung {
         public double lat = Double.NaN, lon = Double.NaN, kmAbHier = Double.NaN, kw;
         public double socAn = Double.NaN, socAb = Double.NaN, ankunftProzent = Double.NaN;
         public long erstelltMs;
+        /** {@code lokal} (Reicht nicht) oder {@code abweichung} (0.1.16, Planer §17). */
+        public String quelle = QUELLE_LOKAL;
 
         public JSONObject alsJson() {
             JSONObject o = new JSONObject();
             try {
                 o.put("art", art);
+                o.put("quelle", quelle);
                 if (name != null) o.put("name", name);
                 if (!Double.isNaN(kmAbHier)) o.put("km", Math.round(kmAbHier * 10) / 10.0);
                 if (kw > 0) o.put("kw", kw);
@@ -75,10 +78,28 @@ public final class Neuplanung {
         vorschlag = v;
     }
 
-    /** Aktueller Vorschlag oder null. Zurück auf „Passt“ verwirft ihn. */
+    /**
+     * Aktueller Vorschlag oder null. Zurück auf „Passt“ verwirft einen lokalen Vorschlag; einen aus der
+     * Plan-Abweichung (§17, z. B. > 3 km neben der Route) nur {@link #abweichungEntwarnt()}.
+     */
     public Vorschlag aktuell(RangeWatch.Stufe stufe) {
-        if (stufe == RangeWatch.Stufe.PASST) vorschlag = null;
+        if (stufe == RangeWatch.Stufe.PASST && vorschlag != null && !QUELLE_ABWEICHUNG.equals(vorschlag.quelle)) {
+            vorschlag = null;
+        }
         return vorschlag;
+    }
+
+    public static final String QUELLE_LOKAL = "lokal";
+    public static final String QUELLE_ABWEICHUNG = "abweichung";
+
+    /** 0.1.16: Darf ein Vorschlag aus der Plan-Abweichung kommen (nicht in der Sperre nach einer Ablehnung)? */
+    public boolean abweichungErlaubt(long now) {
+        return now >= gesperrtBis;
+    }
+
+    /** 0.1.16: Planer meldet „im Plan“ – ein Vorschlag aus der Abweichung gilt nicht mehr. */
+    public void abweichungEntwarnt() {
+        if (vorschlag != null && QUELLE_ABWEICHUNG.equals(vorschlag.quelle)) vorschlag = null;
     }
 
     /** Fahrer verwirft den Vorschlag. @return true, wenn einer da war. */

@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "quelle": "CAMPING_PLAN.md 2.1 (Startwerte, Schätzung): Kabinen-Wärmeverlust ~60 W/K, 2 Schlafende ~160 W, Ziel 'warm' ~14 °C Mittel (nur Rechengröße, nie angezeigt). Wird nachts gemessen und per Rückmeldung angepasst.",
+  "zeilen": [
+    {"aussenC": -10, "intervallMin": 35, "dauerMin": 15, "stufe": 33, "geblaese": 3},
+    {"aussenC": -5,  "intervallMin": 40, "dauerMin": 15, "stufe": 31, "geblaese": 2},
+    {"aussenC": 0,   "intervallMin": 45, "dauerMin": 15, "stufe": 29, "geblaese": 2},
+    {"aussenC": 5,   "intervallMin": 75, "dauerMin": 15, "stufe": 27, "geblaese": 2},
+    {"aussenC": 10,  "intervallMin": 180, "dauerMin": 10, "stufe": 26, "geblaese": 2}
+  ],
+  "verschiebungK": {"mild": 4, "warm": 0, "sehr_warm": -4},
+  "leistungKwJeStufe": {"26": 1.5, "29": 1.9, "33": 2.4},
+  "stufenHinweis": "Surf-Display (Deploy-Test 23.10.): Sollwert 25 = neutral (heizt nicht), 26–33 = rote Heizstufen 1–8. Kleinste Heizstufe im Kennfeld daher 26.",
+  "leistungQuelle": "CAMPING_P1_DATEN.md (HA-Sitzung, 22.10.2026, Auto an): Soll 26 bei 12 °C ≈ 1,5 kW, Max-Heizen ≈ 2,4 kW; Zwischenwerte linear. Wird nachts gemessen.",
+  "grundlastKwAutoAn": 0.4,
+  "cloud": {
+    "temperaturHeizen": 31,
+    "dauerMin": 20,
+    "hinweis": "Fernklima über die BYD-Cloud (OPENAIR) nimmt 15–31 °C ganzzahlig. Wie das auf die Surf-Strichskala (25 = Mitte, 26–33 = Striche 1–8) abbildet, ist NICHT gemessen. Annahme bis zum Test mit Alfred: 31 = stärkstes Heizen, das die Cloud zulässt. Messen: OPENAIR 26/28/31 bei Auto aus, danach beim Einschalten den Drehregler-Wert ablesen (Sollwert-Echo) und die Gebläse-/Heizwirkung notieren."
+  },
+  "vorheizen": {"stufe": 33, "geblaese": 3},
+  "morgens": {"dauerMin": 20, "stufe": 33, "geblaese": 3},
+  "mindestDauerMin": 10,
+  "hoechstIntervallMin": 240,
+  "ersatzAussenC": 0
+}

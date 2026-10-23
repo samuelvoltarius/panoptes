@@ -52,6 +52,7 @@ public final class ExternGuard {
             "/api/ha/v1/zustand",
             "/api/ha/v1/regeln",
             "/api/ha/v1/ereignisse",
+            "/api/camping",   // 0.1.16: Camping-Status (Panoptes-Funktion, keine Innentemperatur)
             // Wächter-Aufnahmen fürs Cockpit (0.1.9): Liste + Tage + Zahlen, NUR lesen
             "/api/recordings",
             "/api/recordings/dates",
@@ -71,7 +72,11 @@ public final class ExternGuard {
             "/api/laden/nachfrage",   // Cockpit darf beantworten (Koordination 22.10.), Auto bleibt die Quelle
             "/api/laden/nachfrage/spaeter",
             "/api/laden/nachfrage/kein-preis",
-            "/api/ha/v1/aktion"
+            "/api/ha/v1/aktion",
+            // 0.1.16 Camping: Panoptes-Funktion (Regel A: in Stufe 2a keine Fahrzeugwirkung)
+            "/api/camping",
+            "/api/camping/rueckmeldung",
+            "/api/camping/weiter"
     )));
 
     /** true, wenn die Anfrage eines gekoppelten Geräts abgelehnt werden muss. */

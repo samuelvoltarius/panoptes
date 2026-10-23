@@ -8,6 +8,7 @@
 #   notzugang.sh serve   adb-Weiterleitung prüfen und bei Bedarf setzen (idempotent): serve=ok|fehlt
 #   notzugang.sh stop    Aufpasser und eigenen tailscaled beenden, Merker „aus“ setzen
 #   notzugang.sh status  läuft? (Aufpasser, tailscaled, adb-Weiterleitung)
+#   notzugang.sh neu     nach Skript-Erneuerung nur den Aufpasser neu starten (tailscaled läuft weiter)
 #   notzugang.sh lauf    (intern) Aufpasser-Schleife
 D=/data/local/tmp/panoptes-notzugang
 B="$D/bin"
@@ -71,6 +72,15 @@ case "$1" in
   serve)
     if serve_sichern; then echo serve=ok; else echo serve=fehlt; exit 1; fi
     ;;
+  neu)
+    # 0.1.16: nach dem Erneuern dieses Skripts (App-Update) nur den Aufpasser mit dem neuen Code neu starten.
+    # Der eigene tailscaled läuft weiter (keine Unterbrechung, kein neues up, kein Key).
+    [ -f "$D/aus" ] && { echo aus; exit 0; }
+    if aufpasser_laeuft; then kill "$(cat "$P")" 2>/dev/null; sleep 1; fi
+    rm -f "$P"
+    nohup sh "$D/notzugang.sh" lauf > /dev/null 2>&1 &
+    echo neu
+    ;;
   lauf)
     echo $$ > "$P"
     w=30
@@ -103,7 +113,7 @@ case "$1" in
     rm -f "$P"
     ;;
   *)
-    echo "notzugang.sh start|stop|status|serve" >&2
+    echo "notzugang.sh start|stop|status|serve|neu" >&2
     exit 2
     ;;
 esac

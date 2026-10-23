@@ -789,6 +789,10 @@ public class HttpServer {
             } else if (path.equals("/orte.html")) {
                 // Orte (0.1.11, ORTE_VERTRAG): Seite nur Anzeige/Formular; /api/orte prüft Login und sperrt die Kopplung.
                 if (!serveStaticFile(out, "local/orte.html")) HttpResponse.sendError(out, 404, "orte.html not found");
+            } else if (path.equals("/camping.html")) {
+                // 0.1.16 Camping (Kern 9): Seite nur Anzeige/Formular; /api/camping prüft Login und Fahrt-Sperre.
+                // Fehlte im Merge (Emulator-Abnahme 23.10.: „Not Found“).
+                if (!serveStaticFile(out, "local/camping.html")) HttpResponse.sendError(out, 404, "camping.html not found");
             } else if (path.equals("/bericht.html") || path.equals("/bericht")) {
                 // Monatsbericht (H7): Seite nur lesend, Daten aus /api/bericht/monat.
                 if (!serveStaticFile(out, "local/bericht.html")) {
@@ -1379,6 +1383,8 @@ public class HttpServer {
         if (path.startsWith("/api/orte") && OrteApiHandler.handle(method, path, body, out)) return true;
         // 0.1.14 Notzugang (zweiter, eigener tailscaled für die Fernwartung, optional)
         if (path.startsWith("/api/notzugang") && NotzugangApiHandler.handle(method, path, body, out)) return true;
+        // 0.1.16: BLE-Zählen (nur lesen, nur Anzahl/Typen, schaltet Bluetooth/Standort nie ein)
+        if (path.startsWith("/api/ble/") && BleApiHandler.handle(method, path, out)) return true;
         if (path.startsWith("/api/system/")
                 && SystemApiHandler.handle(method, path, body, out)) {
             return true;
@@ -1410,6 +1416,12 @@ public class HttpServer {
         // HTTPS im eigenen Tailnet (0.1.9): nur Display/Login, nicht in der Kopplungs-Erlaubnisliste
         if (path.startsWith("/api/tailscale/https")
                 && TailscaleHttpsApiHandler.handle(method, path, body, out)) {
+            return true;
+        }
+
+        // Camping-Modus (0.1.16, CAMPING_PLAN.md): Panoptes-Funktion, in Stufe 2a ohne Heizwirkung
+        if (path.startsWith("/api/camping")
+                && CampingApiHandler.handle(method, path, body, out)) {
             return true;
         }
 

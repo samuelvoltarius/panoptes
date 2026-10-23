@@ -125,6 +125,16 @@ public final class HomeAssistantDiscovery {
                 }
             }
 
+            // 0.1.16: ehemalige Innentemperatur-Entitäten bleiben unter ihrer unique_id stehen, aber mit eigenem
+            // Verfügbarkeits-Topic (retained "offline") → HA zeigt sie als nicht verfügbar statt eines erfundenen
+            // Werts. Eine spätere Version entfernt sie ganz (Komponente nur mit "p").
+            for (String key : TelemetryFieldCatalog.AUSGEMUSTERT) {
+                if (!TelemetryFieldCatalog.istAusgemustert(key)) continue;
+                TelemetryFieldCatalog.Field f = TelemetryFieldCatalog.get(key);
+                if (f == null || f.component == null) continue;
+                cmps.put(key, ausgemustert(node, baseTopic, f));
+            }
+
             // device_tracker for GPS (attributes carry lat/lon; map dot in HA)
             if (hasLat && hasLon) {
                 JSONObject tracker = new JSONObject();
@@ -182,6 +192,20 @@ public final class HomeAssistantDiscovery {
             c.put("payload_on", "1");
             c.put("payload_off", "0");
         }
+        return c;
+    }
+
+    /** Komponente einer ausgemusterten Entität: gleiche unique_id, eigenes Verfügbarkeits-Topic. */
+    static JSONObject ausgemustert(String node, String baseTopic, TelemetryFieldCatalog.Field f) throws Exception {
+        JSONObject c = component(node, baseTopic, f);
+        c.put("name", f.name + " (entfernt: kein Innenraumfühler)");
+        JSONArray avail = new JSONArray();
+        JSONObject a = new JSONObject();
+        a.put("topic", TelemetryFieldCatalog.ausgemustertTopic(baseTopic));
+        a.put("payload_available", "online");
+        a.put("payload_not_available", "offline");
+        avail.put(a);
+        c.put("availability", avail);
         return c;
     }
 

@@ -376,6 +376,7 @@
         ] },
         { id: 'car', label: 'Auto', i18n: 'shell.sec_car', icon: 'car', pages: [
             { href: 'vehicle-control.html', label: 'Steuerung',          i18n: 'shell.page_control' },
+            { href: 'camping.html',         label: 'Camping',            i18n: 'shell.page_camping' },
             { href: 'seat-positions.html',  label: 'Sitze',              i18n: 'shell.page_seats' },
             { href: 'automations.html',     label: 'Regeln',             i18n: 'shell.page_rules' },
             { href: 'key-mapping.html',     label: 'Tasten',             i18n: 'shell.page_keys' },

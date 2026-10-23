@@ -78,7 +78,7 @@ public class TelegramNotifier {
      * TelegramBotDaemon.processIpcCommand.
      */
     public enum Category { CRITICAL, CONNECTIVITY, MOTION, VIDEO, PARKING,
-            CHARGING, BATTERY, GUARD_STOP, UPDATE, HEALTH }
+            CHARGING, BATTERY, GUARD_STOP, UPDATE, HEALTH, CAMPING }
 
     /**
      * Read the matching pref directly from the unified config so a toggle
@@ -106,6 +106,7 @@ public class TelegramNotifier {
                 case GUARD_STOP:   return UnifiedTelegramConfig.isGuardStopAlerts();
                 case HEALTH:       return UnifiedTelegramConfig.isHealthAlerts();
                 case UPDATE:       return UnifiedTelegramConfig.isUpdateAlerts();
+                case CAMPING:      return UnifiedTelegramConfig.isCampingAlerts();
                 default:           return true;
             }
         } catch (Exception e) {

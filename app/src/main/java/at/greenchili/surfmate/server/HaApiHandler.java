@@ -97,6 +97,16 @@ public final class HaApiHandler {
             boolean aktiv = bis > System.currentTimeMillis();
             z.put("ruhezeit", new JSONObject().put("aktiv", aktiv).put("bis", aktiv ? bis : JSONObject.NULL));
             z.put("position", positionGewuenscht && positionErlaubt() ? position() : JSONObject.NULL);
+            // 0.1.16 Camping: nur Werte des Modus (keine Innentemperatur); Heizen in Stufe 2a nur Probelauf
+            JSONObject cs = at.greenchili.surfmate.camping.Camping.status();
+            JSONObject c = new JSONObject();
+            c.put("aktiv", cs.optBoolean("aktiv", false));
+            c.put("probelauf", cs.optBoolean("trockenlauf", true));
+            c.put("phase", cs.optString("phase", "ende"));
+            c.put("naechsterZyklus", cs.has("naechsterZyklusMs") ? cs.get("naechsterZyklusMs") : JSONObject.NULL);
+            JSONObject b = cs.optJSONObject("budget");
+            c.put("reichtBis", b != null && b.has("reichtBisMs") ? b.get("reichtBisMs") : JSONObject.NULL);
+            z.put("camping", c);
         } catch (Exception ignored) { }
         return z;
     }
@@ -186,6 +196,22 @@ public final class HaApiHandler {
                         return fehler(500, "nicht_gespeichert");
                     }
                     res.put("ok", true);
+                    return new JSONObject[]{null, res};
+                }
+                case "camping": {
+                    // 0.1.16: Panoptes-Funktion (Stufe 2a ohne Heizwirkung)
+                    if (!req.has("an")) return fehler(400, "an");
+                    JSONObject r = req.optBoolean("an", false)
+                            ? at.greenchili.surfmate.camping.Camping.ein("ha")
+                            : at.greenchili.surfmate.camping.Camping.aus("ha");
+                    if (!r.optBoolean("ok", false)) return fehler(409, r.optString("fehler", "abgelehnt"));
+                    res.put("ok", true);
+                    return new JSONObject[]{null, res};
+                }
+                case "camping_rueckmeldung": {
+                    JSONObject r = at.greenchili.surfmate.camping.Camping.rueckmeldung(req.optString("art", ""));
+                    if (!r.optBoolean("ok", false)) return fehler(400, r.optString("fehler", "art"));
+                    res.put("ok", true).put("uebernommen", r.optBoolean("uebernommen", false));
                     return new JSONObject[]{null, res};
                 }
                 case "ziel":
