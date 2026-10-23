@@ -317,8 +317,8 @@ android {
         // value (e.g. `-PsurfmateVersionName=27.4 -PsurfmateVersionCode=12`)
         // without a source edit per release; the defaults track the current
         // rolling head so a plain local build is still accurate.
-        versionCode = (project.findProperty("surfmateVersionCode") as? String)?.toIntOrNull() ?: 23
-        versionName = (project.findProperty("surfmateVersionName") as? String) ?: "0.1.15"
+        versionCode = (project.findProperty("surfmateVersionCode") as? String)?.toIntOrNull() ?: 24
+        versionName = (project.findProperty("surfmateVersionName") as? String) ?: "0.1.15.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
         // Note: abiFilters removed - using splits.abi instead for size optimization
@@ -338,6 +338,11 @@ android {
         // (debug) hat ENTWICKLUNG = true. Standard aus, nur per -PpanoptesScreenshotModus=true für Emulator-Abnahmen.
         buildConfigField("boolean", "SCREENSHOT_MODUS",
             if ((project.findProperty("panoptesScreenshotModus") as? String) == "true") "true" else "false")
+        // 0.1.15.1: BootReceiver überlässt den Start nach MY_PACKAGE_REPLACED nur dann der IDE (Android Studio „Run“),
+        // wenn ausdrücklich so gebaut (-PpanoptesIdeStart=true). Standard aus: Auto- und Community-Builds
+        // (ENTWICKLUNG = true) starten nach einem In-App-Update selbst minimiert neu.
+        buildConfigField("boolean", "IDE_START",
+            if ((project.findProperty("panoptesIdeStart") as? String) == "true") "true" else "false")
     }
 
     buildFeatures {

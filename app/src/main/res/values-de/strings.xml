@@ -341,6 +341,9 @@
     <!-- fragment_webview -->
     <string name="webview_loading">Einen Moment…</string>
     <string name="webview_camera_daemon_not_running">Kameradienst ist aus</string>
+    <string name="panoptes_startet">Panoptes startet …</string>
+    <string name="panoptes_startet_hinweis">Die Seite lädt von selbst, sobald Panoptes bereit ist.</string>
+    <string name="panoptes_startet_zu_lange">Panoptes antwortet noch nicht.</string>
     <string name="webview_start_camera_daemon">Starte den Kameradienst im Bereich Dienste, um diese Seite zu öffnen.</string>
     <!-- dialog_roi_drawing -->
     <!-- dialog_reset_data -->

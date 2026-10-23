@@ -570,8 +570,18 @@ open class MainActivity : AppCompatActivity() {
     }
 
     private fun runDaemonStartupJetzt(intent: android.content.Intent?, fromOnCreate: Boolean) {
-        val isPostUpdate = at.greenchili.surfmate.updater.UpdateLifecycle
+        var isPostUpdate = at.greenchili.surfmate.updater.UpdateLifecycle
             .isPostUpdateLaunch(this, intent)
+        // 0.1.15.1: BootReceiver (MY_PACKAGE_REPLACED) und update-on-car (am start post_update) starten nach
+        // einem Update beide mit post_update. Nur der erste darf die Daemons hart neu starten; der zweite wäre
+        // ein Doppelstart, der die gerade gestarteten Daemons wieder beendet.
+        if (isPostUpdate && !at.greenchili.surfmate.updater.NachUpdateStart.beanspruchen(
+                android.os.SystemClock.elapsedRealtime())) {
+            android.util.Log.i("MainActivity",
+                "runDaemonStartup: Post-Update-Start lief in diesem Prozess gerade schon — entprellt")
+            isPostUpdate = false
+        }
+        val nachUpdateBeansprucht = isPostUpdate
         if (intent?.getBooleanExtra(
                 at.greenchili.surfmate.updater.UpdateLifecycle.EXTRA_POST_UPDATE,
                 false,
@@ -593,6 +603,8 @@ open class MainActivity : AppCompatActivity() {
             if (daemonStartupCoordinator.inFlight) {
                 android.util.Log.i("MainActivity",
                     "runDaemonStartup: another startup pass is in flight — skipping")
+                // Post-Update-Start lief nicht: Anspruch zurückgeben, damit der nächste ihn ausführen darf.
+                if (nachUpdateBeansprucht) at.greenchili.surfmate.updater.NachUpdateStart.freigeben()
                 return
             }
             daemonStartupCoordinator.inFlight = true

@@ -407,6 +407,19 @@ class WebViewFragment : Fragment() {
     private var loadingOverlay: View? = null
     private var errorOverlay: View? = null
     private var btnRetry: MaterialButton? = null
+    // 0.1.15.1: Ansicht „Panoptes startet …“ (Webserver antwortet noch nicht), siehe StartWarten
+    private var startOverlay: View? = null
+    private var startTitel: android.widget.TextView? = null
+    private var startHinweis: android.widget.TextView? = null
+    private var startSpinner: View? = null
+    private var btnStartRetry: MaterialButton? = null
+    private val startHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var startWarten: at.greenchili.surfmate.ui.StartWarten? = null
+    // Jede neue Wartephase bekommt eine Nummer; Antworten alter Abfragen werden verworfen.
+    private var startRunde = 0
+    // Hauptseite, für die zuletzt die Ersatzseite „Panoptes startet …“ geliefert wurde (Abfang-Thread schreibt).
+    @Volatile
+    private var startSeiteFuer: String? = null
     private var currentUrl: String? = null
     private var pageLoadFailed = false
     // True between onPageStarted and onPageFinished / onReceivedError. The
@@ -517,6 +530,12 @@ class WebViewFragment : Fragment() {
         errorOverlay = view.findViewById(R.id.errorOverlay)
         btnRetry = view.findViewById(R.id.btnRetry)
         btnRetry?.setOnClickListener { retryLoad() }
+        startOverlay = view.findViewById(R.id.startOverlay)
+        startTitel = view.findViewById(R.id.startTitel)
+        startHinweis = view.findViewById(R.id.startHinweis)
+        startSpinner = view.findViewById(R.id.startSpinner)
+        btnStartRetry = view.findViewById(R.id.btnStartRetry)
+        btnStartRetry?.setOnClickListener { retryLoad() }
 
         setupWebView()
         injectAuthCookie()
@@ -822,8 +841,14 @@ class WebViewFragment : Fragment() {
                         connection.connect()
 
                         // 3. Handle Response
+                        if (request?.isForMainFrame == true && connection.responseCode < 500) startSeiteFuer = null
                         val stream = if (connection.responseCode in 200..399) {
                             connection.inputStream
+                        } else if (at.greenchili.surfmate.ui.StartWarten.istStartFehler(
+                                request?.isForMainFrame == true, connection.responseCode)) {
+                            // 0.1.15.1: Hauptseite mit 5xx (Daemon fährt noch hoch) nie als rohes JSON zeigen –
+                            // lesbare Seite; onReceivedHttpError schaltet auf die Ansicht „Panoptes startet …“.
+                            return startSeite503(url, "HTTP ${connection.responseCode}")
                         } else {
                             // 4xx/5xx — prefer the server's error body, but if
                             // there is none, surface a synthetic 503 instead of
@@ -831,8 +856,8 @@ class WebViewFragment : Fragment() {
                             // system proxy (sing-box) for localhost, which
                             // hangs without firing onReceivedError.
                             connection.errorStream
-                                ?: return synthesize503(
-                                    "HTTP ${connection.responseCode} (no error body)"
+                                ?: return fehlerAntwort(
+                                    request, "HTTP ${connection.responseCode} (no error body)"
                                 )
                         }
                         val length = connection.contentLength
@@ -948,15 +973,41 @@ class WebViewFragment : Fragment() {
                         // WebView treats it as a real error and fires
                         // onReceivedError → showError() → user sees the retry
                         // button.
-                        return synthesize503(e.message ?: "connection failed")
+                        return fehlerAntwort(request, e.message ?: "connection failed")
                     }
                 }
 
                 /**
+                 * 0.1.15.1: Hauptseite → lesbare HTML-Seite (nie JSON am Display), Unterressource → JSON-503 wie
+                 * bisher (fetch()-Aufrufer der Seite werten das JSON aus).
+                 */
+                private fun fehlerAntwort(request: WebResourceRequest?, reason: String): WebResourceResponse =
+                    if (request?.isForMainFrame == true) startSeite503(request?.url?.toString(), reason)
+                    else synthesize503(reason)
+
+                /** 503 mit lesbarer Seite „Panoptes startet …“ für die Hauptseite (Ersatz, falls die Ansicht fehlt). */
+                private fun startSeite503(url: String?, reason: String): WebResourceResponse {
+                    // Merken, für welche Hauptseite sie kam: onPageFinished schaltet dann sicher auf die
+                    // Startansicht, egal in welcher Reihenfolge WebView onReceivedHttpError/onPageStarted meldet.
+                    startSeiteFuer = url
+                    val html = at.greenchili.surfmate.ui.StartWarten.startSeiteHtml(
+                        getString(R.string.panoptes_startet), getString(R.string.panoptes_startet_hinweis))
+                    val resp = WebResourceResponse("text/html", "utf-8",
+                        java.io.ByteArrayInputStream(html.toByteArray(Charsets.UTF_8)))
+                    resp.setStatusCodeAndReasonPhrase(503, "Service Unavailable")
+                    resp.responseHeaders = mapOf(
+                        "Cache-Control" to "no-store",
+                        "Connection" to "close",
+                        "X-SurfMate-Fail-Reason" to reason.take(200).replace(Regex("[\\r\\n]"), " ")
+                    )
+                    return resp
+                }
+
+                /**
                  * Build a 503 WebResourceResponse to return when a localhost
-                 * fetch fails. Surfacing the failure to WebView lets
-                 * onReceivedError fire and the user reach the retry overlay,
-                 * instead of hanging on the system proxy fallback.
+                 * fetch fails, instead of hanging on the system proxy fallback.
+                 * 0.1.15.1: NUR für Unterressourcen (fetch/XHR werten das JSON
+                 * aus); die Hauptseite bekommt startSeite503 (fehlerAntwort).
                  */
                 private fun synthesize503(reason: String): WebResourceResponse {
                     val body = "{\"error\":\"daemon_unreachable\",\"reason\":${
@@ -1010,6 +1061,11 @@ class WebViewFragment : Fragment() {
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
                     loadInProgress = false
+                    if (url != null && url == startSeiteFuer) {
+                        pageLoadFailed = true
+                        zeigeStart()
+                        return
+                    }
                     if (!pageLoadFailed) {
                         showContent()
                         // Theme: tag <html data-theme="…"> BEFORE INJECT_JS so any
@@ -1032,7 +1088,22 @@ class WebViewFragment : Fragment() {
                     if (request?.isForMainFrame == true) {
                         pageLoadFailed = true
                         loadInProgress = false
-                        showError()
+                        zeigeStart()
+                    }
+                }
+
+                // 0.1.15.1: Ein 503 als WebResourceResponse löst nur onReceivedHttpError aus (kein
+                // onReceivedError) – bisher blieb die Fehlerseite ohne Wiederholung stehen.
+                override fun onReceivedHttpError(
+                    view: WebView?, request: WebResourceRequest?,
+                    errorResponse: WebResourceResponse?
+                ) {
+                    super.onReceivedHttpError(view, request, errorResponse)
+                    if (at.greenchili.surfmate.ui.StartWarten.istStartFehler(
+                            request?.isForMainFrame == true, errorResponse?.statusCode ?: 0)) {
+                        pageLoadFailed = true
+                        loadInProgress = false
+                        zeigeStart()
                     }
                 }
 
@@ -1730,8 +1801,80 @@ class WebViewFragment : Fragment() {
     }
 
     private fun retryLoad() {
+        beendeStart()
         injectAuthCookie()
         loadPage()
+    }
+
+    /**
+     * 0.1.15.1: Hauptseite nicht erreichbar bzw. 5xx → „Panoptes startet …“ (hell, P-Logo, Spinner). Fragt alle 2 s
+     * ab, ob der Webserver antwortet, und lädt dann selbst neu; nach 3 min Knopf „Erneut versuchen“.
+     */
+    private fun zeigeStart() {
+        val o = startOverlay ?: run { showError(); return }
+        loadingOverlay?.animate()?.cancel()
+        loadingOverlay?.visibility = View.GONE
+        errorOverlay?.visibility = View.GONE
+        webView?.visibility = View.INVISIBLE
+        o.visibility = View.VISIBLE
+        android.util.Log.i("WebViewFragment", "Startansicht: Webserver antwortet noch nicht")
+        if (startWarten != null) return   // wartet schon (z. B. onReceivedError und onReceivedHttpError)
+        startTitel?.setText(R.string.panoptes_startet)
+        startHinweis?.setText(R.string.panoptes_startet_hinweis)
+        startHinweis?.visibility = View.VISIBLE
+        startSpinner?.visibility = View.VISIBLE
+        btnStartRetry?.visibility = View.GONE
+        startWarten = at.greenchili.surfmate.ui.StartWarten(android.os.SystemClock.elapsedRealtime())
+        val runde = ++startRunde
+        startHandler.postDelayed({ startAbfrage(runde) }, at.greenchili.surfmate.ui.StartWarten.INTERVALL_MS)
+    }
+
+    private fun startAbfrage(runde: Int) {
+        if (runde != startRunde || startWarten == null || view == null) return
+        val wurzel = at.greenchili.surfmate.ui.StartWarten.wurzel(currentUrl)
+            ?: "http://127.0.0.1:${CameraDaemon.HTTP_PORT}/"
+        Thread({
+            val antwortet = try {
+                // direkt, nie über einen System-Proxy (siehe shouldInterceptRequest)
+                val c = java.net.URL(wurzel).openConnection(java.net.Proxy.NO_PROXY) as java.net.HttpURLConnection
+                c.connectTimeout = 1500
+                c.readTimeout = 1500
+                c.instanceFollowRedirects = false
+                try {
+                    at.greenchili.surfmate.ui.StartWarten.antwortet(c.responseCode)
+                } finally {
+                    c.disconnect()
+                }
+            } catch (_: Exception) {
+                false
+            }
+            startHandler.post { nachStartAbfrage(runde, antwortet) }
+        }, "StartWarten").start()
+    }
+
+    private fun nachStartAbfrage(runde: Int, antwortet: Boolean) {
+        val w = startWarten
+        if (runde != startRunde || w == null || view == null) return
+        when (w.nachAbfrage(android.os.SystemClock.elapsedRealtime(), antwortet)) {
+            at.greenchili.surfmate.ui.StartWarten.Schritt.NEU_LADEN -> retryLoad()
+            at.greenchili.surfmate.ui.StartWarten.Schritt.WEITER_WARTEN ->
+                startHandler.postDelayed({ startAbfrage(runde) }, at.greenchili.surfmate.ui.StartWarten.INTERVALL_MS)
+            at.greenchili.surfmate.ui.StartWarten.Schritt.AUFGEBEN -> {
+                startWarten = null
+                startSpinner?.visibility = View.GONE
+                startTitel?.setText(R.string.panoptes_startet_zu_lange)
+                startHinweis?.visibility = View.GONE   // „lädt von selbst“ gilt nicht mehr, jetzt nur noch der Knopf
+                btnStartRetry?.visibility = View.VISIBLE
+            }
+        }
+    }
+
+    /** Wartephase beenden (neu laden, Knopf, Ansicht weg). */
+    private fun beendeStart() {
+        startRunde++
+        startWarten = null
+        startHandler.removeCallbacksAndMessages(null)
+        startOverlay?.visibility = View.GONE
     }
 
     /** Every WebView load shows the overlay, warm or cold, so the whole app
@@ -1756,6 +1899,7 @@ class WebViewFragment : Fragment() {
     }
 
     private fun showContent() {
+        if (startWarten != null || startOverlay?.visibility == View.VISIBLE) beendeStart()
         if (loadingOverlay?.visibility != View.VISIBLE) {
             hideLoading()
             return
@@ -1983,6 +2127,12 @@ class WebViewFragment : Fragment() {
             (wv.parent as? ViewGroup)?.removeView(wv)
             wv.destroy()
         }
+        beendeStart()
+        startOverlay = null
+        startTitel = null
+        startHinweis = null
+        startSpinner = null
+        btnStartRetry = null
         // Drop the capture-bridge ref if it points at this (now-destroyed) view.
         if (liveWebView === webView) liveWebView = null
         webView = null

@@ -98,7 +98,22 @@ stop_daemons() {
     done
     am force-stop "$PKG"
 }
-start_app() { monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1; }
+# 0.1.16 (Deploy, Koordination 23.10.): App MINIMIERT starten – derselbe Start, den BootReceiver bei
+# MY_PACKAGE_REPLACED vorsieht (post_update + minimize_on_start). MainActivity fährt die Daemons hoch und geht
+# sofort in den Hintergrund; am Display bleibt, was vorher vorn war (kein Vordergrund-Start, keine hängende
+# Fehlerseite, wenn 8180 noch nicht läuft). Danach bis START_WARTE_S (180 s; DaemonStartup wartet selbst 45 s) auf web=200 warten; kommt es nicht,
+# Rückfall wie bis 0.1.15: Vordergrund-Start per monkey, damit das Update nie ohne laufende Daemons endet.
+START_WARTE_S=${START_WARTE_S:-180}
+start_app() {
+    am start -n "$PKG/.ui.MainActivity" --ez post_update true --ez minimize_on_start true >/dev/null 2>&1
+    w=0
+    while [ "$w" -lt "$START_WARTE_S" ]; do
+        if [ "$(web_code)" = "200" ]; then log "App minimiert gestartet, web=200 nach ${w} s"; return 0; fi
+        sleep 5; w=$((w + 5))
+    done
+    log "App minimiert gestartet, aber web nach ${START_WARTE_S} s nicht 200 — Rückfall: Vordergrund-Start (monkey)"
+    monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
+}
 daemon_zahl() { for n in byd_cam_daemon sentry_daemon acc_sentry_daemon; do pidof "$n" >/dev/null && echo x; done | wc -l; }
 web_code() { curl -s -m 4 -o /dev/null -w '%{http_code}' http://127.0.0.1:8180/ 2>/dev/null; }
 installierter_vc() { dumpsys package "$PKG" 2>/dev/null | sed -n 's/.*versionCode=\([0-9]*\).*/\1/p' | head -1; }

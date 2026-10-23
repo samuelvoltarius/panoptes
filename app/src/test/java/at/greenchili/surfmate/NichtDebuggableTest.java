@@ -64,7 +64,8 @@ public class NichtDebuggableTest {
     public void entwicklungsSchalterAnDenFruehrerenStellen() throws IOException {
         String[][] stellen = {
                 {"src/main/java/at/greenchili/surfmate/od/Od.kt", "if (at.greenchili.surfmate.BuildConfig.ENTWICKLUNG) { ready = true; return true }"},
-                {"src/main/java/at/greenchili/surfmate/receiver/BootReceiver.kt", "if (at.greenchili.surfmate.BuildConfig.ENTWICKLUNG) {"},
+                // 0.1.15.1: BootReceiver hängt am eigenen Schalter IDE_START (StartNachUpdateTest)
+                {"src/main/java/at/greenchili/surfmate/receiver/BootReceiver.kt", "if (at.greenchili.surfmate.BuildConfig.IDE_START) {"},
                 {"src/main/java/at/greenchili/surfmate/logging/DaemonLogConfig.java", "SOH_ESTIMATOR = BuildConfig.ENTWICKLUNG;"},
         };
         for (String[] st : stellen) {

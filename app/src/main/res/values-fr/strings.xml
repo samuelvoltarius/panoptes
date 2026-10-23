@@ -338,6 +338,9 @@
     <string name="adb_console_hero_subtitle">Exécuter des commandes sur cet appareil</string>
     <string name="webview_loading">Un instant…</string>
     <string name="webview_camera_daemon_not_running">Le service caméra est arrêté</string>
+    <string name="panoptes_startet">Panoptes démarre …</string>
+    <string name="panoptes_startet_hinweis">La page se charge d\'elle-même dès que Panoptes est prêt.</string>
+    <string name="panoptes_startet_zu_lange">Panoptes ne répond pas encore.</string>
     <string name="webview_start_camera_daemon">Démarrez le service caméra dans l\'écran Services pour ouvrir cette page.</string>
     <string name="reset_title">Supprimer les données</string>
     <string name="reset_subtitle">Effacer les données collectées par catégorie</string>

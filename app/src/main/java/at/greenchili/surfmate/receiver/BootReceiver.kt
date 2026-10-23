@@ -176,11 +176,14 @@ class BootReceiver : BroadcastReceiver() {
             // surfmate_update_in_progress sentinel).
             Intent.ACTION_MY_PACKAGE_REPLACED -> {
                 lastStartTime = System.currentTimeMillis()
-                // Skip auto-relaunch in debug builds: Android Studio drives its own
-                // launch after install, and racing it makes "Run" abort with the
-                // app already in the foreground.
-                if (at.greenchili.surfmate.BuildConfig.ENTWICKLUNG) {
-                    Log.d(TAG, "MY_PACKAGE_REPLACED — debug build, skipping auto-relaunch (let IDE drive launch)")
+                // Skip auto-relaunch only for IDE builds (-PpanoptesIdeStart=true): Android Studio
+                // drives its own launch after install, and racing it makes "Run" abort with the
+                // app already in the foreground. 0.1.15.1: früher an ENTWICKLUNG gekoppelt – das
+                // ist auch bei allen Auto-/Community-Builds true, so startete nach einem
+                // In-App-Update niemand die App. Doppelstart mit update-on-car (am start
+                // post_update) verhindert NachUpdateStart in MainActivity.
+                if (at.greenchili.surfmate.BuildConfig.IDE_START) {
+                    Log.d(TAG, "MY_PACKAGE_REPLACED — IDE build, skipping auto-relaunch (let IDE drive launch)")
                     return
                 }
                 try {

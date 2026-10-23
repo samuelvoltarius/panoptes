@@ -94,4 +94,64 @@
             android:layout_marginTop="24dp"
             android:text="@string/action_retry" />
     </LinearLayout>
+
+    <!-- ==================== START OVERLAY (0.1.15.1) ====================
+         „Panoptes startet …“: Webserver antwortet noch nicht (z. B. direkt nach einem Update).
+         Feste helle Schrift auf dunklem Grund – unabhängig vom Theme immer lesbar. -->
+    <LinearLayout
+        android:id="@+id/startOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#FF101418"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="48dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:contentDescription="@null"
+            android:src="@mipmap/ic_panoptes" />
+
+        <TextView
+            android:id="@+id/startTitel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:accessibilityHeading="true"
+            android:gravity="center"
+            android:text="@string/panoptes_startet"
+            android:textColor="#FFF2F4F7"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/startHinweis"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center"
+            android:text="@string/panoptes_startet_hinweis"
+            android:textColor="#FFC9D1D9"
+            android:textSize="18sp" />
+
+        <ProgressBar
+            android:id="@+id/startSpinner"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginTop="24dp"
+            android:indeterminateTint="#FFF2F4F7" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnStartRetry"
+            style="@style/Widget.SurfMate.M3.Button.Tonal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/action_retry"
+            android:visibility="gone" />
+    </LinearLayout>
 </FrameLayout>
