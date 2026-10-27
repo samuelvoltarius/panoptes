@@ -48,3 +48,6 @@ ohne Logos und ohne fremde Vorlagen. Lizenz: [CC0 1.0](https://creativecommons.o
 - BYD M6 (Panoptes-Eigenbau)
 - BYD Seal 5 DM-i (Panoptes-Eigenbau)
 
+## Fahrzeugbilder der Startkarte (seit 0.1.20)
+
+Die Bilder `vehicle_*.webp` sind für Panoptes mit `tools/render_vehicle_art.py` (Blender) aus den oben genannten CC-BY-4.0-Modellen von Nazh Design gerendert und zugeschnitten (verändert): Seagull/Dolphin Surf, Seal, Seal U („2023 BYD Song Plus“), Dolphin, Atto 3. Die neutrale Silhouette (`vehicle_fallback.webp`) ist aus dem Seal-U-Render abgeleitet. Lizenz: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).

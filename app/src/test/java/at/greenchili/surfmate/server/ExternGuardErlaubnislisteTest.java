@@ -99,6 +99,18 @@ public class ExternGuardErlaubnislisteTest {
         assertTrue(ExternGuard.erlaubt("POST", "/api/sitzung/erneuern"));
     }
 
+    /** 0.1.20 (Handy-App/Cockpit): Wallbox-Zustand und Reichweite nur lesen; Wallbox-Steuern bleibt zu. */
+    @Test
+    public void wallboxStatusUndReichweiteNurLesend() {
+        assertTrue(ExternGuard.erlaubt("GET", "/api/wallbox/status"));
+        assertTrue(ExternGuard.erlaubt("GET", "/api/trips/range"));
+        for (String p : new String[] {"/api/wallbox/steuern", "/api/wallbox/freigabe", "/api/wallbox/einstellungen",
+                "/api/wallbox/test", "/api/wallbox/suche", "/api/wallbox/ha/anmelden"}) {
+            for (String m : new String[] {"GET", "POST", "PUT"}) assertFalse(m + " " + p, ExternGuard.erlaubt(m, p));
+        }
+        assertFalse(ExternGuard.erlaubt("POST", "/api/wallbox/status"));
+    }
+
     @Test
     public void websocketsAndMainPathAreGuarded() throws Exception {
         String hs = Quelltext.lies(Paths.get("src/main/java/at/greenchili/surfmate/server/HttpServer.java"));

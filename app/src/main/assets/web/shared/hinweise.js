@@ -100,6 +100,7 @@
                     if (r.s === 409) return pruefen();           // anderswo geändert: neu lesen
                     if (r.d.gespeichert && Object.prototype.hasOwnProperty.call(r.d.gespeichert, FELD)) {
                         bg.parentNode.removeChild(bg);
+                        sitzungOk();
                         return;
                     }
                     msg.textContent = (r.d.fehler && r.d.fehler[FELD]) || 'Fehler';
@@ -124,6 +125,9 @@
             }, function () {});
     }
 
+    // 0.1.20 Tempo: bestätigt → für diese Sitzung nicht mehr laden (app-shell liest den Merker)
+    function sitzungOk() { try { window.sessionStorage.setItem('pn.hinweise.ok', '1'); } catch (e) {} }
+
     function pruefen() {
         return Promise.all([
             fetch('/api/einstellungen', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }),
@@ -132,7 +136,7 @@
                 var d = res[0];
                 var w = d && d.werte && d.werte[FELD];
                 if (!w) return;
-                if (w.gesetzt && w.wert === version()) return;
+                if (w.gesetzt && w.wert === version()) { sitzungOk(); return; }
                 var ex = document.getElementById('pnHinweise');
                 if (ex) ex.parentNode.removeChild(ex);
                 modal(d.etag || '');

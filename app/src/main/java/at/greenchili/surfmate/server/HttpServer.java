@@ -713,6 +713,13 @@ public class HttpServer {
                 client.close();
                 return;
             }
+            // 0.1.20 Web-Sitzung der Handy-App (Stufe B): Sicherheits-Einstellungen nur am Auto oder mit PIN
+            if (AuthMiddleware.isHandyWebRequest() && (WebHandyGuard.blocks(method, pathOnly)
+                    || WebHandyGuard.blocksEinstellungsAbschnitt(method, pathOnly, body))) {
+                WebHandyGuard.sendeGesperrt(out, pathOnly);
+                client.close();
+                return;
+            }
             SchreibProtokoll.melde(method, path, AuthMiddleware.isExternRequest(), client.getInetAddress() != null && client.getInetAddress().isLoopbackAddress());
 
             // Route to modular handlers first
@@ -794,6 +801,9 @@ public class HttpServer {
             } else if (path.equals("/wallbox.html")) {
                 // Wallbox-Testseite (Kern 6, 0.1.11); die API dahinter prüft Login, Freigabe und Fahrt-Sperre.
                 if (!serveStaticFile(out, "local/wallbox.html")) HttpResponse.sendError(out, 404, "wallbox.html not found");
+            } else if (path.equals("/ladeplan.html")) {
+                // Ladeplan zu Hause (0.1.20); die API dahinter prüft Login, Freigabe und Fahrt-Sperre.
+                if (!serveStaticFile(out, "local/ladeplan.html")) HttpResponse.sendError(out, 404, "ladeplan.html not found");
             } else if (path.equals("/orte.html")) {
                 // Orte (0.1.11, ORTE_VERTRAG): Seite nur Anzeige/Formular; /api/orte prüft Login und sperrt die Kopplung.
                 if (!serveStaticFile(out, "local/orte.html")) HttpResponse.sendError(out, 404, "orte.html not found");
@@ -1391,6 +1401,8 @@ public class HttpServer {
         if (path.startsWith("/api/orte") && OrteApiHandler.handle(method, path, body, out)) return true;
         // 0.1.14 Notzugang (zweiter, eigener tailscaled für die Fernwartung, optional)
         if (path.startsWith("/api/notzugang") && NotzugangApiHandler.handle(method, path, body, out)) return true;
+        // 0.1.20 Panoptes-Brücke: Opt-in-Schalter und Status (nur Login/lokal)
+        if (path.startsWith("/api/bruecke") && BrueckeApiHandler.handle(method, path, body, out)) return true;
         // 0.1.18 Handy-Rechte (HANDY_API_VERTRAG): nur Handy-Kopplungen, Befehle über den VehicleCommandRouter
         if (path.startsWith("/api/handy/v1/")) {
             return HandyApiHandler.handle(method, path, body, out, AuthMiddleware.requestKopplungsId());
@@ -1444,6 +1456,8 @@ public class HttpServer {
         }
         // Wallbox über evcc oder Home Assistant (WALLBOX_VERTRAG v1, 0.1.11, Kern 6)
         if (path.startsWith("/api/wallbox/") && WallboxApiHandler.handle(method, path, body, out)) return true;
+        // Ladeplan zu Hause (LADEPLAN_KONZEPT, 0.1.20)
+        if (path.startsWith("/api/ladeplan") && LadeplanApiHandler.handle(method, path, body, out)) return true;
 
         // H10 „Was ist neu“ + Firmware-Hinweis, H7 Monatsbericht
         if (path.startsWith("/api/neuigkeiten")
@@ -2124,10 +2138,10 @@ public class HttpServer {
         String requested = file.substring(0, file.length() - ".json".length());
         if (!LocaleManager.isSupported(requested)) return false;
 
-        android.content.Context context =
-                at.greenchili.surfmate.daemon.DaemonBootstrap.getContext();
-        if (context == null || context.getAssets() == null) return false;
-        try (InputStream in = context.getAssets().open(
+        // 0.1.20: APK-AssetManager (im Daemon gibt es keinen init()-Context)
+        android.content.res.AssetManager assets = at.greenchili.surfmate.daemon.DaemonBootstrap.apkAssets();
+        if (assets == null) return false;
+        try (InputStream in = assets.open(
                 "web/i18n/" + requested + ".json")) {
             ByteArrayOutputStream bytes = new ByteArrayOutputStream();
             byte[] buffer = new byte[8192];

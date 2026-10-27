@@ -8422,6 +8422,8 @@ public class SocHistoryDatabase {
             logger.warn("Charging tariff metadata replay deferred: " + e.getMessage());
             if (isSqlFailure(e)) noteWriteFailed();
         }
+        // 0.1.20 Ladeplan: Heimladungen mit Zeittarif zeitgenau (nach Abschluss und nach jeder Neubepreisung)
+        zeittarifNachpreisen(configuredTariffs);
 
         at.greenchili.surfmate.abrp.SohEstimator estimator = getSohEstimator();
         if (estimator == null) return;
@@ -8590,6 +8592,86 @@ public class SocHistoryDatabase {
             }
         } catch (Exception e) {
             logger.warn("Charging SOH metadata scan deferred: " + e.getMessage());
+            if (isSqlFailure(e)) noteWriteFailed();
+        }
+    }
+
+    /**
+     * 0.1.20 Ladeplan (LADEPLAN_KONZEPT §3): AC-Ladungen eines Tarifs mit Zeitbändern zeitgenau bepreisen –
+     * energiegewichtet aus den Leistungsproben ({@link at.greenchili.surfmate.charging.Zeittarif#mittelpreis}),
+     * {@code preis_quelle = 'zeittarif'}, Tagessumme um die Differenz verschoben (wie die Neubepreisung). Ausdrücklich
+     * gesetzte Preise (Nutzer, Ladenachfrage) bleiben unberührt; ohne Tarif mit Zeitbändern keine einzige Abfrage.
+     */
+    private void zeittarifNachpreisen(java.util.List<at.greenchili.surfmate.charging.TariffProfile> tarife) {
+        if (!isInitialized || connection == null || tarife == null) return;
+        java.util.Map<String, at.greenchili.surfmate.charging.Zeittarif> zt = new java.util.HashMap<>();
+        for (at.greenchili.surfmate.charging.TariffProfile p : tarife) {
+            at.greenchili.surfmate.charging.Zeittarif z = p == null ? null : p.getZeittarif();
+            if (z != null) zt.put(p.getId(), z);
+        }
+        if (zt.isEmpty()) return;
+        java.time.ZoneId zone = java.time.ZoneId.systemDefault();
+        try {
+            java.util.List<Object[]> zeilen = new java.util.ArrayList<>();
+            StringBuilder in = new StringBuilder();
+            for (int i = 0; i < zt.size(); i++) in.append(i == 0 ? "?" : ",?");
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "SELECT start_time, end_time, energy_added_kwh, session_cost, electricity_rate, tariff_id, preis_quelle"
+                            + " FROM " + TABLE_CHARGING + " WHERE end_time IS NOT NULL AND is_dc <> 1"
+                            + " AND energy_added_kwh > 0 AND (preis_quelle = '' OR preis_quelle = 'zeittarif')"
+                            + " AND tariff_id IN (" + in + ");")) {
+                int k = 1;
+                for (String id : zt.keySet()) ps.setString(k++, id);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        zeilen.add(new Object[]{rs.getLong(1), rs.getLong(2), rs.getDouble(3), rs.getDouble(4),
+                                rs.getDouble(5), rs.getString(6), rs.getString(7)});
+                    }
+                }
+            }
+            for (Object[] z : zeilen) {
+                long start = (Long) z[0], ende = (Long) z[1];
+                double energie = (Double) z[2], alteKosten = (Double) z[3], alteRate = (Double) z[4];
+                java.util.List<long[]> t = new java.util.ArrayList<>();
+                java.util.List<Double> p = new java.util.ArrayList<>();
+                try (PreparedStatement ps = connection.prepareStatement(
+                        "SELECT t, power_kw FROM " + TABLE_CPS + " WHERE session_start_time = ?"
+                                + " ORDER BY t ASC, CASE WHEN power_kw <= 0 THEN 1 ELSE 0 END ASC, id ASC;")) {
+                    ps.setLong(1, start);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                            t.add(new long[]{rs.getLong(1)});
+                            p.add(rs.getDouble(2));
+                        }
+                    }
+                }
+                long[] ta = new long[t.size()];
+                double[] pa = new double[p.size()];
+                for (int i = 0; i < ta.length; i++) {
+                    ta[i] = t.get(i)[0];
+                    pa[i] = p.get(i);
+                }
+                double rate = zt.get((String) z[5]).mittelpreis(ta, pa, start, ende, zone);
+                if (!Double.isFinite(rate) || rate < 0) continue;
+                rate = Math.round(rate * 10000.0) / 10000.0;
+                double kosten = energie * rate;
+                if ("zeittarif".equals(z[6]) && realStorageEquivalent(alteRate, rate)
+                        && Math.abs(alteKosten - kosten) < 0.005) continue;
+                final double r = rate, kk = kosten, alt = alteKosten;
+                runInTransaction(() -> {
+                    try (PreparedStatement upd = connection.prepareStatement(
+                            "UPDATE " + TABLE_CHARGING + " SET electricity_rate = ?, session_cost = ?,"
+                                    + " preis_quelle = 'zeittarif' WHERE start_time = ?"
+                                    + " AND (preis_quelle = '' OR preis_quelle = 'zeittarif');")) {
+                        upd.setDouble(1, r);
+                        upd.setDouble(2, kk);
+                        upd.setLong(3, start);
+                        if (upd.executeUpdate() > 0) adjustDailyCost(ende, kk - (alt > 0 ? alt : 0));
+                    }
+                });
+            }
+        } catch (Exception e) {
+            logger.warn("Zeittarif-Bepreisung verschoben: " + e.getMessage());
             if (isSqlFailure(e)) noteWriteFailed();
         }
     }

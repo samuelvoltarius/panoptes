@@ -247,6 +247,38 @@ public class WallboxBrueckeTest {
         assertFalse("nichts gespeichert", new File(tmp.getRoot(), "w.json").exists());
     }
 
+    /** 0.1.20 (Befund am Auto): Warum keine Brücke gefunden wurde, steht je Broker im Status – nie still. */
+    @Test
+    public void sucheHinweiseJeBroker() throws Exception {
+        Broker b = new Broker();   // erreichbar, aber ohne Brücke
+        java.util.List<JSONObject> liste = new ArrayList<>();
+        liste.add(new JSONObject().put("host", "100.64.0.20").put("port", 1883).put("name", "home"));
+        liste.add(new JSONObject().put("host", "broker").put("port", 8883).put("name", "cloud").put("fehler", "nur_tcp"));
+        WallboxDienst d = new WallboxDienst(new File(tmp.getRoot(), "w.json"), new File(tmp.getRoot(), "p.jsonl"),
+                WallboxTest.GEHEIM, (m, u, k, x) -> new WallboxHttp.Antwort(404, ""), WallboxTest.DNS, () -> "steht",
+                jetzt::get, ms -> { })
+                .mitOpenWb(b).mitBroker(() -> liste);
+        JSONObject s = d.status().json;
+        assertEquals(0, s.getJSONArray("gefunden").length());
+        JSONArray h = s.getJSONArray("sucheHinweise");
+        assertEquals(2, h.length());
+        assertEquals("keine_bruecke", h.getJSONObject(0).getString("fehler"));
+        assertEquals("home", h.getJSONObject(0).getString("name"));
+        assertEquals("nur_tcp", h.getJSONObject(1).getString("fehler"));
+        assertEquals("ssl-Broker wird gar nicht erst angefragt", 1, b.zugang.size());
+        // Brücke kommt dazu → ohne Knopfdruck nach kurzer Zeit gefunden (leer: alle 15 s erneut)
+        b.zustand(true, jetzt.get());
+        jetzt.addAndGet(WallboxDienst.GEFUNDEN_LEER_MS);
+        s = d.status().json;
+        assertEquals("bruecke", s.getJSONArray("gefunden").getJSONObject(0).getString("art"));
+        assertEquals(JSONObject.NULL, s.getJSONArray("sucheHinweise").getJSONObject(0).get("fehler"));
+        // ohne MQTT-Verbindung: ehrlicher Hinweis
+        WallboxDienst ohne = new WallboxDienst(new File(tmp.getRoot(), "w2.json"), new File(tmp.getRoot(), "p2.jsonl"),
+                WallboxTest.GEHEIM, (m, u, k, x) -> new WallboxHttp.Antwort(404, ""), WallboxTest.DNS, () -> "steht",
+                jetzt::get, ms -> { }).mitOpenWb(b).mitBroker(Collections::emptyList);
+        assertEquals("kein_broker", ohne.status().json.getJSONArray("sucheHinweise").getJSONObject(0).getString("fehler"));
+    }
+
     /** Leeres WLAN für die Suche (nur die Brücke soll gefunden werden). */
     static final class WallboxSucheTestNetz implements WallboxSuche.Netz {
         public List<WallboxSuche.Paket> lausche(int port, long ms) { return Collections.emptyList(); }

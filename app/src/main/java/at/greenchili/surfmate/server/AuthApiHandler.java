@@ -74,6 +74,11 @@ public class AuthApiHandler {
             return handleSelbstWiderruf(authHeader, out);
         }
 
+        // 0.1.20 Web-Sitzung der Handy-App: /auth/web?einmal=<code>[&ziel=<pfad>]
+        if ((path.equals("/auth/web") || path.startsWith("/auth/web?")) && method.equals("GET")) {
+            return handleWebSitzung(path, out);
+        }
+
         if (path.equals("/auth/status") && method.equals("GET")) {
             return handleStatus(out);
         }
@@ -115,6 +120,12 @@ public class AuthApiHandler {
         }
         if (path.startsWith("/auth/kopplung/anfrage/") && method.equals("GET")) {
             return handleAbholung(path.substring("/auth/kopplung/anfrage/".length()), out);
+        }
+
+        // 0.1.20 go-e-Token per Handy: Einmal-Kennung aus der Wallbox-Einrichtung (10 min, einmal, ratenbegrenzt)
+        if (path.equals("/auth/wallbox-eingabe") && method.equals("POST")) {
+            WallboxApiHandler.eingabeVomHandy(body, out);
+            return true;
         }
 
         if (path.equals("/auth/logout") && method.equals("POST")) {
@@ -316,6 +327,13 @@ public class AuthApiHandler {
                 response.put("success", true);
                 response.put("jwt", jwt);
                 response.put("kopplungId", kid);
+                // 0.1.20 Brücke (BRUECKE_VERTRAG §2.3): nur bei art=handy und eingeschalteter Brücke
+                if (at.greenchili.surfmate.auth.Kopplungen.ART_HANDY.equals(art)) {
+                    try {
+                        org.json.JSONObject block = at.greenchili.surfmate.bruecke.Bruecke.get().kopplungsBlock();
+                        if (block != null) response.put("bruecke", block);
+                    } catch (Throwable ignored) { }
+                }
                 response.put("expiresIn", AuthManager.JWT_EXPIRY_SECONDS);
                 log("Kopplung erfolgreich");
                 HttpResponse.sendJson(out, response.toString());
@@ -325,6 +343,50 @@ public class AuthApiHandler {
         response.put("success", false);
         response.put("error", Messages.get("errors.invalid_device_token"));
         HttpResponse.sendJson(out, response.toString());
+        return true;
+    }
+
+    /**
+     * GET /auth/web?einmal=&lt;code&gt; – Einmal-Code (60 s) gegen einen Web-JWT der Kopplung (scope handyweb, 30 min) als
+     * Cookie tauschen, Einbettungs-Cookie setzen und auf die Seite weiterleiten. Ungültig: kurze Seite, kein JWT.
+     */
+    private static boolean handleWebSitzung(String path, OutputStream out) throws Exception {
+        String q = path.contains("?") ? path.substring(path.indexOf('?') + 1) : "";
+        String code = null, ziel = null;
+        for (String teil : q.split("&")) {
+            int i = teil.indexOf('=');
+            if (i <= 0) continue;
+            String n = teil.substring(0, i), v = java.net.URLDecoder.decode(teil.substring(i + 1), "UTF-8");
+            if (n.equals("einmal")) code = v;
+            else if (n.equals("ziel")) ziel = v;
+        }
+        long jetzt = System.currentTimeMillis();
+        String kid = at.greenchili.surfmate.auth.WebSitzung.get().einloesen(code, jetzt);
+        at.greenchili.surfmate.auth.Kopplungen kk = at.greenchili.surfmate.auth.Kopplungen.get();
+        String jwt = kid == null || !kk.istHandy(kid) || !kk.hatRecht(kid, at.greenchili.surfmate.auth.Kopplungen.RECHT_WEB)
+                ? null
+                : AuthManager.generateJwt(at.greenchili.surfmate.auth.WebSitzung.SCOPE, kid,
+                        at.greenchili.surfmate.auth.WebSitzung.GUELTIG_JWT_S);
+        if (jwt == null) {
+            byte[] b = ("<!doctype html><meta charset=utf-8><meta name=viewport content=\"width=device-width\">"
+                    + "<p style=\"font:16px sans-serif;padding:24px\">" + Messages.get("errors.web_link_expired") + "</p>")
+                    .getBytes("UTF-8");
+            out.write(("HTTP/1.1 410 Gone\r\nContent-Type: text/html; charset=utf-8\r\nCache-Control: no-store\r\n"
+                    + "Referrer-Policy: no-referrer\r\nContent-Length: " + b.length + "\r\nConnection: close\r\n\r\n").getBytes("UTF-8"));
+            out.write(b);
+            out.flush();
+            return true;
+        }
+        // Cookie nicht HttpOnly: auth.js liest den Token aus document.cookie (sonst schickt requireAuth zur Anmeldung)
+        String cookie = "byd_session=" + jwt + "; Path=/; Max-Age=" + at.greenchili.surfmate.auth.WebSitzung.GUELTIG_JWT_S
+                + "; SameSite=Strict";
+        out.write(("HTTP/1.1 302 Found\r\nLocation: " + at.greenchili.surfmate.auth.WebSitzung.ziel(ziel) + "\r\n"
+                + "Set-Cookie: " + cookie + "\r\n"
+                + "Set-Cookie: " + at.greenchili.surfmate.auth.WebSitzung.EINBETTUNG_COOKIE + "; Path=/; Max-Age="
+                + at.greenchili.surfmate.auth.WebSitzung.GUELTIG_JWT_S + "; SameSite=Strict\r\nCache-Control: no-store\r\nReferrer-Policy: no-referrer\r\n"
+                + "Content-Length: 0\r\nConnection: close\r\n\r\n").getBytes("UTF-8"));
+        out.flush();
+        log("Web-Sitzung geöffnet");
         return true;
     }
 

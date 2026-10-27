@@ -13,6 +13,10 @@ import org.json.JSONObject;
  * v1: GET /status (Werte als Text; nrg[11] in 0,01 kW)  GET /mqtt?payload=alw=0|1   GET /mqtt?payload=amx=N
  * </pre>
  * Die lokale API muss in der go-e-App eingeschaltet sein. Keine Zugangsdaten.
+ *
+ * <p>0.1.20 go-e Cloud (WALLBOX_FERN_KONZEPT §6, Doku goecharger/go-eCharger-API-v2 cloudapi-en.md): dieselbe API v2 über
+ * {@code https://<6-stellige Seriennummer>.api.v3.go-e.io}, Token im Kopf {@code Authorization: Bearer} (nie in der URL,
+ * damit es in keinem Log steht). Token einmal in der go-e-App erzeugen (Cloud-API einschalten); nur mit Einwilligung.
  */
 public final class GoeAdapter implements DirektAdapter {
 
@@ -21,15 +25,40 @@ public final class GoeAdapter implements DirektAdapter {
 
     private final String basis;
     private final WallboxHttp http;
+    private final String token;
     private Boolean v2;
 
     public GoeAdapter(String basis, WallboxHttp http) {
         this.basis = basis;
         this.http = http;
+        this.token = null;
+    }
+
+    /** go-e Cloud: Seriennummer (6 Ziffern) + API-Token. */
+    public static GoeAdapter cloud(String seriennummer, String token, WallboxHttp http) throws WallboxFehler {
+        if (seriennummer == null || !seriennummer.matches("[0-9]{6}")) throw new WallboxFehler("einstellung_ungueltig");
+        if (token == null || token.isEmpty()) throw new WallboxFehler("anmeldung", 502);
+        return new GoeAdapter("https://" + seriennummer + ".api.v3.go-e.io", http, token);
+    }
+
+    private GoeAdapter(String basis, WallboxHttp http, String token) {
+        this.basis = basis;
+        this.http = http;
+        this.token = token;
+        this.v2 = true;   // die Cloud spricht nur API v2
+    }
+
+    @Override
+    public long[] pausen() {
+        return token == null ? new long[]{500, 1000, 1000} : new long[]{1500, 2500, 4000};
     }
 
     private JSONObject hole(String pfad) throws WallboxFehler {
-        WallboxHttp.Antwort a = http.anfrage("GET", basis + pfad, new java.util.HashMap<>(), null);
+        java.util.Map<String, String> kopf = new java.util.HashMap<>();
+        if (token != null) kopf.put("Authorization", "Bearer " + token);
+        WallboxHttp.Antwort a = http.anfrage("GET", basis + pfad, kopf, null);
+        if (token != null && (a.code == 401 || a.code == 403)) throw new WallboxFehler("anmeldung", 502);
+        if (token != null && a.code == 429) throw new WallboxFehler("cloud_zu_viele_anfragen", 502);
         EvccQuelle.pruefeCode(a);
         try {
             return new JSONObject(a.text);

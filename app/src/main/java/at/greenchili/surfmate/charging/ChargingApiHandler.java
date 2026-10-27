@@ -1404,6 +1404,14 @@ public class ChargingApiHandler {
     private String validateTariffBody(JSONObject b, boolean isCreate) {
         String invalidCurrency = validateCurrency(b);
         if (invalidCurrency != null) return invalidCurrency;
+        // 0.1.20 Ladeplan: Zeitbänder (null = entfernen); Unsinn ablehnen statt still verwerfen
+        if (b.has("zeittarif") && !b.isNull("zeittarif")) {
+            try {
+                Zeittarif.aus(b.optJSONObject("zeittarif"));
+            } catch (IllegalArgumentException e) {
+                return "zeittarif: " + e.getMessage();
+            }
+        }
 
         double ac = b.has("acRate") ? b.optDouble("acRate", -1) : -1;
         double dc = b.has("dcRate") ? b.optDouble("dcRate", -1) : -1;

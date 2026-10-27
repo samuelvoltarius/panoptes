@@ -2,13 +2,13 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>System – Panoptes</title>
     <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
     <script src="../shared/theme.js?v=13"></script>
     <script src="../shared/kartenquelle.js?v=5"></script>
-    <script src="../shared/app-shell.js?v=pn24"></script>
-    <link rel="stylesheet" href="../shared/styles.css?v=pn10">
+    <script src="../shared/app-shell.js?v=pn25"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn11">
     <style>
         .sys-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .sys-stat { background: var(--bg-elevated); border-radius: 8px; padding: 10px 12px; min-width: 0; }
@@ -39,6 +39,13 @@
             background: var(--status-warning-container, var(--bg-elevated));
         }
         .sys-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px; }
+        /* 0.1.20 Weboberfläche in der Handy-App (Stufe B): Sicherheits-Karten nur am Auto oder mit PIN */
+        .nur-handy-hinweis { display: none; }
+        html[data-einbettung="handy"] .nur-handy-hinweis { display: block; }
+        html[data-einbettung="handy"] #tailscaleKarte, html[data-einbettung="handy"] #kopplung,
+        html[data-einbettung="handy"] #homeassistant, html[data-einbettung="handy"] #einrichtung,
+        html[data-einbettung="handy"] #notzugang, html[data-einbettung="handy"] #updates,
+        html[data-einbettung="handy"] #tunnelKarte { display: none !important; }
     </style>
 </head>
 <body>
@@ -64,9 +71,10 @@
                 </div>
             </header>
             <div class="page-body">
+                <div class="sys-warn nur-handy-hinweis" data-i18n="system.handy_web_hinweis">Fernzugang, Kopplungen, Einrichtung und Updates gehen nur am Auto oder mit PIN.</div>
 
                 <!-- ===== Tailscale ===== -->
-                <div class="card">
+                <div class="card" id="tailscaleKarte">
                     <div class="card-header">
                         <div class="card-title">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
@@ -102,6 +110,12 @@
                     <div class="card-body">
                         <div id="pairReq" style="display:none;margin-bottom:16px;"></div>
                         <div class="sys-note" data-i18n="system.pair_lead">Damit z. B. das EV-Cockpit Panoptes-Einstellungen anzeigen und ändern kann. Fernzugang, Passwort und Anschlüsse bleiben für gekoppelte Geräte gesperrt.</div>
+                        <!-- 0.1.20 Panoptes-Brücke (BRUECKE_VERTRAG §0a): Opt-in, Standard aus, ein Satz, was der Server sieht -->
+                        <div id="brueckeBox" style="margin:10px 0 14px;">
+                            <label class="sys-note" style="display:flex;gap:10px;align-items:center;font-weight:700;"><input type="checkbox" id="brueckeEin" style="width:22px;height:22px;"> <span data-i18n="system.bridge_title">Handy-App unterwegs nutzen</span></label>
+                            <div class="sys-note" data-i18n="system.bridge_note">Über den Panoptes-Server, Ende-zu-Ende verschlüsselt. Der Server sieht keine Inhalte, nur wann das Auto online ist, die IP-Adresse und die Datenmenge.</div>
+                            <div class="sys-note" id="brueckeStatus"></div>
+                        </div>
                         <div class="sys-actions">
                             <button class="btn btn-primary" id="pairBtn" type="button" data-i18n="system.pair_btn">Neues Gerät koppeln</button>
                         </div>
@@ -308,7 +322,7 @@
                 </div>
 
                 <!-- ===== Tunnels & services ===== -->
-                <div class="card">
+                <div class="card" id="tunnelKarte">
                     <div class="card-header">
                         <div class="card-title">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v6"/><path d="M5.6 7.6a8 8 0 1 0 12.8 0"/></svg>
@@ -352,14 +366,14 @@
     <div id="toastContainer" class="toast-container"></div>
 
     <script src="../shared/auth.js"></script>
-    <script src="../shared/core.js?v=pn5"></script>
+    <script src="../shared/core.js?v=pn6"></script>
     <script src="../shared/system.js?v=2"></script>
     <script src="../shared/vendor/qrcode-generator-1.4.4.js"></script>
     <script src="../shared/einstellungen.js?v=pn8"></script>
     <script src="../shared/app-updates.js?v=3"></script>
     <script src="../shared/blitzer.js?v=5"></script>
     <script src="../shared/einrichtung-web.js?v=7"></script>
-    <script src="../shared/overdrive-verlauf.js?v=1"></script>
+    <script src="../shared/overdrive-verlauf.js?v=2"></script>
     <script src="../shared/notzugang.js?v=1"></script>
     <script>
         (function () {
@@ -632,9 +646,10 @@
             handyBlock: function (g) {
                 var self = this, r = Array.isArray(g.rechte) ? g.rechte : [];
                 var namen = { klima: self.t('system.handy_recht_klima', 'Klima'), zusperren: self.t('system.handy_recht_zusperren', 'Zusperren'),
-                    aufsperren: self.t('system.handy_recht_aufsperren', 'Aufsperren (mit Fingerabdruck/Face ID)'), push: self.t('system.handy_recht_push', 'Benachrichtigungen') };
+                    aufsperren: self.t('system.handy_recht_aufsperren', 'Aufsperren (mit Fingerabdruck/Face ID)'), push: self.t('system.handy_recht_push', 'Benachrichtigungen'),
+                    web: self.t('system.handy_recht_web', 'Weboberfläche in der App (ohne PIN, Kopplungen, Netz, Updates)') };
                 var html = '<div class="sys-meta" style="margin-top:6px">' + self.esc(self.t('system.handy_rechte', 'Darf:')) + ' ';
-                ['klima', 'zusperren', 'aufsperren', 'push'].forEach(function (k) {
+                ['klima', 'zusperren', 'aufsperren', 'push', 'web'].forEach(function (k) {
                     html += '<label style="margin-right:12px;white-space:nowrap"><input type="checkbox" data-handy-recht="' + k + '" data-id="'
                         + self.esc(g.id) + '"' + (r.indexOf(k) >= 0 ? ' checked' : '') + '> ' + self.esc(namen[k]) + '</label>';
                 });
@@ -743,27 +758,73 @@
                         return dns ? 'https://' + dns : null;
                     }, function () { return null; });
             },
+            // 0.1.20 QR v2 (HANDY_API_VERTRAG §7): immer anzeigen, auch ohne Tailscale.
+            // <qrBasis>#k=<base64url(JSON)>, JSON {v:2, c, u?: Direktadressen, b?: {p, a} wenn die Brücke an ist}.
+            // Der Teil nach # geht nie an einen Server. Der Link darunter bleibt der Direktweg (Browser, Cockpit).
+            qrV2: function (code, basis, br) {
+                var j = { v: 2, c: code };
+                if (basis) j.u = [basis];
+                if (br && br.ein && br.p && br.a) j.b = { p: br.p, a: br.a };
+                var b64 = btoa(unescape(encodeURIComponent(JSON.stringify(j)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+                return ((br && br.qrBasis) || 'https://byd.serveone.at/p/') + '#k=' + b64;
+            },
             zeigeQr: function (code) {
-                var qrBox = document.getElementById('pairQr'), lb = document.getElementById('pairLinkBox');
+                var self = this, qrBox = document.getElementById('pairQr'), lb = document.getElementById('pairLinkBox');
                 qrBox.innerHTML = ''; lb.style.display = 'none';
-                this.adresse().then(function (basis) {
-                    if (!basis) return;
-                    var link = basis + '/system.html#koppeln=' + encodeURIComponent(code);
-                    var a = document.getElementById('pairLink');
-                    a.href = link; a.textContent = link;
-                    lb.style.display = '';
+                var br = fetch('/api/bruecke', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }, function () { return null; });
+                Promise.all([this.adresse(), br]).then(function (x) {
+                    var basis = x[0], b = x[1];
+                    if (basis) {
+                        var link = basis + '/system.html#koppeln=' + encodeURIComponent(code);
+                        var a = document.getElementById('pairLink');
+                        a.href = link; a.textContent = link;
+                        lb.style.display = '';
+                    }
                     if (typeof window.qrcode === 'function') {
                         try {
                             var q = window.qrcode(0, 'M');
-                            q.addData(link);
+                            q.addData(self.qrV2(code, basis, b));
                             q.make();
-                            qrBox.innerHTML = '<div style="display:inline-block;background:#fff;padding:10px;border-radius:12px;">' + q.createSvgTag(5, 0) + '</div>';
+                            qrBox.innerHTML = '<div style="display:inline-block;background:#fff;padding:10px;border-radius:12px;">' + q.createSvgTag(4, 0) + '</div>';
                         } catch (e) {}
                     }
                 });
             },
+            // 0.1.20 Brücke: Schalter + Status (GET/POST /api/bruecke, nur Login/lokal)
+            brueckeZeigen: function (d) {
+                var ein = document.getElementById('brueckeEin'), st = document.getElementById('brueckeStatus');
+                if (!d) { document.getElementById('brueckeBox').style.display = 'none'; return; }
+                ein.checked = !!d.ein;
+                st.textContent = !d.ein ? '' : (d.verbunden ? this.t('system.bridge_on', 'Aktiv – das Auto ist über den Panoptes-Server erreichbar.')
+                    : this.t('system.bridge_wait', 'Eingeschaltet – Verbindung zum Panoptes-Server wird aufgebaut.'));
+            },
+            brueckeInit: function () {
+                var self = this, ein = document.getElementById('brueckeEin');
+                var laden = function () {
+                    fetch('/api/bruecke', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; })
+                        .then(function (d) { self.brueckeZeigen(d); }, function () { self.brueckeZeigen(null); });
+                };
+                laden();
+                ein.onchange = function () {
+                    var an = ein.checked;
+                    if (!an && !confirm(self.t('system.bridge_off_confirm', 'Ausschalten? Gekoppelte Handys erreichen das Auto dann nur noch direkt (z. B. über Tailscale).'))) { ein.checked = true; return; }
+                    ein.disabled = true;
+                    fetch('/api/bruecke', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ein: an }) })
+                        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d || {} }; }, function () { return { ok: false, d: {} }; }); })
+                        .then(function (r) {
+                            if (!r.ok && window.BYD && BYD.utils && BYD.utils.toast) {
+                                BYD.utils.toast(r.d.grund === 'server_nicht_erreichbar'
+                                    ? self.t('system.bridge_unreachable', 'Der Panoptes-Server antwortet gerade nicht – vielleicht kein Empfang. Später noch einmal.')
+                                    : self.t('system.bridge_fail', 'Das hat nicht geklappt.'), 'warning');
+                            }
+                            self.brueckeZeigen(r.d);
+                        }, function () { laden(); })
+                        .then(function () { ein.disabled = false; setTimeout(laden, 3000); });
+                };
+            },
             init: function () {
                 var self = this, btn = document.getElementById('pairBtn');
+                this.brueckeInit();
                 this.liste();
                 this.anfragen();
                 setInterval(function () { self.anfragen(); }, 3000);

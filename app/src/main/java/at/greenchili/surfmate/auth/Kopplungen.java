@@ -119,6 +119,12 @@ public final class Kopplungen {
         if (!gefunden) return UNBEKANNT;
         geraete = neu;
         at.greenchili.surfmate.ha.HaEreignisse.schliessen(id);   // offene HA-Streams dieser Kopplung sofort zu
+        // 0.1.20: offene Web-Einmal-Codes verwerfen (der Web-JWT selbst fällt bei der nächsten Anfrage durch)
+        WebSitzung.get().kopplungWeg(id);
+        // 0.1.20: Brücken-Zugang des Handys am Server löschen und offene Kanäle schließen
+        try {
+            at.greenchili.surfmate.bruecke.Bruecke.kopplungWeg(id);
+        } catch (Throwable ignored) { }
         // 0.1.18: Push-Abo der Handy-Kopplung mit weg (Schlüssel und Rechte gehen mit dem Eintrag)
         if (pushId != null && !pushId.isEmpty()) {
             try {
@@ -164,12 +170,13 @@ public final class Kopplungen {
 
     public static final String ART_HANDY = "handy";
     public static final String RECHT_KLIMA = "klima", RECHT_ZUSPERREN = "zusperren",
-            RECHT_AUFSPERREN = "aufsperren", RECHT_PUSH = "push";
+            RECHT_AUFSPERREN = "aufsperren", RECHT_PUSH = "push",
+            RECHT_WEB = "web";   // 0.1.20 Web-Sitzung (Weboberfläche in der Handy-App, Stufe B)
     public static final java.util.List<String> RECHTE = java.util.Collections.unmodifiableList(
-            java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_AUFSPERREN, RECHT_PUSH));
+            java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_AUFSPERREN, RECHT_PUSH, RECHT_WEB));
     /** Standard bei neuer Handy-Kopplung: aufsperren AUS, bis der Besitzer es mit Login einschaltet. */
     static final java.util.List<String> HANDY_STANDARD = java.util.Collections.unmodifiableList(
-            java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_PUSH));
+            java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_PUSH, RECHT_WEB));
 
     public static final int SCHLUESSEL_GESPEICHERT = 1, SCHLUESSEL_SCHON = 2, SCHLUESSEL_FEHLER = 0,
             SCHLUESSEL_KEINE_HANDY_KOPPLUNG = 3;

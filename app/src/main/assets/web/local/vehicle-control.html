@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title data-i18n="app.vehicle_control_title">Steuerung – Panoptes</title>
     <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
     <link rel="manifest" href="/manifest.json">
@@ -30,8 +30,8 @@
             }
         })();
     </script>
-    <script src="../shared/app-shell.js?v=pn24"></script>
-    <link rel="stylesheet" href="../shared/styles.css?v=pn10">
+    <script src="../shared/app-shell.js?v=pn25"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn11">
     <link rel="stylesheet" href="../shared/vehicle-control.css?v=47">
 </head>
 <body>
@@ -661,7 +661,7 @@
     <!-- core.js polls /status every 5s and populates the sidebar status card
          (12V, ACC, SOC, range, SOH, fuel, network). Without it those values
          all stay unread since vehicle-control.js only manages the 3D scene. -->
-    <script src="../shared/core.js?v=pn5"></script>
+    <script src="../shared/core.js?v=pn6"></script>
     <!-- Mode-gated loader. In immersive mode this injects the heavy stack
          (SotaPlayer + three.js + Draco/GLTF/Orbit + gsap ≈ 820 KB of script,
          plus the 1.6 MB GLB the scene then fetches) in strict order via
@@ -682,7 +682,7 @@
                 '../shared/vendor/gsap.min.js?v=12'
             ];
             var chain = window.VC_LITE ? [] : window.VC_VENDOR_CHAIN.slice();
-            chain.push('../shared/vehicle-control.js?v=vclite33');
+            chain.push('../shared/vehicle-control.js?v=vclite35');
             for (var i = 0; i < chain.length; i++) {
                 var s = document.createElement('script');
                 s.src = chain[i];

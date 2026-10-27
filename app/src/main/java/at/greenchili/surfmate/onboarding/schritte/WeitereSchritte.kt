@@ -31,6 +31,9 @@ interface AssistentHost {
 class AutostartSchritt(a: Assistent, private val host: AssistentHost) : SchrittAnsicht("autostart", a) {
     private lateinit var status: android.widget.TextView
     private var erledigt = false
+    // 0.1.20 P7: „Panoptes bei Zündung an öffnen“ – einfache Frage, Standard aus, sofort gespeichert
+    private var zuendung: Switch? = null
+    private var zuendungGeladen = false
 
     override fun ansicht(): View = spalte().apply {
         dazu(titel(t.res(R.string.einr_autostart_titel)), 0f)
@@ -40,9 +43,30 @@ class AutostartSchritt(a: Assistent, private val host: AssistentHost) : SchrittA
         dazu(a.knopf(t.res(R.string.einr_autostart_knopf), primaer = false) { SetupGuideDialog.autostartEinrichten(a.activity) }, 18f)
         status = a.text("", 18f, fett = true)
         dazu(status)
+        zuendung = Switch(a.activity).apply {
+            text = t.web("settings.autostart.beiZuendung.title", "Panoptes bei Zündung an öffnen")
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, a.schrift(19f))
+            setTextColor(a.farbeText)
+            minHeight = a.knopfHoehe
+            isChecked = false
+            setOnCheckedChangeListener { _, an ->
+                if (!zuendungGeladen) return@setOnCheckedChangeListener
+                a.imHintergrund({ EinrichtungApi.einstellungSetzen(JSONObject().put("autostart.beiZuendung", an)) }) { _ -> }
+            }
+        }
+        dazu(zuendung!!, 22f)
+        dazu(a.text(t.web("settings.autostart.beiZuendung.help", ""), 16f, leise = true), 2f)
     }
 
-    override fun betreten() { pruefe() }
+    override fun betreten() {
+        pruefe()
+        if (a.stand().vomKern) a.imHintergrund({ EinrichtungApi.get("/api/einstellungen") }) { r ->
+            val w = r?.json?.optJSONObject("werte")?.optJSONObject("autostart.beiZuendung")
+            zuendungGeladen = false
+            zuendung?.isChecked = w?.optBoolean("wert", false) ?: false
+            zuendungGeladen = true
+        }
+    }
     private fun pruefe() {
         erledigt = !SetupGuideDialog.autostartFehlt(a.activity)
         status.text = if (erledigt) "✓ " + t.res(R.string.einr_autostart_ok) else "✗ " + t.res(R.string.einr_autostart_fehlt)

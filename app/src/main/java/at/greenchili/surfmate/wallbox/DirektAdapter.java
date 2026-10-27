@@ -17,11 +17,11 @@ public interface DirektAdapter {
     void setze(String aktion, Object wert) throws WallboxFehler, JSONException;
 
     /** Bekannte Adapter (Kennung → Name). Neue Adapter hier und in der Datentabelle eintragen. */
-    String[] KENNUNGEN = {"goe", "shelly", "keba", "modbus", "openwb", "easee", "zaptec", "bruecke"};
+    String[] KENNUNGEN = {"goe", "shelly", "keba", "modbus", "openwb", "easee", "zaptec", "bruecke", "goecloud", "pulsar"};
 
-    /** Hersteller-Cloud (eigene Einwilligung, keine Adresse, Geräte-ID + Konto). */
+    /** Hersteller-Cloud (eigene Einwilligung, keine Adresse, Geräte-ID + Konto bzw. Token). */
     static boolean cloud(String adapter) {
-        return "easee".equals(adapter) || "zaptec".equals(adapter);
+        return "easee".equals(adapter) || "zaptec".equals(adapter) || "goecloud".equals(adapter) || "pulsar".equals(adapter);
     }
 
     /** Pausen vor dem 1., 2., 3. Zurücklesen (ms); Clouds melden verzögert. */

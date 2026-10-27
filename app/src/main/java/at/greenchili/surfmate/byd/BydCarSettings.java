@@ -156,7 +156,7 @@ public final class BydCarSettings {
 
     private ContentResolver resolver() {
         try {
-            Context ctx = DaemonBootstrap.getContext();
+            Context ctx = DaemonBootstrap.context();   // 0.1.20: im Daemon der CameraDaemon-Context
             return ctx != null ? ctx.getContentResolver() : null;
         } catch (Exception e) {
             return null;

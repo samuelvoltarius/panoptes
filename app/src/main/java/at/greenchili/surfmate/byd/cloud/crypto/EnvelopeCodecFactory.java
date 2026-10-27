@@ -34,6 +34,13 @@ public final class EnvelopeCodecFactory {
                 : BangcleTablesFile.openStream(ctx);
     }
 
+    /** 0.1.20: wie oben, aber direkt mit dem APK-AssetManager (im Daemon gibt es keinen passenden Context). */
+    public static InputStream openTablesStream(boolean isChina, android.content.res.AssetManager am) {
+        return isChina
+                ? WbskTablesFile.openStream(am)
+                : BangcleTablesFile.openStream(am);
+    }
+
     /** Whether a valid cached table file already exists for the region. */
     public static boolean isCacheValid(boolean isChina) {
         return isChina

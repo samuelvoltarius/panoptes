@@ -25,6 +25,8 @@
   "errors": {
     "rate_limited_locked_for_seconds": "Trop d’essais — bloqué pendant {0} s",
     "invalid_device_token": "Ce jeton d'appareil n'est pas valide",
+    "only_car_or_pin": "Cela n'est possible que dans la voiture ou avec le code PIN",
+    "web_link_expired": "Ce lien a expiré. Veuillez l'ouvrir à nouveau dans l'application.",
     "invalid_request_with_detail": "La requête n’est pas valide : {0}",
     "bydcloud_not_configured": "Le compte BYD n'est pas configuré",
     "bydcloud_not_configured_setup_required": "Le compte BYD n'est pas encore configuré. Saisissez d'abord vos identifiants.",
@@ -847,7 +849,9 @@
     "not_supported": "Ce n'est pas possible pour le moment",
     "find_car_label": "Où est ma voiture ?",
     "battery_heat_label": "Préchauffer la batterie",
-    "close_all_windows_label": "Fermer toutes les vitres"
+    "close_all_windows_label": "Fermer toutes les vitres",
+    "car_off_climate_needs_cloud": "La voiture est éteinte – le préchauffage ne peut alors pas se faire directement. Configure le cloud BYD (Système → Compte BYD), et ça marchera aussi voiture éteinte.",
+    "car_off_needs_cloud": "La voiture est éteinte – cela ne peut alors pas se faire directement. Configure le cloud BYD (Système → Compte BYD), et ça marchera aussi voiture éteinte."
   },
   "automation": {
     "lock": "Verrouiller la voiture",
@@ -2036,6 +2040,10 @@
         "help": "Comment Panoptes rétablit l’autorisation de démarrage automatique après une mise à jour. Visible : via la page BYD à l’écran. Paramètres : en arrière-plan, sans affichage (uniquement si confirmé pour ta voiture).",
         "sichtbar": "Visible (page BYD)",
         "settings": "En arrière-plan"
+      },
+      "beiZuendung": {
+        "title": "Ouvrir Panoptes au contact",
+        "help": "À chaque fois que tu allumes la voiture, Panoptes passe au premier plan. Si CarPlay ou Android Auto est actif, il reste devant. Affichage seulement – aucun son. Désactivé par défaut."
       }
     },
     "faehigkeiten": {

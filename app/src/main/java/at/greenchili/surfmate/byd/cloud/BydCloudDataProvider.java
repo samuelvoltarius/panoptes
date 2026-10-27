@@ -1132,7 +1132,7 @@ public final class BydCloudDataProvider {
     private java.io.InputStream loadTables(BydCloudConfig config) {
         return at.greenchili.surfmate.byd.cloud.crypto.EnvelopeCodecFactory.openTablesStream(
                 config.isChinaRegion(),
-                at.greenchili.surfmate.daemon.DaemonBootstrap.getContext());
+                at.greenchili.surfmate.daemon.DaemonBootstrap.apkAssets());   // 0.1.20
     }
 
     // ── MQTT connection state (set by subscriber) ───────────────────────

@@ -76,6 +76,9 @@ public final class EinstellungenApiHandler {
             }
             JSONObject root = UnifiedConfigManager.forceReload();
             Katalog.Kontext k = kontext(root);
+            // 0.1.20 Web-Sitzung der Handy-App (Stufe B): Geheimnisse und Updates nur am Auto oder mit PIN
+            java.util.List<String> gesperrt = AuthMiddleware.isHandyWebRequest()
+                    ? WebHandyGuard.gesperrteFelder(Katalog.felder(k), req) : java.util.Collections.<String>emptyList();
             Einstellungen.Ergebnis e = Einstellungen.aendern(Katalog.felder(k), root, k, req,
                     AuthMiddleware.isExternRequest(), EinstellungenApiHandler::schreibe,
                     System.currentTimeMillis());
@@ -88,6 +91,7 @@ public final class EinstellungenApiHandler {
                 return true;
             }
             res.put("gespeichert", e.gespeichert);
+            for (String g : gesperrt) e.fehler.put(g, "nurAutoOderPin");
             res.put("fehler", e.fehler);
             nachwirkungen(e);
             HttpResponse.sendJson(out, res.toString());

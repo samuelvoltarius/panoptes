@@ -171,6 +171,19 @@ BYD.i18n = (function () {
             });
     }
 
+    /**
+     * 0.1.20 Tempo: Rückfallsprache (en) nur bei Bedarf, einmal je Seite. Vorher wurde sie vor jeder Seite vorsorglich
+     * geladen (zweiter 330-KB-Katalog über die Brücke bzw. HTTP und JSON.parse), obwohl de/en/fr/it/nl vollständig sind.
+     */
+    function rueckfallLaden() {
+        if (state.enLoading) return;
+        state.enLoading = fetchCatalog('en').then(function (enCat) {
+            state.enCatalog = enCat || {};
+            hydrate(document);
+            notify();
+        }).catch(function () { state.enCatalog = {}; });
+    }
+
     /** Look up a dotted key inside a nested catalog. */
     function lookup(catalog, key) {
         if (catalog[key] != null) return catalog[key];   // flat hit
@@ -214,6 +227,8 @@ BYD.i18n = (function () {
                     return interpolate(enVal, vars);
                 }
             }
+            // 0.1.20 Tempo (Alfred): en erst laden, wenn wirklich ein Schlüssel fehlt; danach hydrate + notify.
+            if (state.lang !== 'en' && !state.enCatalog) rueckfallLaden();
             return key;
         }
         if (typeof val === 'object' && val.other) val = val.other;
@@ -385,16 +400,9 @@ BYD.i18n = (function () {
             // init() does: an onChange subscriber re-renders imperative text
             // (dropdown <option>s) that no later hydrate() can repair, so the
             // fallback has to be in place BEFORE we wake them.
-            var fallbackReady = (resolved !== 'en' && state.enCatalog == null)
-                ? fetchCatalog('en').then(function (enCat) {
-                      state.enCatalog = enCat || {};
-                  }).catch(function () { /* best-effort */ })
-                : Promise.resolve();
-            return fallbackReady.then(function () {
-                if (revision !== state.loadRevision || state.lang !== resolved) return;
-                hydrate(document);
-                notify();
-            });
+            // 0.1.20 Tempo: kein vorsorgliches en mehr (rueckfallLaden bei echtem Fehlschlüssel)
+            hydrate(document);
+            notify();
         });
     }
 
@@ -475,12 +483,9 @@ BYD.i18n = (function () {
             // That is not hypothetical: web/i18n/ar.json has no keymap or automation
             // section at all (all 188 keymap options), and nb.json is missing 77.
             // Waiting costs one parallel fetch of an already-cached asset.
-            var fallbackReady = (initialLang !== 'en' && state.enCatalog == null)
-                ? fetchCatalog('en').then(function (enCat) {
-                      state.enCatalog = enCat || {};
-                  }).catch(function () { /* best-effort — active catalog still usable */ })
-                : Promise.resolve();
-            return fallbackReady.then(function () {
+            // 0.1.20 Tempo (Alfred): nur die gewählte Sprache laden; en kommt über rueckfallLaden(), wenn t() wirklich
+            // einen Schlüssel nicht findet (de/en/fr/it/nl sind vollständig, I18nVollstaendigTest).
+            return Promise.resolve().then(function () {
                 if (revision !== state.loadRevision || state.lang !== initialLang) return cat;
                 hydrate(document);
                 notify();

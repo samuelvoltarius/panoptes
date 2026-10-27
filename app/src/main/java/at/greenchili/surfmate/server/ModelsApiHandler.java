@@ -302,6 +302,10 @@ public class ModelsApiHandler {
                 selectedModelId != null ? selectedModelId : JSONObject.NULL);
         response.put("modelSource", modelSource);
         response.put("color", vehicle.optString("color", "#E8E8EC"));
+        // 0.1.20: offizieller Lack (manifest paints des Modells), null bei eigener Farbe oder Modell ohne Liste
+        JSONObject lack = lackFuer(manifest, modelId, vehicle.optString("paintId", ""), vehicle.optString("color", ""));
+        response.put("paintId", lack != null ? lack.optString("id") : JSONObject.NULL);
+        response.put("paint", lack != null ? lack : JSONObject.NULL);
         // driveSide controls which front-axis door each BYD HAL area code
         // labels as "Front-left" vs "Front-right" in notifications. The
         // notifications page reads this field to paint the LHD/RHD picker.
@@ -455,6 +459,9 @@ public class ModelsApiHandler {
                 return;
             }
             patch.put("color", color);
+            // 0.1.20: Lack-Kennung aus manifest paints; eine Farbe ohne paintId ist eine eigene Farbe
+            String paintId = incoming.optString("paintId", "");
+            patch.put("paintId", paintId.matches("^[a-z0-9-]{1,40}$") ? paintId : "");
         }
         if (incoming.has("driveSide")) {
             String side = incoming.optString("driveSide", "").toLowerCase(java.util.Locale.ROOT);
@@ -987,6 +994,85 @@ public class ModelsApiHandler {
             return parsed;
         } catch (Exception e) {
             logger.warn(TAG + ": failed to read manifest at " + f.getAbsolutePath() + ": " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 0.1.20: Lack {id, name, hex} aus {@code paints} des Modells oder null (keine Liste, unbekannte Kennung,
+     * eigene Farbe). Nur lesen; Hex ist eine Näherung (manifest.paintsHinweis).
+     */
+    public static JSONObject lackFuer(JSONObject manifest, String modelId, String paintId) {
+        return lackFuer(manifest, modelId, paintId, null);
+    }
+
+    /** RGB-Abstand, bis zu dem eine alte Farbwahl ohne paintId als „nächster Ton“ gilt (sonst eigene Farbe/Beispiel). */
+    static final double NAECHSTER_TON_MAX = 60.0;
+
+    /**
+     * 0.1.20 (Koordination): Wie {@link #lackFuer(JSONObject, String, String)}; hat die gespeicherte Wahl noch keine
+     * paintId (Stand vor 0.1.20), wird die Farbe auf den nächsten offiziellen Ton des Modells abgebildet
+     * ({@code abgebildet: true}), wenn er nah genug liegt. Die gespeicherte Farbe selbst bleibt unverändert.
+     */
+    public static JSONObject lackFuer(JSONObject manifest, String modelId, String paintId, String farbe) {
+        if (manifest == null || modelId == null) return null;
+        JSONObject model = findModel(manifest, modelId);
+        org.json.JSONArray paints = model == null ? null : model.optJSONArray("paints");
+        if ((paintId == null || paintId.isEmpty()) && farbe != null && farbe.matches("^#[0-9A-Fa-f]{6}$") && paints != null) {
+            JSONObject best = null;
+            double bestD = Double.MAX_VALUE;
+            for (int i = 0; i < paints.length(); i++) {
+                JSONObject p = paints.optJSONObject(i);
+                String h = p == null || p.isNull("hex") ? "" : p.optString("hex", "");
+                if (!h.matches("^#[0-9A-Fa-f]{6}$")) continue;
+                double d = rgbAbstand(farbe, h);
+                if (d < bestD) { bestD = d; best = p; }
+            }
+            if (best == null || bestD > NAECHSTER_TON_MAX) return null;
+            try {
+                return new JSONObject().put("id", best.optString("id")).put("name", best.optString("name"))
+                        .put("hex", best.opt("hex")).put("abgebildet", true);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        if (paintId == null || paintId.isEmpty()) return null;
+        for (int i = 0; paints != null && i < paints.length(); i++) {
+            JSONObject p = paints.optJSONObject(i);
+            if (p != null && paintId.equals(p.optString("id"))) {
+                try {
+                    return new JSONObject().put("id", p.optString("id")).put("name", p.optString("name"))
+                            .put("hex", p.isNull("hex") ? JSONObject.NULL : p.opt("hex"));
+                } catch (Exception e) {
+                    return null;
+                }
+            }
+        }
+        return null;
+    }
+
+    static double rgbAbstand(String a, String b) {
+        int dr = Integer.parseInt(a.substring(1, 3), 16) - Integer.parseInt(b.substring(1, 3), 16);
+        int dg = Integer.parseInt(a.substring(3, 5), 16) - Integer.parseInt(b.substring(3, 5), 16);
+        int db = Integer.parseInt(a.substring(5, 7), 16) - Integer.parseInt(b.substring(5, 7), 16);
+        return Math.sqrt(dr * dr + dg * dg + db * db);
+    }
+
+    /** 0.1.20: Modell + Lack für Kopplungen (nur lesen): {modelId, name, paint|null}. */
+    public static JSONObject fahrzeugAussehen() {
+        try {
+            JSONObject vehicle = UnifiedConfigManager.getVehicle();
+            JSONObject manifest = readManifest();
+            String id = VehicleModelSelection.resolvedModelId(vehicle.optString("modelId", ""),
+                    VehicleModelSelection.normalizeSource(vehicle.optString("modelSource", ""), vehicle.optString("modelId", "")));
+            if (id == null || id.isEmpty() || (manifest != null && findModel(manifest, id) == null)) return null;
+            JSONObject model = manifest == null ? null : findModel(manifest, id);
+            JSONObject lack = lackFuer(manifest, id, vehicle.optString("paintId", ""), vehicle.optString("color", ""));
+            return new JSONObject().put("modelId", id)
+                    .put("name", model != null ? model.optString("nameEu", model.optString("name", id)) : id)
+                    .put("color", vehicle.optString("color", ""))
+                    .put("paint", lack != null ? lack : JSONObject.NULL);
+        } catch (Throwable t) {
             return null;
         }
     }

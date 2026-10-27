@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title data-i18n="app.dashboard_title">Start – Panoptes</title>
     <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
     <link rel="manifest" href="/manifest.json">
@@ -12,8 +12,8 @@
     <meta name="theme-color" content="#0A2238">
     <script src="../shared/theme.js?v=13"></script>
     <script src="../shared/kartenquelle.js?v=5"></script>
-    <script src="../shared/app-shell.js?v=pn24"></script>
-    <link rel="stylesheet" href="../shared/styles.css?v=pn10">
+    <script src="../shared/app-shell.js?v=pn25"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn11">
     <style>
         /* Startseite nach design/mockup/start.html */
         .home-page .main-content { padding: 0; }
@@ -124,6 +124,17 @@
             .band-bar { margin-left: auto; margin-right: auto; width: 100%; }
             .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .h-range { font-size: 48px; }
+            /* 0.1.20 Hochformat (Handy-App-WebView, Liste der Handy-App A2–A7): nichts abschneiden, Schrift ≥ 14 px */
+            .acts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .act { overflow-wrap: anywhere; font-size: 14px; }
+            .stat .v, .stat .s { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+            .stat .k, .stat .s, .muted, .hbtn, .list .empty { font-size: 14px; }
+            .list li { flex-wrap: wrap; }
+            .list .t { white-space: normal; overflow: visible; overflow-wrap: anywhere; flex: 1 1 60%; }
+            .list .t small, .list .r small { font-size: 13px; }
+            .list .r { white-space: normal; }
+            .gauge { width: 140px; height: 172px; border-radius: 70px 70px 28px 28px; }
+            .map { height: 220px; }
         }
         [data-android-embed="1"] .home { padding-top: 16px; }
     </style>
@@ -236,7 +247,7 @@
 
 <script src="../shared/auth.js"></script>
 <script src="../shared/pwa-init.js?v=index1"></script>
-<script src="../shared/core.js?v=pn5"></script>
+<script src="../shared/core.js?v=pn6"></script>
 <script src="../shared/panoptes-map.js?v=12"></script>
 <script src="../shared/laden-nachfrage.js?v=1"></script>
 <script>
@@ -645,7 +656,11 @@
                 .then(function (r) { return r.json(); })
                 .then(function (d) {
                     var ok = !!(d && d.success);
-                    toast((d && (d.message || d.error)) || (ok ? t('home.sent', 'Befehl gesendet') : t('home.failed', 'Hat nicht geklappt')), ok);
+                    var meldung = (d && (d.message || d.error)) || (ok ? t('home.sent', 'Befehl gesendet') : t('home.failed', 'Hat nicht geklappt'));
+                    // 0.1.20 P5: Auto aus + keine BYD-Cloud → gleich anbieten, die Cloud einzurichten
+                    if (d && d.einrichten) {
+                        if (window.confirm(meldung + '\n\n' + t('home.setup_cloud_q', 'Jetzt die BYD-Cloud einrichten?'))) location.href = d.einrichten;
+                    } else toast(meldung, ok);
                     setTimeout(function () { Home.loadVehicleState(); }, 800);
                 })
                 .catch(function () { toast(t('home.failed', 'Hat nicht geklappt'), false); })

@@ -80,6 +80,11 @@ public final class ProjektionsHinweis {
      * Im Daemon nach einem Blitzer-Band: im Hintergrund prüfen und ggf. EINMAL merken. Nie blockierend, nie mit
      * Anzeige oder Ton. {@code ton} = wirksamer speedcam.ton.
      */
+    /** Zeile der Activity im Vordergrund (dumpsys), null bei Fehler. Auch für {@link ZuendungOeffnen}. */
+    static String resumed() {
+        return run("dumpsys activity activities 2>/dev/null | grep -m1 -E 'mResumedActivity|topResumedActivity'");
+    }
+
     public static void nachBand(String ton) {
         if (!"aus".equals(ton)) return;
         Thread t = new Thread(() -> {

@@ -59,6 +59,22 @@
         function holen() {
             return fetch(URL, { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
         }
+        // 0.1.20 Tempo (Messung am Auto: alle 2 s, auch unsichtbar): nur bei sichtbarer Seite, alle 5 s; ändert sich der
+        // Stand 1 min lang nicht (z. B. hängende Phase), nur noch alle 30 s.
+        var letzterStand = '', gleichSeit = 0;
+        function planen() {
+            var still = gleichSeit && (Date.now() - gleichSeit) > 60000;
+            timer = setTimeout(function () {
+                if (document.hidden) { planen(); return; }
+                holen().then(function (d) {
+                    timer = null;
+                    if (d && d.stand && !laufend(d.stand)) { zeichne(d); return; }
+                    var k = d ? JSON.stringify(d.stand || {}) : '';
+                    if (k !== letzterStand) { letzterStand = k; gleichSeit = Date.now(); if (d) zeichneStand(d.stand); }
+                    if (!timer) planen();
+                });
+            }, still ? 30000 : 5000);
+        }
         function laufend(st) { return st && st.phase && ['bereit', 'fertig', 'abgebrochen', 'fehler'].indexOf(st.phase) < 0; }
 
         function zeichneStand(st) {
@@ -72,7 +88,7 @@
                 var ab = knopf(T('abbrechen'));
                 ab.onclick = function () { ab.disabled = true; fetch(URL + '/abbrechen', { method: 'POST' }).then(neu, neu); };
                 inhalt.appendChild(ab);
-                if (!timer) timer = setInterval(function () { holen().then(function (d) { if (d && d.stand && !laufend(d.stand)) { clearInterval(timer); timer = null; zeichne(d); } else if (d) zeichneStand(d.stand); }); }, 2000);
+                if (!timer) planen();
                 return true;
             }
             return false;

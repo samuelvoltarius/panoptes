@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#0A2238">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -10,7 +10,7 @@
     <title data-i18n="app.notifications_title">Meldungen – Panoptes</title>
     <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
     <script src="../shared/theme.js?v=13"></script>
-    <script src="../shared/app-shell.js?v=pn24"></script>
+    <script src="../shared/app-shell.js?v=pn25"></script>
     <!--
       WebView detection MUST run before app-tabs.js builds the tab bar so
       we can filter OT_TABS to the Telegram-only flow on the head unit.
@@ -58,7 +58,7 @@
             : __OT_ALL_TABS;
     </script>
     <script src="../shared/app-tabs.js"></script>
-    <link rel="stylesheet" href="../shared/styles.css?v=pn10">
+    <link rel="stylesheet" href="../shared/styles.css?v=pn11">
     <link rel="manifest" href="/manifest.json">
     <style>
         .notif-page-body { max-width: 720px; margin: 0 auto; }
@@ -1060,7 +1060,7 @@
     <script src="../shared/auth.js"></script>
     <script src="../shared/ts-https.js?v=2"></script>
     <script src="../shared/pwa-init.js?v=index1"></script>
-    <script src="../shared/core.js?v=pn5"></script>
+    <script src="../shared/core.js?v=pn6"></script>
     <!-- surveillance.js owns the SurvSettings module that backs the Telegram
          tier toggles. We load it here so the v2TelegramSendStartPing /
          v2TelegramTierGroup controls hooked into surveillance.js wiring

@@ -405,6 +405,26 @@ class WebViewFragment : Fragment() {
 
     private var webView: WebView? = null
     private var loadingOverlay: View? = null
+
+    // 0.1.20: genau ein erneuter Versuch je Anfrage für /shared/* (Thread der WebView-Anfrage)
+    private val erneuterVersuch = ThreadLocal<Boolean>()
+    // 0.1.20: fehlende Kern-Dateien (styles.css/core.js) → Seite mit Backoff neu laden, statt ungestylt stehen zu bleiben
+    private var kernNeuladeVersuche = 0
+    private val kernHandler = android.os.Handler(android.os.Looper.getMainLooper())
+
+    // 0.1.20 (b2): einmal je Fragment bestimmt (WebView-Hauptversion, Proxy für 127.0.0.1)
+    private val webViewHaupt: Int by lazy {
+        try {
+            at.greenchili.surfmate.ui.AssetSpeicher.hauptversion(WebView.getCurrentWebViewPackage()?.versionName)
+        } catch (_: Throwable) { 0 }
+    }
+    private val proxyFuerLoopback: Boolean by lazy {
+        try {
+            java.net.ProxySelector.getDefault()
+                ?.select(java.net.URI("http://127.0.0.1:${CameraDaemon.HTTP_PORT}/"))
+                ?.any { it.type() != java.net.Proxy.Type.DIRECT } ?: false
+        } catch (_: Throwable) { true }
+    }
     private var errorOverlay: View? = null
     private var btnRetry: MaterialButton? = null
     // 0.1.15.1: Ansicht „Panoptes startet …“ (Webserver antwortet noch nicht), siehe StartWarten
@@ -639,6 +659,12 @@ class WebViewFragment : Fragment() {
 
                     if (isLocalServer) {
                         interceptI18nCatalog(url)?.let { return it }
+                        // 0.1.20 (b2): statische /shared/-Dateien lädt die WebView selbst – dann wirken ihr HTTP-Cache
+                        // und der JS-Code-Cache (abgefangene Antworten cached sie nie). Nur ab M72 und ohne Proxy.
+                        if (at.greenchili.surfmate.ui.AssetSpeicher.direkt(request?.method, request?.url?.path,
+                                request?.requestHeaders?.get("Range"), webViewHaupt, proxyFuerLoopback)) {
+                            return null
+                        }
                     }
                     
                     // Map tiles and CDN resources are fetched here directly (see strategyForId)
@@ -792,6 +818,19 @@ class WebViewFragment : Fragment() {
                         android.util.Log.d("WebViewProxy", "Intercepting Video: $url")
                     }
 
+                    // 0.1.20 Tempo: statische /shared/-Dateien aus dem Arbeitsspeicher (abgefangene Antworten cached die
+                    // WebView nie – sonst kommt jede Datei bei jedem Seitenwechsel erneut über die Leitung).
+                    val assetCachebar = at.greenchili.surfmate.ui.AssetSpeicher.geeignet(
+                        request?.method, request?.url?.path, request?.requestHeaders?.get("Range"))
+                    if (assetCachebar) {
+                        at.greenchili.surfmate.ui.AssetSpeicher.holen(url)?.let { e ->
+                            return WebResourceResponse(e.mime, e.encoding, java.io.ByteArrayInputStream(e.daten)).apply {
+                                setStatusCodeAndReasonPhrase(200, "OK")
+                                responseHeaders = e.kopf
+                            }
+                        }
+                    }
+
                     try {
                         // 1. Force Direct Connection (Bypass sing-box)
                         val connection = java.net.URL(url).openConnection(java.net.Proxy.NO_PROXY) as java.net.HttpURLConnection
@@ -904,6 +943,14 @@ class WebViewFragment : Fragment() {
                             }
                         }
 
+                        // 0.1.20 Tempo: cachebare 200-Antwort einmal ganz lesen und merken (nach den Köpfen, s. u.)
+                        var assetBytes: ByteArray? = null
+                        if (assetCachebar && connection.responseCode == 200 && !splicedHtml
+                                && length in 1..at.greenchili.surfmate.ui.AssetSpeicher.MAX_EINTRAG) {
+                            assetBytes = bodyStream.readBytes()
+                            bodyStream = java.io.ByteArrayInputStream(assetBytes)
+                        }
+
                         val response = WebResourceResponse(mime, encoding, bodyStream)
 
                         // 4. Pass Status Code (206 vs 200)
@@ -951,6 +998,9 @@ class WebViewFragment : Fragment() {
                             headers["Content-Length"] = length.toString()
                         }
                         response.responseHeaders = headers
+                        assetBytes?.let {
+                            if (it.size == length) at.greenchili.surfmate.ui.AssetSpeicher.merken(url, mime, encoding, headers, it)
+                        }
 
                         if (url.endsWith(".mp4")) {
                             android.util.Log.d("WebViewProxy", "Serving Video: ${connection.responseCode} len=$length mime=$mime")
@@ -963,6 +1013,21 @@ class WebViewFragment : Fragment() {
                         return response
                     } catch (e: Exception) {
                         android.util.Log.e("WebViewProxy", "Failed: $url - ${e.message}")
+                        // 0.1.20: statische /shared/-Datei bei kurzem Verbindungsfehler (z. B. Netzwechsel bei ACC an)
+                        // nicht als 503 liefern: zuerst der Speicher, sonst nach 400 ms genau einmal neu versuchen.
+                        if (assetCachebar) {
+                            at.greenchili.surfmate.ui.AssetSpeicher.holen(url)?.let { c ->
+                                return WebResourceResponse(c.mime, c.encoding, java.io.ByteArrayInputStream(c.daten)).apply {
+                                    setStatusCodeAndReasonPhrase(200, "OK")
+                                    responseHeaders = c.kopf
+                                }
+                            }
+                            if (erneuterVersuch.get() != true) {
+                                try { Thread.sleep(400) } catch (_: InterruptedException) {}
+                                erneuterVersuch.set(true)
+                                try { return shouldInterceptRequest(view, request) } finally { erneuterVersuch.set(false) }
+                            }
+                        }
                         // CRITICAL: never return null for a 127.0.0.1 URL.
                         // Returning null tells WebView "fetch this yourself" —
                         // and WebView's default path goes through the system
@@ -981,9 +1046,13 @@ class WebViewFragment : Fragment() {
                  * 0.1.15.1: Hauptseite → lesbare HTML-Seite (nie JSON am Display), Unterressource → JSON-503 wie
                  * bisher (fetch()-Aufrufer der Seite werten das JSON aus).
                  */
-                private fun fehlerAntwort(request: WebResourceRequest?, reason: String): WebResourceResponse =
-                    if (request?.isForMainFrame == true) startSeite503(request?.url?.toString(), reason)
+                private fun fehlerAntwort(request: WebResourceRequest?, reason: String): WebResourceResponse {
+                    // 0.1.20: jede vom Proxy selbst erzeugte 503 mit Grund protokollieren (Befund am Auto nach ACC an)
+                    android.util.Log.w("WebViewProxy", "Proxy-503 (" + reason + ") für " + (request?.url?.path ?: "?")
+                            + if (request?.isForMainFrame == true) " [Hauptseite]" else "")
+                    return if (request?.isForMainFrame == true) startSeite503(request?.url?.toString(), reason)
                     else synthesize503(reason)
+                }
 
                 /** 503 mit lesbarer Seite „Panoptes startet …“ für die Hauptseite (Ersatz, falls die Ansicht fehlt). */
                 private fun startSeite503(url: String?, reason: String): WebResourceResponse {
@@ -1079,6 +1148,7 @@ class WebViewFragment : Fragment() {
                         // dort ist die Web-Navigation die einzige Navigation (sonst wäre man auf der
                         // Startseite gefangen; Befund Koordination/Neubau 2 vor 0.1.7.2).
                         if (!vollbild) view?.evaluateJavascript(INJECT_JS, null)
+                        kernDateienPruefen(view)
                     }
                 }
 
@@ -1896,6 +1966,32 @@ class WebViewFragment : Fragment() {
         loadingOverlay?.visibility = View.GONE
         errorOverlay?.visibility = View.GONE
         webView?.visibility = View.VISIBLE
+    }
+
+    /**
+     * 0.1.20 (Befund am Auto: nach ACC an kamen styles.css/core.js nicht an, die Seite blieb ungestylt): Verweist die
+     * Seite auf styles.css bzw. core.js, müssen sie auch gewirkt haben (--primary gesetzt, window.BYD da). Sonst neu laden
+     * mit Backoff 2/4/8/15/30 s, höchstens [KernDateien.MAX_VERSUCHE] Mal; Erfolg setzt den Zähler zurück.
+     */
+    private fun kernDateienPruefen(view: WebView?) {
+        val w = view ?: return
+        w.evaluateJavascript(at.greenchili.surfmate.ui.KernDateien.PRUEF_JS) { roh ->
+            when (at.greenchili.surfmate.ui.KernDateien.urteil(roh)) {
+                at.greenchili.surfmate.ui.KernDateien.OK -> kernNeuladeVersuche = 0
+                at.greenchili.surfmate.ui.KernDateien.FEHLT -> {
+                    val warte = at.greenchili.surfmate.ui.KernDateien.warteMs(kernNeuladeVersuche)
+                    if (warte < 0) {
+                        android.util.Log.w("WebView", "Kern-Dateien fehlen weiter – kein weiteres Neuladen")
+                        return@evaluateJavascript
+                    }
+                    kernNeuladeVersuche++
+                    android.util.Log.w("WebView", "Kern-Dateien fehlen ($roh) – Seite in ${warte} ms neu laden (Versuch $kernNeuladeVersuche)")
+                    kernHandler.removeCallbacksAndMessages(null)
+                    kernHandler.postDelayed({ if (isAdded) webView?.reload() }, warte)
+                }
+                else -> {}
+            }
+        }
     }
 
     private fun showContent() {

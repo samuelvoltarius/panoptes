@@ -86,6 +86,16 @@ public final class HandyApiHandler {
             case "/api/handy/v1/push/aus":
                 HttpResponse.sendJson(out, pushAus(kopplungId).toString());
                 return true;
+            case "/api/handy/v1/websitzung":
+                websitzung(req, out, kopplungId);
+                return true;
+            case "/api/handy/v1/bruecke":
+                bruecke(req, out, kopplungId);
+                return true;
+            case "/api/handy/v1/bruecke/aus":
+                at.greenchili.surfmate.bruecke.Bruecke.get().handyEntfernen(kopplungId);
+                HttpResponse.sendJson(out, new JSONObject().put("ok", true).toString());
+                return true;
             default:
                 HttpResponse.sendJson(out, 404, fehler("unbekannt").toString());
                 return true;
@@ -113,6 +123,68 @@ public final class HandyApiHandler {
         // damit ein fremder Eintrag auffällt
         umgebung.telegram("handy.schluessel", k().anzeigeName(kid));
         HttpResponse.sendJson(out, new JSONObject().put("ok", true).toString());
+    }
+
+    // ------------------------------------------------------------------ 0.1.20 Web-Sitzung (Stufe B)
+
+    private static final java.util.Map<String, Long> WEB_GEMELDET = new java.util.HashMap<>();
+
+    /**
+     * Einmal-Code (60 s) für {@code /auth/web}; nur mit Recht „web“, Ratenlimit je Kopplung. Optional
+     * {@code {"ziel":"/trips.html"}} – geprüft wird beim Einlösen ({@code WebSitzung.ziel}: nur Pfade dieses Panoptes).
+     */
+    static void websitzung(JSONObject req, OutputStream out, String kid) throws Exception {
+        if (!k().hatRecht(kid, Kopplungen.RECHT_WEB)) {
+            HttpResponse.sendJson(out, 403, fehler("nicht_erlaubt").toString());
+            return;
+        }
+        long jetzt = System.currentTimeMillis();
+        String code = at.greenchili.surfmate.auth.WebSitzung.get().erzeugen(kid, jetzt);
+        if (code == null) {
+            HttpResponse.sendJson(out, 429, fehler("ratenlimit").toString());
+            return;
+        }
+        // Protokoll: einmal am Tag je Handy
+        synchronized (WEB_GEMELDET) {
+            Long zuletzt = WEB_GEMELDET.get(kid);
+            if (zuletzt == null || jetzt - zuletzt > 24L * 3600_000L) {
+                WEB_GEMELDET.put(kid, jetzt);
+                at.greenchili.surfmate.logging.DaemonLogger.getInstance("HandyWeb").info("Handy „" + k().anzeigeName(kid) + "“ hat die Weboberfläche geöffnet");
+            }
+        }
+        JSONObject r = new JSONObject().put("ok", true)
+                .put("url", "/auth/web?einmal=" + code + (req.optString("ziel", "").isEmpty() ? ""
+                        : "&ziel=" + java.net.URLEncoder.encode(req.optString("ziel"), "UTF-8")))
+                .put("gueltigS", at.greenchili.surfmate.auth.WebSitzung.GUELTIG_CODE_MS / 1000)
+                .put("sitzungS", at.greenchili.surfmate.auth.WebSitzung.GUELTIG_JWT_S);
+        HttpResponse.sendJson(out, r.toString());
+    }
+
+    // ------------------------------------------------------------------ 0.1.20 Brücke (BRUECKE_VERTRAG §2.4)
+
+    /** {@code {h_pub, g_handy}} (je 32 Byte base64url): Handy-Schlüssel dieser Kopplung + Server-Zugang. */
+    static void bruecke(JSONObject req, OutputStream out, String kid) throws Exception {
+        at.greenchili.surfmate.bruecke.Bruecke b = at.greenchili.surfmate.bruecke.Bruecke.get();
+        at.greenchili.surfmate.bruecke.Bruecke.HandyErgebnis e = b.handyAnmelden(kid, req.optString("h_pub", ""), req.optString("g_handy", ""));
+        switch (e) {
+            case OK:
+                JSONObject r = new JSONObject().put("ok", true);
+                JSONObject block = b.kopplungsBlock();
+                if (block != null) r.put("bruecke", block);
+                HttpResponse.sendJson(out, r.toString());
+                return;
+            case AUS:
+                HttpResponse.sendJson(out, 409, fehler("bruecke_aus").toString());
+                return;
+            case UNGUELTIG:
+                HttpResponse.sendJson(out, 400, fehler("schluessel").toString());
+                return;
+            case SERVER_NICHT_ERREICHBAR:
+                HttpResponse.sendJson(out, 503, fehler("server_nicht_erreichbar").toString());
+                return;
+            default:
+                HttpResponse.sendJson(out, 502, fehler(e.name().toLowerCase(java.util.Locale.ROOT)).toString());
+        }
     }
 
     // ------------------------------------------------------------------ §3 Aktionen
@@ -215,6 +287,11 @@ public final class HandyApiHandler {
             case RATE_LIMITED:
                 return fehler("ratenlimit_cloud");
             case AUTH_REQUIRED:
+                // 0.1.20 P5: Auto aus + keine BYD-Cloud → eigener Grund samt Klartext (Cockpit/Handy zeigen ihn an)
+                if (VehicleCommandRouter.CommandResult.GRUND_CLOUD_NICHT_EINGERICHTET.equals(r.grund)) {
+                    return fehler(VehicleCommandRouter.CommandResult.GRUND_CLOUD_NICHT_EINGERICHTET)
+                            .put("text", r.displayMessage).put("einrichten", "/byd-cloud.html");
+                }
                 return fehler("kein_cloud_konto");
             case NOT_SUPPORTED:
                 return fehler("nicht_unterstuetzt");

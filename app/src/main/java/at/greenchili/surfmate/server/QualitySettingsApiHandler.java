@@ -531,7 +531,13 @@ public class QualitySettingsApiHandler {
                 }
                 reader.close();
                 
-                JSONObject config = new JSONObject(sb.toString());
+                // 0.1.20 (Koordination 27.10.): Geheimnisse nie an einen Client – für JEDE Anmeldung (PIN, Kopplung,
+                // Web-Sitzung, Loopback): JWT-Schlüssel, Tokens, Passwörter nur als {"gesetzt":…}
+                JSONObject config = at.greenchili.surfmate.config.Geheimnisse.schwaerzen(new JSONObject(sb.toString()));
+                // 0.1.20 Web-Sitzung der Handy-App: keine Geheimnisse/Sicherheits-Abschnitte (JWT-Schlüssel, Tokens …)
+                if (AuthMiddleware.isHandyWebRequest()) {
+                    for (String a : WebHandyGuard.GEHEIME_ABSCHNITTE) config.remove(a);
+                }
                 response.put("config", config);
                 response.put("lastModified", unifiedFile.lastModified());
             } else {
@@ -582,6 +588,8 @@ public class QualitySettingsApiHandler {
             JSONObject request = new JSONObject(body);
             String section = request.optString("section", "");
             JSONObject data = request.optJSONObject("data");
+            // 0.1.20: zurückgeschickte Masken ({"gesetzt":…}) überschreiben nie ein gespeichertes Geheimnis
+            if (data != null) at.greenchili.surfmate.config.Geheimnisse.ohneMasken(data);
 
             if (section.isEmpty() || data == null) {
                 HttpResponse.sendJsonError(out, Messages.get("errors.quality_missing_section_or_data"));

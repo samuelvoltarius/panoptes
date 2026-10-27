@@ -55,6 +55,8 @@ public class TariffProfile {
     /** Kern 5 (0.1.10): 0 €/kWh ist ein GÜLTIGER Preis, wenn ausdrücklich „gratis“ (sonst 0 = nicht gesetzt). */
     private boolean acGratis;
     private boolean dcGratis;
+    /** 0.1.20 Ladeplan: Zeitbänder (nur AC/Heimort), {@link Zeittarif}-Format; null = fester Preis. */
+    private JSONObject zeittarif;
     /** Currency symbol snapshot ("$", "₹", "CHF "). Empty = use the global currency. */
     private String currency;
     private boolean enabled;
@@ -96,6 +98,7 @@ public class TariffProfile {
         this.useCount = Math.max(0, json.optInt("useCount", 0));
         this.acGratis = json.optBoolean("acGratis", false) && this.acRate == 0;
         this.dcGratis = json.optBoolean("dcGratis", false) && this.dcRate == 0;
+        setZeittarif(json.optJSONObject("zeittarif"));
     }
 
     /** Serialize to JSON (both the config file and the API response use this shape). */
@@ -116,6 +119,7 @@ public class TariffProfile {
             json.put("useCount", useCount);
             if (acGratis) json.put("acGratis", true);
             if (dcGratis) json.put("dcGratis", true);
+            if (zeittarif != null) json.put("zeittarif", new JSONObject(zeittarif.toString()));
         } catch (Exception ignored) {}
         return json;
     }
@@ -148,7 +152,17 @@ public class TariffProfile {
 
     /** True when this profile can price at least one kind of session. */
     public boolean hasAnyRate() {
-        return acRate > 0 || dcRate > 0 || acGratis || dcGratis;
+        return acRate > 0 || dcRate > 0 || acGratis || dcGratis || zeittarif != null;
+    }
+
+    /** 0.1.20: gültiger Zeittarif oder null (ungültige Eingaben werden beim Setzen verworfen). */
+    public Zeittarif getZeittarif() {
+        return Zeittarif.oderNull(zeittarif);
+    }
+
+    /** Zeittarif setzen; null oder ungültig = entfernen (fester Preis). */
+    public void setZeittarif(JSONObject z) {
+        this.zeittarif = Zeittarif.oderNull(z) == null ? null : z;
     }
 
     /** Record that this profile priced a session (drives ordering + provenance). */

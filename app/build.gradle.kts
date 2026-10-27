@@ -317,8 +317,8 @@ android {
         // value (e.g. `-PsurfmateVersionName=27.4 -PsurfmateVersionCode=12`)
         // without a source edit per release; the defaults track the current
         // rolling head so a plain local build is still accurate.
-        versionCode = (project.findProperty("surfmateVersionCode") as? String)?.toIntOrNull() ?: 30
-        versionName = (project.findProperty("surfmateVersionName") as? String) ?: "0.1.19.1"
+        versionCode = (project.findProperty("surfmateVersionCode") as? String)?.toIntOrNull() ?: 31
+        versionName = (project.findProperty("surfmateVersionName") as? String) ?: "0.1.20"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
         // Note: abiFilters removed - using splits.abi instead for size optimization
@@ -619,6 +619,8 @@ dependencies {
     
     // Encrypted SharedPreferences for secure token/owner storage
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    // 0.1.20 Panoptes-Brücke (Noise): X25519 + ChaCha20-Poly1305 aus Tink, bisher nur transitiv über security-crypto
+    implementation("com.google.crypto.tink:tink-android:1.8.0")
     
     // H2 Database - Pure Java embedded SQL (no native dependencies, no .so files)
     // Works for UID 2000 because it's 100% Java bytecode - no Android framework needed

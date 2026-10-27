@@ -218,14 +218,32 @@ public final class VehicleCommandRouter {
         public final String displayMessage;
         public final long latencyMs;
         public final Throwable error;
+        /** 0.1.20 (P5): maschinenlesbarer Grund für Clients, z. B. {@link #GRUND_CLOUD_NICHT_EINGERICHTET}; sonst null. */
+        public final String grund;
+
+        public static final String GRUND_CLOUD_NICHT_EINGERICHTET = "cloud_nicht_eingerichtet";
 
         private CommandResult(Outcome outcome, Path path, String displayMessage,
                               long latencyMs, Throwable error) {
+            this(outcome, path, displayMessage, latencyMs, error, null);
+        }
+
+        private CommandResult(Outcome outcome, Path path, String displayMessage,
+                              long latencyMs, Throwable error, String grund) {
             this.outcome = outcome;
             this.path = path;
             this.displayMessage = displayMessage != null ? displayMessage : "";
             this.latencyMs = latencyMs;
             this.error = error;
+            this.grund = grund;
+        }
+
+        /**
+         * 0.1.20 (P5): Direkt ging es nicht, weil das Auto aus ist, und eine BYD-Cloud ist nicht eingerichtet. Ehrlich
+         * „Cloud einrichten“ statt „vom Auto abgelehnt“ (das Auto hat nichts abgelehnt – es war aus).
+         */
+        public static CommandResult cloudNichtEingerichtet(String msg, long latencyMs) {
+            return new CommandResult(Outcome.AUTH_REQUIRED, Path.SDK, msg, latencyMs, null, GRUND_CLOUD_NICHT_EINGERICHTET);
         }
 
         public static CommandResult success(Path path, String msg, long latencyMs) {
@@ -2367,6 +2385,10 @@ public final class VehicleCommandRouter {
             if (leg.success) return CommandResult.success(Path.SDK,
                     msg("cloud_offline_used_local"), elapsed);
             if (leg.blocked) return CommandResult.blocked(msg("blocked_driving"));
+            // 0.1.20 P5: Cloud gar nicht eingerichtet und Auto aus → ehrlich „BYD-Cloud einrichten“
+            if (!cloudHandshakeSatisfied(cmd) && autoAusOhneCloud(leg)) {
+                return CommandResult.cloudNichtEingerichtet(msg(autoAusSchluessel(cmd)), elapsed);
+            }
             // BOTH legs had their turn and both failed — say that, rather than blaming only the
             // cloud when the local HAL is the leg that actually rejected the command last.
             return CommandResult.failed(Path.SDK, msg("both_legs_failed"), elapsed, leg.error);
@@ -2406,6 +2428,11 @@ public final class VehicleCommandRouter {
             // SDK actually ran and returned false — don't blame missing cloud
             // creds (or an asleep car) for a local primitive that had its turn.
             if (sdkLeg != null) {
+                // 0.1.20 P5: Auto aus → direkt ohne Wirkung; ohne BYD-Cloud ehrlich sagen, wie es doch geht
+                if (autoAusOhneCloud(sdkLeg)) {
+                    return CommandResult.cloudNichtEingerichtet(msg(autoAusSchluessel(cmd)),
+                            System.currentTimeMillis() - start);
+                }
                 return CommandResult.failed(Path.SDK, msg("local_failed"),
                         System.currentTimeMillis() - start, sdkLeg.error);
             }
@@ -3095,6 +3122,21 @@ public final class VehicleCommandRouter {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    /**
+     * 0.1.20 P5: Der lokale Befehl blieb ohne Wirkung, weil das Auto aus ist (nicht wach, kein ACC) – nicht weil es
+     * abgelehnt hätte. Nur dann gilt „BYD-Cloud einrichten“; ein wirklich abgelehnter Befehl bei Auto an bleibt
+     * „local_failed“. Fahrsperre und Ausnahmen beim lokalen Aufruf zählen nicht.
+     */
+    private boolean autoAusOhneCloud(SdkLeg leg) {
+        if (leg == null || leg.blocked) return false;
+        return !isVehicleOccupiedOrAwake();
+    }
+
+    /** Text je Befehl: Vorheizen nennt das Vorheizen, alles andere allgemein. */
+    public static String autoAusSchluessel(VehicleCommand cmd) {
+        return cmd instanceof ClimateOnCommand ? "car_off_climate_needs_cloud" : "car_off_needs_cloud";
     }
 
     private boolean isVehicleAwake() {

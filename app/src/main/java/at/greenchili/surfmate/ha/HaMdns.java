@@ -35,7 +35,7 @@ public final class HaMdns {
             v.put("mdnsId", id);
             UnifiedConfigManager.updateValues("ha", v);
         }
-        android.content.Context c = at.greenchili.surfmate.daemon.DaemonBootstrap.getContext();
+        android.content.Context c = at.greenchili.surfmate.daemon.DaemonBootstrap.context();   // 0.1.20: im Daemon der CameraDaemon-Context
         if (c == null) {
             logger.warn("kein Context – keine Ankündigung");
             return;

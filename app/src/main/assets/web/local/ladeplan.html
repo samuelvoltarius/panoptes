@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Zu Hause laden – Panoptes</title>
+    <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0A2238">
+    <meta name="robots" content="noindex">
+    <script src="../shared/theme.js?v=13"></script>
+    <script src="../shared/app-shell.js?v=pn25"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn11">
+    <style>
+        .lpl { padding: 0 28px 60px; max-width: 760px; box-sizing: border-box; }
+        .tc { background: var(--sm-card); border: 1px solid var(--sm-line); border-radius: 20px; padding: 20px; margin-bottom: 16px; }
+        .tc h2 { font-family: var(--family-display); font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--outline); margin: 0 0 6px; }
+        .tc p, .tc label, .hint { color: var(--on-surface-variant); font-size: 13.5px; }
+        .tc label { display: block; margin: 12px 0 4px; }
+        [hidden] { display: none !important; }
+        .tc input[type=text], .tc input[type=number], .tc input[type=time], .tc select {
+            box-sizing: border-box; background: rgba(255,255,255,.06); color: var(--on-surface); border: 1px solid var(--sm-line);
+            border-radius: 10px; padding: 10px 12px; font: 14px var(--family-body, sans-serif); }
+        .tc input.kurz { width: 96px; }
+        .reihe { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+        .tbtn { border: 1px solid var(--sm-line); background: rgba(255,255,255,.075); color: var(--on-surface); border-radius: 12px;
+                padding: 11px 16px; font: 600 14px var(--family-body, sans-serif); cursor: pointer; }
+        .tbtn.lime { background: var(--sm-lime); color: #1d2a00; border-color: transparent; }
+        .tbtn.an { outline: 2px solid var(--sm-lime); }
+        .tbtn:disabled { opacity: .5; cursor: default; }
+        .gross { font: 700 22px var(--family-display); color: var(--on-surface); margin: 4px 0; }
+        .werte { color: var(--on-surface); font-size: 15px; }
+        .warn { color: var(--status-warning); font-size: 13.5px; margin: 8px 0 0; }
+        .balken { display: flex; align-items: flex-end; gap: 3px; height: 110px; margin: 12px 0 4px; }
+        .balken div { flex: 1; background: rgba(255,255,255,.16); border-radius: 3px 3px 0 0; min-height: 3px; }
+        .balken .lad { background: var(--sm-lime); }
+        .achse { display: flex; justify-content: space-between; color: var(--on-surface-variant); font-size: 12px; }
+        .schritt { font: 700 12px var(--family-display); letter-spacing: .06em; text-transform: uppercase; color: var(--sm-aqua); margin: 18px 0 2px; }
+        .band { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
+        .log { font-size: 12.5px; color: var(--on-surface-variant); margin: 0; padding-left: 18px; }
+        #dlg { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: center; justify-content: center; z-index: 50; }
+        #dlg .box { background: var(--sm-card); border: 1px solid var(--sm-line); border-radius: 20px; padding: 22px; max-width: 420px; margin: 16px; }
+        #dlg .box p { color: var(--on-surface); font-size: 16px; margin: 0 0 16px; }
+        @media (max-width: 720px) { .lpl { padding: 0 16px 24px; } }
+    </style>
+</head>
+<body>
+<div class="app-layout">
+    <div id="app-shell-mount"></div>
+    <main class="main-content">
+        <div class="lpl">
+            <!-- 0.1.20 Ladeplan zu Hause (LADEPLAN_KONZEPT): Panoptes plant, die Wallbox bekommt nur Start, Stopp, Strom. -->
+            <article class="tc">
+                <h2 data-i18n="ladeplan.title">Zu Hause laden</h2>
+                <p class="werte" id="kopf"></p>
+                <p class="warn" id="phase"></p>
+                <div class="reihe" id="modi">
+                    <button class="tbtn" type="button" data-modus="aus" data-i18n="ladeplan.mode_off">Aus</button>
+                    <button class="tbtn" type="button" data-modus="guenstig" data-i18n="ladeplan.mode_cheap">Günstig bis Abfahrt</button>
+                    <button class="tbtn" type="button" data-modus="zeitfenster" data-i18n="ladeplan.mode_window">Zeitfenster</button>
+                </div>
+                <div class="reihe">
+                    <button class="tbtn lime" type="button" id="btnSofort" data-i18n="ladeplan.now">Jetzt sofort laden</button>
+                    <button class="tbtn" type="button" id="btnWeiter" hidden data-i18n="ladeplan.resume">Plan wieder aufnehmen</button>
+                </div>
+            </article>
+
+            <article class="tc">
+                <h2 data-i18n="ladeplan.preview">So wird geladen</h2>
+                <div class="gross" id="vGross"></div>
+                <p class="werte" id="vZahlen"></p>
+                <p class="warn" id="vMeldung" hidden></p>
+                <div class="balken" id="balken"></div>
+                <div class="achse" id="achse"></div>
+                <p class="hint" data-i18n="ladeplan.bars_hint">Grün = geplante Ladezeit, Balkenhöhe = Strompreis.</p>
+            </article>
+
+            <article class="tc">
+                <h2 data-i18n="ladeplan.setup">Einrichten in 3 Schritten</h2>
+
+                <div class="schritt" data-i18n="ladeplan.s1">1 · Was kostet dein Strom zu Hause?</div>
+                <p class="warn" id="keinHeim" hidden data-i18n="ladeplan.no_home">Es gibt noch keinen Ort „Zuhause“ mit Strompreis. Lege ihn unter „Orte“ an (Eigenschaft „Zuhause“ und Tarif) – bis dahin gilt dein fester Strompreis.</p>
+                <div class="reihe" id="tarifWahl">
+                    <button class="tbtn" type="button" data-tarif="fest" id="tFest">Immer gleich</button>
+                    <button class="tbtn" type="button" data-tarif="tag_nacht" data-i18n="ladeplan.t_daynight">Tag/Nacht</button>
+                    <button class="tbtn" type="button" data-tarif="mittag" data-i18n="ladeplan.t_noon">Mittags günstiger</button>
+                    <button class="tbtn" type="button" data-tarif="eigen" data-i18n="ladeplan.t_custom">Eigene Zeiten</button>
+                </div>
+                <div id="baender" hidden>
+                    <label for="grundpreis" data-i18n="ladeplan.base_price">Preis außerhalb der Zeiten (€/kWh)</label>
+                    <input type="number" id="grundpreis" class="kurz" min="0" max="10" step="0.01">
+                    <div id="bandListe"></div>
+                    <div class="reihe">
+                        <button class="tbtn" type="button" id="btnBand" data-i18n="ladeplan.add_band">Zeit hinzufügen</button>
+                        <label style="margin:0"><span data-i18n="ladeplan.holidays">Feiertage wie Wochenende</span>
+                            <select id="land"><option value="AT">AT</option><option value="DE">DE</option><option value="" data-i18n="ladeplan.no_holidays">keine</option></select></label>
+                    </div>
+                </div>
+                <div class="reihe"><button class="tbtn" type="button" id="btnTarif" data-i18n="ladeplan.save_price">Preis speichern</button></div>
+                <p class="hint" data-i18n="ladeplan.price_hint">Derselbe Preis gilt auch für die Kosten deiner Ladungen zu Hause im Fahrtenbuch (zeitgenau).</p>
+
+                <div class="schritt" data-i18n="ladeplan.s2">2 · Wann brauchst du das Auto, wie voll?</div>
+                <div class="reihe"><label style="margin:0"><input type="checkbox" id="wtAn"> <span data-i18n="ladeplan.weekday">Werktag (Mo–Fr)</span></label>
+                    <input type="time" id="wtZeit"> <input type="number" id="wtZiel" class="kurz" min="20" max="100" step="5"> %</div>
+                <div class="reihe"><label style="margin:0"><input type="checkbox" id="weAn"> <span data-i18n="ladeplan.weekend">Wochenende und Feiertage</span></label>
+                    <input type="time" id="weZeit"> <input type="number" id="weZiel" class="kurz" min="20" max="100" step="5"> %</div>
+                <div class="reihe"><span class="hint" data-i18n="ladeplan.min_charge">Mindestladung (immer sofort)</span>
+                    <input type="number" id="mindest" class="kurz" min="0" max="80" step="5"> %</div>
+                <div id="fensterTeil">
+                    <p class="hint" data-i18n="ladeplan.window_hint">Zeitfenster: lädt nur in diesen Zeiten, bis zum Ziel.</p>
+                    <div class="reihe"><input type="time" id="fVon"> – <input type="time" id="fBis">
+                        <span class="hint" data-i18n="ladeplan.target">Ziel</span> <input type="number" id="ziel" class="kurz" min="20" max="100" step="5"> %</div>
+                </div>
+                <details style="margin-top:12px"><summary class="hint" data-i18n="ladeplan.more">Mehr</summary>
+                    <div class="reihe"><span class="hint" data-i18n="ladeplan.max_current">Höchster Ladestrom (0 = Grenze der Wallbox)</span>
+                        <input type="number" id="strom" class="kurz" min="0" max="63"> A</div>
+                    <div class="reihe"><span class="hint" data-i18n="ladeplan.phases">Phasen</span>
+                        <select id="phasen"><option value="3">3</option><option value="1">1</option></select>
+                        <span class="hint" data-i18n="ladeplan.car_ac">AC-Grenze des Autos</span> <input type="number" id="autoAc" class="kurz" min="1" max="22" step="0.1"> kW</div>
+                    <div class="reihe"><span class="hint" data-i18n="ladeplan.now_target">„Jetzt sofort“ bis</span>
+                        <input type="number" id="sofortZiel" class="kurz" min="20" max="100" step="5"> %</div>
+                </details>
+                <div class="reihe"><button class="tbtn" type="button" id="btnPlan" data-i18n="ladeplan.save_plan">Plan speichern</button></div>
+
+                <div class="schritt" data-i18n="ladeplan.s3">3 · Darf Panoptes deine Wallbox danach schalten?</div>
+                <p data-i18n="ladeplan.consent_text">Panoptes startet und stoppt dann deine Wallbox nach diesem Plan und setzt den Ladestrom – nur zu Hause, nur wenn das Auto in P steht und angesteckt ist, nie während der Fahrt. Du kannst es jederzeit zurücknehmen. Ohne Erlaubnis läuft der Plan nur als Probelauf (zeigt an, schaltet nicht).</p>
+                <label for="ladepunkt" data-i18n="ladeplan.chargepoint">Wallbox</label>
+                <select id="ladepunkt"></select>
+                <p class="hint" id="keineWallbox" hidden data-i18n="ladeplan.no_wallbox">Noch keine Wallbox eingerichtet – siehe Seite „Wallbox“.</p>
+                <div class="reihe">
+                    <button class="tbtn lime" type="button" id="btnFrei" data-i18n="ladeplan.allow">Erlauben</button>
+                    <button class="tbtn" type="button" id="btnNichtFrei" hidden data-i18n="ladeplan.revoke">Erlaubnis zurücknehmen</button>
+                </div>
+                <p class="hint" id="freiSeit"></p>
+            </article>
+
+            <article class="tc">
+                <h2 data-i18n="ladeplan.log">Letzte Schaltungen</h2>
+                <ul class="log" id="log"></ul>
+            </article>
+        </div>
+    </main>
+</div>
+<div id="dlg" role="dialog" aria-modal="true">
+    <div class="box">
+        <p id="dlgText"></p>
+        <div class="reihe">
+            <button class="tbtn lime" type="button" id="dlgJa" data-i18n="wallbox.yes">Ja, ausführen</button>
+            <button class="tbtn" type="button" id="dlgNein" data-i18n="wallbox.cancel">Abbrechen</button>
+        </div>
+    </div>
+</div>
+<div id="toastContainer" class="toast-container"></div>
+
+<script src="../shared/auth.js"></script>
+<script src="../shared/pwa-init.js?v=index1"></script>
+<script src="../shared/core.js?v=pn6"></script>
+<script>
+(function () {
+    'use strict';
+    // Diese Seite zeigt nur an und schickt Wünsche; geplant, geprüft und geschaltet wird im Daemon (LadeplanDienst).
+    function $(id) { return document.getElementById(id); }
+    function t(k, f, v) { return window.PanoptesShell ? PanoptesShell.tr(k, f, v) : f; }
+    function toast(m, ok) { if (window.BYD && BYD.utils && BYD.utils.toast) BYD.utils.toast(m, ok ? 'success' : 'error'); }
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+    function api(m, p, b) {
+        return fetch(p, { method: m, cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: b ? JSON.stringify(b) : undefined })
+            .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { d._status = r.status; return d; }); });
+    }
+    var PHASE = {
+        aus: 'Ladeplan aus – Panoptes schaltet nichts.', nicht_zuhause: 'Nicht zu Hause – der Plan wartet.',
+        nicht_angesteckt: 'Nicht angesteckt.', fahrsperre: 'Auto nicht in P – keine Schaltung.',
+        pausiert: 'Plan pausiert.', bruecke_gesperrt: 'Würde jetzt schalten – die Wallbox-Brücke ist gesperrt.',
+        probelauf: 'Probelauf: Panoptes zeigt an und schaltet erst, wenn du es in Schritt 3 erlaubst.',
+        laedt: 'Lädt nach Plan.', wartet: 'Wartet auf die geplante Zeit.', fertig: 'Ziel erreicht.',
+        kein_ladepunkt: 'Die gewählte Wallbox wurde nicht gefunden.', wallbox_fehlt: 'Noch keine Wallbox eingerichtet.',
+        wallbox_nicht_erreichbar: 'Wallbox gerade nicht erreichbar.', zu_viele_schaltungen: 'Heute schon 12 Schaltungen – weitere erst nach dem nächsten Einstecken.'
+    };
+    var PAUSE = { hand: 'Du hast selbst geschaltet – der Plan pausiert bis zum nächsten Einstecken.',
+        fehlschlag: 'Die Wallbox hat zweimal nicht bestätigt – der Plan pausiert bis zum nächsten Einstecken.' };
+    var FEHLER = { nur_am_auto: 'Das geht nur am Auto bzw. mit deinem eigenen Login.', ladepunkt_fehlt: 'Bitte zuerst eine Wallbox wählen.' };
+    var st = null, tarifArt = 'fest', baender = [];
+
+    function zeit(ms) { return new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+    function tag(ms) { return new Date(ms).toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' }); }
+    function geld(v) { var w = (st && st.tarif && st.tarif.waehrung) || '€'; return v == null ? '–' : v.toFixed(2).replace('.', ',') + ' ' + w; }
+
+    function zeige(d) {
+        st = d;
+        var z = d.zustand, e = d.einstellungen, v = d.vorschau;
+        var kopf = [];
+        if (z.ladepunktTitel) kopf.push(z.ladepunktTitel + (z.weg ? ' (' + t('wallbox.weg_' + z.weg.art, z.weg.art) + ')' : ''));
+        kopf.push(z.angesteckt ? t('ladeplan.plugged', 'angesteckt') : t('ladeplan.unplugged', 'nicht angesteckt'));
+        if (z.soc != null) kopf.push(Math.round(z.soc) + ' %');
+        if (z.abfahrt) kopf.push(t('ladeplan.departure', 'Abfahrt {zeit}, {ziel} %', { zeit: tag(z.abfahrt.zeit), ziel: z.abfahrt.ziel }));
+        $('kopf').textContent = kopf.join(' · ');
+        var ph = t('ladeplan.ph_' + z.phase, PHASE[z.phase] || z.phase);
+        if (z.pausiert) ph = t('ladeplan.pause_' + z.pausiert.grund, PAUSE[z.pausiert.grund] || ph);
+        if (z.sofort) ph = t('ladeplan.ph_now', 'Lädt jetzt sofort.') + ' ' + ph;
+        $('phase').textContent = ph;
+        $('btnWeiter').hidden = !z.pausiert;
+        $('btnSofort').textContent = z.sofort ? t('ladeplan.now_off', 'Sofort beenden (zurück zum Plan)') : t('ladeplan.now', 'Jetzt sofort laden');
+        [].forEach.call(document.querySelectorAll('#modi [data-modus]'), function (b) { b.classList.toggle('an', b.getAttribute('data-modus') === e.modus); });
+        $('fensterTeil').hidden = e.modus !== 'zeitfenster';
+
+        // Vorschau
+        if (v.bloecke && v.bloecke.length && v.kwh > 0) {
+            $('vGross').textContent = t('ladeplan.from_until', 'ab {von} · fertig ≈ {bis}', { von: zeit(v.bloecke[0].von), bis: v.fertig ? zeit(v.fertig) : '–' });
+            var zahl = '≈ ' + v.kwh.toFixed(1).replace('.', ',') + ' kWh · ≈ ' + geld(v.kosten);
+            if (v.ersparnis > 0.005) zahl += ' (' + t('ladeplan.saves', 'sofort: {sofort} – spart {spart}', { sofort: geld(v.kostenSofort), spart: geld(v.ersparnis) }) + ')';
+            $('vZahlen').textContent = zahl;
+        } else {
+            $('vGross').textContent = v.grund === 'ziel_erreicht' ? t('ladeplan.ph_fertig', 'Ziel erreicht.') : t('ladeplan.nothing', 'Kein Laden geplant.');
+            $('vZahlen').textContent = v.grund === 'daten_fehlen' ? t('ladeplan.no_data', 'Ladestand oder Akkugröße unbekannt.') : '';
+        }
+        $('vMeldung').hidden = !v.meldung;
+        $('vMeldung').textContent = v.meldung === 'ziel_nicht_erreichbar' ? t('ladeplan.not_reachable', 'Ziel bis zur Abfahrt nicht erreichbar – lädt jetzt.') : '';
+        var std = v.stunden || [], max = 0;
+        std.forEach(function (s) { if (s.preis > max) max = s.preis; });
+        $('balken').innerHTML = std.slice(0, 48).map(function (s) {
+            return '<div class="' + (s.laden ? 'lad' : '') + '" style="height:' + (max > 0 ? Math.max(4, Math.round(s.preis / max * 100)) : 4) + '%" title="'
+                + esc(zeit(s.ab) + ' · ' + s.preis.toFixed(2)) + '"></div>';
+        }).join('');
+        $('achse').innerHTML = std.length ? '<span>' + esc(zeit(std[0].ab)) + '</span><span>' + esc(zeit(std[Math.min(std.length, 48) - 1].ab)) + '</span>' : '';
+
+        // Schritt 1
+        var ti = d.tarif;
+        $('keinHeim').hidden = !!ti.tarifId;
+        $('tFest').textContent = t('ladeplan.t_fixed', 'Immer gleich ({preis})', { preis: ti.art === 'fest' && ti.preis != null ? geld(ti.preis) : '?' });
+        if (!document.activeElement || !$('baender').contains(document.activeElement)) {
+            if (ti.zeittarif) {
+                tarifArt = 'eigen'; baender = ti.zeittarif.baender || [];
+                $('grundpreis').value = ti.zeittarif.grundpreis; $('land').value = ti.zeittarif.land || '';
+            } else tarifArt = 'fest';
+            zeigeTarif();
+        }
+        // Schritt 2 (nur, wenn gerade nicht bearbeitet)
+        if (!document.activeElement || document.activeElement.tagName !== 'INPUT') {
+            var a = e.abfahrt;
+            $('wtAn').checked = a.werktag.an; $('wtZeit').value = a.werktag.zeit; $('wtZiel').value = a.werktag.ziel;
+            $('weAn').checked = a.wochenende.an; $('weZeit').value = a.wochenende.zeit; $('weZiel').value = a.wochenende.ziel;
+            $('mindest').value = e.mindestladung; $('ziel').value = e.ziel; $('sofortZiel').value = e.sofortZiel;
+            var f = (e.fenster || [])[0] || { von: '11:00', bis: '15:00' };
+            $('fVon').value = f.von; $('fBis').value = f.bis === '24:00' ? '00:00' : f.bis;
+            $('strom').value = e.hoechststromA; $('phasen').value = String(e.phasen); $('autoAc').value = e.autoAcKw;
+        }
+        // Schritt 3
+        var fr = e.freigabe;
+        $('btnFrei').hidden = fr.an; $('btnNichtFrei').hidden = !fr.an;
+        $('freiSeit').textContent = fr.an && fr.zeit ? t('ladeplan.allowed_since', 'Erlaubt seit {zeit}', { zeit: new Date(fr.zeit).toLocaleString() }) : '';
+        $('log').innerHTML = (d.letzte || []).slice(0, 12).map(function (x) {
+            var was = x.aktion === 'start' ? t('ladeplan.l_start', 'Start') : t('ladeplan.l_stop', 'Stopp');
+            return '<li>' + esc(new Date(x.zeit).toLocaleString()) + ' – ' + esc(was) + ' · ' + esc(x.grund) + (x.ok ? '' : ' ✗') + '</li>';
+        }).join('');
+    }
+    function zeigeTarif() {
+        [].forEach.call(document.querySelectorAll('#tarifWahl [data-tarif]'), function (b) { b.classList.toggle('an', b.getAttribute('data-tarif') === tarifArt); });
+        $('baender').hidden = tarifArt === 'fest';
+        $('bandListe').innerHTML = baender.map(function (b, i) {
+            return '<div class="band" data-i="' + i + '"><select data-f="tage">'
+                + ['alle', 'werktag', 'wochenende'].map(function (x) { return '<option value="' + x + '"' + (b.tage === x ? ' selected' : '') + '>'
+                    + esc(t('ladeplan.days_' + x, { alle: 'jeden Tag', werktag: 'Mo–Fr', wochenende: 'Sa/So/Feiertag' }[x])) + '</option>'; }).join('')
+                + '</select><input type="time" data-f="von" value="' + esc(b.von) + '"> – <input type="time" data-f="bis" value="' + esc(b.bis === '24:00' ? '00:00' : b.bis) + '">'
+                + '<input type="number" class="kurz" data-f="preis" min="0" max="10" step="0.01" value="' + b.preis + '"> €/kWh'
+                + '<button class="tbtn" type="button" data-weg="' + i + '">✕</button></div>';
+        }).join('');
+    }
+    function liesBaender() {
+        return [].map.call(document.querySelectorAll('#bandListe .band'), function (el) {
+            var bis = el.querySelector('[data-f=bis]').value;
+            return { tage: el.querySelector('[data-f=tage]').value, von: el.querySelector('[data-f=von]').value,
+                bis: bis === '00:00' ? '24:00' : bis, preis: parseFloat(el.querySelector('[data-f=preis]').value) };
+        });
+    }
+    function laden() {
+        return api('GET', '/api/ladeplan').then(function (d) { if (d.ok) zeige(d); });
+    }
+    function plan(e, aktion) {
+        var b = {};
+        if (e) b.einstellungen = e;
+        if (aktion) b.aktion = aktion;
+        return api('POST', '/api/ladeplan', b).then(function (d) {
+            if (!d.ok) { toast(t('ladeplan.err_' + d.grund, FEHLER[d.grund] || t('wallbox.err', 'Fehler: {code}', { code: d.grund }), { code: d.grund }), false); return null; }
+            zeige(d);
+            return d;
+        });
+    }
+    function bestaetige(text) {
+        return new Promise(function (ja) {
+            $('dlgText').textContent = text;
+            $('dlg').style.display = 'flex';
+            $('dlgJa').onclick = function () { $('dlg').style.display = 'none'; ja(true); };
+            $('dlgNein').onclick = function () { $('dlg').style.display = 'none'; ja(false); };
+        });
+    }
+    function ladepunkteLaden() {
+        return api('GET', '/api/wallbox/status').then(function (w) {
+            var lps = (w.ladepunkte || []).filter(function (l) { return l.art === 'wallbox'; });
+            $('keineWallbox').hidden = lps.length > 0;
+            var gew = st && st.einstellungen.ladepunkt;
+            $('ladepunkt').innerHTML = lps.map(function (l) {
+                return '<option value="' + esc(l.id) + '"' + (l.id === gew ? ' selected' : '') + '>' + esc(l.titel || l.id) + '</option>';
+            }).join('');
+            return lps;
+        });
+    }
+
+    BYD.i18n.init().then(function () {
+        BYD.core.init();
+        $('modi').onclick = function (ev) {
+            var b = ev.target.closest('[data-modus]'); if (!b) return;
+            var m = b.getAttribute('data-modus');
+            if (m === 'aus') return plan(null, 'plan_aus');
+            plan({ modus: m });
+        };
+        $('btnSofort').onclick = function () { plan(null, st && st.zustand.sofort ? 'sofort_aus' : 'sofort'); };
+        $('btnWeiter').onclick = function () { plan(null, 'weiter'); };
+        $('tarifWahl').onclick = function (ev) {
+            var b = ev.target.closest('[data-tarif]'); if (!b) return;
+            tarifArt = b.getAttribute('data-tarif');
+            var g = parseFloat($('grundpreis').value) || (st && st.tarif.preis) || 0.30;
+            var billig = Math.round(g * 2 / 3 * 100) / 100;
+            if (tarifArt === 'tag_nacht') baender = [{ tage: 'alle', von: '22:00', bis: '06:00', preis: billig }];
+            if (tarifArt === 'mittag') baender = [{ tage: 'alle', von: '11:00', bis: '15:00', preis: billig }];
+            if (tarifArt !== 'fest' && !$('grundpreis').value) $('grundpreis').value = g;
+            zeigeTarif();
+        };
+        $('btnBand').onclick = function () { baender = liesBaender(); baender.push({ tage: 'werktag', von: '11:00', bis: '15:00', preis: 0.15 }); tarifArt = 'eigen'; zeigeTarif(); };
+        $('bandListe').onclick = function (ev) {
+            var b = ev.target.closest('[data-weg]'); if (!b) return;
+            baender = liesBaender(); baender.splice(+b.getAttribute('data-weg'), 1); zeigeTarif();
+        };
+        $('btnTarif').onclick = function () {
+            if (!st || !st.tarif.tarifId) { toast(t('ladeplan.no_home', 'Erst einen Ort „Zuhause“ mit Tarif anlegen.'), false); return; }
+            var zt = tarifArt === 'fest' ? null : { art: 'zeittarif', grundpreis: parseFloat($('grundpreis').value), land: $('land').value, baender: liesBaender() };
+            api('POST', '/api/charging/tariffs', { id: st.tarif.tarifId, zeittarif: zt }).then(function (d) {
+                if (d.success === false || d._status >= 400) { toast(d.error || t('ladeplan.err', 'Das hat nicht geklappt.'), false); return; }
+                toast(t('ladeplan.saved', 'Gespeichert'), true);
+                laden();
+            });
+        };
+        $('btnPlan').onclick = function () {
+            var e = {
+                abfahrt: { werktag: { an: $('wtAn').checked, zeit: $('wtZeit').value, ziel: parseInt($('wtZiel').value, 10) },
+                           wochenende: { an: $('weAn').checked, zeit: $('weZeit').value, ziel: parseInt($('weZiel').value, 10) } },
+                mindestladung: parseInt($('mindest').value, 10) || 0, ziel: parseInt($('ziel').value, 10),
+                sofortZiel: parseInt($('sofortZiel').value, 10), hoechststromA: parseInt($('strom').value, 10) || 0,
+                phasen: parseInt($('phasen').value, 10), autoAcKw: parseFloat($('autoAc').value),
+                fenster: [{ tage: 'alle', von: $('fVon').value, bis: $('fBis').value === '00:00' ? '24:00' : $('fBis').value }]
+            };
+            if (st && st.einstellungen.modus === 'aus') e.modus = 'guenstig';
+            plan(e).then(function (d) { if (d) toast(t('ladeplan.saved', 'Gespeichert'), true); });
+        };
+        $('btnFrei').onclick = function () {
+            var lp = $('ladepunkt').value;
+            if (!lp) { toast(FEHLER.ladepunkt_fehlt, false); return; }
+            // erst die Wallbox-Freigabe (zweistufig wie auf der Wallbox-Seite), dann die Plan-Freigabe
+            api('POST', '/api/wallbox/freigabe', { ladepunkt: lp, an: true }).then(function (d) {
+                if (d._status === 409 && d.grund === 'bestaetigung_noetig') {
+                    return bestaetige(t('ladeplan.confirm', 'Panoptes darf {titel} nach diesem Plan starten, stoppen und den Strom setzen?', { titel: d.frage.titel || lp }))
+                        .then(function (ok) { return ok ? api('POST', '/api/wallbox/freigabe', { ladepunkt: lp, an: true, bestaetigung: d.bestaetigung }) : null; });
+                }
+                return d;
+            }).then(function (d) {
+                if (!d) return;
+                if (!d.ok) { toast(t('wallbox.err_' + d.grund, t('wallbox.err', 'Fehler: {code}', { code: d.grund })), false); return; }
+                return plan({ ladepunkt: lp, freigabe: { an: true } }).then(function (r) { if (r) toast(t('ladeplan.allowed', 'Erlaubt.'), true); });
+            });
+        };
+        $('btnNichtFrei').onclick = function () { plan({ freigabe: { an: false } }); };
+        laden().then(ladepunkteLaden);
+        setInterval(function () { if (!document.hidden && $('dlg').style.display !== 'flex') laden(); }, 20000);
+    });
+})();
+</script>
+</body>
+</html>

@@ -85,6 +85,47 @@ public final class DaemonBootstrap {
         return appContext;
     }
     
+    // 0.1.20: Kein Daemon ruft init() auf – im CameraDaemon (app_process, uid 2000) ist getContext() daher null.
+    // CameraDaemon meldet hier seinen eigenen Context (Shell-Paketkontext) und den APK-AssetManager an.
+    private static volatile java.util.function.Supplier<Context> daemonContext = null;
+    private static volatile java.util.function.Supplier<android.content.res.AssetManager> daemonAssets = null;
+
+    /** Vom CameraDaemon beim Start aufgerufen. */
+    public static void setDaemonQuellen(java.util.function.Supplier<Context> context,
+                                        java.util.function.Supplier<android.content.res.AssetManager> assets) {
+        daemonContext = context;
+        daemonAssets = assets;
+    }
+
+    /**
+     * Context für Systemdienste (ContentResolver, NsdManager …): der init()-Context, sonst der des CameraDaemon.
+     * NICHT für Assets – im Daemon ist das ein Shell-Paketkontext, dessen getAssets() nicht unsere sind; dafür
+     * {@link #apkAssets()}.
+     */
+    public static Context context() {
+        Context c = appContext;
+        if (c != null) return c;
+        java.util.function.Supplier<Context> s = daemonContext;
+        try {
+            return s == null ? null : s.get();
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /** AssetManager über unser APK: im Daemon der des CameraDaemon, sonst der des init()-Context; null, wenn keiner. */
+    public static android.content.res.AssetManager apkAssets() {
+        java.util.function.Supplier<android.content.res.AssetManager> s = daemonAssets;
+        try {
+            android.content.res.AssetManager am = s == null ? null : s.get();
+            if (am != null) return am;
+            Context c = appContext;
+            return c == null ? null : c.getAssets();
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
     /**
      * Check if bootstrap has completed successfully.
      */

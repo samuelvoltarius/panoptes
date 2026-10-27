@@ -86,6 +86,8 @@ public final class WallboxSuche {
     private final WallboxHttp http;
     private java.util.List<JSONObject> broker = Collections.emptyList();
     private OpenWbAdapter.Mqtt mqtt;
+    /** 0.1.20: Ergebnis je Broker der Brücken-Suche (nie still): {@code [{broker, name, fehler}]}. */
+    private final JSONArray brueckeHinweise = new JSONArray();
 
     /** 0.1.19 Wallbox-Brücke: auf diesen Brokern nach {@code wallbox/+/zustand} (v=1) suchen. */
     public WallboxSuche mitBruecke(java.util.List<JSONObject> broker, OpenWbAdapter.Mqtt mqtt) {
@@ -122,7 +124,26 @@ public final class WallboxSuche {
         synchronized (treffer) {
             for (JSONObject t : treffer.values()) a.put(t);
         }
-        return new JSONObject().put("ok", true).put("treffer", a).put("anzahl", a.length());
+        return new JSONObject().put("ok", true).put("treffer", a).put("anzahl", a.length()).put("bruecke", brueckeHinweise());
+    }
+
+    /** Was die Brücken-Suche je Broker gefunden bzw. warum nicht (nach {@link #nurBruecken} bzw. {@link #suche}). */
+    public JSONArray brueckeHinweise() {
+        JSONArray a = new JSONArray();
+        synchronized (brueckeHinweise) {
+            for (int i = 0; i < brueckeHinweise.length(); i++) a.put(brueckeHinweise.opt(i));
+        }
+        return a;
+    }
+
+    private void hinweis(JSONObject b, String fehler) {
+        try {
+            JSONObject h = new JSONObject().put("broker", b.optString("host") + ":" + b.optInt("port", OpenWbAdapter.PORT))
+                    .put("name", b.optString("name", "")).put("fehler", fehler == null ? JSONObject.NULL : fehler);
+            synchronized (brueckeHinweise) {
+                brueckeHinweise.put(h);
+            }
+        } catch (JSONException ignored) { }
     }
 
     private static void dazu(Map<String, JSONObject> m, JSONObject t) {
@@ -179,14 +200,28 @@ public final class WallboxSuche {
     /** Wallbox-Brücken auf den Panoptes-Brokern (WALLBOX_BRUECKE_MQTT §1: retained zustand mit v=1). */
     private void bruecken(Map<String, JSONObject> m) {
         if (mqtt == null) return;
+        if (broker.isEmpty()) {
+            try {
+                hinweis(new JSONObject().put("host", "").put("port", 0), "kein_broker");
+            } catch (JSONException ignored) { }
+            return;
+        }
         for (JSONObject b : broker) {
+            if (b.has("fehler")) {
+                hinweis(b, b.optString("fehler"));
+                continue;
+            }
             try {
                 Map<String, String> w = mqtt.lies(b.optString("host"), b.optInt("port", OpenWbAdapter.PORT),
                         b.optString("benutzer", ""), b.optString("passwort", ""),
                         Collections.singletonList("wallbox/+/zustand"), x -> false, 2_500L);
+                int vorher = m.size();
                 for (Map.Entry<String, String> e : w.entrySet()) dazu(m, brueckeTreffer(e.getKey(), e.getValue(), b));
-            } catch (Exception ignored) {
-                // Broker nicht erreichbar: keine Brücke, kein Fehler
+                hinweis(b, m.size() > vorher ? null : "keine_bruecke");
+            } catch (WallboxFehler f) {
+                hinweis(b, f.code);   // nicht_erreichbar | anmeldung – im Klartext anzeigen, nicht still
+            } catch (Exception e) {
+                hinweis(b, "nicht_erreichbar");
             }
         }
     }

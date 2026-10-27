@@ -62,20 +62,32 @@ public final class WallboxDienst {
     /** Ergebnis der Brücken-Suche ohne Knopfdruck, höchstens einmal je {@link #GEFUNDEN_MS}. */
     static final long GEFUNDEN_MS = 60_000L;
     private JSONArray gefunden = new JSONArray();
+    private JSONArray gefundenHinweise = new JSONArray();
     private long gefundenStand;
 
     private JSONArray brueckenGefunden() {
         long jetzt = uhr.getAsLong();
-        if (gefundenStand == 0 || jetzt - gefundenStand >= GEFUNDEN_MS) {
+        // Nichts gefunden → nach 15 s erneut (eine eben eingeschaltete Brücke erscheint ohne Knopfdruck bald)
+        long frist = gefunden.length() > 0 ? GEFUNDEN_MS : GEFUNDEN_LEER_MS;
+        if (gefundenStand == 0 || jetzt - gefundenStand >= frist) {
             gefundenStand = jetzt;
             try {
-                gefunden = new WallboxSuche(suchNetz, http).mitBruecke(broker.get(), openWbMqtt).nurBruecken();
+                WallboxSuche s = new WallboxSuche(suchNetz, http).mitBruecke(broker.get(), openWbMqtt);
+                gefunden = s.nurBruecken();
+                gefundenHinweise = s.brueckeHinweise();
             } catch (Throwable t) {
                 gefunden = new JSONArray();
+                try {
+                    gefundenHinweise = new JSONArray().put(new JSONObject().put("broker", "").put("name", "")
+                            .put("fehler", "suche_fehler"));
+                } catch (JSONException ignored) { }
             }
         }
         return gefunden;
     }
+
+    /** Nach einer erfolglosen Brücken-Suche schneller erneut versuchen. */
+    static final long GEFUNDEN_LEER_MS = 15_000L;
 
     /** 0.1.19 Wallbox-Brücke: Broker der Panoptes-MQTT-Verbindungen. */
     public WallboxDienst mitBroker(Supplier<java.util.List<JSONObject>> broker) {
@@ -174,7 +186,12 @@ public final class WallboxDienst {
             JSONObject alt = konfig();
             JSONObject k = WallboxKonfig.uebernimm(alt, neu, geheim, uhr.getAsLong());
             String q = WallboxKonfig.quelle(k);
-            if ("tuya".equals(q)) {
+            if ("kette".equals(q)) {
+                // 0.1.20 Rückfallkette: jeder Weg muss in seinem Abschnitt eingerichtet sein
+                JSONArray w = k.getJSONObject("kette").getJSONArray("wege");
+                for (int i = 0; i < w.length(); i++) wegKonfig(k, w.getJSONObject(i).getString("ladepunkt"));
+                if (k.getJSONObject("tuya").getJSONArray("geraete").length() > 0) pruefeTuya(k.getJSONObject("tuya"));
+            } else if ("tuya".equals(q)) {
                 pruefeTuya(k.getJSONObject("tuya"));
             } else if ("direkt".equals(q)) {
                 JSONArray g = k.getJSONObject("direkt").getJSONArray("geraete");
@@ -226,6 +243,7 @@ public final class WallboxDienst {
             o.put("erreichbar", false).put("fehler", "nicht_eingerichtet");
             // 0.1.19: noch keine Wallbox → Brücken auf dem Panoptes-Broker von selbst anbieten („Wallbox gefunden“)
             o.put("gefunden", brueckenGefunden());
+            o.put("sucheHinweise", gefundenHinweise);   // 0.1.20: warum (nicht) gefunden – je Broker im Klartext
             return o;
         }
         try {
@@ -252,6 +270,10 @@ public final class WallboxDienst {
         if (q == null) throw new WallboxFehler("nicht_eingerichtet", 409);
         if ("tuya".equals(q)) return tuyaQuelle(k.getJSONObject("tuya"));
         if ("direkt".equals(q)) return direktQuelle(k.getJSONObject("direkt"));
+        if ("kette".equals(q)) {
+            JSONObject kt = k.getJSONObject("kette");
+            return new KetteQuelle(kt.getJSONArray("wege"), kt.optString("titel", ""), lp -> quelle(wegKonfig(k, lp)), lp -> wegArt(k, lp));
+        }
         JSONObject s = k.getJSONObject(q);
         String basis = WallboxAdresse.pruefe(s.optString("url"), s.optBoolean("oeffentlichErlaubt"), aufloeser);
         if ("evcc".equals(q)) {
@@ -260,6 +282,40 @@ public final class WallboxDienst {
         String token = haToken(s, basis);
         if (token == null || token.isEmpty()) throw new WallboxFehler("anmeldung", 502);
         return new HaQuelle(basis, token, s.optJSONArray("ladepunkte"), http, schlaf);
+    }
+
+    /**
+     * Konfiguration nur für einen Weg der Rückfallkette: Quelle = Abschnitt des Ladepunkts, darin nur dieses Gerät bzw.
+     * diese Zuordnung (kein Abruf der anderen Wege). Wirft {@code kette_ungueltig}, wenn der Weg nicht eingerichtet ist.
+     */
+    static JSONObject wegKonfig(JSONObject k, String lp) throws WallboxFehler, JSONException {
+        int p = lp.indexOf(':');
+        String q = p < 0 ? "" : lp.substring(0, p), s = p < 0 ? "" : lp.substring(p + 1);
+        String liste = "direkt".equals(q) || "tuya".equals(q) ? "geraete" : "ha".equals(q) ? "ladepunkte" : null;
+        if (liste == null) throw new WallboxFehler("kette_ungueltig");
+        JSONObject c = new JSONObject(k.toString());
+        c.put("quelle", q);
+        JSONArray alle = c.getJSONObject(q).optJSONArray(liste);
+        JSONArray nur = new JSONArray();
+        for (int i = 0; alle != null && i < alle.length(); i++) {
+            if (s.equals(alle.getJSONObject(i).optString("schluessel"))) nur.put(alle.getJSONObject(i));
+        }
+        if (nur.length() != 1) throw new WallboxFehler("kette_ungueltig");
+        c.getJSONObject(q).put(liste, nur);
+        return c;
+    }
+
+    /** Anzeige des Wegs: „wlan“, „ha“, „cloud“ oder „bruecke“ (WALLBOX_FERN_KONZEPT §7). */
+    static String wegArt(JSONObject k, String lp) {
+        try {
+            JSONObject c = wegKonfig(k, lp);
+            if (lp.startsWith("ha:")) return "ha";
+            if (lp.startsWith("tuya:")) return "cloud".equals(c.getJSONObject("tuya").optString("zugang")) ? "cloud" : "wlan";
+            String a = c.getJSONObject("direkt").getJSONArray("geraete").getJSONObject(0).optString("adapter");
+            return DirektAdapter.cloud(a) ? "cloud" : "bruecke".equals(a) ? "bruecke" : "wlan";
+        } catch (Exception e) {
+            return "unbekannt";
+        }
     }
 
     /** HA-Zugang: OAuth-Anmeldung (Refresh-Token → Access-Token) vor dem alten Langzeit-Token. */
@@ -308,6 +364,138 @@ public final class WallboxDienst {
         }
     }
 
+    // ------------------------------------------------------------------ 0.1.20 Tuya D′ und Token per Handy
+
+    /**
+     * Tuya D′ (WALLBOX_FERN_KONZEPT §4): {@code {schluessel}} – holt den local_key des Geräts einmal über das eigene
+     * IoT-Projekt (Cloud-Zugang mit Einwilligung muss eingerichtet sein), speichert ihn verschlüsselt und stellt auf
+     * „lan“ um, wenn die IP im Heimnetz bekannt ist. Der Schlüssel erscheint in keiner Antwort.
+     */
+    public synchronized Ergebnis tuyaSchluesselHolen(JSONObject req) throws JSONException {
+        try {
+            String s = req == null ? "" : req.optString("schluessel", "");
+            JSONObject alt = konfig();
+            JSONObject t = alt.getJSONObject("tuya");
+            JSONObject c = t.getJSONObject("cloud");
+            if (!c.optBoolean("einwilligung", false)) throw new WallboxFehler("einwilligung_fehlt", 409);
+            if (c.optString("clientId", "").isEmpty() || geheim.ent(c.optString("secret", "")).isEmpty()) {
+                throw new WallboxFehler("tuya_cloud_fehlt", 409);
+            }
+            JSONArray g = t.getJSONArray("geraete");
+            JSONObject neuT = new JSONObject(t.toString());
+            neuT.getJSONObject("cloud").remove("secret");   // behalten
+            JSONArray ng = new JSONArray();
+            JSONObject ziel = null;
+            for (int i = 0; i < g.length(); i++) {
+                JSONObject d = new JSONObject(g.getJSONObject(i).toString());
+                d.remove("localKey");   // behalten
+                if (s.equals(d.optString("schluessel"))) ziel = d;
+                ng.put(d);
+            }
+            if (ziel == null) throw new WallboxFehler("ladepunkt_unbekannt", 404);
+            TuyaCloud tc = new TuyaCloud(c.optString("region"), c.optString("clientId"), geheim.ent(c.optString("secret", "")), http, uhr);
+            ziel.put("localKey", tc.lokalerSchluessel(ziel.getString("geraeteId")));
+            boolean lan = !ziel.optString("ip", "").isEmpty();
+            if (lan) neuT.put("zugang", "lan");
+            neuT.put("geraete", ng);
+            JSONObject k = WallboxKonfig.uebernimm(alt, new JSONObject().put("tuya", neuT), geheim, uhr.getAsLong());
+            if (lan && "tuya".equals(WallboxKonfig.quelle(k))) pruefeTuya(k.getJSONObject("tuya"));
+            speichere(k);
+            protokoll.schreibe(uhr.getAsLong(), "tuya", "tuya:" + s, "schluessel_geholt", null, "ok", "panoptes");
+            return new Ergebnis(200, new JSONObject().put("ok", true).put("lokal", lan)
+                    .put("einstellungen", WallboxKonfig.oeffentlich(k)));
+        } catch (WallboxFehler f) {
+            return fehler(f);
+        }
+    }
+
+    static final long EINGABE_MS = 10 * 60_000L;
+    static final int EINGABE_FEHLER_MAX = 20;
+    /** Kennung → {Geräte-Schlüssel, Ablauf, Zustand}. Nur im Speicher. */
+    private final Map<String, Object[]> eingaben = new HashMap<>();
+    private int eingabeFehler;
+    private long eingabeFehlerSeit;
+
+    /**
+     * go-e Cloud „Token per Handy“ (WALLBOX_FERN_KONZEPT §6): {@code {schluessel}} eines gespeicherten go-e-Cloud-Geräts →
+     * Einmal-Kennung (128 Bit, 10 min, einmal gültig). Das Handy öffnet {@code /shared/wallbox-eingabe.html#k=…} und schickt
+     * den Token an {@code POST /auth/wallbox-eingabe} – nie über unsere Server, kein Abtippen am Display.
+     */
+    public synchronized Ergebnis eingabeStart(JSONObject req) throws JSONException {
+        try {
+            String s = req == null ? "" : req.optString("schluessel", "");
+            if (direktGeraet(konfig(), s, "goecloud") == null) throw new WallboxFehler("ladepunkt_unbekannt", 404);
+            long jetzt = uhr.getAsLong();
+            eingaben.entrySet().removeIf(e -> (Long) e.getValue()[1] < jetzt);
+            if (eingaben.size() >= 3) throw new WallboxFehler("zu_viele", 429);
+            byte[] z = new byte[16];
+            zufall.nextBytes(z);
+            String kennung = TuyaCloud.hex(z);
+            eingaben.put(kennung, new Object[]{s, jetzt + EINGABE_MS, "offen"});
+            return new Ergebnis(200, new JSONObject().put("ok", true).put("kennung", kennung).put("gueltigBis", jetzt + EINGABE_MS));
+        } catch (WallboxFehler f) {
+            return fehler(f);
+        }
+    }
+
+    /** Status für das Display: offen | empfangen | abgelaufen. */
+    public synchronized Ergebnis eingabeStatus(String kennung) throws JSONException {
+        Object[] e = eingaben.get(kennung == null ? "" : kennung);
+        String z = e == null || (Long) e[1] < uhr.getAsLong() && !"empfangen".equals(e[2]) ? "abgelaufen" : (String) e[2];
+        return new Ergebnis(200, new JSONObject().put("ok", true).put("zustand", z));
+    }
+
+    /** Vom Handy, ohne Login: {@code {kennung, token}}. Ratenbegrenzt; falsche Kennungen zählen. */
+    public synchronized Ergebnis eingabe(JSONObject req) throws JSONException {
+        long jetzt = uhr.getAsLong();
+        if (jetzt - eingabeFehlerSeit > EINGABE_MS) {
+            eingabeFehler = 0;
+            eingabeFehlerSeit = jetzt;
+        }
+        try {
+            if (eingabeFehler >= EINGABE_FEHLER_MAX) throw new WallboxFehler("zu_viele", 429);
+            String kennung = req == null ? "" : req.optString("kennung", "");
+            Object[] e = eingaben.get(kennung);
+            if (e == null || (Long) e[1] < jetzt || !"offen".equals(e[2])) {
+                eingabeFehler++;
+                throw new WallboxFehler("abgelaufen", 410);
+            }
+            String token = req.optString("token", "").trim();
+            if (!token.matches("[A-Za-z0-9._~+/=-]{8,256}")) throw new WallboxFehler("token_ungueltig", 400);
+            JSONObject alt = konfig();
+            JSONObject d = alt.getJSONObject("direkt");
+            JSONObject neuD = new JSONObject(d.toString());
+            JSONArray g = neuD.getJSONArray("geraete");
+            boolean gefunden = false;
+            for (int i = 0; i < g.length(); i++) {
+                JSONObject x = g.getJSONObject(i);
+                if (x.optString("schluessel").equals(e[0]) && "goecloud".equals(x.optString("adapter"))) {
+                    x.put("passwort", token);
+                    gefunden = true;
+                } else {
+                    x.remove("passwort");   // behalten
+                }
+            }
+            if (!gefunden) throw new WallboxFehler("ladepunkt_unbekannt", 404);
+            JSONObject k = WallboxKonfig.uebernimm(alt, new JSONObject().put("direkt", neuD), geheim, jetzt);
+            speichere(k);
+            e[2] = "empfangen";
+            protokoll.schreibe(jetzt, "direkt", "direkt:" + e[0], "token_per_handy", null, "ok", "handy");
+            return new Ergebnis(200, new JSONObject().put("ok", true));
+        } catch (WallboxFehler f) {
+            return fehler(f);
+        }
+    }
+
+    private static JSONObject direktGeraet(JSONObject k, String schluessel, String adapter) throws JSONException {
+        JSONArray g = k.getJSONObject("direkt").getJSONArray("geraete");
+        for (int i = 0; i < g.length(); i++) {
+            JSONObject x = g.getJSONObject(i);
+            if (x.optString("schluessel").equals(schluessel) && adapter.equals(x.optString("adapter"))) return x;
+        }
+        return null;
+    }
+
     /** Direkte Adapter (Stufe 2): nur private Adressen; je Gerät ein Adapter aus {@link DirektAdapter#KENNUNGEN}. */
     private WallboxQuelle direktQuelle(JSONObject d) throws WallboxFehler, JSONException {
         JSONArray g = d.getJSONArray("geraete");
@@ -316,8 +504,13 @@ public final class WallboxDienst {
             JSONObject e = g.getJSONObject(i);
             if (DirektAdapter.cloud(e.getString("adapter"))) {
                 // Regel 2: ohne Einwilligung wird der Cloud-Adapter gar nicht gebaut → keine einzige Anfrage an den Hersteller
+                String ad = e.getString("adapter");
                 DirektAdapter c = !e.optBoolean("einwilligung", false) ? new DirektQuelle.Gesperrt("einwilligung_fehlt")
-                        : new CloudAdapter(e.getString("adapter"), e.optString("geraeteId"), e.optString("benutzer", ""),
+                        // 0.1.20: go-e Cloud (Seriennummer + Token im Passwortfeld), Wallbox Pulsar (Konto)
+                        : "goecloud".equals(ad) ? GoeAdapter.cloud(e.optString("geraeteId"), geheim.ent(e.optString("passwort", "")), http)
+                        : "pulsar".equals(ad) ? new PulsarAdapter(e.optString("geraeteId"), e.optString("benutzer", ""),
+                                geheim.ent(e.optString("passwort", "")), http, uhr)
+                        : new CloudAdapter(ad, e.optString("geraeteId"), e.optString("benutzer", ""),
                         geheim.ent(e.optString("passwort", "")), http, uhr);
                 arr[i] = new DirektQuelle.Geraet(e.getString("schluessel"), e.optString("titel", ""), e.getString("adapter"), c);
                 continue;
@@ -448,6 +641,11 @@ public final class WallboxDienst {
         }
     }
 
+    /** Für den Ladeplan: null = steht (in P), sonst Grund der Fahrsperre. */
+    public String fahrsperre() {
+        return sperre();
+    }
+
     /** null = Steuern erlaubt; sonst Grund (Vertrag §5.5, fail-closed). */
     String sperre() {
         String z;
@@ -525,6 +723,59 @@ public final class WallboxDienst {
             }
             return fehler(f);
         }
+    }
+
+    /** Herkunft der Befehle des Ladeplans im Protokoll. */
+    public static final String HERKUNFT_LADEPLAN = "ladeplan";
+
+    /**
+     * 0.1.20 Ladeplan (LADEPLAN_KONZEPT §5.2): eng begrenzter Steuerweg ohne Zwei-Schritt-Bestätigung – nur
+     * {@code modus aus/sofort} und {@code strom}, nur für einen freigegebenen Ladepunkt, nicht während der Fahrt, jeder
+     * Befehl im Protokoll mit Herkunft „ladeplan“. Die einmalige Plan-Freigabe prüft der Aufrufer (LadeplanDienst).
+     * Erfolg nur mit Echo ({@code uebernommen == true}); „gesendet, ungeprüft“ zählt für den Plan als Fehlschlag.
+     */
+    public synchronized Ergebnis steuernPlan(String id, String aktion, Object wert) throws JSONException {
+        JSONObject k = konfig();
+        try {
+            boolean modus = "modus".equals(aktion)
+                    && (WallboxQuelle.MODUS_AUS.equals(wert) || WallboxQuelle.MODUS_SOFORT.equals(wert));
+            if (!modus && !"strom".equals(aktion)) throw new WallboxFehler("aktion_ungueltig", 400);
+            String gesperrt = sperre();
+            if (gesperrt != null) throw new WallboxFehler(gesperrt, 423);
+            if (!WallboxKonfig.freigegeben(k, id)) throw new WallboxFehler("nicht_freigegeben", 403);
+            WallboxQuelle quelle = quelle(k);
+            JSONObject lp = EvccQuelle.finde(quelle.ladepunkte(), id);
+            if (!"wallbox".equals(lp.optString("art"))) throw new WallboxFehler("nicht_steuerbar", 400);
+            if (lp.has("fehler")) throw new WallboxFehler(lp.getString("fehler"), 409);
+            if ("bruecke_gesperrt".equals(lp.optString("hinweis"))) throw new WallboxFehler("bruecke_gesperrt", 409);
+            pruefeWert(aktion, wert, lp);
+            JSONObject r = quelle.steuern(id, aktion, wert);
+            boolean ok = !r.isNull("uebernommen") && r.optBoolean("uebernommen", false);
+            protokoll.schreibe(uhr.getAsLong(), WallboxKonfig.quelle(k), id, aktion, wert,
+                    r.isNull("uebernommen") ? "gesendet_ungeprueft" : ok ? "uebernommen" : "abweichend", HERKUNFT_LADEPLAN);
+            JSONObject nach = ohneIntern(r.getJSONObject("ladepunkt"));
+            return new Ergebnis(200, new JSONObject().put("ok", ok).put("uebernommen", ok).put("ladepunkt", nach));
+        } catch (WallboxFehler f) {
+            protokoll.schreibe(uhr.getAsLong(), WallboxKonfig.quelle(k), id, aktion, wert, "fehler:" + f.code, HERKUNFT_LADEPLAN);
+            return fehler(f);
+        }
+    }
+
+    /**
+     * „Hand geht vor Plan“: Zeitpunkt des letzten Steuerbefehls für diesen Ladepunkt, der NICHT vom Ladeplan kam und
+     * angekommen ist (aus dem Protokoll, damit auch Befehle aus anderen Prozessen zählen); 0 = keiner.
+     */
+    public long letzteHandSteuerung(String id) throws JSONException {
+        JSONArray e = protokoll.lies(50);
+        for (int i = 0; i < e.length(); i++) {
+            JSONObject z = e.getJSONObject(i);
+            if (!id.equals(z.optString("ladepunkt")) || HERKUNFT_LADEPLAN.equals(z.optString("herkunft"))) continue;
+            String a = z.optString("aktion");
+            String erg = z.optString("ergebnis");
+            if (!"modus".equals(a) && !"strom".equals(a)) continue;
+            if (erg.equals("uebernommen") || erg.equals("gesendet_ungeprueft")) return z.optLong("zeit", 0);
+        }
+        return 0;
     }
 
     /** Plausibilität vor der Bestätigungsfrage, damit der Dialog nie Unsinn fragt. */

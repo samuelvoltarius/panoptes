@@ -1259,7 +1259,13 @@ object UnifiedConfigManager {
             if (isCacheFresh(configFile)) {
                 return cached
             }
+            // 0.1.20 (Tempo, Messung am Auto: 299 KB ~1×/s neu geparst): Ist nur die 1-s-Revalidierung abgelaufen
+            // (mtime unverändert, Sekunde vorbei), werden die Bytes per CRC32 verglichen statt neu geparst.
+            if (revalidateByContent(configFile)) {
+                return cached
+            }
         }
+        val crcVorher = contentCrcForPendingStamp(configFile)
         
         val loaded = try {
             withConfigFileLock {
@@ -1276,10 +1282,54 @@ object UnifiedConfigManager {
         // stall the daemon behind our own lock until our socket timeouts unwind
         // it. Promotion is opportunistic and retries on the next UNLOCKED load,
         // so deferring here loses nothing.
+        rememberContentCrc(crcVorher)
         if (holdingFileLock.get() == true) {
             return loaded
         }
         return promoteNewerAppPrivateBackupIfNeeded(loaded)
+    }
+
+    // 0.1.20: CRC32 der Config-Bytes zu genau dem gestempelten mtime ({crc, mtime}); 0 = unbekannt.
+    private val contentCrc = AtomicLong(0)
+    private val contentCrcMtime = AtomicLong(0)
+
+    /** {crc, mtime} der Datei unmittelbar vor einem vollen Neuladen (null bei Lesefehler). */
+    private fun contentCrcForPendingStamp(configFile: File): LongArray? = try {
+        val mtime = configFile.lastModified()
+        longArrayOf(ConfigInhalt.crc(configFile.readBytes()), mtime)
+    } catch (_: Exception) {
+        null
+    }
+
+    /** Nach dem Neuladen: CRC nur übernehmen, wenn der neue Stempel genau dieses mtime ist. */
+    private fun rememberContentCrc(vorher: LongArray?) {
+        if (vorher != null && vorher[1] > 0L && lastModified.get() == vorher[1]) {
+            contentCrc.set(vorher[0])
+            contentCrcMtime.set(vorher[1])
+        } else {
+            contentCrc.set(0)
+            contentCrcMtime.set(0)
+        }
+    }
+
+    /**
+     * Nur der TTL-Fall von [isCacheFresh]: mtime gleich dem Stempel, die Sekunde ist vorbei, aber die 1-s-Frist ist
+     * um. Dann reicht ein Bytevergleich (CRC32): gleich → Frist neu, Cache bleibt; sonst voller Pfad wie bisher.
+     */
+    private fun revalidateByContent(configFile: File): Boolean {
+        val stamped = lastModified.get()
+        if (stamped <= 0L || contentCrcMtime.get() != stamped) return false
+        if (configFile.lastModified() != stamped) return false
+        if ((System.currentTimeMillis() / 1000L) <= (stamped / 1000L)) return false
+        return try {
+            val crc = ConfigInhalt.crc(configFile.readBytes())
+            if (ConfigInhalt.unveraendert(crc, contentCrc.get()) && configFile.lastModified() == stamped) {
+                lastFreshnessCheckNanos.set(System.nanoTime())
+                true
+            } else false
+        } catch (_: Exception) {
+            false
+        }
     }
 
     /**

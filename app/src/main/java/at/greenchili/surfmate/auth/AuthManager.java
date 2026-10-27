@@ -364,6 +364,11 @@ public class AuthManager {
 
     /** Wie {@link #generateJwt(String)}, zusätzlich mit Kopplungs-id {@code kid} (Widerruf, {@link Kopplungen}). */
     public static String generateJwt(String scope, String kid) {
+        return generateJwt(scope, kid, JWT_EXPIRY_MS / 1000);
+    }
+
+    /** 0.1.20: wie oben mit eigener Laufzeit (Web-Sitzung der Handy-App: 30 min). */
+    public static String generateJwt(String scope, String kid, long gueltigSekunden) {
         AuthState state = getState();
         if (state == null) {
             return null;
@@ -371,7 +376,7 @@ public class AuthManager {
 
         try {
             long now = System.currentTimeMillis() / 1000;
-            long exp = now + (JWT_EXPIRY_MS / 1000);
+            long exp = now + gueltigSekunden;
 
             JSONObject header = new JSONObject();
             header.put("alg", JWT_ALGORITHM);
@@ -547,6 +552,15 @@ public class AuthManager {
     static JwtValidation kopplungPruefen(JwtValidation ok, JSONObject payload, Kopplungen kopplungen, long nowMs) {
         if (ok.scope == null) return ok;
         String kid = payload.optString("kid", "");
+        if (WebSitzung.SCOPE.equals(ok.scope)) {
+            // 0.1.20 Web-Sitzung: gilt nur, solange die Handy-Kopplung besteht und das Recht „web“ hat
+            if (kid.isEmpty()) return JwtValidation.failure("Web-Sitzung ohne Kopplung");
+            if (!kopplungen.pruefe(kid, nowMs) || !kopplungen.istHandy(kid) || !kopplungen.hatRecht(kid, Kopplungen.RECHT_WEB)) {
+                return JwtValidation.failure("Web-Sitzung beendet (Kopplung widerrufen oder ohne Recht)");
+            }
+            ok.kid = kid;
+            return ok;
+        }
         if (!PairingCodes.SCOPE.equals(ok.scope)) return JwtValidation.failure("Unknown scope");
         if (kid.isEmpty()) return JwtValidation.failure("Kopplung ohne id: neu koppeln");
         if (!kopplungen.pruefe(kid, nowMs)) return JwtValidation.failure("Kopplung widerrufen oder abgelaufen");

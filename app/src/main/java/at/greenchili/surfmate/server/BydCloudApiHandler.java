@@ -408,6 +408,6 @@ public class BydCloudApiHandler {
     private static InputStream getTablesStream(BydCloudConfig config) {
         return at.greenchili.surfmate.byd.cloud.crypto.EnvelopeCodecFactory.openTablesStream(
                 config.isChinaRegion(),
-                at.greenchili.surfmate.daemon.DaemonBootstrap.getContext());
+                at.greenchili.surfmate.daemon.DaemonBootstrap.apkAssets());   // 0.1.20
     }
 }

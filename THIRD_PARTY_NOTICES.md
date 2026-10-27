@@ -71,6 +71,7 @@ The exact list and versions are in `app/build.gradle.kts` and `gradle/libs.versi
 - **Map data** © OpenStreetMap contributors, [ODbL 1.0](https://opendatacommons.org/licenses/odbl/). Protomaps basemap, terrain © Mapterhorn. The attribution is shown on every map.
 - **Speed cameras** from OpenStreetMap (ODbL), served via the project's own server.
 - **3D vehicle models:** models by [Nazh Design](https://sketchfab.com/NazhDesign) under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (logos removed, mesh reduced, Draco-compressed), plus models built for Panoptes under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). Full list: `app/src/main/assets/licenses/MODELLE_LIZENZEN.md`.
+- **Vehicle pictures** (`app/src/main/res/drawable-nodpi/vehicle_*.webp`, since 0.1.20): rendered for Panoptes with `tools/render_vehicle_art.py` (Blender) from the CC BY 4.0 models by [Nazh Design](https://sketchfab.com/NazhDesign): “2023 BYD Seagull”, “2024 BYD Seal Performance AWD”, “2023 BYD Song Plus” (Seal U), “2024 BYD Dolphin Premium Long Range”, “2024 BYD Atto 3 Superior Extended Range” – changed (rendered, cropped). `vehicle_fallback.webp` is a neutral silhouette derived from the “2023 BYD Song Plus” render. Earlier press photos without a licence were removed.
 - **Charger data:** source and license of the live data are shown in the app below the map (for example EnBW, CC BY 4.0).
 
 ## Modifications (Apache-2.0 §4(b) notice of changes)

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <meta name="referrer" content="no-referrer">
+    <title>Wallbox-Token – Panoptes</title>
+    <style>
+        body { margin: 0; background: #0A2238; color: #eef3f8; font: 16px/1.45 system-ui, sans-serif; }
+        main { max-width: 480px; margin: 0 auto; padding: 24px 16px; }
+        h1 { font-size: 20px; margin: 0 0 8px; }
+        p { color: #b9c7d6; }
+        textarea { width: 100%; box-sizing: border-box; min-height: 110px; border-radius: 12px; border: 1px solid #36506a;
+                   background: #10304d; color: #fff; padding: 12px; font: 14px monospace; }
+        button { margin-top: 12px; width: 100%; border: 0; border-radius: 12px; padding: 14px; font: 600 16px system-ui, sans-serif;
+                 background: #c6f432; color: #1d2a00; }
+        button:disabled { opacity: .5; }
+        .ok { color: #c6f432; } .fehler { color: #ffb4a8; }
+    </style>
+</head>
+<body>
+<main>
+    <!-- 0.1.20 go-e-Token per Handy (WALLBOX_FERN_KONZEPT §6): ohne Login, nur mit der Einmal-Kennung aus dem QR-Code.
+         Der Token geht nur an dein Auto (dieselbe Adresse), nie an andere Server. -->
+    <h1 id="titel">go-e Cloud-Token an Panoptes übergeben</h1>
+    <p id="lead">Öffne die go-e-App, schalte unter „Internet“ die Cloud-API ein, kopiere den Token und füge ihn hier ein.</p>
+    <textarea id="token" autocomplete="off" spellcheck="false" autocapitalize="off"></textarea>
+    <button id="senden" type="button">An mein Auto senden</button>
+    <p id="stand"></p>
+</main>
+<script>
+(function () {
+    'use strict';
+    var en = !/^de\b/i.test(navigator.language || 'de');
+    var T = en ? {
+        titel: 'Send go-e cloud token to Panoptes', lead: 'Open the go-e app, enable the cloud API under “Internet”, copy the token and paste it here.',
+        senden: 'Send to my car', ok: 'Done – the token is stored encrypted in your car. You can close this page.',
+        abgelaufen: 'This code has expired – please start again in the car.', token_ungueltig: 'That does not look like a token.',
+        zu_viele: 'Too many attempts – please try again later.', fehlt: 'No code – please scan the QR code shown in the car.',
+        fehler: 'That did not work.'
+    } : {
+        titel: 'go-e Cloud-Token an Panoptes übergeben', lead: 'Öffne die go-e-App, schalte unter „Internet“ die Cloud-API ein, kopiere den Token und füge ihn hier ein.',
+        senden: 'An mein Auto senden', ok: 'Fertig – der Token liegt verschlüsselt in deinem Auto. Du kannst die Seite schließen.',
+        abgelaufen: 'Der Code ist abgelaufen – bitte im Auto neu starten.', token_ungueltig: 'Das sieht nicht wie ein Token aus.',
+        zu_viele: 'Zu viele Versuche – bitte später erneut.', fehlt: 'Kein Code – bitte den QR-Code im Auto scannen.',
+        fehler: 'Das hat nicht geklappt.'
+    };
+    function $(id) { return document.getElementById(id); }
+    document.documentElement.lang = en ? 'en' : 'de';
+    $('titel').textContent = T.titel; $('lead').textContent = T.lead; $('senden').textContent = T.senden;
+    var m = /(?:^#|&)k=([0-9a-f]{32})/.exec(location.hash);
+    var kennung = m ? m[1] : '';
+    history.replaceState(null, '', location.pathname);   // Kennung aus der Adresszeile nehmen
+    if (!kennung) { $('stand').textContent = T.fehlt; $('stand').className = 'fehler'; $('senden').disabled = true; return; }
+    $('senden').onclick = function () {
+        var token = $('token').value.trim();
+        $('senden').disabled = true;
+        fetch('/auth/wallbox-eingabe', { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ kennung: kennung, token: token }) })
+            .then(function (r) { return r.json().catch(function () { return {}; }); })
+            .then(function (d) {
+                if (d.ok) { $('stand').textContent = T.ok; $('stand').className = 'ok'; $('token').value = ''; return; }
+                $('stand').textContent = T[d.grund] || T.fehler; $('stand').className = 'fehler';
+                $('senden').disabled = d.grund === 'abgelaufen';
+            }, function () { $('stand').textContent = T.fehler; $('stand').className = 'fehler'; $('senden').disabled = false; });
+    };
+})();
+</script>
+</body>
+</html>

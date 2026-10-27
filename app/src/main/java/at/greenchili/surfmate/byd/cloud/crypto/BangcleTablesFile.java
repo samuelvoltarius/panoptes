@@ -56,6 +56,11 @@ public final class BangcleTablesFile {
      * @param ctx app/daemon context (may be null — falls back to cache only)
      */
     public static InputStream openStream(Context ctx) {
+        return openStream(ctx == null ? null : ctx.getAssets());
+    }
+
+    /** 0.1.20: mit dem APK-AssetManager (null → nur Cache). */
+    public static InputStream openStream(AssetManager am) {
         File cache = new File(CACHE_PATH);
         if (isValid(cache)) {
             try {
@@ -63,18 +68,15 @@ public final class BangcleTablesFile {
             } catch (IOException ignored) {}
         }
 
-        if (ctx != null) {
-            AssetManager am = ctx.getAssets();
-            if (am != null) {
-                if (extractFromAssets(am, cache)) {
-                    try {
-                        return new FileInputStream(cache);
-                    } catch (IOException ignored) {}
-                }
+        if (am != null) {
+            if (extractFromAssets(am, cache)) {
                 try {
-                    return am.open(ASSET_PATH);
+                    return new FileInputStream(cache);
                 } catch (IOException ignored) {}
             }
+            try {
+                return am.open(ASSET_PATH);
+            } catch (IOException ignored) {}
         }
 
         return null;

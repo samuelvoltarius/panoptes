@@ -518,6 +518,7 @@ public class TariffManager {
             if (updates.has("dcGratis")) profile.setDcGratis(updates.optBoolean("dcGratis"));
             if (updates.has("currency")) profile.setCurrency(updates.optString("currency"));
             if (updates.has("enabled")) profile.setEnabled(updates.optBoolean("enabled"));
+            if (updates.has("zeittarif")) profile.setZeittarif(updates.optJSONObject("zeittarif"));
             if (!profile.hasAnyRate()) {
                 return StagedMutation.rejected("tariff has no usable rate");
             }

@@ -40,8 +40,16 @@ public class GpsApiHandler {
     private static void sendGpsLocation(OutputStream out) throws Exception {
         GpsMonitor gps = GpsMonitor.getInstance();
 
-        // Auto-start GPS if not running
-        if (!gps.isRunning()) {
+        // 0.1.20 (Regel 2, Koordination): Eine Kopplung (Cockpit, Handy, HA) bekommt die Position nur mit der
+        // Freigabe ha.positionTeilen – und ihr Abruf schaltet das GPS im Auto NIE ein (nur die letzte bekannte Lage).
+        boolean kopplung = GpsFreigabe.kopplung();
+        if (kopplung && !GpsFreigabe.erlaubt()) {
+            HttpResponse.sendJson(out, 403, "{\"success\":false,\"grund\":\"position_nicht_freigegeben\"}");
+            return;
+        }
+
+        // Auto-start GPS if not running (nur im Auto bzw. mit Login, nie für eine Kopplung)
+        if (!kopplung && !gps.isRunning()) {
             CameraDaemon.log("GPS: Auto-starting GPS tracking");
             gps.start();
         }

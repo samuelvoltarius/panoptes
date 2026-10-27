@@ -137,8 +137,7 @@ public final class Messages {
             // Only a real Context can tell us the asset is absent. Before DaemonBootstrap has
             // one, return without recording a miss — latching here would disable this fallback
             // for the whole process, which is what let raw keys leak in the first place.
-            android.content.Context ctx = at.greenchili.surfmate.daemon.DaemonBootstrap.getContext();
-            if (ctx == null || ctx.getAssets() == null) return null;
+            if (at.greenchili.surfmate.daemon.DaemonBootstrap.apkAssets() == null) return null;
             cat = loadAsset(lang);
             if (cat == null) {
                 ASSET_MISSES.add(lang);
@@ -151,9 +150,8 @@ public final class Messages {
 
     private static JSONObject loadAsset(String lang) {
         try {
-            android.content.Context ctx = at.greenchili.surfmate.daemon.DaemonBootstrap.getContext();
-            if (ctx == null) return null;
-            android.content.res.AssetManager am = ctx.getAssets();
+            // 0.1.20: im Daemon gibt es keinen init()-Context – APK-AssetManager des CameraDaemon
+            android.content.res.AssetManager am = at.greenchili.surfmate.daemon.DaemonBootstrap.apkAssets();
             if (am == null) return null;
             try (java.io.InputStream in = am.open("server-i18n/" + lang + ".json")) {
                 java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();

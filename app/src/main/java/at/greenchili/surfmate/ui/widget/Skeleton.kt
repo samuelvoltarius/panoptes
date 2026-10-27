@@ -55,7 +55,17 @@ class Skeleton(private val host: View) {
         pulse = ValueAnimator.ofFloat(0.45f, 1f).apply {
             duration = PULSE_MS
             repeatMode = ValueAnimator.REVERSE
-            repeatCount = ValueAnimator.INFINITE
+            // 0.1.20 Tempo (Messung: Kaltstart 12–13 s eine Kern voll, RenderThread ~70 %): nicht mehr endlos – jeder
+            // Puls-Frame zeichnet die ganze Startkarte neu. Nach PULSE_WIEDERHOLUNGEN bleibt der Platzhalter ruhig
+            // stehen (Alpha RUHE_ALPHA), bis der Wert kommt.
+            repeatCount = PULSE_WIEDERHOLUNGEN
+            addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: android.animation.Animator) {
+                    if (pulse !== animation) return
+                    for ((id, slot) in slots) if (!loaded.contains(id)) slot.block.alpha = RUHE_ALPHA
+                    for (block in followed) if (block.visibility == View.VISIBLE) block.alpha = RUHE_ALPHA
+                }
+            })
             addUpdateListener { animator ->
                 val alpha = animator.animatedValue as Float
                 for ((id, slot) in slots) {
@@ -78,5 +88,8 @@ class Skeleton(private val host: View) {
 
     companion object {
         private const val PULSE_MS = 620L
+        /** 0.1.20: 4 Wechsel ≈ 2,5 s, dann Ruhe. */
+        const val PULSE_WIEDERHOLUNGEN = 3
+        const val RUHE_ALPHA = 0.7f
     }
 }

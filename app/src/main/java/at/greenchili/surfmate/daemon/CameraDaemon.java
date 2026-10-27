@@ -566,6 +566,8 @@ public class CameraDaemon {
 
     public static void main(String[] args) {
         initFileLogging();
+        // 0.1.20: Context/Assets für Stellen, die DaemonBootstrap fragen (i18n, HA-mDNS, Fahrzeugeinstellungen, Cloud-Tabellen)
+        DaemonBootstrap.setDaemonQuellen(CameraDaemon::getAppContext, CameraDaemon::getApkAssets);
 
         // CRITICAL: Acquire singleton lock FIRST - exit if another instance is running
         if (!acquireSingletonLock()) {
@@ -1167,6 +1169,10 @@ public class CameraDaemon {
         at.greenchili.surfmate.gesundheit.GesundheitsDienst.start();
         at.greenchili.surfmate.appupdate.AppUpdateDienst.start();
         at.greenchili.surfmate.ha.HaDienst.start();
+        // 0.1.20 Panoptes-Brücke: ausgehende Verbindung zum Brücken-Server, nur wenn eingeschaltet (Opt-in)
+        try { at.greenchili.surfmate.bruecke.BrueckeVerbindung.starten(); } catch (Throwable t) { log("Bruecke: " + t); }
+        // Ladeplan zu Hause (0.1.20): Takt 60 s, ohne Einstellung kein Wallbox-Abruf
+        at.greenchili.surfmate.ladeplan.Ladeplan.start();
         at.greenchili.surfmate.fahrtenbuch.FahrtenbuchPostfach.start();
         at.greenchili.surfmate.server.NeuigkeitenApiHandler.startAbgleich();
         // Aufbewahrung: Clips nach 72 h löschen, außer „Behalten“ (nur Panoptes-Ordner).
@@ -8242,6 +8248,8 @@ public class CameraDaemon {
             at.greenchili.surfmate.parking.ParkingHooks.onAccOff(transitionGeneration);
         } else {
             at.greenchili.surfmate.parking.ParkingHooks.onAccOn(transitionGeneration);
+            // 0.1.20 P7: „Panoptes bei Zündung an öffnen“ (Standard aus, nicht vor CarPlay/Android Auto, nur Activity)
+            at.greenchili.surfmate.einrichtung.ZuendungOeffnen.beiAccAn(transitionGeneration);
         }
 
         if (gpuPipeline == null || recordingModeManager == null) {

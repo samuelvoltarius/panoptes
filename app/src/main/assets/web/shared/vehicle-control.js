@@ -123,14 +123,45 @@ var VC = {
     // to the material so the renderer's sRGB output encoding lands the final
     // pixel back at this hex on screen — without that step a saturated red
     // like #C8102E renders pinkish.
+    // 0.1.20: Das sind nur Beispielfarben. Hat das gewählte Modell im Manifest eine belegte Liste (paints, offizielle
+    // BYD-Namen, hex = Näherung), ersetzt _aktualisiereLacke() sie durch die echten Lacke des Modells.
     colorPresets: [
-        { name: 'Aurora White', hex: '#E8E8EC' },
-        { name: 'Cosmos Black', hex: '#1A1A1E' },
-        { name: 'Atlantic Blue', hex: '#1E3A5F' },
-        { name: 'Deepsea Green', hex: '#1B4D3E' },
-        { name: 'Cherry Red',   hex: '#C8102E' },
-        { name: 'Storm Grey',   hex: '#5C5C66' }
+        { name: 'Aurora White', hex: '#E8E8EC', beispiel: true },
+        { name: 'Cosmos Black', hex: '#1A1A1E', beispiel: true },
+        { name: 'Atlantic Blue', hex: '#1E3A5F', beispiel: true },
+        { name: 'Deepsea Green', hex: '#1B4D3E', beispiel: true },
+        { name: 'Cherry Red',   hex: '#C8102E', beispiel: true },
+        { name: 'Storm Grey',   hex: '#5C5C66', beispiel: true }
     ],
+    _beispielLacke: null,
+
+    /** 0.1.20: echte Lacke des Modells aus manifest paints (nur mit Hex), sonst null. */
+    _lackListe: function(modelId) {
+        var entry = this.manifest && this.ModelStore && this.ModelStore.findEntry
+            ? this.ModelStore.findEntry(this.manifest, modelId) : null;
+        var p = entry && entry.paints;
+        if (!p || !p.length) return null;
+        var out = [];
+        for (var i = 0; i < p.length; i++) {
+            if (p[i] && /^#[0-9A-Fa-f]{6}$/.test(p[i].hex || '')) out.push({ id: p[i].id, name: p[i].name, hex: p[i].hex });
+        }
+        return out.length ? out : null;
+    },
+
+    /** 0.1.20: Ist diese Kachel die gespeicherte Wahl (paintId, sonst gleiche Farbe)? Ohne Wahl: keine. */
+    _istGewaehlt: function(preset) {
+        var g = this._gespeichert;
+        if (!g) return false;
+        if (preset.id && g.paintId) return preset.id === g.paintId;
+        return !!g.color && String(g.color).toLowerCase() === String(preset.hex).toLowerCase();
+    },
+
+    /** 0.1.20: Farbauswahl auf das Modell umstellen (echte Lacke oder Beispiele) und neu zeichnen. */
+    _aktualisiereLacke: function(modelId) {
+        if (!this._beispielLacke) this._beispielLacke = this.colorPresets.slice();
+        this.colorPresets = this._lackListe(modelId) || this._beispielLacke;
+        this.initColorPicker();
+    },
 
     // Active 3D model id — populated from manifest in loadSavedModel().
     // The default 'seagull' is bundled in the APK; everything else is downloaded on demand
@@ -216,6 +247,8 @@ var VC = {
             if (selected && selected.color) {
                 self.applyColor(selected.color, true);
             }
+            // 0.1.20: gespeicherte Wahl (paintId bzw. vom Daemon auf den nächsten Ton abgebildet) für die Markierung
+            self._gespeichert = selected ? { paintId: selected.paintId || null, color: selected.color || null } : null;
             // Server has already validated modelId against the manifest, so trust the response.
             var chosenId = (selected && selected.modelId) || self.manifest['default'] || 'seagull';
             var sel = document.getElementById('modelPicker');
@@ -847,6 +880,7 @@ var VC = {
     loadModel: function(modelId) {
         var self = this;
         modelId = modelId || this.activeModelId || 'seagull';
+        if (modelId !== this._lackModell) { this._lackModell = modelId; this._aktualisiereLacke(modelId); }
         this.activeModelId = modelId;
         this._modelLoadStartedAt = Date.now();
         var gen = ++this._loadGen;
@@ -1441,19 +1475,23 @@ var VC = {
         for (var i = 0; i < this.colorPresets.length; i++) {
             (function(preset, idx) {
                 var swatch = document.createElement('div');
-                swatch.className = 'vc-swatch' + (idx === 0 ? ' active' : '');
+                swatch.className = 'vc-swatch' + (self._istGewaehlt(preset) ? ' active' : '');
                 swatch.style.backgroundColor = preset.hex;
-                swatch.title = preset.name;
+                // 0.1.20: offizieller Lackname bzw. „Beispielfarbe“, wenn es für das Modell keine belegte Liste gibt
+                swatch.title = preset.beispiel
+                    ? BYD.i18n.t('vehicle.color_example', { name: preset.name })
+                    : BYD.i18n.t('vehicle.color_similar', { name: preset.name });
                 swatch.setAttribute('data-hex', preset.hex);
+                if (preset.id) swatch.setAttribute('data-paint', preset.id);
                 swatch.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    self.setColor(preset.hex, swatch);
+                    self.setColor(preset.hex, swatch, preset.id);
                 });
                 // Also handle touchend for WebView reliability
                 swatch.addEventListener('touchend', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    self.setColor(preset.hex, swatch);
+                    self.setColor(preset.hex, swatch, preset.id);
                 });
                 container.appendChild(swatch);
             })(this.colorPresets[i], i);
@@ -1738,7 +1776,7 @@ var VC = {
         }
     },
 
-    setColor: function(hex, activeSwatch) {
+    setColor: function(hex, activeSwatch, paintId) {
         // The row is populated while the vendor stack is still downloading, so
         // there may be no THREE and no baseColor to paint into yet.
         if (!this.baseColor) return;
@@ -1748,7 +1786,9 @@ var VC = {
         for (var i = 0; i < swatches.length; i++) swatches[i].classList.remove('active');
         if (activeSwatch) activeSwatch.classList.add('active');
 
-        this._saveSelected({ color: hex });
+        // 0.1.20: Lack-Kennung mitspeichern (eigene Farbe = ohne Kennung)
+        this._gespeichert = { paintId: paintId || null, color: hex };
+        this._saveSelected({ color: hex, paintId: paintId || '' });
     },
 
     // ==================== MODEL PICKER ====================
@@ -6607,6 +6647,13 @@ var VC = {
         else if (result.outcome === 'auth_required') type = 'info';
         else if (result.outcome === 'rate_limited') type = 'info';
         else type = 'error';
+        // 0.1.20 P5: Auto aus + keine BYD-Cloud → Knopf zur Einrichtung (Rückfrage, dann System → BYD-Cloud)
+        if (!result.success && result.einrichten) {
+            if (window.confirm(msg + '\n\n' + BYD.i18n.t('home.setup_cloud_q', 'Jetzt die BYD-Cloud einrichten?'))) {
+                location.href = result.einrichten;
+            }
+            return;
+        }
         this.toast(msg, type);
     },
 

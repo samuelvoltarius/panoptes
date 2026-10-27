@@ -25,6 +25,8 @@
   "errors": {
     "rate_limited_locked_for_seconds": "Te veel pogingen — geblokkeerd voor {0} s",
     "invalid_device_token": "Dit apparaattoken is niet geldig",
+    "only_car_or_pin": "Dit kan alleen in de auto of met de pincode",
+    "web_link_expired": "Deze link is verlopen. Open hem opnieuw in de app.",
     "invalid_request_with_detail": "Het verzoek is niet geldig: {0}",
     "bydcloud_not_configured": "BYD-account is niet ingesteld",
     "bydcloud_not_configured_setup_required": "BYD-account is nog niet ingesteld. Voer eerst je inloggegevens in.",
@@ -847,7 +849,9 @@
     "not_supported": "Dit kan nu niet",
     "find_car_label": "Waar is mijn auto?",
     "battery_heat_label": "Accu voorverwarmen",
-    "close_all_windows_label": "Alle ramen sluiten"
+    "close_all_windows_label": "Alle ramen sluiten",
+    "car_off_climate_needs_cloud": "De auto staat uit – voorverwarmen gaat dan niet direct. Stel de BYD-cloud in (Systeem → BYD-account), dan werkt het ook als de auto uit staat.",
+    "car_off_needs_cloud": "De auto staat uit – dit gaat dan niet direct. Stel de BYD-cloud in (Systeem → BYD-account), dan werkt het ook als de auto uit staat."
   },
   "automation": {
     "lock": "Auto vergrendelen",
@@ -2036,6 +2040,10 @@
         "help": "Hoe Panoptes de toestemming voor automatisch starten na een update herstelt. Zichtbaar: via de BYD-pagina op het scherm. Instellingen: op de achtergrond, zonder weergave (alleen als het voor jouw auto bevestigd is).",
         "sichtbar": "Zichtbaar (BYD-pagina)",
         "settings": "Op de achtergrond"
+      },
+      "beiZuendung": {
+        "title": "Panoptes openen bij contact aan",
+        "help": "Elke keer dat je de auto aanzet, komt Panoptes naar voren. Draait CarPlay of Android Auto, dan blijft dat vooraan. Alleen het scherm – geen geluid. Standaard uit."
       }
     },
     "faehigkeiten": {

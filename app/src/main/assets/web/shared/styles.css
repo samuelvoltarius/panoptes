@@ -8,7 +8,7 @@
  * translucent panel-overlays, layout dimensions) and the actual CSS rules.
  */
 @import url("design-tokens.css?v=pn2");
-@import url("app-shell.css?v=pn9");
+@import url("app-shell.css?v=pn10");
 @import url("app-tabs.css?v=4");
 @import url("app-collapse.css?v=pn2");
 
@@ -4715,3 +4715,14 @@ h1, h2, h3, .page-title, .card-title, [class$="-value"], [class*="-value "], .st
 
 /* Status-Pillen */
 .badge, .pill, .chip { border-radius: 999px; }
+
+/* 0.1.20 Tempo (Messung am Auto + Emulator: Startseite ~50 Bilder/s, eine Kern voll, RenderThread): Am Auto-Display
+   (App-WebView, data-android-app/-embed) keine Endlos-Deko mehr. Die Wellen im Ladestand-Pegel stehen, der Lade-Blitz
+   leuchtet ruhig, Status-Punkte pulsen beim Erscheinen 3× und bleiben dann stehen. Externe Browser unverändert. */
+[data-android-app] .gauge .wave, [data-android-embed] .gauge .wave,
+[data-android-app] .gauge.charging .bolt, [data-android-embed] .gauge.charging .bolt { animation: none; }
+[data-android-app] .status-dot.connected, [data-android-embed] .status-dot.connected,
+[data-android-app] .status-dot.live, [data-android-embed] .status-dot.live,
+[data-android-app] .car-pulse.active, [data-android-embed] .car-pulse.active,
+[data-android-app] .user-pulse, [data-android-embed] .user-pulse,
+[data-android-app] .pip-title .live-dot, [data-android-embed] .pip-title .live-dot { animation-iteration-count: 3; }

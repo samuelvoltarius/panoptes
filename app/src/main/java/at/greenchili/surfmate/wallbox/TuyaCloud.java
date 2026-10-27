@@ -62,6 +62,18 @@ public final class TuyaCloud {
         return o;
     }
 
+    /**
+     * 0.1.20 Tuya D′ (WALLBOX_FERN_KONZEPT §4): local_key des Geräts einmal über das eigene IoT-Projekt holen, danach
+     * steuert Panoptes nur noch lokal (Ablauf der Testlizenz ist dann egal). Der Schlüssel verlässt den Dienst nie.
+     */
+    public String lokalerSchluessel(String geraeteId) throws WallboxFehler, JSONException {
+        JSONObject r = rufe("GET", "/v1.0/devices/" + id(geraeteId), null);
+        JSONObject res = r.optJSONObject("result");
+        String k = res == null ? "" : res.optString("local_key", "");
+        if (k.length() != 16) throw new WallboxFehler("tuya_schluessel_fehlt", 502);
+        return k;
+    }
+
     public void befehle(String geraeteId, JSONObject codes) throws WallboxFehler, JSONException {
         JSONArray cmds = new JSONArray();
         for (java.util.Iterator<String> it = codes.keys(); it.hasNext(); ) {

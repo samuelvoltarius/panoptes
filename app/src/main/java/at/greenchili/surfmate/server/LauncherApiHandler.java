@@ -154,8 +154,12 @@ public final class LauncherApiHandler {
             o.put("driveSide", v.optString("driveSide", "rhd"));
             JSONObject model = findManifestModel(modelId);
             if (model != null) {
-                o.put("name", model.optString("name", modelId));
+                o.put("name", model.optString("nameEu", model.optString("name", modelId)));
                 o.put("isPhev", model.optBoolean("phev", false));
+                // 0.1.20: offizieller Lack (manifest paints), null bei eigener Farbe / Modell ohne Liste
+                JSONObject lack = ModelsApiHandler.lackFuer(new JSONObject().put("models",
+                        new org.json.JSONArray().put(model)), modelId, v.optString("paintId", ""), v.optString("color", ""));
+                o.put("paint", lack != null ? lack : JSONObject.NULL);
             } else {
                 // Manifest unreadable — name unknown, but probe live drivetrain.
                 o.put("name", JSONObject.NULL);

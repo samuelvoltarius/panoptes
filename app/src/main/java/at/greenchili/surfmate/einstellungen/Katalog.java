@@ -398,6 +398,11 @@ public final class Katalog {
         hinweise.verborgen = true;
         hinweise.nurLesendExtern = true;
         l.add(hinweise);
+        // 0.1.20 P7: Panoptes bei jedem ACC an nach vorn holen (BYD-Autostart greift nur beim Hochfahren). Standard aus;
+        // nicht vor CarPlay/Android Auto, nur die Activity (A+). Gefragt im Einrichtungsschritt „Autostart“.
+        Feld beiZuendung = new Feld("autostart.beiZuendung", Feld.Typ.BOOL);
+        beiZuendung.gruppe = "system"; beiZuendung.reihenfolge = 94; beiZuendung.standard = false;
+        l.add(beiZuendung);
         // Autostart-Weg (Koordination 22.10., AUTOSTART_BEFUND): sichtbar = BYD-Dialog (heute); settings =
         // ssc_whitelist ergänzen (SscWhitelist, vorbereitet). Verborgen, nur lokal; aktiviert erst nach Befund (a) + GO.
         Feld asWeg = new Feld("autostart.weg", Feld.Typ.AUSWAHL);

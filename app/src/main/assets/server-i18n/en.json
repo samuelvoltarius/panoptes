@@ -19,6 +19,8 @@
   "errors": {
     "rate_limited_locked_for_seconds": "Too many tries — blocked for {0}s",
     "invalid_device_token": "This device token isn't valid",
+    "only_car_or_pin": "This only works in the car or with the PIN",
+    "web_link_expired": "This link has expired. Please open it again in the app.",
     "invalid_request_with_detail": "The request isn't valid: {0}",
     "bydcloud_not_configured": "BYD account isn't set up",
     "bydcloud_not_configured_setup_required": "BYD account isn't set up yet. Enter your login details first.",
@@ -841,7 +843,9 @@
     "not_supported": "This isn't possible right now",
     "find_car_label": "Where's my car?",
     "battery_heat_label": "Warm the battery",
-    "close_all_windows_label": "Close every window"
+    "close_all_windows_label": "Close every window",
+    "car_off_climate_needs_cloud": "The car is off – pre-heating can’t work directly then. Set up the BYD cloud (System → BYD account), then it also works with the car switched off.",
+    "car_off_needs_cloud": "The car is off – this can’t work directly then. Set up the BYD cloud (System → BYD account), then it also works with the car switched off."
   },
   "automation": {
     "lock": "Lock the car",
@@ -2030,6 +2034,10 @@
         "help": "How Panoptes restores the autostart permission after an update. Visible: via the BYD page on the screen. Settings: in the background, without anything on screen (only once confirmed for your car).",
         "sichtbar": "Visible (BYD page)",
         "settings": "In the background"
+      },
+      "beiZuendung": {
+        "title": "Open Panoptes when the ignition is switched on",
+        "help": "Every time you switch the car on, Panoptes comes to the front. If CarPlay or Android Auto is running, that stays in front. Display only – no sound. Off by default."
       }
     },
     "faehigkeiten": {

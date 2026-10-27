@@ -70,7 +70,11 @@ public final class HaApiHandler {
             JSONObject g = new JSONObject();
             g.put("autoId", nullSafe(EinstellungenApiHandler.autoId()));
             g.put("name", nullSafe(geraetName()));
-            g.put("modell", JSONObject.NULL);
+            // 0.1.20: Modell (Anzeigename, String wie im HA_VERTRAG) + Kennung + offizieller Lack, nur lesen
+            JSONObject aussehen = ModelsApiHandler.fahrzeugAussehen();
+            g.put("modell", aussehen != null ? aussehen.optString("name") : JSONObject.NULL);
+            g.put("modellId", aussehen != null ? aussehen.optString("modelId") : JSONObject.NULL);
+            g.put("lack", aussehen != null ? aussehen.opt("paint") : JSONObject.NULL);
             g.put("appVersion", at.greenchili.surfmate.BuildConfig.VERSION_NAME);
             g.put("dilink", JSONObject.NULL);
             z.put("geraet", g);

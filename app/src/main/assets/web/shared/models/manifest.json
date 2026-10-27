@@ -62,7 +62,41 @@
       "authorUrl": "https://sketchfab.com/NazhDesign",
       "source": "https://sketchfab.com/3d-models/2024-byd-seal-performance-awd-96ec5c34852f4c3090a755d4445f5e98",
       "title": "2024 BYD Seal Performance AWD",
-      "attribution": "„2024 BYD Seal Performance AWD“ von Nazh Design (https://sketchfab.com/3d-models/2024-byd-seal-performance-awd-96ec5c34852f4c3090a755d4445f5e98), Lizenz CC BY 4.0; verändert für Panoptes."
+      "attribution": "„2024 BYD Seal Performance AWD“ von Nazh Design (https://sketchfab.com/3d-models/2024-byd-seal-performance-awd-96ec5c34852f4c3090a755d4445f5e98), Lizenz CC BY 4.0; verändert für Panoptes.",
+      "paints": [
+        {
+          "id": "atlantis-grey",
+          "name": "Atlantis Grey",
+          "hex": "#53617A"
+        },
+        {
+          "id": "indigo-grey",
+          "name": "Indigo Grey",
+          "hex": "#7C818D"
+        },
+        {
+          "id": "lavender-grey",
+          "name": "Lavender Grey",
+          "hex": "#6A697B"
+        },
+        {
+          "id": "obsidian-black",
+          "name": "Obsidian Black",
+          "hex": "#10151C"
+        },
+        {
+          "id": "polar-white",
+          "name": "Polar White",
+          "hex": "#B1B8C1"
+        },
+        {
+          "id": "ruby-red",
+          "name": "Ruby Red",
+          "hex": "#8C0D1F"
+        }
+      ],
+      "paintsQuelle": "https://www.byd.com/de/e-fahrzeuge/seal",
+      "paintsStand": "2026-10"
     },
     {
       "id": "sealion7",
@@ -83,7 +117,31 @@
       },
       "nominalKwh": 91.3,
       "verfuegbar": false,
-      "hinweis": "Modell in Arbeit (eigener Blender-Bau, CC0) – bis dahin kein 3D-Modell."
+      "hinweis": "Modell in Arbeit (eigener Blender-Bau, CC0) – bis dahin kein 3D-Modell.",
+      "paints": [
+        {
+          "id": "atlantis-grey",
+          "name": "Atlantis Grey",
+          "hex": "#2C3A4A"
+        },
+        {
+          "id": "indigo-grey",
+          "name": "Indigo Grey",
+          "hex": "#777D82"
+        },
+        {
+          "id": "obsidian-black",
+          "name": "Obsidian Black",
+          "hex": "#1A1D22"
+        },
+        {
+          "id": "polar-white",
+          "name": "Polar White",
+          "hex": "#C9CDD1"
+        }
+      ],
+      "paintsQuelle": "https://www.byd.com/de/e-fahrzeuge/sealion-7",
+      "paintsStand": "2026-10"
     },
     {
       "id": "shark",
@@ -111,7 +169,36 @@
       "authorUrl": "https://sketchfab.com/NazhDesign",
       "source": "https://sketchfab.com/3d-models/2024-byd-seal-performance-awd-96ec5c34852f4c3090a755d4445f5e98",
       "title": "2024 BYD Seal Performance AWD",
-      "attribution": "„2024 BYD Seal Performance AWD“ von Nazh Design (https://sketchfab.com/3d-models/2024-byd-seal-performance-awd-96ec5c34852f4c3090a755d4445f5e98), Lizenz CC BY 4.0; verändert für Panoptes."
+      "attribution": "„2024 BYD Seal Performance AWD“ von Nazh Design (https://sketchfab.com/3d-models/2024-byd-seal-performance-awd-96ec5c34852f4c3090a755d4445f5e98), Lizenz CC BY 4.0; verändert für Panoptes.",
+      "paints": [
+        {
+          "id": "polar-white",
+          "name": "Polar White",
+          "hex": "#BDC3C8"
+        },
+        {
+          "id": "grey-green",
+          "name": "Grey Green",
+          "hex": "#A1A09A"
+        },
+        {
+          "id": "atlantis-blue",
+          "name": "Atlantis Blue",
+          "hex": "#223954"
+        },
+        {
+          "id": "obsidian-black",
+          "name": "Obsidian Black",
+          "hex": "#171B21"
+        },
+        {
+          "id": "sunrise-orange",
+          "name": "Sunrise Orange",
+          "hex": "#E5392B"
+        }
+      ],
+      "paintsQuelle": "https://www.byd.com/de/hybrid-fahrzeuge/shark",
+      "paintsStand": "2026-10"
     },
     {
       "id": "seal-u",
@@ -159,7 +246,36 @@
       },
       "nominalKwh": 18.3,
       "verfuegbar": false,
-      "hinweis": "Modell in Arbeit (eigener Blender-Bau, CC0) – bis dahin kein 3D-Modell."
+      "hinweis": "Modell in Arbeit (eigener Blender-Bau, CC0) – bis dahin kein 3D-Modell.",
+      "paints": [
+        {
+          "id": "time-grey",
+          "name": "Time Grey",
+          "hex": "#484E59"
+        },
+        {
+          "id": "snow-white",
+          "name": "Snow White",
+          "hex": "#D0D4D5"
+        },
+        {
+          "id": "boundless-cloud",
+          "name": "Boundless Cloud",
+          "hex": "#7C7C7A"
+        },
+        {
+          "id": "obsidian-black",
+          "name": "Obsidian Black",
+          "hex": "#1C1D1E"
+        },
+        {
+          "id": "tian-qing",
+          "name": "Tian Qing",
+          "hex": "#6B7D91"
+        }
+      ],
+      "paintsQuelle": "https://www.byd.com/de/hybrid-fahrzeuge/seal-u-dm-i",
+      "paintsStand": "2026-10"
     },
     {
       "id": "dolphin",
@@ -186,7 +302,31 @@
       "authorUrl": "https://sketchfab.com/NazhDesign",
       "source": "https://sketchfab.com/3d-models/2024-byd-dolphin-premium-long-range-8d30880667524cf3abb9e3e66c5299b5",
       "title": "2024 BYD Dolphin Premium Long Range",
-      "attribution": "„2024 BYD Dolphin Premium Long Range“ von Nazh Design (https://sketchfab.com/3d-models/2024-byd-dolphin-premium-long-range-8d30880667524cf3abb9e3e66c5299b5), Lizenz CC BY 4.0; verändert für Panoptes."
+      "attribution": "„2024 BYD Dolphin Premium Long Range“ von Nazh Design (https://sketchfab.com/3d-models/2024-byd-dolphin-premium-long-range-8d30880667524cf3abb9e3e66c5299b5), Lizenz CC BY 4.0; verändert für Panoptes.",
+      "paints": [
+        {
+          "id": "skiing-white",
+          "name": "Skiing White",
+          "hex": "#F0F5FB"
+        },
+        {
+          "id": "atlantis-grey",
+          "name": "Atlantis Grey",
+          "hex": "#4E6178"
+        },
+        {
+          "id": "time-grey",
+          "name": "Time Grey",
+          "hex": "#7A828D"
+        },
+        {
+          "id": "obsidian-black",
+          "name": "Obsidian Black",
+          "hex": "#141516"
+        }
+      ],
+      "paintsQuelle": "https://www.byd.com/de/e-fahrzeuge/dolphin",
+      "paintsStand": "2026-10"
     },
     {
       "id": "atto3",
@@ -234,7 +374,41 @@
       },
       "nominalKwh": 74.8,
       "verfuegbar": false,
-      "hinweis": "Modell in Arbeit (eigener Blender-Bau, CC0) – bis dahin kein 3D-Modell."
+      "hinweis": "Modell in Arbeit (eigener Blender-Bau, CC0) – bis dahin kein 3D-Modell.",
+      "paints": [
+        {
+          "id": "iris-blue",
+          "name": "Iris Blue",
+          "hex": "#1B3463"
+        },
+        {
+          "id": "skiing-white",
+          "name": "Skiing White",
+          "hex": null
+        },
+        {
+          "id": "time-grey",
+          "name": "Time Grey",
+          "hex": "#444E58"
+        },
+        {
+          "id": "obsidian-black",
+          "name": "Obsidian Black",
+          "hex": "#171D20"
+        },
+        {
+          "id": "ruby-red",
+          "name": "Ruby Red",
+          "hex": "#830E1E"
+        },
+        {
+          "id": "atlantis-blue",
+          "name": "Atlantis Blue",
+          "hex": "#3C4D67"
+        }
+      ],
+      "paintsQuelle": "https://www.byd.com/de/e-fahrzeuge/atto-3-evo",
+      "paintsStand": "2026-10"
     },
     {
       "id": "atto2",
@@ -295,7 +469,26 @@
       },
       "nominalKwh": 108.8,
       "verfuegbar": false,
-      "hinweis": "Modell in Arbeit (eigener Blender-Bau, CC0) – bis dahin kein 3D-Modell."
+      "hinweis": "Modell in Arbeit (eigener Blender-Bau, CC0) – bis dahin kein 3D-Modell.",
+      "paints": [
+        {
+          "id": "snow-white",
+          "name": "Snow White",
+          "hex": "#F4F4F2"
+        },
+        {
+          "id": "mountain-grey",
+          "name": "Mountain Grey",
+          "hex": "#7D8286"
+        },
+        {
+          "id": "silver-sand-black",
+          "name": "Silver Sand Black",
+          "hex": "#25272A"
+        }
+      ],
+      "paintsQuelle": "https://www.byd.com/de/material/byd-site/de/preview/TANG_Brochure_DE.pdf",
+      "paintsStand": "2026-10"
     },
     {
       "id": "m6",
@@ -359,7 +552,33 @@
           "quelle": "Herstellerangabe Dolphin Surf Comfort/Boost, von Alfred bestätigt",
           "datum": "2026-10-22"
         }
-      ]
+      ],
+      "paints": [
+        {
+          "id": "lime-green",
+          "name": "Lime Green",
+          "hex": "#A7AE3F"
+        },
+        {
+          "id": "polar-night-black",
+          "name": "Polar Night Black",
+          "hex": "#282E37"
+        },
+        {
+          "id": "apricity-white",
+          "name": "Apricity White",
+          "hex": "#BCB7AB"
+        },
+        {
+          "id": "ice-blue",
+          "name": "Ice Blue",
+          "hex": "#7C98B9"
+        }
+      ],
+      "paintsQuelle": "https://www.byd.com/de/e-fahrzeuge/dolphin-surf",
+      "paintsStand": "2026-10",
+      "nameEu": "BYD Dolphin Surf",
+      "nameEuQuelle": "https://www.byd.com/de/e-fahrzeuge/dolphin-surf"
     },
     {
       "id": "destroyer",
@@ -383,5 +602,6 @@
       "hinweis": "Modell in Arbeit (eigener Blender-Bau, CC0) – bis dahin kein 3D-Modell."
     }
   ],
-  "hinweis": "Gemeinsames Modell-Manifest für Panoptes und EV-Cockpit (byd.serveone.at/tiles/models/). Lizenzen je Modell in license/author/source; Namensnennung in der App unter „Über / Lizenzen“."
+  "hinweis": "Gemeinsames Modell-Manifest für Panoptes und EV-Cockpit (byd.serveone.at/tiles/models/). Lizenzen je Modell in license/author/source; Namensnennung in der App unter „Über / Lizenzen“.",
+  "paintsHinweis": "paints je Modell: offizielle Lacknamen laut byd.com/de (Modellseite bzw. offizielle Broschüre; Stand paintsStand, Quelle paintsQuelle). hex ist eine Näherung („Farbton ähnlich“), null = nicht verlässlich bestimmbar. Modelle ohne bzw. nur teilweise belegte Liste haben kein paints; dort gelten paintPresets nur als Beispiel. Abgleich mit LACKE_BYD.json (Koordination)."
 }

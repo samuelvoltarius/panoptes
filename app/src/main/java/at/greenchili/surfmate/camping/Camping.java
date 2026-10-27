@@ -848,11 +848,8 @@ public final class Camping {
             // Im Kamera-Daemon (uid 2000) erreicht nur der APK-AssetManager unsere Assets; er steht nach dem
             // Wächter-Init bereit – bis dahin versucht der Takt es erneut.
             android.content.res.AssetManager am = at.greenchili.surfmate.daemon.CameraDaemon.getApkAssets();
-            if (am == null) {
-                android.content.Context ctx = at.greenchili.surfmate.daemon.DaemonBootstrap.getContext();
-                if (ctx == null) return null;
-                am = ctx.getAssets();
-            }
+            if (am == null) am = at.greenchili.surfmate.daemon.DaemonBootstrap.apkAssets();
+            if (am == null) return null;
             try (InputStream in = am.open(ASSET_TABELLE)) {
                 java.io.ByteArrayOutputStream b = new java.io.ByteArrayOutputStream();
                 byte[] buf = new byte[4096];

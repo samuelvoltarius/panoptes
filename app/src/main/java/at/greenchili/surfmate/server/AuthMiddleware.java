@@ -44,6 +44,7 @@ public class AuthMiddleware {
         "/auth/status",  // Login page needs deviceId hint before user has JWT
         "/auth/token",
         "/auth/kopplung",   // Kopplungs-Code einlösen (eigener Code-Typ, rate-limitiert)
+        "/auth/wallbox-eingabe",   // 0.1.20 go-e-Token per Handy (Einmal-Kennung 128 Bit, 10 min, ratenbegrenzt)
         "/auth/logout",
         "/login.html",
         "/login",
@@ -73,6 +74,11 @@ public class AuthMiddleware {
     /** Kopplungs-id der laufenden Anfrage oder null. */
     public static String requestKopplungsId() {
         return isExternRequest() ? REQUEST_KID.get() : null;
+    }
+
+    /** 0.1.20: true, wenn die laufende Anfrage aus der Web-Sitzung der Handy-App kommt (scope handyweb, Stufe B). */
+    public static boolean isHandyWebRequest() {
+        return at.greenchili.surfmate.auth.WebSitzung.SCOPE.equals(REQUEST_SCOPE.get());
     }
 
     /** true, wenn die laufende Anfrage mit einem Kopplungs-JWT kam (EV-Cockpit u. a.). */

@@ -25,6 +25,24 @@
 (function () {
     'use strict';
 
+    // 0.1.20 Weboberfläche in der Handy-App (HANDY_WEB_SITZUNG_VERTRAG): ?einbettung=handy blendet die eigene
+    // Leiste und Kopfzeile aus (dieselbe Regel wie die Android-Hülle: data-android-embed). Für die Sitzung gemerkt,
+    // weil Links innerhalb der Oberfläche den Parameter nicht tragen.
+    (function () {
+        var handy = false;
+        try {
+            handy = /(?:^|[?&])einbettung=handy(?:&|$)/.test(window.location.search);
+            if (handy) window.sessionStorage.setItem('pn_einbettung', 'handy');
+            else handy = window.sessionStorage.getItem('pn_einbettung') === 'handy';
+            // /auth/web setzt das Cookie (Seiten wie /trips.html findet der Server nur ohne Query)
+            if (!handy && /(?:^|;\s*)pn_einbettung=handy(?:;|$)/.test(document.cookie)) handy = true;
+        } catch (e) { /* sessionStorage gesperrt: nur der Parameter zählt */ }
+        if (handy) {
+            document.documentElement.setAttribute('data-android-embed', '1');
+            document.documentElement.setAttribute('data-einbettung', 'handy');
+        }
+    })();
+
     // The Android app supplies its own navigation rail and injects
     // AndroidBridge before the page starts loading. Its post-load CSS hides
     // this web sidebar, so rendering the sidebar's 3D vehicle there wastes a
@@ -362,6 +380,7 @@
             { href: 'bericht.html',         label: 'Monatsbericht',      i18n: 'shell.page_report' },
             { href: 'charging.html',        label: 'Laden',              i18n: 'shell.page_charging' },
             { href: 'wallbox.html',         label: 'Wallbox',            i18n: 'shell.page_wallbox' },
+            { href: 'ladeplan.html',        label: 'Zu Hause laden',     i18n: 'shell.page_ladeplan' },
             { href: 'road-sense.html',      label: 'Straßenzustand',     i18n: 'shell.page_road' }
         ] },
         { id: 'guard', label: 'Wächter', i18n: 'shell.sec_guard', icon: 'eye', pages: [
@@ -761,6 +780,29 @@
     (function () {
         try { var c = JSON.parse(sessionStorage.getItem('pn-caps') || 'null'); if (c) applyCaps(c); } catch (e) {}
     })();
+    // 0.1.20 Tempo: hinweise.js / neuigkeiten.js nur laden, solange sie in dieser Sitzung noch etwas zu zeigen haben
+    // könnten (sessionStorage-Merker, gesetzt von den Bausteinen selbst). Eine neue App-Version bringt eine neue Sitzung.
+    function sitzungMerker(k) { try { return window.sessionStorage.getItem(k) === '1'; } catch (e) { return false; } }
+    function baustein(src, nachLaden) {
+        var sc = document.createElement('script');
+        sc.src = src;
+        sc.onload = nachLaden;
+        document.head.appendChild(sc);
+    }
+    function spaeteBausteine() {
+        var laden = function () {
+            if (!sitzungMerker('pn.hinweise.ok')) baustein('../shared/hinweise.js?v=pn10', function () {
+                if (window.PanoptesHinweise) window.PanoptesHinweise.pruefen();
+            });
+            if (!sitzungMerker('pn.neu.ok')) baustein('../shared/neuigkeiten.js?v=3', function () {
+                if (window.PanoptesNeu) window.PanoptesNeu.pruefen();
+            });
+        };
+        var p = null;
+        try { p = window.BYD && BYD.i18n && typeof BYD.i18n.init === 'function' ? BYD.i18n.init() : null; } catch (e) { p = null; }
+        if (p && typeof p.then === 'function') p.then(laden, laden); else setTimeout(laden, 300);
+    }
+
     function loadCaps() {
         fetch('/api/system/capabilities', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; })
             .then(function (c) {
@@ -804,23 +846,12 @@
             pollTailnet();
             pollGuard();
             pollKopplung(base);
-            // Haftungshinweise: einmal je Textversion bestätigen (DISCLAIMER.md). Nicht auf der Über-Seite,
-            // dort steht der volle Text. Kurz warten, bis die Seite ihre Texte (BYD.i18n) geladen hat.
-            if (base !== 'about.html') setTimeout(function () {
-                var sc = document.createElement('script');
-                sc.src = '../shared/hinweise.js?v=pn9';
-                sc.onload = function () { if (window.PanoptesHinweise) window.PanoptesHinweise.pruefen(); };
-                document.head.appendChild(sc);
-            }, 1500);
             // Anzeige-Modus (Auto-Display): Bausteine nachladen, auch wenn die Hülle das Attribut erst später setzt.
             anzeigeStarten();
-            // „Was ist neu“ nach einem Update, einmal (H10). Wartet selbst, bis die Haftungshinweise zu sind.
-            if (base !== 'about.html') setTimeout(function () {
-                var sn = document.createElement('script');
-                sn.src = '../shared/neuigkeiten.js?v=2';
-                sn.onload = function () { if (window.PanoptesNeu) window.PanoptesNeu.pruefen(); };
-                document.head.appendChild(sn);
-            }, 2500);
+            // Haftungshinweise (einmal je Textversion, DISCLAIMER.md) und „Was ist neu“ (H10, wartet selbst auf die
+            // Hinweise). Nicht auf der Über-Seite. 0.1.20 Tempo: beide zusammen, sobald die Texte da sind (statt fester
+            // 1,5/2,5 s), und nur, bis sie in dieser Sitzung einmal „nichts zu zeigen“ gemeldet haben.
+            if (base !== 'about.html') spaeteBausteine();
         }
 
         try {

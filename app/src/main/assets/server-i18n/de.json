@@ -19,6 +19,8 @@
   "errors": {
     "rate_limited_locked_for_seconds": "Zu viele Versuche – gesperrt für {0} s",
     "invalid_device_token": "Das Geräte-Token stimmt nicht",
+    "only_car_or_pin": "Das geht nur am Auto oder mit PIN",
+    "web_link_expired": "Der Link ist abgelaufen. Bitte in der App noch einmal öffnen.",
     "invalid_request_with_detail": "Die Anfrage passt nicht: {0}",
     "bydcloud_not_configured": "BYD-Konto ist nicht eingerichtet",
     "bydcloud_not_configured_setup_required": "BYD-Konto ist noch nicht eingerichtet. Gib zuerst deine Zugangsdaten ein.",
@@ -841,7 +843,9 @@
     "not_supported": "Das geht gerade nicht",
     "find_car_label": "Wo ist mein Auto?",
     "battery_heat_label": "Akku vorwärmen",
-    "close_all_windows_label": "Alle Fenster schließen"
+    "close_all_windows_label": "Alle Fenster schließen",
+    "car_off_climate_needs_cloud": "Das Auto ist aus – direkt geht Vorheizen dann nicht. Richte die BYD-Cloud ein (System → BYD-Konto), dann geht es auch bei ausgeschaltetem Auto.",
+    "car_off_needs_cloud": "Das Auto ist aus – direkt geht das dann nicht. Richte die BYD-Cloud ein (System → BYD-Konto), dann geht es auch bei ausgeschaltetem Auto."
   },
   "automation": {
     "lock": "Auto verriegeln",
@@ -2030,6 +2034,10 @@
         "help": "Wie Panoptes die Autostart-Freigabe nach einem Update wieder setzt. Sichtbar: über die BYD-Seite am Bildschirm. Einstellungen: im Hintergrund, ohne Anzeige (nur, wenn für dein Auto bestätigt).",
         "sichtbar": "Sichtbar (BYD-Seite)",
         "settings": "Im Hintergrund"
+      },
+      "beiZuendung": {
+        "title": "Panoptes bei Zündung an öffnen",
+        "help": "Jedes Mal, wenn du das Auto einschaltest, holt Panoptes sich nach vorn. Läuft gerade CarPlay oder Android Auto, bleibt das vorn. Nur die Anzeige – kein Ton. Standard aus."
       }
     },
     "faehigkeiten": {

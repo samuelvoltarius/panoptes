@@ -16,22 +16,15 @@ object VehicleArt {
     /** @return the render for [modelId], or the generic fallback. */
     @DrawableRes
     fun drawableFor(modelId: String?): Int = when (normalize(modelId)) {
+        // 0.1.20: nur noch eigene Renderbilder der CC-BY-Modelle aus dem Katalog (Namensnennung im Manifest und in
+        // THIRD_PARTY_NOTICES.md, erzeugt mit tools/render_vehicle_art.py). Die früheren Pressefotos ohne Lizenz sind
+        // entfernt; Modelle ohne eigenes 3D-Modell zeigen die neutrale Silhouette.
         "seal" -> R.drawable.vehicle_seal
-        "sealion7" -> R.drawable.vehicle_sealion7
         // Same body as the Seal U; only the drivetrain differs.
         "sealu", "sealudmi" -> R.drawable.vehicle_seal_u
         "dolphin" -> R.drawable.vehicle_dolphin
         "atto3" -> R.drawable.vehicle_atto3
-        "atto3evo" -> R.drawable.vehicle_atto3_evo
-        "atto2" -> R.drawable.vehicle_atto2
-        "han" -> R.drawable.vehicle_han
-        "tang" -> R.drawable.vehicle_tang
-        "m6" -> R.drawable.vehicle_m6
-        "seagull" -> R.drawable.vehicle_seagull
-        "destroyer", "destroyer05" -> R.drawable.vehicle_destroyer05
-        // Shark currently reuses seal.glb in the manifest; keep its still in
-        // lockstep with the actual 3D asset until a dedicated model ships.
-        "shark" -> R.drawable.vehicle_seal
+        "seagull", "dolphinsurf" -> R.drawable.vehicle_seagull
         else -> R.drawable.vehicle_fallback
     }
 

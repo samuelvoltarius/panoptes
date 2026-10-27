@@ -25,6 +25,8 @@
   "errors": {
     "rate_limited_locked_for_seconds": "Troppi tentativi — bloccato per {0} s",
     "invalid_device_token": "Questo token del dispositivo non è valido",
+    "only_car_or_pin": "Questo è possibile solo in auto o con il PIN",
+    "web_link_expired": "Il link è scaduto. Aprilo di nuovo nell'app.",
     "invalid_request_with_detail": "La richiesta non è valida: {0}",
     "bydcloud_not_configured": "L'account BYD non è configurato",
     "bydcloud_not_configured_setup_required": "L'account BYD non è ancora configurato. Inserisci prima i tuoi dati di accesso.",
@@ -847,7 +849,9 @@
     "not_supported": "Al momento non è possibile",
     "find_car_label": "Dov'è la mia auto?",
     "battery_heat_label": "Riscalda la batteria",
-    "close_all_windows_label": "Alza tutti i finestrini"
+    "close_all_windows_label": "Alza tutti i finestrini",
+    "car_off_climate_needs_cloud": "L’auto è spenta – il preriscaldamento diretto allora non funziona. Configura il cloud BYD (Sistema → Account BYD), così funziona anche ad auto spenta.",
+    "car_off_needs_cloud": "L’auto è spenta – così non funziona direttamente. Configura il cloud BYD (Sistema → Account BYD), così funziona anche ad auto spenta."
   },
   "automation": {
     "lock": "Chiudi l'auto a chiave",
@@ -2036,6 +2040,10 @@
         "help": "Come Panoptes ripristina l’autorizzazione all’avvio automatico dopo un aggiornamento. Visibile: tramite la pagina BYD sullo schermo. Impostazioni: in background, senza nulla sullo schermo (solo se confermato per la tua auto).",
         "sichtbar": "Visibile (pagina BYD)",
         "settings": "In background"
+      },
+      "beiZuendung": {
+        "title": "Apri Panoptes all’accensione",
+        "help": "Ogni volta che accendi l’auto, Panoptes passa in primo piano. Se è attivo CarPlay o Android Auto, resta davanti. Solo schermo – nessun suono. Disattivato di serie."
       }
     },
     "faehigkeiten": {

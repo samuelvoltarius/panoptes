@@ -3892,6 +3892,11 @@ public class VehicleControlApiHandler {
             resp.put("message", r.displayMessage);
             resp.put("outcome", r.outcome.name().toLowerCase());
             resp.put("action", action);
+            // 0.1.20 P5: Grund + wohin (Display zeigt dann einen Knopf „BYD-Cloud einrichten“)
+            if (r.grund != null) {
+                resp.put("grund", r.grund);
+                if (CommandResult.GRUND_CLOUD_NICHT_EINGERICHTET.equals(r.grund)) resp.put("einrichten", "/byd-cloud.html");
+            }
             if (!success && r.error != null && r.error.getMessage() != null) {
                 resp.put("error", r.error.getMessage());
             } else if (!success) {

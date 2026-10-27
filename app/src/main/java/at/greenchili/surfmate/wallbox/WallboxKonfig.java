@@ -38,6 +38,7 @@ public final class WallboxKonfig {
                         .put("cloud", new JSONObject().put("region", "eu").put("clientId", "").put("einwilligung", false)
                                 .put("einwilligungZeit", JSONObject.NULL)))
                 .put("direkt", new JSONObject().put("geraete", new JSONArray()))
+                .put("kette", new JSONObject().put("titel", "").put("wege", new JSONArray()))
                 .put("freigaben", new JSONArray());
     }
 
@@ -82,7 +83,39 @@ public final class WallboxKonfig {
 
     public static String quelle(JSONObject k) throws JSONException {
         String q = k.isNull("quelle") ? "" : k.optString("quelle", "");
-        return "evcc".equals(q) || "ha".equals(q) || "tuya".equals(q) || "direkt".equals(q) ? q : null;
+        return "evcc".equals(q) || "ha".equals(q) || "tuya".equals(q) || "direkt".equals(q) || "kette".equals(q) ? q : null;
+    }
+
+    /** 0.1.20 Rückfallkette: höchstens so viele Wege je Wallbox. */
+    static final int MAX_WEGE = 4;
+    /** Ladepunkt-Kennung der Kette (genau eine Wallbox, mehrere Wege). */
+    public static final String KETTE_ID = "kette:haupt";
+
+    /**
+     * Rückfallkette (WALLBOX_FERN_KONZEPT §7): {@code {titel, wege:[{ladepunkt:"direkt:x"|"ha:y"|"tuya:z"}]}} – dieselbe
+     * Wallbox über mehrere eingerichtete Wege, Reihenfolge = Vorrang (lokal → HA → Cloud). Die Wege selbst stehen in
+     * ihren Abschnitten (direkt/ha/tuya); hier nur Verweise.
+     */
+    private static void kette(JSONObject alt, JSONObject neu, JSONObject k, boolean aktiv) throws WallboxFehler, JSONException {
+        JSONObject altK = alt.optJSONObject("kette") == null ? new JSONObject() : alt.optJSONObject("kette");
+        JSONObject neuK = neu.optJSONObject("kette") == null ? altK : neu.optJSONObject("kette");
+        JSONArray w = neuK.optJSONArray("wege") == null ? new JSONArray() : neuK.optJSONArray("wege");
+        if (w.length() > MAX_WEGE || (aktiv && w.length() < 2)) throw new WallboxFehler("kette_ungueltig");
+        JSONArray sauber = new JSONArray();
+        java.util.Set<String> gesehen = new java.util.HashSet<>();
+        for (int i = 0; i < w.length(); i++) {
+            JSONObject e = w.optJSONObject(i);
+            String lp = e == null ? "" : e.optString("ladepunkt", "");
+            int p = lp.indexOf(':');
+            String q = p < 0 ? "" : lp.substring(0, p);
+            if (!("direkt".equals(q) || "ha".equals(q) || "tuya".equals(q))
+                    || !HaQuelle.SCHLUESSEL.matcher(lp.substring(p + 1)).matches() || !gesehen.add(lp)) {
+                throw new WallboxFehler("kette_ungueltig");
+            }
+            sauber.put(new JSONObject().put("ladepunkt", lp));
+        }
+        String titel = neuK.optString("titel", "").trim();
+        k.getJSONObject("kette").put("titel", titel.length() > 40 ? titel.substring(0, 40) : titel).put("wege", sauber);
     }
 
     /**
@@ -101,7 +134,7 @@ public final class WallboxKonfig {
         if (neu == null) throw new WallboxFehler("einstellung_ungueltig");
         JSONObject k = leer();
         String q = neu.has("quelle") ? (neu.isNull("quelle") ? "" : neu.optString("quelle", "")) : String.valueOf(quelle(alt));
-        boolean bekannt = "evcc".equals(q) || "ha".equals(q) || "tuya".equals(q) || "direkt".equals(q);
+        boolean bekannt = "evcc".equals(q) || "ha".equals(q) || "tuya".equals(q) || "direkt".equals(q) || "kette".equals(q);
         if (!q.isEmpty() && !"null".equals(q) && !bekannt) throw new WallboxFehler("einstellung_ungueltig");
         k.put("quelle", bekannt ? q : JSONObject.NULL);
 
@@ -138,18 +171,23 @@ public final class WallboxKonfig {
 
         java.util.Map<String, String> tuyaIds = tuya(alt, neu, k.getJSONObject("tuya"), geheim, jetzt);
         java.util.Set<String> direktBleiben = direkt(alt, neu, k.getJSONObject("direkt"), geheim, jetzt);
+        kette(alt, neu, k, "kette".equals(q));
 
         // Freigaben behalten nur, wenn Quelle und Ziel gleich bleiben; HA: nur für weiter vorhandene Schlüssel.
         JSONArray frei = new JSONArray();
         String altQ = quelle(alt);
         String neuQ = quelle(k);
-        if (neuQ != null && neuQ.equals(altQ) && WallboxAdresse.ziel(zielUrl(alt)).equals(WallboxAdresse.ziel(zielUrl(k)))) {
+        boolean gleichesZiel = "kette".equals(neuQ) ? zielUrl(alt).equals(zielUrl(k))
+                : WallboxAdresse.ziel(zielUrl(alt)).equals(WallboxAdresse.ziel(zielUrl(k)));
+        if (neuQ != null && neuQ.equals(altQ) && gleichesZiel) {
             JSONArray af = alt.optJSONArray("freigaben");
             for (int i = 0; af != null && i < af.length(); i++) {
                 String id = af.optString(i);
                 if ("ha".equals(neuQ) && !schluessel.contains(id.startsWith("ha:") ? id.substring(3) : "")) continue;
                 if ("tuya".equals(neuQ) && !tuyaIds.containsKey(id)) continue;
                 if ("direkt".equals(neuQ) && !direktBleiben.contains(id)) continue;
+                // Kette: Wege unverändert (zielUrl gleich) – die Wege selbst dürfen sich nicht geändert haben
+                if ("kette".equals(neuQ) && !ketteUnveraendert(alt, k, tuyaIds, direktBleiben, schluessel)) continue;
                 frei.put(id);
             }
         }
@@ -157,10 +195,33 @@ public final class WallboxKonfig {
         return k;
     }
 
+    /** Jeder Weg der Kette ist noch derselbe (Gerät, Adresse, Zugang) – sonst Freigabe weg. */
+    private static boolean ketteUnveraendert(JSONObject alt, JSONObject k, java.util.Map<String, String> tuyaIds,
+                                             java.util.Set<String> direktBleiben, java.util.Set<String> haSchluessel) throws JSONException {
+        JSONArray w = k.getJSONObject("kette").getJSONArray("wege");
+        for (int i = 0; i < w.length(); i++) {
+            String lp = w.getJSONObject(i).getString("ladepunkt");
+            if (lp.startsWith("direkt:") && !direktBleiben.contains(lp)) return false;
+            if (lp.startsWith("tuya:") && !tuyaIds.containsKey(lp)) return false;
+            if (lp.startsWith("ha:")) {
+                if (!haSchluessel.contains(lp.substring(3))) return false;
+                JSONObject ah = alt.optJSONObject("ha") == null ? new JSONObject() : alt.optJSONObject("ha");
+                if (!WallboxAdresse.ziel(ah.optString("url", "")).equals(WallboxAdresse.ziel(k.getJSONObject("ha").optString("url", "")))) return false;
+            }
+        }
+        return true;
+    }
+
     static String zielUrl(JSONObject k) throws JSONException {
         String q = quelle(k);
         if (q == null) return "";
         if ("direkt".equals(q)) return "direkt://";
+        if ("kette".equals(q)) {
+            StringBuilder sb = new StringBuilder("kette://");
+            JSONArray w = k.optJSONObject("kette") == null ? null : k.getJSONObject("kette").optJSONArray("wege");
+            for (int i = 0; w != null && i < w.length(); i++) sb.append(i == 0 ? "" : ",").append(w.getJSONObject(i).optString("ladepunkt"));
+            return sb.toString();
+        }
         if ("tuya".equals(q)) {
             // Tuya: „Ziel“ = Zugangsweg (+ Region und Client-ID bei Cloud); Geräte werden einzeln über die ID verglichen.
             JSONObject t = k.optJSONObject("tuya") == null ? new JSONObject() : k.optJSONObject("tuya");

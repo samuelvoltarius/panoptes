@@ -39,6 +39,8 @@ public final class ExternGuard {
             "/api/navi/unterwegs",
             "/api/trips",
             "/api/trips/summary",
+            "/api/trips/range",       // 0.1.20 Handy-App: Reichweiten-Schätzung, keine Koordinaten
+            "/api/wallbox/status",    // 0.1.20 Handy-App/Cockpit: Wallbox-Zustand, NUR lesen (Steuern bleibt gesperrt)
             "/api/planer/identitaet",
             "/api/einstellungen",
             "/api/einstellungen/schema",
@@ -53,6 +55,7 @@ public final class ExternGuard {
             "/api/ha/v1/regeln",
             "/api/ha/v1/ereignisse",
             "/api/camping",   // 0.1.16: Camping-Status (Panoptes-Funktion, keine Innentemperatur)
+            "/api/ladeplan",  // 0.1.20: Ladeplan lesen (Cockpit/Handy)
             // Wächter-Aufnahmen fürs Cockpit (0.1.9): Liste + Tage + Zahlen, NUR lesen
             "/api/recordings",
             "/api/recordings/dates",
@@ -77,6 +80,7 @@ public final class ExternGuard {
             "/api/camping",
             "/api/camping/rueckmeldung",
             "/api/camping/plan",   // 0.1.17: Cockpit plant Start/Ende (Panoptes-Funktion)
+            "/api/ladeplan",   // 0.1.20: Plan ändern; Freigabe/Ladepunkt nie (Handler: nur_am_auto)
             "/api/camping/weiter"
     )));
 
@@ -88,7 +92,10 @@ public final class ExternGuard {
             "/api/handy/v1/geraet",
             "/api/handy/v1/aktion",
             "/api/handy/v1/push",
-            "/api/handy/v1/push/aus"
+            "/api/handy/v1/push/aus",
+            "/api/handy/v1/bruecke",   // 0.1.20 Panoptes-Brücke: Handy-Schlüssel + Zugang (BRUECKE_VERTRAG §2.4)
+            "/api/handy/v1/bruecke/aus",
+            "/api/handy/v1/websitzung"   // 0.1.20 Weboberfläche in der Handy-App (HANDY_WEB_SITZUNG_VERTRAG)
     )));
 
     /** true, wenn die Anfrage eines gekoppelten Geräts abgelehnt werden muss. */
