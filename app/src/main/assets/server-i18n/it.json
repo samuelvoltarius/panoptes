@@ -172,6 +172,10 @@
     "camping_heizen_aus_fehlgeschlagen": "Campeggio: il riscaldamento non si è spento – controlla l'auto",
     "camping_cloud_gesperrt_weg2": "Campeggio: l'accesso remoto 2 è sparito dopo una sessione cloud – riscaldamento via cloud bloccato",
     "camping_weck_grenze": "Campeggio: raggiunto il numero massimo di sessioni cloud – nessun'altra stanotte",
+    "camping_aus_plan": "Campeggio spento (fine pianificata)",
+    "camping_aus_weckzeit": "Campeggio spento (sveglia + prosecuzione)",
+    "camping_aus_hoechstdauer": "Campeggio spento (durata massima raggiunta)",
+    "camping_plan_fehler": "Campeggio: avvio pianificato non possibile – motivo in Panoptes",
     "camping_tuer_offen": "Campeggio: {0} aperta",
     "guard_stop_reason_soc": "batteria di trazione scarica",
     "guard_stop_reason_v12": "batteria da 12 V debole",
@@ -1918,9 +1922,13 @@
         "title": "Avviso 12 V",
         "help": "Se la batteria di avviamento scende sotto questo valore, il riscaldamento si ferma e arriva un messaggio. Vuoto = spento."
       },
+      "nachlaufMinuten": {
+        "title": "Prosecuzione dopo la sveglia",
+        "help": "Il campeggio termina questi minuti dopo la sveglia – salvo che il piano abbia una sua fine. Al più tardi dopo la durata massima, subito alla partenza."
+      },
       "hoechstdauerStunden": {
-        "title": "Durata massima del riscaldamento",
-        "help": "Dopo queste ore il riscaldamento si ferma, con un messaggio."
+        "title": "Durata massima",
+        "help": "Il campeggio (e quindi il riscaldamento) termina al più tardi dopo queste ore, con un messaggio."
       },
       "waechterBewohnt": {
         "title": "Guardiano «abitato»",
@@ -2107,6 +2115,27 @@
       "acStandard": {
         "title": "La ricarica AC in luoghi sconosciuti costa",
         "help": "Vale per tutte le ricariche AC in luoghi non salvati (ad es. a casa), così Panoptes non chiede. 0 = gratis. Vuoto = chiedi ogni volta."
+      }
+    },
+    "zaehlen": {
+      "an": {
+        "title": "Conteggio anonimo",
+        "help": "Una volta al giorno Panoptes invia solo un identificativo casuale e il numero di versione, nessun dato su di te o sulla tua auto. Disattivato di default. Disattivarlo cancella il conteggio anche sul server."
+      },
+      "kennung": {
+        "title": "Identificativo casuale",
+        "help": "Creato solo qui, non ha nulla a che fare con te, l'auto o il dispositivo. Vuoto finché il conteggio è disattivato."
+      },
+      "kennungAktion": {
+        "title": "Cambia identificativo",
+        "help": "Crearne uno nuovo o cancellarlo. Il vecchio identificativo viene cancellato anche sul server. Cancellare disattiva il conteggio.",
+        "behalten": "Mantieni",
+        "neu": "Crea nuovo identificativo",
+        "loeschen": "Cancella identificativo"
+      },
+      "url": {
+        "title": "Indirizzo di conteggio",
+        "help": "Dove viene inviato il conteggio. Cambialo solo se gestisci un tuo contatore."
       }
     }
   },

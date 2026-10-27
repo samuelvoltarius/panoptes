@@ -270,6 +270,27 @@ public final class Katalog {
         vorl.gruppe = "datenschutz"; vorl.reihenfolge = 22; vorl.standard = false;
         vorl.nurLesendExtern = true; vorl.bestaetigung = "planer.vorliebenEinwilligung";
         l.add(vorl);
+        // 0.1.17 „Anonym mitzählen“ (27.10.2026): Standard AUS, Frage im Einrichten („Daten teilen“).
+        // Einmal am Tag nur Zufallskennung + Version (analytics/Mitzaehlen). Kennung neu/löschen über kennungAktion.
+        Feld zaehlen = new Feld("zaehlen.an", Feld.Typ.BOOL);
+        zaehlen.gruppe = "datenschutz"; zaehlen.reihenfolge = 30; zaehlen.standard = false;
+        zaehlen.nurLesendExtern = true;
+        l.add(zaehlen);
+        Feld kennung = new Feld("zaehlen.kennung", Feld.Typ.TEXT);
+        kennung.gruppe = "datenschutz"; kennung.reihenfolge = 31; kennung.nurLesend = true; kennung.nurLesendExtern = true;
+        l.add(kennung);
+        Feld kennungAktion = new Feld("zaehlen.kennungAktion", Feld.Typ.AUSWAHL);
+        kennungAktion.gruppe = "datenschutz"; kennungAktion.reihenfolge = 32; kennungAktion.standard = "behalten";
+        kennungAktion.nurLesendExtern = true;
+        kennungAktion.optionen.add(new Feld.Option("behalten", "settings.zaehlen.kennungAktion.behalten"));
+        kennungAktion.optionen.add(new Feld.Option("neu", "settings.zaehlen.kennungAktion.neu"));
+        kennungAktion.optionen.add(new Feld.Option("loeschen", "settings.zaehlen.kennungAktion.loeschen"));
+        kennungAktion.zugriff = kennungAktion();
+        l.add(kennungAktion);
+        Feld zaehlenUrl = new Feld("zaehlen.url", Feld.Typ.TEXT);
+        zaehlenUrl.gruppe = "datenschutz"; zaehlenUrl.reihenfolge = 33; zaehlenUrl.erweitert = true;
+        zaehlenUrl.nurLesendExtern = true; zaehlenUrl.standard = at.greenchili.surfmate.analytics.Mitzaehlen.STANDARD_URL;
+        l.add(zaehlenUrl);
         // Datenschutz Regel Nr. 2: Kartenquelle wählt der Nutzer (Web kartenquelle.js + native Karte).
         // Nicht gesetzt = keine (auch Bestand), kein stiller Rückfall auf einen anderen Anbieter.
         Feld karte = new Feld("karte.quelle", Feld.Typ.AUSWAHL);
@@ -417,6 +438,8 @@ public final class Katalog {
         double[] v12 = AkkuChemie.v12Standard(k.akkuChemie);
         l.add(camping(nullAus(zahlOhneStopp("camping.v12Warnung", Feld.Typ.ZAHL, v12[0], 0.0, 13.5, 0.1, "V")), r += 10));
         l.add(camping(zahlOhneStopp("camping.hoechstdauerStunden", Feld.Typ.INT, 12, 1.0, 24.0, 1.0, "h"), r += 10));
+        // 0.1.17: Ende = Weckzeit + Nachlauf (ohne ausdrückliches Plan-Ende), spätestens Höchstdauer
+        l.add(camping(zahlOhneStopp("camping.nachlaufMinuten", Feld.Typ.INT, 60, 0.0, 240.0, 5.0, "min"), r += 5));
         l.add(camping(zahlOhneStopp("camping.waechterBewohnt", Feld.Typ.BOOL, true, null, null, null, null), r += 10));
         Feld aussen = new Feld("camping.aussenBewegung", Feld.Typ.AUSWAHL);
         aussen.standard = "nichts";
@@ -477,6 +500,39 @@ public final class Katalog {
                 v.put("deterrentAction", neu);
                 Map<String, Map<String, Object>> out = new HashMap<>();
                 out.put("surveillance", v);
+                return out;
+            }
+        };
+    }
+
+    /**
+     * zaehlen.kennungAktion: wirkt beim Speichern und liest sich immer als „behalten“. „neu“ = neue Zufallskennung,
+     * „loeschen“ = Kennung weg und Mitzählen aus; die alte Kennung kommt jeweils in die Löschliste (Regel 2).
+     */
+    static Feld.Zugriff kennungAktion() {
+        return new Feld.Zugriff() {
+            public Object lese(JSONObject root) {
+                return "behalten";
+            }
+            public Map<String, Map<String, Object>> schreibe(Object wert, JSONObject root) {
+                JSONObject z = root == null ? null : root.optJSONObject(at.greenchili.surfmate.analytics.Mitzaehlen.ABSCHNITT);
+                String alt = z == null ? "" : z.optString("kennung", "");
+                String liste = z == null ? "" : z.optString("loeschen", "");
+                Map<String, Object> v = new HashMap<>();
+                if ("neu".equals(wert) || "loeschen".equals(wert)) {
+                    v.put("loeschen", at.greenchili.surfmate.analytics.Mitzaehlen.loeschenDazu(liste, alt));
+                    v.put("letzterTag", "");
+                    if ("neu".equals(wert)) {
+                        // aus: keine Kennung auf Vorrat (der Takt erzeugt sie beim Einschalten)
+                        v.put("kennung", z != null && z.optBoolean("an", false)
+                                ? at.greenchili.surfmate.analytics.Mitzaehlen.neueKennung() : "");
+                    } else {
+                        v.put("kennung", "");
+                        v.put("an", false);
+                    }
+                }
+                Map<String, Map<String, Object>> out = new HashMap<>();
+                out.put(at.greenchili.surfmate.analytics.Mitzaehlen.ABSCHNITT, v);
                 return out;
             }
         };

@@ -172,6 +172,10 @@
     "camping_heizen_aus_fehlgeschlagen": "Camping : le chauffage n'a pas pu s'arrêter – vérifiez la voiture",
     "camping_cloud_gesperrt_weg2": "Camping : l'accès à distance 2 a disparu après une session cloud – chauffage via le cloud bloqué",
     "camping_weck_grenze": "Camping : nombre maximal de sessions cloud atteint – plus aucune cette nuit",
+    "camping_aus_plan": "Camping désactivé (fin planifiée)",
+    "camping_aus_weckzeit": "Camping désactivé (réveil + prolongation)",
+    "camping_aus_hoechstdauer": "Camping désactivé (durée maximale atteinte)",
+    "camping_plan_fehler": "Camping : démarrage planifié impossible – raison dans Panoptes",
     "camping_tuer_offen": "Camping : {0} ouverte",
     "guard_stop_reason_soc": "batterie de traction faible",
     "guard_stop_reason_v12": "batterie 12 V faible",
@@ -1918,9 +1922,13 @@
         "title": "Alerte 12 V",
         "help": "Si la batterie de démarrage descend en dessous, le chauffage s'arrête et un message est envoyé. Vide = désactivé."
       },
+      "nachlaufMinuten": {
+        "title": "Prolongation après le réveil",
+        "help": "Le camping se termine ce nombre de minutes après l'heure du réveil – sauf si le plan a sa propre fin. Au plus tard après la durée maximale, immédiatement au départ."
+      },
       "hoechstdauerStunden": {
-        "title": "Durée maximale de chauffage",
-        "help": "Le chauffage s'arrête après ce nombre d'heures, avec un message."
+        "title": "Durée maximale",
+        "help": "Le camping (et donc le chauffage) se termine au plus tard après ce nombre d'heures, avec un message."
       },
       "waechterBewohnt": {
         "title": "Gardien « occupé »",
@@ -2107,6 +2115,27 @@
       "acStandard": {
         "title": "La recharge AC dans un lieu inconnu coûte",
         "help": "Vaut pour toutes les recharges AC dans un lieu non enregistré (par ex. à domicile) ; Panoptes ne demande alors pas. 0 = gratuit. Vide = demander à chaque fois."
+      }
+    },
+    "zaehlen": {
+      "an": {
+        "title": "Compter anonymement",
+        "help": "Une fois par jour, Panoptes transmet uniquement un identifiant aléatoire et le numéro de version, aucune donnée sur toi ou ta voiture. Désactivé par défaut. Le désactiver supprime aussi le comptage sur le serveur."
+      },
+      "kennung": {
+        "title": "Identifiant aléatoire",
+        "help": "Créé uniquement ici, sans lien avec toi, la voiture ou l'appareil. Vide tant que le comptage est désactivé."
+      },
+      "kennungAktion": {
+        "title": "Changer l'identifiant",
+        "help": "En créer un nouveau ou le supprimer. L'ancien identifiant est aussi supprimé sur le serveur. Supprimer désactive le comptage.",
+        "behalten": "Conserver",
+        "neu": "Créer un nouvel identifiant",
+        "loeschen": "Supprimer l'identifiant"
+      },
+      "url": {
+        "title": "Adresse de comptage",
+        "help": "Où le comptage est envoyé. À modifier seulement si tu utilises ton propre compteur."
       }
     }
   },

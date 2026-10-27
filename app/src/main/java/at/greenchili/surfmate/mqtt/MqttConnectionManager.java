@@ -487,6 +487,9 @@ public class MqttConnectionManager {
      * 0.1.16: Lokale Klimaanlage gilt als aus, wenn das Auto nicht „an“ ist (power_level &lt; 2 oder unbekannt),
      * außer bei DiLink 5 (eigene Quelle). Gleiche Regel wie {@code VehicleControlApiHandler} für acOn/fanLevel.
      */
+    /** 0.1.17: Änderungszeitpunkte für Schloss/Stecker (persistiert). */
+    private final ZustandsWechsel zustandsWechsel = ZustandsWechsel.imDaemon();
+
     static boolean klimaRuht(BydVehicleData vd, boolean diLink5) {
         if (diLink5) return false;
         return !(vd.powerLevel != BydVehicleData.UNAVAILABLE && vd.powerLevel >= 2);
@@ -1392,6 +1395,8 @@ public class MqttConnectionManager {
                             at.greenchili.surfmate.server.VehicleControlApiHandler.tuerOffenStand(collector),
                             at.greenchili.surfmate.server.VehicleControlApiHandler.fensterStand(collector, vd)[1],
                             vd.chargingGunState);
+                    // 0.1.17: echter Zeitpunkt der letzten Änderung von Schloss und Stecker (HA last_changed springt)
+                    zustandsWechsel.eintragen(payload, now);
                 } catch (Throwable ignored) {
                     // nur Telemetrie: fehlt ein Wert, fehlt die Entität
                 }

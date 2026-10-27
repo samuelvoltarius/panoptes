@@ -2543,25 +2543,15 @@ public class CameraDaemon {
         }, 5, 10, java.util.concurrent.TimeUnit.MINUTES);
         log("Geo backfill armed on dedicated thread (10-minute cadence)");
 
-        // Privacy-preserving DAU/MAU ping (analytics-edge). At most ONE tiny POST
-        // per install per UTC day; maybePing() short-circuits cheaply when already
-        // pinged today or disabled (analytics.enabled kill-switch, default on). We
-        // tick HOURLY so a day-boundary crossing (or a boot after midnight) sends
-        // promptly; the day guard + server-side (day,id) PK make repeat ticks
-        // no-ops. Piggy-backed on memoryLogScheduler: the work is a rare, short,
-        // proxy-aware HTTP call that swallows all failures internally, so it can't
-        // stall the watchdog cadence. Same try/catch guard as the ticks above —
-        // scheduleAtFixedRate cancels a recurring task on first uncaught throw.
+        // 0.1.17 „Anonym mitzählen“ (Standard AUS): stündlich prüfen, höchstens einmal am Tag senden, still bei
+        // Fehler. Mitzaehlen.takt wirft nie; der try/catch schützt nur die Planung (scheduleAtFixedRate bricht sonst ab).
         memoryLogScheduler.scheduleAtFixedRate(() -> {
             try {
-                at.greenchili.surfmate.analytics.AnalyticsPinger.INSTANCE.maybePing(
-                    System.currentTimeMillis());
-            } catch (Throwable t) {
-                log("Analytics ping tick failed: "
-                    + t.getClass().getSimpleName() + ": " + t.getMessage());
+                at.greenchili.surfmate.analytics.Mitzaehlen.taktImDaemon(System.currentTimeMillis());
+            } catch (Throwable ignored) {
+                // still
             }
         }, 2, 60, java.util.concurrent.TimeUnit.MINUTES);
-        log("Analytics DAU/MAU ping armed (hourly check, <=1 send/day)");
     }
 
     private static void logMemoryStatus() {

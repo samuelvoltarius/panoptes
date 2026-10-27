@@ -142,7 +142,7 @@ public class BydCloudProxyFallbackContractTest {
 
         assertTrue(read("app/src/main/java/at/greenchili/surfmate/weather/WeatherTemperature.java")
                 .contains(".proxySelector(ProxyHelper.chainProxySelector())"));
-        assertTrue(read("app/src/main/java/at/greenchili/surfmate/analytics/AnalyticsPinger.kt")
+        assertTrue(read("app/src/main/java/at/greenchili/surfmate/analytics/Mitzaehlen.java")
                 .contains(".proxySelector(at.greenchili.surfmate.mqtt.ProxyHelper.chainProxySelector())"));
         assertTrue(read("app/src/main/java/at/greenchili/surfmate/roadsense/sync/CloudflareEdgeSyncProvider.kt")
                 .contains(".proxySelector(at.greenchili.surfmate.mqtt.ProxyHelper.chainProxySelector())"));

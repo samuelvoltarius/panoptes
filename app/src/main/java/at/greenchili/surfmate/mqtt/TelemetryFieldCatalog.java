@@ -285,6 +285,11 @@ public final class TelemetryFieldCatalog {
         add("door_open_rr",        "Door Rear Right",     BINARY, "door",   null, null, "mdi:car-door",         false, 0);
         add("trunk_open",          "Trunk",               BINARY, "door",   null, null, "mdi:car-back",         false, 0);
         add("hood_open",           "Hood",                BINARY, "door",   null, null, "mdi:car-lifted-pickup", true, 0);
+        // 0.1.17: echter Zeitpunkt der letzten Änderung (HA last_changed springt beim HA-Neustart)
+        add("lock_changed_at",       "Lock Changed At",        SENSOR, "timestamp", null, null, "mdi:lock-clock", false, 0);
+        add("plugged_changed_at",    "Plugged Changed At",     SENSOR, "timestamp", null, null, "mdi:ev-plug-type2", false, 0);
+        add("lock_changed_at_ms",    "Lock Changed At (ms)",   NONE, null, null, null, null, true, 0);
+        add("plugged_changed_at_ms", "Plugged Changed At (ms)", NONE, null, null, null, null, true, 0);
         add("window_open_lf",      "Window Front Left",   BINARY, "window", null, null, "mdi:car-door",         false, 0);
         add("window_open_rf",      "Window Front Right",  BINARY, "window", null, null, "mdi:car-door",         false, 0);
         add("window_open_lr",      "Window Rear Left",    BINARY, "window", null, null, "mdi:car-door",         false, 0);

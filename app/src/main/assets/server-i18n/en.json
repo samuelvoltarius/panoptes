@@ -166,6 +166,10 @@
     "camping_heizen_aus_fehlgeschlagen": "Camping: heating could not be switched off – please check the car",
     "camping_cloud_gesperrt_weg2": "Camping: remote access 2 is gone after a cloud session – cloud heating blocked",
     "camping_weck_grenze": "Camping: maximum number of cloud sessions reached – no more tonight",
+    "camping_aus_plan": "Camping off (planned end)",
+    "camping_aus_weckzeit": "Camping off (wake-up time + run-on)",
+    "camping_aus_hoechstdauer": "Camping off (maximum time reached)",
+    "camping_plan_fehler": "Camping: planned start not possible – reason in Panoptes",
     "camping_tuer_offen": "Camping: {0} opened",
     "guard_stop_reason_soc": "traction battery low",
     "guard_stop_reason_v12": "12 V battery weak",
@@ -1912,9 +1916,13 @@
         "title": "12 V warning",
         "help": "If the starter battery drops below this, heating stops and you get a message. Empty = off."
       },
+      "nachlaufMinuten": {
+        "title": "Run-on after wake-up",
+        "help": "Camping ends this many minutes after the wake-up time – unless the plan has its own end. At the latest after the maximum time, immediately when you drive off."
+      },
       "hoechstdauerStunden": {
-        "title": "Maximum heating time",
-        "help": "Heating stops after this many hours, with a message."
+        "title": "Maximum duration",
+        "help": "Camping (and with it the heating) ends after this many hours at the latest, with a message."
       },
       "waechterBewohnt": {
         "title": "Guardian \"occupied\"",
@@ -2101,6 +2109,27 @@
       "acStandard": {
         "title": "AC charging at unknown places costs",
         "help": "Applies to all AC charges at places you have not saved (e.g. at home), so Panoptes does not ask there. 0 = free. Empty = ask every time."
+      }
+    },
+    "zaehlen": {
+      "an": {
+        "title": "Count anonymously",
+        "help": "Once a day Panoptes reports only a random ID and the version number, no data about you or your car. Off by default. Switching it off also deletes the count on the server."
+      },
+      "kennung": {
+        "title": "Random ID",
+        "help": "Created only here and has nothing to do with you, the car or the device. Empty while counting is off."
+      },
+      "kennungAktion": {
+        "title": "Change ID",
+        "help": "Create a new one or delete it. The old ID is also deleted on the server. Deleting switches counting off.",
+        "behalten": "Keep",
+        "neu": "Create new ID",
+        "loeschen": "Delete ID"
+      },
+      "url": {
+        "title": "Count address",
+        "help": "Where the count is sent. Only change it if you run your own counter."
       }
     }
   },

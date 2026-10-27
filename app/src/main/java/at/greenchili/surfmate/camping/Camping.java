@@ -78,6 +78,17 @@ public final class Camping {
     private final Deque<JSONObject> protokoll = new ArrayDeque<>();
     private int[] letzteFenster;
     private ScheduledExecutorService exec;
+    // ---- 0.1.17 Plan (CampingPlan) ----
+    /** Geplanter Start/Ende (0 = keiner); läuft Camping, gilt sitzungEndeMs. */
+    long planStartMs, planEndeMs;
+    /** Beginn und ausdrückliches Ende (aus dem Plan) der laufenden Sitzung; 0 = keins. */
+    long sitzungSeitMs, sitzungEndeMs;
+    String planFehler;
+    long planFehlerMs;
+    /** Uhr und Zeitzone (in Tests ersetzbar). */
+    java.util.function.LongSupplier uhr = System::currentTimeMillis;
+    java.util.TimeZone zone = java.util.TimeZone.getDefault();
+
     /** Stellglied (in Tests ersetzbar); null ohne Kennfeld. */
     Heizweg heizweg;
     /**
@@ -160,6 +171,18 @@ public final class Camping {
         if (tabelle != null && heizweg == null) heizweg = new RouterHeizweg(tabelle.cloudTemperatur);
         try {
             String z = lies(ZUSTAND_DATEI);
+            if (z != null) {
+                JSONObject zj = new JSONObject(z);
+                JSONObject plan = zj.optJSONObject("plan");
+                if (plan != null) {
+                    planStartMs = plan.optLong("startMs", 0);
+                    planEndeMs = plan.optLong("endeMs", 0);
+                    planFehler = plan.optString("fehler", "").isEmpty() ? null : plan.optString("fehler");
+                    planFehlerMs = plan.optLong("fehlerMs", 0);
+                }
+                sitzungSeitMs = zj.optLong("sitzungSeitMs", 0);
+                sitzungEndeMs = zj.optLong("sitzungEndeMs", 0);
+            }
             if (z != null && regler != null) regler.laden(new JSONObject(z).optJSONObject("regler"));
             if (z != null && regler == null) {
                 // ohne Kennfeld bleibt nur „an/aus“ erhalten
@@ -238,6 +261,8 @@ public final class Camping {
         CampingRegler.Einstellung e = einstellung();
         einstellungUebernehmen(e);
         verbrauch.leeren();
+        sitzungSeitMs = uhr.getAsLong();
+        sitzungEndeMs = 0;
         letzteFenster = null;
         if (heizweg != null) heizweg.zuruecksetzen();
         einmalGemeldet.clear();
@@ -259,16 +284,97 @@ public final class Camping {
     synchronized JSONObject ausschalten(String grund) {
         if (!aktiv) return ok();
         if (regler != null) {
-            CampingRegler.Entscheidung d = regler.ausschalten(grund, System.currentTimeMillis());
-            verarbeiten(d, null);
+            // 0.1.17: mit echter Lage, sonst würde eine laufende lokale Heizphase nicht abgeschaltet
+            CampingRegler.Lage l = lage();
+            CampingRegler.Entscheidung d = regler.ausschalten(grund, l.jetztMs);
+            verarbeiten(d, l);
         } else {
             melden("camping_aus_" + grund, false, null);
         }
         aktiv = false;
+        sitzungEndeMs = 0;
         logger.info("Camping aus (" + grund + ")");
         waechterAnpassen();
         speichern();
         return ok();
+    }
+
+    // ---------------------------------------------------------------- 0.1.17 Plan
+
+    /** POST /api/camping/plan: {"start","ende"} bzw. {"loeschen": true}. */
+    public static JSONObject plan(JSONObject req) {
+        Camping c = instance;
+        if (c == null) return fehler("nicht_gestartet");
+        return c.planSetzen(req);
+    }
+
+    synchronized JSONObject planSetzen(JSONObject req) {
+        if (req == null) return fehler("json");
+        if (req.optBoolean("loeschen", false)) {
+            planStartMs = 0;
+            planEndeMs = 0;
+            planFehler = null;
+            planFehlerMs = 0;
+            speichern();
+            logger.info("Plan gelöscht");
+            return ok();
+        }
+        if (aktiv) return fehler("camping_laeuft");
+        String ende = req.isNull("ende") ? null : req.optString("ende", null);
+        CampingPlan.Ergebnis r = CampingPlan.pruefen(req.optString("start", null), ende, uhr.getAsLong(), zone);
+        if (!r.ok()) return fehler(r.fehler);
+        planStartMs = r.startMs;
+        planEndeMs = r.endeMs;
+        planFehler = null;
+        planFehlerMs = 0;
+        speichern();
+        logger.info("Plan gesetzt: Start " + planStartMs + (planEndeMs > 0 ? ", Ende " + planEndeMs : ""));
+        JSONObject o = ok();
+        try { o.put("geplant", CampingPlan.alsJson(planStartMs, planEndeMs)); } catch (Exception ignored) { }
+        return o;
+    }
+
+    /** Takt: fälligen Plan starten – mit allen Prüfungen von {@link #einschalten}; geht das nicht, Grund merken. */
+    private void planAusfuehren() {
+        if (aktiv || planStartMs <= 0) return;
+        long jetzt = uhr.getAsLong();
+        if (jetzt < planStartMs) return;
+        long ende = planEndeMs;
+        String fehler = null;
+        if (jetzt - planStartMs > CampingPlan.VERPASST_MS) {
+            fehler = "verpasst";
+        } else {
+            JSONObject r = einschalten("plan");
+            if (!r.optBoolean("ok", false)) fehler = r.optString("fehler", "unbekannt");
+        }
+        planStartMs = 0;
+        planEndeMs = 0;
+        if (fehler != null) {
+            planFehler = fehler;
+            planFehlerMs = jetzt;
+            logger.warn("Geplanter Start nicht möglich: " + fehler);
+            melden("camping_plan_fehler", true, null);
+        } else {
+            sitzungEndeMs = ende;
+            planFehler = null;
+        }
+        speichern();
+    }
+
+    /** Ende-Regel (CampingPlan.ende): Plan-Ende bzw. Weckzeit + Nachlauf, spätestens Höchstdauer. true = beendet. */
+    private boolean endeRegel() {
+        CampingPlan.Ende en = aktuellesEnde();
+        if (en == null || uhr.getAsLong() < en.ms) return false;
+        ausschalten(en.grund);
+        return true;
+    }
+
+    private CampingPlan.Ende aktuellesEnde() {
+        long seit = sitzungSeitMs > 0 ? sitzungSeitMs : (regler != null ? regler.aktivSeitMs() : 0);
+        if (seit <= 0) return null;
+        CampingRegler.Einstellung e = einstellung();
+        return CampingPlan.ende(seit, sitzungEndeMs, e.weckMinuteDesTages, e.nachlaufMinuten,
+                e.hoechstdauerStunden, zone);
     }
 
     synchronized JSONObject rueckmelden(String art) {
@@ -299,7 +405,9 @@ public final class Camping {
                 if (heizweg == null) heizweg = new RouterHeizweg(tabelle.cloudTemperatur);
             }
         }
+        planAusfuehren();
         if (!aktiv) return;
+        if (endeRegel()) return;
         CampingRegler.Lage l = lage();
         if (regler == null) {
             if (l.fahrt == CampingRegler.Fahrt.FAEHRT) ausschalten("losgefahren");
@@ -549,6 +657,7 @@ public final class Camping {
         }
         e.v12Grenze = v12;
         e.hoechstdauerStunden = clamp(c.optInt("hoechstdauerStunden", 12), 1, 24);
+        e.nachlaufMinuten = clamp(c.optInt("nachlaufMinuten", 60), 0, 240);
         return e;
     }
 
@@ -592,6 +701,14 @@ public final class Camping {
             o.put("innenC", JSONObject.NULL);
             CampingRegler.Einstellung e = einstellung();
             o.put("waerme", e.waerme).put("socGrenze", e.socGrenze);
+            // 0.1.17 Plan (Cockpit): geplant {start, ende} in ms bzw. null, planFehler {grund, zeit} bzw. null
+            o.put("geplant", planStartMs > 0 ? CampingPlan.alsJson(planStartMs, planEndeMs) : JSONObject.NULL);
+            o.put("planFehler", planFehler != null
+                    ? new JSONObject().put("grund", planFehler).put("zeit", planFehlerMs) : JSONObject.NULL);
+            if (aktiv) {
+                CampingPlan.Ende en = aktuellesEnde();
+                if (en != null) o.put("endeUm", en.ms).put("endeGrund", en.grund);
+            }
             if (regler != null) {
                 o.put("seit", aktiv ? regler.aktivSeitMs() : 0);
                 o.put("phase", regler.phase().name().toLowerCase());
@@ -666,6 +783,9 @@ public final class Camping {
         try {
             z.put("aktiv", aktiv);
             if (regler != null) z.put("regler", regler.zustand());
+            z.put("plan", new JSONObject().put("startMs", planStartMs).put("endeMs", planEndeMs)
+                    .put("fehler", planFehler == null ? "" : planFehler).put("fehlerMs", planFehlerMs));
+            z.put("sitzungSeitMs", sitzungSeitMs).put("sitzungEndeMs", sitzungEndeMs);
         } catch (Exception ignored) { }
         schreibe(ZUSTAND_DATEI, z.toString());
     }

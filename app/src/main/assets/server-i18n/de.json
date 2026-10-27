@@ -166,6 +166,10 @@
     "camping_heizen_aus_fehlgeschlagen": "Camping: Heizen ließ sich nicht ausschalten – bitte am Auto prüfen",
     "camping_cloud_gesperrt_weg2": "Camping: Fernzugang 2 ist nach einer Cloud-Sitzung weg – Heizen über die Cloud gesperrt",
     "camping_weck_grenze": "Camping: Höchstzahl an Cloud-Sitzungen erreicht – keine weiteren heute Nacht",
+    "camping_aus_plan": "Camping aus (geplantes Ende)",
+    "camping_aus_weckzeit": "Camping aus (Weckzeit + Nachlauf)",
+    "camping_aus_hoechstdauer": "Camping aus (Höchstdauer erreicht)",
+    "camping_plan_fehler": "Camping: geplanter Start nicht möglich – Grund in Panoptes",
     "camping_tuer_offen": "Camping: {0} geöffnet",
     "guard_stop_reason_soc": "Fahrakku zu leer",
     "guard_stop_reason_v12": "Starterbatterie zu schwach",
@@ -1912,9 +1916,13 @@
         "title": "12-V-Warnung",
         "help": "Liegt die Starterbatterie darunter, hört das Heizen auf und es kommt eine Meldung. Leer = aus."
       },
+      "nachlaufMinuten": {
+        "title": "Nachlauf nach der Weckzeit",
+        "help": "Camping endet so viele Minuten nach der Weckzeit – außer im Plan steht ein eigenes Ende. Spätestens nach der Höchstdauer, beim Losfahren sofort."
+      },
       "hoechstdauerStunden": {
-        "title": "Höchstdauer Heizen",
-        "help": "Nach so vielen Stunden hört das Heizen auf, mit Meldung."
+        "title": "Höchstdauer",
+        "help": "Spätestens nach so vielen Stunden endet Camping (und damit das Heizen), mit Meldung."
       },
       "waechterBewohnt": {
         "title": "Wächter „bewohnt“",
@@ -2101,6 +2109,27 @@
       "acStandard": {
         "title": "AC-Laden ohne bekannten Ort kostet",
         "help": "Gilt für alle AC-Ladungen ohne gemerkten Ort (z. B. zu Hause), dann fragt Panoptes dort nicht. 0 = gratis. Leer = jedes Mal fragen."
+      }
+    },
+    "zaehlen": {
+      "an": {
+        "title": "Anonym mitzählen",
+        "help": "Panoptes meldet einmal am Tag nur eine zufällige Kennung und die Versionsnummer, keine Daten über dich oder dein Auto. Standard aus. Ausschalten löscht die Zählung auch am Server."
+      },
+      "kennung": {
+        "title": "Zufallskennung",
+        "help": "Wird nur hier erzeugt und hat nichts mit dir, dem Auto oder dem Gerät zu tun. Leer, solange Mitzählen aus ist."
+      },
+      "kennungAktion": {
+        "title": "Kennung ändern",
+        "help": "Neu erzeugen oder löschen. Die alte Kennung wird auch am Server gelöscht. Löschen schaltet das Mitzählen aus.",
+        "behalten": "Behalten",
+        "neu": "Neue Kennung erzeugen",
+        "loeschen": "Kennung löschen"
+      },
+      "url": {
+        "title": "Zähl-Adresse",
+        "help": "Wohin die Zählung geht. Nur ändern, wenn du einen eigenen Zähler betreibst."
       }
     }
   },

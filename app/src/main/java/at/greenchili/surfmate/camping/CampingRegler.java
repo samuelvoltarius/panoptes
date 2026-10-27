@@ -35,6 +35,8 @@ public final class CampingRegler {
         public int socGrenze = 20;
         public double v12Grenze = Double.NaN;              // NaN = aus
         public int hoechstdauerStunden = 12;
+        /** 0.1.17: Camping endet Weckzeit + so viele Minuten (ohne ausdrückliches Plan-Ende). */
+        public int nachlaufMinuten = 60;
     }
 
     /** Lage in diesem Takt. */

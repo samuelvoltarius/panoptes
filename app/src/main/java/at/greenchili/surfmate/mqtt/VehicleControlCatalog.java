@@ -454,7 +454,11 @@ public final class VehicleControlCatalog {
                         c.put("fan_modes", fans);
                         c.put("fan_mode_command_topic", cmdBase + "/fan_mode/set");
                         c.put("fan_mode_state_topic", baseTopic + "/ac_fan");
-                        c.put("current_temperature_topic", baseTopic + "/cabin_temp");
+                        // 0.1.17: Gebläse 0 (Klima aus) ist kein fan_mode → "None" setzt fan_mode in HA auf leer
+                        // statt alle 2 min „Invalid fan_modes mode: 0“.
+                        c.put("fan_mode_state_template",
+                                "{% if (value | int(0)) >= 1 %}{{ value | int(0) }}{% else %}None{% endif %}");
+                        // 0.1.16/0.1.17: keine current_temperature – cabin_temp war der Klima-Sollwert, kein Fühler
                         break;
                     }
                     case "cover": {

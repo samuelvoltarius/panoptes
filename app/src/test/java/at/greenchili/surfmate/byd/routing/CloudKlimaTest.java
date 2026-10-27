@@ -98,4 +98,20 @@ public class CloudKlimaTest {
         String col = Quelltext.lies(Paths.get("src/main/java/at/greenchili/surfmate/byd/BydDataCollector.java"));
         assertTrue("Rückgabecode immer geloggt", col.contains("logger.info(\"AC \" + methodName + \"(0) Rückgabe=\" + result);"));
     }
+
+    @Test
+    public void echoUnbekanntBeiAutoAusIstFehlschlag() throws Exception {
+        long now = System.currentTimeMillis();
+        assertTrue(VehicleCommandRouter.autoNachweislichAn(
+                new at.greenchili.surfmate.byd.BydVehicleData.Builder().powerLevel(2, now - 10_000L).build(), now));
+        assertFalse("alt", VehicleCommandRouter.autoNachweislichAn(
+                new at.greenchili.surfmate.byd.BydVehicleData.Builder().powerLevel(2, now - 61_000L).build(), now));
+        assertFalse("aus", VehicleCommandRouter.autoNachweislichAn(
+                new at.greenchili.surfmate.byd.BydVehicleData.Builder().powerLevel(0, now).build(), now));
+        assertFalse("unbekannt", VehicleCommandRouter.autoNachweislichAn(
+                new at.greenchili.surfmate.byd.BydVehicleData.Builder().build(), now));
+        assertFalse(VehicleCommandRouter.autoNachweislichAn(null, now));
+        String q = Quelltext.lies(Paths.get("src/main/java/at/greenchili/surfmate/byd/routing/VehicleCommandRouter.java"));
+        assertTrue(q.contains("if (echo == BydDataCollector.ECHO_UNBEKANNT && !autoNachweislichAn(c.getData(), System.currentTimeMillis())) {"));
+    }
 }

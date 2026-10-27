@@ -76,6 +76,7 @@ public final class ExternGuard {
             // 0.1.16 Camping: Panoptes-Funktion (Regel A: in Stufe 2a keine Fahrzeugwirkung)
             "/api/camping",
             "/api/camping/rueckmeldung",
+            "/api/camping/plan",   // 0.1.17: Cockpit plant Start/Ende (Panoptes-Funktion)
             "/api/camping/weiter"
     )));
 

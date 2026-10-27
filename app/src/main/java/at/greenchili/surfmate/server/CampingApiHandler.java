@@ -15,6 +15,8 @@ import java.io.OutputStream;
  *   <li>{@code POST /api/camping} {@code {"an": true|false}} – ein/aus</li>
  *   <li>{@code POST /api/camping/rueckmeldung} {@code {"art": "zu_kalt"|"passt"|"zu_warm"}}</li>
  *   <li>{@code POST /api/camping/weiter} – nach „Auto hat abgeschaltet“ weiter regeln</li>
+ *   <li>{@code POST /api/camping/plan} {@code {"start": ISO|HH:MM, "ende": ISO|HH:MM|null}} bzw. {@code {"loeschen": true}}
+ *       – geplanter Start (0.1.17, Cockpit)</li>
  * </ul>
  */
 public final class CampingApiHandler {
@@ -41,6 +43,13 @@ public final class CampingApiHandler {
             JSONObject req = json(body);
             JSONObject r = Camping.rueckmeldung(req == null ? "" : req.optString("art", ""));
             HttpResponse.sendJson(out, r.optBoolean("ok", false) ? 200 : 400, r.toString());
+            return true;
+        }
+        if (p.equals("/api/camping/plan") && "POST".equals(method)) {
+            JSONObject req = json(body);
+            JSONObject r = Camping.plan(req);
+            HttpResponse.sendJson(out, r.optBoolean("ok", false) ? 200
+                    : "camping_laeuft".equals(r.optString("fehler")) ? 409 : 400, r.toString());
             return true;
         }
         if (p.equals("/api/camping/weiter") && "POST".equals(method)) {

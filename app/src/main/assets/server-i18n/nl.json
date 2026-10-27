@@ -172,6 +172,10 @@
     "camping_heizen_aus_fehlgeschlagen": "Kamperen: verwarmen kon niet worden uitgeschakeld – controleer de auto",
     "camping_cloud_gesperrt_weg2": "Kamperen: toegang op afstand 2 is weg na een cloudsessie – verwarmen via de cloud geblokkeerd",
     "camping_weck_grenze": "Kamperen: maximaal aantal cloudsessies bereikt – vannacht geen meer",
+    "camping_aus_plan": "Kamperen uit (gepland einde)",
+    "camping_aus_weckzeit": "Kamperen uit (wektijd + uitloop)",
+    "camping_aus_hoechstdauer": "Kamperen uit (maximale duur bereikt)",
+    "camping_plan_fehler": "Kamperen: geplande start niet mogelijk – reden in Panoptes",
     "camping_tuer_offen": "Kamperen: {0} geopend",
     "guard_stop_reason_soc": "hoofdaccu te leeg",
     "guard_stop_reason_v12": "12 V-accu te zwak",
@@ -1918,9 +1922,13 @@
         "title": "12V-waarschuwing",
         "help": "Zakt de startaccu daaronder, dan stopt het verwarmen en komt er een melding. Leeg = uit."
       },
+      "nachlaufMinuten": {
+        "title": "Uitloop na de wektijd",
+        "help": "Kamperen stopt zoveel minuten na de wektijd – tenzij het plan een eigen einde heeft. Uiterlijk na de maximale duur, direct bij wegrijden."
+      },
       "hoechstdauerStunden": {
-        "title": "Maximale verwarmingsduur",
-        "help": "Na zoveel uur stopt het verwarmen, met een melding."
+        "title": "Maximale duur",
+        "help": "Kamperen (en daarmee het verwarmen) stopt uiterlijk na zoveel uur, met een melding."
       },
       "waechterBewohnt": {
         "title": "Bewaker „bewoond\"",
@@ -2107,6 +2115,27 @@
       "acStandard": {
         "title": "AC-laden op onbekende plekken kost",
         "help": "Geldt voor alle AC-laadbeurten op niet opgeslagen plekken (bijv. thuis), dan vraagt Panoptes daar niet. 0 = gratis. Leeg = elke keer vragen."
+      }
+    },
+    "zaehlen": {
+      "an": {
+        "title": "Anoniem meetellen",
+        "help": "Panoptes meldt één keer per dag alleen een willekeurige ID en het versienummer, geen gegevens over jou of je auto. Standaard uit. Uitzetten wist de telling ook op de server."
+      },
+      "kennung": {
+        "title": "Willekeurige ID",
+        "help": "Wordt alleen hier aangemaakt en heeft niets met jou, de auto of het apparaat te maken. Leeg zolang meetellen uit staat."
+      },
+      "kennungAktion": {
+        "title": "ID wijzigen",
+        "help": "Nieuw aanmaken of wissen. De oude ID wordt ook op de server gewist. Wissen zet meetellen uit.",
+        "behalten": "Behouden",
+        "neu": "Nieuwe ID aanmaken",
+        "loeschen": "ID wissen"
+      },
+      "url": {
+        "title": "Teladres",
+        "help": "Waar de telling naartoe gaat. Alleen wijzigen als je een eigen teller draait."
       }
     }
   },

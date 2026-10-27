@@ -512,8 +512,15 @@ public final class VehicleCommandRouter {
             // erst einschalten, Wirkung abwarten, dann Sollwert, Echo prüfen. Keine Wirkung = Fehlschlag –
             // bei Auto aus folgt OPENAIR (Router, CloudPowerGate), bei Auto an nie (localOnlyWhenAwake).
             if (!c.setAcPower(true)) return false;
-            if (c.warteAufKlimaEcho(true, KLIMA_ECHO_MS) == BydDataCollector.ECHO_AUS) {
+            int echo = c.warteAufKlimaEcho(true, KLIMA_ECHO_MS);
+            if (echo == BydDataCollector.ECHO_AUS) {
                 logger.warn("climate-on: start(0) ohne Wirkung (AC bleibt aus) – lokal fehlgeschlagen");
+                return false;
+            }
+            // 0.1.17 (Deploy 23.10.): Ist der AC-Zustand nicht lesbar und das Auto nicht nachweislich an, gilt
+            // start(0) als wirkungslos – sonst bliebe bei Auto aus ein falscher Erfolg ohne Cloud-Ausweichen.
+            if (echo == BydDataCollector.ECHO_UNBEKANNT && !autoNachweislichAn(c.getData(), System.currentTimeMillis())) {
+                logger.warn("climate-on: Wirkung unbekannt und Auto nicht nachweislich an – lokal fehlgeschlagen");
                 return false;
             }
             if (!c.setAcTemperature(0, tempCelsius)) return false;
@@ -571,6 +578,13 @@ public final class VehicleCommandRouter {
         // vehicle responds by powering itself down. See localOnlyWhenAwake().
         public boolean localOnlyWhenAwake() { return true; }
         public boolean allowCloudFallbackFromMqtt() { return true; }
+    }
+
+    /** 0.1.17: Auto nachweislich an = power_level ≥ 2, live gelesen, höchstens 60 s alt. */
+    static boolean autoNachweislichAn(BydVehicleData d, long nowMs) {
+        if (d == null || d.powerLevel == BydVehicleData.UNAVAILABLE || d.powerLevelAtMs <= 0L) return false;
+        long alter = nowMs - d.powerLevelAtMs;
+        return d.powerLevel >= 2 && alter >= -5_000L && alter <= 60_000L;
     }
 
     /** 0.1.16: Frist für die Wirkung von start/stop (Deploy-Test: Echo nach spätestens 32 s per REST). */
