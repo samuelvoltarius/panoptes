@@ -102,7 +102,17 @@ public final class CloudPowerGate {
         return "climate-off".equals(commandName) || "climate-remote-off".equals(commandName);
     }
 
+    /**
+     * Aufsperren über die Cloud nie – einzige Ausnahme (0.1.18, Projektinhaber 27.10.) ist der handy-signierte Befehl
+     * {@code unlock-handy} (VehicleCommandRouter.HandyUnlockCommand, nur mit Biometrie-Freigabe baubar). Für ihn gilt
+     * die normale Regel: nur bei frischem power_level 0 und ACC nicht an. Jeder andere Name mit „unlock“ bleibt zu.
+     */
     static boolean isUnlock(String commandName) {
-        return commandName != null && commandName.trim().equalsIgnoreCase("unlock");
+        if (commandName == null) return false;
+        String n = commandName.trim().toLowerCase(java.util.Locale.ROOT);
+        if (n.equals(UNLOCK_HANDY)) return false;
+        return n.contains("unlock");
     }
+
+    static final String UNLOCK_HANDY = "unlock-handy";
 }

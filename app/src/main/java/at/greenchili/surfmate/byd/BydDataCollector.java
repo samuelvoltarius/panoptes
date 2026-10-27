@@ -2953,6 +2953,71 @@ public class BydDataCollector {
         }
     }
 
+    /** 0.1.18: Echo-Fristen Fenster bzw. Heckklappe (Fenster ~4–6 s Fahrweg, Heckklappe zu ~6–10 s). */
+    public static final long FENSTER_ECHO_MS = 10_000L;
+    public static final long HECKKLAPPE_AUF_ECHO_MS = 10_000L;
+    public static final long HECKKLAPPE_ZU_ECHO_MS = 20_000L;
+
+    /**
+     * 0.1.18: Allgemeines Echo (wie Klima/Sitz): pollt {@code leser} alle {@code schrittMs}, bis er {@code soll}
+     * liefert. Ein negativer Wert heißt „nicht lesbar“. {@link #ECHO_OK} | {@link #ECHO_AUS} (lesbar, nicht
+     * erreicht) | {@link #ECHO_UNBEKANNT} (nie lesbar – keine Aussage, dann gilt die HAL-Rückgabe).
+     */
+    public static int warteAufEcho(java.util.function.IntSupplier leser, int soll, long maxMs, long schrittMs) {
+        long ende = System.currentTimeMillis() + Math.max(0L, maxMs);
+        boolean lesbar = false;
+        while (true) {
+            int v;
+            try {
+                v = leser.getAsInt();
+            } catch (Throwable t) {
+                v = -1;
+            }
+            if (v >= 0) {
+                lesbar = true;
+                if (v == soll) return ECHO_OK;
+            }
+            if (System.currentTimeMillis() >= ende) return lesbar ? ECHO_AUS : ECHO_UNBEKANNT;
+            try {
+                Thread.sleep(Math.max(10L, schrittMs));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return lesbar ? ECHO_AUS : ECHO_UNBEKANNT;
+            }
+        }
+    }
+
+    /** 0.1.18: Heckklappe 1 = offen, 0 = zu, −1 = nicht lesbar (dieselbe Lesung wie die Tür-Ereignisse). */
+    public int readTrunkOpenState() {
+        try {
+            return normalizeDoorOpen(readDoorOpenState(BodyworkConstants.AREA_TRUNK,
+                    isRightHandDriveForDoorMapping()));
+        } catch (Throwable t) {
+            return -1;
+        }
+    }
+
+    /**
+     * 0.1.18: Sammelzustand der vier Seitenfenster (grob, {@link #readWindowOpenState}): 1 = alle lesbaren offen,
+     * 0 = alle lesbaren zu, 2 = gemischt, −1 = keins lesbar.
+     */
+    public int readAllSideWindowsOpenState() {
+        int offen = 0, zu = 0;
+        for (int area = 1; area <= 4; area++) {
+            int s = readWindowOpenState(area);
+            if (s == 1) offen++;
+            else if (s == 0) zu++;
+        }
+        return sammelZustand(offen, zu);
+    }
+
+    static int sammelZustand(int offen, int zu) {
+        if (offen + zu == 0) return -1;
+        if (zu == 0) return 1;
+        if (offen == 0) return 0;
+        return 2;
+    }
+
     /** Echo-Ergebnis: bestätigt. */
     public static final int ECHO_OK = 1;
     /** Echo-Ergebnis: Wert lesbar, aber nicht binnen der Frist erreicht. */

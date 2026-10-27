@@ -1141,12 +1141,34 @@ public final class BydCloudClient {
         return executeRemoteCommand(vin, commandType, null, waitForResult).success;
     }
 
+    /**
+     * 0.1.18 (27.10.: „es soll aufsperren können“, HANDY_API_VERTRAG §3.1): einziger Weg zu OPENDOOR – nur
+     * mit einer frischen {@link at.greenchili.surfmate.handy.HandySignatur.Freigabe} (gültige Biometrie-Signatur des
+     * Handys). Alle anderen Aufrufer (Web, MQTT, HA, Telegram, Automationen, Debug) bleiben hart verweigert.
+     */
+    public CloudCommandResult aufsperrenSigniert(String vin,
+                                                at.greenchili.surfmate.handy.HandySignatur.Freigabe freigabe)
+            throws IOException {
+        if (freigabe == null || !freigabe.frisch(System.currentTimeMillis())) {
+            logger.warn("Remote command OPENDOOR refused: keine frische Handy-Freigabe");
+            return new CloudCommandResult(false, "unlock_removed", "");
+        }
+        return executeRemoteCommandIntern(vin, "OPENDOOR", null, true, true);
+    }
+
     private CloudCommandResult executeRemoteCommand(String vin, String commandType,
                                                     JSONObject extraParams,
                                                     boolean waitForResult) throws IOException {
-        // Aufsperren nie (Projektinhaber, Koordination 0.1.9): auch kein Umweg über einen anderen Aufrufer
-        if ("OPENDOOR".equalsIgnoreCase(commandType)) {
-            logger.warn("Remote command OPENDOOR refused: unlocking is removed from Panoptes");
+        return executeRemoteCommandIntern(vin, commandType, extraParams, waitForResult, false);
+    }
+
+    private CloudCommandResult executeRemoteCommandIntern(String vin, String commandType,
+                                                          JSONObject extraParams,
+                                                          boolean waitForResult,
+                                                          boolean handyFreigabe) throws IOException {
+        // Aufsperren nur mit Handy-Freigabe (aufsperrenSigniert); kein Umweg über einen anderen Aufrufer
+        if ("OPENDOOR".equalsIgnoreCase(commandType) && !handyFreigabe) {
+            logger.warn("Remote command OPENDOOR refused: unlocking only via signed phone command");
             return new CloudCommandResult(false, "unlock_removed", "");
         }
         if (Thread.currentThread().isInterrupted()) {

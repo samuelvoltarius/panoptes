@@ -16,6 +16,7 @@ public final class DebugSchreibsperre {
             "/api/debug/car-property/set",                 // beliebige Fahrzeug-Property schreiben
             "/api/debug/light/fire",                       // Licht/Warnblinker auslösen (auch fire-all)
             "/api/debug/seat/write",                       // Sitz bewegen
+            "/api/debug/bs-spike",                         // 0.1.18: zeichnet 6 s ein rotes Rechteck aufs Display
     };
 
     public static boolean gesperrt(String path) {

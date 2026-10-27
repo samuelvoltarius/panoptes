@@ -7,6 +7,8 @@ import at.greenchili.surfmate.logging.DaemonLogger;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.util.LinkedList;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -21,7 +23,11 @@ import java.util.function.Supplier;
  *       Dauer auf 10/15/20/25/30 min aufgerundet. Aus: nichts – die Sitzung läuft ab, <b>nie CLOSEAIR</b>
  *       (Vorfall 13.10.2026). Höchstens {@link #MAX_WECKUNGEN} Sitzungen je Camping, Abstand mindestens
  *       {@link #MIN_ABSTAND_MS}. Stirbt Weg 2 (Tailscale-App, VPN-Netz {@code tun*}) nach einer Sitzung, wird H2
- *       gesperrt (Regel B, BYD-Massen-forceStop beim ACC-off, WEG2_KILL_BEFUND).</li>
+ *       gesperrt (Regel B, BYD-Massen-forceStop beim ACC-off, WEG2_KILL_BEFUND).
+ *       <br>0.1.18 (27.10.2026): Erfolg nur mit Cloud-Bestätigung (BYD-Endergebnis über
+ *       {@code remoteControlResult}, siehe BydCloudClient). Nach {@link #MAX_CLOUD_FEHLVERSUCHE} Fehlschlägen in
+ *       Folge pausiert H2 bis zum nächsten Camping (keine Endlos-Wiederholung, Meldung über Camping). Jede
+ *       Cloud-Entscheidung landet im Protokoll ({@code camping_cloud.jsonl}).</li>
  *   <li>Sonst (Zustand unbekannt oder alt, ACC, Laden mit anderem power_level): übersprungen, nichts gesendet.</li>
  * </ul>
  */
@@ -33,29 +39,44 @@ final class RouterHeizweg implements Heizweg {
     static final long AN_MAX_ALTER_MS = 60_000L;
     /** Prüfen, ob Weg 2 noch lebt: frühestens so lange nach einer Cloud-Sitzung. */
     static final long WEG2_PRUEFEN_NACH_MS = 3 * 60_000L;
+    /** So viele Cloud-Fehlschläge in Folge, dann Pause bis zum nächsten Camping. */
+    static final int MAX_CLOUD_FEHLVERSUCHE = 2;
+    /** Die letzten Protokolleinträge im Status. */
+    static final int STAND_PROTOKOLL = 5;
 
     private final Function<VehicleCommandRouter.VehicleCommand, VehicleCommandRouter.CommandResult> router;
     private final Function<String, CloudPowerGate.Decision> gate;
     private final Supplier<Boolean> weg2Lebt;
     private final int cloudTemperatur;
+    private final Consumer<JSONObject> protokoll;
+    private final LinkedList<JSONObject> letzteEintraege = new LinkedList<>();
 
     private int weckungen;
     private long letzteCloudMs;
     private Boolean weg2VorCloud;
     private boolean cloudGesperrt;
+    private int cloudFehlVersuche;
+    private boolean cloudPausiert;
     private String letztesErgebnis;
 
-    RouterHeizweg(int cloudTemperatur) {
+    RouterHeizweg(int cloudTemperatur, Consumer<JSONObject> protokoll) {
         this(v -> VehicleCommandRouter.getInstance().execute(v), CloudPowerGate::evaluateLive,
-                RouterHeizweg::weg2NetzDa, cloudTemperatur);
+                RouterHeizweg::weg2NetzDa, cloudTemperatur, protokoll);
     }
 
     RouterHeizweg(Function<VehicleCommandRouter.VehicleCommand, VehicleCommandRouter.CommandResult> router,
                   Function<String, CloudPowerGate.Decision> gate, Supplier<Boolean> weg2Lebt, int cloudTemperatur) {
+        this(router, gate, weg2Lebt, cloudTemperatur, null);
+    }
+
+    RouterHeizweg(Function<VehicleCommandRouter.VehicleCommand, VehicleCommandRouter.CommandResult> router,
+                  Function<String, CloudPowerGate.Decision> gate, Supplier<Boolean> weg2Lebt, int cloudTemperatur,
+                  Consumer<JSONObject> protokoll) {
         this.router = router;
         this.gate = gate;
         this.weg2Lebt = weg2Lebt;
         this.cloudTemperatur = Math.max(15, Math.min(31, cloudTemperatur));
+        this.protokoll = protokoll;
     }
 
     static boolean autoAn(CampingRegler.Lage l) {
@@ -90,8 +111,11 @@ final class RouterHeizweg implements Heizweg {
                 e = Ergebnis.lokal();
             }
         } else if (autoAus(l)) {
+            JSONObject eintrag = null;
             if (!cloudErlaubt) {
                 e = Ergebnis.uebersprungen("cloud_aus");
+            } else if (cloudPausiert) {
+                e = Ergebnis.uebersprungen("cloud_pausiert");
             } else if (cloudGesperrt) {
                 e = Ergebnis.uebersprungen("cloud_gesperrt_weg2");
             } else if (weckungen >= MAX_WECKUNGEN) {
@@ -100,18 +124,48 @@ final class RouterHeizweg implements Heizweg {
                 e = Ergebnis.uebersprungen("weck_abstand");
             } else {
                 CloudPowerGate.Decision g = gate.apply("climate-remote-on");
+                eintrag = eintrag("ein", l);
+                put(eintrag, "gate", g == null ? "null" : (g.allowed ? "erlaubt" : g.reasonKey));
                 if (g == null || !g.allowed) {
                     e = Ergebnis.uebersprungen("gate_" + (g == null ? "null" : g.reasonKey));
                 } else {
                     weg2VorCloud = weg2Lebt.get();
+                    int dauer = cloudDauer(dauerMin);
+                    long t0 = System.currentTimeMillis();
                     VehicleCommandRouter.CommandResult r = router.apply(
-                            new VehicleCommandRouter.ClimateRemoteOnCommand(cloudTemperatur, cloudDauer(dauerMin)));
+                            new VehicleCommandRouter.ClimateRemoteOnCommand(cloudTemperatur, dauer));
                     weckungen++;
                     letzteCloudMs = l.jetztMs;
-                    e = r != null && r.outcome == VehicleCommandRouter.Outcome.SUCCESS
-                            ? Ergebnis.cloud()
-                            : Ergebnis.fehler("cloud_" + (r == null ? "null" : r.outcome.name().toLowerCase()));
+                    // SUCCESS nur mit BYD-Endergebnis (Cloud-Bestätigung); alles andere ist ein Fehlschlag
+                    boolean bestaetigt = r != null && r.outcome == VehicleCommandRouter.Outcome.SUCCESS
+                            && r.path == VehicleCommandRouter.Path.CLOUD;
+                    if (bestaetigt) {
+                        cloudFehlVersuche = 0;
+                        e = Ergebnis.cloud();
+                    } else {
+                        cloudFehlVersuche++;
+                        if (cloudFehlVersuche >= MAX_CLOUD_FEHLVERSUCHE) {
+                            cloudPausiert = true;
+                            logger.warn("Cloud-Heizen pausiert: " + cloudFehlVersuche + " Fehlschläge ohne Bestätigung");
+                        }
+                        e = Ergebnis.fehler("cloud_" + (r == null ? "null" : r.outcome.name().toLowerCase()));
+                    }
+                    put(eintrag, "temperatur", cloudTemperatur);
+                    put(eintrag, "dauerMin", dauer);
+                    put(eintrag, "weckung", weckungen);
+                    put(eintrag, "outcome", r == null ? "null" : r.outcome.name().toLowerCase());
+                    put(eintrag, "pfad", r == null || r.path == null ? "null" : r.path.name().toLowerCase());
+                    put(eintrag, "bestaetigt", bestaetigt);
+                    put(eintrag, "ms", System.currentTimeMillis() - t0);
+                    put(eintrag, "fehlVersuche", cloudFehlVersuche);
+                    put(eintrag, "pausiert", cloudPausiert);
+                    put(eintrag, "weg2Vorher", weg2VorCloud == null ? JSONObject.NULL : weg2VorCloud);
                 }
+            }
+            if (eintrag == null && cloudErlaubt) eintrag = eintrag("ein", l);
+            if (eintrag != null) {
+                put(eintrag, "ergebnis", e.toString());
+                protokollieren(eintrag);
             }
         } else {
             e = Ergebnis.uebersprungen("zustand_unklar");
@@ -143,7 +197,16 @@ final class RouterHeizweg implements Heizweg {
         if (weg2VorCloud == null || letzteCloudMs <= 0 || jetztMs - letzteCloudMs < WEG2_PRUEFEN_NACH_MS) return null;
         Boolean vorher = weg2VorCloud;
         weg2VorCloud = null;
-        if (Boolean.TRUE.equals(vorher) && Boolean.FALSE.equals(weg2Lebt.get())) {
+        Boolean nachher = weg2Lebt.get();
+        boolean sperren = Boolean.TRUE.equals(vorher) && Boolean.FALSE.equals(nachher);
+        JSONObject o = new JSONObject();
+        put(o, "zeit", jetztMs);
+        put(o, "art", "weg2");
+        put(o, "vorher", vorher);
+        put(o, "nachher", nachher == null ? JSONObject.NULL : nachher);
+        put(o, "gesperrt", sperren);
+        protokollieren(o);
+        if (sperren) {
             cloudGesperrt = true;
             logger.warn("Weg 2 (Tailscale-App) nach Cloud-Sitzung weg – H2 gesperrt (Regel B)");
             return "cloud_gesperrt_weg2";
@@ -157,6 +220,8 @@ final class RouterHeizweg implements Heizweg {
         letzteCloudMs = 0;
         weg2VorCloud = null;
         letztesErgebnis = null;
+        cloudFehlVersuche = 0;
+        cloudPausiert = false;
         // cloudGesperrt bleibt bis zum Daemon-Neustart: erst die Koordination entscheidet
     }
 
@@ -166,9 +231,42 @@ final class RouterHeizweg implements Heizweg {
         try {
             o.put("weckungen", weckungen).put("maxWeckungen", MAX_WECKUNGEN).put("cloudGesperrt", cloudGesperrt)
                     .put("letzteCloudMs", letzteCloudMs).put("cloudTemperatur", cloudTemperatur)
-                    .put("letztes", letztesErgebnis == null ? JSONObject.NULL : letztesErgebnis);
+                    .put("letztes", letztesErgebnis == null ? JSONObject.NULL : letztesErgebnis)
+                    .put("cloudFehlVersuche", cloudFehlVersuche).put("cloudPausiert", cloudPausiert)
+                    .put("protokoll", new org.json.JSONArray(letzteEintraege));
         } catch (Exception ignored) { }
         return o;
+    }
+
+    /** Cloud wegen wiederholter Fehlschläge pausiert (bis zum nächsten Camping). */
+    synchronized boolean cloudPausiert() {
+        return cloudPausiert;
+    }
+
+    private static JSONObject eintrag(String art, CampingRegler.Lage l) {
+        JSONObject o = new JSONObject();
+        put(o, "zeit", l.jetztMs);
+        put(o, "art", art);
+        put(o, "powerLevel", l.powerLevel);
+        put(o, "powerLevelAlterMs", l.powerLevelAlterMs);
+        return o;
+    }
+
+    private static void put(JSONObject o, String k, Object v) {
+        try {
+            o.put(k, v);
+        } catch (Exception ignored) { }
+    }
+
+    /** Protokoll jeder Cloud-Entscheidung (der erste echte Einsatz wird ausgewertet). Wirft nie. */
+    private void protokollieren(JSONObject o) {
+        letzteEintraege.addLast(o);
+        while (letzteEintraege.size() > STAND_PROTOKOLL) letzteEintraege.removeFirst();
+        logger.info("Cloud-Protokoll: " + o);
+        if (protokoll == null) return;
+        try {
+            protokoll.accept(o);
+        } catch (Throwable ignored) { }
     }
 
     /** Weg 2 lebt = ein VPN-Netz tun* ist da (wie Weg2Waechter). Unlesbar → null (keine Aussage). */

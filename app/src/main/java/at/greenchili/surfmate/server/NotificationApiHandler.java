@@ -370,6 +370,36 @@ public final class NotificationApiHandler {
         return true;
     }
 
+    /**
+     * 0.1.18 Handy-Vertrag §4: Push-Abo einer Handy-Kopplung anlegen (ersetzt ein altes). Standard: alle
+     * Kategorien wie bei neuen Browser-Abos, aber ohne „Info“ (minSeverity WARN). Liefert die Abo-id oder null.
+     */
+    public static String handyAboAnlegen(String endpoint, byte[] p256dh, byte[] auth, String label) {
+        SubscriptionStore store = subStore;
+        if (store == null || endpoint == null) return null;
+        try {
+            String id = SubscriptionStore.idForEndpoint(endpoint);
+            store.clearTombstone(id);   // ausdrücklicher Wunsch der Handy-App, wie force=true
+            PushSubscription sub = new PushSubscription(id, endpoint, p256dh, auth, label,
+                    System.currentTimeMillis());
+            if (registry != null) sub.mutedCategories.addAll(PushSubscription.defaultMutedCategories(registry));
+            sub.minSeverity = at.greenchili.surfmate.notifications.NotificationEvent.Severity.WARN;
+            store.put(sub);
+            return id;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** 0.1.18: Push-Abo einer Handy-Kopplung entfernen (Widerruf, „push/aus“, neues Abo). */
+    public static void handyAboEntfernen(String id) {
+        SubscriptionStore store = subStore;
+        if (store == null || id == null) return;
+        try {
+            store.remove(id);
+        } catch (Exception ignored) { }
+    }
+
     private static boolean unsubscribe(String body, OutputStream out) throws Exception {
         if (body == null || body.isEmpty()) {
             HttpResponse.sendError(out, 400, "missing body");

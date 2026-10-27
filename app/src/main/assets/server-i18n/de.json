@@ -166,6 +166,7 @@
     "camping_heizen_aus_fehlgeschlagen": "Camping: Heizen ließ sich nicht ausschalten – bitte am Auto prüfen",
     "camping_cloud_gesperrt_weg2": "Camping: Fernzugang 2 ist nach einer Cloud-Sitzung weg – Heizen über die Cloud gesperrt",
     "camping_weck_grenze": "Camping: Höchstzahl an Cloud-Sitzungen erreicht – keine weiteren heute Nacht",
+    "camping_cloud_pausiert": "Camping: Cloud-Heizen pausiert – zweimal keine Bestätigung von BYD. Heute Nacht keine weiteren Cloud-Sitzungen, Panoptes wartet auf dich",
     "camping_aus_plan": "Camping aus (geplantes Ende)",
     "camping_aus_weckzeit": "Camping aus (Weckzeit + Nachlauf)",
     "camping_aus_hoechstdauer": "Camping aus (Höchstdauer erreicht)",
@@ -749,7 +750,8 @@
       "schon_entschieden": "Diese Anfrage ist schon entschieden.",
       "abgelaufen": "⌛ Die Anfrage ist abgelaufen.",
       "fehler": "⚠️ Panoptes ist gerade nicht erreichbar. Bitte im Web erlauben.",
-      "anfrage_ha": "🔗 *Home Assistant „{0}“ will sich verbinden*\nPrüfzahl: *{1}*\n\nStimmt die Zahl mit der in Home Assistant überein? Die Anfrage gilt 2 Minuten."
+      "anfrage_ha": "🔗 *Home Assistant „{0}“ will sich verbinden*\nPrüfzahl: *{1}*\n\nStimmt die Zahl mit der in Home Assistant überein? Die Anfrage gilt 2 Minuten.",
+      "anfrage_handy": "📱 *Handy „{0}“ will sich verbinden*\nPrüfzahl: *{1}*\n\nStimmt die Zahl mit der in der App überein? Die Anfrage gilt 2 Minuten."
     },
     "health": {
       "repariert": "🩺 *Wächter war {0} min aus – repariert.* Panoptes hat sich selbst wieder scharf geschaltet.",
@@ -812,6 +814,12 @@
         "label": "Updates",
         "note": "Eine neue Panoptes-Version ist da oder wurde installiert."
       }
+    },
+    "handy": {
+      "schluessel": "🔑 Handy „{0}“ hat einen Aufsperr-Schlüssel hinterlegt. Warst du das nicht, entkoppel das Gerät in Panoptes.",
+      "aufsperren_ok": "🔓 *Aufgesperrt* über Handy „{0}“.",
+      "aufsperren_unbestaetigt": "🔓 Aufsperr-Befehl über Handy „{0}“ gesendet – die Bestätigung vom Auto fehlt.",
+      "aufsperren_abgelehnt": "🔒 Aufsperren über Handy „{0}“ abgelehnt ({1})."
     }
   },
   "vehicle_control": {
@@ -1891,7 +1899,7 @@
       },
       "heizweg": {
         "title": "Heizweg",
-        "help": "Wie Panoptes heizt. „Nur bei Auto an“ schaltet die Klimaanlage lokal, solange das Auto eingeschaltet in P steht. „Auch über die BYD-Cloud“ startet bei ausgeschaltetem Auto Fernklima-Sitzungen (10–30 min, höchstens 12 je Nacht, Abstand mindestens 45 min); das weckt das Auto jedes Mal. „Probelauf“ schaltet nichts und zeigt nur, was passieren würde.",
+        "help": "Wie Panoptes heizt. „Nur bei Auto an“ schaltet die Klimaanlage lokal, solange das Auto eingeschaltet in P steht. „Auch über die BYD-Cloud“ startet bei ausgeschaltetem Auto Fernklima-Sitzungen (10–30 min, höchstens 12 je Nacht, Abstand mindestens 45 min); das weckt das Auto jedes Mal. „Probelauf“ schaltet nichts und zeigt nur, was passieren würde. Jede Cloud-Sitzung zählt nur mit Bestätigung von BYD; nach zwei Fehlschlägen ruht das Cloud-Heizen bis zum nächsten Camping.",
         "probelauf": "Probelauf (schaltet nichts)",
         "auto_an": "Nur bei Auto an (lokal)",
         "auto_an_und_cloud": "Auch über die BYD-Cloud bei Auto aus"

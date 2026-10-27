@@ -5038,7 +5038,19 @@
     "upd_badge_paused": "En pause",
     "upd_ph_paused": "Téléchargement interrompu. Il reprendra au prochain stationnement.",
     "upd_net_wlan": "Wi-Fi",
-    "upd_net_mobile": "Données mobiles"
+    "upd_net_mobile": "Données mobiles",
+    "handy_rechte": "Autorisé :",
+    "handy_recht_klima": "Climatisation",
+    "handy_recht_zusperren": "Verrouiller",
+    "handy_recht_aufsperren": "Déverrouiller (avec empreinte/Face ID)",
+    "handy_recht_push": "Notifications",
+    "handy_schluessel_da": "Clé de déverrouillage enregistrée{g}.",
+    "handy_schluessel_fehlt": "Aucune clé de déverrouillage enregistrée.",
+    "handy_schluessel_weg": "Supprimer la clé",
+    "handy_aufsperren_confirm": "Ce téléphone pourra alors déverrouiller la voiture – uniquement après empreinte ou Face ID sur le téléphone, et vous recevez un message Telegram à chaque déverrouillage. Activer ?",
+    "handy_schluessel_confirm": "Supprimer la clé de déverrouillage ? Le téléphone ne pourra déverrouiller à nouveau qu'après avoir enregistré une nouvelle clé (p. ex. après une nouvelle empreinte).",
+    "handy_gespeichert": "Enregistré",
+    "handy_fehler": "Impossible d'enregistrer."
   },
   "guardLegal": {
     "trigger": {

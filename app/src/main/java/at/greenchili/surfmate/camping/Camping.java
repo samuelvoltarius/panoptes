@@ -28,9 +28,11 @@ import java.util.concurrent.TimeUnit;
  * Wächter-Stopp: Takt 60 s, Zustand in kleinen Dateien (überlebt Neustarts), Meldungen über den
  * NotificationBus, Status für {@code /api/camping}.
  *
- * <p><b>Trockenlauf:</b> Der Heizregler entscheidet, aber niemand führt es aus – es wird nur protokolliert
- * („würde einschalten: Stufe 29, Gebläse 2“). Ein Heizweg kommt erst nach Freigabe der Koordination
- * (Regel A). Ohne Heizen ist Camping eine reine Panoptes-Funktion: Wächter „bewohnt“, Ruhe, Akku- und
+ * <p><b>Heizweg</b> ({@code camping.heizweg}, Standard „probelauf“): Im Probelauf entscheidet der Heizregler,
+ * aber niemand führt es aus – es wird nur protokolliert („würde einschalten: Stufe 29, Gebläse 2“). Ab 0.1.18
+ * (27.10.2026) schalten „auto_an“ (lokal) und „auto_an_und_cloud“ (zusätzlich OPENAIR bei Auto aus, hinter
+ * dem CloudPowerGate, mit Cloud-Bestätigung, Pause nach zwei Fehlschlägen, Protokoll {@link #CLOUD_PROTOKOLL})
+ * echt – nur auf ausdrückliche Wahl des Nutzers. Ohne Heizen ist Camping eine reine Panoptes-Funktion: Wächter „bewohnt“, Ruhe, Akku- und
  * 12-V-Wache, Verbrauch. Panoptes schaltet dabei nie das Auto ab.
  *
  * <p>Schnelle Abfragen ({@link #aktiv()}, {@link #blocksArming()}, {@link #ohneAbschreckung()}) lesen nur
@@ -168,7 +170,7 @@ public final class Camping {
             lernen = new HeizLernen();
         }
         regler = tabelle == null ? null : new CampingRegler(tabelle, istProbe(heizwegEinstellung()));
-        if (tabelle != null && heizweg == null) heizweg = new RouterHeizweg(tabelle.cloudTemperatur);
+        if (tabelle != null && heizweg == null) heizweg = new RouterHeizweg(tabelle.cloudTemperatur, this::cloudProtokoll);
         try {
             String z = lies(ZUSTAND_DATEI);
             if (z != null) {
@@ -402,7 +404,7 @@ public final class Camping {
             tabelleLaden();
             if (tabelle != null) {
                 regler = new CampingRegler(tabelle, istProbe(heizwegEinstellung()));
-                if (heizweg == null) heizweg = new RouterHeizweg(tabelle.cloudTemperatur);
+                if (heizweg == null) heizweg = new RouterHeizweg(tabelle.cloudTemperatur, this::cloudProtokoll);
             }
         }
         planAusfuehren();
@@ -487,6 +489,10 @@ public final class Camping {
             if (e.art == Heizweg.Ergebnis.Art.FEHLER) {
                 regler.fehlgeschlagen(l.jetztMs);
                 melden("heizen_fehlgeschlagen", true, l);
+                // zweimal keine Cloud-Bestätigung: Cloud-Heizen ruht bis zum nächsten Camping, einmal melden
+                if (heizweg instanceof RouterHeizweg && ((RouterHeizweg) heizweg).cloudPausiert()) {
+                    einmalMelden("cloud_pausiert", l);
+                }
             } else if (e.art == Heizweg.Ergebnis.Art.UEBERSPRUNGEN) {
                 regler.uebersprungen(l.jetztMs);
                 if ("cloud_gesperrt_weg2".equals(e.grund) || "weck_grenze".equals(e.grund)) einmalMelden(e.grund, l);
@@ -498,6 +504,27 @@ public final class Camping {
     }
 
     private final java.util.Set<String> einmalGemeldet = new java.util.HashSet<>();
+
+    /** Protokoll jeder Cloud-Entscheidung (JSON je Zeile), für die Auswertung des ersten echten Einsatzes. */
+    static final String CLOUD_PROTOKOLL = "camping_cloud.jsonl";
+    static final long CLOUD_PROTOKOLL_MAX = 256 * 1024;
+
+    /** Zeile anhängen; über der Grenze bleibt die jüngere Hälfte. Wirft nie (nur Protokoll). */
+    void cloudProtokoll(JSONObject eintrag) {
+        try {
+            File f = new File(ordner, CLOUD_PROTOKOLL);
+            if (f.length() > CLOUD_PROTOKOLL_MAX) {
+                byte[] alt = java.nio.file.Files.readAllBytes(f.toPath());
+                int ab = alt.length / 2;
+                while (ab < alt.length && alt[ab] != '\n') ab++;
+                java.nio.file.Files.write(f.toPath(), java.util.Arrays.copyOfRange(alt, Math.min(alt.length, ab + 1), alt.length));
+            }
+            java.nio.file.Files.write(f.toPath(), (eintrag.toString() + "\n").getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                    java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
+        } catch (Throwable t) {
+            logger.warn("Cloud-Protokoll nicht geschrieben: " + t.getMessage());
+        }
+    }
 
     private void einmalMelden(String code, CampingRegler.Lage l) {
         if (einmalGemeldet.add(code)) melden(code, true, l);

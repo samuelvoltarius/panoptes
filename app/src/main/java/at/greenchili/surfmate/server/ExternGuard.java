@@ -80,9 +80,36 @@ public final class ExternGuard {
             "/api/camping/weiter"
     )));
 
+    /**
+     * 0.1.18 Handy-Vertrag §1: genau diese Schreibpfade NUR für Kopplungen der Art {@code handy} (Rechte prüft der
+     * Handler je Aktion). Cockpit/HA bleiben hier 403; {@code /api/vehicle/*} bleibt für alle Kopplungen zu.
+     */
+    static final Set<String> HANDY_SCHREIBEN = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "/api/handy/v1/geraet",
+            "/api/handy/v1/aktion",
+            "/api/handy/v1/push",
+            "/api/handy/v1/push/aus"
+    )));
+
     /** true, wenn die Anfrage eines gekoppelten Geräts abgelehnt werden muss. */
     public static boolean blocks(String method, String pathOnly) {
         return !erlaubt(method, pathOnly);
+    }
+
+    /** Wie {@link #blocks(String, String)}, mit der Art der Kopplung (Handy-Pfade nur für {@code handy}). */
+    public static boolean blocks(String method, String pathOnly, String kopplungsArt) {
+        if (erlaubt(method, pathOnly)) return false;
+        return !handyErlaubt(method, pathOnly, kopplungsArt);
+    }
+
+    static boolean handyErlaubt(String method, String pathOnly, String kopplungsArt) {
+        if (!"handy".equals(kopplungsArt) || !"POST".equals(method) || pathOnly == null) return false;
+        String p = pathOnly;
+        int q = p.indexOf('?');
+        if (q >= 0) p = p.substring(0, q);
+        if (p.length() > 1 && p.endsWith("/")) p = p.substring(0, p.length() - 1);
+        if (p.contains("..") || p.contains("//")) return false;
+        return HANDY_SCHREIBEN.contains(p);
     }
 
     public static boolean erlaubt(String method, String pathOnly) {

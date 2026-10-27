@@ -18,10 +18,11 @@ import java.util.regex.Pattern
  *    `0xffffffb6` ("Not a data message"), confirming the gate is the token,
  *    not the caller uid.
  *
- * Two surfaces exposed today:
- *  1. Read paths: `getInt(area, cmd)` and `getBuffer(area, cmd)` — query HAL state.
- *  2. Remote-control envelope (tx=40): `writeInt(5); writeInt(opcode)` where
- *     opcode is one of 5/6/7/9/17/22 (UNLOCK/TRUNK/LOCK/POWER_OFF/CLOSE_WINDOWS/FLASH).
+ * Nur lesend (0.1.9 Schreibwege entfernt, 0.1.18 strukturell gesperrt):
+ *  - `getInt(area, cmd)` (tx 6) und `getBuffer(area, cmd)` (tx 8) – HAL-Zustand lesen,
+ *  - `readDiLink5` (tx 5/7, nur DiLink 5) – Werte lesen.
+ * Jede Transaktion läuft durch [lesendErlaubt]; alles andere (z. B. der frühere Fernsteuer-Umschlag tx 40 mit
+ * UNLOCK/TRUNK/LOCK/POWER_OFF/CLOSE_WINDOWS/FLASH oder CAN-Senden tx 42) wird abgelehnt, bevor der Binder es sieht.
  *
  * Lifecycle: stays connected for the daemon lifetime. `init()` lazily resolves
  * the binder via `ServiceManager.getService("autoservice")`. If `Binder.transact`
@@ -33,13 +34,18 @@ object AutoServiceBridge {
     private const val SERVICE_NAME = "autoservice"
     private const val INTERFACE_TOKEN = "android.gui.BYDAutoServer"
 
-    // Transaction IDs
+    // Transaction IDs – nur lesende (0.1.18: TX 40 Fernsteuerung und TX 42 CAN-Senden gibt es hier nicht mehr)
     private const val TX_GET_INT = 6
     private const val TX_GET_BUFFER = 8
-    private const val TX_REMOTE_CONTROL = 40
-    private const val TX_SEND_CAN = 42
 
-    // Remote-control envelope opcodes (writeInt(5); writeInt(opcode))
+    /**
+     * 0.1.18 (Sicherheit, Koordination): Positivliste der erlaubten Transaktionen. Prüft JEDEN Binder- bzw.
+     * `service call`-Aufruf dieser Klasse; ein Schreib-Opcode kann so auch durch künftigen Code nicht durchrutschen.
+     */
+    @JvmStatic
+    fun lesendErlaubt(tx: Int): Boolean = tx == TX_GET_INT || tx == TX_GET_BUFFER
+
+    // Frühere Fernsteuer-Opcodes – NUR zur Anzeige (opcodeName im Debug-Bericht), es gibt keinen Weg, sie zu senden.
     const val OP_UNLOCK = 5
     const val OP_TRUNK_OPEN = 6
     const val OP_LOCK = 7
@@ -236,6 +242,10 @@ object AutoServiceBridge {
      * with NO {@code readException()} for the read side.
      */
     private inline fun transactInt(tx: Int, write: (Parcel) -> Unit): Int {
+        if (!lesendErlaubt(tx)) {
+            log("transactInt(tx=$tx): nicht lesend – abgelehnt")
+            return ERROR_TRANSACT_FALSE
+        }
         val b = binder
         if (b == null) {
             log("transactInt(tx=$tx): no binder")
@@ -314,6 +324,10 @@ object AutoServiceBridge {
     }
 
     private fun shellServiceCall(tx: Int, vararg args: String): String? {
+        if (!lesendErlaubt(tx)) {
+            log("shellServiceCall(tx=$tx): nicht lesend – abgelehnt")
+            return null
+        }
         val cmd = StringBuilder("service call ").append(SERVICE_NAME).append(' ').append(tx)
         for (a in args) cmd.append(' ').append(a)
         return try {

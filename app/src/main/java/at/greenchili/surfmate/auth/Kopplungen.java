@@ -63,6 +63,8 @@ public final class Kopplungen {
             g.put("angelegt", nowMs);
             g.put("zuletzt", nowMs);
             if (art != null && ARTEN.contains(art)) g.put("art", art);
+            // 0.1.18 Handy-Vertrag §1: Standardrechte klima, zusperren, push – aufsperren erst per Web mit Login
+            if (ART_HANDY.equals(art)) g.put("rechte", new JSONArray(HANDY_STANDARD));
         } catch (Exception ignored) { }
         JSONArray neu = kopie(l);
         neu.put(g);
@@ -104,14 +106,25 @@ public final class Kopplungen {
         JSONArray l = liste();
         JSONArray neu = new JSONArray();
         boolean gefunden = false;
+        String pushId = null;
         for (int i = 0; i < l.length(); i++) {
             JSONObject g = l.optJSONObject(i);
-            if (g != null && id.equals(g.optString("id"))) { gefunden = true; continue; }
+            if (g != null && id.equals(g.optString("id"))) {
+                gefunden = true;
+                pushId = g.optString("pushId", null);
+                continue;
+            }
             if (g != null) neu.put(g);
         }
         if (!gefunden) return UNBEKANNT;
         geraete = neu;
         at.greenchili.surfmate.ha.HaEreignisse.schliessen(id);   // offene HA-Streams dieser Kopplung sofort zu
+        // 0.1.18: Push-Abo der Handy-Kopplung mit weg (Schlüssel und Rechte gehen mit dem Eintrag)
+        if (pushId != null && !pushId.isEmpty()) {
+            try {
+                at.greenchili.surfmate.handy.HandyPush.entfernen(pushId);
+            } catch (Throwable ignored) { }
+        }
         return speicher.speichere(kopie(neu)) ? WIDERRUFEN : NUR_IM_SPEICHER;
     }
 
@@ -130,6 +143,14 @@ public final class Kopplungen {
                 o.put("zuletzt", g.optLong("zuletzt"));
                 o.put("abgelaufen", nowMs - g.optLong("zuletzt", 0) > GUELTIG_OHNE_NUTZUNG_MS);
                 if (g.has("art")) o.put("art", g.optString("art"));
+                if (ART_HANDY.equals(g.optString("art"))) {
+                    o.put("rechte", rechteVon(g));
+                    // nur ob ein Aufsperr-Schlüssel hinterlegt ist, nie der Schlüssel selbst
+                    o.put("schluessel", !g.optString("geraeteSchluessel", "").isEmpty());
+                    if (g.has("geraeteName")) o.put("geraeteName", g.optString("geraeteName"));
+                    if (g.has("plattform")) o.put("plattform", g.optString("plattform"));
+                    o.put("push", !g.optString("pushId", "").isEmpty());
+                }
             } catch (Exception ignored) { }
             out.put(o);
         }
@@ -137,7 +158,128 @@ public final class Kopplungen {
     }
 
     public static final java.util.Set<String> ARTEN = java.util.Collections.unmodifiableSet(
-            new java.util.HashSet<>(java.util.Arrays.asList("cockpit", "homeassistant")));
+            new java.util.HashSet<>(java.util.Arrays.asList("cockpit", "homeassistant", "handy")));
+
+    // ---------------------------------------------------------------- 0.1.18 Handy (HANDY_API_VERTRAG.md)
+
+    public static final String ART_HANDY = "handy";
+    public static final String RECHT_KLIMA = "klima", RECHT_ZUSPERREN = "zusperren",
+            RECHT_AUFSPERREN = "aufsperren", RECHT_PUSH = "push";
+    public static final java.util.List<String> RECHTE = java.util.Collections.unmodifiableList(
+            java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_AUFSPERREN, RECHT_PUSH));
+    /** Standard bei neuer Handy-Kopplung: aufsperren AUS, bis der Besitzer es mit Login einschaltet. */
+    static final java.util.List<String> HANDY_STANDARD = java.util.Collections.unmodifiableList(
+            java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_PUSH));
+
+    public static final int SCHLUESSEL_GESPEICHERT = 1, SCHLUESSEL_SCHON = 2, SCHLUESSEL_FEHLER = 0,
+            SCHLUESSEL_KEINE_HANDY_KOPPLUNG = 3;
+
+    private JSONObject finde(String id) {
+        if (id == null || id.isEmpty()) return null;
+        JSONArray l = liste();
+        for (int i = 0; i < l.length(); i++) {
+            JSONObject g = l.optJSONObject(i);
+            if (g != null && id.equals(g.optString("id"))) return g;
+        }
+        return null;
+    }
+
+    private static JSONArray rechteVon(JSONObject g) {
+        JSONArray r = g.optJSONArray("rechte");
+        return r != null ? r : new JSONArray(HANDY_STANDARD);
+    }
+
+    /** Art der Kopplung oder null (unbekannt bzw. ohne Art). */
+    public synchronized String art(String id) {
+        JSONObject g = finde(id);
+        return g == null || !g.has("art") ? null : g.optString("art");
+    }
+
+    public synchronized boolean istHandy(String id) {
+        return ART_HANDY.equals(art(id));
+    }
+
+    /** Recht einer Handy-Kopplung; andere Arten haben keine Handy-Rechte. */
+    public synchronized boolean hatRecht(String id, String recht) {
+        JSONObject g = finde(id);
+        if (g == null || !ART_HANDY.equals(g.optString("art"))) return false;
+        JSONArray r = rechteVon(g);
+        for (int i = 0; i < r.length(); i++) if (recht.equals(r.optString(i))) return true;
+        return false;
+    }
+
+    /** Rechte setzen (nur aus Panoptes-Web mit Login). Unbekannte Rechte werden verworfen. */
+    public synchronized boolean rechteSetzen(String id, java.util.Collection<String> rechte) {
+        JSONObject g = finde(id);
+        if (g == null || !ART_HANDY.equals(g.optString("art"))) return false;
+        JSONArray r = new JSONArray();
+        for (String x : RECHTE) if (rechte != null && rechte.contains(x)) r.put(x);
+        try { g.put("rechte", r); } catch (Exception e) { return false; }
+        return speichernSofort();
+    }
+
+    /**
+     * Geräteschlüssel (Aufsperren) hinterlegen – first write wins. Ersetzen nur nach {@link #schluesselLoeschen}
+     * aus Panoptes-Web mit Login.
+     */
+    public synchronized int schluesselMelden(String id, String oeffentlicherSchluessel, String plattform,
+                                             String geraeteName) {
+        JSONObject g = finde(id);
+        if (g == null || !ART_HANDY.equals(g.optString("art"))) return SCHLUESSEL_KEINE_HANDY_KOPPLUNG;
+        if (!g.optString("geraeteSchluessel", "").isEmpty()) return SCHLUESSEL_SCHON;
+        try {
+            g.put("geraeteSchluessel", oeffentlicherSchluessel);
+            g.put("plattform", "ios".equals(plattform) ? "ios" : "android");
+            g.put("geraeteName", bereinigeName(geraeteName));
+        } catch (Exception e) {
+            return SCHLUESSEL_FEHLER;
+        }
+        return speichernSofort() ? SCHLUESSEL_GESPEICHERT : SCHLUESSEL_FEHLER;
+    }
+
+    public synchronized String schluessel(String id) {
+        JSONObject g = finde(id);
+        String s = g == null ? "" : g.optString("geraeteSchluessel", "");
+        return s.isEmpty() ? null : s;
+    }
+
+    /** Name für Meldungen: Gerätename aus der Schlüssel-Meldung, sonst der Kopplungsname. */
+    public synchronized String anzeigeName(String id) {
+        JSONObject g = finde(id);
+        if (g == null) return "?";
+        String n = g.optString("geraeteName", "");
+        return n.isEmpty() ? g.optString("name", "?") : n;
+    }
+
+    /** Schlüssel entfernen (nur Panoptes-Web mit Login), z. B. nach neuem Fingerabdruck. */
+    public synchronized boolean schluesselLoeschen(String id) {
+        JSONObject g = finde(id);
+        if (g == null) return false;
+        g.remove("geraeteSchluessel");
+        return speichernSofort();
+    }
+
+    public synchronized String pushId(String id) {
+        JSONObject g = finde(id);
+        String s = g == null ? "" : g.optString("pushId", "");
+        return s.isEmpty() ? null : s;
+    }
+
+    public synchronized boolean pushSetzen(String id, String pushId) {
+        JSONObject g = finde(id);
+        if (g == null) return false;
+        try {
+            if (pushId == null) g.remove("pushId");
+            else g.put("pushId", pushId);
+        } catch (Exception e) {
+            return false;
+        }
+        return speichernSofort();
+    }
+
+    private boolean speichernSofort() {
+        return speicher.speichere(kopie(liste()));
+    }
 
     static String neueId() {
         byte[] b = new byte[8];

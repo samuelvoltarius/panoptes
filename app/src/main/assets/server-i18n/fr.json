@@ -172,6 +172,7 @@
     "camping_heizen_aus_fehlgeschlagen": "Camping : le chauffage n'a pas pu s'arrêter – vérifiez la voiture",
     "camping_cloud_gesperrt_weg2": "Camping : l'accès à distance 2 a disparu après une session cloud – chauffage via le cloud bloqué",
     "camping_weck_grenze": "Camping : nombre maximal de sessions cloud atteint – plus aucune cette nuit",
+    "camping_cloud_pausiert": "Camping : chauffage cloud en pause – deux fois sans confirmation de BYD. Plus de sessions cloud cette nuit, Panoptes vous attend",
     "camping_aus_plan": "Camping désactivé (fin planifiée)",
     "camping_aus_weckzeit": "Camping désactivé (réveil + prolongation)",
     "camping_aus_hoechstdauer": "Camping désactivé (durée maximale atteinte)",
@@ -755,7 +756,8 @@
       "schon_entschieden": "Cette demande a déjà été traitée.",
       "abgelaufen": "⌛ La demande a expiré.",
       "fehler": "⚠️ Panoptes est injoignable pour le moment. Veuillez l'autoriser sur le web.",
-      "anfrage_ha": "🔗 *Home Assistant « {0} » veut se connecter*\nNuméro de contrôle : *{1}*\n\nCorrespond-il au numéro affiché dans Home Assistant ? La demande est valable 2 minutes."
+      "anfrage_ha": "🔗 *Home Assistant « {0} » veut se connecter*\nNuméro de contrôle : *{1}*\n\nCorrespond-il au numéro affiché dans Home Assistant ? La demande est valable 2 minutes.",
+      "anfrage_handy": "📱 *Le téléphone « {0} » veut se connecter*\nNombre de contrôle : *{1}*\n\nLe nombre correspond-il à celui de l'application ? La demande est valable 2 minutes."
     },
     "health": {
       "repariert": "🩺 *Le Gardien était arrêté depuis {0} min – réparé.* Panoptes s’est réarmé tout seul.",
@@ -818,6 +820,12 @@
         "label": "Mises à jour",
         "note": "Une nouvelle version de Panoptes est disponible ou a été installée."
       }
+    },
+    "handy": {
+      "schluessel": "🔑 Le téléphone « {0} » a enregistré une clé de déverrouillage. Si ce n'était pas vous, dissociez l'appareil dans Panoptes.",
+      "aufsperren_ok": "🔓 *Déverrouillé* via le téléphone « {0} ».",
+      "aufsperren_unbestaetigt": "🔓 Commande de déverrouillage envoyée via le téléphone « {0} » – la confirmation de la voiture manque.",
+      "aufsperren_abgelehnt": "🔒 Déverrouillage via le téléphone « {0} » refusé ({1})."
     }
   },
   "vehicle_control": {
@@ -1897,7 +1905,7 @@
       },
       "heizweg": {
         "title": "Mode de chauffage",
-        "help": "Comment Panoptes chauffe. « Seulement voiture allumée » commande la climatisation localement tant que la voiture est allumée en P. « Aussi via le cloud BYD » lance des sessions de climatisation à distance quand la voiture est éteinte (10–30 min, au plus 12 par nuit, au moins 45 min d'écart) ; cela réveille la voiture à chaque fois. « Essai » ne commande rien et montre seulement ce qui se passerait.",
+        "help": "Comment Panoptes chauffe. « Seulement voiture allumée » commande la climatisation localement tant que la voiture est allumée en P. « Aussi via le cloud BYD » lance des sessions de climatisation à distance quand la voiture est éteinte (10–30 min, au plus 12 par nuit, au moins 45 min d'écart) ; cela réveille la voiture à chaque fois. « Essai » ne commande rien et montre seulement ce qui se passerait. Chaque session cloud ne compte qu'avec une confirmation de BYD ; après deux échecs, le chauffage cloud reste en pause jusqu'au prochain camping.",
         "probelauf": "Essai (ne commande rien)",
         "auto_an": "Seulement voiture allumée (local)",
         "auto_an_und_cloud": "Aussi via le cloud BYD voiture éteinte"

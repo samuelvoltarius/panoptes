@@ -5038,7 +5038,19 @@
     "upd_badge_paused": "Gepauzeerd",
     "upd_ph_paused": "Download onderbroken. Hij gaat verder bij de volgende keer parkeren.",
     "upd_net_wlan": "Wifi",
-    "upd_net_mobile": "Mobiele data"
+    "upd_net_mobile": "Mobiele data",
+    "handy_rechte": "Mag:",
+    "handy_recht_klima": "Klimaat",
+    "handy_recht_zusperren": "Vergrendelen",
+    "handy_recht_aufsperren": "Ontgrendelen (met vingerafdruk/Face ID)",
+    "handy_recht_push": "Meldingen",
+    "handy_schluessel_da": "Ontgrendelsleutel geregistreerd{g}.",
+    "handy_schluessel_fehlt": "Nog geen ontgrendelsleutel geregistreerd.",
+    "handy_schluessel_weg": "Sleutel verwijderen",
+    "handy_aufsperren_confirm": "Deze telefoon kan de auto dan ontgrendelen – alleen na vingerafdruk of Face ID op de telefoon, en je krijgt bij elke ontgrendeling een Telegram-bericht. Inschakelen?",
+    "handy_schluessel_confirm": "Ontgrendelsleutel verwijderen? De telefoon kan pas weer ontgrendelen nadat hij een nieuwe sleutel meldt (bijv. na een nieuwe vingerafdruk).",
+    "handy_gespeichert": "Opgeslagen",
+    "handy_fehler": "Kon niet opslaan."
   },
   "guardLegal": {
     "trigger": {

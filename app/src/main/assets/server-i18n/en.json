@@ -166,6 +166,7 @@
     "camping_heizen_aus_fehlgeschlagen": "Camping: heating could not be switched off – please check the car",
     "camping_cloud_gesperrt_weg2": "Camping: remote access 2 is gone after a cloud session – cloud heating blocked",
     "camping_weck_grenze": "Camping: maximum number of cloud sessions reached – no more tonight",
+    "camping_cloud_pausiert": "Camping: cloud heating paused – no confirmation from BYD twice. No more cloud sessions tonight, Panoptes waits for you",
     "camping_aus_plan": "Camping off (planned end)",
     "camping_aus_weckzeit": "Camping off (wake-up time + run-on)",
     "camping_aus_hoechstdauer": "Camping off (maximum time reached)",
@@ -749,7 +750,8 @@
       "schon_entschieden": "This request has already been decided.",
       "abgelaufen": "⌛ The request has expired.",
       "fehler": "⚠️ Panoptes is not reachable right now. Please allow it on the web.",
-      "anfrage_ha": "🔗 *Home Assistant “{0}” wants to connect*\nCheck number: *{1}*\n\nDoes it match the number in Home Assistant? The request is valid for 2 minutes."
+      "anfrage_ha": "🔗 *Home Assistant “{0}” wants to connect*\nCheck number: *{1}*\n\nDoes it match the number in Home Assistant? The request is valid for 2 minutes.",
+      "anfrage_handy": "📱 *Phone “{0}” wants to connect*\nCheck number: *{1}*\n\nDoes the number match the one in the app? The request is valid for 2 minutes."
     },
     "health": {
       "repariert": "🩺 *Guardian was off for {0} min – repaired.* Panoptes re-armed itself.",
@@ -812,6 +814,12 @@
         "label": "Updates",
         "note": "A new Panoptes version is available or was installed."
       }
+    },
+    "handy": {
+      "schluessel": "🔑 Phone “{0}” registered an unlock key. If this was not you, remove the device in Panoptes.",
+      "aufsperren_ok": "🔓 *Unlocked* via phone “{0}”.",
+      "aufsperren_unbestaetigt": "🔓 Unlock command sent via phone “{0}” – confirmation from the car is missing.",
+      "aufsperren_abgelehnt": "🔒 Unlock via phone “{0}” refused ({1})."
     }
   },
   "vehicle_control": {
@@ -1891,7 +1899,7 @@
       },
       "heizweg": {
         "title": "Heating method",
-        "help": "How Panoptes heats. \"Only when the car is on\" switches the climate locally while the car is on in P. \"Also via the BYD cloud\" starts remote climate sessions when the car is off (10–30 min, at most 12 per night, at least 45 min apart); this wakes the car each time. \"Trial run\" switches nothing and only shows what would happen.",
+        "help": "How Panoptes heats. \"Only when the car is on\" switches the climate locally while the car is on in P. \"Also via the BYD cloud\" starts remote climate sessions when the car is off (10–30 min, at most 12 per night, at least 45 min apart); this wakes the car each time. \"Trial run\" switches nothing and only shows what would happen. Each cloud session only counts with a confirmation from BYD; after two failures cloud heating rests until the next camping.",
         "probelauf": "Trial run (switches nothing)",
         "auto_an": "Only when the car is on (local)",
         "auto_an_und_cloud": "Also via the BYD cloud when the car is off"

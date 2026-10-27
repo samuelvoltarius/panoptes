@@ -5038,7 +5038,19 @@
     "upd_badge_paused": "Paused",
     "upd_ph_paused": "Download interrupted. It continues the next time the car is parked.",
     "upd_net_wlan": "Wi-Fi",
-    "upd_net_mobile": "Mobile data"
+    "upd_net_mobile": "Mobile data",
+    "handy_rechte": "Allowed:",
+    "handy_recht_klima": "Climate",
+    "handy_recht_zusperren": "Lock",
+    "handy_recht_aufsperren": "Unlock (with fingerprint/Face ID)",
+    "handy_recht_push": "Notifications",
+    "handy_schluessel_da": "Unlock key registered{g}.",
+    "handy_schluessel_fehlt": "No unlock key registered yet.",
+    "handy_schluessel_weg": "Remove key",
+    "handy_aufsperren_confirm": "This phone will then be able to unlock the car – only after fingerprint or Face ID on the phone, and you get a Telegram message every time it unlocks. Turn on?",
+    "handy_schluessel_confirm": "Remove the unlock key? The phone can only unlock again after it registers a new key (e.g. after a new fingerprint).",
+    "handy_gespeichert": "Saved",
+    "handy_fehler": "Could not save."
   },
   "guardLegal": {
     "trigger": {

@@ -121,6 +121,7 @@ public class CampingHeizwegTest {
 
     @Test
     public void h2NurWennErlaubtUndGateOffen() {
+        router.antwort = VehicleCommandRouter.CommandResult.success(VehicleCommandRouter.Path.CLOUD, "", 1);   // 0.1.18: nur Cloud-Pfad = bestätigt
         RouterHeizweg w = weg();
         Heizweg.Ergebnis e = w.ein(33, 3, 15, lage(0, 5000, NOW), false);
         assertEquals("cloud_aus", e.grund);
@@ -140,6 +141,7 @@ public class CampingHeizwegTest {
 
     @Test
     public void h2AbstandUndHoechstzahl() {
+        router.antwort = VehicleCommandRouter.CommandResult.success(VehicleCommandRouter.Path.CLOUD, "", 1);   // 0.1.18: nur Cloud-Pfad = bestätigt
         RouterHeizweg w = weg();
         assertEquals(Heizweg.Ergebnis.Art.CLOUD, w.ein(33, 3, 15, lage(0, 5000, NOW), true).art);
         assertEquals("weck_abstand", w.ein(33, 3, 15, lage(0, 5000, NOW + 30 * MIN), true).grund);

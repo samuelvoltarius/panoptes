@@ -700,7 +700,8 @@ public class HttpServer {
             }
             // Regel A/B: gekoppelte Geräte (scope "kopplung") dürfen nur, was ExternGuard ausdrücklich
             // erlaubt (Erlaubnisliste: lesen + Einstellungen); alles andere 403.
-            if (AuthMiddleware.isExternRequest() && ExternGuard.blocks(method, pathOnly)) {
+            if (AuthMiddleware.isExternRequest() && ExternGuard.blocks(method, pathOnly,
+                    at.greenchili.surfmate.auth.Kopplungen.get().art(AuthMiddleware.requestKopplungsId()))) {
                 HttpResponse.sendError(out, 403, "Nicht für gekoppelte Geräte");
                 client.close();
                 return;
@@ -1383,6 +1384,10 @@ public class HttpServer {
         if (path.startsWith("/api/orte") && OrteApiHandler.handle(method, path, body, out)) return true;
         // 0.1.14 Notzugang (zweiter, eigener tailscaled für die Fernwartung, optional)
         if (path.startsWith("/api/notzugang") && NotzugangApiHandler.handle(method, path, body, out)) return true;
+        // 0.1.18 Handy-Rechte (HANDY_API_VERTRAG): nur Handy-Kopplungen, Befehle über den VehicleCommandRouter
+        if (path.startsWith("/api/handy/v1/")) {
+            return HandyApiHandler.handle(method, path, body, out, AuthMiddleware.requestKopplungsId());
+        }
         // 0.1.16: BLE-Zählen (nur lesen, nur Anzahl/Typen, schaltet Bluetooth/Standort nie ein)
         if (path.startsWith("/api/ble/") && BleApiHandler.handle(method, path, out)) return true;
         if (path.startsWith("/api/system/")

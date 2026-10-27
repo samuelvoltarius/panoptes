@@ -107,7 +107,7 @@ public class ExternGuardErlaubnislisteTest {
         assertTrue("WebSockets für Kopplung gesperrt",
                 hs.substring(ws, ws + 400).contains("if (AuthMiddleware.isExternRequest()) {"));
         int auth = hs.indexOf("boolean authenticated = remoteDevRequest");
-        int guard = hs.indexOf("if (AuthMiddleware.isExternRequest() && ExternGuard.blocks(method, pathOnly)) {", auth);
+        int guard = hs.indexOf("if (AuthMiddleware.isExternRequest() && ExternGuard.blocks(method, pathOnly,", auth);   // 0.1.18: mit Kopplungs-Art
         int route = hs.indexOf("if (routeToHandlers(", auth);
         assertTrue("Guard nach Anmeldung, vor jedem Handler", auth > 0 && guard > auth && guard < route);
     }

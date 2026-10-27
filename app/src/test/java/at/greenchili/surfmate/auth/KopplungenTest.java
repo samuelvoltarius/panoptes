@@ -154,7 +154,7 @@ public class KopplungenTest {
                 am.contains("return kopplungPruefen(ok, payload, Kopplungen.get(), System.currentTimeMillis());"));
         assertTrue(am.contains("payload.put(\"kid\", kid)"));
         String ah = lies("src/main/java/at/greenchili/surfmate/server/AuthApiHandler.java");
-        assertTrue(ah.contains("Kopplungen.get().anlegen(name, now)"));
+        assertTrue(ah.contains("Kopplungen.get().anlegen(name, art, now)"));   // 0.1.18: Art auch beim Code-Weg
         assertTrue(ah.contains("generateJwt(at.greenchili.surfmate.auth.PairingCodes.SCOPE, kid)"));
         String eh = lies("src/main/java/at/greenchili/surfmate/server/EinstellungenApiHandler.java");
         int liste = eh.indexOf("pathOnly.equals(\"/api/kopplungen\")");

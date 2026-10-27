@@ -446,7 +446,41 @@ public final class VehicleCommandRouter {
         public String motionSafetyGuardKey() { return DrivingSafetyGuard.GUARD_DOOR_LOCKS; }
     }
 
-    // Kein UnlockCommand: Aufsperren ist in Panoptes komplett entfernt (Projektinhaber „nie“, Koordination 0.1.9).
+    /**
+     * 0.1.18 (27.10.: „es soll aufsperren können“; HANDY_API_VERTRAG §3.1): Aufsperren NUR mit einer
+     * {@link at.greenchili.surfmate.handy.HandySignatur.Freigabe} – die gibt es nur nach gültiger Biometrie-Signatur
+     * des gekoppelten Handys (Recht „aufsperren“, ±30 s, Nonce, Ratenlimit; HandyApiHandler). Kein anderer Weg
+     * (Web, MQTT, HA, Telegram, Automationen, Tastenbelegung, Debug) kann diesen Befehl bauen.
+     *
+     * <p>Nur Cloud (OPENDOOR), und nur hinter {@link CloudPowerGate} (frisches power_level 0, ACC nicht an). Einen
+     * am Auto bestätigten lokalen Aufsperr-Schreibweg gibt es nicht (Zusperren ist ebenfalls Cloud-only); bei wachem
+     * Auto lehnt das Gate deshalb ab, die App zeigt den Grund.
+     */
+    public static final class HandyUnlockCommand extends VehicleCommand {
+        public static final String NAME = "unlock-handy";
+        private final transient at.greenchili.surfmate.handy.HandySignatur.Freigabe freigabe;
+
+        public HandyUnlockCommand(at.greenchili.surfmate.handy.HandySignatur.Freigabe freigabe) {
+            if (freigabe == null) throw new IllegalArgumentException("Aufsperren nur mit Handy-Freigabe");
+            this.freigabe = freigabe;
+        }
+        public String name() { return NAME; }
+        public Capability cloudCapability() { return Capability.REQUIRED; }
+        public Capability sdkCapability() { return Capability.NONE; }
+        public RoutePreference defaultPreference() { return RoutePreference.CLOUD_ONLY; }
+        public CloudOutcome executeViaCloud(BydCloudClient client, String vin) throws Exception {
+            if (freigabe == null || !freigabe.frisch(System.currentTimeMillis())) return CloudOutcome.failed();
+            BydCloudClient.CloudCommandResult r = client.aufsperrenSigniert(vin, freigabe);
+            if (r.success) return CloudOutcome.success();
+            if (BydCloudClient.DRIVING_SAFETY_BLOCKED_CODE.equals(r.code)) return CloudOutcome.blockedDriving();
+            if (CLOUD_CODE_RATE_LIMITED.equals(r.code)) return CloudOutcome.rateLimited();
+            return CloudOutcome.failed();
+        }
+        public CloudCapabilities.Feature cloudFeature() { return CloudCapabilities.Feature.UNLOCK; }
+        public boolean requiresKnownCloudFeature() { return true; }
+        public MotionSafety motionSafety() { return MotionSafety.BLOCK_WHILE_MOVING; }
+        public String motionSafetyGuardKey() { return DrivingSafetyGuard.GUARD_DOOR_LOCKS; }
+    }
 
     /** Horn + lights — BYD cloud only (no SDK FINDCAR primitive on this gen). */
     public static final class FindCarCommand extends VehicleCommand {
@@ -687,7 +721,9 @@ public final class VehicleCommandRouter {
             return remoteCommand(client, vin, "CLOSEWINDOW", null);
         }
         public boolean executeViaSdk(BydDataCollector c) {
-            return c.setAllWindowsCommand(2); // 2 = close
+            // 0.1.18: Wirkung prüfen – alle lesbaren Seitenfenster zu, sonst Fehlschlag
+            return mitEcho(name(), c.setAllWindowsCommand(2), c::readAllSideWindowsOpenState, 0,
+                    BydDataCollector.FENSTER_ECHO_MS); // 2 = close
         }
         public CloudCapabilities.Feature cloudFeature() {
             return CloudCapabilities.Feature.WINDOWS_CLOSE;
@@ -701,7 +737,8 @@ public final class VehicleCommandRouter {
         public Capability sdkCapability() { return Capability.AVAILABLE; }
         public RoutePreference defaultPreference() { return RoutePreference.SDK_ONLY; }
         public boolean executeViaSdk(BydDataCollector c) {
-            return c.setAllWindowsCommand(1); // 1 = open
+            return mitEcho(name(), c.setAllWindowsCommand(1), c::readAllSideWindowsOpenState, 1,
+                    BydDataCollector.FENSTER_ECHO_MS); // 1 = open
         }
     }
 
@@ -724,7 +761,9 @@ public final class VehicleCommandRouter {
             return remoteCommand(client, vin, "OPENWINDOW", null);
         }
         public boolean executeViaSdk(BydDataCollector c) {
-            return c.moveAllSideWindowsToPercent(LOCAL_VENT_PERCENT);
+            // Spalt (15 %) gilt grob als „offen“: alle lesbaren Seitenfenster offen, sonst Fehlschlag
+            return mitEcho(name(), c.moveAllSideWindowsToPercent(LOCAL_VENT_PERCENT),
+                    c::readAllSideWindowsOpenState, 1, BydDataCollector.FENSTER_ECHO_MS);
         }
         public CloudCapabilities.Feature cloudFeature() {
             return CloudCapabilities.Feature.WINDOWS_OPEN_VENT;
@@ -772,8 +811,10 @@ public final class VehicleCommandRouter {
          * is treated as locked because opening while locked can trigger the alarm.
          */
         public boolean executeViaSdk(BydDataCollector c) {
-            return c.readDoorLockState() == BydDataCollector.DOOR_STATE_UNLOCK
-                    && c.openTailgate();
+            if (c.readDoorLockState() != BydDataCollector.DOOR_STATE_UNLOCK) return false;
+            // 0.1.18: Wirkung prüfen – Heckklappe meldet „offen“, sonst Fehlschlag
+            return mitEcho(name(), c.openTailgate(), c::readTrunkOpenState, 1,
+                    BydDataCollector.HECKKLAPPE_AUF_ECHO_MS);
         }
         public CloudCapabilities.Feature cloudFeature() { return CloudCapabilities.Feature.TRUNK_OPEN; }
         public MotionSafety motionSafety() { return MotionSafety.BLOCK_WHILE_MOVING; }
@@ -791,7 +832,11 @@ public final class VehicleCommandRouter {
         public CloudOutcome executeViaCloud(BydCloudClient client, String vin) throws Exception {
             return remoteCommand(client, vin, "CLOSETRUNK", null);
         }
-        public boolean executeViaSdk(BydDataCollector c) { return c.closeTailgate(); }
+        public boolean executeViaSdk(BydDataCollector c) {
+            // 0.1.18: Wirkung prüfen – Heckklappe meldet „zu“, sonst Fehlschlag
+            return mitEcho(name(), c.closeTailgate(), c::readTrunkOpenState, 0,
+                    BydDataCollector.HECKKLAPPE_ZU_ECHO_MS);
+        }
         public CloudCapabilities.Feature cloudFeature() { return CloudCapabilities.Feature.TRUNK_CLOSE; }
         public MotionSafety motionSafety() { return MotionSafety.BLOCK_WHILE_MOVING; }
         public String motionSafetyGuardKey() { return DrivingSafetyGuard.GUARD_TRUNK; }
@@ -808,8 +853,10 @@ public final class VehicleCommandRouter {
         public Capability sdkCapability() { return Capability.REQUIRED; }
         public RoutePreference defaultPreference() { return RoutePreference.SDK_ONLY; }
         public boolean executeViaSdk(BydDataCollector c) {
-            return c.readDoorLockState() == BydDataCollector.DOOR_STATE_UNLOCK
-                    && c.openTailgate();
+            if (c.readDoorLockState() != BydDataCollector.DOOR_STATE_UNLOCK) return false;
+            // 0.1.18: Wirkung prüfen – Heckklappe meldet „offen“, sonst Fehlschlag
+            return mitEcho(name(), c.openTailgate(), c::readTrunkOpenState, 1,
+                    BydDataCollector.HECKKLAPPE_AUF_ECHO_MS);
         }
         public MotionSafety motionSafety() { return MotionSafety.BLOCK_WHILE_MOVING; }
         public String motionSafetyGuardKey() { return DrivingSafetyGuard.GUARD_TRUNK; }
@@ -949,8 +996,17 @@ public final class VehicleCommandRouter {
         public RoutePreference defaultPreference() { return RoutePreference.SDK_ONLY; }
         public boolean executeViaSdk(BydDataCollector c) {
             if (targetPercent != null) return c.moveWindowToPercent(area, targetPercent);
-            if (area == 0) return c.setAllWindowsCommand(action);
-            return c.setWindowCommand(area, action);
+            int sollZustand = action == 1 ? 1 : action == 2 ? 0 : -1;   // 3 = stop: kein Echo
+            if (area == 0) {
+                boolean ok = c.setAllWindowsCommand(action);
+                return sollZustand < 0 ? ok : mitEcho(name(), ok, c::readAllSideWindowsOpenState, sollZustand,
+                        BydDataCollector.FENSTER_ECHO_MS);
+            }
+            boolean ok = c.setWindowCommand(area, action);
+            final int fenster = area;
+            return sollZustand < 0 || area < 1 || area > 4 ? ok
+                    : mitEcho(name(), ok, () -> c.readWindowOpenState(fenster), sollZustand,
+                            BydDataCollector.FENSTER_ECHO_MS);
         }
     }
 
@@ -1990,6 +2046,23 @@ public final class VehicleCommandRouter {
      * routing". A non-null result is final — notably a local FAILURE is reported as failed
      * rather than escalated, because the escalation is precisely what powers the car down.
      */
+    /**
+     * 0.1.18 (Koordination): Echo nach einem lokalen Fenster-/Heckklappen-Befehl. Gesendet und der Zustand lesbar,
+     * aber nicht binnen {@code maxMs} erreicht = Fehlschlag (der Router weicht dann nur bei nachweislich
+     * ausgeschaltetem Auto auf die Cloud aus). Nicht lesbar = HAL-Rückgabe gilt.
+     */
+    static boolean mitEcho(String befehl, boolean gesendet, java.util.function.IntSupplier leser, int soll,
+                           long maxMs) {
+        if (!gesendet) return false;
+        int e = BydDataCollector.warteAufEcho(leser, soll, maxMs, 250L);
+        if (e == BydDataCollector.ECHO_AUS) {
+            logger.warn("'" + befehl + "': keine Wirkung binnen " + maxMs + " ms (Soll " + soll
+                    + ") – lokal fehlgeschlagen");
+            return false;
+        }
+        return true;
+    }
+
     private CommandResult runLocalOnlyWhileAwake(VehicleCommand cmd) {
         if (!cmd.localOnlyWhenAwake() || !cmd.hasSdkPath()) return null;
         if (!isVehicleOccupiedOrAwake()) return null;

@@ -1665,7 +1665,10 @@ public class TelegramBotDaemon {
                         response.put("message", ownerChatId <= 0 ? "Owner not set" : "bad ref");
                         break;
                     }
-                    String kText = tr("homeassistant".equals(cmd.optString("art", "")) ? "kopplung.anfrage_ha" : "kopplung.anfrage",
+                    String kArt = cmd.optString("art", "");
+                    // 0.1.18: Handy-App bekommt einen eigenen Text (nicht „EV-Cockpit“)
+                    String kText = tr("homeassistant".equals(kArt) ? "kopplung.anfrage_ha"
+                                    : "handy".equals(kArt) ? "kopplung.anfrage_handy" : "kopplung.anfrage",
                             at.greenchili.surfmate.telegram.KopplungsKnopf.md(cmd.optString("geraet", "")),
                             cmd.optString("pruefzahl", ""));
                     boolean kOk = sendMessageWithButtons(ownerChatId, kText, new String[][][]{{

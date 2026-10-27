@@ -107,6 +107,15 @@ public final class HomeAssistantDiscovery {
                 cmps.put(key, component(node, baseTopic, TelemetryFieldCatalog.get(key)));
             }
 
+            // 0.1.18 (HA-Befund 27.10.): Änderungszeit von Schloss/Stecker gleich mit dem Grundwert anmelden. Der Wert
+            // kommt erst nach der ersten echten Änderung (ZustandsWechsel); bis dahin zeigt HA „unbekannt“ statt
+            // keiner Entität.
+            for (String[] zw : ZustandsWechsel.FELDER) {
+                if (snapshot.has(zw[0]) && !cmps.has(zw[1]) && TelemetryFieldCatalog.isDiscoverable(zw[1])) {
+                    cmps.put(zw[1], component(node, baseTopic, TelemetryFieldCatalog.get(zw[1])));
+                }
+            }
+
             // Sticky keys: a discoverable field that populates intermittently (e.g. hv_pack_v,
             // derived from cell data + pack capacity) can be ABSENT from this particular snapshot.
             // The caller's announcedKeys set is monotonic, so once a field has been announced we

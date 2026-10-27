@@ -608,17 +608,65 @@
                                 + '<div class="sys-info"><div class="sys-name">' + (g.art === 'homeassistant' ? HomeAssistant.symbol() : '')
                                 + self.esc(g.name || self.t('system.paired_noname', 'Gerät ohne Namen'))
                                 + (g.abgelaufen ? ' · ' + self.esc(self.t('system.paired_expired', 'abgelaufen')) : '') + '</div>'
-                                + '<div class="sys-meta">' + self.esc(self.t('system.paired_meta', 'Gekoppelt {a} · zuletzt {z}', { a: self.datum(g.angelegt), z: self.datum(g.zuletzt) })) + '</div></div>'
+                                + '<div class="sys-meta">' + self.esc(self.t('system.paired_meta', 'Gekoppelt {a} · zuletzt {z}', { a: self.datum(g.angelegt), z: self.datum(g.zuletzt) })) + '</div>'
+                                + (g.art === 'handy' ? self.handyBlock(g) : '') + '</div>'
                                 + '<button class="btn" type="button" data-id="' + self.esc(g.id) + '" data-name="' + self.esc(g.name || '') + '">'
                                 + self.esc(self.t('system.paired_remove', 'Entfernen')) + '</button></div>';
                         }).join('');
                         Array.prototype.forEach.call(rows.querySelectorAll('button[data-id]'), function (b) {
                             b.onclick = function () { self.widerrufen(b.getAttribute('data-id'), b.getAttribute('data-name'), b); };
                         });
+                        // 0.1.18 Handy-Rechte (HANDY_API_VERTRAG §1): nur mit Login änderbar
+                        Array.prototype.forEach.call(rows.querySelectorAll('input[data-handy-recht]'), function (cb) {
+                            cb.onchange = function () { self.handyRechte(cb); };
+                        });
+                        Array.prototype.forEach.call(rows.querySelectorAll('button[data-handy-schluessel]'), function (b) {
+                            b.onclick = function () { self.handySchluesselWeg(b); };
+                        });
                     }
                     document.getElementById('pairDays').textContent = d.gueltigOhneNutzungTage
                         ? self.t('system.paired_days', 'Ein gekoppeltes Gerät verliert den Zugang, wenn es {n} Tage nicht benutzt wurde.', { n: d.gueltigOhneNutzungTage }) : '';
                 }).catch(function () { document.getElementById('pairList').style.display = 'none'; });
+            },
+            // 0.1.18: Rechte und Aufsperr-Schlüssel einer Handy-Kopplung
+            handyBlock: function (g) {
+                var self = this, r = Array.isArray(g.rechte) ? g.rechte : [];
+                var namen = { klima: self.t('system.handy_recht_klima', 'Klima'), zusperren: self.t('system.handy_recht_zusperren', 'Zusperren'),
+                    aufsperren: self.t('system.handy_recht_aufsperren', 'Aufsperren (mit Fingerabdruck/Face ID)'), push: self.t('system.handy_recht_push', 'Benachrichtigungen') };
+                var html = '<div class="sys-meta" style="margin-top:6px">' + self.esc(self.t('system.handy_rechte', 'Darf:')) + ' ';
+                ['klima', 'zusperren', 'aufsperren', 'push'].forEach(function (k) {
+                    html += '<label style="margin-right:12px;white-space:nowrap"><input type="checkbox" data-handy-recht="' + k + '" data-id="'
+                        + self.esc(g.id) + '"' + (r.indexOf(k) >= 0 ? ' checked' : '') + '> ' + self.esc(namen[k]) + '</label>';
+                });
+                html += '</div><div class="sys-meta">' + self.esc(g.schluessel
+                    ? self.t('system.handy_schluessel_da', 'Aufsperr-Schlüssel hinterlegt{g}.', { g: g.geraeteName ? ' (' + g.geraeteName + ')' : '' })
+                    : self.t('system.handy_schluessel_fehlt', 'Noch kein Aufsperr-Schlüssel hinterlegt.'));
+                if (g.schluessel) html += ' <button class="btn" type="button" data-handy-schluessel="' + self.esc(g.id) + '">'
+                    + self.esc(self.t('system.handy_schluessel_weg', 'Schlüssel entfernen')) + '</button>';
+                return html + '</div>';
+            },
+            handyRechte: function (cb) {
+                var self = this, id = cb.getAttribute('data-id');
+                if (cb.getAttribute('data-handy-recht') === 'aufsperren' && cb.checked
+                    && !window.confirm(self.t('system.handy_aufsperren_confirm', 'Dieses Handy darf das Auto dann aufsperren – nur nach Fingerabdruck bzw. Face ID am Handy, und du bekommst bei jedem Aufsperren eine Telegram-Meldung. Einschalten?'))) {
+                    cb.checked = false;
+                    return;
+                }
+                var rechte = Array.prototype.filter.call(document.querySelectorAll('input[data-handy-recht][data-id="' + id + '"]'),
+                    function (x) { return x.checked; }).map(function (x) { return x.getAttribute('data-handy-recht'); });
+                fetch('/api/kopplung/rechte', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id, rechte: rechte }) })
+                    .then(function (r) { return r.ok; }).catch(function () { return false; }).then(function (ok) {
+                        var toast = window.BYD && BYD.utils && BYD.utils.toast;
+                        if (toast) BYD.utils.toast(ok ? self.t('system.handy_gespeichert', 'Gespeichert') : self.t('system.handy_fehler', 'Konnte nicht speichern.'), ok ? 'success' : 'error');
+                        self.liste();
+                    });
+            },
+            handySchluesselWeg: function (b) {
+                var self = this;
+                if (!window.confirm(self.t('system.handy_schluessel_confirm', 'Aufsperr-Schlüssel entfernen? Das Handy kann danach erst wieder aufsperren, wenn es einen neuen Schlüssel meldet (z. B. nach neuem Fingerabdruck).'))) return;
+                b.disabled = true;
+                fetch('/api/kopplung/schluessel-loeschen', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: b.getAttribute('data-handy-schluessel') }) })
+                    .catch(function () {}).then(function () { self.liste(); });
             },
             widerrufen: function (id, name, btn) {
                 var self = this;

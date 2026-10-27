@@ -153,6 +153,34 @@ public final class EinstellungenApiHandler {
                     res.toString());
             return true;
         }
+        // 0.1.18 Handy-Vertrag §1/§2: Rechte einer Handy-Kopplung bzw. Geräteschlüssel – NUR mit Login (Panoptes-Web),
+        // nie von einem gekoppelten Gerät (auch nicht vom Handy selbst).
+        if (pathOnly.equals("/api/kopplung/rechte") && method.equals("POST")) {
+            if (AuthMiddleware.isExternRequest()) return verboten(out);
+            JSONObject req;
+            try {
+                req = new JSONObject(body == null || body.isEmpty() ? "{}" : body);
+            } catch (Exception e) {
+                req = new JSONObject();
+            }
+            java.util.List<String> rechte = new java.util.ArrayList<>();
+            org.json.JSONArray a = req.optJSONArray("rechte");
+            for (int i = 0; a != null && i < a.length(); i++) rechte.add(a.optString(i));
+            boolean ok = Kopplungen.get().rechteSetzen(req.optString("id", ""), rechte);
+            HttpResponse.sendJson(out, ok ? 200 : 404, new JSONObject().put("ok", ok).toString());
+            return true;
+        }
+        if (pathOnly.equals("/api/kopplung/schluessel-loeschen") && method.equals("POST")) {
+            if (AuthMiddleware.isExternRequest()) return verboten(out);
+            String id = "";
+            try {
+                id = new JSONObject(body == null || body.isEmpty() ? "{}" : body).optString("id", "");
+            } catch (Exception ignored) {
+            }
+            boolean ok = Kopplungen.get().schluesselLoeschen(id);
+            HttpResponse.sendJson(out, ok ? 200 : 404, new JSONObject().put("ok", ok).toString());
+            return true;
+        }
         // Gekoppeltes Gerät meldet sich selbst ab (z. B. HA-Integration wird entfernt): widerruft nur die
         // eigene Kopplung (kid aus dem JWT); Alfreds Login und andere Kopplungen bleiben unberührt.
         if (pathOnly.equals("/api/sitzung/abmelden") && method.equals("POST")) {

@@ -172,6 +172,7 @@
     "camping_heizen_aus_fehlgeschlagen": "Campeggio: il riscaldamento non si è spento – controlla l'auto",
     "camping_cloud_gesperrt_weg2": "Campeggio: l'accesso remoto 2 è sparito dopo una sessione cloud – riscaldamento via cloud bloccato",
     "camping_weck_grenze": "Campeggio: raggiunto il numero massimo di sessioni cloud – nessun'altra stanotte",
+    "camping_cloud_pausiert": "Campeggio: riscaldamento cloud in pausa – due volte nessuna conferma da BYD. Nessun'altra sessione cloud stanotte, Panoptes ti aspetta",
     "camping_aus_plan": "Campeggio spento (fine pianificata)",
     "camping_aus_weckzeit": "Campeggio spento (sveglia + prosecuzione)",
     "camping_aus_hoechstdauer": "Campeggio spento (durata massima raggiunta)",
@@ -755,7 +756,8 @@
       "schon_entschieden": "Su questa richiesta hai già deciso.",
       "abgelaufen": "⌛ La richiesta è scaduta.",
       "fehler": "⚠️ Panoptes al momento non è raggiungibile. Consenti dal web.",
-      "anfrage_ha": "🔗 *Home Assistant “{0}” vuole collegarsi*\nNumero di controllo: *{1}*\n\nCorrisponde al numero mostrato in Home Assistant? La richiesta vale 2 minuti."
+      "anfrage_ha": "🔗 *Home Assistant “{0}” vuole collegarsi*\nNumero di controllo: *{1}*\n\nCorrisponde al numero mostrato in Home Assistant? La richiesta vale 2 minuti.",
+      "anfrage_handy": "📱 *Il telefono «{0}» vuole collegarsi*\nNumero di controllo: *{1}*\n\nIl numero corrisponde a quello nell'app? La richiesta vale 2 minuti."
     },
     "health": {
       "repariert": "🩺 *Il Guardiano è rimasto spento per {0} min – riparato.* Panoptes si è riattivato da solo.",
@@ -818,6 +820,12 @@
         "label": "Aggiornamenti",
         "note": "È disponibile o è stata installata una nuova versione di Panoptes."
       }
+    },
+    "handy": {
+      "schluessel": "🔑 Il telefono «{0}» ha registrato una chiave di apertura. Se non sei stato tu, scollega il dispositivo in Panoptes.",
+      "aufsperren_ok": "🔓 *Aperta* tramite il telefono «{0}».",
+      "aufsperren_unbestaetigt": "🔓 Comando di apertura inviato tramite il telefono «{0}» – manca la conferma dall'auto.",
+      "aufsperren_abgelehnt": "🔒 Apertura tramite il telefono «{0}» rifiutata ({1})."
     }
   },
   "vehicle_control": {
@@ -1897,7 +1905,7 @@
       },
       "heizweg": {
         "title": "Modalità di riscaldamento",
-        "help": "Come riscalda Panoptes. «Solo ad auto accesa» comanda il clima localmente finché l'auto è accesa in P. «Anche tramite il cloud BYD» avvia sessioni di clima remoto ad auto spenta (10–30 min, al massimo 12 per notte, almeno 45 min di distanza); ogni volta sveglia l'auto. «Prova» non comanda nulla e mostra solo cosa succederebbe.",
+        "help": "Come riscalda Panoptes. «Solo ad auto accesa» comanda il clima localmente finché l'auto è accesa in P. «Anche tramite il cloud BYD» avvia sessioni di clima remoto ad auto spenta (10–30 min, al massimo 12 per notte, almeno 45 min di distanza); ogni volta sveglia l'auto. «Prova» non comanda nulla e mostra solo cosa succederebbe. Ogni sessione cloud conta solo con una conferma da BYD; dopo due fallimenti il riscaldamento cloud resta fermo fino al prossimo campeggio.",
         "probelauf": "Prova (non comanda nulla)",
         "auto_an": "Solo ad auto accesa (locale)",
         "auto_an_und_cloud": "Anche tramite il cloud BYD ad auto spenta"

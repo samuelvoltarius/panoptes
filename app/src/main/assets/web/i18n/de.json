@@ -5038,7 +5038,19 @@
     "upd_badge_paused": "Pausiert",
     "upd_ph_paused": "Download unterbrochen. Er geht beim nächsten Parken weiter.",
     "upd_net_wlan": "WLAN",
-    "upd_net_mobile": "Mobilfunk"
+    "upd_net_mobile": "Mobilfunk",
+    "handy_rechte": "Darf:",
+    "handy_recht_klima": "Klima",
+    "handy_recht_zusperren": "Zusperren",
+    "handy_recht_aufsperren": "Aufsperren (mit Fingerabdruck/Face ID)",
+    "handy_recht_push": "Benachrichtigungen",
+    "handy_schluessel_da": "Aufsperr-Schlüssel hinterlegt{g}.",
+    "handy_schluessel_fehlt": "Noch kein Aufsperr-Schlüssel hinterlegt.",
+    "handy_schluessel_weg": "Schlüssel entfernen",
+    "handy_aufsperren_confirm": "Dieses Handy darf das Auto dann aufsperren – nur nach Fingerabdruck bzw. Face ID am Handy, und du bekommst bei jedem Aufsperren eine Telegram-Meldung. Einschalten?",
+    "handy_schluessel_confirm": "Aufsperr-Schlüssel entfernen? Das Handy kann danach erst wieder aufsperren, wenn es einen neuen Schlüssel meldet (z. B. nach neuem Fingerabdruck).",
+    "handy_gespeichert": "Gespeichert",
+    "handy_fehler": "Konnte nicht speichern."
   },
   "guardLegal": {
     "trigger": {

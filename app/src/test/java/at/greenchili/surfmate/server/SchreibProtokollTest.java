@@ -42,7 +42,7 @@ public class SchreibProtokollTest {
     @Test
     public void imServerVorDenHandlernVerdrahtet() throws Exception {
         String h = Quelltext.lies(Paths.get("src/main/java/at/greenchili/surfmate/server/HttpServer.java"));
-        int guard = h.indexOf("ExternGuard.blocks(method, pathOnly)");
+        int guard = h.indexOf("ExternGuard.blocks(method, pathOnly,");   // 0.1.18: mit Kopplungs-Art
         int prot = h.indexOf("SchreibProtokoll.melde(", guard);
         int route = h.indexOf("routeToHandlers(method, path, body", guard);
         assertTrue(guard > 0 && prot > guard && route > prot);

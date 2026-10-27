@@ -85,7 +85,7 @@ public class KopplungUndRegelBTest {
         String hs = new String(Files.readAllBytes(Paths.get(
                 "src/main/java/at/greenchili/surfmate/server/HttpServer.java")), StandardCharsets.UTF_8);
         int auth = hs.indexOf("if (!authenticated) {");
-        int guard = hs.indexOf("ExternGuard.blocks(method, pathOnly)", auth);
+        int guard = hs.indexOf("ExternGuard.blocks(method, pathOnly,", auth);   // 0.1.18: mit Kopplungs-Art
         int route = hs.indexOf("routeToHandlers(method, path, body", auth);
         assertTrue(auth > 0 && guard > auth && guard < route);
         String am = new String(Files.readAllBytes(Paths.get(

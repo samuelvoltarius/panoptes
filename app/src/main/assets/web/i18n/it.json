@@ -5038,7 +5038,19 @@
     "upd_badge_paused": "In pausa",
     "upd_ph_paused": "Download interrotto. Riprenderà al prossimo parcheggio.",
     "upd_net_wlan": "Wi-Fi",
-    "upd_net_mobile": "Rete mobile"
+    "upd_net_mobile": "Rete mobile",
+    "handy_rechte": "Può:",
+    "handy_recht_klima": "Clima",
+    "handy_recht_zusperren": "Chiudere",
+    "handy_recht_aufsperren": "Aprire (con impronta/Face ID)",
+    "handy_recht_push": "Notifiche",
+    "handy_schluessel_da": "Chiave di apertura registrata{g}.",
+    "handy_schluessel_fehlt": "Nessuna chiave di apertura registrata.",
+    "handy_schluessel_weg": "Rimuovi chiave",
+    "handy_aufsperren_confirm": "Questo telefono potrà allora aprire l'auto – solo dopo impronta o Face ID sul telefono, e ricevi un messaggio Telegram a ogni apertura. Attivare?",
+    "handy_schluessel_confirm": "Rimuovere la chiave di apertura? Il telefono potrà aprire di nuovo solo dopo aver registrato una nuova chiave (ad es. dopo una nuova impronta).",
+    "handy_gespeichert": "Salvato",
+    "handy_fehler": "Impossibile salvare."
   },
   "guardLegal": {
     "trigger": {

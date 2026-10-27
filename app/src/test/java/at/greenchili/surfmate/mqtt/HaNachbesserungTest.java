@@ -51,6 +51,24 @@ public class HaNachbesserungTest {
     }
 
     @Test
+    public void zeitEntitaetGleichMitDemGrundwertAngemeldet() throws Exception {
+        // 0.1.18: vor der ersten echten Änderung gibt es noch keinen Wert, die Entität soll trotzdem da sein
+        JSONObject snap = new JSONObject().put("unlocked", 0).put("plugged", 1);
+        JSONObject cmps = new JSONObject(HomeAssistantDiscovery.buildBundle("byd-3eb0b7d3", null, "Dolphin Surf",
+                "0.1.18", "surfmate/byd-3eb0b7d3", snap, null, false)).getJSONObject("cmps");
+        JSONObject lock = cmps.getJSONObject("lock_changed_at");
+        assertEquals("sensor", lock.getString("p"));
+        assertEquals("timestamp", lock.getString("device_class"));
+        assertEquals("surfmate/byd-3eb0b7d3/lock_changed_at", lock.getString("state_topic"));
+        assertTrue(cmps.has("plugged_changed_at"));
+        assertFalse("ms nur als Rohwert", cmps.has("lock_changed_at_ms"));
+        // ohne Grundwert keine Zeit-Entität
+        JSONObject leer = new JSONObject(HomeAssistantDiscovery.buildBundle("byd-3eb0b7d3", null, "Dolphin Surf",
+                "0.1.18", "surfmate/byd-3eb0b7d3", new JSONObject().put("soc", 80), null, false)).getJSONObject("cmps");
+        assertFalse(leer.has("lock_changed_at"));
+    }
+
+    @Test
     public void zeitfelderImKatalog() {
         assertTrue(TelemetryFieldCatalog.isDiscoverable("lock_changed_at"));
         assertTrue(TelemetryFieldCatalog.isDiscoverable("plugged_changed_at"));

@@ -296,17 +296,20 @@ public class AuthApiHandler {
         JSONObject response = new JSONObject();
         String code = "";
         String name = "";
+        String art = null;
         try {
             JSONObject req = new JSONObject(body == null || body.isEmpty() ? "{}" : body);
             code = req.optString("code", "");
             name = req.optString("name", "");
+            // 0.1.18 Handy-Vertrag §1: Art auch beim Code/QR-Weg übernehmen (wie bei der Anfrage); unbekannt = ohne
+            art = req.optString("art", "");
         } catch (Exception ignored) {
         }
         long now = System.currentTimeMillis();
         if (at.greenchili.surfmate.auth.PairingCodes.redeem(code, now)) {
             clearRateLimit(rateLimitIdentity);
             // Jede Kopplung bekommt einen eigenen Listeneintrag; der JWT trägt dessen id (Widerruf).
-            String kid = at.greenchili.surfmate.auth.Kopplungen.get().anlegen(name, now);
+            String kid = at.greenchili.surfmate.auth.Kopplungen.get().anlegen(name, art, now);
             String jwt = kid == null ? null
                     : AuthManager.generateJwt(at.greenchili.surfmate.auth.PairingCodes.SCOPE, kid);
             if (jwt != null) {
