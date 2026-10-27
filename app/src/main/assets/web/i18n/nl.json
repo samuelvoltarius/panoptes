@@ -699,7 +699,15 @@
     "device_id_missing": "Het auto-ID is niet geladen. Laad de pagina opnieuw.",
     "success": "Je bent binnen. Je wordt doorgestuurd…",
     "invalid_code": "Die code klopt niet",
-    "connection_retry": "Verbinden is niet gelukt. Probeer het nog eens."
+    "connection_retry": "Verbinden is niet gelukt. Probeer het nog eens.",
+    "telegram_btn": "Aanmelden via Telegram",
+    "telegram_pruefzahl": "Controlegetal in Telegram",
+    "telegram_warte": "Vergelijk het getal en tik in Telegram op „Toestaan”. Deze aanmelding kan niet ontgrendelen en geen beveiligingsinstellingen wijzigen.",
+    "telegram_kein": "Telegram is niet ingesteld in de auto. Meld je aan met de toegangscode.",
+    "telegram_limit": "Te veel pogingen. Probeer het later opnieuw.",
+    "telegram_offen": "Er wachten al aanvragen. Wacht even.",
+    "telegram_abgelehnt": "De aanmelding is in Telegram geweigerd.",
+    "telegram_abgelaufen": "De aanvraag is verlopen. Vraag opnieuw aan."
   },
   "notif": {
     "page_title": "Meldingen",
@@ -4717,7 +4725,16 @@
     "confirm_custom": "“{name}” nu uitvoeren?",
     "confirm_climate_off": "De klimaatregeling uitzetten?",
     "confirm_generic": "Een opdracht naar de auto sturen?",
-    "setup_cloud_q": "Nu de BYD-cloud instellen?"
+    "setup_cloud_q": "Nu de BYD-cloud instellen?",
+    "pwa_title": "Panoptes als app",
+    "pwa_text": "Tik onderaan op „Delen” en dan op „Zet op beginscherm”. Daarna opent Panoptes als een app.",
+    "pwa_ok": "Begrepen",
+    "autostart_title": "Automatisch starten staat uit",
+    "autostart_text": "Na de update heeft BYD automatisch starten voor Panoptes uitgezet. Zonder start Panoptes niet vanzelf.",
+    "autostart_btn": "Automatisch starten weer aanzetten",
+    "autostart_laeuft": "Even geduld, Panoptes zet automatisch starten aan …",
+    "autostart_ok": "Automatisch starten staat weer aan.",
+    "autostart_fehler": "Dat is niet gelukt. Sta Panoptes toe bij Automatisch starten in de BYD-instellingen."
   },
   "shell": {
     "greet_night": "Goedenacht",
@@ -4727,6 +4744,7 @@
     "pill_guard": "Bewaker",
     "pill_net": "Netwerk",
     "my_car": "Mijn auto",
+    "no_model": "Geen model gekozen",
     "pill_guard_safe": "Bewaker · thuis",
     "pill_guard_on": "Bewaker actief",
     "pill_guard_off": "Bewaker uit",
@@ -5067,7 +5085,8 @@
     "handy_aufsperren_confirm": "Deze telefoon kan de auto dan ontgrendelen – alleen na vingerafdruk of Face ID op de telefoon, en je krijgt bij elke ontgrendeling een Telegram-bericht. Inschakelen?",
     "handy_schluessel_confirm": "Ontgrendelsleutel verwijderen? De telefoon kan pas weer ontgrendelen nadat hij een nieuwe sleutel meldt (bijv. na een nieuwe vingerafdruk).",
     "handy_gespeichert": "Opgeslagen",
-    "handy_fehler": "Kon niet opslaan."
+    "handy_fehler": "Kon niet opslaan.",
+    "cu_title": "‘{n}’ wil je BYD-cloudaanmelding aan Panoptes overdragen"
   },
   "guardLegal": {
     "trigger": {
@@ -6033,6 +6052,15 @@
     "err_ladepunkt_fehlt": "Kies eerst een laadpaal.",
     "days_alle": "elke dag",
     "days_werktag": "ma–vr",
-    "days_wochenende": "za/zo/feestdag"
+    "days_wochenende": "za/zo/feestdag",
+    "dyn": "Ik heb een dynamisch stroomtarief (beursprijs per uur)",
+    "dyn_hint": "Panoptes haalt dan één keer per dag de openbare beursprijzen op (aWATTar, zonder account). Uitgeschakeld gebeurt er geen enkele aanvraag.",
+    "t_exchange": "Beursprijs",
+    "exchange_country": "Beurs",
+    "surcharge": "Opslag (net, heffingen, leverancier)",
+    "exchange_hint": "Hieronder kun je extra opslagen per tijd toevoegen (bijv. nettarief dag/nacht). ‘Prijs buiten deze tijden’ geldt zolang er nog geen beursprijs bekend is.",
+    "exchange_off": "Je tarief staat op beursprijs, maar ‘dynamisch stroomtarief’ is uit – Panoptes rekent met de vervangende prijs.",
+    "exchange_until": "Beursprijzen bekend tot {zeit}, daarna vervangende prijs.",
+    "exchange_none": "Nog geen beursprijzen – ze komen binnen een minuut, anders geldt de vervangende prijs."
   }
 }

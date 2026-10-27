@@ -995,6 +995,8 @@ public class SurveillanceIpcServer implements Runnable {
                     // Telegram /where: the open (or latest) parking session.
                     // Same JSON the HTTP API serves, so both surfaces agree.
                     ParkingApiHandler.fillStatus(response);
+                    // 0.1.21: Ort nur mit „Position teilen“ (ha.positionTeilen); sonst verlässt kein Ort den Daemon
+                    HaApiHandler.woFreigabe(response);
                     response.put("success", true);
                     break;
 

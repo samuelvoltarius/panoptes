@@ -27,6 +27,8 @@ public final class WebHandyGuard {
             "/api/einrichtung",
             "/api/telegram/token", "/api/telegram/owner", "/api/telegram/clear", "/api/telegram/pin",
             "/api/bydcloud/setup", "/api/bydcloud/clear", "/api/bydcloud/settings",
+            "/api/telegram-anmeldung",   // 0.1.21: eine Web-Sitzung erlaubt keine weiteren Anmeldungen
+            "/api/cloud-uebergabe",   // 0.1.21: Erlauben/Ablehnen der BYD-Cloud-Übergabe nur am Auto bzw. mit Login
             "/api/abrp/token",
             "/api/backup/",
             "/api/system/tailscale", "/api/tailscale/", "/api/wireguard", "/api/notzugang", "/api/hotspot",

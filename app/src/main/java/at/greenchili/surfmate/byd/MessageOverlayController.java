@@ -157,6 +157,17 @@ public final class MessageOverlayController {
         return true;
     }
 
+    /**
+     * 0.1.21: Rückfrage wie bei der Kopplung, aber an einen anderen Daemon-Pfad (BYD-Cloud-Übergabe:
+     * {@code /api/cloud-uebergabe/r-<ref>}). Der Dienst nimmt nur die zwei bekannten Pfadformen an.
+     */
+    public static boolean showRueckfrage(String ref, String pfad, String title, String message, String erlauben,
+                                         String ablehnen, int timeoutSec) {
+        if (ref == null || !ref.matches("^[0-9a-f]{16}$") || !("/api/cloud-uebergabe/r-" + ref).equals(pfad)) return false;
+        exec(kopplungCommand(ref, title, message, erlauben, ablehnen, timeoutSec) + " --es pfad " + q(pfad));
+        return true;
+    }
+
     public static String kopplungCommand(String ref, String title, String message, String erlauben,
                                          String ablehnen, int timeoutSec) {
         return "am start-foreground-service -n " + SERVICE

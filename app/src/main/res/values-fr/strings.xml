@@ -939,7 +939,6 @@
     <string name="vehicle_dialog_capacity_suffix">kWh</string>
     <string name="vehicle_dialog_capacity_helper">Entre 5 et 120 kWh. Une valeur inférieure à 15 ne convient qu\'à un hybride rechargeable (PHEV).</string>
     <string name="vehicle_dialog_model_label">Modèle de voiture</string>
-    <string name="vehicle_model_seagull">BYD Seagull</string>
     <string name="vehicle_dialog_save">Enregistrer</string>
     <string name="vehicle_dialog_reset">Détecter à nouveau automatiquement</string>
     <string name="vehicle_dialog_invalid_capacity">Veuillez saisir de 5 à 120 kWh</string>

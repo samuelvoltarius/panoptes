@@ -1168,7 +1168,11 @@ public class CameraDaemon {
         at.greenchili.surfmate.blitzer.BlitzerDienst.start();
         at.greenchili.surfmate.gesundheit.GesundheitsDienst.start();
         at.greenchili.surfmate.appupdate.AppUpdateDienst.start();
+        // 0.1.21: nach jedem bestätigten Update einmal die BYD-Autostart-Freigabe wiederherstellen
+        at.greenchili.surfmate.appupdate.AutostartNachUpdate.starteWaechter();
         at.greenchili.surfmate.ha.HaDienst.start();
+        // 0.1.21 PWA Stufe 1: eigene Tailnet-HTTPS-Regel prüfen und – nur wenn eingeschaltet – nachziehen
+        at.greenchili.surfmate.server.TailscaleHttpsApiHandler.starteWaechter();
         // 0.1.20 Panoptes-Brücke: ausgehende Verbindung zum Brücken-Server, nur wenn eingeschaltet (Opt-in)
         try { at.greenchili.surfmate.bruecke.BrueckeVerbindung.starten(); } catch (Throwable t) { log("Bruecke: " + t); }
         // Ladeplan zu Hause (0.1.20): Takt 60 s, ohne Einstellung kein Wallbox-Abruf
@@ -8246,7 +8250,10 @@ public class CameraDaemon {
         // "returned" stills still find the camera pipeline up.
         if (accIsOff) {
             at.greenchili.surfmate.parking.ParkingHooks.onAccOff(transitionGeneration);
+            // 0.1.21 Telegram „zurück am Auto“: Parkbeginn merken (Meldung nur mit Schalter, Standard aus)
+            at.greenchili.surfmate.telegram.ZurueckAmAuto.beiAccAus(System.currentTimeMillis());
         } else {
+            at.greenchili.surfmate.telegram.ZurueckAmAuto.beiAccAn(System.currentTimeMillis());
             at.greenchili.surfmate.parking.ParkingHooks.onAccOn(transitionGeneration);
             // 0.1.20 P7: „Panoptes bei Zündung an öffnen“ (Standard aus, nicht vor CarPlay/Android Auto, nur Activity)
             at.greenchili.surfmate.einrichtung.ZuendungOeffnen.beiAccAn(transitionGeneration);

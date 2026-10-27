@@ -217,6 +217,10 @@ public final class Katalog {
         park.gruppe = "system"; park.reihenfolge = 70; park.standard = true; park.verborgen = true;
         park.nurLesendExtern = true;
         l.add(park);
+        // 0.1.21: Telegram „zurück am Auto“ beim Einschalten nach einer Parkzeit (ohne Ort). Standard aus.
+        Feld zurueck = new Feld("telegram.zurueckAmAuto", Feld.Typ.BOOL);
+        zurueck.gruppe = "system"; zurueck.reihenfolge = 71; zurueck.standard = false; zurueck.nurLesendExtern = true;
+        l.add(zurueck);
         // Datenschutz Regel Nr. 2: Wetter über Open-Meteo nur mit Einwilligung (Position grob, ≈ 1 km)
         Feld wetter = new Feld("wetter.online", Feld.Typ.BOOL);
         wetter.gruppe = "system"; wetter.reihenfolge = 60; wetter.standard = false; wetter.nurLesendExtern = true;

@@ -22,6 +22,16 @@ public final class AppUpdateApiHandler {
     public static boolean handle(String method, String path, String body, OutputStream out) throws Exception {
         String pathOnly = path.contains("?") ? path.substring(0, path.indexOf('?')) : path;
         String query = path.contains("?") ? path.substring(path.indexOf('?') + 1) : "";
+        // 0.1.21 Knopf „Autostart wieder einschalten“: nur am Auto (lokal, voller Login) – öffnet kurz den BYD-Dialog
+        if (pathOnly.equals("/api/appupdate/autostart/freigeben") && method.equals("POST")) {
+            if (AuthMiddleware.isExternRequest() || AuthMiddleware.isHandyWebRequest()) {
+                HttpResponse.sendJson(out, 403, "{\"ok\":false,\"grund\":\"nur_am_auto\"}");
+                return true;
+            }
+            JSONObject r = at.greenchili.surfmate.appupdate.AutostartNachUpdate.get().freigeben(System.currentTimeMillis());
+            HttpResponse.sendJson(out, r.put("ok", true).toString());
+            return true;
+        }
         AppUpdateDienst d = AppUpdateDienst.get();
         if (d == null) {
             HttpResponse.sendJson(out, 503, "{\"ok\":false,\"grund\":\"nicht_bereit\"}");
@@ -30,7 +40,11 @@ public final class AppUpdateApiHandler {
         // ?sprache=de (Schema-Stil) oder ?lang=de (NEUBAU2-Vorschlag)
         String sprache = EinstellungenApiHandler.sprache(query.replace("lang=", "sprache="));
         if (pathOnly.equals("/api/appupdate/status") && method.equals("GET")) {
-            HttpResponse.sendJson(out, d.status(sprache).toString());
+            JSONObject s = d.status(sprache);
+            try {   // 0.1.21: Autostart nach dem Update (frei true/false + Zeit), nie ein Fehlergrund für den Status
+                s.put("autostart", at.greenchili.surfmate.appupdate.AutostartNachUpdate.get().zustand(System.currentTimeMillis()));
+            } catch (Exception ignored) { }
+            HttpResponse.sendJson(out, s.toString());
             return true;
         }
         boolean schreibend = method.equals("POST")

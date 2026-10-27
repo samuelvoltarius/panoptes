@@ -51,6 +51,11 @@ public final class TailscaleHttpsApiHandler {
         return true;
     }
 
+    /** 0.1.21 PWA Stufe 1: Wächter für die eigene HTTPS-Regel starten (im Daemon). */
+    public static void starteWaechter() {
+        TailscaleHttps.starteWaechter(TailscaleHttpsApiHandler::run);
+    }
+
     private static String run(String cmd, int timeoutSec) {
         Process p = null;
         try {

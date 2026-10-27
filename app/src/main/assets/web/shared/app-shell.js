@@ -428,10 +428,17 @@
     var NO_TOPBAR = { 'live-view.html': 1, 'remote-dev-view.html': 1 };
 
     // Anzeigenamen je vehicle.modelId (nur für die Kopfzeile, wenn kein eigener Name gesetzt ist).
-    var MODEL_NAMES = {
-        seagull: 'BYD Dolphin Surf', dolphin: 'BYD Dolphin', atto2: 'BYD Atto 2', atto3: 'BYD Atto 3',
-        seal: 'BYD Seal', sealu: 'BYD Seal U', sealion7: 'BYD Sealion 7', han: 'BYD Han', tang: 'BYD Tang'
-    };
+    // 0.1.21: eine Quelle – das Modell-Manifest (nameEu vor name), keine eigene Liste mehr.
+    var MODEL_NAMES = {};
+    function ladeModellNamen() {
+        fetch('../shared/models/manifest.json').then(function (r) { return r.json(); }).then(function (m) {
+            var arr = (m && m.models) || [];
+            for (var i = 0; i < arr.length; i++) {
+                if (arr[i] && arr[i].id) MODEL_NAMES[arr[i].id] = arr[i].nameEu || arr[i].name || '';
+            }
+            renderProfile();
+        }).catch(function () {});
+    }
 
     function tr(key, fallback, vars) {
         try {
@@ -584,6 +591,11 @@
             var parts = [];
             if (profileState.vehicleName) parts.push(profileState.vehicleName);
             if (model && model !== profileState.vehicleName) parts.push(model);
+            // 0.1.21: ohne gewähltes Modell kein geratenes Modell, sondern ein Hinweis
+            if (profileState.modellGewaehlt === false) {
+                if (!parts.length) parts.push(tr('shell.my_car', 'Mein Auto'));
+                parts.push(tr('shell.no_model', 'Kein Modell gewählt'));
+            }
             vehEl.textContent = parts.length ? parts.join(' · ') : tr('shell.my_car', 'Mein Auto');
         }
     }
@@ -591,6 +603,7 @@
     function loadProfile() {
         readCachedProfile();
         renderProfile();
+        ladeModellNamen();
         function store(p) {
             profileState = p;
             try { sessionStorage.setItem('pn-profile', JSON.stringify(p)); } catch (e) {}
@@ -608,11 +621,14 @@
         }).then(function (p) {
             if (!p || p.success === false) throw new Error('profile');
             store({ displayName: p.displayName || '', vehicleName: p.vehicleName || '',
-                    modelId: p.modelId || '', color: p.color || '', batteryKwh: p.batteryKwh || 0 });
+                    modelId: p.modelId || '', modellGewaehlt: p.modellGewaehlt, color: p.color || '',
+                    batteryKwh: p.batteryKwh || 0 });
         }).catch(function () {
             // Ältere App ohne Profil-Schnittstelle: wenigstens das Modell zeigen.
             fetch('/api/models/selected').then(function (r) { return r.json(); }).then(function (m) {
-                store({ displayName: '', vehicleName: '', modelId: (m && m.modelId) || '', color: (m && m.color) || '' });
+                var gew = !(m && m.modellGewaehlt === false);
+                store({ displayName: '', vehicleName: '', modelId: gew ? ((m && m.modelId) || '') : '',
+                        modellGewaehlt: m ? m.modellGewaehlt : undefined, color: (m && m.color) || '' });
             }).catch(function () {});
         });
     }

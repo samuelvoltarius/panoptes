@@ -323,6 +323,16 @@
                 <div class="spinner" id="loginSpinner" style="display:none;"></div>
             </button>
 
+            <!-- 0.1.21 Anmeldung per Telegram: Prüfzahl + Erlauben im Telegram-Chat; Web-Sitzung ohne Sicherheitsrechte -->
+            <button class="btn btn-secondary" id="tgBtn" onclick="telegramAnmelden()" style="margin-top:10px;">
+                <span data-i18n="login.telegram_btn">Per Telegram anmelden</span>
+            </button>
+            <div id="tgBox" class="device-info" style="display:none; margin-top:12px;">
+                <div class="device-info-label" data-i18n="login.telegram_pruefzahl">Prüfzahl in Telegram</div>
+                <div class="device-info-value" id="tgPruefzahl" style="font-size:24px; letter-spacing:0.2em;"></div>
+                <p class="form-hint" id="tgHinweis" data-i18n="login.telegram_warte">Vergleiche die Zahl und tippe in Telegram auf „Erlauben“.</p>
+            </div>
+
             <div class="login-footer">
                 <p data-i18n="login.privacy">Alles bleibt auf deinem Gerät.</p>
             </div>
@@ -493,6 +503,64 @@
             }
         }
         
+        // 0.1.21 Anmeldung per Telegram (ohne Zugangscode, ohne Sicherheitsrechte)
+        let tgTimer = null;
+        async function telegramAnmelden() {
+            const btn = document.getElementById('tgBtn');
+            hideStatus();
+            btn.disabled = true;
+            try {
+                const r = await fetch('/auth/telegram/anfrage', { method: 'POST' });
+                const d = await r.json().catch(() => ({}));
+                if (!d.ok) {
+                    const g = d.grund || '';
+                    showStatus(g === 'kein_telegram' ? t('login.telegram_kein', 'Telegram ist am Auto nicht eingerichtet.')
+                        : g === 'ratenlimit' ? t('login.telegram_limit', 'Zu viele Versuche. Bitte später noch einmal.')
+                        : g === 'zu_viele_offen' ? t('login.telegram_offen', 'Es warten schon Anfragen. Bitte kurz warten.')
+                        : t('login.connection_retry', 'Connection error. Please try again.'), 'error');
+                    btn.disabled = false;
+                    return;
+                }
+                document.getElementById('tgPruefzahl').textContent = d.pruefzahl;
+                document.getElementById('tgBox').style.display = 'block';
+                tgWarten(d.id);
+            } catch (e) {
+                showStatus(t('login.connection_retry', 'Connection error. Please try again.'), 'error');
+                btn.disabled = false;
+            }
+        }
+
+        function tgEnde(text, art) {
+            if (tgTimer) clearTimeout(tgTimer);
+            tgTimer = null;
+            document.getElementById('tgBox').style.display = 'none';
+            document.getElementById('tgBtn').disabled = false;
+            showStatus(text, art);
+        }
+
+        function tgWarten(id) {
+            tgTimer = setTimeout(async () => {
+                try {
+                    const r = await fetch('/auth/telegram/abholen?id=' + encodeURIComponent(id), { cache: 'no-store' });
+                    const d = await r.json().catch(() => ({}));
+                    const s = d.status || '';
+                    if (s === 'erlaubt') {
+                        // Der Server setzt das Cookie; für Tunnel wie beim Zugangscode auch in localStorage
+                        const m = document.cookie.match(/(?:^|;\s*)byd_session=([^;]+)/);
+                        if (m) { try { localStorage.setItem('byd_jwt', m[1]); } catch (e) { } }
+                        tgEnde(t('login.success', 'Login successful! Redirecting...'), 'success');
+                        setTimeout(() => { window.location.href = redirectUrl; }, 500);
+                        return;
+                    }
+                    if (s === 'abgelehnt') return tgEnde(t('login.telegram_abgelehnt', 'Die Anmeldung wurde in Telegram abgelehnt.'), 'error');
+                    if (s === 'abgelaufen' || s === 'abgeholt' || s === 'unbekannt' || r.status === 404 || r.status === 410) {
+                        return tgEnde(t('login.telegram_abgelaufen', 'Die Anfrage ist abgelaufen. Bitte neu anfragen.'), 'error');
+                    }
+                } catch (e) { /* kurz weg: weiter warten */ }
+                tgWarten(id);
+            }, 2000);
+        }
+
         // Enter key handler
         document.getElementById('tokenInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {

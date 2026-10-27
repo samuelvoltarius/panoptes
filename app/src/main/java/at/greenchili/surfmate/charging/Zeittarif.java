@@ -22,7 +22,10 @@ import java.util.Set;
  * </pre>
  * Ein Band gehört zum Kalendertag des Zeitpunkts: „22:00–06:00 werktag“ gilt Mo–Fr 00:00–06:00 und 22:00–24:00.
  * {@code bis:"24:00"} = Tagesende. Überlappen Bänder, gilt das erste passende.
- * Börse ({@code art:"boerse"}) kommt in 0.1.21 hinter dem Schalter „dynamischer Tarif“; bis dahin ungültig.
+ * <p>0.1.21 Börse ({@code art:"boerse"}, nur mit Schalter „dynamischer Tarif“): {@code {art:"boerse", land:"AT"|"DE",
+ * aufschlag:0.12, grundpreis:0.30, baender:[…Zusatzaufschläge…]}} – Preis = Börse ({@link BoersenPreise}) + Aufschlag +
+ * Aufschlag des passenden Bands. Ist kein Börsenpreis bekannt (Schalter aus, noch nicht veröffentlicht), gilt der
+ * Grundpreis als Ersatz. Börsenpreise dürfen negativ sein.
  */
 public final class Zeittarif {
 
@@ -58,11 +61,20 @@ public final class Zeittarif {
     private final double grundpreis;
     private final String land;
     private final Band[] baender;
+    private final boolean boerse;
+    private final double aufschlag;
 
-    private Zeittarif(double grundpreis, String land, Band[] baender) {
+    private Zeittarif(double grundpreis, String land, Band[] baender, boolean boerse, double aufschlag) {
         this.grundpreis = grundpreis;
         this.land = land;
         this.baender = baender;
+        this.boerse = boerse;
+        this.aufschlag = aufschlag;
+    }
+
+    /** Börsentarif (0.1.21)? */
+    public boolean istBoerse() {
+        return boerse;
     }
 
     /**
@@ -71,11 +83,15 @@ public final class Zeittarif {
      */
     public static Zeittarif aus(JSONObject j) {
         if (j == null) throw new IllegalArgumentException("zeittarif_fehlt");
-        if (!"zeittarif".equals(j.optString("art", ""))) throw new IllegalArgumentException("art_ungueltig");
+        String art = j.optString("art", "");
+        boolean boerse = "boerse".equals(art);
+        if (!"zeittarif".equals(art) && !boerse) throw new IllegalArgumentException("art_ungueltig");
         double g = j.optDouble("grundpreis", Double.NaN);
         if (!preisOk(g)) throw new IllegalArgumentException("grundpreis_ungueltig");
         String land = j.optString("land", "");
         if (!land.isEmpty() && !"AT".equals(land) && !"DE".equals(land)) throw new IllegalArgumentException("land_ungueltig");
+        double aufschlag = boerse ? j.optDouble("aufschlag", Double.NaN) : 0;
+        if (boerse && (land.isEmpty() || !preisOk(aufschlag) || aufschlag > 1)) throw new IllegalArgumentException("aufschlag_ungueltig");
         JSONArray b = j.optJSONArray("baender");
         if (b == null) b = new JSONArray();
         if (b.length() > MAX_BAENDER) throw new IllegalArgumentException("zu_viele_baender");
@@ -93,7 +109,7 @@ public final class Zeittarif {
             if (von < 0 || bis < 0 || !preisOk(p)) throw new IllegalArgumentException("band_ungueltig");
             arr[i] = new Band(tage, von, bis % 1440, p);
         }
-        return new Zeittarif(g, land, arr);
+        return new Zeittarif(g, land, arr, boerse, aufschlag);
     }
 
     /** null, wenn kein (gültiger) Zeittarif. */
@@ -145,8 +161,19 @@ public final class Zeittarif {
         ZonedDateTime z = Instant.ofEpochMilli(ms).atZone(zone);
         boolean we = wochenende(z.toLocalDate(), land);
         int minute = z.getHour() * 60 + z.getMinute();
+        if (boerse) {
+            double b = BoersenPreise.aktuell(land, ms);
+            double basis = Double.isNaN(b) ? grundpreis : b + aufschlag;
+            for (Band x : baender) if (x.gilt(we, minute)) return basis + x.preis;
+            return basis;
+        }
         for (Band b : baender) if (b.gilt(we, minute)) return b.preis;
         return grundpreis;
+    }
+
+    /** Börsentarif: ist für diesen Zeitpunkt ein echter Börsenpreis bekannt (sonst Ersatzpreis)? */
+    public boolean boerseBekannt(long ms) {
+        return boerse && !Double.isNaN(BoersenPreise.aktuell(land, ms));
     }
 
     /**

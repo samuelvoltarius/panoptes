@@ -141,10 +141,31 @@ public class BydCloudApiHandler {
      * }
      */
     private static void handleSetup(OutputStream out, String body) throws Exception {
+        JSONObject req;
+        try {
+            req = new JSONObject(body);
+        } catch (Exception e) {
+            JSONObject r = new JSONObject().put("success", false).put("error", e.getMessage());
+            HttpResponse.sendJson(out, r.toString());
+            return;
+        }
+        JSONObject r = einrichten(req);
+        r.remove("code");
+        r.remove("gespeichert");
+        HttpResponse.sendJson(out, r.toString());
+    }
+
+    /**
+     * Einrichten wie „BYD-Cloud einrichten“ (Speichern + Test-Login + VIN + PIN-Prüfung). Gemeinsamer Weg für die
+     * Eingabe von Hand und die Übergabe vom EV-Cockpit (0.1.21, CLOUD_UEBERGABE_VERTRAG §1.5). Antwort wie bisher
+     * ({@code success, error, vin…}) plus {@code gespeichert} (Zugangsdaten liegen) und {@code code} (Grund, maschinenlesbar).
+     * Schreibt nie Zugangsdaten ins Protokoll.
+     */
+    public static JSONObject einrichten(JSONObject req) throws Exception {
         JSONObject response = new JSONObject();
+        response.put("gespeichert", false);
 
         try {
-            JSONObject req = new JSONObject(body);
             String username = req.optString("username", "").trim();
             String password = req.optString("password", "").trim();
             String controlPin = req.optString("controlPin", "").trim();
@@ -170,8 +191,7 @@ public class BydCloudApiHandler {
             if (username.isEmpty()) {
                 response.put("success", false);
                 response.put("error", Messages.get("errors.bydcloud_email_required"));
-                HttpResponse.sendJson(out, response.toString());
-                return;
+                return response.put("code", "email_fehlt");
             }
 
             // For updates: if password/PIN are empty, reuse existing derived keys
@@ -192,16 +212,14 @@ public class BydCloudApiHandler {
             } else {
                 response.put("success", false);
                 response.put("error", Messages.get("errors.bydcloud_password_required_first_setup"));
-                HttpResponse.sendJson(out, response.toString());
-                return;
+                return response.put("code", "passwort_fehlt");
             }
 
             if (!controlPin.isEmpty()) {
                 if (!controlPin.matches("\\d{4,6}")) {
                     response.put("success", false);
                     response.put("error", Messages.get("errors.bydcloud_pin_format"));
-                    HttpResponse.sendJson(out, response.toString());
-                    return;
+                    return response.put("code", "pin_format");
                 }
                 commandPwd = BydCryptoUtils.md5Hex(controlPin);
             } else if (existing.isConfigured()) {
@@ -209,8 +227,7 @@ public class BydCloudApiHandler {
             } else {
                 response.put("success", false);
                 response.put("error", Messages.get("errors.bydcloud_pin_required_first_setup"));
-                HttpResponse.sendJson(out, response.toString());
-                return;
+                return response.put("code", "pin_fehlt");
             }
 
             logger.info("Testing BYD Cloud login for: " + username.charAt(0) + "***@" + username.substring(username.indexOf('@') + 1));
@@ -225,6 +242,7 @@ public class BydCloudApiHandler {
             // Save credentials first (so BydCloudClient can read them)
             BydCloudConfig.saveCredentials(username, loginKey, signPassword,
                     commandPwd, rawPasswordForSave, "", countryCode, language, region);
+            response.put("gespeichert", true);
             logger.info("  Credentials saved to unified config");
 
             // Test login
@@ -236,8 +254,7 @@ public class BydCloudApiHandler {
                 logger.error("  FAILED: transport tables not found at /data/user_de/0/com.android.shell/surfmate/ or in assets");
                 response.put("success", false);
                 response.put("error", Messages.get("errors.bydcloud_bangcle_tables_missing_reinstall"));
-                HttpResponse.sendJson(out, response.toString());
-                return;
+                return response.put("code", "tabellen_fehlen");
             }
 
             try {
@@ -266,8 +283,7 @@ public class BydCloudApiHandler {
                 logger.warn("  Step 2/3: FAILED to fetch vehicles: " + e.getMessage());
                 response.put("success", false);
                 response.put("error", Messages.get("errors.bydcloud_login_no_vehicles_with_detail", e.getMessage()));
-                HttpResponse.sendJson(out, response.toString());
-                return;
+                return response.put("code", "keine_fahrzeuge");
             }
 
             // Verify control PIN
@@ -279,8 +295,7 @@ public class BydCloudApiHandler {
                 logger.warn("  Step 3/3: FAILED to verify PIN: " + e.getMessage());
                 response.put("success", false);
                 response.put("error", Messages.get("errors.bydcloud_login_pin_verify_failed_with_detail", e.getMessage()));
-                HttpResponse.sendJson(out, response.toString());
-                return;
+                return response.put("code", "pin_falsch");
             }
 
             // Preserve existing cloudDataMerge toggle state
@@ -313,9 +328,9 @@ public class BydCloudApiHandler {
             logger.warn("BYD Cloud setup failed: " + e.getMessage());
             response.put("success", false);
             response.put("error", e.getMessage());
+            response.put("code", response.optBoolean("gespeichert") ? "login" : "speichern");
         }
-
-        HttpResponse.sendJson(out, response.toString());
+        return response;
     }
 
     /**

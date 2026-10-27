@@ -1352,7 +1352,6 @@
     <string name="settings_overlay_replay_subtitle">Zeigt CLIP: grün, solange der Clip aufgenommen wird, 5 Sekunden blau nach dem Speichern, rot bei einem Fehler. Erscheint nur, wenn eine Taste oder Regel für Sofortclips eingerichtet ist.</string>
     <string name="recordings_segment_replays">Rückblicke</string>
     <string name="recordings_segment_replays_count">Rückblicke · %d</string>
-    <string name="vehicle_model_seagull">BYD Seagull</string>
     <string name="projection_window_title">Anzeigebereich</string>
     <string name="projection_window_desc">Wähle, wo die App im Kombiinstrument sitzt. Nimm einen fertigen Platz oder ändere Größe und Lage selbst.</string>
     <string name="projection_preset_full">Ganz</string>

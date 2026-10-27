@@ -50,6 +50,17 @@ public final class VehicleModelSelection {
         return isResolvedSelection(modelId, source) ? modelId.trim() : null;
     }
 
+    /**
+     * 0.1.21: Das wirklich gewählte Modell aus {@code unified.vehicle}, sonst null („kein Modell gewählt“). Eine Regel
+     * für /api/system/profile, /api/models/selected und /api/launcher/v1/summary – nie das alte „seal“ einer
+     * Neuinstallation als Wahl ausgeben.
+     */
+    public static String gewaehlt(org.json.JSONObject vehicle) {
+        if (vehicle == null) return null;
+        String raw = vehicle.optString("modelId", "");
+        return resolvedModelId(raw, vehicle.optString("modelSource", ""));
+    }
+
     private static boolean hasModelId(String modelId) {
         return modelId != null && !modelId.trim().isEmpty();
     }

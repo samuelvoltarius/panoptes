@@ -555,7 +555,7 @@ public class AuthManager {
         if (WebSitzung.SCOPE.equals(ok.scope)) {
             // 0.1.20 Web-Sitzung: gilt nur, solange die Handy-Kopplung besteht und das Recht „web“ hat
             if (kid.isEmpty()) return JwtValidation.failure("Web-Sitzung ohne Kopplung");
-            if (!kopplungen.pruefe(kid, nowMs) || !kopplungen.istHandy(kid) || !kopplungen.hatRecht(kid, Kopplungen.RECHT_WEB)) {
+            if (!kopplungen.pruefe(kid, nowMs) || !kopplungen.darfWebSitzung(kid)) {
                 return JwtValidation.failure("Web-Sitzung beendet (Kopplung widerrufen oder ohne Recht)");
             }
             ok.kid = kid;

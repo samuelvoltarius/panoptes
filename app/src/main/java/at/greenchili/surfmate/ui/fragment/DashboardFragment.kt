@@ -1606,11 +1606,8 @@ class DashboardFragment : Fragment() {
                                 m.optString("title", "").isNotEmpty() -> m.optString("title")
                                 else -> id
                             }
-                            val title = if (id.equals("seagull", ignoreCase = true)) {
-                                ctx.getString(R.string.vehicle_model_seagull)
-                            } else {
-                                canonicalTitle
-                            }
+                            // 0.1.21: EU-Name (z. B. Dolphin Surf statt Seagull) aus dem Manifest
+                            val title = m.optString("nameEu", "").ifEmpty { canonicalTitle }
                             // nominalKwh is the manifest's canonical pack
                             // capacity for this model. 0 means the manifest
                             // doesn't carry a value for it; the dropdown
@@ -1922,25 +1919,9 @@ class DashboardFragment : Fragment() {
     }
 
     private fun modelDisplayName(modelId: String?): String {
-        return when (modelId?.lowercase()) {
-            null -> "—"
-            "seal" -> "BYD Seal"
-            "atto3", "atto-3" -> "BYD Atto 3"
-            "atto3evo", "atto3-evo", "atto-3-evo" -> "BYD Atto 3 Evo"
-            "atto2", "atto-2" -> "BYD Atto 2"
-            "atto1", "atto-1" -> "BYD Atto 1"
-            "han" -> "BYD Han"
-            "tang" -> "BYD Tang"
-            "song" -> "BYD Song"
-            "qin" -> "BYD Qin"
-            "dolphin" -> "BYD Dolphin"
-            "seagull" -> getString(R.string.vehicle_model_seagull)
-            "sealion6" -> "BYD Sealion 6"
-            "sealion7" -> "BYD Sealion 7"
-            "shark" -> "BYD Shark"
-            "sealu", "seal-u" -> "BYD Seal U"
-            else -> modelId.replaceFirstChar { it.uppercase() }
-        }
+        // 0.1.21: Name nur aus dem Modell-Manifest (nameEu vor name), keine eigene Liste
+        val c = context ?: return modelId ?: "—"
+        return at.greenchili.surfmate.ui.ModellNamen.anzeige(c, modelId)
     }
 
     companion object {

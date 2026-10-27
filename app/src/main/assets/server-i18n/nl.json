@@ -349,7 +349,9 @@
         "label": "Datalimiet van de hotspot bereikt",
         "note": "Als de hotspot zijn ingestelde datalimiet overschrijdt; hij wordt dan uitgezet. Verhoog of reset de limiet om hem weer te gebruiken."
       }
-    }
+    },
+    "cloud_uebergabe_titel": "‘{0}’ wil de BYD-cloud overdragen",
+    "cloud_uebergabe_text": "Controlegetal {0}"
   },
   "parking": {
     "notify": {
@@ -533,7 +535,9 @@
         "gps_recent": "Locatie is een paar minuten oud",
         "gps_stale": "Locatie is oud – waarschijnlijk een parkeergarage, de ingang wordt getoond",
         "gps_unknown": "Positie onbekend",
-        "osm_link": "🗺 Kaart (OpenStreetMap):"
+        "osm_link": "🗺 Kaart (OpenStreetMap):",
+        "position_off": "📍 Panoptes deelt de positie alleen als je dat toestaat: Panoptes → Instellingen → Home Assistant → „Positie delen”.",
+        "now": "📍 *Hier staat je auto nu*"
       }
     },
     "motion": {
@@ -828,6 +832,22 @@
       "aufsperren_ok": "🔓 *Ontgrendeld* via telefoon ‘{0}’.",
       "aufsperren_unbestaetigt": "🔓 Ontgrendelopdracht via telefoon ‘{0}’ verzonden – bevestiging van de auto ontbreekt.",
       "aufsperren_abgelehnt": "🔒 Ontgrendelen via telefoon ‘{0}’ geweigerd ({1})."
+    },
+    "zurueck": {
+      "text": "🚗 Welkom terug bij de auto. Hij stond {0} geparkeerd.",
+      "mit_ereignissen": "🚗 Welkom terug bij de auto. Hij stond {0} geparkeerd, met {1} gebeurtenissen. Zie /wo of Panoptes."
+    },
+    "anmeldung": {
+      "anfrage": "🔑 Een browser wil zich aanmelden bij Panoptes.\nControlegetal: {0}\nSta het alleen toe als hetzelfde getal op je scherm staat. Deze aanmelding kan niet ontgrendelen en geen beveiligingsinstellingen wijzigen.",
+      "erlaubt": "✅ Aanmelding toegestaan.",
+      "abgelehnt": "❌ Aanmelding geweigerd."
+    },
+    "cloud_uebergabe": {
+      "anfrage": "☁️ *‘{0}’ wil je BYD-cloudaanmelding aan Panoptes overdragen*\nControlegetal: *{1}*\n\nKomt het getal overeen met dat in de cockpit? Je gegevens gaan versleuteld alleen naar je auto. Het verzoek geldt 5 minuten.",
+      "erlaubt": "✅ Toegestaan – de cockpit draagt de aanmelding nu over.",
+      "abgelehnt": "❌ Geweigerd.",
+      "uebernommen_ok": "☁️ BYD-cloud overgenomen van ‘{0}’ en gecontroleerd – Panoptes werkt nu ook als de auto uit staat.",
+      "uebernommen_nicht_geprueft": "☁️ BYD-cloud overgenomen van ‘{0}’, maar de controle is mislukt. Kijk in Panoptes onder Systeem → BYD-account."
     }
   },
   "vehicle_control": {
@@ -1989,6 +2009,10 @@
       "parkingMessages": {
         "title": "Parkeerbericht in Telegram",
         "help": "Stuurt na het parkeren een Telegram-bericht met de positie van de auto. Uit bij nieuwe installaties; bestaande installaties behouden hun eerdere instelling."
+      },
+      "zurueckAmAuto": {
+        "title": "Melding „terug bij de auto”",
+        "help": "Stuurt bij het aanzetten van het contact na minstens 10 minuten parkeren een kort Telegram-bericht met parkeerduur en aantal gebeurtenissen. Standaard: uit."
       }
     },
     "hinweise": {
@@ -2306,5 +2330,8 @@
       "installieren": "De bestanden voor de noodtoegang konden niet worden aangemaakt.",
       "adb_serve": "De noodtoegang is aangemeld, maar het doorsturen van adb (poort 5555) ontbreekt nog. De noodtoegang probeert het zelf opnieuw."
     }
+  },
+  "telegram_login": {
+    "geraet_name": "Browser (Telegram)"
   }
 }

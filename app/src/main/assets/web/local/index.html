@@ -6,13 +6,14 @@
     <title data-i18n="app.dashboard_title">Start – Panoptes</title>
     <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
     <link rel="manifest" href="/manifest.json">
-    <link rel="apple-touch-icon" href="../shared/app-icon-dark.webp">
+    <link rel="apple-touch-icon" href="../shared/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-title" content="Panoptes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0A2238">
     <script src="../shared/theme.js?v=13"></script>
     <script src="../shared/kartenquelle.js?v=5"></script>
-    <script src="../shared/app-shell.js?v=pn25"></script>
+    <script src="../shared/app-shell.js?v=pn26"></script>
     <link rel="stylesheet" href="../shared/styles.css?v=pn11">
     <style>
         /* Startseite nach design/mockup/start.html */
@@ -157,6 +158,18 @@
     <main class="main-content">
         <!-- 0.1.10: ruhige Karte „Wo hast du geladen?“ nur bei jetztZeigen (Auto in P); kein Ton, kein Popup -->
         <div class="hc" id="hNachfrage" style="display:none;margin:0 0 14px;padding:16px 18px;"></div>
+        <!-- 0.1.21 Autostart nach Update: nur am Display, nur wenn die automatische Freigabe nicht geklappt hat -->
+        <div class="hc" id="hAutostart" style="display:none;margin:0 0 14px;padding:18px 20px;">
+            <b data-i18n="home.autostart_title">Autostart ist aus</b>
+            <p style="margin:6px 0 12px" id="hAutostartText" data-i18n="home.autostart_text">Nach dem Update hat BYD den Autostart von Panoptes ausgeschaltet. Ohne ihn startet Panoptes nicht von selbst.</p>
+            <button type="button" class="act" id="hAutostartKnopf" style="width:100%;min-height:64px;font-size:1.2em" data-i18n="home.autostart_btn">Autostart wieder einschalten</button>
+        </div>
+        <!-- 0.1.21 PWA Stufe 1: nur in Safari am iPhone/iPad über https und noch nicht als App installiert -->
+        <div class="hc" id="hAppHinweis" style="display:none;margin:0 0 14px;padding:16px 18px;">
+            <b data-i18n="home.pwa_title">Panoptes als App</b>
+            <p style="margin:6px 0 10px" data-i18n="home.pwa_text">Unten auf „Teilen“ tippen → „Zum Home-Bildschirm“. Dann startet Panoptes wie eine App und kann dir Meldungen schicken.</p>
+            <button type="button" class="act" id="hAppHinweisZu" data-i18n="home.pwa_ok">Verstanden</button>
+        </div>
         <div class="home">
         <section class="home-grid">
 
@@ -708,8 +721,59 @@
         Home.loadVehicleState();
     }
 
+    // 0.1.21 PWA Stufe 1: Hinweis „Zum Home-Bildschirm“ – nur iOS-Safari, nur sicherer Kontext (https), nicht installiert
+    function appHinweis() {
+        try {
+            var ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            var installiert = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+            var weg = false;
+            try { weg = localStorage.getItem('panoptes.pwaHinweisWeg') === '1'; } catch (e) {}
+            if (!ios || installiert || weg || location.protocol !== 'https:') return;
+            var k = document.getElementById('hAppHinweis');
+            k.style.display = '';
+            document.getElementById('hAppHinweisZu').onclick = function () {
+                k.style.display = 'none';
+                try { localStorage.setItem('panoptes.pwaHinweisWeg', '1'); } catch (e) {}
+            };
+        } catch (e) {}
+    }
+
+    // 0.1.21: Autostart nach Update. EIN Knopf statt Dauer-Dialog; nur am Display und nur bei frei === false
+    function autostartKarte() {
+        if (document.documentElement.getAttribute('data-anzeige') !== 'auto') return;
+        var k = document.getElementById('hAutostart');
+        var knopf = document.getElementById('hAutostartKnopf');
+        var text = document.getElementById('hAutostartText');
+        function tt(key, fb) { var v = BYD.i18n.t(key); return v && v !== key ? v : fb; }
+        fetch('/api/appupdate/status', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (s) {
+                var a = s && s.autostart;
+                if (!a || a.frei !== false || a.aktuell !== true) return;
+                k.style.display = '';
+                knopf.onclick = function () {
+                    knopf.disabled = true;
+                    text.textContent = tt('home.autostart_laeuft', 'Einen Moment, Panoptes schaltet den Autostart ein …');
+                    fetch('/api/appupdate/autostart/freigeben', { method: 'POST' })
+                        .then(function (r) { return r.json(); })
+                        .then(function (e) {
+                            if (e && e.frei) {
+                                text.textContent = tt('home.autostart_ok', 'Autostart ist wieder an.');
+                                knopf.style.display = 'none';
+                                setTimeout(function () { k.style.display = 'none'; }, 4000);
+                            } else {
+                                text.textContent = tt('home.autostart_fehler', 'Das hat nicht geklappt. Bitte in den BYD-Einstellungen bei Autostart Panoptes erlauben.');
+                                knopf.disabled = false;
+                            }
+                        })
+                        .catch(function () { knopf.disabled = false; });
+                };
+            }).catch(function () {});
+    }
+
     BYD.i18n.init().then(function () {
         BYD.core.init();
+        appHinweis();
+        autostartKarte();
         Home.initMap();
         Home.loadRange();
         Home.loadVehicleState();

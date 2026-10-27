@@ -71,13 +71,14 @@ public class LadeplanDienstTest {
 
     Box box;
     LadeplanDienst d;
+    TariffProfile tarif;
 
     @Before
     public void setUp() throws Exception {
         box = new Box();
         JSONObject tj = new TariffProfile("Zuhause", 47.8, 13.0, 50, 0.30, 0, "€").toJson().put("id", "t1")
                 .put("zeittarif", Zeittarif.vorlage(Zeittarif.VORLAGE_TAG_NACHT, 0.30, "AT"));
-        TariffProfile tarif = new TariffProfile(tj);
+        tarif = new TariffProfile(tj);
         JSONArray orte = new JSONArray().put(new JSONObject().put("id", "o1").put("name", "Zuhause").put("lat", 47.8).put("lon", 13.0)
                 .put("r", 100).put("eigenschaften", new JSONObject().put("zuhause", true)).put("verweise", new JSONObject().put("tarif", "t1")));
         LadeplanDienst.Umgebung u = new LadeplanDienst.Umgebung() {
@@ -108,6 +109,24 @@ public class LadeplanDienstTest {
 
     void freigeben() throws Exception {
         assertNull(d.aendere(new JSONObject().put("freigabe", new JSONObject().put("an", true)), false));
+    }
+
+    /** 0.1.21: Börsentarif – ohne Schalter „dynamischer Tarif“ erscheint nirgends ein Börsenpreis. */
+    @Test
+    public void boerseNurMitSchalter() throws Exception {
+        JSONObject tj = tarif.toJson().put("zeittarif", new JSONObject().put("art", "boerse").put("land", "AT")
+                .put("aufschlag", 0.12).put("grundpreis", 0.30).put("baender", new JSONArray()));
+        tarif = new TariffProfile(tj);
+        JSONObject s = d.status();
+        assertEquals("boerse_aus", s.getJSONObject("tarif").getString("art"));
+        assertFalse(s.getJSONObject("vorschau").has("boerseBis"));
+        assertNull(d.boerseLand());
+        assertNull(d.aendere(new JSONObject().put("dynamischerTarif", true), true));   // Cockpit darf den Schalter setzen
+        s = d.status();
+        assertEquals("boerse", s.getJSONObject("tarif").getString("art"));
+        assertTrue(s.getJSONObject("vorschau").has("boerseBis"));
+        assertEquals("AT", d.boerseLand());
+        assertEquals("einstellung_ungueltig", d.aendere(new JSONObject().put("dynamischerTarif", "ja"), false));
     }
 
     @Test

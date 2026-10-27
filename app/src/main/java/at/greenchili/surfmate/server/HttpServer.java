@@ -743,6 +743,9 @@ public class HttpServer {
                 if (!serveStaticFile(out, "local/communicate.html")) {
                     HttpResponse.sendError(out, 404, "communicate.html not found");
                 }
+            } else if (path.equals("/apple-touch-icon.png") || path.equals("/apple-touch-icon-precomposed.png")) {
+                // 0.1.21 PWA: iOS fragt das Symbol ohne Anmeldung an der Wurzel ab (PNG, kein WebP)
+                if (!serveStaticFile(out, "shared/apple-touch-icon.png")) HttpResponse.sendError(out, 404, "icon not found");
             } else if (path.startsWith("/manifest.json")) {
                 if (!serveStaticFile(out, "local/manifest.json")) {
                     HttpResponse.sendError(out, 404, "manifest.json not found");
@@ -1458,6 +1461,23 @@ public class HttpServer {
         if (path.startsWith("/api/wallbox/") && WallboxApiHandler.handle(method, path, body, out)) return true;
         // Ladeplan zu Hause (LADEPLAN_KONZEPT, 0.1.20)
         if (path.startsWith("/api/ladeplan") && LadeplanApiHandler.handle(method, path, body, out)) return true;
+        // 0.1.21 Web-Anmeldung per Telegram: Entscheidung nur mit vollem Login (Telegram-Knopf über den Daemon)
+        if (path.matches("/api/telegram-anmeldung/[0-9a-f]{16}/(erlauben|ablehnen)") && "POST".equals(method)) {
+            if (AuthMiddleware.isExternRequest() || AuthMiddleware.isHandyWebRequest()) {
+                HttpResponse.sendJson(out, 403, "{\"ok\":false,\"grund\":\"nur_besitzer\"}");
+                return true;
+            }
+            String ref = path.substring("/api/telegram-anmeldung/".length(), path.lastIndexOf('/'));
+            at.greenchili.surfmate.auth.TelegramAnmeldung.Entscheid e = AuthApiHandler.telegramAnmeldung()
+                    .entscheiden(ref, path.endsWith("/erlauben"), System.currentTimeMillis());
+            int code = e == at.greenchili.surfmate.auth.TelegramAnmeldung.Entscheid.OK ? 200
+                    : e == at.greenchili.surfmate.auth.TelegramAnmeldung.Entscheid.SCHON_ENTSCHIEDEN ? 409
+                    : e == at.greenchili.surfmate.auth.TelegramAnmeldung.Entscheid.ABGELAUFEN ? 410 : 404;
+            HttpResponse.sendJson(out, code, "{\"ok\":" + (code == 200) + "}");
+            return true;
+        }
+        // BYD-Cloud vom EV-Cockpit übernehmen (CLOUD_UEBERGABE_VERTRAG, 0.1.21)
+        if (path.startsWith("/api/cloud-uebergabe") && CloudUebergabeApiHandler.handle(method, path, body, out)) return true;
 
         // H10 „Was ist neu“ + Firmware-Hinweis, H7 Monatsbericht
         if (path.startsWith("/api/neuigkeiten")

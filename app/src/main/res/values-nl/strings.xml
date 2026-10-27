@@ -939,7 +939,6 @@
     <string name="vehicle_dialog_capacity_suffix">kWh</string>
     <string name="vehicle_dialog_capacity_helper">Tussen 5 en 120 kWh. Alles onder 15 werkt alleen voor een PHEV.</string>
     <string name="vehicle_dialog_model_label">Automodel</string>
-    <string name="vehicle_model_seagull">BYD Seagull</string>
     <string name="vehicle_dialog_save">Opslaan</string>
     <string name="vehicle_dialog_reset">Weer automatisch herkennen</string>
     <string name="vehicle_dialog_invalid_capacity">Vul 5 tot 120 kWh in</string>

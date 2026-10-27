@@ -164,7 +164,18 @@ public final class Kopplungen {
     }
 
     public static final java.util.Set<String> ARTEN = java.util.Collections.unmodifiableSet(
-            new java.util.HashSet<>(java.util.Arrays.asList("cockpit", "homeassistant", "handy")));
+            new java.util.HashSet<>(java.util.Arrays.asList("cockpit", "homeassistant", "handy", "web")));
+
+    /** 0.1.21: Browser, angemeldet per Telegram-Erlauben – nur Web-Sitzung ohne Sicherheitsrechte (TelegramAnmeldung). */
+    public static final String ART_WEB = "web";
+
+    /**
+     * Darf eine Web-Sitzung (scope handyweb, Stufe B) an dieser Kopplung hängen? Handy mit Recht „web“ oder ein per
+     * Telegram angemeldeter Browser (Art web). Andere Arten nie.
+     */
+    public synchronized boolean darfWebSitzung(String id) {
+        return ART_WEB.equals(art(id)) || hatRecht(id, RECHT_WEB);
+    }
 
     // ---------------------------------------------------------------- 0.1.18 Handy (HANDY_API_VERTRAG.md)
 

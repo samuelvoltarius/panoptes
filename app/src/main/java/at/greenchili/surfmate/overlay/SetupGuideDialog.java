@@ -73,12 +73,23 @@ public class SetupGuideDialog {
                 // kein zweiter Dialog gleichzeitig (SETUP_WIZARD §3 Regel 10).
                 return false;
             case EINZELHINWEIS:
-                zeigeEinzelhinweis(context, needs);
-                return true;
+                // 0.1.21: Fehlt NUR der Autostart, kein Dialog bei jedem Start mehr – der Daemon gibt nach dem Update
+                // selbst frei (AutostartNachUpdate), und schlägt das fehl, zeigt die Startseite EINEN Knopf.
+                if (!nurAutostartDialog(needs)) {
+                    zeigeEinzelhinweis(context, needs);
+                    return true;
+                }
+                Log.i(TAG, "Autostart fehlt – Hinweis als Knopf auf der Startseite, kein Dialog");
+                return false;
             default:
                 if (!needs.anything()) markCurrentInstallSeen(context);
                 return false;
         }
+    }
+
+    /** true = es fehlt nur der Autostart (das übernimmt die Startseite); dann kein Dialog. */
+    static boolean nurAutostartDialog(SetupNeeds needs) {
+        return needs.autostartMissing && !needs.overlayMissing;
     }
 
     /**

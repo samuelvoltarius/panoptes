@@ -343,7 +343,9 @@
         "label": "Hotspot-Datenlimit erreicht",
         "note": "Wenn der Hotspot sein eingestelltes Datenlimit überschreitet; er wird dabei ausgeschaltet. Limit erhöhen oder zurücksetzen, um ihn wieder zu nutzen."
       }
-    }
+    },
+    "cloud_uebergabe_titel": "„{0}“ will die BYD-Cloud übergeben",
+    "cloud_uebergabe_text": "Prüfzahl {0}"
   },
   "parking": {
     "notify": {
@@ -501,7 +503,9 @@
         "gps_recent": "Standort ein paar Minuten alt",
         "gps_stale": "Standort alt – wohl eine Tiefgarage, gezeigt wird die Einfahrt",
         "gps_unknown": "Kein Standort",
-        "osm_link": "🗺 Karte (OpenStreetMap):"
+        "osm_link": "🗺 Karte (OpenStreetMap):",
+        "position_off": "📍 Die Position teilt Panoptes nur, wenn du es erlaubst: Panoptes → Einstellungen → Home Assistant → „Position teilen“.",
+        "now": "📍 *Hier ist dein Auto gerade*"
       }
     },
     "daemon": {
@@ -822,6 +826,22 @@
       "aufsperren_ok": "🔓 *Aufgesperrt* über Handy „{0}“.",
       "aufsperren_unbestaetigt": "🔓 Aufsperr-Befehl über Handy „{0}“ gesendet – die Bestätigung vom Auto fehlt.",
       "aufsperren_abgelehnt": "🔒 Aufsperren über Handy „{0}“ abgelehnt ({1})."
+    },
+    "zurueck": {
+      "text": "🚗 Willkommen zurück am Auto. Es stand {0}.",
+      "mit_ereignissen": "🚗 Willkommen zurück am Auto. Es stand {0}, dabei gab es {1} Ereignisse. Ansehen unter /wo oder in Panoptes."
+    },
+    "anmeldung": {
+      "anfrage": "🔑 Ein Browser möchte sich bei Panoptes anmelden.\nPrüfzahl: {0}\nErlaube nur, wenn dieselbe Zahl auf deinem Bildschirm steht. Die Anmeldung kann nicht aufsperren und keine Sicherheits-Einstellungen ändern.",
+      "erlaubt": "✅ Anmeldung erlaubt.",
+      "abgelehnt": "❌ Anmeldung abgelehnt."
+    },
+    "cloud_uebergabe": {
+      "anfrage": "☁️ *„{0}“ will deine BYD-Cloud-Anmeldung an Panoptes übergeben*\nPrüfzahl: *{1}*\n\nStimmt die Zahl mit der im Cockpit überein? Deine Zugangsdaten kommen verschlüsselt nur in dein Auto. Die Anfrage gilt 5 Minuten.",
+      "erlaubt": "✅ Erlaubt – das Cockpit übergibt jetzt die Anmeldung.",
+      "abgelehnt": "❌ Abgelehnt.",
+      "uebernommen_ok": "☁️ BYD-Cloud von „{0}“ übernommen und geprüft – Panoptes kann jetzt auch bei ausgeschaltetem Auto.",
+      "uebernommen_nicht_geprueft": "☁️ BYD-Cloud von „{0}“ übernommen, die Prüfung ist aber fehlgeschlagen. Bitte in Panoptes unter System → BYD-Konto nachsehen."
     }
   },
   "vehicle_control": {
@@ -1983,6 +2003,10 @@
       "parkingMessages": {
         "title": "Parknachricht in Telegram",
         "help": "Schickt nach dem Abstellen eine Telegram-Nachricht mit der Position des Autos. Bei neuer Einrichtung aus; bestehende Einrichtungen behalten ihre bisherige Einstellung."
+      },
+      "zurueckAmAuto": {
+        "title": "Meldung „zurück am Auto“",
+        "help": "Schickt beim Einschalten der Zündung nach mindestens 10 Minuten Parken eine kurze Telegram-Nachricht mit Parkdauer und Anzahl der Ereignisse. Standard: aus."
       }
     },
     "hinweise": {
@@ -2300,5 +2324,8 @@
       "installieren": "Die Dateien für den Notzugang konnten nicht angelegt werden.",
       "adb_serve": "Der Notzugang ist angemeldet, aber die adb-Weiterleitung (Port 5555) fehlt noch. Der Notzugang versucht es selbst erneut."
     }
+  },
+  "telegram_login": {
+    "geraet_name": "Browser (Telegram)"
   }
 }

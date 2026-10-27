@@ -106,7 +106,23 @@ public final class ExternGuard {
     /** Wie {@link #blocks(String, String)}, mit der Art der Kopplung (Handy-Pfade nur für {@code handy}). */
     public static boolean blocks(String method, String pathOnly, String kopplungsArt) {
         if (erlaubt(method, pathOnly)) return false;
+        if (cockpitErlaubt(method, pathOnly, kopplungsArt)) return false;
         return !handyErlaubt(method, pathOnly, kopplungsArt);
+    }
+
+    /**
+     * 0.1.21 BYD-Cloud-Übergabe (CLOUD_UEBERGABE_VERTRAG §5): genau {@code POST /api/cloud-uebergabe/anfrage},
+     * {@code GET|POST /api/cloud-uebergabe/r-<16 hex>} – nur für Kopplungen der Art {@code cockpit}. Erlauben/Ablehnen
+     * ({@code …/erlauben|ablehnen}) und die Liste offener Rückfragen bleiben für Kopplungen zu.
+     */
+    static boolean cockpitErlaubt(String method, String pathOnly, String kopplungsArt) {
+        if (!"cockpit".equals(kopplungsArt) || pathOnly == null) return false;
+        String p = pathOnly;
+        int q = p.indexOf('?');
+        if (q >= 0) p = p.substring(0, q);
+        if (p.contains("..") || p.contains("//")) return false;
+        if ("/api/cloud-uebergabe/anfrage".equals(p)) return "POST".equals(method);
+        return p.matches("/api/cloud-uebergabe/r-[0-9a-f]{16}") && ("GET".equals(method) || "POST".equals(method));
     }
 
     static boolean handyErlaubt(String method, String pathOnly, String kopplungsArt) {

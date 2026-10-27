@@ -301,6 +301,8 @@ public class ModelsApiHandler {
         response.put("selectedModelId",
                 selectedModelId != null ? selectedModelId : JSONObject.NULL);
         response.put("modelSource", modelSource);
+        // 0.1.21: modelId ist ohne Wahl nur der Platzhalter fürs 3D-Bild; ob gewählt, sagt dieses Feld (wie profile)
+        response.put("modellGewaehlt", selectedModelId != null);
         response.put("color", vehicle.optString("color", "#E8E8EC"));
         // 0.1.20: offizieller Lack (manifest paints des Modells), null bei eigener Farbe oder Modell ohne Liste
         JSONObject lack = lackFuer(manifest, modelId, vehicle.optString("paintId", ""), vehicle.optString("color", ""));

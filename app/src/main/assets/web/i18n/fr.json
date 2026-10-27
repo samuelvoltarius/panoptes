@@ -699,7 +699,15 @@
     "device_id_missing": "L'ID de la voiture ne s'est pas chargé. Rechargez la page.",
     "success": "Vous êtes connecté. Redirection…",
     "invalid_code": "Ce code ne correspond pas",
-    "connection_retry": "Connexion impossible. Veuillez réessayer."
+    "connection_retry": "Connexion impossible. Veuillez réessayer.",
+    "telegram_btn": "Se connecter via Telegram",
+    "telegram_pruefzahl": "Code de contrôle dans Telegram",
+    "telegram_warte": "Comparez le nombre et touchez « Autoriser » dans Telegram. Cette connexion ne peut pas déverrouiller ni modifier les réglages de sécurité.",
+    "telegram_kein": "Telegram n’est pas configuré dans la voiture. Connectez-vous avec le code d’accès.",
+    "telegram_limit": "Trop de tentatives. Réessayez plus tard.",
+    "telegram_offen": "Des demandes sont déjà en attente. Patientez un instant.",
+    "telegram_abgelehnt": "La connexion a été refusée dans Telegram.",
+    "telegram_abgelaufen": "La demande a expiré. Veuillez recommencer."
   },
   "notif": {
     "page_title": "Alertes",
@@ -4717,7 +4725,16 @@
     "confirm_custom": "Exécuter « {name} » maintenant ?",
     "confirm_climate_off": "Éteindre la climatisation ?",
     "confirm_generic": "Envoyer une commande à la voiture ?",
-    "setup_cloud_q": "Configurer le cloud BYD maintenant ?"
+    "setup_cloud_q": "Configurer le cloud BYD maintenant ?",
+    "pwa_title": "Panoptes comme appli",
+    "pwa_text": "Touchez « Partager » en bas, puis « Sur l’écran d’accueil ». Panoptes s’ouvre ensuite comme une appli.",
+    "pwa_ok": "Compris",
+    "autostart_title": "Démarrage auto désactivé",
+    "autostart_text": "Après la mise à jour, BYD a désactivé le démarrage auto de Panoptes. Sans lui, Panoptes ne démarre pas tout seul.",
+    "autostart_btn": "Réactiver le démarrage auto",
+    "autostart_laeuft": "Un instant, Panoptes active le démarrage auto …",
+    "autostart_ok": "Le démarrage auto est réactivé.",
+    "autostart_fehler": "Cela n’a pas fonctionné. Autorisez Panoptes sous Démarrage auto dans les réglages BYD."
   },
   "shell": {
     "greet_night": "Bonne nuit",
@@ -4727,6 +4744,7 @@
     "pill_guard": "Gardien",
     "pill_net": "Réseau",
     "my_car": "Ma voiture",
+    "no_model": "Aucun modèle choisi",
     "pill_guard_safe": "Gardien · à la maison",
     "pill_guard_on": "Gardien actif",
     "pill_guard_off": "Gardien désactivé",
@@ -5067,7 +5085,8 @@
     "handy_aufsperren_confirm": "Ce téléphone pourra alors déverrouiller la voiture – uniquement après empreinte ou Face ID sur le téléphone, et vous recevez un message Telegram à chaque déverrouillage. Activer ?",
     "handy_schluessel_confirm": "Supprimer la clé de déverrouillage ? Le téléphone ne pourra déverrouiller à nouveau qu'après avoir enregistré une nouvelle clé (p. ex. après une nouvelle empreinte).",
     "handy_gespeichert": "Enregistré",
-    "handy_fehler": "Impossible d'enregistrer."
+    "handy_fehler": "Impossible d'enregistrer.",
+    "cu_title": "« {n} » veut transmettre ta connexion au cloud BYD à Panoptes"
   },
   "guardLegal": {
     "trigger": {
@@ -6033,6 +6052,15 @@
     "err_ladepunkt_fehlt": "Choisis d’abord une borne.",
     "days_alle": "tous les jours",
     "days_werktag": "lun–ven",
-    "days_wochenende": "sam/dim/férié"
+    "days_wochenende": "sam/dim/férié",
+    "dyn": "J’ai un tarif d’électricité dynamique (prix de bourse horaire)",
+    "dyn_hint": "Panoptes récupère alors une fois par jour les prix de bourse publics (aWATTar, sans compte). Désactivé, aucune requête n’est faite.",
+    "t_exchange": "Prix de bourse",
+    "exchange_country": "Bourse",
+    "surcharge": "Supplément (réseau, taxes, fournisseur)",
+    "exchange_hint": "En dessous, tu peux ajouter des suppléments par plage horaire (p. ex. tarif réseau jour/nuit). « Prix en dehors de ces horaires » s’applique tant qu’aucun prix de bourse n’est connu.",
+    "exchange_off": "Ton tarif est réglé sur le prix de bourse, mais « tarif d’électricité dynamique » est désactivé – Panoptes utilise le prix de remplacement.",
+    "exchange_until": "Prix de bourse connus jusqu’à {zeit}, ensuite prix de remplacement.",
+    "exchange_none": "Pas encore de prix de bourse – ils arrivent dans la minute, sinon le prix de remplacement s’applique."
   }
 }

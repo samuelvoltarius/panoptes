@@ -699,7 +699,15 @@
     "device_id_missing": "Die Geräte-ID wurde nicht geladen. Lade die Seite neu.",
     "success": "Angemeldet. Weiter geht's …",
     "invalid_code": "Der Zugangscode stimmt nicht",
-    "connection_retry": "Verbindung fehlgeschlagen. Versuch es bitte nochmal."
+    "connection_retry": "Verbindung fehlgeschlagen. Versuch es bitte nochmal.",
+    "telegram_btn": "Per Telegram anmelden",
+    "telegram_pruefzahl": "Prüfzahl in Telegram",
+    "telegram_warte": "Vergleiche die Zahl und tippe in Telegram auf „Erlauben“. Diese Anmeldung kann nicht aufsperren und keine Sicherheits-Einstellungen ändern.",
+    "telegram_kein": "Telegram ist am Auto nicht eingerichtet. Melde dich mit dem Zugangscode an.",
+    "telegram_limit": "Zu viele Versuche. Bitte später noch einmal.",
+    "telegram_offen": "Es warten schon Anfragen. Bitte kurz warten.",
+    "telegram_abgelehnt": "Die Anmeldung wurde in Telegram abgelehnt.",
+    "telegram_abgelaufen": "Die Anfrage ist abgelaufen. Bitte neu anfragen."
   },
   "notif": {
     "page_title": "Meldungen",
@@ -4717,7 +4725,16 @@
     "confirm_custom": "„{name}“ jetzt ausführen?",
     "confirm_climate_off": "Klima ausschalten?",
     "confirm_generic": "Befehl ans Auto senden?",
-    "setup_cloud_q": "Jetzt die BYD-Cloud einrichten?"
+    "setup_cloud_q": "Jetzt die BYD-Cloud einrichten?",
+    "pwa_title": "Panoptes als App",
+    "pwa_text": "Tippe unten auf „Teilen“ und dann auf „Zum Home-Bildschirm“. Danach öffnet sich Panoptes wie eine App.",
+    "pwa_ok": "Verstanden",
+    "autostart_title": "Autostart ist aus",
+    "autostart_text": "Nach dem Update hat BYD den Autostart von Panoptes ausgeschaltet. Ohne ihn startet Panoptes nicht von selbst.",
+    "autostart_btn": "Autostart wieder einschalten",
+    "autostart_laeuft": "Einen Moment, Panoptes schaltet den Autostart ein …",
+    "autostart_ok": "Autostart ist wieder an.",
+    "autostart_fehler": "Das hat nicht geklappt. Bitte in den BYD-Einstellungen bei Autostart Panoptes erlauben."
   },
   "shell": {
     "greet_night": "Gute Nacht",
@@ -4727,6 +4744,7 @@
     "pill_guard": "Wächter",
     "pill_net": "Netz",
     "my_car": "Mein Auto",
+    "no_model": "Kein Modell gewählt",
     "pill_guard_safe": "Wächter · Zuhause",
     "pill_guard_on": "Wächter aktiv",
     "pill_guard_off": "Wächter aus",
@@ -5067,7 +5085,8 @@
     "handy_aufsperren_confirm": "Dieses Handy darf das Auto dann aufsperren – nur nach Fingerabdruck bzw. Face ID am Handy, und du bekommst bei jedem Aufsperren eine Telegram-Meldung. Einschalten?",
     "handy_schluessel_confirm": "Aufsperr-Schlüssel entfernen? Das Handy kann danach erst wieder aufsperren, wenn es einen neuen Schlüssel meldet (z. B. nach neuem Fingerabdruck).",
     "handy_gespeichert": "Gespeichert",
-    "handy_fehler": "Konnte nicht speichern."
+    "handy_fehler": "Konnte nicht speichern.",
+    "cu_title": "„{n}“ will deine BYD-Cloud-Anmeldung an Panoptes übergeben"
   },
   "guardLegal": {
     "trigger": {
@@ -6033,6 +6052,15 @@
     "err_ladepunkt_fehlt": "Bitte zuerst eine Wallbox wählen.",
     "days_alle": "jeden Tag",
     "days_werktag": "Mo–Fr",
-    "days_wochenende": "Sa/So/Feiertag"
+    "days_wochenende": "Sa/So/Feiertag",
+    "dyn": "Ich habe einen dynamischen Stromtarif (stündlicher Börsenpreis)",
+    "dyn_hint": "Dann holt Panoptes einmal am Tag die öffentlichen Börsenpreise (aWATTar, ohne Konto). Ausgeschaltet gibt es keinen einzigen Abruf.",
+    "t_exchange": "Börsenpreis",
+    "exchange_country": "Börse",
+    "surcharge": "Aufschlag (Netz, Abgaben, Anbieter)",
+    "exchange_hint": "Unten kannst du zusätzliche Aufschläge je Zeit eintragen (z. B. Netzentgelt Tag/Nacht). „Preis außerhalb der Zeiten“ gilt, solange noch kein Börsenpreis bekannt ist.",
+    "exchange_off": "Dein Tarif ist auf Börsenpreis gestellt, „dynamischer Stromtarif“ ist aber aus – Panoptes rechnet mit dem Ersatzpreis.",
+    "exchange_until": "Börsenpreise bekannt bis {zeit}, danach Ersatzpreis.",
+    "exchange_none": "Noch keine Börsenpreise – sie kommen innerhalb einer Minute, sonst gilt der Ersatzpreis."
   }
 }

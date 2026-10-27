@@ -7,7 +7,7 @@
     <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
     <script src="../shared/theme.js?v=13"></script>
     <script src="../shared/kartenquelle.js?v=5"></script>
-    <script src="../shared/app-shell.js?v=pn25"></script>
+    <script src="../shared/app-shell.js?v=pn26"></script>
     <link rel="stylesheet" href="../shared/styles.css?v=pn11">
     <style>
         .sys-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -703,10 +703,20 @@
             anfragen: function () {
                 var self = this;
                 if (document.hidden || !this.anfragenDa) return;
-                fetch('/api/kopplung/anfragen', { cache: 'no-store' }).then(function (r) {
+                var kopplung = fetch('/api/kopplung/anfragen', { cache: 'no-store' }).then(function (r) {
                     if (r.status === 404 || r.status === 403) { self.anfragenDa = false; return null; }
                     return r.ok ? r.json() : null;
-                }).then(function (d) { if (d) self.zeigeAnfragen(d.anfragen || []); }).catch(function () {});
+                }).catch(function () { return null; });
+                // 0.1.21: BYD-Cloud-Übergabe vom EV-Cockpit (gleiche Rückfrage mit Prüfzahl)
+                var cloud = fetch('/api/cloud-uebergabe', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; })
+                    .catch(function () { return null; });
+                Promise.all([kopplung, cloud]).then(function (e) {
+                    if (!e[0] && !self.anfragenDa) return;
+                    var liste = ((e[0] && e[0].anfragen) || []).concat(((e[1] && e[1].offen) || []).map(function (c) {
+                        return { ref: c.ref, geraet: c.geraet, pruefzahl: c.pruefzahl, art: 'cloud' };
+                    }));
+                    self.zeigeAnfragen(liste);
+                });
             },
             zeigeAnfragen: function (liste) {
                 var self = this, box = document.getElementById('pairReq');
@@ -716,7 +726,8 @@
                 box.style.display = liste.length ? '' : 'none';
                 box.innerHTML = liste.map(function (a) {
                     return '<div class="sys-warn" style="display:block;padding:14px;">'
-                        + '<div style="font-weight:700;font-size:15px;">' + (a.art === 'homeassistant' ? HomeAssistant.symbol() + self.esc(self.t('system.req_title_ha', 'Home Assistant „{n}“ will sich verbinden', { n: a.geraet || '?' }))
+                        + '<div style="font-weight:700;font-size:15px;">' + (a.art === 'cloud' ? self.esc(self.t('system.cu_title', '„{n}“ will deine BYD-Cloud-Anmeldung an Panoptes übergeben', { n: a.geraet || '?' }))
+                            : a.art === 'homeassistant' ? HomeAssistant.symbol() + self.esc(self.t('system.req_title_ha', 'Home Assistant „{n}“ will sich verbinden', { n: a.geraet || '?' }))
                             : self.esc(self.t('system.req_title', '„{n}“ will sich verbinden', { n: a.geraet || '?' }))) + '</div>'
                         + '<div class="sys-note" style="margin-top:4px;">' + self.esc(self.t('system.req_check', 'Stimmt die Zahl mit der auf dem Gerät überein?')) + '</div>'
                         + '<div style="font:700 40px/1.2 var(--family-display, monospace);letter-spacing:.25em;margin:8px 0;">' + self.esc(a.pruefzahl) + '</div>'
@@ -737,7 +748,9 @@
                 var auf = null;   // 0.1.19 „Auch Aufsperren erlauben“ (nur Handy-Anfragen)
                 Array.prototype.forEach.call(document.querySelectorAll('#pairReq input[data-auf]'), function (x) { if (x.getAttribute('data-auf') === ref) auf = x; });
                 var body = was === 'erlauben' && auf && auf.checked ? JSON.stringify({ aufsperren: true }) : '{}';
-                fetch('/api/kopplung/anfrage/' + encodeURIComponent(ref) + '/' + was, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body })
+                var url = /^r-[0-9a-f]{16}$/.test(ref) ? '/api/cloud-uebergabe/' + ref + '/' + was   // 0.1.21 BYD-Cloud-Übergabe
+                    : '/api/kopplung/anfrage/' + encodeURIComponent(ref) + '/' + was;
+                fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body })
                     .then(function (r) { return r.json().then(function (d) { return d || {}; }, function () { return {}; }); })
                     .then(function (d) {
                         if (d.ok) toast(was === 'erlauben' ? self.t('system.req_allowed', 'Erlaubt. Das Gerät verbindet sich jetzt.') : self.t('system.req_denied', 'Abgelehnt.'), 'success');

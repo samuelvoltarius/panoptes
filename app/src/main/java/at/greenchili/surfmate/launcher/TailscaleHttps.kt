@@ -101,6 +101,63 @@ object TailscaleHttps {
         return lesen(sh)
     }
 
+    /**
+     * 0.1.21 (PWA Stufe 1): Soll der Wächter die eigene 443-Regel neu setzen? Nur wenn der Nutzer HTTPS eingeschaltet hat
+     * (Merkdatei), Tailscale läuft, das Tailnet Zertifikate erlaubt und Port 443 FREI ist (Regel fehlt, z. B. nach einem
+     * Zurücksetzen von tailscaled). Eine fremde oder unklare Regel wird nie angefasst.
+     */
+    @JvmStatic
+    fun nachziehen(statusJson: String, serveJson: String, merk: String?): Boolean {
+        val z = zustand(statusJson, serveJson, merk)
+        if (merk?.trim() != "true" || !z.optBoolean("httpsMoeglich")) return false
+        return TailscaleLauncher.parseHttpsServeSnapshot(serveJson).ownership == TailscaleLauncher.HttpsServeOwnership.FREE
+    }
+
+    /** Letzter Zustand des Wächters (für Selbsttest/Anzeige), null = noch nie geprüft. */
+    @Volatile
+    @JvmStatic
+    var letzterZustand: JSONObject? = null
+        private set
+
+    /** Ein Wächter-Durchlauf: lesen, ggf. Regel neu setzen, zurücklesen. Liefert den Zustand danach. */
+    @JvmStatic
+    fun waechterLauf(sh: Shell): JSONObject {
+        val (st, sv, merk) = lies(sh)
+        var z = zustand(st, sv, merk)
+        if (nachziehen(st, sv, merk)) {
+            sh.run(cli(TailscaleLauncher.secureHttpsServeArgs()) + " 2>&1 || true", 60)
+            z = lesen(sh).put("nachgezogen", true)
+        }
+        letzterZustand = z
+        return z
+    }
+
+    private val waechterGestartet = java.util.concurrent.atomic.AtomicBoolean(false)
+
+    /**
+     * Startet den Wächter im Daemon (Shell-UID): alle 2 Minuten. Ein Tailscale-Neustart verliert die Regel normalerweise
+     * nicht (serve --bg ist in tailscaled gespeichert); fehlt sie trotzdem, ist sie spätestens nach 2 Minuten wieder da.
+     * Ohne eingeschaltetes HTTPS ändert der Wächter nie etwas.
+     */
+    @JvmStatic
+    fun starteWaechter(sh: Shell) {
+        if (!waechterGestartet.compareAndSet(false, true)) return
+        val ex = java.util.concurrent.Executors.newSingleThreadScheduledExecutor { r ->
+            Thread(r, "TailscaleHttpsWaechter").apply { isDaemon = true }
+        }
+        ex.scheduleWithFixedDelay({
+            try {
+                val vorher = letzterZustand
+                val z = waechterLauf(sh)
+                if (z.optBoolean("nachgezogen") || vorher?.optBoolean("an") != z.optBoolean("an")) {
+                    at.greenchili.surfmate.logging.DaemonLogger.getInstance("TailscaleHttps").info("Wächter: an=" + z.optBoolean("an") + " grund=" + z.opt("grund")
+                            + (if (z.optBoolean("nachgezogen")) " (Regel neu gesetzt)" else ""))
+                }
+            } catch (_: Throwable) {
+            }
+        }, 30, 120, java.util.concurrent.TimeUnit.SECONDS)
+    }
+
     private fun merkSchreiben(an: Boolean, sh: Shell) {
         sh.run("mkdir -p '$HOME' && echo $an > '$MERKDATEI' && chmod 600 '$MERKDATEI'", 5)
     }

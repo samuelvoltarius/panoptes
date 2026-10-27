@@ -128,6 +128,14 @@ public class AuthApiHandler {
             return true;
         }
 
+        // 0.1.21 Anmeldung per Telegram-Erlauben (Web-Sitzung ohne Sicherheitsrechte, Stufe B)
+        if (path.equals("/auth/telegram/anfrage") && method.equals("POST")) {
+            return handleTelegramAnfrage(out, rateLimitIdentity);
+        }
+        if (path.startsWith("/auth/telegram/abholen") && method.equals("GET")) {
+            return handleTelegramAbholen(path, out);
+        }
+
         if (path.equals("/auth/logout") && method.equals("POST")) {
             return handleLogout(out);
         }
@@ -387,6 +395,83 @@ public class AuthApiHandler {
                 + "Content-Length: 0\r\nConnection: close\r\n\r\n").getBytes("UTF-8"));
         out.flush();
         log("Web-Sitzung geöffnet");
+        return true;
+    }
+
+    /** Gültigkeit der Web-Sitzung aus der Telegram-Anmeldung (widerrufbar über die Kopplungsliste). */
+    static final int TELEGRAM_SITZUNG_S = 7 * 24 * 3600;
+
+    /** Laufzeit-Instanz der Telegram-Anmeldung (Kopplung Art web + Web-JWT; Meldung an den Telegram-Besitzer). */
+    static at.greenchili.surfmate.auth.TelegramAnmeldung telegramAnmeldung() {
+        at.greenchili.surfmate.auth.TelegramAnmeldung t = at.greenchili.surfmate.auth.TelegramAnmeldung.get();
+        if (t != null) return t;
+        synchronized (AuthApiHandler.class) {
+            t = at.greenchili.surfmate.auth.TelegramAnmeldung.get();
+            if (t == null) {
+                t = new at.greenchili.surfmate.auth.TelegramAnmeldung(now -> {
+                    String kid = at.greenchili.surfmate.auth.Kopplungen.get().anlegen(
+                            Messages.get("telegram_login.geraet_name"), at.greenchili.surfmate.auth.Kopplungen.ART_WEB, now);
+                    if (kid == null) return null;
+                    return new String[]{kid, AuthManager.generateJwt(at.greenchili.surfmate.auth.WebSitzung.SCOPE, kid, TELEGRAM_SITZUNG_S)};
+                }, new at.greenchili.surfmate.auth.TelegramAnmeldung.Melder() {
+                    @Override public void neu(String ref, String pruefzahl, String absender) {
+                        try {
+                            at.greenchili.surfmate.telegram.TelegramNotifier.notifyTelegramAnmeldung(ref, pruefzahl);
+                        } catch (Throwable ignored) { }
+                    }
+
+                    @Override public void protokoll(String zeile) {
+                        log(zeile);
+                    }
+                });
+                at.greenchili.surfmate.auth.TelegramAnmeldung.setzen(t);
+            }
+            return t;
+        }
+    }
+
+    /** POST /auth/telegram/anfrage – ohne Login; nur wenn Telegram mit Besitzer eingerichtet ist. */
+    private static boolean handleTelegramAnfrage(OutputStream out, String identity) throws Exception {
+        if (!at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.hasOwner()) {
+            HttpResponse.sendJson(out, 409, new JSONObject().put("ok", false).put("grund", "kein_telegram").toString());
+            return true;
+        }
+        at.greenchili.surfmate.auth.TelegramAnmeldung.Neu n = telegramAnmeldung().anfrage(identity, System.currentTimeMillis());
+        if (n.grund != null) {
+            HttpResponse.sendJson(out, "ratenlimit".equals(n.grund) ? 429 : 409,
+                    new JSONObject().put("ok", false).put("grund", n.grund).toString());
+            return true;
+        }
+        HttpResponse.sendJson(out, 201, new JSONObject().put("ok", true).put("id", n.abholId)
+                .put("pruefzahl", n.pruefzahl).put("gueltigBis", n.gueltigBis).toString());
+        return true;
+    }
+
+    /** GET /auth/telegram/abholen?id=… – Status; bei „erlaubt“ einmalig die Web-Sitzung als Cookie. */
+    private static boolean handleTelegramAbholen(String path, OutputStream out) throws Exception {
+        String id = null;
+        String q = path.contains("?") ? path.substring(path.indexOf('?') + 1) : "";
+        for (String teil : q.split("&")) if (teil.startsWith("id=")) id = teil.substring(3);
+        at.greenchili.surfmate.auth.TelegramAnmeldung.Abholung a = telegramAnmeldung().abholen(id, System.currentTimeMillis());
+        if (a.status == null) {
+            HttpResponse.sendJson(out, 404, new JSONObject().put("ok", false).put("status", "unbekannt").toString());
+            return true;
+        }
+        String status = a.status.name().toLowerCase(java.util.Locale.ROOT);
+        if (a.jwt == null) {
+            HttpResponse.sendJson(out, a.status == at.greenchili.surfmate.auth.TelegramAnmeldung.Status.ABGELAUFEN ? 410 : 200,
+                    new JSONObject().put("ok", true).put("status", status).toString());
+            return true;
+        }
+        // Cookie nicht HttpOnly: auth.js liest den Token aus document.cookie (wie die Web-Sitzung der Handy-App)
+        String cookie = "byd_session=" + a.jwt + "; Path=/; Max-Age=" + TELEGRAM_SITZUNG_S + "; SameSite=Strict";
+        byte[] b = new JSONObject().put("ok", true).put("status", "erlaubt").toString().getBytes("UTF-8");
+        out.write(("HTTP/1.1 200 OK\r\nContent-Type: application/json; charset=utf-8\r\nSet-Cookie: " + cookie
+                + "\r\nCache-Control: no-store\r\nReferrer-Policy: no-referrer\r\nContent-Length: " + b.length
+                + "\r\nConnection: close\r\n\r\n").getBytes("UTF-8"));
+        out.write(b);
+        out.flush();
+        log("Web-Sitzung per Telegram geöffnet");
         return true;
     }
 

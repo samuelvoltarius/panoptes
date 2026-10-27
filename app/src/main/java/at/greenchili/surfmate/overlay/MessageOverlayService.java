@@ -258,6 +258,9 @@ public final class MessageOverlayService extends Service {
     private boolean showKopplung(Intent intent) {
         String ref = orDefault(intent.getStringExtra("ref"), "");
         if (!ref.matches("^[0-9a-f]{16}$")) { stopSelf(); return false; }
+        // 0.1.21: dieselbe Rückfrage auch für die BYD-Cloud-Übergabe (eigener Pfad, nur diese zwei Formen)
+        String pfad = orDefault(intent.getStringExtra("pfad"), "/api/kopplung/anfrage/" + ref);
+        if (!pfad.equals("/api/kopplung/anfrage/" + ref) && !pfad.equals("/api/cloud-uebergabe/r-" + ref)) { stopSelf(); return false; }
         String title = orDefault(intent.getStringExtra("title"), "");
         String message = orDefault(intent.getStringExtra("message"), "");
         int timeoutSec = intent.getIntExtra("timeoutSec", 120);
@@ -293,8 +296,8 @@ public final class MessageOverlayService extends Service {
         LinearLayout reihe = new LinearLayout(ctx);
         reihe.setOrientation(LinearLayout.HORIZONTAL);
         reihe.setGravity(Gravity.END);
-        reihe.addView(kopplungKnopf(ctx, orDefault(intent.getStringExtra("ablehnen"), "X"), 0xFF5F6368, ref, false));
-        reihe.addView(kopplungKnopf(ctx, orDefault(intent.getStringExtra("erlauben"), "OK"), 0xFF0B57D0, ref, true));
+        reihe.addView(kopplungKnopf(ctx, orDefault(intent.getStringExtra("ablehnen"), "X"), 0xFF5F6368, pfad, false));
+        reihe.addView(kopplungKnopf(ctx, orDefault(intent.getStringExtra("erlauben"), "OK"), 0xFF0B57D0, pfad, true));
         LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         rlp.topMargin = dp(ctx, 20);
@@ -311,7 +314,7 @@ public final class MessageOverlayService extends Service {
         return true;
     }
 
-    private Button kopplungKnopf(Context ctx, String text, int farbe, String ref, boolean erlauben) {
+    private Button kopplungKnopf(Context ctx, String text, int farbe, String pfad, boolean erlauben) {
         Button b = new Button(ctx);
         b.setText(text);
         b.setAllCaps(false);
@@ -331,7 +334,7 @@ public final class MessageOverlayService extends Service {
                 java.net.HttpURLConnection c = null;
                 try {
                     c = at.greenchili.surfmate.util.DaemonHttpClient.open(
-                            "/api/kopplung/anfrage/" + ref + (erlauben ? "/erlauben" : "/ablehnen"), "POST", 3000, 5000);
+                            pfad + (erlauben ? "/erlauben" : "/ablehnen"), "POST", 3000, 5000);
                     c.setDoOutput(true);
                     try (java.io.OutputStream o = c.getOutputStream()) { o.write(new byte[0]); }
                     logger.info("Kopplung am Display: " + (erlauben ? "erlaubt" : "abgelehnt") + " -> " + c.getResponseCode());

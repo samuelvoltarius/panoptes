@@ -548,6 +548,37 @@ public class TelegramNotifier {
         });
     }
 
+    /** 0.1.21 Web-Anmeldung per Telegram: Prüfzahl + Erlauben/Ablehnen an den Besitzer. Nie ein Schlüssel. */
+    public static void notifyTelegramAnmeldung(String ref, String pruefzahl) {
+        criticalExecutor.execute(() -> {
+            try {
+                JSONObject cmd = new JSONObject();
+                cmd.put("cmd", "notifyTelegramAnmeldung");
+                cmd.put("ref", ref);
+                cmd.put("pruefzahl", pruefzahl);
+                sendIpc(cmd, /*spoolOnDaemonDown=*/false);
+            } catch (Exception e) {
+                Log.e(TAG, "notifyTelegramAnmeldung IPC error", e);
+            }
+        });
+    }
+
+    /** 0.1.21 BYD-Cloud-Übergabe vom EV-Cockpit: Rückfrage mit Prüfzahl (Knöpfe wie beim Koppeln). Nie Zugangsdaten. */
+    public static void notifyCloudUebergabe(String ref, String geraet, String pruefzahl) {
+        criticalExecutor.execute(() -> {
+            try {
+                JSONObject cmd = new JSONObject();
+                cmd.put("cmd", "notifyCloudUebergabe");
+                cmd.put("ref", ref);
+                cmd.put("geraet", geraet);
+                cmd.put("pruefzahl", pruefzahl);
+                sendIpc(cmd, /*spoolOnDaemonDown=*/false);
+            } catch (Exception e) {
+                Log.e(TAG, "notifyCloudUebergabe IPC error", e);
+            }
+        });
+    }
+
     /** Gesundheitswächter: art = repariert | hilfe, minuten = wie lange der Wächter aus war. */
     public static void notifyGesundheit(String art, long minuten) {
         criticalExecutor.execute(() -> {

@@ -69,6 +69,20 @@ public final class LadeplanDienst {
         long letzteHandSteuerung(String ladepunkt) throws JSONException;
     }
 
+    /** Letzte Antwort von Takt/Status (für HA, ohne neuen Abruf). */
+    private volatile JSONObject letzter;
+
+    public JSONObject letzter() {
+        return letzter;
+    }
+
+    /** Schnappschuss „Plan aus“ (ohne Abruf) merken und liefern. */
+    JSONObject alsAus() throws JSONException {
+        JSONObject l = new JSONObject().put("zustand", new JSONObject().put("phase", "aus"));
+        letzter = l;
+        return l;
+    }
+
     private final File einstellungenDatei;
     private final File zustandDatei;
     private final Umgebung u;
@@ -97,6 +111,8 @@ public final class LadeplanDienst {
                 .put("phasen", 3)
                 .put("autoAcKw", 11)
                 .put("wirkungsgrad", 0.9)
+                // 0.1.21: „Ich habe einen dynamischen Stromtarif (stündlicher Börsenpreis)“ – Standard aus; nur dann Börse
+                .put("dynamischerTarif", false)
                 .put("ladepunkt", JSONObject.NULL)
                 .put("freigabe", new JSONObject().put("an", false).put("zeit", JSONObject.NULL).put("ladepunkt", JSONObject.NULL));
     }
@@ -144,6 +160,9 @@ public final class LadeplanDienst {
         // Not-Aus: Plan aus, während der Plan gerade lädt → einmal Stopp, danach schaltet er nie mehr
         if ("aus".equals(s.getString("modus")) && !"aus".equals(alt.getString("modus"))) notAus(alt);
         schreibe(einstellungenDatei, s);
+        if ("aus".equals(s.getString("modus"))) {
+            letzter = new JSONObject().put("zustand", new JSONObject().put("phase", "aus"));
+        }
         return null;
     }
 
@@ -166,6 +185,7 @@ public final class LadeplanDienst {
         if (Double.isNaN(ac) || ac < 1 || ac > 22) return "leistung_ungueltig";
         double wg = s.optDouble("wirkungsgrad", -1);
         if (Double.isNaN(wg) || wg < 0.5 || wg > 1) return "wirkungsgrad_ungueltig";
+        if (!(s.opt("dynamischerTarif") instanceof Boolean)) return "einstellung_ungueltig";
         JSONArray f = s.optJSONArray("fenster");
         if (f == null || f.length() > Zeittarif.MAX_BAENDER) return "fenster_ungueltig";
         for (int i = 0; i < f.length(); i++) {
@@ -185,6 +205,25 @@ public final class LadeplanDienst {
         if (!(v instanceof Number)) return false;
         double d = ((Number) v).doubleValue();
         return d == Math.rint(d) && d >= min && d <= max;
+    }
+
+    /**
+     * 0.1.21: Land für den Börsen-Abruf – nur mit Schalter „dynamischer Tarif“ und nur, wenn der Tarif des (ersten)
+     * Heimorts ein Börsentarif ist; sonst null (= kein Abruf).
+     */
+    public synchronized String boerseLand() throws JSONException {
+        if (!einstellungen().optBoolean("dynamischerTarif", false)) return null;
+        JSONArray orte = u.orte();
+        for (int i = 0; orte != null && i < orte.length(); i++) {
+            JSONObject o = orte.optJSONObject(i);
+            JSONObject eig = o == null ? null : o.optJSONObject("eigenschaften");
+            if (eig == null || !eig.optBoolean("zuhause") || o.optJSONObject("verweise") == null) continue;
+            String tid = o.getJSONObject("verweise").optString("tarif", "");
+            TariffProfile t = tid.isEmpty() ? null : u.tarif(tid);
+            Zeittarif zt = t == null ? null : t.getZeittarif();
+            if (zt != null && zt.istBoerse()) return zt.land();
+        }
+        return null;
     }
 
     // ------------------------------------------------------------------ Zustand
@@ -252,6 +291,7 @@ public final class LadeplanDienst {
         double lon = tel == null ? Double.NaN : tel.optDouble("lon", Double.NaN);
 
         // Heimort + Tarif
+        boolean dyn = s.optBoolean("dynamischerTarif", false);
         JSONArray orte = u.orte();
         JSONObject heim = null;
         boolean zuhause = false;
@@ -431,8 +471,15 @@ public final class LadeplanDienst {
                 .put("abfahrt", ab == null ? JSONObject.NULL : new JSONObject().put("zeit", ab[0]).put("ziel", ab[1]))
                 .put("schaltungen", z.optInt("schaltungen", 0));
         o.put("zustand", zu);
-        o.put("vorschau", plan.json());
-        JSONObject ti = new JSONObject().put("art", zt != null ? "zeittarif" : "fest")
+        JSONObject vs = plan.json();
+        // Börsenpreise nirgends ohne Schalter (§3): dann gilt beim Börsentarif überall der Ersatzpreis
+        if (zt != null && zt.istBoerse() && dyn) {
+            long bb = at.greenchili.surfmate.charging.BoersenPreise.aktuellBis(zt.land());
+            vs.put("boerseBis", bb > 0 ? (Object) bb : JSONObject.NULL);
+        }
+        o.put("vorschau", vs);
+        String art = zt == null ? "fest" : !zt.istBoerse() ? "zeittarif" : dyn ? "boerse" : "boerse_aus";
+        JSONObject ti = new JSONObject().put("art", art)
                 .put("preis", zt != null ? zt.grundpreis() : fest > 0 ? (Object) fest : JSONObject.NULL)
                 .put("tarifId", tarif == null ? JSONObject.NULL : tarif.getId())
                 .put("tarifName", tarif == null ? JSONObject.NULL : tarif.getLabel())
@@ -441,6 +488,7 @@ public final class LadeplanDienst {
         if (zt != null && tarif.toJson().optJSONObject("zeittarif") != null) ti.put("zeittarif", tarif.toJson().getJSONObject("zeittarif"));
         o.put("tarif", ti);
         o.put("letzte", z.optJSONArray("protokoll") == null ? new JSONArray() : z.getJSONArray("protokoll"));
+        letzter = o;
         return o;
     }
 

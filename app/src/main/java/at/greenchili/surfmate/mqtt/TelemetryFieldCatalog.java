@@ -322,6 +322,14 @@ public final class TelemetryFieldCatalog {
         add("camping_verbrauch",         "Camping Consumption",        SENSOR, null, MEAS, "%/h", "mdi:battery-arrow-down", false, 0.1);
         add("camping_intervall",         "Camping Heating Interval",   SENSOR, "duration", null, "min", "mdi:timer-sync", false, 0);
         add("camping_dauer",             "Camping Heating Duration",   SENSOR, "duration", null, "min", "mdi:timer", false, 0);
+        // 0.1.21 Ladeplan zu Hause (LadeplanTelemetrie): nur lesend, keine Börsenpreise
+        add("ladeplan_phase",            "Charge Plan Status",         SENSOR, "enum", null, null, "mdi:ev-station", false, 0);
+        add("ladeplan_laedt",            "Charge Plan Charging",       BINARY, "battery_charging", null, null, "mdi:ev-station", false, 0);
+        add("ladeplan_naechster_start",  "Charge Plan Next Start",     SENSOR, "timestamp", null, null, "mdi:clock-start", false, 0);
+        add("ladeplan_fertig",           "Charge Plan Finished At",    SENSOR, "timestamp", null, null, "mdi:clock-end", false, 0);
+        add("ladeplan_kwh",              "Charge Plan Energy",         SENSOR, "energy", null, "kWh", "mdi:lightning-bolt", false, 0.1);
+        add("ladeplan_kosten",           "Charge Plan Estimated Cost", SENSOR, null, null, null, "mdi:cash", false, 0.01);
+        add("ladeplan_ersparnis",        "Charge Plan Savings",        SENSOR, null, null, null, "mdi:piggy-bank", false, 0.01);
         // Zündung (ACC) laut Daemon, nur wenn autoritativ bekannt.
         add("ignition",             "Ignition",             NONE, null, null, null, null, true, 0);
     }

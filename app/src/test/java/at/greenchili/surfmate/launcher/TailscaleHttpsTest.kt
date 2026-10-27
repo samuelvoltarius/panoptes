@@ -121,6 +121,32 @@ class TailscaleHttpsTest {
         }
     }
 
+    /** 0.1.21 Wächter: zieht nur nach, wenn der Nutzer HTTPS eingeschaltet hat, das Tailnet es kann und 443 frei ist. */
+    @Test
+    fun waechterZiehtNurDieEigeneRegelNach() {
+        assertTrue(TailscaleHttps.nachziehen(statusAn, serveFrei, "true"))
+        assertFalse("Standard aus", TailscaleHttps.nachziehen(statusAn, serveFrei, null))
+        assertFalse(TailscaleHttps.nachziehen(statusAn, serveFrei, "false"))
+        assertFalse("Tailnet ohne HTTPS-Zertifikate", TailscaleHttps.nachziehen(statusOhneHttps, serveFrei, "true"))
+        assertFalse("Tailscale aus", TailscaleHttps.nachziehen(statusAus, serveFrei, "true"))
+        assertFalse("schon da", TailscaleHttps.nachziehen(statusAn, serveEigen, "true"))
+        assertFalse("fremde Regel bleibt", TailscaleHttps.nachziehen(statusAn, serveFremd, "true"))
+
+        val sh = FakeShell(statusAn, serveFrei, "true")
+        sh.nachEinschalten = serveEigen
+        val z = TailscaleHttps.waechterLauf(sh)
+        assertTrue(z.optBoolean("nachgezogen"))
+        assertEquals(1, sh.befehle.count { it.contains("serve --bg --https=443") })
+        keineGefaehrlichenBefehle(sh)
+
+        val aus = FakeShell(statusAn, serveFrei, "")
+        TailscaleHttps.waechterLauf(aus)
+        assertTrue("ohne Einschalten nie ein serve-Befehl", aus.befehle.none { it.contains("--https=443") })
+        val fremd = FakeShell(statusAn, serveFremd, "true")
+        TailscaleHttps.waechterLauf(fremd)
+        assertTrue(fremd.befehle.none { it.contains("--https=443") })
+    }
+
     @Suppress("unused")
     private fun json(s: String) = JSONObject(s)
 }

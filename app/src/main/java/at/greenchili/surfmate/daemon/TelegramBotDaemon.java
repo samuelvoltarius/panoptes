@@ -1656,6 +1656,25 @@ public class TelegramBotDaemon {
                     break;
                 }
 
+                case "notifyCloudUebergabe": {
+                    // 0.1.21 BYD-Cloud vom EV-Cockpit: nur an den Besitzer-Chat, Knöpfe wie beim Koppeln, nie Zugangsdaten
+                    String cRef = cmd.optString("ref", "");
+                    if (ownerChatId <= 0 || !cRef.matches("^r-[0-9a-f]{16}$")) {
+                        response.put("status", "error");
+                        response.put("message", ownerChatId <= 0 ? "Owner not set" : "bad ref");
+                        break;
+                    }
+                    String cHex = cRef.substring(2);
+                    String cText = tr("cloud_uebergabe.anfrage",
+                            at.greenchili.surfmate.telegram.KopplungsKnopf.md(cmd.optString("geraet", "")),
+                            cmd.optString("pruefzahl", ""));
+                    boolean cOk = sendMessageWithButtons(ownerChatId, cText, new String[][][]{{
+                            {tr("kopplung.knopf_erlauben"), at.greenchili.surfmate.telegram.CloudUebergabeKnopf.daten(cHex, true)},
+                            {tr("kopplung.knopf_ablehnen"), at.greenchili.surfmate.telegram.CloudUebergabeKnopf.daten(cHex, false)}}});
+                    response.put("status", cOk ? "ok" : "error");
+                    break;
+                }
+
                 case "notifyKopplungsAnfrage": {
                     // Kopplung per Anfrage (KOPPLUNG_ANFRAGE.md): nur an den Besitzer-Chat, Knöpfe
                     // [Erlauben] [Ablehnen]; Einmal-Wirkung + Ablauf prüft der Kamera-Daemon.
@@ -1675,6 +1694,22 @@ public class TelegramBotDaemon {
                             {tr("kopplung.knopf_erlauben"), at.greenchili.surfmate.telegram.KopplungsKnopf.daten(kId, true)},
                             {tr("kopplung.knopf_ablehnen"), at.greenchili.surfmate.telegram.KopplungsKnopf.daten(kId, false)}}});
                     response.put("status", kOk ? "ok" : "error");
+                    break;
+                }
+
+                case "notifyTelegramAnmeldung": {
+                    // 0.1.21 Web-Anmeldung per Telegram: Prüfzahl + Knöpfe, nur an den Besitzer-Chat
+                    String aRef = cmd.optString("ref", "");
+                    if (ownerChatId <= 0 || !aRef.matches("^[0-9a-f]{16}$")) {
+                        response.put("status", "error");
+                        response.put("message", ownerChatId <= 0 ? "Owner not set" : "bad ref");
+                        break;
+                    }
+                    boolean aOk = sendMessageWithButtons(ownerChatId, tr("anmeldung.anfrage", cmd.optString("pruefzahl", "")),
+                            new String[][][]{{
+                                    {tr("kopplung.knopf_erlauben"), at.greenchili.surfmate.telegram.AnmeldungsKnopf.daten(aRef, true)},
+                                    {tr("kopplung.knopf_ablehnen"), at.greenchili.surfmate.telegram.AnmeldungsKnopf.daten(aRef, false)}}});
+                    response.put("status", aOk ? "ok" : "error");
                     break;
                 }
 
@@ -2529,6 +2564,15 @@ public class TelegramBotDaemon {
                 handleKopplungsKnopf(callbackQuery, callbackId, data, userId);
                 return;
             }
+            if (data.startsWith(at.greenchili.surfmate.telegram.CloudUebergabeKnopf.PREFIX)) {
+                handleCloudUebergabeKnopf(callbackQuery, callbackId, data, userId);
+                return;
+            }
+
+            if (data.startsWith(at.greenchili.surfmate.telegram.AnmeldungsKnopf.PREFIX)) {
+                handleAnmeldungsKnopf(callbackQuery, callbackId, data, userId);
+                return;
+            }
 
             log("Callback from " + userId + ": " + data);
             
@@ -2584,6 +2628,41 @@ public class TelegramBotDaemon {
         }
     }
     
+    /** 0.1.21: Erlauben/Ablehnen einer BYD-Cloud-Übergabe aus Telegram (über den Kamera-Daemon, voller Login). */
+    private static void handleCloudUebergabeKnopf(JSONObject callbackQuery, String callbackId, String data, long userId) {
+        JSONObject msg = callbackQuery.optJSONObject("message");
+        JSONObject chat = msg == null ? null : msg.optJSONObject("chat");
+        long chatId = chat == null ? 0 : chat.optLong("id", 0);
+        String[] k = at.greenchili.surfmate.telegram.CloudUebergabeKnopf.lies(data);
+        if (k == null || !at.greenchili.surfmate.telegram.KopplungsKnopf.berechtigt(userId, chatId, ownerChatId)) {
+            log("Cloud-Übergabe-Knopf abgewiesen (fremder Absender/Chat oder ungültig)");
+            answerCallbackQuery(callbackId, tr("callback.not_authorized"));
+            return;
+        }
+        boolean erlauben = "j".equals(k[1]);
+        int code = 0;
+        java.net.HttpURLConnection c = null;
+        try {
+            c = at.greenchili.surfmate.util.DaemonHttpClient.open(
+                    at.greenchili.surfmate.telegram.CloudUebergabeKnopf.pfad(k[0], erlauben), "POST", 3000, 5000);
+            c.setDoOutput(true);
+            try (java.io.OutputStream o = c.getOutputStream()) {
+                o.write(new byte[0]);
+            }
+            code = c.getResponseCode();
+        } catch (Exception e) {
+            log("Cloud-Übergabe-Knopf: Daemon nicht erreichbar");
+        } finally {
+            if (c != null) c.disconnect();
+        }
+        String ergebnis = tr(at.greenchili.surfmate.telegram.CloudUebergabeKnopf.ergebnisSchluessel(code, erlauben));
+        answerCallbackQuery(callbackId, ergebnis);
+        log("Cloud-Übergabe-Knopf: " + (erlauben ? "erlauben" : "ablehnen") + " -> " + code);
+        if (msg != null && code != 0) {
+            editMessageRemoveButtons(chatId, msg.optLong("message_id", 0), msg.optString("text", "") + "\n\n" + ergebnis);
+        }
+    }
+
     /** Erlauben/Ablehnen einer Kopplungs-Anfrage aus Telegram (über den Kamera-Daemon, voller Login). */
     private static void handleKopplungsKnopf(JSONObject callbackQuery, String callbackId, String data, long userId) {
         JSONObject msg = callbackQuery.optJSONObject("message");
@@ -2615,6 +2694,41 @@ public class TelegramBotDaemon {
         answerCallbackQuery(callbackId, ergebnis);
         log("Kopplungs-Knopf: " + (erlauben ? "erlauben" : "ablehnen") + " -> " + code);
         // Knöpfe entfernen und Ergebnis anhängen (jede weitere Wirkung wäre ohnehin 409/410).
+        if (msg != null && code != 0) {
+            editMessageRemoveButtons(chatId, msg.optLong("message_id", 0), msg.optString("text", "") + "\n\n" + ergebnis);
+        }
+    }
+
+    /** 0.1.21: Erlauben/Ablehnen einer Web-Anmeldung aus Telegram (über den Kamera-Daemon, voller Login). */
+    private static void handleAnmeldungsKnopf(JSONObject callbackQuery, String callbackId, String data, long userId) {
+        JSONObject msg = callbackQuery.optJSONObject("message");
+        JSONObject chat = msg == null ? null : msg.optJSONObject("chat");
+        long chatId = chat == null ? 0 : chat.optLong("id", 0);
+        String[] k = at.greenchili.surfmate.telegram.AnmeldungsKnopf.lies(data);
+        if (k == null || !at.greenchili.surfmate.telegram.KopplungsKnopf.berechtigt(userId, chatId, ownerChatId)) {
+            log("Anmelde-Knopf abgewiesen (fremder Absender/Chat oder ungültig)");
+            answerCallbackQuery(callbackId, tr("callback.not_authorized"));
+            return;
+        }
+        boolean erlauben = "j".equals(k[1]);
+        int code = 0;
+        java.net.HttpURLConnection c = null;
+        try {
+            c = at.greenchili.surfmate.util.DaemonHttpClient.open(
+                    at.greenchili.surfmate.telegram.AnmeldungsKnopf.pfad(k[0], erlauben), "POST", 3000, 5000);
+            c.setDoOutput(true);
+            try (java.io.OutputStream o = c.getOutputStream()) {
+                o.write(new byte[0]);
+            }
+            code = c.getResponseCode();
+        } catch (Exception e) {
+            log("Anmelde-Knopf: Daemon nicht erreichbar");
+        } finally {
+            if (c != null) c.disconnect();
+        }
+        String ergebnis = tr(at.greenchili.surfmate.telegram.AnmeldungsKnopf.ergebnisSchluessel(code, erlauben));
+        answerCallbackQuery(callbackId, ergebnis);
+        log("Anmelde-Knopf: " + (erlauben ? "erlauben" : "ablehnen") + " -> " + code);
         if (msg != null && code != 0) {
             editMessageRemoveButtons(chatId, msg.optLong("message_id", 0), msg.optString("text", "") + "\n\n" + ergebnis);
         }

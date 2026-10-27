@@ -61,24 +61,95 @@ public final class OpenWbAdapter implements DirektAdapter {
      * die Tailscale-App des Autos lief (Befund 27.10.: Brücke 100.64.0.20 „nicht_erreichbar“, Verbindung „home“ verbunden).
      */
     static String weg(boolean proxy, boolean tailnetZiel, boolean localApi) {
-        if (proxy) return "proxy";
-        return tailnetZiel && localApi ? "tailnet" : "direkt";
+        return wege(proxy, tailnetZiel, localApi, null).get(0);
+    }
+
+    /**
+     * 0.1.21 Wegkette (Deploy 27.10., nach dem Kaltstart des Infotainments 22:06 „nicht_erreichbar“): jeder verfügbare
+     * Weg einmal, in der Reihenfolge proxy → tailnet → direkt; der zuletzt erfolgreiche Weg zu diesem Broker zuerst.
+     * Bis 0.1.20.1 gab es nach einem offenen, aber nicht tragenden SOCKS-Port keinen Rückfall.
+     */
+    static List<String> wege(boolean proxy, boolean tailnetZiel, boolean localApi, String zuletzt) {
+        List<String> w = new ArrayList<>();
+        if (proxy) w.add("proxy");
+        if (tailnetZiel && localApi) w.add("tailnet");
+        w.add("direkt");
+        if (zuletzt != null && w.remove(zuletzt)) w.add(0, zuletzt);
+        return w;
+    }
+
+    /** Ein Verbindungsversuch über einen Weg (Paho; im Test ersetzt). */
+    interface WegVersuch<T> {
+        T versuche(String weg) throws Exception;
+    }
+
+    /** Zuletzt erfolgreicher Weg je Broker (host:port). */
+    static final Map<String, String> ZULETZT = new ConcurrentHashMap<>();
+    /** Letzter Verbindungsaufbau für Status und Log: {broker, weg|null, wegFehler{weg: grund}, zeit}. */
+    static volatile JSONObject letzterAufbau;
+    private static volatile long letztesFehlerLog;
+
+    /** Für {@code /api/wallbox/status}: Weg und Gründe des letzten Aufbaus, oder null. */
+    public static JSONObject verbindung() {
+        return letzterAufbau;
+    }
+
+    /** Wege der Reihe nach probieren; Anmeldefehler (Broker erreicht) brechen sofort ab, sonst der letzte Fehler. */
+    static <T> T ueberWege(String broker, List<String> wege, WegVersuch<T> v) throws Exception {
+        JSONObject fehler = new JSONObject();
+        Exception letzter = null;
+        for (String w : wege) {
+            try {
+                T t = v.versuche(w);
+                ZULETZT.put(broker, w);
+                merke(broker, w, fehler);
+                return t;
+            } catch (org.eclipse.paho.client.mqttv3.MqttSecurityException e) {
+                merke(broker, w, fehler.put(w, "anmeldung"));
+                throw e;
+            } catch (Exception e) {
+                fehler.put(w, grund(e));
+                letzter = e;
+            }
+        }
+        merke(broker, null, fehler);
+        long jetzt = System.currentTimeMillis();
+        if (jetzt - letztesFehlerLog > 60_000L) {
+            letztesFehlerLog = jetzt;
+            try {
+                at.greenchili.surfmate.logging.DaemonLogger.getInstance("Wallbox")
+                        .warn("Broker " + broker + " nicht erreichbar: " + fehler);
+            } catch (Throwable ignored) { }
+        }
+        throw letzter != null ? letzter : new IllegalStateException("kein Weg");
+    }
+
+    private static void merke(String broker, String weg, JSONObject fehler) {
+        try {
+            letzterAufbau = new JSONObject().put("broker", broker).put("weg", weg == null ? JSONObject.NULL : weg)
+                    .put("wegFehler", fehler).put("zeit", System.currentTimeMillis());
+        } catch (JSONException ignored) { }
+    }
+
+    /** Kurzer Grund ohne Zugangsdaten (Klasse, Paho-Code, Ursache). */
+    static String grund(Throwable e) {
+        StringBuilder sb = new StringBuilder(e.getClass().getSimpleName());
+        if (e instanceof org.eclipse.paho.client.mqttv3.MqttException) {
+            sb.append(" ").append(((org.eclipse.paho.client.mqttv3.MqttException) e).getReasonCode());
+        }
+        Throwable c = e.getCause() != null ? e.getCause() : e;
+        if (c.getMessage() != null) sb.append(": ").append(c.getMessage());
+        return sb.length() > 160 ? sb.substring(0, 160) : sb.toString();
     }
 
     /** Paho (schon Teil von Panoptes, EPL-2.0/EDL-1.0). Je Vorgang eine kurze Verbindung. */
     public static final Mqtt PAHO = new Mqtt() {
         private MqttClient verbinde(String host, int port, String b, String p) throws Exception {
-            String w = weg(at.greenchili.surfmate.mqtt.ProxyHelper.isProxyAvailable(),
+            String broker = host + ":" + port;
+            List<String> w = wege(at.greenchili.surfmate.mqtt.ProxyHelper.isProxyAvailable(),
                     at.greenchili.surfmate.mqtt.TailnetAnstoss.istTailnetZiel(host),
-                    at.greenchili.surfmate.mqtt.TailnetDial.localApiErreichbar());
-            try {
-                return verbinde(host, port, b, p, w);
-            } catch (org.eclipse.paho.client.mqttv3.MqttSecurityException e) {
-                throw e;
-            } catch (Exception e) {
-                if (!"tailnet".equals(w)) throw e;
-                return verbinde(host, port, b, p, "direkt");   // wie die MQTT-Verbindung: OS-Weg als Rückfall
-            }
+                    at.greenchili.surfmate.mqtt.TailnetDial.localApiErreichbar(), ZULETZT.get(broker));
+            return ueberWege(broker, w, weg -> verbinde(host, port, b, p, weg));
         }
 
         private MqttClient verbinde(String host, int port, String b, String p, String weg) throws Exception {

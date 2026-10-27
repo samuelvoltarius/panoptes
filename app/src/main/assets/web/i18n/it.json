@@ -699,7 +699,15 @@
     "device_id_missing": "L'ID auto non è stato caricato. Ricarica la pagina.",
     "success": "Sei dentro. Ti porto subito…",
     "invalid_code": "Il codice non è corretto",
-    "connection_retry": "Impossibile connettersi. Riprova."
+    "connection_retry": "Impossibile connettersi. Riprova.",
+    "telegram_btn": "Accedi con Telegram",
+    "telegram_pruefzahl": "Numero di controllo in Telegram",
+    "telegram_warte": "Confronta il numero e tocca “Consenti” in Telegram. Questo accesso non può sbloccare né modificare le impostazioni di sicurezza.",
+    "telegram_kein": "Telegram non è configurato nell’auto. Accedi con il codice di accesso.",
+    "telegram_limit": "Troppi tentativi. Riprova più tardi.",
+    "telegram_offen": "Ci sono già richieste in attesa. Attendi un momento.",
+    "telegram_abgelehnt": "L’accesso è stato rifiutato in Telegram.",
+    "telegram_abgelaufen": "La richiesta è scaduta. Richiedi di nuovo."
   },
   "notif": {
     "page_title": "Avvisi",
@@ -4717,7 +4725,16 @@
     "confirm_custom": "Eseguire «{name}» ora?",
     "confirm_climate_off": "Spegnere la climatizzazione?",
     "confirm_generic": "Inviare un comando all'auto?",
-    "setup_cloud_q": "Configurare ora il cloud BYD?"
+    "setup_cloud_q": "Configurare ora il cloud BYD?",
+    "pwa_title": "Panoptes come app",
+    "pwa_text": "Tocca “Condividi” in basso, poi “Aggiungi a schermata Home”. Panoptes si apre poi come un’app.",
+    "pwa_ok": "Ho capito",
+    "autostart_title": "Avvio automatico disattivato",
+    "autostart_text": "Dopo l’aggiornamento BYD ha disattivato l’avvio automatico di Panoptes. Senza, Panoptes non si avvia da solo.",
+    "autostart_btn": "Riattiva l’avvio automatico",
+    "autostart_laeuft": "Un momento, Panoptes attiva l’avvio automatico …",
+    "autostart_ok": "L’avvio automatico è di nuovo attivo.",
+    "autostart_fehler": "Non ha funzionato. Consenti Panoptes in Avvio automatico nelle impostazioni BYD."
   },
   "shell": {
     "greet_night": "Buonanotte",
@@ -4727,6 +4744,7 @@
     "pill_guard": "Guardiano",
     "pill_net": "Rete",
     "my_car": "La mia auto",
+    "no_model": "Nessun modello scelto",
     "pill_guard_safe": "Guardiano · a casa",
     "pill_guard_on": "Guardiano attivo",
     "pill_guard_off": "Guardiano spento",
@@ -5067,7 +5085,8 @@
     "handy_aufsperren_confirm": "Questo telefono potrà allora aprire l'auto – solo dopo impronta o Face ID sul telefono, e ricevi un messaggio Telegram a ogni apertura. Attivare?",
     "handy_schluessel_confirm": "Rimuovere la chiave di apertura? Il telefono potrà aprire di nuovo solo dopo aver registrato una nuova chiave (ad es. dopo una nuova impronta).",
     "handy_gespeichert": "Salvato",
-    "handy_fehler": "Impossibile salvare."
+    "handy_fehler": "Impossibile salvare.",
+    "cu_title": "“{n}” vuole passare a Panoptes il tuo accesso al cloud BYD"
   },
   "guardLegal": {
     "trigger": {
@@ -6033,6 +6052,15 @@
     "err_ladepunkt_fehlt": "Scegli prima una wallbox.",
     "days_alle": "ogni giorno",
     "days_werktag": "lun–ven",
-    "days_wochenende": "sab/dom/festivo"
+    "days_wochenende": "sab/dom/festivo",
+    "dyn": "Ho una tariffa elettrica dinamica (prezzo di borsa orario)",
+    "dyn_hint": "Panoptes recupera allora una volta al giorno i prezzi di borsa pubblici (aWATTar, senza account). Se disattivato, non avviene nessuna richiesta.",
+    "t_exchange": "Prezzo di borsa",
+    "exchange_country": "Borsa",
+    "surcharge": "Sovrapprezzo (rete, imposte, fornitore)",
+    "exchange_hint": "Qui sotto puoi aggiungere sovrapprezzi per fascia oraria (ad es. tariffa di rete giorno/notte). “Prezzo fuori da questi orari” vale finché non è noto alcun prezzo di borsa.",
+    "exchange_off": "La tua tariffa è impostata sul prezzo di borsa, ma “tariffa elettrica dinamica” è disattivata – Panoptes usa il prezzo sostitutivo.",
+    "exchange_until": "Prezzi di borsa noti fino a {zeit}, poi prezzo sostitutivo.",
+    "exchange_none": "Ancora nessun prezzo di borsa – arrivano entro un minuto, altrimenti vale il prezzo sostitutivo."
   }
 }

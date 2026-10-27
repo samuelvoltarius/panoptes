@@ -1334,7 +1334,6 @@
     <string name="vehicle_dialog_capacity_suffix">kWh</string>
     <string name="vehicle_dialog_capacity_helper">Between 5 and 120 kWh. Anything under 15 only works for a PHEV.</string>
     <string name="vehicle_dialog_model_label">Car model</string>
-    <string name="vehicle_model_seagull">BYD Seagull</string>
     <string name="vehicle_dialog_save">Save</string>
     <string name="vehicle_dialog_reset">Detect automatically again</string>
     <string name="vehicle_dialog_invalid_capacity">Please enter 5 to 120 kWh</string>

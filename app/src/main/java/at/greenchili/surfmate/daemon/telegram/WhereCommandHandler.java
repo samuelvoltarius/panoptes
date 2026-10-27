@@ -30,18 +30,27 @@ public class WhereCommandHandler implements TelegramCommandHandler {
             ctx.sendMessage(chatId, ctx.tr("parking.where.unavailable"));
             return;
         }
-        if (!resp.optBoolean("enabled", false)) {
-            ctx.sendMessage(chatId, ctx.tr("parking.where.disabled"));
-            return;
-        }
-        JSONObject s = resp.optJSONObject("current");
+        ctx.sendMessage(chatId, antwort(resp, ctx));
+    }
+
+    /**
+     * 0.1.21: Ort nur mit „Position teilen“ (der Daemon entfernt ihn sonst schon); ohne Freigabe ein ehrlicher Hinweis.
+     * Mit Freigabe und ohne Parksitzung: aktuelle Position als Rückfall. Package-visible für Tests.
+     */
+    static String antwort(JSONObject resp, CommandContext ctx) {
+        boolean frei = resp.optBoolean("positionTeilen", true);   // ältere Daemons kennen das Feld nicht
+        JSONObject s = resp.optBoolean("enabled", false) ? resp.optJSONObject("current") : null;
         boolean open = s != null;
-        if (s == null) s = resp.optJSONObject("latest");
-        if (s == null) {
-            ctx.sendMessage(chatId, ctx.tr("parking.where.none"));
-            return;
+        if (s == null && resp.optBoolean("enabled", false)) s = resp.optJSONObject("latest");
+        String hinweis = frei ? "" : "\n\n" + ctx.tr("parking.where.position_off");
+        if (s != null) return format(s, open, ctx) + hinweis;
+        JSONObject jetzt = resp.optJSONObject("jetzt");
+        if (frei && jetzt != null && jetzt.has("lat") && jetzt.has("lon")) {
+            return ctx.tr("parking.where.now") + "\n" + ctx.tr("parking.where.osm_link") + " "
+                    + at.greenchili.surfmate.parking.ParkingNotifier.osmUrl(jetzt.optDouble("lat"), jetzt.optDouble("lon"));
         }
-        ctx.sendMessage(chatId, format(s, open, ctx));
+        if (!frei) return ctx.tr("parking.where.position_off");
+        return ctx.tr(resp.optBoolean("enabled", false) ? "parking.where.none" : "parking.where.disabled");
     }
 
     /** Package-visible for tests. */

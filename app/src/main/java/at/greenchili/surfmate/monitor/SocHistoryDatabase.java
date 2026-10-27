@@ -8618,7 +8618,7 @@ public class SocHistoryDatabase {
             try (PreparedStatement ps = connection.prepareStatement(
                     "SELECT start_time, end_time, energy_added_kwh, session_cost, electricity_rate, tariff_id, preis_quelle"
                             + " FROM " + TABLE_CHARGING + " WHERE end_time IS NOT NULL AND is_dc <> 1"
-                            + " AND energy_added_kwh > 0 AND (preis_quelle = '' OR preis_quelle = 'zeittarif')"
+                            + " AND energy_added_kwh > 0 AND (preis_quelle = '' OR preis_quelle = 'zeittarif' OR preis_quelle = 'boerse')"
                             + " AND tariff_id IN (" + in + ");")) {
                 int k = 1;
                 for (String id : zt.keySet()) ps.setString(k++, id);
@@ -8651,21 +8651,24 @@ public class SocHistoryDatabase {
                     ta[i] = t.get(i)[0];
                     pa[i] = p.get(i);
                 }
-                double rate = zt.get((String) z[5]).mittelpreis(ta, pa, start, ende, zone);
+                at.greenchili.surfmate.charging.Zeittarif tarif = zt.get((String) z[5]);
+                double rate = tarif.mittelpreis(ta, pa, start, ende, zone);
+                final String quelle = tarif.istBoerse() ? "boerse" : "zeittarif";
                 if (!Double.isFinite(rate) || rate < 0) continue;
                 rate = Math.round(rate * 10000.0) / 10000.0;
                 double kosten = energie * rate;
-                if ("zeittarif".equals(z[6]) && realStorageEquivalent(alteRate, rate)
+                if (quelle.equals(z[6]) && realStorageEquivalent(alteRate, rate)
                         && Math.abs(alteKosten - kosten) < 0.005) continue;
                 final double r = rate, kk = kosten, alt = alteKosten;
                 runInTransaction(() -> {
                     try (PreparedStatement upd = connection.prepareStatement(
                             "UPDATE " + TABLE_CHARGING + " SET electricity_rate = ?, session_cost = ?,"
-                                    + " preis_quelle = 'zeittarif' WHERE start_time = ?"
-                                    + " AND (preis_quelle = '' OR preis_quelle = 'zeittarif');")) {
+                                    + " preis_quelle = ? WHERE start_time = ?"
+                                    + " AND (preis_quelle = '' OR preis_quelle = 'zeittarif' OR preis_quelle = 'boerse');")) {
                         upd.setDouble(1, r);
                         upd.setDouble(2, kk);
-                        upd.setLong(3, start);
+                        upd.setString(3, quelle);
+                        upd.setLong(4, start);
                         if (upd.executeUpdate() > 0) adjustDailyCost(ende, kk - (alt > 0 ? alt : 0));
                     }
                 });

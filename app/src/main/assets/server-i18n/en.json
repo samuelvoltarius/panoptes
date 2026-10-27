@@ -343,7 +343,9 @@
         "label": "Hotspot data limit reached",
         "note": "When the hotspot goes over its set data limit; it is turned off at the same time. Raise or reset the limit to use it again."
       }
-    }
+    },
+    "cloud_uebergabe_titel": "“{0}” wants to hand over the BYD cloud",
+    "cloud_uebergabe_text": "Check number {0}"
   },
   "parking": {
     "notify": {
@@ -527,7 +529,9 @@
         "gps_recent": "Location a few minutes old",
         "gps_stale": "Location is old – probably a car park, showing the entrance",
         "gps_unknown": "Position not known",
-        "osm_link": "🗺 Map (OpenStreetMap):"
+        "osm_link": "🗺 Map (OpenStreetMap):",
+        "position_off": "📍 Panoptes only shares the position if you allow it: Panoptes → Settings → Home Assistant → “Share position”.",
+        "now": "📍 *This is where your car is now*"
       }
     },
     "motion": {
@@ -822,6 +826,22 @@
       "aufsperren_ok": "🔓 *Unlocked* via phone “{0}”.",
       "aufsperren_unbestaetigt": "🔓 Unlock command sent via phone “{0}” – confirmation from the car is missing.",
       "aufsperren_abgelehnt": "🔒 Unlock via phone “{0}” refused ({1})."
+    },
+    "zurueck": {
+      "text": "🚗 Welcome back to the car. It was parked for {0}.",
+      "mit_ereignissen": "🚗 Welcome back to the car. It was parked for {0} with {1} events. See /wo or Panoptes."
+    },
+    "anmeldung": {
+      "anfrage": "🔑 A browser wants to sign in to Panoptes.\nCheck number: {0}\nOnly allow it if the same number is on your screen. This sign-in cannot unlock and cannot change security settings.",
+      "erlaubt": "✅ Sign-in allowed.",
+      "abgelehnt": "❌ Sign-in declined."
+    },
+    "cloud_uebergabe": {
+      "anfrage": "☁️ *“{0}” wants to hand your BYD cloud login to Panoptes*\nCheck number: *{1}*\n\nDoes it match the number in the cockpit? Your login goes encrypted to your car only. The request is valid for 5 minutes.",
+      "erlaubt": "✅ Allowed – the cockpit is now handing over the login.",
+      "abgelehnt": "❌ Declined.",
+      "uebernommen_ok": "☁️ BYD cloud taken over from “{0}” and checked – Panoptes now also works with the car switched off.",
+      "uebernommen_nicht_geprueft": "☁️ BYD cloud taken over from “{0}”, but the check failed. Please look in Panoptes under System → BYD account."
     }
   },
   "vehicle_control": {
@@ -1983,6 +2003,10 @@
       "parkingMessages": {
         "title": "Parking message in Telegram",
         "help": "After parking, sends a Telegram message with the car’s position. Off for new setups; existing setups keep their previous setting."
+      },
+      "zurueckAmAuto": {
+        "title": "“Back at the car” message",
+        "help": "When the ignition is switched on after at least 10 minutes parked, sends a short Telegram message with parking time and number of events. Default: off."
       }
     },
     "hinweise": {
@@ -2300,5 +2324,8 @@
       "installieren": "The files for the emergency access could not be created.",
       "adb_serve": "The emergency access is signed in, but the adb forwarding (port 5555) is still missing. The emergency access keeps retrying by itself."
     }
+  },
+  "telegram_login": {
+    "geraet_name": "Browser (Telegram)"
   }
 }

@@ -349,7 +349,9 @@
         "label": "Limite dati dell'hotspot raggiunto",
         "note": "Quando l'hotspot supera il limite di dati impostato; viene spento nello stesso momento. Aumenta o reimposta il limite per usarlo di nuovo."
       }
-    }
+    },
+    "cloud_uebergabe_titel": "“{0}” vuole passare il cloud BYD",
+    "cloud_uebergabe_text": "Numero di controllo {0}"
   },
   "parking": {
     "notify": {
@@ -533,7 +535,9 @@
         "gps_recent": "Posizione di qualche minuto fa",
         "gps_stale": "Posizione vecchia – probabilmente un garage, viene mostrato l'ingresso",
         "gps_unknown": "Posizione non nota",
-        "osm_link": "🗺 Mappa (OpenStreetMap):"
+        "osm_link": "🗺 Mappa (OpenStreetMap):",
+        "position_off": "📍 Panoptes condivide la posizione solo se lo consenti: Panoptes → Impostazioni → Home Assistant → “Condividi posizione”.",
+        "now": "📍 *Ecco dov’è ora la tua auto*"
       }
     },
     "motion": {
@@ -828,6 +832,22 @@
       "aufsperren_ok": "🔓 *Aperta* tramite il telefono «{0}».",
       "aufsperren_unbestaetigt": "🔓 Comando di apertura inviato tramite il telefono «{0}» – manca la conferma dall'auto.",
       "aufsperren_abgelehnt": "🔒 Apertura tramite il telefono «{0}» rifiutata ({1})."
+    },
+    "zurueck": {
+      "text": "🚗 Bentornato all’auto. Era parcheggiata da {0}.",
+      "mit_ereignissen": "🚗 Bentornato all’auto. Era parcheggiata da {0}, con {1} eventi. Vedi /wo o Panoptes."
+    },
+    "anmeldung": {
+      "anfrage": "🔑 Un browser vuole accedere a Panoptes.\nNumero di controllo: {0}\nConsenti solo se sul tuo schermo c’è lo stesso numero. Questo accesso non può sbloccare né modificare le impostazioni di sicurezza.",
+      "erlaubt": "✅ Accesso consentito.",
+      "abgelehnt": "❌ Accesso rifiutato."
+    },
+    "cloud_uebergabe": {
+      "anfrage": "☁️ *“{0}” vuole passare a Panoptes il tuo accesso al cloud BYD*\nNumero di controllo: *{1}*\n\nIl numero corrisponde a quello nel cockpit? I tuoi dati arrivano cifrati solo nella tua auto. La richiesta vale 5 minuti.",
+      "erlaubt": "✅ Consentito – il cockpit ora passa l’accesso.",
+      "abgelehnt": "❌ Rifiutato.",
+      "uebernommen_ok": "☁️ Cloud BYD ripreso da “{0}” e verificato – ora Panoptes funziona anche ad auto spenta.",
+      "uebernommen_nicht_geprueft": "☁️ Cloud BYD ripreso da “{0}”, ma la verifica non è riuscita. Controlla in Panoptes sotto Sistema → Account BYD."
     }
   },
   "vehicle_control": {
@@ -1989,6 +2009,10 @@
       "parkingMessages": {
         "title": "Messaggio di parcheggio su Telegram",
         "help": "Dopo il parcheggio invia un messaggio Telegram con la posizione dell’auto. Disattivato nelle nuove configurazioni; quelle esistenti mantengono l’impostazione precedente."
+      },
+      "zurueckAmAuto": {
+        "title": "Messaggio “di nuovo all’auto”",
+        "help": "All’accensione dopo almeno 10 minuti di sosta, invia un breve messaggio Telegram con durata e numero di eventi. Predefinito: disattivato."
       }
     },
     "hinweise": {
@@ -2306,5 +2330,8 @@
       "installieren": "Non è stato possibile creare i file per l'accesso di emergenza.",
       "adb_serve": "L'accesso di emergenza è connesso, ma l'inoltro adb (porta 5555) manca ancora. L'accesso di emergenza riprova da solo."
     }
+  },
+  "telegram_login": {
+    "geraet_name": "Browser (Telegram)"
   }
 }

@@ -349,7 +349,9 @@
         "label": "Limite de données du point d'accès atteinte",
         "note": "Quand le point d'accès dépasse sa limite de données ; il est alors désactivé. Augmentez ou réinitialisez la limite pour le réutiliser."
       }
-    }
+    },
+    "cloud_uebergabe_titel": "« {0} » veut transmettre le cloud BYD",
+    "cloud_uebergabe_text": "Code de contrôle {0}"
   },
   "parking": {
     "notify": {
@@ -533,7 +535,9 @@
         "gps_recent": "Position vieille de quelques minutes",
         "gps_stale": "Position ancienne – probablement un parking souterrain, l'entrée est affichée",
         "gps_unknown": "Position inconnue",
-        "osm_link": "🗺 Carte (OpenStreetMap) :"
+        "osm_link": "🗺 Carte (OpenStreetMap) :",
+        "position_off": "📍 Panoptes ne partage la position que si vous l’autorisez : Panoptes → Réglages → Home Assistant → « Partager la position ».",
+        "now": "📍 *Votre voiture est ici*"
       }
     },
     "motion": {
@@ -828,6 +832,22 @@
       "aufsperren_ok": "🔓 *Déverrouillé* via le téléphone « {0} ».",
       "aufsperren_unbestaetigt": "🔓 Commande de déverrouillage envoyée via le téléphone « {0} » – la confirmation de la voiture manque.",
       "aufsperren_abgelehnt": "🔒 Déverrouillage via le téléphone « {0} » refusé ({1})."
+    },
+    "zurueck": {
+      "text": "🚗 Bon retour à la voiture. Elle était garée depuis {0}.",
+      "mit_ereignissen": "🚗 Bon retour à la voiture. Elle était garée depuis {0}, avec {1} événements. Voir /wo ou Panoptes."
+    },
+    "anmeldung": {
+      "anfrage": "🔑 Un navigateur veut se connecter à Panoptes.\nCode de contrôle : {0}\nN’autorisez que si le même nombre s’affiche sur votre écran. Cette connexion ne peut pas déverrouiller ni modifier les réglages de sécurité.",
+      "erlaubt": "✅ Connexion autorisée.",
+      "abgelehnt": "❌ Connexion refusée."
+    },
+    "cloud_uebergabe": {
+      "anfrage": "☁️ *« {0} » veut transmettre ta connexion au cloud BYD à Panoptes*\nCode de contrôle : *{1}*\n\nLe code correspond-il à celui du cockpit ? Tes identifiants vont chiffrés uniquement dans ta voiture. La demande est valable 5 minutes.",
+      "erlaubt": "✅ Autorisé – le cockpit transmet maintenant la connexion.",
+      "abgelehnt": "❌ Refusé.",
+      "uebernommen_ok": "☁️ Cloud BYD repris de « {0} » et vérifié – Panoptes fonctionne maintenant aussi voiture éteinte.",
+      "uebernommen_nicht_geprueft": "☁️ Cloud BYD repris de « {0} », mais la vérification a échoué. Regarde dans Panoptes sous Système → Compte BYD."
     }
   },
   "vehicle_control": {
@@ -1989,6 +2009,10 @@
       "parkingMessages": {
         "title": "Message de stationnement dans Telegram",
         "help": "Après le stationnement, envoie un message Telegram avec la position de la voiture. Désactivé pour les nouvelles installations ; les installations existantes gardent leur réglage précédent."
+      },
+      "zurueckAmAuto": {
+        "title": "Message « de retour à la voiture »",
+        "help": "À la mise du contact après au moins 10 minutes de stationnement, envoie un court message Telegram avec la durée et le nombre d’événements. Par défaut : désactivé."
       }
     },
     "hinweise": {
@@ -2306,5 +2330,8 @@
       "installieren": "Les fichiers de l'accès de secours n'ont pas pu être créés.",
       "adb_serve": "L'accès de secours est connecté, mais le transfert adb (port 5555) manque encore. L'accès de secours réessaie tout seul."
     }
+  },
+  "telegram_login": {
+    "geraet_name": "Navigateur (Telegram)"
   }
 }

@@ -1569,6 +1569,14 @@ public class MqttConnectionManager {
             logger.debug("Camping-Telemetrie: " + t.getMessage());
         }
 
+        // 0.1.21 Ladeplan: letzter Schnappschuss (kein Wallbox-Abruf von hier)
+        try {
+            at.greenchili.surfmate.ladeplan.LadeplanTelemetrie.eintragen(payload,
+                    at.greenchili.surfmate.ladeplan.Ladeplan.schnappschuss());
+        } catch (Throwable t) {
+            logger.debug("Ladeplan-Telemetrie: " + t.getMessage());
+        }
+
         // Update the cache
         lastCachedTelemetry = payload;
         lastCollectionTimeMs = now;

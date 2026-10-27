@@ -6,10 +6,12 @@
     <title>Zu Hause laden – Panoptes</title>
     <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
     <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="../shared/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-title" content="Panoptes">
     <meta name="theme-color" content="#0A2238">
     <meta name="robots" content="noindex">
     <script src="../shared/theme.js?v=13"></script>
-    <script src="../shared/app-shell.js?v=pn25"></script>
+    <script src="../shared/app-shell.js?v=pn26"></script>
     <link rel="stylesheet" href="../shared/styles.css?v=pn11">
     <style>
         .lpl { padding: 0 28px 60px; max-width: 760px; box-sizing: border-box; }
@@ -80,12 +82,24 @@
 
                 <div class="schritt" data-i18n="ladeplan.s1">1 · Was kostet dein Strom zu Hause?</div>
                 <p class="warn" id="keinHeim" hidden data-i18n="ladeplan.no_home">Es gibt noch keinen Ort „Zuhause“ mit Strompreis. Lege ihn unter „Orte“ an (Eigenschaft „Zuhause“ und Tarif) – bis dahin gilt dein fester Strompreis.</p>
+                <label><input type="checkbox" id="dyn"> <span data-i18n="ladeplan.dyn">Ich habe einen dynamischen Stromtarif (stündlicher Börsenpreis)</span></label>
+                <p class="hint" id="dynHinweis" hidden data-i18n="ladeplan.dyn_hint">Dann holt Panoptes einmal am Tag die öffentlichen Börsenpreise (aWATTar, ohne Konto). Ausgeschaltet gibt es keinen einzigen Abruf.</p>
                 <div class="reihe" id="tarifWahl">
                     <button class="tbtn" type="button" data-tarif="fest" id="tFest">Immer gleich</button>
                     <button class="tbtn" type="button" data-tarif="tag_nacht" data-i18n="ladeplan.t_daynight">Tag/Nacht</button>
                     <button class="tbtn" type="button" data-tarif="mittag" data-i18n="ladeplan.t_noon">Mittags günstiger</button>
                     <button class="tbtn" type="button" data-tarif="eigen" data-i18n="ladeplan.t_custom">Eigene Zeiten</button>
+                    <button class="tbtn" type="button" data-tarif="boerse" id="tBoerse" hidden data-i18n="ladeplan.t_exchange">Börsenpreis</button>
                 </div>
+                <div id="boerseTeil" hidden>
+                    <div class="reihe"><span class="hint" data-i18n="ladeplan.exchange_country">Börse</span>
+                        <select id="bLand"><option value="AT">AT</option><option value="DE">DE</option></select>
+                        <span class="hint" data-i18n="ladeplan.surcharge">Aufschlag (Netz, Abgaben, Anbieter)</span>
+                        <input type="number" id="bAufschlag" class="kurz" min="0" max="100" step="0.1"> ct/kWh</div>
+                    <p class="hint" data-i18n="ladeplan.exchange_hint">Unten kannst du zusätzliche Aufschläge je Zeit eintragen (z. B. Netzentgelt Tag/Nacht). „Preis außerhalb der Zeiten“ gilt, solange noch kein Börsenpreis bekannt ist.</p>
+                    <p class="hint" id="bStand"></p>
+                </div>
+                <p class="warn" id="boerseAus" hidden data-i18n="ladeplan.exchange_off">Dein Tarif ist auf Börsenpreis gestellt, „dynamischer Stromtarif“ ist aber aus – Panoptes rechnet mit dem Ersatzpreis.</p>
                 <div id="baender" hidden>
                     <label for="grundpreis" data-i18n="ladeplan.base_price">Preis außerhalb der Zeiten (€/kWh)</label>
                     <input type="number" id="grundpreis" class="kurz" min="0" max="10" step="0.01">
@@ -225,12 +239,22 @@
 
         // Schritt 1
         var ti = d.tarif;
+        $('dyn').checked = !!e.dynamischerTarif;
+        $('dynHinweis').hidden = !e.dynamischerTarif;
+        $('tBoerse').hidden = !e.dynamischerTarif;
+        $('boerseAus').hidden = ti.art !== 'boerse_aus';
+        $('bStand').textContent = ti.art === 'boerse' ? (v.boerseBis ? t('ladeplan.exchange_until', 'Börsenpreise bekannt bis {zeit}, danach Ersatzpreis.', { zeit: tag(v.boerseBis) })
+            : t('ladeplan.exchange_none', 'Noch keine Börsenpreise – sie kommen innerhalb einer Minute, sonst gilt der Ersatzpreis.')) : '';
         $('keinHeim').hidden = !!ti.tarifId;
         $('tFest').textContent = t('ladeplan.t_fixed', 'Immer gleich ({preis})', { preis: ti.art === 'fest' && ti.preis != null ? geld(ti.preis) : '?' });
         if (!document.activeElement || !$('baender').contains(document.activeElement)) {
             if (ti.zeittarif) {
-                tarifArt = 'eigen'; baender = ti.zeittarif.baender || [];
+                tarifArt = ti.zeittarif.art === 'boerse' && e.dynamischerTarif ? 'boerse' : 'eigen'; baender = ti.zeittarif.baender || [];
                 $('grundpreis').value = ti.zeittarif.grundpreis; $('land').value = ti.zeittarif.land || '';
+                if (ti.zeittarif.art === 'boerse') {
+                    $('bLand').value = ti.zeittarif.land || 'AT';
+                    $('bAufschlag').value = Math.round((ti.zeittarif.aufschlag || 0) * 1000) / 10;
+                }
             } else tarifArt = 'fest';
             zeigeTarif();
         }
@@ -256,6 +280,7 @@
     function zeigeTarif() {
         [].forEach.call(document.querySelectorAll('#tarifWahl [data-tarif]'), function (b) { b.classList.toggle('an', b.getAttribute('data-tarif') === tarifArt); });
         $('baender').hidden = tarifArt === 'fest';
+        $('boerseTeil').hidden = tarifArt !== 'boerse';
         $('bandListe').innerHTML = baender.map(function (b, i) {
             return '<div class="band" data-i="' + i + '"><select data-f="tage">'
                 + ['alle', 'werktag', 'wochenende'].map(function (x) { return '<option value="' + x + '"' + (b.tage === x ? ' selected' : '') + '>'
@@ -322,6 +347,7 @@
             var billig = Math.round(g * 2 / 3 * 100) / 100;
             if (tarifArt === 'tag_nacht') baender = [{ tage: 'alle', von: '22:00', bis: '06:00', preis: billig }];
             if (tarifArt === 'mittag') baender = [{ tage: 'alle', von: '11:00', bis: '15:00', preis: billig }];
+            if (tarifArt === 'boerse') { baender = []; if (!$('bAufschlag').value) $('bAufschlag').value = 12; }
             if (tarifArt !== 'fest' && !$('grundpreis').value) $('grundpreis').value = g;
             zeigeTarif();
         };
@@ -333,6 +359,10 @@
         $('btnTarif').onclick = function () {
             if (!st || !st.tarif.tarifId) { toast(t('ladeplan.no_home', 'Erst einen Ort „Zuhause“ mit Tarif anlegen.'), false); return; }
             var zt = tarifArt === 'fest' ? null : { art: 'zeittarif', grundpreis: parseFloat($('grundpreis').value), land: $('land').value, baender: liesBaender() };
+            if (tarifArt === 'boerse') {
+                zt = { art: 'boerse', land: $('bLand').value, aufschlag: Math.round((parseFloat($('bAufschlag').value) || 0) * 10) / 1000,
+                    grundpreis: parseFloat($('grundpreis').value), baender: liesBaender() };
+            }
             api('POST', '/api/charging/tariffs', { id: st.tarif.tarifId, zeittarif: zt }).then(function (d) {
                 if (d.success === false || d._status >= 400) { toast(d.error || t('ladeplan.err', 'Das hat nicht geklappt.'), false); return; }
                 toast(t('ladeplan.saved', 'Gespeichert'), true);
@@ -368,6 +398,7 @@
             });
         };
         $('btnNichtFrei').onclick = function () { plan({ freigabe: { an: false } }); };
+        $('dyn').onchange = function () { plan({ dynamischerTarif: $('dyn').checked }); };
         laden().then(ladepunkteLaden);
         setInterval(function () { if (!document.hidden && $('dlg').style.display !== 'flex') laden(); }, 20000);
     });

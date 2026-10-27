@@ -147,9 +147,16 @@ public final class LauncherApiHandler {
     private static Object buildVehicle() {
         try {
             JSONObject v = at.greenchili.surfmate.config.UnifiedConfigManager.getVehicle();
-            String modelId = v.optString("modelId", "seal");
+            // 0.1.21: ohne Wahl wie /api/models/selected – Platzhalter = Manifest-Standard, name null, modellGewaehlt false
+            String gewaehlt = at.greenchili.surfmate.config.VehicleModelSelection.gewaehlt(v);
+            String modelId = gewaehlt;
+            if (modelId == null) {
+                JSONObject mf = readBestManifest();
+                modelId = mf != null ? mf.optString("default", v.optString("modelId", "")) : v.optString("modelId", "");
+            }
             JSONObject o = new JSONObject();
             o.put("modelId", modelId);
+            o.put("modellGewaehlt", gewaehlt != null);
             o.put("color", v.optString("color", "#E8E8EC"));
             o.put("driveSide", v.optString("driveSide", "rhd"));
             JSONObject model = findManifestModel(modelId);
@@ -168,6 +175,7 @@ public final class LauncherApiHandler {
                 catch (Throwable ignored) {}
                 o.put("isPhev", phev);
             }
+            if (gewaehlt == null) o.put("name", JSONObject.NULL);   // 0.1.21: kein geratener Name
             return o;
         } catch (Throwable t) {
             return JSONObject.NULL;

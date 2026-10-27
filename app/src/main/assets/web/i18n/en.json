@@ -699,7 +699,15 @@
     "device_id_missing": "The car ID didn't load. Reload the page.",
     "success": "You're in. Taking you there…",
     "invalid_code": "That code doesn't fit",
-    "connection_retry": "Couldn't connect. Please try once more."
+    "connection_retry": "Couldn't connect. Please try once more.",
+    "telegram_btn": "Sign in with Telegram",
+    "telegram_pruefzahl": "Check number in Telegram",
+    "telegram_warte": "Compare the number and tap “Allow” in Telegram. This sign-in cannot unlock and cannot change security settings.",
+    "telegram_kein": "Telegram is not set up in the car. Sign in with the access code.",
+    "telegram_limit": "Too many attempts. Please try again later.",
+    "telegram_offen": "Requests are already waiting. Please wait a moment.",
+    "telegram_abgelehnt": "The sign-in was declined in Telegram.",
+    "telegram_abgelaufen": "The request has expired. Please request again."
   },
   "notif": {
     "page_title": "Alerts",
@@ -4717,7 +4725,16 @@
     "confirm_custom": "Run “{name}” now?",
     "confirm_climate_off": "Switch the climate off?",
     "confirm_generic": "Send a command to the car?",
-    "setup_cloud_q": "Set up the BYD cloud now?"
+    "setup_cloud_q": "Set up the BYD cloud now?",
+    "pwa_title": "Panoptes as an app",
+    "pwa_text": "Tap “Share” below, then “Add to Home Screen”. Panoptes then opens like an app.",
+    "pwa_ok": "Got it",
+    "autostart_title": "Autostart is off",
+    "autostart_text": "After the update, BYD switched off autostart for Panoptes. Without it, Panoptes does not start on its own.",
+    "autostart_btn": "Turn autostart back on",
+    "autostart_laeuft": "One moment, Panoptes is turning autostart on …",
+    "autostart_ok": "Autostart is back on.",
+    "autostart_fehler": "That did not work. Please allow Panoptes under Autostart in the BYD settings."
   },
   "shell": {
     "greet_night": "Good night",
@@ -4727,6 +4744,7 @@
     "pill_guard": "Guard",
     "pill_net": "Network",
     "my_car": "My car",
+    "no_model": "No model selected",
     "pill_guard_safe": "Guard · at home",
     "pill_guard_on": "Guard active",
     "pill_guard_off": "Guard off",
@@ -5067,7 +5085,8 @@
     "handy_aufsperren_confirm": "This phone will then be able to unlock the car – only after fingerprint or Face ID on the phone, and you get a Telegram message every time it unlocks. Turn on?",
     "handy_schluessel_confirm": "Remove the unlock key? The phone can only unlock again after it registers a new key (e.g. after a new fingerprint).",
     "handy_gespeichert": "Saved",
-    "handy_fehler": "Could not save."
+    "handy_fehler": "Could not save.",
+    "cu_title": "“{n}” wants to hand your BYD cloud login to Panoptes"
   },
   "guardLegal": {
     "trigger": {
@@ -6033,6 +6052,15 @@
     "err_ladepunkt_fehlt": "Please choose a wallbox first.",
     "days_alle": "every day",
     "days_werktag": "Mon–Fri",
-    "days_wochenende": "Sat/Sun/holiday"
+    "days_wochenende": "Sat/Sun/holiday",
+    "dyn": "I have a dynamic electricity tariff (hourly exchange price)",
+    "dyn_hint": "Panoptes then fetches the public exchange prices once a day (aWATTar, no account). Switched off, there is not a single request.",
+    "t_exchange": "Exchange price",
+    "exchange_country": "Exchange",
+    "surcharge": "Surcharge (grid, taxes, supplier)",
+    "exchange_hint": "Below you can add extra surcharges per time (e.g. day/night grid fee). “Price outside these times” applies as long as no exchange price is known yet.",
+    "exchange_off": "Your tariff is set to exchange price, but “dynamic electricity tariff” is off – Panoptes uses the fallback price.",
+    "exchange_until": "Exchange prices known until {zeit}, fallback price after that.",
+    "exchange_none": "No exchange prices yet – they arrive within a minute, otherwise the fallback price applies."
   }
 }

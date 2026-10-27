@@ -503,29 +503,40 @@ open class MainActivity : AppCompatActivity() {
      * The extra is STRIPPED once consumed so an OS task-restore of the same
      * intent record cannot replay the navigation over the user's later state.
      * Unknown values are ignored (forward/backward compatible).
+     * 0.1.21: Ziel ist die vollflächige Web-Oberfläche (NavigateZiel), nicht mehr die alte native.
      */
     private fun handleNavigateExtra(intent: android.content.Intent) {
         val target = intent.getStringExtra(EXTRA_NAVIGATE_TO) ?: return
         intent.removeExtra(EXTRA_NAVIGATE_TO)
         setIntent(intent)
-        val destinationId = when (target) {
-            "trips" -> R.id.tripsFragment
-            "charging" -> R.id.chargingFragment
-            "roadsense" -> R.id.roadSenseFragment
-            "recordings" -> R.id.recordingsFragment
-            "parking" -> R.id.parkingFragment
-            "live" -> R.id.liveViewFragment
-            "vehicle" -> R.id.vehicleControlFragment
-            "dashboard" -> R.id.dashboardFragment
-            "assistant" -> R.id.genAiFragment
-            "waechter" -> R.id.waechterFragment
-            "navi" -> R.id.naviFragment
-            "system" -> R.id.systemFragment
-            else -> return
+        val pfad = NavigateZiel.pfad(target) ?: return
+        navigateToWebSeite(pfad)
+    }
+
+    /**
+     * 0.1.21: Startziel (vollflächiges Web) mit [pfad] neu aufbauen; alles darüber (auch alte native Seiten) fällt
+     * weg. Wie [navigateToRailDestination]: bei gesichertem FragmentManager-Zustand aufgeschoben bis onResume.
+     */
+    private fun navigateToWebSeite(pfad: String) {
+        if (supportFragmentManager.isStateSaved) {
+            pendingWebSeite = pfad
+            return
         }
-        // navigateToRailDestination self-defers via pendingRailDestination when
-        // FragmentManager state is saved, so this is safe from onCreate/onNewIntent.
-        navigateToRailDestination(destinationId)
+        pendingWebSeite = null
+        val args = Bundle().apply {
+            putString(at.greenchili.surfmate.ui.fragment.WebViewFragment.ARG_PAGE_PATH, pfad)
+            putBoolean(at.greenchili.surfmate.ui.fragment.WebViewFragment.ARG_VOLLBILD, true)
+        }
+        val options = androidx.navigation.NavOptions.Builder()
+            .setPopUpTo(R.id.nav_graph, /* inclusive = */ true, /* saveState = */ false)
+            .build()
+        try {
+            navController.navigate(R.id.panoptesStartFragment, args, options)
+        } catch (_: IllegalArgumentException) {
+            // Destination not in graph — defensive only.
+        } catch (_: IllegalStateException) {
+            pendingWebSeite = pfad
+        }
     }
 
     /**
@@ -842,6 +853,10 @@ open class MainActivity : AppCompatActivity() {
         pendingRailDestination?.let { dest ->
             pendingRailDestination = null
             navigateToRailDestination(dest)
+        }
+        pendingWebSeite?.let { pfad ->
+            pendingWebSeite = null
+            navigateToWebSeite(pfad)
         }
     }
 
@@ -3944,25 +3959,8 @@ open class MainActivity : AppCompatActivity() {
     }
 
     private fun modelDisplayName(modelId: String?): String {
-        return when (modelId?.lowercase()) {
-            null -> "—"
-            "seal" -> "BYD Seal"
-            "atto3", "atto-3" -> "BYD Atto 3"
-            "atto3evo", "atto3-evo", "atto-3-evo" -> "BYD Atto 3 Evo"
-            "atto2", "atto-2" -> "BYD Atto 2"
-            "atto1", "atto-1" -> "BYD Atto 1"
-            "han" -> "BYD Han"
-            "tang" -> "BYD Tang"
-            "song" -> "BYD Song"
-            "qin" -> "BYD Qin"
-            "dolphin" -> "BYD Dolphin"
-            "seagull" -> getString(R.string.vehicle_model_seagull)
-            "sealion6" -> "BYD Sealion 6"
-            "sealion7" -> "BYD Sealion 7"
-            "shark" -> "BYD Shark"
-            "sealu", "seal-u" -> "BYD Seal U"
-            else -> modelId.replaceFirstChar { it.uppercase() }
-        }
+        // 0.1.21: Name nur aus dem Modell-Manifest (nameEu vor name), keine eigene Liste
+        return ModellNamen.anzeige(this, modelId)
     }
     
     /**
@@ -4618,6 +4616,8 @@ open class MainActivity : AppCompatActivity() {
     // deferred rather than silently dropped. Cleared once consumed or when a later navigation
     // supersedes it.
     private var pendingRailDestination: Int? = null
+    // 0.1.21: ebenso ein Deep-Link (navigate_to) auf eine Web-Seite.
+    private var pendingWebSeite: String? = null
 
     /**
      * Orientation-agnostic Settings anchor for the Expert tour (portrait card vs landscape

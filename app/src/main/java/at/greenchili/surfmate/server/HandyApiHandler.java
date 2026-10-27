@@ -40,6 +40,20 @@ public final class HandyApiHandler {
         String pushAnlegen(String endpoint, byte[] p256dh, byte[] auth, String label);
         void pushEntfernen(String id);
         long jetzt();
+
+        /**
+         * 0.1.21 Sitzheizung: Befehl wie {@code /api/vehicle/seat} – je Sitz lokal; der Cloud-Sammelbefehl bekommt nur
+         * einen frischen, vollständigen Sitzzustand als Grundlage (sonst prüft der Router selbst). Ohne Snapshot: Nullen.
+         */
+        default VehicleCommandRouter.VehicleCommand sitzheizung(int position, int stufe) {
+            return new VehicleCommandRouter.SeatHeatCommand(position, stufe,
+                    position == 1 ? stufe : 0, 0, position == 2 ? stufe : 0, 0, true, 0L);
+        }
+
+        /** Echo der Sitzheizung (live gelesen): ECHO_OK, wenn der Sitz die Stufe meldet. */
+        default int echoSitz(int position, int stufe) {
+            return BydDataCollector.ECHO_UNBEKANNT;
+        }
     }
 
     static volatile Umgebung umgebung = new Echt();
@@ -198,6 +212,7 @@ public final class HandyApiHandler {
         switch (aktion) {
             case "klima_an":
             case "klima_aus":
+            case "sitzheizung":   // 0.1.21: gleiches Recht wie das Klima
                 recht = Kopplungen.RECHT_KLIMA;
                 break;
             case "zusperren":
@@ -228,6 +243,8 @@ public final class HandyApiHandler {
             }
             case "klima_aus":
                 return ergebnis(u, aktion, new VehicleCommandRouter.ClimateOffCommand());
+            case "sitzheizung":
+                return sitzheizung(req, u);
             case "zusperren": {
                 VehicleCommandRouter.LockCommand cmd = new VehicleCommandRouter.LockCommand();
                 CloudPowerGate.Decision d = u.gate(cmd.name());
@@ -271,15 +288,40 @@ public final class HandyApiHandler {
         return r;
     }
 
+    /**
+     * 0.1.21 {@code {aktion:"sitzheizung", sitz:"fahrer"|"beifahrer", stufe:0|1|2}}: über den Router wie das Klima
+     * (wach → nur lokal je Sitz; Auto aus → BYD-Cloud nur über CloudPowerGate). Sperrt das Gate den Cloud-Weg, kommt
+     * dessen Grund (z. B. {@code auto_laeuft}) statt eines allgemeinen „gate“.
+     */
+    static JSONObject sitzheizung(JSONObject req, Umgebung u) throws Exception {
+        String sitz = req.optString("sitz", "");
+        int position = "fahrer".equals(sitz) ? 1 : "beifahrer".equals(sitz) ? 2 : 0;
+        Object roh = req.opt("stufe");
+        int stufe = roh instanceof Integer || roh instanceof Long ? ((Number) roh).intValue() : -1;
+        if (position == 0 || stufe < 0 || stufe > 2) return fehler("werte");
+        VehicleCommandRouter.VehicleCommand cmd = u.sitzheizung(position, stufe);
+        VehicleCommandRouter.CommandResult r = u.ausfuehren(cmd);
+        if (r != null && r.outcome == VehicleCommandRouter.Outcome.BLOCKED_DRIVING) {
+            CloudPowerGate.Decision d = u.gate(cmd.name());
+            if (d != null && !d.allowed) return gateFehler(d).put("sitz", sitz).put("stufe", stufe);
+        }
+        JSONObject o = abbilden(r, () -> u.echoSitz(position, stufe));
+        return o.put("sitz", sitz).put("stufe", stufe);
+    }
+
     /** Router ausführen und das Ergebnis vertragsgemäß abbilden; Erfolg ohne Echo = bestaetigt:false. */
     static JSONObject ergebnis(Umgebung u, String aktion, VehicleCommandRouter.VehicleCommand cmd) throws Exception {
-        VehicleCommandRouter.CommandResult r = u.ausfuehren(cmd);
+        return abbilden(u.ausfuehren(cmd), () -> u.echo(aktion));
+    }
+
+    private static JSONObject abbilden(VehicleCommandRouter.CommandResult r, java.util.function.IntSupplier echo)
+            throws Exception {
         if (r == null) return fehler("fehlgeschlagen");
         switch (r.outcome) {
             case SUCCESS: {
                 String weg = r.path == VehicleCommandRouter.Path.SDK
                         || r.path == VehicleCommandRouter.Path.CLOUD_THEN_SDK ? "lokal" : "cloud";
-                boolean bestaetigt = u.echo(aktion) == BydDataCollector.ECHO_OK;
+                boolean bestaetigt = echo.getAsInt() == BydDataCollector.ECHO_OK;
                 return new JSONObject().put("ok", true).put("weg", weg).put("bestaetigt", bestaetigt);
             }
             case BLOCKED_DRIVING:
@@ -402,6 +444,25 @@ public final class HandyApiHandler {
 
         public long jetzt() {
             return System.currentTimeMillis();
+        }
+
+        @Override
+        public VehicleCommandRouter.VehicleCommand sitzheizung(int position, int stufe) {
+            // wie VehicleControlApiHandler (Sitz-Route): Cloud-Grundlage nur aus frischem, vollständigem Zustand
+            at.greenchili.surfmate.byd.BydVehicleData snap = BydDataCollector.getInstance().getData();
+            if (!VehicleCommandRouter.hasFreshCompleteSeatState(snap)) {
+                return Umgebung.super.sitzheizung(position, stufe);
+            }
+            int[] z = {snap.seatHeat[0], snap.seatCool[0], snap.seatHeat[1], snap.seatCool[1]};
+            z[position == 1 ? 0 : 2] = stufe;
+            return new VehicleCommandRouter.SeatHeatCommand(position, stufe, z[0], z[1], z[2], z[3], true,
+                    snap.seatClimateAtMs);
+        }
+
+        @Override
+        public int echoSitz(int position, int stufe) {
+            BydDataCollector c = BydDataCollector.getInstance();
+            return BydDataCollector.warteAufEcho(() -> c.readSeatClimateNow(true, position), stufe, 2_000L, 250L);
         }
     }
 }

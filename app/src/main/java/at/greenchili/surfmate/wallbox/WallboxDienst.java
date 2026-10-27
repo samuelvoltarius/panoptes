@@ -262,6 +262,9 @@ public final class WallboxDienst {
         } catch (WallboxFehler f) {
             o.put("erreichbar", false).put("fehler", f.code);
         }
+        // 0.1.21: welcher Weg zum MQTT-Broker (Brücke/openWB) trug bzw. woran jeder Weg scheiterte
+        JSONObject v = OpenWbAdapter.verbindung();
+        if (v != null) o.put("mqttVerbindung", v);
         return o;
     }
 

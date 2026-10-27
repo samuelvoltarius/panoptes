@@ -275,7 +275,7 @@ public final class Planer {
         for (int i = 0; i < st.size(); i++) {
             p.slotStart[i] = st.get(i);
             double pr = e.preis.applyAsDouble(st.get(i));
-            p.slotPreis[i] = Double.isNaN(pr) || pr < 0 ? 0 : pr;
+            p.slotPreis[i] = Double.isNaN(pr) ? 0 : pr;   // Börse darf negativ sein
         }
     }
 

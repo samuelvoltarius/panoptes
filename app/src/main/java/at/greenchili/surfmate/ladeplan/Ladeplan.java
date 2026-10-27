@@ -1,5 +1,6 @@
 package at.greenchili.surfmate.ladeplan;
 
+import at.greenchili.surfmate.charging.BoersenPreise;
 import at.greenchili.surfmate.charging.TariffManager;
 import at.greenchili.surfmate.charging.TariffProfile;
 import at.greenchili.surfmate.config.UnifiedConfigManager;
@@ -41,6 +42,18 @@ public final class Ladeplan {
         return d;
     }
 
+    /** Letzter Zustand des Ladeplans für HA (ohne Abruf); null, solange noch nichts bekannt ist. */
+    public static JSONObject schnappschuss() {
+        try {
+            LadeplanDienst d = dienst();
+            JSONObject l = d.letzter();
+            if (l == null && "aus".equals(d.einstellungen().optString("modus"))) l = d.alsAus();   // einmal, dann im Speicher
+            return l;
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
     public static synchronized void start() {
         if (gestartet) return;
         gestartet = true;
@@ -49,7 +62,15 @@ public final class Ladeplan {
             t.setDaemon(true);
             return t;
         });
+        BoersenPreise.setzeAktiv(boerse());
         ex.scheduleWithFixedDelay(() -> {
+            try {
+                // 0.1.21 Börse: nur mit Schalter „dynamischer Tarif“ und Börsentarif am Heimort (sonst kein Abruf)
+                String land = dienst().boerseLand();
+                if (land != null) boerse().aktualisiere(land);
+            } catch (Throwable t) {
+                logger.warn("Börse: " + t.getMessage());
+            }
             try {
                 // Ohne Einstellung (Standard „aus“) und ohne „sofort“ kein einziger Wallbox-Abruf
                 LadeplanDienst d = dienst();
@@ -59,6 +80,30 @@ public final class Ladeplan {
                 logger.warn("Takt: " + t.getMessage());
             }
         }, 90, 60, java.util.concurrent.TimeUnit.SECONDS);
+    }
+
+    private static volatile BoersenPreise boerse;
+    private static volatile long schalterStand;
+    private static volatile boolean schalter;
+
+    /** Börsenpreise (0.1.21); Schalter „dynamischer Tarif“ aus ladeplan.json, höchstens alle 10 s gelesen. */
+    static synchronized BoersenPreise boerse() {
+        if (boerse == null) {
+            boerse = new BoersenPreise(new File(DaemonStorage.path("ladeplan.json")).getParentFile(), BoersenPreise.HTTP,
+                    System::currentTimeMillis, ZoneId.systemDefault(), () -> {
+                        long jetzt = System.currentTimeMillis();
+                        if (jetzt - schalterStand > 10_000L) {
+                            try {
+                                schalter = dienst().einstellungen().optBoolean("dynamischerTarif", false);
+                            } catch (Throwable t) {
+                                schalter = false;
+                            }
+                            schalterStand = jetzt;
+                        }
+                        return schalter;
+                    });
+        }
+        return boerse;
     }
 
     static final LadeplanDienst.Umgebung UMGEBUNG = new LadeplanDienst.Umgebung() {

@@ -355,7 +355,10 @@ public class SystemApiHandler {
             res.put("success", true);
             res.put("displayName", p != null ? p.optString("displayName", "") : "");
             res.put("vehicleName", p != null ? p.optString("vehicleName", "") : "");
-            res.put("modelId", v != null ? v.optString("modelId", "") : "");
+            // 0.1.21: nur ein wirklich gewähltes Modell, sonst "" + modellGewaehlt=false (kein geratenes „seal“)
+            String gewaehlt = at.greenchili.surfmate.config.VehicleModelSelection.gewaehlt(v);
+            res.put("modelId", gewaehlt != null ? gewaehlt : "");
+            res.put("modellGewaehlt", gewaehlt != null);
             res.put("color", v != null ? v.optString("color", "") : "");
             if (v != null && v.has("nominalKwh") && !v.isNull("nominalKwh")) {
                 res.put("batteryKwh", v.optDouble("nominalKwh", 0));

@@ -58,7 +58,7 @@ public class WebHandyGuardTest {
         assertTrue(req.getJSONObject("werte").has("recording.mode"));
     }
 
-    static String quelle(String rel) throws Exception {
+    public static String quelle(String rel) throws Exception {
         java.io.File f = new java.io.File("src/main/" + rel);
         if (!f.isFile()) f = new java.io.File("app/" + f.getPath());
         return new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8).replace("\r\n", "\n");

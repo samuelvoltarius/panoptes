@@ -53,6 +53,7 @@ public class AuthMiddleware {
         // worker registration and manifest discovery, with no Bearer header
         // (browser-internal fetch, not auth.js-wrapped).
         "/manifest.json",
+        "/apple-touch-icon.png", "/apple-touch-icon-precomposed.png",   // 0.1.21 PWA: iOS holt das Symbol ohne Login
         "/sw.js"
     ));
 
@@ -60,6 +61,7 @@ public class AuthMiddleware {
     private static final String[] PUBLIC_PREFIXES = {
         "/shared/", // Static assets (CSS, JS, fonts, models)
         "/auth/kopplung/anfrage", // Kopplung per Anfrage: anlegen + abholen (Ablauf/Ratenlimit in KopplungsAnfragen)
+        "/auth/telegram/",        // 0.1.21 Anmeldung per Telegram-Erlauben: anfrage + abholen (Ratenlimit in TelegramAnmeldung)
         "/i18n/"    // Language files
     };
 
@@ -89,6 +91,11 @@ public class AuthMiddleware {
     /** Für Tests und Handler-Prüfungen. */
     static void setRequestScopeForTest(String scope) {
         REQUEST_SCOPE.set(scope);
+    }
+
+    /** Für Tests: Kopplungs-id der laufenden Anfrage. */
+    static void setRequestKopplungForTest(String kid) {
+        REQUEST_KID.set(kid);
     }
 
     /**

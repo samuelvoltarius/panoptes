@@ -111,6 +111,12 @@ public final class HaApiHandler {
             JSONObject b = cs.optJSONObject("budget");
             c.put("reichtBis", b != null && b.has("reichtBisMs") ? b.get("reichtBisMs") : JSONObject.NULL);
             z.put("camping", c);
+            // 0.1.21: ob Panoptes BYD-Cloud-Zugangsdaten hat (nur ja/nein, nie Werte) – Cockpit/Handy blenden ihren Hinweis aus
+            boolean cloud = false;
+            try {
+                cloud = at.greenchili.surfmate.byd.cloud.BydCloudConfig.fromUnifiedConfig().isConfigured();
+            } catch (Throwable ignored) { }
+            z.put("cloud", new JSONObject().put("eingerichtet", cloud));
         } catch (Exception ignored) { }
         return z;
     }
@@ -134,6 +140,34 @@ public final class HaApiHandler {
         } catch (Throwable t) {
             return false;
         }
+    }
+
+    /**
+     * 0.1.21 Telegram /wo (Koordination): Ort nur mit {@code ha.positionTeilen}. Ohne Freigabe werden Koordinaten und
+     * Ortsname aus den Parkdaten entfernt ({@code positionTeilen:false}); mit Freigabe kommt die aktuelle Position als
+     * Rückfall dazu ({@code jetzt}), falls Parken aus ist oder keine Sitzung hat.
+     */
+    static void woFreigabe(JSONObject r) throws Exception {
+        woFreigabe(r, positionErlaubt(), HaApiHandler::position);
+    }
+
+    /** Rein (für Tests): ohne Freigabe Ort/Koordinaten entfernen, mit Freigabe die aktuelle Position anhängen. */
+    static void woFreigabe(JSONObject r, boolean frei, java.util.function.Supplier<Object> position) throws Exception {
+        r.put("positionTeilen", frei);
+        if (!frei) {
+            for (String k : new String[]{"current", "latest"}) {
+                JSONObject s = r.optJSONObject(k);
+                if (s == null) continue;
+                s.remove("place");
+                s.remove("safeZone");
+                s.remove("signage");
+                JSONObject g = s.optJSONObject("gps");
+                if (g != null) { g.remove("lat"); g.remove("lng"); g.remove("lon"); }
+            }
+            return;
+        }
+        Object p = position.get();
+        if (p instanceof JSONObject) r.put("jetzt", p);
     }
 
     private static Object position() {
