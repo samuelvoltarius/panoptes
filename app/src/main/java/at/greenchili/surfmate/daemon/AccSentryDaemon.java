@@ -1,5 +1,6 @@
 package at.greenchili.surfmate.daemon;
 
+import at.greenchili.surfmate.power.StandWeckRegel;
 import android.content.Context;
 import android.hardware.bydauto.bodywork.AbsBYDAutoBodyworkListener;
 import android.hardware.bydauto.power.AbsBYDAutoPowerListener;
@@ -4769,6 +4770,17 @@ public class AccSentryDaemon {
         return performSystemWakeUp(-1L);
     }
 
+    /** PowerManager.isInteractive() (API 20); null when unreadable. */
+    private static Boolean isApInteractive() {
+        try {
+            if (appContext == null) return null;
+            PowerManager pm = (PowerManager) appContext.getSystemService(Context.POWER_SERVICE);
+            return pm == null ? null : pm.isInteractive();
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
     private static boolean performSystemWakeUp(long keepAliveGeneration) {
         if (appContext == null) {
             log("performSystemWakeUp: No context available");
@@ -5800,7 +5812,17 @@ public class AccSentryDaemon {
                             if (!isKeepAliveCommitCurrent(transitionGeneration)) {
                                 break;
                             }
-                            boolean wakeCommitted = runBoundedHardwareBoolean(
+                            // 0.1.19 A+: the full wakeUp only when the AP actually
+                            // drifted (or the state is unreadable, or SD recovery).
+                            // An AP that is still interactive gains nothing from it
+                            // except the visible panel flash (StandWeckRegel).
+                            final boolean fullWake = StandWeckRegel.vollesWecken(
+                                    sdRecoveryTick, isApInteractive());
+                            if (!fullWake) {
+                                log("Periodic keepalive: AP still interactive - "
+                                        + "wakeUp skipped (A+, no panel flash)");
+                            }
+                            boolean wakeCommitted = fullWake && runBoundedHardwareBoolean(
                                     "KeepAlive system wake",
                                     () -> isKeepAliveGenerationCurrent(
                                             transitionGeneration),
@@ -5838,7 +5860,7 @@ public class AccSentryDaemon {
                                         sdRecoveryTick
                                                 ? "SD recovery wake"
                                                 : "Periodic keepalive wake");
-                            } else {
+                            } else if (fullWake) {
                                 requestPanelForLatestTransition();
                             }
                         } catch (Throwable t) {
@@ -6855,6 +6877,8 @@ public class AccSentryDaemon {
      * Checks if Wi-Fi is enabled and forces it ON if not.
      * Equivalent to: Runtime.getRuntime().exec("svc wifi enable");
      */
+    private static volatile boolean wlanUrsprungGesichert;
+
     private static void ensureWifiEnabled(long transitionGeneration) {
         // Respect a user's explicit "WiFi off" automation / key-mapping: when the radio
         // action set the suppression flag, the keep-alive stands down so the deliberate
@@ -6872,6 +6896,14 @@ public class AccSentryDaemon {
         }
         if (!isKeepAliveCommitCurrent(transitionGeneration)) {
             return;
+        }
+        // 0.1.19: record the Wi-Fi state from before our first enable, once per
+        // process (the script itself keeps an existing record). Proof only.
+        if (!wlanUrsprungGesichert) {
+            wlanUrsprungGesichert = true;
+            execShellResult(at.greenchili.surfmate.power.SystemEingriffe.wlanSichernSkript(),
+                    DEFAULT_SHELL_TIMEOUT_MS,
+                    () -> isKeepAliveCommitCurrent(transitionGeneration));
         }
         // We use a lightweight check to avoid spamming the shell log
         // running it blindly is safer for persistence.

@@ -115,4 +115,44 @@ public class SystemEingriffeTest {
         assertTrue("eigener Thread", methode.contains("new Thread(") && methode.contains(".start();"));
         assertFalse("setzt nie selbst 7", methode.contains("stay_on_while_plugged_in 7"));
     }
+
+    /** 0.1.19: WLAN-Ursprung einmal sichern (vorhandene Sicherung bleibt), echte Shell mit settings-Attrappe. */
+    @Test
+    public void wlanUrsprungEinmalSichern() throws Exception {
+        assumeTrue("sh nicht vorhanden", shDa());
+        File d = tmp.newFolder();
+        File u = new File(d, "ursprung");
+        String pfad = u.getAbsolutePath().replace('\\', '/');
+        String skript = SystemEingriffe.wlanSichernSkript().replace(SystemEingriffe.URSPRUNG_DATEI, pfad);
+        for (String wert : new String[] {"0", "1"}) {
+            String attrappe = "settings() { echo " + wert + "; }; ";
+            Process p = new ProcessBuilder("sh", "-c", attrappe + skript).redirectErrorStream(true).start();
+            p.waitFor();
+        }
+        assertEquals("global.wifi_on=0", new String(Files.readAllBytes(u.toPath()), StandardCharsets.UTF_8).trim());
+        assertTrue("Teil der allgemeinen Sicherung", SystemEingriffe.sichernSkript().contains(SystemEingriffe.wlanSichernSkript()));
+    }
+
+    /** 0.1.19: tote Launcher-Fassung mit dauerhaften WLAN-Einstellungen ist weg; der Keep-alive sichert vor dem Einschalten. */
+    @Test
+    public void wlanKeineDauerhaftenEinstellungenUndSicherungImKeepAlive() throws Exception {
+        for (String rel : new String[] {
+                "at/greenchili/surfmate/launcher/ServiceLauncher.kt",
+                "at/greenchili/surfmate/launcher/AdbDaemonLauncher.kt"}) {
+            String s = quelle(rel);
+            assertFalse(rel, s.contains("fun ensureWifiEnabled"));
+            assertFalse(rel, s.contains("byd_wifi_always_on"));
+            assertFalse(rel, s.contains("wifi_sleep_policy 2\""));
+        }
+        String a = quelle("at/greenchili/surfmate/daemon/AccSentryDaemon.java");
+        int m = a.indexOf("private static void ensureWifiEnabled(long transitionGeneration)");
+        assertTrue(m > 0);
+        int sichern = a.indexOf("SystemEingriffe.wlanSichernSkript()", m);
+        int ein = a.indexOf("CMD_WIFI_ENABLE()", m);
+        assertTrue("sichern vor dem Einschalten", sichern > 0 && sichern < ein);
+        String sd = quelle("at/greenchili/surfmate/daemon/SentryDaemon.java");
+        int e = sd.indexOf("private static void enableWifi()");
+        assertTrue(e > 0 && sd.indexOf("SystemEingriffe.wlanSichernSkript()", e) < sd.indexOf("execShell(CMD_WIFI_ENABLE())", e)
+                && sd.indexOf("SystemEingriffe.wlanSichernSkript()", e) > 0);
+    }
 }

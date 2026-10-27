@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import at.greenchili.surfmate.byd.BydVehicleData;
 import at.greenchili.surfmate.byd.routing.CloudPowerGate;
 import at.greenchili.surfmate.byd.routing.VehicleCommandRouter;
 import at.greenchili.surfmate.testutil.Quelltext;
@@ -36,7 +37,7 @@ public class CampingCloudSitzungTest {
     private final List<JSONObject> protokoll = new ArrayList<>();
 
     private RouterHeizweg weg() {
-        return new RouterHeizweg(router::apply, n -> gate, () -> Boolean.TRUE, 31, protokoll::add);
+        return new RouterHeizweg(router::apply, n -> gate, () -> Boolean.TRUE, 31, protokoll::add, null);
     }
 
     private static CampingRegler.Lage aus(long jetzt) {
@@ -111,6 +112,81 @@ public class CampingCloudSitzungTest {
         assertEquals(RouterHeizweg.STAND_PROTOKOLL >= 2, w.stand().optJSONArray("protokoll").length() >= 2);
     }
 
+    // ------------------------------------------------------------ 0.1.19 Messung nach der Sitzung
+
+    private BydVehicleData daten;
+
+    private RouterHeizweg wegMitDaten() {
+        router.antwort = VehicleCommandRouter.CommandResult.success(VehicleCommandRouter.Path.CLOUD, "", 1);
+        return new RouterHeizweg(router::apply, n -> gate, () -> Boolean.TRUE, 31, protokoll::add, () -> daten);
+    }
+
+    private JSONObject letzteMessung() {
+        JSONObject m = null;
+        for (JSONObject o : protokoll) if ("messung".equals(o.optString("art"))) m = o;
+        return m;
+    }
+
+    private int messungen() {
+        int n = 0;
+        for (JSONObject o : protokoll) if ("messung".equals(o.optString("art"))) n++;
+        return n;
+    }
+
+    @Test
+    public void messungNachZweiMinutenNurLesend() throws Exception {
+        RouterHeizweg w = wegMitDaten();
+        w.ein(30, 2, 15, aus(NOW), true);
+        int befehle = router.befehle.size();
+        daten = new BydVehicleData.Builder().klimaSollwertC(33, NOW + 90_000).acSetpointDriver(33).acFanLevel(3)
+                .acStartState(1).powerLevel(1, NOW + 100_000).build();
+        w.nachTakt(NOW + MIN);
+        assertEquals("vor 2 min nichts", 0, messungen());
+        w.nachTakt(NOW + 2 * MIN);
+        JSONObject m = letzteMessung();
+        assertTrue(m.getBoolean("lesbar"));
+        assertEquals(33.0, m.getDouble("sollwertC"), 0.01);
+        assertEquals(3, m.getInt("geblaese"));
+        assertEquals(1, m.getInt("klimaAn"));
+        assertEquals(1, m.getInt("powerLevel"));
+        assertEquals(31, m.getInt("cloudTemperatur"));
+        assertEquals("nur lesen: kein Befehl", befehle, router.befehle.size());
+        w.nachTakt(NOW + 3 * MIN);
+        assertEquals("nur einmal", 1, messungen());
+    }
+
+    @Test
+    public void alteDatenSindNichtLesbar() throws Exception {
+        RouterHeizweg w = wegMitDaten();
+        daten = new BydVehicleData.Builder().klimaSollwertC(25, NOW - 10 * MIN).acFanLevel(0)
+                .powerLevel(0, NOW - 5 * MIN).build();
+        w.ein(30, 2, 15, aus(NOW), true);
+        w.nachTakt(NOW + 2 * MIN);
+        JSONObject m = letzteMessung();
+        assertFalse(m.getBoolean("lesbar"));
+        assertFalse("ohne frische Daten keine Werte", m.has("sollwertC") || m.has("geblaese"));
+    }
+
+    @Test
+    public void ohneBestaetigungKeineMessungUndVerpasstNachAblauf() throws Exception {
+        RouterHeizweg w = wegMitDaten();
+        router.antwort = VehicleCommandRouter.CommandResult.failed(VehicleCommandRouter.Path.CLOUD, "", 1, null);
+        w.ein(30, 2, 15, aus(NOW), true);
+        w.nachTakt(NOW + 2 * MIN);
+        assertEquals(0, messungen());
+        // bestätigt, aber der Takt kommt erst nach Ablauf der 15-min-Sitzung
+        router.antwort = VehicleCommandRouter.CommandResult.success(VehicleCommandRouter.Path.CLOUD, "", 1);
+        w.ein(30, 2, 15, aus(NOW + 50 * MIN), true);
+        w.nachTakt(NOW + 70 * MIN);
+        assertTrue(letzteMessung().getBoolean("verpasst"));
+        // zuruecksetzen verwirft eine fällige Messung
+        w.ein(30, 2, 15, aus(NOW + 120 * MIN), true);
+        w.zuruecksetzen();
+        int n = messungen();
+        w.nachTakt(NOW + 123 * MIN);
+        assertEquals(n, messungen());
+    }
+
     @Test
     public void protokolldateiWirdAngehaengtUndBegrenzt() throws Exception {
         Camping c = new Camping(tmp.getRoot().getAbsolutePath());
@@ -134,7 +210,7 @@ public class CampingCloudSitzungTest {
     public void pauseWirdEinmalGemeldetUndTexteDa() throws Exception {
         String q = Quelltext.lies(Paths.get("src/main/java/at/greenchili/surfmate/camping/Camping.java"));
         assertTrue(q.contains("einmalMelden(\"cloud_pausiert\", l);"));
-        assertTrue(q.contains("new RouterHeizweg(tabelle.cloudTemperatur, this::cloudProtokoll)"));
+        assertTrue(q.contains("new RouterHeizweg(tabelle.cloudTemperatur, this::cloudProtokoll, () -> daten.get())"));
         for (String l : new String[]{"de", "en", "fr", "it", "nl"}) {
             JSONObject d = new JSONObject(Quelltext.lies(Paths.get("src/main/assets/server-i18n/" + l + ".json")));
             assertTrue(l, d.getJSONObject("notifications").getString("camping_cloud_pausiert").length() > 20);

@@ -272,10 +272,37 @@
                 + '<div class="ln">' + esc(abw === 0 ? t('navi.uw_cons_eq', 'Verbrauch wie geplant')
                     : t(abw > 0 ? 'navi.uw_cons_hi' : 'navi.uw_cons_lo', abw > 0 ? 'Verbrauch {x} % über Plan' : 'Verbrauch {x} % unter Plan', { x: Math.abs(abw) }))
                 + (d.reserve > 0 ? ' · ' + esc(t('navi.uw_reserve', 'Reserve {r} %', { r: fmt(d.reserve) })) : '') + '</div>'
-                + this.belegung(n) + this.kurve(d.verlauf, d.reserve)
+                + this.neu(d.neuPlanen) + this.belegung(n) + this.kurve(d.verlauf, d.reserve)
                 + '<details><summary>' + esc(t('navi.uw_settings', 'Einstellungen')) + '</summary><div id="nUwSet"></div></details>';
             box.innerHTML = html;
             box.querySelector('details').addEventListener('toggle', function () { if (this.open) UW.einstellungen(); });
+            this.neuVerdrahten(box, d.neuPlanen);
+        },
+        // 0.1.19: Planer meldet „neu planen“ (§17, Einwilligung planner.abweichung). Nur hier in der Navi-Seite,
+        // dezent, ohne Ton und ohne Fenster über anderen Apps (A+). „Neu planen“ rechnet die Route zum selben Ziel
+        // ab der aktuellen Position neu (wie eine eigene Suche); ins Navi geht erst etwas nach „Ziel ins Auto“.
+        neu: function (h) {
+            if (!h || !h.ziel) return '';
+            var g = (h.gruende || []).filter(Boolean).slice(0, 2).join(' · ');
+            return '<div class="uw-neu" role="status" style="margin-top:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--outline-variant, var(--outline));">'
+                + '<div class="ln" style="margin-top:0;font-weight:600">' + esc(t('navi.uw_neu', 'Die Fahrt weicht vom Plan ab – neu planen?')) + '</div>'
+                + (g ? '<div class="ln">' + esc(g) + '</div>' : '')
+                + '<div class="pr-act"><button class="nbtn" type="button" data-uw="neu">' + esc(t('navi.uw_neu_btn', 'Neu planen')) + '</button>'
+                + '<button class="nbtn ghost" type="button" data-uw="weg">' + esc(t('navi.uw_neu_weg', 'Nicht jetzt')) + '</button></div></div>';
+        },
+        neuVerdrahten: function (box, h) {
+            var self = this;
+            if (!h || !h.ziel) return;
+            var b = box.querySelector('[data-uw="neu"]'), w = box.querySelector('[data-uw="weg"]');
+            if (b) b.onclick = function () {
+                N.choose({ name: h.ziel.name || t('navi.uw_dest', 'Ziel'), full: h.ziel.name || '', lat: h.ziel.lat, lng: h.ziel.lon,
+                           via: Array.isArray(h.via) ? h.via : [] });
+                var out = $('nOut'); if (out && out.scrollIntoView) out.scrollIntoView({ block: 'nearest' });
+            };
+            if (w) w.onclick = function () {
+                w.disabled = true;
+                post('/api/navi/unterwegs/ablehnen', {}).catch(function () { return null; }).then(function () { self.laden(); });
+            };
         },
         // Belegung des nächsten Stopps (Kern: nur < 60 km, kein Ziel). voll → Ausweich-Säule nennen.
         belegung: function (n) {
@@ -504,10 +531,13 @@
             }
             out.innerHTML = this.destHtml() + '<div class="n-msg"><span class="n-busy"></span>' + esc(t('navi.calc', 'Route, Säulen und Preise werden gerechnet … (lange Strecken bis zu 2 Minuten)')) + '</div>';
             var soc = this.soc();
-            planer('/api/navi/plan', {
+            var body = {
                 start: [+car.lat.toFixed(5), +car.lng.toFixed(5)], ziel: [+dest.lat.toFixed(5), +dest.lng.toFixed(5)],
                 soc_start: soc !== null ? Math.round(soc) : 80, soc_ziel_min: +$('nArrive').value, fahrzeug: null
-            }).then(function (d) {
+            };
+            // 0.1.19: „Neu planen“ aus der Plan-Abweichung behält die noch vor uns liegenden Zwischenziele (Planer §17)
+            if (dest.via && dest.via.length) body.via = dest.via;
+            planer('/api/navi/plan', body).then(function (d) {
                 if (self.dest !== dest) return;
                 if (!d || d.fehler || !d.route) throw new Error((d && d.fehler) || t('navi.offline', 'Planer nicht erreichbar'));
                 self.plan = d;

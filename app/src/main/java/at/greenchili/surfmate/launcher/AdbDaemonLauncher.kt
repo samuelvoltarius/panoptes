@@ -230,12 +230,6 @@ class AdbDaemonLauncher(private val context: Context) {
         serviceLauncher.injectAccWhitelist(packageName, callback.toServiceCallback())
     }
     
-    /**
-     * Enable WiFi and prevent it from sleeping via shell commands.
-     */
-    fun ensureWifiEnabled(callback: LaunchCallback) {
-        serviceLauncher.ensureWifiEnabled(callback.toServiceCallback())
-    }
     
     // ==================== SENTRY DAEMON ====================
     

@@ -1,5 +1,6 @@
 package at.greenchili.surfmate.camping;
 
+import at.greenchili.surfmate.byd.BydVehicleData;
 import at.greenchili.surfmate.byd.routing.CloudPowerGate;
 import at.greenchili.surfmate.byd.routing.VehicleCommandRouter;
 import at.greenchili.surfmate.logging.DaemonLogger;
@@ -27,7 +28,10 @@ import java.util.function.Supplier;
  *       <br>0.1.18 (27.10.2026): Erfolg nur mit Cloud-Bestätigung (BYD-Endergebnis über
  *       {@code remoteControlResult}, siehe BydCloudClient). Nach {@link #MAX_CLOUD_FEHLVERSUCHE} Fehlschlägen in
  *       Folge pausiert H2 bis zum nächsten Camping (keine Endlos-Wiederholung, Meldung über Camping). Jede
- *       Cloud-Entscheidung landet im Protokoll ({@code camping_cloud.jsonl}).</li>
+ *       Cloud-Entscheidung landet im Protokoll ({@code camping_cloud.jsonl}).
+ *       <br>0.1.19 (SPEC_0119_CLOUD_MESSUNG): {@link #MESSEN_NACH_MS} nach einer bestätigten Sitzung einmal Sollwert,
+ *       Gebläse, Klima und power_level aus den vorhandenen Fahrzeugdaten ins Protokoll – nur lesen, nie wecken;
+ *       sind die Daten nicht frisch seit dem Sitzungsstart, steht dort „nicht lesbar“.</li>
  *   <li>Sonst (Zustand unbekannt oder alt, ACC, Laden mit anderem power_level): übersprungen, nichts gesendet.</li>
  * </ul>
  */
@@ -43,12 +47,15 @@ final class RouterHeizweg implements Heizweg {
     static final int MAX_CLOUD_FEHLVERSUCHE = 2;
     /** Die letzten Protokolleinträge im Status. */
     static final int STAND_PROTOKOLL = 5;
+    /** Messung nach einer bestätigten Cloud-Sitzung: so lange danach (Klima und Sollwert eingeschwungen). */
+    static final long MESSEN_NACH_MS = 2 * 60_000L;
 
     private final Function<VehicleCommandRouter.VehicleCommand, VehicleCommandRouter.CommandResult> router;
     private final Function<String, CloudPowerGate.Decision> gate;
     private final Supplier<Boolean> weg2Lebt;
     private final int cloudTemperatur;
     private final Consumer<JSONObject> protokoll;
+    private final Supplier<BydVehicleData> daten;
     private final LinkedList<JSONObject> letzteEintraege = new LinkedList<>();
 
     private int weckungen;
@@ -57,26 +64,30 @@ final class RouterHeizweg implements Heizweg {
     private boolean cloudGesperrt;
     private int cloudFehlVersuche;
     private boolean cloudPausiert;
+    /** Start der bestätigten Sitzung, deren Messung noch aussteht (0 = keine). */
+    private long messungFuerMs;
+    private int messungDauerMin;
     private String letztesErgebnis;
 
-    RouterHeizweg(int cloudTemperatur, Consumer<JSONObject> protokoll) {
+    RouterHeizweg(int cloudTemperatur, Consumer<JSONObject> protokoll, Supplier<BydVehicleData> daten) {
         this(v -> VehicleCommandRouter.getInstance().execute(v), CloudPowerGate::evaluateLive,
-                RouterHeizweg::weg2NetzDa, cloudTemperatur, protokoll);
+                RouterHeizweg::weg2NetzDa, cloudTemperatur, protokoll, daten);
     }
 
     RouterHeizweg(Function<VehicleCommandRouter.VehicleCommand, VehicleCommandRouter.CommandResult> router,
                   Function<String, CloudPowerGate.Decision> gate, Supplier<Boolean> weg2Lebt, int cloudTemperatur) {
-        this(router, gate, weg2Lebt, cloudTemperatur, null);
+        this(router, gate, weg2Lebt, cloudTemperatur, null, null);
     }
 
     RouterHeizweg(Function<VehicleCommandRouter.VehicleCommand, VehicleCommandRouter.CommandResult> router,
                   Function<String, CloudPowerGate.Decision> gate, Supplier<Boolean> weg2Lebt, int cloudTemperatur,
-                  Consumer<JSONObject> protokoll) {
+                  Consumer<JSONObject> protokoll, Supplier<BydVehicleData> daten) {
         this.router = router;
         this.gate = gate;
         this.weg2Lebt = weg2Lebt;
         this.cloudTemperatur = Math.max(15, Math.min(31, cloudTemperatur));
         this.protokoll = protokoll;
+        this.daten = daten;
     }
 
     static boolean autoAn(CampingRegler.Lage l) {
@@ -141,6 +152,8 @@ final class RouterHeizweg implements Heizweg {
                             && r.path == VehicleCommandRouter.Path.CLOUD;
                     if (bestaetigt) {
                         cloudFehlVersuche = 0;
+                        messungFuerMs = l.jetztMs;
+                        messungDauerMin = dauer;
                         e = Ergebnis.cloud();
                     } else {
                         cloudFehlVersuche++;
@@ -194,6 +207,7 @@ final class RouterHeizweg implements Heizweg {
 
     @Override
     public synchronized String nachTakt(long jetztMs) {
+        messen(jetztMs);
         if (weg2VorCloud == null || letzteCloudMs <= 0 || jetztMs - letzteCloudMs < WEG2_PRUEFEN_NACH_MS) return null;
         Boolean vorher = weg2VorCloud;
         weg2VorCloud = null;
@@ -222,6 +236,7 @@ final class RouterHeizweg implements Heizweg {
         letztesErgebnis = null;
         cloudFehlVersuche = 0;
         cloudPausiert = false;
+        messungFuerMs = 0;
         // cloudGesperrt bleibt bis zum Daemon-Neustart: erst die Koordination entscheidet
     }
 
@@ -236,6 +251,48 @@ final class RouterHeizweg implements Heizweg {
                     .put("protokoll", new org.json.JSONArray(letzteEintraege));
         } catch (Exception ignored) { }
         return o;
+    }
+
+    /**
+     * Einmalige Messung nach einer bestätigten Cloud-Sitzung (SPEC_0119_CLOUD_MESSUNG). Liest nur die vorhandenen
+     * Fahrzeugdaten – kein Router, keine Cloud, kein Wecken.
+     */
+    private void messen(long jetztMs) {
+        if (messungFuerMs <= 0 || jetztMs - messungFuerMs < MESSEN_NACH_MS) return;
+        long start = messungFuerMs;
+        messungFuerMs = 0;
+        JSONObject o = new JSONObject();
+        put(o, "zeit", jetztMs);
+        put(o, "art", "messung");
+        put(o, "seitCloudMs", jetztMs - start);
+        put(o, "cloudTemperatur", cloudTemperatur);
+        if (jetztMs - start > messungDauerMin * 60_000L) {
+            // Takt kam zu spät (z. B. Daemon-Neustart): die Sitzung ist schon abgelaufen
+            put(o, "lesbar", JSONObject.NULL);
+            put(o, "verpasst", true);
+            protokollieren(o);
+            return;
+        }
+        BydVehicleData v = null;
+        try {
+            v = daten == null ? null : daten.get();
+        } catch (Throwable ignored) { }
+        boolean lesbar = v != null && (v.klimaSollwertReadAt >= start || v.powerLevelAtMs >= start);
+        put(o, "lesbar", lesbar);
+        if (lesbar) {
+            put(o, "sollwertC", Double.isNaN(v.klimaSollwertC) ? JSONObject.NULL : (Object) v.klimaSollwertC);
+            put(o, "sollwertAlterMs", v.klimaSollwertReadAt > 0 ? (Object) (jetztMs - v.klimaSollwertReadAt) : JSONObject.NULL);
+            put(o, "setpointFahrer", zahl(v.acSetpointDriver));
+            put(o, "geblaese", zahl(v.acFanLevel));
+            put(o, "klimaAn", zahl(v.acStartState));
+            put(o, "powerLevel", zahl(v.powerLevel));
+            put(o, "powerLevelAlterMs", v.powerLevelAtMs > 0 ? (Object) (jetztMs - v.powerLevelAtMs) : JSONObject.NULL);
+        }
+        protokollieren(o);
+    }
+
+    private static Object zahl(int w) {
+        return w == BydVehicleData.UNAVAILABLE ? JSONObject.NULL : (Object) w;
     }
 
     /** Cloud wegen wiederholter Fehlschläge pausiert (bis zum nächsten Camping). */

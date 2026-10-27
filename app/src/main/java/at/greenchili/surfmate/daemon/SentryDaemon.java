@@ -532,6 +532,8 @@ public class SentryDaemon {
             return;
         }
         log("Enabling WiFi...");
+        // 0.1.19: WLAN-Ursprung vor dem ersten Einschalten einmal sichern (SystemEingriffe, nur Nachweis).
+        execShell(at.greenchili.surfmate.power.SystemEingriffe.wlanSichernSkript());
         execShell(CMD_WIFI_ENABLE());
         execShell(CMD_WIFI_ENABLE_ALT());
         log("WiFi enabled");

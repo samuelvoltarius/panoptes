@@ -23,6 +23,8 @@ import java.io.OutputStream;
  *   <li>{@code POST /api/wallbox/test} – nur lesender Abruf mit ungespeicherten Einstellungen</li>
  *   <li>{@code POST /api/wallbox/freigabe}, {@code POST /api/wallbox/steuern} – zweistufig bestätigt, nicht während der Fahrt</li>
  *   <li>{@code GET  /api/wallbox/protokoll}</li>
+ *   <li>0.1.19: {@code POST /api/wallbox/ha/anmelden} + {@code POST /api/wallbox/ha/rueckruf} („Mit Home Assistant
+ *       anmelden“, OAuth), {@code POST /api/wallbox/suche} („Wallbox finden“ im WLAN, nur finden)</li>
  * </ul>
  * Zugangsdaten: nur im Auto, AES-GCM über {@link CredentialCipher}; nie an unsere Server.
  */
@@ -62,7 +64,8 @@ public final class WallboxApiHandler {
                             System::currentTimeMillis, WallboxQuelle.ECHT,
                             at.greenchili.surfmate.wallbox.TuyaLan.TCP, WallboxApiHandler::tuyaModelle)
                             .mitDirekt(() -> webDaten("wallbox-modbus-modelle.json"),
-                                    at.greenchili.surfmate.wallbox.KebaUdpAdapter.Udp.ECHT);
+                                    at.greenchili.surfmate.wallbox.KebaUdpAdapter.Udp.ECHT)
+                            .mitBroker(WallboxApiHandler::broker);
                     dienst = d;
                 }
             }
@@ -81,6 +84,39 @@ public final class WallboxApiHandler {
             File f = new File(DaemonStorage.rebase("/data/user_de/0/com.android.shell/surfmate/web/shared/" + name));
             return new JSONObject(new String(java.nio.file.Files.readAllBytes(f.toPath()), java.nio.charset.StandardCharsets.UTF_8));
         } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /**
+     * 0.1.19 Wallbox-Brücke: Broker der eingeschalteten Panoptes-MQTT-Verbindungen (nur tcp). Zugangsdaten bleiben im
+     * Daemon (entschlüsselt erst hier, nie in einer Antwort).
+     */
+    private static java.util.List<JSONObject> broker() {
+        java.util.List<JSONObject> aus = new java.util.ArrayList<>();
+        try {
+            at.greenchili.surfmate.mqtt.MqttConnectionStore s = new at.greenchili.surfmate.mqtt.MqttConnectionStore();
+            s.load();
+            for (at.greenchili.surfmate.mqtt.MqttConnectionConfig c : s.getEnabled()) {
+                JSONObject b = brokerAus(c.brokerUrl, c.port, c.username, c.password);
+                if (b != null) aus.add(b);
+            }
+        } catch (Throwable ignored) { }
+        return aus;
+    }
+
+    /** {@code tcp://host[:port]} → {host, port, benutzer, passwort}; ssl/ws → null (die Brücke spricht tcp). */
+    static JSONObject brokerAus(String url, int port, String benutzer, String passwort) {
+        try {
+            if (url == null) return null;
+            String u = url.trim();
+            if (!u.startsWith("tcp://")) return null;
+            java.net.URI uri = new java.net.URI(u);
+            if (uri.getHost() == null) return null;
+            int p = uri.getPort() > 0 ? uri.getPort() : (port > 0 ? port : 1883);
+            return new JSONObject().put("host", uri.getHost()).put("port", p)
+                    .put("benutzer", benutzer == null ? "" : benutzer).put("passwort", passwort == null ? "" : passwort);
+        } catch (Exception e) {
             return null;
         }
     }
@@ -104,6 +140,9 @@ public final class WallboxApiHandler {
             case "POST /api/wallbox/einstellungen": r = dienst().speichereEinstellungen(json(body)); break;
             case "POST /api/wallbox/test": r = dienst().test(json(body)); break;
             case "POST /api/wallbox/ha/vorschlag": r = dienst().haVorschlag(json(body)); break;
+            case "POST /api/wallbox/ha/anmelden": r = dienst().haAnmeldungStart(json(body)); break;
+            case "POST /api/wallbox/ha/rueckruf": r = dienst().haAnmeldungRueckruf(json(body)); break;
+            case "POST /api/wallbox/suche": r = dienst().suche(); break;
             case "POST /api/wallbox/freigabe": r = dienst().freigabe(json(body), "panoptes"); break;
             case "POST /api/wallbox/steuern": r = dienst().steuern(json(body), "panoptes"); break;
             case "GET /api/wallbox/protokoll": r = dienst().protokoll(); break;

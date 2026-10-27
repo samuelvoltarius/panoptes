@@ -89,8 +89,11 @@ public final class AppUpdateDienst {
         File arbeitsordner();
         /** SHA-256 des Zertifikats der installierten App oder null (nicht lesbar). */
         String installiertesZertifikat();
-        /** Skript (Asset) als Text. */
-        String skript() throws Exception;
+        /**
+         * update-on-car.sh als Text. 0.1.19: aus dem geprüften neuen APK ({@code apk}, sha256 + Zertifikat sind dann
+         * schon bestätigt), sonst aus dem installierten – nie über einen Android-Context (im Daemon gibt es keinen).
+         */
+        String skript(File apk) throws Exception;
         /** Startet das Skript abgekoppelt (überlebt den Tod des Daemons). */
         void starteAbgekoppelt(File skript, File apk, String schluessel, int vc, String tag) throws Exception;
         long jetzt();
@@ -455,6 +458,37 @@ public final class AppUpdateDienst {
 
     /** Laden → prüfen → Sperre → Skript starten. Fehler landen in {@code fehler}, der Daemon läuft weiter. */
     void ausfuehren(Freigabe f) {
+        // 0.1.19: eine hier gesetzte Deploy-Sperre wird bei JEDEM Abbruch vor dem Skriptstart wieder freigegeben
+        // (Befund 27.10.: „kein Context“ fiel ins äußere catch, .deploy.lock blieb liegen → dauerhaft laeuft_schon)
+        File[] gesetzteSperre = {null};
+        String[] sperrSchluessel = {null};
+        boolean[] gestartet = {false};
+        try {
+            ausfuehrenIntern(f, gesetzteSperre, sperrSchluessel, gestartet);
+        } finally {
+            if (gesetzteSperre[0] != null && !gestartet[0]) sperreFreigeben(gesetzteSperre[0], sperrSchluessel[0]);
+        }
+    }
+
+    /** Nur unsere Sperre (Schlüssel in info) entfernen – nie die einer Deploy-Sitzung. */
+    static void sperreFreigeben(File sperre, String schluessel) {
+        File info = new File(sperre, "info");
+        try {
+            if (info.isFile()) {
+                String t = new String(Files.readAllBytes(info.toPath()), StandardCharsets.UTF_8);
+                if (schluessel == null || !t.contains("schluessel=" + schluessel)) return;
+            }
+            //noinspection ResultOfMethodCallIgnored
+            info.delete();
+            //noinspection ResultOfMethodCallIgnored
+            sperre.delete();
+            logger.info("Deploy-Sperre freigegeben (Update nicht gestartet)");
+        } catch (Exception e) {
+            logger.warn("Deploy-Sperre freigeben: " + e.getMessage());
+        }
+    }
+
+    private void ausfuehrenIntern(Freigabe f, File[] gesetzteSperre, String[] sperrSchluessel, boolean[] gestartet) {
         File dd = env.arbeitsordner();
         //noinspection ResultOfMethodCallIgnored
         dd.mkdirs();
@@ -514,21 +548,22 @@ public final class AppUpdateDienst {
                 return;
             }
             String schluessel = "appupdate-" + env.jetzt() + "-" + Long.toHexString(new SecureRandom().nextLong());
+            gesetzteSperre[0] = sperre;
+            sperrSchluessel[0] = schluessel;
             Files.write(new File(sperre, "info").toPath(), ("sitzung=appupdate\ncommit=" + f.tag + "\napk="
                     + apk.getAbsolutePath() + "\nstart=" + env.jetzt() + "\nschluessel=" + schluessel + "\n")
                     .getBytes(StandardCharsets.UTF_8));
             File skript = new File(dd, "update-on-car.sh");
-            Files.write(skript.toPath(), env.skript().getBytes(StandardCharsets.UTF_8));
+            Files.write(skript.toPath(), env.skript(apk).getBytes(StandardCharsets.UTF_8));
             new File(env.basis(), ".appupdate-rueckfall").delete();
             setzePhase("installiert", null);
             logger.warn("Installation " + f.versionName + " (vC " + f.versionCode + ", " + f.tag
                     + ") startet – Totmannschalter 30 min, Selbstbestätigung nach 3 gesunden Prüfungen");
             try {
                 env.starteAbgekoppelt(skript, apk, schluessel, f.versionCode, f.tag);
+                gestartet[0] = true;   // ab hier gehört die Sperre dem Skript (Totmann, Selbstbestätigung)
             } catch (Exception e) {
-                // Skript lief nicht an: Sperre wieder freigeben (nur unsere)
-                new File(sperre, "info").delete();
-                sperre.delete();
+                // Skript lief nicht an: Sperre gibt ausfuehren() frei (nur unsere)
                 scheitern("nicht_erreichbar", "Start fehlgeschlagen: " + e.getMessage(), apk);
             }
         } catch (Exception e) {
@@ -959,25 +994,38 @@ public final class AppUpdateDienst {
         @Override
         public String installiertesZertifikat() {
             try {
+                // 0.1.19: im Daemon gibt es keinen Context – das installierte APK steht im CLASSPATH
+                File apk = installiertesApk();
+                return apk == null ? null : ApkZertifikat.sha256(apk);
+            } catch (Throwable t) {
+                return null;
+            }
+        }
+
+        /** Installiertes APK: CLASSPATH des Daemons, sonst (App-Prozess) ApplicationInfo. */
+        static File installiertesApk() {
+            File f = ApkQuelle.installiertesApk(System.getenv("CLASSPATH"));
+            if (f != null) return f;
+            try {
                 android.content.Context c = at.greenchili.surfmate.daemon.DaemonBootstrap.getContext();
                 String pfad = c == null ? null : c.getApplicationInfo().sourceDir;
-                return pfad == null ? null : ApkZertifikat.sha256(new File(pfad));
+                return pfad == null ? null : new File(pfad);
             } catch (Throwable t) {
                 return null;
             }
         }
 
         @Override
-        public String skript() throws Exception {
-            android.content.Context c = at.greenchili.surfmate.daemon.DaemonBootstrap.getContext();
-            if (c == null) throw new java.io.IOException("kein Context");
-            try (InputStream in = c.getAssets().open("deploy/update-on-car.sh")) {
-                java.io.ByteArrayOutputStream b = new java.io.ByteArrayOutputStream();
-                byte[] buf = new byte[8192];
-                int n;
-                while ((n = in.read(buf)) > 0) b.write(buf, 0, n);
-                return b.toString("UTF-8");
+        public String skript(File apk) throws Exception {
+            // 0.1.19 (Befund 27.10.: „kein Context“): direkt aus dem geprüften neuen APK, sonst aus dem installierten
+            try {
+                return ApkQuelle.text(apk, ApkQuelle.SKRIPT_EINTRAG);
+            } catch (java.io.IOException e) {
+                logger.warn("Skript aus neuem APK: " + e.getMessage() + " – nehme das installierte");
             }
+            File inst = installiertesApk();
+            if (inst == null) throw new java.io.IOException("kein installiertes APK im CLASSPATH");
+            return ApkQuelle.text(inst, ApkQuelle.SKRIPT_EINTRAG);
         }
 
         @Override

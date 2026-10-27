@@ -17,7 +17,7 @@ public interface DirektAdapter {
     void setze(String aktion, Object wert) throws WallboxFehler, JSONException;
 
     /** Bekannte Adapter (Kennung → Name). Neue Adapter hier und in der Datentabelle eintragen. */
-    String[] KENNUNGEN = {"goe", "shelly", "keba", "modbus", "openwb", "easee", "zaptec"};
+    String[] KENNUNGEN = {"goe", "shelly", "keba", "modbus", "openwb", "easee", "zaptec", "bruecke"};
 
     /** Hersteller-Cloud (eigene Einwilligung, keine Adresse, Geräte-ID + Konto). */
     static boolean cloud(String adapter) {
@@ -31,7 +31,7 @@ public interface DirektAdapter {
 
     /** Adapter, deren Adresse ein Host/IP ist (TCP/UDP); alle anderen erwarten eine http(s)-URL. */
     static boolean hostAdresse(String adapter) {
-        return "keba".equals(adapter) || "modbus".equals(adapter) || "openwb".equals(adapter);
+        return "keba".equals(adapter) || "modbus".equals(adapter) || "openwb".equals(adapter) || "bruecke".equals(adapter);
     }
 
     /** Leerer Ladepunkt mit allen Vertragsfeldern auf null. */

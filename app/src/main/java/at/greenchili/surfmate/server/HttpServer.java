@@ -651,6 +651,13 @@ public class HttpServer {
             
             // Serve login page (public) - strip query string for matching
             String pathOnly = path.contains("?") ? path.substring(0, path.indexOf("?")) : path;
+            // 0.1.19 „Mit Home Assistant anmelden“: HA leitet von fremder Seite zurück, das Login-Cookie (SameSite=Strict)
+            // fehlt dabei. Datenlose Seite ohne Login, die nur auf die angemeldete wallbox.html weiterleitet.
+            if (pathOnly.equals(at.greenchili.surfmate.wallbox.HaAnmeldung.RUECKRUF) && method.equals("GET")) {
+                HttpResponse.sendHtml(out, at.greenchili.surfmate.wallbox.HaAnmeldung.weiterleitungsSeite());
+                client.close();
+                return;
+            }
             if (pathOnly.equals("/login") || pathOnly.equals("/login.html")) {
                 if (!serveStaticFile(out, "local/login.html")) {
                     HttpResponse.sendError(out, 404, "login.html not found");

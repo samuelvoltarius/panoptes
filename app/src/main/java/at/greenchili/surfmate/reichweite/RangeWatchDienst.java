@@ -148,10 +148,11 @@ public final class RangeWatchDienst {
     void ablehnenIntern(long now) {
         boolean war = neuplanung.ablehnen(now);
         JSONObject a = letzteAntwort;
-        if (a != null && a.has("vorschlag")) {
+        if (a != null && (a.has("vorschlag") || a.has("neuPlanen"))) {
             try {
                 JSONObject kopie = new JSONObject(a.toString());   // HTTP-Threads lesen die alte weiter
                 kopie.remove("vorschlag");
+                kopie.remove("neuPlanen");
                 letzteAntwort = kopie;
             } catch (Exception ignored) {
             }
@@ -250,6 +251,9 @@ public final class RangeWatchDienst {
             if (letzterBefund != null) {
                 try {
                     a.put("abweichung", letzterBefund.alsJson());
+                    JSONObject h = Neuplanung.hinweis(letzterBefund, neuplanung.abweichungErlaubt(now),
+                            planRoh == null ? null : planRoh.optJSONObject("ziel"));
+                    if (h != null) a.put("neuPlanen", h);
                 } catch (Exception ignored) {
                 }
             }
@@ -262,7 +266,7 @@ public final class RangeWatchDienst {
             letzteAntwort = a;
             stoppMelden(token, planner.optString("autoId", ""), l);
             belegungHolen(now, l);
-            bandZeigen(now, planner, l, vs);
+            bandZeigen(now, planner, l, Neuplanung.fuersBand(vs));
         } else {
             letzteAntwort = a;
         }

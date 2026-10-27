@@ -123,8 +123,14 @@ public final class EinstellungenApiHandler {
             if (AuthMiddleware.isExternRequest()) return verboten(out);
             boolean erlauben = pathOnly.endsWith("/erlauben");
             String ref = pathOnly.substring("/api/kopplung/anfrage/".length(), pathOnly.lastIndexOf('/'));
+            // 0.1.19: {"aufsperren":true} beim Erlauben einer Handy-Anfrage (nur Login/lokal, wie /api/kopplung/rechte)
+            boolean aufsperren = false;
+            try {
+                aufsperren = erlauben && new JSONObject(body == null || body.isEmpty() ? "{}" : body).optBoolean("aufsperren", false);
+            } catch (Exception ignored) {
+            }
             at.greenchili.surfmate.auth.KopplungsAnfragen.Entscheid e =
-                    at.greenchili.surfmate.auth.KopplungsAnfragen.get().entscheiden(ref, erlauben, System.currentTimeMillis());
+                    at.greenchili.surfmate.auth.KopplungsAnfragen.get().entscheiden(ref, erlauben, aufsperren, System.currentTimeMillis());
             JSONObject res = new JSONObject();
             res.put("ok", e == at.greenchili.surfmate.auth.KopplungsAnfragen.Entscheid.OK);
             int code = 200;

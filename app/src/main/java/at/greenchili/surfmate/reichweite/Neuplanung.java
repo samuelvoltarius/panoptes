@@ -102,6 +102,37 @@ public final class Neuplanung {
         if (vorschlag != null && QUELLE_ABWEICHUNG.equals(vorschlag.quelle)) vorschlag = null;
     }
 
+    /**
+     * 0.1.19: Hinweis „neu planen“ für die Navi-Seite im Auto (nur Panoptes-Oberfläche: kein Band über fremden Apps,
+     * kein Ton – A+). Nur wenn der Planer (§17, Einwilligung {@code planner.abweichung}) {@code neu_planen} meldet, der
+     * Fahrer nicht gerade verworfen hat und das Ziel bekannt ist. {@code ziel}/{@code via} dienen dem Knopf
+     * „Neu planen“, der die Navi-Seite mit dem Ziel neu rechnen lässt (nichts geht automatisch ins Navi, Regel A).
+     *
+     * @param planZiel {@code ziel} der überwachten Route ({@code {name, lat, lon}})
+     * @return {@code {gruende, abweichungPp?, ziel:{name,lat,lon}, via:[…]}} oder null
+     */
+    public static JSONObject hinweis(PlanAbweichung.Befund b, boolean erlaubt, JSONObject planZiel) {
+        if (b == null || !b.ok || !b.neuPlanen || !erlaubt || planZiel == null) return null;
+        double lat = planZiel.optDouble("lat", Double.NaN), lon = planZiel.optDouble("lon", Double.NaN);
+        if (Double.isNaN(lat) || Double.isNaN(lon)) return null;
+        JSONObject o = new JSONObject();
+        try {
+            o.put("gruende", b.gruende);
+            if (!Double.isNaN(b.abweichungPp)) o.put("abweichungPp", b.abweichungPp);
+            o.put("ziel", new JSONObject().put("name", planZiel.optString("name", "")).put("lat", lat).put("lon", lon));
+            JSONArray via = b.neuPlanAnfrage == null ? null : b.neuPlanAnfrage.optJSONArray("via");
+            o.put("via", via == null ? new JSONArray() : via);
+        } catch (Exception e) {
+            return null;
+        }
+        return o;
+    }
+
+    /** 0.1.19: Band/Ansage nur für den lokalen Vorschlag; einer aus der Plan-Abweichung erscheint nur in der Navi (A+). */
+    public static Vorschlag fuersBand(Vorschlag v) {
+        return v != null && QUELLE_ABWEICHUNG.equals(v.quelle) ? null : v;
+    }
+
     /** Fahrer verwirft den Vorschlag. @return true, wenn einer da war. */
     public boolean ablehnen(long now) {
         boolean war = vorschlag != null;

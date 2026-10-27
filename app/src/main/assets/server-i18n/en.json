@@ -2139,6 +2139,20 @@
         "title": "Count address",
         "help": "Where the count is sent. Only change it if you run your own counter."
       }
+    },
+    "ladekurve": {
+      "teilen": {
+        "title": "Share charging curve anonymously",
+        "help": "While DC charging, Panoptes measures how many kW the car takes at which charge level and keeps it in the car. When on, at most once a day a summary per model goes to the route planner: charge-level bands, typical kW, number of charges. No location, no time, no VIN, not linked to your account. Off by default. Turning it off also deletes it on the server."
+      },
+      "kennung": {
+        "title": "Random ID (charging curve)",
+        "help": "Only for sharing the charging curve, created here, not linked to you, the car or the device. It lets the server replace your car's curve instead of counting it twice. Empty while sharing is off."
+      },
+      "url": {
+        "title": "Charging curve address",
+        "help": "Where the charging curve is sent. Only change this if you run your own route planner."
+      }
     }
   },
   "kartenquelle": {
@@ -2176,6 +2190,10 @@
     "vorliebenEinwilligung": {
       "title": "Send charging preferences to the route planner?",
       "text": "What: your charging cards (only which ones, no charging sessions), preferred and avoided networks, detour, “only open”, minimum power, plugs, arrival charge level, “charge up to”, planning mode. No position. Where: byd.serveone.at (charging planner), only into your account. How long: up to 24 hours in memory, never on disk, not logged. What for: /ev/ in the browser plans with the preferences from your car. Switching off deletes them on the server right away."
+    },
+    "ladekurveEinwilligung": {
+      "title": "Share charging curve anonymously?",
+      "text": "What: for each charge-level band (5 %), the typical DC charging power of your model and how many charges it is based on. No location, no time of day, no date, no VIN, no individual charges, no account. Where: byd.serveone.at (route planner), with a random ID used only for this. Why: realistic charging times for everyone with the same model. Turning it off also deletes your curve on the server."
     }
   },
   "genai": {

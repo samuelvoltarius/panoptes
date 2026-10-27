@@ -1220,6 +1220,7 @@ public class ChargingSessionManager implements ChargingDetector.FusedStateListen
                 // only place that can, and without it the sampler would run for the rest of uptime.
                 // It also deferred all session cleanup for the same reason, so complete the boundary,
                 // classifier/rate reset, taper fence, and DB close together here.
+                at.greenchili.surfmate.ladekurve.LadekurveDienst.sitzungEnde();   // 0.1.19, wirft nie
                 finishStoppedSessionIfGeneration(generation);
                 return;
             }
@@ -1241,6 +1242,12 @@ public class ChargingSessionManager implements ChargingDetector.FusedStateListen
 
             BatterySocData soc = vm.getBatterySoc();
             double socPct = soc != null ? soc.socPercent : Double.NaN;
+            // 0.1.19 Ladekurve: SoC -> kW (gemessen oder geschätzt, mit Qualität) nur für die lokale Kurve;
+            // berührt weder die Energie- noch die Preisreihe unten. Wirft nie.
+            if (!deferredTarget) {
+                at.greenchili.surfmate.ladekurve.LadekurveDienst.probe(sessionStart, socPct, power, cs,
+                        socDb.getOpenChargingSessionTypeVerdict());
+            }
 
             double temp = -999, tempHigh = -999, tempLow = -999;
             try {

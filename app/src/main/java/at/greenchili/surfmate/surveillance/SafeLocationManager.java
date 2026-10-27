@@ -160,6 +160,50 @@ public class SafeLocationManager {
         return new ArrayList<>(zones);
     }
 
+    // 0.1.19 (ORTE_VERTRAG §5, Leser-Umstellung): die Geofence-Prüfung liest die Ortsliste (Abschnitt "orte" der
+    // gemeinsamen Konfiguration, damit in jedem Daemon-Prozess aktuell), nicht mehr die Datei. getZones() bleibt die
+    // Datei (alter Speicher, Spiegel und alte API). Noch nicht migriert bzw. unlesbar → Datei wie bisher.
+    private static final long ORTE_CACHE_MS = 5_000L;
+    private volatile List<SafeLocation> orteZonen;
+    private volatile long orteZonenAm;
+
+    /** Zonen für die Geofence-Prüfung (Ortsliste, sonst Datei). */
+    List<SafeLocation> geofenceZonen() {
+        long jetzt = System.nanoTime() / 1_000_000L;
+        List<SafeLocation> c = orteZonen;
+        if (c != null && jetzt - orteZonenAm < ORTE_CACHE_MS) return c;
+        List<SafeLocation> l = ausOrten(at.greenchili.surfmate.orte.OrteDaemon.abschnittOhneAbgleich(), zones);
+        if (l == null) l = new ArrayList<>(zones);
+        orteZonen = l;
+        orteZonenAm = jetzt;
+        return l;
+    }
+
+    /** Rein: Zonen aus dem Abschnitt {@code orte} (null = nicht migriert/unlesbar → Datei). */
+    static List<SafeLocation> ausOrten(JSONObject orte, List<SafeLocation> datei) {
+        try {
+            if (orte == null || !orte.optBoolean("migriert", false) || orte.optJSONArray("liste") == null) return null;
+            JSONArray alt = new JSONArray();
+            for (SafeLocation z : datei) {
+                alt.put(new JSONObject().put("id", z.getId()).put("name", z.getName()).put("lat", z.getLatitude())
+                        .put("lon", z.getLongitude()).put("r", z.getRadiusMeters()).put("an", z.isEnabled()));
+            }
+            JSONObject sp = orte.optJSONObject("spiegel");
+            JSONArray rz = at.greenchili.surfmate.orte.Orte.ruheZonen(orte.getJSONArray("liste"), alt,
+                    sp == null ? null : sp.optJSONArray("ruhe"));
+            List<SafeLocation> l = new ArrayList<>();
+            for (int i = 0; i < rz.length(); i++) {
+                JSONObject z = rz.getJSONObject(i);
+                l.add(new SafeLocation(new JSONObject().put("id", z.optString("id")).put("name", z.optString("name"))
+                        .put("lat", z.optDouble("lat")).put("lng", z.optDouble("lon")).put("radiusM", z.optInt("r"))
+                        .put("enabled", z.optBoolean("an", true))));
+            }
+            return l;
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
     public void setFeatureEnabled(boolean enabled) {
         this.featureEnabled = enabled;
         saveToFile();
@@ -213,6 +257,7 @@ public class SafeLocationManager {
      * </ul>
      */
     public void onLocationUpdate(double lat, double lng) {
+        final List<SafeLocation> zones = geofenceZonen();
         if (zones.isEmpty()) {
             cachedZoneName = null;
             cachedDistanceM = Double.MAX_VALUE;
@@ -410,6 +455,7 @@ public class SafeLocationManager {
     // ========================================================================
 
     private void saveToFile() {
+        orteZonen = null;   // 0.1.19: eigene Schreibvorgänge sofort in der Geofence-Prüfung
         try {
             JSONObject root = new JSONObject();
             root.put("enabled", featureEnabled);
@@ -439,6 +485,7 @@ public class SafeLocationManager {
     }
 
     private void loadFromFile() {
+        orteZonen = null;
         try {
             File file = new File(CONFIG_FILE);
             if (!file.exists()) return;

@@ -705,6 +705,8 @@
                             : self.esc(self.t('system.req_title', '„{n}“ will sich verbinden', { n: a.geraet || '?' }))) + '</div>'
                         + '<div class="sys-note" style="margin-top:4px;">' + self.esc(self.t('system.req_check', 'Stimmt die Zahl mit der auf dem Gerät überein?')) + '</div>'
                         + '<div style="font:700 40px/1.2 var(--family-display, monospace);letter-spacing:.25em;margin:8px 0;">' + self.esc(a.pruefzahl) + '</div>'
+                        + (a.art === 'handy' ? '<label class="sys-note" style="display:flex;gap:10px;align-items:center;margin:4px 0 10px;"><input type="checkbox" data-auf="' + self.esc(a.ref) + '" style="width:22px;height:22px;"> '
+                            + self.esc(self.t('system.req_unlock', 'Auch Aufsperren erlauben (mit Fingerabdruck am Handy, später unter Kopplungen änderbar)')) + '</label>' : '')
                         + '<div class="sys-actions">'
                         + '<button class="btn btn-primary" type="button" style="min-width:140px;min-height:48px;font-size:16px;" data-req="' + self.esc(a.ref) + '" data-was="erlauben">' + self.esc(self.t('system.req_allow', 'Erlauben')) + '</button> '
                         + '<button class="btn" type="button" style="min-width:140px;min-height:48px;font-size:16px;" data-req="' + self.esc(a.ref) + '" data-was="ablehnen">' + self.esc(self.t('system.req_deny', 'Ablehnen')) + '</button>'
@@ -717,7 +719,10 @@
             entscheide: function (ref, was) {
                 var self = this, toast = function (m, k) { if (window.BYD && BYD.utils && BYD.utils.toast) BYD.utils.toast(m, k); };
                 Array.prototype.forEach.call(document.querySelectorAll('#pairReq button'), function (b) { b.disabled = true; });
-                fetch('/api/kopplung/anfrage/' + encodeURIComponent(ref) + '/' + was, { method: 'POST' })
+                var auf = null;   // 0.1.19 „Auch Aufsperren erlauben“ (nur Handy-Anfragen)
+                Array.prototype.forEach.call(document.querySelectorAll('#pairReq input[data-auf]'), function (x) { if (x.getAttribute('data-auf') === ref) auf = x; });
+                var body = was === 'erlauben' && auf && auf.checked ? JSON.stringify({ aufsperren: true }) : '{}';
+                fetch('/api/kopplung/anfrage/' + encodeURIComponent(ref) + '/' + was, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body })
                     .then(function (r) { return r.json().then(function (d) { return d || {}; }, function () { return {}; }); })
                     .then(function (d) {
                         if (d.ok) toast(was === 'erlauben' ? self.t('system.req_allowed', 'Erlaubt. Das Gerät verbindet sich jetzt.') : self.t('system.req_denied', 'Abgelehnt.'), 'success');

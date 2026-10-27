@@ -11,7 +11,8 @@ import org.json.JSONObject;
  * <pre>
  * {quelle: "evcc"|"ha"|null,
  *  evcc: {url, apiKey(verschlüsselt), oeffentlichErlaubt},
- *  ha:   {url, token(verschlüsselt), oeffentlichErlaubt, ladepunkte:[Zuordnung]},
+ *  ha:   {url, token(verschlüsselt), oeffentlichErlaubt, ladepunkte:[Zuordnung],
+ *         refresh(verschlüsselt, 0.1.19 „Mit Home Assistant anmelden“), clientId},
  *  freigaben: ["evcc:1", …]}
  * </pre>
  */
@@ -52,6 +53,8 @@ public final class WallboxKonfig {
         if (h != null) {
             h.put("tokenGesetzt", !h.optString("token", "").isEmpty());
             h.remove("token");
+            h.put("angemeldet", !h.optString("refresh", "").isEmpty());
+            h.remove("refresh");
         }
         JSONObject dk = o.optJSONObject("direkt");
         JSONArray dg = dk == null ? null : dk.optJSONArray("geraete");
@@ -115,6 +118,13 @@ public final class WallboxKonfig {
         h.put("url", url(neuH));
         h.put("oeffentlichErlaubt", neuH.optBoolean("oeffentlichErlaubt", false));
         h.put("token", geheimnis(altH, neuH, "token", h.getString("url"), geheim));
+        // 0.1.19 OAuth: Refresh-Token wie ein Geheimnis (bleibt nur bei gleichem Ziel), client_id dazu
+        String refresh = geheimnis(altH, neuH, "refresh", h.getString("url"), geheim);
+        if (!refresh.isEmpty()) {
+            String cid = neuH.has("clientId") ? neuH.optString("clientId", "") : altH.optString("clientId", "");
+            if (cid.length() > 210) throw new WallboxFehler("einstellung_ungueltig");
+            h.put("refresh", refresh).put("clientId", cid);
+        }
         JSONArray lps = neuH.optJSONArray("ladepunkte") == null ? new JSONArray() : neuH.optJSONArray("ladepunkte");
         if (lps.length() > MAX_LADEPUNKTE) throw new WallboxFehler("einstellung_ungueltig");
         JSONArray sauber = new JSONArray();
@@ -169,6 +179,8 @@ public final class WallboxKonfig {
     }
 
     private static String geheimnis(JSONObject alt, JSONObject neu, String feld, String neueUrl, Geheim geheim) throws WallboxFehler, JSONException {
+        // Abschnitt nicht mitgeschickt (neu == alt): gespeicherter Wert ist schon verschlüsselt – nie noch einmal verschlüsseln
+        if (neu == alt) return alt.optString(feld, "");
         if (neu.has(feld) && !neu.isNull(feld)) {
             String v = neu.optString(feld, "").trim();
             if (v.isEmpty()) return "";
@@ -241,7 +253,7 @@ public final class WallboxKonfig {
                 JSONObject x = altG.optJSONObject(j);
                 if (x != null && s.equals(x.optString("schluessel")) && gid.equals(x.optString("geraeteId"))) a = x;
             }
-            if (n.has("localKey") && !n.isNull("localKey")) {
+            if (n != a && n.has("localKey") && !n.isNull("localKey")) {
                 String lk = n.optString("localKey", "").trim();
                 if (!lk.isEmpty() && lk.length() != 16) throw new WallboxFehler("tuya_schluessel_format");
             }
@@ -278,8 +290,11 @@ public final class WallboxKonfig {
             boolean cloud = DirektAdapter.cloud(adapter);
             String adresse = cloud ? "" : n.optString("adresse", "").trim();
             if (!cloud && (adresse.isEmpty() || adresse.length() > 300)) throw new WallboxFehler("adresse_ungueltig");
-            String geraeteId = cloud ? n.optString("geraeteId", "").trim() : "";
+            boolean bruecke = "bruecke".equals(adapter);
+            String geraeteId = cloud || bruecke ? n.optString("geraeteId", "").trim() : "";
             if (cloud && !geraeteId.matches("[A-Za-z0-9-]{3,64}")) throw new WallboxFehler("einstellung_ungueltig");
+            // 0.1.19 Wallbox-Brücke: Geräte-ID der Brücke (Tuya-gwId, Vertrag WALLBOX_BRUECKE_MQTT §2)
+            if (bruecke && !geraeteId.matches(BrueckeAdapter.ID_MUSTER)) throw new WallboxFehler("einstellung_ungueltig");
             boolean einw = cloud && n.optBoolean("einwilligung", false);
             int kanal = n.optInt("kanal", 0);
             if (kanal < 0 || kanal > 3) throw new WallboxFehler("einstellung_ungueltig");
@@ -312,6 +327,7 @@ public final class WallboxKonfig {
                 e.put("einwilligungZeit", !einw ? JSONObject.NULL
                         : a != null && a.optBoolean("einwilligung", false) && altZeit != null ? altZeit : (Object) jetzt);
             }
+            if (bruecke) e.put("geraeteId", geraeteId);
             e.put("passwort", geheimFeld(a == null ? new JSONObject() : a, n, "passwort", a != null, 128, geheim));
             if (a != null && adapter.equals(a.optString("adapter")) && modell.equals(a.isNull("modell") ? "" : a.optString("modell"))
                     && String.valueOf(e.opt("port")).equals(String.valueOf(a.opt("port")))
@@ -334,6 +350,7 @@ public final class WallboxKonfig {
     /** Geheimnis-Feld: Text = neu (verschlüsselt), "" = löschen, fehlt = behalten nur wenn {@code behalten}. */
     private static String geheimFeld(JSONObject alt, JSONObject neu, String feld, boolean behalten, int maxLaenge, Geheim geheim)
             throws WallboxFehler, JSONException {
+        if (neu == alt) return behalten ? alt.optString(feld, "") : "";   // unverändert übernommen (schon verschlüsselt)
         if (neu.has(feld) && !neu.isNull(feld)) {
             String v = neu.optString(feld, "").trim();
             if (v.isEmpty()) return "";

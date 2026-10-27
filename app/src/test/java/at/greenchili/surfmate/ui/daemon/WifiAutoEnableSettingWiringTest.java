@@ -53,8 +53,8 @@ public class WifiAutoEnableSettingWiringTest {
     public void everyWifiEnablePathUsesEffectiveSuppression() throws Exception {
         for (String relativePath : new String[]{
                 "app/src/main/java/at/greenchili/surfmate/daemon/AccSentryDaemon.java",
-                "app/src/main/java/at/greenchili/surfmate/daemon/SentryDaemon.java",
-                "app/src/main/java/at/greenchili/surfmate/launcher/ServiceLauncher.kt"}) {
+                // 0.1.19: ServiceLauncher.ensureWifiEnabled entfernt (ohne Aufrufer, SystemEingriffeTest)
+                "app/src/main/java/at/greenchili/surfmate/daemon/SentryDaemon.java"}) {
             assertTrue(readRepositoryFile(relativePath)
                     .contains("UnifiedConfigManager.isWifiKeepAliveSuppressed()"));
         }

@@ -91,6 +91,10 @@ public final class LadenApiHandler {
                 if (u.extern()) return fehler(403, "nur_mit_login");
                 if (!u.abschnittLeeren(LadenKatalog.ABSCHNITT)) return fehler(500, "speichernFehlgeschlagen");
                 return ok(LadenVorlieben.antwort(u.config()));
+            case "/api/laden/kurve":   // 0.1.19 eigene Ladekurve (lokal, nur lesen)
+                if (!"GET".equals(method)) return fehler(405, "methode");
+                if (u.extern()) return fehler(403, "nur_mit_login");
+                return ok(at.greenchili.surfmate.ladekurve.LadekurveDienst.status());
             case "/api/laden/tarife":
                 if (!"GET".equals(method)) return fehler(405, "methode");
                 return durchreichen(u, "tarife");

@@ -699,23 +699,64 @@ public class TariffManager {
         if (snapshot.isEmpty()) return null;
         // (0,0) is the "no GPS fix at the charge edge" sentinel, not the Atlantic.
         if (lat == 0 && lng == 0) return null;
+        return resolveInCircleSnapshot(snapshot, lat, lng, isDc, anyRate, ortsKreise.apply(snapshot));
+    }
 
+    // 0.1.19 (ORTE_VERTRAG §5, Leser-Umstellung): der Kreis (Mittelpunkt + Radius) eines Tarifs mit Ort kommt aus der
+    // Ortsliste (verweise.tarif), Preis und Verlauf weiter vom Tarif (Kostenhistorie, Neubepreisung). Tarife ohne Ort
+    // in der Liste, nicht migrierte Installationen und Lesefehler: Kreis des Tarifs wie bisher.
+    static volatile java.util.function.Function<List<TariffProfile>, Map<String, double[]>> ortsKreise =
+            TariffManager::kreiseAusOrten;
+
+    private static Map<String, double[]> kreiseAusOrten(List<TariffProfile> snapshot) {
+        try {
+            return kreiseAusOrten(at.greenchili.surfmate.orte.OrteDaemon.abschnittOhneAbgleich(), snapshot);
+        } catch (Throwable t) {
+            return Collections.emptyMap();
+        }
+    }
+
+    /** Rein: Kreise je Tarif-id aus dem Abschnitt {@code orte}; leer, wenn nicht migriert. */
+    static Map<String, double[]> kreiseAusOrten(JSONObject orte, List<TariffProfile> snapshot) throws Exception {
+        if (orte == null || !orte.optBoolean("migriert", false) || orte.optJSONArray("liste") == null) {
+            return Collections.emptyMap();
+        }
+        JSONArray alt = new JSONArray();
+        for (TariffProfile p : snapshot) {
+            if (p.getLatitude() == 0 && p.getLongitude() == 0) continue;   // wie OrteDaemon.alteLesen
+            alt.put(new JSONObject().put("id", p.getId()).put("lat", p.getLatitude())
+                    .put("lon", p.getLongitude()).put("r", p.getRadiusMeters()));
+        }
+        JSONObject sp = orte.optJSONObject("spiegel");
+        return at.greenchili.surfmate.orte.Orte.tarifKreise(orte.getJSONArray("liste"), alt,
+                sp == null ? null : sp.optJSONArray("tarife"));
+    }
+
+    static TariffProfile resolveInCircleSnapshot(
+            List<TariffProfile> snapshot, double lat, double lng,
+            int isDc, boolean anyRate, Map<String, double[]> kreise) {
         TariffProfile best = null;
         double bestDist = Double.MAX_VALUE;
+        double bestR = Double.MAX_VALUE;
         for (TariffProfile p : snapshot) {
             if (!p.isEnabled()) continue;
             if (anyRate ? !p.hasAnyRate() : !p.hatPreis(isDc)) continue;
-            double d = SafeLocationManager.haversine(lat, lng, p.getLatitude(), p.getLongitude());
+            double[] k = kreise == null ? null : kreise.get(p.getId());
+            double pLat = k != null ? k[0] : p.getLatitude();
+            double pLng = k != null ? k[1] : p.getLongitude();
+            double pR = k != null ? k[2] : p.getRadiusMeters();
+            double d = SafeLocationManager.haversine(lat, lng, pLat, pLng);
             // Written as !(d <= r) rather than (d > r) so a NaN distance — from a
             // hand-edited/garbage coordinate in the world-writable config file —
             // fails CLOSED. With (d > r), NaN compares false and the broken
             // profile would "contain" every location on earth.
-            if (!(d <= p.getRadiusMeters())) continue;
+            if (!(d <= pR)) continue;
             if (best == null
-                    || p.getRadiusMeters() < best.getRadiusMeters()
-                    || (p.getRadiusMeters() == best.getRadiusMeters() && d < bestDist)) {
+                    || pR < bestR
+                    || (pR == bestR && d < bestDist)) {
                 best = p;
                 bestDist = d;
+                bestR = pR;
             }
         }
         return best;

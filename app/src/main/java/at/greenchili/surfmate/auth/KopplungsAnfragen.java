@@ -45,12 +45,17 @@ public final class KopplungsAnfragen {
     public interface Ausgeber {
         /** @return {kid, jwt} oder null, wenn die Kopplungsliste voll ist / Speichern scheitert. */
         String[] ausstellen(String geraet, String art, long nowMs);
+
+        /** 0.1.19: Recht „aufsperren“ gleich beim Erlauben (nur Handy, nur mit Login gewählt). */
+        default void aufsperrenErlauben(String kid) { }
     }
 
     static final class Anfrage {
         /** id = Abhol-Geheimnis (nur Cockpit); ref = Griff für Erlauben/Ablehnen (Telegram, Web, Display). */
         final String id, ref, geraet, pruefzahl;
         String art;
+        /** 0.1.19: beim Erlauben zusätzlich „aufsperren“ gewählt (nur Handy). */
+        boolean aufsperren;
         final long angelegt;
         Status status = Status.WARTET;
         long entschieden;
@@ -129,6 +134,14 @@ public final class KopplungsAnfragen {
 
     /** Erlauben/Ablehnen über den Griff {@code ref} (nur Login, Telegram-Besitzer, Auto-Display). */
     public Entscheid entscheiden(String ref, boolean erlauben, long now) {
+        return entscheiden(ref, erlauben, false, now);
+    }
+
+    /**
+     * 0.1.19 (Handy-Wunsch): {@code aufsperren} = beim Erlauben gleich das Recht „aufsperren“ geben. Wirkt nur bei
+     * {@code erlauben} und einer Handy-Anfrage; sonst wie bisher (Handy-Standard ohne Aufsperren).
+     */
+    public Entscheid entscheiden(String ref, boolean erlauben, boolean aufsperren, long now) {
         synchronized (this) {
             aufraeumen(now);
             Anfrage a = null;
@@ -137,6 +150,7 @@ public final class KopplungsAnfragen {
             if (a.status == Status.ABGELAUFEN) return Entscheid.ABGELAUFEN;
             if (a.status != Status.WARTET) return Entscheid.SCHON_ENTSCHIEDEN;
             a.status = erlauben ? Status.ERLAUBT : Status.ABGELEHNT;
+            a.aufsperren = erlauben && aufsperren && Kopplungen.ART_HANDY.equals(a.art);
             a.entschieden = now;
         }
         Beobachter b = beobachter;
@@ -161,6 +175,9 @@ public final class KopplungsAnfragen {
                 return new Abholung(Status.ABGELEHNT);
             }
             a.status = Status.ABGEHOLT;
+            if (a.aufsperren) {
+                try { ausgeber.aufsperrenErlauben(k[0]); } catch (Throwable ignored) { }
+            }
             r.kid = k[0];
             r.jwt = k[1];
         }
@@ -228,11 +245,18 @@ public final class KopplungsAnfragen {
         if (k == null) {
             synchronized (KopplungsAnfragen.class) {
                 if (instanz == null) {
-                    instanz = new KopplungsAnfragen((geraet, art, now) -> {
-                        String kid = Kopplungen.get().anlegen(geraet, art, now);
-                        if (kid == null) return null;
-                        String jwt = AuthManager.generateJwt(PairingCodes.SCOPE, kid);
-                        return jwt == null ? null : new String[] {kid, jwt};
+                    instanz = new KopplungsAnfragen(new Ausgeber() {
+                        public String[] ausstellen(String geraet, String art, long now) {
+                            String kid = Kopplungen.get().anlegen(geraet, art, now);
+                            if (kid == null) return null;
+                            String jwt = AuthManager.generateJwt(PairingCodes.SCOPE, kid);
+                            return jwt == null ? null : new String[] {kid, jwt};
+                        }
+                        public void aufsperrenErlauben(String kid) {
+                            java.util.List<String> r = new java.util.ArrayList<>(Kopplungen.HANDY_STANDARD);
+                            r.add(Kopplungen.RECHT_AUFSPERREN);
+                            Kopplungen.get().rechteSetzen(kid, r);
+                        }
                     });
                     instanz.setBeobachter(new KopplungsMelder());
                 }

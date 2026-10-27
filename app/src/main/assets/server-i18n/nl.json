@@ -2145,6 +2145,20 @@
         "title": "Teladres",
         "help": "Waar de telling naartoe gaat. Alleen wijzigen als je een eigen teller draait."
       }
+    },
+    "ladekurve": {
+      "teilen": {
+        "title": "Laadcurve anoniem delen",
+        "help": "Tijdens DC-laden meet Panoptes met hoeveel kW de auto bij welk laadniveau laadt en bewaart dat in de auto. Aan: hoogstens één keer per dag gaat een samenvatting per model naar de routeplanner: laadniveaubereiken, typische kW, aantal laadbeurten. Geen locatie, geen tijd, geen VIN, niet aan je account gekoppeld. Standaard uit. Uitzetten verwijdert het ook op de server."
+      },
+      "kennung": {
+        "title": "Willekeurige ID (laadcurve)",
+        "help": "Alleen voor het delen van de laadcurve, hier aangemaakt, niet gekoppeld aan jou, de auto of het apparaat. Zo vervangt de server de curve van je auto in plaats van hem dubbel te tellen. Leeg zolang delen uit staat."
+      },
+      "url": {
+        "title": "Adres laadcurve",
+        "help": "Waar de laadcurve naartoe gaat. Alleen wijzigen als je een eigen routeplanner draait."
+      }
     }
   },
   "kartenquelle": {
@@ -2182,6 +2196,10 @@
     "vorliebenEinwilligung": {
       "title": "Laadvoorkeuren naar de routeplanner sturen?",
       "text": "Wat: je laadpassen (alleen welke, geen laadsessies), voorkeurs- en vermeden netwerken, omweg, ‘alleen open’, minimaal vermogen, stekkers, laadniveau bij aankomst, ‘laden tot’, planningswijze. Geen positie. Waarheen: byd.serveone.at (laadplanner), alleen in je account. Hoe lang: tot 24 uur in het werkgeheugen, nooit op schijf, niet gelogd. Waarvoor: /ev/ in de browser plant met de voorkeuren uit je auto. Uitzetten wist ze meteen op de server."
+    },
+    "ladekurveEinwilligung": {
+      "title": "Laadcurve anoniem delen?",
+      "text": "Wat: per laadniveaubereik (5 %) het typische DC-laadvermogen van je model en op hoeveel laadbeurten dat berust. Geen locatie, geen tijdstip, geen datum, geen VIN, geen afzonderlijke laadbeurten, geen account. Waarheen: byd.serveone.at (routeplanner), met een willekeurige ID alleen hiervoor. Waarom: realistische laadtijden voor iedereen met hetzelfde model. Uitzetten verwijdert je curve ook op de server."
     }
   },
   "genai": {

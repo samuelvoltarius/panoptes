@@ -10564,6 +10564,35 @@ public class SocHistoryDatabase {
         }
     }
 
+    /**
+     * 0.1.19 Ladekurve (Startkurve aus dem eigenen Verlauf): abgeschlossene DC-Ladungen, neueste zuerst, höchstens
+     * {@code limit}. Nur lesen; {@code [{id, start, startSoc, endSoc, avgKw}]}. Fehler → leer.
+     */
+    public synchronized JSONArray getDcSessionsForCurve(int limit) {
+        JSONArray out = new JSONArray();
+        try {
+            final Connection conn = requireChargingHistoryReadConnection();
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "SELECT id, start_time, start_soc, end_soc, avg_power_kw FROM " + TABLE_CHARGING
+                            + " WHERE is_dc = 1 AND end_time IS NOT NULL AND end_time > 0"
+                            + " ORDER BY start_time DESC LIMIT ?;")) {
+                ps.setInt(1, Math.max(1, Math.min(1000, limit)));
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        out.put(new JSONObject().put("id", rs.getLong(1)).put("start", rs.getLong(2))
+                                .put("startSoc", rs.getDouble(3)).put("endSoc", rs.getDouble(4))
+                                .put("avgKw", rs.getDouble(5)));
+                    }
+                }
+            }
+            noteReadOk();
+        } catch (Exception e) {
+            logger.warn("Ladekurve: DC sessions unreadable: " + e.getMessage());
+            return new JSONArray();
+        }
+        return out;
+    }
+
     /** Strict API-facing sample read: failure throws; absent session or no samples is empty. */
     public synchronized JSONArray getChargingSamplesStrict(long id)
             throws java.sql.SQLException {

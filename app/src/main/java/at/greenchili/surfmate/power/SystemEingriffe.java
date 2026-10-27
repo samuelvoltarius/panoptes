@@ -16,6 +16,14 @@ package at.greenchili.surfmate.power;
  *       geschrieben. Doze ({@code dumpsys deviceidle}) wird nicht mehr global abgeschaltet; ein früher abgeschaltetes
  *       Doze bleibt im Stand unangetastet (Regel B: Fernzugang nicht gefährden) und lässt sich ausdrücklich über
  *       {@code POST /api/system/eingriffe/zuruecksetzen} wieder einschalten.</li>
+ *   <li>0.1.19: WLAN. Ursprung von {@code ensureWifiEnabled}: Ausgangscode (Overdrive, Basis 4c4d1c31), nicht von
+ *       Panoptes erdacht. Wirksam sind der Stand-Keep-alive im AccSentryDaemon ({@code svc wifi enable} je Takt) und
+ *       {@code SentryDaemon.enableWifi} beim Daemon-Start (beide
+ *       abschaltbar über eine Funk-Regel „WLAN aus“ = {@code isWifiKeepAliveSuppressed}). Die Launcher-Fassung mit
+ *       dauerhaften Einstellungen ({@code byd_wifi_always_on}, {@code byd_wifi_keep_alive}, {@code wifi_scan_throttle},
+ *       {@code wifi_sleep_policy}) hatte schon im Ausgangscode keinen Aufrufer und ist entfernt. Der WLAN-Zustand vor
+ *       dem ersten Einschalten durch Panoptes wird einmal als {@code global.wifi_on} gesichert (nur Nachweis; es wird
+ *       nichts automatisch zurückgesetzt, weil das die Erreichbarkeit im Stand verschlechtern würde).</li>
  * </ul>
  * Alles als Shell-Text, weil sentry_daemon (UID 1000), Park-Reaper (Shell-Skript) und App (adb-Shell) es ausführen.
  */
@@ -29,6 +37,7 @@ public final class SystemEingriffe {
     /** Wert, den ältere Panoptes-Versionen gesetzt haben. */
     static final String PANOPTES_STAY_ON = "7";
     public static final String UNBEKANNT = "unbekannt";
+    static final String SCHLUESSEL_WIFI_ON = "global.wifi_on";
 
     /** Rein: Was als Ursprung gilt, wenn beim ersten Sichern {@code aktuell} steht. */
     public static String ursprungAus(String aktuell) {
@@ -63,7 +72,19 @@ public final class SystemEingriffe {
         return "F='" + f + "'; grep -q '^" + SCHLUESSEL_STAY_ON + "=' \"$F\" 2>/dev/null || { "
                 + "v=$(settings get global stay_on_while_plugged_in 2>/dev/null); "
                 + "case \"$v\" in ''|null|" + PANOPTES_STAY_ON + ") v=" + UNBEKANNT + ";; esac; "
-                + "echo \"" + SCHLUESSEL_STAY_ON + "=$v\" >> \"$F\"; }";
+                + "echo \"" + SCHLUESSEL_STAY_ON + "=$v\" >> \"$F\"; }; " + wlanSichernSkript();
+    }
+
+    /**
+     * Shell: WLAN-Ursprung ({@code settings get global wifi_on}) einmalig sichern, bevor Panoptes es zum ersten Mal
+     * einschaltet. Vorhandene Sicherung bleibt; leer/null → unbekannt.
+     */
+    public static String wlanSichernSkript() {
+        String f = URSPRUNG_DATEI;
+        return "F='" + f + "'; grep -q '^" + SCHLUESSEL_WIFI_ON + "=' \"$F\" 2>/dev/null || { "
+                + "w=$(settings get global wifi_on 2>/dev/null); "
+                + "case \"$w\" in ''|null) w=" + UNBEKANNT + ";; esac; "
+                + "echo \"" + SCHLUESSEL_WIFI_ON + "=$w\" >> \"$F\"; }";
     }
 
     /**

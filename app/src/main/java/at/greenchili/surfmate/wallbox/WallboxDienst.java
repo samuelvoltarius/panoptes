@@ -55,6 +55,54 @@ public final class WallboxDienst {
     private KebaUdpAdapter.Udp kebaUdp = KebaUdpAdapter.Udp.ECHT;
     private OpenWbAdapter.Mqtt openWbMqtt = OpenWbAdapter.PAHO;
 
+    private WallboxSuche.Netz suchNetz = WallboxSuche.ECHT;
+    /** Panoptes-MQTT-Broker ({host, port, benutzer, passwort}) für die Wallbox-Brücke (Suche und Zugang). */
+    private Supplier<java.util.List<JSONObject>> broker = java.util.Collections::emptyList;
+
+    /** Ergebnis der Brücken-Suche ohne Knopfdruck, höchstens einmal je {@link #GEFUNDEN_MS}. */
+    static final long GEFUNDEN_MS = 60_000L;
+    private JSONArray gefunden = new JSONArray();
+    private long gefundenStand;
+
+    private JSONArray brueckenGefunden() {
+        long jetzt = uhr.getAsLong();
+        if (gefundenStand == 0 || jetzt - gefundenStand >= GEFUNDEN_MS) {
+            gefundenStand = jetzt;
+            try {
+                gefunden = new WallboxSuche(suchNetz, http).mitBruecke(broker.get(), openWbMqtt).nurBruecken();
+            } catch (Throwable t) {
+                gefunden = new JSONArray();
+            }
+        }
+        return gefunden;
+    }
+
+    /** 0.1.19 Wallbox-Brücke: Broker der Panoptes-MQTT-Verbindungen. */
+    public WallboxDienst mitBroker(Supplier<java.util.List<JSONObject>> broker) {
+        this.broker = broker;
+        return this;
+    }
+    private final java.util.concurrent.atomic.AtomicBoolean sucheLaeuft = new java.util.concurrent.atomic.AtomicBoolean();
+
+    /** 0.1.19 „Wallbox finden“: Netzzugang der Suche (Tests: Attrappe). */
+    public WallboxDienst mitSuche(WallboxSuche.Netz netz) {
+        this.suchNetz = netz;
+        return this;
+    }
+
+    /**
+     * „Wallbox finden“ im WLAN (nur finden, nichts speichern, keine Befehle). Bewusst nicht synchronized – dauert einige
+     * Sekunden; höchstens eine Suche gleichzeitig.
+     */
+    public Ergebnis suche() throws JSONException {
+        if (!sucheLaeuft.compareAndSet(false, true)) return fehler(new WallboxFehler("suche_laeuft", 409));
+        try {
+            return new Ergebnis(200, new WallboxSuche(suchNetz, http).mitBruecke(broker.get(), openWbMqtt).suche());
+        } finally {
+            sucheLaeuft.set(false);
+        }
+    }
+
     /** Stufe 2c: MQTT-Zugang für openWB (Tests: Test-Broker). */
     public WallboxDienst mitOpenWb(OpenWbAdapter.Mqtt mqtt) {
         this.openWbMqtt = mqtt;
@@ -67,6 +115,8 @@ public final class WallboxDienst {
         this.kebaUdp = kebaUdp;
         return this;
     }
+    /** 0.1.19 „Mit Home Assistant anmelden“ (OAuth). */
+    private final HaAnmeldung haAnmeldung;
     private final SecureRandom zufall = new SecureRandom();
     private final Map<String, String[]> offen = new HashMap<>();   // Kennung → {Aktionsschlüssel, Ablauf}
 
@@ -89,6 +139,7 @@ public final class WallboxDienst {
         this.uhr = uhr;
         this.schlaf = schlaf;
         this.protokoll = new WallboxProtokoll(protokollDatei);
+        this.haAnmeldung = new HaAnmeldung(http, uhr);
     }
 
     // ------------------------------------------------------------------ Einstellungen
@@ -173,6 +224,8 @@ public final class WallboxDienst {
         o.put("ladepunkte", new JSONArray());
         if (q == null) {
             o.put("erreichbar", false).put("fehler", "nicht_eingerichtet");
+            // 0.1.19: noch keine Wallbox → Brücken auf dem Panoptes-Broker von selbst anbieten („Wallbox gefunden“)
+            o.put("gefunden", brueckenGefunden());
             return o;
         }
         try {
@@ -204,9 +257,55 @@ public final class WallboxDienst {
         if ("evcc".equals(q)) {
             return new EvccQuelle(basis, geheim.ent(s.optString("apiKey", "")), http, schlaf, uhr);
         }
-        String token = geheim.ent(s.optString("token", ""));
+        String token = haToken(s, basis);
         if (token == null || token.isEmpty()) throw new WallboxFehler("anmeldung", 502);
         return new HaQuelle(basis, token, s.optJSONArray("ladepunkte"), http, schlaf);
+    }
+
+    /** HA-Zugang: OAuth-Anmeldung (Refresh-Token → Access-Token) vor dem alten Langzeit-Token. */
+    private String haToken(JSONObject s, String basis) throws WallboxFehler, JSONException {
+        String refresh = geheim.ent(s.optString("refresh", ""));
+        if (refresh != null && !refresh.isEmpty()) return haAnmeldung.access(basis, refresh, s.optString("clientId", ""));
+        return geheim.ent(s.optString("token", ""));
+    }
+
+    /** „Mit Home Assistant anmelden“, Schritt 1: Adresse der HA-Anmeldeseite (0.1.19). */
+    public synchronized Ergebnis haAnmeldungStart(JSONObject req) throws JSONException {
+        try {
+            if (req == null) throw new WallboxFehler("einstellung_ungueltig");
+            String url = req.optString("url", "").trim();
+            if (url.length() > 300) throw new WallboxFehler("adresse_ungueltig");
+            boolean oeff = req.optBoolean("oeffentlichErlaubt", false);
+            String basis = WallboxAdresse.pruefe(url, oeff, aufloeser);
+            String ziel = haAnmeldung.start(url, basis, req.optString("herkunft", ""), oeff);
+            return new Ergebnis(200, new JSONObject().put("ok", true).put("anmeldeUrl", ziel));
+        } catch (WallboxFehler f) {
+            return fehler(f);
+        }
+    }
+
+    /**
+     * Schritt 2 (von der angemeldeten Seite nach der Weiterleitung): Code tauschen, Refresh-Token verschlüsselt speichern,
+     * Quelle = HA. Ein alter Langzeit-Token wird gelöscht; Zuordnungen bleiben nur bei gleichem Ziel.
+     */
+    public synchronized Ergebnis haAnmeldungRueckruf(JSONObject req) throws JSONException {
+        try {
+            if (req == null) throw new WallboxFehler("einstellung_ungueltig");
+            if (!req.optString("fehler", "").isEmpty()) throw new WallboxFehler("anmeldung_abgebrochen", 400);
+            HaAnmeldung.Offen o = haAnmeldung.pruefeState(req.optString("state", ""));
+            HaAnmeldung.Token t = haAnmeldung.tausche(o, req.optString("code", ""));
+            JSONObject alt = konfig();
+            JSONObject altH = alt.optJSONObject("ha") == null ? new JSONObject() : alt.optJSONObject("ha");
+            boolean gleich = WallboxAdresse.ziel(altH.optString("url", "")).equals(WallboxAdresse.ziel(o.url));
+            JSONObject neuH = new JSONObject().put("url", o.url).put("oeffentlichErlaubt", o.oeffentlich)
+                    .put("token", "").put("refresh", t.refresh).put("clientId", o.clientId)
+                    .put("ladepunkte", gleich && altH.optJSONArray("ladepunkte") != null ? altH.optJSONArray("ladepunkte") : new JSONArray());
+            JSONObject k = WallboxKonfig.uebernimm(alt, new JSONObject().put("quelle", "ha").put("ha", neuH), geheim, uhr.getAsLong());
+            speichere(k);
+            return new Ergebnis(200, new JSONObject().put("ok", true).put("einstellungen", WallboxKonfig.oeffentlich(k)));
+        } catch (WallboxFehler f) {
+            return fehler(f);
+        }
     }
 
     /** Direkte Adapter (Stufe 2): nur private Adressen; je Gerät ein Adapter aus {@link DirektAdapter#KENNUNGEN}. */
@@ -231,6 +330,23 @@ public final class WallboxDienst {
                 case "keba":
                     a = new KebaUdpAdapter(basis, kebaUdp);
                     break;
+                case "bruecke": {
+                    // Ohne eigenen Benutzer: Zugang der Panoptes-MQTT-Verbindung zum selben Broker (kein zweites Geheimnis)
+                    String b = e.optString("benutzer", "");
+                    String p = geheim.ent(e.optString("passwort", ""));
+                    if (b.isEmpty()) {
+                        for (JSONObject z : broker.get()) {
+                            if (basis.equalsIgnoreCase(z.optString("host"))) {
+                                b = z.optString("benutzer", "");
+                                p = z.optString("passwort", "");
+                                break;
+                            }
+                        }
+                    }
+                    a = new BrueckeAdapter(basis, e.isNull("port") || e.optInt("port") == 0 ? OpenWbAdapter.PORT : e.optInt("port"),
+                            e.optString("geraeteId"), b, p, openWbMqtt, uhr);
+                    break;
+                }
                 case "openwb":
                     a = new OpenWbAdapter(basis, e.isNull("port") ? OpenWbAdapter.PORT : e.optInt("port"), e.optInt("nummer", 1),
                             e.optString("benutzer", ""), geheim.ent(e.optString("passwort", "")), openWbMqtt);
@@ -324,7 +440,7 @@ public final class WallboxDienst {
             if (!"ha".equals(WallboxKonfig.quelle(k))) throw new WallboxFehler("einstellung_ungueltig");
             JSONObject s = k.getJSONObject("ha");
             String basis = WallboxAdresse.pruefe(s.optString("url"), s.optBoolean("oeffentlichErlaubt"), aufloeser);
-            String token = geheim.ent(s.optString("token", ""));
+            String token = haToken(s, basis);
             if (token == null || token.isEmpty()) throw new WallboxFehler("token_fehlt");
             return new Ergebnis(200, new HaQuelle(basis, token, new JSONArray(), http, schlaf).vorschlag());
         } catch (WallboxFehler f) {

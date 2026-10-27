@@ -38,6 +38,10 @@
     {"id": "zaptec", "quelle": "direkt", "name": "Zaptec (Cloud)", "art": "direkt", "zugang": "cloud", "einwilligung": true,
      "funktionen": ["status", "start_stop", "limit_a"], "zugangsdaten": ["zaptec_konto", "geraete_id"],
      "voraussetzung": "eigene Einwilligung (Daten laufen über api.zaptec.com); Strom ggf. nicht zurücklesbar (dann 'ungeprüft')",
-     "beleg": "evcc charger/zaptec*.go (MIT, evcc.io); OIDC-Discovery api.zaptec.com", "stand": "fertig"}
+     "beleg": "evcc charger/zaptec*.go (MIT, evcc.io); OIDC-Discovery api.zaptec.com", "stand": "fertig"},
+    {"id": "bruecke", "quelle": "direkt", "name": "Panoptes-Wallbox-Brücke (MQTT)", "art": "direkt", "zugang": "lan", "einwilligung": false,
+     "funktionen": ["status", "start_stop", "limit_a"], "zugangsdaten": ["benutzer_passwort_optional"],
+     "voraussetzung": "Eine Wallbox-Brücke (z. B. Tuya lokal) meldet sich am selben MQTT-Broker wie Panoptes (wallbox/<id>/zustand, v=1); Steuern nur, wenn die Brücke es erlaubt (steuern_erlaubt)",
+     "beleg": "Vertrag WALLBOX_BRUECKE_MQTT.md v1 (Sitzung wallbox-bruecke, 27.10.2026)", "stand": "fertig"}
   ]
 }

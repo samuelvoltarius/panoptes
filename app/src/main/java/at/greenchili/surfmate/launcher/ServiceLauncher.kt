@@ -195,44 +195,8 @@ class ServiceLauncher(
         }
     }
     
-    /**
-     * Enable WiFi and prevent it from sleeping via shell commands.
-     */
-    fun ensureWifiEnabled(callback: LaunchCallback) {
-        // Honor an explicit user "WiFi off" automation / key-mapping. When the radio
-        // action set the suppression flag we must NOT run `svc wifi enable` NOR write the
-        // OEM firmware keep-alive hints (byd_wifi_always_on / byd_wifi_keep_alive), which
-        // would make the firmware re-enable WiFi outside our control. Default false → the
-        // full sequence runs as before. Fail-open on read error.
-        if (at.greenchili.surfmate.config.UnifiedConfigManager.isWifiKeepAliveSuppressed()) {
-            logManager.info(TAG, "WiFi keep-alive skipped — user radio rule keeps WiFi off")
-            callback.onLog("WiFi keep-alive skipped — user turned WiFi off")
-            callback.onLaunched()
-            return
-        }
-        logManager.info(TAG, "Ensuring WiFi stays enabled...")
-        callback.onLog("Ensuring WiFi stays enabled...")
-
-        val commands = if (at.greenchili.surfmate.camera.dilink5.DiLink5Platform.isSelected()) {
-            listOf("svc wifi enable")
-        } else {
-            listOf(
-                "svc wifi enable",
-                "settings put global wifi_sleep_policy 2",
-                "settings put global wifi_scan_throttle_enabled 0",
-                "settings put global wifi_on 1",
-                "settings put global byd_wifi_always_on 1 2>/dev/null",
-                "settings put system byd_wifi_keep_alive 1 2>/dev/null",
-                "dumpsys deviceidle whitelist +com.android.wifi"
-            )
-        }
-
-        executeCommandSequence(commands, 0, callback) {
-            logManager.info(TAG, "WiFi keep-alive settings applied")
-            callback.onLog("WiFi keep-alive settings applied")
-            callback.onLaunched()
-        }
-    }
+    // 0.1.19: ensureWifiEnabled (dauerhafte WLAN-Einstellungen) entfernt – schon im Ausgangscode ohne Aufrufer;
+    // wirksam bleibt nur der Stand-Keep-alive im AccSentryDaemon (SystemEingriffe).
     
     // ==================== LOCATION SIDECAR MANAGEMENT ====================
     

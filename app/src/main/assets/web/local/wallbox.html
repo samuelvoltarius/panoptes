@@ -62,6 +62,10 @@
 
             <article class="tc" id="setup">
                 <h2 data-i18n="wallbox.setup">Einrichtung</h2>
+                <!-- 0.1.19 „Wallbox finden“ (WALLBOX_FERN_KONZEPT §3): nur finden, Übernehmen speichert erst -->
+                <div class="reihe"><button class="tbtn" type="button" id="btnSuche" data-i18n="wallbox.find_btn">Wallbox im WLAN finden</button></div>
+                <p class="hint" data-i18n="wallbox.find_hint">Sucht etwa 5 Sekunden im WLAN, mit dem das Auto gerade verbunden ist (nur lesen). Unterwegs geht das nicht – dann Home Assistant oder das Hersteller-Konto nutzen.</p>
+                <div id="sucheListe"></div>
                 <div class="schritt" data-i18n="wallbox.s1">1 · Welche Wallbox hast du?</div>
                 <div class="aw" id="adapterWahl"></div>
                 <p class="hint" id="adapterVoraus"></p>
@@ -121,13 +125,13 @@
                     <div id="direktForm">
                         <div class="feld2">
                             <div><label for="d_titel" data-i18n="wallbox.f_titel">Name</label><input type="text" id="d_titel" placeholder="Wallbox"></div>
-                            <div data-fuer="goe shelly keba modbus openwb"><label for="d_adresse" id="d_adresseLabel" data-i18n="wallbox.f_adresse">Adresse im Heimnetz (IP)</label><input type="text" id="d_adresse" autocomplete="off" spellcheck="false" placeholder="192.168.1.50"></div>
+                            <div data-fuer="goe shelly keba modbus openwb bruecke"><label for="d_adresse" id="d_adresseLabel" data-i18n="wallbox.f_adresse">Adresse im Heimnetz (IP)</label><input type="text" id="d_adresse" autocomplete="off" spellcheck="false" placeholder="192.168.1.50"></div>
                             <div data-fuer="shelly"><label for="d_kanal" data-i18n="wallbox.f_kanal">Kanal am Shelly</label>
                                 <select id="d_kanal"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></div>
                             <div data-fuer="modbus"><label for="d_modell" data-i18n="wallbox.f_modell">Modell</label><select id="d_modell"></select></div>
                             <div data-fuer="openwb"><label for="d_nummer" data-i18n="wallbox.f_nummer">Ladepunkt-Nummer in openWB</label>
                                 <select id="d_nummer"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
-                            <div data-fuer="easee zaptec"><label for="d_geraeteId" data-i18n="wallbox.f_seriennummer">Seriennummer bzw. Geräte-ID</label><input type="text" id="d_geraeteId" autocomplete="off" spellcheck="false"></div>
+                            <div data-fuer="easee zaptec bruecke"><label for="d_geraeteId" data-i18n="wallbox.f_seriennummer">Seriennummer bzw. Geräte-ID</label><input type="text" id="d_geraeteId" autocomplete="off" spellcheck="false"></div>
                             <div data-fuer="shelly openwb easee zaptec"><label for="d_benutzer" id="d_benutzerLabel" data-i18n="wallbox.f_benutzer">Benutzer</label><input type="text" id="d_benutzer" autocomplete="off" spellcheck="false"></div>
                             <div data-fuer="shelly openwb easee zaptec"><label for="d_passwort" data-i18n="wallbox.f_passwort">Passwort</label><input type="password" id="d_passwort" autocomplete="new-password">
                                 <p class="hint" id="d_passwortGesetzt" hidden data-i18n="wallbox.secret_kept">Gespeichert – leer lassen zum Behalten.</p></div>
@@ -163,6 +167,9 @@
                     <label><input type="checkbox" id="oeffentlich"> <span data-i18n="wallbox.public">Adresse im Internet erlauben (nur https)</span></label>
                     <p class="hint" data-i18n="wallbox.public_hint">Dann gehen deine Zugangsdaten übers Internet an diese Adresse. Nie an Panoptes-Server.</p>
                     <div id="haFelder" hidden>
+                        <div class="reihe"><button class="tbtn" type="button" id="btnHaAnmelden" data-i18n="wallbox.ha_login">Mit Home Assistant anmelden</button></div>
+                        <p class="hint" id="haAngemeldet" hidden data-i18n="wallbox.ha_logged_in">Mit Home Assistant angemeldet – kein Token nötig.</p>
+                        <p class="hint" data-i18n="wallbox.ha_login_hint">Oben die Adresse deines Home Assistant eintragen (wird im WLAN gefunden), dann mit deinem normalen HA-Konto anmelden. Ein Langzeit-Token ist nicht mehr nötig.</p>
                         <div class="reihe"><button class="tbtn" type="button" id="btnVorschlag" data-i18n="wallbox.ha_suggest">Wallbox-Entitäten vorschlagen</button></div>
                         <p class="hint" data-i18n="wallbox.ha_suggest_hint">Liest einmal die Entitäten deines Home Assistant (nur lesend) und trägt passende vor. Bitte prüfen, dann speichern.</p>
                         <div id="haForm">
@@ -259,12 +266,22 @@
         modbus_abgelehnt: 'Die Wallbox hat den Befehl abgelehnt.',
         openwb_keine_daten: 'Keine openWB-Daten auf diesem MQTT-Broker – Adresse oder Ladepunkt-Nummer prüfen.',
         openwb_profil_fehlt: 'openWB liefert kein Ladeprofil für diesen Ladepunkt.',
-        cloud_zu_viele_anfragen: 'Der Hersteller-Server bremst gerade (zu viele Anfragen) – bitte später erneut.'
+        cloud_zu_viele_anfragen: 'Der Hersteller-Server bremst gerade (zu viele Anfragen) – bitte später erneut.',
+        anmeldung_abgelaufen: 'Anmeldung bei Home Assistant abgelaufen – bitte neu anmelden.',
+        anmeldung_abgebrochen: 'Anmeldung bei Home Assistant abgebrochen.',
+        zu_viele_anmeldungen: 'Zu viele offene Anmeldungen – bitte in 10 Minuten erneut.',
+        suche_laeuft: 'Die Suche läuft schon.',
+        bruecke_gesperrt: 'Die Wallbox-Brücke hat das Steuern gesperrt.',
+        bruecke_keine_quittung: 'Die Wallbox-Brücke hat nicht geantwortet – Befehl nicht bestätigt.',
+        bruecke_nicht_angesteckt: 'Kein Auto angesteckt.',
+        bruecke_fehler_wallbox: 'Die Wallbox meldet einen Fehler.',
+        bruecke_abgelehnt: 'Die Wallbox-Brücke hat den Befehl abgelehnt.'
     };
     var HINWEISE = {
         nur_ein_aus: 'Nur Ein/Aus – kein Ladestrom.', keba_rfid: 'Die KEBA verlangt eine RFID-Karte – Starten geht nur mit Karte.',
         modbus_failsafe: 'Watchdog aktiv – nur Anzeige.', openwb1_modus_global: 'openWB 1.x: Der Lademodus gilt für alle Ladepunkte dieser openWB.',
-        openwb_gesperrt: 'In openWB gesperrt – Panoptes hebt die Sperre nicht auf.'
+        openwb_gesperrt: 'In openWB gesperrt – Panoptes hebt die Sperre nicht auf.',
+        bruecke_gesperrt: 'Die Wallbox-Brücke erlaubt gerade kein Steuern – nur Anzeige. Freigeben kann nur der Betreiber der Brücke.'
     };
     function modusText(m) { return t('wallbox.mode_' + m, MODUS_TEXT[m] || m); }
     function fehlerText(code) { return t('wallbox.err_' + code, FEHLER[code] || t('wallbox.err', 'Fehler: {code}', { code: code }), { code: code }); }
@@ -371,7 +388,7 @@
             b.textContent = a.id ? t('wallbox.ad_' + a.id, a.name) : a.name;
             var sm = document.createElement('small');
             if (a.zugang === 'cloud' || a.einwilligung === true) { sm.className = 'cloud'; sm.textContent = t('wallbox.ad_cloud', 'über Hersteller-Server'); }
-            else if (a.art === 'bruecke') sm.textContent = t('wallbox.ad_bruecke', 'über eine Brücke');
+            else if (a.art === 'bruecke') sm.textContent = t('wallbox.ad_ueber_bruecke', 'über eine Brücke');
             else if (a.id) sm.textContent = t('wallbox.ad_lan', 'direkt im Heimnetz');
             b.appendChild(sm);
             b.onclick = function () { waehleAdapter(a.id); };
@@ -434,6 +451,7 @@
             d.geraeteId = $('d_geraeteId').value.trim();
             d.einwilligung = $('d_einw').checked;
         }
+        if (id === 'bruecke') d.geraeteId = $('d_geraeteId').value.trim();   // Broker-Adresse oben, Zugang der Panoptes-MQTT-Verbindung
         if (['shelly', 'openwb', 'easee', 'zaptec'].indexOf(id) >= 0) {
             d.benutzer = $('d_benutzer').value.trim();
             var pw = $('d_passwort').value;
@@ -466,6 +484,7 @@
         }
         $('felder').hidden = !q || q === 'tuya' || q === 'direkt';
         $('haFelder').hidden = q !== 'ha';
+        $('haAngemeldet').hidden = !(q === 'ha' && konfig && konfig.ha && konfig.ha.angemeldet);
         var s = q && konfig ? konfig[q] : null;
         $('url').value = s ? s.url || '' : '';
         $('url').placeholder = q === 'ha' ? 'http://192.168.1.20:8123' : 'http://192.168.1.20:7070';
@@ -605,7 +624,14 @@
         $('lps').innerHTML = html;
     }
     function ladeStatus() {
-        return api('GET', '/api/wallbox/status').then(zeige).then(ladeLog);
+        return api('GET', '/api/wallbox/status').then(function (d) {
+            // 0.1.19: Brücke auf dem Panoptes-Broker von selbst gefunden → gleich zum Übernehmen anbieten
+            if (d && !d.eingerichtet && d.gefunden && d.gefunden.length && !$('sucheListe').innerHTML.trim()) {
+                zeigeSuche({ treffer: d.gefunden });
+                toast(t('wallbox.found_auto', 'Wallbox gefunden – zum Übernehmen tippen.'), true);
+            }
+            return d;
+        }).then(zeige).then(ladeLog);
     }
     function ladeLog() {
         return api('GET', '/api/wallbox/protokoll').then(function (d) {
@@ -668,8 +694,83 @@
         if (b.hasAttribute('data-start')) return zweistufig('/api/wallbox/steuern', { ladepunkt: id, aktion: 'plan', wert: { zeit: box.querySelector('[data-startzeit]').value } });
     });
 
+    // ---------------------------------------------------------------- 0.1.19 Wallbox finden
+    var SUCHE_HINWEIS = {
+        tuya_schluessel: 'Diese Wallbox lässt sich über Home Assistant steuern. So geht’s: In Home Assistant die offizielle Tuya-Integration einrichten (Anmeldung per QR-Code mit der Smart-Life-App), dann hier oben „Home Assistant“ wählen und „Mit Home Assistant anmelden“.',
+        nur_ueber_ha: 'Fronius Wattpilot geht nur über Home Assistant.',
+        bruecke_gesperrt: 'Gefunden. Steuern ist an der Brücke gerade gesperrt – Panoptes zeigt dann nur an.'
+    };
+    function zeigeSuche(d) {
+        var box = $('sucheListe');
+        var tr = d && d.treffer ? d.treffer : [];
+        if (!tr.length) {
+            box.innerHTML = '<p class="hint">' + esc(t('wallbox.find_none', 'Keine Wallbox im WLAN gefunden. Ist das Auto mit dem Heim-WLAN verbunden? Sonst: Home Assistant oder Hersteller-Konto.')) + '</p>';
+            return;
+        }
+        box.innerHTML = tr.map(function (x, i) {
+            var hinweis = x.hinweis ? t('wallbox.find_' + x.hinweis, SUCHE_HINWEIS[x.hinweis] || '') : '';
+            var unsicher = x.unsicher ? ' (' + t('wallbox.find_unsure', 'unsicher') + ')' : '';
+            var knopf = '';
+            if (x.art === 'ha') knopf = '<button class="tbtn" type="button" data-ha="' + i + '">' + esc(t('wallbox.ha_login', 'Mit Home Assistant anmelden')) + '</button>';
+            else if (x.vorschlag) knopf = '<button class="tbtn" type="button" data-nimm="' + i + '">' + esc(t('wallbox.find_take', 'Übernehmen')) + '</button>';
+            var modell = (x.braucht || []).indexOf('modell') >= 0
+                ? '<select data-modell="' + i + '">' + MODBUS.map(function (m) { return '<option value="' + esc(m.id) + '">' + esc(m.name || m.id) + '</option>'; }).join('') + '</select>' : '';
+            return '<div class="reihe"><b>' + esc(x.name) + '</b> · ' + esc(x.adresse) + esc(unsicher) + ' ' + modell + ' ' + knopf + '</div>'
+                + (hinweis ? '<p class="hint">' + esc(hinweis) + '</p>' : '');
+        }).join('');
+        box.onclick = function (ev) {
+            var b = ev.target.closest('button'); if (!b) return;
+            if (b.hasAttribute('data-ha')) {
+                var h = tr[+b.getAttribute('data-ha')];
+                waehleAdapter('ha'); $('quelle').value = 'ha'; zeigeFelder(); $('url').value = h.url;
+                return haAnmelden();
+            }
+            var x = tr[+b.getAttribute('data-nimm')];
+            var v = JSON.parse(JSON.stringify(x.vorschlag));
+            var sel = box.querySelector('[data-modell="' + b.getAttribute('data-nimm') + '"]');
+            if (sel && v.direkt) v.direkt.geraete[0].modell = sel.value;
+            api('POST', '/api/wallbox/einstellungen', v).then(function (d) {
+                if (!d.ok) { toast(fehlerText(d.grund), false); return; }
+                toast(t('wallbox.find_taken', 'Übernommen – bitte unten prüfen.'), true);
+                konfig = d; adapterId = adapterAusKonfig(); waehleAdapter(adapterId); ladeStatus();
+            });
+        };
+    }
+    function haAnmelden() {
+        api('POST', '/api/wallbox/ha/anmelden', { url: $('url').value.trim(), oeffentlichErlaubt: $('oeffentlich').checked,
+            herkunft: location.origin }).then(function (d) {
+            if (!d.ok) { toast(fehlerText(d.grund), false); return; }
+            location.href = d.anmeldeUrl;
+        });
+    }
+    function haRueckruf() {
+        // Weiterleitung von /wallbox-ha-rueckruf.html: Code nur im Fragment, sofort aus der Adresszeile nehmen
+        if (location.hash.indexOf('#ha_rueckruf&') !== 0) return Promise.resolve();
+        var p = {};
+        location.hash.substring(13).split('&').forEach(function (kv) {
+            var i = kv.indexOf('='); if (i > 0) p[kv.substring(0, i)] = decodeURIComponent(kv.substring(i + 1).replace(/\+/g, ' '));
+        });
+        history.replaceState(null, '', location.pathname);
+        return api('POST', '/api/wallbox/ha/rueckruf', { code: p.code || '', state: p.state || '', fehler: p.error || '' }).then(function (d) {
+            if (!d.ok) { toast(fehlerText(d.grund), false); return; }
+            toast(t('wallbox.ha_login_ok', 'Mit Home Assistant angemeldet.'), true);
+            konfig = d.einstellungen; adapterId = 'ha'; waehleAdapter('ha');
+            $('btnVorschlag').onclick();   // Wallbox-Entitäten gleich vorschlagen (nur lesend), dann prüfen + speichern
+        });
+    }
+
     BYD.i18n.init().then(function () {
         BYD.core.init();
+        $('btnSuche').onclick = function () {
+            $('btnSuche').disabled = true;
+            $('sucheListe').innerHTML = '<p class="hint">' + esc(t('wallbox.find_running', 'Suche läuft …')) + '</p>';
+            api('POST', '/api/wallbox/suche').then(function (d) {
+                $('btnSuche').disabled = false;
+                if (d.ok === false) { toast(fehlerText(d.grund), false); return; }
+                zeigeSuche(d);
+            }).catch(function () { $('btnSuche').disabled = false; });
+        };
+        $('btnHaAnmelden').onclick = haAnmelden;
         $('quelle').onchange = zeigeFelder;
         $('tuyaZugang').onchange = function () {
             var cloud = $('tuyaZugang').value === 'cloud';
@@ -706,7 +807,7 @@
                 konfig = d; adapterId = adapterAusKonfig(); waehleAdapter(adapterId); ladeStatus();
             });
         };
-        Promise.all([tuyaModelleLaden(), adapterLaden()]).then(function () { zeichneAdapter(); return ladeKonfig(); }).then(ladeStatus);
+        Promise.all([tuyaModelleLaden(), adapterLaden()]).then(function () { zeichneAdapter(); return ladeKonfig(); }).then(haRueckruf).then(ladeStatus);
         setInterval(function () { if (!document.hidden && $('dlg').style.display !== 'flex') ladeStatus(); }, 15000);
     });
 })();

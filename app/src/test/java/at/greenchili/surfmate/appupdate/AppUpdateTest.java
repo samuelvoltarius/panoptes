@@ -186,7 +186,10 @@ public class AppUpdateTest {
             @Override public File basis() { return basis; }
             @Override public File arbeitsordner() { return dd; }
             @Override public String installiertesZertifikat() { return null; }
-            @Override public String skript() { return "#!/system/bin/sh\necho test\n"; }
+            @Override public String skript(File apk) throws Exception {
+                if (skriptWirft) throw new java.io.IOException("kein Context");   // Befund 27.10. am Auto
+                return "#!/system/bin/sh\necho test\n";
+            }
             @Override public void starteAbgekoppelt(File s, File apk, String key, int vc, String tag) {
                 gestartet.add(apk.getName() + "|" + vc + "|" + tag + "|" + key);
             }
@@ -198,6 +201,7 @@ public class AppUpdateTest {
     }
 
     String netzArt = UpdateRegel.NETZ_UNBEKANNT;
+    boolean skriptWirft;
     final List<String> gemeldet = new ArrayList<>();
     AppUpdateDienst.Netz netzErsatz;
 
@@ -525,6 +529,34 @@ public class AppUpdateTest {
         assertEquals("installiert", d.status("de").getString("phase"));   // bis der Daemon stirbt
         // nach dem Neustart (neuer Dienst, gleiche Dateien): Sperre von appupdate → „beobachtet“
         assertEquals("beobachtet", new AppUpdateDienst(d.netz, d.env).status("de").getString("phase"));
+    }
+
+    /**
+     * 0.1.19, Befund am Auto 27.10.: Scheitert das Lesen des Skripts („kein Context“) NACH dem Setzen der
+     * Deploy-Sperre, wird sie wieder freigegeben – sonst stand der Updater dauerhaft auf „laeuft_schon“.
+     */
+    @Test
+    public void sperreFreiWennSkriptScheitert() throws Exception {
+        File[] apks = new File("build/abgabe").listFiles((x, n) -> n.startsWith("panoptes-0.1.") && n.endsWith("-rot.apk"));
+        assumeTrue(apks != null && apks.length > 0);
+        AppUpdateDienst d = dienst();
+        skriptWirft = true;
+        String sha = AppUpdateDienst.sha256(apks[0]);
+        texte.put(LATEST, vj(9, "0.1.8", "stabil", "v0.1.8", sha));
+        Freigabe f = frei(texte.get(LATEST));
+        dateien.put(f.apkUrl(), apks[0]);
+        d.pruefen();
+        d.ausfuehren(f);
+        assertTrue(gestartet.isEmpty());
+        assertFalse("Sperre freigegeben", new File(basis, ".deploy.lock").exists());
+        JSONObject s = d.status("de");
+        assertEquals("nicht_erreichbar", s.getString("fehler"));
+        assertFalse("nicht dauerhaft laeuft_schon", "laeuft_schon".equals(s.optString("nichtWeil")));
+        // danach geht es wieder: nächster Versuch startet das Skript
+        skriptWirft = false;
+        d.ausfuehren(f);
+        assertEquals(1, gestartet.size());
+        assertTrue("Sperre gehört jetzt dem Skript", new File(basis, ".deploy.lock").isDirectory());
     }
 
     // ------------------------------------------------------------- Verträge

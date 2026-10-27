@@ -291,6 +291,20 @@ public final class Katalog {
         zaehlenUrl.gruppe = "datenschutz"; zaehlenUrl.reihenfolge = 33; zaehlenUrl.erweitert = true;
         zaehlenUrl.nurLesendExtern = true; zaehlenUrl.standard = at.greenchili.surfmate.analytics.Mitzaehlen.STANDARD_URL;
         l.add(zaehlenUrl);
+        // 0.1.19 „Ladekurve anonym teilen“ (Regel 2): Standard AUS, Frage im Einrichten („Daten teilen“). Höchstens 1×/Tag
+        // je Modell SoC-Bänder + Median-kW + Anzahl, ohne Ort/Zeit/VIN/Konto (ladekurve/LadekurveTeilen). Aus = löschen.
+        Feld kurve = new Feld("ladekurve.teilen", Feld.Typ.BOOL);
+        kurve.gruppe = "datenschutz"; kurve.reihenfolge = 34; kurve.standard = false;
+        kurve.nurLesendExtern = true; kurve.bestaetigung = "planer.ladekurveEinwilligung";
+        l.add(kurve);
+        Feld kurveKennung = new Feld("ladekurve.kennung", Feld.Typ.TEXT);
+        kurveKennung.gruppe = "datenschutz"; kurveKennung.reihenfolge = 35; kurveKennung.nurLesend = true;
+        kurveKennung.nurLesendExtern = true;
+        l.add(kurveKennung);
+        Feld kurveUrl = new Feld("ladekurve.url", Feld.Typ.TEXT);
+        kurveUrl.gruppe = "datenschutz"; kurveUrl.reihenfolge = 36; kurveUrl.erweitert = true;
+        kurveUrl.nurLesendExtern = true; kurveUrl.standard = at.greenchili.surfmate.ladekurve.LadekurveTeilen.STANDARD_URL;
+        l.add(kurveUrl);
         // Datenschutz Regel Nr. 2: Kartenquelle wählt der Nutzer (Web kartenquelle.js + native Karte).
         // Nicht gesetzt = keine (auch Bestand), kein stiller Rückfall auf einen anderen Anbieter.
         Feld karte = new Feld("karte.quelle", Feld.Typ.AUSWAHL);

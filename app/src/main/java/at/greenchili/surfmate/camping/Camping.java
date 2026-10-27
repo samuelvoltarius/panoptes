@@ -170,7 +170,7 @@ public final class Camping {
             lernen = new HeizLernen();
         }
         regler = tabelle == null ? null : new CampingRegler(tabelle, istProbe(heizwegEinstellung()));
-        if (tabelle != null && heizweg == null) heizweg = new RouterHeizweg(tabelle.cloudTemperatur, this::cloudProtokoll);
+        if (tabelle != null && heizweg == null) heizweg = new RouterHeizweg(tabelle.cloudTemperatur, this::cloudProtokoll, () -> daten.get());
         try {
             String z = lies(ZUSTAND_DATEI);
             if (z != null) {
@@ -404,7 +404,7 @@ public final class Camping {
             tabelleLaden();
             if (tabelle != null) {
                 regler = new CampingRegler(tabelle, istProbe(heizwegEinstellung()));
-                if (heizweg == null) heizweg = new RouterHeizweg(tabelle.cloudTemperatur, this::cloudProtokoll);
+                if (heizweg == null) heizweg = new RouterHeizweg(tabelle.cloudTemperatur, this::cloudProtokoll, () -> daten.get());
             }
         }
         planAusfuehren();

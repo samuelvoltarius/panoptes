@@ -2552,6 +2552,16 @@ public class CameraDaemon {
                 // still
             }
         }, 2, 60, java.util.concurrent.TimeUnit.MINUTES);
+
+        // 0.1.19 Ladekurve: ruhende Ladung abschließen, Startkurve einmalig aus dem eigenen Verlauf, anonym teilen nur
+        // mit Einwilligung (ladekurve.teilen, Standard AUS). Wirft nie; try/catch schützt nur die Planung.
+        memoryLogScheduler.scheduleAtFixedRate(() -> {
+            try {
+                at.greenchili.surfmate.ladekurve.LadekurveDienst.taktImDaemon(System.currentTimeMillis());
+            } catch (Throwable ignored) {
+                // still
+            }
+        }, 7, 60, java.util.concurrent.TimeUnit.MINUTES);
     }
 
     private static void logMemoryStatus() {

@@ -75,11 +75,12 @@ public class SystemApiHandler {
     /** 0.1.13: aktueller Wert, gesicherter Ursprung, Doze-Zustand (nur lesen). */
     static JSONObject eingriffeStand() throws Exception {
         String aktuell = shellText("settings get global stay_on_while_plugged_in").trim();
-        String ursprung = "";
+        String ursprung = "", wlanUrsprung = "";
         try {
             for (String z : new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(
                     at.greenchili.surfmate.power.SystemEingriffe.URSPRUNG_DATEI)), "UTF-8").split("\n")) {
-                if (z.startsWith("global.stay_on_while_plugged_in=")) { ursprung = z.substring(z.indexOf('=') + 1).trim(); break; }
+                if (z.startsWith("global.stay_on_while_plugged_in=") && ursprung.isEmpty()) ursprung = z.substring(z.indexOf('=') + 1).trim();
+                if (z.startsWith("global.wifi_on=") && wlanUrsprung.isEmpty()) wlanUrsprung = z.substring(z.indexOf('=') + 1).trim();
             }
         } catch (Exception ignored) {
         }
@@ -87,7 +88,14 @@ public class SystemApiHandler {
         return new JSONObject().put("stayOnWhilePluggedIn", aktuell).put("stayOnUrsprung", ursprung.isEmpty() ? JSONObject.NULL : ursprung)
                 .put("stayOnVonPanoptes", "7".equals(aktuell))
                 .put("doze", doze.isEmpty() ? JSONObject.NULL : doze)
+                .put("wifiOn", nullWennLeer(shellText("settings get global wifi_on").trim()))
+                .put("wifiUrsprung", nullWennLeer(wlanUrsprung))
+                .put("wifiKeepAliveAus", at.greenchili.surfmate.config.UnifiedConfigManager.isWifiKeepAliveSuppressed())
                 .put("weg2Waechter", at.greenchili.surfmate.power.Weg2Waechter.stand());
+    }
+
+    private static Object nullWennLeer(String s) {
+        return s == null || s.isEmpty() ? JSONObject.NULL : s;
     }
 
     private static String shellText(String cmd) {

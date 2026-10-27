@@ -141,7 +141,7 @@ public class UpdateQuelleTest {
             @Override public File basis() { return basis; }
             @Override public File arbeitsordner() { return dd; }
             @Override public String installiertesZertifikat() { return null; }
-            @Override public String skript() { return ""; }
+            @Override public String skript(File apk) { return ""; }
             @Override public void starteAbgekoppelt(File s, File apk, String key, int vc, String tag) {
                 throw new AssertionError("darf nicht starten");
             }

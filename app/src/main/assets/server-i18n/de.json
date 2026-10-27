@@ -2139,6 +2139,20 @@
         "title": "Zähl-Adresse",
         "help": "Wohin die Zählung geht. Nur ändern, wenn du einen eigenen Zähler betreibst."
       }
+    },
+    "ladekurve": {
+      "teilen": {
+        "title": "Ladekurve anonym teilen",
+        "help": "Beim DC-Laden misst Panoptes, mit wie viel kW bei welchem Ladestand geladen wird, und speichert das im Auto. Eingeschaltet geht höchstens einmal am Tag eine Zusammenfassung je Modell an den Routenplaner: Ladestand-Bereiche, typische kW, Anzahl Ladungen. Kein Ort, keine Zeit, keine VIN, nicht deinem Konto zugeordnet. Standard aus. Ausschalten löscht sie auch am Server."
+      },
+      "kennung": {
+        "title": "Zufallskennung (Ladekurve)",
+        "help": "Nur für das Teilen der Ladekurve, hier erzeugt, nicht mit dir, dem Auto oder dem Gerät verbunden. Damit ersetzt der Server die Kurve deines Autos statt sie doppelt zu zählen. Leer, solange Teilen aus ist."
+      },
+      "url": {
+        "title": "Ladekurven-Adresse",
+        "help": "Wohin die Ladekurve geht. Nur ändern, wenn du einen eigenen Routenplaner betreibst."
+      }
     }
   },
   "kartenquelle": {
@@ -2176,6 +2190,10 @@
     "vorliebenEinwilligung": {
       "title": "Lade-Vorlieben an den Routenplaner senden?",
       "text": "Was: deine Ladekarten (nur welche, keine Ladevorgänge), bevorzugte und gemiedene Ladenetze, Umweg, „nur geöffnet“, Mindestleistung, Stecker, Ankunfts-Ladestand, „Laden bis“, Planungsart. Keine Position. Wohin: byd.serveone.at (Ladeplaner), nur in dein Konto. Wie lange: bis zu 24 Stunden im Arbeitsspeicher, nie auf Platte, nicht protokolliert. Wofür: /ev/ im Browser plant mit den Vorlieben aus deinem Auto. Ausschalten löscht sie sofort am Server."
+    },
+    "ladekurveEinwilligung": {
+      "title": "Ladekurve anonym teilen?",
+      "text": "Was: je Ladestand-Bereich (5 %) die typische DC-Ladeleistung deines Modells und wie viele Ladungen dahinterstehen. Kein Ort, keine Uhrzeit, kein Datum, keine VIN, keine einzelnen Ladungen, kein Konto. Wohin: byd.serveone.at (Routenplaner), mit einer Zufallskennung nur für diesen Zweck. Wofür: realistische Ladezeiten für alle mit demselben Modell. Ausschalten löscht deine Kurve auch am Server."
     }
   },
   "genai": {

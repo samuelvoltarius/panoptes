@@ -2145,6 +2145,20 @@
         "title": "Adresse de comptage",
         "help": "Où le comptage est envoyé. À modifier seulement si tu utilises ton propre compteur."
       }
+    },
+    "ladekurve": {
+      "teilen": {
+        "title": "Partager la courbe de recharge anonymement",
+        "help": "Pendant la recharge DC, Panoptes mesure combien de kW la voiture accepte selon le niveau de charge et le garde dans la voiture. Activé, un résumé par modèle part au maximum une fois par jour vers le planificateur : tranches de niveau de charge, kW typiques, nombre de recharges. Aucun lieu, aucune heure, aucun VIN, non lié à ton compte. Désactivé par défaut. Le désactiver le supprime aussi sur le serveur."
+      },
+      "kennung": {
+        "title": "Identifiant aléatoire (courbe de recharge)",
+        "help": "Uniquement pour partager la courbe de recharge, créé ici, sans lien avec toi, la voiture ou l’appareil. Le serveur remplace ainsi la courbe de ta voiture au lieu de la compter deux fois. Vide tant que le partage est désactivé."
+      },
+      "url": {
+        "title": "Adresse de la courbe de recharge",
+        "help": "Où la courbe de recharge est envoyée. À modifier seulement si tu gères ton propre planificateur."
+      }
     }
   },
   "kartenquelle": {
@@ -2182,6 +2196,10 @@
     "vorliebenEinwilligung": {
       "title": "Envoyer les préférences de recharge au planificateur ?",
       "text": "Quoi : tes cartes de recharge (seulement lesquelles, aucune recharge), réseaux préférés et évités, détour, « seulement ouvertes », puissance minimale, prises, niveau de charge à l'arrivée, « recharger jusqu'à », mode de planification. Aucune position. Où : byd.serveone.at (planificateur de recharge), uniquement dans ton compte. Combien de temps : jusqu'à 24 heures en mémoire vive, jamais sur disque, sans journalisation. Pourquoi : /ev/ dans le navigateur planifie avec les préférences de ta voiture. Désactiver les supprime aussitôt sur le serveur."
+    },
+    "ladekurveEinwilligung": {
+      "title": "Partager la courbe de recharge anonymement ?",
+      "text": "Quoi : pour chaque tranche de niveau de charge (5 %), la puissance de recharge DC typique de ton modèle et le nombre de recharges. Aucun lieu, aucune heure, aucune date, aucun VIN, aucune recharge individuelle, aucun compte. Où : byd.serveone.at (planificateur), avec un identifiant aléatoire réservé à cet usage. Pourquoi : des temps de recharge réalistes pour tous ceux qui ont le même modèle. Le désactiver supprime aussi ta courbe sur le serveur."
     }
   },
   "genai": {

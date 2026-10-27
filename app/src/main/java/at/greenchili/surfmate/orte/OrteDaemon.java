@@ -60,6 +60,15 @@ public final class OrteDaemon implements OrteDienst.Speicher {
         }
     }
 
+    /** 0.1.19: ganzer Abschnitt ohne Abgleich (nur lesen; Leser SafeLocationManager/TariffManager); null bei Fehler. */
+    public static JSONObject abschnittOhneAbgleich() {
+        try {
+            return UnifiedConfigManager.loadConfig().optJSONObject(ABSCHNITT);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
     // ------------------------------------------------------------------ Speicher
 
     @Override public JSONObject alteLesen() throws Exception {

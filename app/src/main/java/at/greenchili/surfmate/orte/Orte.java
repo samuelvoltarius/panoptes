@@ -407,4 +407,76 @@ public final class Orte {
         }
         return l;
     }
+
+    // ------------------------------------------------------------------ Leser (0.1.19, Vertrag §5)
+
+    /**
+     * 0.1.19 (Leser-Umstellung): Ruhezonen für SafeLocationManager aus der Ortsliste, Normalform
+     * {@code [{id,name,lat,lon,r,an}]}. Wie der Spiegel ({@link #soll}): Ort mit ruhezone ODER zuhause, {@code an} =
+     * ruhezone. Was ein alter Weg seit dem letzten Spiegel geschrieben hat und der Abgleich (höchstens 60 s) noch nicht
+     * aufgenommen hat, gilt sofort: geänderte Zone → alte Fassung, gelöschte → weg, neue → dazu.
+     *
+     * @param alt     Ruhezonen der Datei (Normalform)
+     * @param spiegel Ruhezonen beim letzten Spiegel (Abschnitt {@code orte.spiegel.ruhe}), darf null sein
+     */
+    public static JSONArray ruheZonen(JSONArray liste, JSONArray alt, JSONArray spiegel) throws Exception {
+        Map<String, JSONObject> a = nachId(alt), sp = nachId(spiegel);
+        JSONArray out = new JSONArray();
+        java.util.Set<String> gesehen = new java.util.HashSet<>();
+        JSONArray soll = soll(liste == null ? new JSONArray() : liste).getJSONArray("ruhe");
+        String[] felder = {"name", "lat", "lon", "r", "an"};
+        for (int i = 0; i < soll.length(); i++) {
+            JSONObject z = soll.getJSONObject(i);
+            String id = z.has("id") ? z.optString("id") : null;
+            if (id != null) {
+                gesehen.add(id);
+                if (sp.containsKey(id)) {
+                    if (!a.containsKey(id)) continue;                                   // alter Weg hat gelöscht
+                    if (!gleicheFelder(a.get(id), sp.get(id), felder)) { out.put(a.get(id)); continue; }  // geändert
+                }
+            }
+            out.put(new JSONObject().put("id", id != null ? id : "ort:" + z.optString("ort"))
+                    .put("name", z.optString("name")).put("lat", z.optDouble("lat")).put("lon", z.optDouble("lon"))
+                    .put("r", z.optInt("r")).put("an", z.optBoolean("an")));
+        }
+        for (Map.Entry<String, JSONObject> e : a.entrySet()) {
+            // neu über den alten Weg (noch ohne Ort); im Spiegel, aber ohne Ort = über orte entfernt → nicht mehr
+            if (!gesehen.contains(e.getKey()) && !sp.containsKey(e.getKey())) out.put(e.getValue());
+        }
+        return out;
+    }
+
+    /**
+     * 0.1.19 (Leser-Umstellung): Kreis je Tarif-id ({@code verweise.tarif}) aus der Ortsliste für den TariffManager:
+     * {@code id → {lat, lon, r}}. Preis und Verlauf bleiben am Tarif (Kostenhistorie, Neubepreisung). Hat ein alter Weg
+     * den Kreis seit dem letzten Spiegel geändert, fehlt die id hier (der Tarif nimmt bis zum Abgleich seinen eigenen).
+     */
+    public static Map<String, double[]> tarifKreise(JSONArray liste, JSONArray alt, JSONArray spiegel) throws Exception {
+        Map<String, JSONObject> a = nachId(alt), sp = nachId(spiegel);
+        Map<String, double[]> m = new HashMap<>();
+        String[] felder = {"lat", "lon", "r"};
+        for (int i = 0; liste != null && i < liste.length(); i++) {
+            JSONObject o = liste.optJSONObject(i);
+            if (o == null || eig(o).optJSONObject("tarif") == null) continue;
+            String id = verweise(o).optString("tarif", "");
+            if (id.isEmpty()) continue;
+            if (sp.containsKey(id) && (!a.containsKey(id) || !gleicheFelder(a.get(id), sp.get(id), felder))) continue;
+            double lat = o.optDouble("lat", Double.NaN), lon = o.optDouble("lon", Double.NaN), r = o.optDouble("r", Double.NaN);
+            if (Double.isNaN(lat) || Double.isNaN(lon) || Double.isNaN(r)) continue;
+            m.put(id, new double[] {lat, lon, r});
+        }
+        return m;
+    }
+
+    static boolean gleicheFelder(JSONObject a, JSONObject b, String[] felder) {
+        for (String f : felder) {
+            Object x = a.opt(f), y = b.opt(f);
+            if (x instanceof Number && y instanceof Number) {
+                if (Math.abs(((Number) x).doubleValue() - ((Number) y).doubleValue()) > 1e-9) return false;
+            } else if (!String.valueOf(x).equals(String.valueOf(y))) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

@@ -44,6 +44,15 @@ public final class OpenWbAdapter implements DirektAdapter {
                                  java.util.function.Predicate<Map<String, String>> fertig, long wartenMs) throws WallboxFehler;
 
         void sende(String host, int port, String benutzer, String passwort, String topic, String wert) throws WallboxFehler;
+
+        /**
+         * 0.1.19 (Wallbox-Brücke): {@code antwortTopic} abonnieren, dann {@code wert} auf {@code sendeTopic} senden (nicht
+         * retained) und auf die erste Antwort warten, für die {@code passt} gilt. null = keine passende Antwort in der Zeit.
+         */
+        default String frage(String host, int port, String benutzer, String passwort, String antwortTopic, String sendeTopic,
+                             String wert, java.util.function.Predicate<String> passt, long wartenMs) throws WallboxFehler {
+            throw new WallboxFehler("nicht_unterstuetzt", 400);
+        }
     }
 
     /** Paho (schon Teil von Panoptes, EPL-2.0/EDL-1.0). Je Vorgang eine kurze Verbindung. */
@@ -97,6 +106,30 @@ public final class OpenWbAdapter implements DirektAdapter {
             try {
                 c = verbinde(host, port, b, p);
                 c.publish(topic, wert.getBytes(StandardCharsets.UTF_8), 1, false);
+            } catch (org.eclipse.paho.client.mqttv3.MqttSecurityException e) {
+                throw new WallboxFehler("anmeldung", 502);
+            } catch (Exception e) {
+                throw new WallboxFehler("nicht_erreichbar", 502);
+            } finally {
+                schliesse(c);
+            }
+        }
+
+        @Override
+        public String frage(String host, int port, String b, String p, String antwortTopic, String sendeTopic, String wert,
+                            java.util.function.Predicate<String> passt, long wartenMs) throws WallboxFehler {
+            MqttClient c = null;
+            java.util.concurrent.atomic.AtomicReference<String> treffer = new java.util.concurrent.atomic.AtomicReference<>();
+            try {
+                c = verbinde(host, port, b, p);
+                c.subscribe(antwortTopic, 1, (topic, m) -> {
+                    String s = new String(m.getPayload(), StandardCharsets.UTF_8);
+                    if (treffer.get() == null && passt.test(s)) treffer.set(s);
+                });
+                c.publish(sendeTopic, wert.getBytes(StandardCharsets.UTF_8), 1, false);
+                long ende = System.currentTimeMillis() + wartenMs;
+                while (System.currentTimeMillis() < ende && treffer.get() == null) Thread.sleep(50);
+                return treffer.get();
             } catch (org.eclipse.paho.client.mqttv3.MqttSecurityException e) {
                 throw new WallboxFehler("anmeldung", 502);
             } catch (Exception e) {

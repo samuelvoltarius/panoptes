@@ -2145,6 +2145,20 @@
         "title": "Indirizzo di conteggio",
         "help": "Dove viene inviato il conteggio. Cambialo solo se gestisci un tuo contatore."
       }
+    },
+    "ladekurve": {
+      "teilen": {
+        "title": "Condividi la curva di ricarica in forma anonima",
+        "help": "Durante la ricarica DC, Panoptes misura quanti kW l’auto assorbe a ogni livello di carica e lo conserva nell’auto. Se attivo, al massimo una volta al giorno un riepilogo per modello va al pianificatore: fasce di livello di carica, kW tipici, numero di ricariche. Nessun luogo, nessun orario, nessun VIN, non collegato al tuo account. Disattivato per impostazione predefinita. Disattivarlo lo cancella anche sul server."
+      },
+      "kennung": {
+        "title": "ID casuale (curva di ricarica)",
+        "help": "Solo per condividere la curva di ricarica, creato qui, non collegato a te, all’auto o al dispositivo. Così il server sostituisce la curva della tua auto invece di contarla due volte. Vuoto finché la condivisione è disattivata."
+      },
+      "url": {
+        "title": "Indirizzo curva di ricarica",
+        "help": "Dove viene inviata la curva di ricarica. Modificalo solo se gestisci un tuo pianificatore."
+      }
     }
   },
   "kartenquelle": {
@@ -2182,6 +2196,10 @@
     "vorliebenEinwilligung": {
       "title": "Inviare le preferenze di ricarica al pianificatore?",
       "text": "Cosa: le tue carte di ricarica (solo quali, nessuna ricarica), reti preferite ed evitate, deviazione, «solo aperte», potenza minima, prese, livello di carica all'arrivo, «ricaricare fino a», modo di pianificazione. Nessuna posizione. Dove: byd.serveone.at (pianificatore di ricarica), solo nel tuo account. Per quanto: fino a 24 ore in memoria, mai su disco, senza registrazione. A cosa serve: /ev/ nel browser pianifica con le preferenze della tua auto. Disattivare le cancella subito sul server."
+    },
+    "ladekurveEinwilligung": {
+      "title": "Condividere la curva di ricarica in forma anonima?",
+      "text": "Cosa: per ogni fascia di livello di carica (5 %), la potenza di ricarica DC tipica del tuo modello e su quante ricariche si basa. Nessun luogo, nessun orario, nessuna data, nessun VIN, nessuna singola ricarica, nessun account. Dove: byd.serveone.at (pianificatore), con un ID casuale usato solo per questo. Perché: tempi di ricarica realistici per tutti con lo stesso modello. Disattivarlo cancella la tua curva anche sul server."
     }
   },
   "genai": {
