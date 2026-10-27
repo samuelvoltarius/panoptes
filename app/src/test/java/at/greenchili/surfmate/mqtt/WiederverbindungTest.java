@@ -165,6 +165,8 @@ public class WiederverbindungTest {
         final ServerSocket server;
         final AtomicInteger verbindungen = new AtomicInteger();
         final List<Socket> clients = new CopyOnWriteArrayList<>();
+        /** Gespeicherte (retained) Werte, die nach jedem SUBSCRIBE ausgeliefert werden (Wallbox-Brücke). */
+        final java.util.Map<String, String> gespeichert = new java.util.concurrent.ConcurrentHashMap<>();
         volatile boolean laeuft = true;
 
         private TestBroker(ServerSocket s) { server = s; }
@@ -225,6 +227,16 @@ public class WiederverbindungTest {
                             byte[] ack = new byte[4 + n];
                             ack[0] = (byte) 0x90; ack[1] = (byte) (2 + n); ack[2] = rest[0]; ack[3] = rest[1];
                             out.write(ack);
+                            for (java.util.Map.Entry<String, String> e : gespeichert.entrySet()) {
+                                byte[] t = e.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                                byte[] w = e.getValue().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                                int l = 2 + t.length + w.length;
+                                java.io.ByteArrayOutputStream m = new java.io.ByteArrayOutputStream();
+                                m.write(0x31);                    // PUBLISH, QoS 0, retain
+                                do { int x = l % 128; l /= 128; m.write(l > 0 ? x | 0x80 : x); } while (l > 0);
+                                m.write(t.length >> 8); m.write(t.length & 0xFF); m.write(t, 0, t.length); m.write(w, 0, w.length);
+                                out.write(m.toByteArray());
+                            }
                         } else if (typ == 12) {               // PINGREQ
                             out.write(new byte[] {(byte) 0xD0, 0x00});
                         } else if (typ == 14) {               // DISCONNECT

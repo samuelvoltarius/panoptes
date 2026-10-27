@@ -55,9 +55,33 @@ public final class OpenWbAdapter implements DirektAdapter {
         }
     }
 
+    /**
+     * 0.1.20.1 Weg zum Broker wie die Panoptes-MQTT-Verbindung (MqttPublisherService): Proxy, sonst ein Tailnet-Ziel über
+     * die LocalAPI des Panoptes-tailscaled, sonst direkt. Bis 0.1.20 wählte die Wallbox immer direkt – das ging nur, solange
+     * die Tailscale-App des Autos lief (Befund 27.10.: Brücke 100.64.0.20 „nicht_erreichbar“, Verbindung „home“ verbunden).
+     */
+    static String weg(boolean proxy, boolean tailnetZiel, boolean localApi) {
+        if (proxy) return "proxy";
+        return tailnetZiel && localApi ? "tailnet" : "direkt";
+    }
+
     /** Paho (schon Teil von Panoptes, EPL-2.0/EDL-1.0). Je Vorgang eine kurze Verbindung. */
     public static final Mqtt PAHO = new Mqtt() {
         private MqttClient verbinde(String host, int port, String b, String p) throws Exception {
+            String w = weg(at.greenchili.surfmate.mqtt.ProxyHelper.isProxyAvailable(),
+                    at.greenchili.surfmate.mqtt.TailnetAnstoss.istTailnetZiel(host),
+                    at.greenchili.surfmate.mqtt.TailnetDial.localApiErreichbar());
+            try {
+                return verbinde(host, port, b, p, w);
+            } catch (org.eclipse.paho.client.mqttv3.MqttSecurityException e) {
+                throw e;
+            } catch (Exception e) {
+                if (!"tailnet".equals(w)) throw e;
+                return verbinde(host, port, b, p, "direkt");   // wie die MQTT-Verbindung: OS-Weg als Rückfall
+            }
+        }
+
+        private MqttClient verbinde(String host, int port, String b, String p, String weg) throws Exception {
             byte[] z = new byte[6];
             new SecureRandom().nextBytes(z);
             MqttClient c = new MqttClient("tcp://" + (host.contains(":") ? "[" + host + "]" : host) + ":" + port,
@@ -71,7 +95,14 @@ public final class OpenWbAdapter implements DirektAdapter {
                 o.setUserName(b);
                 o.setPassword(p == null ? new char[0] : p.toCharArray());
             }
-            c.connect(o);
+            if ("proxy".equals(weg)) o.setSocketFactory(at.greenchili.surfmate.mqtt.ProxyHelper.getMqttSocketFactory());
+            else if ("tailnet".equals(weg)) o.setSocketFactory(at.greenchili.surfmate.mqtt.TailnetDial.factory());
+            try {
+                c.connect(o);
+            } catch (Exception e) {
+                try { c.close(); } catch (Exception ignored) { }
+                throw e;
+            }
             return c;
         }
 
