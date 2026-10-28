@@ -74,6 +74,15 @@
       "note": "Camping: battery close to or at the lower limit, weak 12 V battery, maximum time reached."
     },
     {
+      "id": "gewohnheit.probe",
+      "label": "Habits: trial run",
+      "group": "Gewohnheiten",
+      "defaultEnabled": true,
+      "severity": "info",
+      "defaultClickUrl": "/",
+      "note": "A learned rule in trial run reports what it would have done (it does not switch anything yet)."
+    },
+    {
       "id": "surveillance.guard_stop",
       "label": "Guardian stopped / resumed",
       "group": "Surveillance",

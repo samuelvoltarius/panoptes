@@ -21,6 +21,10 @@ public class Automation {
     public static final String MODE_AUTOMATIC = "automatic";
     public static final String MODE_MANUAL = "manual";
     public static final String MODE_DISABLED = "disabled";
+    // 0.1.23 Gewohnheiten E4: Probelauf. Auslöser und Bedingungen laufen wie automatisch, statt der Aktionen kommt
+    // nur eine Meldung („jetzt hätte ich …“). Wie manual wird probe mit disabled=true gespeichert: ein älterer Build
+    // ohne Probelauf sieht die Regel als aus und schaltet nie versehentlich echt.
+    public static final String MODE_PROBE = "probe";
 
     // Condition-combining logic. "AND" (default) = every condition must match;
     // "OR" = any one condition matching is enough. Stored as a String so the JSON
@@ -66,6 +70,9 @@ public class Automation {
     // Lightweight run stats surfaced in the list ("last fired", "N times"). Written on
     // the queue worker thread when the actions actually run; volatile for cross-thread
     // visibility to the HTTP list read. Persisted so the count survives a restart.
+    // 0.1.23 Gewohnheiten: Herkunft und Belege einer aus einer Gewohnheit gelernten Regel (Schlüssel, Treffer,
+    // Probelauf-Zähler). null bei allen anderen Automationen; dann bleibt das JSON byte-gleich.
+    private volatile JSONObject gewohnheit;
     private volatile long lastTriggered = 0L; // epoch ms, 0 = never
     private volatile long triggerCount = 0L;
 
@@ -204,7 +211,12 @@ public class Automation {
      * Both manual-only and fully disabled modes return true.
      */
     public boolean isDisabled() {
-        return !MODE_AUTOMATIC.equals(mode);
+        return !MODE_AUTOMATIC.equals(mode) && !MODE_PROBE.equals(mode);
+    }
+
+    /** 0.1.23: Probelauf – wird ausgelöst wie automatisch, führt aber keine Aktion aus (nur Meldung). */
+    public boolean isProbe() {
+        return MODE_PROBE.equals(mode);
     }
 
     /**
@@ -234,7 +246,8 @@ public class Automation {
     public static boolean isValidMode(String value) {
         return MODE_AUTOMATIC.equals(value)
                 || MODE_MANUAL.equals(value)
-                || MODE_DISABLED.equals(value);
+                || MODE_DISABLED.equals(value)
+                || MODE_PROBE.equals(value);
     }
 
     /**
@@ -253,6 +266,8 @@ public class Automation {
     public void setName(String n) { this.name = (n == null) ? "" : n.trim(); }
 
     /** Epoch-ms of the last time this automation's actions ran (0 = never). */
+    public JSONObject getGewohnheit() { return gewohnheit; }
+    public void setGewohnheit(JSONObject g) { this.gewohnheit = g; }
     public long getLastTriggered() { return lastTriggered; }
     public long getTriggerCount() { return triggerCount; }
     /** Restore persisted stats on load. */
@@ -422,8 +437,11 @@ public class Automation {
             json.put("elseActions", elseActionsJson);
             // Compatibility contract: old builds know only `disabled`. Manual-only
             // must look disabled to them or a downgrade could arm the rule.
-            json.put("disabled", isDisabled());
+            // Probelauf ebenso: für alte Builds aus (disabled=true), nie versehentlich echt.
+            json.put("disabled", !MODE_AUTOMATIC.equals(mode));
             if (isManualOnly()) json.put("manualOnly", true);
+            if (isProbe()) json.put("probe", true);
+            if (gewohnheit != null) json.put("gewohnheit", new JSONObject(gewohnheit.toString()));
             // Optional name + run stats — emitted only when set, so an automation
             // created before this feature serializes with no new keys (byte-identical).
             if (!getName().isEmpty()) json.put("name", getName());
@@ -611,6 +629,10 @@ public class Automation {
             Automation a = new Automation(triggers, conditions, conditionLogic, conditionGroups,
                     delay, actions, elseActions, disabled);
             if (manualOnly) a.setMode(MODE_MANUAL);
+            // 0.1.23: probe gewinnt über disabled=true (so wird es gespeichert), nie über manualOnly
+            else if (input.optBoolean("probe", false)) a.setMode(MODE_PROBE);
+            JSONObject gew = input.optJSONObject("gewohnheit");
+            if (gew != null) a.setGewohnheit(gew);
             // Optional name + run stats (absent on pre-feature automations → defaults).
             a.setName(input.optString("name", ""));
             a.setStats(input.optLong("lastTriggered", 0L), input.optLong("triggerCount", 0L));

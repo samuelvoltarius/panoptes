@@ -29,6 +29,7 @@ public final class ExternGuard {
     static final Set<String> LESEN = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             "/api/mqtt/telemetry",
             "/api/launcher/v1/summary",
+            "/api/gewohnheiten/karte",   // 0.1.23 Gewohnheiten: Cockpit-Feld (dieselbe Karte wie am Display)
             "/api/vehicle/state",
             "/api/vehicle/status",
             "/api/gps",
@@ -74,6 +75,7 @@ public final class ExternGuard {
             "/api/laden",   // Cockpit pflegt die Vorlieben im Auto (GRUNDSATZ)
             "/api/laden/nachfrage",   // Cockpit darf beantworten (Koordination 22.10.), Auto bleibt die Quelle
             "/api/laden/nachfrage/spaeter",
+            "/api/gewohnheiten/antwort",   // 0.1.23 Gewohnheiten: Cockpit darf die Karte beantworten (Auto bleibt die Quelle)
             "/api/laden/nachfrage/kein-preis",
             "/api/ha/v1/aktion",
             // 0.1.16 Camping: Panoptes-Funktion (Regel A: in Stufe 2a keine Fahrzeugwirkung)
@@ -91,6 +93,7 @@ public final class ExternGuard {
     static final Set<String> HANDY_SCHREIBEN = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             "/api/handy/v1/geraet",
             "/api/handy/v1/aktion",
+            "/api/handy/v1/gewohnheit",   // 0.1.23 Gewohnheiten: Karte lesen/beantworten
             "/api/handy/v1/push",
             "/api/handy/v1/push/aus",
             "/api/handy/v1/bruecke",   // 0.1.20 Panoptes-Brücke: Handy-Schlüssel + Zugang (BRUECKE_VERTRAG §2.4)

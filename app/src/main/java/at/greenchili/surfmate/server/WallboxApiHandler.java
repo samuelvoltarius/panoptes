@@ -173,6 +173,14 @@ public final class WallboxApiHandler {
             case "POST /api/wallbox/suche": r = dienst().suche(); break;
             case "POST /api/wallbox/freigabe": r = dienst().freigabe(json(body), "panoptes"); break;
             case "POST /api/wallbox/steuern": r = dienst().steuern(json(body), "panoptes"); break;
+            // 0.1.23 Gewohnheiten E5: nur für Automationen (Erlaubnisliste in HttpServer), Weg wie der Ladeplan
+            case "POST /api/wallbox/automation":
+                if (!HttpServer.isAutomationRequest()) {
+                    HttpResponse.sendJson(out, 403, "{\"ok\":false,\"grund\":\"nur_automation\"}");
+                    return true;
+                }
+                r = dienst().steuernAutomatik(json(body));
+                break;
             case "GET /api/wallbox/protokoll": r = dienst().protokoll(); break;
             // 0.1.20: Tuya D′ (Schlüssel einmal holen), go-e-Token per Handy
             case "POST /api/wallbox/tuya/schluessel": r = dienst().tuyaSchluesselHolen(json(body)); break;

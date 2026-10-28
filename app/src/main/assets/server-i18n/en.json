@@ -342,10 +342,15 @@
       "network_hotspot_limit": {
         "label": "Hotspot data limit reached",
         "note": "When the hotspot goes over its set data limit; it is turned off at the same time. Raise or reset the limit to use it again."
+      },
+      "gewohnheit_probe": {
+        "label": "Habits: trial run",
+        "note": "A learned rule in trial run only reports what it would have done – it does not switch anything yet."
       }
     },
     "cloud_uebergabe_titel": "“{0}” wants to hand over the BYD cloud",
-    "cloud_uebergabe_text": "Check number {0}"
+    "cloud_uebergabe_text": "Check number {0}",
+    "gewohnheit_probelauf": "Trial run: I would have carried out your habit now. Is that right?"
   },
   "parking": {
     "notify": {
@@ -1650,7 +1655,21 @@
     "wireless_charging_right": "Phone charger, right",
     "wireless_charging_right_description": "Switches the right phone charging pad on or off. Only for cars with two pads.",
     "apply_seat_position": "Set seat and mirrors",
-    "apply_seat_position_description": "Moves the driver seat and both side mirrors to a position saved in Panoptes. You can save a position by holding a memory button in the car, or on the Seats page. The car must be switched on."
+    "apply_seat_position_description": "Moves the driver seat and both side mirrors to a position saved in Panoptes. You can save a position by holding a memory button in the car, or on the Seats page. The car must be switched on.",
+    "wallbox_mode": "Wallbox charging",
+    "wallbox_mode_description": "Starts or stops charging at the released wallbox (only when parked).",
+    "wallbox_start": "Start charging",
+    "wallbox_stop": "Stop charging",
+    "wallbox_current": "Wallbox charging current",
+    "wallbox_current_description": "Sets the charging current of the released wallbox (only when parked).",
+    "ampere": "Amps",
+    "set_camping": "Camping",
+    "set_camping_description": "Turns camping mode on or off.",
+    "charge_plan": "Charging plan",
+    "charge_plan_description": "Charge now, stop charging now, or resume the plan.",
+    "charge_plan_now": "Charge now",
+    "charge_plan_now_off": "Stop charging now",
+    "charge_plan_resume": "Resume plan"
   },
   "messages": {
     "seat_position_captured": "“{0}” is now saved in Panoptes",

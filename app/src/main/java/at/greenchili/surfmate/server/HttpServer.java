@@ -982,6 +982,10 @@ public class HttpServer {
         // Destructive system action: exact route only. The handler independently requires
         // Park and a persisted reboot-loop guard before it starts the reboot command.
         if (clean.equals("/api/system/ivi-reboot")) return true;
+        // 0.1.23 Gewohnheiten E5: genau diese drei Wege, nichts daneben (keine Freigaben, keine Einstellungen):
+        // Wallbox nur über den eng begrenzten Automationsweg, Camping an/aus, Ladeplan-Aktionen (Einstellungen
+        // lehnt LadeplanApiHandler für Automationen ab).
+        if (clean.equals("/api/wallbox/automation") || clean.equals("/api/camping") || clean.equals("/api/ladeplan")) return true;
         if (clean.startsWith("/api/surveillance/")) {
             return clean.equals("/api/surveillance/enable")
                     || clean.equals("/api/surveillance/disable")
@@ -1471,7 +1475,7 @@ public class HttpServer {
         if (path.startsWith("/api/wallbox/") && WallboxApiHandler.handle(method, path, body, out)) return true;
         // Ladeplan zu Hause (LADEPLAN_KONZEPT, 0.1.20)
         if (path.startsWith("/api/ladeplan") && LadeplanApiHandler.handle(method, path, body, out)) return true;
-        if (path.startsWith("/api/gewohnheiten") && GewohnheitenApiHandler.handle(method, path, out)) return true;
+        if (path.startsWith("/api/gewohnheiten") && GewohnheitenApiHandler.handle(method, path, body, out)) return true;
         // 0.1.21 Web-Anmeldung per Telegram: Entscheidung nur mit vollem Login (Telegram-Knopf über den Daemon)
         if (path.matches("/api/telegram-anmeldung/[0-9a-f]{16}/(erlauben|ablehnen)") && "POST".equals(method)) {
             if (AuthMiddleware.isExternRequest() || AuthMiddleware.isHandyWebRequest()) {

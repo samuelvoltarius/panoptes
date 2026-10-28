@@ -348,10 +348,15 @@
       "network_hotspot_limit": {
         "label": "Limite de données du point d'accès atteinte",
         "note": "Quand le point d'accès dépasse sa limite de données ; il est alors désactivé. Augmentez ou réinitialisez la limite pour le réutiliser."
+      },
+      "gewohnheit_probe": {
+        "label": "Habitudes : essai",
+        "note": "Une règle apprise en essai indique seulement ce qu’elle aurait fait – elle n’actionne encore rien."
       }
     },
     "cloud_uebergabe_titel": "« {0} » veut transmettre le cloud BYD",
-    "cloud_uebergabe_text": "Code de contrôle {0}"
+    "cloud_uebergabe_text": "Code de contrôle {0}",
+    "gewohnheit_probelauf": "Essai : j’aurais exécuté ton habitude maintenant. C’est bon ?"
   },
   "parking": {
     "notify": {
@@ -1656,7 +1661,21 @@
     "wireless_charging_right": "Chargeur de téléphone, droit",
     "wireless_charging_right_description": "Active ou désactive le chargeur de téléphone droit. Uniquement pour les voitures équipées de deux chargeurs.",
     "apply_seat_position": "Régler le siège et les rétroviseurs",
-    "apply_seat_position_description": "Déplace le siège conducteur et les deux rétroviseurs extérieurs vers une position enregistrée dans Panoptes. Vous pouvez enregistrer une position en maintenant une touche mémoire dans la voiture, ou sur la page « Sièges ». La voiture doit être allumée."
+    "apply_seat_position_description": "Déplace le siège conducteur et les deux rétroviseurs extérieurs vers une position enregistrée dans Panoptes. Vous pouvez enregistrer une position en maintenant une touche mémoire dans la voiture, ou sur la page « Sièges ». La voiture doit être allumée.",
+    "wallbox_mode": "Recharge wallbox",
+    "wallbox_mode_description": "Démarre ou arrête la recharge sur la wallbox autorisée (uniquement à l’arrêt).",
+    "wallbox_start": "Démarrer la recharge",
+    "wallbox_stop": "Arrêter la recharge",
+    "wallbox_current": "Courant de la wallbox",
+    "wallbox_current_description": "Règle le courant de recharge de la wallbox autorisée (uniquement à l’arrêt).",
+    "ampere": "Ampères",
+    "set_camping": "Camping",
+    "set_camping_description": "Active ou désactive le mode camping.",
+    "charge_plan": "Plan de recharge",
+    "charge_plan_description": "Recharger maintenant, arrêter la recharge immédiate ou reprendre le plan.",
+    "charge_plan_now": "Recharger maintenant",
+    "charge_plan_now_off": "Arrêter la recharge immédiate",
+    "charge_plan_resume": "Reprendre le plan"
   },
   "messages": {
     "seat_position_captured": "« {0} » est maintenant enregistrée dans Panoptes",

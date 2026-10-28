@@ -40,6 +40,11 @@ public final class LadeplanApiHandler {
         }
         boolean extern = AuthMiddleware.isExternRequest();
         JSONObject e = b.optJSONObject("einstellungen");
+        // 0.1.23 Gewohnheiten E5: Automationen dürfen nur sofort/sofort_aus/weiter, nie Einstellungen (Freigabe, Plan)
+        if (HttpServer.isAutomationRequest() && (e != null || "plan_aus".equals(b.optString("aktion", "")))) {
+            HttpResponse.sendJson(out, 403, fehler("nur_aktionen"));
+            return true;
+        }
         if (e != null) {
             String f = d.aendere(e, extern);
             if (f != null) {

@@ -348,10 +348,15 @@
       "network_hotspot_limit": {
         "label": "Limite dati dell'hotspot raggiunto",
         "note": "Quando l'hotspot supera il limite di dati impostato; viene spento nello stesso momento. Aumenta o reimposta il limite per usarlo di nuovo."
+      },
+      "gewohnheit_probe": {
+        "label": "Abitudini: prova",
+        "note": "Una regola appresa in prova segnala solo cosa avrebbe fatto – non aziona ancora nulla."
       }
     },
     "cloud_uebergabe_titel": "“{0}” vuole passare il cloud BYD",
-    "cloud_uebergabe_text": "Numero di controllo {0}"
+    "cloud_uebergabe_text": "Numero di controllo {0}",
+    "gewohnheit_probelauf": "Prova: adesso avrei eseguito la tua abitudine. Va bene?"
   },
   "parking": {
     "notify": {
@@ -1656,7 +1661,21 @@
     "wireless_charging_right": "Ricarica telefono, destra",
     "wireless_charging_right_description": "Accende o spegne la piastra di ricarica destra per il telefono. Solo per auto con due piastre.",
     "apply_seat_position": "Imposta sedile e specchietti",
-    "apply_seat_position_description": "Porta il sedile del conducente e i due specchietti laterali su una posizione salvata in Panoptes. Puoi salvare una posizione tenendo premuto un tasto di memoria nell'auto, oppure nella pagina “Sedili”. L'auto deve essere accesa."
+    "apply_seat_position_description": "Porta il sedile del conducente e i due specchietti laterali su una posizione salvata in Panoptes. Puoi salvare una posizione tenendo premuto un tasto di memoria nell'auto, oppure nella pagina “Sedili”. L'auto deve essere accesa.",
+    "wallbox_mode": "Ricarica wallbox",
+    "wallbox_mode_description": "Avvia o ferma la ricarica sulla wallbox autorizzata (solo da fermo).",
+    "wallbox_start": "Avvia ricarica",
+    "wallbox_stop": "Ferma ricarica",
+    "wallbox_current": "Corrente wallbox",
+    "wallbox_current_description": "Imposta la corrente di ricarica della wallbox autorizzata (solo da fermo).",
+    "ampere": "Ampere",
+    "set_camping": "Campeggio",
+    "set_camping_description": "Attiva o disattiva la modalità campeggio.",
+    "charge_plan": "Piano di ricarica",
+    "charge_plan_description": "Ricarica subito, termina la ricarica immediata o riprendi il piano.",
+    "charge_plan_now": "Ricarica subito",
+    "charge_plan_now_off": "Termina ricarica immediata",
+    "charge_plan_resume": "Riprendi il piano"
   },
   "messages": {
     "seat_position_captured": "“{0}” è stata salvata in Panoptes",

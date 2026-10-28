@@ -942,6 +942,46 @@ public class Actions {
                         new Label("comfort", "automation.steering_comfort"),
                         new Label("sport", "automation.steering_sport"),
                         new Label("toggle", "automation.toggle"))));
+        // 0.1.23 Gewohnheiten E5: Wallbox (eng begrenzter Weg wie der Ladeplan: nur freigegebener Ladepunkt, nicht
+        // während der Fahrt), Camping an/aus und Ladeplan-Aktionen. Nie Aufsperren (REGEL AUFSPERREN).
+        addAction(new ApiAction(
+                new Label("wallboxModus", "automation.wallbox_mode"),
+                "automation.wallbox_mode_description",
+                "POST",
+                "/api/wallbox/automation",
+                "{\"aktion\":\"modus\",\"wert\":\"${modus}\"}",
+                new EnumType(
+                        new Label("modus", "automation.action"),
+                        new Label("sofort", "automation.wallbox_start"),
+                        new Label("aus", "automation.wallbox_stop"))));
+        addAction(new ApiAction(
+                new Label("wallboxStrom", "automation.wallbox_current"),
+                "automation.wallbox_current_description",
+                "POST",
+                "/api/wallbox/automation",
+                "{\"aktion\":\"strom\",\"wert\":${strom}}",
+                new IntType(new Label("strom", "automation.ampere"), 6, 32)));
+        addAction(new ApiAction(
+                new Label("camping", "automation.set_camping"),
+                "automation.set_camping_description",
+                "POST",
+                "/api/camping",
+                "{\"an\":${an}}",
+                new EnumType(
+                        new Label("an", "automation.action"),
+                        new Label("false", "automation.off"),
+                        new Label("true", "automation.on"))));
+        addAction(new ApiAction(
+                new Label("ladeplan", "automation.charge_plan"),
+                "automation.charge_plan_description",
+                "POST",
+                "/api/ladeplan",
+                "{\"aktion\":\"${aktion}\"}",
+                new EnumType(
+                        new Label("aktion", "automation.action"),
+                        new Label("sofort", "automation.charge_plan_now"),
+                        new Label("sofort_aus", "automation.charge_plan_now_off"),
+                        new Label("weiter", "automation.charge_plan_resume"))));
         addAction(new ApiAction(
                 new Label("surveillance", "automation.set_surveillance"),
                 "automation.set_surveillance_description",

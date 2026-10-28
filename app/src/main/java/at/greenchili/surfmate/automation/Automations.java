@@ -1974,7 +1974,7 @@ public class Automations {
      */
     static boolean triggerQueuedStateSetters(String id) {
         Automation automation = automations.get(id);
-        if (automation == null || automation.isDisabled()) return true;
+        if (automation == null || automation.isDisabled() || automation.isProbe()) return true;
         long automationRevision = automation.enabledStateRevision();
         boolean met = automation.conditionsMet(conditionState);
         java.util.List<AutomationAction> selected = met
@@ -2088,6 +2088,11 @@ public class Automations {
             cursor.actions = met
                     ? automation.getActions()
                     : runElse ? automation.getElseActions() : java.util.Collections.emptyList();
+            // 0.1.23 Gewohnheiten E4: Probelauf – nur melden („jetzt hätte ich …“), nichts ausführen
+            if (automation.isProbe()) {
+                if (met) at.greenchili.surfmate.gewohnheiten.Probelauf.ausgeloest(id, automation);
+                return true;
+            }
             if (!ownsQueuedDefinition(id, cursor)) return true;
             if (!cursor.actions.isEmpty()) {
                 logger.info("Triggering automation " + (runElse ? "else-" : "")
@@ -2241,6 +2246,13 @@ public class Automations {
         if (blocked) {
             logger.info("Skipping " + (explicit ? "fully disabled" : "non-automatic")
                     + " automation actions: " + id);
+            return true;
+        }
+        // 0.1.23 Gewohnheiten E4: Probelauf führt nie eine Aktion aus – auch nicht per Run now/Test
+        if (automation.isProbe()) {
+            if (!checkConditions || automation.conditionsMet(conditionState)) {
+                at.greenchili.surfmate.gewohnheiten.Probelauf.ausgeloest(id, automation);
+            }
             return true;
         }
 

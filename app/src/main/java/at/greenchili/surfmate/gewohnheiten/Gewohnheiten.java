@@ -57,6 +57,7 @@ public final class Gewohnheiten {
     final AutoBeobachter beobachter = new AutoBeobachter(erwartungen);
     /** Schreibt der Reihe nach; im Test direkt. */
     java.util.concurrent.Executor schreiber;
+    private volatile Angebot angebot;
     private volatile long gekuerztMs;
     private volatile long vergessenStand = -1;
 
@@ -86,6 +87,23 @@ public final class Gewohnheiten {
             }
         }
         return g;
+    }
+
+    /** 0.1.23 E3/E4: die Karte (Vorschlag, Probelauf-Rückfrage, Freigabe) über die echten Automationen. */
+    public Angebot angebot() {
+        Angebot a = angebot;
+        if (a == null) {
+            synchronized (this) {
+                if (angebot == null) angebot = new Angebot(this, DAEMON_REGELN);
+                a = angebot;
+            }
+        }
+        return a;
+    }
+
+    /** Nur für Tests. */
+    void setzeAngebot(Angebot a) {
+        angebot = a;
     }
 
     /** Nur für Tests. */
@@ -157,6 +175,8 @@ public final class Gewohnheiten {
                 if (grenzfall != null) e.put("grenzfall", grenzfall);
                 e.put("kontext", Kontext.bilde(t, u.zone(), w));
                 log.schreibe(e);
+                // E4: eine eigene Handlung, die zu einem offenen Probelauf passt, zählt als „richtig“
+                if (Herkunft.zaehlt(quelle)) angebot().handlung(aktion, t);
             } catch (Throwable x) {
                 logger.debug("notiere: " + x.getMessage());
             }
@@ -276,6 +296,33 @@ public final class Gewohnheiten {
     }
 
     // ---------------------------------------------------------------- Daemon-Umgebung
+
+    static final Angebot.Regeln DAEMON_REGELN = new Angebot.Regeln() {
+        @Override public java.util.Map<String, at.greenchili.surfmate.automation.Automation> alle() {
+            return at.greenchili.surfmate.automation.Automations.alleLesend();
+        }
+
+        @Override public String speichere(String id, at.greenchili.surfmate.automation.Automation a) {
+            String neu = id == null ? java.util.UUID.randomUUID().toString() : id;
+            return at.greenchili.surfmate.automation.Automations.updateAutomation(neu, a) ? neu : null;
+        }
+
+        @Override public boolean modus(String id, String modus) {
+            return at.greenchili.surfmate.automation.Automations.setAutomationMode(id, modus);
+        }
+
+        @Override public boolean loesche(String id) {
+            return at.greenchili.surfmate.automation.Automations.deleteAutomation(id);
+        }
+
+        @Override public JSONArray orte() {
+            try {
+                return at.greenchili.surfmate.orte.OrteDaemon.listeOhneAbgleich();
+            } catch (Throwable t) {
+                return null;
+            }
+        }
+    };
 
     static final Umgebung DAEMON = new Umgebung() {
         private volatile long stand;

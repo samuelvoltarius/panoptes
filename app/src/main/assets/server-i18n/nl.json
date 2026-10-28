@@ -348,10 +348,15 @@
       "network_hotspot_limit": {
         "label": "Datalimiet van de hotspot bereikt",
         "note": "Als de hotspot zijn ingestelde datalimiet overschrijdt; hij wordt dan uitgezet. Verhoog of reset de limiet om hem weer te gebruiken."
+      },
+      "gewohnheit_probe": {
+        "label": "Gewoonten: proefrun",
+        "note": "Een geleerde regel in proefrun meldt alleen wat hij nu zou hebben gedaan – hij schakelt nog niets."
       }
     },
     "cloud_uebergabe_titel": "‘{0}’ wil de BYD-cloud overdragen",
-    "cloud_uebergabe_text": "Controlegetal {0}"
+    "cloud_uebergabe_text": "Controlegetal {0}",
+    "gewohnheit_probelauf": "Proefrun: nu zou ik je gewoonte hebben uitgevoerd. Klopt dat?"
   },
   "parking": {
     "notify": {
@@ -1656,7 +1661,21 @@
     "wireless_charging_right": "Telefoonlader rechts",
     "wireless_charging_right_description": "Zet de rechter oplaadplaat voor telefoons aan of uit. Alleen voor auto's met twee platen.",
     "apply_seat_position": "Stoel en spiegels instellen",
-    "apply_seat_position_description": "Zet de bestuurdersstoel en beide buitenspiegels in een positie die in Panoptes is opgeslagen. Een positie sla je op door in de auto een geheugentoets ingedrukt te houden, of op de pagina “Stoelen”. De auto moet aan staan."
+    "apply_seat_position_description": "Zet de bestuurdersstoel en beide buitenspiegels in een positie die in Panoptes is opgeslagen. Een positie sla je op door in de auto een geheugentoets ingedrukt te houden, of op de pagina “Stoelen”. De auto moet aan staan.",
+    "wallbox_mode": "Wallbox laden",
+    "wallbox_mode_description": "Start of stopt het laden bij de vrijgegeven wallbox (alleen stilstaand).",
+    "wallbox_start": "Laden starten",
+    "wallbox_stop": "Laden stoppen",
+    "wallbox_current": "Laadstroom wallbox",
+    "wallbox_current_description": "Stelt de laadstroom van de vrijgegeven wallbox in (alleen stilstaand).",
+    "ampere": "Ampère",
+    "set_camping": "Kamperen",
+    "set_camping_description": "Zet de kampeermodus aan of uit.",
+    "charge_plan": "Laadplan",
+    "charge_plan_description": "Nu laden, direct laden stoppen of het plan hervatten.",
+    "charge_plan_now": "Nu laden",
+    "charge_plan_now_off": "Direct laden stoppen",
+    "charge_plan_resume": "Plan hervatten"
   },
   "messages": {
     "seat_position_captured": "“{0}” is nu opgeslagen in Panoptes",

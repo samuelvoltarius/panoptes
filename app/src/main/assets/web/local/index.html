@@ -263,9 +263,14 @@
 <script src="../shared/core.js?v=pn6"></script>
 <script src="../shared/panoptes-map.js?v=12"></script>
 <script src="../shared/laden-nachfrage.js?v=1"></script>
+<script src="../shared/gewohnheit-karte.js?v=1"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        var go = function () { if (window.PanoptesNachfrage) PanoptesNachfrage.init(document.getElementById('hNachfrage'), { nurJetzt: true }); };
+        var go = function () {
+            if (window.PanoptesNachfrage) PanoptesNachfrage.init(document.getElementById('hNachfrage'), { nurJetzt: true });
+            // 0.1.23 Gewohnheiten: die eine Vorschlags-/Probelauf-Karte (nur im Stand)
+            if (window.PanoptesGewohnheit) PanoptesGewohnheit.init();
+        };
         if (window.BYD && BYD.i18n && BYD.i18n.init) BYD.i18n.init().then(go, go); else go();
     });
 </script>

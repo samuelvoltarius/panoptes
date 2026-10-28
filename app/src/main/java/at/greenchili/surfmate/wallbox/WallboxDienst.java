@@ -739,6 +739,41 @@ public final class WallboxDienst {
      * Erfolg nur mit Echo ({@code uebernommen == true}); „gesendet, ungeprüft“ zählt für den Plan als Fehlschlag.
      */
     public synchronized Ergebnis steuernPlan(String id, String aktion, Object wert) throws JSONException {
+        return steuernOhneFrage(id, aktion, wert, HERKUNFT_LADEPLAN);
+    }
+
+    /** Herkunft der Befehle von Automationen im Protokoll (0.1.23 Gewohnheiten E5). */
+    public static final String HERKUNFT_AUTOMATION = "automation";
+
+    /**
+     * 0.1.23 Gewohnheiten E5: derselbe eng begrenzte Weg wie der Ladeplan, für Automationen ({@code POST
+     * /api/wallbox/automation}) – nur {@code modus aus/sofort} und {@code strom}, nur für einen freigegebenen Ladepunkt,
+     * nicht während der Fahrt, jeder Befehl im Protokoll mit Herkunft „automation“. Ohne {@code ladepunkt} gilt der
+     * einzige freigegebene; bei mehreren muss er genannt sein.
+     */
+    public synchronized Ergebnis steuernAutomatik(JSONObject b) throws JSONException {
+        String id = b == null ? "" : b.optString("ladepunkt", "");
+        String aktion = b == null ? "" : b.optString("aktion", "");
+        Object wert = b == null || b.isNull("wert") ? null : b.opt("wert");
+        if (id.isEmpty()) {
+            JSONObject k = konfig();
+            try {
+                JSONArray alle = quelle(k).ladepunkte();
+                for (int i = 0; i < alle.length(); i++) {
+                    JSONObject lp = alle.optJSONObject(i);
+                    if (lp == null || !"wallbox".equals(lp.optString("art")) || !WallboxKonfig.freigegeben(k, lp.optString("id"))) continue;
+                    if (!id.isEmpty()) return fehler(new WallboxFehler("ladepunkt_mehrdeutig", 400));
+                    id = lp.optString("id");
+                }
+            } catch (WallboxFehler f) {
+                return fehler(f);
+            }
+            if (id.isEmpty()) return fehler(new WallboxFehler("nicht_freigegeben", 403));
+        }
+        return steuernOhneFrage(id, aktion, wert, HERKUNFT_AUTOMATION);
+    }
+
+    private Ergebnis steuernOhneFrage(String id, String aktion, Object wert, String herkunft) throws JSONException {
         JSONObject k = konfig();
         try {
             boolean modus = "modus".equals(aktion)
@@ -756,11 +791,11 @@ public final class WallboxDienst {
             JSONObject r = quelle.steuern(id, aktion, wert);
             boolean ok = !r.isNull("uebernommen") && r.optBoolean("uebernommen", false);
             protokoll.schreibe(uhr.getAsLong(), WallboxKonfig.quelle(k), id, aktion, wert,
-                    r.isNull("uebernommen") ? "gesendet_ungeprueft" : ok ? "uebernommen" : "abweichend", HERKUNFT_LADEPLAN);
+                    r.isNull("uebernommen") ? "gesendet_ungeprueft" : ok ? "uebernommen" : "abweichend", herkunft);
             JSONObject nach = ohneIntern(r.getJSONObject("ladepunkt"));
             return new Ergebnis(200, new JSONObject().put("ok", ok).put("uebernommen", ok).put("ladepunkt", nach));
         } catch (WallboxFehler f) {
-            protokoll.schreibe(uhr.getAsLong(), WallboxKonfig.quelle(k), id, aktion, wert, "fehler:" + f.code, HERKUNFT_LADEPLAN);
+            protokoll.schreibe(uhr.getAsLong(), WallboxKonfig.quelle(k), id, aktion, wert, "fehler:" + f.code, herkunft);
             return fehler(f);
         }
     }

@@ -94,6 +94,13 @@ public final class HandyApiHandler {
             case "/api/handy/v1/aktion":
                 HttpResponse.sendJson(out, aktion(req, kopplungId).toString());
                 return true;
+            case "/api/handy/v1/gewohnheit": {
+                // 0.1.23 Gewohnheiten E3: ohne „antwort“ die Karte, mit „antwort“ beantworten (wie /api/gewohnheiten/antwort)
+                at.greenchili.surfmate.gewohnheiten.Gewohnheiten g = at.greenchili.surfmate.gewohnheiten.Gewohnheiten.get();
+                JSONObject r = req.has("antwort") ? g.angebot().antworte(req) : GewohnheitenApiHandler.karte();
+                HttpResponse.sendJson(out, r.toString());
+                return true;
+            }
             case "/api/handy/v1/push":
                 HttpResponse.sendJson(out, push(req, kopplungId).toString());
                 return true;

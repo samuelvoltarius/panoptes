@@ -342,10 +342,15 @@
       "network_hotspot_limit": {
         "label": "Hotspot-Datenlimit erreicht",
         "note": "Wenn der Hotspot sein eingestelltes Datenlimit überschreitet; er wird dabei ausgeschaltet. Limit erhöhen oder zurücksetzen, um ihn wieder zu nutzen."
+      },
+      "gewohnheit_probe": {
+        "label": "Gewohnheiten: Probelauf",
+        "note": "Eine gelernte Regel im Probelauf meldet nur, was sie jetzt getan hätte – sie schaltet noch nichts."
       }
     },
     "cloud_uebergabe_titel": "„{0}“ will die BYD-Cloud übergeben",
-    "cloud_uebergabe_text": "Prüfzahl {0}"
+    "cloud_uebergabe_text": "Prüfzahl {0}",
+    "gewohnheit_probelauf": "Probelauf: Jetzt hätte ich deine Gewohnheit ausgeführt. Passt das?"
   },
   "parking": {
     "notify": {
@@ -1650,7 +1655,21 @@
     "wireless_charging_right": "Handy-Ladefläche rechts",
     "wireless_charging_right_description": "Schaltet die rechte Handy-Ladefläche ein oder aus. Nur für Autos mit zwei Ladeflächen.",
     "apply_seat_position": "Sitz und Spiegel einstellen",
-    "apply_seat_position_description": "Fährt den Fahrersitz und beide Außenspiegel auf eine in Panoptes gespeicherte Position. Speichern geht, indem du im Auto eine Positionstaste gedrückt hältst, oder auf der Seite „Sitze“. Das Auto muss eingeschaltet sein."
+    "apply_seat_position_description": "Fährt den Fahrersitz und beide Außenspiegel auf eine in Panoptes gespeicherte Position. Speichern geht, indem du im Auto eine Positionstaste gedrückt hältst, oder auf der Seite „Sitze“. Das Auto muss eingeschaltet sein.",
+    "wallbox_mode": "Wallbox laden",
+    "wallbox_mode_description": "Startet oder stoppt das Laden an der freigegebenen Wallbox (nur im Stand).",
+    "wallbox_start": "Laden starten",
+    "wallbox_stop": "Laden stoppen",
+    "wallbox_current": "Wallbox-Ladestrom",
+    "wallbox_current_description": "Stellt den Ladestrom der freigegebenen Wallbox ein (nur im Stand).",
+    "ampere": "Ampere",
+    "set_camping": "Camping",
+    "set_camping_description": "Schaltet den Camping-Modus ein oder aus.",
+    "charge_plan": "Ladeplan",
+    "charge_plan_description": "Sofort laden, sofort laden beenden oder den Plan fortsetzen.",
+    "charge_plan_now": "Sofort laden",
+    "charge_plan_now_off": "Sofort laden beenden",
+    "charge_plan_resume": "Plan fortsetzen"
   },
   "messages": {
     "seat_position_captured": "„{0}“ ist jetzt in Panoptes gespeichert",
