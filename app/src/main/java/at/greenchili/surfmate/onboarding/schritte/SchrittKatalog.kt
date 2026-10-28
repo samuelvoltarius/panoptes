@@ -20,6 +20,7 @@ object SchrittKatalog {
         "strompreis" -> StrompreisSchritt(a)
         "extra_telegram", "extra_planer", "extra_cockpit", "extra_fernzugang", "extra_notzugang" -> ExtraSchritt(id, a, a.host)
         "extra_overdrive" -> OverdriveSchritt(a)
+        "extra_gewohnheiten" -> GewohnheitenSchritt(a)
         "fertig" -> FertigSchritt(a, a.host)
         else -> null
     }

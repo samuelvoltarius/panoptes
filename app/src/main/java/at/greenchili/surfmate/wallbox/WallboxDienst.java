@@ -716,6 +716,7 @@ public final class WallboxDienst {
             boolean ok = r.optBoolean("uebernommen", false);
             protokoll.schreibe(uhr.getAsLong(), WallboxKonfig.quelle(k), id, aktion, wert,
                     unbekannt ? "gesendet_ungeprueft" : ok ? "uebernommen" : "abweichend", herkunft);
+            if (ok || unbekannt) at.greenchili.surfmate.gewohnheiten.BefehlsHaken.wallbox(aktion, wert);   // 0.1.22 Gewohnheiten
             JSONObject nach = ohneIntern(r.getJSONObject("ladepunkt"));
             nach.put("steuernFrei", true);
             return new Ergebnis(200, new JSONObject().put("ok", ok || unbekannt)

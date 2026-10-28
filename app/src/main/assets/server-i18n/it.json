@@ -2191,6 +2191,22 @@
         "title": "Indirizzo curva di ricarica",
         "help": "Dove viene inviata la curva di ricarica. Modificalo solo se gestisci un tuo pianificatore."
       }
+    },
+    "gewohnheiten": {
+      "an": {
+        "title": "Ricorda le abitudini",
+        "help": "Panoptes ricorda, solo qui in auto, ciò che fai spesso allo stesso modo (es. preriscaldare ogni mattina) e può poi proporti di farlo da solo. Niente viene inviato a un server."
+      },
+      "aufbewahrungTage": {
+        "title": "Conserva le abitudini",
+        "help": "Giorni in cui le azioni ricordate restano in auto prima di essere cancellate."
+      },
+      "vergessen": {
+        "title": "Dimentica le abitudini",
+        "help": "Cancella tutto ciò che è stato ricordato e tutte le proposte rifiutate. Le automazioni già create restano.",
+        "behalten": "Mantieni",
+        "loeschen": "Dimentica tutto"
+      }
     }
   },
   "kartenquelle": {

@@ -5504,7 +5504,8 @@
       "extra_cockpit": "EV Cockpit",
       "extra_fernzugang": "Toegang op afstand",
       "fertig": "Afronden",
-      "extra_notzugang": "Noodtoegang"
+      "extra_notzugang": "Noodtoegang",
+      "extra_gewohnheiten": "Gewoonten onthouden"
     },
     "hinweis": {
       "projektion_unbekannt": {

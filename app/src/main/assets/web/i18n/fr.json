@@ -5504,7 +5504,8 @@
       "extra_cockpit": "EV Cockpit",
       "extra_fernzugang": "Accès distant",
       "fertig": "Fin",
-      "extra_notzugang": "Accès de secours"
+      "extra_notzugang": "Accès de secours",
+      "extra_gewohnheiten": "Retenir les habitudes"
     },
     "hinweis": {
       "projektion_unbekannt": {

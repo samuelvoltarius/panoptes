@@ -154,4 +154,9 @@
     <string name="einr_rundgang_ja">Ja, laat me Panoptes zien</string>
     <string name="einr_extra_notzugang_titel">Noodtoegang voor onderhoud op afstand</string>
     <string name="einr_extra_notzugang_text">Een tweede, aparte weg in de auto voor onderhoud, voor het geval de normale toegang op afstand ooit niet meer werkt. Hij loopt via je eigen Tailscale-netwerk: alleen apparaten in je tailnet bereiken hem, en alleen voor onderhoud, niet de Panoptes-interface. Standaard uit. Je kunt hem altijd uitzetten onder Systeem → Noodtoegang.</string>
+    <!-- 0.1.22 Gewohnheiten (GEWOHNHEITEN_KONZEPT §2, Regel 2) -->
+    <string name="einr_gewohnheiten_titel">Gewoonten onthouden?</string>
+    <string name="einr_gewohnheiten_text">Panoptes merkt wat je vaak op dezelfde manier doet, bv. elke ochtend voorverwarmen, en vraagt of het dat voortaan zelf moet doen. Het blijft alleen in de auto. Je kunt het altijd uitzetten of alles wissen onder Systeem.</string>
+    <string name="einr_gewohnheiten_ja">Ja, onthouden</string>
+    <string name="einr_gewohnheiten_nein">Nee</string>
 </resources>

@@ -497,6 +497,8 @@ public class SurveillanceIpcServer implements Runnable {
                     response.put("success", true);
                     response.put("enabled", true);
                     response.put("deferred", accOn);
+                    at.greenchili.surfmate.gewohnheiten.Gewohnheiten.melde(at.greenchili.surfmate.gewohnheiten.Aktionen.WAECHTER_AN,
+                            null, at.greenchili.surfmate.gewohnheiten.Herkunft.TELEGRAM);
                     response.put("message", accOn
                             ? "Surveillance will start when the vehicle is next turned off"
                             : "Surveillance enabled");
@@ -521,6 +523,8 @@ public class SurveillanceIpcServer implements Runnable {
                         catch (Throwable ignored) {}
                     }
                     logger.info("Surveillance stopped via Telegram IPC");
+                    at.greenchili.surfmate.gewohnheiten.Gewohnheiten.melde(at.greenchili.surfmate.gewohnheiten.Aktionen.WAECHTER_AUS,
+                            null, at.greenchili.surfmate.gewohnheiten.Herkunft.TELEGRAM);
                     response.put("success", true);
                     response.put("enabled", false);
                     response.put("deferred", accOn);

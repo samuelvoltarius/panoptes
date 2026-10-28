@@ -154,4 +154,9 @@
     <string name="einr_rundgang_ja">Oui, montrez-moi Panoptes</string>
     <string name="einr_extra_notzugang_titel">Accès de secours pour la maintenance</string>
     <string name="einr_extra_notzugang_text">Un second accès séparé à la voiture pour la maintenance, au cas où l’accès distant habituel ne fonctionnerait plus. Il passe par ton propre réseau Tailscale : seuls les appareils de ton tailnet peuvent l’atteindre, et seulement pour la maintenance, pas l’interface Panoptes. Désactivé par défaut. Tu peux le couper à tout moment sous Système → Accès de secours.</string>
+    <!-- 0.1.22 Gewohnheiten (GEWOHNHEITEN_KONZEPT §2, Regel 2) -->
+    <string name="einr_gewohnheiten_titel">Retenir les habitudes ?</string>
+    <string name="einr_gewohnheiten_text">Panoptes remarque ce que tu fais souvent de la même façon, p. ex. préchauffer chaque matin, et te demande s’il doit le faire lui-même à l’avenir. Cela reste uniquement dans la voiture. Tu peux le désactiver ou tout effacer à tout moment sous Système.</string>
+    <string name="einr_gewohnheiten_ja">Oui, retenir</string>
+    <string name="einr_gewohnheiten_nein">Non</string>
 </resources>

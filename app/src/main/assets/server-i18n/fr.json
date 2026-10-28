@@ -2191,6 +2191,22 @@
         "title": "Adresse de la courbe de recharge",
         "help": "Où la courbe de recharge est envoyée. À modifier seulement si tu gères ton propre planificateur."
       }
+    },
+    "gewohnheiten": {
+      "an": {
+        "title": "Retenir les habitudes",
+        "help": "Panoptes retient, uniquement ici dans la voiture, ce que tu fais souvent de la même façon (p. ex. préchauffer chaque matin) et peut ensuite te proposer de le faire lui-même. Rien n'est envoyé à un serveur."
+      },
+      "aufbewahrungTage": {
+        "title": "Conserver les habitudes",
+        "help": "Nombre de jours pendant lesquels les actions retenues restent dans la voiture avant d'être supprimées."
+      },
+      "vergessen": {
+        "title": "Oublier les habitudes",
+        "help": "Supprime tout ce qui a été retenu et toutes les propositions refusées. Les automatisations déjà créées restent.",
+        "behalten": "Conserver",
+        "loeschen": "Tout oublier"
+      }
     }
   },
   "kartenquelle": {

@@ -721,6 +721,11 @@ public class HttpServer {
                 return;
             }
             SchreibProtokoll.melde(method, path, AuthMiddleware.isExternRequest(), client.getInetAddress() != null && client.getInetAddress().isLoopbackAddress());
+            // 0.1.22 Gewohnheiten: Herkunft dieser Anfrage (Display, Handy, Cockpit, HA) für die Dauer des Handlers
+            at.greenchili.surfmate.gewohnheiten.Herkunft.setze(at.greenchili.surfmate.gewohnheiten.Herkunft.ausAnfrage(
+                    AuthMiddleware.isExternRequest(),
+                    AuthMiddleware.isExternRequest() ? at.greenchili.surfmate.auth.Kopplungen.get().art(AuthMiddleware.requestKopplungsId()) : null,
+                    AuthMiddleware.isHandyWebRequest(), pathOnly));
 
             // Route to modular handlers first
             if (routeToHandlers(method, path, body, rangeHeader, ifNoneMatchHeader, out)) {
@@ -935,6 +940,7 @@ public class HttpServer {
         } catch (Exception e) {
             CameraDaemon.log("HTTP error: " + e.getMessage());
         } finally {
+            at.greenchili.surfmate.gewohnheiten.Herkunft.setze(null);
             try { client.close(); } catch (Exception e) {}
         }
     }
@@ -1004,11 +1010,15 @@ public class HttpServer {
         OutputStream out = new ByteArrayOutputStream();
         int depth = AUTOMATION_REQUEST_DEPTH.get();
         AUTOMATION_REQUEST_DEPTH.set(depth + 1);
+        // 0.1.22 Gewohnheiten: Automationen zählen nie – außer der Aufrufer hat schon eine Herkunft gesetzt
+        String herkunftVorher = at.greenchili.surfmate.gewohnheiten.Herkunft.gesetzt();
+        if (herkunftVorher == null) at.greenchili.surfmate.gewohnheiten.Herkunft.setze(at.greenchili.surfmate.gewohnheiten.Herkunft.AUTOMATION);
         try {
             if (!routeToHandlers(method, path, body, null, null, out)) return null;
         } catch (Exception e) {
             return null;
         } finally {
+            at.greenchili.surfmate.gewohnheiten.Herkunft.setze(herkunftVorher);
             if (depth == 0) {
                 AUTOMATION_REQUEST_DEPTH.remove();
             } else {
@@ -1461,6 +1471,7 @@ public class HttpServer {
         if (path.startsWith("/api/wallbox/") && WallboxApiHandler.handle(method, path, body, out)) return true;
         // Ladeplan zu Hause (LADEPLAN_KONZEPT, 0.1.20)
         if (path.startsWith("/api/ladeplan") && LadeplanApiHandler.handle(method, path, body, out)) return true;
+        if (path.startsWith("/api/gewohnheiten") && GewohnheitenApiHandler.handle(method, path, out)) return true;
         // 0.1.21 Web-Anmeldung per Telegram: Entscheidung nur mit vollem Login (Telegram-Knopf über den Daemon)
         if (path.matches("/api/telegram-anmeldung/[0-9a-f]{16}/(erlauben|ablehnen)") && "POST".equals(method)) {
             if (AuthMiddleware.isExternRequest() || AuthMiddleware.isHandyWebRequest()) {

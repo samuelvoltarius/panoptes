@@ -154,4 +154,9 @@
     <string name="einr_rundgang_ja">Ja, zeig mir Panoptes</string>
     <string name="einr_extra_notzugang_titel">Notzugang für die Fernwartung</string>
     <string name="einr_extra_notzugang_text">Ein zweiter, getrennter Weg ins Auto für die Wartung, falls der normale Fernzugang einmal nicht mehr geht. Er läuft über dein eigenes Tailscale-Netz: Nur Geräte in deinem Tailnet erreichen ihn, und nur zur Wartung, nicht die Panoptes-Oberfläche. Standard aus. Abschalten kannst du ihn jederzeit unter System → Notzugang.</string>
+    <!-- 0.1.22 Gewohnheiten (GEWOHNHEITEN_KONZEPT §2, Regel 2) -->
+    <string name="einr_gewohnheiten_titel">Gewohnheiten merken?</string>
+    <string name="einr_gewohnheiten_text">Panoptes merkt sich, was du oft gleich machst, z. B. jeden Morgen vorheizen, und fragt dich, ob es das künftig selbst machen soll. Bleibt nur im Auto. Ausschalten oder alles löschen kannst du jederzeit unter System.</string>
+    <string name="einr_gewohnheiten_ja">Ja, merken</string>
+    <string name="einr_gewohnheiten_nein">Nein</string>
 </resources>

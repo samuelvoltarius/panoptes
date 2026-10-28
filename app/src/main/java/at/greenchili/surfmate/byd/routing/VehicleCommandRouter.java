@@ -1981,6 +1981,14 @@ public final class VehicleCommandRouter {
     // ── Routing ─────────────────────────────────────────────────────────
 
     public CommandResult execute(VehicleCommand cmd) {
+        // 0.1.22 Gewohnheiten: Wirkung vorher erwarten (Echo zählt nicht als „am Auto“), Erfolg mit Herkunft mitschreiben
+        at.greenchili.surfmate.gewohnheiten.BefehlsHaken.vor(cmd);
+        CommandResult r = executeOhneHaken(cmd);
+        at.greenchili.surfmate.gewohnheiten.BefehlsHaken.nach(cmd, r);
+        return r;
+    }
+
+    private CommandResult executeOhneHaken(VehicleCommand cmd) {
         // Snapshot at ingress before any safety/preflight work can yield. MQTT may provide
         // a still-earlier message-ingress snapshot, so an already-queued open cannot overtake
         // a STOP while its per-connection worker is busy.

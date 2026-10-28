@@ -47,7 +47,9 @@ public final class EinrichtungApiHandler {
             "waechter", "betrieb", "karte", "daten", "blitzer", "updates", "strompreis",
             "extra_telegram", "extra_planer", "extra_cockpit", "extra_fernzugang", "extra_overdrive",
             // 0.1.14: optionaler Notzugang für die Fernwartung (Standard aus, Regel 1)
-            "extra_notzugang", "fertig");
+            "extra_notzugang",
+            // 0.1.22: Gewohnheiten merken (Regel 2: Frage mit Erklärung; Bestand → „Noch offen“, nie still an)
+            "extra_gewohnheiten", "fertig");
 
     /**
      * Overdrive-Übernahme (Kern 5): liefert true, wenn Overdrive-Daten gefunden wurden. Kern 5 setzt den Haken

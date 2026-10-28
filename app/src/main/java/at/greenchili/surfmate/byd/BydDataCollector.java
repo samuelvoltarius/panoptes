@@ -8664,6 +8664,19 @@ public class BydDataCollector {
     // which the best-effort driver mapping is inferring. Written from both the 5s poll and
     // the 500ms fast poll; a benign cross-thread race only affects log cadence, not data.
     private volatile long lastSeatbeltRawLogMs = 0;
+    /** 0.1.22 Gurt-Log entprellt: zuletzt geschriebene Werte (ohne die laufenden Zähler). */
+    private volatile String lastSeatbeltRawLogKey = "";
+    static final long GURT_LOG_MIN_MS = 30_000L, GURT_LOG_HERZSCHLAG_MS = 30L * 60_000L;
+
+    /**
+     * 0.1.22 (Koordination, Gurtsensor-Log-Spam): Die Gurt-Diagnosen schrieben bisher stur alle 30 s eine Zeile, auch
+     * wenn sich nichts änderte (≈ 5800 Zeilen/Tag). Jetzt nur bei geänderten Werten (frühestens nach 30 s) und sonst
+     * höchstens alle 30 min als Lebenszeichen.
+     */
+    static boolean gurtLogFaellig(String neu, String alt, long jetzt, long letzt) {
+        if (jetzt - letzt < GURT_LOG_MIN_MS) return false;
+        return !neu.equals(alt) || jetzt - letzt >= GURT_LOG_HERZSCHLAG_MS;
+    }
 
     /** Cached BYDAutoInstrumentDevice.getSafetyBeltStatus(int) — the dedicated named getter
      *  the WORKING telemetry-recording overlay uses (TelemetryDataCollector.probeSeatbeltApis
@@ -8899,6 +8912,75 @@ public class BydDataCollector {
         return (int) state;
     }
 
+    // ---------------------------------------------------------------- 0.1.23 Gurt-Entprellung (Beifahrer-Callback)
+
+    private final GurtEntpreller gurtEntpreller = new GurtEntpreller();
+    private volatile java.util.concurrent.ScheduledExecutorService gurtNachlauf;
+    private volatile java.util.concurrent.ScheduledFuture<?> gurtNachlaufHalten, gurtNachlaufRuhe;
+
+    private static long monotonicGurtMs() {
+        return System.nanoTime() / 1_000_000L;
+    }
+
+    /** Logzeile schreiben und einen neu geltenden Zustand übernehmen (Tracker, DiLink5, Automationen). */
+    private void gurtAusgabe(GurtEntpreller.Ausgabe a) {
+        if (a.logZeile != null) logger.info(a.logZeile);
+        if (!a.zustandGeaendert()) return;
+        int state = a.neuerZustand;
+        passengerSeatbeltTracker.recordCallback(state);
+        invalidateSeatbeltPairMemo();
+        try {
+            if (isDiLink5ProducerActive()) {
+                at.greenchili.surfmate.byd.dilink5.Dilink5TelemetryBridge.publishEvent(
+                        "seatbeltPassenger", 0, state);
+            } else if (anyReferenced(
+                    at.greenchili.surfmate.automation.condition.BydEvent.SEATBELT_PASSENGER)) {
+                at.greenchili.surfmate.automation.condition.BydEvent
+                        .publishPassengerSeatbeltEdge(state);
+            }
+        } catch (Throwable t) {
+            logger.debug("passenger seatbelt callback publish error: " + t.getMessage());
+        }
+    }
+
+    /**
+     * Nachlauf ohne neuen Callback: nach der Haltezeit den Wert übernehmen, nach dem Ruhefenster das Flattern beenden.
+     * Jeder Callback ersetzt die geplanten Läufe (ein eigener, schlafender Thread; kein Takt im Leerlauf).
+     */
+    private void planeGurtNachlauf() {
+        try {
+            java.util.concurrent.ScheduledExecutorService ex = gurtNachlauf;
+            if (ex == null) {
+                synchronized (gurtEntpreller) {
+                    ex = gurtNachlauf;
+                    if (ex == null) {
+                        ex = java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r -> {
+                            Thread th = new Thread(r, "GurtNachlauf");
+                            th.setDaemon(true);
+                            return th;
+                        });
+                        gurtNachlauf = ex;
+                    }
+                }
+            }
+            Runnable lauf = () -> {
+                try {
+                    gurtAusgabe(gurtEntpreller.takt(monotonicGurtMs()));
+                } catch (Throwable t) {
+                    logger.debug("GurtNachlauf: " + t.getMessage());
+                }
+            };
+            java.util.concurrent.ScheduledFuture<?> alt = gurtNachlaufHalten;
+            if (alt != null) alt.cancel(false);
+            alt = gurtNachlaufRuhe;
+            if (alt != null) alt.cancel(false);
+            gurtNachlaufHalten = ex.schedule(lauf, GurtEntpreller.HALTE_MS + 50, java.util.concurrent.TimeUnit.MILLISECONDS);
+            gurtNachlaufRuhe = ex.schedule(lauf, GurtEntpreller.FENSTER_MS + 50, java.util.concurrent.TimeUnit.MILLISECONDS);
+        } catch (Throwable t) {
+            logger.debug("GurtNachlauf planen: " + t.getMessage());
+        }
+    }
+
     /**
      * Opening the passenger door starts a new occupancy lifecycle, so evidence from the previous
      * passenger cannot make a later ambiguous 1 trustworthy.
@@ -9028,8 +9110,11 @@ public class BydDataCollector {
             // Diagnostic (throttled 30s): pin the EXACT raw driver/passenger codes on-device so
             // the best-effort driver mapping above can be replaced with an exact rule once seen.
             long nowMs = System.currentTimeMillis();
-            if (nowMs - lastSeatbeltRawLogMs > 30_000) {
+            String seatbeltKey = driver + "|" + driverRaw + "|" + driverDedicated + "|" + passenger + "|" + passengerRaw
+                    + "|" + passengerDedicated + "|" + passengerOccupant;
+            if (gurtLogFaellig(seatbeltKey, lastSeatbeltRawLogKey, nowMs, lastSeatbeltRawLogMs)) {
                 lastSeatbeltRawLogMs = nowMs;
+                lastSeatbeltRawLogKey = seatbeltKey;
                 logger.info("seatbelt: driver=" + driver + " (source="
                         + (driverDedicated ? "dedicated"
                             : instrumentDevice != null ? "instrument" : "unavailable")
@@ -9253,8 +9338,9 @@ public class BydDataCollector {
         // inference from the reference app's mapPassengerArea (driver=bit 0). Read this on-device
         // with the driver seated + unbelted to confirm bit 0 is the one that lights up.
         long nowMs = System.currentTimeMillis();
-        if (nowMs - lastReminderMaskLogMs > 30_000) {
+        if (gurtLogFaellig(String.valueOf(mask), lastReminderMaskLogKey, nowMs, lastReminderMaskLogMs)) {
             lastReminderMaskLogMs = nowMs;
+            lastReminderMaskLogKey = String.valueOf(mask);
             logger.info("seatbelt reminder mask: raw=" + mask
                     + (mask < 0 ? " (unreadable)" : " bits=0b" + Integer.toBinaryString(mask))
                     + " driverBit" + REMINDER_BIT_DRIVER + "="
@@ -9279,6 +9365,7 @@ public class BydDataCollector {
     // Throttle (30s) for the reminder-mask diagnostic above, so a 500ms poll can't flood the log.
     // Same benign-race stance as lastSeatbeltRawLogMs: a cross-thread write only affects cadence.
     private volatile long lastReminderMaskLogMs = 0;
+    private volatile String lastReminderMaskLogKey = "";
 
     // Driver presence is inferred, in this order, mirroring the reference app:
     //  tier 1 — reminder mask bit 0 active ⇒ OCCUPIED (seatbeltReminderIndicatesOccupant)
@@ -12007,24 +12094,10 @@ public class BydDataCollector {
                     ? normalizePassengerSeatbeltCallback(args[0], args[1])
                     : BydVehicleData.UNAVAILABLE;
             if (passengerState != BydVehicleData.UNAVAILABLE) {
-                boolean changed = passengerSeatbeltTracker.recordCallback(passengerState);
-                invalidateSeatbeltPairMemo();
-                if (changed) {
-                    logger.info("onSafetyBeltStatusChanged: front passenger="
-                            + (passengerState == 1 ? "buckled" : "unbuckled"));
-                }
-                try {
-                    if (isDiLink5ProducerActive()) {
-                        at.greenchili.surfmate.byd.dilink5.Dilink5TelemetryBridge.publishEvent(
-                                "seatbeltPassenger", 0, passengerState);
-                    } else if (anyReferenced(
-                            at.greenchili.surfmate.automation.condition.BydEvent.SEATBELT_PASSENGER)) {
-                        at.greenchili.surfmate.automation.condition.BydEvent
-                                .publishPassengerSeatbeltEdge(passengerState);
-                    }
-                } catch (Throwable t) {
-                    logger.debug("passenger seatbelt callback publish error: " + t.getMessage());
-                }
+                // 0.1.23: entprellt (GurtEntpreller) – ein flatternder Callback erreicht weder Tracker noch
+                // Automationen noch DiLink5 und loggt höchstens eine Zusammenfassung je Minute.
+                gurtAusgabe(gurtEntpreller.roh(passengerState, monotonicGurtMs()));
+                planeGurtNachlauf();
             }
             return;
         }

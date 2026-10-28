@@ -2191,6 +2191,22 @@
         "title": "Adres laadcurve",
         "help": "Waar de laadcurve naartoe gaat. Alleen wijzigen als je een eigen routeplanner draait."
       }
+    },
+    "gewohnheiten": {
+      "an": {
+        "title": "Gewoonten onthouden",
+        "help": "Panoptes onthoudt, alleen hier in de auto, wat je vaak op dezelfde manier doet (bv. elke ochtend voorverwarmen) en kan later voorstellen het zelf te doen. Er gaat niets naar een server."
+      },
+      "aufbewahrungTage": {
+        "title": "Gewoonten bewaren",
+        "help": "Aantal dagen dat de onthouden handelingen in de auto blijven voordat ze worden verwijderd."
+      },
+      "vergessen": {
+        "title": "Gewoonten vergeten",
+        "help": "Verwijdert alles wat onthouden is en alle afgewezen voorstellen. Al aangemaakte automatiseringen blijven.",
+        "behalten": "Behouden",
+        "loeschen": "Alles vergeten"
+      }
     }
   },
   "kartenquelle": {

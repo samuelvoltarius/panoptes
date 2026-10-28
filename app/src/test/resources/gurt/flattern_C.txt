@@ -1,0 +1,14 @@
+# Auszug C aus cam_daemon.log am Auto (Panoptes 0.1.21, 28.10.2026, Deploy): nur die Gurtzeilen, alle anderen Zeilen entfernt.
+BydDataCollector: [2026-10-28 07:46:05.328] onSafetyBeltStatusChanged: front passenger=unbuckled
+BydDataCollector: [2026-10-28 07:46:05.731] onSafetyBeltStatusChanged: front passenger=buckled
+BydDataCollector: [2026-10-28 07:46:06.147] onSafetyBeltStatusChanged: front passenger=unbuckled
+BydDataCollector: [2026-10-28 07:46:06.569] onSafetyBeltStatusChanged: front passenger=buckled
+BydDataCollector: [2026-10-28 07:46:06.966] onSafetyBeltStatusChanged: front passenger=unbuckled
+BydDataCollector: [2026-10-28 07:46:07.372] onSafetyBeltStatusChanged: front passenger=buckled
+BydDataCollector: [2026-10-28 07:46:07.773] onSafetyBeltStatusChanged: front passenger=unbuckled
+BydDataCollector: [2026-10-28 07:46:08.183] onSafetyBeltStatusChanged: front passenger=buckled
+BydDataCollector: [2026-10-28 07:46:08.598] onSafetyBeltStatusChanged: front passenger=unbuckled
+BydDataCollector: [2026-10-28 07:46:09.006] onSafetyBeltStatusChanged: front passenger=buckled
+BydDataCollector: [2026-10-28 07:46:09.406] onSafetyBeltStatusChanged: front passenger=unbuckled
+BydDataCollector: [2026-10-28 07:46:09.828] onSafetyBeltStatusChanged: front passenger=buckled
+BydDataCollector: [2026-10-28 07:46:10.230] onSafetyBeltStatusChanged: front passenger=unbuckled

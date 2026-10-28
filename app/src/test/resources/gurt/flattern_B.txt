@@ -1,0 +1,22 @@
+# Auszug B aus cam_daemon.log am Auto (Panoptes 0.1.21, 28.10.2026, Deploy): nur die Gurtzeilen, alle anderen Zeilen entfernt.
+BydDataCollector: [2026-10-28 07:45:29.146] onSafetyBeltStatusChanged: front passenger=buckled
+BydDataCollector: [2026-10-28 07:45:29.589] onSafetyBeltStatusChanged: front passenger=unbuckled
+BydDataCollector: [2026-10-28 07:45:29.984] onSafetyBeltStatusChanged: front passenger=buckled
+BydDataCollector: [2026-10-28 07:45:30.351] onSafetyBeltStatusChanged: front passenger=unbuckled
+BydDataCollector: [2026-10-28 07:45:30.773] onSafetyBeltStatusChanged: front passenger=buckled
+BydDataCollector: [2026-10-28 07:45:31.163] onSafetyBeltStatusChanged: front passenger=unbuckled
+BydDataCollector: [2026-10-28 07:45:31.569] onSafetyBeltStatusChanged: front passenger=buckled
+BydDataCollector: [2026-10-28 07:45:31.972] onSafetyBeltStatusChanged: front passenger=unbuckled
+BydDataCollector: [2026-10-28 07:45:32.376] onSafetyBeltStatusChanged: front passenger=buckled
+BydDataCollector: [2026-10-28 07:45:32.780] onSafetyBeltStatusChanged: front passenger=unbuckled
+BydDataCollector: [2026-10-28 07:45:33.204] onSafetyBeltStatusChanged: front passenger=buckled
+BydDataCollector: [2026-10-28 07:45:33.618] onSafetyBeltStatusChanged: front passenger=unbuckled
+BydDataCollector: [2026-10-28 07:45:34.034] onSafetyBeltStatusChanged: front passenger=buckled
+BydDataCollector: [2026-10-28 07:45:34.457] onSafetyBeltStatusChanged: front passenger=unbuckled
+BydDataCollector: [2026-10-28 07:45:34.855] onSafetyBeltStatusChanged: front passenger=buckled
+BydDataCollector: [2026-10-28 07:45:35.257] onSafetyBeltStatusChanged: front passenger=unbuckled
+BydDataCollector: [2026-10-28 07:45:35.660] onSafetyBeltStatusChanged: front passenger=buckled
+BydDataCollector: [2026-10-28 07:45:36.069] onSafetyBeltStatusChanged: front passenger=unbuckled
+BydDataCollector: [2026-10-28 07:45:36.468] onSafetyBeltStatusChanged: front passenger=buckled
+BydDataCollector: [2026-10-28 07:45:36.874] onSafetyBeltStatusChanged: front passenger=unbuckled
+BydDataCollector: [2026-10-28 07:45:37.273] onSafetyBeltStatusChanged: front passenger=buckled

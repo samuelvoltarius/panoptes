@@ -217,13 +217,18 @@ public final class Camping {
     public static JSONObject ein(String quelle) {
         Camping c = instance;
         if (c == null) return fehler("nicht_gestartet");
-        return c.einschalten(quelle);
+        JSONObject r = c.einschalten(quelle);
+        if (r != null && r.optBoolean("ok", false)) at.greenchili.surfmate.gewohnheiten.BefehlsHaken.camping(true, quelle);
+        return r;
     }
 
     public static JSONObject aus(String grund) {
         Camping c = instance;
         if (c == null) return fehler("nicht_gestartet");
-        return c.ausschalten(grund == null || grund.isEmpty() ? "tipp" : grund);
+        String g = grund == null || grund.isEmpty() ? "tipp" : grund;
+        JSONObject r = c.ausschalten(g);
+        if (r != null && r.optBoolean("ok", false)) at.greenchili.surfmate.gewohnheiten.BefehlsHaken.camping(false, g);
+        return r;
     }
 
     /** „zu kalt / passt / zu warm“. */

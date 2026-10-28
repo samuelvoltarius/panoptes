@@ -5503,7 +5503,8 @@
       "extra_cockpit": "EV-Cockpit",
       "extra_fernzugang": "Fernzugang",
       "fertig": "Abschluss",
-      "extra_notzugang": "Notzugang für die Fernwartung"
+      "extra_notzugang": "Notzugang für die Fernwartung",
+      "extra_gewohnheiten": "Gewohnheiten merken"
     },
     "titel": "Einrichtung",
     "hinweis": {

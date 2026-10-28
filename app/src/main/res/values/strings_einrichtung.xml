@@ -154,4 +154,9 @@
     <string name="einr_rundgang_ja">Yes, show me Panoptes</string>
     <string name="einr_extra_notzugang_titel">Emergency access for remote maintenance</string>
     <string name="einr_extra_notzugang_text">A second, separate way into the car for maintenance, in case the normal remote access ever stops working. It runs through your own Tailscale network: only devices in your tailnet can reach it, and only for maintenance, not the Panoptes interface. Off by default. You can switch it off at any time under System → Emergency access.</string>
+    <!-- 0.1.22 Gewohnheiten (GEWOHNHEITEN_KONZEPT §2, Regel 2) -->
+    <string name="einr_gewohnheiten_titel">Remember habits?</string>
+    <string name="einr_gewohnheiten_text">Panoptes notices what you often do the same way, e.g. preheating every morning, and asks whether it should do it for you in future. It stays only in the car. You can switch it off or delete everything at any time under System.</string>
+    <string name="einr_gewohnheiten_ja">Yes, remember</string>
+    <string name="einr_gewohnheiten_nein">No</string>
 </resources>

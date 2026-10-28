@@ -2460,6 +2460,7 @@ public class SurveillanceApiHandler {
         JSONObject response = new JSONObject();
         response.put("success", true);
         response.put("deferred", accIsOn);
+        at.greenchili.surfmate.gewohnheiten.Gewohnheiten.melde(at.greenchili.surfmate.gewohnheiten.Aktionen.WAECHTER_AN, null);
         HttpResponse.sendJson(out, response.toString());
     }
 
@@ -2494,6 +2495,7 @@ public class SurveillanceApiHandler {
         response.put("success", true);
         // Nothing was armed to stop, so the write only affects the next park.
         response.put("deferred", accIsOn);
+        at.greenchili.surfmate.gewohnheiten.Gewohnheiten.melde(at.greenchili.surfmate.gewohnheiten.Aktionen.WAECHTER_AUS, null);
         HttpResponse.sendJson(out, response.toString());
     }
 

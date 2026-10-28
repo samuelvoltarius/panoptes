@@ -221,6 +221,27 @@ public final class Katalog {
         Feld zurueck = new Feld("telegram.zurueckAmAuto", Feld.Typ.BOOL);
         zurueck.gruppe = "system"; zurueck.reihenfolge = 71; zurueck.standard = false; zurueck.nurLesendExtern = true;
         l.add(zurueck);
+        // 0.1.22 Gewohnheiten (GEWOHNHEITEN_KONZEPT §2): merkt sich NUR im Auto, was der Nutzer oft gleich macht. Regel 2:
+        // Standard aus bis zur Antwort im Einrichten (Schritt extra_gewohnheiten, dort „Ja“ vorgewählt); Bestand erst nach
+        // der Frage. Nie an einen Server. „Alles vergessen“ löscht Log und abgelehnte Gewohnheiten.
+        Feld gew = new Feld("gewohnheiten.an", Feld.Typ.BOOL);
+        gew.gruppe = "system"; gew.reihenfolge = 75; gew.standard = false; gew.nurLesendExtern = true;
+        l.add(gew);
+        Feld gewTage = new Feld("gewohnheiten.aufbewahrungTage", Feld.Typ.INT);
+        gewTage.gruppe = "system"; gewTage.reihenfolge = 76; gewTage.erweitert = true; gewTage.nurLesendExtern = true;
+        gewTage.standard = at.greenchili.surfmate.gewohnheiten.GewohnheitsLog.AUFBEWAHRUNG_TAGE;
+        gewTage.min = (double) at.greenchili.surfmate.gewohnheiten.GewohnheitsLog.TAGE_MIN;
+        gewTage.max = (double) at.greenchili.surfmate.gewohnheiten.GewohnheitsLog.TAGE_MAX;
+        gewTage.schritt = 1.0; gewTage.einheit = "d";
+        gewTage.nurWenn = obj("key", "gewohnheiten.an", "gleich", true);
+        l.add(gewTage);
+        Feld gewVergessen = new Feld("gewohnheiten.vergessen", Feld.Typ.AUSWAHL);
+        gewVergessen.gruppe = "system"; gewVergessen.reihenfolge = 77; gewVergessen.standard = "behalten";
+        gewVergessen.nurLesendExtern = true;
+        gewVergessen.optionen.add(new Feld.Option("behalten", "settings.gewohnheiten.vergessen.behalten"));
+        gewVergessen.optionen.add(new Feld.Option("loeschen", "settings.gewohnheiten.vergessen.loeschen"));
+        gewVergessen.zugriff = gewohnheitenVergessen();
+        l.add(gewVergessen);
         // Datenschutz Regel Nr. 2: Wetter über Open-Meteo nur mit Einwilligung (Position grob, ≈ 1 km)
         Feld wetter = new Feld("wetter.online", Feld.Typ.BOOL);
         wetter.gruppe = "system"; wetter.reihenfolge = 60; wetter.standard = false; wetter.nurLesendExtern = true;
@@ -556,6 +577,27 @@ public final class Katalog {
                 }
                 Map<String, Map<String, Object>> out = new HashMap<>();
                 out.put(at.greenchili.surfmate.analytics.Mitzaehlen.ABSCHNITT, v);
+                return out;
+            }
+        };
+    }
+
+    /**
+     * 0.1.22 gewohnheiten.vergessen: wirkt beim Speichern und liest sich immer als „behalten“. „loeschen“ setzt
+     * {@code gewohnheiten.vergessenAm}; die Laufzeit (Gewohnheiten.pflege) löscht daraufhin Log und Sperrliste.
+     */
+    static Feld.Zugriff gewohnheitenVergessen() {
+        return new Feld.Zugriff() {
+            public Object lese(JSONObject root) {
+                return "behalten";
+            }
+            public Map<String, Map<String, Object>> schreibe(Object wert, JSONObject root) {
+                Map<String, Map<String, Object>> out = new HashMap<>();
+                if ("loeschen".equals(wert)) {
+                    Map<String, Object> v = new HashMap<>();
+                    v.put("vergessenAm", System.currentTimeMillis());
+                    out.put(at.greenchili.surfmate.gewohnheiten.Gewohnheiten.ABSCHNITT, v);
+                }
                 return out;
             }
         };

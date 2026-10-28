@@ -670,6 +670,8 @@ public class BydEvent {
     }
 
     public static void bydEvent(BydVehicleData data) {
+        // 0.1.22 Gewohnheiten: Bedienung am Auto aus jedem Schnappschuss – vor der Sperre unten (auch ohne Automationen)
+        at.greenchili.surfmate.gewohnheiten.Gewohnheiten.beobachte(data);
         // Do nothing when no automations enabled — EXCEPT while the editor is asking for live
         // values. With nothing enabled, Automations.update() short-circuits and stores nothing,
         // so the whole state map was empty and every signal in the editor read "not reported yet

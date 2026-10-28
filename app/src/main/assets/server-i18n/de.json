@@ -2185,6 +2185,22 @@
         "title": "Ladekurven-Adresse",
         "help": "Wohin die Ladekurve geht. Nur ändern, wenn du einen eigenen Routenplaner betreibst."
       }
+    },
+    "gewohnheiten": {
+      "an": {
+        "title": "Gewohnheiten merken",
+        "help": "Panoptes merkt sich nur hier im Auto, was du oft gleich machst (z. B. jeden Morgen vorheizen), und kann dir später vorschlagen, es selbst zu machen. Nichts geht an einen Server."
+      },
+      "aufbewahrungTage": {
+        "title": "Gewohnheiten aufbewahren",
+        "help": "So viele Tage bleibt das Gemerkte im Auto, danach wird es gelöscht."
+      },
+      "vergessen": {
+        "title": "Gewohnheiten vergessen",
+        "help": "Löscht alles Gemerkte und alle abgelehnten Vorschläge. Schon angelegte Automationen bleiben.",
+        "behalten": "Behalten",
+        "loeschen": "Alles vergessen"
+      }
     }
   },
   "kartenquelle": {

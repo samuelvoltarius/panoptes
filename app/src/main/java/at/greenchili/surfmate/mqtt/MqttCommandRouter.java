@@ -53,12 +53,20 @@ public class MqttCommandRouter {
         this.connectionId = connectionId;
         this.echo = echo;
         this.exec = Executors.newSingleThreadExecutor(r -> {
-            Thread t = new Thread(r, "MqttControl-" + connectionId);
+            // 0.1.22 Gewohnheiten: Befehle über MQTT kommen von Home Assistant
+            Thread t = new Thread(() -> {
+                at.greenchili.surfmate.gewohnheiten.Herkunft.setze(at.greenchili.surfmate.gewohnheiten.Herkunft.HA);
+                r.run();
+            }, "MqttControl-" + connectionId);
             t.setDaemon(true);
             return t;
         });
         this.urgentExec = Executors.newSingleThreadExecutor(r -> {
-            Thread t = new Thread(r, "MqttControlUrgent-" + connectionId);
+            // 0.1.22 Gewohnheiten: Befehle über MQTT kommen von Home Assistant
+            Thread t = new Thread(() -> {
+                at.greenchili.surfmate.gewohnheiten.Herkunft.setze(at.greenchili.surfmate.gewohnheiten.Herkunft.HA);
+                r.run();
+            }, "MqttControlUrgent-" + connectionId);
             t.setDaemon(true);
             return t;
         });

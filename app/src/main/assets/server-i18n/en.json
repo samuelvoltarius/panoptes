@@ -2185,6 +2185,22 @@
         "title": "Charging curve address",
         "help": "Where the charging curve is sent. Only change this if you run your own route planner."
       }
+    },
+    "gewohnheiten": {
+      "an": {
+        "title": "Remember habits",
+        "help": "Panoptes remembers, only here in the car, what you often do the same way (e.g. preheating every morning) and can later offer to do it for you. Nothing is sent to a server."
+      },
+      "aufbewahrungTage": {
+        "title": "Keep habits for",
+        "help": "Number of days the remembered actions stay in the car before they are deleted."
+      },
+      "vergessen": {
+        "title": "Forget habits",
+        "help": "Deletes everything remembered and all declined suggestions. Automations already created stay.",
+        "behalten": "Keep",
+        "loeschen": "Forget everything"
+      }
     }
   },
   "kartenquelle": {

@@ -64,8 +64,22 @@ public final class LadeplanApiHandler {
                 HttpResponse.sendJson(out, 400, fehler("aktion_ungueltig"));
                 return true;
         }
+        // 0.1.22 Gewohnheiten: Ladeplan-Änderung mitschreiben (nur mitgeschrieben, nie vorgeschlagen)
+        try {
+            JSONObject w = new JSONObject();
+            if (e != null) w.put("felder", new org.json.JSONArray(new java.util.TreeSet<>(iterierbar(e.keys()))));
+            if (!b.optString("aktion", "").isEmpty()) w.put("aktion", b.optString("aktion"));
+            if (w.length() > 0) at.greenchili.surfmate.gewohnheiten.Gewohnheiten.melde(at.greenchili.surfmate.gewohnheiten.Aktionen.LADEPLAN, w);
+        } catch (Exception ignored) {
+        }
         HttpResponse.sendJson(out, 200, d.status().toString());
         return true;
+    }
+
+    private static java.util.List<String> iterierbar(java.util.Iterator<String> it) {
+        java.util.List<String> l = new java.util.ArrayList<>();
+        while (it.hasNext()) l.add(it.next());
+        return l;
     }
 
     private static String fehler(String grund) {
