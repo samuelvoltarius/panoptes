@@ -245,6 +245,8 @@
     "kopplung_ablehnen": "Ablehnen",
     "neue_kopplung_titel": "Neues Gerät verbunden: {0}",
     "neue_kopplung_text": "Warst du das nicht? In Panoptes unter System → Gekoppelte Geräte entfernen.",
+    "neue_kopplung_band_titel": "Neues Gerät: {0}",
+    "neue_kopplung_band_text": "Nicht du? Unter System entfernen",
     "blitzer_titel": "Blitzer in {0} m",
     "blitzer_tempo": "Tempolimit {0} km/h",
     "kopplung_titel_ha": "Home Assistant „{0}“ will sich verbinden",
@@ -352,7 +354,9 @@
     },
     "cloud_uebergabe_titel": "„{0}“ will die BYD-Cloud übergeben",
     "cloud_uebergabe_text": "Prüfzahl {0}",
-    "gewohnheit_probelauf": "Probelauf: Jetzt hätte ich deine Gewohnheit ausgeführt. Passt das?"
+    "gewohnheit_probelauf": "Probelauf: Jetzt hätte ich deine Gewohnheit ausgeführt. Passt das?",
+    "weiteres_geraet_titel": "Cockpit „{0}“ möchte ein Handy verbinden",
+    "weiteres_geraet_text": "Prüfzahl {0}"
   },
   "parking": {
     "notify": {
@@ -388,7 +392,10 @@
       "status_on": "⛺ *Camping ist an*",
       "status_off": "⛺ *Camping ist aus.* Einschalten nur im Stand (Gang P).",
       "battery": "Akku {0} % · Grenze {1} %",
-      "interval": "Heizen: alle {0} min für {1} min · Stufe {2}",
+      "interval": "Heizen: alle {0} min für {1} min · {2}",
+      "stufe_heizen": "Heizen Stufe {0}",
+      "stufe_kuehlen": "Kühlen Stufe {0}",
+      "stufe_neutral": "Neutral",
       "lasts": "Heizung reicht bis {0}",
       "trial": "_Probelauf: Panoptes heizt in dieser Version noch nicht._",
       "not_parked": "Camping geht nur im Stand (Gang P).",
@@ -764,7 +771,11 @@
       "abgelaufen": "⌛ Die Anfrage ist abgelaufen.",
       "fehler": "⚠️ Panoptes ist gerade nicht erreichbar. Bitte im Web erlauben.",
       "anfrage_ha": "🔗 *Home Assistant „{0}“ will sich verbinden*\nPrüfzahl: *{1}*\n\nStimmt die Zahl mit der in Home Assistant überein? Die Anfrage gilt 2 Minuten.",
-      "anfrage_handy": "📱 *Handy „{0}“ will sich verbinden*\nPrüfzahl: *{1}*\n\nStimmt die Zahl mit der in der App überein? Die Anfrage gilt 2 Minuten."
+      "anfrage_handy": "📱 *Handy „{0}“ will sich verbinden*\nPrüfzahl: *{1}*\n\nStimmt die Zahl mit der in der App überein? Die Anfrage gilt 2 Minuten.",
+      "neu": "📱 *Neues Gerät verbunden: {0}*\nWarst du das nicht? Dann tippe auf Entfernen.",
+      "knopf_entfernen": "🗑 Entfernen",
+      "entfernt": "🗑 Entfernt – das Gerät ist nicht mehr verbunden.",
+      "entfernen_abgelaufen": "⌛ Der Knopf ist abgelaufen. Bitte in Panoptes unter System → Gekoppelte Geräte entfernen."
     },
     "health": {
       "repariert": "🩺 *Wächter war {0} min aus – repariert.* Panoptes hat sich selbst wieder scharf geschaltet.",
@@ -832,7 +843,8 @@
       "schluessel": "🔑 Handy „{0}“ hat einen Aufsperr-Schlüssel hinterlegt. Warst du das nicht, entkoppel das Gerät in Panoptes.",
       "aufsperren_ok": "🔓 *Aufgesperrt* über Handy „{0}“.",
       "aufsperren_unbestaetigt": "🔓 Aufsperr-Befehl über Handy „{0}“ gesendet – die Bestätigung vom Auto fehlt.",
-      "aufsperren_abgelehnt": "🔒 Aufsperren über Handy „{0}“ abgelehnt ({1})."
+      "aufsperren_abgelehnt": "🔒 Aufsperren über Handy „{0}“ abgelehnt ({1}).",
+      "wallbox": "🔌 Wallbox vom Handy „{0}“ gesteuert: {1}"
     },
     "zurueck": {
       "text": "🚗 Willkommen zurück am Auto. Es stand {0}.",
@@ -849,6 +861,11 @@
       "abgelehnt": "❌ Abgelehnt.",
       "uebernommen_ok": "☁️ BYD-Cloud von „{0}“ übernommen und geprüft – Panoptes kann jetzt auch bei ausgeschaltetem Auto.",
       "uebernommen_nicht_geprueft": "☁️ BYD-Cloud von „{0}“ übernommen, die Prüfung ist aber fehlgeschlagen. Bitte in Panoptes unter System → BYD-Konto nachsehen."
+    },
+    "weiteres_geraet": {
+      "anfrage": "📱 *EV-Cockpit „{0}“ möchte ein Handy verbinden*\nPrüfzahl: *{1}*\n\nStimmt die Zahl mit der im Cockpit überein? Erlaubst du, zeigt das Cockpit einen Code zum Scannen. Die Anfrage gilt 5 Minuten.",
+      "erlaubt": "✅ Erlaubt – das Cockpit zeigt jetzt den Code fürs Handy.",
+      "abgelehnt": "❌ Abgelehnt."
     }
   },
   "vehicle_control": {
@@ -1078,9 +1095,9 @@
     "temperature_description": "Die gemessene Temperatur im Auto in °C – nur mit echtem Innenraumfühler. Viele BYD haben keinen (z. B. Dolphin Surf: der Wert des Klimamoduls ist der eingestellte Sollwert). Dann ist die Bedingung nie erfüllt. Außentemperatur und eingestellte Klimatemperatur sind eigene Werte.",
     "outside_temperature": "Außentemperatur",
     "outside_temperature_description": "Die Temperatur draußen in °C. Sie kommt vom Außensensor, sonst vom örtlichen Wetter. Der Innensensor wird nie benutzt.",
-    "celsius": "Celsius",
-    "ac_setpoint": "Eingestellte Klimatemperatur",
-    "ac_setpoint_description": "Die Temperatur, auf die die Klimaanlage EINGESTELLT ist (der Regler), nicht die echte Temperatur im Auto. Immer in °C, auch wenn das Auto °F zeigt, damit eine Regel in jedem Auto gleich funktioniert. Nicht verfügbar, wenn das Auto sie nicht meldet.",
+    "celsius": "Wert 17–33 (25 = Neutral)",
+    "ac_setpoint": "Eingestellte Klima-Stufe",
+    "ac_setpoint_description": "Worauf die Klimaanlage EINGESTELLT ist (der Regler), nicht die echte Temperatur im Auto. Wert 17–33: am Dolphin Surf ist das der Balken im Display, 17 = stärkstes Kühlen, 25 = Mitte (Neutral), 26–33 = Heizen Stufe 1–8. Nicht verfügbar, wenn das Auto ihn nicht meldet.",
     "set_ac": "Klimaanlage ein/aus",
     "set_ac_description": "Schaltet die Klimaanlage ein oder aus. Geht nicht, solange das Auto aus ist. Mit „Ausschalten nach“ geht sie nach der gewählten Zeit von selbst aus. So leert sie den Akku nicht, wenn du sie vergisst, etwa beim Vorheizen oder Lüften. „Kein Timer“ setzt hier keinen Timer. Einen laufenden Timer stoppst du mit der Aktion „Klima-Ausschalt-Timer“.",
     "remote_climate_schedule": "Fernklima planen",
@@ -1108,13 +1125,13 @@
     "ac_auto_off_120": "2 Std.",
     "set_ac_auto_off": "Klima-Ausschalt-Timer",
     "set_ac_auto_off_description": "Schaltet die Klimaanlage nach einer festgelegten Zeit von selbst aus. Jetzt ändert sich noch nichts. Mit „Kein Timer“ stoppst du einen Timer, der schon läuft. Läuft diese Aktion noch einmal, startet der Timer neu, es kommt kein zweiter dazu. Schaltest du die Klimaanlage von Hand aus, endet er ebenfalls. Der Timer übersteht einen Neustart. Die Klimaanlage geht also auch nach dem Abstellen des Autos noch aus.",
-    "set_ac_temp": "Klimatemperatur einstellen",
-    "set_ac_temp_description": "Stellt die Temperatur der Klimaanlage ein. Geht nicht, solange das Auto aus ist.",
-    "step_ac_temp": "Klimatemperatur anpassen",
-    "step_ac_temp_description": "Macht die Klimatemperatur um ein Grad wärmer oder kühler als jetzt, statt einen festen Wert zu setzen. Nutzt die Einheit, die das Auto zeigt (°C oder °F), und hört bei der niedrigsten und höchsten Einstellung auf. Geht nicht, solange das Auto aus ist.",
+    "set_ac_temp": "Klima-Stufe einstellen",
+    "set_ac_temp_description": "Stellt die Klima-Stufe ein (17–33, 25 = Neutral, ab 26 heizt sie). Geht nicht, solange das Auto aus ist.",
+    "step_ac_temp": "Klima-Stufe anpassen",
+    "step_ac_temp_description": "Macht die Klima eine Stufe wärmer oder kühler als jetzt, statt einen festen Wert zu setzen. Hört bei der niedrigsten und höchsten Stufe auf. Geht nicht, solange das Auto aus ist.",
     "step_direction": "Änderung",
-    "step_warmer": "1 Grad wärmer",
-    "step_cooler": "1 Grad kühler",
+    "step_warmer": "1 Stufe wärmer",
+    "step_cooler": "1 Stufe kühler",
     "speed": "Geschwindigkeit",
     "set_ac_fan": "Gebläsestufe einstellen",
     "set_ac_fan_description": "Stellt ein, wie stark das Gebläse der Klimaanlage bläst. Geht nicht, solange das Auto aus ist.",

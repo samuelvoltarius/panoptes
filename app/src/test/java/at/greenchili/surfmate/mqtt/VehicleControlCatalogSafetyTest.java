@@ -159,11 +159,14 @@ public class VehicleControlCatalogSafetyTest {
     public void cloudOnlyClimateAndSmartChargeControlsHaveStrictMqttPayloads() throws Exception {
         VehicleControlCatalog.ControlAction climate = VehicleControlCatalog
                 .get("remote_climate_start")
-                .toAction(null, "{\"temp\":15,\"durationMinutes\":25}", null);
+                .toAction(null, "{\"temp\":17,\"durationMinutes\":25}", null);
         assertNotNull(climate);
         VehicleCommandRouter.ClimateOnCommand climateCommand =
                 (VehicleCommandRouter.ClimateOnCommand) climate.command;
-        assertEquals(15.0, climateCommand.tempCelsius, 0.0);
+        assertEquals(17.0, climateCommand.tempCelsius, 0.0);
+        // 0.1.26: 15 gibt es nicht mehr (SDK 17..33 = Stufe 1..17)
+        assertNull(VehicleControlCatalog.get("remote_climate_start")
+                .toAction(null, "{\"temp\":15,\"durationMinutes\":25}", null));
         assertEquals(25, climateCommand.remoteDurationMinutes);
         assertNull(VehicleControlCatalog.get("remote_climate_start")
                 .toAction(null, "{\"temp\":15,\"durationMinutes\":12}", null));
@@ -171,7 +174,7 @@ public class VehicleControlCatalogSafetyTest {
         VehicleControlCatalog.ControlAction create = VehicleControlCatalog
                 .get("remote_climate_schedule")
                 .toAction(null, "{\"action\":\"create\",\"bookingTime\":\"" + future
-                        + "\",\"temp\":15,\"durationMinutes\":25}", null);
+                        + "\",\"temp\":33,\"durationMinutes\":25}", null);
         assertNotNull(create);
         assertTrue(create.command instanceof VehicleCommandRouter.ClimateScheduleCommand);
         VehicleCommandRouter.ClimateScheduleCommand createCommand =

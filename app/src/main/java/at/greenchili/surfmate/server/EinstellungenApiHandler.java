@@ -133,13 +133,15 @@ public final class EinstellungenApiHandler {
             boolean erlauben = pathOnly.endsWith("/erlauben");
             String ref = pathOnly.substring("/api/kopplung/anfrage/".length(), pathOnly.lastIndexOf('/'));
             // 0.1.19: {"aufsperren":true} beim Erlauben einer Handy-Anfrage (nur Login/lokal, wie /api/kopplung/rechte)
-            boolean aufsperren = false;
+            boolean aufsperren = false, wallbox = false;
             try {
-                aufsperren = erlauben && new JSONObject(body == null || body.isEmpty() ? "{}" : body).optBoolean("aufsperren", false);
+                JSONObject b = new JSONObject(body == null || body.isEmpty() ? "{}" : body);
+                aufsperren = erlauben && b.optBoolean("aufsperren", false);
+                wallbox = erlauben && b.optBoolean("wallbox", false);   // 0.1.25 Recht „wallbox“ gleich beim Koppeln
             } catch (Exception ignored) {
             }
             at.greenchili.surfmate.auth.KopplungsAnfragen.Entscheid e =
-                    at.greenchili.surfmate.auth.KopplungsAnfragen.get().entscheiden(ref, erlauben, aufsperren, System.currentTimeMillis());
+                    at.greenchili.surfmate.auth.KopplungsAnfragen.get().entscheiden(ref, erlauben, aufsperren, wallbox, System.currentTimeMillis());
             JSONObject res = new JSONObject();
             res.put("ok", e == at.greenchili.surfmate.auth.KopplungsAnfragen.Entscheid.OK);
             int code = 200;
@@ -150,6 +152,22 @@ public final class EinstellungenApiHandler {
                 default: res.put("grund", "abgelaufen"); code = 410; break;
             }
             HttpResponse.sendJson(out, code, res.toString());
+            return true;
+        }
+        // 0.1.25 Telegram [Entfernen] an „Neues Gerät verbunden“: Einmal-Griff (24 h) statt Kopplungs-id, nur Login
+        if (pathOnly.startsWith("/api/kopplung/entfernen/") && method.equals("POST")) {
+            if (AuthMiddleware.isExternRequest()) return verboten(out);
+            String kid = at.greenchili.surfmate.auth.NeueKopplungMeldung.einloesen(
+                    pathOnly.substring("/api/kopplung/entfernen/".length()), System.currentTimeMillis());
+            JSONObject res = new JSONObject();
+            if (kid == null) {
+                res.put("ok", false).put("grund", "abgelaufen");
+                HttpResponse.sendJson(out, 410, res.toString());
+                return true;
+            }
+            int r = Kopplungen.get().widerrufen(kid);
+            res.put("ok", r == Kopplungen.WIDERRUFEN || r == Kopplungen.UNBEKANNT);   // schon weg = Ziel erreicht
+            HttpResponse.sendJson(out, r == Kopplungen.WIDERRUFEN || r == Kopplungen.UNBEKANNT ? 200 : 500, res.toString());
             return true;
         }
         if (pathOnly.equals("/api/kopplung/widerrufen") && method.equals("POST")) {

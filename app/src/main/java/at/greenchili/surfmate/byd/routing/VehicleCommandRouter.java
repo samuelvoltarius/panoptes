@@ -539,8 +539,8 @@ public final class VehicleCommandRouter {
         }
         public String name() { return "climate-on"; }
         public Capability cloudCapability() {
-            // OPENAIR accepts whole 15..31 C values. Do not use it as a
-            // fallback when it would clamp a valid local 32/33 C request.
+            // 0.1.26: Surf (level model) takes all 17 levels (SDK 17..33, raw = level); other models keep
+            // pyBYD's 15..31 °C. Whole values only; never clamp a valid local request into the cloud.
             return isCloudTemperatureRepresentable() && isCloudDurationRepresentable()
                     ? Capability.AVAILABLE : Capability.NONE;
         }
@@ -591,7 +591,8 @@ public final class VehicleCommandRouter {
         private boolean isCloudTemperatureRepresentable() {
             return !Double.isNaN(tempCelsius) && !Double.isInfinite(tempCelsius)
                     && tempCelsius == Math.rint(tempCelsius)
-                    && tempCelsius >= 15D && tempCelsius <= 31D;
+                    && tempCelsius >= at.greenchili.surfmate.byd.KlimaStufe.cloudSdkMin()
+                    && tempCelsius <= at.greenchili.surfmate.byd.KlimaStufe.cloudSdkMax();
         }
 
         private boolean isSdkTemperatureRepresentable() {
@@ -647,9 +648,9 @@ public final class VehicleCommandRouter {
     /**
      * 0.1.16 (Koordination 23.10.2026): ausdrückliches Fernklima über die BYD-Cloud ({@code OPENAIR}), ohne
      * lokale Seite. Nur bei frischem „Auto aus“ ({@link CloudPowerGate}, ≤ 180 s, ACC nicht an); bei wachem
-     * Auto verweigert ({@code CLOUD_ONLY} läuft durch das Gate). Temperatur 15–31 °C ganzzahlig, Dauer
-     * 10/15/20/25/30 min. Die Zuordnung der Cloud-Temperatur zur Strichskala des Surf (25 = Mitte,
-     * 26–33 = Striche 1–8) ist noch nicht gemessen.
+     * Auto verweigert ({@code CLOUD_ONLY} läuft durch das Gate). Sollwert ganzzahlig in der SDK-Skala: am Surf
+     * 17–33 (= Stufe 1–17, Cloud-Roh = Stufe, 0.1.26 – Annahme, Messung folgt), sonst 15–31 °C (pyBYD).
+     * Dauer 10/15/20/25/30 min.
      */
     public static final class ClimateRemoteOnCommand extends VehicleCommand {
         public final int tempCelsius;
@@ -669,7 +670,8 @@ public final class VehicleCommandRouter {
         }
         public CloudCapabilities.Feature cloudFeature() { return CloudCapabilities.Feature.CLIMATE; }
         public boolean gueltig() {
-            return tempCelsius >= 15 && tempCelsius <= 31
+            return tempCelsius >= at.greenchili.surfmate.byd.KlimaStufe.cloudSdkMin()
+                    && tempCelsius <= at.greenchili.surfmate.byd.KlimaStufe.cloudSdkMax()
                     && (dauerMinuten == 10 || dauerMinuten == 15 || dauerMinuten == 20
                         || dauerMinuten == 25 || dauerMinuten == 30);
         }
@@ -3080,6 +3082,8 @@ public final class VehicleCommandRouter {
                                               String commandType, JSONObject extra) throws Exception {
         BydCloudClient.CloudCommandResult r =
                 client.executeRemoteCommandWithCode(vin, commandType, extra, true);
+        // 0.1.26: Sollwert, der an BYD ging, samt Umrechnung ins Protokoll (nur OPENAIR/CLOSEAIR)
+        at.greenchili.surfmate.byd.cloud.KlimaRohProtokoll.befehl(commandType, extra, r.success, r.code);
         if (r.success) return CloudOutcome.success();
         if (BydCloudClient.DRIVING_SAFETY_BLOCKED_CODE.equals(r.code)) {
             return CloudOutcome.blockedDriving();

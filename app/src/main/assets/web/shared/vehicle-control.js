@@ -2378,35 +2378,35 @@ var VC = {
             });
         });
 
-        // Battery preconditioning heat — cloud-only in both directions. The state
-        // now comes from the cloud snapshot via /api/vehicle/state, so the tile
-        // reflects reality across reloads; previously it was write-only, and after
-        // a reload every tap re-sent "on" with no way to switch it off.
-        this.bindBtn('btnBatteryHeat', function() {
+        // Battery preconditioning heat — cloud-only in both directions. 0.1.26: two
+        // buttons (on / off) instead of a toggle, so "off" always works, even while
+        // the state is unknown (no fresh cloud snapshot). The state from
+        // /api/vehicle/state only lights the "on" tile.
+        function batteryHeat(next, btnId) {
             if (!self.requireCloud()) return;
-            var current = !!(self.vehicleState && self.vehicleState.batteryHeat);
-            var next = !current;
             var revision = ++self._batteryHeatRevision;
             self._batteryHeatPending = revision;
-            self.setPending('btnBatteryHeat', true);
+            self.setPending(btnId, true);
+            var label = BYD.i18n.t(next ? 'vehicle_control.battery_heat_on' : 'vehicle_control.battery_heat_off');
             self.apiPost('/api/vehicle/battery-heat', { enabled: next }).then(function(result) {
                 if (revision !== self._batteryHeatRevision) return;
                 self._batteryHeatPending = 0;
-                self.setPending('btnBatteryHeat', false);
+                self.setPending(btnId, false);
                 if (result.success) {
                     if (!self.vehicleState) self.vehicleState = {};
                     self.vehicleState.batteryHeat = next;
                     self.updateBatteryHeatUI();
                 }
-                self.toastFromResult(result, BYD.i18n.t('vehicle_control.battery_heat_label'), null);
+                self.toastFromResult(result, label, null);
             }).catch(function(e) {
                 if (revision !== self._batteryHeatRevision) return;
                 self._batteryHeatPending = 0;
-                self.setPending('btnBatteryHeat', false);
-                self.toastFromResult({ success: false, error: e.message }, null,
-                    BYD.i18n.t('vehicle_control.battery_heat_label'));
+                self.setPending(btnId, false);
+                self.toastFromResult({ success: false, error: e.message }, null, label);
             });
-        });
+        }
+        this.bindBtn('btnBatteryHeat', function() { batteryHeat(true, 'btnBatteryHeat'); });
+        this.bindBtn('btnBatteryHeatOff', function() { batteryHeat(false, 'btnBatteryHeatOff'); });
 
         // Per-window preset levels — backend runs closed-loop to drive the
         // window to the target % and auto-stops. UI just sends the target.
@@ -2939,6 +2939,15 @@ var VC = {
             self.triggerSonarVFX(0, 0.6, 0, new THREE.Color(t < 20 ? 0x38BDF8 : 0x00D4AA));
             submitClimateValue('temp', t, { action: 'set_temp', zone: 1, temp: t });
         });
+        // 0.1.26: Neutral = Mitte des Balkens (SDK 25), heizt und kühlt nicht
+        this.bindBtn('btnTempNeutral', function() {
+            submitClimateValue('temp', 25, { action: 'set_temp', zone: 1, temp: 25 });
+        });
+        // Modell-Anzeige (Stufe/Grad) kam später aus /api/system/capabilities → neu zeichnen
+        document.addEventListener('panoptes:klima-anzeige', function() {
+            self.updateClimateUI();
+            if (self.updateClimateScheduleUI) self.updateClimateScheduleUI();
+        });
         this.bindBtn('btnFanUp', function() {
             var f = Math.min(7, self.vehicleState.acFan + 1);
             // Multiple sonar rings for higher fan — more rings = more wind
@@ -2963,7 +2972,8 @@ var VC = {
             this.vehicleState.climateSchedule = {
                 bookingId: null,
                 time: '07:30',
-                temp: 22,
+                // 0.1.26: Standard nach Außentemperatur (Koordination 28.10.), nicht mehr fest 22
+                temp: window.PanoptesKlimaStufe ? PanoptesKlimaStufe.vorklimaSdk(this.vehicleState.aussenC) : 22,
                 durationMinutes: 20,
                 supported: null,
                 // Cloud accepted a booking but reported no id for it — see the note
@@ -3000,14 +3010,17 @@ var VC = {
         this.bindBtn('btnBookingTempUp', function() {
             if (self._climateSchedulePending) return;
             var s = self.vehicleState.climateSchedule;
-            s.temp = Math.min(31, (s.temp || 22) + 1);
+            // 0.1.26: Surf alle 17 Stufen (SDK 17..33), andere Modelle wie bisher 15..31 (pyBYD)
+            var stufenB = window.PanoptesKlimaStufe && PanoptesKlimaStufe.stufen();
+            s.temp = Math.min(stufenB ? 33 : 31, (s.temp || 22) + 1);
             self._climateScheduleDirty = true;
             self.updateClimateScheduleUI();
         });
         this.bindBtn('btnBookingTempDown', function() {
             if (self._climateSchedulePending) return;
             var s = self.vehicleState.climateSchedule;
-            s.temp = Math.max(15, (s.temp || 22) - 1);
+            var stufenK = window.PanoptesKlimaStufe && PanoptesKlimaStufe.stufen();
+            s.temp = Math.max(stufenK ? 17 : 15, (s.temp || 22) - 1);
             self._climateScheduleDirty = true;
             self.updateClimateScheduleUI();
         });
@@ -3691,6 +3704,8 @@ var VC = {
                         && data.climate.fanLevel >= 1 && data.climate.fanLevel <= 7) {
                     self.vehicleState.acFan = data.climate.fanLevel;
                 }
+                // 0.1.26: Außentemperatur für den Vorklima-Standard der Buchung (statt fest 22)
+                if (typeof data.climate.outsideTempC === 'number') self.vehicleState.aussenC = data.climate.outsideTempC;
                 if (climateTempRevision === self._climateTempRevision
                         && !self._climatePending.temp
                         && data.climate.setpointDriver !== undefined
@@ -4244,19 +4259,29 @@ var VC = {
     },
 
     updateClimateUI: function() {
+        // 0.1.26: Sollwert als Stufe wie im Display (nie \u00B0C) plus Balken mit 17 Strichen
         var tempEl = document.getElementById('acTemp');
-        if (tempEl) tempEl.textContent = this.vehicleState.acTemp + '\u00B0';
+        if (tempEl && window.PanoptesKlimaStufe) {
+            tempEl.textContent = PanoptesKlimaStufe.text(this.vehicleState.acTemp);
+            tempEl.removeAttribute('data-i18n');
+            PanoptesKlimaStufe.balken(document.getElementById('acStufeBalken'), this.vehicleState.acTemp);
+            // „Neutral“ gibt es nur auf der Stufen-Skala; sonst einmaliger Hinweis „Stufen statt Grad? melden“
+            var neutral = document.getElementById('btnTempNeutral');
+            if (neutral) neutral.hidden = !PanoptesKlimaStufe.stufen();
+            PanoptesKlimaStufe.hinweis(document.getElementById('klimaStufeHinweis'));
+        }
 
         var fanEl = document.getElementById('acFan');
         if (fanEl) fanEl.textContent = this.vehicleState.acFan;
 
-        // AC On button highlights when AC is on; AC Off button highlights when AC
-        // is off. Both stay visible \u2014 neither hides \u2014 so the user can always tap
-        // the opposite state regardless of where the live state currently is.
+        // Both buttons stay visible \u2014 neither hides \u2014 so the user can always tap
+        // either one regardless of where the live state currently is.
         var btnOn = document.getElementById('btnAcOn');
         var btnOff = document.getElementById('btnAcOff');
+        // 0.1.26: only "Klima an" shows the state; "Klima aus" is an action and never lit
+        // (lit while the climate was off, it read like "this is running").
         if (btnOn) { if (this.vehicleState.acOn) btnOn.classList.add('on'); else btnOn.classList.remove('on'); }
-        if (btnOff) { if (!this.vehicleState.acOn) btnOff.classList.add('on'); else btnOff.classList.remove('on'); }
+        if (btnOff) btnOff.classList.remove('on');
 
         if (this.vehicleState.acOn) {
             this.setStateGlow('ac', { x: 0, y: 0.5, z: 0.3 }, 0x38BDF8);
@@ -4298,7 +4323,7 @@ var VC = {
         if (this.vehicleState.steeringHeat === true) btn.classList.add('on2');
     },
 
-    /** Battery preconditioning tile. Unlit for both "off" and "not yet read". */
+    /** Battery preconditioning: only the "on" tile is lit, and only when known on. */
     updateBatteryHeatUI: function() {
         var btn = document.getElementById('btnBatteryHeat');
         if (!btn) return;
@@ -4688,9 +4713,11 @@ var VC = {
             timeInput.disabled = pending;
         }
 
+        // 0.1.26: Buchung läuft über die Cloud – bis die Cloud-Skala gemessen ist, nur Heizen/Kühlen/Neutral
         var tempReadout = document.getElementById('climateBookingTemp');
-        if (tempReadout) {
-            tempReadout.textContent = (typeof s.temp === 'number' ? s.temp : 22) + '°';
+        if (tempReadout && window.PanoptesKlimaStufe) {
+            tempReadout.textContent = PanoptesKlimaStufe.text(typeof s.temp === 'number' ? s.temp : 22, { ohneStufe: true });
+            tempReadout.removeAttribute('data-i18n');
         }
         var tempUp = document.getElementById('btnBookingTempUp');
         var tempDown = document.getElementById('btnBookingTempDown');
@@ -4719,9 +4746,10 @@ var VC = {
         if (note) {
             if (s.bookingId && s.reportedTime) {
                 note.style.display = '';
+                var gebucht = typeof s.reportedTemp === 'number' ? s.reportedTemp : s.temp;
                 note.textContent = BYD.i18n.t('vehicle.precondition_booked', {
                     time: s.reportedTime,
-                    temp: (typeof s.reportedTemp === 'number' ? s.reportedTemp : s.temp),
+                    stufe: window.PanoptesKlimaStufe ? PanoptesKlimaStufe.text(gebucht, { ohneStufe: true }) : '',
                     minutes: s.reportedDuration || minutes
                 });
             } else if (s.bookingId) {
@@ -4822,14 +4850,14 @@ var VC = {
                     s.reportedTime = self._epochSecondsToLocalTime(when);
                     s.time = s.reportedTime;
                 }
-                // Wire temperature is the raw HVAC scale (15C = 1), same as OPENAIR.
+                // Wire value is the raw HVAC scale, same as OPENAIR. 0.1.26: raw = level 1..17
+                // (assumption, measurement pending), SDK = level + 16 (was raw + 14 up to 0.1.25).
                 // Only the primary spelling is verified to be raw; the alternates could
-                // be plain Celsius, and the two domains overlap at 15/16/17. Accept the
-                // raw decode only from the verified key so an alternate spelling can
-                // never turn a 17C booking into 31C.
+                // be plain setpoints. Accept the raw decode only from the verified key.
                 var rawTemp = self._positiveInteger(first.mainSettingTemp);
                 if (rawTemp !== null && rawTemp >= 1 && rawTemp <= 17) {
-                    s.reportedTemp = rawTemp + 14;
+                    var sdkB = window.PanoptesKlimaStufe ? PanoptesKlimaStufe.sdkAusCloudRoh(rawTemp) : rawTemp + 14;
+                    s.reportedTemp = sdkB > 0 ? sdkB : rawTemp + 14;
                     s.temp = s.reportedTemp;
                 }
                 var span = self._positiveInteger(

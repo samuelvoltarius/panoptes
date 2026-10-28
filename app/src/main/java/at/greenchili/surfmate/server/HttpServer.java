@@ -1493,6 +1493,7 @@ public class HttpServer {
         }
         // BYD-Cloud vom EV-Cockpit übernehmen (CLOUD_UEBERGABE_VERTRAG, 0.1.21)
         if (path.startsWith("/api/cloud-uebergabe") && CloudUebergabeApiHandler.handle(method, path, body, out)) return true;
+        if (path.startsWith("/api/kopplung/weiteres-geraet") && WeiteresGeraetApiHandler.handle(method, path, body, out)) return true;
 
         // H10 „Was ist neu“ + Firmware-Hinweis, H7 Monatsbericht
         if (path.startsWith("/api/neuigkeiten")

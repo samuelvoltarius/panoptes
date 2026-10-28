@@ -125,6 +125,9 @@ public final class ExternGuard {
         if (q >= 0) p = p.substring(0, q);
         if (p.contains("..") || p.contains("//")) return false;
         if ("/api/cloud-uebergabe/anfrage".equals(p)) return "POST".equals(method);
+        // 0.1.25 „weiteres Gerät koppeln“ (KOPPLUNG_WEITERES_GERAET_VERTRAG): Anfrage + Status; Entscheiden nie
+        if ("/api/kopplung/weiteres-geraet".equals(p)) return "POST".equals(method);
+        if (p.matches("/api/kopplung/weiteres-geraet/r-[0-9a-f]{16}")) return "GET".equals(method);
         return p.matches("/api/cloud-uebergabe/r-[0-9a-f]{16}") && ("GET".equals(method) || "POST".equals(method));
     }
 

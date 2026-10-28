@@ -298,8 +298,12 @@ public final class TelemetryFieldCatalog {
         add("climate_on",          "Climate",             BINARY, "running", null, null, "mdi:air-conditioner", false, 0);
         add("consumption_avg",     "Consumption (average)", SENSOR, null, "measurement", "kWh/100 km", "mdi:lightning-bolt", false, 0.1);
         add("consumption_last_trip", "Consumption (last trip)", SENSOR, null, "measurement", "kWh/100 km", "mdi:lightning-bolt", true, 0.1);
-        add("climate_setpoint",    "Climate Setpoint",    SENSOR, "temperature", "measurement", "°C", "mdi:thermometer", true, 0);
-        add("climate_setpoint_passenger", "Climate Setpoint Passenger", SENSOR, "temperature", "measurement", "°C", "mdi:thermometer", true, 0);
+        // 0.1.26: am Surf ist der Sollwert eine Stufe (17 = Kühlen 8, 25 = Neutral, 33 = Heizen 8), keine Temperatur –
+        // darum ohne °C; der Zahlenwert bleibt für die HA-Klima-Entität, der Text steht in climate_setpoint_stufe
+        add("climate_setpoint",    "Climate Setpoint (level 17-33, not a temperature)", SENSOR, null, "measurement", null, "mdi:thermostat", true, 0);
+        add("climate_setpoint_passenger", "Climate Setpoint Passenger (level 17-33, not a temperature)", SENSOR, null, "measurement", null, "mdi:thermostat", true, 0);
+        add("climate_setpoint_stufe", "Climate Level",     SENSOR, null, null, null, "mdi:thermostat", true, 0);
+        add("climate_setpoint_stufe_passenger", "Climate Level Passenger", SENSOR, null, null, null, "mdi:thermostat", true, 0);
 
         // ---------- Arrays / time: present but not mapped to entities ----------
         add("door_lock",            "Door Lock",            NONE, null, null, null, null, true, 0);

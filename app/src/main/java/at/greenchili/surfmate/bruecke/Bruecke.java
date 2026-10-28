@@ -38,6 +38,8 @@ public final class Bruecke {
         int postfachLoeschen(String server, String p, String g);
         int zugangHinzu(String server, String p, String g, String gHandyHash);
         int zugangWeg(String server, String p, String g, String gHandyHash);
+        /** 0.1.25 Anklopfen: sha256(k) beim Brücken-Server anmelden (204). */
+        default int klopfAnmelden(String server, String p, String g, String kHash) { return -1; }
     }
 
     /** Kopplungen-Sicht: gültige Handy-Kopplung? */
@@ -301,6 +303,88 @@ public final class Bruecke {
         if (e != null && e.optLong("bis", 0) <= jetzt) einmalWeg();
     }
 
+    // ------------------------------------------------------------------ 0.1.25 Tagesgrenze Kamera-Daten (BRUECKE_MEDIEN §5)
+
+    /** Erlaubte Einstellungen in MB pro Tag (0 = keine Kamera-Daten übers Internet). Standard 500. */
+    public static final int[] MEDIEN_STUFEN_MB = {0, 100, 250, 500, 1000, 2000};
+    static final int MEDIEN_STANDARD_MB = 500;
+    private static final long MB = 1024L * 1024L;
+    private long medienTag = -1, medienHeute, medienGespeichert;
+
+    public synchronized int medienTagMb() { return z.optInt("medienTagMb", MEDIEN_STANDARD_MB); }
+
+    public synchronized boolean medienTagMbSetzen(int mb) {
+        boolean erlaubt = false;
+        for (int x : MEDIEN_STUFEN_MB) erlaubt |= x == mb;
+        if (!erlaubt) return false;
+        try { z.put("medienTagMb", mb); } catch (Exception e) { return false; }
+        return platte.speichere(z);
+    }
+
+    private void medienTagPruefen(long jetzt) {
+        long tag = jetzt / 86_400_000L;
+        if (medienTag == tag) return;
+        JSONObject m = z.optJSONObject("medienHeute");
+        medienTag = tag;
+        medienHeute = m != null && m.optLong("tag", -1) == tag ? m.optLong("bytes", 0) : 0;
+        medienGespeichert = medienHeute;
+    }
+
+    /** Kamera-Daten über die Brücke zählen; false = Tagesgrenze erreicht (n = 0: nur prüfen). */
+    public synchronized boolean medienVerbrauchen(long n, long jetzt) {
+        medienTagPruefen(jetzt);
+        long grenze = medienTagMb() * MB;
+        if (medienHeute + n > grenze || (n == 0 && medienHeute >= grenze)) return false;
+        medienHeute += n;
+        if (medienHeute - medienGespeichert >= 10 * MB) {   // nicht bei jedem Stück auf die Platte
+            try {
+                z.put("medienHeute", new JSONObject().put("tag", medienTag).put("bytes", medienHeute));
+                if (platte.speichere(z)) medienGespeichert = medienHeute;
+            } catch (Exception ignored) { }
+        }
+        return true;
+    }
+
+    public synchronized long medienHeuteBytes(long jetzt) {
+        medienTagPruefen(jetzt);
+        return medienHeute;
+    }
+
+    // ------------------------------------------------------------------ 0.1.25 Anklopfen (Routenplaner)
+
+    /**
+     * Klopf-Merkmal k (32 Byte, base64url) für den Planer: das Auto schickt k als {@code X-Klopf} an {@code meine-route}
+     * und meldet nur sha256(k) beim Brücken-Server an. Der Planer kennt kein Postfach, die Brücke kein Mitglied.
+     * null, wenn die Brücke aus ist.
+     */
+    public synchronized String klopfMerkmal() {
+        if (!ein()) return null;
+        JSONObject k = z.optJSONObject("klopf");
+        if (k == null || b64_32(k.optString("k")) == null) {
+            k = new JSONObject();
+            try {
+                k.put("k", b64(zufall32())).put("angemeldet", false);
+                z.put("klopf", k);
+            } catch (Exception e) {
+                return null;
+            }
+            if (!platte.speichere(z)) return null;
+        }
+        return k.optString("k");
+    }
+
+    /** Merkmal beim Brücken-Server anmelden, falls noch nicht geschehen (Netz – nicht im UI-Thread). */
+    public synchronized boolean klopfAnmelden() {
+        String k = klopfMerkmal();
+        if (k == null) return false;
+        JSONObject e = z.optJSONObject("klopf");
+        if (e.optBoolean("angemeldet", false)) return true;
+        int code = api.klopfAnmelden(server(), postfach(), geheimnis(), sha256Hex(b64_32(k)));
+        if (code != 204 && code != 200) return false;
+        try { e.put("angemeldet", true); } catch (Exception x) { return false; }
+        return platte.speichere(z);
+    }
+
     /** Status für Panoptes-Web (ohne Geheimnisse). */
     public synchronized JSONObject status() {
         JSONObject r = new JSONObject();
@@ -308,6 +392,8 @@ public final class Bruecke {
             r.put("ein", ein());
             r.put("server", server());
             r.put("handys", anzahlHandys());
+            r.put("medienTagMb", medienTagMb());
+            r.put("medienHeuteMb", Math.round(medienHeuteBytes(System.currentTimeMillis()) * 10.0 / MB) / 10.0);
             if (ein()) {
                 r.put("p", postfach());
                 r.put("a", autoOeffentlich());

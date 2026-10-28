@@ -29,8 +29,19 @@ public class CloudKlimaTest {
         assertFalse("keine lokale Seite", on.hasSdkPath());
         assertTrue(on.hasCloudPath());
         assertEquals(VehicleCommandRouter.RoutePreference.CLOUD_ONLY, on.defaultPreference());
+        // anderes Modell: wie bisher 15..31
         assertFalse(new VehicleCommandRouter.ClimateRemoteOnCommand(32, 10).hasCloudPath());
         assertFalse(new VehicleCommandRouter.ClimateRemoteOnCommand(14, 10).hasCloudPath());
+        // 0.1.26 Dolphin Surf: SDK-Skala 17..33 (Stufe 1..17)
+        at.greenchili.surfmate.byd.KlimaStufe.fuerTest(Boolean.TRUE);
+        try {
+            assertTrue(new VehicleCommandRouter.ClimateRemoteOnCommand(33, 10).hasCloudPath());
+            assertTrue(new VehicleCommandRouter.ClimateRemoteOnCommand(17, 10).hasCloudPath());
+            assertFalse(new VehicleCommandRouter.ClimateRemoteOnCommand(34, 10).hasCloudPath());
+            assertFalse(new VehicleCommandRouter.ClimateRemoteOnCommand(16, 10).hasCloudPath());
+        } finally {
+            at.greenchili.surfmate.byd.KlimaStufe.fuerTest(null);
+        }
         assertFalse(new VehicleCommandRouter.ClimateRemoteOnCommand(25, 12).hasCloudPath());
         VehicleCommandRouter.ClimateRemoteOffCommand off = new VehicleCommandRouter.ClimateRemoteOffCommand();
         assertFalse(off.hasSdkPath());
@@ -70,7 +81,10 @@ public class CloudKlimaTest {
 
     @Test
     public void apiPrueftFernklimaEingaben() throws Exception {
-        for (String body : new String[]{"{\"action\":\"power_on\",\"remote\":true,\"temp\":33}",
+        for (String body : new String[]{"{\"action\":\"power_on\",\"remote\":true,\"temp\":34}",
+                "{\"action\":\"power_on\",\"remote\":true,\"temp\":16}",
+                "{\"action\":\"power_on\",\"remote\":true,\"stufe\":0}",
+                "{\"action\":\"power_on\",\"remote\":true,\"stufe\":18}",
                 "{\"action\":\"power_on\",\"remote\":true,\"temp\":25.5}",
                 "{\"action\":\"power_on\",\"remote\":true,\"remoteDurationMinutes\":12}"}) {
             ByteArrayOutputStream out = new ByteArrayOutputStream();

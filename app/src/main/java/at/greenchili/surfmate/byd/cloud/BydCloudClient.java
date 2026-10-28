@@ -459,11 +459,17 @@ public final class BydCloudClient {
      *
      * <p>The remote app exposes five fixed session lengths. Keep that discrete BYD
      * wire contract rather than accepting a minute count that would be rounded or ignored.
+     *
+     * <p>0.1.26: {@code tempCelsius} is the SDK setpoint. On a level model (Dolphin Surf, {@link
+     * at.greenchili.surfmate.byd.KlimaStufe#stufenModell}) the cloud raw value is the level 1..17 = SDK - 16
+     * (assumption of the coordination, measurement pending; up to 0.1.25 it was °C − 14, two levels too warm).
+     * Every other model keeps the pyBYD scale 15C=1 .. 31C=17.
      */
     public static JSONObject climateStartParams(double tempCelsius, int durationMinutes)
             throws IOException {
-        int celsius = (int) Math.round(Math.max(15, Math.min(31, tempCelsius)));
-        int rawTemp = celsius - 14; // BYD raw HVAC scale: 15C=1 .. 31C=17
+        int sdk = (int) Math.round(Math.max(at.greenchili.surfmate.byd.KlimaStufe.cloudSdkMin(),
+                Math.min(at.greenchili.surfmate.byd.KlimaStufe.cloudSdkMax(), tempCelsius)));
+        int rawTemp = at.greenchili.surfmate.byd.KlimaStufe.cloudRoh(sdk);
         int timeSpan = climateDurationToTimeSpan(durationMinutes);
         JSONObject params = new JSONObject();
         try {
@@ -521,11 +527,12 @@ public final class BydCloudClient {
             if (bookingId != null) params.put("bookingId", bookingId.longValue());
             if (bookingTimeSeconds != null) params.put("bookingTime", bookingTimeSeconds.longValue());
             if (remoteMode != 3) {
-                int celsius = (int) Math.round(tempCelsius.doubleValue());
-                if (celsius < 15 || celsius > 31) {
-                    throw new IOException("BOOKINGAIR temperature must be 15..31 C");
+                // 0.1.26: model-dependent cloud scale (see climateStartParams)
+                int rawTemp = at.greenchili.surfmate.byd.KlimaStufe.cloudRoh(tempCelsius.doubleValue());
+                if (rawTemp < 0) {
+                    throw new IOException("BOOKINGAIR temperature must be " + at.greenchili.surfmate.byd.KlimaStufe.cloudSdkMin()
+                            + ".." + at.greenchili.surfmate.byd.KlimaStufe.cloudSdkMax());
                 }
-                int rawTemp = celsius - 14;
                 params.put("mainSettingTemp", rawTemp);
                 params.put("copilotSettingTemp", rawTemp);
                 params.put("timeSpan", timeSpan);

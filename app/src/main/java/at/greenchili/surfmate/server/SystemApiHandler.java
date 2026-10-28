@@ -334,7 +334,17 @@ public class SystemApiHandler {
     // Eine Stelle für „kann dieses Auto das?“ – Logik in VehicleCapabilities, damit der
     // Regel-Katalog dieselbe Antwort nutzt. Die Oberfläche blendet Tacho/HUD nur bei true ein.
     private static JSONObject capabilities() {
-        return VehicleCapabilities.get();
+        JSONObject c = VehicleCapabilities.get();
+        // 0.1.25 Brücke: Handy schickt v2/LIVE nur, wenn das Auto es kann (BRUECKE_MEDIEN §2)
+        try {
+            c = new JSONObject(c.toString());
+            c.put("bruecke", new JSONObject().put("innen", 2).put("live", true).put("medienKanal", true));
+            // 0.1.26 Klima-Sollwert als Stufe 1–17: Cockpit/Handy senden „stufe“ nur, wenn sie das hier sehen.
+            // anzeige: „stufe“ nur bei belegten Modellen (Dolphin Surf), sonst „grad“ wie bisher
+            c.put("klima", new JSONObject().put("stufe", 1)
+                    .put("anzeige", at.greenchili.surfmate.byd.KlimaStufe.stufenModell() ? "stufe" : "grad"));
+        } catch (Exception ignored) { }
+        return c;
     }
 
     // guardStop: Einstellungen nur noch über /api/einstellungen (Schema); /api/system/guardstop

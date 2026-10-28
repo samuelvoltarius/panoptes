@@ -98,7 +98,7 @@ public final class RegelBau {
             case Aktionen.KLIMA_AN:
             case Aktionen.KLIMA_AUS:
                 v.put("action", Aktionen.KLIMA_AN.equals(aktion) ? "on" : "off");
-                v.put("temp", Math.max(15, Math.min(33, (int) Math.round(w.optDouble("temp", 22)))));
+                v.put("temp", Math.max(17, Math.min(33, (int) Math.round(w.optDouble("temp", 22)))));   // 0.1.26: Stufe 1–17
                 v.put("remoteDurationMinutes", "20");
                 v.put("autoOffMinutes", "0");
                 return new AutomationAction("setAc", v);

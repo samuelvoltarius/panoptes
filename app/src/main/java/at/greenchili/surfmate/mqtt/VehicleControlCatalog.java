@@ -612,7 +612,8 @@ public final class VehicleControlCatalog {
                 0, 0, 0, null, null, deviceClass, null, null, cmd, null);
     }
     static ControlEntity climate(CommandFn cmd) {
-        return new ControlEntity("climate", "climate", "Climate", "mdi:air-conditioner", null, false, null,
+        // 0.1.26: HA zeigt am Sollwert selbst °C – der Name sagt, dass es eine Stufe ist (Text: climate_setpoint_stufe)
+        return new ControlEntity("climate", "climate", "Climate (setpoint is a level 17-33 = bar 1-17, not a temperature)", "mdi:air-conditioner", null, false, null,
                 17, 33, 1, null, null, null, null, null, cmd, null);
     }
     static ControlEntity text(String key, String name, String icon, String category, CommandFn cmd) {
@@ -654,8 +655,7 @@ public final class VehicleControlCatalog {
             if (!(rawTemp instanceof Number) || !(rawDuration instanceof Number)) return null;
             double temp = ((Number) rawTemp).doubleValue();
             double duration = ((Number) rawDuration).doubleValue();
-            if (Double.isNaN(temp) || Double.isInfinite(temp) || temp != Math.rint(temp)
-                    || temp < 15D || temp > 31D || duration != Math.rint(duration)
+            if (!at.greenchili.surfmate.byd.KlimaStufe.sdkGanzGueltig(temp) || duration != Math.rint(duration)
                     || duration < Integer.MIN_VALUE || duration > Integer.MAX_VALUE) {
                 return null;
             }
@@ -698,16 +698,13 @@ public final class VehicleControlCatalog {
             long nowSeconds = System.currentTimeMillis() / 1000L;
             if (bookingTime == null || bookingTime.longValue() <= nowSeconds + 30L) return null;
 
-            double temp = 22D;
+            double temp = at.greenchili.surfmate.byd.KlimaStufe.vorklimaSdkJetzt();   // 0.1.26: Standard nach Außentemperatur statt 22
             if (request.has("temp")) {
                 Object rawTemp = request.opt("temp");
                 if (!(rawTemp instanceof Number)) return null;
                 temp = ((Number) rawTemp).doubleValue();
             }
-            if (Double.isNaN(temp) || Double.isInfinite(temp) || temp != Math.rint(temp)
-                    || temp < 15D || temp > 31D) {
-                return null;
-            }
+            if (!at.greenchili.surfmate.byd.KlimaStufe.sdkGanzGueltig(temp)) return null;   // 0.1.26: 17..33 = Stufe 1..17
 
             int duration = 20;
             if (request.has("durationMinutes")) {
@@ -921,7 +918,8 @@ public final class VehicleControlCatalog {
                 if ("off".equalsIgnoreCase(payload.trim())) {
                     return ControlAction.echo(new VehicleCommandRouter.ClimateOffCommand(), "ac_on", "0");
                 }
-                double setpoint = 22;
+                // 0.1.26 (Koordination 28.10.): kein fester Wert 22 mehr – Vorklima-Stufe nach Außentemperatur
+                double setpoint = at.greenchili.surfmate.byd.KlimaStufe.vorklimaSdkJetzt();
                 return ControlAction.echo(new VehicleCommandRouter.ClimateOnCommand(setpoint), "ac_on", "1");
             }
             if ("temperature".equals(sub)) {
@@ -936,7 +934,7 @@ public final class VehicleControlCatalog {
             return null;
         }));
         // The normal HA climate entity keeps its standard in-car 17..33 C controls.
-        // This cloud-only text entity supplies OPENAIR's exact 15..31 C / 10..30 minute
+        // This cloud-only text entity supplies OPENAIR's exact 17..33 (level 1..17, 0.1.26) / 10..30 minute
         // shape for off-car automations without repurposing a temperature write into a start.
         register(text("remote_climate_start", "Remote Climate Start", "mdi:air-conditioner",
                 "config", (sub, payload, snap) -> remoteClimateStartAction(payload)));

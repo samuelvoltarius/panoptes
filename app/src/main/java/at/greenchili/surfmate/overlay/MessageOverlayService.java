@@ -260,7 +260,8 @@ public final class MessageOverlayService extends Service {
         if (!ref.matches("^[0-9a-f]{16}$")) { stopSelf(); return false; }
         // 0.1.21: dieselbe Rückfrage auch für die BYD-Cloud-Übergabe (eigener Pfad, nur diese zwei Formen)
         String pfad = orDefault(intent.getStringExtra("pfad"), "/api/kopplung/anfrage/" + ref);
-        if (!pfad.equals("/api/kopplung/anfrage/" + ref) && !pfad.equals("/api/cloud-uebergabe/r-" + ref)) { stopSelf(); return false; }
+        if (!pfad.equals("/api/kopplung/anfrage/" + ref) && !pfad.equals("/api/cloud-uebergabe/r-" + ref)
+                && !pfad.equals("/api/kopplung/weiteres-geraet/r-" + ref)) { stopSelf(); return false; }   // 0.1.25
         String title = orDefault(intent.getStringExtra("title"), "");
         String message = orDefault(intent.getStringExtra("message"), "");
         int timeoutSec = intent.getIntExtra("timeoutSec", 120);

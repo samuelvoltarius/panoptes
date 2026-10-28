@@ -1366,10 +1366,11 @@
             var time = String(suggestion.time || '');
             var titleText = tx('genai.routine_title_default', 'Vorgeschlagene Routine');
             if (suggestion.kind === 'climate') {
+                // 0.1.26: Stufe wie im Display, nie °C
                 titleText = tx('genai.routine_title_climate',
-                    'Innenraum gegen {time} auf {temp} °C stellen', {
-                        temp: String(variables.temperature == null
-                            ? '' : variables.temperature),
+                    'Klima gegen {time} auf {klima} stellen', {
+                        klima: variables.temperature == null || !window.PanoptesKlimaStufe
+                            ? '' : PanoptesKlimaStufe.text(variables.temperature),
                         time: time
                     });
             } else if (suggestion.kind === 'sunshade') {
@@ -2201,8 +2202,8 @@
                 var zoneName = zone === 1
                     ? 'driver zone' : (zone === 2
                         ? 'passenger zone' : 'both zones');
-                detail.textContent = Number(proposal.temperatureC)
-                    + ' °C · ' + zoneName;
+                detail.textContent = (window.PanoptesKlimaStufe
+                    ? PanoptesKlimaStufe.text(proposal.temperatureC) : '') + ' · ' + zoneName;
             } else if (type === 'sunshade') {
                 detail.textContent =
                     'Sunshade · ' + String(proposal.operation || '');

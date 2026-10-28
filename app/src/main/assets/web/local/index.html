@@ -138,6 +138,13 @@
             .map { height: 220px; }
         }
         [data-android-embed="1"] .home { padding-top: 16px; }
+        /* 0.1.26 Heizen stoppen: groß und rot, solange Klima oder Akku heizt; leise, wenn der Klima-Zustand unbekannt ist */
+        .stopp { display: block; width: 100%; min-height: 72px; margin: 0 0 14px; border: 0; border-radius: 18px; cursor: pointer;
+                 background: #c62828; color: #fff;   /* festes Rot: Weiß darauf gut lesbar */ font-size: 1.35em; font-weight: 700; }
+        .stopp.leise { min-height: 56px; font-size: 1.1em; background: transparent; color: #ff6b5e;
+                       border: 2px solid #ff6b5e; }
+        .stopp[hidden] { display: none; }
+        .stopp.pending { opacity: .5; pointer-events: none; }
     </style>
 </head>
 <body class="home-page">
@@ -170,6 +177,8 @@
             <p style="margin:6px 0 10px" data-i18n="home.pwa_text">Unten auf „Teilen“ tippen → „Zum Home-Bildschirm“. Dann startet Panoptes wie eine App und kann dir Meldungen schicken.</p>
             <button type="button" class="act" id="hAppHinweisZu" data-i18n="home.pwa_ok">Verstanden</button>
         </div>
+        <!-- 0.1.26: stoppt Klima UND Akku heizen, ohne Rückfrage (Stoppen ist sicher) -->
+        <button type="button" class="stopp" id="hStopp" hidden onclick="Home.stopp(this)"><span id="hStoppLabel" data-i18n="home.heat_stop">Heizen stoppen</span></button>
         <div class="home">
         <section class="home-grid">
 
@@ -261,6 +270,7 @@
 <script src="../shared/auth.js"></script>
 <script src="../shared/pwa-init.js?v=index1"></script>
 <script src="../shared/core.js?v=pn6"></script>
+<script src="../shared/klima-stufe.js?v=1"></script>
 <script src="../shared/panoptes-map.js?v=12"></script>
 <script src="../shared/laden-nachfrage.js?v=1"></script>
 <script src="../shared/gewohnheit-karte.js?v=1"></script>
@@ -485,6 +495,17 @@
                 setText('sClimS', temps.join(' · ') || (cl.remoteClimateActive ? t('home.remote', 'aus der Ferne') : ''));
             }
             this.climateOn = acOn;
+            this.aussenC = num(cl.outsideTempC) ? cl.outsideTempC : null;   // 0.1.26: fürs Vorklimatisieren
+            // 0.1.26: roter Stopp, solange Klima oder Akku heizt; bei unbekanntem Klima-Zustand leise (Stoppen geht immer)
+            var klimaBekannt = typeof cl.acOn === 'boolean' || typeof cl.remoteClimateActive === 'boolean';
+            var heizt = acOn || d.batteryHeat === true;
+            var stopp = $('hStopp');
+            if (stopp) {
+                stopp.hidden = !heizt && klimaBekannt;
+                stopp.classList.toggle('leise', !heizt);
+                setText('hStoppLabel', heizt ? t('home.heat_stop', 'Heizen stoppen') : t('home.heat_stop_unknown', 'Klima und Akku-Heizung stoppen'));
+                $('hStoppLabel').removeAttribute('data-i18n');
+            }
             setText('hClimateLabel', acOn ? t('home.climate_off', 'Klima aus') : t('home.climate_on', 'Vorklimatisieren'));
             $('hClimateLabel').removeAttribute('data-i18n');
 
@@ -655,7 +676,7 @@
 
         // ---------------- Befehle
         // Jeder Befehl ans Auto nur nach Rückfrage (Alfreds Regel 21.10.: nie versehentlich auslösen).
-        command: function (btn, url, payload, confirmKey, name) {
+        command: function (btn, url, payload, confirmKey, name, extra) {
             if (!btn || btn.classList.contains('pending')) return;
             var FRAGEN = {
                 'home.confirm_trunk': 'Kofferraum öffnen?',
@@ -664,10 +685,14 @@
                 'home.confirm_find': 'Auto suchen? Es blinkt und hupt.',
                 'home.confirm_custom': '„{name}“ jetzt ausführen?',
                 'home.confirm_climate_off': 'Klima ausschalten?',
-                'home.confirm_climate': 'Klima jetzt für 20 Minuten auf 22 °C einschalten?'
+                'home.confirm_climate': 'Klima jetzt für 20 Minuten einschalten ({klima})?',
+                'home.confirm_preheat': 'Vorheizen mit {klima}?',
+                'home.confirm_precool': 'Vorkühlen mit {klima}?'
             };
             var key = confirmKey || 'home.confirm_generic';
-            var q = t(key, FRAGEN[key] || 'Befehl ans Auto senden?', { name: name || '' });
+            var vars = { name: name || '' };
+            if (extra) Object.keys(extra).forEach(function (k) { vars[k] = extra[k]; });
+            var q = t(key, FRAGEN[key] || 'Befehl ans Auto senden?', vars);
             if (!window.confirm(q)) return;
             btn.classList.add('pending');
             fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload ? JSON.stringify(payload) : undefined })
@@ -691,7 +716,39 @@
                 this.command(btn, '/api/vehicle/climate', { action: 'power_off' }, 'home.confirm_climate_off');
                 return;
             }
-            this.command(btn, '/api/vehicle/climate', { action: 'power_on', temp: 22, remoteDurationMinutes: 20 }, 'home.confirm_climate');
+            // 0.1.26 (Koordination 28.10.): kein fester Wert 22 mehr – Stufe nach Außentemperatur
+            // (<15 °C Heizen 3, 15–24 °C Heizen 1, >24 °C Kühlen 3, unbekannt Heizen 3); Rückfrage nennt die Stufe
+            var ks = window.PanoptesKlimaStufe;
+            var sdk = ks ? ks.vorklimaSdk(this.aussenC) : 28;
+            var klima = ks ? ks.text(sdk) : '';
+            var frage = !ks || !ks.stufen() ? 'home.confirm_climate'
+                : ks.art(sdk) === 'kuehlen' ? 'home.confirm_precool' : 'home.confirm_preheat';
+            this.command(btn, '/api/vehicle/climate', { action: 'power_on', temp: sdk, remoteDurationMinutes: 20 }, frage, null, { klima: klima });
+        },
+
+        // 0.1.26 Heizen stoppen: Klima aus, dann Akku heizen aus – immer beide, ohne Rückfrage. Gut, sobald einer durchging.
+        stopp: function (btn) {
+            if (!btn || btn.classList.contains('pending')) return;
+            btn.classList.add('pending');
+            function senden(url, body) {
+                return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+                    .then(function (r) { return r.json(); }).catch(function () { return null; });
+            }
+            var klima;
+            senden('/api/vehicle/climate', { action: 'power_off' })
+                .then(function (d) { klima = d; return senden('/api/vehicle/battery-heat', { enabled: false }); })
+                .then(function (akku) {
+                    if ((klima && klima.success) || (akku && akku.success)) {
+                        toast(t('home.heat_stopped', 'Heizen gestoppt'), true);
+                    } else {
+                        var meldung = (klima && (klima.message || klima.error)) || t('home.failed', 'Hat nicht geklappt');
+                        if (klima && klima.einrichten) {
+                            if (window.confirm(meldung + '\n\n' + t('home.setup_cloud_q', 'Jetzt die BYD-Cloud einrichten?'))) location.href = klima.einrichten;
+                        } else toast(meldung, false);
+                    }
+                    setTimeout(function () { Home.loadVehicleState(); }, 800);
+                })
+                .then(function () { btn.classList.remove('pending'); });
         },
 
         openDirections: function () {
@@ -720,6 +777,9 @@
     BYD.core.refreshStatus = function () {
         return origRefresh().then(function (st) { if (st) Home.fromStatus(st); return st; });
     };
+
+    // 0.1.26: Anzeige Stufe/Grad kam aus /api/system/capabilities → neu zeichnen
+    document.addEventListener('panoptes:klima-anzeige', function () { Home.loadVehicleState(); });
 
     function slowLoop() {
         if (document.hidden) return;

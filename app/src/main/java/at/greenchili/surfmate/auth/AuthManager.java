@@ -214,6 +214,16 @@ public class AuthManager {
         // so callers (e.g. WebViewFragment) retry once the daemon has
         // booted and getState() can pull the canonical value.
         if (state == null || state.deviceSecret == null || state.deviceSecret.isEmpty()) {
+            // 0.1.25 (Befund Kern 12, Freeze 0.1.24: einmal „JWT signature mismatch“ nach Neuinstallation): nur der
+            // Daemon (uid 2000) erzeugt den Signaturschlüssel. Ein App-Prozess, der beim ersten Start schneller ist, darf
+            // keinen eigenen in die Konfiguration schreiben – sonst übernimmt der Daemon ihn und schon ausgestellte JWTs
+            // (z. B. aus /auth/kopplung) werden ungültig. Die App wartet, bis der Daemon geschrieben hat (getState()).
+            if (istAppProzess()) {
+                log("Auth: kein Schlüssel in der Konfiguration – App-Prozess wartet auf den Daemon");
+                cachedState = null;
+                cachedConfigMtime = 0;
+                return null;
+            }
             if (state == null) state = new AuthState();
             if (state.deviceId == null || state.deviceId.isEmpty()) {
                 state.deviceId = loadDeviceId();
@@ -277,6 +287,15 @@ public class AuthManager {
             }
             // Config has no auth yet — initialize (handles migration too).
             return initialize();
+        }
+    }
+
+    /** App-UID (≥ 10000) auf Android; Daemon (2000), root und JVM-Tests (Stub) → false. */
+    static boolean istAppProzess() {
+        try {
+            return android.os.Process.myUid() >= 10000;
+        } catch (Throwable t) {
+            return false;
         }
     }
 

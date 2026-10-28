@@ -1,16 +1,1 @@
-# Geprüfte Fehlalarme (23.10.2026): Konfig-Schlüsselnamen (Di5ParkedKeepAliveSettings), Upstream-Standardwert
-# byd-cam-secret-2024 (auskommentiert), Rechenzeile in mqtt.js, Test-Attrappen 0123…cdef. Nur exakte Fingerprints –
-# jeder neue Fund schlägt weiter an.
-f962601e511e6d14a14c172f8d3a176e9fc1d2a2:app/src/main/assets/web/shared/mqtt.js:generic-api-key:470
-f962601e511e6d14a14c172f8d3a176e9fc1d2a2:app/src/main/java/at/greenchili/surfmate/daemon/camera/CameraConfiguration.kt:generic-api-key:47
-f962601e511e6d14a14c172f8d3a176e9fc1d2a2:app/src/main/java/at/greenchili/surfmate/power/Di5ParkedKeepAliveSettings.java:generic-api-key:23
-f962601e511e6d14a14c172f8d3a176e9fc1d2a2:app/src/main/java/at/greenchili/surfmate/power/Di5ParkedKeepAliveSettings.java:generic-api-key:24
-f962601e511e6d14a14c172f8d3a176e9fc1d2a2:app/src/main/java/at/greenchili/surfmate/power/Di5ParkedKeepAliveSettings.java:generic-api-key:27
-f962601e511e6d14a14c172f8d3a176e9fc1d2a2:app/src/main/java/at/greenchili/surfmate/power/Di5ParkedKeepAliveSettings.java:generic-api-key:30
-f962601e511e6d14a14c172f8d3a176e9fc1d2a2:app/src/main/java/at/greenchili/surfmate/power/Di5ParkedKeepAliveSettings.java:generic-api-key:31
-f962601e511e6d14a14c172f8d3a176e9fc1d2a2:app/src/main/java/at/greenchili/surfmate/util/Constants.kt:generic-api-key:53
-f962601e511e6d14a14c172f8d3a176e9fc1d2a2:app/src/test/java/at/greenchili/surfmate/community/CommunityClientTest.java:generic-api-key:39
-f962601e511e6d14a14c172f8d3a176e9fc1d2a2:app/src/test/java/at/greenchili/surfmate/planer/PlanerVerbindungTest.java:generic-api-key:158
-f962601e511e6d14a14c172f8d3a176e9fc1d2a2:app/src/test/java/at/greenchili/surfmate/planer/PlanerVerbindungTest.java:generic-api-key:161
-f962601e511e6d14a14c172f8d3a176e9fc1d2a2:app/src/test/java/at/greenchili/surfmate/planer/PlanerVerbindungTest.java:generic-api-key:164
-f962601e511e6d14a14c172f8d3a176e9fc1d2a2:app/src/test/java/at/greenchili/surfmate/server/Fix0191Test.java:generic-api-key:41
+# Geprüfte Fehlalarme: Konfig-Schlüsselnamen, Testwerte, öffentlicher ABRP-App-Schlüssel des Ursprungsprojekts.

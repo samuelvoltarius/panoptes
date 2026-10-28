@@ -471,7 +471,7 @@ public final class Camping {
             while (protokoll.size() > 50) protokoll.removeFirst();
             if (schalten != null) schalter.execute(schalten);
             logger.info((probe ? "Probelauf: würde " : "Heizweg: ") + (d.aktion == CampingRegler.Aktion.EIN
-                    ? "einschalten (Stufe " + d.stufe + ", Gebläse " + d.geblaese + ", " + d.phase + ")"
+                    ? "einschalten (" + at.greenchili.surfmate.byd.KlimaStufe.anzeige(d.stufe) + ", Gebläse " + d.geblaese + ", " + d.phase + ")"
                     : "ausschalten (" + d.phase + ")") + (probe ? "" : " → " + ergebnis));
         }
         for (String m : d.meldungen) {

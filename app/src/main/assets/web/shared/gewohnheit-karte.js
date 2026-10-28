@@ -14,9 +14,10 @@
     var DE = {
         tag_werktag: 'Werktags', tag_wochenende: 'Am Wochenende',
         sym_werktag: 'Mo–Fr', sym_wochenende: 'Sa–So',
-        klima_an: '{tag} bis {zeit} auf {temp} °C vorheizen?',
+        // 0.1.26: Sollwert als Stufe wie im Display, nie °C ({klima} = „Heizen Stufe 2“ …)
+        klima_an: '{tag} bis {zeit} vorheizen ({klima})?',
         klima_aus: '{tag} um {zeit} die Klima ausschalten?',
-        klima_temp: '{tag} um {zeit} auf {temp} °C stellen?',
+        klima_temp: '{tag} um {zeit} die Klima auf {klima} stellen?',
         sitzheizung: '{tag} um {zeit} Sitzheizung {sitz} auf Stufe {stufe}?',
         sitzlueftung: '{tag} um {zeit} Sitzlüftung {sitz} auf Stufe {stufe}?',
         lenkradheizung: '{tag} um {zeit} Lenkradheizung {an}?',
@@ -67,7 +68,7 @@
         var vars = {
             tag: T('tag_' + (g.tag === 'wochenende' ? 'wochenende' : 'werktag')),
             zeit: uhr(min),
-            temp: w.temp, stufe: w.stufe, a: w.a,
+            temp: w.temp, stufe: w.stufe, a: w.a, klima: klima(w.temp),
             sitz: T('sitz_' + (w.sitz === 'beifahrer' ? 'beifahrer' : 'fahrer')),
             an: T(w.an ? 'an' : 'aus')
         };
@@ -75,10 +76,15 @@
         if (g.bedingung && typeof g.bedingung.aussen_unter === 'number') s = s.replace(/\?$/, ' (' + T('unter', { x: g.bedingung.aussen_unter }) + ')?');
         return s;
     }
+    /** 0.1.26: Klima-Sollwert (SDK-Skala) als Stufen-Text; ohne klima-stufe.js wenigstens ohne „°C“. */
+    function klima(v) {
+        if (v == null) return '';
+        return window.PanoptesKlimaStufe ? PanoptesKlimaStufe.text(v) : String(v);
+    }
     function symbole(g) {
         var w = g.wert || {}, box = el('div', 'gw-sym');
         function sym(z, klein) { var d = el('div', 'gw-s'); d.appendChild(el('span', 'gw-z', z)); if (klein != null) d.appendChild(el('small', null, String(klein))); box.appendChild(d); }
-        var wert = w.temp != null ? w.temp + ' °C' : w.a != null ? w.a + ' A' : w.stufe != null ? T('sitz_' + (w.sitz === 'beifahrer' ? 'beifahrer' : 'fahrer')) : null;
+        var wert = w.temp != null ? klima(w.temp) : w.a != null ? w.a + ' A' : w.stufe != null ? T('sitz_' + (w.sitz === 'beifahrer' ? 'beifahrer' : 'fahrer')) : null;
         sym(SYM[g.aktion] || '⚙️', wert);
         sym('📅', T('sym_' + (g.tag === 'wochenende' ? 'wochenende' : 'werktag')));
         sym('⏰', uhr(g.minute || 0));

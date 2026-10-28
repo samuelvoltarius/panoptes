@@ -72,6 +72,11 @@ public final class BrueckeApiHandler {
                 return true;
             }
         }
+        // 0.1.25 Tagesgrenze für Kamera-Daten übers Internet (MB, Stufen in Bruecke.MEDIEN_STUFEN_MB)
+        if (req.has("medienTagMb") && !b.medienTagMbSetzen(req.optInt("medienTagMb", -1))) {
+            HttpResponse.sendJson(out, 400, HandyApiHandler.fehler("medien_tag_mb").toString());
+            return true;
+        }
         if (req.has("server") && !b.serverSetzen(req.optString("server", ""))) {
             HttpResponse.sendJson(out, 400, HandyApiHandler.fehler("server").toString());
             return true;

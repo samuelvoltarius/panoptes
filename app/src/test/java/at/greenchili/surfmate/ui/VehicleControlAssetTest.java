@@ -270,7 +270,9 @@ public class VehicleControlAssetTest {
 
         // Climate: labelled steppers on their own row instead of bare siblings.
         assertTrue(html.contains("class=\"vc-block vc-block--stepper\""));
-        assertTrue(html.contains("data-i18n=\"vehicle.temperature\""));
+        // 0.1.26: der Sollwert ist eine Stufe wie im Display, darum „Klima-Stufe“ statt „Temperatur“
+        assertTrue(html.contains("data-i18n=\"vehicle.climate_level\""));
+        assertFalse(html.contains("id=\"acTemp\">22&deg;"));
         assertTrue(html.contains("data-i18n=\"vehicle.fan\""));
         assertTrue(ruleFor(css, ".vc-stepper").contains("height: 48px"));
         assertTrue(ruleFor(css, ".vc-stepper > .vc-mini").contains("border: none"));

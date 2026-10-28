@@ -245,6 +245,8 @@
     "kopplung_ablehnen": "Decline",
     "neue_kopplung_titel": "New device connected: {0}",
     "neue_kopplung_text": "Wasn’t you? Remove it in Panoptes under System → Paired devices.",
+    "neue_kopplung_band_titel": "New device: {0}",
+    "neue_kopplung_band_text": "Not you? Remove under System",
     "blitzer_titel": "Speed camera in {0} m",
     "blitzer_tempo": "Speed limit {0} km/h",
     "kopplung_titel_ha": "Home Assistant “{0}” wants to connect",
@@ -352,7 +354,9 @@
     },
     "cloud_uebergabe_titel": "“{0}” wants to hand over the BYD cloud",
     "cloud_uebergabe_text": "Check number {0}",
-    "gewohnheit_probelauf": "Trial run: I would have carried out your habit now. Is that right?"
+    "gewohnheit_probelauf": "Trial run: I would have carried out your habit now. Is that right?",
+    "weiteres_geraet_titel": "Cockpit “{0}” wants to connect a phone",
+    "weiteres_geraet_text": "Check number {0}"
   },
   "parking": {
     "notify": {
@@ -388,7 +392,10 @@
       "status_on": "⛺ *Camping is on*",
       "status_off": "⛺ *Camping is off.* Can only be switched on when parked (gear P).",
       "battery": "Battery {0} % · limit {1} %",
-      "interval": "Heating: every {0} min for {1} min · level {2}",
+      "interval": "Heating: every {0} min for {1} min · {2}",
+      "stufe_heizen": "Heating level {0}",
+      "stufe_kuehlen": "Cooling level {0}",
+      "stufe_neutral": "Neutral",
       "lasts": "Heating lasts until {0}",
       "trial": "_Trial run: Panoptes does not heat yet in this version._",
       "not_parked": "Camping only works when parked (gear P).",
@@ -764,7 +771,11 @@
       "abgelaufen": "⌛ The request has expired.",
       "fehler": "⚠️ Panoptes is not reachable right now. Please allow it on the web.",
       "anfrage_ha": "🔗 *Home Assistant “{0}” wants to connect*\nCheck number: *{1}*\n\nDoes it match the number in Home Assistant? The request is valid for 2 minutes.",
-      "anfrage_handy": "📱 *Phone “{0}” wants to connect*\nCheck number: *{1}*\n\nDoes the number match the one in the app? The request is valid for 2 minutes."
+      "anfrage_handy": "📱 *Phone “{0}” wants to connect*\nCheck number: *{1}*\n\nDoes the number match the one in the app? The request is valid for 2 minutes.",
+      "neu": "📱 *New device connected: {0}*\nWasn’t you? Then tap Remove.",
+      "knopf_entfernen": "🗑 Remove",
+      "entfernt": "🗑 Removed – the device is no longer connected.",
+      "entfernen_abgelaufen": "⌛ This button has expired. Please remove it in Panoptes under System → Paired devices."
     },
     "health": {
       "repariert": "🩺 *Guardian was off for {0} min – repaired.* Panoptes re-armed itself.",
@@ -832,7 +843,8 @@
       "schluessel": "🔑 Phone “{0}” registered an unlock key. If this was not you, remove the device in Panoptes.",
       "aufsperren_ok": "🔓 *Unlocked* via phone “{0}”.",
       "aufsperren_unbestaetigt": "🔓 Unlock command sent via phone “{0}” – confirmation from the car is missing.",
-      "aufsperren_abgelehnt": "🔒 Unlock via phone “{0}” refused ({1})."
+      "aufsperren_abgelehnt": "🔒 Unlock via phone “{0}” refused ({1}).",
+      "wallbox": "🔌 Wallbox controlled from phone “{0}”: {1}"
     },
     "zurueck": {
       "text": "🚗 Welcome back to the car. It was parked for {0}.",
@@ -849,6 +861,11 @@
       "abgelehnt": "❌ Declined.",
       "uebernommen_ok": "☁️ BYD cloud taken over from “{0}” and checked – Panoptes now also works with the car switched off.",
       "uebernommen_nicht_geprueft": "☁️ BYD cloud taken over from “{0}”, but the check failed. Please look in Panoptes under System → BYD account."
+    },
+    "weiteres_geraet": {
+      "anfrage": "📱 *EV-Cockpit “{0}” wants to connect a phone*\nCheck number: *{1}*\n\nDoes the number match the one in the Cockpit? If you allow it, the Cockpit shows a code to scan. The request is valid for 5 minutes.",
+      "erlaubt": "✅ Allowed – the Cockpit now shows the code for the phone.",
+      "abgelehnt": "❌ Declined."
     }
   },
   "vehicle_control": {
@@ -1078,9 +1095,9 @@
     "temperature_description": "The measured temperature inside the car in °C – only with a real cabin sensor. Many BYD have none (e.g. Dolphin Surf: the climate module's value is the dial setpoint). Then the condition is never met. Outside temperature and the climate setpoint are separate values.",
     "outside_temperature": "Outdoor temperature",
     "outside_temperature_description": "The temperature outside in °C. It comes from the outside sensor, or from local weather if there is none. It never uses the inside sensor.",
-    "celsius": "Celsius",
-    "ac_setpoint": "Climate dial setting",
-    "ac_setpoint_description": "The temperature the climate control is SET to (the dial), not what it really is inside. Always in °C, even if the car shows °F, so a rule works the same in every car. Not available if the car does not report it.",
+    "celsius": "Value 17–33 (25 = neutral)",
+    "ac_setpoint": "Climate level setting",
+    "ac_setpoint_description": "What the climate control is SET to (the dial), not what it really is inside. Value 17–33: on the Dolphin Surf this is the bar on the display, 17 = strongest cooling, 25 = middle (neutral), 26–33 = heating level 1–8. Not available if the car does not report it.",
     "set_ac": "Climate control on/off",
     "set_ac_description": "Turns the climate control on or off. Does not work while the car is switched off. With “Turn off after” it stops by itself after the time you pick. That way it can't drain the battery if you forget, for example when warming up or airing out the car. “No countdown” sets no timer here. To stop a timer that is already running, use the “AC off timer” action.",
     "remote_climate_schedule": "Plan remote climate",
@@ -1108,13 +1125,13 @@
     "ac_auto_off_120": "2 h",
     "set_ac_auto_off": "AC off timer",
     "set_ac_auto_off_description": "Turns the climate control off by itself after a set time, without changing it now. Pick “No countdown” to stop a timer that is already running. Running this action again restarts the timer instead of adding a second one. Switching the climate off by hand also stops it. The timer survives a restart, so the climate still goes off after the car is parked.",
-    "set_ac_temp": "Set climate temperature",
-    "set_ac_temp_description": "Sets the temperature of the climate control. Does not work while the car is switched off.",
-    "step_ac_temp": "Nudge climate temperature",
-    "step_ac_temp_description": "Makes the climate temperature one degree warmer or cooler than it is now, instead of setting a fixed value. Uses the unit the car shows (°C or °F) and stops at the lowest and highest setting. Does not work while the car is switched off.",
+    "set_ac_temp": "Set climate level",
+    "set_ac_temp_description": "Sets the climate level (17–33, 25 = neutral, from 26 it heats). Does not work while the car is switched off.",
+    "step_ac_temp": "Nudge climate level",
+    "step_ac_temp_description": "Makes the climate one level warmer or cooler than it is now, instead of setting a fixed value. Stops at the lowest and highest level. Does not work while the car is switched off.",
     "step_direction": "Change",
-    "step_warmer": "One degree up",
-    "step_cooler": "One degree down",
+    "step_warmer": "One level up",
+    "step_cooler": "One level down",
     "speed": "Speed",
     "set_ac_fan": "Set fan level",
     "set_ac_fan_description": "Sets how fast the climate fan blows. Does not work while the car is switched off.",

@@ -473,6 +473,21 @@ public class StorageManager {
     // stick when both are present. volatile for the same cross-thread reason
     // as the SD state fields above.
     private volatile String usbPath = null;
+    // 0.1.25 (WAECHTER_1849_ANALYSE §4): Nach dem Aufwachen braucht vold auf dem BYD für den ersten `sm mount`
+    // länger als 8 s (28.10. 17:31: zweimal exit −1 nach 8 s, Erfolg erst nach 83 s). Der ERSTE Versuch nach
+    // Daemon-Start bzw. ACC-an-Wecken darf bis 20 s laufen; danach wieder 8 s.
+    static final long SM_MOUNT_MS = 8_000L, SM_MOUNT_NACH_WECKEN_MS = 20_000L, WECK_FENSTER_MS = 120_000L;
+    private volatile long weckZeitMs = System.currentTimeMillis();
+    private volatile long letzterMountErfolgMs = 0L;
+    // 0.1.25: USB ist wieder eingehängt, aber der Pfad war noch nicht ermittelt (Erkennung übersprungen) –
+    // der nächste Watchdog-Takt zieht Aufnahme- und Wächter-Pfad auf USB nach, statt intern stehen zu lassen.
+    private volatile boolean usbPfadNachziehen = false;
+
+    /** Rein: Zeitlimit für `sm mount` – 20 s für den ersten Versuch nach dem Wecken, sonst 8 s. */
+    static long smMountTimeoutMs(long jetzt, long weckZeit, long letzterErfolg) {
+        boolean frischGeweckt = jetzt - weckZeit < WECK_FENSTER_MS && letzterErfolg < weckZeit;
+        return frischGeweckt ? SM_MOUNT_NACH_WECKEN_MS : SM_MOUNT_MS;
+    }
     private volatile boolean usbAvailable = false;
     
     // Singleton instance
@@ -1737,12 +1752,14 @@ public class StorageManager {
                 // hung without closing its pipe blocked here forever while
                 // holding mountLock.
                 Process mountProcess = Runtime.getRuntime().exec(new String[]{"sm", "mount", volumeId});
+                long mountTimeoutMs = smMountTimeoutMs(System.currentTimeMillis(), weckZeitMs, letzterMountErfolgMs);
                 ProcessLines mountOut = readProcessLinesBounded(
-                    mountProcess, true, 8_000, "sm mount " + volumeId);
+                    mountProcess, true, mountTimeoutMs, "sm mount " + volumeId);
                 StringBuilder output = new StringBuilder();
                 for (String outLine : mountOut.lines) output.append(outLine).append("\n");
 
                 int exitCode = mountOut.exitCode;
+                if (exitCode == 0) letzterMountErfolgMs = System.currentTimeMillis();
                 logInfo("sm mount " + volumeId + " exit code: " + exitCode +
                     (output.length() > 0 ? ", output: " + output.toString().trim() : ""));
 
@@ -4758,6 +4775,15 @@ public class StorageManager {
             ok &= sdOk;
         }
         if (anyOnUsb) {
+            weckZeitMs = System.currentTimeMillis();   // 0.1.25: erster sm mount nach dem Wecken darf 20 s
+            // 0.1.25: kein zweiter `sm mount` parallel zu einem schon laufenden (Watchdog hält die Mount-Sperre) –
+            // 28.10. 17:31 liefen beide gegeneinander und die Erkennung übersprang („mountLock not acquired“).
+            if (mountLock.isLocked() && !mountLock.isHeldByCurrentThread()) {
+                logInfo("ACC ON: USB-Einhängen läuft bereits (Watchdog) – kein zweiter sm mount, Watchdog bringt es zu Ende");
+                updateActiveDirectories();
+                notifyRecordingsIndexOfStorageChange("ACC-ON remount (läuft schon)");
+                return ok;
+            }
             logInfo("ACC ON: force-remounting USB drive (bridged reader may have dropped across wake)...");
             boolean usbOk = ensureUsbMounted(true);
             if (usbOk) {
@@ -10271,6 +10297,28 @@ public class StorageManager {
                 // failure. The SD branch above is also independent and
                 // its state must not be skipped if/when USB transient
                 // failures stack at the start of a tick.
+                // 0.1.25: Pfad nach erfolgreichem Einhängen nachziehen, falls er beim Erfolg noch unbekannt war
+                if (watchUsb && usbPfadNachziehen && isUsbLikelyMounted()) {
+                    discoverVolumes();
+                    initUsbDirectories();
+                    updateActiveDirectories();
+                    if (usbRecordingsDir != null) {
+                        usbPfadNachziehen = false;
+                        try {
+                            at.greenchili.surfmate.surveillance.GpuSurveillancePipeline pl =
+                                at.greenchili.surfmate.daemon.CameraDaemon.getGpuPipeline();
+                            if (pl != null && pl.getRecorder() != null && recordingsStorageType == StorageType.USB) {
+                                pl.getRecorder().setOutputDir(usbRecordingsDir);
+                            }
+                            if (pl != null && pl.getSentry() != null && surveillanceStorageType == StorageType.USB) {
+                                pl.getSentry().setEventOutputDir(getLiveSurveillanceDir());
+                            }
+                            logInfo("USB watchdog: Pfad nachgezogen – Aufnahmen wieder auf " + usbRecordingsDir.getAbsolutePath());
+                        } catch (Throwable th) {
+                            logWarn("USB watchdog: Pfad nachziehen fehlgeschlagen: " + th.getMessage());
+                        }
+                    }
+                }
                 boolean usbHandled = false;
                 if (watchUsb && !isUsbLikelyMounted()) {
                     usbWatchdogConsecutiveFailures++;
@@ -10297,6 +10345,11 @@ public class StorageManager {
                         // branch): drive is back, so a later drop recovers again.
                         usbFallbackRecoveryDone = false;
                         initUsbDirectories();
+                        if (usbRecordingsDir == null) {
+                            // 0.1.25: Erkennung war übersprungen (Mount-Sperre) – einmal nachholen, nie intern einsetzen
+                            discoverVolumes();
+                            initUsbDirectories();
+                        }
                         updateActiveDirectories();
                         try {
                             at.greenchili.surfmate.surveillance.GpuSurveillancePipeline pipeline =
@@ -10326,11 +10379,14 @@ public class StorageManager {
                                     && recordingsStorageType == StorageType.USB) {
                                 // FIX (audit R5, LOW): use canonical USB path
                                 // directly — see SD branch comment for rationale.
-                                ResolvedDir rUsb = resolveActive(StorageType.USB,
-                                    internalRecordingsDir, sdCardRecordingsDir, usbRecordingsDir,
-                                    "recordings");
-                                java.io.File newRecordingsDir = (usbRecordingsDir != null)
-                                    ? usbRecordingsDir : rUsb.dir;
+                                // 0.1.25: NUR der echte USB-Pfad – kein Rückfall auf intern nach erfolgreichem
+                                // Einhängen (28.10. 17:32:54 zeigte der Rekorder sonst ~1 min auf intern).
+                                java.io.File newRecordingsDir = usbRecordingsDir;
+                                if (newRecordingsDir == null) {
+                                    usbPfadNachziehen = true;
+                                    logWarn("USB watchdog: USB eingehängt, Pfad noch unbekannt – Aufnahmepfad bleibt, nächster Takt zieht nach");
+                                    throw new IllegalStateException("usb-pfad-unbekannt");
+                                }
                                 // FIX (audit R2): same writerAborted belt-and-
                                 // suspenders as the SD branch — see comment
                                 // there for full rationale.

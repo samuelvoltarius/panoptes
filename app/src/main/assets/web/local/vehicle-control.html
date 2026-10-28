@@ -225,25 +225,34 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="5" y1="5" x2="19" y2="19"/></svg>
                                 <span data-i18n="vehicle.ac_off">Klima aus</span>
                             </button>
-                            <button class="vc-tile" id="btnBatteryHeat" title="Akku heizen" data-i18n-attr="title:vehicle_control.battery_heat_label" data-requires-cloud="true">
+                            <!-- 0.1.26: Akku heizen als zwei Knöpfe An/Aus (kein Umschalter) – Aus geht auch bei unbekanntem Zustand -->
+                            <button class="vc-tile" id="btnBatteryHeat" title="Akku heizen an" data-i18n-attr="title:vehicle_control.battery_heat_on" data-requires-cloud="true">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <rect width="16" height="10" x="2" y="7" rx="2" ry="2"/>
                                     <line x1="22" x2="22" y1="11" y2="13"/>
                                     <path d="M6 11v2"/><path d="M10 11v2"/>
                                 </svg>
-                                <span data-i18n="vehicle_control.battery_heat_label">Akku heizen</span>
+                                <span data-i18n="vehicle_control.battery_heat_on">Akku heizen an</span>
+                            </button>
+                            <button class="vc-tile" id="btnBatteryHeatOff" title="Akku heizen aus" data-i18n-attr="title:vehicle_control.battery_heat_off" data-requires-cloud="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect width="16" height="10" x="2" y="7" rx="2" ry="2"/>
+                                    <line x1="22" x2="22" y1="11" y2="13"/>
+                                    <line x1="4" y1="5" x2="18" y2="19"/>
+                                </svg>
+                                <span data-i18n="vehicle_control.battery_heat_off">Akku heizen aus</span>
                             </button>
                             <div class="vc-block-row">
-                                <div class="vc-block vc-block--stepper">
-                                    <span class="vc-block-title" data-i18n="vehicle.temperature">Temperatur</span>
-                                    <div class="vc-stepper">
-                                        <button class="vc-mini" id="btnTempDown" title="Kühler" data-i18n-attr="title:vehicle_control.tip_temp_down">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                        </button>
-                                        <span class="vc-readout" id="acTemp">22&deg;</span>
-                                        <button class="vc-mini" id="btnTempUp" title="Wärmer" data-i18n-attr="title:vehicle_control.tip_temp_up">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                        </button>
+                                <!-- 0.1.26: Sollwert als Stufe wie im Display (8 blau | Mitte | 8 rot), nie °C; große Knöpfe -->
+                                <div class="vc-block vc-block--stepper vc-klima-stufe">
+                                    <span class="vc-block-title" data-i18n="vehicle.climate_level">Klima-Stufe</span>
+                                    <span class="vc-readout" id="acTemp" data-i18n="klima_stufe.neutral">Neutral</span>
+                                    <div id="acStufeBalken"></div>
+                                    <p class="vc-hint" id="klimaStufeHinweis" hidden></p>
+                                    <div class="vc-stufe-knoepfe">
+                                        <button class="vc-tile" id="btnTempDown" title="Kühler" data-i18n-attr="title:vehicle_control.tip_temp_down"><span data-i18n="vehicle_control.tip_temp_down">Kühler</span></button>
+                                        <button class="vc-tile" id="btnTempNeutral" title="Neutral" data-i18n-attr="title:klima_stufe.neutral"><span data-i18n="klima_stufe.neutral">Neutral</span></button>
+                                        <button class="vc-tile" id="btnTempUp" title="Wärmer" data-i18n-attr="title:vehicle_control.tip_temp_up"><span data-i18n="vehicle_control.tip_temp_up">Wärmer</span></button>
                                     </div>
                                 </div>
                                 <div class="vc-block vc-block--stepper">
@@ -284,12 +293,12 @@
                                         </div>
                                     </div>
                                     <div class="vc-block vc-block--stepper">
-                                        <span class="vc-block-title" data-i18n="vehicle.temperature">Temperatur</span>
+                                        <span class="vc-block-title" data-i18n="vehicle.climate_level">Klima-Stufe</span>
                                         <div class="vc-stepper">
                                             <button class="vc-mini" id="btnBookingTempDown" title="Temperatur fürs Vorab-Klimatisieren senken" data-i18n-attr="title:vehicle.precondition_temp_down">
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                             </button>
-                                            <span class="vc-readout" id="climateBookingTemp">22&deg;</span>
+                                            <span class="vc-readout" id="climateBookingTemp" data-i18n="klima_stufe.cool">Kühlen</span>
                                             <button class="vc-mini" id="btnBookingTempUp" title="Temperatur fürs Vorab-Klimatisieren erhöhen" data-i18n-attr="title:vehicle.precondition_temp_up">
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                             </button>
@@ -663,6 +672,7 @@
          (12V, ACC, SOC, range, SOH, fuel, network). Without it those values
          all stay unread since vehicle-control.js only manages the 3D scene. -->
     <script src="../shared/core.js?v=pn6"></script>
+    <script src="../shared/klima-stufe.js?v=1"></script>
     <!-- Mode-gated loader. In immersive mode this injects the heavy stack
          (SotaPlayer + three.js + Draco/GLTF/Orbit + gsap ≈ 820 KB of script,
          plus the 1.6 MB GLB the scene then fetches) in strict order via

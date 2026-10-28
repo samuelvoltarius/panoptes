@@ -54,6 +54,26 @@ public final class HandyApiHandler {
         default int echoSitz(int position, int stufe) {
             return BydDataCollector.ECHO_UNBEKANNT;
         }
+
+        /**
+         * 0.1.25 Wallbox (Recht „wallbox“): {@code {ladepunkt?, aktion:"modus"|"strom", wert}} über den eng begrenzten
+         * Weg des Wallbox-Dienstes (Herkunft „handy“). Antwort {@code {status, json}} wie {@code WallboxDienst.Ergebnis}.
+         */
+        /** 0.1.25 Route ins Auto schicken (Recht „route“): sofort {ok, status:"plant"} oder {ok:false, grund}. */
+        default JSONObject route(String kid, JSONObject req, long jetzt) throws Exception {
+            return at.greenchili.surfmate.planer.HandyRoute.get().starten(kid, req, jetzt);
+        }
+
+        /** 0.1.25 Stand der letzten Handy-Route dieser Kopplung. */
+        default JSONObject routeStand(String kid) throws Exception {
+            return at.greenchili.surfmate.planer.HandyRoute.get().stand(kid);
+        }
+
+        default JSONObject[] wallbox(JSONObject befehl) throws Exception {
+            at.greenchili.surfmate.wallbox.WallboxDienst.Ergebnis e =
+                    at.greenchili.surfmate.server.WallboxApiHandler.dienst().steuernHandy(befehl);
+            return new JSONObject[]{new JSONObject().put("status", e.status), e.json};
+        }
     }
 
     static volatile Umgebung umgebung = new Echt();
@@ -220,6 +240,8 @@ public final class HandyApiHandler {
             case "klima_an":
             case "klima_aus":
             case "sitzheizung":   // 0.1.21: gleiches Recht wie das Klima
+            case "akku_heizen":   // 0.1.26: Akku vorheizen, gleiches Recht wie das Klima
+            case "heizen_stoppen":   // 0.1.26: Klima UND Akku aus, ohne Rückfrage (Stoppen ist sicher)
                 recht = Kopplungen.RECHT_KLIMA;
                 break;
             case "zusperren":
@@ -228,6 +250,13 @@ public final class HandyApiHandler {
             case "aufsperren":
                 recht = Kopplungen.RECHT_AUFSPERREN;
                 break;
+            case "wallbox":   // 0.1.25: Start/Stop/Ladestrom, Standard AUS
+                recht = Kopplungen.RECHT_WALLBOX;
+                break;
+            case "route":     // 0.1.25: Ziel ins Auto schicken (nur Anzeige), Standard AN
+            case "route_stand":
+                recht = Kopplungen.RECHT_ROUTE;
+                break;
             default:
                 return fehler("aktion");
         }
@@ -235,15 +264,18 @@ public final class HandyApiHandler {
             if (aufsperren) u.telegram("handy.aufsperren_abgelehnt", k().anzeigeName(kid), "nicht_erlaubt");
             return fehler("nicht_erlaubt");
         }
+        // 0.1.25: Stand der Handy-Route nur lesen – zählt nicht zum Ratenlimit (die App fragt nach)
+        if ("route_stand".equals(aktion)) return u.routeStand(kid);
         if (!LIMIT.erlauben(kid, aufsperren, jetzt)) {
             if (aufsperren) u.telegram("handy.aufsperren_abgelehnt", k().anzeigeName(kid), "ratenlimit");
             return fehler("ratenlimit");
         }
         switch (aktion) {
             case "klima_an": {
-                double t = req.optDouble("tempC", Double.NaN);
+                // 0.1.26: stufe 1–17 wie im Display (bevorzugt) oder tempC in der SDK-Skala 17–33
+                double t = at.greenchili.surfmate.byd.KlimaStufe.sdkAusAnfrage(req, "tempC", Double.NaN);
                 int min = req.optInt("minuten", 20);
-                if (Double.isNaN(t) || t < 17 || t > 33 || t != Math.rint(t) || min < 5 || min > 30) {
+                if (Double.isNaN(t) || min < 5 || min > 30) {
                     return fehler("werte");
                 }
                 return ergebnis(u, aktion, new VehicleCommandRouter.ClimateOnCommand(t, min));
@@ -252,6 +284,16 @@ public final class HandyApiHandler {
                 return ergebnis(u, aktion, new VehicleCommandRouter.ClimateOffCommand());
             case "sitzheizung":
                 return sitzheizung(req, u);
+            case "akku_heizen":
+                return akkuHeizen(req, u);
+            case "heizen_stoppen":
+                return heizenStoppen(u);
+            case "wallbox":
+                return wallbox(req, kid, u);
+            case "route":
+                // Weg A (Koordination 28.10.): planen ab Auto-Position, ins Planer-Postfach; Karte am Display bleibt der
+                // einzige Weg ins Navi – nichts startet von selbst
+                return u.route(kid, req, jetzt);
             case "zusperren": {
                 VehicleCommandRouter.LockCommand cmd = new VehicleCommandRouter.LockCommand();
                 CloudPowerGate.Decision d = u.gate(cmd.name());
@@ -261,6 +303,44 @@ public final class HandyApiHandler {
             default:
                 return aufsperren(req, kid, u, jetzt);
         }
+    }
+
+    /**
+     * 0.1.25 {@code {aktion:"wallbox", was:"start"|"stop"|"strom", strom?:int, ladepunkt?}} (Recht „wallbox“):
+     * Start = Modus „sofort“, Stop = Modus „aus“, Ladestrom nur in den erlaubten Stufen. Nicht während der Fahrt, nur ein
+     * freigegebener Ladepunkt, Erfolg nur mit Echo ({@code bestaetigt}). Jede Änderung von außen meldet Telegram.
+     */
+    static JSONObject wallbox(JSONObject req, String kid, Umgebung u) throws Exception {
+        String was = req.optString("was", "");
+        JSONObject b = new JSONObject();
+        if (!req.optString("ladepunkt", "").isEmpty()) b.put("ladepunkt", req.optString("ladepunkt"));
+        switch (was) {
+            case "start":
+                b.put("aktion", "modus").put("wert", at.greenchili.surfmate.wallbox.WallboxQuelle.MODUS_SOFORT);
+                break;
+            case "stop":
+                b.put("aktion", "modus").put("wert", at.greenchili.surfmate.wallbox.WallboxQuelle.MODUS_AUS);
+                break;
+            case "strom": {
+                Object s = req.opt("strom");
+                if (!(s instanceof Integer)) return fehler("werte");
+                b.put("aktion", "strom").put("wert", s);
+                break;
+            }
+            default:
+                return fehler("werte");
+        }
+        JSONObject[] e = u.wallbox(b);
+        JSONObject r = e[1];
+        if (!r.optBoolean("ok", false)) {
+            JSONObject f = fehler(r.optString("grund", "fehlgeschlagen"));
+            return f.put("was", was);
+        }
+        boolean bestaetigt = r.optBoolean("uebernommen", false);
+        u.telegram("handy.wallbox", k().anzeigeName(kid), was + ("strom".equals(was) ? " " + b.get("wert") + " A" : ""));
+        JSONObject o = new JSONObject().put("ok", true).put("was", was).put("bestaetigt", bestaetigt);
+        if ("strom".equals(was)) o.put("strom", b.get("wert"));
+        return o;
     }
 
     static JSONObject aufsperren(JSONObject req, String kid, Umgebung u, long jetzt) throws Exception {
@@ -314,6 +394,43 @@ public final class HandyApiHandler {
         }
         JSONObject o = abbilden(r, () -> u.echoSitz(position, stufe));
         return o.put("sitz", sitz).put("stufe", stufe);
+    }
+
+    /**
+     * 0.1.26 {@code {aktion:"akku_heizen", an:true|false}}: wie {@code /api/vehicle/battery-heat} – nur über die
+     * BYD-Cloud (CLOUD_ONLY, also immer durch das CloudPowerGate). Es gibt keine lokale Rückmeldung, daher
+     * {@code bestaetigt:false}; den Zustand liest die App aus {@code batteryHeat} in {@code /api/vehicle/state}.
+     */
+    static JSONObject akkuHeizen(JSONObject req, Umgebung u) throws Exception {
+        Object an = req.opt("an");
+        if (!(an instanceof Boolean)) return fehler("werte");
+        return mitGate(u, "akku_heizen", new VehicleCommandRouter.BatteryHeatCommand((Boolean) an)).put("an", an);
+    }
+
+    /**
+     * 0.1.26 {@code {aktion:"heizen_stoppen"}}: erst Klima aus, dann Akku heizen aus – immer beide, auch wenn der
+     * Zustand unbekannt ist. Cloud nur wie sonst über Router + CloudPowerGate (bei Auto aus erlaubt). Antwort
+     * {@code {ok, klima:{…}, akku:{…}}}; {@code ok}, sobald einer der beiden Befehle durchging, sonst der Grund des
+     * Klimas (samt {@code einrichten}).
+     */
+    static JSONObject heizenStoppen(Umgebung u) throws Exception {
+        JSONObject klima = mitGate(u, "klima_aus", new VehicleCommandRouter.ClimateOffCommand());
+        JSONObject akku = mitGate(u, "akku_heizen", new VehicleCommandRouter.BatteryHeatCommand(false));
+        JSONObject o = klima.optBoolean("ok") || akku.optBoolean("ok")
+                ? new JSONObject().put("ok", true)
+                : new JSONObject(klima.toString());
+        return o.put("klima", klima).put("akku", akku);
+    }
+
+    /** Router ausführen; sperrt das Gate den Cloud-Weg, dessen Grund (z. B. auto_laeuft) statt „gate“. */
+    private static JSONObject mitGate(Umgebung u, String aktion, VehicleCommandRouter.VehicleCommand cmd)
+            throws Exception {
+        VehicleCommandRouter.CommandResult r = u.ausfuehren(cmd);
+        if (r != null && r.outcome == VehicleCommandRouter.Outcome.BLOCKED_DRIVING) {
+            CloudPowerGate.Decision d = u.gate(cmd.name());
+            if (d != null && !d.allowed) return gateFehler(d);
+        }
+        return abbilden(r, () -> u.echo(aktion));
     }
 
     /** Router ausführen und das Ergebnis vertragsgemäß abbilden; Erfolg ohne Echo = bestaetigt:false. */

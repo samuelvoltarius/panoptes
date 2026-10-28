@@ -752,6 +752,23 @@ public final class WallboxDienst {
      * einzige freigegebene; bei mehreren muss er genannt sein.
      */
     public synchronized Ergebnis steuernAutomatik(JSONObject b) throws JSONException {
+        return steuernBegrenzt(b, HERKUNFT_AUTOMATION);
+    }
+
+    /** Herkunft der Befehle aus der Handy-App im Protokoll (0.1.25, Recht „wallbox“). */
+    public static final String HERKUNFT_HANDY = "handy";
+
+    /**
+     * 0.1.25 Handy-App ({@code /api/handy/v1/aktion wallbox}, Recht „wallbox“): derselbe eng begrenzte Weg wie
+     * Ladeplan und Automationen – nur Start/Stop ({@code modus sofort/aus}) und Ladestrom in den erlaubten Stufen
+     * ({@link #pruefeWert}), nur ein freigegebener Ladepunkt, nicht während der Fahrt, Protokoll-Herkunft „handy“,
+     * Erfolg nur mit Echo.
+     */
+    public synchronized Ergebnis steuernHandy(JSONObject b) throws JSONException {
+        return steuernBegrenzt(b, HERKUNFT_HANDY);
+    }
+
+    private Ergebnis steuernBegrenzt(JSONObject b, String herkunft) throws JSONException {
         String id = b == null ? "" : b.optString("ladepunkt", "");
         String aktion = b == null ? "" : b.optString("aktion", "");
         Object wert = b == null || b.isNull("wert") ? null : b.opt("wert");
@@ -770,7 +787,7 @@ public final class WallboxDienst {
             }
             if (id.isEmpty()) return fehler(new WallboxFehler("nicht_freigegeben", 403));
         }
-        return steuernOhneFrage(id, aktion, wert, HERKUNFT_AUTOMATION);
+        return steuernOhneFrage(id, aktion, wert, herkunft);
     }
 
     private Ergebnis steuernOhneFrage(String id, String aktion, Object wert, String herkunft) throws JSONException {

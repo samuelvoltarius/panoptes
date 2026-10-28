@@ -81,7 +81,10 @@ public class KarosserieTelemetrieTest {
             assertTrue(TelemetryFieldCatalog.isDiscoverable(e[0]));
         }
         assertEquals("kWh/100 km", TelemetryFieldCatalog.get("consumption_avg").unit);
-        assertEquals("°C", TelemetryFieldCatalog.get("climate_setpoint").unit);
+        // 0.1.26: der Sollwert ist eine Stufe, keine Temperatur – nie °C; Text in climate_setpoint_stufe
+        assertEquals(null, TelemetryFieldCatalog.get("climate_setpoint").unit);
+        assertEquals(null, TelemetryFieldCatalog.get("climate_setpoint").deviceClass);
+        assertTrue(TelemetryFieldCatalog.isDiscoverable("climate_setpoint_stufe"));
 
         JSONObject snap = new JSONObject().put("unlocked", 0).put("door_open_lf", 1).put("plugged", 1)
                 .put("climate_on", 0).put("consumption_avg", 14.2);

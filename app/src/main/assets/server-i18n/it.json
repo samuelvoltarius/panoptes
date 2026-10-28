@@ -251,6 +251,8 @@
     "kopplung_ablehnen": "Rifiuta",
     "neue_kopplung_titel": "Nuovo dispositivo collegato: {0}",
     "neue_kopplung_text": "Non eri tu? Rimuovilo in Panoptes in Sistema → Dispositivi collegati.",
+    "neue_kopplung_band_titel": "Nuovo dispositivo: {0}",
+    "neue_kopplung_band_text": "Non eri tu? Rimuovi in Sistema",
     "blitzer_titel": "Autovelox tra {0} m",
     "blitzer_tempo": "Limite di velocità {0} km/h",
     "kopplung_titel_ha": "Home Assistant “{0}” vuole collegarsi",
@@ -358,7 +360,9 @@
     },
     "cloud_uebergabe_titel": "“{0}” vuole passare il cloud BYD",
     "cloud_uebergabe_text": "Numero di controllo {0}",
-    "gewohnheit_probelauf": "Prova: adesso avrei eseguito la tua abitudine. Va bene?"
+    "gewohnheit_probelauf": "Prova: adesso avrei eseguito la tua abitudine. Va bene?",
+    "weiteres_geraet_titel": "Cockpit «{0}» vuole collegare un telefono",
+    "weiteres_geraet_text": "Numero di controllo {0}"
   },
   "parking": {
     "notify": {
@@ -394,7 +398,10 @@
       "status_on": "⛺ *Il campeggio è attivo*",
       "status_off": "⛺ *Il campeggio è spento.* Si accende solo da fermi (marcia P).",
       "battery": "Batteria {0} % · limite {1} %",
-      "interval": "Riscaldamento: ogni {0} min per {1} min · livello {2}",
+      "interval": "Riscaldamento: ogni {0} min per {1} min · {2}",
+      "stufe_heizen": "Riscaldamento livello {0}",
+      "stufe_kuehlen": "Raffreddamento livello {0}",
+      "stufe_neutral": "Neutro",
       "lasts": "Il riscaldamento basta fino alle {0}",
       "trial": "_Prova: in questa versione Panoptes non riscalda ancora._",
       "not_parked": "Il campeggio funziona solo da fermi (marcia P).",
@@ -770,7 +777,11 @@
       "abgelaufen": "⌛ La richiesta è scaduta.",
       "fehler": "⚠️ Panoptes al momento non è raggiungibile. Consenti dal web.",
       "anfrage_ha": "🔗 *Home Assistant “{0}” vuole collegarsi*\nNumero di controllo: *{1}*\n\nCorrisponde al numero mostrato in Home Assistant? La richiesta vale 2 minuti.",
-      "anfrage_handy": "📱 *Il telefono «{0}» vuole collegarsi*\nNumero di controllo: *{1}*\n\nIl numero corrisponde a quello nell'app? La richiesta vale 2 minuti."
+      "anfrage_handy": "📱 *Il telefono «{0}» vuole collegarsi*\nNumero di controllo: *{1}*\n\nIl numero corrisponde a quello nell'app? La richiesta vale 2 minuti.",
+      "neu": "📱 *Nuovo dispositivo collegato: {0}*\nNon eri tu? Tocca Rimuovi.",
+      "knopf_entfernen": "🗑 Rimuovi",
+      "entfernt": "🗑 Rimosso – il dispositivo non è più collegato.",
+      "entfernen_abgelaufen": "⌛ Il pulsante è scaduto. Rimuovilo in Panoptes in Sistema → Dispositivi collegati."
     },
     "health": {
       "repariert": "🩺 *Il Guardiano è rimasto spento per {0} min – riparato.* Panoptes si è riattivato da solo.",
@@ -838,7 +849,8 @@
       "schluessel": "🔑 Il telefono «{0}» ha registrato una chiave di apertura. Se non sei stato tu, scollega il dispositivo in Panoptes.",
       "aufsperren_ok": "🔓 *Aperta* tramite il telefono «{0}».",
       "aufsperren_unbestaetigt": "🔓 Comando di apertura inviato tramite il telefono «{0}» – manca la conferma dall'auto.",
-      "aufsperren_abgelehnt": "🔒 Apertura tramite il telefono «{0}» rifiutata ({1})."
+      "aufsperren_abgelehnt": "🔒 Apertura tramite il telefono «{0}» rifiutata ({1}).",
+      "wallbox": "🔌 Wallbox comandata dal telefono «{0}»: {1}"
     },
     "zurueck": {
       "text": "🚗 Bentornato all’auto. Era parcheggiata da {0}.",
@@ -855,6 +867,11 @@
       "abgelehnt": "❌ Rifiutato.",
       "uebernommen_ok": "☁️ Cloud BYD ripreso da “{0}” e verificato – ora Panoptes funziona anche ad auto spenta.",
       "uebernommen_nicht_geprueft": "☁️ Cloud BYD ripreso da “{0}”, ma la verifica non è riuscita. Controlla in Panoptes sotto Sistema → Account BYD."
+    },
+    "weiteres_geraet": {
+      "anfrage": "📱 *EV-Cockpit «{0}» vuole collegare un telefono*\nNumero di controllo: *{1}*\n\nIl numero corrisponde a quello nel Cockpit? Se lo consenti, il Cockpit mostra un codice da scansionare. La richiesta vale 5 minuti.",
+      "erlaubt": "✅ Consentito – il Cockpit ora mostra il codice per il telefono.",
+      "abgelehnt": "❌ Rifiutato."
     }
   },
   "vehicle_control": {

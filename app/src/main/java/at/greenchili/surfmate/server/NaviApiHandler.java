@@ -202,6 +202,11 @@ public class NaviApiHandler {
         return c;
     }
 
+    /** 0.1.25 Handy-Route: dieselbe Aufbereitung des Plan-Bodys wie beim Planen im Auto (Vorlieben). */
+    public static String planBodyFuerAuto(String body) {
+        return planBody(body);
+    }
+
     /** Leeres filter.bevorzugt (bzw. leeres filter) entfernen: dann gilt die Konto-Einstellung beim Planer. */
     static String planBody(String body) {
         String auto = at.greenchili.surfmate.laden.LadenVorlieben.mitVorliebenOderNull(body);   // Kern 5: Auto ist die Quelle

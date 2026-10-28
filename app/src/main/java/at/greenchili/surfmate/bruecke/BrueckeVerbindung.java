@@ -32,6 +32,8 @@ public final class BrueckeVerbindung {
     interface Sender {
         boolean text(String s);
         boolean binaer(byte[] b);
+        /** 0.1.25 Gegendruck: Bytes, die noch zum Server unterwegs sind (OkHttp queueSize). */
+        default long warteschlange() { return 0; }
     }
 
     /** Ein Handy-Kanal. */
@@ -43,6 +45,12 @@ public final class BrueckeVerbindung {
         /** 0.1.24 Erstkopplung: Kanal kam mit unbekanntem Handy-Schlüssel über den Einmal-Zugang. */
         volatile boolean einmal;
         volatile byte[] hPub;
+        /** 0.1.25 Medien-Kanal (Server meldet {@code "art":"medien"}): nur Kamera-Daten über v2. */
+        volatile boolean medien;
+        /** 0.1.25 v2-Abbruch {@code {"t":"ab","id":n}}: diese ids nicht weiter senden. */
+        final java.util.Set<Long> abgebrochen = ConcurrentHashMap.newKeySet();
+        /** 0.1.25 laufende Live-Sitzung dieses Kanals (Steuerung da/ab/keyframe kommt sofort an). */
+        volatile BrueckeLive.Sitzung live;
         final ExecutorService arbeit = Executors.newSingleThreadExecutor();
 
         Kanal(int k, NoiseIK noise) {
@@ -62,6 +70,18 @@ public final class BrueckeVerbindung {
         /** Nach der Erstkopplung: Einmal-Zugang löschen (der Server schließt dann diesen Kanal, das Handy kommt mit
          *  eigenem Zugang wieder). Im Daemon verzögert, damit die Antwort vorher ankommt; im Test ersetzt. */
         Runnable einmalFertig;
+        /** Lokale Stream-Quelle für LIVE (im Test ersetzt). */
+        BrueckeLive.Quelle liveQuelle;
+        /** 0.1.25 Anklopfen vom Planer: Route sofort lesen (Übernahme bleibt ein Tipp am Auto). Im Test ersetzt. */
+        Runnable klopfen = () -> {
+            Thread t = new Thread(() -> {
+                try {
+                    at.greenchili.surfmate.planer.PlanerRoute.get().angeklopft(System.currentTimeMillis());
+                } catch (Throwable ignored) { }
+            }, "Bruecke-Klopf");
+            t.setDaemon(true);
+            t.start();
+        };
 
         Kanaele(Bruecke bruecke, BrueckeWeiterleitung weiter, Sender sender, java.util.function.LongSupplier uhr) {
             this.bruecke = bruecke;
@@ -95,12 +115,17 @@ public final class BrueckeVerbindung {
                     schliessen(k, true);
                     return;
                 }
-                Kanal alt = offen.put(k, new Kanal(k, NoiseIK.responder(a)));
+                Kanal neu = new Kanal(k, NoiseIK.responder(a));
+                neu.medien = "medien".equals(j.optString("art", ""));
+                Kanal alt = offen.put(k, neu);
                 if (alt != null) alt.arbeit.shutdownNow();
             } else if ("zu".equals(t) && k >= 0) {
                 schliessen(k, false);   // idempotent (Server meldet ggf. mehrfach)
             } else if ("limit".equals(t)) {
                 log("Server meldet Limit");
+            } else if ("klopf".equals(t)) {
+                log("Anklopfen vom Planer – Route wird gelesen");
+                klopfen.run();
             }
         }
 
@@ -154,6 +179,8 @@ public final class BrueckeVerbindung {
                     }
                     byte[] anfrage = c.sammler.hinzu(c.noise.entschluesseln(m));
                     if (anfrage == null) return;
+                    // v2-Steuerung (ab/da/keyframe) sofort, nicht hinter der laufenden Antwort anstellen
+                    if (steuerung(c, anfrage)) return;
                     c.arbeit.execute(() -> antworten(c, anfrage));
                 }
             } catch (Exception e) {
@@ -169,7 +196,103 @@ public final class BrueckeVerbindung {
             return false;
         }
 
+        /** {@code {"t":"ab","id":n}} → n, sonst -1. */
+        static long abbruchId(byte[] anfrage) {
+            if (anfrage.length > 200) return -1;
+            try {
+                JSONObject j = new JSONObject(new String(anfrage, java.nio.charset.StandardCharsets.UTF_8));
+                return "ab".equals(j.optString("t", "")) ? j.optLong("id", -1) : -1;
+            } catch (Exception e) {
+                return -1;
+            }
+        }
+
+        /** {@code {"t":"ab"|"da"|"keyframe","id":n}} sofort wirken lassen. true = war Steuerung. */
+        boolean steuerung(Kanal c, byte[] anfrage) {
+            if (anfrage.length > 200) return false;
+            JSONObject j;
+            try {
+                j = new JSONObject(new String(anfrage, java.nio.charset.StandardCharsets.UTF_8));
+            } catch (Exception e) {
+                return false;
+            }
+            String t = j.optString("t", "");
+            long id = j.optLong("id", -1);
+            if (id < 0 || !(t.equals("ab") || t.equals("da") || t.equals("keyframe"))) return false;
+            BrueckeLive.Sitzung s = c.live;
+            boolean seine = s != null && s.id == id;
+            if (t.equals("ab")) {
+                c.abgebrochen.add(id);
+                if (seine) s.stopp = true;
+            } else if (seine && t.equals("da")) {
+                s.da(uhr.getAsLong());
+            } else if (seine) {
+                s.keyframe();
+            }
+            return true;
+        }
+
+        private BrueckeWeiterleitung.StueckAusgang ausgang(Kanal c) {
+            return new BrueckeWeiterleitung.StueckAusgang() {
+                public boolean senden(byte[] stueck) throws Exception {
+                    synchronized (c) {
+                        if (offen.get(c.k) != c) return false;
+                        BrueckeVerbindung.Kanaele.this.senden(c.k, c.noise.verschluesseln(stueck));
+                        return true;
+                    }
+                }
+                public long warteschlange() { return sender.warteschlange(); }
+            };
+        }
+
+        /** 0.1.25 LIVE: Prüfungen wie ein Kamera-Pfad (JWT der Kopplung, Recht „kamera“), dann bis Stopp streamen. */
+        private void live(Kanal c, byte[] anfrage, JSONObject j) {
+            BrueckeWeiterleitung.StueckAusgang aus = ausgang(c);
+            long id = j.optLong("id", -1);
+            try {
+                if (j.optInt("v", 1) != 2) {
+                    antwortSenden(c, BrueckeWeiterleitung.fehler(id, 400, "live_nur_v2"));
+                    return;
+                }
+                JSONObject probe = new JSONObject(j.toString()).put("m", "GET").put("p", "/ws");
+                BrueckeWeiterleitung.Vorbereitet v = weiter.vorbereiten(
+                        probe.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8), c.kid, 0);
+                if (v.fehler != null) {
+                    aus.senden(BrueckeWeiterleitung.v2Fehler(v));
+                    return;
+                }
+                BrueckeLive.Sitzung s = new BrueckeLive.Sitzung(id, uhr.getAsLong());
+                c.live = s;
+                BrueckeLive.Quelle q = liveQuelle != null ? liveQuelle : BrueckeLive.imDaemon();
+                BrueckeLive.laufen(s, j.optString("q", "ULTRA_LOW").toUpperCase(java.util.Locale.ROOT), q, aus,
+                        weiter.konto(), uhr);
+            } catch (Exception e) {
+                schliessen(c.k, true);
+            } finally {
+                c.live = null;
+            }
+        }
+
         private void antworten(Kanal c, byte[] anfrage) {
+            if (!c.einmal) {
+                JSONObject j = null;
+                try {
+                    j = new JSONObject(new String(anfrage, java.nio.charset.StandardCharsets.UTF_8));
+                } catch (Exception ignored) { }
+                if (j != null && BrueckeLive.istLive(j)) {
+                    live(c, anfrage, j);
+                    return;
+                }
+            }
+            if (!c.einmal && BrueckeWeiterleitung.istV2(anfrage)) {
+                weiter.strom(anfrage, c.kid, c.medien, ausgang(c), c.abgebrochen::contains);
+                return;
+            }
+            if (c.medien) {
+                // Medien-Kanal: nur v2 (Kamera-Daten)
+                antwortSenden(c, BrueckeWeiterleitung.fehler(-1, 403, "medien_kanal"));
+                return;
+            }
             byte[] antwort;
             if (c.einmal) {
                 BrueckeWeiterleitung.EinmalSchritt s = weiter.einmal(anfrage, c.kid, c.hPub);
@@ -182,6 +305,10 @@ public final class BrueckeVerbindung {
             } else {
                 antwort = weiter.bearbeiten(anfrage, c.kid);
             }
+            antwortSenden(c, antwort);
+        }
+
+        private void antwortSenden(Kanal c, byte[] antwort) {
             try {
                 synchronized (c) {
                     if (offen.get(c.k) != c) return;
@@ -260,6 +387,7 @@ public final class BrueckeVerbindung {
             Sender sender = new Sender() {
                 public boolean text(String s) { WebSocket w = socket; return w != null && w.send(s); }
                 public boolean binaer(byte[] x) { WebSocket w = socket; return w != null && w.send(ByteString.of(x)); }
+                public long warteschlange() { WebSocket w = socket; return w == null ? 0 : w.queueSize(); }
             };
             Kanaele kk = new Kanaele(b, weiter, sender, System::currentTimeMillis);
             kanaele = kk;
@@ -273,6 +401,12 @@ public final class BrueckeVerbindung {
                             verbunden = true;
                             rueckzugMs = 2000;
                             log("verbunden");
+                            // 0.1.25 Klopf-Merkmal einmalig beim Brücken-Server anmelden (Netz: eigener Thread)
+                            Thread kt = new Thread(() -> {
+                                try { b.klopfAnmelden(); } catch (Throwable ignored) { }
+                            }, "Bruecke-Klopf-Anmeldung");
+                            kt.setDaemon(true);
+                            kt.start();
                         } catch (Exception e) {
                             w.close(1000, null);
                         }

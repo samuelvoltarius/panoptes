@@ -114,6 +114,7 @@
     <div id="toastContainer" class="toast-container"></div>
     <script src="../shared/auth.js"></script>
     <script src="../shared/core.js?v=pn6"></script>
+    <script src="../shared/klima-stufe.js?v=1"></script>
     <script src="../shared/einstellungen.js?v=pn8"></script>
     <script>
         function toggleSidebar() {
@@ -151,7 +152,11 @@
                 var z = s.tabelle, b = s.budget;
                 if (!z) return null;
                 var iv = b ? b.intervallMin : z.intervallMin, du = b ? b.dauerMin : z.dauerMin;
-                return this.t('camping.interval', 'alle {i} min für {d} min · Stufe {s}', { i: iv, d: du, s: z.stufe });
+                return this.t('camping.interval', 'alle {i} min für {d} min · {s}', { i: iv, d: du, s: this.stufe(z.stufe) });
+            },
+            // 0.1.26: Sollwert (SDK 26–33) als Stufe wie im Display, z. B. „Heizen Stufe 2“ – nie die Rohzahl
+            stufe: function (v) {
+                return window.PanoptesKlimaStufe ? PanoptesKlimaStufe.text(v) : '';
             },
             zeichne: function (s) {
                 this.s = s;
@@ -194,11 +199,11 @@
                     var e = p[i], txt;
                     if (e.trockenlauf !== false) {
                         txt = e.aktion === 'ein'
-                            ? this.t('camping.would_on', 'würde einschalten: Stufe {s}, Gebläse {g}', { s: e.stufe, g: e.geblaese })
+                            ? this.t('camping.would_on', 'würde einschalten: {s}, Gebläse {g}', { s: this.stufe(e.stufe), g: e.geblaese })
                             : this.t('camping.would_off', 'würde ausschalten');
                     } else {
                         txt = e.aktion === 'ein'
-                            ? this.t('camping.did_on', 'eingeschaltet: Stufe {s}, Gebläse {g} – {r}', { s: e.stufe, g: e.geblaese, r: e.ergebnis || '' })
+                            ? this.t('camping.did_on', 'eingeschaltet: {s}, Gebläse {g} – {r}', { s: this.stufe(e.stufe), g: e.geblaese, r: e.ergebnis || '' })
                             : this.t('camping.did_off', 'ausgeschaltet – {r}', { r: e.ergebnis || '' });
                     }
                     ph += '<div>' + this.esc(this.uhr(e.zeit)) + ' · ' + this.esc(txt) + '</div>';

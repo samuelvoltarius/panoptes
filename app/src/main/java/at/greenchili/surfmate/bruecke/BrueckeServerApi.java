@@ -59,6 +59,17 @@ final class BrueckeServerApi implements Bruecke.ServerApi {
         }
     }
 
+    @Override
+    public int klopfAnmelden(String server, String p, String g, String kHash) {
+        try {
+            String body = new JSONObject().put("k_hash", kHash).toString();
+            return ausfuehren(new Request.Builder().url(url(server, "postfach/" + p + "/klopf"))
+                    .header("Authorization", "Bearer " + g).post(RequestBody.create(body, JSON)).build());
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
     public int zugangWeg(String server, String p, String g, String gHandyHash) {
         return ausfuehren(new Request.Builder().url(url(server, "postfach/" + p + "/zugang/" + gHandyHash))
                 .header("Authorization", "Bearer " + g).delete().build());

@@ -51,7 +51,7 @@ public final class HeizTabelle {
     public final int morgensDauerMin, morgensStufe, morgensGeblaese;
     public final int mindestDauerMin, hoechstIntervallMin;
     public final double ersatzAussenC;
-    /** Cloud-Temperatur (OPENAIR 15–31) für H2-Sitzungen; Zuordnung zur Strichskala noch nicht gemessen. */
+    /** Cloud-Sollwert (SDK-Skala 17–33, 0.1.26) für H2-Sitzungen; 33 = Stufe 17 = stärkstes Heizen wie bisher Roh 17. */
     public final int cloudTemperatur;
 
     private HeizTabelle(List<Zeile> zeilen, Map<String, Double> verschiebung, TreeMap<Integer, Double> leistung,
@@ -71,7 +71,8 @@ public final class HeizTabelle {
         this.hoechstIntervallMin = j.optInt("hoechstIntervallMin", 240);
         this.ersatzAussenC = j.optDouble("ersatzAussenC", 0);
         JSONObject c = j.optJSONObject("cloud");
-        this.cloudTemperatur = c == null ? 31 : Math.max(15, Math.min(31, c.optInt("temperaturHeizen", 31)));
+        // 0.1.26: SDK-Skala; der alte Wert 31 bedeutete Roh 17 (°C − 14) = stärkstes Heizen, jetzt 33 (Roh = Stufe 17)
+        this.cloudTemperatur = c == null ? 33 : Math.max(17, Math.min(33, c.optInt("temperaturHeizen", 33)));
     }
 
     /** Liest das Kennfeld; wirft bei fehlender oder unsinniger Tabelle (dann heizt der Regler nicht). */

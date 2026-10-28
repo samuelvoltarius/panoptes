@@ -78,7 +78,7 @@ public class CampingCommandHandler implements TelegramCommandHandler {
             if (z != null) {
                 int iv = b != null ? b.optInt("intervallMin") : z.optInt("intervallMin");
                 int du = b != null ? b.optInt("dauerMin") : z.optInt("dauerMin");
-                sb.append("\n").append(ctx.tr("camping.interval", iv, du, z.optInt("stufe")));
+                sb.append("\n").append(ctx.tr("camping.interval", iv, du, stufe(ctx, z.optInt("stufe"))));
             }
             if (b != null && b.optLong("reichtBisMs", 0) > 0) {
                 sb.append("\n").append(ctx.tr("camping.lasts", uhr(b.optLong("reichtBisMs"))));
@@ -91,6 +91,17 @@ public class CampingCommandHandler implements TelegramCommandHandler {
                         {ctx.tr("camping.btn_warm"), "cmd:/camping warm"}},
                         {{ctx.tr("camping.btn_off"), "cmd:/camping aus"}}}
                 : new String[][][]{{{ctx.tr("camping.btn_on"), "cmd:/camping an"}}});
+    }
+
+    /** 0.1.26: Sollwert (SDK 17–33) als Stufe wie im Display („Heizen Stufe 2“), nie die Rohzahl oder °C. */
+    static String stufe(CommandContext ctx, int sdk) {
+        if (!at.greenchili.surfmate.byd.KlimaStufe.stufenModell()) return at.greenchili.surfmate.byd.KlimaStufe.anzeige(sdk);
+        int s = at.greenchili.surfmate.byd.KlimaStufe.ausSdk(sdk);
+        String art = at.greenchili.surfmate.byd.KlimaStufe.art(s);
+        if (art == null) return "–";
+        if (at.greenchili.surfmate.byd.KlimaStufe.NEUTRAL.equals(art)) return ctx.tr("camping.stufe_neutral");
+        return ctx.tr(at.greenchili.surfmate.byd.KlimaStufe.HEIZEN.equals(art) ? "camping.stufe_heizen"
+                : "camping.stufe_kuehlen", at.greenchili.surfmate.byd.KlimaStufe.textStufe(s));
     }
 
     static String uhr(long ms) {

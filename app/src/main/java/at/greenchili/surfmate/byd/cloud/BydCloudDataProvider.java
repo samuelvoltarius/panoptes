@@ -136,6 +136,8 @@ public final class BydCloudDataProvider {
     void updateFromVehicleInfo(
             JSONObject vehicleInfo, JSONObject hvac, long updateSequence) {
         if (vehicleInfo == null) return;
+        // 0.1.26: Klima-Felder gedrosselt ins Protokoll (airRunState-Aufnahme), nur lesend
+        KlimaRohProtokoll.antwort(vehicleInfo, hvac);
 
         VehicleCloudSnapshot.Builder nextBuilder =
                 VehicleCloudSnapshot.fromVehicleInfo(vehicleInfo, hvac);

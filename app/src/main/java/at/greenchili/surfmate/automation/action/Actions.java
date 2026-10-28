@@ -386,7 +386,7 @@ public class Actions {
                         + "\"remoteDurationMinutes\":${remoteDurationMinutes},"
                         + "\"autoOffMinutes\":${autoOffMinutes}}",
                 new EnumType(new Label("action", "automation.action"), new Label("off", "automation.off"), new Label("on", "automation.on")),
-                new IntType(new Label("temp", "automation.temperature"), 15, 33),
+                new IntType(new Label("temp", "automation.temperature"), 17, 33),
                 REMOTE_CLIMATE_DURATIONS,
                 AC_AUTO_OFF_MINUTES));
         // BOOKINGAIR has no local SDK equivalent. This creates a cloud remote-climate booking
@@ -400,7 +400,7 @@ public class Actions {
                 "{\"action\":\"create\",\"bookingTime\":\"${bookingTime}\",\"temp\":${temp},"
                         + "\"durationMinutes\":${durationMinutes}}",
                 new StringType(new Label("bookingTime", "automation.remote_climate_booking_time"), 10),
-                new IntType(new Label("temp", "automation.temperature"), 15, 31),
+                new IntType(new Label("temp", "automation.temperature"), 17, 33),
                 new EnumType(new Label("durationMinutes", "automation.remote_climate_duration"),
                         new Label("10", "automation.remote_climate_duration_10"),
                         new Label("15", "automation.remote_climate_duration_15"),
@@ -419,7 +419,7 @@ public class Actions {
                         + "\"durationMinutes\":${durationMinutes}}",
                 new StringType(new Label("bookingId", "automation.remote_climate_booking_id"), 19),
                 new StringType(new Label("bookingTime", "automation.remote_climate_booking_time"), 10),
-                new IntType(new Label("temp", "automation.temperature"), 15, 31),
+                new IntType(new Label("temp", "automation.temperature"), 17, 33),
                 new EnumType(new Label("durationMinutes", "automation.remote_climate_duration"),
                         new Label("10", "automation.remote_climate_duration_10"),
                         new Label("15", "automation.remote_climate_duration_15"),

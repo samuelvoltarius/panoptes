@@ -14,7 +14,7 @@
   "leistungQuelle": "CAMPING_P1_DATEN.md (HA-Sitzung, 22.10.2026, Auto an): Soll 26 bei 12 °C ≈ 1,5 kW, Max-Heizen ≈ 2,4 kW; Zwischenwerte linear. Wird nachts gemessen.",
   "grundlastKwAutoAn": 0.4,
   "cloud": {
-    "temperaturHeizen": 31,
+    "temperaturHeizen": 33,
     "dauerMin": 20,
     "hinweis": "Fernklima über die BYD-Cloud (OPENAIR) nimmt 15–31 °C ganzzahlig. Wie das auf die Surf-Strichskala (25 = Mitte, 26–33 = Striche 1–8) abbildet, ist NICHT gemessen. Annahme bis zum Test mit Alfred: 31 = stärkstes Heizen, das die Cloud zulässt. Messen: OPENAIR 26/28/31 bei Auto aus, danach beim Einschalten den Drehregler-Wert ablesen (Sollwert-Echo) und die Gebläse-/Heizwirkung notieren."
   },

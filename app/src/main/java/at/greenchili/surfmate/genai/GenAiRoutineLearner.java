@@ -362,8 +362,9 @@ public final class GenAiRoutineLearner {
         if (KIND_CLIMATE.equals(candidate.kind)) {
             variables.put("temperature", candidate.temperatureC);
             variables.put("zone", Integer.toString(candidate.zone));
-            name = "Routine · Set cabin to " + candidate.temperatureC
-                    + "°C at " + candidate.timeLabel();
+            // 0.1.26: Stufe wie im Display, nie °C
+            name = "Routine · Set climate to " + at.greenchili.surfmate.byd.KlimaStufe.anzeigeEn(candidate.temperatureC)
+                    + " at " + candidate.timeLabel();
         } else {
             variables.put("payload", candidate.operation);
             name = "Routine · "

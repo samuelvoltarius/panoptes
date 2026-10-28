@@ -76,18 +76,44 @@ final class BrueckeWeiterleitung {
     static final Set<String> NUR_WEB_RAUS = new HashSet<>(Arrays.asList("set-cookie", "location"));
     static final int MAX_PFAD = 2048, MAX_ANTWORT = 4 * 1024 * 1024, MAX_BEREICH = 1024 * 1024;
 
+    /** Hat die Kopplung dieses Recht? (Kopplungen.hatRecht) */
+    interface RechtPruefer {
+        boolean hat(String kid, String recht);
+    }
+
+    /**
+     * 0.1.25 (Koordination 28.10., mit Kern 12 abgesprochen): Kamerabilder, Aufnahmen und Live-Bild gehen über die
+     * Brücke nur mit dem Kopplungsrecht „kamera“ (Standard aus) – egal ob Kanal „web“, v1 oder v2.
+     */
+    static final String[] KAMERA_PFADE = {"/video/", "/thumb/", "/snapshot/", "/api/recordings", "/api/events/",
+            "/parking/asset/", "/api/stream", "/api/bs/", "/api/camview/", "/ws", "/h264/"};
+
+    static boolean istKameraPfad(String p) {
+        String q = p.contains("?") ? p.substring(0, p.indexOf('?')) : p;
+        for (String k : KAMERA_PFADE) {
+            if (q.startsWith(k) || (k.endsWith("/") && q.equals(k.substring(0, k.length() - 1)))) return true;
+        }
+        return false;
+    }
+
     private final JwtPruefer pruefer;
     private final Aufruf aufruf;
     private final WebZugang webZugang;
+    private final RechtPruefer recht;
 
     BrueckeWeiterleitung(JwtPruefer pruefer, Aufruf aufruf) {
         this(pruefer, aufruf, kid -> null);
     }
 
     BrueckeWeiterleitung(JwtPruefer pruefer, Aufruf aufruf, WebZugang webZugang) {
+        this(pruefer, aufruf, webZugang, (kid, r) -> false);
+    }
+
+    BrueckeWeiterleitung(JwtPruefer pruefer, Aufruf aufruf, WebZugang webZugang, RechtPruefer recht) {
         this.pruefer = pruefer;
         this.aufruf = aufruf;
         this.webZugang = webZugang;
+        this.recht = recht;
     }
 
     /**
@@ -95,13 +121,17 @@ final class BrueckeWeiterleitung {
      * oder Unlesbares → null (Kopfzeile fällt weg).
      */
     static String begrenzeRange(String v) {
+        return begrenzeRange(v, MAX_BEREICH);
+    }
+
+    static String begrenzeRange(String v, long max) {
         java.util.regex.Matcher m = java.util.regex.Pattern.compile("^\\s*bytes=(\\d{0,15})-(\\d{0,15})\\s*$").matcher(v);
         if (!m.matches() || (m.group(1).isEmpty() && m.group(2).isEmpty())) return null;
-        if (m.group(1).isEmpty()) return "bytes=-" + Math.min(Long.parseLong(m.group(2)), MAX_BEREICH);
+        if (m.group(1).isEmpty()) return "bytes=-" + Math.min(Long.parseLong(m.group(2)), max);
         long a = Long.parseLong(m.group(1));
         long b = m.group(2).isEmpty() ? Long.MAX_VALUE : Long.parseLong(m.group(2));
         if (b < a) return null;
-        return "bytes=" + a + "-" + Math.min(b, a + MAX_BEREICH - 1);
+        return "bytes=" + a + "-" + Math.min(b, a + max - 1);
     }
 
     /** Cookie-Kopfzeile ohne {@code byd_session} (im Kanal „web“ zählt nur der vom Auto ausgestellte Web-JWT). */
@@ -116,22 +146,41 @@ final class BrueckeWeiterleitung {
         return sb.toString();
     }
 
+    /** Geprüfte Innen-Anfrage (oder {@link #fehler} als fertige Antwort). */
+    static final class Vorbereitet {
+        long id = -1;
+        String m, p;
+        java.util.Map<String, String> kopf;
+        byte[] body;
+        boolean web;
+        byte[] fehler;
+    }
+
     /** Bearbeitet eine Innen-Anfrage (JSON) für die Kopplung {@code kid}; liefert immer eine Antwort (JSON). */
     byte[] bearbeiten(byte[] anfrage, String kid) {
+        Vorbereitet v = vorbereiten(anfrage, kid, MAX_BEREICH);
+        return v.fehler != null ? v.fehler : weiterreichen(v.id, v.m, v.p, v.kopf, v.body, v.web);
+    }
+
+    /** Alle Prüfungen (JWT der eigenen Kopplung, Recht „kamera“, Kanal „web“, Range höchstens {@code maxBereich}). */
+    Vorbereitet vorbereiten(byte[] anfrage, String kid, int maxBereich) {
+        Vorbereitet v = new Vorbereitet();
         JSONObject req;
         long id = -1;
         try {
             req = new JSONObject(new String(anfrage, StandardCharsets.UTF_8));
             id = req.optLong("id", -1);
         } catch (Exception e) {
-            return fehler(id, 400, "json");
+            v.fehler = fehler(id, 400, "json");
+            return v;
         }
+        v.id = id;
         boolean web = "web".equals(req.optString("x", ""));
         String m = req.optString("m", "").toUpperCase(Locale.ROOT);
         String p = req.optString("p", "");
-        if (!METHODEN.contains(m)) return fehler(id, 405, "methode");
+        if (!METHODEN.contains(m)) { v.fehler = fehler(id, 405, "methode"); return v; }
         if (p.isEmpty() || p.length() > MAX_PFAD || !p.startsWith("/") || p.startsWith("//")
-                || !p.matches("[\\x21-\\x7e]+")) return fehler(id, 400, "pfad");
+                || !p.matches("[\\x21-\\x7e]+")) { v.fehler = fehler(id, 400, "pfad"); return v; }
         java.util.Map<String, String> kopf = new java.util.LinkedHashMap<>();
         JSONObject h = req.optJSONObject("h");
         String jwt = null;
@@ -139,22 +188,26 @@ final class BrueckeWeiterleitung {
             for (Iterator<String> it = h.keys(); it.hasNext(); ) {
                 String k = it.next();
                 String kl = k.toLowerCase(Locale.ROOT);
-                String v = h.optString(k, "");
+                String wert = h.optString(k, "");
                 if (!(KOPF_REIN.contains(kl) || (web && kl.equals("cookie")))
-                        || v.indexOf('\r') >= 0 || v.indexOf('\n') >= 0 || v.length() > 8192) continue;
+                        || wert.indexOf('\r') >= 0 || wert.indexOf('\n') >= 0 || wert.length() > 8192) continue;
                 if (kl.equals("authorization")) {
-                    if (!v.regionMatches(true, 0, "Bearer ", 0, 7)) continue;
-                    jwt = v.substring(7).trim();
+                    if (!wert.regionMatches(true, 0, "Bearer ", 0, 7)) continue;
+                    jwt = wert.substring(7).trim();
                 }
-                kopf.put(kl, v);
+                kopf.put(kl, wert);
             }
         }
         // Kanal gehört genau einer Kopplung: nur deren Kopplungs-JWT gilt
         String jwtKid = jwt == null ? null : pruefer.kopplungsId(jwt);
-        if (jwtKid == null || !jwtKid.equals(kid)) return fehler(id, 401, "kopplung");
+        if (jwtKid == null || !jwtKid.equals(kid)) { v.fehler = fehler(id, 401, "kopplung"); return v; }
+        if (istKameraPfad(p) && !recht.hat(kid, at.greenchili.surfmate.auth.Kopplungen.RECHT_KAMERA)) {
+            v.fehler = fehler(id, 403, "kamera");
+            return v;
+        }
         if (web) {
             String wj = webZugang.webJwt(kid);
-            if (wj == null) return fehler(id, 403, "nicht_erlaubt");
+            if (wj == null) { v.fehler = fehler(id, 403, "nicht_erlaubt"); return v; }
             kopf.put("authorization", "Bearer " + wj);
             if (kopf.containsKey("cookie")) {
                 String c = ohneSitzungsCookie(kopf.get("cookie"));
@@ -163,7 +216,7 @@ final class BrueckeWeiterleitung {
             }
         }
         if (kopf.containsKey("range")) {
-            String r = begrenzeRange(kopf.get("range"));
+            String r = begrenzeRange(kopf.get("range"), maxBereich);
             if (r == null) kopf.remove("range");
             else kopf.put("range", r);
         }
@@ -175,12 +228,18 @@ final class BrueckeWeiterleitung {
             try {
                 body = Base64.getDecoder().decode(String.valueOf(b));
             } catch (IllegalArgumentException e) {
-                return fehler(id, 400, "body");
+                v.fehler = fehler(id, 400, "body");
+                return v;
             }
         } else {
             body = String.valueOf(b).getBytes(StandardCharsets.UTF_8);
         }
-        return weiterreichen(id, m, p, kopf, body, web);
+        v.m = m;
+        v.p = p;
+        v.kopf = kopf;
+        v.body = body;
+        v.web = web;
+        return v;
     }
 
     private byte[] weiterreichen(long id, String m, String p, java.util.Map<String, String> kopf, byte[] body, boolean web) {
@@ -189,15 +248,7 @@ final class BrueckeWeiterleitung {
             JSONObject r = new JSONObject();
             r.put("id", id);
             r.put("s", a.status);
-            JSONObject rk = new JSONObject();
-            for (java.util.Map.Entry<String, String> e : a.kopf.entrySet()) {
-                String k = e.getKey() == null ? null : e.getKey().toLowerCase(Locale.ROOT);
-                if (k == null || !KOPF_RAUS.contains(k) || (!web && NUR_WEB_RAUS.contains(k))) continue;
-                // Weiterleitungen nur auf eigene Pfade (kein fremder Host über die Brücke)
-                if (k.equals("location") && (!e.getValue().startsWith("/") || e.getValue().startsWith("//"))) continue;
-                rk.put(k, e.getValue());
-            }
-            r.put("h", rk);
+            r.put("h", kopfRaus(a.kopf, web));
             String ct = a.kopf.containsKey("content-type") ? a.kopf.get("content-type") : "";
             if (istText(ct)) {
                 r.put("b", new String(a.body, StandardCharsets.UTF_8));
@@ -299,6 +350,183 @@ final class BrueckeWeiterleitung {
         return new EinmalSchritt(fehler(id, 403, "einmal"), null, false);
     }
 
+    static JSONObject kopfRaus(java.util.Map<String, String> kopf, boolean web) throws Exception {
+        JSONObject rk = new JSONObject();
+        for (java.util.Map.Entry<String, String> e : kopf.entrySet()) {
+            String k = e.getKey() == null ? null : e.getKey().toLowerCase(Locale.ROOT);
+            if (k == null || !KOPF_RAUS.contains(k) || (!web && NUR_WEB_RAUS.contains(k))) continue;
+            // Weiterleitungen nur auf eigene Pfade (kein fremder Host über die Brücke)
+            if (k.equals("location") && (!e.getValue().startsWith("/") || e.getValue().startsWith("//"))) continue;
+            rk.put(k, e.getValue());
+        }
+        return rk;
+    }
+
+    // ------------------------------------------------------------------ 0.1.25 Innen v2 (BRUECKE_MEDIEN §2.1)
+
+    /** Stück-Typen v2: je Noise-Nachricht genau ein Stück {@code [Typ][id 4 Byte BE][Daten]} (Format Kern 12). */
+    static final byte V2_KOPF = 0x10, V2_DATEN = 0x11, V2_ENDE = 0x12, V2_FEHLER = 0x13;
+    static final int V2_MAX_DATEN = BrueckeRahmen.MAX_STUECK - 5;
+    /** v2 liefert Bereiche bis 2 MiB (v1 bleibt bei {@link #MAX_BEREICH}). */
+    static final int MAX_BEREICH_V2 = 2 * 1024 * 1024;
+    /** Gegendruck: nicht weiterlesen, solange so viel im Sende-Puffer zum Server wartet. */
+    static final long GEGENDRUCK = 256 * 1024;
+    static final long GEGENDRUCK_MAX_MS = 30_000;
+
+    /** Offene lokale Antwort zum stückweisen Lesen. */
+    static final class Strom implements java.io.Closeable {
+        final int status;
+        final java.util.Map<String, String> kopf;
+        final InputStream daten;
+        private final Runnable zu;
+
+        Strom(int status, java.util.Map<String, String> kopf, InputStream daten, Runnable zu) {
+            this.status = status;
+            this.kopf = kopf;
+            this.daten = daten;
+            this.zu = zu;
+        }
+
+        @Override
+        public void close() {
+            try {
+                if (daten != null) daten.close();
+            } catch (Exception ignored) { }
+            if (zu != null) zu.run();
+        }
+    }
+
+    interface StromAufruf {
+        Strom oeffnen(String methode, String pfad, java.util.Map<String, String> kopf, byte[] body) throws Exception;
+    }
+
+    /** Ziel der Stücke (verschlüsselt und sendet genau eine Noise-Nachricht je Stück). */
+    interface StueckAusgang {
+        /** false = Kanal ist zu. */
+        boolean senden(byte[] stueck) throws Exception;
+        /** Bytes, die noch auf dem Weg zum Server warten (Gegendruck). */
+        long warteschlange();
+    }
+
+    /** Tagesgrenze für Kamera-Daten am Auto (Standard 500 MB). false = Grenze erreicht. */
+    interface MedienKonto {
+        boolean verbrauchen(long n);
+    }
+
+    private StromAufruf stromAufruf = BrueckeWeiterleitung::loopbackStrom;
+    private MedienKonto konto = n -> true;
+
+    MedienKonto konto() { return konto; }
+
+    BrueckeWeiterleitung mitStrom(StromAufruf s, MedienKonto k) {
+        this.stromAufruf = s;
+        this.konto = k;
+        return this;
+    }
+
+    static byte[] stueck(byte typ, long id, byte[] daten, int laenge) {
+        byte[] r = new byte[5 + laenge];
+        r[0] = typ;
+        int i = (int) id;
+        r[1] = (byte) (i >>> 24);
+        r[2] = (byte) (i >>> 16);
+        r[3] = (byte) (i >>> 8);
+        r[4] = (byte) i;
+        if (laenge > 0) System.arraycopy(daten, 0, r, 5, laenge);
+        return r;
+    }
+
+    private static byte[] v2Fehler(long id, int status, String grund) {
+        byte[] j;
+        try {
+            j = new JSONObject().put("id", id).put("s", status).put("grund", grund).toString().getBytes(StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            j = ("{\"id\":" + id + ",\"s\":" + status + "}").getBytes(StandardCharsets.UTF_8);
+        }
+        return stueck(V2_FEHLER, id, j, j.length);
+    }
+
+    /** Prüf-Fehler (v1-Form {@code {"id","s","b":{"grund"}}}) als v2-Fehlerstück {@code {"id","s","grund"}}. */
+    static byte[] v2Fehler(Vorbereitet v) {
+        int s = 400;
+        String grund = "fehler";
+        try {
+            JSONObject f = new JSONObject(new String(v.fehler, StandardCharsets.UTF_8));
+            s = f.optInt("s", 400);
+            grund = new JSONObject(f.optString("b", "{}")).optString("grund", grund);
+        } catch (Exception ignored) { }
+        return v2Fehler(v.id, s, grund);
+    }
+
+    /** Ist die Innen-Anfrage v2 ({@code "v":2})? */
+    static boolean istV2(byte[] anfrage) {
+        try {
+            return new JSONObject(new String(anfrage, StandardCharsets.UTF_8)).optInt("v", 1) == 2;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * v2-Anfrage stückweise beantworten: Kopf (0x10), Daten (0x11, je höchstens {@link #V2_MAX_DATEN} Byte, ohne Base64,
+     * nie die ganze Antwort im Speicher), Ende (0x12) oder Fehler (0x13). Kamera-Daten zählen gegen die Tagesgrenze
+     * des Autos; auf einem Medien-Kanal sind nur Kamera-Pfade erlaubt. Abbruch über {@code abgebrochen}.
+     */
+    void strom(byte[] anfrage, String kid, boolean medienKanal, StueckAusgang aus, java.util.function.LongPredicate abgebrochen) {
+        Vorbereitet v = vorbereiten(anfrage, kid, MAX_BEREICH_V2);
+        try {
+            if (v.fehler != null) {
+                aus.senden(v2Fehler(v));
+                return;
+            }
+            boolean kamera = istKameraPfad(v.p);
+            if (medienKanal && !kamera) {
+                aus.senden(v2Fehler(v.id, 403, "medien_kanal"));
+                return;
+            }
+            if (kamera && !konto.verbrauchen(0)) {
+                aus.senden(v2Fehler(v.id, 429, "medien_tageslimit"));
+                return;
+            }
+            try (Strom st = stromAufruf.oeffnen(v.m, v.p, v.kopf, v.body)) {
+                byte[] k = new JSONObject().put("id", v.id).put("s", st.status).put("h", kopfRaus(st.kopf, v.web))
+                        .toString().getBytes(StandardCharsets.UTF_8);
+                if (!aus.senden(stueck(V2_KOPF, v.id, k, k.length))) return;
+                byte[] buf = new byte[V2_MAX_DATEN];
+                while (st.daten != null) {
+                    int n = 0, r;
+                    while (n < buf.length && (r = st.daten.read(buf, n, buf.length - n)) > 0) n += r;
+                    if (n == 0) break;
+                    if (abgebrochen.test(v.id)) {
+                        aus.senden(v2Fehler(v.id, 499, "abgebrochen"));
+                        return;
+                    }
+                    if (kamera && !konto.verbrauchen(n)) {
+                        aus.senden(v2Fehler(v.id, 429, "medien_tageslimit"));
+                        return;
+                    }
+                    long warten = System.currentTimeMillis() + GEGENDRUCK_MAX_MS;
+                    while (aus.warteschlange() > GEGENDRUCK) {
+                        if (System.currentTimeMillis() > warten || abgebrochen.test(v.id)) {
+                            aus.senden(v2Fehler(v.id, 504, "gegenstelle_langsam"));
+                            return;
+                        }
+                        Thread.sleep(20);
+                    }
+                    if (!aus.senden(stueck(V2_DATEN, v.id, buf, n))) return;
+                    if (n < buf.length) break;
+                }
+                aus.senden(stueck(V2_ENDE, v.id, null, 0));
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            try {
+                aus.senden(v2Fehler(v.id, 502, "intern"));
+            } catch (Exception ignored) { }
+        }
+    }
+
     static boolean istText(String contentType) {
         String c = contentType == null ? "" : contentType.toLowerCase(Locale.ROOT);
         return c.isEmpty() || c.startsWith("text/") || c.contains("json") || c.contains("javascript") || c.contains("xml");
@@ -326,43 +554,69 @@ final class BrueckeWeiterleitung {
             return kk.istHandy(kid) && kk.hatRecht(kid, at.greenchili.surfmate.auth.Kopplungen.RECHT_WEB)
                     ? at.greenchili.surfmate.auth.AuthManager.generateJwt(at.greenchili.surfmate.auth.WebSitzung.SCOPE, kid, 120)
                     : null;
-        });
+        }, (kid, r) -> at.greenchili.surfmate.auth.Kopplungen.get().hatRecht(kid, r))
+                .mitStrom(BrueckeWeiterleitung::loopbackStrom, n -> Bruecke.get().medienVerbrauchen(n, System.currentTimeMillis()));
     }
 
     /** Loopback an den eigenen HTTP-Server – mit Tunnel-Kennzeichen, damit die Loopback-Ausnahme nicht greift. */
-    static Antwort loopback(String methode, String pfad, java.util.Map<String, String> kopf, byte[] body) throws Exception {
+    /** v2: lokale Antwort offen lassen und stückweise lesen (nichts gesammelt, keine 4-MiB-Grenze). */
+    static Strom loopbackStrom(String methode, String pfad, java.util.Map<String, String> kopf, byte[] body) throws Exception {
+        HttpURLConnection c = verbinde(methode, pfad, kopf, body);
+        try {
+            int status = c.getResponseCode();
+            java.util.Map<String, String> rk = kopfVon(c);
+            InputStream in = status >= 400 ? c.getErrorStream() : c.getInputStream();
+            return new Strom(status, rk, in, c::disconnect);
+        } catch (Exception e) {
+            c.disconnect();
+            throw e;
+        }
+    }
+
+    private static HttpURLConnection verbinde(String methode, String pfad, java.util.Map<String, String> kopf, byte[] body)
+            throws Exception {
         URL u = new URL("http://127.0.0.1:" + at.greenchili.surfmate.daemon.CameraDaemon.HTTP_PORT + pfad);
         HttpURLConnection c = (HttpURLConnection) u.openConnection();
+        c.setInstanceFollowRedirects(false);
+        c.setUseCaches(false);
+        c.setConnectTimeout(5000);
+        c.setReadTimeout(60000);
+        c.setRequestMethod(methode);
+        for (java.util.Map.Entry<String, String> e : kopf.entrySet()) c.setRequestProperty(e.getKey(), e.getValue());
+        c.setRequestProperty("Forwarded", "for=panoptes-bruecke");
+        if (body.length > 0 || "POST".equals(methode) || "PUT".equals(methode)) {
+            c.setDoOutput(true);
+            c.setFixedLengthStreamingMode(body.length);
+            try (OutputStream o = c.getOutputStream()) {
+                o.write(body);
+            }
+        }
+        return c;
+    }
+
+    private static java.util.Map<String, String> kopfVon(HttpURLConnection c) {
+        java.util.Map<String, String> rk = new java.util.HashMap<>();
+        for (String k : KOPF_RAUS) {
+            if (k.equals("set-cookie")) {
+                // mehrere Set-Cookie: zeilenweise (die App setzt jede Zeile einzeln)
+                java.util.List<String> alle = null;
+                for (java.util.Map.Entry<String, java.util.List<String>> e : c.getHeaderFields().entrySet()) {
+                    if (e.getKey() != null && e.getKey().equalsIgnoreCase("set-cookie")) alle = e.getValue();
+                }
+                if (alle != null && !alle.isEmpty()) rk.put(k, String.join("\n", alle));
+                continue;
+            }
+            String v = c.getHeaderField(k);
+            if (v != null) rk.put(k, v);
+        }
+        return rk;
+    }
+
+    static Antwort loopback(String methode, String pfad, java.util.Map<String, String> kopf, byte[] body) throws Exception {
+        HttpURLConnection c = verbinde(methode, pfad, kopf, body);
         try {
-            c.setInstanceFollowRedirects(false);
-            c.setUseCaches(false);
-            c.setConnectTimeout(5000);
-            c.setReadTimeout(60000);
-            c.setRequestMethod(methode);
-            for (java.util.Map.Entry<String, String> e : kopf.entrySet()) c.setRequestProperty(e.getKey(), e.getValue());
-            c.setRequestProperty("Forwarded", "for=panoptes-bruecke");
-            if (body.length > 0 || "POST".equals(methode) || "PUT".equals(methode)) {
-                c.setDoOutput(true);
-                c.setFixedLengthStreamingMode(body.length);
-                try (OutputStream o = c.getOutputStream()) {
-                    o.write(body);
-                }
-            }
             int status = c.getResponseCode();
-            java.util.Map<String, String> rk = new java.util.HashMap<>();
-            for (String k : KOPF_RAUS) {
-                if (k.equals("set-cookie")) {
-                    // mehrere Set-Cookie: zeilenweise (die App setzt jede Zeile einzeln)
-                    java.util.List<String> alle = null;
-                    for (java.util.Map.Entry<String, java.util.List<String>> e : c.getHeaderFields().entrySet()) {
-                        if (e.getKey() != null && e.getKey().equalsIgnoreCase("set-cookie")) alle = e.getValue();
-                    }
-                    if (alle != null && !alle.isEmpty()) rk.put(k, String.join("\n", alle));
-                    continue;
-                }
-                String v = c.getHeaderField(k);
-                if (v != null) rk.put(k, v);
-            }
+            java.util.Map<String, String> rk = kopfVon(c);
             InputStream in = status >= 400 ? c.getErrorStream() : c.getInputStream();
             ByteArrayOutputStream b = new ByteArrayOutputStream();
             if (in != null) {

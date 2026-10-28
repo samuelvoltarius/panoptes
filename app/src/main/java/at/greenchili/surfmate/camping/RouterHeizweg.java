@@ -85,7 +85,7 @@ final class RouterHeizweg implements Heizweg {
         this.router = router;
         this.gate = gate;
         this.weg2Lebt = weg2Lebt;
-        this.cloudTemperatur = Math.max(15, Math.min(31, cloudTemperatur));
+        this.cloudTemperatur = Math.max(17, Math.min(33, cloudTemperatur));   // 0.1.26: SDK-Skala (Stufe 1–17)
         this.protokoll = protokoll;
         this.daten = daten;
     }

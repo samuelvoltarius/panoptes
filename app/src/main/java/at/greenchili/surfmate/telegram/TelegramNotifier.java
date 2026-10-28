@@ -548,6 +548,24 @@ public class TelegramNotifier {
         });
     }
 
+    /**
+     * 0.1.25 „Neues Gerät verbunden“ an den Besitzer-Chat mit Knopf [Entfernen] (Einmal-Griff {@code ref}, nie die
+     * Kopplungs-id). Ohne ref nur der Text. Nicht gespoolt.
+     */
+    public static void notifyNeueKopplung(String ref, String geraet) {
+        criticalExecutor.execute(() -> {
+            try {
+                JSONObject cmd = new JSONObject();
+                cmd.put("cmd", "notifyNeueKopplung");
+                if (ref != null) cmd.put("ref", ref);
+                cmd.put("geraet", geraet);
+                sendIpc(cmd, /*spoolOnDaemonDown=*/false);
+            } catch (Exception e) {
+                Log.e(TAG, "notifyNeueKopplung IPC error", e);
+            }
+        });
+    }
+
     /** 0.1.21 Web-Anmeldung per Telegram: Prüfzahl + Erlauben/Ablehnen an den Besitzer. Nie ein Schlüssel. */
     public static void notifyTelegramAnmeldung(String ref, String pruefzahl) {
         criticalExecutor.execute(() -> {
@@ -575,6 +593,22 @@ public class TelegramNotifier {
                 sendIpc(cmd, /*spoolOnDaemonDown=*/false);
             } catch (Exception e) {
                 Log.e(TAG, "notifyCloudUebergabe IPC error", e);
+            }
+        });
+    }
+
+    /** 0.1.25 „weiteres Gerät koppeln“ vom EV-Cockpit: Rückfrage mit Prüfzahl (Knöpfe wie beim Koppeln). */
+    public static void notifyWeiteresGeraet(String ref, String geraet, String pruefzahl) {
+        criticalExecutor.execute(() -> {
+            try {
+                JSONObject cmd = new JSONObject();
+                cmd.put("cmd", "notifyWeiteresGeraet");
+                cmd.put("ref", ref);
+                cmd.put("geraet", geraet);
+                cmd.put("pruefzahl", pruefzahl);
+                sendIpc(cmd, /*spoolOnDaemonDown=*/false);
+            } catch (Exception e) {
+                Log.e(TAG, "notifyWeiteresGeraet IPC error", e);
             }
         });
     }

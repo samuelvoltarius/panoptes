@@ -48,6 +48,14 @@ public final class KopplungsAnfragen {
 
         /** 0.1.19: Recht „aufsperren“ gleich beim Erlauben (nur Handy, nur mit Login gewählt). */
         default void aufsperrenErlauben(String kid) { }
+
+        /**
+         * 0.1.25: Zusatzrechte gleich beim Erlauben (nur Handy, nur mit Login gewählt): „aufsperren“ und/oder
+         * „wallbox“ zu den Standardrechten. Ohne Überschreiben wie bisher nur {@link #aufsperrenErlauben}.
+         */
+        default void zusatzRechte(String kid, boolean aufsperren, boolean wallbox) {
+            if (aufsperren) aufsperrenErlauben(kid);
+        }
     }
 
     static final class Anfrage {
@@ -56,6 +64,8 @@ public final class KopplungsAnfragen {
         String art;
         /** 0.1.19: beim Erlauben zusätzlich „aufsperren“ gewählt (nur Handy). */
         boolean aufsperren;
+        /** 0.1.25: beim Erlauben zusätzlich „wallbox“ gewählt (nur Handy). */
+        boolean wallbox;
         final long angelegt;
         Status status = Status.WARTET;
         long entschieden;
@@ -142,6 +152,11 @@ public final class KopplungsAnfragen {
      * {@code erlauben} und einer Handy-Anfrage; sonst wie bisher (Handy-Standard ohne Aufsperren).
      */
     public Entscheid entscheiden(String ref, boolean erlauben, boolean aufsperren, long now) {
+        return entscheiden(ref, erlauben, aufsperren, false, now);
+    }
+
+    /** 0.1.25: zusätzlich {@code wallbox} = Recht „wallbox“ gleich beim Erlauben (nur Handy). */
+    public Entscheid entscheiden(String ref, boolean erlauben, boolean aufsperren, boolean wallbox, long now) {
         synchronized (this) {
             aufraeumen(now);
             Anfrage a = null;
@@ -151,6 +166,7 @@ public final class KopplungsAnfragen {
             if (a.status != Status.WARTET) return Entscheid.SCHON_ENTSCHIEDEN;
             a.status = erlauben ? Status.ERLAUBT : Status.ABGELEHNT;
             a.aufsperren = erlauben && aufsperren && Kopplungen.ART_HANDY.equals(a.art);
+            a.wallbox = erlauben && wallbox && Kopplungen.ART_HANDY.equals(a.art);
             a.entschieden = now;
         }
         Beobachter b = beobachter;
@@ -175,8 +191,8 @@ public final class KopplungsAnfragen {
                 return new Abholung(Status.ABGELEHNT);
             }
             a.status = Status.ABGEHOLT;
-            if (a.aufsperren) {
-                try { ausgeber.aufsperrenErlauben(k[0]); } catch (Throwable ignored) { }
+            if (a.aufsperren || a.wallbox) {
+                try { ausgeber.zusatzRechte(k[0], a.aufsperren, a.wallbox); } catch (Throwable ignored) { }
             }
             r.kid = k[0];
             r.jwt = k[1];
@@ -253,8 +269,12 @@ public final class KopplungsAnfragen {
                             return jwt == null ? null : new String[] {kid, jwt};
                         }
                         public void aufsperrenErlauben(String kid) {
+                            zusatzRechte(kid, true, false);
+                        }
+                        public void zusatzRechte(String kid, boolean aufsperren, boolean wallbox) {
                             java.util.List<String> r = new java.util.ArrayList<>(Kopplungen.HANDY_STANDARD);
-                            r.add(Kopplungen.RECHT_AUFSPERREN);
+                            if (aufsperren) r.add(Kopplungen.RECHT_AUFSPERREN);
+                            if (wallbox) r.add(Kopplungen.RECHT_WALLBOX);
                             Kopplungen.get().rechteSetzen(kid, r);
                         }
                     });

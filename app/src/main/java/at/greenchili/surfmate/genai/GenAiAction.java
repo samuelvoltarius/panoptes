@@ -180,12 +180,13 @@ public final class GenAiAction {
                         || temperature < BydDataCollector.AC_SETPOINT_MIN_C
                         || temperature > BydDataCollector.AC_SETPOINT_MAX_C
                         || zone < 0 || zone > 2) {
+                    // 0.1.26: am Surf ist der Sollwert eine Stufe (17 = Kühlen 8, 25 = Neutral, 33 = Heizen 8), kein °C
                     throw new ValidationException(
-                            "Choose a valid climate zone and a temperature from "
+                            "Choose a valid climate zone and a setpoint from "
                                     + BydDataCollector.AC_SETPOINT_MIN_C
-                                    + " to "
+                                    + " (cooling level 8) to "
                                     + BydDataCollector.AC_SETPOINT_MAX_C
-                                    + " °C.");
+                                    + " (heating level 8); 25 is neutral.");
                 }
                 return new JSONObject()
                         .put("type", CLIMATE)
@@ -295,12 +296,9 @@ public final class GenAiAction {
     private static String confirmationText(JSONObject action) {
         String type = action.optString("type", "");
         if (CLIMATE.equals(type)) {
-            double value = action.optDouble("temperatureC");
-            String temperature = value == Math.rint(value)
-                    ? String.valueOf((int) value)
-                    : String.valueOf(value);
-            return "Ready to set the cabin temperature to "
-                    + temperature + " °C. Confirm below to run it.";
+            // 0.1.26: Stufe wie im Display, nie °C
+            String stufe = at.greenchili.surfmate.byd.KlimaStufe.anzeigeEn(action.optDouble("temperatureC"));
+            return "Ready to set the climate to " + stufe + ". Confirm below to run it.";
         }
         if (SUNSHADE.equals(type)) {
             return "Ready to " + action.optString("operation")

@@ -163,7 +163,10 @@ public final class MessageOverlayController {
      */
     public static boolean showRueckfrage(String ref, String pfad, String title, String message, String erlauben,
                                          String ablehnen, int timeoutSec) {
-        if (ref == null || !ref.matches("^[0-9a-f]{16}$") || !("/api/cloud-uebergabe/r-" + ref).equals(pfad)) return false;
+        if (ref == null || !ref.matches("^[0-9a-f]{16}$")
+                || !(("/api/cloud-uebergabe/r-" + ref).equals(pfad) || ("/api/kopplung/weiteres-geraet/r-" + ref).equals(pfad))) {
+            return false;   // 0.1.25: auch „weiteres Gerät koppeln“
+        }
         exec(kopplungCommand(ref, title, message, erlauben, ablehnen, timeoutSec) + " --es pfad " + q(pfad));
         return true;
     }

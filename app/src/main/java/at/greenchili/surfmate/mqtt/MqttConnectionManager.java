@@ -1439,9 +1439,13 @@ public class MqttConnectionManager {
                 // the same scale; `temp_unit` above still tells a consumer what the car displays.
                 if (vd.acSetpointDriver != BydVehicleData.UNAVAILABLE) {
                     payload.put("climate_setpoint", setpointToCelsius(vd.acSetpointDriver));
+                    // 0.1.26: als Text wie im Display („Heizen Stufe 2“), nie °C
+                    payload.put("climate_setpoint_stufe", at.greenchili.surfmate.byd.KlimaStufe.anzeige(setpointToCelsius(vd.acSetpointDriver)));
                 }
                 if (vd.acSetpointPassenger != BydVehicleData.UNAVAILABLE) {
                     payload.put("climate_setpoint_passenger", setpointToCelsius(vd.acSetpointPassenger));
+                    payload.put("climate_setpoint_stufe_passenger",
+                            at.greenchili.surfmate.byd.KlimaStufe.anzeige(setpointToCelsius(vd.acSetpointPassenger)));
                 }
 
                 // Seats
@@ -1671,6 +1675,7 @@ public class MqttConnectionManager {
                 "ambient_colour", "ambient_enabled",
                 "ac_on", "ac_cycle", "ac_wind", "ac_fan", "temp_unit",
                 "climate_setpoint", "climate_setpoint_passenger",
+                "climate_setpoint_stufe", "climate_setpoint_stufe_passenger",
                 "drift_mode", "speed_limit_warning",
                 "light_left_turn", "light_right_turn",
                 "light_low_beam", "light_high_beam",

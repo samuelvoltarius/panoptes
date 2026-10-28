@@ -1317,12 +1317,14 @@ public class VehicleControlApiHandler {
                     && ("power_on".equals(action) || "power_off".equals(action))) {
                 VehicleCommand fern;
                 if ("power_on".equals(action)) {
-                    Double t = req.has("temp") ? jsonNumber(req, "temp") : Double.valueOf(25);
+                    // 0.1.26: stufe 1..17 (bevorzugt) oder temp in der SDK-Skala 17..33; Cloud-Roh = Stufe
+                    double tw = at.greenchili.surfmate.byd.KlimaStufe.sdkAusAnfrage(req, "temp", 25);
+                    Double t = Double.isNaN(tw) ? null : Double.valueOf(tw);
                     Integer dauer = req.has("remoteDurationMinutes")
                             ? jsonInteger(req, "remoteDurationMinutes") : Integer.valueOf(10);
-                    if (t == null || t.doubleValue() != Math.rint(t.doubleValue())
-                            || t.doubleValue() < 15 || t.doubleValue() > 31) {
-                        sendClimateInputError(out, response, "remote: temp must be a whole number 15..31 C");
+                    if (t == null) {
+                        sendClimateInputError(out, response,
+                                "remote: stufe must be a whole number 1..17 (or temp 17..33)");
                         return;
                     }
                     if (dauer == null || !isValidRemoteClimateDuration(dauer.intValue())) {
@@ -1355,12 +1357,19 @@ public class VehicleControlApiHandler {
             switch (action) {
                 case "power_on": {
                     double t = 22;
-                    if (req.has("temp")) {
+                    if (req.has("stufe")) {
+                        // 0.1.26: Stufe 1..17 wie im Display (SDK = Stufe + 16)
+                        t = at.greenchili.surfmate.byd.KlimaStufe.sdkAusAnfrage(req, "temp", 22);
+                        if (Double.isNaN(t)) {
+                            sendClimateInputError(out, response, "stufe must be a whole number 1..17");
+                            return;
+                        }
+                    } else if (req.has("temp")) {
                         Double suppliedTemp = jsonNumber(req, "temp");
                         if (suppliedTemp == null
                                 || !isValidClimateStartTemperature(suppliedTemp.doubleValue())) {
                             sendClimateInputError(out, response,
-                                    "temp must be a number in range 15..33 C");
+                                    "temp must be a number in range 17..33 (or stufe 1..17)");
                             return;
                         }
                         t = suppliedTemp.doubleValue();
@@ -1420,7 +1429,10 @@ public class VehicleControlApiHandler {
                         sendClimateInputError(out, response, "zone must be an integer from 0 to 2");
                         return;
                     }
-                    Double suppliedTemp = jsonNumber(req, "temp");
+                    // 0.1.26: auch stufe 1..17 (SDK = Stufe + 16)
+                    double ausStufe = at.greenchili.surfmate.byd.KlimaStufe.sdkAusAnfrage(req, "temp", Double.NaN);
+                    Double suppliedTemp = !req.has("stufe") ? jsonNumber(req, "temp")
+                            : Double.isNaN(ausStufe) ? null : Double.valueOf(ausStufe);
                     if (suppliedTemp == null) {
                         sendClimateInputError(out, response, "temp must be a number in range "
                                 + at.greenchili.surfmate.byd.BydDataCollector.AC_SETPOINT_MIN_C + ".."
@@ -1592,7 +1604,7 @@ public class VehicleControlApiHandler {
      *
      * <p>Body: {@code { action: "create"|"update"|"delete", bookingId?,
      * bookingTime?, temp?, durationMinutes? }}. Times are epoch seconds. Create/update require a
-     * future booking time, 15..31 C whole-degree temperature, and one of the OEM's duration
+     * future booking time, a whole setpoint 17..33 (or stufe 1..17, 0.1.26), and one of the OEM's duration
      * values (10/15/20/25/30 minutes); delete requires only the booking id.
      */
     private static void handleClimateSchedule(OutputStream out, String body) throws Exception {
@@ -1628,11 +1640,13 @@ public class VehicleControlApiHandler {
                     HttpResponse.sendJson(out, response.toString());
                     return;
                 }
-                temp = req.has("temp") ? jsonNumber(req, "temp") : Double.valueOf(22D);
-                if (temp == null || temp.doubleValue() != Math.rint(temp.doubleValue())
-                        || temp.doubleValue() < 15D || temp.doubleValue() > 31D) {
+                // 0.1.26: stufe 1..17 oder temp in der SDK-Skala 17..33 (Cloud-Roh = Stufe)
+                // 0.1.26: Standard nach Außentemperatur statt fest 22 (Koordination 28.10.)
+                double tb = at.greenchili.surfmate.byd.KlimaStufe.sdkAusAnfrage(req, "temp", at.greenchili.surfmate.byd.KlimaStufe.vorklimaSdkJetzt());
+                temp = Double.isNaN(tb) ? null : Double.valueOf(tb);
+                if (temp == null) {
                     response.put("success", false);
-                    response.put("error", "temp must be a whole number from 15 to 31 C");
+                    response.put("error", "stufe must be a whole number from 1 to 17 (or temp 17..33)");
                     HttpResponse.sendJson(out, response.toString());
                     return;
                 }
@@ -3495,7 +3509,8 @@ public class VehicleControlApiHandler {
      * SDK-only, without ever silently clamping the caller's target.
      */
     private static boolean isValidClimateStartTemperature(double temp) {
-        return !Double.isNaN(temp) && !Double.isInfinite(temp) && temp >= 15D && temp <= 33D;
+        // 0.1.26: 15/16 gibt es nicht mehr – lokal und Cloud dieselben 17 Stufen (SDK 17..33)
+        return !Double.isNaN(temp) && !Double.isInfinite(temp) && temp >= 17D && temp <= 33D;
     }
 
     private static boolean isValidRemoteClimateDuration(int minutes) {

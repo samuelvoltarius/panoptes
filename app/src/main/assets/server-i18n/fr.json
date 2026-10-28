@@ -251,6 +251,8 @@
     "kopplung_ablehnen": "Refuser",
     "neue_kopplung_titel": "Nouvel appareil connecté : {0}",
     "neue_kopplung_text": "Ce n’était pas vous ? Supprimez-le dans Panoptes sous Système → Appareils associés.",
+    "neue_kopplung_band_titel": "Nouvel appareil : {0}",
+    "neue_kopplung_band_text": "Pas vous ? Supprimer sous Système",
     "blitzer_titel": "Radar dans {0} m",
     "blitzer_tempo": "Limitation à {0} km/h",
     "kopplung_titel_ha": "Home Assistant « {0} » veut se connecter",
@@ -358,7 +360,9 @@
     },
     "cloud_uebergabe_titel": "« {0} » veut transmettre le cloud BYD",
     "cloud_uebergabe_text": "Code de contrôle {0}",
-    "gewohnheit_probelauf": "Essai : j’aurais exécuté ton habitude maintenant. C’est bon ?"
+    "gewohnheit_probelauf": "Essai : j’aurais exécuté ton habitude maintenant. C’est bon ?",
+    "weiteres_geraet_titel": "Cockpit « {0} » veut connecter un téléphone",
+    "weiteres_geraet_text": "Numéro de contrôle {0}"
   },
   "parking": {
     "notify": {
@@ -394,7 +398,10 @@
       "status_on": "⛺ *Le camping est activé*",
       "status_off": "⛺ *Le camping est désactivé.* Activation uniquement à l'arrêt (position P).",
       "battery": "Batterie {0} % · limite {1} %",
-      "interval": "Chauffage : toutes les {0} min pendant {1} min · niveau {2}",
+      "interval": "Chauffage : toutes les {0} min pendant {1} min · {2}",
+      "stufe_heizen": "Chauffage niveau {0}",
+      "stufe_kuehlen": "Refroidissement niveau {0}",
+      "stufe_neutral": "Neutre",
       "lasts": "Le chauffage tient jusqu'à {0}",
       "trial": "_Essai : Panoptes ne chauffe pas encore dans cette version._",
       "not_parked": "Le camping ne fonctionne qu'à l'arrêt (position P).",
@@ -770,7 +777,11 @@
       "abgelaufen": "⌛ La demande a expiré.",
       "fehler": "⚠️ Panoptes est injoignable pour le moment. Veuillez l'autoriser sur le web.",
       "anfrage_ha": "🔗 *Home Assistant « {0} » veut se connecter*\nNuméro de contrôle : *{1}*\n\nCorrespond-il au numéro affiché dans Home Assistant ? La demande est valable 2 minutes.",
-      "anfrage_handy": "📱 *Le téléphone « {0} » veut se connecter*\nNombre de contrôle : *{1}*\n\nLe nombre correspond-il à celui de l'application ? La demande est valable 2 minutes."
+      "anfrage_handy": "📱 *Le téléphone « {0} » veut se connecter*\nNombre de contrôle : *{1}*\n\nLe nombre correspond-il à celui de l'application ? La demande est valable 2 minutes.",
+      "neu": "📱 *Nouvel appareil connecté : {0}*\nCe n’était pas vous ? Appuyez sur Supprimer.",
+      "knopf_entfernen": "🗑 Supprimer",
+      "entfernt": "🗑 Supprimé – l’appareil n’est plus connecté.",
+      "entfernen_abgelaufen": "⌛ Ce bouton a expiré. Supprimez l’appareil dans Panoptes sous Système → Appareils associés."
     },
     "health": {
       "repariert": "🩺 *Le Gardien était arrêté depuis {0} min – réparé.* Panoptes s’est réarmé tout seul.",
@@ -838,7 +849,8 @@
       "schluessel": "🔑 Le téléphone « {0} » a enregistré une clé de déverrouillage. Si ce n'était pas vous, dissociez l'appareil dans Panoptes.",
       "aufsperren_ok": "🔓 *Déverrouillé* via le téléphone « {0} ».",
       "aufsperren_unbestaetigt": "🔓 Commande de déverrouillage envoyée via le téléphone « {0} » – la confirmation de la voiture manque.",
-      "aufsperren_abgelehnt": "🔒 Déverrouillage via le téléphone « {0} » refusé ({1})."
+      "aufsperren_abgelehnt": "🔒 Déverrouillage via le téléphone « {0} » refusé ({1}).",
+      "wallbox": "🔌 Borne pilotée depuis le téléphone « {0} » : {1}"
     },
     "zurueck": {
       "text": "🚗 Bon retour à la voiture. Elle était garée depuis {0}.",
@@ -855,6 +867,11 @@
       "abgelehnt": "❌ Refusé.",
       "uebernommen_ok": "☁️ Cloud BYD repris de « {0} » et vérifié – Panoptes fonctionne maintenant aussi voiture éteinte.",
       "uebernommen_nicht_geprueft": "☁️ Cloud BYD repris de « {0} », mais la vérification a échoué. Regarde dans Panoptes sous Système → Compte BYD."
+    },
+    "weiteres_geraet": {
+      "anfrage": "📱 *EV-Cockpit « {0} » veut connecter un téléphone*\nNuméro de contrôle : *{1}*\n\nLe numéro correspond-il à celui du Cockpit ? Si tu autorises, le Cockpit affiche un code à scanner. La demande est valable 5 minutes.",
+      "erlaubt": "✅ Autorisé – le Cockpit affiche maintenant le code pour le téléphone.",
+      "abgelehnt": "❌ Refusé."
     }
   },
   "vehicle_control": {

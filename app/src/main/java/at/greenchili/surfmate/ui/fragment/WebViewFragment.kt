@@ -1848,16 +1848,18 @@ class WebViewFragment : Fragment() {
                     authReloadFired = true
                     webView?.reload()
                 }
-            } else if (attempt < 10) {
+            } else if (attempt < 40) {
                 // Auth not ready yet — daemon may still be writing the
-                // unified config. Poll up to ~10s. Each retry re-mints
-                // the JWT, so we'll pick up the daemon's secret as soon
-                // as it lands in the unified config.
+                // unified config. Each retry re-mints the JWT, so we pick up
+                // the daemon's secret as soon as it lands in the unified config.
+                // 0.1.25: since the app process no longer mints its own secret
+                // (AuthManager.istAppProzess), wait longer on a fresh install:
+                // 10 × 1 s, then 30 × 3 s (~100 s in total).
                 android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                     injectAuthCookie(attempt + 1)
-                }, 1000)
+                }, if (attempt < 10) 1000L else 3000L)
             } else {
-                android.util.Log.e("WebView", "Auth cookie retry exhausted after 10 attempts")
+                android.util.Log.e("WebView", "Auth cookie retry exhausted after 40 attempts")
             }
         } catch (e: Exception) {
             android.util.Log.e("WebView", "Cookie inject failed: ${e.message}")

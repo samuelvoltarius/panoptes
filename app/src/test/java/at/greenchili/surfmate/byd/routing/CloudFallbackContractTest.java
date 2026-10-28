@@ -35,6 +35,7 @@ public class CloudFallbackContractTest {
 
     @Test
     public void climateFallbackNeverClampsAValidLocalSetpoint() {
+        // anderes Modell (Standard im Test): wie bis 0.1.25 – Cloud nur 15..31, 32/33 nie geklemmt
         assertTrue(new VehicleCommandRouter.ClimateOnCommand(31).hasCloudPath());
         assertTrue(new VehicleCommandRouter.ClimateOnCommand(15, 25).hasCloudPath());
         assertTrue(new VehicleCommandRouter.ClimateOnCommand(15, 25).hasSdkPath());
@@ -42,6 +43,16 @@ public class CloudFallbackContractTest {
         assertTrue(!new VehicleCommandRouter.ClimateOnCommand(31.5).hasCloudPath());
         assertTrue(!new VehicleCommandRouter.ClimateOnCommand(32).hasCloudPath());
         assertTrue(!new VehicleCommandRouter.ClimateOnCommand(33).hasCloudPath());
+        // 0.1.26 Dolphin Surf: lokal und Cloud dieselben 17 Stufen (SDK 17..33, Cloud-Roh = Stufe)
+        at.greenchili.surfmate.byd.KlimaStufe.fuerTest(Boolean.TRUE);
+        try {
+            assertTrue(new VehicleCommandRouter.ClimateOnCommand(17).hasCloudPath());
+            assertTrue(new VehicleCommandRouter.ClimateOnCommand(33, 25).hasCloudPath());
+            assertTrue(!new VehicleCommandRouter.ClimateOnCommand(16).hasCloudPath());
+            assertTrue(!new VehicleCommandRouter.ClimateOnCommand(34).hasCloudPath());
+        } finally {
+            at.greenchili.surfmate.byd.KlimaStufe.fuerTest(null);
+        }
     }
 
     @Test

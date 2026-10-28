@@ -251,6 +251,8 @@
     "kopplung_ablehnen": "Weigeren",
     "neue_kopplung_titel": "Nieuw apparaat verbonden: {0}",
     "neue_kopplung_text": "Was jij dit niet? Verwijder het in Panoptes onder Systeem → Gekoppelde apparaten.",
+    "neue_kopplung_band_titel": "Nieuw apparaat: {0}",
+    "neue_kopplung_band_text": "Niet jij? Verwijder onder Systeem",
     "blitzer_titel": "Flitspaal over {0} m",
     "blitzer_tempo": "Maximumsnelheid {0} km/h",
     "kopplung_titel_ha": "Home Assistant “{0}” wil verbinding maken",
@@ -358,7 +360,9 @@
     },
     "cloud_uebergabe_titel": "‘{0}’ wil de BYD-cloud overdragen",
     "cloud_uebergabe_text": "Controlegetal {0}",
-    "gewohnheit_probelauf": "Proefrun: nu zou ik je gewoonte hebben uitgevoerd. Klopt dat?"
+    "gewohnheit_probelauf": "Proefrun: nu zou ik je gewoonte hebben uitgevoerd. Klopt dat?",
+    "weiteres_geraet_titel": "Cockpit „{0}” wil een telefoon verbinden",
+    "weiteres_geraet_text": "Controlegetal {0}"
   },
   "parking": {
     "notify": {
@@ -394,7 +398,10 @@
       "status_on": "⛺ *Kamperen staat aan*",
       "status_off": "⛺ *Kamperen staat uit.* Alleen in te schakelen bij stilstand (stand P).",
       "battery": "Accu {0} % · grens {1} %",
-      "interval": "Verwarmen: elke {0} min gedurende {1} min · stand {2}",
+      "interval": "Verwarmen: elke {0} min gedurende {1} min · {2}",
+      "stufe_heizen": "Verwarmen stand {0}",
+      "stufe_kuehlen": "Koelen stand {0}",
+      "stufe_neutral": "Neutraal",
       "lasts": "Verwarming reikt tot {0}",
       "trial": "_Proefdraaien: Panoptes verwarmt in deze versie nog niet._",
       "not_parked": "Kamperen werkt alleen bij stilstand (stand P).",
@@ -770,7 +777,11 @@
       "abgelaufen": "⌛ Het verzoek is verlopen.",
       "fehler": "⚠️ Panoptes is nu niet bereikbaar. Sta het toe via het web.",
       "anfrage_ha": "🔗 *Home Assistant “{0}” wil verbinding maken*\nControlegetal: *{1}*\n\nKomt het overeen met het getal in Home Assistant? Het verzoek is 2 minuten geldig.",
-      "anfrage_handy": "📱 *Telefoon ‘{0}’ wil verbinden*\nControlegetal: *{1}*\n\nKomt het getal overeen met dat in de app? Het verzoek is 2 minuten geldig."
+      "anfrage_handy": "📱 *Telefoon ‘{0}’ wil verbinden*\nControlegetal: *{1}*\n\nKomt het getal overeen met dat in de app? Het verzoek is 2 minuten geldig.",
+      "neu": "📱 *Nieuw apparaat verbonden: {0}*\nWas jij dit niet? Tik dan op Verwijderen.",
+      "knopf_entfernen": "🗑 Verwijderen",
+      "entfernt": "🗑 Verwijderd – het apparaat is niet meer verbonden.",
+      "entfernen_abgelaufen": "⌛ Deze knop is verlopen. Verwijder het in Panoptes onder Systeem → Gekoppelde apparaten."
     },
     "health": {
       "repariert": "🩺 *Bewaker was {0} min uit – hersteld.* Panoptes heeft zichzelf weer ingeschakeld.",
@@ -838,7 +849,8 @@
       "schluessel": "🔑 Telefoon ‘{0}’ heeft een ontgrendelsleutel geregistreerd. Was jij dit niet, ontkoppel het apparaat dan in Panoptes.",
       "aufsperren_ok": "🔓 *Ontgrendeld* via telefoon ‘{0}’.",
       "aufsperren_unbestaetigt": "🔓 Ontgrendelopdracht via telefoon ‘{0}’ verzonden – bevestiging van de auto ontbreekt.",
-      "aufsperren_abgelehnt": "🔒 Ontgrendelen via telefoon ‘{0}’ geweigerd ({1})."
+      "aufsperren_abgelehnt": "🔒 Ontgrendelen via telefoon ‘{0}’ geweigerd ({1}).",
+      "wallbox": "🔌 Laadpaal bediend vanaf telefoon „{0}”: {1}"
     },
     "zurueck": {
       "text": "🚗 Welkom terug bij de auto. Hij stond {0} geparkeerd.",
@@ -855,6 +867,11 @@
       "abgelehnt": "❌ Geweigerd.",
       "uebernommen_ok": "☁️ BYD-cloud overgenomen van ‘{0}’ en gecontroleerd – Panoptes werkt nu ook als de auto uit staat.",
       "uebernommen_nicht_geprueft": "☁️ BYD-cloud overgenomen van ‘{0}’, maar de controle is mislukt. Kijk in Panoptes onder Systeem → BYD-account."
+    },
+    "weiteres_geraet": {
+      "anfrage": "📱 *EV-Cockpit „{0}” wil een telefoon verbinden*\nControlegetal: *{1}*\n\nKomt het getal overeen met dat in de Cockpit? Als je het toestaat, toont de Cockpit een code om te scannen. Het verzoek is 5 minuten geldig.",
+      "erlaubt": "✅ Toegestaan – de Cockpit toont nu de code voor de telefoon.",
+      "abgelehnt": "❌ Geweigerd."
     }
   },
   "vehicle_control": {

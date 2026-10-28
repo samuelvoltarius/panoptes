@@ -22,6 +22,9 @@ public class WebSocketStreamServer extends WebSocketServer
     private static final String TAG = "WSStreamServer";
     private static final DaemonLogger logger = DaemonLogger.getInstance(TAG);
     private static final int PORT = 8987;
+    /** 0.1.25 für den lokalen Abgriff der Brücke (BrueckeLive, nur 127.0.0.1). */
+    public static final int PORT_OEFFENTLICH = PORT;
+    static final String LOOPBACK = "127.0.0.1";
     private static final long IDLE_TIMEOUT_MS = 30_000;
     // KF-RESYNC-002: how long to wait before retrying a per-client SPS/PPS
     // re-send when a "keyframe" request arrives before the encoder has
@@ -57,14 +60,17 @@ public class WebSocketStreamServer extends WebSocketServer
     private byte[] reusableFrameBuffer = null;
 
     public WebSocketStreamServer() {
-        super(new InetSocketAddress(PORT));
+        // 0.1.25 (Koordination 28.10.): nur Loopback – vorher an allen Schnittstellen ohne Token (Live-Bild im WLAN/
+        // Hotspot/Tailnet ohne Anmeldung abgreifbar). Die Live-Ansicht läuft über /ws (HttpServer, mit Token, im Prozess),
+        // die Brücke greift lokal ab (BrueckeLive).
+        super(new InetSocketAddress(LOOPBACK, PORT));
         setReuseAddr(true);
         setConnectionLostTimeout(30);
         logger.info("WebSocketStreamServer created on port " + PORT);
     }
 
     public WebSocketStreamServer(int port) {
-        super(new InetSocketAddress(port));
+        super(new InetSocketAddress(LOOPBACK, port));
         setReuseAddr(true);
         setConnectionLostTimeout(30);
         logger.info("WebSocketStreamServer created on port " + port);

@@ -29,8 +29,20 @@ public class ClimateScheduleParamsTest {
 
         assertEquals(1, params.getInt("remoteMode"));
         assertEquals(1_800_000_000L, params.getLong("bookingTime"));
+        // anderes Modell (Standard im Test, keine Konfiguration): wie bis 0.1.25 pyBYD °C − 14 = 8
         assertEquals(8, params.getInt("mainSettingTemp"));
         assertEquals(8, params.getInt("copilotSettingTemp"));
+        // 0.1.26 Dolphin Surf: SDK 22 = Stufe 6 = Roh 6
+        at.greenchili.surfmate.byd.KlimaStufe.fuerTest(Boolean.TRUE);
+        try {
+            JSONObject surf = BydCloudClient.climateScheduleParams(
+                    1, null, Long.valueOf(1_800_000_000L), Double.valueOf(22D), Integer.valueOf(25));
+            assertEquals(6, surf.getInt("mainSettingTemp"));
+            assertEquals(17, BydCloudClient.climateStartParams(33D, 20).getInt("mainSettingTemp"));
+            assertEquals(1, BydCloudClient.climateStartParams(17D, 20).getInt("mainSettingTemp"));
+        } finally {
+            at.greenchili.surfmate.byd.KlimaStufe.fuerTest(null);
+        }
         assertEquals(4, params.getInt("timeSpan"));
         assertEquals(2, params.getInt("cycleMode"));
         assertEquals(1, params.getInt("airAccuracy"));

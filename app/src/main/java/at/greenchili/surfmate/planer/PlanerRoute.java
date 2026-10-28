@@ -91,6 +91,22 @@ public final class PlanerRoute {
         return new Object[]{200, antwort(cachePlan, env.angenommen(), env.abgelehnt())};
     }
 
+    /**
+     * 0.1.25 Anklopfen über die Brücke („Ins Auto schicken“ im Planer): Zwischenspeicher verwerfen und meine-route sofort
+     * lesen, damit das Angebot ohne Wartezeit da ist. Nur lesen – übernommen wird weiter nur auf Tipp am Auto.
+     */
+    public void angeklopft(long now) {
+        synchronized (this) {
+            cacheGueltig = false;
+        }
+        status(now);
+    }
+
+    /** 0.1.25: nach „Route ins Auto schicken“ vom Handy die Karte sofort neu lesen (nicht erst nach 30 s). */
+    public synchronized void neuLaden() {
+        cacheGueltig = false;
+    }
+
     /** POST /api/navi/planer-route/annehmen {id}. */
     public synchronized JSONObject annehmen(String id, long now) {
         String[] token = env.token();
@@ -219,6 +235,13 @@ public final class PlanerRoute {
                 c.setRequestProperty(token[0], token[1]);
                 c.setRequestProperty("Accept", "application/json");
                 c.setRequestProperty("User-Agent", "Panoptes");
+                // 0.1.25 Anklopfen: Merkmal k nur an meine-route (Planer speichert es je Mitglied+Auto)
+                if (op.startsWith("meine-route")) {
+                    try {
+                        String k = at.greenchili.surfmate.bruecke.Bruecke.get().klopfMerkmal();
+                        if (k != null) c.setRequestProperty("X-Klopf", k);
+                    } catch (Throwable ignored) { }
+                }
                 if (body != null) {
                     byte[] b = body.getBytes(java.nio.charset.StandardCharsets.UTF_8);
                     c.setDoOutput(true);

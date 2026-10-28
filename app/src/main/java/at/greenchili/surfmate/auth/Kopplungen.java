@@ -64,7 +64,7 @@ public final class Kopplungen {
             g.put("zuletzt", nowMs);
             if (art != null && ARTEN.contains(art)) g.put("art", art);
             // 0.1.18 Handy-Vertrag §1: Standardrechte klima, zusperren, push – aufsperren erst per Web mit Login
-            if (ART_HANDY.equals(art)) g.put("rechte", new JSONArray(HANDY_STANDARD));
+            if (ART_HANDY.equals(art)) g.put("rechte", new JSONArray(HANDY_STANDARD)).put("rechteStand", RECHTE_STAND);
         } catch (Exception ignored) { }
         JSONArray neu = kopie(l);
         neu.put(g);
@@ -182,12 +182,21 @@ public final class Kopplungen {
     public static final String ART_HANDY = "handy";
     public static final String RECHT_KLIMA = "klima", RECHT_ZUSPERREN = "zusperren",
             RECHT_AUFSPERREN = "aufsperren", RECHT_PUSH = "push",
-            RECHT_WEB = "web";   // 0.1.20 Web-Sitzung (Weboberfläche in der Handy-App, Stufe B)
+            RECHT_WEB = "web",   // 0.1.20 Web-Sitzung (Weboberfläche in der Handy-App, Stufe B)
+            RECHT_KAMERA = "kamera",   // 0.1.25 Kamerabilder/Aufnahmen übers Internet (Brücke); Standard AUS (Passanten)
+            RECHT_WALLBOX = "wallbox",   // 0.1.25 Wallbox starten/stoppen/Ladestrom vom Handy; Standard AUS
+            RECHT_ROUTE = "route";       // 0.1.25 Route ins Auto schicken (nur Anzeige, nichts startet von selbst); Standard AN
     public static final java.util.List<String> RECHTE = java.util.Collections.unmodifiableList(
-            java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_AUFSPERREN, RECHT_PUSH, RECHT_WEB));
-    /** Standard bei neuer Handy-Kopplung: aufsperren AUS, bis der Besitzer es mit Login einschaltet. */
+            java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_AUFSPERREN, RECHT_PUSH, RECHT_WEB, RECHT_KAMERA,
+                    RECHT_WALLBOX, RECHT_ROUTE));
+    /** Standard bei neuer Handy-Kopplung: aufsperren, kamera und wallbox AUS, bis der Besitzer sie mit Login einschaltet. */
     static final java.util.List<String> HANDY_STANDARD = java.util.Collections.unmodifiableList(
-            java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_PUSH, RECHT_WEB));
+            java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_PUSH, RECHT_WEB, RECHT_ROUTE));
+    /**
+     * Stand der Rechte-Liste: ab 2 (0.1.25) kennt die gespeicherte Liste „route“. Ältere Kopplungen bekommen das neue
+     * Standard-AN-Recht „route“ beim Lesen dazu, bis der Besitzer die Rechte selbst setzt.
+     */
+    static final int RECHTE_STAND = 2;
 
     public static final int SCHLUESSEL_GESPEICHERT = 1, SCHLUESSEL_SCHON = 2, SCHLUESSEL_FEHLER = 0,
             SCHLUESSEL_KEINE_HANDY_KOPPLUNG = 3;
@@ -204,7 +213,12 @@ public final class Kopplungen {
 
     private static JSONArray rechteVon(JSONObject g) {
         JSONArray r = g.optJSONArray("rechte");
-        return r != null ? r : new JSONArray(HANDY_STANDARD);
+        if (r == null) return new JSONArray(HANDY_STANDARD);
+        if (g.optInt("rechteStand", 1) >= RECHTE_STAND) return r;
+        for (int i = 0; i < r.length(); i++) if (RECHT_ROUTE.equals(r.optString(i))) return r;
+        JSONArray mit = new JSONArray();
+        for (int i = 0; i < r.length(); i++) mit.put(r.opt(i));
+        return mit.put(RECHT_ROUTE);   // 0.1.25: neues Standard-AN-Recht für Bestand
     }
 
     /** Art der Kopplung oder null (unbekannt bzw. ohne Art). */
@@ -232,7 +246,7 @@ public final class Kopplungen {
         if (g == null || !ART_HANDY.equals(g.optString("art"))) return false;
         JSONArray r = new JSONArray();
         for (String x : RECHTE) if (rechte != null && rechte.contains(x)) r.put(x);
-        try { g.put("rechte", r); } catch (Exception e) { return false; }
+        try { g.put("rechte", r).put("rechteStand", RECHTE_STAND); } catch (Exception e) { return false; }
         return speichernSofort();
     }
 
