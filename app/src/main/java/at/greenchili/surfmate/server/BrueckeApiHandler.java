@@ -11,7 +11,11 @@ import java.io.OutputStream;
  * 0.1.20 Panoptes-Brücke (BRUECKE_VERTRAG.md):
  * <ul>
  *   <li>{@code GET /api/bruecke} – Status (ein, verbunden, Server, Postfach, öffentlicher Auto-Schlüssel, QR-Basis)</li>
- *   <li>{@code POST /api/bruecke {"ein":true|false, "server"?}} – Opt-in-Schalter</li>
+ *   <li>{@code POST /api/bruecke {"ein":true|false, "server"?, "zustimmung"?, "quelle"?}} – Opt-in-Schalter.
+ *       0.1.24: Einschalten nur mit Zustimmung (gespeichert oder {@code zustimmung:true} in derselben Anfrage, sonst
+ *       409 {@code zustimmung}); Ausschalten nimmt die Zustimmung zurück.</li>
+ *   <li>{@code POST /api/bruecke/zustimmung {"quelle"?}} – 0.1.24 Zustimmung nachreichen (Bestand mit schon
+ *       eingeschalteter Brücke: einmal nachfragen, die Brücke bleibt an)</li>
  * </ul>
  * Beides nur mit Login bzw. im Auto, nie mit einem Kopplungs-JWT (ExternGuard lässt die Pfade nicht durch, hier
  * zusätzlich geprüft). Die Handy-Seite ({@code /api/handy/v1/bruecke}) liegt im {@link HandyApiHandler}.
@@ -22,13 +26,13 @@ public final class BrueckeApiHandler {
 
     public static boolean handle(String method, String path, String body, OutputStream out) throws Exception {
         String p = path.contains("?") ? path.substring(0, path.indexOf('?')) : path;
-        if (!p.equals("/api/bruecke")) return false;
+        if (!p.equals("/api/bruecke") && !p.equals("/api/bruecke/zustimmung")) return false;
         if (AuthMiddleware.isExternRequest()) {
             HttpResponse.sendJson(out, 403, HandyApiHandler.fehler("nur_login").toString());
             return true;
         }
         Bruecke b = Bruecke.get();
-        if ("GET".equals(method)) {
+        if ("GET".equals(method) && p.equals("/api/bruecke")) {
             HttpResponse.sendJson(out, status(b).toString());
             return true;
         }
@@ -43,6 +47,31 @@ public final class BrueckeApiHandler {
             HttpResponse.sendJson(out, 400, HandyApiHandler.fehler("json").toString());
             return true;
         }
+        at.greenchili.surfmate.bruecke.Zustimmung zs = at.greenchili.surfmate.bruecke.Zustimmung.get();
+        if (p.equals("/api/bruecke/zustimmung")) {
+            if (!zs.setzen(System.currentTimeMillis(), req.optString("quelle", "web"))) {
+                HttpResponse.sendJson(out, 400, HandyApiHandler.fehler("quelle").toString());
+                return true;
+            }
+            JSONObject r = status(b);
+            r.put("ok", true);
+            HttpResponse.sendJson(out, r.toString());
+            return true;
+        }
+        if (req.optBoolean("ein", false) && !zs.erteilt()) {
+            // 0.1.24: ohne Häkchen kein Einschalten (28.10.)
+            if (!req.optBoolean("zustimmung", false)) {
+                JSONObject r = status(b);
+                r.put("ok", false);
+                r.put("grund", "zustimmung");
+                HttpResponse.sendJson(out, 409, r.toString());
+                return true;
+            }
+            if (!zs.setzen(System.currentTimeMillis(), req.optString("quelle", "web"))) {
+                HttpResponse.sendJson(out, 400, HandyApiHandler.fehler("quelle").toString());
+                return true;
+            }
+        }
         if (req.has("server") && !b.serverSetzen(req.optString("server", ""))) {
             HttpResponse.sendJson(out, 400, HandyApiHandler.fehler("server").toString());
             return true;
@@ -55,6 +84,7 @@ public final class BrueckeApiHandler {
             } else {
                 BrueckeVerbindung.stoppen();
                 e = b.ausschalten();
+                zs.zuruecknehmen();   // Brücke aus = Zustimmung weg
             }
             if (e != Bruecke.Ergebnis.OK) {
                 JSONObject r = status(b);
@@ -74,6 +104,7 @@ public final class BrueckeApiHandler {
         JSONObject r = b.status();
         r.put("verbunden", BrueckeVerbindung.verbunden());
         r.put("qrBasis", qrBasis(b.server()));
+        at.greenchili.surfmate.bruecke.Zustimmung.get().inStatus(r, r.optBoolean("ein", false));
         return r;
     }
 

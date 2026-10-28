@@ -45,11 +45,18 @@ public final class EinrichtungApiHandler {
     public static final List<String> SCHRITTE = Arrays.asList(
             "sprache", "haftung", "autostart", "ueberlagerung", "rechte", "usb_freigabe", "auto", "kameras",
             "waechter", "betrieb", "karte", "daten", "blitzer", "updates", "strompreis",
-            "extra_telegram", "extra_planer", "extra_cockpit", "extra_fernzugang", "extra_overdrive",
-            // 0.1.14: optionaler Notzugang für die Fernwartung (Standard aus, Regel 1)
-            "extra_notzugang",
+            "extra_telegram",
+            // 0.1.24: Handy & PC über die Panoptes-Brücke verbinden – der Standardweg, ohne Tailscale
+            "extra_handy",
+            "extra_planer", "extra_cockpit", "extra_overdrive",
             // 0.1.22: Gewohnheiten merken (Regel 2: Frage mit Erklärung; Bestand → „Noch offen“, nie still an)
-            "extra_gewohnheiten", "fertig");
+            "extra_gewohnheiten",
+            // 0.1.24: „Für Fortgeschrittene“ ans Ende (Tailscale-Fernzugang; 0.1.14 Notzugang, Standard aus, Regel 1)
+            "extra_fernzugang", "extra_notzugang",
+            "fertig");
+
+    /** 0.1.24: Schritte unter „Für Fortgeschrittene“ (brauchen Tailscale; Laien kommen ohne aus). */
+    public static final Set<String> FORTGESCHRITTEN = new HashSet<>(Arrays.asList("extra_fernzugang", "extra_notzugang"));
 
     /**
      * Overdrive-Übernahme (Kern 5): liefert true, wenn Overdrive-Daten gefunden wurden. Kern 5 setzt den Haken
@@ -93,6 +100,13 @@ public final class EinrichtungApiHandler {
             try {
                 JSONArray rf = at.greenchili.surfmate.storage.StorageManager.getInstance().rueckfallStatus();
                 for (int i = 0; i < rf.length(); i++) antwort.getJSONArray("noch_offen").put(rf.get(i));
+            } catch (Throwable ignored) {
+            }
+            // 0.1.24 Zustimmung zur Brücke: Bestand mit eingeschalteter Brücke einmal nachfragen (Brücke bleibt an)
+            try {
+                JSONObject bz = brueckeZustimmungOffen(at.greenchili.surfmate.bruecke.Bruecke.get().ein(),
+                        at.greenchili.surfmate.bruecke.Zustimmung.get().erteilt());
+                if (bz != null) antwort.getJSONArray("noch_offen").put(bz);
             } catch (Throwable ignored) {
             }
             // Kern 5 (LADENACHFRAGE): „Noch offen: N Ladungen ohne Preis“ – die Lade-DB kann fehlen
@@ -351,6 +365,13 @@ public final class EinrichtungApiHandler {
     }
 
     /** Das §0-Format für GET. */
+    /** 0.1.24: „Noch offen“-Eintrag, wenn die Brücke an ist, die Zustimmung aber fehlt; sonst null. */
+    static JSONObject brueckeZustimmungOffen(boolean brueckeEin, boolean erteilt) throws Exception {
+        if (!brueckeEin || erteilt) return null;
+        return new JSONObject().put("id", "bruecke_zustimmung").put("textKey", "einr.hinweis.bruecke_zustimmung")
+                .put("ziel", "system.html#kopplung");
+    }
+
     public static JSONObject sicht(JSONObject root, JSONObject z, JSONObject faehigkeiten, JSONObject selbsttest)
             throws Exception {
         JSONObject s = z.getJSONObject("schritte");
@@ -376,6 +397,7 @@ public final class EinrichtungApiHandler {
         for (String id : SCHRITTE) {
             String st = s.optString(id, OFFEN);
             JSONObject e = new JSONObject().put("id", id).put("pflicht", PFLICHT.contains(id)).put("status", st);
+            if (FORTGESCHRITTEN.contains(id)) e.put("gruppe", "fortgeschritten");
             if (g.has(id)) e.put("grund", g.getString(id));
             liste.put(e);
             if (aktuell == null && OFFEN.equals(st)) aktuell = id;

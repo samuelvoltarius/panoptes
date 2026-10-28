@@ -243,6 +243,8 @@
     "kopplung_text": "Check number {0}",
     "kopplung_erlauben": "Allow",
     "kopplung_ablehnen": "Decline",
+    "neue_kopplung_titel": "New device connected: {0}",
+    "neue_kopplung_text": "Wasn’t you? Remove it in Panoptes under System → Paired devices.",
     "blitzer_titel": "Speed camera in {0} m",
     "blitzer_tempo": "Speed limit {0} km/h",
     "kopplung_titel_ha": "Home Assistant “{0}” wants to connect",

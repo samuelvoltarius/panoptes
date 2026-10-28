@@ -243,6 +243,8 @@
     "kopplung_text": "Prüfzahl {0}",
     "kopplung_erlauben": "Erlauben",
     "kopplung_ablehnen": "Ablehnen",
+    "neue_kopplung_titel": "Neues Gerät verbunden: {0}",
+    "neue_kopplung_text": "Warst du das nicht? In Panoptes unter System → Gekoppelte Geräte entfernen.",
     "blitzer_titel": "Blitzer in {0} m",
     "blitzer_tempo": "Tempolimit {0} km/h",
     "kopplung_titel_ha": "Home Assistant „{0}“ will sich verbinden",

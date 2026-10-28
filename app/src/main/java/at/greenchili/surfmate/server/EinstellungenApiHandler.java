@@ -103,6 +103,11 @@ public final class EinstellungenApiHandler {
             JSONObject res = new JSONObject();
             res.put("code", code);
             res.put("gueltigBis", now + PairingCodes.TTL_MS);
+            // 0.1.24 Erstkopplung über die Brücke: Einmal-Zugang zum Code (nur im QR hinter „#“, BRUECKE_VERTRAG §2.3)
+            try {
+                String einmal = at.greenchili.surfmate.bruecke.Bruecke.get().einmalAnlegen(now + PairingCodes.TTL_MS);
+                if (einmal != null) res.put("brueckeEinmal", einmal);
+            } catch (Throwable ignored) { }
             HttpResponse.sendJson(out, res.toString());
             return true;
         }

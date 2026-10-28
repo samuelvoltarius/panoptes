@@ -249,6 +249,8 @@
     "kopplung_text": "Numero di controllo {0}",
     "kopplung_erlauben": "Consenti",
     "kopplung_ablehnen": "Rifiuta",
+    "neue_kopplung_titel": "Nuovo dispositivo collegato: {0}",
+    "neue_kopplung_text": "Non eri tu? Rimuovilo in Panoptes in Sistema → Dispositivi collegati.",
     "blitzer_titel": "Autovelox tra {0} m",
     "blitzer_tempo": "Limite di velocità {0} km/h",
     "kopplung_titel_ha": "Home Assistant “{0}” vuole collegarsi",

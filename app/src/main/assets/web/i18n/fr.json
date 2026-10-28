@@ -5086,7 +5086,10 @@
     "handy_schluessel_confirm": "Supprimer la clé de déverrouillage ? Le téléphone ne pourra déverrouiller à nouveau qu'après avoir enregistré une nouvelle clé (p. ex. après une nouvelle empreinte).",
     "handy_gespeichert": "Enregistré",
     "handy_fehler": "Impossible d'enregistrer.",
-    "cu_title": "« {n} » veut transmettre ta connexion au cloud BYD à Panoptes"
+    "cu_title": "« {n} » veut transmettre ta connexion au cloud BYD à Panoptes",
+    "bridge_consent": "Je veux connecter mon téléphone par Internet. Pour cela, un trafic chiffré passe par notre serveur en Allemagne. Le serveur ne voit aucune donnée du véhicule.",
+    "bridge_consent_link": "Confidentialité ›",
+    "bridge_consent_missing": "Coche d'abord la case."
   },
   "guardLegal": {
     "trigger": {
@@ -5505,7 +5508,8 @@
       "extra_fernzugang": "Accès distant",
       "fertig": "Fin",
       "extra_notzugang": "Accès de secours",
-      "extra_gewohnheiten": "Retenir les habitudes"
+      "extra_gewohnheiten": "Retenir les habitudes",
+      "extra_handy": "Connecter le téléphone"
     },
     "hinweis": {
       "projektion_unbekannt": {
@@ -5524,14 +5528,16 @@
         "fehlgeschlagen": "Sur {volume}, « {alt} » n’a pas pu être renommé en « {neu} ». Panoptes continue d’utiliser « {alt} »."
       },
       "speicher_rueckfall": "{bereich} : le support choisi ({gewaehlt}) est absent. Panoptes enregistre en interne pour l’instant, avec une place limitée.",
-      "rueckfall_aufnahmen": "{bereich} : {anzahl} enregistrements sont encore en interne, car le support était absent."
+      "rueckfall_aufnahmen": "{bereich} : {anzahl} enregistrements sont encore en interne, car le support était absent.",
+      "bruecke_zustimmung": "Ton téléphone est connecté par Internet. Merci de le confirmer encore une fois avec une coche."
     },
     "link": {
       "faehigkeiten_ueberCarPlay": "Visible via CarPlay ?",
       "faehigkeiten_ueberAndroidAuto": "Visible via Android Auto ?",
       "speedcam_ton": "Activer le signal sonore",
       "laden_strompreis": "Vérifier le prix",
-      "nachfrage": "Ajouter les prix"
+      "nachfrage": "Ajouter les prix",
+      "bruecke_zustimmung": "Confirmer"
     },
     "akku_uebernehmen": "Reprendre {name} : {wert}",
     "akku_ok": "Taille de batterie reprise.",
@@ -5562,7 +5568,8 @@
       "ziel_fehlt": "support retiré",
       "kein_platz": "place insuffisante",
       "abgebrochen": "annulé"
-    }
+    },
+    "fortgeschritten": "Pour utilisateurs avancés"
   },
   "laden": {
     "ui": {

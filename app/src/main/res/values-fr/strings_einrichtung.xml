@@ -134,13 +134,13 @@
     <string name="einr_updates_auto">Automatiquement</string>
     <string name="einr_updates_auto_satz">Uniquement quand la voiture est garée et éteinte.</string>
     <string name="einr_extra_telegram_titel">Telegram</string>
-    <string name="einr_extra_telegram_text">Messages du Gardien et de la voiture sur votre téléphone, via votre propre bot Telegram.</string>
+    <string name="einr_extra_telegram_text">Messages du Gardien et de la voiture sur ton téléphone, via ton propre bot Telegram. Fonctionne par Internet, sans programme en plus.</string>
     <string name="einr_extra_planer_titel">Relier le planificateur d’itinéraire</string>
     <string name="einr_extra_planer_text">Vous voyez alors en route si la batterie suffit jusqu’à destination. La liaison se fait avec un code sur votre téléphone.</string>
     <string name="einr_extra_cockpit_titel">Jumeler l’EV Cockpit</string>
     <string name="einr_extra_cockpit_text">L’EV Cockpit sur votre PC affiche les valeurs de votre voiture. Le jumelage se fait en un geste.</string>
     <string name="einr_extra_fernzugang_titel">Accès distant (Tailscale)</string>
-    <string name="einr_extra_fernzugang_text">Utile seulement si vous voulez voir la voiture à distance. Il vous faut pour cela un compte Tailscale gratuit.</string>
+    <string name="einr_extra_fernzugang_text">Accès direct à la voiture via ton propre réseau Tailscale (compte gratuit nécessaire). Nécessaire seulement pour : l\'interface web sur un PC à distance, l\'image en direct et les vidéos en pleine qualité, la maintenance à distance (adb) et l\'accès de secours. Pour l\'app mobile, « Connecter le téléphone » suffit.</string>
     <string name="einr_fertig_titel">Tout fonctionne ?</string>
     <string name="einr_fertig_pruefe">Panoptes vérifie …</string>
     <string name="einr_ungeprueft">Pas encore vérifié.</string>
@@ -159,4 +159,11 @@
     <string name="einr_gewohnheiten_text">Panoptes remarque ce que tu fais souvent de la même façon, p. ex. préchauffer chaque matin, et te demande s’il doit le faire lui-même à l’avenir. Cela reste uniquement dans la voiture. Tu peux le désactiver ou tout effacer à tout moment sous Système.</string>
     <string name="einr_gewohnheiten_ja">Oui, retenir</string>
     <string name="einr_gewohnheiten_nein">Non</string>
+    <string name="einr_fortgeschritten">Pour utilisateurs avancés. Inutile si tu utilises seulement l\'app mobile.</string>
+    <string name="einr_extra_handy_titel">Connecter le téléphone</string>
+    <string name="einr_extra_handy_text">Avec l\'app Panoptes sur ton téléphone, tu vois et commandes ta voiture. Même en déplacement, par Internet.\n\nVoici comment : coche la case ci-dessous. Touche « Connecter maintenant ». Touche ensuite « Associer un nouvel appareil » et scanne le code avec ton téléphone.\n\nL\'image en direct et les vidéos ne marchent pas encore en déplacement. Cela arrive bientôt.\nSur PC, utilise le programme EV-Cockpit (version 1.22 ou plus).</string>
+    <string name="einr_handy_knopf">Connecter maintenant</string>
+    <string name="einr_handy_zustimmung">Je veux connecter mon téléphone par Internet. Pour cela, un trafic chiffré passe par notre serveur en Allemagne. Le serveur ne voit aucune donnée du véhicule.</string>
+    <string name="einr_handy_datenschutz">Confidentialité : byd.serveone.at/en/datenschutz</string>
+    <string name="einr_handy_fehler">Cela n\'a pas marché. Peut-être pas de réseau. Réessaie plus tard.</string>
 </resources>

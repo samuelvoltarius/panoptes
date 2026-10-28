@@ -5086,7 +5086,10 @@
     "handy_schluessel_confirm": "Remove the unlock key? The phone can only unlock again after it registers a new key (e.g. after a new fingerprint).",
     "handy_gespeichert": "Saved",
     "handy_fehler": "Could not save.",
-    "cu_title": "“{n}” wants to hand your BYD cloud login to Panoptes"
+    "cu_title": "“{n}” wants to hand your BYD cloud login to Panoptes",
+    "bridge_consent": "I want to connect my phone over the internet. For this, encrypted traffic runs through our server in Germany. The server does not see any vehicle data.",
+    "bridge_consent_link": "Privacy ›",
+    "bridge_consent_missing": "Please tick the box first."
   },
   "guardLegal": {
     "trigger": {
@@ -5505,7 +5508,8 @@
       "extra_fernzugang": "Remote access",
       "fertig": "Finish",
       "extra_notzugang": "Emergency access",
-      "extra_gewohnheiten": "Remember habits"
+      "extra_gewohnheiten": "Remember habits",
+      "extra_handy": "Connect your phone"
     },
     "hinweis": {
       "projektion_unbekannt": {
@@ -5524,14 +5528,16 @@
         "fehlgeschlagen": "On {volume}, “{alt}” could not be renamed to “{neu}”. Panoptes keeps using “{alt}”."
       },
       "speicher_rueckfall": "{bereich}: the chosen storage ({gewaehlt}) is missing. Panoptes records internally for now, with limited space.",
-      "rueckfall_aufnahmen": "{bereich}: {anzahl} recordings are still stored internally because the storage was missing."
+      "rueckfall_aufnahmen": "{bereich}: {anzahl} recordings are still stored internally because the storage was missing.",
+      "bruecke_zustimmung": "Your phone is connected over the internet. Please confirm this once more with a tick."
     },
     "link": {
       "faehigkeiten_ueberCarPlay": "Visible over CarPlay?",
       "faehigkeiten_ueberAndroidAuto": "Visible over Android Auto?",
       "speedcam_ton": "Turn on chime",
       "laden_strompreis": "Check price",
-      "nachfrage": "Add prices"
+      "nachfrage": "Add prices",
+      "bruecke_zustimmung": "Confirm now"
     },
     "akku_uebernehmen": "Use {name}: {wert}",
     "akku_ok": "Battery size applied.",
@@ -5562,7 +5568,8 @@
       "ziel_fehlt": "storage removed",
       "kein_platz": "not enough space",
       "abgebrochen": "cancelled"
-    }
+    },
+    "fortgeschritten": "For advanced users"
   },
   "laden": {
     "ui": {

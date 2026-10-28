@@ -20,8 +20,9 @@ object Einrichtung {
     val ALLE = listOf(
         "sprache", "haftung", "autostart", "ueberlagerung", "rechte", "usb_freigabe", "auto", "kameras",
         "waechter", "betrieb", "karte", "daten", "blitzer", "updates", "strompreis",
-        "extra_telegram", "extra_planer", "extra_cockpit", "extra_fernzugang", "extra_overdrive", "extra_notzugang",
-        "extra_gewohnheiten", "fertig",
+        "extra_telegram", "extra_handy", "extra_planer", "extra_cockpit", "extra_overdrive", "extra_gewohnheiten",
+        // 0.1.24: „Für Fortgeschrittene“ (Tailscale) ans Ende
+        "extra_fernzugang", "extra_notzugang", "fertig",
     )
 
     /** Schritte, die ohne laufenden Daemon gezeigt werden (Neuinstallation vor der USB-Freigabe). */

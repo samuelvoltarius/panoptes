@@ -249,6 +249,8 @@
     "kopplung_text": "Numéro de contrôle {0}",
     "kopplung_erlauben": "Autoriser",
     "kopplung_ablehnen": "Refuser",
+    "neue_kopplung_titel": "Nouvel appareil connecté : {0}",
+    "neue_kopplung_text": "Ce n’était pas vous ? Supprimez-le dans Panoptes sous Système → Appareils associés.",
     "blitzer_titel": "Radar dans {0} m",
     "blitzer_tempo": "Limitation à {0} km/h",
     "kopplung_titel_ha": "Home Assistant « {0} » veut se connecter",

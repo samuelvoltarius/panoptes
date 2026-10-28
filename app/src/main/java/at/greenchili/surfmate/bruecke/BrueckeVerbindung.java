@@ -40,6 +40,9 @@ public final class BrueckeVerbindung {
         final NoiseIK noise;
         final BrueckeRahmen.Sammler sammler = new BrueckeRahmen.Sammler(MAX_ANFRAGE);
         volatile String kid;
+        /** 0.1.24 Erstkopplung: Kanal kam mit unbekanntem Handy-Schlüssel über den Einmal-Zugang. */
+        volatile boolean einmal;
+        volatile byte[] hPub;
         final ExecutorService arbeit = Executors.newSingleThreadExecutor();
 
         Kanal(int k, NoiseIK noise) {
@@ -56,12 +59,25 @@ public final class BrueckeVerbindung {
         private final BrueckeWeiterleitung weiter;
         private final Sender sender;
         private final java.util.function.LongSupplier uhr;
+        /** Nach der Erstkopplung: Einmal-Zugang löschen (der Server schließt dann diesen Kanal, das Handy kommt mit
+         *  eigenem Zugang wieder). Im Daemon verzögert, damit die Antwort vorher ankommt; im Test ersetzt. */
+        Runnable einmalFertig;
 
         Kanaele(Bruecke bruecke, BrueckeWeiterleitung weiter, Sender sender, java.util.function.LongSupplier uhr) {
             this.bruecke = bruecke;
             this.weiter = weiter;
             this.sender = sender;
             this.uhr = uhr;
+            this.einmalFertig = () -> {
+                Thread t = new Thread(() -> {
+                    try {
+                        Thread.sleep(3000);
+                    } catch (InterruptedException ignored) { }
+                    bruecke.einmalWeg();
+                }, "Bruecke-Einmal");
+                t.setDaemon(true);
+                t.start();
+            };
         }
 
         void steuer(String text) {
@@ -122,9 +138,15 @@ public final class BrueckeVerbindung {
                         c.noise.leseNachricht1(m);
                         String kid = bruecke.kidFuerSchluessel(c.noise.gegenseite(), uhr.getAsLong());
                         if (kid == null) {
-                            log("Handshake von unbekanntem Handy-Schlüssel abgelehnt");
-                            schliessen(k, true);
-                            return;
+                            // 0.1.24 Erstkopplung: nur solange der Einmal-Zugang des Kopplungs-QR läuft, nur ein Kanal
+                            if (!bruecke.einmalOffen(uhr.getAsLong()) || einmalBelegt(k)) {
+                                log("Handshake von unbekanntem Handy-Schlüssel abgelehnt");
+                                schliessen(k, true);
+                                return;
+                            }
+                            c.einmal = true;
+                            c.hPub = c.noise.gegenseite();
+                            log("Erstkopplung über die Brücke: Kanal " + k);
                         }
                         c.kid = kid;
                         senden(k, c.noise.schreibeNachricht2(new byte[0]));
@@ -142,8 +164,24 @@ public final class BrueckeVerbindung {
             }
         }
 
+        private boolean einmalBelegt(int ausser) {
+            for (Kanal c : offen.values()) if (c.k != ausser && c.einmal) return true;
+            return false;
+        }
+
         private void antworten(Kanal c, byte[] anfrage) {
-            byte[] antwort = weiter.bearbeiten(anfrage, c.kid);
+            byte[] antwort;
+            if (c.einmal) {
+                BrueckeWeiterleitung.EinmalSchritt s = weiter.einmal(anfrage, c.kid, c.hPub);
+                antwort = s.antwort;
+                if (s.neueKid != null) c.kid = s.neueKid;
+                if (s.fertig) {
+                    log("Erstkopplung über die Brücke fertig");
+                    einmalFertig.run();
+                }
+            } else {
+                antwort = weiter.bearbeiten(anfrage, c.kid);
+            }
             try {
                 synchronized (c) {
                     if (offen.get(c.k) != c) return;
@@ -259,7 +297,10 @@ public final class BrueckeVerbindung {
                     }
                 });
                 synchronized (fertig) {
-                    while (!zu[0] && laufen) fertig.wait(30_000);
+                    while (!zu[0] && laufen) {
+                        fertig.wait(30_000);
+                        b.einmalAufraeumen(System.currentTimeMillis());   // abgelaufener Einmal-Zugang (Kopplungs-QR)
+                    }
                 }
             } catch (InterruptedException e) {
                 break;

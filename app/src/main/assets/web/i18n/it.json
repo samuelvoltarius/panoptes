@@ -5086,7 +5086,10 @@
     "handy_schluessel_confirm": "Rimuovere la chiave di apertura? Il telefono potrà aprire di nuovo solo dopo aver registrato una nuova chiave (ad es. dopo una nuova impronta).",
     "handy_gespeichert": "Salvato",
     "handy_fehler": "Impossibile salvare.",
-    "cu_title": "“{n}” vuole passare a Panoptes il tuo accesso al cloud BYD"
+    "cu_title": "“{n}” vuole passare a Panoptes il tuo accesso al cloud BYD",
+    "bridge_consent": "Voglio collegare il mio telefono via Internet. Per questo il traffico cifrato passa dal nostro server in Germania. Il server non vede i dati del veicolo.",
+    "bridge_consent_link": "Privacy ›",
+    "bridge_consent_missing": "Prima metti la spunta."
   },
   "guardLegal": {
     "trigger": {
@@ -5505,7 +5508,8 @@
       "extra_fernzugang": "Accesso remoto",
       "fertig": "Fine",
       "extra_notzugang": "Accesso di emergenza",
-      "extra_gewohnheiten": "Ricorda le abitudini"
+      "extra_gewohnheiten": "Ricorda le abitudini",
+      "extra_handy": "Collega il telefono"
     },
     "hinweis": {
       "projektion_unbekannt": {
@@ -5524,14 +5528,16 @@
         "fehlgeschlagen": "Su {volume} non è stato possibile rinominare «{alt}» in «{neu}». Panoptes continua a usare «{alt}»."
       },
       "speicher_rueckfall": "{bereich}: il supporto scelto ({gewaehlt}) manca. Panoptes registra per ora nella memoria interna, con spazio limitato.",
-      "rueckfall_aufnahmen": "{bereich}: {anzahl} registrazioni sono ancora nella memoria interna perché il supporto mancava."
+      "rueckfall_aufnahmen": "{bereich}: {anzahl} registrazioni sono ancora nella memoria interna perché il supporto mancava.",
+      "bruecke_zustimmung": "Il tuo telefono è collegato via Internet. Confermalo ancora una volta con una spunta."
     },
     "link": {
       "faehigkeiten_ueberCarPlay": "Visibile tramite CarPlay?",
       "faehigkeiten_ueberAndroidAuto": "Visibile tramite Android Auto?",
       "speedcam_ton": "Attiva il segnale acustico",
       "laden_strompreis": "Controlla il prezzo",
-      "nachfrage": "Aggiungi i prezzi"
+      "nachfrage": "Aggiungi i prezzi",
+      "bruecke_zustimmung": "Conferma ora"
     },
     "akku_uebernehmen": "Usa {name}: {wert}",
     "akku_ok": "Capacità della batteria applicata.",
@@ -5562,7 +5568,8 @@
       "ziel_fehlt": "supporto rimosso",
       "kein_platz": "spazio insufficiente",
       "abgebrochen": "annullato"
-    }
+    },
+    "fortgeschritten": "Per utenti esperti"
   },
   "laden": {
     "ui": {

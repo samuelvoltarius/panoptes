@@ -5086,7 +5086,10 @@
     "handy_schluessel_confirm": "Ontgrendelsleutel verwijderen? De telefoon kan pas weer ontgrendelen nadat hij een nieuwe sleutel meldt (bijv. na een nieuwe vingerafdruk).",
     "handy_gespeichert": "Opgeslagen",
     "handy_fehler": "Kon niet opslaan.",
-    "cu_title": "‘{n}’ wil je BYD-cloudaanmelding aan Panoptes overdragen"
+    "cu_title": "‘{n}’ wil je BYD-cloudaanmelding aan Panoptes overdragen",
+    "bridge_consent": "Ik wil mijn telefoon via internet verbinden. Daarvoor loopt versleuteld verkeer via onze server in Duitsland. De server ziet geen voertuiggegevens.",
+    "bridge_consent_link": "Privacy ›",
+    "bridge_consent_missing": "Zet eerst het vinkje."
   },
   "guardLegal": {
     "trigger": {
@@ -5505,7 +5508,8 @@
       "extra_fernzugang": "Toegang op afstand",
       "fertig": "Afronden",
       "extra_notzugang": "Noodtoegang",
-      "extra_gewohnheiten": "Gewoonten onthouden"
+      "extra_gewohnheiten": "Gewoonten onthouden",
+      "extra_handy": "Telefoon verbinden"
     },
     "hinweis": {
       "projektion_unbekannt": {
@@ -5524,14 +5528,16 @@
         "fehlgeschlagen": "Op {volume} kon „{alt}” niet worden hernoemd naar „{neu}”. Panoptes blijft „{alt}” gebruiken."
       },
       "speicher_rueckfall": "{bereich}: de gekozen opslag ({gewaehlt}) ontbreekt. Panoptes neemt voorlopig intern op, met beperkte ruimte.",
-      "rueckfall_aufnahmen": "{bereich}: {anzahl} opnamen staan nog intern omdat de opslag ontbrak."
+      "rueckfall_aufnahmen": "{bereich}: {anzahl} opnamen staan nog intern omdat de opslag ontbrak.",
+      "bruecke_zustimmung": "Je telefoon is via internet verbonden. Bevestig dit nog één keer met een vinkje."
     },
     "link": {
       "faehigkeiten_ueberCarPlay": "Zichtbaar via CarPlay?",
       "faehigkeiten_ueberAndroidAuto": "Zichtbaar via Android Auto?",
       "speedcam_ton": "Signaal aanzetten",
       "laden_strompreis": "Prijs controleren",
-      "nachfrage": "Prijzen aanvullen"
+      "nachfrage": "Prijzen aanvullen",
+      "bruecke_zustimmung": "Nu bevestigen"
     },
     "akku_uebernehmen": "{name}: {wert} overnemen",
     "akku_ok": "Accugrootte overgenomen.",
@@ -5562,7 +5568,8 @@
       "ziel_fehlt": "opslag verwijderd",
       "kein_platz": "te weinig ruimte",
       "abgebrochen": "geannuleerd"
-    }
+    },
+    "fortgeschritten": "Voor gevorderden"
   },
   "laden": {
     "ui": {

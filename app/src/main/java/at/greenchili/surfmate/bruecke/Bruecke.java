@@ -252,6 +252,55 @@ public final class Bruecke {
         return gefunden != null && kopplungen.gueltigesHandy(gefunden, jetzt) ? gefunden : null;
     }
 
+    // ------------------------------------------------------------------ Einmal-Zugang (0.1.24, Erstkopplung über die Brücke)
+
+    /**
+     * Zum Kopplungs-Code (10 min, einmal, immer nur einer): ein zweiter Server-Zugang, damit ein noch unbekanntes Handy
+     * ohne Direktweg durch die Brücke koppeln kann (BRUECKE_VERTRAG §2.3). G_einmal steht nur im QR hinter „#“. Ein neuer
+     * Code ersetzt den alten Zugang. Liefert G_einmal (base64url) oder null (aus, Server nicht erreichbar).
+     */
+    public synchronized String einmalAnlegen(long bis) {
+        if (!ein()) return null;
+        einmalWeg();
+        byte[] g = zufall32();
+        String hash = sha256Hex(g);
+        int code = api.zugangHinzu(server(), postfach(), geheimnis(), hash);
+        if (code != 201 && code != 200) return null;
+        try {
+            z.put("einmal", new JSONObject().put("z", hash).put("bis", bis));
+        } catch (Exception e) {
+            api.zugangWeg(server(), postfach(), geheimnis(), hash);
+            return null;
+        }
+        if (!platte.speichere(z)) {
+            z.remove("einmal");
+            api.zugangWeg(server(), postfach(), geheimnis(), hash);
+            return null;
+        }
+        return b64(g);
+    }
+
+    /** Läuft gerade ein Einmal-Zugang? Nur dann nimmt das Auto einen unbekannten Handy-Schlüssel an. */
+    public synchronized boolean einmalOffen(long jetzt) {
+        JSONObject e = ein() ? z.optJSONObject("einmal") : null;
+        return e != null && e.optLong("bis", 0) > jetzt;
+    }
+
+    /** Einmal-Zugang am Server löschen und vergessen (nach der Kopplung, beim neuen Code, bei Ablauf). Idempotent. */
+    public synchronized void einmalWeg() {
+        JSONObject e = z.optJSONObject("einmal");
+        if (e == null) return;
+        if (ein()) api.zugangWeg(server(), postfach(), geheimnis(), e.optString("z"));
+        z.remove("einmal");
+        platte.speichere(z);
+    }
+
+    /** Abgelaufenen Einmal-Zugang wegräumen (aus der Verbindungs-Schleife, auch nach einem Neustart). */
+    public synchronized void einmalAufraeumen(long jetzt) {
+        JSONObject e = z.optJSONObject("einmal");
+        if (e != null && e.optLong("bis", 0) <= jetzt) einmalWeg();
+    }
+
     /** Status für Panoptes-Web (ohne Geheimnisse). */
     public synchronized JSONObject status() {
         JSONObject r = new JSONObject();

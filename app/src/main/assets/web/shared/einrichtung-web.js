@@ -45,7 +45,10 @@
         'schritt.extra_telegram': 'Telegram',
         'schritt.extra_planer': 'Routenplaner',
         'schritt.extra_cockpit': 'EV-Cockpit',
+        'schritt.extra_handy': 'Handy verbinden',
         'schritt.extra_fernzugang': 'Fernzugang',
+        'schritt.extra_notzugang': 'Notzugang',
+        'fortgeschritten': 'Für Fortgeschrittene',
         'schritt.fertig': 'Abschluss',
         'hinweis.carplay': 'Du nutzt CarPlay. Ob Panoptes-Hinweise darüber sichtbar sind, ist für dein Auto nicht bekannt. Bitte angeben oder Hinweiston einschalten.',
         'hinweis.androidauto': 'Du nutzt Android Auto. Ob Panoptes-Hinweise darüber sichtbar sind, ist für dein Auto nicht bekannt. Bitte angeben oder Hinweiston einschalten.',
@@ -57,6 +60,8 @@
         'link.laden_strompreis': 'Preis prüfen',
         'hinweis.ladungen_ohne_preis': '{anzahl} Ladungen ohne Preis. Ohne Preis fehlen die Kosten in Fahrten und Monatsbericht.',
         'link.nachfrage': 'Preise nachtragen',
+        'hinweis.bruecke_zustimmung': 'Dein Handy ist übers Internet verbunden. Bitte bestätige das noch einmal mit einem Häkchen.',
+        'link.bruecke_zustimmung': 'Jetzt bestätigen',
         'hinweis.ordner_umbenennen.beide_da': 'Auf {volume} gibt es die Ordner „{alt}“ und „{neu}“. Panoptes nutzt weiter „{alt}“ und verschiebt nichts von selbst.',
         'hinweis.ordner_umbenennen.fehlgeschlagen': 'Auf {volume} ließ sich „{alt}“ nicht in „{neu}“ umbenennen. Panoptes nutzt weiter „{alt}“.',
         'hinweis.speicher_rueckfall': '{bereich}: Der gewählte Datenträger ({gewaehlt}) fehlt. Panoptes nimmt vorübergehend intern auf, mit begrenztem Platz.',
@@ -99,13 +104,13 @@
 
     // „Noch offen“: offen_spaeter plus Pflichtschritte, die noch offen sind (Bestand ohne Antwort, z. B. update.mobilfunk)
     function offeneSchritte(d) {
-        var ids = [], status = {};
-        (d.schritte || []).forEach(function (s) { status[s.id] = s.status; });
+        var ids = [], status = {}, gruppe = {};
+        (d.schritte || []).forEach(function (s) { status[s.id] = s.status; if (s.gruppe) gruppe[s.id] = s.gruppe; });
         (d.offen_spaeter || []).forEach(function (id) { if (ids.indexOf(id) < 0) ids.push(id); });
         (d.schritte || []).forEach(function (s) {
             if (s.id !== 'fertig' && (s.status === 'offen' || s.status === 'spaeter') && ids.indexOf(s.id) < 0) ids.push(s.id);
         });
-        return ids.map(function (id) { return { id: id, status: status[id] || 'spaeter' }; });
+        return ids.map(function (id) { return { id: id, status: status[id] || 'spaeter', gruppe: gruppe[id] }; });
     }
 
     function zeichne(inhalt, d) {
@@ -140,6 +145,16 @@
                 try { var v2 = BYD.i18n.t(k2, { wert: wert }); if (v2 && v2 !== k2) tx2 = v2; } catch (e) {}
                 tx = (tx2 || DE[k2.replace(/^einr\./, '')] || '').split('{wert}').join(wert);
                 h.einstellungen = ['laden.strompreis'];
+            }
+            // 0.1.24 Zustimmung zur Verbindung übers Internet nachholen (Brücke bleibt an)
+            if (h.id === 'bruecke_zustimmung') {
+                box.appendChild(el('div', null, tx || DE['hinweis.bruecke_zustimmung']));
+                var lz = el('a', null, t('link.bruecke_zustimmung'));
+                lz.href = 'system.html#kopplung';
+                lz.style.cssText = 'color:var(--sm-aqua);font-weight:600;display:inline-block;margin-top:4px';
+                box.appendChild(lz);
+                inhalt.appendChild(box);
+                return;
             }
             if (h.id === 'ladungen_ohne_preis' || h.id === 'uebernommene_ladungen_ohne_preis') {
                 var uebern = h.id === 'uebernommene_ladungen_ohne_preis';
@@ -247,14 +262,25 @@
         if (!offen.length && !hinweise.length) {
             inhalt.appendChild(el('div', 'sys-note', t('offen_keins')));
         } else if (offen.length) {
-            var ul = el('ul');
-            ul.style.cssText = 'margin:6px 0 0 18px;padding:0';
-            offen.forEach(function (o) {
-                var li = el('li', null, t('schritt.' + o.id) + ' (' + t('status.' + (o.status === 'offen' ? 'offen' : 'spaeter')) + ')');
-                li.setAttribute('data-schritt', o.id);
-                ul.appendChild(li);
+            // 0.1.24: Tailscale-Schritte gesondert unter „Für Fortgeschrittene“ (Laien kommen ohne aus)
+            [false, true].forEach(function (fort) {
+                var teil = offen.filter(function (o) { return (o.gruppe === 'fortgeschritten') === fort; });
+                if (!teil.length) return;
+                if (fort) {
+                    var kopf = el('div', 'sys-note', t('fortgeschritten'));
+                    kopf.style.cssText = 'margin-top:10px;font-weight:600';
+                    kopf.setAttribute('data-gruppe', 'fortgeschritten');
+                    inhalt.appendChild(kopf);
+                }
+                var ul = el('ul');
+                ul.style.cssText = 'margin:6px 0 0 18px;padding:0';
+                teil.forEach(function (o) {
+                    var li = el('li', null, t('schritt.' + o.id) + ' (' + t('status.' + (o.status === 'offen' ? 'offen' : 'spaeter')) + ')');
+                    li.setAttribute('data-schritt', o.id);
+                    ul.appendChild(li);
+                });
+                inhalt.appendChild(ul);
             });
-            inhalt.appendChild(ul);
             inhalt.appendChild(el('div', 'sys-note', t('offen_hinweis')));
         }
         var knopf = el('button', 'btn', t('neu_knopf'));

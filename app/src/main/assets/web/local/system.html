@@ -115,6 +115,8 @@
                             <label class="sys-note" style="display:flex;gap:10px;align-items:center;font-weight:700;"><input type="checkbox" id="brueckeEin" style="width:22px;height:22px;"> <span data-i18n="system.bridge_title">Handy-App unterwegs nutzen</span></label>
                             <div class="sys-note" data-i18n="system.bridge_note">Über den Panoptes-Server, Ende-zu-Ende verschlüsselt. Der Server sieht keine Inhalte, nur wann das Auto online ist, die IP-Adresse und die Datenmenge.</div>
                             <div class="sys-note" id="brueckeStatus"></div>
+                            <!-- 0.1.24 Zustimmung (28.10.): Häkchen vor dem Einschalten; Bestand: einmal nachfragen -->
+                            <label id="brueckeZustimmungBox" class="sys-note" style="display:none;gap:10px;align-items:flex-start;margin-top:8px;"><input type="checkbox" id="brueckeZustimmung" style="width:22px;height:22px;flex:none;"> <span><span data-i18n="system.bridge_consent">Ich möchte mein Handy übers Internet verbinden. Dafür läuft verschlüsselter Verkehr über unseren Server in Deutschland. Der Server sieht keine Fahrzeugdaten.</span> <a id="brueckeDatenschutz" href="https://byd.serveone.at/datenschutz#bruecke" target="_blank" rel="noopener" data-i18n="system.bridge_consent_link">Datenschutz ›</a></span></label>
                         </div>
                         <div class="sys-actions">
                             <button class="btn btn-primary" id="pairBtn" type="button" data-i18n="system.pair_btn">Neues Gerät koppeln</button>
@@ -772,16 +774,18 @@
                     }, function () { return null; });
             },
             // 0.1.20 QR v2 (HANDY_API_VERTRAG §7): immer anzeigen, auch ohne Tailscale.
-            // <qrBasis>#k=<base64url(JSON)>, JSON {v:2, c, u?: Direktadressen, b?: {p, a} wenn die Brücke an ist}.
+            // <qrBasis>#k=<base64url(JSON)>, JSON {v:2, c, u?: Direktadressen, b?: {p, a, z?} wenn die Brücke an ist}.
+            // 0.1.24 z = Einmal-Zugang zum Code: Erstkopplung durch die Brücke ohne Direktweg (BRUECKE_VERTRAG §2.3).
             // Der Teil nach # geht nie an einen Server. Der Link darunter bleibt der Direktweg (Browser, Cockpit).
-            qrV2: function (code, basis, br) {
+            qrV2: function (code, basis, br, einmal) {
                 var j = { v: 2, c: code };
                 if (basis) j.u = [basis];
                 if (br && br.ein && br.p && br.a) j.b = { p: br.p, a: br.a };
+                if (j.b && einmal) j.b.z = einmal;
                 var b64 = btoa(unescape(encodeURIComponent(JSON.stringify(j)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
                 return ((br && br.qrBasis) || 'https://byd.serveone.at/p/') + '#k=' + b64;
             },
-            zeigeQr: function (code) {
+            zeigeQr: function (code, einmal) {
                 var self = this, qrBox = document.getElementById('pairQr'), lb = document.getElementById('pairLinkBox');
                 qrBox.innerHTML = ''; lb.style.display = 'none';
                 var br = fetch('/api/bruecke', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }, function () { return null; });
@@ -796,7 +800,7 @@
                     if (typeof window.qrcode === 'function') {
                         try {
                             var q = window.qrcode(0, 'M');
-                            q.addData(self.qrV2(code, basis, b));
+                            q.addData(self.qrV2(code, basis, b, einmal));
                             q.make();
                             qrBox.innerHTML = '<div style="display:inline-block;background:#fff;padding:10px;border-radius:12px;">' + q.createSvgTag(4, 0) + '</div>';
                         } catch (e) {}
@@ -808,6 +812,12 @@
                 var ein = document.getElementById('brueckeEin'), st = document.getElementById('brueckeStatus');
                 if (!d) { document.getElementById('brueckeBox').style.display = 'none'; return; }
                 ein.checked = !!d.ein;
+                // 0.1.24 Zustimmung: fehlt sie, Satz mit Häkchen zeigen; ohne Häkchen lässt sich die Brücke nicht einschalten
+                var zBox = document.getElementById('brueckeZustimmungBox'), z = document.getElementById('brueckeZustimmung');
+                var erteilt = !!(d.zustimmung && d.zustimmung.version === d.zustimmungVersion);
+                zBox.style.display = erteilt ? 'none' : 'flex';
+                if (!erteilt) z.checked = false;
+                ein.disabled = !d.ein && !erteilt && !z.checked;
                 st.textContent = !d.ein ? '' : (d.verbunden ? this.t('system.bridge_on', 'Aktiv – das Auto ist über den Panoptes-Server erreichbar.')
                     : this.t('system.bridge_wait', 'Eingeschaltet – Verbindung zum Panoptes-Server wird aufgebaut.'));
             },
@@ -818,21 +828,38 @@
                         .then(function (d) { self.brueckeZeigen(d); }, function () { self.brueckeZeigen(null); });
                 };
                 laden();
+                var z = document.getElementById('brueckeZustimmung');
+                // Datenschutz-Abschnitt 8b auf der Homepage: deutsch oder englisch
+                try {
+                    var sprache = (window.BYD && BYD.i18n && BYD.i18n.getLang && BYD.i18n.getLang()) || 'de';
+                    if (sprache !== 'de') document.getElementById('brueckeDatenschutz').href = 'https://byd.serveone.at/en/datenschutz#bruecke';
+                } catch (e) {}
+                z.onchange = function () {
+                    // Bestand (Brücke schon an): Häkchen = Zustimmung nachreichen; sonst schaltet es den Schalter frei
+                    if (ein.checked && z.checked) {
+                        fetch('/api/bruecke/zustimmung', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quelle: 'web' }) })
+                            .then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { if (d) self.brueckeZeigen(d); }, function () {});
+                    } else if (!ein.checked) {
+                        ein.disabled = !z.checked;
+                    }
+                };
                 ein.onchange = function () {
                     var an = ein.checked;
                     if (!an && !confirm(self.t('system.bridge_off_confirm', 'Ausschalten? Gekoppelte Handys erreichen das Auto dann nur noch direkt (z. B. über Tailscale).'))) { ein.checked = true; return; }
                     ein.disabled = true;
-                    fetch('/api/bruecke', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ein: an }) })
+                    fetch('/api/bruecke', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(an ? { ein: true, zustimmung: z.checked, quelle: 'web' } : { ein: false }) })
                         .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d || {} }; }, function () { return { ok: false, d: {} }; }); })
                         .then(function (r) {
                             if (!r.ok && window.BYD && BYD.utils && BYD.utils.toast) {
                                 BYD.utils.toast(r.d.grund === 'server_nicht_erreichbar'
                                     ? self.t('system.bridge_unreachable', 'Der Panoptes-Server antwortet gerade nicht – vielleicht kein Empfang. Später noch einmal.')
-                                    : self.t('system.bridge_fail', 'Das hat nicht geklappt.'), 'warning');
+                                    : r.d.grund === 'zustimmung'
+                                        ? self.t('system.bridge_consent_missing', 'Bitte zuerst das Häkchen setzen.')
+                                        : self.t('system.bridge_fail', 'Das hat nicht geklappt.'), 'warning');
                             }
                             self.brueckeZeigen(r.d);
                         }, function () { laden(); })
-                        .then(function () { ein.disabled = false; setTimeout(laden, 3000); });
+                        .then(function () { setTimeout(laden, 3000); });
                 };
             },
             init: function () {
@@ -850,17 +877,17 @@
                         return r.json();
                     }).then(function (d) {
                         if (!d || !d.code) throw new Error('leer');
-                        self.zeige(d.code, Number(d.gueltigBis) || (Date.now() + 600000));
+                        self.zeige(d.code, Number(d.gueltigBis) || (Date.now() + 600000), d.brueckeEinmal);
                     }).catch(function () {
                         if (window.BYD && BYD.utils && BYD.utils.toast) BYD.utils.toast(self.t('system.pair_fail', 'Konnte keinen Code erzeugen.'), 'error');
                     }).then(function () { btn.disabled = false; });
                 };
             },
-            zeige: function (code, bis) {
+            zeige: function (code, bis, einmal) {
                 var self = this;
                 document.getElementById('pairOut').style.display = '';
                 document.getElementById('pairCode').textContent = code;
-                this.zeigeQr(code);
+                this.zeigeQr(code, einmal);
                 clearInterval(this.timer);
                 function tick() {
                     var rest = Math.max(0, Math.round((bis - Date.now()) / 1000));

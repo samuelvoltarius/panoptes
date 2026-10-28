@@ -15,7 +15,9 @@ import java.util.concurrent.TimeUnit;
  * „Anonym mitzählen“ (0.1.17, 27.10.2026): freiwillig, Standard AUS (Frage im Einrichten → „Daten teilen“
  * und in den Einstellungen, Gruppe Datenschutz). Ersetzt den stillgelegten AnalyticsPinger.
  *
- * <p>Gesendet wird höchstens einmal am Tag (UTC) genau {@code {"id":…,"version":…}}: eine lokal
+ * <p>Gesendet wird höchstens einmal am Tag (UTC) genau {@code {"id":…,"version":…}} – 0.1.24 zusätzlich einmal, wenn
+ * sich die Version seit dem letzten Ping geändert hat (sonst meldete ein Auto nach einem Update bis zum nächsten
+ * UTC-Tag die alte Version): eine lokal
  * erzeugte Zufallskennung (UUID, nichts vom Auto oder Gerät abgeleitet) und die Versionsnummer. Kein Modell, keine
  * Position, keine Fahrzeugdaten. Ohne Netz oder bei Fehler passiert nichts: keine Meldung, kein Log, Versuch im
  * nächsten Takt.
@@ -24,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  * der Takt schickt {@code {"id":…,"loeschen":true}}, bis der Server antwortet. 4xx gilt als erledigt (nicht
  * wiederholen), außer 429 (Überlast): dann frühestens im nächsten Stundentakt wieder.
  *
- * <p>Config-Abschnitt {@code zaehlen}: {@code an}, {@code kennung}, {@code letzterTag}, {@code loeschen}
+ * <p>Config-Abschnitt {@code zaehlen}: {@code an}, {@code kennung}, {@code letzterTag}, {@code letzteVersion}, {@code loeschen}
  * (Kennungen mit Komma getrennt), {@code url} (leer = {@link #STANDARD_URL}).
  */
 public final class Mitzaehlen {
@@ -91,7 +93,7 @@ public final class Mitzaehlen {
                 // Ausgeschaltet: Kennung weg, am Server löschen
                 loeschen = loeschenDazu(loeschen, id);
                 id = "";
-                neu.put("kennung", "").put("letzterTag", "").put("loeschen", loeschen);
+                neu.put("kennung", "").put("letzterTag", "").put("letzteVersion", "").put("loeschen", loeschen);
             }
 
             List<String> offen = liste(loeschen);
@@ -111,11 +113,13 @@ public final class Mitzaehlen {
                     neu.put("kennung", id);
                 }
                 String heute = tag(jetztMs);
-                if (!heute.equals(z.optString("letzterTag", ""))) {
+                String v = version != null && version.matches("[0-9][0-9A-Za-z.-]{0,15}") ? version : "";
+                boolean neueVersion = !v.isEmpty() && !v.equals(z.optString("letzteVersion", ""));
+                if (!heute.equals(z.optString("letzterTag", "")) || neueVersion) {
                     JSONObject p = new JSONObject().put("id", id);
                     // Server-Format (PANOPTES_PING.md); sonst nur die Kennung
-                    if (version != null && version.matches("[0-9][0-9A-Za-z.-]{0,15}")) p.put("version", version);
-                    if (ok(sender, url, p)) neu.put("letzterTag", heute);
+                    if (!v.isEmpty()) p.put("version", v);
+                    if (ok(sender, url, p)) neu.put("letzterTag", heute).put("letzteVersion", v);
                 }
             }
             if (neu.length() > 0) speicher.schreibe(neu);

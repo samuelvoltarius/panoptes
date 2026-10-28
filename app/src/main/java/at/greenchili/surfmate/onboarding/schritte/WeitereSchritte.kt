@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.util.TypedValue
 import android.view.View
+import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.Switch
 import at.greenchili.surfmate.R
@@ -332,25 +333,63 @@ class ExtraSchritt(id: String, a: Assistent, private val host: AssistentHost) : 
         val sid = this@ExtraSchritt.id
         val (titelId, textId) = when (sid) {
             "extra_telegram" -> R.string.einr_extra_telegram_titel to R.string.einr_extra_telegram_text
+            // 0.1.24: Standardweg ohne Tailscale – Schalter „Handy-App unterwegs nutzen“ + Kopplungs-QR auf der System-Seite
+            "extra_handy" -> R.string.einr_extra_handy_titel to R.string.einr_extra_handy_text
             "extra_planer" -> R.string.einr_extra_planer_titel to R.string.einr_extra_planer_text
             "extra_cockpit" -> R.string.einr_extra_cockpit_titel to R.string.einr_extra_cockpit_text
             // 0.1.14: Notzugang (Kern 7) – Standard aus; eingerichtet wird nur auf der System-Seite (Auth-Key nie im Assistenten)
             "extra_notzugang" -> R.string.einr_extra_notzugang_titel to R.string.einr_extra_notzugang_text
             else -> R.string.einr_extra_fernzugang_titel to R.string.einr_extra_fernzugang_text
         }
+        // 0.1.24: Tailscale-Schritte sind „Für Fortgeschrittene“ – Laien können sie mit „Später“ übergehen
+        if (sid in FORTGESCHRITTEN) dazu(a.text(t.res(R.string.einr_fortgeschritten), 14f, fett = true, leise = true), 0f)
         dazu(titel(t.res(titelId)), 0f)
         dazu(a.text(t.res(textId)))
-        dazu(a.knopf(t.res(R.string.einr_jetzt_einrichten), primaer = false) {
+        // 0.1.24 Zustimmung (28.10.): ein Satz mit Häkchen, nie vorausgewählt; ohne Häkchen kein „Jetzt verbinden“
+        var haken: CheckBox? = null
+        val meldung = a.text("", 16f).apply { visibility = View.GONE }
+        if (sid == "extra_handy") {
+            haken = CheckBox(a.activity).apply {
+                text = t.res(R.string.einr_handy_zustimmung)
+                setTextSize(TypedValue.COMPLEX_UNIT_PX, a.schrift(18f))
+                setTextColor(a.farbeText)
+                minHeight = a.knopfHoehe
+                isChecked = false
+                a.grosserHaken(this)
+            }
+            dazu(haken, 16f)
+            dazu(a.text(t.res(R.string.einr_handy_datenschutz), 14f, leise = true), 4f)
+        }
+        val knopf = a.knopf(t.res(if (sid == "extra_handy") R.string.einr_handy_knopf else R.string.einr_jetzt_einrichten), primaer = sid == "extra_handy") {
             when (sid) {
                 "extra_telegram" -> host.seiteOeffnen("telegram.html")
+                // Zustimmung speichern und die Verbindung gleich einschalten; danach „Neues Gerät koppeln“ auf der Seite
+                "extra_handy" -> a.imHintergrund({
+                    EinrichtungApi.transport("POST", "/api/bruecke",
+                        JSONObject().put("ein", true).put("zustimmung", true).put("quelle", "einrichtung"))
+                }) { r ->
+                    if (r.ok) { meldung.visibility = View.GONE; host.seiteOeffnen("system.html#kopplung") }
+                    else { meldung.text = t.res(R.string.einr_handy_fehler); meldung.visibility = View.VISIBLE }
+                }
                 "extra_planer" -> host.seiteOeffnen("system.html#planerKarte")
                 "extra_cockpit" -> host.seiteOeffnen("system.html#kopplung")
                 "extra_notzugang" -> host.seiteOeffnen("system.html#notzugang")
                 else -> host.fernzugang { ok -> erledigt = ok; a.geaendert() }
             }
-        }, 18f)
+        }
+        haken?.let { h ->
+            knopf.isEnabled = false
+            h.setOnCheckedChangeListener { _, an -> knopf.isEnabled = an }
+        }
+        dazu(knopf, 18f)
+        dazu(meldung, 8f)
     }
     override fun antwort(): JSONObject = JSONObject()
+
+    companion object {
+        /** Wie EinrichtungApiHandler.FORTGESCHRITTEN. */
+        val FORTGESCHRITTEN = setOf("extra_fernzugang", "extra_notzugang")
+    }
 }
 
 // ================================================================ Teil G: Fertig – Selbsttest (nur echte Prüfungen)

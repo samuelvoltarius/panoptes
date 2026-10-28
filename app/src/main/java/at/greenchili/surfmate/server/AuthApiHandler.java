@@ -344,6 +344,10 @@ public class AuthApiHandler {
                 }
                 response.put("expiresIn", AuthManager.JWT_EXPIRY_SECONDS);
                 log("Kopplung erfolgreich");
+                // 0.1.24: Besitzer erfährt jede neue Kopplung (Telegram + Band), „Warst du das nicht? … entfernen“
+                try {
+                    at.greenchili.surfmate.auth.NeueKopplungMeldung.melden(name);
+                } catch (Throwable ignored) { }
                 HttpResponse.sendJson(out, response.toString());
                 return true;
             }

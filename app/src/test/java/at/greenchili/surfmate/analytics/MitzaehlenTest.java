@@ -111,6 +111,39 @@ public class MitzaehlenTest {
         assertFalse(gesendet.get(0).has("version"));
     }
 
+    /** 0.1.24: Update am selben UTC-Tag → ein weiterer Ping mit der neuen Version (Alfreds Auto meldete noch 0.1.21). */
+    @Test
+    public void neueVersionAmSelbenTagEinWeitererPing() throws Exception {
+        zustand.put("an", true);
+        Mitzaehlen.takt(T0, "0.1.21", speicher, sender);
+        Mitzaehlen.takt(T0 + 3_600_000L, "0.1.21", speicher, sender);
+        assertEquals(1, gesendet.size());
+        assertEquals("0.1.21", zustand.getString("letzteVersion"));
+        Mitzaehlen.takt(T0 + 7_200_000L, "0.1.23", speicher, sender);
+        assertEquals("Update → sofort ein Ping", 2, gesendet.size());
+        JSONObject p = gesendet.get(1);
+        assertEquals("gleiche Regeln: nur id + version", 2, p.length());
+        assertEquals("0.1.23", p.getString("version"));
+        assertEquals(gesendet.get(0).getString("id"), p.getString("id"));
+        Mitzaehlen.takt(T0 + 10_800_000L, "0.1.23", speicher, sender);
+        assertEquals("danach wieder höchstens einmal am Tag", 2, gesendet.size());
+        // Bestand ohne letzteVersion (vor 0.1.24): einmal nachmelden, dann Ruhe
+        zustand.remove("letzteVersion");
+        Mitzaehlen.takt(T0 + 14_400_000L, "0.1.24", speicher, sender);
+        Mitzaehlen.takt(T0 + 18_000_000L, "0.1.24", speicher, sender);
+        assertEquals(3, gesendet.size());
+        // fehlgeschlagen → im nächsten Takt nochmal; unlesbare Version zählt nicht als neu
+        antwort = 503;
+        Mitzaehlen.takt(T0 + 21_600_000L, "0.1.25", speicher, sender);
+        assertEquals("0.1.24", zustand.getString("letzteVersion"));
+        antwort = 204;
+        Mitzaehlen.takt(T0 + 25_200_000L, "0.1.25", speicher, sender);
+        assertEquals("0.1.25", zustand.getString("letzteVersion"));
+        int n = gesendet.size();
+        Mitzaehlen.takt(T0 + 28_800_000L, "Manually Installed", speicher, sender);
+        assertEquals(n, gesendet.size());
+    }
+
     @Test
     public void ueberlastWiederholtNichtImSelbenTakt() throws Exception {
         zustand.put("an", true);

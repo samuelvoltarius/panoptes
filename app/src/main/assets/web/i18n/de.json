@@ -5086,7 +5086,10 @@
     "handy_schluessel_confirm": "Aufsperr-Schlüssel entfernen? Das Handy kann danach erst wieder aufsperren, wenn es einen neuen Schlüssel meldet (z. B. nach neuem Fingerabdruck).",
     "handy_gespeichert": "Gespeichert",
     "handy_fehler": "Konnte nicht speichern.",
-    "cu_title": "„{n}“ will deine BYD-Cloud-Anmeldung an Panoptes übergeben"
+    "cu_title": "„{n}“ will deine BYD-Cloud-Anmeldung an Panoptes übergeben",
+    "bridge_consent": "Ich möchte mein Handy übers Internet verbinden. Dafür läuft verschlüsselter Verkehr über unseren Server in Deutschland. Der Server sieht keine Fahrzeugdaten.",
+    "bridge_consent_link": "Datenschutz ›",
+    "bridge_consent_missing": "Bitte zuerst das Häkchen setzen."
   },
   "guardLegal": {
     "trigger": {
@@ -5504,7 +5507,8 @@
       "extra_fernzugang": "Fernzugang",
       "fertig": "Abschluss",
       "extra_notzugang": "Notzugang für die Fernwartung",
-      "extra_gewohnheiten": "Gewohnheiten merken"
+      "extra_gewohnheiten": "Gewohnheiten merken",
+      "extra_handy": "Handy verbinden"
     },
     "titel": "Einrichtung",
     "hinweis": {
@@ -5524,14 +5528,16 @@
         "fehlgeschlagen": "Auf {volume} ließ sich „{alt}“ nicht in „{neu}“ umbenennen. Panoptes nutzt weiter „{alt}“."
       },
       "speicher_rueckfall": "{bereich}: Der gewählte Datenträger ({gewaehlt}) fehlt. Panoptes nimmt vorübergehend intern auf, mit begrenztem Platz.",
-      "rueckfall_aufnahmen": "{bereich}: {anzahl} Aufnahmen liegen noch intern, weil der Datenträger fehlte."
+      "rueckfall_aufnahmen": "{bereich}: {anzahl} Aufnahmen liegen noch intern, weil der Datenträger fehlte.",
+      "bruecke_zustimmung": "Dein Handy ist übers Internet verbunden. Bitte bestätige das noch einmal mit einem Häkchen."
     },
     "link": {
       "faehigkeiten_ueberCarPlay": "Sichtbar über CarPlay?",
       "faehigkeiten_ueberAndroidAuto": "Sichtbar über Android Auto?",
       "speedcam_ton": "Hinweiston einschalten",
       "laden_strompreis": "Preis prüfen",
-      "nachfrage": "Preise nachtragen"
+      "nachfrage": "Preise nachtragen",
+      "bruecke_zustimmung": "Jetzt bestätigen"
     },
     "akku_uebernehmen": "{name}: {wert} übernehmen",
     "akku_ok": "Akkugröße übernommen.",
@@ -5562,7 +5568,8 @@
       "ziel_fehlt": "Datenträger weg",
       "kein_platz": "zu wenig Platz",
       "abgebrochen": "abgebrochen"
-    }
+    },
+    "fortgeschritten": "Für Fortgeschrittene"
   },
   "laden": {
     "ui": {

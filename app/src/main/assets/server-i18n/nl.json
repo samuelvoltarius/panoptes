@@ -249,6 +249,8 @@
     "kopplung_text": "Controlegetal {0}",
     "kopplung_erlauben": "Toestaan",
     "kopplung_ablehnen": "Weigeren",
+    "neue_kopplung_titel": "Nieuw apparaat verbonden: {0}",
+    "neue_kopplung_text": "Was jij dit niet? Verwijder het in Panoptes onder Systeem → Gekoppelde apparaten.",
     "blitzer_titel": "Flitspaal over {0} m",
     "blitzer_tempo": "Maximumsnelheid {0} km/h",
     "kopplung_titel_ha": "Home Assistant “{0}” wil verbinding maken",

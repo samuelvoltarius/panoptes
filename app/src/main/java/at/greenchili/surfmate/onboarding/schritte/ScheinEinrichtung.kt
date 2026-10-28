@@ -30,8 +30,8 @@ object ScheinEinrichtung {
         "sprache" to "erledigt", "haftung" to "erledigt", "autostart" to "erledigt", "ueberlagerung" to "spaeter",
         "rechte" to "erledigt", "usb_freigabe" to "erledigt", "auto" to "offen", "kameras" to "offen",
         "waechter" to "offen", "betrieb" to "offen", "karte" to "offen", "daten" to "offen", "blitzer" to "offen",
-        "updates" to "offen", "extra_telegram" to "offen", "extra_planer" to "offen", "extra_cockpit" to "offen",
-        "extra_fernzugang" to "offen", "extra_overdrive" to "offen", "fertig" to "offen",
+        "updates" to "offen", "extra_telegram" to "offen", "extra_handy" to "offen", "extra_planer" to "offen",
+        "extra_cockpit" to "offen", "extra_overdrive" to "offen", "extra_fernzugang" to "offen", "fertig" to "offen",
     )
     private val pflicht = setOf("sprache", "haftung", "usb_freigabe", "auto", "waechter", "betrieb", "karte", "updates")
 
