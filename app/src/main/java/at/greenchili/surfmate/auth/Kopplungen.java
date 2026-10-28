@@ -42,8 +42,33 @@ public final class Kopplungen {
             JSONArray l = null;
             try { l = speicher.lade(); } catch (Throwable ignored) { }
             geraete = l == null ? new JSONArray() : l;
+            rechteStandHeben();
         }
         return geraete;
+    }
+
+    /**
+     * 0.1.26.1: Rechte des Bestands einmal beim Laden auf {@link #RECHTE_STAND} heben und festschreiben, damit „update“
+     * an der damals ältesten Handy-Kopplung hängt und nicht später zu einer anderen wandert.
+     */
+    private void rechteStandHeben() {
+        boolean geaendert = false;
+        java.util.List<Object[]> neu = new java.util.ArrayList<>();
+        for (int i = 0; i < geraete.length(); i++) {
+            JSONObject g = geraete.optJSONObject(i);
+            if (g == null || !ART_HANDY.equals(g.optString("art"))) continue;
+            if (g.optJSONArray("rechte") != null && g.optInt("rechteStand", 1) >= RECHTE_STAND) continue;
+            neu.add(new Object[]{g, rechteVon(g)});
+        }
+        for (Object[] x : neu) {
+            try {
+                ((JSONObject) x[0]).put("rechte", x[1]).put("rechteStand", RECHTE_STAND);
+                geaendert = true;
+            } catch (Exception ignored) { }
+        }
+        if (geaendert) {
+            try { speicher.speichere(geraete); } catch (Throwable ignored) { }
+        }
     }
 
     /** Neue Kopplung anlegen; liefert die id oder null (Liste voll / Speichern fehlgeschlagen). */
@@ -64,7 +89,12 @@ public final class Kopplungen {
             g.put("zuletzt", nowMs);
             if (art != null && ARTEN.contains(art)) g.put("art", art);
             // 0.1.18 Handy-Vertrag §1: Standardrechte klima, zusperren, push – aufsperren erst per Web mit Login
-            if (ART_HANDY.equals(art)) g.put("rechte", new JSONArray(HANDY_STANDARD)).put("rechteStand", RECHTE_STAND);
+            if (ART_HANDY.equals(art)) {
+                JSONArray r = new JSONArray(HANDY_STANDARD);
+                // 0.1.26.1: die erste Handy-Kopplung ist die des Besitzers → darf aktualisieren
+                if (aeltesteHandyId(null) == null) r.put(RECHT_UPDATE);
+                g.put("rechte", r).put("rechteStand", RECHTE_STAND);
+            }
         } catch (Exception ignored) { }
         JSONArray neu = kopie(l);
         neu.put(g);
@@ -185,18 +215,22 @@ public final class Kopplungen {
             RECHT_WEB = "web",   // 0.1.20 Web-Sitzung (Weboberfläche in der Handy-App, Stufe B)
             RECHT_KAMERA = "kamera",   // 0.1.25 Kamerabilder/Aufnahmen übers Internet (Brücke); Standard AUS (Passanten)
             RECHT_WALLBOX = "wallbox",   // 0.1.25 Wallbox starten/stoppen/Ladestrom vom Handy; Standard AUS
-            RECHT_ROUTE = "route";       // 0.1.25 Route ins Auto schicken (nur Anzeige, nichts startet von selbst); Standard AN
+            RECHT_ROUTE = "route",       // 0.1.25 Route ins Auto schicken (nur Anzeige, nichts startet von selbst); Standard AN
+            // 0.1.26.1 Panoptes aktualisieren (nur freigegebene Version des Updaters, nur geparkt). Standard AN nur für
+            // die erste Handy-Kopplung und die am Display bzw. mit Login erlaubten, sonst AUS
+            RECHT_UPDATE = "update";
     public static final java.util.List<String> RECHTE = java.util.Collections.unmodifiableList(
             java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_AUFSPERREN, RECHT_PUSH, RECHT_WEB, RECHT_KAMERA,
-                    RECHT_WALLBOX, RECHT_ROUTE));
+                    RECHT_WALLBOX, RECHT_ROUTE, RECHT_UPDATE));
     /** Standard bei neuer Handy-Kopplung: aufsperren, kamera und wallbox AUS, bis der Besitzer sie mit Login einschaltet. */
     static final java.util.List<String> HANDY_STANDARD = java.util.Collections.unmodifiableList(
             java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_PUSH, RECHT_WEB, RECHT_ROUTE));
     /**
      * Stand der Rechte-Liste: ab 2 (0.1.25) kennt die gespeicherte Liste „route“. Ältere Kopplungen bekommen das neue
-     * Standard-AN-Recht „route“ beim Lesen dazu, bis der Besitzer die Rechte selbst setzt.
+     * Standard-AN-Recht „route“ beim Lesen dazu, bis der Besitzer die Rechte selbst setzt. Ab 3 (0.1.26.1) kennt sie
+     * „update“: Bestand bekommt es beim Lesen nur für die älteste Handy-Kopplung (die erste des Besitzers).
      */
-    static final int RECHTE_STAND = 2;
+    static final int RECHTE_STAND = 3;
 
     public static final int SCHLUESSEL_GESPEICHERT = 1, SCHLUESSEL_SCHON = 2, SCHLUESSEL_FEHLER = 0,
             SCHLUESSEL_KEINE_HANDY_KOPPLUNG = 3;
@@ -211,14 +245,52 @@ public final class Kopplungen {
         return null;
     }
 
-    private static JSONArray rechteVon(JSONObject g) {
+    private JSONArray rechteVon(JSONObject g) {
         JSONArray r = g.optJSONArray("rechte");
-        if (r == null) return new JSONArray(HANDY_STANDARD);
-        if (g.optInt("rechteStand", 1) >= RECHTE_STAND) return r;
-        for (int i = 0; i < r.length(); i++) if (RECHT_ROUTE.equals(r.optString(i))) return r;
+        int stand = r == null ? 0 : g.optInt("rechteStand", 1);
+        if (stand >= RECHTE_STAND) return r;
         JSONArray mit = new JSONArray();
-        for (int i = 0; i < r.length(); i++) mit.put(r.opt(i));
-        return mit.put(RECHT_ROUTE);   // 0.1.25: neues Standard-AN-Recht für Bestand
+        if (r == null) {
+            for (String x : HANDY_STANDARD) mit.put(x);
+        } else {
+            for (int i = 0; i < r.length(); i++) mit.put(r.opt(i));
+            if (stand < 2 && !enthaelt(mit, RECHT_ROUTE)) mit.put(RECHT_ROUTE);   // 0.1.25: neues Standard-AN-Recht für Bestand
+        }
+        // 0.1.26.1: „update“ für Bestand nur an der ältesten Handy-Kopplung
+        if (!enthaelt(mit, RECHT_UPDATE) && g.optString("id").equals(aeltesteHandyId(null))) mit.put(RECHT_UPDATE);
+        return mit;
+    }
+
+    private static boolean enthaelt(JSONArray r, String recht) {
+        for (int i = 0; i < r.length(); i++) if (recht.equals(r.optString(i))) return true;
+        return false;
+    }
+
+    /** id der ältesten Handy-Kopplung (außer {@code ohne}) oder null. */
+    private String aeltesteHandyId(String ohne) {
+        JSONArray l = liste();
+        String best = null;
+        long bestZeit = Long.MAX_VALUE;
+        for (int i = 0; i < l.length(); i++) {
+            JSONObject g = l.optJSONObject(i);
+            if (g == null || !ART_HANDY.equals(g.optString("art")) || g.optString("id").equals(ohne)) continue;
+            long t = g.optLong("angelegt", Long.MAX_VALUE - 1);
+            if (best == null || t < bestZeit) {
+                best = g.optString("id");
+                bestZeit = t;
+            }
+        }
+        return best;
+    }
+
+    /** Aktuelle Rechte einer Handy-Kopplung (leer bei anderen Arten). */
+    public synchronized java.util.List<String> rechte(String id) {
+        java.util.List<String> out = new java.util.ArrayList<>();
+        JSONObject g = finde(id);
+        if (g == null || !ART_HANDY.equals(g.optString("art"))) return out;
+        JSONArray r = rechteVon(g);
+        for (int i = 0; i < r.length(); i++) out.add(r.optString(i));
+        return out;
     }
 
     /** Art der Kopplung oder null (unbekannt bzw. ohne Art). */

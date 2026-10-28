@@ -384,8 +384,9 @@
             { href: 'road-sense.html',      label: 'Straßenzustand',     i18n: 'shell.page_road' }
         ] },
         { id: 'guard', label: 'Wächter', i18n: 'shell.sec_guard', icon: 'eye', pages: [
-            { href: 'waechter.html',        label: 'Übersicht',          i18n: 'shell.page_guard_home' },
+            // 0.1.26.1: Live zuerst – ein Tipp auf „Wächter“ öffnet das Live-Bild (Wunsch Alfred)
             { href: 'live-view.html',       label: 'Live',               i18n: 'shell.page_live' },
+            { href: 'waechter.html',        label: 'Übersicht',          i18n: 'shell.page_guard_home' },
             { href: 'events.html',          label: 'Aufnahmen',          i18n: 'nav.recordings' },
             { href: 'parking.html',         label: 'Parken',             i18n: 'nav.parking' },
             { href: 'communicate.html',     label: 'Sprechen',           i18n: 'shell.page_talk' },

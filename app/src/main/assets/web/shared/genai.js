@@ -29,8 +29,16 @@
         openai: 'https://api.openai.com',
         anthropic: 'https://api.anthropic.com',
         gemini: 'https://generativelanguage.googleapis.com',
-        openai_compatible: ''
+        openai_compatible: '',
+        // 0.1.26.1 Vorlage: Anthropic-kompatible API von MiniMax (gespeichert wird provider anthropic)
+        minimax: 'https://api.minimax.io/anthropic'
     };
+    var MINIMAX_HOST = /(^|\.)minimax\.io$/i;
+
+    function istMinimax(url) {
+        var m = /^https?:\/\/([^\/:?#]+)/i.exec(String(url || '').trim());
+        return !!(m && MINIMAX_HOST.test(m[1]));
+    }
 
     var MODEL_PRESETS = {
         openai: {
@@ -45,8 +53,28 @@
             text: ['gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-2.5-flash'],
             realtime: ['gemini-3.1-flash-live-preview']
         },
-        openai_compatible: { text: [], realtime: [] }
+        openai_compatible: { text: [], realtime: [] },
+        minimax: { text: ['MiniMax-M3.1-Flash', 'MiniMax-M3'], realtime: [] }
     };
+
+    // 0.1.26.1: Fehler des Dienstes nie halb englisch – bekannte Codes übersetzen, sonst der Text vom Dienst
+    var FEHLER_DE = {
+        empty_provider_response: 'Der Anbieter hat keine Antwort geschickt. Bitte noch einmal fragen, am besten kürzer.',
+        provider_output_limit: 'Der Assistent hat zu lange nachgedacht und keine Antwort mehr geschafft. Bitte die Frage kürzer stellen.',
+        provider_error: 'Der Anbieter hat die Anfrage abgelehnt. Bitte Schlüssel und Modell prüfen.',
+        provider_unreachable: 'Der Anbieter ist gerade nicht erreichbar. Bitte später noch einmal versuchen.',
+        provider_request_failed: 'Die Verbindung zum Anbieter hat nicht geklappt. Bitte noch einmal versuchen.',
+        provider_stream_failed: 'Die Verbindung zum Anbieter ist abgerissen. Bitte noch einmal versuchen.',
+        invalid_provider_response: 'Der Anbieter hat eine unbrauchbare Antwort geschickt. Bitte noch einmal versuchen.',
+        provider_response_too_large: 'Die Antwort war zu lang. Bitte die Frage kürzer stellen.',
+        genai_disabled: 'Der Assistent ist ausgeschaltet.',
+        genai_not_configured: 'Der Assistent ist noch nicht eingerichtet. Bitte Anbieter und Schlüssel eintragen.'
+    };
+
+    function fehlerText(code, text) {
+        if (code && FEHLER_DE[code]) return tx('genai.err_' + code, FEHLER_DE[code]);
+        return text || '';
+    }
 
     var GenAI = {
         status: null,
@@ -165,7 +193,10 @@
                         return;
                     }
                     self.selectedMode = mode;
-                    var prompt = this.getAttribute('data-prompt') || '';
+                    // 0.1.26.1: Vorschlag in der UI-Sprache (data-prompt-key), englischer Text nur als Rückfall
+                    var promptKey = this.getAttribute('data-prompt-key');
+                    var prompt = promptKey && t(promptKey) !== promptKey
+                        ? t(promptKey) : (this.getAttribute('data-prompt') || '');
                     if (input) {
                         input.value = prompt;
                         input.focus();
@@ -206,7 +237,7 @@
                     return { success: false, error: tx('genai.invalid_daemon', 'Der Dienst im Auto hat eine unbrauchbare Antwort geschickt.') };
                 }).then(function (data) {
                     if (!response.ok || data.success === false) {
-                        var error = new Error(data.error || tx('genai.request_failed', 'Das ging schief (Code {status})', { status: response.status }));
+                        var error = new Error(fehlerText(data.code, data.error) || tx('genai.request_failed', 'Das ging schief (Code {status})', { status: response.status }));
                         error.code = data.code || '';
                         throw error;
                     }
@@ -291,7 +322,8 @@
         populateConfig: function () {
             var s = this.status;
             if (!s) return;
-            this.setValue('genAiProvider', s.provider || 'openai');
+            this.setValue('genAiProvider', s.provider === 'anthropic' && istMinimax(s.baseUrl)
+                ? 'minimax' : (s.provider || 'openai'));
             this.setValue('genAiBaseUrl', s.baseUrl || DEFAULT_URLS[s.provider] || '');
             this.setValue('genAiModel', s.model || '');
             this.setValue('genAiRealtimeModel', s.realtimeModel || '');
@@ -462,7 +494,12 @@
                 if (realtimeModel) realtimeModel.value = '';
                 var key = document.getElementById('genAiApiKey');
                 if (key) key.value = '';
+                // MiniMax denkt vor der Antwort: längere Antworten zulassen
+                var tokens = document.getElementById('genAiMaxTokens');
+                if (tokens && provider === 'minimax') tokens.value = '8192';
             }
+            var mmHinweis = document.getElementById('genAiMinimaxHinweis');
+            if (mmHinweis) mmHinweis.hidden = provider !== 'minimax';
             this.fillModelSelect(
                 'genAiModelPreset', 'genAiModel',
                 'genAiModelCustomField', presets.text, false);
@@ -549,7 +586,7 @@
         configPayload: function () {
             var payload = {
                 enabled: !!document.getElementById('genAiEnabled').checked,
-                provider: this.value('genAiProvider'),
+                provider: this.value('genAiProvider') === 'minimax' ? 'anthropic' : this.value('genAiProvider'),
                 baseUrl: this.value('genAiBaseUrl'),
                 model: this.value('genAiModel'),
                 realtimeModel: this.value('genAiRealtimeModel'),
@@ -1846,7 +1883,7 @@
                 } else if (message.type === 'error') {
                     completed = true;
                     self.finishChatFailure(
-                        message.error || (window.BYD && BYD.i18n && BYD.i18n.t && BYD.i18n.t('genai.chat_request_failed')) || 'Die Anfrage hat nicht geklappt.',
+                        fehlerText(message.code, message.error) || (window.BYD && BYD.i18n && BYD.i18n.t && BYD.i18n.t('genai.chat_request_failed')) || 'Die Anfrage hat nicht geklappt.',
                         generation);
                 }
             };
@@ -2737,6 +2774,7 @@
         },
 
         providerLabel: function (provider) {
+            if (provider === 'minimax') return 'MiniMax';
             if (provider === 'anthropic') return 'Anthropic';
             if (provider === 'gemini') return 'Google Gemini';
             if (provider === 'openai_compatible') return 'OpenAI-compatible';

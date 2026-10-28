@@ -32,6 +32,25 @@
         .sys-info { flex: 1; min-width: 0; }
         .sys-name { font-weight: 600; font-size: 14px; color: var(--text-primary); }
         .sys-meta { font-size: 12px; color: var(--text-muted); font-family: var(--family-mono); }
+        /* 0.1.26.1 Gekoppelte Geräte: je Recht ein großer Schalter, Text bricht um (REGEL DAU) */
+        .pn-rechte { display: flex; flex-direction: column; gap: 2px; margin-top: 8px; }
+        .pn-recht { display: flex; align-items: center; gap: 12px; min-height: 48px; cursor: pointer; }
+        .pn-recht-text { flex: 1; min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+        .pn-recht-wort { display: block; font-size: 16px; font-weight: 600; color: var(--text-primary); }
+        .pn-recht-info { display: block; font-size: 13px; color: var(--text-muted); line-height: 1.35; }
+        .pn-rechte-mehr { margin-top: 6px; }
+        .pn-rechte-mehr > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-size: 15px; color: var(--text-primary); }
+        .pn-alt { margin-top: 8px; font-size: 14px; color: var(--text-primary); white-space: normal; }
+        #pairRows .sys-row { flex-wrap: wrap; align-items: flex-start; }
+        #pairRows .sys-meta { white-space: normal; overflow-wrap: anywhere; }
+        .pn-rechte-mehr > summary { list-style: none; }
+        .pn-rechte-mehr > summary::-webkit-details-marker { display: none; }
+        .pn-rechte-mehr > summary::before { content: '+'; display: inline-block; width: 24px; font-weight: 700; font-size: 20px; }
+        .pn-rechte-mehr[open] > summary::before { content: '−'; }
+        @media (max-width: 600px) {
+            #pairRows .sys-info { flex-basis: calc(100% - 24px); }
+            #pairRows .sys-row > button { margin-left: auto; }
+        }
         .sys-note { font-size: 12px; color: var(--text-muted); margin-top: 10px; line-height: 1.5; }
         .sys-warn {
             border: 1px solid var(--status-warning); border-radius: 8px; padding: 12px 14px;
@@ -628,7 +647,7 @@
                                 + self.esc(g.name || self.t('system.paired_noname', 'Gerät ohne Namen'))
                                 + (g.abgelaufen ? ' · ' + self.esc(self.t('system.paired_expired', 'abgelaufen')) : '') + '</div>'
                                 + '<div class="sys-meta">' + self.esc(self.t('system.paired_meta', 'Gekoppelt {a} · zuletzt {z}', { a: self.datum(g.angelegt), z: self.datum(g.zuletzt) })) + '</div>'
-                                + (g.art === 'handy' ? self.handyBlock(g) : '') + '</div>'
+                                + (g.art === 'handy' ? self.handyBlock(g) : (!g.art ? self.altBlock(g) : '')) + '</div>'
                                 + '<button class="btn" type="button" data-id="' + self.esc(g.id) + '" data-name="' + self.esc(g.name || '') + '">'
                                 + self.esc(self.t('system.paired_remove', 'Entfernen')) + '</button></div>';
                         }).join('');
@@ -642,31 +661,67 @@
                         Array.prototype.forEach.call(rows.querySelectorAll('button[data-handy-schluessel]'), function (b) {
                             b.onclick = function () { self.handySchluesselWeg(b); };
                         });
+                        Array.prototype.forEach.call(rows.querySelectorAll('button[data-neu-koppeln]'), function (b) {
+                            b.onclick = function () { self.neuKoppeln(); };
+                        });
                     }
                     document.getElementById('pairDays').textContent = d.gueltigOhneNutzungTage
                         ? self.t('system.paired_days', 'Ein gekoppeltes Gerät verliert den Zugang, wenn es {n} Tage nicht benutzt wurde.', { n: d.gueltigOhneNutzungTage }) : '';
                 }).catch(function () { document.getElementById('pairList').style.display = 'none'; });
             },
-            // 0.1.18: Rechte und Aufsperr-Schlüssel einer Handy-Kopplung
+            // 0.1.18: Rechte und Aufsperr-Schlüssel einer Handy-Kopplung.
+            // 0.1.26.1 (REGEL DAU): oben nur die Rechte, die das Gerät WIRKLICH hat, je Recht ein großer Schalter mit
+            // einem Wort; die übrigen eingeklappt unter „Mehr erlauben“. Text bricht um. Ändern nur am Autobildschirm
+            // bzw. angemeldet (Server: 403 nur_mit_login für Kopplungen und Web-Sitzung, nie über die Brücke).
             handyBlock: function (g) {
                 var self = this, r = Array.isArray(g.rechte) ? g.rechte : [];
+                var wort = { klima: self.t('system.handy_wort_klima', 'Klima'), zusperren: self.t('system.handy_wort_zusperren', 'Zusperren'),
+                    aufsperren: self.t('system.handy_wort_aufsperren', 'Aufsperren'), push: self.t('system.handy_wort_push', 'Mitteilungen'),
+                    web: self.t('system.handy_wort_web', 'Weboberfläche'), kamera: self.t('system.handy_wort_kamera', 'Kamera'),
+                    wallbox: self.t('system.handy_wort_wallbox', 'Wallbox'), route: self.t('system.handy_wort_route', 'Route'),
+                    update: self.t('system.handy_wort_update', 'Update') };
                 var namen = { klima: self.t('system.handy_recht_klima', 'Klima'), zusperren: self.t('system.handy_recht_zusperren', 'Zusperren'),
                     aufsperren: self.t('system.handy_recht_aufsperren', 'Aufsperren (mit Fingerabdruck/Face ID)'), push: self.t('system.handy_recht_push', 'Benachrichtigungen'),
                     web: self.t('system.handy_recht_web', 'Weboberfläche in der App (ohne PIN, Kopplungen, Netz, Updates)'),
                     kamera: self.t('system.handy_recht_kamera', 'Kamerabilder und Aufnahmen unterwegs'),
                     wallbox: self.t('system.handy_recht_wallbox', 'Wallbox starten, stoppen, Ladestrom'),
-                    route: self.t('system.handy_recht_route', 'Route ins Auto schicken (startet nichts von selbst)') };
-                var html = '<div class="sys-meta" style="margin-top:6px">' + self.esc(self.t('system.handy_rechte', 'Darf:')) + ' ';
-                ['klima', 'zusperren', 'aufsperren', 'push', 'web', 'kamera', 'wallbox', 'route'].forEach(function (k) {
-                    html += '<label style="margin-right:12px;white-space:nowrap"><input type="checkbox" data-handy-recht="' + k + '" data-id="'
-                        + self.esc(g.id) + '"' + (r.indexOf(k) >= 0 ? ' checked' : '') + '> ' + self.esc(namen[k]) + '</label>';
-                });
-                html += '</div><div class="sys-meta">' + self.esc(g.schluessel
+                    route: self.t('system.handy_recht_route', 'Route ins Auto schicken (startet nichts von selbst)'),
+                    update: self.t('system.handy_recht_update', 'Panoptes aktualisieren (nur geparkt)') };
+                function schalter(k, an) {
+                    var info = namen[k] !== wort[k] ? '<span class="pn-recht-info">' + self.esc(namen[k]) + '</span>' : '';
+                    return '<label class="pn-recht"><span class="pn-recht-text"><span class="pn-recht-wort">' + self.esc(wort[k]) + '</span>' + info + '</span>'
+                        + '<span class="toggle-switch"><input type="checkbox" data-handy-recht="' + k + '" data-id="' + self.esc(g.id) + '"'
+                        + (an ? ' checked' : '') + ' aria-label="' + self.esc(wort[k]) + '"><span class="toggle-slider"></span></span></label>';
+                }
+                var alle = ['klima', 'zusperren', 'aufsperren', 'push', 'web', 'kamera', 'wallbox', 'route', 'update'];
+                var hat = alle.filter(function (k) { return r.indexOf(k) >= 0; });
+                var fehlt = alle.filter(function (k) { return r.indexOf(k) < 0; });
+                var html = '<div class="pn-rechte">';
+                html += hat.length ? hat.map(function (k) { return schalter(k, true); }).join('')
+                    : '<div class="pn-recht-info">' + self.esc(self.t('system.handy_darf_nichts', 'Dieses Gerät darf noch nichts.')) + '</div>';
+                html += '</div>';
+                if (fehlt.length) {
+                    html += '<details class="pn-rechte-mehr"><summary>' + self.esc(self.t('system.handy_mehr', 'Mehr erlauben')) + '</summary><div class="pn-rechte">'
+                        + fehlt.map(function (k) { return schalter(k, false); }).join('') + '</div></details>';
+                }
+                html += '<div class="sys-meta">' + self.esc(g.schluessel
                     ? self.t('system.handy_schluessel_da', 'Aufsperr-Schlüssel hinterlegt{g}.', { g: g.geraeteName ? ' (' + g.geraeteName + ')' : '' })
                     : self.t('system.handy_schluessel_fehlt', 'Noch kein Aufsperr-Schlüssel hinterlegt.'));
                 if (g.schluessel) html += ' <button class="btn" type="button" data-handy-schluessel="' + self.esc(g.id) + '">'
                     + self.esc(self.t('system.handy_schluessel_weg', 'Schlüssel entfernen')) + '</button>';
                 return html + '</div>';
+            },
+            // 0.1.26.1: Kopplung aus einer alten Version ohne „art“ – Rechte sind unklar, also ehrlich neu koppeln lassen
+            altBlock: function (g) {
+                var self = this;
+                return '<div class="pn-alt">' + self.esc(self.t('system.paired_alt', 'Ältere Kopplung – bitte neu koppeln.'))
+                    + ' <button class="btn" type="button" data-neu-koppeln="' + self.esc(g.id) + '">'
+                    + self.esc(self.t('system.paired_neu_koppeln', 'Neu koppeln')) + '</button></div>';
+            },
+            neuKoppeln: function () {
+                var k = document.getElementById('kopplung'), b = document.getElementById('pairBtn');
+                if (k && k.scrollIntoView) k.scrollIntoView();
+                if (b && !b.disabled) b.click();
             },
             handyRechte: function (cb) {
                 var self = this, id = cb.getAttribute('data-id');
@@ -687,12 +742,21 @@
                     cb.checked = false;
                     return;
                 }
+                // 0.1.26.1 Panoptes aktualisieren vom Handy: eigene Rückfrage, Standard aus (außer erste Kopplung / am Display erlaubt)
+                if (cb.getAttribute('data-handy-recht') === 'update' && cb.checked
+                    && !window.confirm(self.t('system.handy_update_confirm', 'Dieses Gerät darf dann Panoptes aktualisieren – nur auf eine freigegebene Version und nur, wenn das Auto in P steht und aus ist. Du bekommst bei jedem Start eine Telegram-Nachricht. Einschalten?'))) {
+                    cb.checked = false;
+                    return;
+                }
                 var rechte = Array.prototype.filter.call(document.querySelectorAll('input[data-handy-recht][data-id="' + id + '"]'),
                     function (x) { return x.checked; }).map(function (x) { return x.getAttribute('data-handy-recht'); });
                 fetch('/api/kopplung/rechte', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id, rechte: rechte }) })
-                    .then(function (r) { return r.ok; }).catch(function () { return false; }).then(function (ok) {
+                    .then(function (r) { return r.ok ? 'ok' : (r.status === 403 ? 'login' : 'fehler'); }).catch(function () { return 'fehler'; }).then(function (e) {
                         var toast = window.BYD && BYD.utils && BYD.utils.toast;
-                        if (toast) BYD.utils.toast(ok ? self.t('system.handy_gespeichert', 'Gespeichert') : self.t('system.handy_fehler', 'Konnte nicht speichern.'), ok ? 'success' : 'error');
+                        var text = e === 'ok' ? self.t('system.handy_gespeichert', 'Gespeichert')
+                            : e === 'login' ? self.t('system.handy_nur_login', 'Ändern geht nur am Autobildschirm oder angemeldet.')
+                            : self.t('system.handy_fehler', 'Konnte nicht speichern.');
+                        if (toast) BYD.utils.toast(text, e === 'ok' ? 'success' : 'error');
                         self.liste();
                     });
             },
@@ -760,7 +824,9 @@
                         + (a.art === 'handy' ? '<label class="sys-note" style="display:flex;gap:10px;align-items:center;margin:4px 0 10px;"><input type="checkbox" data-auf="' + self.esc(a.ref) + '" style="width:22px;height:22px;"> '
                             + self.esc(self.t('system.req_unlock', 'Auch Aufsperren erlauben (mit Fingerabdruck am Handy, später unter Kopplungen änderbar)')) + '</label>'
                             + '<label class="sys-note" style="display:flex;gap:10px;align-items:center;margin:4px 0 10px;"><input type="checkbox" data-wb="' + self.esc(a.ref) + '" style="width:22px;height:22px;"> '
-                            + self.esc(self.t('system.req_wallbox', 'Auch die Wallbox steuern (Laden starten/stoppen, Ladestrom; später änderbar)')) + '</label>' : '')
+                            + self.esc(self.t('system.req_wallbox', 'Auch die Wallbox steuern (Laden starten/stoppen, Ladestrom; später änderbar)')) + '</label>'
+                            + '<label class="sys-note" style="display:flex;gap:10px;align-items:center;margin:4px 0 10px;"><input type="checkbox" checked data-upd="' + self.esc(a.ref) + '" style="width:22px;height:22px;"> '
+                            + self.esc(self.t('system.req_update', 'Darf Panoptes aktualisieren (nur geparkt; später änderbar)')) + '</label>' : '')
                         + '<div class="sys-actions">'
                         + '<button class="btn btn-primary" type="button" style="min-width:140px;min-height:48px;font-size:16px;" data-req="' + self.esc(a.ref) + '" data-art="' + self.esc(a.art || '') + '" data-was="erlauben">' + self.esc(self.t('system.req_allow', 'Erlauben')) + '</button> '
                         + '<button class="btn" type="button" style="min-width:140px;min-height:48px;font-size:16px;" data-req="' + self.esc(a.ref) + '" data-art="' + self.esc(a.art || '') + '" data-was="ablehnen">' + self.esc(self.t('system.req_deny', 'Ablehnen')) + '</button>'
@@ -777,7 +843,9 @@
                 Array.prototype.forEach.call(document.querySelectorAll('#pairReq input[data-auf]'), function (x) { if (x.getAttribute('data-auf') === ref) auf = x; });
                 var wb = null;   // 0.1.25 „Auch die Wallbox steuern“ (nur Handy-Anfragen)
                 Array.prototype.forEach.call(document.querySelectorAll('#pairReq input[data-wb]'), function (x) { if (x.getAttribute('data-wb') === ref) wb = x; });
-                var body = was !== 'erlauben' ? '{}' : JSON.stringify({ aufsperren: !!(auf && auf.checked), wallbox: !!(wb && wb.checked) });
+                var upd = null;   // 0.1.26.1 „Darf Panoptes aktualisieren“ (nur Handy-Anfragen, Standard an)
+                Array.prototype.forEach.call(document.querySelectorAll('#pairReq input[data-upd]'), function (x) { if (x.getAttribute('data-upd') === ref) upd = x; });
+                var body = was !== 'erlauben' ? '{}' : JSON.stringify({ aufsperren: !!(auf && auf.checked), wallbox: !!(wb && wb.checked), update: !!(upd && upd.checked) });
                 var url = art === 'weiteres' && /^r-[0-9a-f]{16}$/.test(ref) ? '/api/kopplung/weiteres-geraet/' + ref + '/' + was   // 0.1.25
                     : /^r-[0-9a-f]{16}$/.test(ref) ? '/api/cloud-uebergabe/' + ref + '/' + was   // 0.1.21 BYD-Cloud-Übergabe
                     : '/api/kopplung/anfrage/' + encodeURIComponent(ref) + '/' + was;

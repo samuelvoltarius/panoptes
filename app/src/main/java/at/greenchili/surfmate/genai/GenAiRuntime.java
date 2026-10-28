@@ -193,8 +193,10 @@ public final class GenAiRuntime implements Closeable {
 
         String text = extractText(config.provider, providerJson);
         if (text == null || text.trim().isEmpty()) {
-            throw new GenAiException(503, "empty_provider_response",
-                    "The provider returned no text.");
+            // 0.1.26.1: Befund ins Protokoll (nur Struktur, nie Inhalte oder Schlüssel)
+            String stop = stopGrund(providerJson);
+            logger.warn("Leere Antwort von " + config.provider + ": " + leerBefund(providerJson));
+            throw leerFehler(stop);
         }
 
         JSONObject result = new JSONObject();
@@ -448,8 +450,9 @@ public final class GenAiRuntime implements Closeable {
             ensureGenerationCurrent(requestGeneration);
             if (cancellation.isCancelled()) throw cancelledException();
             if (state.text.length() == 0) {
-                throw new GenAiException(503, "empty_provider_response",
-                        "The provider returned no text.");
+                logger.warn("Leere Antwort (Stream) von " + config.provider + ": stop_reason=" + state.stopReason
+                        + ", usage=" + (state.usage == null ? "-" : state.usage.toString()));
+                throw leerFehler(state.stopReason);
             }
             return streamResult(config, state);
         } catch (GenAiException e) {
@@ -587,7 +590,8 @@ public final class GenAiRuntime implements Closeable {
             GenAiConfig config, StreamState state) throws Exception {
         JSONObject result = new JSONObject()
                 .put("success", true)
-                .put("text", state.text.toString().trim())
+                .put("text", GenAiConfig.PROVIDER_ANTHROPIC.equals(config.provider)
+                        ? ohneDenkteil(state.text.toString()) : state.text.toString().trim())
                 .put("provider", config.provider)
                 .put("model", config.model);
         if (!state.id.isEmpty()) result.put("requestId", state.id);
@@ -645,11 +649,21 @@ public final class GenAiRuntime implements Closeable {
             throws GenAiException {
         try {
             if (GenAiConfig.PROVIDER_ANTHROPIC.equals(config.provider)) {
+                // 0.1.26.1 Anthropic-kompatible Fremdanbieter (MiniMax): Sie denken vor der Antwort (thinking zählt zu
+                // max_tokens) und ignorieren output_config. Deshalb mehr Budget und das Schema als Anweisung.
+                boolean fremd = !istAnthropicHost(config.baseUrl);
+                String system = instructions;
+                if (fremd && schemaName != null && schema != null) {
+                    system = (instructions == null ? "" : instructions)
+                            + "\n\nReply with exactly one JSON object and nothing else (no Markdown, no code fence)."
+                            + " It must match this JSON Schema:\n" + schema.toString();
+                }
                 JSONObject body = new JSONObject()
                         .put("model", config.model)
-                        .put("system", instructions)
+                        .put("system", system)
                         .put("messages", copyMessages(messages))
-                        .put("max_tokens", config.maxOutputTokens)
+                        .put("max_tokens", fremd ? Math.max(config.maxOutputTokens, FREMD_MIN_TOKENS)
+                                : config.maxOutputTokens)
                         .put("stream", stream);
                 applyStructuredOutput(
                         config.provider, body, schemaName, schema);
@@ -818,6 +832,83 @@ public final class GenAiRuntime implements Closeable {
         return "{\"truncated\":true}";
     }
 
+    /** Abbruchgrund der Antwort (Anthropic stop_reason, OpenAI-kompatibel finish_reason, Gemini finishReason) oder "". */
+    static String stopGrund(JSONObject json) {
+        if (json == null) return "";
+        String s = json.optString("stop_reason", "");
+        if (!s.isEmpty()) return s;
+        JSONArray choices = json.optJSONArray("choices");
+        if (choices != null && choices.length() > 0 && choices.optJSONObject(0) != null) {
+            s = choices.optJSONObject(0).optString("finish_reason", "");
+            if (!s.isEmpty()) return s;
+        }
+        JSONArray cands = json.optJSONArray("candidates");
+        if (cands != null && cands.length() > 0 && cands.optJSONObject(0) != null) {
+            return cands.optJSONObject(0).optString("finishReason", "");
+        }
+        return json.optString("status", "");
+    }
+
+    /** true, wenn die Antwort am Ausgabelimit abgebrochen ist (bei Denkmodellen oft schon im Denkteil). */
+    static boolean amLimit(String stop) {
+        return "max_tokens".equals(stop) || "length".equals(stop) || "MAX_TOKENS".equals(stop)
+                || "incomplete".equals(stop);
+    }
+
+    static GenAiException leerFehler(String stop) {
+        if (amLimit(stop)) {
+            return new GenAiException(503, "provider_output_limit",
+                    "The provider used up the answer length before replying.");
+        }
+        return new GenAiException(503, "empty_provider_response", "The provider returned no text.");
+    }
+
+    /** Nur Struktur fürs Protokoll: stop_reason, Arten der content-Blöcke, usage. Keine Texte. */
+    static String leerBefund(JSONObject json) {
+        if (json == null) return "keine JSON-Antwort";
+        StringBuilder b = new StringBuilder("stop_reason=").append(stopGrund(json)).append(", content=[");
+        JSONArray content = json.optJSONArray("content");
+        if (content != null) {
+            for (int i = 0; i < content.length(); i++) {
+                JSONObject part = content.optJSONObject(i);
+                if (i > 0) b.append(',');
+                b.append(part == null ? "?" : part.optString("type", "?"));
+            }
+        }
+        JSONObject usage = json.optJSONObject("usage");
+        if (usage == null) usage = json.optJSONObject("usageMetadata");
+        return b.append("], usage=").append(usage == null ? "-" : usage.toString()).toString();
+    }
+
+    /** 0.1.26.1: Mindest-Budget für Anthropic-kompatible Fremdanbieter mit Denkteil (belegt mit MiniMax-M3.1-Flash). */
+    static final int FREMD_MIN_TOKENS = 8192;
+
+    /** true für api.anthropic.com (und ohne Host); false für Anthropic-kompatible Fremdanbieter wie MiniMax. */
+    static boolean istAnthropicHost(String baseUrl) {
+        try {
+            String h = java.net.URI.create(baseUrl == null ? "" : baseUrl.trim()).getHost();
+            return h == null || h.isEmpty() || h.equalsIgnoreCase("api.anthropic.com")
+                    || h.toLowerCase(java.util.Locale.ROOT).endsWith(".anthropic.com");
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    /** Denkteil im Text ({@code <think>…</think>}) und einen umschließenden Code-Zaun entfernen. */
+    static String ohneDenkteil(String text) {
+        if (text == null || text.isEmpty()) return text;
+        String t = text.replaceAll("(?s)<think>.*?</think>", "");
+        int offen = t.indexOf("<think>");
+        if (offen >= 0) t = t.substring(0, offen);   // abgebrochener Denkteil
+        t = t.trim();
+        if (t.startsWith("```") && t.endsWith("```") && t.length() >= 6) {
+            int nl = t.indexOf('\n');
+            String innen = nl > 0 ? t.substring(nl + 1, t.length() - 3).trim() : "";
+            if (innen.startsWith("{") || innen.startsWith("[")) t = innen;   // nur JSON auspacken
+        }
+        return t;
+    }
+
     static String endpoint(String baseUrl, String path) {
         String base = baseUrl == null ? "" : baseUrl.replaceAll("/+$", "");
         if (base.endsWith("/v1") && path.startsWith("/v1/")) {
@@ -882,7 +973,7 @@ public final class GenAiRuntime implements Closeable {
                 text.append(value);
             }
         }
-        return text.toString();
+        return ohneDenkteil(text.toString());   // 0.1.26.1: thinking-Blöcke zählen nie, <think> im Text auch nicht
     }
 
     static String extractGeminiText(JSONObject json) {
@@ -1132,8 +1223,14 @@ public final class GenAiRuntime implements Closeable {
         final StringBuilder text = new StringBuilder();
         String id = "";
         JSONObject usage;
+        /** 0.1.26.1: Abbruchgrund (Anthropic message_delta.delta.stop_reason u. a.), "" = unbekannt. */
+        String stopReason = "";
 
         void capture(JSONObject event) {
+            JSONObject delta = event.optJSONObject("delta");
+            if (delta != null && !delta.optString("stop_reason", "").isEmpty()) {
+                stopReason = delta.optString("stop_reason");
+            }
             JSONObject payload = event.optJSONObject("response");
             if (payload == null) payload = event.optJSONObject("message");
             if (payload == null) {

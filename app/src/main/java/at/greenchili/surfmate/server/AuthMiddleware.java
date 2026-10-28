@@ -78,6 +78,11 @@ public class AuthMiddleware {
         return isExternRequest() ? REQUEST_KID.get() : null;
     }
 
+    /** 0.1.26.1: Kopplungs-id hinter der Web-Sitzung der Handy-App (scope handyweb) oder null. */
+    public static String requestWebKopplungsId() {
+        return isHandyWebRequest() ? REQUEST_KID.get() : null;
+    }
+
     /** 0.1.20: true, wenn die laufende Anfrage aus der Web-Sitzung der Handy-App kommt (scope handyweb, Stufe B). */
     public static boolean isHandyWebRequest() {
         return at.greenchili.surfmate.auth.WebSitzung.SCOPE.equals(REQUEST_SCOPE.get());

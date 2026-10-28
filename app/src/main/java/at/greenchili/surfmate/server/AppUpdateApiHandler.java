@@ -54,6 +54,24 @@ public final class AppUpdateApiHandler {
             HttpResponse.sendJson(out, 403, "{\"ok\":false,\"grund\":\"nur_mit_login\"}");
             return true;
         }
+        // 0.1.26.1 Web-Sitzung der Handy-App mit Recht „update“ (WebHandyGuard): dieselben Regeln wie das Handy
+        if (AuthMiddleware.isHandyWebRequest() && pathOnly.equals("/api/appupdate/installieren")) {
+            String kid = AuthMiddleware.requestWebKopplungsId();
+            if (!at.greenchili.surfmate.auth.Kopplungen.get().hatRecht(kid, at.greenchili.surfmate.auth.Kopplungen.RECHT_UPDATE)) {
+                HttpResponse.sendJson(out, 403, "{\"ok\":false,\"grund\":\"nicht_erlaubt\"}");
+                return true;
+            }
+            JSONObject b;
+            try {
+                b = new JSONObject(body == null || body.isEmpty() ? "{}" : body);
+            } catch (Exception e) {
+                b = new JSONObject();
+            }
+            HttpResponse.sendJson(out, at.greenchili.surfmate.appupdate.FernUpdate.get().starten(b.optString("version", null),
+                    b.optBoolean("bestaetigt", false), at.greenchili.surfmate.auth.Kopplungen.get().anzeigeName(kid), sprache)
+                    .toString());
+            return true;
+        }
         if (pathOnly.equals("/api/appupdate/suchen")) {
             JSONObject s = d.suchen(sprache);
             HttpResponse.sendJson(out, s == null ? "{\"ok\":false,\"grund\":\"ratenlimit\"}" : s.toString());

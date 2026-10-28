@@ -714,8 +714,11 @@ public class HttpServer {
                 return;
             }
             // 0.1.20 Web-Sitzung der Handy-App (Stufe B): Sicherheits-Einstellungen nur am Auto oder mit PIN
+            // 0.1.26.1: Update-Pfade nur mit Recht „update“ der Kopplung dahinter (WebHandyGuard.updateErlaubt)
             if (AuthMiddleware.isHandyWebRequest() && (WebHandyGuard.blocks(method, pathOnly)
-                    || WebHandyGuard.blocksEinstellungsAbschnitt(method, pathOnly, body))) {
+                    || WebHandyGuard.blocksEinstellungsAbschnitt(method, pathOnly, body))
+                    && !WebHandyGuard.updateErlaubt(method, pathOnly, at.greenchili.surfmate.auth.Kopplungen.get()
+                            .hatRecht(AuthMiddleware.requestWebKopplungsId(), at.greenchili.surfmate.auth.Kopplungen.RECHT_UPDATE))) {
                 WebHandyGuard.sendeGesperrt(out, pathOnly);
                 client.close();
                 return;

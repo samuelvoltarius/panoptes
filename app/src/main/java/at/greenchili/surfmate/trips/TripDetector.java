@@ -57,6 +57,7 @@ public class TripDetector {
     // active trip. Used by the cost-breakdown UI to label the trip's HEV
     // mode share. Idle on BEVs (sampler is started only when isPhev=true).
     private volatile ScheduledFuture<?> iceSamplerTask;
+    private volatile ScheduledFuture<?> klimaSamplerTask;
     private static final int ICE_RPM_THRESHOLD = 600;
 
     public TripDetector() {
@@ -336,6 +337,7 @@ public class TripDetector {
         }
 
         state = State.ACTIVE;
+        startKlimaSampler();
         logger.info("Trip started at " + now + " (SoC=" + activeTrip.socStart
                 + "%, GPS=" + activeTrip.startLat + "," + activeTrip.startLon + ")");
 
@@ -360,6 +362,7 @@ public class TripDetector {
 
         cancelParkDebounceTimer();
         stopIceSampler();
+        stopKlimaSampler();
 
         long now = System.currentTimeMillis();
         // Use the time when gear first went to P as the actual trip end time
@@ -674,6 +677,7 @@ public class TripDetector {
         if (trip.isPhev) {
             startIceSampler();
         }
+        startKlimaSampler();
         if (parked) {
             state = State.PARK_PENDING;
             parkStartTime = parkStartMs > 0 ? parkStartMs : System.currentTimeMillis();
@@ -724,6 +728,38 @@ public class TripDetector {
                 logger.debug("ICE sampler tick failed: " + th.getMessage());
             }
         }, 1, 1, java.util.concurrent.TimeUnit.SECONDS);
+    }
+
+    /**
+     * 0.1.26.1: 1-Hz-Zähler für den Klima-Anteil der Fahrt (alle Antriebe). Ein Snapshot-Lesen je Takt wie beim
+     * ICE-Zähler, kein SDK-Aufruf.
+     */
+    private void startKlimaSampler() {
+        stopKlimaSampler();
+        klimaSamplerTask = scheduler.scheduleAtFixedRate(() -> {
+            try {
+                TripRecord t = activeTrip;
+                if (t == null || state != State.ACTIVE) return;
+                at.greenchili.surfmate.byd.BydVehicleData vd = VehicleDataMonitor.getInstance().getVd();
+                if (vd != null) klimaZaehlen(t, vd.acStartState);
+            } catch (Throwable th) {
+                logger.debug("Klima-Zähler: " + th.getMessage());
+            }
+        }, 1, 1, java.util.concurrent.TimeUnit.SECONDS);
+    }
+
+    /** Ein Takt: 1 = Klima an, 0 = aus (BYDAutoAcDevice), alles andere unbekannt und nicht gezählt. */
+    static void klimaZaehlen(TripRecord t, int acStartState) {
+        if (acStartState != 0 && acStartState != 1) return;
+        t.klimaBekanntSekundenAtomic.incrementAndGet();
+        if (acStartState == 1) t.klimaSekundenAtomic.incrementAndGet();
+    }
+
+    private void stopKlimaSampler() {
+        if (klimaSamplerTask != null && !klimaSamplerTask.isDone()) {
+            klimaSamplerTask.cancel(false);
+            klimaSamplerTask = null;
+        }
     }
 
     private void stopIceSampler() {

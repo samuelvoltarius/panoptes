@@ -795,7 +795,29 @@ BYD.stream = {
     /**
      * Start streaming
      */
+    /** 0.1.26.1: Seite kommt über die Brücke (Cookie von BrueckeWeiterleitung) – dort gibt es kein WebSocket. */
+    _ueberBruecke() {
+        try { return /(?:^|;\s*)pn_weg=bruecke(?:;|$)/.test(document.cookie); } catch (e) { return false; }
+    },
+
     async startStream() {
+        if (this._ueberBruecke()) {
+            const text = BYD.i18n.t('stream.ueber_bruecke');
+            this.updateStreamStatus(text, false);
+            const ph = document.getElementById('placeholder');
+            if (ph) {
+                let n = document.getElementById('brueckeHinweis');
+                if (!n) {
+                    n = document.createElement('p');
+                    n.id = 'brueckeHinweis';
+                    n.style.cssText = 'margin:12px 16px;font-size:18px;line-height:1.4;white-space:normal;';
+                    ph.appendChild(n);
+                }
+                n.textContent = text;
+            }
+            if (BYD.utils && BYD.utils.toast) BYD.utils.toast(text, 'info');
+            return;
+        }
         this.streamStarted = true;
 
         // Optimistic UI mutations — Connecting overlay shows during the
@@ -1194,11 +1216,13 @@ BYD.stream = {
         try {
             const res = await fetch('/api/stream/quality');
             const data = await res.json();
-            if (data.success && data.current) {
-                this.selectedQuality = data.current;
+            // 0.1.26.1: Start mit der gespeicherten Stufe der Einstellungsseite, nicht mit der einer fremden Sitzung
+            const stufe = data.success ? (data.gespeichert || data.current) : null;
+            if (stufe) {
+                this.selectedQuality = stufe;
                 const selector = document.getElementById('qualitySelector');
                 if (selector) {
-                    selector.value = data.current;
+                    selector.value = stufe;
                     // Assigning .value fires no event, so mirrored menus
                     // need an explicit sync.
                     if (BYD.qualityMenu) BYD.qualityMenu.sync();

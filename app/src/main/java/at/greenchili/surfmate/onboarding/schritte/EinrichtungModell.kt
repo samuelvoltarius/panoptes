@@ -84,6 +84,12 @@ data class EinrichtungStand(
         return if (i <= 0) null else l[i - 1].id
     }
 
+    /**
+     * 0.1.26: Steht „rechte“ noch auf offen/später, meldet die App beim Start den echten Zustand nach
+     * (nur wenn alle Rechte erteilt sind; nie umgekehrt). Den Daemon fragt das niemand sonst.
+     */
+    fun rechteNachmelden(): Boolean = schritt("rechte")?.status.let { it == Einrichtung.OFFEN || it == Einrichtung.SPAETER }
+
     /** „Später“ ist nur bei Nicht-Pflichtschritten erlaubt (Kern antwortet sonst 422). */
     fun spaeterErlaubt(id: String): Boolean = schritt(id)?.pflicht == false
 

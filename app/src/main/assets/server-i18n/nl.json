@@ -850,7 +850,8 @@
       "aufsperren_ok": "🔓 *Ontgrendeld* via telefoon ‘{0}’.",
       "aufsperren_unbestaetigt": "🔓 Ontgrendelopdracht via telefoon ‘{0}’ verzonden – bevestiging van de auto ontbreekt.",
       "aufsperren_abgelehnt": "🔒 Ontgrendelen via telefoon ‘{0}’ geweigerd ({1}).",
-      "wallbox": "🔌 Laadpaal bediend vanaf telefoon „{0}”: {1}"
+      "wallbox": "🔌 Laadpaal bediend vanaf telefoon „{0}”: {1}",
+      "update_gestartet": "⬆️ Update naar {0} gestart door „{1}”. Panoptes is ongeveer 3–8 minuten weg."
     },
     "zurueck": {
       "text": "🚗 Welkom terug bij de auto. Hij stond {0} geparkeerd.",
@@ -2384,6 +2385,25 @@
       "installieren": "De bestanden voor de noodtoegang konden niet worden aangemaakt.",
       "adb_serve": "De noodtoegang is aangemeld, maar het doorsturen van adb (poort 5555) ontbreekt nog. De noodtoegang probeert het zelf opnieuw."
     }
+  },
+  "update_fern": {
+    "bereit": "Nieuwe versie {0} is beschikbaar. De update duurt ongeveer 3–8 minuten.",
+    "kein_update": "Panoptes is up-to-date ({1}).",
+    "laeuft": "Panoptes wordt bijgewerkt en is zo terug. Dat duurt ongeveer 3–8 minuten.",
+    "laeuft_schon": "Panoptes wordt al bijgewerkt.",
+    "fertig": "Klaar. Panoptes draait nu met {1}.",
+    "fehler": "De update is niet gelukt. Panoptes draait verder met de vorige versie.",
+    "nicht_erlaubt": "Dit apparaat mag Panoptes niet bijwerken. Inschakelen in de auto onder „Gekoppelde apparaten”.",
+    "faehrt": "Geen update tijdens het rijden. Parkeer en zet de auto uit.",
+    "nicht_in_p": "Bijwerken kan alleen als de auto in P staat en uit is.",
+    "zuendung_an": "Bijwerken kan alleen als de auto uit is. Zet hem uit en probeer het opnieuw.",
+    "zustand_unbekannt": "Panoptes weet nu niet zeker of de auto stilstaat. Probeer het zo opnieuw.",
+    "wartet_wlan": "Updates staan op „alleen wifi”, en de auto heeft nu geen wifi.",
+    "zu_alt": "Voor deze update heeft Panoptes eerst een nieuwere versie nodig. Werk bij in de auto.",
+    "andere_version": "Deze versie is niet vrijgegeven. Vrijgegeven is {0}.",
+    "bestaetigung_fehlt": "Bevestig de update eerst.",
+    "nicht_bereit": "Panoptes start op. Probeer het over een minuut opnieuw.",
+    "nicht_moeglich": "De update kan nu niet. Probeer het later opnieuw."
   },
   "telegram_login": {
     "geraet_name": "Browser (Telegram)"

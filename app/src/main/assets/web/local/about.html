@@ -457,6 +457,17 @@
             document.getElementById('sidebarOverlay').classList.toggle('show');
         }
 
+        // 0.1.26.1: tSafe fehlte seit dem Umbau (8c7e0b40) – der ReferenceError liess alle Felder auf „—“.
+        function tSafe(key, fallback) {
+            try {
+                if (window.BYD && BYD.i18n && typeof BYD.i18n.t === 'function') {
+                    const v = BYD.i18n.t(key);
+                    if (v && v !== key) return v;
+                }
+            } catch (e) { /* Übersetzung fehlt: Rückfall */ }
+            return fallback;
+        }
+
         const VEHICLE_INFO_KEYS = [
             'firmware', 'dsp', 'mcu', 'android', 'securityPatch', 'headUnit'
         ];
@@ -464,7 +475,7 @@
         let vehicleInfoFailed = false;
 
         function renderVehicleInfo() {
-            const unavailable = tSafe('about.vehicle_unavailable', 'Unavailable');
+            const unavailable = tSafe('about.vehicle_unavailable', 'nicht verfügbar');
             for (const key of VEHICLE_INFO_KEYS) {
                 const node = document.querySelector('[data-vehicle-info="' + key + '"]');
                 if (!node) continue;
@@ -482,9 +493,14 @@
 
         async function loadVehicleInfo() {
             try {
+                // nie ewig „—“: nach 10 s gilt die Abfrage als gescheitert
+                const abbruch = typeof AbortController !== 'undefined' ? new AbortController() : null;
+                const uhr = abbruch ? setTimeout(function () { abbruch.abort(); }, 10000) : null;
                 const resp = await fetch('/api/about/vehicle-info', {
-                    credentials: 'same-origin', cache: 'no-store'
+                    credentials: 'same-origin', cache: 'no-store',
+                    signal: abbruch ? abbruch.signal : undefined
                 });
+                if (uhr) clearTimeout(uhr);
                 if (!resp.ok) throw new Error('HTTP ' + resp.status);
                 const data = await resp.json();
                 if (!data || data.success !== true) throw new Error('Invalid response');

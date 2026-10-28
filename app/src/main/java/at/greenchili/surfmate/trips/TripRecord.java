@@ -77,6 +77,15 @@ public class TripRecord {
     public final AtomicInteger iceSecondsAtomic = new AtomicInteger(0);
     /** Convenience accessor — most call sites only need a plain int. */
     public int iceSeconds() { return iceSecondsAtomic.get(); }
+    // 0.1.26.1 (Koordination, REICHWEITE_ANALYSE §4): Klima-Anteil je Fahrt, nur im Auto – für eine spätere
+    // Rückprüfung der Reichweite. Sekunden mit Klima an bzw. mit bekanntem Klima-Zustand (1-Hz-Takt, TripDetector).
+    public final AtomicInteger klimaSekundenAtomic = new AtomicInteger(0);
+    public final AtomicInteger klimaBekanntSekundenAtomic = new AtomicInteger(0);
+    /** Anteil der Fahrzeit mit Klima an (0–1); −1 = unbekannt (alte Fahrt bzw. kein Klima-Zustand lesbar). */
+    public double klimaAnteil() {
+        int b = klimaBekanntSekundenAtomic.get();
+        return b <= 0 ? -1 : (double) klimaSekundenAtomic.get() / b;
+    }
     public String kinematicState;      // HEAVY_GRIDLOCK, URBAN_FLOW, HIGHWAY_CRUISING
     public String gradientProfile;     // FLAT, HILLY, MOUNTAIN (terrain classification)
     public double elevationGainM;      // Cumulative meters gained (uphill)
@@ -317,6 +326,7 @@ public class TripRecord {
             json.put("fuelCost", fuelCost);
             json.put("electricCost", electricCost);
             json.put("iceSeconds", iceSeconds());
+            json.put("klimaAnteil", klimaAnteil());
             json.put("microMomentsJson", microMomentsJson != null ? microMomentsJson : "");
             json.put("telemetryFilePath", telemetryFilePath != null ? telemetryFilePath : "");
         } catch (Exception e) {
@@ -392,6 +402,7 @@ public class TripRecord {
             json.put("fuelCost", fuelCost);
             json.put("electricCost", electricCost);
             json.put("iceSeconds", iceSeconds());
+            json.put("klimaAnteil", klimaAnteil());
         } catch (Exception e) {
             // JSONObject.put only throws on null key
         }

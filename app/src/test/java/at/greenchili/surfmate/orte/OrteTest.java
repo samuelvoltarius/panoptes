@@ -110,11 +110,11 @@ public class OrteTest {
     /** Typischer Bestand: Zuhause (Ruhezone + privater Kreis 8 m daneben + Hausstrom-Tarif), Büro (aus), Lidl. */
     private static Alt bestand() throws Exception {
         return new Alt()
-                .ruhe("a1", "Zuhause", 47.80941, 13.05501, 80, true)
-                .ruhe("a2", "Büro", 47.79000, 13.04000, 60, false)
-                .privat(47.80948, 13.05501, 90)            // ~8 m vom Zuhause-Mittelpunkt
+                .ruhe("a1", "Zuhause", 48.30941, 14.29001, 80, true)
+                .ruhe("a2", "Büro", 48.29000, 14.27500, 60, false)
+                .privat(48.30948, 14.29001, 90)            // ~8 m vom Zuhause-Mittelpunkt
                 .privat(48.20000, 16.37000, 50)            // eigener privater Ort
-                .tarif("t_home", "Hausstrom", 47.80941, 13.05501, 80, 0.0, null)
+                .tarif("t_home", "Hausstrom", 48.30941, 14.29001, 80, 0.0, null)
                 .tarif("t_lidl", "Lidl Leoben", 47.38000, 15.09000, 50, null, 0.29);
     }
 
@@ -238,8 +238,8 @@ public class OrteTest {
 
     @Test
     public void cockpitSiehtKeineKoordinaten() throws Exception {
-        JSONObject o = Orte.neuerOrt("Zuhause", 47.8, 13.05, 80, 1);
-        JSONObject c = Orte.ohneKoordinaten(o, 47.8001, 13.05);
+        JSONObject o = Orte.neuerOrt("Zuhause", 48.3, 14.28, 80, 1);
+        JSONObject c = Orte.ohneKoordinaten(o, 48.3001, 14.28);
         assertFalse(c.has("lat"));
         assertFalse(c.has("lon"));
         assertFalse(c.has("r"));

@@ -1,6 +1,7 @@
 package at.greenchili.surfmate.bruecke;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.json.JSONObject;
@@ -187,5 +188,22 @@ public class BrueckeLiveTest {
         st[0] = BrueckeRahmen.LETZTES;
         System.arraycopy(anfrage, 0, st, 1, anfrage.length);
         kk.binaer(BrueckeTest.rahmen(2, i.verschluesseln(st)));
+    }
+
+    /** 0.1.26.1 (Befund Deploy): LIVE stellt die vorherige Stream-Qualität zurück, statt ULTRA_LOW dauerhaft zu speichern. */
+    @Test
+    public void qualitaetNurFuerDieSitzung() throws Exception {
+        assertTrue(BrueckeLive.zurueckStellen("HQ", "ULTRA_LOW"));
+        assertTrue(BrueckeLive.zurueckStellen("medium", "ULTRA_LOW"));
+        assertFalse("gleich", BrueckeLive.zurueckStellen("ULTRA_LOW", "ultra_low"));
+        assertFalse("unbekannt", BrueckeLive.zurueckStellen(null, "ULTRA_LOW"));
+        assertFalse("unbekannt", BrueckeLive.zurueckStellen("", "ULTRA_LOW"));
+        java.io.File f = new java.io.File("src/main/java/at/greenchili/surfmate/bruecke/BrueckeLive.java");
+        if (!f.isFile()) f = new java.io.File("app/" + f.getPath());
+        String k = new String(java.nio.file.Files.readAllBytes(f.toPath()), java.nio.charset.StandardCharsets.UTF_8);
+        int a = k.indexOf("String vorher = lokaleStufe();"), b = k.indexOf("lokalPost(\"/api/stream/quality/\" + stufe);");
+        assertTrue("vorher lesen, dann setzen", a > 0 && b > a);
+        int z = k.indexOf("public void schliessen()");
+        assertTrue("beim Schliessen zurück", z > 0 && k.indexOf("lokalPost(\"/api/stream/quality/\" + vorher);", z) > z);
     }
 }

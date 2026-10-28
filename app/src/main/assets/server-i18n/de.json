@@ -844,7 +844,8 @@
       "aufsperren_ok": "🔓 *Aufgesperrt* über Handy „{0}“.",
       "aufsperren_unbestaetigt": "🔓 Aufsperr-Befehl über Handy „{0}“ gesendet – die Bestätigung vom Auto fehlt.",
       "aufsperren_abgelehnt": "🔒 Aufsperren über Handy „{0}“ abgelehnt ({1}).",
-      "wallbox": "🔌 Wallbox vom Handy „{0}“ gesteuert: {1}"
+      "wallbox": "🔌 Wallbox vom Handy „{0}“ gesteuert: {1}",
+      "update_gestartet": "⬆️ Update auf {0} gestartet von „{1}“. Panoptes ist ca. 3–8 Minuten weg."
     },
     "zurueck": {
       "text": "🚗 Willkommen zurück am Auto. Es stand {0}.",
@@ -2378,6 +2379,25 @@
       "installieren": "Die Dateien für den Notzugang konnten nicht angelegt werden.",
       "adb_serve": "Der Notzugang ist angemeldet, aber die adb-Weiterleitung (Port 5555) fehlt noch. Der Notzugang versucht es selbst erneut."
     }
+  },
+  "update_fern": {
+    "bereit": "Neue Version {0} ist da. Das Update dauert etwa 3–8 Minuten.",
+    "kein_update": "Panoptes ist auf dem neuesten Stand ({1}).",
+    "laeuft": "Panoptes wird aktualisiert und kommt gleich wieder. Das dauert etwa 3–8 Minuten.",
+    "laeuft_schon": "Panoptes wird gerade schon aktualisiert.",
+    "fertig": "Fertig. Panoptes läuft jetzt mit {1}.",
+    "fehler": "Das Update hat nicht geklappt. Panoptes läuft weiter mit der bisherigen Version.",
+    "nicht_erlaubt": "Dieses Gerät darf Panoptes nicht aktualisieren. Einschalten am Auto unter „Gekoppelte Geräte“.",
+    "faehrt": "Während der Fahrt geht kein Update. Bitte parken und das Auto ausschalten.",
+    "nicht_in_p": "Update geht nur, wenn das Auto in P steht und aus ist.",
+    "zuendung_an": "Update geht nur, wenn das Auto aus ist. Bitte ausschalten und noch einmal versuchen.",
+    "zustand_unbekannt": "Panoptes weiß gerade nicht sicher, ob das Auto steht. Bitte gleich noch einmal versuchen.",
+    "wartet_wlan": "Updates sind auf „nur WLAN“ eingestellt, und das Auto hat gerade kein WLAN.",
+    "zu_alt": "Für dieses Update braucht Panoptes zuerst eine neuere Version. Bitte am Auto aktualisieren.",
+    "andere_version": "Diese Version ist nicht freigegeben. Freigegeben ist {0}.",
+    "bestaetigung_fehlt": "Bitte das Update zuerst bestätigen.",
+    "nicht_bereit": "Panoptes startet gerade. Bitte in einer Minute noch einmal versuchen.",
+    "nicht_moeglich": "Das Update geht gerade nicht. Bitte später noch einmal versuchen."
   },
   "telegram_login": {
     "geraet_name": "Browser (Telegram)"

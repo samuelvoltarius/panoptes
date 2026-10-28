@@ -104,7 +104,7 @@ public final class WeatherTemperature {
      * existing cache (possibly NaN) on failure. Bounded to a few seconds.
      */
     /** Einwilligung „Wetter online“ (wetter.online, Standard aus). Fehler → aus. */
-    static boolean onlineErlaubt() {
+    public static boolean onlineErlaubt() {
         try {
             org.json.JSONObject w = at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig()
                     .optJSONObject("wetter");

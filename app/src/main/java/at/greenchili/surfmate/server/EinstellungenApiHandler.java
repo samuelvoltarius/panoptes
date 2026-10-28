@@ -133,15 +133,18 @@ public final class EinstellungenApiHandler {
             boolean erlauben = pathOnly.endsWith("/erlauben");
             String ref = pathOnly.substring("/api/kopplung/anfrage/".length(), pathOnly.lastIndexOf('/'));
             // 0.1.19: {"aufsperren":true} beim Erlauben einer Handy-Anfrage (nur Login/lokal, wie /api/kopplung/rechte)
-            boolean aufsperren = false, wallbox = false;
+            boolean aufsperren = false, wallbox = false, update = false;
             try {
                 JSONObject b = new JSONObject(body == null || body.isEmpty() ? "{}" : body);
                 aufsperren = erlauben && b.optBoolean("aufsperren", false);
                 wallbox = erlauben && b.optBoolean("wallbox", false);   // 0.1.25 Recht „wallbox“ gleich beim Koppeln
+                // 0.1.26.1 Recht „update“: Display und Panoptes-Web senden es (Häkchen, Standard an), Telegram nie
+                update = erlauben && b.optBoolean("update", false);
             } catch (Exception ignored) {
             }
             at.greenchili.surfmate.auth.KopplungsAnfragen.Entscheid e =
-                    at.greenchili.surfmate.auth.KopplungsAnfragen.get().entscheiden(ref, erlauben, aufsperren, wallbox, System.currentTimeMillis());
+                    at.greenchili.surfmate.auth.KopplungsAnfragen.get().entscheiden(ref, erlauben, aufsperren, wallbox, update,
+                            System.currentTimeMillis());
             JSONObject res = new JSONObject();
             res.put("ok", e == at.greenchili.surfmate.auth.KopplungsAnfragen.Entscheid.OK);
             int code = 200;

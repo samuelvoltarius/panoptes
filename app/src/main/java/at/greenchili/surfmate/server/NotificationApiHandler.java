@@ -50,6 +50,27 @@ public final class NotificationApiHandler {
         return r == null ? null : r.rawJson();
     }
 
+    /**
+     * 0.1.26.1: NUR der öffentliche VAPID-Schlüssel (unkomprimiert P-256, base64url) für
+     * {@code capabilities.push.vapid}; null, solange Push nicht bereit ist. Nie der private Teil.
+     */
+    static String vapidOeffentlich() {
+        java.util.concurrent.Callable<String> q = vapidQuelleFuerTest;
+        if (q != null) {
+            try { return q.call(); } catch (Exception e) { return null; }
+        }
+        VapidKeyStore k = keyStore;
+        if (k == null) return null;
+        try {
+            return k.publicKeyB64Url();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** Nur für JVM-Tests (VapidKeyStore braucht android.util.Base64). */
+    static volatile java.util.concurrent.Callable<String> vapidQuelleFuerTest = null;
+
     /** Wire the dependencies once at daemon startup. */
     public static void init(CategoryRegistry r, SubscriptionStore s, VapidKeyStore k) {
         registry = r;

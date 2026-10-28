@@ -844,7 +844,8 @@
       "aufsperren_ok": "🔓 *Unlocked* via phone “{0}”.",
       "aufsperren_unbestaetigt": "🔓 Unlock command sent via phone “{0}” – confirmation from the car is missing.",
       "aufsperren_abgelehnt": "🔒 Unlock via phone “{0}” refused ({1}).",
-      "wallbox": "🔌 Wallbox controlled from phone “{0}”: {1}"
+      "wallbox": "🔌 Wallbox controlled from phone “{0}”: {1}",
+      "update_gestartet": "⬆️ Update to {0} started by “{1}”. Panoptes will be away for about 3–8 minutes."
     },
     "zurueck": {
       "text": "🚗 Welcome back to the car. It was parked for {0}.",
@@ -2378,6 +2379,25 @@
       "installieren": "The files for the emergency access could not be created.",
       "adb_serve": "The emergency access is signed in, but the adb forwarding (port 5555) is still missing. The emergency access keeps retrying by itself."
     }
+  },
+  "update_fern": {
+    "bereit": "New version {0} is available. The update takes about 3–8 minutes.",
+    "kein_update": "Panoptes is up to date ({1}).",
+    "laeuft": "Panoptes is updating and will be back shortly. This takes about 3–8 minutes.",
+    "laeuft_schon": "Panoptes is already being updated.",
+    "fertig": "Done. Panoptes now runs {1}.",
+    "fehler": "The update did not work. Panoptes keeps running the previous version.",
+    "nicht_erlaubt": "This device may not update Panoptes. Switch it on in the car under “Paired devices”.",
+    "faehrt": "No update while driving. Please park and switch the car off.",
+    "nicht_in_p": "Updates only work when the car is in P and switched off.",
+    "zuendung_an": "Updates only work when the car is switched off. Please switch it off and try again.",
+    "zustand_unbekannt": "Panoptes cannot tell for sure right now whether the car is parked. Please try again in a moment.",
+    "wartet_wlan": "Updates are set to “Wi-Fi only”, and the car has no Wi-Fi right now.",
+    "zu_alt": "For this update Panoptes first needs a newer version. Please update in the car.",
+    "andere_version": "This version is not approved. The approved version is {0}.",
+    "bestaetigung_fehlt": "Please confirm the update first.",
+    "nicht_bereit": "Panoptes is starting. Please try again in a minute.",
+    "nicht_moeglich": "The update is not possible right now. Please try again later."
   },
   "telegram_login": {
     "geraet_name": "Browser (Telegram)"

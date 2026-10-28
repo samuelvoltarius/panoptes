@@ -31,6 +31,22 @@ class VehicleVersionInfoWebAssetTest {
         )
     }
 
+    /** 0.1.26.1: Am Auto blieb alles „—“, weil tSafe nicht definiert war (ReferenceError). */
+    @Test
+    fun helperIsDefinedAndMissingValuesSayNotAvailable() {
+        val html = readRepositoryFile("app/src/main/assets/web/local/about.html")
+        assertTrue(html.contains("tSafe("))
+        assertTrue("tSafe muss definiert sein", html.contains("function tSafe(key, fallback)"))
+        assertTrue("nie ewig warten", html.contains("abbruch.abort()"))
+        val de = org.json.JSONObject(readRepositoryFile("app/src/main/assets/web/i18n/de.json"))
+        assertTrue(de.getJSONObject("about").getString("vehicle_unavailable") == "nicht verfügbar")
+        for (l in listOf("en", "fr", "it", "nl")) {
+            val t = org.json.JSONObject(readRepositoryFile("app/src/main/assets/web/i18n/$l.json"))
+                .getJSONObject("about").getString("vehicle_unavailable")
+            assertTrue(l, t.isNotBlank())
+        }
+    }
+
     @Test
     fun vehicleInformationDoesNotInterruptContributorIntroduction() {
         val html = readRepositoryFile("app/src/main/assets/web/local/about.html")

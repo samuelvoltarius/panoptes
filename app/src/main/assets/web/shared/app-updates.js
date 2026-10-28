@@ -175,7 +175,8 @@
         installieren: function () {
             var self = this, d = this.stand, v = d && d.verfuegbar;
             if (!v) return;
-            if (!window.confirm(t('system.upd_confirm', 'Panoptes {v} jetzt installieren? Panoptes ist dabei etwa eine Minute nicht erreichbar. Läuft die neue Version nicht sauber, kehrt es von selbst zur jetzigen zurück.', { v: v.version }))) return;
+            // 0.1.26.1: gleiche Rückfrage wie in der Handy-App (HANDY_API_VERTRAG §8)
+            if (!window.confirm(t('system.upd_confirm_fern', 'Panoptes wird jetzt auf {v} aktualisiert. Wächter und Verbindung sind ca. 3–8 Minuten weg. Läuft die neue Version nicht sauber, kehrt Panoptes von selbst zur jetzigen zurück.', { v: v.version }))) return;
             var b = $('updInstall');
             b.disabled = true;
             this.alteVersion = d.aktuell && d.aktuell.version;
@@ -183,7 +184,7 @@
                 .then(function (s) { if (s && s.appVersion) self.alteVersion = s.appVersion; }, function () {})
                 .then(function () {
                     return fetch('/api/appupdate/installieren', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ versionCode: v.versionCode }) });
+                        body: JSON.stringify({ versionCode: v.versionCode, version: v.version, bestaetigt: true }) });
                 })
                 .then(function (r) {
                     if (r.status === 403) return { ok: false, grund: 'kein_recht' };
@@ -192,7 +193,7 @@
                 .then(function (r) {
                     if (r.ok) { toast(t('system.upd_started', 'Update gestartet.'), 'success'); self.nachInstallation(); return; }
                     toast(r.grund === 'kein_recht' ? t('system.upd_no_right', 'Nur mit Anmeldung an Panoptes möglich, nicht von einem gekoppelten Gerät.')
-                        : self.grundText(r.grund), 'warning');
+                        : r.text || self.grundText(r.grund), 'warning');
                     self.laden();
                 }, function () { toast(t('system.req_fail', 'Das hat nicht geklappt.'), 'error'); })
                 .then(function () { b.disabled = false; });

@@ -850,7 +850,8 @@
       "aufsperren_ok": "🔓 *Déverrouillé* via le téléphone « {0} ».",
       "aufsperren_unbestaetigt": "🔓 Commande de déverrouillage envoyée via le téléphone « {0} » – la confirmation de la voiture manque.",
       "aufsperren_abgelehnt": "🔒 Déverrouillage via le téléphone « {0} » refusé ({1}).",
-      "wallbox": "🔌 Borne pilotée depuis le téléphone « {0} » : {1}"
+      "wallbox": "🔌 Borne pilotée depuis le téléphone « {0} » : {1}",
+      "update_gestartet": "⬆️ Mise à jour vers {0} lancée par « {1} ». Panoptes sera absent environ 3 à 8 minutes."
     },
     "zurueck": {
       "text": "🚗 Bon retour à la voiture. Elle était garée depuis {0}.",
@@ -2384,6 +2385,25 @@
       "installieren": "Les fichiers de l'accès de secours n'ont pas pu être créés.",
       "adb_serve": "L'accès de secours est connecté, mais le transfert adb (port 5555) manque encore. L'accès de secours réessaie tout seul."
     }
+  },
+  "update_fern": {
+    "bereit": "La nouvelle version {0} est disponible. La mise à jour dure environ 3 à 8 minutes.",
+    "kein_update": "Panoptes est à jour ({1}).",
+    "laeuft": "Panoptes se met à jour et revient bientôt. Cela dure environ 3 à 8 minutes.",
+    "laeuft_schon": "Panoptes est déjà en cours de mise à jour.",
+    "fertig": "Terminé. Panoptes fonctionne maintenant avec {1}.",
+    "fehler": "La mise à jour n’a pas fonctionné. Panoptes continue avec la version précédente.",
+    "nicht_erlaubt": "Cet appareil ne peut pas mettre à jour Panoptes. À activer dans la voiture sous « Appareils couplés ».",
+    "faehrt": "Pas de mise à jour pendant la conduite. Veuillez vous garer et éteindre la voiture.",
+    "nicht_in_p": "La mise à jour ne fonctionne que si la voiture est sur P et éteinte.",
+    "zuendung_an": "La mise à jour ne fonctionne que si la voiture est éteinte. Veuillez l’éteindre et réessayer.",
+    "zustand_unbekannt": "Panoptes ne sait pas avec certitude si la voiture est à l’arrêt. Veuillez réessayer dans un instant.",
+    "wartet_wlan": "Les mises à jour sont réglées sur « Wi-Fi uniquement » et la voiture n’a pas de Wi-Fi pour l’instant.",
+    "zu_alt": "Pour cette mise à jour, Panoptes a d’abord besoin d’une version plus récente. Veuillez mettre à jour dans la voiture.",
+    "andere_version": "Cette version n’est pas validée. La version validée est {0}.",
+    "bestaetigung_fehlt": "Veuillez d’abord confirmer la mise à jour.",
+    "nicht_bereit": "Panoptes démarre. Veuillez réessayer dans une minute.",
+    "nicht_moeglich": "La mise à jour n’est pas possible pour l’instant. Veuillez réessayer plus tard."
   },
   "telegram_login": {
     "geraet_name": "Navigateur (Telegram)"

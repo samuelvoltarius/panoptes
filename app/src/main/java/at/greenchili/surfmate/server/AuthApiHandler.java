@@ -325,10 +325,21 @@ public class AuthApiHandler {
         } catch (Exception ignored) {
         }
         long now = System.currentTimeMillis();
-        if (at.greenchili.surfmate.auth.PairingCodes.redeem(code, now)) {
+        int herkunft = at.greenchili.surfmate.auth.PairingCodes.einloesen(code, now);
+        if (herkunft != at.greenchili.surfmate.auth.PairingCodes.UNGUELTIG) {
             clearRateLimit(rateLimitIdentity);
             // Jede Kopplung bekommt einen eigenen Listeneintrag; der JWT trägt dessen id (Widerruf).
             String kid = at.greenchili.surfmate.auth.Kopplungen.get().anlegen(name, art, now);
+            // 0.1.26.1: den Code hat der Besitzer am Display bzw. mit Login erzeugt → Recht „update“ wie am Display erlaubt
+            // (nicht bei „weiteres Gerät koppeln“ vom Cockpit: weitere Kopplungen AUS, mit Häkchen)
+            if (kid != null && at.greenchili.surfmate.auth.Kopplungen.ART_HANDY.equals(art)
+                    && herkunft == at.greenchili.surfmate.auth.PairingCodes.BESITZER) {
+                java.util.List<String> r = at.greenchili.surfmate.auth.Kopplungen.get().rechte(kid);
+                if (!r.contains(at.greenchili.surfmate.auth.Kopplungen.RECHT_UPDATE)) {
+                    r.add(at.greenchili.surfmate.auth.Kopplungen.RECHT_UPDATE);
+                    at.greenchili.surfmate.auth.Kopplungen.get().rechteSetzen(kid, r);
+                }
+            }
             String jwt = kid == null ? null
                     : AuthManager.generateJwt(at.greenchili.surfmate.auth.PairingCodes.SCOPE, kid);
             if (jwt != null) {

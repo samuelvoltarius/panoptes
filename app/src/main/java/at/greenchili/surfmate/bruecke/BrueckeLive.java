@@ -197,7 +197,10 @@ final class BrueckeLive {
 
     static Quelle imDaemon() {
         return (stufe, e) -> {
-            // Qualität setzen und Stream anfordern – lokal, ohne Tunnel-Kennzeichen (das Auto selbst, nicht das Handy)
+            // Qualität setzen und Stream anfordern – lokal, ohne Tunnel-Kennzeichen (das Auto selbst, nicht das Handy).
+            // 0.1.26.1 (Befund Deploy): POST quality speichert dauerhaft und gilt auch fürs Display → nur für die Sitzung,
+            // danach die vorherige Stufe zurück.
+            String vorher = lokaleStufe();
             lokalPost("/api/stream/quality/" + stufe);
             lokalPost("/api/stream/enable");
             okhttp3.WebSocket w = BrueckeServerApi.HTTP.newWebSocket(
@@ -210,9 +213,47 @@ final class BrueckeLive {
                     });
             return new Quelle.Verbindung() {
                 public void text(String s) { w.send(s); }
-                public void schliessen() { w.close(1000, null); }
+                public void schliessen() {
+                    w.close(1000, null);
+                    if (zurueckStellen(vorher, stufe)) {
+                        try {
+                            lokalPost("/api/stream/quality/" + vorher);
+                        } catch (Exception ignored) { }
+                    }
+                }
             };
         };
+    }
+
+    /** Vorherige Stufe zurückstellen? Nur wenn sie bekannt war und sich unterscheidet. */
+    static boolean zurueckStellen(String vorher, String stufe) {
+        return vorher != null && !vorher.isEmpty() && !vorher.equalsIgnoreCase(stufe);
+    }
+
+    /** Aktuelle Stream-Qualität ({@code GET /api/stream/quality} → current), null wenn unbekannt. */
+    private static String lokaleStufe() {
+        try {
+            java.net.HttpURLConnection c = (java.net.HttpURLConnection) new java.net.URL("http://127.0.0.1:"
+                    + at.greenchili.surfmate.daemon.CameraDaemon.HTTP_PORT + "/api/stream/quality").openConnection();
+            try {
+                c.setConnectTimeout(3000);
+                c.setReadTimeout(5000);
+                if (c.getResponseCode() != 200) return null;
+                try (java.io.InputStream in = c.getInputStream()) {
+                    java.io.ByteArrayOutputStream b = new java.io.ByteArrayOutputStream();
+                    byte[] buf = new byte[4096];
+                    int n;
+                    while ((n = in.read(buf)) > 0 && b.size() < 65536) b.write(buf, 0, n);
+                    String s = new org.json.JSONObject(b.toString("UTF-8")).optString("current", "")
+                            .toUpperCase(java.util.Locale.ROOT);
+                    return s.matches("[A-Z_]{1,32}") ? s : null;
+                }
+            } finally {
+                c.disconnect();
+            }
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private static void lokalPost(String pfad) throws Exception {

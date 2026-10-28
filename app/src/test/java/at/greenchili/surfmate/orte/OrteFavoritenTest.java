@@ -22,15 +22,15 @@ public class OrteFavoritenTest {
     /** App-Speicher wie navmap_saved_places: Zuhause (8 m neben der Ruhezone), Arbeit, zwei eigene. */
     private static JSONArray appBestand() throws Exception {
         return new JSONArray()
-                .put(fav("home", "Daheim", 47.80948, 13.05501))
-                .put(fav("work", "Firma", 47.70000, 13.10000))
+                .put(fav("home", "Daheim", 48.30948, 14.29001))
+                .put(fav("work", "Firma", 48.20000, 14.33500))
                 .put(fav("custom", "Oma", 47.10000, 15.40000))
-                .put(fav("custom", "Fitness", 47.81000, 13.06000));
+                .put(fav("custom", "Fitness", 48.31000, 14.29500));
     }
 
     @Test
     public void migrationAppBleibtUnveraendertUndIdempotent() throws Exception {
-        OrteTest.Alt alt = new OrteTest.Alt().ruhe("a1", "Zuhause", 47.80941, 13.05501, 80, true);
+        OrteTest.Alt alt = new OrteTest.Alt().ruhe("a1", "Zuhause", 48.30941, 14.29001, 80, true);
         OrteDienst d = new OrteDienst(alt);
         String alteVorher = alt.alteLesen().toString();
         JSONObject r = d.favoritenAbgleichen(appBestand(), -1, 1000);
@@ -63,7 +63,7 @@ public class OrteFavoritenTest {
         long v = d.favoritenAbgleichen(appBestand(), -1, 1000).getLong("version");
         JSONArray neu = appBestand();
         neu.remove(3);                                       // Fitness gelöscht
-        neu.put(fav("custom", "See", 47.90000, 13.20000));  // See neu
+        neu.put(fav("custom", "See", 48.40000, 14.43500));  // See neu
         JSONObject r = d.favoritenAbgleichen(neu, v, 2000);
         assertFalse(r.getBoolean("aendern"));
         JSONArray l = d.abgleichen(2100);

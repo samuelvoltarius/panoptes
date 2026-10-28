@@ -386,9 +386,16 @@ public final class EinrichtungApiHandler {
             g.put("kameras", "einr.grund.keine_kameras");
         }
         if (OFFEN.equals(s.optString("usb_freigabe"))) s.put("usb_freigabe", ERLEDIGT);   // Dienst antwortet
-        if (OFFEN.equals(s.optString("extra_overdrive")) && !overdriveVorhanden()) {
+        // 0.1.26: auch ein gemerktes „später“ entfällt, wenn keine Overdrive-Daten da sind
+        String od = s.optString("extra_overdrive");
+        if ((OFFEN.equals(od) || SPAETER.equals(od)) && !overdriveVorhanden()) {
             s.put("extra_overdrive", ENTFAELLT);
             g.put("extra_overdrive", "einr.grund.kein_overdrive");
+        }
+        // 0.1.26 (Alfreds Auto): „später“ bzw. „offen“ überdeckt nie, was am Auto wirklich eingerichtet ist
+        for (String id : echtEingerichtet(root, felderOhneIo(root), planerSchluesselDa(root))) {
+            String st = s.optString(id, OFFEN);
+            if (!PFLICHT.contains(id) && (OFFEN.equals(st) || SPAETER.equals(st))) s.put(id, ERLEDIGT);
         }
         JSONArray liste = new JSONArray();
         String aktuell = null;
@@ -426,6 +433,57 @@ public final class EinrichtungApiHandler {
         r.put("noch_offen", offen);
         r.put("art", z.optString("art", "neu"));
         return r;
+    }
+
+    /**
+     * 0.1.26 (Alfreds Auto, „Noch offen“ voller Erledigtem): Nicht-Pflicht-Schritte, die am Auto wirklich eingerichtet
+     * sind – abgeleitet aus dem echten Zustand, nicht aus dem Merker. Der Bestand bekommt neue Schritte pauschal als
+     * „später“ ({@link #anfang}, {@link #bestandNachpruefen}); das darf nie einen erledigten Schritt überdecken.
+     * „rechte“ kennt nur die App (Android-Rechte), sie meldet sie über {@code POST /api/einrichtung/schritt}.
+     */
+    public static Set<String> echtEingerichtet(JSONObject root, List<Feld> felder, boolean planerSchluessel) {
+        Set<String> e = new HashSet<>();
+        if (root == null) return e;
+        JSONObject tg = root.optJSONObject("telegram");
+        if (tg != null && tg.optLong("ownerChatId", 0) > 0) e.add("extra_telegram");
+        JSONObject k = root.optJSONObject("kopplungen");
+        JSONArray geraete = k == null ? null : k.optJSONArray("geraete");
+        for (int i = 0; geraete != null && i < geraete.length(); i++) {
+            JSONObject gr = geraete.optJSONObject(i);
+            String art = gr == null ? "" : gr.optString("art", "");
+            if (at.greenchili.surfmate.auth.Kopplungen.ART_HANDY.equals(art)) e.add("extra_handy");
+            // Kopplungen vor 0.1.25 haben kein „art“ – das waren EV-Cockpits (Alfreds Auto: „EV-Cockpit home“ vom 21.10.)
+            if ("cockpit".equals(art) || art.isEmpty()) e.add("extra_cockpit");
+        }
+        if (planerSchluessel) e.add("extra_planer");
+        if (at.greenchili.surfmate.notzugang.Notzugang.an(root)) e.add("extra_notzugang");
+        JSONObject sc = root.optJSONObject("speedcam");
+        if (sc != null && sc.optBoolean("enabled", false)) e.add("blitzer");
+        // Daten teilen: mindestens eine Freigabe der Gruppe „datenschutz“ ist eingeschaltet
+        for (Feld f : felder == null ? java.util.Collections.<Feld>emptyList() : felder) {
+            if (f.typ != Feld.Typ.BOOL || !"datenschutz".equals(f.gruppe) || f.zugriff == null) continue;
+            try {
+                if (Boolean.TRUE.equals(f.zugriff.lese(root))) { e.add("daten"); break; }
+            } catch (Exception ignored) {
+            }
+        }
+        return e;
+    }
+
+    /** Planer-Schlüssel gespeichert (Gerät oder Mitglied); nur Vorhandensein, kein Entschlüsseln nötig. */
+    static boolean planerSchluesselDa(JSONObject root) {
+        JSONObject p = root == null ? null : root.optJSONObject("planner");
+        if (p == null) return false;
+        if (!p.optString("geraeteSchluessel", "").isEmpty()) return true;
+        return at.greenchili.surfmate.planer.PlanerSchluessel.kopf(p, x -> null) != null;
+    }
+
+    private static List<Feld> felderOhneIo(JSONObject root) {
+        try {
+            return Katalog.felder(kontextOhneIo(root));
+        } catch (Throwable t) {
+            return java.util.Collections.emptyList();
+        }
     }
 
     /**

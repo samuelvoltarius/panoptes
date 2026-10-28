@@ -343,6 +343,14 @@ public class SystemApiHandler {
             // anzeige: „stufe“ nur bei belegten Modellen (Dolphin Surf), sonst „grad“ wie bisher
             c.put("klima", new JSONObject().put("stufe", 1)
                     .put("anzeige", at.greenchili.surfmate.byd.KlimaStufe.stufenModell() ? "stufe" : "grad"));
+            // 0.1.26.1 Update von außen (HANDY_API_VERTRAG §8): GET /api/handy/v1/update + Aktion update_starten
+            c.put("update", new JSONObject().put("fern", 1));
+        } catch (Exception ignored) { }
+        // 0.1.26.1 (HANDY_API_VERTRAG §4): öffentlicher VAPID-Schlüssel für UnifiedPush mit FCM-Verteiler.
+        // Eigener Block, damit ein Fehler oben das Feld nicht verschluckt. Nie der private Teil.
+        try {
+            String vapid = NotificationApiHandler.vapidOeffentlich();
+            if (vapid != null) c.put("push", new JSONObject().put("vapid", vapid));
         } catch (Exception ignored) { }
         return c;
     }

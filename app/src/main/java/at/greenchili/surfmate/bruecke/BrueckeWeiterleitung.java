@@ -153,13 +153,15 @@ final class BrueckeWeiterleitung {
         java.util.Map<String, String> kopf;
         byte[] body;
         boolean web;
+        /** 0.1.26.1: Handy versteht gzip (accept-encoding) – nur im Kanal „web“. */
+        boolean gzip;
         byte[] fehler;
     }
 
     /** Bearbeitet eine Innen-Anfrage (JSON) für die Kopplung {@code kid}; liefert immer eine Antwort (JSON). */
     byte[] bearbeiten(byte[] anfrage, String kid) {
         Vorbereitet v = vorbereiten(anfrage, kid, MAX_BEREICH);
-        return v.fehler != null ? v.fehler : weiterreichen(v.id, v.m, v.p, v.kopf, v.body, v.web);
+        return v.fehler != null ? v.fehler : weiterreichen(v.id, v.m, v.p, v.kopf, v.body, v.web, v.gzip);
     }
 
     /** Alle Prüfungen (JWT der eigenen Kopplung, Recht „kamera“, Kanal „web“, Range höchstens {@code maxBereich}). */
@@ -184,11 +186,17 @@ final class BrueckeWeiterleitung {
         java.util.Map<String, String> kopf = new java.util.LinkedHashMap<>();
         JSONObject h = req.optJSONObject("h");
         String jwt = null;
+        boolean gzip = false;
         if (h != null) {
             for (Iterator<String> it = h.keys(); it.hasNext(); ) {
                 String k = it.next();
                 String kl = k.toLowerCase(Locale.ROOT);
                 String wert = h.optString(k, "");
+                // nicht weiterreichen: das Auto komprimiert selbst (unten), lokal bleibt alles unkomprimiert
+                if (kl.equals("accept-encoding")) {
+                    gzip = wert.toLowerCase(Locale.ROOT).contains("gzip");
+                    continue;
+                }
                 if (!(KOPF_REIN.contains(kl) || (web && kl.equals("cookie")))
                         || wert.indexOf('\r') >= 0 || wert.indexOf('\n') >= 0 || wert.length() > 8192) continue;
                 if (kl.equals("authorization")) {
@@ -239,17 +247,27 @@ final class BrueckeWeiterleitung {
         v.kopf = kopf;
         v.body = body;
         v.web = web;
+        v.gzip = web && gzip;
         return v;
     }
 
-    private byte[] weiterreichen(long id, String m, String p, java.util.Map<String, String> kopf, byte[] body, boolean web) {
+    private byte[] weiterreichen(long id, String m, String p, java.util.Map<String, String> kopf, byte[] body, boolean web,
+                                 boolean gzip) {
         try {
             Antwort a = aufruf.senden(m, p, kopf, body);
             JSONObject r = new JSONObject();
             r.put("id", id);
             r.put("s", a.status);
-            r.put("h", kopfRaus(a.kopf, web));
+            JSONObject rk = kopfRaus(a.kopf, web);
             String ct = a.kopf.containsKey("content-type") ? a.kopf.get("content-type") : "";
+            if (gzip && komprimierbar(a.status, a.kopf) && a.body.length >= GZIP_AB) {
+                rk.put("content-encoding", "gzip");
+                r.put("h", rk);
+                r.put("b", Base64.getEncoder().encodeToString(gzip(a.body)));
+                r.put("b64", true);
+                return r.toString().getBytes(StandardCharsets.UTF_8);
+            }
+            r.put("h", rk);
             if (istText(ct)) {
                 r.put("b", new String(a.body, StandardCharsets.UTF_8));
             } else {
@@ -327,7 +345,8 @@ final class BrueckeWeiterleitung {
             }
             java.util.Map<String, String> kopf = new java.util.LinkedHashMap<>();
             kopf.put("content-type", "application/json");
-            byte[] antwort = weiterreichen(id, "POST", EINMAL_KOPPLUNG, kopf, neu.toString().getBytes(StandardCharsets.UTF_8), false);
+            byte[] antwort = weiterreichen(id, "POST", EINMAL_KOPPLUNG, kopf, neu.toString().getBytes(StandardCharsets.UTF_8), false,
+                    false);
             String kid = null;
             try {
                 JSONObject r = new JSONObject(new String(antwort, StandardCharsets.UTF_8));
@@ -359,8 +378,17 @@ final class BrueckeWeiterleitung {
             if (k.equals("location") && (!e.getValue().startsWith("/") || e.getValue().startsWith("//"))) continue;
             rk.put(k, e.getValue());
         }
+        if (web) {
+            // 0.1.26.1: Merker für die Weboberfläche „kommt über die Brücke“ (kein WebSocket unterwegs):
+            // live-view zeigt dann den Hinweis auf Live in der App statt eines Verbindungsversuchs zu /ws.
+            String alt = rk.optString("set-cookie", "");
+            rk.put("set-cookie", alt.isEmpty() ? WEG_COOKIE : alt + "\n" + WEG_COOKIE);
+        }
         return rk;
     }
+
+    /** 0.1.26.1: Sitzungs-Cookie (ohne HttpOnly, damit stream.js es lesen kann). */
+    static final String WEG_COOKIE = "pn_weg=bruecke; Path=/; SameSite=Strict";
 
     // ------------------------------------------------------------------ 0.1.25 Innen v2 (BRUECKE_MEDIEN §2.1)
 
@@ -488,14 +516,18 @@ final class BrueckeWeiterleitung {
                 aus.senden(v2Fehler(v.id, 429, "medien_tageslimit"));
                 return;
             }
-            try (Strom st = stromAufruf.oeffnen(v.m, v.p, v.kopf, v.body)) {
-                byte[] k = new JSONObject().put("id", v.id).put("s", st.status).put("h", kopfRaus(st.kopf, v.web))
+            try (Strom st = stromAufruf.oeffnen(v.m, v.p, v.kopf, v.body);
+                 InputStream daten = v.gzip && !kamera && st.daten != null && komprimierbar(st.status, st.kopf)
+                         && laenge(st.kopf) >= GZIP_AB ? new GzipStrom(st.daten) : st.daten) {
+                JSONObject hk = kopfRaus(st.kopf, v.web);
+                if (daten instanceof GzipStrom) hk.put("content-encoding", "gzip");
+                byte[] k = new JSONObject().put("id", v.id).put("s", st.status).put("h", hk)
                         .toString().getBytes(StandardCharsets.UTF_8);
                 if (!aus.senden(stueck(V2_KOPF, v.id, k, k.length))) return;
                 byte[] buf = new byte[V2_MAX_DATEN];
-                while (st.daten != null) {
+                while (daten != null) {
                     int n = 0, r;
-                    while (n < buf.length && (r = st.daten.read(buf, n, buf.length - n)) > 0) n += r;
+                    while (n < buf.length && (r = daten.read(buf, n, buf.length - n)) > 0) n += r;
                     if (n == 0) break;
                     if (abgebrochen.test(v.id)) {
                         aus.senden(v2Fehler(v.id, 499, "abgebrochen"));
@@ -530,6 +562,96 @@ final class BrueckeWeiterleitung {
     static boolean istText(String contentType) {
         String c = contentType == null ? "" : contentType.toLowerCase(Locale.ROOT);
         return c.isEmpty() || c.startsWith("text/") || c.contains("json") || c.contains("javascript") || c.contains("xml");
+    }
+
+    // ------------------------------------------------------------------ 0.1.26.1 gzip im Kanal „web“
+
+    /**
+     * Ab dieser Größe komprimiert das Auto Text für den Kanal „web“ (Seiten laden über die Brücke sonst ~2 MB je Aufruf,
+     * Server-Grenze je Postfach). Darunter lohnt der gzip-Kopf nicht.
+     */
+    static final int GZIP_AB = 1024;
+
+    /** Nur ganze, erfolgreiche Text-Antworten; nie Bereiche, nie Ereignis-Ströme (SSE würde gepuffert). */
+    static boolean komprimierbar(int status, java.util.Map<String, String> kopf) {
+        String ct = kopf.get("content-type");
+        if (status != 200 || ct == null || ct.isEmpty() || !istText(ct)) return false;
+        if (ct.toLowerCase(Locale.ROOT).contains("event-stream")) return false;
+        return !kopf.containsKey("content-range") && !kopf.containsKey("content-encoding");
+    }
+
+    /** content-length der lokalen Antwort, unbekannt = groß genug. */
+    static long laenge(java.util.Map<String, String> kopf) {
+        try {
+            return Long.parseLong(kopf.get("content-length").trim());
+        } catch (Exception e) {
+            return Long.MAX_VALUE;
+        }
+    }
+
+    static byte[] gzip(byte[] d) throws java.io.IOException {
+        ByteArrayOutputStream b = new ByteArrayOutputStream(d.length / 3 + 64);
+        try (java.util.zip.GZIPOutputStream z = new java.util.zip.GZIPOutputStream(b)) {
+            z.write(d);
+        }
+        return b.toByteArray();
+    }
+
+    /** gzip beim Lesen (v2 stückweise, nie die ganze Antwort im Speicher): Kopf, Deflate-Daten, CRC32 + Länge. */
+    static final class GzipStrom extends InputStream {
+        private final java.util.zip.CRC32 crc = new java.util.zip.CRC32();
+        private final java.util.zip.Deflater deflater = new java.util.zip.Deflater(6, true);
+        private final InputStream roh;
+        private final java.util.zip.DeflaterInputStream def;
+        private final byte[] kopf = {0x1f, (byte) 0x8b, 8, 0, 0, 0, 0, 0, 0, (byte) 0xff};
+        private int kopfPos;
+        private byte[] schluss;
+        private int schlussPos;
+
+        GzipStrom(InputStream quelle) {
+            roh = quelle;
+            def = new java.util.zip.DeflaterInputStream(new java.util.zip.CheckedInputStream(quelle, crc), deflater);
+        }
+
+        @Override
+        public int read() throws java.io.IOException {
+            byte[] e = new byte[1];
+            int n;
+            while ((n = read(e, 0, 1)) == 0) { }
+            return n < 0 ? -1 : e[0] & 0xff;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws java.io.IOException {
+            if (len == 0) return 0;
+            if (kopfPos < kopf.length) {
+                int n = Math.min(len, kopf.length - kopfPos);
+                System.arraycopy(kopf, kopfPos, b, off, n);
+                kopfPos += n;
+                return n;
+            }
+            if (schluss == null) {
+                int n = def.read(b, off, len);
+                if (n > 0) return n;
+                long c = crc.getValue(), l = deflater.getBytesRead();
+                schluss = new byte[8];
+                for (int i = 0; i < 4; i++) {
+                    schluss[i] = (byte) (c >>> (8 * i));
+                    schluss[4 + i] = (byte) (l >>> (8 * i));
+                }
+            }
+            if (schlussPos >= schluss.length) return -1;
+            int n = Math.min(len, schluss.length - schlussPos);
+            System.arraycopy(schluss, schlussPos, b, off, n);
+            schlussPos += n;
+            return n;
+        }
+
+        @Override
+        public void close() throws java.io.IOException {
+            deflater.end();
+            roh.close();
+        }
     }
 
     static byte[] fehler(long id, int status, String grund) {
@@ -606,6 +728,11 @@ final class BrueckeWeiterleitung {
                 if (alle != null && !alle.isEmpty()) rk.put(k, String.join("\n", alle));
                 continue;
             }
+            String v = c.getHeaderField(k);
+            if (v != null) rk.put(k, v);
+        }
+        // nur für die gzip-Entscheidung (komprimierbar/laenge), gehen nicht hinaus (kopfRaus filtert)
+        for (String k : new String[]{"content-length", "content-encoding"}) {
             String v = c.getHeaderField(k);
             if (v != null) rk.put(k, v);
         }

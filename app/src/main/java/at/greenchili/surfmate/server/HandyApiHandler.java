@@ -77,6 +77,13 @@ public final class HandyApiHandler {
     }
 
     static volatile Umgebung umgebung = new Echt();
+    /** 0.1.26.1 Update von außen; im Test ersetzt. */
+    static volatile at.greenchili.surfmate.appupdate.FernUpdate fernUpdate;
+
+    private static at.greenchili.surfmate.appupdate.FernUpdate update() {
+        at.greenchili.surfmate.appupdate.FernUpdate f = fernUpdate;
+        return f != null ? f : at.greenchili.surfmate.appupdate.FernUpdate.get();
+    }
     static volatile Kopplungen kopplungen;
     static final HandySignatur SIGNATUR = new HandySignatur();
     static final HandyRatenlimit LIMIT = new HandyRatenlimit();
@@ -92,6 +99,17 @@ public final class HandyApiHandler {
             throws Exception {
         String p = path.contains("?") ? path.substring(0, path.indexOf('?')) : path;
         if (!p.startsWith("/api/handy/v1/")) return false;
+        // 0.1.26.1 Update-Stand lesen (HANDY_API_VERTRAG §8): einziger GET-Pfad, jede Handy-Kopplung; „darf“ = Recht
+        if ("/api/handy/v1/update".equals(p) && "GET".equals(method)) {
+            if (kopplungId == null || !k().istHandy(kopplungId)) {
+                HttpResponse.sendJson(out, 403, fehler("nur_handy").toString());
+                return true;
+            }
+            String q = path.contains("?") ? path.substring(path.indexOf('?') + 1) : "";
+            HttpResponse.sendJson(out, update().stand(EinstellungenApiHandler.sprache(q.replace("lang=", "sprache=")),
+                    k().hatRecht(kopplungId, Kopplungen.RECHT_UPDATE)).toString());
+            return true;
+        }
         if (!"POST".equals(method)) {
             HttpResponse.sendJson(out, 405, fehler("nur_post").toString());
             return true;
@@ -257,6 +275,9 @@ public final class HandyApiHandler {
             case "route_stand":
                 recht = Kopplungen.RECHT_ROUTE;
                 break;
+            case "update_starten":   // 0.1.26.1: nur die vom Updater freigegebene Version, nur geparkt, Standard AUS
+                recht = Kopplungen.RECHT_UPDATE;
+                break;
             default:
                 return fehler("aktion");
         }
@@ -290,6 +311,9 @@ public final class HandyApiHandler {
                 return heizenStoppen(u);
             case "wallbox":
                 return wallbox(req, kid, u);
+            case "update_starten":
+                return update().starten(req.optString("version", null), req.optBoolean("bestaetigt", false),
+                        k().anzeigeName(kid), EinstellungenApiHandler.sprache("sprache=" + req.optString("sprache", "")));
             case "route":
                 // Weg A (Koordination 28.10.): planen ab Auto-Position, ins Planer-Postfach; Karte am Display bleibt der
                 // einzige Weg ins Navi – nichts startet von selbst

@@ -23,8 +23,13 @@ public class RangeEstimator {
     private static final String TAG = "RangeEstimator";
     private static final DaemonLogger logger = DaemonLogger.getInstance(TAG);
 
-    // Minimum samples for a bucket to be considered reliable
-    private static final int MIN_BUCKET_SAMPLES = 3;
+    // Minimum samples for a bucket to be considered reliable.
+    // 0.1.26.1 (Rückprüfung an Alfreds Auto, REICHWEITE_ANALYSE.md): 3 → 10. Ein dünner Topf (z. B. 5 kalte
+    // Kurzfahrten) lieferte 132 km bei 8 °C; mit 10 nimmt die Kette Nachbarn bzw. Gesamtwert („lernt noch“),
+    // der 100-km-Fehler bleibt gleich (10,8 %).
+    static final int MIN_BUCKET_SAMPLES = 10;
+    /** Kraftstoff-Töpfe: ungeprüft, bleibt beim alten Wert. */
+    private static final int MIN_FUEL_BUCKET_SAMPLES = 3;
 
     // BMS reserves the bottom ~2% SoC as a buffer — usable energy tapers off
     private static final double BMS_CUTOFF_SOC = 2.0;
@@ -44,6 +49,20 @@ public class RangeEstimator {
     private final TripDatabase database;
     private final SohEstimator sohEstimator;
 
+    /** 0.1.26.1: Spanne aus dem eigenen 100-km-Rückprüffehler; null = lernt noch. Neu bei jedem Lernlauf. */
+    private volatile ReichweitenRueckpruefung.Ergebnis rueckpruefung;
+
+    /** Töpfe lesen (Datenbank im Daemon, Speicher in der Rückprüfung). */
+    interface Toepfe {
+        ConsumptionBucket topf(String key);
+        ConsumptionBucket gesamt();
+    }
+
+    private final Toepfe dbToepfe = new Toepfe() {
+        public ConsumptionBucket topf(String key) { return database.getBucket(key); }
+        public ConsumptionBucket gesamt() { return database.getOverallAverage(); }
+    };
+
     public RangeEstimator(TripDatabase database, SohEstimator sohEstimator) {
         this.database = database;
         this.sohEstimator = sohEstimator;
@@ -54,7 +73,7 @@ public class RangeEstimator {
         // multiple seconds — long enough to delay camera bring-up. Running
         // it on a worker keeps init latency O(1). Idempotent: subsequent
         // calls early-return when buckets are populated.
-        Thread t = new Thread(this::backfillBucketsIfNeeded, "RangeEstimator-Backfill");
+        Thread t = new Thread(() -> { backfillBucketsIfNeeded(); rueckpruefungNeu(); }, "RangeEstimator-Backfill");
         t.setDaemon(true);
         t.start();
     }
@@ -276,6 +295,14 @@ public class RangeEstimator {
         double lowerBound = usableEnergyKwh / lowerConsumption;
         double upperBound = Math.min(predictedRange * 1.8, usableEnergyKwh / upperConsumption);
 
+        // 0.1.26.1: Spanne aus dem eigenen 100-km-Rückprüffehler statt aus der Streuung einzelner Fahrten
+        ReichweitenRueckpruefung.Ergebnis rp = rueckpruefung;
+        double[] band = band(predictedRange, rp);
+        if (band != null) {
+            lowerBound = band[0];
+            upperBound = band[1];
+        }
+
         // Sanity clamp
         predictedRange = Math.max(0, predictedRange);
         lowerBound = Math.max(0, lowerBound);
@@ -287,6 +314,11 @@ public class RangeEstimator {
         estimate.upperBoundKm = upperBound;
         estimate.bucketKey = bucketResult.bucketKey;
         estimate.sampleCount = bucketResult.sampleCount;
+        estimate.tempC = extTempC;
+        estimate.bandAusRueckpruefung = band != null;
+        // „lernt noch“: Topf zu dünn (Nachbarn/Gesamt) oder noch keine 10 Rückprüf-Fenster
+        estimate.lerntNoch = !bucketResult.exakt || band == null;
+        estimate.rueckpruefFenster = rp == null ? 0 : rp.fenster;
 
         logger.debug("Range: " + String.format("%.0f", predictedRange)
                 + " km [" + String.format("%.0f", lowerBound) + "-"
@@ -373,7 +405,7 @@ public class RangeEstimator {
         String exactKey = computeBucketKey(speedKmh, tempC, dnaScore);
 
         ConsumptionBucket exact = database.getFuelBucket(exactKey);
-        if (exact != null && exact.sampleCount >= MIN_BUCKET_SAMPLES) {
+        if (exact != null && exact.sampleCount >= MIN_FUEL_BUCKET_SAMPLES) {
             return new BucketResult(exact.bucketKey, exact.getMean(), exact.getStdDev(), exact.sampleCount);
         }
 
@@ -413,7 +445,7 @@ public class RangeEstimator {
             }
         }
 
-        if (totalSamples >= MIN_BUCKET_SAMPLES) {
+        if (totalSamples >= MIN_FUEL_BUCKET_SAMPLES) {
             double mean = weightedSum / totalSamples;
             double variance = (weightedSumSq / totalSamples) - (mean * mean);
             if (variance < 0) variance = 0;
@@ -432,7 +464,7 @@ public class RangeEstimator {
                 }
             }
         }
-        if (speedCount >= MIN_BUCKET_SAMPLES) {
+        if (speedCount >= MIN_FUEL_BUCKET_SAMPLES) {
             double mean = speedSum / speedCount;
             double variance = (speedSumSq / speedCount) - (mean * mean);
             if (variance < 0) variance = 0;
@@ -440,7 +472,7 @@ public class RangeEstimator {
         }
 
         ConsumptionBucket overall = database.getOverallFuelAverage();
-        if (overall != null && overall.sampleCount >= MIN_BUCKET_SAMPLES) {
+        if (overall != null && overall.sampleCount >= MIN_FUEL_BUCKET_SAMPLES) {
             return new BucketResult("overall", overall.getMean(), overall.getStdDev(), overall.sampleCount);
         }
 
@@ -481,6 +513,53 @@ public class RangeEstimator {
 
         // EV-mode path (BEV or PHEV-EV trip)
         updateEvBucket(trip);
+        // 0.1.26.1: Spanne nach jedem Lernlauf neu nachrechnen (im Hintergrund, liest die Fahrten)
+        Thread t = new Thread(this::rueckpruefungNeu, "RangeEstimator-Rueckpruefung");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    /** Rückprüfung über die eigenen EV-Fahrten (wie der Backfill: 365 Tage, Mischbetrieb und Altlasten raus). */
+    private void rueckpruefungNeu() {
+        try {
+            java.util.List<TripRecord> alle = database.getTrips(365, 10000);
+            if (alle == null) return;
+            boolean liveIsPhev = false;
+            try {
+                liveIsPhev = at.greenchili.surfmate.monitor.VehicleDataMonitor.getInstance().isPhev();
+            } catch (Throwable ignored) {
+            }
+            java.util.List<TripRecord> ev = new java.util.ArrayList<>();
+            for (TripRecord t : alle) {
+                if (liveIsPhev && isContaminationSignature(t)) continue;
+                if (classifyTripMode(t) == TripMode.EV) ev.add(t);
+            }
+            ReichweitenRueckpruefung.Ergebnis e = ReichweitenRueckpruefung.rechne(ev, sohEstimator.getNominalCapacityKwh());
+            rueckpruefung = e;
+            logger.info(e == null ? "Rückprüfung: lernt noch (" + ev.size() + " Fahrten)"
+                    : String.format(java.util.Locale.ROOT, "Rückprüfung: 100-km-Faktor P25–P75 %.2f–%.2f aus %d Fenstern",
+                            e.p25, e.p75, e.fenster));
+        } catch (Throwable t) {
+            logger.warn("Rückprüfung fehlgeschlagen: " + t.getMessage());
+        }
+    }
+
+    /**
+     * Verbrauch einer Fahrt in kWh/km wie {@link #updateEvBucket}; NaN, wenn sie nicht zählt
+     * (≤ 0,5 km, keine Energie, Ausreißer außerhalb 0,03–0,8).
+     */
+    static double verbrauch(TripRecord trip, double nominalCapacityKwh) {
+        if (trip.distanceKm <= 0.5) return Double.NaN;
+        double r;
+        double energyUsed = trip.getEnergyUsedKwh();
+        if (energyUsed > 0) {
+            r = energyUsed / trip.distanceKm;
+        } else {
+            double socDelta = trip.socStart - trip.socEnd;
+            if (socDelta <= 0) return Double.NaN;
+            r = (socDelta * nominalCapacityKwh / 100.0) / trip.distanceKm;
+        }
+        return r < 0.03 || r > 0.8 ? Double.NaN : r;
     }
 
     /** EV-mode kWh-per-km bucket update. Caller must ensure trip is EV-mode. */
@@ -622,12 +701,17 @@ public class RangeEstimator {
      * Returns null if no data is available at all.
      */
     private BucketResult resolveConsumptionRate(double speedKmh, int tempC, int dnaScore) {
+        return aufloesen(dbToepfe, speedKmh, tempC, dnaScore);
+    }
+
+    /** Die Rückfallkette über beliebige Töpfe (Datenbank bzw. Rückprüfung im Speicher). */
+    static BucketResult aufloesen(Toepfe database, double speedKmh, int tempC, int dnaScore) {
         String exactKey = computeBucketKey(speedKmh, tempC, dnaScore);
 
         // 1. Exact match
-        ConsumptionBucket exact = database.getBucket(exactKey);
+        ConsumptionBucket exact = database.topf(exactKey);
         if (exact != null && exact.sampleCount >= MIN_BUCKET_SAMPLES) {
-            return new BucketResult(exact.bucketKey, exact.getMean(), exact.getStdDev(), exact.sampleCount);
+            return new BucketResult(exact.bucketKey, exact.getMean(), exact.getStdDev(), exact.sampleCount, true);
         }
 
         // 2. Neighbor blend — find buckets sharing 2 of 3 dimensions
@@ -654,7 +738,7 @@ public class RangeEstimator {
         // Neighbors: same speed+temp (any style), same speed+style (any temp)
         for (String s : styleBrackets) {
             if (s.equals(myStyle)) continue;
-            ConsumptionBucket b = database.getBucket(mySpeed + "_" + myTemp + "_" + s);
+            ConsumptionBucket b = database.topf(mySpeed + "_" + myTemp + "_" + s);
             if (b != null && b.sampleCount > 0) {
                 weightedSum += b.sumKwhPerKm * 0.5;
                 weightedSumSq += b.sumSquaredKwhPerKm * 0.5;
@@ -663,7 +747,7 @@ public class RangeEstimator {
         }
         for (String t : tempBands) {
             if (t.equals(myTemp)) continue;
-            ConsumptionBucket b = database.getBucket(mySpeed + "_" + t + "_" + myStyle);
+            ConsumptionBucket b = database.topf(mySpeed + "_" + t + "_" + myStyle);
             if (b != null && b.sampleCount > 0) {
                 weightedSum += b.sumKwhPerKm * 0.3;
                 weightedSumSq += b.sumSquaredKwhPerKm * 0.3;
@@ -683,7 +767,7 @@ public class RangeEstimator {
         int speedCount = 0;
         for (String t : tempBands) {
             for (String s : styleBrackets) {
-                ConsumptionBucket b = database.getBucket(mySpeed + "_" + t + "_" + s);
+                ConsumptionBucket b = database.topf(mySpeed + "_" + t + "_" + s);
                 if (b != null && b.sampleCount > 0) {
                     speedSum += b.sumKwhPerKm;
                     speedSumSq += b.sumSquaredKwhPerKm;
@@ -699,7 +783,7 @@ public class RangeEstimator {
         }
 
         // 4. Overall average
-        ConsumptionBucket overall = database.getOverallAverage();
+        ConsumptionBucket overall = database.gesamt();
         if (overall != null && overall.sampleCount >= MIN_BUCKET_SAMPLES) {
             return new BucketResult("overall", overall.getMean(), overall.getStdDev(), overall.sampleCount);
         }
@@ -724,20 +808,34 @@ public class RangeEstimator {
         return 2.5 - 1.5 * t;
     }
 
+    /** {untere, obere} Reichweite aus dem Rückprüf-Faktor (echt/vorhergesagt), null ohne Rückprüfung. */
+    static double[] band(double vorhersageKm, ReichweitenRueckpruefung.Ergebnis rp) {
+        if (rp == null || rp.p25 <= 0 || rp.p75 <= 0 || vorhersageKm <= 0) return null;
+        // die Schätzung liegt immer in der Spanne (REGEL DAU: nie „etwa 260 km (270–300)“)
+        return new double[] {Math.min(vorhersageKm, vorhersageKm / rp.p75), Math.max(vorhersageKm, vorhersageKm / rp.p25)};
+    }
+
     // ==================== Inner Classes ====================
 
     /** Result of bucket resolution with consumption stats. */
-    private static class BucketResult {
+    static class BucketResult {
         final String bucketKey;
         final double mean;
         final double stddev;
         final int sampleCount;
+        /** true = genauer Topf mit genug Fahrten; sonst Nachbarn/Profil/Gesamt („lernt noch“). */
+        final boolean exakt;
 
         BucketResult(String bucketKey, double mean, double stddev, int sampleCount) {
+            this(bucketKey, mean, stddev, sampleCount, false);
+        }
+
+        BucketResult(String bucketKey, double mean, double stddev, int sampleCount, boolean exakt) {
             this.bucketKey = bucketKey;
             this.mean = mean;
             this.stddev = stddev;
             this.sampleCount = sampleCount;
+            this.exakt = exakt;
         }
     }
 }

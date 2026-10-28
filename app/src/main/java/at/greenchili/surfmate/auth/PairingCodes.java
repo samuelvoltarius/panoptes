@@ -25,16 +25,27 @@ public final class PairingCodes {
 
     private static byte[] openHash;
     private static long openUntil;
+    /** 0.1.26.1: offener Code stammt aus „weiteres Gerät koppeln“ (Cockpit), nicht vom Besitzer am Display. */
+    private static boolean openWeiteres;
+
+    /** Ergebnis von {@link #einloesen}: ungültig, Code des Besitzers bzw. aus „weiteres Gerät koppeln“. */
+    public static final int UNGUELTIG = 0, BESITZER = 1, WEITERES = 2;
 
     private PairingCodes() {}
 
     /** Neuen Code erzeugen (ersetzt einen offenen). Rückgabe: Klartext-Code, nur einmal sichtbar. */
     public static synchronized String create(long nowMs) {
+        return create(nowMs, false);
+    }
+
+    /** Wie {@link #create(long)}; {@code weiteres} = für „weiteres Gerät koppeln“ (Cockpit). */
+    public static synchronized String create(long nowMs, boolean weiteres) {
         char[] c = new char[LENGTH];
         for (int i = 0; i < LENGTH; i++) c[i] = ALPHABET[RANDOM.nextInt(ALPHABET.length)];
         String code = new String(c);
         openHash = hash(code);
         openUntil = nowMs + TTL_MS;
+        openWeiteres = weiteres;
         return code;
     }
 
@@ -42,15 +53,21 @@ public final class PairingCodes {
 
     /** Einlösen: true genau einmal für den offenen, nicht abgelaufenen Code. */
     public static synchronized boolean redeem(String code, long nowMs) {
-        if (openHash == null || code == null) return false;
+        return einloesen(code, nowMs) != UNGUELTIG;
+    }
+
+    /** Wie {@link #redeem}, sagt zusätzlich, woher der Code kam ({@link #BESITZER} | {@link #WEITERES}). */
+    public static synchronized int einloesen(String code, long nowMs) {
+        if (openHash == null || code == null) return UNGUELTIG;
         if (nowMs > openUntil) {
             openHash = null;
-            return false;
+            return UNGUELTIG;
         }
         String norm = code.trim().toUpperCase(java.util.Locale.ROOT).replace("-", "").replace(" ", "");
         boolean ok = MessageDigest.isEqual(openHash, hash(norm));
-        if (ok) openHash = null;   // einmal verwendbar
-        return ok;
+        if (!ok) return UNGUELTIG;
+        openHash = null;   // einmal verwendbar
+        return openWeiteres ? WEITERES : BESITZER;
     }
 
     /** Nur für Tests. */

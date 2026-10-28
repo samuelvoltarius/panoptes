@@ -832,6 +832,8 @@ public class TripApiHandler {
 
             int extTemp = 20; // Default mild temperature
             boolean extTempFromSnapshot = false;
+            double snapshotTemp = Double.NaN;
+            Integer legacyTemp = null;
             try {
                 // NORMALIZED TELEMETRY FIRST (R25). The previous code linked
                 // android.hardware.bydauto.instrument.BYDAutoInstrumentDevice
@@ -846,8 +848,8 @@ public class TripApiHandler {
                 if (collector.isInitialized()) {
                     at.greenchili.surfmate.byd.BydVehicleData data = collector.getData();
                     if (data != null && !Double.isNaN(data.outsideTempC)) {
-                        extTemp = (int) Math.round(data.outsideTempC);
-                        extTempFromSnapshot = true;
+                        snapshotTemp = data.outsideTempC;
+                        extTempFromSnapshot = plausibleAussenTemp((int) Math.round(snapshotTemp));
                     }
                 }
             } catch (Throwable t) {
@@ -861,12 +863,40 @@ public class TripApiHandler {
                     Object instrumentDevice = getInst.invoke(null, (android.content.Context) null);
                     if (instrumentDevice != null) {
                         java.lang.reflect.Method getTemp = instrumentClass.getMethod("getOutCarTemperature");
-                        extTemp = (Integer) getTemp.invoke(instrumentDevice);
+                        legacyTemp = (Integer) getTemp.invoke(instrumentDevice);
                     }
                 } catch (Throwable t) {
                     logger.debug("Could not read external temp: " + t.getMessage());
                 }
             }
+
+            // 0.1.26.1 (Alfreds Auto 28.10. 22:56, geparkt, ~10 °C → Topf „city_hot_high“): Beim Parken fehlt die
+            // Außentemperatur im Snapshot; der Rohwert von getOutCarTemperature ging ohne Plausibilitätsprüfung in den
+            // Topf (TripDetector prüft −50…60). Jetzt: Snapshot → Rohwert (geprüft, ≠ 0) → letzte Fahrt (≤ 6 h).
+            Integer letzteFahrt = null;
+            try {
+                java.util.List<TripRecord> l = db.getTrips(1, 1);
+                if (l != null && !l.isEmpty()) {
+                    TripRecord t = l.get(0);
+                    long ende = t.endTime > 0 ? t.endTime : t.startTime;
+                    if (System.currentTimeMillis() - ende <= LETZTE_FAHRT_TEMP_MS && t.extTempC != 0) letzteFahrt = t.extTempC;
+                }
+            } catch (Exception e) {
+                logger.debug("Could not read last trip temp: " + e.getMessage());
+            }
+            // 0.1.26.1 („Temp von einem öffentlichen Sensor“): Wetter als Rückfall – nur der vorhandene
+            // Open-Meteo-Zwischenspeicher (≤ 1 h, mit Einwilligung wetter.online), keine neue Abfrage von hier.
+            double wetter = Double.NaN;
+            try {
+                if (at.greenchili.surfmate.weather.WeatherTemperature.onlineErlaubt()) {
+                    wetter = at.greenchili.surfmate.weather.WeatherTemperature.getCached();
+                }
+            } catch (Throwable t) {
+                logger.debug("Could not read weather temp: " + t.getMessage());
+            }
+            String[] quelle = new String[1];
+            Integer aussen = aussenTemp(snapshotTemp, legacyTemp, wetter, letzteFahrt, quelle);
+            if (aussen != null) extTemp = aussen;
 
             int dnaOverall = 50; // Default mid-range
             try {
@@ -879,6 +909,10 @@ public class TripApiHandler {
             }
 
             RangeEstimate estimate = estimator.estimate(currentSoc, currentSpeed, extTemp, dnaOverall);
+            if (estimate != null) {
+                estimate.tempBekannt = aussen != null;
+                estimate.tempQuelle = quelle[0];
+            }
 
             JSONObject response = new JSONObject();
             response.put("success", true);
@@ -1615,5 +1649,35 @@ public class TripApiHandler {
             logger.error("Error building error response", e);
         }
         return response;
+    }
+
+    /** 0.1.26.1: so alt darf die Fahrt sein, deren Außentemperatur beim Parken für die Reichweite gilt. */
+    static final long LETZTE_FAHRT_TEMP_MS = 6L * 3600_000L;
+
+    static boolean plausibleAussenTemp(int c) {
+        return c >= -50 && c <= 60;
+    }
+
+    /**
+     * Außentemperatur für die Reichweiten-Schätzung: Auto (Snapshot, sonst Rohwert von getOutCarTemperature – nur
+     * plausibel und ≠ 0, wie im Collector), sonst Wetter (Open-Meteo-Zwischenspeicher, ≤ 1 h, NaN ohne
+     * Einwilligung), sonst die letzte Fahrt; null = unbekannt (Anzeige ohne „bei X °C“).
+     * {@code quelle[0]} = "auto" | "wetter" | "fahrt" | null.
+     */
+    static Integer aussenTemp(double snapshotC, Integer legacyRaw, double wetterC, Integer letzteFahrtC, String[] quelle) {
+        quelle[0] = "auto";
+        if (!Double.isNaN(snapshotC) && plausibleAussenTemp((int) Math.round(snapshotC))) return (int) Math.round(snapshotC);
+        if (legacyRaw != null && legacyRaw != 0 && plausibleAussenTemp(legacyRaw)) return legacyRaw;
+        quelle[0] = "wetter";
+        if (!Double.isNaN(wetterC) && plausibleAussenTemp((int) Math.round(wetterC))) return (int) Math.round(wetterC);
+        quelle[0] = "fahrt";
+        if (letzteFahrtC != null && plausibleAussenTemp(letzteFahrtC)) return letzteFahrtC;
+        quelle[0] = null;
+        return null;
+    }
+
+    /** Ohne Wetter (Tests, ältere Aufrufer). */
+    static Integer aussenTemp(double snapshotC, Integer legacyRaw, Integer letzteFahrtC) {
+        return aussenTemp(snapshotC, legacyRaw, Double.NaN, letzteFahrtC, new String[1]);
     }
 }

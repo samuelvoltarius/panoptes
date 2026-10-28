@@ -100,11 +100,7 @@ class UeberlagerungSchritt(a: Assistent) : SchrittAnsicht("ueberlagerung", a) {
 
 class RechteSchritt(a: Assistent) : SchrittAnsicht("rechte", a) {
     private lateinit var liste: LinearLayout
-    private val rechte = listOf(
-        Manifest.permission.CAMERA to R.string.einr_recht_kamera,
-        Manifest.permission.ACCESS_FINE_LOCATION to R.string.einr_recht_standort,
-        Manifest.permission.WRITE_EXTERNAL_STORAGE to R.string.einr_recht_speicher,
-    )
+    private val rechte = ANDROID_RECHTE.zip(listOf(R.string.einr_recht_kamera, R.string.einr_recht_standort, R.string.einr_recht_speicher))
     override fun ansicht(): View = spalte().apply {
         dazu(titel(t.res(R.string.einr_rechte_titel)), 0f)
         dazu(a.text(t.res(R.string.einr_rechte_text), 17f, leise = true))
@@ -127,6 +123,11 @@ class RechteSchritt(a: Assistent) : SchrittAnsicht("rechte", a) {
         }, 16f)
     }
     override fun antwort(): JSONObject = JSONObject().put("geprueft", true).put("ok", rechte.all { erteilt(it.first) })
+
+    companion object {
+        /** Die Rechte dieses Schritts (auch für den Abgleich beim App-Start, OnboardingHost). */
+        val ANDROID_RECHTE = listOf(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+    }
 }
 
 class UsbFreigabeSchritt(a: Assistent, private val host: AssistentHost) : SchrittAnsicht("usb_freigabe", a) {

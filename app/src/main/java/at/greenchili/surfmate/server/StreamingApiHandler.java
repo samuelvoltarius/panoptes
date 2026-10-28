@@ -28,6 +28,9 @@ public class StreamingApiHandler {
             "rotation must be 0, 40, 90, 180, 270, 310 or 'auto'";
 
     private static String streamingQuality = "LOW";  // Default to LOW for better performance
+    /** 0.1.26.1: Stufe nur für die laufende Live-Sitzung (Live-Ansicht, Brücke LIVE), nie gespeichert.
+     *  null = die gespeicherte Stufe der Einstellungsseite gilt. Endet mit /api/stream/disable. */
+    private static volatile String sitzungsQualitaet = null;
 
     // Last view-mode the user explicitly picked, persisted across scaler
     // teardown / WS idle-shutdown / reconnect cycles. The scaler's own
@@ -1964,7 +1967,7 @@ public class StreamingApiHandler {
     static GpuPipelineConfig.StreamingQuality effectiveStreamingQuality(
             boolean broadwayDecoder) {
         return capBroadwayQuality(
-                GpuPipelineConfig.StreamingQuality.fromString(streamingQuality),
+                GpuPipelineConfig.StreamingQuality.fromString(wirksameQualitaet()),
                 at.greenchili.surfmate.camera.dilink5.DiLink5Platform.isEnabled(),
                 broadwayDecoder);
     }
@@ -2012,7 +2015,7 @@ public class StreamingApiHandler {
         
         try {
             GpuPipelineConfig.StreamingQuality requested =
-                    GpuPipelineConfig.StreamingQuality.fromString(streamingQuality);
+                    GpuPipelineConfig.StreamingQuality.fromString(wirksameQualitaet());
             GpuPipelineConfig.StreamingQuality q =
                     capBroadwayQuality(requested, diLink5, broadwayDecoder);
             if (q != requested) {
@@ -2044,6 +2047,7 @@ public class StreamingApiHandler {
     }
     
     private static void handleDisableStreaming(OutputStream out) throws Exception {
+        sitzungsQualitaet = null;   // 0.1.26.1: Sitzung vorbei, die gespeicherte Stufe gilt wieder
         GpuSurveillancePipeline pipeline = CameraDaemon.getGpuPipeline();
 
         if (pipeline == null) {
@@ -2089,10 +2093,11 @@ public class StreamingApiHandler {
     }
     
     private static void sendStreamQualityOptions(OutputStream out) throws Exception {
-        CameraDaemon.log("sendStreamQualityOptions: current=" + streamingQuality);
+        CameraDaemon.log("sendStreamQualityOptions: current=" + wirksameQualitaet());
         JSONObject response = new JSONObject();
         response.put("success", true);
-        response.put("current", streamingQuality);
+        response.put("current", wirksameQualitaet());
+        response.put("gespeichert", streamingQuality);
         
         JSONArray options = new JSONArray();
         for (GpuPipelineConfig.StreamingQuality q : GpuPipelineConfig.StreamingQuality.values()) {
@@ -2114,27 +2119,19 @@ public class StreamingApiHandler {
     private static void handleSetStreamQuality(OutputStream out, String quality) throws Exception {
         GpuPipelineConfig.StreamingQuality newQuality = GpuPipelineConfig.StreamingQuality.fromString(quality);
 
-        streamingQuality = newQuality.name();
+        // 0.1.26.1: Live-Ansicht und Brücke LIVE wählen die Stufe nur für die laufende Sitzung.
+        // Speichern darf nur die Einstellungsseite (/api/settings/quality → setStreamingQuality).
+        // Früher wurde hier persistSettings() gerufen: Live stellte die gespeicherte Stufe dauerhaft um.
+        sitzungsQualitaet = newQuality.name();
         CameraDaemon.setStreamingQuality(quality);
+        CameraDaemon.log("Streaming quality for this session: " + newQuality.displayName
+                + " (saved stays " + streamingQuality + ")");
 
-        // Persist to UnifiedConfigManager (streaming.quality) so the choice
-        // survives daemon restart. Mirrors the recording-side flow where
-        // QualitySettingsApiHandler.persistSettings is the single canonical
-        // writer for both recording and streaming sections — without this
-        // call the in-memory `streamingQuality` field is the only record of
-        // the user's pick, and a kill/restart silently reverts to whatever
-        // the on-disk default seeded (MEDIUM).
-        QualitySettingsApiHandler.persistSettings();
-
-        // Save quality preference — it will be applied on next stream start.
-        // Don't restart the active stream to avoid disrupting the live view.
-        // The /ws handler applies the quality when the client reconnects.
-        CameraDaemon.log("Streaming quality set to: " + newQuality.displayName + " (persisted)");
-        
         JSONObject response = new JSONObject();
         response.put("success", true);
         response.put("quality", newQuality.name());
         response.put("displayName", newQuality.displayName);
+        response.put("nurSitzung", true);
         response.put("width", newQuality.width);
         response.put("height", newQuality.height);
         response.put("fps", newQuality.fps);
@@ -2439,7 +2436,7 @@ public class StreamingApiHandler {
         if (pano != null && !pano.isStreamingEnabled()) {
             try {
                 GpuPipelineConfig.StreamingQuality q =
-                    GpuPipelineConfig.StreamingQuality.fromString(streamingQuality);
+                    GpuPipelineConfig.StreamingQuality.fromString(wirksameQualitaet());
                 pano.enableStreaming(q.width, q.height, q.fps, q.bitrate);
             } catch (Exception e) {
                 CameraDaemon.log("handleOemDashcamView: pano.enableStreaming failed: " + e.getMessage());
@@ -2630,7 +2627,17 @@ public class StreamingApiHandler {
     }
     
     // Static getters/setters for cross-component access
+    /** Die gespeicherte Stufe (Einstellungsseite); nur sie wird persistiert. */
     public static String getStreamingQuality() { return streamingQuality; }
+
+    /** 0.1.26.1: Stufe, mit der gestreamt wird: die der Live-Sitzung, sonst die gespeicherte. */
+    static String wirksameQualitaet() {
+        String s = sitzungsQualitaet;
+        return s != null ? s : streamingQuality;
+    }
+
+    /** Nur für Tests. */
+    static void sitzungZuruecksetzenFuerTest() { sitzungsQualitaet = null; }
     
     public static void setStreamingQuality(String quality) {
         if (quality == null) return;
@@ -2651,6 +2658,7 @@ public class StreamingApiHandler {
             case "LQ":
             case "HQ":
                 streamingQuality = q;
+                sitzungsQualitaet = null;   // 0.1.26.1: neue gespeicherte Wahl gilt sofort
                 break;
             default:
                 // Unknown tag — leave previous value intact.

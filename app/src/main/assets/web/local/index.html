@@ -59,6 +59,8 @@
         .h-range { font-family: var(--family-display); font-size: 56px; font-weight: 700; letter-spacing: -.03em; line-height: 1; color: var(--on-surface); }
         .h-range small { font-size: 22px; color: var(--on-surface-variant); font-weight: 600; margin-left: 4px; }
         .h-band { color: var(--on-surface-variant); font-size: 14px; margin: 8px 0 18px; }
+        /* 0.1.26.1: „Auto zeigt …“ klein unter der eigenen Schätzung */
+        .h-band-auto { color: var(--on-surface-variant); font-size: 12px; margin: -14px 0 18px; opacity: .8; }
         .band-bar { height: 8px; border-radius: 8px; background: rgba(255, 255, 255, .08); position: relative; margin-bottom: 18px; max-width: 420px; }
         .band-bar i { position: absolute; top: 0; bottom: 0; border-radius: 8px;
                       background: linear-gradient(90deg, rgba(95, 214, 230, .35), rgba(181, 242, 61, .55)); }
@@ -195,6 +197,7 @@
                     <div class="h-state"><i class="pn-dot" id="hStateDot"></i><span id="hState" data-i18n="home.waiting">Warte auf das Auto …</span></div>
                     <div class="h-range"><span id="hRange">--</span><small id="hRangeUnit">km</small></div>
                     <div class="h-band" id="hBand">&nbsp;</div>
+                    <div class="h-band-auto" id="hRangeCar" hidden></div>
                     <div class="band-bar" id="hBandBar" hidden><i id="hBandSpan"></i><u id="hBandCar" title=""></u><em id="hBandMark"></em></div>
                     <div class="h-charge" id="hCharge"></div>
                     <div class="chips">
@@ -423,13 +426,45 @@
             var r = this.range;
             var unit = distUnit();
             setText('hRangeUnit', unit);
+            var carEl = $('hRangeCar');
+            if (carEl) carEl.hidden = true;
             if (r && r.predictedRangeKm > 0) {
                 setText('hRange', fmt(distVal(r.predictedRangeKm)));
                 var lo = r.lowerBoundKm, hi = r.upperBoundKm;
-                var band = t('home.range_from_trips', 'Deine Reichweite aus {n} Fahrten', { n: r.sampleCount || 0 });
-                if (lo > 0 && hi > 0) band += ' · ' + t('home.range_span', 'Spanne {a}–{b} {u}', { a: fmt(distVal(lo)), b: fmt(distVal(hi)), u: unit });
-                if (carKm > 0) band += ' · ' + t('home.range_car', 'Auto zeigt {n} {u}', { n: fmt(distVal(carKm)), u: unit });
-                setText('hBand', band);
+                var band;
+                if (typeof r.tempC === 'number') {
+                    // 0.1.26.1 (REGEL DAU): „Heute bei 8 °C: etwa 260 km (235–285)“, darunter klein „Auto zeigt 308 km“;
+                    // Spanne nur aus der Rückprüfung, sonst „lernt noch“ (keine 187–409 km mehr)
+                    var r5 = function (v) { return fmt(Math.round(distVal(v) / 5) * 5); };
+                    var mitSpanne = !r.lerntNoch && r.bandAusRueckpruefung && lo > 0 && hi > 0;
+                    var w = { t: r.tempC, n: r5(r.predictedRangeKm), u: unit, a: r5(lo), b: r5(hi) };
+                    if (r.tempBekannt === false) {   // geparkt ohne Außentemperatur: nicht raten
+                        band = mitSpanne ? t('home.range_heute_ohne_temp', 'Heute: etwa {n} {u} ({a}–{b})', w)
+                            : t('home.range_heute_ohne_temp_spanne', 'Heute: etwa {n} {u}', w);
+                    } else {
+                        band = mitSpanne ? t('home.range_heute', 'Heute bei {t} °C: etwa {n} {u} ({a}–{b})', w)
+                            : t('home.range_heute_ohne_spanne', 'Heute bei {t} °C: etwa {n} {u}', w);
+                    }
+                    if (!mitSpanne) band += ' · ' + t('home.range_lernt_noch', 'Lernt noch: genauer wird es nach ein paar längeren Fahrten.');
+                    // Quelle der Temperatur, wenn nicht vom Auto: „bei 8 °C (Wetter)“
+                    var qk = r.tempQuelle === 'wetter' ? 'home.range_quelle_wetter' : r.tempQuelle === 'fahrt' ? 'home.range_quelle_fahrt' : null;
+                    if (qk && r.tempBekannt !== false) {
+                        var qt = t(qk, r.tempQuelle === 'wetter' ? '(Wetter)' : '(letzte Fahrt)');
+                        band = band.replace(r.tempC + ' °C', r.tempC + ' °C ' + qt);
+                    }
+                    setText('hBand', band);
+                    if (carEl && carKm > 0) {
+                        carEl.textContent = t('home.range_auto_klein', 'Auto zeigt {n} {u}', { n: fmt(distVal(carKm)), u: unit });
+                        carEl.hidden = false;
+                    }
+                    if (!mitSpanne) { lo = 0; hi = 0; $('hBandBar').hidden = true; }
+                } else {
+                    // älterer Dienst ohne tempC: bisherige Zeile
+                    band = t('home.range_from_trips', 'Deine Reichweite aus {n} Fahrten', { n: r.sampleCount || 0 });
+                    if (lo > 0 && hi > 0) band += ' · ' + t('home.range_span', 'Spanne {a}–{b} {u}', { a: fmt(distVal(lo)), b: fmt(distVal(hi)), u: unit });
+                    if (carKm > 0) band += ' · ' + t('home.range_car', 'Auto zeigt {n} {u}', { n: fmt(distVal(carKm)), u: unit });
+                    setText('hBand', band);
+                }
                 if (lo > 0 && hi > 0) {
                     var max = Math.max(hi, carKm, r.predictedRangeKm) * 1.1;
                     var pct = function (v) { return Math.max(0, Math.min(100, v / max * 100)) + '%'; };

@@ -850,7 +850,8 @@
       "aufsperren_ok": "🔓 *Aperta* tramite il telefono «{0}».",
       "aufsperren_unbestaetigt": "🔓 Comando di apertura inviato tramite il telefono «{0}» – manca la conferma dall'auto.",
       "aufsperren_abgelehnt": "🔒 Apertura tramite il telefono «{0}» rifiutata ({1}).",
-      "wallbox": "🔌 Wallbox comandata dal telefono «{0}»: {1}"
+      "wallbox": "🔌 Wallbox comandata dal telefono «{0}»: {1}",
+      "update_gestartet": "⬆️ Aggiornamento a {0} avviato da «{1}». Panoptes non sarà disponibile per circa 3–8 minuti."
     },
     "zurueck": {
       "text": "🚗 Bentornato all’auto. Era parcheggiata da {0}.",
@@ -2384,6 +2385,25 @@
       "installieren": "Non è stato possibile creare i file per l'accesso di emergenza.",
       "adb_serve": "L'accesso di emergenza è connesso, ma l'inoltro adb (porta 5555) manca ancora. L'accesso di emergenza riprova da solo."
     }
+  },
+  "update_fern": {
+    "bereit": "È disponibile la nuova versione {0}. L’aggiornamento dura circa 3–8 minuti.",
+    "kein_update": "Panoptes è aggiornato ({1}).",
+    "laeuft": "Panoptes si sta aggiornando e torna subito. Ci vogliono circa 3–8 minuti.",
+    "laeuft_schon": "Panoptes è già in aggiornamento.",
+    "fertig": "Fatto. Panoptes ora funziona con {1}.",
+    "fehler": "L’aggiornamento non è riuscito. Panoptes continua con la versione precedente.",
+    "nicht_erlaubt": "Questo dispositivo non può aggiornare Panoptes. Attivalo nell’auto in «Dispositivi associati».",
+    "faehrt": "Nessun aggiornamento durante la guida. Parcheggia e spegni l’auto.",
+    "nicht_in_p": "L’aggiornamento funziona solo con l’auto in P e spenta.",
+    "zuendung_an": "L’aggiornamento funziona solo con l’auto spenta. Spegnila e riprova.",
+    "zustand_unbekannt": "Panoptes ora non sa con certezza se l’auto è ferma. Riprova tra un momento.",
+    "wartet_wlan": "Gli aggiornamenti sono impostati su «solo Wi-Fi» e l’auto ora non ha Wi-Fi.",
+    "zu_alt": "Per questo aggiornamento Panoptes ha prima bisogno di una versione più recente. Aggiorna nell’auto.",
+    "andere_version": "Questa versione non è approvata. La versione approvata è {0}.",
+    "bestaetigung_fehlt": "Conferma prima l’aggiornamento.",
+    "nicht_bereit": "Panoptes si sta avviando. Riprova tra un minuto.",
+    "nicht_moeglich": "L’aggiornamento ora non è possibile. Riprova più tardi."
   },
   "telegram_login": {
     "geraet_name": "Browser (Telegram)"

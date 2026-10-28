@@ -20,9 +20,9 @@ public class OrteLeserTest {
 
     private static OrteTest.Alt bestand() throws Exception {
         return new OrteTest.Alt()
-                .ruhe("a1", "Zuhause", 47.80941, 13.05501, 80, true)
-                .ruhe("a2", "Büro", 47.79000, 13.04000, 60, false)
-                .tarif("t_home", "Hausstrom", 47.80941, 13.05501, 80, 0.0, null)
+                .ruhe("a1", "Zuhause", 48.30941, 14.29001, 80, true)
+                .ruhe("a2", "Büro", 48.29000, 14.27500, 60, false)
+                .tarif("t_home", "Hausstrom", 48.30941, 14.29001, 80, 0.0, null)
                 .tarif("t_lidl", "Lidl Leoben", 47.38000, 15.09000, 50, null, 0.29);
     }
 
@@ -71,7 +71,7 @@ public class OrteLeserTest {
         JSONArray l = alt.abschnittLesen().getJSONArray("liste");
         JSONArray sp = spiegel(alt, "ruhe");
         // alte Seite: Zuhause ausgeschaltet, Büro gelöscht, neue Zone angelegt – noch kein Abgleich
-        alt.ruheAendern("a1", "Zuhause", 47.80941, 13.05501, 80, false);
+        alt.ruheAendern("a1", "Zuhause", 48.30941, 14.29001, 80, false);
         alt.ruheEntfernen("a2");
         alt.ruhe("a9", "Oma", 48.0, 14.0, 100, true);
         Map<String, JSONObject> rz = nachId(Orte.ruheZonen(l, alt.ruhe, sp));

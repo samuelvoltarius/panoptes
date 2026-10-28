@@ -132,13 +132,15 @@ public final class ExternGuard {
     }
 
     static boolean handyErlaubt(String method, String pathOnly, String kopplungsArt) {
-        if (!"handy".equals(kopplungsArt) || !"POST".equals(method) || pathOnly == null) return false;
+        if (!"handy".equals(kopplungsArt) || pathOnly == null) return false;
         String p = pathOnly;
         int q = p.indexOf('?');
         if (q >= 0) p = p.substring(0, q);
         if (p.length() > 1 && p.endsWith("/")) p = p.substring(0, p.length() - 1);
         if (p.contains("..") || p.contains("//")) return false;
-        return HANDY_SCHREIBEN.contains(p);
+        // 0.1.26.1: Update-Stand lesen (HANDY_API_VERTRAG §8), einziger GET unter /api/handy/v1
+        if ("GET".equals(method)) return "/api/handy/v1/update".equals(p);
+        return "POST".equals(method) && HANDY_SCHREIBEN.contains(p);
     }
 
     public static boolean erlaubt(String method, String pathOnly) {

@@ -103,6 +103,20 @@ public final class WebHandyGuard {
         out.flush();
     }
 
+    /**
+     * 0.1.26.1 „derselbe Knopf in der Web-UI“: Update-Stand lesen, suchen und starten, wenn die Kopplung hinter der
+     * Web-Sitzung das Recht „update“ hat. Die Regeln (nur freigegebene Version, Bestätigung, geparkt, Telegram) prüft
+     * {@link AppUpdateApiHandler} über {@code FernUpdate}. Einstellungen des Updaters bleiben gesperrt.
+     */
+    public static boolean updateErlaubt(String method, String pathOnly, boolean rechtUpdate) {
+        if (!rechtUpdate || pathOnly == null) return false;
+        String p = pathOnly;
+        int q = p.indexOf('?');
+        if (q >= 0) p = p.substring(0, q);
+        if ("GET".equals(method)) return "/api/appupdate/status".equals(p);
+        return "POST".equals(method) && ("/api/appupdate/installieren".equals(p) || "/api/appupdate/suchen".equals(p));
+    }
+
     /** true, wenn die Web-Sitzung des Handys diesen Pfad nicht nutzen darf. */
     public static boolean blocks(String method, String pathOnly) {
         if (pathOnly == null) return true;

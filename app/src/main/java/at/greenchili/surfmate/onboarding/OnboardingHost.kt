@@ -66,6 +66,7 @@ class OnboardingHost(
         // USB-Popup ungefragt). neuZaehler gleicht lokale Merker ab („Einrichtung erneut starten“ im Web).
         Thread({
             val r = at.greenchili.surfmate.onboarding.schritte.EinrichtungApi.get("/api/einrichtung")
+            if (r.ok) rechteNachmelden(r.json)
             mainHandler.post {
                 if (started) return@post
                 when {
@@ -80,6 +81,23 @@ class OnboardingHost(
             }
         }, "EinrichtungStart").start()
         return false
+    }
+
+    /**
+     * 0.1.26 (Alfreds Auto): Rechte längst erteilt, „Noch offen“ zeigt trotzdem „Berechtigungen (später)“ – nur die App
+     * sieht die Android-Rechte, also meldet sie den echten Zustand nach (Hintergrund-Thread, Fehler still).
+     */
+    private fun rechteNachmelden(json: org.json.JSONObject) {
+        try {
+            if (!at.greenchili.surfmate.onboarding.schritte.EinrichtungStand.ausJson(json).rechteNachmelden()) return
+            val alle = at.greenchili.surfmate.onboarding.schritte.RechteSchritt.ANDROID_RECHTE.all {
+                activity.checkSelfPermission(it) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            }
+            if (alle) at.greenchili.surfmate.onboarding.schritte.EinrichtungApi.schritt("rechte",
+                org.json.JSONObject().put("geprueft", true).put("ok", true))
+        } catch (t: Throwable) {
+            Log.w(TAG, "Rechte nachmelden: ${t.message}")
+        }
     }
 
     /** Force-start (replay "?" affordance). Ignores onboardingComplete, still parked-gated. */

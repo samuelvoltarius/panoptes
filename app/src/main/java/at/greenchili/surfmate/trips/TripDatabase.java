@@ -414,6 +414,13 @@ public class TripDatabase {
             } catch (Exception e) {
                 logger.debug("trips fuel column migration: " + e.getMessage());
             }
+            // 0.1.26.1: Klima-Anteil je Fahrt (alte Fahrten: 0/0 = unbekannt)
+            try {
+                stmt.execute("ALTER TABLE trips ADD COLUMN IF NOT EXISTS klima_sekunden INTEGER DEFAULT 0");
+                stmt.execute("ALTER TABLE trips ADD COLUMN IF NOT EXISTS klima_bekannt_sekunden INTEGER DEFAULT 0");
+            } catch (Exception e) {
+                logger.debug("trips klima column migration: " + e.getMessage());
+            }
 
             // Migration: cumulative HAL fuel-accumulator snapshots. Old rows
             // read these as -1 (sentinel "no accumulator"), so the fuel math
@@ -612,8 +619,8 @@ public class TripDatabase {
                 "is_phev, fuel_pct_start, fuel_pct_end, litres_used, fuel_price_per_l, fuel_cost, " +
                 "electric_cost, ice_seconds, fuel_con_start, fuel_con_end, size_bytes, sidecar_size_bytes, " +
                 "odometer_start_km, odometer_end_km, rate_source, rate_label, " +
-                "elec_con_start, elec_con_end) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "elec_con_start, elec_con_end, klima_sekunden, klima_bekannt_sekunden) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             setTripParams(pstmt, trip);
@@ -627,6 +634,8 @@ public class TripDatabase {
             pstmt.setString(49, trip.rateLabel != null ? trip.rateLabel : "");
             pstmt.setDouble(50, trip.elecConStart);
             pstmt.setDouble(51, trip.elecConEnd);
+            pstmt.setInt(52, trip.klimaSekundenAtomic.get());
+            pstmt.setInt(53, trip.klimaBekanntSekundenAtomic.get());
             pstmt.executeUpdate();
 
             try (ResultSet keys = pstmt.getGeneratedKeys()) {
@@ -667,7 +676,8 @@ public class TripDatabase {
                 "is_phev=?, fuel_pct_start=?, fuel_pct_end=?, litres_used=?, fuel_price_per_l=?, " +
                 "fuel_cost=?, electric_cost=?, ice_seconds=?, fuel_con_start=?, fuel_con_end=?, " +
                 "size_bytes=?, sidecar_size_bytes=?, odometer_start_km=?, odometer_end_km=?, " +
-                "rate_source=?, rate_label=?, elec_con_start=?, elec_con_end=? " +
+                "rate_source=?, rate_label=?, elec_con_start=?, elec_con_end=?, " +
+                "klima_sekunden=?, klima_bekannt_sekunden=? " +
                 "WHERE id=?";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -682,7 +692,9 @@ public class TripDatabase {
             pstmt.setString(49, trip.rateLabel != null ? trip.rateLabel : "");
             pstmt.setDouble(50, trip.elecConStart);
             pstmt.setDouble(51, trip.elecConEnd);
-            pstmt.setLong(52, trip.id);
+            pstmt.setInt(52, trip.klimaSekundenAtomic.get());
+            pstmt.setInt(53, trip.klimaBekanntSekundenAtomic.get());
+            pstmt.setLong(54, trip.id);
             int rows = pstmt.executeUpdate();
             logger.debug("Updated trip id=" + trip.id + " (rows=" + rows + ")");
             return rows > 0;
@@ -3082,6 +3094,8 @@ public class TripDatabase {
         try { trip.fuelCost       = rs.getDouble("fuel_cost"); }       catch (Exception e) { trip.fuelCost = 0; }
         try { trip.electricCost   = rs.getDouble("electric_cost"); }   catch (Exception e) { trip.electricCost = 0; }
         try { trip.iceSecondsAtomic.set(rs.getInt("ice_seconds")); } catch (Exception e) { trip.iceSecondsAtomic.set(0); }
+        try { trip.klimaSekundenAtomic.set(rs.getInt("klima_sekunden")); } catch (Exception e) { trip.klimaSekundenAtomic.set(0); }
+        try { trip.klimaBekanntSekundenAtomic.set(rs.getInt("klima_bekannt_sekunden")); } catch (Exception e) { trip.klimaBekanntSekundenAtomic.set(0); }
         // wasNull re-maps a SQL NULL to the -1 sentinel; getDouble would
         // otherwise return 0.0, which falsely satisfies the >=0 metered guard.
         try { trip.fuelConStart = rs.getDouble("fuel_con_start"); if (rs.wasNull()) trip.fuelConStart = -1; } catch (Exception e) { trip.fuelConStart = -1; }

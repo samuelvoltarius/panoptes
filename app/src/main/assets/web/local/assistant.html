@@ -392,19 +392,19 @@
                     </div>
 
                     <div class="ai-quick-actions" aria-label="Schnelle Fragen" data-i18n-attr="aria-label:genai.quick_actions_label">
-                        <button class="ai-chip" type="button" data-mode="vehicle_history" data-i18n="genai.chip_vehicle_history" data-prompt="Find ">Im Verlauf suchen</button>
-                        <button class="ai-chip" type="button" data-mode="current_vehicle" data-i18n="genai.chip_current_vehicle" data-prompt="Explain the current vehicle state and call out anything unusual.">Auto jetzt</button>
-                        <button class="ai-chip" type="button" data-mode="latest_trip" data-i18n="genai.chip_latest_trip" data-prompt="Explain my latest trip, including efficiency and notable moments.">Letzte Fahrt erklären</button>
-                        <button class="ai-chip" type="button" data-mode="trip_comparison" data-i18n="genai.chip_more_battery" data-prompt="Why did my latest trip use more battery than comparable trips?">Warum mehr Verbrauch?</button>
-                        <button class="ai-chip" type="button" data-mode="recent_events" data-i18n="genai.chip_summarize_events" data-prompt="Summarize my recent recording and surveillance events.">Aufnahmen zusammenfassen</button>
-                        <button class="ai-chip" type="button" data-mode="roadsense" data-i18n="genai.chip_roadsense" data-prompt="Summarize recent RoadSense hazards and what they mean.">Gefahrenstellen</button>
-                        <button class="ai-chip" type="button" data-mode="charging" data-i18n="genai.chip_charging" data-prompt="Review recent charging and highlight useful trends.">Laden im Rückblick</button>
-                        <button class="ai-chip" type="button" data-mode="diagnostics" data-i18n="genai.chip_diagnostics" data-prompt="Review current diagnostics and explain any likely issues.">Auto-Check</button>
-                        <button class="ai-chip" type="button" data-mode="diagnostic_logs" data-i18n="genai.chip_analyze_logs" data-prompt="Analyze the recent redacted daemon warnings and errors, identify the strongest evidence, and say what is still uncertain.">Protokolle lesen</button>
-                        <button class="ai-chip" type="button" data-mode="automation_diagnostics" data-i18n="genai.chip_diagnose_automation" data-prompt="Why did my automation not run? Diagnose its conditions, recent logs, action timing, and safe fixes.">Regel prüfen</button>
-                        <button class="ai-chip" type="button" data-mode="vehicle_action" data-i18n="genai.chip_control_vehicle" data-prompt="Set the cabin temperature to ">Auto steuern</button>
-                        <button class="ai-chip" type="button" data-mode="automation_draft" data-i18n="genai.chip_create_automation" data-prompt="Create an automation that ">Neue Regel</button>
-                        <button class="ai-chip" type="button" data-mode="community_search" data-i18n="genai.chip_find_automation" data-prompt="Find a community automation for ">Regel suchen</button>
+                        <button class="ai-chip" type="button" data-mode="vehicle_history" data-prompt-key="genai.prompt_vehicle_history" data-i18n="genai.chip_vehicle_history" data-prompt="Find ">Im Verlauf suchen</button>
+                        <button class="ai-chip" type="button" data-mode="current_vehicle" data-prompt-key="genai.prompt_current_vehicle" data-i18n="genai.chip_current_vehicle" data-prompt="Explain the current vehicle state and call out anything unusual.">Auto jetzt</button>
+                        <button class="ai-chip" type="button" data-mode="latest_trip" data-prompt-key="genai.prompt_latest_trip" data-i18n="genai.chip_latest_trip" data-prompt="Explain my latest trip, including efficiency and notable moments.">Letzte Fahrt erklären</button>
+                        <button class="ai-chip" type="button" data-mode="trip_comparison" data-prompt-key="genai.prompt_more_battery" data-i18n="genai.chip_more_battery" data-prompt="Why did my latest trip use more battery than comparable trips?">Warum mehr Verbrauch?</button>
+                        <button class="ai-chip" type="button" data-mode="recent_events" data-prompt-key="genai.prompt_summarize_events" data-i18n="genai.chip_summarize_events" data-prompt="Summarize my recent recording and surveillance events.">Aufnahmen zusammenfassen</button>
+                        <button class="ai-chip" type="button" data-mode="roadsense" data-prompt-key="genai.prompt_roadsense" data-i18n="genai.chip_roadsense" data-prompt="Summarize recent RoadSense hazards and what they mean.">Gefahrenstellen</button>
+                        <button class="ai-chip" type="button" data-mode="charging" data-prompt-key="genai.prompt_charging" data-i18n="genai.chip_charging" data-prompt="Review recent charging and highlight useful trends.">Laden im Rückblick</button>
+                        <button class="ai-chip" type="button" data-mode="diagnostics" data-prompt-key="genai.prompt_diagnostics" data-i18n="genai.chip_diagnostics" data-prompt="Review current diagnostics and explain any likely issues.">Auto-Check</button>
+                        <button class="ai-chip" type="button" data-mode="diagnostic_logs" data-prompt-key="genai.prompt_analyze_logs" data-i18n="genai.chip_analyze_logs" data-prompt="Analyze the recent redacted daemon warnings and errors, identify the strongest evidence, and say what is still uncertain.">Protokolle lesen</button>
+                        <button class="ai-chip" type="button" data-mode="automation_diagnostics" data-prompt-key="genai.prompt_diagnose_automation" data-i18n="genai.chip_diagnose_automation" data-prompt="Why did my automation not run? Diagnose its conditions, recent logs, action timing, and safe fixes.">Regel prüfen</button>
+                        <button class="ai-chip" type="button" data-mode="vehicle_action" data-prompt-key="genai.prompt_control_vehicle" data-i18n="genai.chip_control_vehicle" data-prompt="Set the cabin temperature to ">Auto steuern</button>
+                        <button class="ai-chip" type="button" data-mode="automation_draft" data-prompt-key="genai.prompt_create_automation" data-i18n="genai.chip_create_automation" data-prompt="Create an automation that ">Neue Regel</button>
+                        <button class="ai-chip" type="button" data-mode="community_search" data-prompt-key="genai.prompt_find_automation" data-i18n="genai.chip_find_automation" data-prompt="Find a community automation for ">Regel suchen</button>
                     </div>
 
                     <div class="card ai-chat-card" data-tab="assistant">
@@ -602,6 +602,7 @@
                                             <option value="anthropic">Anthropic</option>
                                             <option value="gemini">Google Gemini</option>
                                             <option value="openai_compatible">OpenAI-compatible</option>
+                                            <option value="minimax">MiniMax</option>
                                         </select>
                                         <label class="md-label" for="genAiProvider" data-i18n="genai.provider">Anbieter</label>
                                     </div>
@@ -631,6 +632,7 @@
                                     </div>
                                     <span class="md-supporting" id="genAiKeyHint" data-i18n="genai.key_keep">Leer lassen, dann bleibt der gespeicherte Schlüssel.</span>
                                     <span class="md-supporting" id="genAiZiel" style="display:block;font-weight:600;"></span>
+                                    <span class="md-supporting" id="genAiMinimaxHinweis" data-i18n="genai.minimax_hinweis" style="display:block;" hidden>Deine Fragen und Fahrzeugdaten gehen dafür an MiniMax (China). Standard ist aus.</span>
                                 </div>
                                 <div class="md-field">
                                     <div class="md-field-box">
@@ -726,7 +728,7 @@
                 if (!el) return;
                 var p = (document.getElementById('genAiProvider') || {}).value || 'openai';
                 var h = host((document.getElementById('genAiBaseUrl') || {}).value);
-                var name = { openai: 'OpenAI', anthropic: 'Anthropic', gemini: 'Google Gemini' }[p] || '';
+                var name = { openai: 'OpenAI', anthropic: 'Anthropic', gemini: 'Google Gemini', minimax: 'MiniMax' }[p] || '';
                 var dienst = name ? (h ? name + ' (' + h + ')' : name) : (h || '?');
                 el.textContent = T('genai.ziel', { dienst: dienst }, 'Deine Anfragen gehen an {dienst}.');
             }

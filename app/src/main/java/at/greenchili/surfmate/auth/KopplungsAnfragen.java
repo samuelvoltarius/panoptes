@@ -56,6 +56,11 @@ public final class KopplungsAnfragen {
         default void zusatzRechte(String kid, boolean aufsperren, boolean wallbox) {
             if (aufsperren) aufsperrenErlauben(kid);
         }
+
+        /** 0.1.26.1: dazu {@code update} = Recht „update“ (am Display bzw. mit Login erlaubt). */
+        default void zusatzRechte(String kid, boolean aufsperren, boolean wallbox, boolean update) {
+            zusatzRechte(kid, aufsperren, wallbox);
+        }
     }
 
     static final class Anfrage {
@@ -66,6 +71,8 @@ public final class KopplungsAnfragen {
         boolean aufsperren;
         /** 0.1.25: beim Erlauben zusätzlich „wallbox“ gewählt (nur Handy). */
         boolean wallbox;
+        /** 0.1.26.1: beim Erlauben zusätzlich „update“ (am Display bzw. mit Login; Telegram nicht). */
+        boolean update;
         final long angelegt;
         Status status = Status.WARTET;
         long entschieden;
@@ -157,6 +164,12 @@ public final class KopplungsAnfragen {
 
     /** 0.1.25: zusätzlich {@code wallbox} = Recht „wallbox“ gleich beim Erlauben (nur Handy). */
     public Entscheid entscheiden(String ref, boolean erlauben, boolean aufsperren, boolean wallbox, long now) {
+        return entscheiden(ref, erlauben, aufsperren, wallbox, false, now);
+    }
+
+    /** 0.1.26.1: zusätzlich {@code update} = Recht „update“ gleich beim Erlauben (nur Handy). */
+    public Entscheid entscheiden(String ref, boolean erlauben, boolean aufsperren, boolean wallbox, boolean update,
+                                 long now) {
         synchronized (this) {
             aufraeumen(now);
             Anfrage a = null;
@@ -167,6 +180,7 @@ public final class KopplungsAnfragen {
             a.status = erlauben ? Status.ERLAUBT : Status.ABGELEHNT;
             a.aufsperren = erlauben && aufsperren && Kopplungen.ART_HANDY.equals(a.art);
             a.wallbox = erlauben && wallbox && Kopplungen.ART_HANDY.equals(a.art);
+            a.update = erlauben && update && Kopplungen.ART_HANDY.equals(a.art);
             a.entschieden = now;
         }
         Beobachter b = beobachter;
@@ -191,8 +205,8 @@ public final class KopplungsAnfragen {
                 return new Abholung(Status.ABGELEHNT);
             }
             a.status = Status.ABGEHOLT;
-            if (a.aufsperren || a.wallbox) {
-                try { ausgeber.zusatzRechte(k[0], a.aufsperren, a.wallbox); } catch (Throwable ignored) { }
+            if (a.aufsperren || a.wallbox || a.update) {
+                try { ausgeber.zusatzRechte(k[0], a.aufsperren, a.wallbox, a.update); } catch (Throwable ignored) { }
             }
             r.kid = k[0];
             r.jwt = k[1];
@@ -272,9 +286,14 @@ public final class KopplungsAnfragen {
                             zusatzRechte(kid, true, false);
                         }
                         public void zusatzRechte(String kid, boolean aufsperren, boolean wallbox) {
-                            java.util.List<String> r = new java.util.ArrayList<>(Kopplungen.HANDY_STANDARD);
-                            if (aufsperren) r.add(Kopplungen.RECHT_AUFSPERREN);
-                            if (wallbox) r.add(Kopplungen.RECHT_WALLBOX);
+                            zusatzRechte(kid, aufsperren, wallbox, false);
+                        }
+                        public void zusatzRechte(String kid, boolean aufsperren, boolean wallbox, boolean update) {
+                            // vom eben angelegten Stand aus (erste Handy-Kopplung hat „update“ schon)
+                            java.util.List<String> r = new java.util.ArrayList<>(Kopplungen.get().rechte(kid));
+                            if (aufsperren && !r.contains(Kopplungen.RECHT_AUFSPERREN)) r.add(Kopplungen.RECHT_AUFSPERREN);
+                            if (wallbox && !r.contains(Kopplungen.RECHT_WALLBOX)) r.add(Kopplungen.RECHT_WALLBOX);
+                            if (update && !r.contains(Kopplungen.RECHT_UPDATE)) r.add(Kopplungen.RECHT_UPDATE);
                             Kopplungen.get().rechteSetzen(kid, r);
                         }
                     });

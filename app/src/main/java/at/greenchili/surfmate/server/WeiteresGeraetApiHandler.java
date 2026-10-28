@@ -40,7 +40,7 @@ public final class WeiteresGeraetApiHandler {
             if (!brueckeBereit()) return null;
             at.greenchili.surfmate.bruecke.Bruecke b = at.greenchili.surfmate.bruecke.Bruecke.get();
             String einmal = b.einmalAnlegen(jetzt + at.greenchili.surfmate.auth.PairingCodes.TTL_MS);
-            String code = at.greenchili.surfmate.auth.PairingCodes.create(jetzt);
+            String code = at.greenchili.surfmate.auth.PairingCodes.create(jetzt, true);   // 0.1.26.1: ohne Recht „update“
             JSONObject st = BrueckeApiHandler.status(b);
             // ohne Adresse (u): das neue Handy kommt über die Brücke; den Direktweg lernt es nach der Kopplung
             return KopplungsQr.url(st.optString("qrBasis", ""),
