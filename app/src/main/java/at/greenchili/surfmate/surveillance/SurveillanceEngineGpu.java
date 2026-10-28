@@ -121,6 +121,15 @@ public class SurveillanceEngineGpu {
     // that lowers approachTriggerMs below this still wins. 0 disables it.
     private static final long CLOSE_CONFIRMED_TRIGGER_MS = 1000;
 
+    // 0.1.25 „Person kommt zum Auto“ (Koordination, WAECHTER_1849_ANALYSE §5a): Annäherung, NEAR und mindestens ein
+    // YOLO-PERSON-Treffer (≥ confThr 0,35) in DIESER Sequenz → 0,5 s statt 1,0 s. Am 28.10. 18:49 lag der erste
+    // Personentreffer 1,1 s vor dem Türöffnen; mit 1,0 s löste der Wächter erst mit der Tür aus. Gemessen am Auto
+    // (5,5 h, 111 Episoden): keine einzige nicht ausgelöste Episode hatte einen Personentreffer – der Weg macht
+    // Ereignisse mit Person nur früher, nicht häufiger. Strenger als CLOSE_CONFIRMED: PERSON statt „irgendein Objekt“.
+    static final long PERSON_APPROACH_TRIGGER_MS = 500;
+    // Zuletzt geloggte Schwelle der laufenden Sequenz (Log-Ehrlichkeit: die echte Schwelle, nicht die Grundzeit).
+    private long loggedRequiredMs = -1;
+
     // Sequence latch: did proximity reach NEAR at any point during the current
     // motion sequence? Reset at sequence start (with peakThreatDuringSequence /
     // cachedHighIsTrusted), set each frame the best quadrant reads NEAR. Gates
@@ -636,6 +645,12 @@ public class SurveillanceEngineGpu {
     private long preRecordMs = 5000;    // 5 seconds before motion (default)
     private long postRecordMs = 10000;  // 10 seconds after motion (default)
     private long recordingStopTime = 0;  // When to stop recording (motion time + post-record)
+    // 0.1.25 Nachlauf bei ACC an (WAECHTER_1849_ANALYSE §3): ein LAUFENDES Ereignis darf seinen Nachlauf zu Ende
+    // schreiben, höchstens ACC_NACHLAUF_MAX_MS ab ACC an; neue Ereignisse gibt es dann keine mehr (Pipeline steht),
+    // danach schaltet der Wächter wie bisher ab. 18:49 endete die Aufnahme 0,5 s nach dem Auslösen statt 10 s.
+    static final long ACC_NACHLAUF_MAX_MS = 10_000L;
+    private volatile long accAnSeitMs = 0;
+    private volatile boolean accNachlaufGemeldet = false;
     private long lastRecordingStopTime = 0;  // When last recording stopped (for cooldown)
     // Monotonic twin of the above, for consumers that only measure an ELAPSED gap and
     // must not be fooled by a GPS/NTP wall-clock step (currently the salience min-gap).
@@ -2223,6 +2238,20 @@ public class SurveillanceEngineGpu {
         // auto-disable. This catches the case where enable() raced with ACC ON and the
         // disable path hasn't run yet.
         if (at.greenchili.surfmate.monitor.AccMonitor.isAccOn()) {
+            // 0.1.25: läuft gerade ein Ereignis, den Nachlauf (≤ 10 s ab ACC an) fertig schreiben; keine neuen
+            // Ereignisse – die Pipeline wird übersprungen. Danach wie bisher abschalten.
+            long rest = accNachlaufRestMs();
+            if (rest > 0) {
+                if (!accNachlaufGemeldet) {
+                    accNachlaufGemeldet = true;
+                    logger.info(String.format("ACC an während eines Ereignisses – Nachlauf noch %.1fs, dann Wächter aus", rest / 1000.0));
+                }
+                motionFramesInFlight.decrementAndGet();
+                if (downscaler != null) {
+                    downscaler.recycleBuffer(smallRgbFrame);
+                }
+                return;
+            }
             logger.warn("processFrame: ACC is ON but surveillance is active — auto-disabling");
             // Release the admission BEFORE the (blocking) disable so its
             // drain doesn't count this thread's own admission (audit R13-3).
@@ -3609,7 +3638,9 @@ public class SurveillanceEngineGpu {
                         && highThreatIsTrusted(bestQ, bestR);
                 long needed = (maxThreat >= MotionPipelineV2.THREAT_HIGH && startTrusted)
                         ? SUSTAINED_MOTION_BASE_MS : loiteringTimeMs;
-                logger.info(String.format("Motion started: %s camera, threat=%s, prox=%s, %s, need %.1fs sustained...",
+                loggedRequiredMs = -1;
+                // 0.1.25: „base“ statt „need“ – die echte Schwelle steht in „Motion threshold“ (Schnellwege 0,5–1,0 s)
+                logger.info(String.format("Motion started: %s camera, threat=%s, prox=%s, %s, base %.1fs sustained...",
                         bestQ >= 0 ? MotionPipelineV2.QUADRANT_NAMES[bestQ] : "?",
                         threatStr, prox.describe(), describeHighTrust(maxThreat, startTrusted, bestR),
                         needed / 1000.0));
@@ -3787,6 +3818,7 @@ public class SurveillanceEngineGpu {
             //   loitering time, so lighting artifacts / flags / shadows (which
             //   never yield a YOLO object) can't take the fast path.
             long requiredDuration;
+            boolean personPfadAktiv = false;   // 0.1.25: für den ehrlichen Log-Grund
             if (effectiveThreat >= MotionPipelineV2.THREAT_HIGH && cachedHighIsTrusted) {
                 requiredDuration = SUSTAINED_MOTION_BASE_MS;
             } else {
@@ -3814,6 +3846,13 @@ public class SurveillanceEngineGpu {
                         && peakNearDuringSequence
                         && CLOSE_CONFIRMED_TRIGGER_MS < requiredDuration) {
                     requiredDuration = CLOSE_CONFIRMED_TRIGGER_MS;
+                }
+                // 0.1.25 „Person kommt zum Auto“: Annäherung + NEAR + YOLO-PERSON in dieser Sequenz → 0,5 s.
+                if (personKommtZumAuto(firstMotionTime > 0, lastPersonConfirmationElapsedMs, firstMotionElapsedMs,
+                        peakNearDuringSequence, effectiveThreat >= MotionPipelineV2.THREAT_MEDIUM)
+                        && PERSON_APPROACH_TRIGGER_MS < requiredDuration) {
+                    requiredDuration = PERSON_APPROACH_TRIGGER_MS;
+                    personPfadAktiv = true;
                 }
                 // CLOSE-ZONE NEAR fast-path — the near-sibling of the confirmed
                 // bar above, for the safety-critical FN where YOLO never returns
@@ -3894,6 +3933,13 @@ public class SurveillanceEngineGpu {
                         && VIGILANCE_TRIGGER_MS < requiredDuration) {
                     requiredDuration = VIGILANCE_TRIGGER_MS;
                 }
+            }
+
+            // 0.1.25 Log-Ehrlichkeit: die WIRKLICHE Schwelle dieser Sequenz loggen, sobald sie sich ändert
+            if (firstMotionTime > 0 && requiredDuration != loggedRequiredMs) {
+                loggedRequiredMs = requiredDuration;
+                logger.info(String.format("Motion threshold: %.1fs sustained (%s)", requiredDuration / 1000.0,
+                        schwellenGrund(requiredDuration, loiteringTimeMs, personPfadAktiv)));
             }
 
             // --- Diagnostic: Log sustained motion progress ---
@@ -4004,7 +4050,8 @@ public class SurveillanceEngineGpu {
                     // firstMotionTime, OR a live in-zone person track (which is
                     // itself the product of a prior real YOLO person detection;
                     // see sequenceConfirmed / track-anchored confirmation above).
-                    boolean aiRecentlyConfirmed = sequenceConfirmed;
+                    // 0.1.25: ein YOLO-PERSON-Treffer dieser Sequenz (Person kommt zum Auto) ist selbst die Bestätigung
+                    boolean aiRecentlyConfirmed = sequenceConfirmed || personPfadAktiv;
                     // FIX: aiAvailable must also reflect the user-side gate
                     // (classFilter empty OR aiEnabled false). Previously this
                     // only tracked the daemon-classpath state, so a user who
@@ -10833,6 +10880,8 @@ public class SurveillanceEngineGpu {
         if (recorder == null || !recording) {
             return;
         }
+        // 0.1.25: Zeitleisten-Dauer = echte Videolänge (nicht die spätere Schreibzeit)
+        try { if (timelineCollector != null) timelineCollector.markiereAufnahmeEnde(); } catch (Throwable ignored) {}
         
         // SOTA: Update detection baseline from the last YOLO detections of this event.
         // This is the event-driven baseline update — zero extra inferences.
@@ -11695,6 +11744,23 @@ public class SurveillanceEngineGpu {
     /**
      * Enables surveillance (starts monitoring).
      */
+    /**
+     * 0.1.25: Restzeit des Nachlaufs eines laufenden Ereignisses ab ACC an (0 = keins bzw. abgelaufen). Der erste
+     * Aufruf nach ACC an merkt sich den Zeitpunkt; {@link #disable()} setzt ihn zurück.
+     */
+    public long accNachlaufRestMs() {
+        long now = System.currentTimeMillis();
+        if (accAnSeitMs == 0) accAnSeitMs = now;
+        return nachlaufRestMs(recording, recordingStopTime, accAnSeitMs, now);
+    }
+
+    /** Rein: Ende = früher von geplantem Aufnahme-Ende und ACC an + 10 s. */
+    static long nachlaufRestMs(boolean aufnahmeLaeuft, long geplantesEnde, long accAnSeit, long jetzt) {
+        if (!aufnahmeLaeuft || geplantesEnde <= 0 || accAnSeit <= 0) return 0;
+        long ende = Math.min(geplantesEnde, accAnSeit + ACC_NACHLAUF_MAX_MS);
+        return Math.max(0, ende - jetzt);
+    }
+
     public void enable() {
         // Abschreckungs-Anzeige: „Kamera nimmt auf“ nur bei echter Aufnahme (Wahrheitsregel).
         ScreenDeterrent.setRecordingProbe(this::isRecording);
@@ -12008,6 +12074,8 @@ public class SurveillanceEngineGpu {
      * Disables surveillance (stops monitoring).
      */
     public void disable() {
+        accAnSeitMs = 0;              // 0.1.25 Nachlauf bei ACC an: nächste Sitzung beginnt frisch
+        accNachlaufGemeldet = false;
         // ONE SERIALIZED TRANSITION (audit R13-2 / ExtE-3) — see enable().
         // The R11-3 epoch guards inside remain as belt-and-braces; under the
         // monitor they can only fire for a transition that completed
@@ -12747,6 +12815,25 @@ public class SurveillanceEngineGpu {
         }
     }
     
+    /**
+     * 0.1.25 „Person kommt zum Auto“: in dieser Sequenz hat YOLO eine PERSON bestätigt (nach dem Sequenzbeginn),
+     * die Nähe erreichte NEAR und es ist mindestens eine Annäherung (MEDIUM). Rein, testbar.
+     */
+    static boolean personKommtZumAuto(boolean sequenzLaeuft, long letztePersonElapsedMs, long sequenzBeginnElapsedMs,
+                                      boolean nahErreicht, boolean annaeherung) {
+        return PERSON_APPROACH_TRIGGER_MS > 0 && sequenzLaeuft && letztePersonElapsedMs > 0
+                && letztePersonElapsedMs >= sequenzBeginnElapsedMs && nahErreicht && annaeherung;
+    }
+
+    /** Lesbarer Grund der Schwelle für das Log (0.1.25 Log-Ehrlichkeit). */
+    static String schwellenGrund(long required, long loiterMs, boolean personPfad) {
+        if (personPfad && required == PERSON_APPROACH_TRIGGER_MS) return "Person kommt zum Auto";
+        if (required == SUSTAINED_MOTION_BASE_MS) return "vertrauenswürdiges Verweilen";
+        if (required == CLOSE_CONFIRMED_TRIGGER_MS) return "nah + bestätigt / Nahzone / Auffälligkeit / Wachsamkeit";
+        if (required == loiterMs) return "Grundzeit (Verweilen)";
+        return "Annäherung bestätigt";
+    }
+
     /**
      * Apply a V2 environment preset (outdoor/garage/street).
      */

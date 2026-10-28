@@ -4660,6 +4660,26 @@ public class GpuSurveillancePipeline {
     public void onAccOn() {
         logger.info("ACC ON detected - stopping surveillance and finalizing recordings");
 
+        // 0.1.25 Nachlauf bei ACC an: ein laufendes Wächter-Ereignis schreibt seinen Nachlauf zu Ende (höchstens
+        // 10 s ab ACC an), erst dann wird gestoppt und abgeschaltet. Neue Ereignisse entstehen in der Zeit keine
+        // (SurveillanceEngineGpu.processFrame überspringt bei ACC an die Pipeline).
+        SurveillanceEngineGpu s = sentry;
+        if (s != null && currentMode == Mode.SURVEILLANCE) {
+            long rest = s.accNachlaufRestMs();
+            if (rest > 0) {
+                logger.info(String.format("ACC an: Wächter-Ereignis läuft – Nachlauf noch %.1fs abwarten", rest / 1000.0));
+                long bis = System.currentTimeMillis() + Math.min(rest, SurveillanceEngineGpu.ACC_NACHLAUF_MAX_MS);
+                while (System.currentTimeMillis() < bis && s.accNachlaufRestMs() > 0) {
+                    try {
+                        Thread.sleep(200);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            }
+        }
+
         try {
             // First, stop any active recording immediately (synchronous)
             if (recorder != null && recorder.isRecording()) {

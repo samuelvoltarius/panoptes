@@ -111,6 +111,19 @@ public class EventTimelineCollector {
 
     // State
     private long recordingStartTimeMs = 0;
+    // 0.1.25: wann die Aufnahme WIRKLICH endete (Wächter stoppt den Rekorder). Die Zeitleiste wird oft erst nach dem
+    // Finalisieren geschrieben (18:49: 11 s „durationMs“ bei 6 s Video) – ihre Dauer ist das Video, nicht die Schreibzeit.
+    private volatile long aufnahmeEndeMs = 0;
+
+    /** 0.1.25: Der Rekorder hat gestoppt – nur der erste Aufruf je Aufnahme zählt. */
+    public void markiereAufnahmeEnde() {
+        if (aufnahmeEndeMs == 0 && recordingStartTimeMs > 0) aufnahmeEndeMs = System.currentTimeMillis();
+    }
+
+    /** Rein: Dauer bis zum echten Aufnahme-Ende (falls bekannt), sonst bis jetzt. */
+    static long dauerMs(long start, long ende, long jetzt) {
+        return Math.max(0, (ende > 0 && ende <= jetzt ? ende : jetzt) - start);
+    }
     private volatile boolean collecting = false;
     // COLLECTION GENERATION (audit R11-4 / ExtD-5). Bumped by every
     // startCollecting* call. A stopAndWrite carrying an expected generation
@@ -207,6 +220,7 @@ public class EventTimelineCollector {
 
         // Timeline origin: the start of the video (preRecordMs before now)
         recordingStartTimeMs = System.currentTimeMillis() - preRecordMs;
+        aufnahmeEndeMs = 0;
 
         int flushed = 0;
         if (flushPreRing) {
@@ -348,7 +362,7 @@ public class EventTimelineCollector {
         System.arraycopy(spanCounts,      0, counts, 0, count);
         System.arraycopy(spanCameras,     0, cams,   0, count);
 
-        final long durationMs = System.currentTimeMillis() - recordingStartTimeMs;
+        final long durationMs = dauerMs(recordingStartTimeMs, aufnahmeEndeMs, System.currentTimeMillis());
         // Snapshot actors so the writer thread sees an immutable copy
         final java.util.List<Actor> actorsCopy =
                 (actors == null || actors.isEmpty())
