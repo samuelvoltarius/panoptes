@@ -962,7 +962,9 @@ public final class AppUpdateDienst {
             try {
                 at.greenchili.surfmate.byd.BydVehicleData d =
                         at.greenchili.surfmate.byd.BydDataCollector.getInstance().getData();
-                return d == null || Double.isNaN(d.speedKmh) ? Double.NaN : Math.abs(d.speedKmh);
+                // 0.1.28.1: alter Restwert der letzten Fahrt zählt bei ACC aus + P nicht als „fährt“ (byd.Stillstand)
+                double v = at.greenchili.surfmate.byd.Stillstand.tempoJetzt(d);
+                return Double.isNaN(v) ? Double.NaN : Math.abs(v);
             } catch (Throwable t) {
                 return Double.NaN;
             }

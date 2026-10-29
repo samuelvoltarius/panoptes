@@ -650,8 +650,14 @@ public final class Camping {
     /** Stand / Fahrt / unbekannt aus Gang und Tempo (fail-closed). */
     static CampingRegler.Fahrt fahrt(BydVehicleData v) {
         if (v == null) return CampingRegler.Fahrt.UNBEKANNT;
-        boolean tempoBekannt = !Double.isNaN(v.speedKmh) && v.speedKmh >= 0;
-        if (tempoBekannt && v.speedKmh > 2.0) return CampingRegler.Fahrt.FAEHRT;
+        return fahrt(v, at.greenchili.surfmate.byd.Stillstand.tempoJetzt(v));
+    }
+
+    /** Wie oben, mit dem Tempo nach byd.Stillstand (0.1.28.1: alter Restwert bei ACC aus + P zählt nicht). */
+    static CampingRegler.Fahrt fahrt(BydVehicleData v, double kmh) {
+        if (v == null) return CampingRegler.Fahrt.UNBEKANNT;
+        boolean tempoBekannt = !Double.isNaN(kmh) && kmh >= 0;
+        if (tempoBekannt && kmh > 2.0) return CampingRegler.Fahrt.FAEHRT;
         if (v.gearMode == BydVehicleData.UNAVAILABLE || v.gearMode <= 0) return CampingRegler.Fahrt.UNBEKANNT;
         if (v.gearMode != GearMonitor.GEAR_P) return CampingRegler.Fahrt.FAEHRT;
         return tempoBekannt ? CampingRegler.Fahrt.STEHT : CampingRegler.Fahrt.UNBEKANNT;

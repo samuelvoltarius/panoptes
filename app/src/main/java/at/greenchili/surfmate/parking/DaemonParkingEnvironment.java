@@ -423,8 +423,9 @@ public final class DaemonParkingEnvironment implements ParkingEnvironment {
         if (Boolean.TRUE.equals(p)) return true;
         try {
             at.greenchili.surfmate.byd.BydVehicleData d = BydDataCollector.getInstance().getData();
-            if (d != null && !Double.isNaN(d.speedKmh) && d.speedKmh >= 0) {
-                if (d.speedKmh > 2) return false;
+            double kmh = at.greenchili.surfmate.byd.Stillstand.tempoJetzt(d);   // 0.1.28.1: kein alter Restwert
+            if (d != null && !Double.isNaN(kmh) && kmh >= 0) {
+                if (kmh > 2) return false;
                 if (p == null) return true;   // Gang unbekannt, aber 0 km/h
             }
         } catch (Throwable ignored) { }

@@ -512,7 +512,8 @@ public final class LadenApiHandler {
         public boolean steht() {
             try {
                 at.greenchili.surfmate.byd.BydVehicleData v = at.greenchili.surfmate.byd.BydDataCollector.getInstance().getData();
-                return v != null && v.gearMode == 1 && v.speedKmh < 1;   // Gang P, keine Fahrt
+                // Gang P, keine Fahrt; 0.1.28.1: alter Tempo-Restwert bei ACC aus + P zählt nicht (byd.Stillstand)
+                return v != null && v.gearMode == 1 && at.greenchili.surfmate.byd.Stillstand.tempoJetzt(v) < 1;
             } catch (Throwable t) {
                 return false;
             }

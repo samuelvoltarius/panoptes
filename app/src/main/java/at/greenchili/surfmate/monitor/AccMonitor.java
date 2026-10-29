@@ -34,6 +34,8 @@ public class AccMonitor {
     // it stays unrecorded for the rest of the drive.
     private static volatile boolean accOnAuthoritative = false;
     private static volatile long accStateUpdatedAtElapsedMs;
+    /** 0.1.28.1: seit wann ACC aus ist (elapsedRealtime), 0 = an bzw. noch nie gelesen. Nur bei echter Aus-Flanke gesetzt. */
+    private static volatile long accAusSeitElapsedMs;
     private static final long DILINK5_SAFETY_STATE_MAX_AGE_MS = 15_000L;
 
     // DiLink 5 car_service power-mode dump source: ACC-OFF admission dampener.
@@ -130,6 +132,29 @@ public class AccMonitor {
         return accOn;
     }
 
+    /** Vor jedem Setzen von {@code accOn}: an → 0; aus und bisher an oder unbekannt → jetzt. */
+    private static void merkeAusFlanke(boolean an) {
+        accAusSeitElapsedMs = naechstesAusSeit(accAusSeitElapsedMs, an, android.os.SystemClock.elapsedRealtime());
+    }
+
+    static long naechstesAusSeit(long bisher, boolean an, long jetzt) {
+        if (an) return 0L;
+        return bisher > 0L ? bisher : Math.max(1L, jetzt);
+    }
+
+    /**
+     * 0.1.28.1: wie lange ACC schon <b>autoritativ</b> aus ist (ms), −1 = an oder unbekannt. Für „ein alter Tempowert
+     * zählt nicht mehr“ (byd.Stillstand).
+     */
+    public static long accAusSeitMs() {
+        return ausSeit(accOnAuthoritative, accOn, accAusSeitElapsedMs, android.os.SystemClock.elapsedRealtime());
+    }
+
+    static long ausSeit(boolean autoritativ, boolean an, long seit, long jetzt) {
+        if (!autoritativ || an || seit <= 0L || jetzt < seit) return -1L;
+        return jetzt - seit;
+    }
+
     /** Fail-safe guard used immediately before any full-screen deterrent render. */
     public static boolean isVehicleActive() {
         return accOn
@@ -204,6 +229,7 @@ public class AccMonitor {
      */
     public static void setAccState(boolean isAccOn) {
         synchronized (AccMonitor.class) {
+            merkeAusFlanke(isAccOn);
             accOn = isAccOn;
             inSentryMode = !isAccOn;
             // First IPC marks the state authoritative; stays authoritative for
@@ -520,6 +546,7 @@ public class AccMonitor {
             }
 
             boolean isAccOn = level >= POWER_LEVEL_ON;
+            merkeAusFlanke(isAccOn);
             accOn = isAccOn;
             inSentryMode = !isAccOn;
             // Clean power level (0-3, possibly settled from a retry) — this reading
@@ -863,6 +890,7 @@ public class AccMonitor {
 
     private static boolean publishDiLink5State(boolean isOn, String source) {
         synchronized (AccMonitor.class) {
+            merkeAusFlanke(isOn);
             accOn = isOn;
             inSentryMode = !isOn;
             lastProbeTrustworthy = true;
