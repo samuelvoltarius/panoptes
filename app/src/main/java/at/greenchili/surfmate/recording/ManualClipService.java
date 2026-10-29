@@ -134,8 +134,14 @@ public final class ManualClipService {
         } catch (Throwable t) {
             automationSeconds = 0;
         }
+        int ereignisSeconds;
+        try {
+            ereignisSeconds = EreignisClip.ringSekunden();
+        } catch (Throwable t) {
+            ereignisSeconds = 0;
+        }
         return Math.min(ManualClipWindow.MAX_SECONDS,
-                Math.max(keymapSeconds, automationSeconds));
+                Math.max(ereignisSeconds, Math.max(keymapSeconds, automationSeconds)));
     }
 
     /** Package-visible for validation tests and config-save propagation. */
@@ -320,43 +326,62 @@ public final class ManualClipService {
     }
 
     public RequestResult requestClip(int beforeSeconds, int afterSeconds) {
+        return requestClip(beforeSeconds, afterSeconds, null);
+    }
+
+    /** Ergebnis eines Ereignis-Clips (null = gescheitert). Läuft auf dem Export-Thread. */
+    public interface EreignisFertig {
+        void fertig(File datei);
+    }
+
+    /**
+     * Ereignis-Clip (0.1.27): wie ein Replay aus demselben Ring, aber als
+     * {@code ereignisse/ereignis_*.mp4} (geschützt vor dem Aufräumer, nie hochgeladen) und ohne
+     * die Replay-Anzeige; {@code fertig} meldet das Ergebnis.
+     */
+    public RequestResult requestEreignisClip(int beforeSeconds, int afterSeconds, EreignisFertig fertig) {
+        return requestClip(beforeSeconds, afterSeconds,
+                fertig != null ? fertig : datei -> { });
+    }
+
+    private RequestResult requestClip(int beforeSeconds, int afterSeconds, EreignisFertig ereignis) {
         final ManualClipWindow window;
         try {
             window = ManualClipWindow.create(beforeSeconds, afterSeconds);
         } catch (IllegalArgumentException e) {
-            return reject(Status.INVALID_WINDOW, e.getMessage(), 0);
+            return reject(ereignis, Status.INVALID_WINDOW, e.getMessage(), 0);
         }
 
         GpuSurveillancePipeline pipeline = CameraDaemon.getGpuPipeline();
         if (pipeline == null || !pipeline.isRunning()) {
-            return reject(Status.PIPELINE_NOT_READY, "Camera pipeline is not running", 0);
+            return reject(ereignis, Status.PIPELINE_NOT_READY, "Camera pipeline is not running", 0);
         }
         if (isProtectedRecordingMode(pipeline)) {
-            return reject(Status.BUSY, "Surveillance or proximity recording owns the camera", 0);
+            return reject(ereignis, Status.BUSY, "Surveillance or proximity recording owns the camera", 0);
         }
 
         HardwareEventRecorderGpu encoder = currentEncoder();
         if (!isEncoderReady(encoder)) {
-            return reject(Status.PIPELINE_NOT_READY, "Encoder history is not available", 0);
+            return reject(ereignis, Status.PIPELINE_NOT_READY, "Encoder history is not available", 0);
         }
         if (!encoder.canRetainManualClip(window.getTotalSeconds())) {
             // The shared history arena is regrown at the next encoder (re)init
             // (pipeline restart on an ACC cycle, or a camera-daemon restart) —
             // see HardwareEventRecorderGpu.regrowSharedRingLocked. Until then the
             // ring physically cannot hold before+after at the current bitrate.
-            return reject(Status.RESTART_REQUIRED,
+            return reject(ereignis, Status.RESTART_REQUIRED,
                     "Camera history buffer is smaller than this replay window; "
                             + "it is resized at the next camera restart "
                             + "(ACC cycle or camera-daemon restart)", 0);
         }
         if (encoder.isPreRecordFlushInProgress()) {
-            return reject(Status.BUSY, "Another pre-record export is in progress", 0);
+            return reject(ereignis, Status.BUSY, "Another pre-record export is in progress", 0);
         }
 
         long triggerPtsUs = encoder.getLatestPreRecordPtsUs();
         long oldestPtsUs = encoder.getOldestPreRecordPtsUs();
         if (triggerPtsUs == Long.MIN_VALUE || oldestPtsUs == Long.MIN_VALUE) {
-            return reject(Status.NO_HISTORY, "No encoded history is available yet", 0);
+            return reject(ereignis, Status.NO_HISTORY, "No encoded history is available yet", 0);
         }
         int availableBefore = (int) Math.max(0L,
                 (triggerPtsUs - oldestPtsUs) / 1_000_000L);
@@ -379,11 +404,11 @@ public final class ManualClipService {
         }
         long endPtsUs = triggerPtsUs + window.getAfterSeconds() * 1_000_000L;
         if (endPtsUs - startPtsUs < MIN_EXPORT_SPAN_US) {
-            return reject(Status.NO_HISTORY,
+            return reject(ereignis, Status.NO_HISTORY,
                     "No encoded history is available yet", availableBefore);
         }
         if (!requestInFlight.compareAndSet(false, true)) {
-            return reject(Status.BUSY, "An instant replay request is already pending", availableBefore);
+            return reject(ereignis, Status.BUSY, "An instant replay request is already pending", availableBefore);
         }
 
         // Reserve at trigger time, before collecting post-roll. Otherwise an
@@ -391,7 +416,7 @@ public final class ManualClipService {
         // already-accepted manual replay would be lost.
         if (!encoder.tryReserveManualClip()) {
             requestInFlight.set(false);
-            return reject(Status.BUSY, "Another pre-record export is in progress", availableBefore);
+            return reject(ereignis, Status.BUSY, "Another pre-record export is in progress", availableBefore);
         }
 
         // Ring eviction between the availability snapshot above and the
@@ -405,7 +430,7 @@ public final class ManualClipService {
             if (endPtsUs - startPtsUs < MIN_EXPORT_SPAN_US) {
                 encoder.releaseManualClipReservation();
                 requestInFlight.set(false);
-                return reject(Status.NO_HISTORY,
+                return reject(ereignis, Status.NO_HISTORY,
                         "No encoded history is available yet", availableBefore);
             }
         }
@@ -418,17 +443,19 @@ public final class ManualClipService {
         // overwrite that terminal state and pin /status + the overlay on
         // "recording" forever (no further transition comes once
         // requestInFlight has already dropped).
-        publishState(STATE_RECORDING, truncated ? "truncated:" + availableBefore : null);
+        if (ereignis == null) {
+            publishState(STATE_RECORDING, truncated ? "truncated:" + availableBefore : null);
+        }
         try {
             exportExecutor.execute(() -> exportWhenReady(
-                    encoder, window, exportStartPtsUs, endPtsUs, startTruncated));
+                    encoder, window, exportStartPtsUs, endPtsUs, startTruncated, ereignis));
         } catch (RuntimeException e) {
             encoder.releaseManualClipReservation();
             requestInFlight.set(false);
             logger.warn("Could not queue instant replay worker: " + e.getMessage());
             // Direct FAILED publish — publishRejection would suppress BUSY
             // here because the state was just set to RECORDING above.
-            publishState(STATE_FAILED, "WORKER_QUEUE");
+            if (ereignis == null) publishState(STATE_FAILED, "WORKER_QUEUE");
             return result(Status.BUSY, "Instant replay worker is unavailable", availableBefore);
         }
 
@@ -448,15 +475,26 @@ public final class ManualClipService {
         return result(status, message, availableBefore);
     }
 
+    private RequestResult reject(EreignisFertig ereignis, Status status, String message,
+                                 int availableBefore) {
+        if (ereignis != null) {
+            logger.info("Ereignis-Clip abgelehnt: " + status + " – " + message);
+            return result(status, message, availableBefore);
+        }
+        return reject(status, message, availableBefore);
+    }
+
     private void exportWhenReady(HardwareEventRecorderGpu requestedEncoder,
                                  ManualClipWindow window,
                                  long startPtsUs,
                                  long endPtsUs,
-                                 boolean startTruncated) {
+                                 boolean startTruncated,
+                                 EreignisFertig ereignis) {
+        File gesichert = null;
         try {
             if (!awaitPostRoll(requestedEncoder, endPtsUs, window.getAfterSeconds())) {
                 logger.warn("Instant replay cancelled: encoder changed or post-roll did not arrive");
-                publishState(STATE_FAILED, "POST_ROLL");
+                fehlgeschlagen(ereignis, "POST_ROLL");
                 return;
             }
 
@@ -464,13 +502,13 @@ public final class ManualClipService {
             if (pipeline == null || !pipeline.isRunning()
                     || currentEncoder() != requestedEncoder) {
                 logger.warn("Instant replay cancelled: camera ownership changed while pending");
-                publishState(STATE_FAILED, "OWNERSHIP");
+                fehlgeschlagen(ereignis, "OWNERSHIP");
                 return;
             }
 
             AtomicReference<File> outputRef = new AtomicReference<>();
             boolean exported = requestedEncoder.exportManualClip(() -> {
-                File output = prepareOutputFile();
+                File output = ereignis != null ? prepareEreignisFile() : prepareOutputFile();
                 outputRef.set(output);
                 return output;
             }, startPtsUs, endPtsUs, startTruncated);
@@ -482,11 +520,11 @@ public final class ManualClipService {
                 logger.warn(output == null
                         ? "Instant replay cancelled before or during output resolution"
                         : "Instant replay export failed for " + output.getName());
-                publishState(STATE_FAILED, "EXPORT");
+                fehlgeschlagen(ereignis, "EXPORT");
                 return;
             }
 
-            try {
+            if (ereignis == null) try {
                 StorageManager.getInstance().onFileSaved(output);
             } catch (Throwable t) {
                 logger.warn("Instant replay storage accounting failed: " + t.getMessage());
@@ -497,14 +535,27 @@ public final class ManualClipService {
                 logger.warn("Instant replay index update failed: " + t.getMessage());
             }
             logger.info("Instant replay saved: " + output.getAbsolutePath());
-            publishState(STATE_SAVED, output.getName());
+            if (ereignis == null) publishState(STATE_SAVED, output.getName());
+            gesichert = output;
         } catch (Throwable t) {
             logger.warn("Instant replay worker failed: " + t.getMessage());
-            publishState(STATE_FAILED, "WORKER");
+            fehlgeschlagen(ereignis, "WORKER");
         } finally {
             requestedEncoder.releaseManualClipReservation();
             requestInFlight.set(false);
+            if (ereignis != null) {
+                try {
+                    ereignis.fertig(gesichert);
+                } catch (Throwable t) {
+                    logger.warn("Ereignis-Clip Rückmeldung fehlgeschlagen: " + t.getMessage());
+                }
+            }
         }
+    }
+
+    private void fehlgeschlagen(EreignisFertig ereignis, String detail) {
+        if (ereignis == null) publishState(STATE_FAILED, detail);
+        else logger.warn("Ereignis-Clip fehlgeschlagen: " + detail);
     }
 
     private boolean awaitPostRoll(HardwareEventRecorderGpu encoder,
@@ -585,6 +636,37 @@ public final class ManualClipService {
             }
         } catch (Throwable t) {
             logger.warn("Instant replay output preparation failed: " + t.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Ziel für einen Ereignis-Clip: Unterordner {@code ereignisse/} im Aufnahmen-Ordner (Stick, wenn
+     * vorhanden). Der Größen-Aufräumer liest nur die oberste Ebene – der Clip wird nicht überschrieben.
+     */
+    private static File prepareEreignisFile() {
+        try {
+            StorageManager storage = StorageManager.getInstance();
+            storage.ensureStorageReady(false);
+            File base = storage.resolveTargetWithEnospcFallback(
+                    storage.getRecordingsDir(), OUTPUT_RESERVE_BYTES, false);
+            File dir = EreignisClip.ordner(base);
+            if (dir == null) return null;
+            if (!dir.exists() && !dir.mkdirs() && !dir.exists()) return null;
+            if (!storage.ensureRecordingsSpaceForRecorder(OUTPUT_RESERVE_BYTES, base)) return null;
+
+            String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
+                    .format(new Date());
+            for (int suffix = 0; suffix < 1_000; suffix++) {
+                String name = EreignisClip.PRAEFIX + timestamp
+                        + (suffix == 0 ? "" : "_" + suffix) + ".mp4";
+                File candidate = new File(dir, name);
+                if (!candidate.exists() && !new File(candidate.getAbsolutePath() + ".tmp").exists()) {
+                    return candidate;
+                }
+            }
+        } catch (Throwable t) {
+            logger.warn("Ereignis-Clip: Ziel nicht vorbereitet: " + t.getMessage());
         }
         return null;
     }

@@ -19,7 +19,8 @@ data class RecordingPresentation(
         MOTION,
         DASHCAM,
         FORWARD_CAMERA,
-        INSTANT_REPLAY
+        INSTANT_REPLAY,
+        EVENT_CLIP
     }
 
     enum class Distance { VERY_CLOSE, CLOSE, MID, FAR }
@@ -51,6 +52,8 @@ object RecordingPresentationResolver {
                 RecordingPresentation.Headline.FORWARD_CAMERA
             recording.type == RecordingFile.RecordingType.REPLAY ->
                 RecordingPresentation.Headline.INSTANT_REPLAY
+            recording.type == RecordingFile.RecordingType.EREIGNIS ->
+                RecordingPresentation.Headline.EVENT_CLIP
             else -> RecordingPresentation.Headline.DASHCAM
         }
 

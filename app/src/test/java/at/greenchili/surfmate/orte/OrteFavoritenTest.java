@@ -81,7 +81,7 @@ public class OrteFavoritenTest {
         // Web: Oma ist kein Favorit mehr, ein neuer Ort „Werkstatt“ wird Favorit
         JSONObject oma = ort(d.abgleichen(1100), "Oma");
         d.aendern(oma.getString("id"), new JSONObject().put("eigenschaften", new JSONObject().put("favorit", false)), 1200);
-        d.anlegen(new JSONObject().put("name", "Werkstatt").put("lat", 47.5).put("lon", 13.5).put("r", 50)
+        d.anlegen(new JSONObject().put("name", "Werkstatt").put("lat", 48.0).put("lon", 14.735).put("r", 50)
                 .put("eigenschaften", new JSONObject().put("favorit", true)), 1300);
         // App meldet ihre unveränderte (alte) Liste mit der alten Version
         JSONObject r = d.favoritenAbgleichen(app, v, 2000);

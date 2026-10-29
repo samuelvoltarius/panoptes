@@ -49,7 +49,7 @@ public class GewohnheitenKarteTest {
         public boolean loesche(String id) { return m.remove(id) != null; }
         public JSONArray orte() {
             try {
-                return new JSONArray().put(new JSONObject().put("id", "h").put("name", "Daheim").put("lat", 47.8).put("lon", 13.0)
+                return new JSONArray().put(new JSONObject().put("id", "h").put("name", "Daheim").put("lat", 48.3).put("lon", 14.235)
                         .put("r", 50).put("eigenschaften", new JSONObject().put("zuhause", true)));
             } catch (Exception e) {
                 throw new RuntimeException(e);

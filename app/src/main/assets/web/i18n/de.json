@@ -2028,7 +2028,8 @@
     "dash_used": "-- belegt",
     "dash_limit": "-- Grenze",
     "quality_rejected": "Nichts übernommen. Diese Werte wurden abgelehnt: {fields}",
-    "quality_partial": "{applied} – aber diese Werte blieben wie vorher: {fields}"
+    "quality_partial": "{applied} – aber diese Werte blieben wie vorher: {fields}",
+    "dauer_hinweis": "Hinweis: Dauernd filmen ist in Deutschland, Österreich und der Schweiz rechtlich heikel. Empfohlen: Aufnahme auf „Aus“ lassen und in den Wächter-Einstellungen „Ereignisse automatisch sichern“ einschalten. Dann sichert Panoptes nur bei einer Vollbremsung oder einem Stoß."
   },
   "events": {
     "select_date": "Tag wählen",
@@ -2136,7 +2137,10 @@
     "keep_released": "Wird mit dem nächsten Aufräumen gelöscht, wenn sie älter als {stunden} Stunden ist.",
     "keep_unsaved": "Konnte nicht gespeichert werden. Bitte noch einmal versuchen.",
     "keep_fail": "Das hat nicht geklappt.",
-    "keep_released_size": "Nicht mehr behalten. Sie wird nur gelöscht, wenn der Speicher knapp wird."
+    "keep_released_size": "Nicht mehr behalten. Sie wird nur gelöscht, wenn der Speicher knapp wird.",
+    "tab_ereignisse": "Ereignisse",
+    "title_ereignis": "{prefix} Ereignisse",
+    "badge_ereignis": "Ereignis"
   },
   "surveillance": {
     "tab_general": "Allgemein",
@@ -4499,16 +4503,16 @@
     "could_not_complete": "Das konnte ich nicht zu Ende bringen: {error}",
     "minimax_hinweis": "Deine Fragen und Fahrzeugdaten gehen dafür an MiniMax (China). Standard ist aus.",
     "prompt_vehicle_history": "Suche im Verlauf nach ",
-    "prompt_current_vehicle": "Erklär mir den jetzigen Zustand des Autos und sag, was auffällt.",
-    "prompt_latest_trip": "Erklär meine letzte Fahrt, mit Verbrauch und Besonderheiten.",
-    "prompt_more_battery": "Warum hat meine letzte Fahrt mehr Akku gebraucht als ähnliche Fahrten?",
-    "prompt_summarize_events": "Fass meine letzten Aufnahmen und Wächter-Ereignisse zusammen.",
-    "prompt_roadsense": "Fass die letzten Gefahrenstellen zusammen und sag, was sie bedeuten.",
-    "prompt_charging": "Schau dir mein Laden der letzten Zeit an und zeig nützliche Trends.",
-    "prompt_diagnostics": "Prüf den aktuellen Zustand des Autos und erklär mögliche Probleme.",
-    "prompt_analyze_logs": "Lies die letzten Warnungen und Fehler im Protokoll (ohne private Daten), nenn die stärksten Hinweise und sag, was noch unsicher ist.",
-    "prompt_diagnose_automation": "Warum ist meine Regel nicht gelaufen? Prüf Bedingungen, Protokoll, Zeitpunkt und sichere Lösungen.",
-    "prompt_control_vehicle": "Stell die Innentemperatur auf ",
+    "prompt_current_vehicle": "Wie geht es meinem Auto gerade? Ist alles in Ordnung?",
+    "prompt_latest_trip": "Wie war meine letzte Fahrt? Wie viel Strom hat sie gebraucht?",
+    "prompt_more_battery": "Warum hat meine letzte Fahrt mehr Strom gebraucht als sonst?",
+    "prompt_summarize_events": "Was ist zuletzt rund ums Auto passiert? Gab es Aufnahmen?",
+    "prompt_roadsense": "Welche Gefahrenstellen gibt es in meiner Nähe?",
+    "prompt_charging": "Wie lief das Laden in letzter Zeit? Was fällt auf?",
+    "prompt_diagnostics": "Prüf mein Auto und Panoptes: Gibt es ein Problem?",
+    "prompt_analyze_logs": "Lies das Protokoll: Gab es zuletzt Fehler, und was bedeuten sie?",
+    "prompt_diagnose_automation": "Warum ist meine Regel nicht gelaufen? Was kann ich tun?",
+    "prompt_control_vehicle": "Stell die Klimaanlage auf ",
     "prompt_create_automation": "Erstelle eine Regel, die ",
     "prompt_find_automation": "Suche eine Community-Regel für ",
     "err_provider_output_limit": "Der Assistent hat zu lange nachgedacht und keine Antwort mehr geschafft. Bitte die Frage kürzer stellen.",
@@ -4984,7 +4988,9 @@
     "fps_now": "Kamera gerade: {v} Bilder pro Sekunde ausgewertet",
     "fps_delivered": "(Kamera liefert {g})",
     "fps_throttle": "Panoptes bremst selbst, weil die Kamera die Rate nicht einstellen lässt.",
-    "trigger_unset": "Noch nicht gewählt, wann er aufnehmen soll – bis dahin nur bei Erschütterung."
+    "trigger_unset": "Noch nicht gewählt, wann er aufnehmen soll – bis dahin nur bei Erschütterung.",
+    "fahrt_title": "Beim Fahren",
+    "fahrt_lead": "Bei einer Vollbremsung oder einem Stoß sichert Panoptes einen kurzen Clip. Sonst wird nichts gespeichert."
   },
   "system": {
     "tailscale_title": "Fernzugang (Tailscale)",
@@ -6197,5 +6203,14 @@
     "behalten": "Behalten",
     "fehler": "Das hat nicht geklappt.",
     "fehler_ort_unbekannt": "Zuerst unter Orte das Zuhause festlegen."
+  },
+  "ereignis": {
+    "frage": "Ereignis von {zeit} gesichert – behalten?",
+    "behalten": "Behalten",
+    "nein": "Nein danke",
+    "erklaerung": "Ohne „Behalten“ wird der Clip nach {stunden} Stunden automatisch gelöscht.",
+    "erklaerung_ohne_frist": "Ohne „Behalten“ wird der Clip gelöscht, wenn der Platz für Ereignisse voll ist.",
+    "gespeichert": "Wird behalten.",
+    "fehler": "Das hat nicht geklappt. Bitte noch einmal versuchen."
   }
 }

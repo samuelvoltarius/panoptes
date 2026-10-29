@@ -2028,7 +2028,8 @@
     "dash_used": "-- utilisé",
     "dash_limit": "-- limite",
     "quality_rejected": "Aucune modification appliquée. Valeurs refusées : {fields}",
-    "quality_partial": "{applied} — mais anciennes valeurs conservées pour : {fields}"
+    "quality_partial": "{applied} — mais anciennes valeurs conservées pour : {fields}",
+    "dauer_hinweis": "Remarque : filmer en continu est juridiquement délicat en Allemagne, en Autriche et en Suisse. Conseillé : laisser l’enregistrement sur « Désactivé » et activer « Sauvegarder les événements automatiquement » dans les réglages du gardien. Panoptes ne sauvegarde alors qu’en cas de freinage d’urgence ou de choc."
   },
   "events": {
     "select_date": "Choisir une date",
@@ -2136,7 +2137,10 @@
     "keep_released": "Sera supprimé au prochain nettoyage s'il date de plus de {stunden} heures.",
     "keep_unsaved": "Enregistrement impossible. Veuillez réessayer.",
     "keep_fail": "Cela n'a pas fonctionné.",
-    "keep_released_size": "N'est plus conservé. Il ne sera supprimé que lorsque l'espace de stockage sera presque plein."
+    "keep_released_size": "N'est plus conservé. Il ne sera supprimé que lorsque l'espace de stockage sera presque plein.",
+    "tab_ereignisse": "Événements",
+    "title_ereignis": "{prefix} Événements",
+    "badge_ereignis": "Événement"
   },
   "surveillance": {
     "tab_general": "Général",
@@ -4499,16 +4503,16 @@
     "could_not_complete": "Je n'ai pas pu terminer : {error}",
     "minimax_hinweis": "Pour cela, vos questions et les données de la voiture sont envoyées à MiniMax (Chine). Désactivé par défaut.",
     "prompt_vehicle_history": "Chercher dans l’historique : ",
-    "prompt_current_vehicle": "Explique l’état actuel de la voiture et signale ce qui est inhabituel.",
-    "prompt_latest_trip": "Explique mon dernier trajet, avec la consommation et les moments marquants.",
-    "prompt_more_battery": "Pourquoi mon dernier trajet a-t-il consommé plus de batterie que des trajets comparables ?",
-    "prompt_summarize_events": "Résume mes derniers enregistrements et événements de surveillance.",
-    "prompt_roadsense": "Résume les derniers dangers signalés et ce qu’ils signifient.",
-    "prompt_charging": "Analyse mes dernières recharges et montre les tendances utiles.",
-    "prompt_diagnostics": "Vérifie l’état actuel de la voiture et explique les problèmes probables.",
-    "prompt_analyze_logs": "Analyse les derniers avertissements et erreurs du journal (sans données privées), indique les indices les plus solides et ce qui reste incertain.",
-    "prompt_diagnose_automation": "Pourquoi ma règle ne s’est-elle pas exécutée ? Vérifie les conditions, le journal, le moment et des solutions sûres.",
-    "prompt_control_vehicle": "Règle la température intérieure sur ",
+    "prompt_current_vehicle": "Comment va ma voiture en ce moment ? Tout va bien ?",
+    "prompt_latest_trip": "Comment s’est passé mon dernier trajet ? Combien d’énergie a-t-il consommé ?",
+    "prompt_more_battery": "Pourquoi mon dernier trajet a-t-il consommé plus que d’habitude ?",
+    "prompt_summarize_events": "Que s’est-il passé autour de ma voiture récemment ? Y a-t-il des enregistrements ?",
+    "prompt_roadsense": "Quels dangers sur la route y a-t-il près de moi ?",
+    "prompt_charging": "Comment se sont passées mes recharges récemment ? Quelque chose à savoir ?",
+    "prompt_diagnostics": "Vérifie ma voiture et Panoptes : y a-t-il un problème ?",
+    "prompt_analyze_logs": "Lis le journal : y a-t-il eu des erreurs récemment, et que veulent-elles dire ?",
+    "prompt_diagnose_automation": "Pourquoi ma règle ne s’est-elle pas exécutée ? Que puis-je faire ?",
+    "prompt_control_vehicle": "Règle la climatisation sur ",
     "prompt_create_automation": "Crée une règle qui ",
     "prompt_find_automation": "Cherche une règle de la communauté pour ",
     "err_provider_output_limit": "L’assistant a réfléchi trop longtemps et n’a pas pu répondre. Veuillez poser une question plus courte.",
@@ -4984,7 +4988,9 @@
     "fps_now": "Caméra en ce moment : {v} images par seconde analysées",
     "fps_delivered": "(la caméra en fournit {g})",
     "fps_throttle": "Panoptes ralentit lui-même, car la caméra ne permet pas de régler la cadence.",
-    "trigger_unset": "Pas encore choisi quand il doit enregistrer – d’ici là, uniquement en cas de choc."
+    "trigger_unset": "Pas encore choisi quand il doit enregistrer – d’ici là, uniquement en cas de choc.",
+    "fahrt_title": "En roulant",
+    "fahrt_lead": "En cas de freinage d’urgence ou de choc, Panoptes sauvegarde un court clip. Rien d’autre n’est enregistré."
   },
   "system": {
     "tailscale_title": "Accès distant (Tailscale)",
@@ -6197,5 +6203,14 @@
     "behalten": "Garder",
     "fehler": "Ça n’a pas marché.",
     "fehler_ort_unbekannt": "Définis d’abord ton domicile dans Lieux."
+  },
+  "ereignis": {
+    "frage": "Événement de {zeit} sauvegardé – le garder ?",
+    "behalten": "Garder",
+    "nein": "Non merci",
+    "erklaerung": "Sans « Garder », le clip est supprimé automatiquement après {stunden} heures.",
+    "erklaerung_ohne_frist": "Sans « Garder », le clip est supprimé quand l’espace pour les événements est plein.",
+    "gespeichert": "Sera gardé.",
+    "fehler": "Cela n’a pas marché. Veuillez réessayer."
   }
 }

@@ -26,6 +26,15 @@ public class HardwareEventRecorderGpuVideoUploadPolicyTest {
     }
 
     @Test
+    public void ereignisClipNeverUploadsAutomatically() {
+        // Ereignis-Clip 0.1.27: bleibt im Auto.
+        assertFalse(HardwareEventRecorderGpu.VideoUploadPolicy.AUTOMATIC
+                .shouldAutoUpload("ereignis_20261029_143200.mp4"));
+        assertFalse(HardwareEventRecorderGpu.VideoUploadPolicy.AUTOMATIC
+                .shouldAutoUpload("/storage/usb/Panoptes/recordings/ereignisse/ereignis_20261029_143200.mp4"));
+    }
+
+    @Test
     public void proximityClipKeepsHistoricalAutomaticUpload() {
         assertTrue(HardwareEventRecorderGpu.VideoUploadPolicy.AUTOMATIC
                 .shouldAutoUpload("proximity_20260812_153155.mp4"));

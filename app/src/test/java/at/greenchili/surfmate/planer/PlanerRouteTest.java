@@ -18,7 +18,7 @@ import java.util.Map;
 /** Koordination 0.1.9, Punkt 9: Route vom Planer anzeigen und nur per Tipp übernehmen (Vertrag §3/3a/3b). */
 public class PlanerRouteTest {
 
-    static final String PLAN = "{\"titel\":\"Salzburg → Wien\",\"ziel\":{\"lat\":48.2,\"lon\":16.37,\"name\":\"Wien\"},"
+    static final String PLAN = "{\"titel\":\"Linz → Wien\",\"ziel\":{\"lat\":48.2,\"lon\":16.37,\"name\":\"Wien\"},"
             + "\"km\":302.7,\"soc_ankunft\":18,\"stopps\":[{\"name\":\"Ionity Ansfelden\",\"lat\":48.2,\"lon\":14.3}],"
             + "\"erstellt\":\"2026-10-21T08:00:00Z\",\"schon_abgeholt\":false}";
 

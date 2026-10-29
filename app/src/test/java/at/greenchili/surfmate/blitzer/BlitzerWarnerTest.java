@@ -30,7 +30,7 @@ public class BlitzerWarnerTest {
 
     @Test
     public void austriaWarnsWithDistanceAndLimit() {
-        double lat = 47.80, lon = 13.04;   // Salzburg
+        double lat = 48.30, lon = 14.28;   // Linz
         BlitzerWarner w = new BlitzerWarner();
         BlitzerWarner.Warnung x = w.pruefe(T, lat, lon, NORD, 90, false,
                 Collections.singletonList(vorne("at", lat, lon, 80)));
@@ -50,7 +50,7 @@ public class BlitzerWarnerTest {
 
     @Test
     public void onlyAustrianCamerasCountInAustria() {
-        double lat = 47.80, lon = 13.04;
+        double lat = 48.30, lon = 14.28;
         assertNull("deutscher Datensatz zählt in AT ohne Test nicht", new BlitzerWarner().pruefe(T, lat, lon, NORD, 90, false,
                 Collections.singletonList(vorne("de", lat, lon, 50))));
     }
@@ -71,7 +71,7 @@ public class BlitzerWarnerTest {
 
     @Test
     public void courseFilterPlusMinus30Degrees() {
-        double lat = 47.80, lon = 13.04;
+        double lat = 48.30, lon = 14.28;
         List<BlitzerWarner.Blitzer> b = Collections.singletonList(vorne("at", lat, lon, 50));
         assertNotNull("25° daneben geht", new BlitzerWarner().pruefe(T, lat, lon, 25, 90, false, b));
         assertNotNull("335° geht", new BlitzerWarner().pruefe(T, lat, lon, 335, 90, false, b));
@@ -82,7 +82,7 @@ public class BlitzerWarnerTest {
 
     @Test
     public void quietLimitPerCameraSpeedAndRange() {
-        double lat = 47.80, lon = 13.04;
+        double lat = 48.30, lon = 14.28;
         List<BlitzerWarner.Blitzer> b = Collections.singletonList(vorne("at", lat, lon, 50));
         BlitzerWarner w = new BlitzerWarner();
         assertNotNull(w.pruefe(T, lat, lon, NORD, 90, false, b));
@@ -99,23 +99,23 @@ public class BlitzerWarnerTest {
 
     @Test
     public void borderPolygon() {
-        double[][] at = {{48.21, 16.37}, {47.80, 13.04}, {47.27, 11.39}, {47.07, 15.44}, {46.62, 14.31}, {48.31, 14.29},
+        double[][] at = {{48.21, 16.37}, {48.20, 15.62}, {47.27, 11.39}, {47.07, 15.44}, {46.62, 14.31}, {48.31, 14.29},
                 {47.50, 9.75}, {48.26, 13.04}, {48.457, 13.432}, {46.97, 10.19}, {47.58, 12.17}};
-        double[][] aus = {{48.14, 11.58}, {47.63, 13.00}, {47.72, 12.88}, {47.86, 12.12}, {48.57, 13.46}, {47.49, 11.09},
+        double[][] aus = {{48.14, 11.58}, {47.57, 10.70}, {47.71, 10.31}, {47.86, 12.12}, {48.57, 13.46}, {47.49, 11.09},
                 {48.15, 17.11}, {46.50, 11.35}, {46.05, 14.51}, {47.37, 8.54}, {47.14, 9.52}, {47.68, 16.59},
-                {47.84, 12.98}, {46.94, 10.36}, {48.27, 13.02}, {46.51, 13.58}, {46.55, 15.65}, {48.86, 16.05}};
+                {47.66, 9.48}, {46.94, 10.36}, {48.27, 13.02}, {46.51, 13.58}, {46.55, 15.65}, {48.86, 16.05}};
         for (double[] p : at) assertTrue(p[0] + "," + p[1], BlitzerWarner.inOesterreich(p[0], p[1]));
         for (double[] p : aus) assertFalse(p[0] + "," + p[1], BlitzerWarner.inOesterreich(p[0], p[1]));
     }
 
     @Test
     public void readsDataset() {
-        String json = "{\"land\":\"at\",\"stand\":\"2026-10-21\",\"quelle\":\"OSM\",\"punkte\":[[47.8,13.04,80],[47.9,13.1],[999,1,50],[47.7,13.0,-5]]}";
+        String json = "{\"land\":\"at\",\"stand\":\"2026-10-21\",\"quelle\":\"OSM\",\"punkte\":[[48.3,14.28,80],[48.4,14.33],[999,1,50],[48.2,14.2,-5]]}";
         List<BlitzerWarner.Blitzer> l = BlitzerDaten.lies(json, "at");
         assertEquals(3, l.size());
         assertEquals(80, l.get(0).maxspeed);
         assertEquals(0, l.get(1).maxspeed);
-        assertEquals("at:4780000:1304000", l.get(0).id);
+        assertEquals("at:4830000:1428000", l.get(0).id);
         assertNull("falsches Land", BlitzerDaten.lies(json, "de"));
         assertNull(BlitzerDaten.lies("kaputt", "at"));
     }

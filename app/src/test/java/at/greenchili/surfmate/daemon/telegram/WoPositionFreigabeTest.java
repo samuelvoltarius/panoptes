@@ -28,7 +28,7 @@ public class WoPositionFreigabeTest {
     private static JSONObject sitzung() throws Exception {
         return new JSONObject().put("startedMs", 1L).put("eventCount", 2)
                 .put("place", new JSONObject().put("short", "Hauptplatz 1"))
-                .put("gps", new JSONObject().put("quality", "FRESH").put("lat", 47.8).put("lng", 13.04));
+                .put("gps", new JSONObject().put("quality", "FRESH").put("lat", 48.3).put("lng", 14.275));
     }
 
     @Test
@@ -37,7 +37,7 @@ public class WoPositionFreigabeTest {
         at.greenchili.surfmate.server.WoFreigabeZugang.anwenden(r, false, null);
         String a = WhereCommandHandler.antwort(r, CTX);
         assertFalse(a, a.contains("Hauptplatz"));
-        assertFalse(a, a.contains("47.8"));
+        assertFalse(a, a.contains("48.3"));
         assertFalse(a, a.contains("osm_link"));
         assertTrue(a, a.contains("parking.where.counts|2|0"));
         assertTrue(a, a.endsWith("parking.where.position_off"));
@@ -58,10 +58,10 @@ public class WoPositionFreigabeTest {
         assertFalse(a, a.contains("position_off"));
 
         JSONObject ohneParken = new JSONObject().put("enabled", false);
-        at.greenchili.surfmate.server.WoFreigabeZugang.anwenden(ohneParken, true, new JSONObject().put("lat", 47.8).put("lon", 13.04));
+        at.greenchili.surfmate.server.WoFreigabeZugang.anwenden(ohneParken, true, new JSONObject().put("lat", 48.3).put("lon", 14.275));
         String b = WhereCommandHandler.antwort(ohneParken, CTX);
         assertTrue(b, b.startsWith("parking.where.now"));
-        assertTrue(b, b.contains("47.8"));
+        assertTrue(b, b.contains("48.3"));
     }
 
     @Test

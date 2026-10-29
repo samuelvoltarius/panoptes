@@ -31,6 +31,9 @@
     var OSM_TILES = 'https://tile.openstreetmap.de/{z}/{x}/{y}.png';
     var VENDOR = window.PANOPTES_VENDOR || '../shared/vendor/';
     var LIME = '#B5F23D';
+    // Startansicht ohne bekannte Position: Mitte Europas, grob (kein fester Ort).
+    var EUROPA_MITTE = [10.0, 50.0];
+    var EUROPA_ZOOM = 4;
 
     // Außenmaße in Metern (Herstellerangaben). Schlüssel = vehicle.modelId wie in
     // /api/models/selected. Unbekannte Modelle bekommen ein mittleres Auto.
@@ -88,7 +91,7 @@
             })
             .then(function () {
                 // Gemeinsames Kartenmodul (B1, Karten-Sitzung): Live-Belegung + Namensnennung.
-                return window.PanoptesKarte ? null : loadScript(VENDOR + 'panoptes-karte-1.1.0.js').catch(function () {});
+                return window.PanoptesKarte ? null : loadScript(VENDOR + 'panoptes-karte-1.1.1.js').catch(function () {});
             })
             .then(function () {
                 if (!window.maplibregl) throw new Error('maplibre missing');
@@ -249,7 +252,7 @@
     };
 
     // ---------------------------------------------------------------- Live-Belegung
-    // Gemeinsames Modul panoptes-karte 1.1.0 (Vertrag https://byd.serveone.at/tiles/lib/README.md,
+    // Gemeinsames Modul panoptes-karte 1.1.1 (Vertrag https://byd.serveone.at/tiles/lib/README.md,
     // gebündelte Kopie, sha256 per Unit-Test geprüft). Abfrage über die App-Weiterleitung
     // /api/navi/umkreis (der Planer hat kein CORS); Pflicht-Namensnennung (live_quellen) zeigt
     // das Modul unten links im Kartenfeld an.
@@ -339,7 +342,11 @@
             api._car = { lng: c.lng, lat: c.lat, heading: typeof c.heading === 'number' ? c.heading : (api._car ? api._car.heading : 0) };
             whenReady(function () {
                 drawCar();
-                if (first && opts.followCar !== false) api.map.jumpTo({ center: [api._car.lng, api._car.lat] });
+                if (first && opts.followCar !== false) {
+                    var ziel = { center: [api._car.lng, api._car.lat] };
+                    if (!opts.center) ziel.zoom = zielZoom();
+                    api.map.jumpTo(ziel);
+                }
             });
         };
         api.setAppearance = function (look) {
@@ -437,13 +444,16 @@
             });
         };
 
+        function zielZoom() { return typeof opts.zoom === 'number' ? opts.zoom : 14; }
+
         function build(style, source) {
             api.source = source;
             var map = new window.maplibregl.Map({
                 container: el,
                 style: style,
-                center: opts.center || [13.045, 47.80],
-                zoom: typeof opts.zoom === 'number' ? opts.zoom : 14,
+                // Ohne Mitte: grob Europa, bis die Position des eigenen Autos kommt (setCar springt dann hin).
+                center: opts.center || EUROPA_MITTE,
+                zoom: opts.center ? zielZoom() : EUROPA_ZOOM,
                 pitch: api.mode === '2d' ? 0 : pitch3d,
                 bearing: opts.bearing || 0,
                 maxPitch: 75,

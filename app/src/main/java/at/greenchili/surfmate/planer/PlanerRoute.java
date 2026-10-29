@@ -95,11 +95,26 @@ public final class PlanerRoute {
      * 0.1.25 Anklopfen über die Brücke („Ins Auto schicken“ im Planer): Zwischenspeicher verwerfen und meine-route sofort
      * lesen, damit das Angebot ohne Wartezeit da ist. Nur lesen – übernommen wird weiter nur auf Tipp am Auto.
      */
-    public void angeklopft(long now) {
+    public String angeklopft(long now) {
         synchronized (this) {
             cacheGueltig = false;
         }
-        status(now);
+        Object[] r = status(now);
+        int groesse;
+        synchronized (this) {
+            groesse = cachePlan == null ? 0 : cachePlan.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+        }
+        return kurz(r, groesse);
+    }
+
+    /** 0.1.27 Log-Zeile nach dem Anklopfen: nur vorhanden=ja/nein und die Größe, nie Ziel oder Koordinaten. */
+    public static String kurz(Object[] r, int groesse) {
+        JSONObject j = r != null && r.length > 1 && r[1] instanceof JSONObject ? (JSONObject) r[1] : null;
+        if (j == null || !j.optBoolean("vorhanden", false)) {
+            String g = j == null ? "" : j.optString("grund", "");
+            return g.matches("[a-z_]{1,32}") ? "vorhanden=nein, " + g : "vorhanden=nein";
+        }
+        return "vorhanden=ja, " + groesse + " B";
     }
 
     /** 0.1.25: nach „Route ins Auto schicken“ vom Handy die Karte sofort neu lesen (nicht erst nach 30 s). */

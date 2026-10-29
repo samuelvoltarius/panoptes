@@ -108,6 +108,10 @@ public final class GenAiIncidentPacks {
                     "Recording was not found.");
         }
         File video = ref.file();
+        if (video != null && at.greenchili.surfmate.recording.EreignisClip.istEreignisPfad(video.getPath())) {
+            // Ereignis-Clips (0.1.27) bleiben im Auto, auch kein KI-Paket.
+            throw new PackException(403, "ereignis_lokal", "Event clips stay in the car.");
+        }
         if (!RecordingsApiHandler.indexPathAllowed(video)) {
             throw new PackException(404, "recording_not_found",
                     "Recording was not found.");

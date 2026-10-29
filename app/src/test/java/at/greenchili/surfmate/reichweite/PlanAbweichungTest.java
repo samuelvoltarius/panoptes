@@ -22,7 +22,7 @@ public class PlanAbweichungTest {
 
     static JSONObject plan() throws Exception {
         return new JSONObject()
-                .put("geometrie", new JSONArray().put(new JSONArray().put(47.8).put(13.04))
+                .put("geometrie", new JSONArray().put(new JSONArray().put(48.3).put(14.275))
                         .put(new JSONArray().put(48.2).put(16.37)))
                 .put("soc_start", 90).put("soc_ankunft", 30)
                 .put("ziel", new JSONObject().put("name", "Wien").put("lat", 48.2).put("lon", 16.37))
@@ -44,13 +44,13 @@ public class PlanAbweichungTest {
 
     @Test
     public void anfrageNurPlanfelderPositionGerundet() throws Exception {
-        JSONObject b = PlanAbweichung.anfrage(plan(), 47.912345, 13.567891, 55.4, 10);
+        JSONObject b = PlanAbweichung.anfrage(plan(), 48.412345, 14.802891, 55.4, 10);
         assertNotNull(b);
         JSONObject p = b.getJSONObject("plan");
         assertTrue(p.has("geometrie") && p.has("stopps") && p.has("ziel") && p.has("soc_start"));
         assertFalse("nur Felder aus §3", p.has("titel") || p.has("erstellt"));
-        assertEquals(47.912, b.getJSONArray("position").getDouble(0), 1e-9);
-        assertEquals(13.568, b.getJSONArray("position").getDouble(1), 1e-9);
+        assertEquals(48.412, b.getJSONArray("position").getDouble(0), 1e-9);
+        assertEquals(14.803, b.getJSONArray("position").getDouble(1), 1e-9);
         assertEquals(55, b.getInt("soc"));
         assertEquals(10, b.getInt("reserve"));
         assertNull(PlanAbweichung.anfrage(new JSONObject(), 47, 13, 50, 10));
@@ -62,7 +62,7 @@ public class PlanAbweichungTest {
         // so wie live am 23.10. (Sbg→Wien, km 35 mit 55 % statt 61 %)
         JSONObject res = new JSONObject().put("ok", true).put("neu_planen", true).put("abweichung_pp", -6)
                 .put("gruende", new JSONArray().put("soc_unter_plan"))
-                .put("neu_plan_anfrage", new JSONObject().put("start", new JSONArray().put(47.9).put(13.6))
+                .put("neu_plan_anfrage", new JSONObject().put("start", new JSONArray().put(48.4).put(14.835))
                         .put("ziel", new JSONArray().put(48.2).put(16.37)).put("soc_start", 55)
                         .put("via", new JSONArray()).put("soc_reserve", 10).put("fremd", 1));
         PlanAbweichung.Befund b = PlanAbweichung.auswerten(res);

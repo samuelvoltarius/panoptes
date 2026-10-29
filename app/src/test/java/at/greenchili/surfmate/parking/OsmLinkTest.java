@@ -14,8 +14,8 @@ public class OsmLinkTest {
 
     @Test
     public void osmLinkMitMarkierung() {
-        assertEquals("https://www.openstreetmap.org/?mlat=47.800000&mlon=13.040000#map=18/47.800000/13.040000",
-                ParkingNotifier.osmUrl(47.8, 13.04));
+        assertEquals("https://www.openstreetmap.org/?mlat=48.300000&mlon=14.275000#map=18/48.300000/14.275000",
+                ParkingNotifier.osmUrl(48.3, 14.275));
     }
 
     @Test

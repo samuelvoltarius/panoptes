@@ -246,8 +246,8 @@ public class EinstellungenTest {
     public void geozoneAndWindowsAreValidated() throws Exception {
         Katalog.Kontext k = kontext(Laenderprofil.Land.ANDERES);
         Merker m = new Merker();
-        JSONArray zonen = new JSONArray().put(new JSONObject().put("name", "Garage").put("lat", 47.8).put("lon", 13.04).put("radiusM", 50));
-        JSONArray schlecht = new JSONArray().put(new JSONObject().put("lat", 47.8).put("lon", 13.04).put("radiusM", 5000));
+        JSONArray zonen = new JSONArray().put(new JSONObject().put("name", "Garage").put("lat", 48.3).put("lon", 14.275).put("radiusM", 50));
+        JSONArray schlecht = new JSONArray().put(new JSONObject().put("lat", 48.3).put("lon", 14.275).put("radiusM", 5000));
         JSONArray fenster = new JSONArray().put(new JSONObject().put("days", new JSONArray().put(1).put(7)).put("from", "22:00").put("to", "06:00"));
         Einstellungen.Ergebnis e = Einstellungen.aendern(Katalog.felder(k), new JSONObject(), k,
                 new JSONObject().put("werte", new JSONObject()
@@ -265,22 +265,22 @@ public class EinstellungenTest {
 
     @Test
     public void triggerModeEffectiveRules() {
-        JSONArray zone = new JSONArray().put(new JSONObject(java.util.Map.of("lat", 47.8, "lon", 13.04, "radiusM", 50)));
+        JSONArray zone = new JSONArray().put(new JSONObject(java.util.Map.of("lat", 48.3, "lon", 14.275, "radiusM", 50)));
         Laenderprofil.Land at = Laenderprofil.Land.ANDERES, ch = Laenderprofil.Land.SCHWEIZ, un = Laenderprofil.Land.UNBEKANNT;
         // Alt-Installation: wie heute, auch ohne GPS
         assertFalse(TriggerModus.kiErlaubt(null, at, null, 0, 0, false));   // nicht gewählt: keine KI
         assertFalse(TriggerModus.kiErlaubt(null, un, null, 0, 0, false));
         assertFalse(TriggerModus.kiErlaubt("aus", at, null, 0, 0, false));
         // (a)
-        assertFalse(TriggerModus.kiErlaubt("shock", at, zone, 47.8, 13.04, true));
+        assertFalse(TriggerModus.kiErlaubt("shock", at, zone, 48.3, 14.275, true));
         // (c) Zonengrenze: innen ja, 60 m daneben nein, ohne Fix nein
-        assertTrue(TriggerModus.kiErlaubt("ai_private", at, zone, 47.8003, 13.04, true));
-        assertFalse(TriggerModus.kiErlaubt("ai_private", at, zone, 47.80054, 13.04, true));
-        assertFalse(TriggerModus.kiErlaubt("ai_private", at, zone, 47.8, 13.04, false));
-        assertFalse(TriggerModus.kiErlaubt("ai_private", at, new JSONArray(), 47.8, 13.04, true));
+        assertTrue(TriggerModus.kiErlaubt("ai_private", at, zone, 48.3003, 14.275, true));
+        assertFalse(TriggerModus.kiErlaubt("ai_private", at, zone, 48.30054, 14.275, true));
+        assertFalse(TriggerModus.kiErlaubt("ai_private", at, zone, 48.3, 14.275, false));
+        assertFalse(TriggerModus.kiErlaubt("ai_private", at, new JSONArray(), 48.3, 14.275, true));
         // CH: (b) wirkungslos → (c) bzw. (a); gilt auch für die Alt-Installation
         assertFalse(TriggerModus.kiErlaubt("ai_everywhere", ch, null, 47.37, 8.54, true));
-        assertTrue(TriggerModus.kiErlaubt("ai_everywhere", ch, zone, 47.8, 13.04, true));
+        assertTrue(TriggerModus.kiErlaubt("ai_everywhere", ch, zone, 48.3, 14.275, true));
         assertEquals("shock", TriggerModus.wirksam(null, ch, false));
         assertEquals("ai_private", TriggerModus.wirksam("ai_everywhere", ch, true));
         // Land unbekannt: Alt-Installation bleibt (b), ausdrücklich gewähltes (b) streng wie (c)
@@ -302,7 +302,7 @@ public class EinstellungenTest {
         assertEquals(Laenderprofil.Land.SCHWEIZ, Laenderprofil.land(46.20, 6.14, true));    // Genf
         assertEquals(Laenderprofil.Land.SCHWEIZ, Laenderprofil.land(47.14, 9.52, true));    // Vaduz (FL)
         assertEquals(Laenderprofil.Land.SCHWEIZ, Laenderprofil.land(46.50, 9.84, true));    // St. Moritz
-        assertEquals(Laenderprofil.Land.ANDERES, Laenderprofil.land(47.80, 13.04, true));   // Salzburg
+        assertEquals(Laenderprofil.Land.ANDERES, Laenderprofil.land(48.30, 14.275, true));   // Linz
         assertEquals(Laenderprofil.Land.ANDERES, Laenderprofil.land(47.26, 11.39, true));   // Innsbruck
         assertEquals(Laenderprofil.Land.ANDERES, Laenderprofil.land(45.46, 9.19, true));    // Mailand
         assertEquals(Laenderprofil.Land.ANDERES, Laenderprofil.land(48.14, 11.58, true));   // München

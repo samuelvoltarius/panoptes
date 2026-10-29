@@ -1,4 +1,4 @@
-/*! panoptes-karte 1.1.0 – gemeinsames Kartenmodul für /ev/, EV-Cockpit und Panoptes
+/*! panoptes-karte 1.1.1 – gemeinsames Kartenmodul für /ev/, EV-Cockpit und Panoptes
  *  Vertrag: https://byd.serveone.at/tiles/lib/README.md  (Repo: deploy/server/tiles/lib/README.md)
  *  Diese Datei ist unveränderlich. Jede Änderung = neue Versionsnummer = neue Datei.
  *  Keine Abhängigkeiten. Browser: window.PanoptesKarte, Node/CommonJS: require(...).
@@ -9,7 +9,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '1.1.0';
+  var VERSION = '1.1.1';
   var BASIS = 'https://byd.serveone.at';
 
   // ---------------------------------------------------------------- Stil / Karte
@@ -23,9 +23,10 @@
     maplibregl.__panoptesPmtiles = true;
   }
 
-  /** Grundoptionen für new maplibregl.Map(...) im gemeinsamen Stil; `extra` überschreibt. */
+  /** Grundoptionen für new maplibregl.Map(...) im gemeinsamen Stil; `extra` überschreibt.
+   *  1.1.1: ohne `center` grob Mitte Europas (kein fester Ort); eigene Position über `extra` setzen. */
   function kartenOptionen(extra) {
-    var o = { style: STIL_URL, center: [13.045, 47.80], zoom: 13, maxPitch: 85 };
+    var o = { style: STIL_URL, center: [10.0, 50.0], zoom: 4, maxPitch: 85 };
     for (var k in (extra || {})) o[k] = extra[k];
     return o;
   }

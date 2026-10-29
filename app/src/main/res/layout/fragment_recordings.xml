@@ -22,7 +22,7 @@
     3. Library container — hosts the embedded RecordingLibraryFragment list.
 
   IDs preserved (consumed by RecordingsFragment.kt — DO NOT rename):
-    segmentedSource, segmentDashcam, segmentReplays, segmentSurveillance,
+    segmentedSource, segmentDashcam, segmentReplays, segmentEreignisse, segmentSurveillance,
     btnRecordingsSettings, libraryContainer,
     btnPrevDay, btnNextDay, cardDateJump, tvSelectedDate, tvDayClipCount,
     chipActorAny, chipActorPerson, chipActorVehicle, chipActorBike,
@@ -187,6 +187,23 @@
                 android:ellipsize="end"
                 android:paddingHorizontal="8dp"
                 app:icon="@drawable/ic_instant_replay"
+                app:iconSize="18dp"
+                app:iconGravity="textStart"
+                app:iconPadding="4dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/segmentEreignisse"
+                style="@style/Widget.SurfMate.M3.Button.Outlined"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="48dp"
+                android:text="@string/recordings_segment_ereignisse"
+                android:textAllCaps="false"
+                android:textSize="12sp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:paddingHorizontal="8dp"
+                app:icon="@drawable/ic_events"
                 app:iconSize="18dp"
                 app:iconGravity="textStart"
                 app:iconPadding="4dp" />

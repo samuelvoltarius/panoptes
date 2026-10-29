@@ -1152,6 +1152,7 @@ public class CameraDaemon {
         new Thread(at.greenchili.surfmate.notzugang.Notzugang::starten, "NotzugangStart").start();
         // Erschütterung im Parkmodus (Wächter-Modus a): eigener Takt, nur scharf + ACC aus.
         at.greenchili.surfmate.surveillance.ShockMonitor.start();
+        at.greenchili.surfmate.recording.EreignisMonitor.start();
         // guard/state (retained) + guard/sleep für den Server-Wächter S1.
         at.greenchili.surfmate.surveillance.GuardStateReporter.start();
         // F1 „Reicht es noch?“ (nur Rechnung + Anzeige, keine Fahrzeugbefehle).
@@ -9735,6 +9736,7 @@ public class CameraDaemon {
         // Wächter-Stopp: guardStopActive / guardStopReason / guardStopSince (+ 12-V-Auswertung)
         at.greenchili.surfmate.surveillance.GuardStopMonitor.putStatus(status);
         at.greenchili.surfmate.surveillance.ShockMonitor.putStatus(status);
+        at.greenchili.surfmate.recording.EreignisMonitor.putStatus(status);
 
         // SOTA: BYD camera coordinator status
         if (gpuPipeline != null && gpuPipeline.getCamera() != null) {

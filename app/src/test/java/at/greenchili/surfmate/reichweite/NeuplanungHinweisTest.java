@@ -21,7 +21,7 @@ public class NeuplanungHinweisTest {
     private static PlanAbweichung.Befund befund(boolean neu) throws Exception {
         return PlanAbweichung.auswerten(new JSONObject().put("ok", true).put("neu_planen", neu).put("abweichung_pp", -6)
                 .put("gruende", new JSONArray().put("6 Prozentpunkte unter Plan"))
-                .put("neu_plan_anfrage", new JSONObject().put("start", new JSONArray().put(47.9).put(13.6))
+                .put("neu_plan_anfrage", new JSONObject().put("start", new JSONArray().put(48.4).put(14.835))
                         .put("ziel", new JSONArray().put(48.2).put(16.37))
                         .put("via", new JSONArray().put(new JSONObject().put("name", "Linz").put("lat", 48.3).put("lon", 14.3)))));
     }

@@ -198,7 +198,7 @@ class RecordingsFragment : Fragment() {
      */
     private val pendingPosts = mutableListOf<Runnable>()
 
-    enum class Source { ALL, DASHCAM, REPLAYS, SURVEILLANCE }
+    enum class Source { ALL, DASHCAM, REPLAYS, EREIGNISSE, SURVEILLANCE }
 
     private val isLandscape: Boolean
         get() = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -253,6 +253,7 @@ class RecordingsFragment : Fragment() {
                 "sentry" -> currentSource = Source.SURVEILLANCE
                 "proximity", "normal" -> currentSource = Source.DASHCAM
                 "replay" -> currentSource = Source.REPLAYS
+                "ereignis" -> currentSource = Source.EREIGNISSE
             }
             // Parking page → "Open events": narrow to that park's clips. Same
             // token rule as the daemon so a mangled value can't reach the API.
@@ -521,6 +522,13 @@ class RecordingsFragment : Fragment() {
                 actors = emptySet()
                 severities = emptySet()
             }
+            Source.EREIGNISSE -> {
+                // Event clips only: no chips, no actor/severity narrowing.
+                source = RecordingLibraryFragment.RecordingFilter.EREIGNIS
+                extra = null
+                actors = emptySet()
+                severities = emptySet()
+            }
             Source.SURVEILLANCE -> {
                 source = RecordingLibraryFragment.RecordingFilter.SENTRY
                 extra = null
@@ -678,6 +686,7 @@ class RecordingsFragment : Fragment() {
             RecordingFile.RecordingType.OEM_DASHCAM ->
                 getString(R.string.recording_lib_type_oem)
             RecordingFile.RecordingType.REPLAY -> getString(R.string.recording_lib_type_replay)
+            RecordingFile.RecordingType.EREIGNIS -> getString(R.string.recording_lib_type_ereignis)
         }
 
         val severity = recording.peakSeverity?.uppercase(Locale.ROOT)
@@ -934,6 +943,7 @@ class RecordingsFragment : Fragment() {
             Source.ALL -> group.check(R.id.segmentAll)
             Source.DASHCAM -> group.check(R.id.segmentDashcam)
             Source.REPLAYS -> group.check(R.id.segmentReplays)
+            Source.EREIGNISSE -> group.check(R.id.segmentEreignisse)
             Source.SURVEILLANCE -> group.check(R.id.segmentSurveillance)
         }
         applyChipRowVisibility(view)
@@ -943,6 +953,7 @@ class RecordingsFragment : Fragment() {
                 R.id.segmentAll -> Source.ALL
                 R.id.segmentSurveillance -> Source.SURVEILLANCE
                 R.id.segmentReplays -> Source.REPLAYS
+                R.id.segmentEreignisse -> Source.EREIGNISSE
                 else -> Source.DASHCAM
             }
             applyChipRowVisibility(view)
@@ -1141,7 +1152,7 @@ class RecordingsFragment : Fragment() {
             when (currentSource) {
                 // Replays share the dashcam encoder knobs, so they open Settings
                 // on the Recording section.
-                Source.ALL, Source.DASHCAM, Source.REPLAYS -> {
+                Source.ALL, Source.DASHCAM, Source.REPLAYS, Source.EREIGNISSE -> {
                     val args = Bundle().apply {
                         putString(
                             SettingsFragment.KEY_SECTION,
@@ -1461,6 +1472,7 @@ class RecordingsFragment : Fragment() {
             Source.ALL -> placeFilter.isNotEmpty() || searchActive
             Source.DASHCAM -> dashcamTypes.isNotEmpty() || placeFilter.isNotEmpty() || searchActive
             Source.REPLAYS -> placeFilter.isNotEmpty() || searchActive
+            Source.EREIGNISSE -> placeFilter.isNotEmpty() || searchActive
             Source.SURVEILLANCE -> actorClassFilter.isNotEmpty()
                 || severityFilter.isNotEmpty()
                 || placeFilter.isNotEmpty()
@@ -1633,6 +1645,7 @@ class RecordingsFragment : Fragment() {
                     viewRef = viewRef,
                     dashcamCount = 0,
                     replaysCount = 0,
+                    ereignisCount = 0,
                     surveillanceCount = 0,
                     totalCount = 0,
                     totalToday = 0,
@@ -1656,17 +1669,20 @@ class RecordingsFragment : Fragment() {
                         it.type == RecordingFile.RecordingType.OEM_DASHCAM
                 }
                 val replays = all.filter { it.type == RecordingFile.RecordingType.REPLAY }
+                val ereignisse = all.filter { it.type == RecordingFile.RecordingType.EREIGNIS }
                 val surveillance = all.filter { it.type == RecordingFile.RecordingType.SENTRY }
                 val dashcamStats = aggregate(dashcam, today0)
                 val replayStats = aggregate(replays, today0)
+                val ereignisStats = aggregate(ereignisse, today0)
                 val surveillanceStats = aggregate(surveillance, today0)
-                val totalCount = dashcamStats.total + replayStats.total + surveillanceStats.total
-                val totalToday = dashcamStats.today + replayStats.today + surveillanceStats.today
-                val totalBytes = dashcamStats.bytes + replayStats.bytes + surveillanceStats.bytes
+                val totalCount = dashcamStats.total + replayStats.total + ereignisStats.total + surveillanceStats.total
+                val totalToday = dashcamStats.today + replayStats.today + ereignisStats.today + surveillanceStats.today
+                val totalBytes = dashcamStats.bytes + replayStats.bytes + ereignisStats.bytes + surveillanceStats.bytes
                 val segmentClips = when (sourceAtDispatch) {
                     Source.ALL -> all
                     Source.DASHCAM -> dashcam
                     Source.REPLAYS -> replays
+                    Source.EREIGNISSE -> ereignisse
                     Source.SURVEILLANCE -> surveillance
                 }
                 val sortedPlaces = derivePlaceLabelsFromScan(segmentClips)
@@ -1674,6 +1690,7 @@ class RecordingsFragment : Fragment() {
                     viewRef = viewRef,
                     dashcamCount = dashcamStats.total.toLong(),
                     replaysCount = replayStats.total.toLong(),
+                    ereignisCount = ereignisStats.total.toLong(),
                     surveillanceCount = surveillanceStats.total.toLong(),
                     totalCount = totalCount.toLong(),
                     totalToday = totalToday.toLong(),
@@ -1708,12 +1725,14 @@ class RecordingsFragment : Fragment() {
             // normalCount. Sum normal + proximity for the segment badge.
             val dashcamCount = stats.normalCount + stats.proximityCount
             val replaysCount = stats.replayCount
+            val ereignisCount = stats.ereignisCount
             val surveillanceCount = stats.sentryCount
 
             postCountsToUi(
                 viewRef = viewRef,
                 dashcamCount = dashcamCount,
                 replaysCount = replaysCount,
+                ereignisCount = ereignisCount,
                 surveillanceCount = surveillanceCount,
                 totalCount = stats.totalCount,
                 totalToday = stats.totalToday,
@@ -1734,6 +1753,7 @@ class RecordingsFragment : Fragment() {
         Source.ALL -> null
         Source.DASHCAM -> "normal"
         Source.REPLAYS -> "replay"
+        Source.EREIGNISSE -> "ereignis"
         Source.SURVEILLANCE -> "sentry"
     }
 
@@ -1747,6 +1767,7 @@ class RecordingsFragment : Fragment() {
         viewRef: WeakReference<View?>,
         dashcamCount: Long,
         replaysCount: Long,
+        ereignisCount: Long,
         surveillanceCount: Long,
         totalCount: Long,
         totalToday: Long,
@@ -1793,6 +1814,12 @@ class RecordingsFragment : Fragment() {
                     else activeCtx.getString(
                         R.string.recordings_segment_replays_count,
                         replaysCount.toInt()
+                    )
+                v.findViewById<MaterialButton>(R.id.segmentEreignisse)?.text =
+                    if (indexDown) activeCtx.getString(R.string.recordings_segment_ereignisse)
+                    else activeCtx.getString(
+                        R.string.recordings_segment_ereignisse_count,
+                        ereignisCount.toInt()
                     )
                 v.findViewById<MaterialButton>(R.id.segmentSurveillance)?.text =
                     if (indexDown) activeCtx.getString(R.string.recordings_segment_surveillance)

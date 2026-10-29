@@ -75,9 +75,22 @@ public class BrueckeKlopfTest {
         String k = new String(java.nio.file.Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
         assertTrue(k.contains("if (op.startsWith(\"meine-route\")) {"));
         assertTrue(k.contains("c.setRequestProperty(\"X-Klopf\", k);"));
-        int a = k.indexOf("public void angeklopft(long now)");
+        int a = k.indexOf("public String angeklopft(long now)");
         String rumpf = k.substring(a, k.indexOf("\n    }", a));
         assertTrue("nur lesen, nie abholen", a > 0 && rumpf.contains("status(now);") && !rumpf.contains("annehmen(")
                 && !rumpf.contains("auto-abholen"));
+    }
+
+    /** 0.1.27 Log-Zeile nach dem Anklopfen: nur vorhanden und Größe, nie Ziel oder Koordinaten. */
+    @Test
+    public void logZeileOhneZiel() throws Exception {
+        org.json.JSONObject plan = new org.json.JSONObject().put("vorhanden", true).put("ziel", "Linz Hauptplatz").put("lat", 48.3059);
+        String z = at.greenchili.surfmate.planer.PlanerRoute.kurz(new Object[]{200, plan}, 1328);
+        assertEquals("vorhanden=ja, 1328 B", z);
+        assertEquals("vorhanden=nein, netz", at.greenchili.surfmate.planer.PlanerRoute.kurz(
+                new Object[]{200, new org.json.JSONObject().put("vorhanden", false).put("grund", "netz")}, 0));
+        assertEquals("vorhanden=nein", at.greenchili.surfmate.planer.PlanerRoute.kurz(
+                new Object[]{200, new org.json.JSONObject().put("vorhanden", false).put("grund", "Linz 48.3")}, 0));
+        assertEquals("vorhanden=nein", at.greenchili.surfmate.planer.PlanerRoute.kurz(null, 0));
     }
 }

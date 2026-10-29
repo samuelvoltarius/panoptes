@@ -114,7 +114,8 @@ data class RecordingFile(
         SENTRY,         // Sentry event recordings (event_*.mp4)
         PROXIMITY,      // Proximity guard recordings (proximity_*.mp4)
         OEM_DASHCAM,    // OEM forward-sensor dashcam recordings (dvr_*.mp4)
-        REPLAY          // Manual instant-replay clips (replay_*.mp4)
+        REPLAY,         // Manual instant-replay clips (replay_*.mp4)
+        EREIGNIS        // Event clips of the Ereignis-Clip feature (ereignisse/ereignis_*.mp4)
     }
     
     companion object {
@@ -126,6 +127,8 @@ data class RecordingFile(
         // Manual instant-replay clips use their own namespace so their .tmp
         // can never collide with a live cam_* segment rotation.
         private val REPLAY_FILENAME_PATTERN = Regex("""replay_(\d{8})_(\d{6})(?:_\d+)?\.mp4""")
+        // Event clips live in the ereignisse/ subfolder of the recordings dir.
+        private val EREIGNIS_FILENAME_PATTERN = Regex("""ereignis_(\d{8})_(\d{6})(?:_\d+)?\.mp4""")
         // event_20251224_132630.mp4 or event_20251224_132630_2.mp4
         private val EVENT_FILENAME_PATTERN = Regex("""event_(\d{8})_(\d{6})(?:_\d+)?\.mp4""")
         // proximity_20251224_132630.mp4 or proximity_20251224_132630_2.mp4
@@ -162,6 +165,7 @@ data class RecordingFile(
                 RecordingType.PROXIMITY -> parseProximityRecording(file)
                 RecordingType.OEM_DASHCAM -> parseOemDashcamRecording(file)
                 RecordingType.REPLAY -> parseReplayRecording(file)
+                RecordingType.EREIGNIS -> parseEreignisRecording(file)
             }
 
             // If type-specific parsing failed, try fallback parsing
@@ -214,6 +218,7 @@ data class RecordingFile(
             val matchedPrefix = when {
                 name.startsWith("cam_") || name.matches(Regex("""cam\d+_.*""")) -> RecordingType.NORMAL
                 name.startsWith("replay_") -> RecordingType.REPLAY
+                name.startsWith("ereignis_") -> RecordingType.EREIGNIS
                 name.startsWith("event_") -> RecordingType.SENTRY
                 name.startsWith("proximity_") -> RecordingType.PROXIMITY
                 name.startsWith("dvr_") -> RecordingType.OEM_DASHCAM
@@ -275,7 +280,28 @@ data class RecordingFile(
                 type = RecordingType.REPLAY
             )
         }
-        
+
+        // ereignis_*.mp4 - event clips saved from the pre-record ring; own type
+        // so the recordings library lists them in the Events segment.
+        private fun parseEreignisRecording(file: File): RecordingFile? {
+            val match = EREIGNIS_FILENAME_PATTERN.matchEntire(file.name) ?: return null
+            val dateStr = "${match.groupValues[1]}_${match.groupValues[2]}"
+            val timestamp = try {
+                newDateFormat().parse(dateStr)?.time ?: file.lastModified()
+            } catch (e: Exception) {
+                file.lastModified()
+            }
+
+            return RecordingFile(
+                file = file,
+                cameraId = 0,
+                timestamp = timestamp,
+                durationMs = 0,
+                sizeBytes = file.length(),
+                type = RecordingType.EREIGNIS
+            )
+        }
+
         private fun parseSentryRecording(file: File): RecordingFile? {
             val match = EVENT_FILENAME_PATTERN.matchEntire(file.name) ?: return null
             val dateStr = "${match.groupValues[1]}_${match.groupValues[2]}"

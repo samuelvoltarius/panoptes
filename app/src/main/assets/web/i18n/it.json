@@ -2028,7 +2028,8 @@
     "dash_used": "-- usati",
     "dash_limit": "-- limite",
     "quality_rejected": "Nessuna modifica applicata. Valori rifiutati: {fields}",
-    "quality_partial": "{applied} — ma restano i vecchi valori per: {fields}"
+    "quality_partial": "{applied} — ma restano i vecchi valori per: {fields}",
+    "dauer_hinweis": "Nota: filmare sempre è giuridicamente delicato in Germania, Austria e Svizzera. Consigliato: lasciare la registrazione su “Spento” e attivare “Salva eventi automaticamente” nelle impostazioni del guardiano. Così Panoptes salva solo dopo una frenata brusca o un urto."
   },
   "events": {
     "select_date": "Scegli una data",
@@ -2136,7 +2137,10 @@
     "keep_released": "Verrà eliminata alla prossima pulizia se ha più di {stunden} ore.",
     "keep_unsaved": "Salvataggio non riuscito. Riprova.",
     "keep_fail": "Non ha funzionato.",
-    "keep_released_size": "Non più conservata. Verrà eliminata solo quando lo spazio sta per finire."
+    "keep_released_size": "Non più conservata. Verrà eliminata solo quando lo spazio sta per finire.",
+    "tab_ereignisse": "Eventi",
+    "title_ereignis": "{prefix} Eventi",
+    "badge_ereignis": "Evento"
   },
   "surveillance": {
     "tab_general": "Generali",
@@ -4499,16 +4503,16 @@
     "could_not_complete": "Non sono riuscito a finire: {error}",
     "minimax_hinweis": "Per questo le tue domande e i dati dell’auto vanno a MiniMax (Cina). Disattivato di default.",
     "prompt_vehicle_history": "Cerca nella cronologia: ",
-    "prompt_current_vehicle": "Spiegami lo stato attuale dell’auto e segnala cosa c’è di insolito.",
-    "prompt_latest_trip": "Spiega il mio ultimo viaggio, con consumi e momenti particolari.",
-    "prompt_more_battery": "Perché il mio ultimo viaggio ha consumato più batteria di viaggi simili?",
-    "prompt_summarize_events": "Riassumi le mie ultime registrazioni ed eventi di sorveglianza.",
-    "prompt_roadsense": "Riassumi i pericoli segnalati di recente e cosa significano.",
-    "prompt_charging": "Guarda le mie ultime ricariche e mostra le tendenze utili.",
-    "prompt_diagnostics": "Controlla lo stato attuale dell’auto e spiega i possibili problemi.",
-    "prompt_analyze_logs": "Analizza gli ultimi avvisi ed errori del registro (senza dati privati), indica le prove più forti e cosa resta incerto.",
-    "prompt_diagnose_automation": "Perché la mia regola non è partita? Controlla condizioni, registro, tempi e soluzioni sicure.",
-    "prompt_control_vehicle": "Imposta la temperatura interna a ",
+    "prompt_current_vehicle": "Come sta la mia auto adesso? Va tutto bene?",
+    "prompt_latest_trip": "Com’è andato il mio ultimo viaggio? Quanta energia ha consumato?",
+    "prompt_more_battery": "Perché il mio ultimo viaggio ha consumato più del solito?",
+    "prompt_summarize_events": "Cosa è successo di recente intorno alla mia auto? Ci sono registrazioni?",
+    "prompt_roadsense": "Quali pericoli stradali ci sono vicino a me?",
+    "prompt_charging": "Come sono andate le ricariche di recente? C’è qualcosa da sapere?",
+    "prompt_diagnostics": "Controlla la mia auto e Panoptes: c’è un problema?",
+    "prompt_analyze_logs": "Leggi il registro: ci sono stati errori di recente e cosa significano?",
+    "prompt_diagnose_automation": "Perché la mia regola non è partita? Cosa posso fare?",
+    "prompt_control_vehicle": "Imposta il clima su ",
     "prompt_create_automation": "Crea una regola che ",
     "prompt_find_automation": "Cerca una regola della community per ",
     "err_provider_output_limit": "L’assistente ha pensato troppo a lungo e non è riuscito a rispondere. Fai una domanda più breve.",
@@ -4984,7 +4988,9 @@
     "fps_now": "Telecamera ora: {v} fotogrammi al secondo analizzati",
     "fps_delivered": "(la telecamera ne fornisce {g})",
     "fps_throttle": "Panoptes rallenta da solo, perché la telecamera non permette di impostare la frequenza.",
-    "trigger_unset": "Non hai ancora scelto quando deve registrare – fino ad allora solo in caso di urto."
+    "trigger_unset": "Non hai ancora scelto quando deve registrare – fino ad allora solo in caso di urto.",
+    "fahrt_title": "Durante la guida",
+    "fahrt_lead": "Dopo una frenata brusca o un urto, Panoptes salva una breve clip. Nient’altro viene salvato."
   },
   "system": {
     "tailscale_title": "Accesso remoto (Tailscale)",
@@ -6197,5 +6203,14 @@
     "behalten": "Tieni",
     "fehler": "Non ha funzionato.",
     "fehler_ort_unbekannt": "Imposta prima la tua casa in Luoghi."
+  },
+  "ereignis": {
+    "frage": "Evento delle {zeit} salvato – tenerlo?",
+    "behalten": "Tieni",
+    "nein": "No grazie",
+    "erklaerung": "Senza “Tieni” la clip viene cancellata automaticamente dopo {stunden} ore.",
+    "erklaerung_ohne_frist": "Senza “Tieni” la clip viene cancellata quando lo spazio per gli eventi è pieno.",
+    "gespeichert": "Verrà tenuta.",
+    "fehler": "Non ha funzionato. Riprova."
   }
 }

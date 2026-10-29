@@ -1742,7 +1742,8 @@
     "section": {
       "aufnahme": "Aufnahme",
       "abschreckung": "Abschreckung",
-      "stopp": "Wächter stoppt, wenn …"
+      "stopp": "Wächter stoppt, wenn …",
+      "fahrt": "Fahrt"
     },
     "surveillance": {
       "triggerMode": {
@@ -2029,8 +2030,8 @@
     },
     "wetter": {
       "online": {
-        "title": "Wetter aus dem Internet (Open-Meteo)",
-        "help": "Wenn das Auto keine Außentemperatur liefert oder eine Regel „Regen wahrscheinlich“ nutzt, fragt Panoptes Open-Meteo. Dabei geht der ungefähre Standort (auf etwa 1 km gerundet) höchstens alle 10 Minuten an Open-Meteo. Panoptes speichert dort nichts; ausschalten beendet die Abfragen sofort. Standard aus."
+        "title": "Wetter aus dem Internet (über den Panoptes-Server)",
+        "help": "Für Wetter und Reichweite fragt Panoptes unseren Server nach dem Wetter in deiner Gegend (auf ca. 10 km ungenau). Ohne Kennung, höchstens alle 10 Minuten; der Server speichert weder deine Gegend noch deine IP-Adresse. Die Wetterdaten stammen von Open-Meteo (CC BY 4.0). Ausschalten beendet die Abfragen sofort. Standard aus."
       }
     },
     "karte": {
@@ -2239,6 +2240,17 @@
         "help": "Löscht alles Gemerkte und alle abgelehnten Vorschläge. Schon angelegte Automationen bleiben.",
         "behalten": "Behalten",
         "loeschen": "Alles vergessen"
+      }
+    },
+    "recording": {
+      "ereignisClip": {
+        "title": "Ereignisse automatisch sichern",
+        "help": "Bei einer Vollbremsung oder einem Stoß sichert Panoptes 20 Sekunden davor und danach. Sonst wird nichts gespeichert. Die Clips bleiben nur im Auto bzw. auf dem Stick. Wirkt ab der nächsten Fahrt.",
+        "helpCH": "In der Schweiz standardmäßig aus, weil dort strengere Regeln für Autokameras gelten. Du kannst es selbst einschalten."
+      },
+      "ereignisTelegram": {
+        "title": "Telegram-Nachricht bei Ereignis",
+        "help": "Nur ein kurzer Text mit der Uhrzeit. Kein Video, kein Ort."
       }
     }
   },

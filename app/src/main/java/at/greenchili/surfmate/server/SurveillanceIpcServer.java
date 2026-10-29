@@ -896,6 +896,8 @@ public class SurveillanceIpcServer implements Runnable {
                     }
                     // Wächter-Erschütterung im Parkmodus (nur aktiv, wenn scharf + ACC aus).
                     at.greenchili.surfmate.surveillance.ShockMonitor.onImuBatch(request);
+                    // Ereignis-Clip beim Fahren (nur aktiv, wenn eingeschaltet + Fahrstufe).
+                    at.greenchili.surfmate.recording.EreignisMonitor.onImuBatch(request);
                     // Fire-and-forget: RoadSenseImuSidecarService never reads the
                     // ack. Return null so handleClient skips the reply write
                     // (saves a JSONObject build + serialize + write ~10/s).

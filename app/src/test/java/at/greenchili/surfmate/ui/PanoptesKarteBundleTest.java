@@ -16,8 +16,8 @@ import org.junit.Test;
  */
 public class PanoptesKarteBundleTest {
 
-    private static final String DATEI = "src/main/assets/web/shared/vendor/panoptes-karte-1.1.0.js";
-    private static final String SHA256 = "0801623fec901132cbeb725872b72e799a14ec4b6b49f45c5600ee6f6a80e2eb";
+    private static final String DATEI = "src/main/assets/web/shared/vendor/panoptes-karte-1.1.1.js";
+    private static final String SHA256 = "9956ae2f065758f3a7d6a7befd1a3bcf81ca0b351dd8313dacefad15a3e8aebf";
 
     @Test
     public void gebuendeltesModulHatVeroeffentlichtePruefsumme() throws Exception {

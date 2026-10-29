@@ -1,8 +1,6 @@
 package at.greenchili.surfmate.genai;
 
 import at.greenchili.surfmate.automation.Automations;
-import at.greenchili.surfmate.byd.BydDataCollector;
-import at.greenchili.surfmate.byd.BydVehicleData;
 import at.greenchili.surfmate.charging.ChargingApiHandler;
 import at.greenchili.surfmate.community.CommunityApiHandler;
 import at.greenchili.surfmate.daemon.CameraDaemon;
@@ -58,22 +56,32 @@ public final class GenAiContext {
     public static final String COMMUNITY_SEARCH = "community_search";
     public static final String VEHICLE_ACTION = GenAiAction.MODE;
 
-    private static final Set<String> MODES = new LinkedHashSet<>();
+    /**
+     * 0.1.27 (REGEL DAU, Befund 29.10.): Schreibweise für alle Antworten. Viele Nutzer sind 50+ und ohne
+     * Technikwissen; die Antwort am Auto war voller Feldnamen, Codes und Vermutungen über unbekannte Werte.
+     */
+    public static final String PLAIN_STYLE =
+            "HOW TO ANSWER (the reader is a driver, often 50+, without technical knowledge):\n"
+            + "- Start with the one thing that matters most. If nothing needs attention, "
+            + "start with a clear all-clear sentence.\n"
+            + "- Use short, simple sentences and everyday words. At most about 8 lines, "
+            + "unless the user asks for more detail.\n"
+            + "- Never show field names, JSON keys, codes, raw numbers without meaning, "
+            + "or milliseconds.\n"
+            + "- Never guess. If a value is missing or unknown, leave it out. Do not "
+            + "discuss missing data, placeholders, or what a code might mean.\n"
+            + "- Give times as local time, as supplied. Never mention UTC.\n"
+            + "- The car is fully electric. Never mention oil, engine coolant, fuel, "
+            + "or engine speed.\n"
+            + "- The climate setting is a level on the display bar (for example "
+            + "'Heating level 4'), not a temperature. Never give it in degrees "
+            + "unless the context itself states degrees.\n"
+            + "- 'Panoptes guard' is the camera watch of the Panoptes app, not an alarm "
+            + "of the car. An armed guard is normal while parked.\n"
+            + "- For log, automation, and shell-command questions you may name the "
+            + "component or command, but explain it in simple words.";
 
-    private static final String[] VEHICLE_KEYS = {
-            "battery", "thermal", "cellVoltage", "speed", "motor",
-            "energy", "range", "mileage", "charging", "gearMode",
-            "tyrePressure", "tyrePressureUnit", "tyrePressureState",
-            "tyreAirLeakState", "tyreSignalState", "tyreTemperature",
-            "tyreTemperatureUnit", "tyreSystemState",
-            "tyreTemperatureState", "doorLockStatus",
-            "windowOpenPercent", "lights", "seatbeltStatus", "seatHeat",
-            "seatCool", "climate", "powerLevel", "mcuStatus",
-            "emergencyAlarm", "radarDistances", "timestamp",
-            "extendedBattery", "extendedThermal", "extendedCharging",
-            "extendedDriving", "extendedTrip", "extendedEngine",
-            "extendedBodywork", "extendedSafety", "extendedAir"
-    };
+    private static final Set<String> MODES = new LinkedHashSet<>();
 
     private static final String[] TRIP_KEYS = {
             "id", "startTime", "endTime", "distanceKm",
@@ -129,7 +137,9 @@ public final class GenAiContext {
         JSONObject context = new JSONObject();
         JSONObject clientData = new JSONObject();
         try {
-            context.put("capturedAtMs", System.currentTimeMillis());
+            long jetzt = System.currentTimeMillis();
+            context.put("asked at", AssistentZustand.ortszeit(
+                    jetzt, jetzt, java.time.ZoneId.systemDefault()));
             context.put("mode", mode);
             switch (mode) {
                 case OVERVIEW:
@@ -186,6 +196,9 @@ public final class GenAiContext {
                     context = new JSONObject();
                     break;
             }
+            // 0.1.27: Zeitstempel in Ortszeit statt Millisekunden (Fahrten, Ladevorgänge, Ereignisse)
+            AssistentZustand.zeitenInOrtszeit(context,
+                    System.currentTimeMillis(), java.time.ZoneId.systemDefault());
         } catch (Exception ignored) {
         }
         return new Snapshot(mode, context, instructions(mode), clientData);
@@ -338,12 +351,67 @@ public final class GenAiContext {
                 + "Panoptes language (" + language + "). If the user's "
                 + "latest message or speech is clearly in another language, "
                 + "reply in that language instead. For mixed-language input, "
-                + "use the language of the request. Keep identifiers, JSON "
-                + "keys, enum values, model names, code, commands, paths, "
-                + "units, and quoted telemetry unchanged.";
+                + "use the language of the request. Translate the supplied "
+                + "plain-language values into that language. In structured "
+                + "output, keep identifiers, JSON keys, enum values, model "
+                + "names, code, commands, paths, and units unchanged; never "
+                + "show them in plain prose. " + languageHints(language);
         String task = taskInstructions == null
                 ? "" : taskInstructions.trim();
         return task.isEmpty() ? policy : task + "\n\n" + policy;
+    }
+
+    /**
+     * 0.1.27: dieselben Wörter wie die App (i18n {@code klima_stufe}) für Entwarnung und Klima-Stufe, damit die
+     * Antwort in jeder der 5 Sprachen zur Anzeige im Auto passt.
+     */
+    static String languageHints(String language) {
+        String ok, heat, cool, neutral, klima, waechter;
+        switch (language == null ? "" : language) {
+            case "de":
+                klima = "Klima";
+                waechter = "Panoptes-Wächter";
+                ok = "Alles in Ordnung.";
+                heat = "Heizen Stufe 4";
+                cool = "Kühlen Stufe 2";
+                neutral = "Neutral";
+                break;
+            case "fr":
+                klima = "climatisation";
+                waechter = "surveillance Panoptes";
+                ok = "Tout va bien.";
+                heat = "Chauffage niveau 4";
+                cool = "Refroidissement niveau 2";
+                neutral = "Neutre";
+                break;
+            case "it":
+                klima = "clima";
+                waechter = "sorveglianza Panoptes";
+                ok = "Tutto a posto.";
+                heat = "Riscaldamento livello 4";
+                cool = "Raffreddamento livello 2";
+                neutral = "Neutro";
+                break;
+            case "nl":
+                klima = "klimaatregeling";
+                waechter = "Panoptes-bewaking";
+                ok = "Alles in orde.";
+                heat = "Verwarmen stand 4";
+                cool = "Koelen stand 2";
+                neutral = "Neutraal";
+                break;
+            default:
+                klima = "climate";
+                waechter = "Panoptes guard";
+                ok = "All is fine.";
+                heat = "Heating level 4";
+                cool = "Cooling level 2";
+                neutral = "Neutral";
+                break;
+        }
+        return "In this language, an all-clear opener is \"" + ok + "\". Climate levels read like \""
+                + heat + "\", \"" + cool + "\" or \"" + neutral + "\". Say \"" + klima
+                + "\" for the climate and \"" + waechter + "\" for the Panoptes guard.";
     }
 
     static String resolveMode(String requestedMode, String latestUserText) {
@@ -440,24 +508,34 @@ public final class GenAiContext {
         return false;
     }
 
+    /**
+     * 0.1.27: Klartext-Fassung statt Roh-Snapshot (Befund 29.10. mit MiniMax: Feldnamen, Sentinels, Öl-Werte und
+     * °C-Sollwerte führten zu falschen Deutungen). Quelle ist dieselbe Telemetrie wie HA ({@code /api/ha/v1/zustand}).
+     */
     private static JSONObject currentVehicle() {
-        JSONObject out = new JSONObject();
         try {
-            BydVehicleData snapshot = BydDataCollector.getInstance().getData();
-            if (snapshot == null) {
-                return unavailable("No vehicle snapshot is available yet.");
+            at.greenchili.surfmate.mqtt.MqttConnectionManager m =
+                    at.greenchili.surfmate.server.SurveillanceIpcServer.mqttManager();
+            JSONObject roh = m == null ? null : m.getLatestTelemetry();
+            if (roh == null || roh.length() == 0) {
+                return unavailable("No vehicle values are available yet.");
             }
-            out = copyAllowed(snapshot.toJson(), VEHICLE_KEYS);
-            long timestamp = out.optLong("timestamp", 0L);
-            if (timestamp > 0L) {
-                out.put("snapshotAgeMs",
-                        Math.max(0L, System.currentTimeMillis() - timestamp));
+            String waechter = null;
+            try {
+                waechter = at.greenchili.surfmate.ha.HaZustand.waechter(
+                        CameraDaemon.surveillanceZustand(), false);
+            } catch (Throwable ignored) {
             }
-            out.put("available", true);
+            JSONObject out = AssistentZustand.aus(roh, waechter,
+                    at.greenchili.surfmate.byd.KlimaStufe.stufenModell(),
+                    System.currentTimeMillis(), java.time.ZoneId.systemDefault());
+            if (out.length() == 0) {
+                return unavailable("No vehicle values are available yet.");
+            }
+            return out;
         } catch (Throwable t) {
-            return unavailable("Vehicle snapshot is unavailable.");
+            return unavailable("Vehicle values are unavailable.");
         }
-        return out;
     }
 
     private static JSONObject overview() {
@@ -1177,9 +1255,9 @@ public final class GenAiContext {
     private static String instructions(String mode) {
         switch (mode) {
             case OVERVIEW:
-                return "Create a concise vehicle brief from the supplied snapshots. Lead with what matters now, then cover the latest trip, notable events or RoadSense hazards, and charging trends only when data is available. Do not fill unavailable sections with guesses.";
+                return "Give a short brief about the car. Lead with what matters now, then mention the latest trip, notable events or road hazards, and charging only when there is something worth saying. Skip anything that is unavailable.";
             case CURRENT_VEHICLE:
-                return "Explain the current snapshot in plain language. Distinguish raw enum values from known facts, call out stale data, and prioritize safety-relevant anomalies.";
+                return "Tell the user how the car is right now. First line: 'all is fine' or the one thing that needs attention (for example unlocked, a door or window open, low battery, or charging stopped). Then at most a few short lines: battery and range, charging, locked or not, climate, and the Panoptes guard. If the note says the car is asleep, say once when the values were measured. Leave out everything else.";
             case LATEST_TRIP:
                 return "Explain only the supplied latest trip. Cover efficiency, energy, scores, and micro-moment aggregates; do not infer a route or location.";
             case TRIP_COMPARISON:
@@ -1191,7 +1269,7 @@ public final class GenAiContext {
             case CHARGING:
                 return "Explain recent charging trends, data-quality flags, costs, power, temperatures, and battery-health trend. Treat estimated or incomplete energy as approximate.";
             case DIAGNOSTICS:
-                return "Triage the supplied snapshot. Separate observations from hypotheses and suggest low-risk checks; never imply a diagnosis is certain.";
+                return "Check the car and the Panoptes app for problems. First line: 'all is fine' or the most important problem. Name only real, supplied findings, say what the user can do in one simple step, and never claim a diagnosis is certain. Values that are missing are not problems; leave them out.";
             case DIAGNOSTIC_LOGS:
                 return "Triage the supplied snapshot and redacted log excerpts. Cite the exact component and timestamp text for important evidence, distinguish repeated symptoms from root cause, and state when the excerpts are insufficient. Never infer content that was filtered or redacted.";
             case AUTOMATION_DIAGNOSTICS:

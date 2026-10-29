@@ -12,7 +12,7 @@
            pair so the two-pane body gets the reclaimed height.
 
   IDs preserved (consumed by RecordingsFragment.kt):
-    segmentedSource, segmentDashcam, segmentReplays, segmentSurveillance,
+    segmentedSource, segmentDashcam, segmentReplays, segmentEreignisse, segmentSurveillance,
     btnRecordingsSettings, libraryContainer, previewContainer, previewPlaceholder,
     btnPrevDay, btnNextDay, cardDateJump, tvSelectedDate, tvDayClipCount,
     chipActorAny, chipActorPerson, chipActorVehicle, chipActorBike, chipActorAnimal,
@@ -218,6 +218,20 @@
                     android:maxLines="1"
                     android:ellipsize="end"
                     app:icon="@drawable/ic_instant_replay"
+                    app:iconSize="16dp"
+                    app:iconGravity="textStart"
+                    app:iconPadding="6dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/segmentEreignisse"
+                    style="@style/Widget.SurfMate.M3.Button.Outlined"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="@string/recordings_segment_ereignisse"
+                    android:textAllCaps="false"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    app:icon="@drawable/ic_events"
                     app:iconSize="16dp"
                     app:iconGravity="textStart"
                     app:iconPadding="6dp" />

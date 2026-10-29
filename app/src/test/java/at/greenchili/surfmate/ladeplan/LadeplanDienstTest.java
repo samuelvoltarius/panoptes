@@ -31,7 +31,7 @@ public class LadeplanDienstTest {
 
     long jetzt = ZonedDateTime.of(2026, 10, 28, 22, 15, 0, 0, WIEN).toInstant().toEpochMilli();
     double soc = 40;
-    double lat = 47.8, lon = 13.0;
+    double lat = 48.3, lon = 14.235;
     String sperre = null;
     long hand = 0;
 
@@ -76,10 +76,10 @@ public class LadeplanDienstTest {
     @Before
     public void setUp() throws Exception {
         box = new Box();
-        JSONObject tj = new TariffProfile("Zuhause", 47.8, 13.0, 50, 0.30, 0, "€").toJson().put("id", "t1")
+        JSONObject tj = new TariffProfile("Zuhause", 48.3, 14.235, 50, 0.30, 0, "€").toJson().put("id", "t1")
                 .put("zeittarif", Zeittarif.vorlage(Zeittarif.VORLAGE_TAG_NACHT, 0.30, "AT"));
         tarif = new TariffProfile(tj);
-        JSONArray orte = new JSONArray().put(new JSONObject().put("id", "o1").put("name", "Zuhause").put("lat", 47.8).put("lon", 13.0)
+        JSONArray orte = new JSONArray().put(new JSONObject().put("id", "o1").put("name", "Zuhause").put("lat", 48.3).put("lon", 14.235)
                 .put("r", 100).put("eigenschaften", new JSONObject().put("zuhause", true)).put("verweise", new JSONObject().put("tarif", "t1")));
         LadeplanDienst.Umgebung u = new LadeplanDienst.Umgebung() {
             @Override public long jetzt() { return jetzt; }
@@ -202,7 +202,7 @@ public class LadeplanDienstTest {
         // Vorschau gibt es trotzdem (Tarif des Heimorts)
         assertTrue(s.getJSONObject("vorschau").getDouble("kwh") > 0);
         box.verbunden = false;
-        lat = 47.8;
+        lat = 48.3;
         assertEquals("nicht_angesteckt", d.takt().getJSONObject("zustand").getString("phase"));
         assertTrue(box.befehle.isEmpty());
     }

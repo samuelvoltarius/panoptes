@@ -2028,7 +2028,8 @@
     "dash_used": "-- gebruikt",
     "dash_limit": "-- limiet",
     "quality_rejected": "Er is niets toegepast. Afgewezen waarden: {fields}",
-    "quality_partial": "{applied} — maar oude waarden behouden voor: {fields}"
+    "quality_partial": "{applied} — maar oude waarden behouden voor: {fields}",
+    "dauer_hinweis": "Let op: altijd filmen is juridisch gevoelig in Duitsland, Oostenrijk en Zwitserland. Aanbevolen: opname op „Uit” laten en in de bewaker-instellingen „Gebeurtenissen automatisch opslaan” aanzetten. Dan slaat Panoptes alleen iets op na hard remmen of een stoot."
   },
   "events": {
     "select_date": "Kies een datum",
@@ -2136,7 +2137,10 @@
     "keep_released": "Wordt bij de volgende opruiming verwijderd als ze ouder is dan {stunden} uur.",
     "keep_unsaved": "Opslaan is niet gelukt. Probeer het nog eens.",
     "keep_fail": "Dat is niet gelukt.",
-    "keep_released_size": "Niet meer bewaard. Ze wordt alleen verwijderd als de opslag bijna vol is."
+    "keep_released_size": "Niet meer bewaard. Ze wordt alleen verwijderd als de opslag bijna vol is.",
+    "tab_ereignisse": "Gebeurtenissen",
+    "title_ereignis": "{prefix} Gebeurtenissen",
+    "badge_ereignis": "Gebeurtenis"
   },
   "surveillance": {
     "tab_general": "Basis",
@@ -4499,16 +4503,16 @@
     "could_not_complete": "Dat kon ik niet afmaken: {error}",
     "minimax_hinweis": "Je vragen en autogegevens gaan hiervoor naar MiniMax (China). Standaard uit.",
     "prompt_vehicle_history": "Zoek in de geschiedenis naar ",
-    "prompt_current_vehicle": "Leg de huidige toestand van de auto uit en noem wat opvalt.",
-    "prompt_latest_trip": "Leg mijn laatste rit uit, met verbruik en bijzonderheden.",
-    "prompt_more_battery": "Waarom gebruikte mijn laatste rit meer accu dan vergelijkbare ritten?",
-    "prompt_summarize_events": "Vat mijn laatste opnames en bewakingsgebeurtenissen samen.",
-    "prompt_roadsense": "Vat de laatste gevaarlijke plekken samen en wat ze betekenen.",
-    "prompt_charging": "Bekijk mijn laden van de laatste tijd en laat nuttige trends zien.",
-    "prompt_diagnostics": "Controleer de huidige toestand van de auto en leg mogelijke problemen uit.",
-    "prompt_analyze_logs": "Analyseer de laatste waarschuwingen en fouten in het logboek (zonder privégegevens), noem de sterkste aanwijzingen en wat nog onzeker is.",
-    "prompt_diagnose_automation": "Waarom is mijn regel niet uitgevoerd? Controleer voorwaarden, logboek, timing en veilige oplossingen.",
-    "prompt_control_vehicle": "Zet de binnentemperatuur op ",
+    "prompt_current_vehicle": "Hoe is het nu met mijn auto? Is alles in orde?",
+    "prompt_latest_trip": "Hoe was mijn laatste rit? Hoeveel stroom heeft die gebruikt?",
+    "prompt_more_battery": "Waarom gebruikte mijn laatste rit meer stroom dan normaal?",
+    "prompt_summarize_events": "Wat is er de laatste tijd rond mijn auto gebeurd? Zijn er opnames?",
+    "prompt_roadsense": "Welke gevaarlijke plekken zijn er bij mij in de buurt?",
+    "prompt_charging": "Hoe ging het laden de laatste tijd? Valt er iets op?",
+    "prompt_diagnostics": "Controleer mijn auto en Panoptes: is er een probleem?",
+    "prompt_analyze_logs": "Lees het logboek: waren er de laatste tijd fouten, en wat betekenen ze?",
+    "prompt_diagnose_automation": "Waarom is mijn regel niet uitgevoerd? Wat kan ik doen?",
+    "prompt_control_vehicle": "Zet de klimaatregeling op ",
     "prompt_create_automation": "Maak een regel die ",
     "prompt_find_automation": "Zoek een communityregel voor ",
     "err_provider_output_limit": "De assistent heeft te lang nagedacht en kon niet meer antwoorden. Stel de vraag korter.",
@@ -4984,7 +4988,9 @@
     "fps_now": "Camera nu: {v} beelden per seconde geanalyseerd",
     "fps_delivered": "(camera levert {g})",
     "fps_throttle": "Panoptes remt zelf af, omdat de camera de snelheid niet laat instellen.",
-    "trigger_unset": "Nog niet gekozen wanneer hij moet opnemen – tot dan alleen bij een schok."
+    "trigger_unset": "Nog niet gekozen wanneer hij moet opnemen – tot dan alleen bij een schok.",
+    "fahrt_title": "Tijdens het rijden",
+    "fahrt_lead": "Na hard remmen of een stoot slaat Panoptes een korte clip op. Verder wordt niets opgeslagen."
   },
   "system": {
     "tailscale_title": "Toegang op afstand (Tailscale)",
@@ -6197,5 +6203,14 @@
     "behalten": "Houden",
     "fehler": "Dat is niet gelukt.",
     "fehler_ort_unbekannt": "Stel eerst je thuis in onder Plaatsen."
+  },
+  "ereignis": {
+    "frage": "Gebeurtenis van {zeit} opgeslagen – bewaren?",
+    "behalten": "Bewaren",
+    "nein": "Nee bedankt",
+    "erklaerung": "Zonder „Bewaren” wordt de clip na {stunden} uur automatisch verwijderd.",
+    "erklaerung_ohne_frist": "Zonder „Bewaren” wordt de clip verwijderd als de ruimte voor gebeurtenissen vol is.",
+    "gespeichert": "Wordt bewaard.",
+    "fehler": "Dat is niet gelukt. Probeer het opnieuw."
   }
 }

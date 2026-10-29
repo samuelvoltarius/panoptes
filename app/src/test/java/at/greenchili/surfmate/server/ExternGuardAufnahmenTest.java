@@ -45,8 +45,8 @@ public class ExternGuardAufnahmenTest {
 
     @Test
     public void ohnePfadeUndRohkoordinaten() throws Exception {
-        JSONObject r = new JSONObject().put("id", ID).put("path", "/storage/x/clip.mp4").put("startLat", 47.8)
-                .put("startLng", 13.0).put("deleteUrl", "/api/recordings/id/" + ID).put("videoUrl", "/video/id/" + ID)
+        JSONObject r = new JSONObject().put("id", ID).put("path", "/storage/x/clip.mp4").put("startLat", 48.3)
+                .put("startLng", 14.235).put("deleteUrl", "/api/recordings/id/" + ID).put("videoUrl", "/video/id/" + ID)
                 .put("volumeId", "usb").put("timestamp", 1L);
         List<JSONObject> k = RecordingsApiHandler.fuerExtern(Collections.singletonList(r));
         JSONObject o = k.get(0);

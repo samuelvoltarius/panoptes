@@ -153,7 +153,7 @@ public class CommunityClientTest {
     @Test
     public void roadTilesArePostedNeverInUrl() throws Exception {
         Abfang a = new Abfang();
-        a.antwort = "{\"hazards\":[{\"tile\":\"-9007199254740993\",\"lat\":47.8,\"lng\":13.04,\"type\":1,"
+        a.antwort = "{\"hazards\":[{\"tile\":\"-9007199254740993\",\"lat\":48.3,\"lng\":14.275,\"type\":1,"
                 + "\"severity\":2,\"heading\":null,\"confidence\":0.8,\"altitude\":null,\"createdMs\":1,\"updatedMs\":77}],\"more\":false}";
         CloudflareEdgeSyncProvider p = new CloudflareEdgeSyncProvider(() -> CommunityZugang.STANDARD_STRASSE, a::client, () -> TOKEN);
         List<Long> tiles = Arrays.asList(-9007199254740993L, -42L);

@@ -72,17 +72,17 @@ public class StoppBelegungTest {
 
     @Test
     public void fullOnlyCountsForThatStop() {
-        double lat = 47.8;
-        double kmProGrad = RangeWatch.distKm(lat, 13.0, lat, 14.0);
+        double lat = 48.2;
+        double kmProGrad = RangeWatch.distKm(lat, 14.3, lat, 15.3);
         List<double[]> linie = new ArrayList<>();
-        for (int km = 0; km <= 200; km += 5) linie.add(new double[] {lat, 13.0 + km / kmProGrad});
+        for (int km = 0; km <= 200; km += 5) linie.add(new double[] {lat, 14.3 + km / kmProGrad});
         RangeWatch.Plan p = new RangeWatch.Plan(linie, Arrays.asList(
                 new RangeWatch.Stopp("A", 80, 40, 80), new RangeWatch.Stopp("B", 150, 40, 80)), 90, 50, 10, "Ziel");
         RangeWatch w = new RangeWatch(p);
-        RangeWatch.Lage l = w.messung(0, lat, 13.0 + 50 / kmProGrad, p.soll(50), 15, "A");
+        RangeWatch.Lage l = w.messung(0, lat, 14.3 + 50 / kmProGrad, p.soll(50), 15, "A");
         assertEquals(RangeWatch.Stufe.REICHT_NICHT, l.stufe);
         RangeWatch w2 = new RangeWatch(p);
-        RangeWatch.Lage l2 = w2.messung(0, lat, 13.0 + 100 / kmProGrad, p.soll(100), 15, "A");
+        RangeWatch.Lage l2 = w2.messung(0, lat, 14.3 + 100 / kmProGrad, p.soll(100), 15, "A");
         assertEquals("B", l2.naechsterName);
         assertEquals("A ist vorbei: „voll“ gilt nicht für B", RangeWatch.Stufe.PASST, l2.stufe);
     }

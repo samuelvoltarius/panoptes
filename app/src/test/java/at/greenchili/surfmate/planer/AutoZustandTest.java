@@ -166,23 +166,23 @@ public class AutoZustandTest {
         Netz n = new Netz();
         Env e = new Env();
         AutoZustand z = new AutoZustand(n, e);
-        e.m = m(50, false, Double.NaN, 1_000L).mitPosition(47.80123, 13.04456, 1_000L);
+        e.m = m(50, false, Double.NaN, 1_000L).mitPosition(48.30123, 14.27956, 1_000L);
         z.takt(1_000L);
         assertFalse("ohne Positions-Einwilligung keine Position", n.bodies.get(0).has("position"));
         assertFalse(n.bodies.get(0).has("lat"));
 
         e.positionEin = true;
-        e.m = m(60, false, Double.NaN, 400_000L).mitPosition(47.80123, 13.04456, 400_000L);
+        e.m = m(60, false, Double.NaN, 400_000L).mitPosition(48.30123, 14.27956, 400_000L);
         z.takt(400_000L);
         JSONObject b = n.bodies.get(1);
         JSONObject pos = b.getJSONObject("position");
         assertEquals(2, pos.length());
-        assertEquals(47.8012, pos.getDouble("lat"), 1e-9);
-        assertEquals(13.0446, pos.getDouble("lon"), 1e-9);
+        assertEquals(48.3012, pos.getDouble("lat"), 1e-9);
+        assertEquals(14.2796, pos.getDouble("lon"), 1e-9);
         assertFalse(b.has("lat") || b.has("lon"));
 
         // veralteter GPS-Fix: keine Position
-        e.m = m(70, false, Double.NaN, 800_000L).mitPosition(47.8, 13.0, 1_000L);
+        e.m = m(70, false, Double.NaN, 800_000L).mitPosition(48.3, 14.235, 1_000L);
         z.takt(800_000L);
         assertFalse(n.bodies.get(2).has("position"));
     }
@@ -209,12 +209,12 @@ public class AutoZustandTest {
         Env e = new Env();
         AutoZustand z = new AutoZustand(n, e);
         e.positionEin = false;
-        e.m = m(50, false, Double.NaN, 1_000L).mitPosition(47.8, 13.0, 1_000L);
+        e.m = m(50, false, Double.NaN, 1_000L).mitPosition(48.3, 14.235, 1_000L);
         z.takt(1_000L);
         assertFalse("nie Position gesendet -> kein Widerruf", n.ops.contains(AutoZustand.WIDERRUF_OP));
 
         e.positionEin = true;
-        e.m = m(60, false, Double.NaN, 400_000L).mitPosition(47.8, 13.0, 400_000L);
+        e.m = m(60, false, Double.NaN, 400_000L).mitPosition(48.3, 14.235, 400_000L);
         z.takt(400_000L);
         assertTrue(e.positionGesendet);
 

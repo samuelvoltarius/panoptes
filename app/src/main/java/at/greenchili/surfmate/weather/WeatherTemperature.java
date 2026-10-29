@@ -14,8 +14,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Shared outside-air temperature from the Open-Meteo weather API, keyed on GPS
- * coordinates. Single source of truth for weather temp across the daemon (the
+ * Shared outside-air temperature, keyed on GPS coordinates. 0.1.27 (Koordination 28.10., API_FUER_SURFMATE §18):
+ * das Auto fragt NUR noch den eigenen Server ({@link #STANDARD_URL}, Daten von Open-Meteo, CC BY 4.0) mit einer
+ * Rasterzelle von 0,1° (≈ 10 km) – ohne Kennung; die IP des Autos geht nicht mehr an Dritte. Single source of truth for weather temp across the daemon (the
  * automation temperature fallback, ABRP {@code ext_temp}, …) so there is ONE
  * cache and ONE network path, not a copy per caller.
  *
@@ -45,13 +46,35 @@ public final class WeatherTemperature {
     private static volatile long lastFetchTime = 0;
     private static final AtomicBoolean fetchInFlight = new AtomicBoolean(false);
 
-    // Mean precipitation probability (%) over the next PRECIP_HOURS hours, from the same
+    // Mean precipitation probability (%) over the next PRECIP_HOURS hours (0.1.27: Server-Mittel, sonst Höchstwert), from the same
     // Open-Meteo fetch (one round-trip serves temp + rain). -1 = not yet fetched/stale.
     // Drives the "rain likely" automation trigger; kept on the same cache clock as temp.
     private static final int PRECIP_HOURS = 6;
     private static volatile int cachedPrecipProb = -1;
 
     private WeatherTemperature() {}
+
+    /** Eigener Wetter-Endpunkt (Server fragt Open-Meteo je Zelle höchstens alle 15 min); überschreibbar: wetter.url. */
+    public static final String STANDARD_URL = "https://byd.serveone.at/api/wetter/v1/jetzt";
+
+    /** Rasterzelle „lat_lon“ auf 0,1° (genau eine Nachkommastelle, wie der Server sie verlangt); −0.0 → 0.0. */
+    static String zelle(double lat, double lon) {
+        double a = Math.round(lat * 10) / 10.0, b = Math.round(lon * 10) / 10.0;
+        if (a == 0) a = 0.0;
+        if (b == 0) b = 0.0;
+        return String.format(Locale.US, "%.1f_%.1f", a, b);
+    }
+
+    static String url(double lat, double lon) {
+        String basis = STANDARD_URL;
+        try {
+            JSONObject w = at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig().optJSONObject("wetter");
+            String u = w == null ? "" : w.optString("url", "").trim();
+            if (u.startsWith("https://")) basis = u;
+        } catch (Throwable ignored) {
+        }
+        return basis + "?zelle=" + zelle(lat, lon);
+    }
 
     /**
      * Mean precipitation probability (%) over roughly the next {@value #PRECIP_HOURS}
@@ -123,15 +146,9 @@ public final class WeatherTemperature {
         // Serve fresh cache without a network round-trip.
         if (!Double.isNaN(cachedTemp) && (now - lastFetchTime) < CACHE_MS) return cachedTemp;
         try {
-            // One round-trip serves both signals: current temperature + the next-hours
-            // precipitation-probability series (for the "rain likely" automation trigger).
-            // Mit Einwilligung nur grob (2 Nachkommastellen ≈ 1 km) – für Wetter genügt das.
-            String url = String.format(Locale.US,
-                    "https://api.open-meteo.com/v1/forecast?latitude=%.2f&longitude=%.2f"
-                    + "&current=temperature_2m&hourly=precipitation_probability&forecast_days=1&timezone=auto",
-                    lat, lon);
+            // Ein Aufruf liefert Temperatur und Regenwahrscheinlichkeit (höchste der nächsten 6 h).
             Request request = new Request.Builder()
-                    .url(url)
+                    .url(url(lat, lon))
                     .header("User-Agent", "Panoptes/" + at.greenchili.surfmate.BuildConfig.VERSION_NAME)
                     .build();
             // Chain selector (proxy → direct) rather than a frozen proxy: a
@@ -143,24 +160,10 @@ public final class WeatherTemperature {
                     .readTimeout(3, TimeUnit.SECONDS)
                     .build();
             try (Response response = client.newCall(request).execute()) {
+                // 429 (Ratenbremse) / 503 (Server ohne Wert): letzten Wert behalten
                 if (response.isSuccessful() && response.body() != null) {
-                    String body = response.body().string();
-                    JSONObject root = new JSONObject(body);
-                    // Parse precip first so a temp-only success still updates rain (and
-                    // vice versa); both share lastFetchTime set once below on any success.
-                    int precip = parseMeanPrecip(root);
-                    if (precip >= 0) cachedPrecipProb = precip;
-                    JSONObject current = root.optJSONObject("current");
-                    if (current != null && current.has("temperature_2m")) {
-                        double temp = current.getDouble("temperature_2m");
-                        cachedTemp = temp;
-                        lastFetchTime = System.currentTimeMillis();
-                        logger.debug("weather temp=" + String.format(Locale.US, "%.1f", temp)
-                                + "°C precip=" + cachedPrecipProb + "%");
-                        return temp;
-                    }
-                    // Temp missing but precip parsed — still a useful refresh.
-                    if (precip >= 0) lastFetchTime = System.currentTimeMillis();
+                    double temp = uebernehmen(new JSONObject(response.body().string()));
+                    if (!Double.isNaN(temp)) return temp;
                 }
             }
         } catch (Exception e) {
@@ -170,39 +173,29 @@ public final class WeatherTemperature {
     }
 
     /**
-     * Mean precipitation probability (%) over the next {@value #PRECIP_HOURS} hourly
-     * buckets from Open-Meteo's {@code hourly.precipitation_probability} array. The
-     * array starts at 00:00 today; we start at the current hour so "next hours" is
-     * actually ahead of now. Returns -1 if the field is absent/empty.
+     * Antwort des eigenen Servers in den Zwischenspeicher: {@code {temp_c, regen_6h_prozent|null, stand, veraltet?, ok}}.
+     * Liefert die Temperatur oder NaN. Ein vom Server als „veraltet“ markierter Wert (≤ 1 h) wird übernommen.
      */
-    private static int parseMeanPrecip(JSONObject root) {
-        try {
-            JSONObject hourly = root.optJSONObject("hourly");
-            if (hourly == null) return -1;
-            org.json.JSONArray times = hourly.optJSONArray("time");
-            org.json.JSONArray probs = hourly.optJSONArray("precipitation_probability");
-            if (probs == null || probs.length() == 0) return -1;
-            // Find the first bucket at/after the current wall-clock hour. Open-Meteo
-            // returns local time strings "YYYY-MM-DDTHH:00"; match on the "THH" hour.
-            int startIdx = 0;
-            if (times != null && times.length() == probs.length()) {
-                String hourTag = String.format(Locale.US, "T%02d",
-                        java.time.LocalTime.now().getHour());
-                for (int i = 0; i < times.length(); i++) {
-                    String ts = times.optString(i, "");
-                    if (ts.contains(hourTag)) { startIdx = i; break; }
-                }
-            }
-            long sum = 0; int n = 0;
-            for (int i = startIdx; i < probs.length() && n < PRECIP_HOURS; i++, n++) {
-                int p = probs.optInt(i, -1);
-                if (p >= 0) sum += p;
-                else n--; // skip nulls without counting them
-            }
-            if (n <= 0) return -1;
-            return (int) Math.round(sum / (double) n);
-        } catch (Exception e) {
-            return -1;
-        }
+    private static int regen(JSONObject root, String feld) {
+        if (!root.has(feld) || root.isNull(feld)) return -1;
+        int p = root.optInt(feld, -1);
+        return p >= 0 && p <= 100 ? p : -1;
+    }
+
+    static double uebernehmen(JSONObject root) {
+        if (!root.optBoolean("ok", false)) return Double.NaN;
+        // „Regen wahrscheinlich“ behält seine Bedeutung (Mittel der nächsten 6 h, wie vor 0.1.27): Mittelwert des
+        // Servers, wenn er ihn liefert; sonst die höchste Wahrscheinlichkeit (Koordination 28.10.)
+        int p = regen(root, "regen_6h_mittel_prozent");
+        if (p < 0) p = regen(root, "regen_6h_prozent");
+        if (p >= 0) cachedPrecipProb = p;
+        if (!root.has("temp_c") || root.isNull("temp_c")) return Double.NaN;
+        double temp = root.optDouble("temp_c", Double.NaN);
+        if (Double.isNaN(temp) || temp < -60 || temp > 60) return Double.NaN;
+        cachedTemp = temp;
+        lastFetchTime = System.currentTimeMillis();
+        logger.debug("weather temp=" + String.format(Locale.US, "%.1f", temp) + "°C precip=" + cachedPrecipProb + "%"
+                + (root.optBoolean("veraltet", false) ? " (veraltet)" : ""));
+        return temp;
     }
 }

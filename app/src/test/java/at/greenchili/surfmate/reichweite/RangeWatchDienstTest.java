@@ -16,12 +16,12 @@ import java.nio.file.Paths;
 public class RangeWatchDienstTest {
 
     /** Beispiel nach API_FUER_SURFMATE.md §3 (auto-abholen / meine-route). */
-    static final String PLAN = "{\"titel\":\"Salzburg → Wien\",\"start\":{\"lat\":47.8,\"lon\":13.04,\"name\":\"Salzburg\"},"
+    static final String PLAN = "{\"titel\":\"Linz → Wien\",\"start\":{\"lat\":48.3,\"lon\":14.275,\"name\":\"Linz\"},"
             + "\"ziel\":{\"lat\":48.2,\"lon\":16.37,\"name\":\"Wien\"},\"km\":302.7,\"minuten\":161,"
             + "\"soc_start\":80,\"soc_ankunft\":18,\"fahrzeug\":\"Dolphin Surf\",\"abfahrt\":\"\","
             + "\"stopps\":[{\"name\":\"Ionity Ansfelden\",\"lat\":48.2,\"lon\":14.3,\"km\":120.4,\"kw\":350,\"cpo\":\"Ionity\","
             + "\"soc_an\":24,\"soc_ab\":70,\"dauer_min\":25,\"kwh\":19.8,\"preis\":12.1}],"
-            + "\"geometrie\":[[47.8,13.04],[48.0,13.8],[48.2,14.3],[48.2,15.3],[48.2,16.37]],"
+            + "\"geometrie\":[[48.3,14.275],[48.0,13.8],[48.2,14.3],[48.2,15.3],[48.2,16.37]],"
             + "\"erstellt\":\"2026-10-21T08:00:00Z\",\"schon_abgeholt\":false,\"auto\":null}";
 
     @Test
@@ -34,7 +34,7 @@ public class RangeWatchDienstTest {
         assertEquals("Wien", p.zielName);
         assertEquals(PlanLeser.RESERVE_STANDARD, p.reserve, 0);
         assertTrue(p.zielKm > 200);
-        assertEquals("2026-10-21T08:00:00Z|Salzburg → Wien", PlanLeser.kennung(new JSONObject(PLAN)));
+        assertEquals("2026-10-21T08:00:00Z|Linz → Wien", PlanLeser.kennung(new JSONObject(PLAN)));
     }
 
     @Test

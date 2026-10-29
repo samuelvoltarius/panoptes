@@ -111,7 +111,7 @@ public class ZeittarifTest {
 
     @Test
     public void tarifProfilHaeltZeittarifUndVerwirftUnsinn() throws Exception {
-        JSONObject j = new TariffProfile("Zuhause", 47.8, 13.0, 50, 0.30, 0, "€").toJson();
+        JSONObject j = new TariffProfile("Zuhause", 48.3, 14.3, 50, 0.30, 0, "€").toJson();
         j.put("zeittarif", Zeittarif.vorlage(Zeittarif.VORLAGE_MITTAG, 0.30, "AT"));
         TariffProfile p = new TariffProfile(j);
         assertNotNull(p.getZeittarif());
@@ -122,7 +122,7 @@ public class ZeittarifTest {
         assertNull(rund.getZeittarif());
         assertFalse(rund.toJson().has("zeittarif"));
         // nur Zeittarif ohne AC-Preis ist ein gültiger Tarif
-        TariffProfile nur = new TariffProfile("Z", 47.8, 13.0, 50, 0, 0, "");
+        TariffProfile nur = new TariffProfile("Z", 48.3, 14.3, 50, 0, 0, "");
         assertFalse(nur.hasAnyRate());
         nur.setZeittarif(Zeittarif.vorlage(Zeittarif.VORLAGE_TAG_NACHT, 0.3, "AT"));
         assertTrue(nur.hasAnyRate());

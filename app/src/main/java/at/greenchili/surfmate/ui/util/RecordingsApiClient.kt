@@ -195,6 +195,8 @@ object RecordingsApiClient {
         val proximityCount: Long, val proximitySize: Long, val proximityToday: Long,
         // Instant replays (replay_*). Zero on daemons predating type='replay'.
         val replayCount: Long, val replaySize: Long, val replayToday: Long,
+        // Event clips (ereignis_*). Zero on daemons predating type='ereignis'.
+        val ereignisCount: Long = 0, val ereignisSize: Long = 0, val ereignisToday: Long = 0,
         val warming: Boolean, val warmingDone: Int, val warmingTotal: Int,
         /**
          * Daemon reported its recordings index is down. Every counter in this
@@ -358,6 +360,9 @@ object RecordingsApiClient {
                 replayCount = root.optLong("replayCount", 0),
                 replaySize = root.optLong("replaySize", 0),
                 replayToday = root.optLong("replayTodayCount", 0),
+                ereignisCount = root.optLong("ereignisCount", 0),
+                ereignisSize = root.optLong("ereignisSize", 0),
+                ereignisToday = root.optLong("ereignisTodayCount", 0),
                 warming = warmObj?.optBoolean("warming", false) ?: false,
                 warmingDone = warmObj?.optInt("done", 0) ?: 0,
                 warmingTotal = warmObj?.optInt("total", 0) ?: 0
@@ -693,6 +698,7 @@ object RecordingsApiClient {
             "proximity" -> RecordingFile.RecordingType.PROXIMITY
             "oemDashcam" -> RecordingFile.RecordingType.OEM_DASHCAM
             "replay" -> RecordingFile.RecordingType.REPLAY
+            "ereignis" -> RecordingFile.RecordingType.EREIGNIS
             else -> RecordingFile.RecordingType.NORMAL
         }
         val cameraId = rec.optInt("cameraId", 0)

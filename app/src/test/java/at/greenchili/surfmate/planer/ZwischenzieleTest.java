@@ -12,7 +12,7 @@ import org.junit.Test;
 public class ZwischenzieleTest {
 
     private static JSONObject plan(String zwischen) throws Exception {
-        return new JSONObject("{\"titel\":\"Salzburg → Wien\",\"erstellt\":\"2026-10-22T08:00:00Z\","
+        return new JSONObject("{\"titel\":\"Innsbruck → Wien\",\"erstellt\":\"2026-10-22T08:00:00Z\","
                 + "\"ziel\":{\"name\":\"Wien\",\"lat\":48.2,\"lon\":16.37},\"km\":300,"
                 + "\"stopps\":[{\"name\":\"Ladepark A\",\"lat\":48.1,\"lon\":14.3,\"km\":120},{\"name\":\"Ladepark B\",\"lat\":48.2,\"lon\":15.6,\"km\":230}]"
                 + (zwischen == null ? "" : ",\"zwischenziele\":" + zwischen) + "}");
@@ -30,7 +30,7 @@ public class ZwischenzieleTest {
     @Test
     public void nachKmZwischenDieLadestopps() throws Exception {
         JSONObject a = PlanerRoute.antwort(plan("[{\"name\":\"Linz\",\"lat\":48.3,\"lon\":14.29,\"km\":130,\"aufenthalt_min\":45},"
-                + "{\"name\":\"Mondsee\",\"lat\":47.85,\"lon\":13.35,\"km\":25}]"), null, null);
+                + "{\"name\":\"Enns\",\"lat\":48.35,\"lon\":14.585,\"km\":25}]"), null, null);
         JSONArray z = a.getJSONArray("zwischenziele");
         assertEquals("Z1", z.getJSONObject(0).getString("nr"));       // Fahrreihenfolge des Planers bleibt die Nummer
         assertEquals("Linz", z.getJSONObject(0).getString("name"));

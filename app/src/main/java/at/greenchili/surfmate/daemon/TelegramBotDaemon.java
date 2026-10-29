@@ -3543,6 +3543,11 @@ public class TelegramBotDaemon {
     private static final long TELEGRAM_MAX_UPLOAD_BYTES = 50L * 1000L * 1000L;  // 50 MB
 
     public static boolean sendVideo(long chatId, String videoPath, String caption) {
+        if (at.greenchili.surfmate.recording.EreignisClip.istEreignisPfad(videoPath)) {
+            // Ereignis-Clips (0.1.27) bleiben im Auto: nie an Telegram.
+            log("Ereignis-Clip wird nicht gesendet: " + videoPath);
+            return false;
+        }
         try {
             File videoFile = new File(videoPath);
             if (!videoFile.exists()) {
@@ -3620,6 +3625,10 @@ public class TelegramBotDaemon {
      * single-429-retry shape.
      */
     public static boolean sendDocument(long chatId, String filePath, String caption) {
+        if (at.greenchili.surfmate.recording.EreignisClip.istEreignisPfad(filePath)) {
+            log("Ereignis-Clip wird nicht gesendet: " + filePath);
+            return false;
+        }
         try {
             File docFile = new File(filePath);
             if (!docFile.exists()) {

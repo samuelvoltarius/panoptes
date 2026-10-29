@@ -1748,7 +1748,8 @@
     "section": {
       "aufnahme": "Enregistrement",
       "abschreckung": "Dissuasion",
-      "stopp": "Le Gardien s'arrête quand …"
+      "stopp": "Le Gardien s'arrête quand …",
+      "fahrt": "Trajet"
     },
     "surveillance": {
       "triggerMode": {
@@ -2035,8 +2036,8 @@
     },
     "wetter": {
       "online": {
-        "title": "Météo depuis Internet (Open-Meteo)",
-        "help": "Si la voiture ne fournit pas de température extérieure ou si une règle utilise « pluie probable », Panoptes interroge Open-Meteo. La position approximative (arrondie à environ 1 km) est alors envoyée à Open-Meteo au plus toutes les 10 minutes. Panoptes n'y stocke rien ; la désactivation arrête immédiatement les requêtes. Désactivé par défaut."
+        "title": "Météo depuis Internet (via le serveur Panoptes)",
+        "help": "Pour la météo et l’autonomie, Panoptes demande à notre serveur la météo de ta région (floutée à environ 10 km). Sans identifiant, au plus toutes les 10 minutes ; le serveur n’enregistre ni ta région ni ton adresse IP. Les données météo proviennent d’Open-Meteo (CC BY 4.0). Désactiver arrête immédiatement les requêtes. Désactivé par défaut."
       }
     },
     "karte": {
@@ -2245,6 +2246,17 @@
         "help": "Supprime tout ce qui a été retenu et toutes les propositions refusées. Les automatisations déjà créées restent.",
         "behalten": "Conserver",
         "loeschen": "Tout oublier"
+      }
+    },
+    "recording": {
+      "ereignisClip": {
+        "title": "Sauvegarder les événements automatiquement",
+        "help": "En cas de freinage d’urgence ou de choc, Panoptes sauvegarde 20 secondes avant et après. Rien d’autre n’est enregistré. Les clips restent dans la voiture ou sur la clé USB. Actif dès le prochain trajet.",
+        "helpCH": "Désactivé par défaut en Suisse, car les règles pour les caméras de voiture y sont plus strictes. Vous pouvez l’activer vous-même."
+      },
+      "ereignisTelegram": {
+        "title": "Message Telegram en cas d’événement",
+        "help": "Seulement un court texte avec l’heure. Pas de vidéo, pas de lieu."
       }
     }
   },

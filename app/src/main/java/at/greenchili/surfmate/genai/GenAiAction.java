@@ -36,7 +36,7 @@ public final class GenAiAction {
             }
         }
         try {
-            return new JSONObject()
+            JSONObject out = new JSONObject()
                     .put("allowedActions", new JSONArray()
                             .put(CLIMATE)
                             .put(SUNSHADE)
@@ -48,6 +48,14 @@ public final class GenAiAction {
                     .put("safety",
                             "Return one proposal only. Never claim execution. "
                             + "Missing or ambiguous details require a clarification.");
+            // 0.1.27: Nutzer sagen „Heizen Stufe 3“ wie im Display; temperatureC bleibt die SDK-Skala 17–33
+            if (at.greenchili.surfmate.byd.KlimaStufe.stufenModell()) {
+                out.put("climateLevels",
+                        "The car shows a level, not degrees. temperatureC is the bar value: "
+                        + "'Heating level n' = 25 + n, 'Cooling level n' = 25 - n, "
+                        + "'Neutral' = 25 (n is 1 to 8). Reply with the level, never with degrees.");
+            }
+            return out;
         } catch (Exception ignored) {
             return new JSONObject();
         }

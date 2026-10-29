@@ -521,6 +521,26 @@
             </intent-filter>
         </receiver>
 
+        <!-- 0.1.27 Ereignis-Clip: „Ereignis gesichert“ (Toast, ohne Ton/Licht). Nur Shell/System (DUMP). -->
+        <receiver
+            android:name="at.greenchili.surfmate.receiver.EreignisReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.DUMP">
+            <intent-filter>
+                <action android:name="at.greenchili.surfmate.action.EREIGNIS_GESICHERT" />
+            </intent-filter>
+        </receiver>
+        <!-- 0.1.27 Ereignis-Clip: Frage „Behalten?“ beim Aussteigen bzw. nächsten Start (Daemon: am start).
+             Exportiert, weil der Daemon als Shell startet; zeigt nur lokale offene Fragen. -->
+        <activity
+            android:name="at.greenchili.surfmate.ui.EreignisFrageActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Material.Dialog.NoActionBar"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:taskAffinity="" />
+
         <receiver
             android:name="at.greenchili.surfmate.receiver.ProcessRevivalReceiver"
             android:enabled="true"

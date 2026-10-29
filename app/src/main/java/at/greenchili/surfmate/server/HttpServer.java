@@ -1412,6 +1412,7 @@ public class HttpServer {
         if ((path.startsWith("/api/einstellungen") || path.startsWith("/api/kopplung/")
                 || path.startsWith("/api/kopplungen") || path.startsWith("/api/sitzung/")
                 || path.startsWith("/api/aufnahmen/behalten") || path.startsWith("/api/aufnahmen/freigeben")
+                || path.startsWith("/api/ereignisse/")   // 0.1.27 Ereignis-Clip: offene „Behalten?“-Fragen (nur lokal, ExternGuard)
                 || path.startsWith("/api/planer/") || path.startsWith("/api/test/blitzer"))
                 && EinstellungenApiHandler.handle(method, path, body, out)) {
             return true;

@@ -1742,7 +1742,8 @@
     "section": {
       "aufnahme": "Recording",
       "abschreckung": "Warn-off",
-      "stopp": "Guardian stops when …"
+      "stopp": "Guardian stops when …",
+      "fahrt": "Driving"
     },
     "surveillance": {
       "triggerMode": {
@@ -2029,8 +2030,8 @@
     },
     "wetter": {
       "online": {
-        "title": "Weather from the internet (Open-Meteo)",
-        "help": "If the car does not report an outside temperature or a rule uses “rain likely”, Panoptes asks Open-Meteo. The approximate location (rounded to about 1 km) is sent to Open-Meteo at most every 10 minutes. Panoptes stores nothing there; switching off stops the requests immediately. Off by default."
+        "title": "Weather from the internet (via the Panoptes server)",
+        "help": "For weather and range, Panoptes asks our server for the weather in your area (blurred to about 10 km). No identifier, at most every 10 minutes; the server stores neither your area nor your IP address. Weather data comes from Open-Meteo (CC BY 4.0). Switching off stops the requests immediately. Off by default."
       }
     },
     "karte": {
@@ -2239,6 +2240,17 @@
         "help": "Deletes everything remembered and all declined suggestions. Automations already created stay.",
         "behalten": "Keep",
         "loeschen": "Forget everything"
+      }
+    },
+    "recording": {
+      "ereignisClip": {
+        "title": "Save events automatically",
+        "help": "After hard braking or a bump, Panoptes saves 20 seconds before and after. Nothing else is stored. Clips stay only in the car or on the USB stick. Works from the next drive.",
+        "helpCH": "Off by default in Switzerland because the rules for car cameras are stricter there. You can turn it on yourself."
+      },
+      "ereignisTelegram": {
+        "title": "Telegram message on event",
+        "help": "Only a short text with the time. No video, no location."
       }
     }
   },

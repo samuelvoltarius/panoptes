@@ -347,6 +347,10 @@ public class RecordingsApiHandler {
             HttpResponse.sendError(out, 400, Messages.get("errors.recordings_invalid_filename"));
             return;
         }
+        if (ereignisVonAussen(filename) || ereignisVonAussen(requestedPath)) {
+            HttpResponse.sendError(out, 403, Messages.get("errors.recordings_not_found"));
+            return;
+        }
 
         // Direct sidecar JPEG hits — heroes ("event_xxx.jpg") or per-actor
         // ("thumb_event_xxx_a17_9300.jpg") written by ThumbnailBuffer next to
@@ -451,6 +455,10 @@ public class RecordingsApiHandler {
         if (!indexPathAllowed(videoFile)) {
             HttpResponse.sendError(out, 404,
                 Messages.get("errors.recordings_thumbnail_not_found_with_filename", recordingId));
+            return;
+        }
+        if (ereignisVonAussen(videoFile.getPath())) {
+            HttpResponse.sendError(out, 403, Messages.get("errors.recordings_not_found"));
             return;
         }
         if (!videoFile.isFile() || !videoFile.canRead()) {
@@ -851,6 +859,8 @@ public class RecordingsApiHandler {
         List<JSONObject> out = new java.util.ArrayList<>(rows.size());
         for (JSONObject r : rows) {
             try {
+                // Ereignis-Clips (0.1.27) bleiben im Auto: nie über Brücke/Cockpit.
+                if (at.greenchili.surfmate.recording.EreignisClip.TYP.equals(r.optString("type"))) continue;
                 JSONObject k = new JSONObject(r.toString());
                 for (String f : NICHT_EXTERN) k.remove(f);
                 out.add(k);
@@ -1077,6 +1087,7 @@ public class RecordingsApiHandler {
                     case "sentry": canon.add("sentry"); break;
                     case "proximity": canon.add("proximity"); break;
                     case "replay": canon.add("replay"); break;
+                    case "ereignis": canon.add("ereignis"); break;
                     case "oemdashcam":
                     case "oem_dashcam": canon.add("oemDashcam"); break;
                     default: canon.add(t); // unknown — pass through (logs as zero matches)
@@ -1403,6 +1414,12 @@ public class RecordingsApiHandler {
         response.put("replayCount", s.replayCount);
         response.put("replaySize", s.replayBytes);
         response.put("replaySizeFormatted", formatSize(s.replayBytes));
+        // Ereignis-Clips (0.1.27): eigener Ordner, eigene Grenze (EreignisClip.GRENZE_BYTES).
+        response.put("ereignisCount", s.ereignisCount);
+        response.put("ereignisSize", s.ereignisBytes);
+        response.put("ereignisSizeFormatted", formatSize(s.ereignisBytes));
+        response.put("ereignisTodayCount", s.ereignisToday);
+        response.put("ereignisLimitBytes", at.greenchili.surfmate.recording.EreignisClip.GRENZE_BYTES);
         response.put("totalCount", s.totalCount());
         response.put("totalSize", s.totalBytes());
         response.put("totalSizeFormatted", formatSize(s.totalBytes()));
@@ -1445,6 +1462,7 @@ public class RecordingsApiHandler {
         byType.put("sentry", typeBlock(s.sentryCount, s.sentryBytes, s.sentryToday));
         byType.put("proximity", typeBlock(s.proximityCount, s.proximityBytes, s.proximityToday));
         byType.put("replay", typeBlock(s.replayCount, s.replayBytes, s.replayToday));
+        byType.put("ereignis", typeBlock(s.ereignisCount, s.ereignisBytes, s.ereignisToday));
         response.put("byType", byType);
 
         // Index health surface — clients can detect a still-warming index.
@@ -1533,8 +1551,18 @@ public class RecordingsApiHandler {
         streamVideoFile(out, file, rangeHeader, ifNoneMatchHeader);
     }
 
+    /** Ereignis-Clips (0.1.27) nur im Auto bzw. im lokalen Netz, nie von außen (Brücke/Cockpit). */
+    private static boolean ereignisVonAussen(String pfad) {
+        return pfad != null && AuthMiddleware.isExternRequest()
+                && at.greenchili.surfmate.recording.EreignisClip.istEreignisPfad(pfad);
+    }
+
     private static void streamVideoFile(OutputStream out, File file, String rangeHeader,
                                         String ifNoneMatchHeader) throws Exception {
+        if (ereignisVonAussen(file.getPath())) {
+            HttpResponse.sendError(out, 403, Messages.get("errors.recordings_not_found"));
+            return;
+        }
         // Conditional GET: if the client's cached copy matches our ETag,
         // skip re-streaming. Tag is "<length>-<mtime>" so any append/replace
         // invalidates without us needing a content hash.

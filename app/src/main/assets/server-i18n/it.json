@@ -1748,7 +1748,8 @@
     "section": {
       "aufnahme": "Registrazione",
       "abschreckung": "Dissuasione",
-      "stopp": "Il Guardiano si ferma quando …"
+      "stopp": "Il Guardiano si ferma quando …",
+      "fahrt": "Viaggio"
     },
     "surveillance": {
       "triggerMode": {
@@ -2035,8 +2036,8 @@
     },
     "wetter": {
       "online": {
-        "title": "Meteo da internet (Open-Meteo)",
-        "help": "Se l'auto non fornisce la temperatura esterna o una regola usa “pioggia probabile”, Panoptes interroga Open-Meteo. In questo caso la posizione approssimativa (arrotondata a circa 1 km) viene inviata a Open-Meteo al massimo ogni 10 minuti. Panoptes lì non memorizza nulla; se disattivi, le richieste terminano subito. Di serie disattivato."
+        "title": "Meteo da internet (tramite il server Panoptes)",
+        "help": "Per meteo e autonomia, Panoptes chiede al nostro server il meteo della tua zona (sfocato a circa 10 km). Senza identificativo, al massimo ogni 10 minuti; il server non salva né la tua zona né il tuo indirizzo IP. I dati meteo provengono da Open-Meteo (CC BY 4.0). Disattivando, le richieste si fermano subito. Disattivato per impostazione predefinita."
       }
     },
     "karte": {
@@ -2245,6 +2246,17 @@
         "help": "Cancella tutto ciò che è stato ricordato e tutte le proposte rifiutate. Le automazioni già create restano.",
         "behalten": "Mantieni",
         "loeschen": "Dimentica tutto"
+      }
+    },
+    "recording": {
+      "ereignisClip": {
+        "title": "Salva eventi automaticamente",
+        "help": "Dopo una frenata brusca o un urto, Panoptes salva 20 secondi prima e dopo. Nient’altro viene salvato. Le clip restano solo in auto o sulla chiavetta USB. Attivo dal prossimo viaggio.",
+        "helpCH": "Spento di default in Svizzera, perché lì le regole per le telecamere in auto sono più severe. Puoi attivarlo tu."
+      },
+      "ereignisTelegram": {
+        "title": "Messaggio Telegram per un evento",
+        "help": "Solo un breve testo con l’ora. Niente video, niente luogo."
       }
     }
   },

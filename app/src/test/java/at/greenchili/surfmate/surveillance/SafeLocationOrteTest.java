@@ -16,7 +16,7 @@ import java.util.List;
 public class SafeLocationOrteTest {
 
     private static JSONObject ort(String name, boolean ruhe, boolean zuhause) throws Exception {
-        return new JSONObject().put("id", "o_" + name).put("name", name).put("lat", 47.8).put("lon", 13.05).put("r", 80)
+        return new JSONObject().put("id", "o_" + name).put("name", name).put("lat", 48.3).put("lon", 14.285).put("r", 80)
                 .put("eigenschaften", new JSONObject().put("privat", false).put("ruhezone", ruhe).put("zuhause", zuhause)
                         .put("favorit", false).put("tarif", JSONObject.NULL))
                 .put("verweise", new JSONObject());

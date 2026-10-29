@@ -271,11 +271,19 @@ object RecordingScanner {
             scanDirectoryDedup(dir, RecordingFile.RecordingType.REPLAY, replay, seenReplay)
         }
 
-        val allFiles = (normal + sentry + proximity + oemDashcam + replay).sortedByDescending { it.timestamp }
+        // Event clips (ereignis_*.mp4) live in the ereignisse/ subfolder of each
+        // recordings dir; the prefix check in fromFile keeps other files out.
+        val ereignis = mutableListOf<RecordingFile>()
+        val seenEreignis = mutableSetOf<String>()
+        for (dir in sm.allRecordingsDirs) {
+            scanDirectoryDedup(File(dir, "ereignisse"), RecordingFile.RecordingType.EREIGNIS, ereignis, seenEreignis)
+        }
+
+        val allFiles = (normal + sentry + proximity + oemDashcam + replay + ereignis).sortedByDescending { it.timestamp }
 
         Log.d(TAG, "Direct Scan: Found ${allFiles.size} total videos " +
             "(normal=${normal.size}, sentry=${sentry.size}, proximity=${proximity.size}, " +
-            "oemDashcam=${oemDashcam.size}, replay=${replay.size})")
+            "oemDashcam=${oemDashcam.size}, replay=${replay.size}, ereignis=${ereignis.size})")
 
         return allFiles
     }

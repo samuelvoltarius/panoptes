@@ -108,6 +108,8 @@ public class AufbewahrungTest {
         assertTrue(cam.contains("at.greenchili.surfmate.storage.Aufbewahrung.start();"));
         String hs = lies("src/main/java/at/greenchili/surfmate/server/HttpServer.java");
         assertTrue(hs.contains("path.startsWith(\"/api/aufnahmen/behalten\")"));
+        // 0.1.27: ohne diese Weiterleitung antwortet /api/ereignisse/offen mit 404 (Emulator 29.10.)
+        assertTrue(hs.contains("path.startsWith(\"/api/ereignisse/\")"));
     }
 
     private static String lies(String p) throws Exception {

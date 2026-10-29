@@ -4832,6 +4832,20 @@ public class StorageManager {
             proximityDir, internalProximityDir, sdCardProximityDir, usbProximityDir);
     }
 
+    /**
+     * Ereignis-Clips (0.1.27): Unterordner {@code ereignisse/} jedes Aufnahmen-Ordners. Bewusst NICHT
+     * in {@link #getReapableDirs}: der Größen-Aufräumer darf sie nicht überschreiben; Grenze und
+     * Aufbewahrung pflegt {@link at.greenchili.surfmate.recording.EreignisAblage}.
+     */
+    public List<File> getAllEreignisDirs() {
+        List<File> out = new ArrayList<>();
+        for (File d : getAllRecordingsDirs()) {
+            File e = at.greenchili.surfmate.recording.EreignisClip.ordner(d);
+            if (e != null && !containsPath(out, e)) out.add(e);
+        }
+        return out;
+    }
+
     public List<File> getAllTripsDirs() {
         return getAllDirsForType(tripsDir, internalTripsDir, sdCardTripsDir, usbTripsDir);
     }

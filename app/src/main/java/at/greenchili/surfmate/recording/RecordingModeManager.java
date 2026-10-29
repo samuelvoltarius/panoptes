@@ -56,6 +56,11 @@ public class RecordingModeManager {
     private final AvcHalWarmup avcWarmup;
     
     private volatile Mode currentMode = Mode.NONE;  // Default: no recording
+    // Ereignis-Clip (0.1.27, Koordination 29.10.2026, F1 Variante a): Aufnahmemodus NONE + Schalter
+    // „Ereignisse automatisch sichern“ = Nur-Ring-Betrieb beim Fahren. Intern läuft dafür die
+    // DRIVE_MODE-Maschine (Gang/ACC/Warmup/Resync), aber OHNE startRecording: kein cam_* auf den
+    // Stick, nur der RAM-Ring für den Ereignis-Clip. Nach außen (getCurrentMode, Config) bleibt NONE.
+    private volatile boolean nurRing = false;
     private volatile boolean accIsOn = false;  // Default: ACC OFF — wait for AccSentryDaemon to confirm
     private volatile int currentGear = GEAR_P;  // Default: Park
 
@@ -553,7 +558,8 @@ public class RecordingModeManager {
             // (it records on triggers only) so we must NOT mark it wedged
             // simply because pipeline.isRecording()==false.
             boolean recordingHealthy = pipeline.isRunning()
-                    && (pipeline.isRecording() || pipeline.getPendingRecordingPrefix() != null);
+                    && (nurRingAktiv()
+                        || pipeline.isRecording() || pipeline.getPendingRecordingPrefix() != null);
             // FIX (pipeline: Segment-rotation grace window is plumbed in
             // pipeline but never consumed by RMM wedge ticker): if a segment
             // just rotated (within 5s), the pipeline.isRecording()=false read
@@ -1467,12 +1473,14 @@ public class RecordingModeManager {
                 // (Previously returned false when gear==P; removed so the
                 // pre-record ring is warmed while parked, giving the first event
                 // pre-roll. ACC re-validation below still applies.)
-                if (!force && modeActive && pipeline.isRunning() && pipeline.isNormalRecordingMode()) {
+                if (!force && modeActive && pipeline.isRunning()
+                        && (nurRingAktiv() || pipeline.isNormalRecordingMode())) {
                     logger.info("Mode " + mode + " already active — skipping re-activation ("
                         + reason + ")");
                     return false;
                 }
-                if (force && modeActive && pipeline.isRunning() && pipeline.isNormalRecordingMode()) {
+                if (force && modeActive && pipeline.isRunning()
+                        && (nurRingAktiv() || pipeline.isNormalRecordingMode())) {
                     logger.info("Wedge recovery: forcing activation despite modeActive — reason=" + reason);
                 }
                 return true;
@@ -1576,6 +1584,44 @@ public class RecordingModeManager {
      * the I/O (e.g., ACC OFF arriving on a sibling thread) is honored.
      */
     public void setMode(Mode mode) {
+        boolean ring = nurRingGewuenscht(mode);
+        setModeIntern(ring ? Mode.DRIVE_MODE : mode, ring, mode);
+    }
+
+    /** Nur-Ring-Betrieb aktiv (siehe {@link #nurRing}). */
+    private boolean nurRingAktiv() {
+        return nurRing && currentMode == Mode.DRIVE_MODE;
+    }
+
+    public boolean isNurRing() {
+        return nurRingAktiv();
+    }
+
+    private static boolean nurRingGewuenscht(Mode m) {
+        if (m != Mode.NONE) return false;
+        try {
+            return EreignisClip.aktiv();
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /**
+     * Schalter „Ereignisse automatisch sichern“ geändert: denselben (Nutzer-)Modus neu setzen, damit
+     * der Nur-Ring-Betrieb an- bzw. abgeht. Eigener Thread (setMode kann ~Sekunden dauern).
+     */
+    public void ereignisSchalterGeaendert() {
+        final Mode wunsch = getCurrentMode();
+        new Thread(() -> {
+            try {
+                setMode(wunsch);
+            } catch (Throwable t) {
+                logger.warn("Ereignis-Schalter: Modus nicht neu gesetzt: " + t.getMessage());
+            }
+        }, "EreignisRingModus").start();
+    }
+
+    private void setModeIntern(Mode mode, boolean ring, Mode wunsch) {
         synchronized (lifecycleSerializer) {
             Mode oldMode;
             final Mode targetMode = mode;
@@ -1591,9 +1637,10 @@ public class RecordingModeManager {
             // post-cap backoff schedule.
             boolean userRecoveryReselect = false;
             synchronized (this) {
-                if (mode == currentMode) {
+                if (mode == currentMode && ring == nurRing) {
                     boolean recordingHealthy = pipeline.isRunning()
-                            && (pipeline.isRecording()
+                            && (ring
+                                || pipeline.isRecording()
                                 || pipeline.getPendingRecordingPrefix() != null);
                     boolean wedgedOrInactive = accIsOn && mode != Mode.NONE
                             && (!modeActive
@@ -1716,6 +1763,8 @@ public class RecordingModeManager {
 
                 oldMode = currentMode;
                 currentMode = mode;
+                nurRing = ring;
+                if (ring) logger.info("Nur-Ring-Betrieb für Ereignis-Clips (keine Daueraufnahme)");
 
                 // FIX (rmm: persistMode runs UnifiedConfig full-JSON write under
                 // manager monitor). Don't call persistMode here — UnifiedConfig
@@ -1777,9 +1826,9 @@ public class RecordingModeManager {
             // activation) so a crash during activation doesn't lose the
             // user's persisted setting.
             try {
-                persistMode(mode);
+                persistMode(wunsch);
             } catch (Exception persistErr) {
-                logger.warn("persistMode failed for " + mode + ": " + persistErr.getMessage());
+                logger.warn("persistMode failed for " + wunsch + ": " + persistErr.getMessage());
             }
 
             // Deactivate runs unconditionally with no re-validation.
@@ -1823,7 +1872,7 @@ public class RecordingModeManager {
      * Get current recording mode.
      */
     public Mode getCurrentMode() {
-        return currentMode;
+        return nurRingAktiv() ? Mode.NONE : currentMode;
     }
     
     /**
@@ -2025,6 +2074,7 @@ public class RecordingModeManager {
                 // "no active recording mode". Pipeline keeps running.
                 synchronized (this) {
                     currentMode = Mode.NONE;
+                    nurRing = false;
                 }
                 return;
             }
@@ -2418,6 +2468,21 @@ public class RecordingModeManager {
                     // lane off, fps 1) doesn't bleed into the first recorded
                     // frames.
                     applyFullRecordingProfile();
+                    if (nurRingAktiv()) {
+                        // Ereignis-Clip: Encoder füllt nur den RAM-Ring, nichts auf den Stick.
+                        if (pipeline.isNormalRecordingMode()) {
+                            pipeline.stopRecording();
+                            OemDashcamMirror.onPanoRecordingStopped();
+                        }
+                        try {
+                            ManualClipService.getInstance().reapplyLiveRetention();
+                        } catch (Throwable ignored) {}
+                        CameraDaemon.startAvcKeepAliveIfNeeded();
+                        modeActive = pipeline.isRunning();
+                        logger.info("DRIVE_MODE (Nur-Ring für Ereignis-Clips) aktiv: running="
+                                + pipeline.isRunning());
+                        break;
+                    }
                     if (!pipeline.isNormalRecordingMode()) {
                         if (pipeline.isRecording()) {
                             logger.info("DRIVE_MODE: pipeline recording but not in NORMAL mode "
@@ -3551,10 +3616,14 @@ public class RecordingModeManager {
             
             try {
                 currentMode = Mode.valueOf(modeStr.toUpperCase());
-                logger.info("Loaded persisted mode: " + currentMode);
+                nurRing = nurRingGewuenscht(currentMode);
+                if (nurRing) currentMode = Mode.DRIVE_MODE;
+                logger.info("Loaded persisted mode: " + getCurrentMode()
+                        + (nurRing ? " (Nur-Ring-Betrieb für Ereignis-Clips)" : ""));
             } catch (IllegalArgumentException e) {
                 logger.warn("Invalid persisted mode: " + modeStr + ", using NONE");
                 currentMode = Mode.NONE;
+                nurRing = false;
             }
         } catch (Exception e) {
             logger.error("Failed to load persisted mode: " + e.getMessage());

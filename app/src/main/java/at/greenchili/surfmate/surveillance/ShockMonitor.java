@@ -108,7 +108,15 @@ public final class ShockMonitor {
         }
     }
 
+    /** Läuft die Erschütterungserkennung gerade (braucht den Sensor)? */
+    public static boolean istAktiv() {
+        ShockMonitor m = instance;
+        return m != null && m.aktiv;
+    }
+
     private static void sidecarStoppenWennFrei() {
+        // Der Ereignis-Clip beim Fahren braucht den Sensor womöglich noch.
+        if (at.greenchili.surfmate.recording.EreignisMonitor.brauchtSensor()) return;
         try {
             at.greenchili.surfmate.roadsense.RoadSenseController rs =
                     at.greenchili.surfmate.daemon.CameraDaemon.getRoadSense();

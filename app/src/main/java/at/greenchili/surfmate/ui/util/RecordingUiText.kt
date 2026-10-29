@@ -42,6 +42,8 @@ object RecordingUiText {
                 context.getString(R.string.recording_headline_forward_camera)
             RecordingPresentation.Headline.INSTANT_REPLAY ->
                 context.getString(R.string.recording_headline_replay)
+            RecordingPresentation.Headline.EVENT_CLIP ->
+                context.getString(R.string.recording_headline_ereignis)
         }
     }
 

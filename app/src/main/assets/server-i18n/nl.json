@@ -1748,7 +1748,8 @@
     "section": {
       "aufnahme": "Opname",
       "abschreckung": "Afschrikking",
-      "stopp": "Bewaker stopt als …"
+      "stopp": "Bewaker stopt als …",
+      "fahrt": "Rit"
     },
     "surveillance": {
       "triggerMode": {
@@ -2035,8 +2036,8 @@
     },
     "wetter": {
       "online": {
-        "title": "Weer van internet (Open-Meteo)",
-        "help": "Als de auto geen buitentemperatuur doorgeeft of een regel “regen waarschijnlijk” gebruikt, vraagt Panoptes het aan Open-Meteo. Daarbij gaat de globale locatie (afgerond op ongeveer 1 km) hooguit elke 10 minuten naar Open-Meteo. Panoptes slaat daar niets op; uitschakelen stopt de aanvragen meteen. Standaard uit."
+        "title": "Weer van internet (via de Panoptes-server)",
+        "help": "Voor weer en bereik vraagt Panoptes onze server naar het weer in jouw omgeving (onnauwkeurig tot ca. 10 km). Zonder kenmerk, hooguit elke 10 minuten; de server bewaart je omgeving noch je IP-adres. De weergegevens komen van Open-Meteo (CC BY 4.0). Uitschakelen stopt de verzoeken meteen. Standaard uit."
       }
     },
     "karte": {
@@ -2245,6 +2246,17 @@
         "help": "Verwijdert alles wat onthouden is en alle afgewezen voorstellen. Al aangemaakte automatiseringen blijven.",
         "behalten": "Behouden",
         "loeschen": "Alles vergeten"
+      }
+    },
+    "recording": {
+      "ereignisClip": {
+        "title": "Gebeurtenissen automatisch opslaan",
+        "help": "Na hard remmen of een stoot slaat Panoptes 20 seconden ervoor en erna op. Verder wordt niets opgeslagen. Clips blijven alleen in de auto of op de USB-stick. Werkt vanaf de volgende rit.",
+        "helpCH": "In Zwitserland standaard uit, omdat de regels voor autocamera’s daar strenger zijn. Je kunt het zelf aanzetten."
+      },
+      "ereignisTelegram": {
+        "title": "Telegram-bericht bij gebeurtenis",
+        "help": "Alleen een korte tekst met de tijd. Geen video, geen locatie."
       }
     }
   },

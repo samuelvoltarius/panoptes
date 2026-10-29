@@ -2028,7 +2028,8 @@
     "dash_used": "-- used",
     "dash_limit": "-- limit",
     "quality_rejected": "No changes applied — values rejected: {fields}",
-    "quality_partial": "{applied} — but kept old values for: {fields}"
+    "quality_partial": "{applied} — but kept old values for: {fields}",
+    "dauer_hinweis": "Note: Filming all the time is legally risky in Germany, Austria and Switzerland. Recommended: leave recording “Off” and turn on “Save events automatically” in the guard settings. Then Panoptes only saves a clip after hard braking or a bump."
   },
   "events": {
     "select_date": "Pick a date",
@@ -2136,7 +2137,10 @@
     "keep_released": "Will be deleted at the next clean-up if it is older than {stunden} hours.",
     "keep_unsaved": "Could not be saved. Please try again.",
     "keep_fail": "That did not work.",
-    "keep_released_size": "No longer kept. It will only be deleted when storage runs low."
+    "keep_released_size": "No longer kept. It will only be deleted when storage runs low.",
+    "tab_ereignisse": "Events",
+    "title_ereignis": "{prefix} Events",
+    "badge_ereignis": "Event"
   },
   "surveillance": {
     "tab_general": "Basics",
@@ -4499,16 +4503,16 @@
     "could_not_complete": "I could not finish that: {error}",
     "minimax_hinweis": "Your questions and vehicle data go to MiniMax (China) for this. Off by default.",
     "prompt_vehicle_history": "Find ",
-    "prompt_current_vehicle": "Explain the current vehicle state and call out anything unusual.",
-    "prompt_latest_trip": "Explain my latest trip, including efficiency and notable moments.",
-    "prompt_more_battery": "Why did my latest trip use more battery than comparable trips?",
-    "prompt_summarize_events": "Summarize my recent recording and surveillance events.",
-    "prompt_roadsense": "Summarize recent RoadSense hazards and what they mean.",
-    "prompt_charging": "Review recent charging and highlight useful trends.",
-    "prompt_diagnostics": "Review current diagnostics and explain any likely issues.",
-    "prompt_analyze_logs": "Analyze the recent redacted daemon warnings and errors, identify the strongest evidence, and say what is still uncertain.",
-    "prompt_diagnose_automation": "Why did my automation not run? Diagnose its conditions, recent logs, action timing, and safe fixes.",
-    "prompt_control_vehicle": "Set the cabin temperature to ",
+    "prompt_current_vehicle": "How is my car right now? Is everything OK?",
+    "prompt_latest_trip": "How was my last drive? How much energy did it use?",
+    "prompt_more_battery": "Why did my last drive use more energy than usual?",
+    "prompt_summarize_events": "What happened around my car lately? Were there any recordings?",
+    "prompt_roadsense": "Which road hazards are near me?",
+    "prompt_charging": "How has charging gone lately? Anything worth knowing?",
+    "prompt_diagnostics": "Check my car and Panoptes: is there a problem?",
+    "prompt_analyze_logs": "Read the log: were there errors lately, and what do they mean?",
+    "prompt_diagnose_automation": "Why did my rule not run? What can I do?",
+    "prompt_control_vehicle": "Set the climate to ",
     "prompt_create_automation": "Create an automation that ",
     "prompt_find_automation": "Find a community automation for ",
     "err_provider_output_limit": "The assistant thought for too long and ran out of room to answer. Please ask a shorter question.",
@@ -4984,7 +4988,9 @@
     "fps_now": "Camera right now: {v} frames per second analysed",
     "fps_delivered": "(camera delivers {g})",
     "fps_throttle": "Panoptes slows it down itself because the camera does not let the rate be set.",
-    "trigger_unset": "Not chosen yet when it should record – until then only on impact."
+    "trigger_unset": "Not chosen yet when it should record – until then only on impact.",
+    "fahrt_title": "While driving",
+    "fahrt_lead": "After hard braking or a bump, Panoptes saves a short clip. Nothing else is stored."
   },
   "system": {
     "tailscale_title": "Remote access (Tailscale)",
@@ -6197,5 +6203,14 @@
     "behalten": "Keep",
     "fehler": "That didn’t work.",
     "fehler_ort_unbekannt": "First set your home under Places."
+  },
+  "ereignis": {
+    "frage": "Event at {zeit} saved – keep it?",
+    "behalten": "Keep",
+    "nein": "No thanks",
+    "erklaerung": "If you do not keep it, the clip is deleted automatically after {stunden} hours.",
+    "erklaerung_ohne_frist": "If you do not keep it, the clip is deleted when the space for events is full.",
+    "gespeichert": "Will be kept.",
+    "fehler": "That did not work. Please try again."
   }
 }

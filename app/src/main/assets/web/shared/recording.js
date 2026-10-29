@@ -1357,6 +1357,12 @@ BYD.recording = {
     },
     
     updateProximitySettingsVisibility() {
+        // 0.1.27: Daueraufnahme (Immer / Beim Fahren) → kurzer Hinweis zur Rechtslage.
+        const dauer = document.getElementById('dauerHinweis');
+        if (dauer) {
+            const m = this.config.recordingMode;
+            dauer.style.display = (m === 'CONTINUOUS' || m === 'DRIVE_MODE') ? 'block' : 'none';
+        }
         const card = document.getElementById('proximitySettingsCard');
         if (card) {
             card.style.display = this.config.recordingMode === 'PROXIMITY_GUARD' ? 'block' : 'none';

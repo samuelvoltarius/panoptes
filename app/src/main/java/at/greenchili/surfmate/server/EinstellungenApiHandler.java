@@ -275,10 +275,38 @@ public final class EinstellungenApiHandler {
             boolean ok = pathOnly.endsWith("/behalten")
                     ? Aufbewahrung.behalten(stamm, System.currentTimeMillis())
                     : Aufbewahrung.freigeben(stamm);
+            // Ereignis-Clip: behalten beantwortet auch die offene „Behalten?“-Frage.
+            if (ok && pathOnly.endsWith("/behalten")) {
+                at.greenchili.surfmate.recording.EreignisClip.frageErledigt(stamm);
+            }
             res.put("ok", ok);
             res.put("datei", stamm);
             if (!ok) res.put("grund", "nicht_gespeichert");
             HttpResponse.sendJson(out, ok ? 200 : 500, res.toString());
+            return true;
+        }
+        // Ereignis-Clip (0.1.27): offene „Behalten?“-Fragen fürs Display und den Wächter.
+        if (pathOnly.equals("/api/ereignisse/offen") && method.equals("GET")) {
+            JSONObject root = UnifiedConfigManager.loadConfig();
+            JSONObject res = new JSONObject();
+            res.put("offen", at.greenchili.surfmate.recording.EreignisClip.offen(root));
+            res.put("stunden", Aufbewahrung.maxAlterMs(root) / 3_600_000L);
+            res.put("tage", Aufbewahrung.behaltenTage(root));
+            HttpResponse.sendJson(out, res.toString());
+            return true;
+        }
+        if (pathOnly.equals("/api/ereignisse/erledigt") && method.equals("POST")) {
+            String datei = "";
+            try {
+                datei = new JSONObject(body == null || body.isEmpty() ? "{}" : body).optString("datei", "");
+            } catch (Exception ignored) {
+            }
+            String stamm = Aufbewahrung.stamm(datei);
+            JSONObject res = new JSONObject();
+            boolean ok = Aufbewahrung.gueltigerStamm(stamm)
+                    && at.greenchili.surfmate.recording.EreignisClip.frageErledigt(stamm);
+            res.put("ok", ok);
+            HttpResponse.sendJson(out, ok ? 200 : 400, res.toString());
             return true;
         }
         // Mit Routenplaner-Konto verbinden (Geräte-Fluss, Planer-Vertrag §6): nur Login/lokal.

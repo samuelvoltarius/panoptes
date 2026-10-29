@@ -44,6 +44,16 @@
     <main class="main-content">
         <div class="gw">
         <section class="gw-grid">
+            <!-- 0.1.27 Ereignis-Clip: „Ereignis von HH:MM gesichert – behalten?“ (Koordination 29.10., F2) -->
+            <article class="gc wide" id="eFrage" hidden>
+                <h2 id="eFrageTitel"></h2>
+                <p class="lead" id="eFrageText"></p>
+                <div class="actions">
+                    <button class="gbtn lime" type="button" id="eBehalten" style="font-size:1.25em;padding:14px 28px" data-i18n="ereignis.behalten">Behalten</button>
+                    <button class="gbtn" type="button" id="eNein" data-i18n="ereignis.nein">Nein danke</button>
+                </div>
+            </article>
+
             <!-- Zustand -->
             <article class="gc">
                 <h2 data-i18n="guard.now">Gerade</h2>
@@ -70,6 +80,13 @@
                 <div id="tKeep"></div>
                 <p class="note" id="tFps" hidden></p>
                 <p class="note" id="tNa" hidden data-i18n="guard.stop_unavailable">Diese Einstellung kommt mit dem nächsten App-Update.</p>
+            </article>
+
+            <!-- 0.1.27 Beim Fahren: Ereignisse automatisch sichern -->
+            <article class="gc">
+                <h2 data-i18n="guard.fahrt_title">Beim Fahren</h2>
+                <p class="lead" data-i18n="guard.fahrt_lead">Bei einer Vollbremsung oder einem Stoß sichert Panoptes einen kurzen Clip. Sonst wird nichts gespeichert.</p>
+                <div id="fBox"></div>
             </article>
 
             <!-- Abschreckung -->
@@ -248,15 +265,59 @@
                 nachSpeichern: function (f) {
                     if (f.key === ZONES && trig) { var z = store.wert(ZONES).wert; trig.setPrivatePlaces(Array.isArray(z) ? z.length : 0); trigJetzt(); }
                 } });
+            store.zeichne($('fBox'), { gruppe: 'waechter', abschnitt: 'fahrt' });
             store.zeichne($('dBox'), { gruppe: 'waechter', abschnitt: 'abschreckung' });
             store.zeichne($('sBox'), { gruppe: 'waechter', abschnitt: 'stopp' });
             store.zeichne($('sAuto'), { gruppe: 'auto' });
         });
     }
 
+    // ---------------- Ereignis-Clip: offene Frage „behalten?“ (nur lokal, nichts verlässt das Auto)
+    var eOffen = [], eInfo = { stunden: 0, tage: 30 };
+    function ereignisFrage() {
+        fetch('/api/ereignisse/offen', { cache: 'no-store' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (j) {
+                if (!j) return;
+                eOffen = j.offen || [];
+                eInfo = { stunden: j.stunden || 0, tage: j.tage || 30 };
+                ereignisZeigen();
+            }).catch(function () {});
+    }
+    function ereignisZeigen() {
+        var o = eOffen.length ? eOffen[eOffen.length - 1] : null;
+        $('eFrage').hidden = !o;
+        if (!o) return;
+        var d = new Date(o.zeit || Date.now());
+        var zeit = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+        $('eFrageTitel').textContent = t('ereignis.frage', 'Ereignis von {zeit} gesichert – behalten?', { zeit: zeit });
+        var txt = t('guardLegal.keep.body', 'Du behältst diese Aufnahme bis zu {keepDays} Tage. Bitte nur, wenn du sie für einen Schaden oder Unfall brauchst.', { keepDays: eInfo.tage });
+        txt += ' ' + (eInfo.stunden > 0
+            ? t('ereignis.erklaerung', 'Ohne „Behalten“ wird der Clip nach {stunden} Stunden automatisch gelöscht.', { stunden: eInfo.stunden })
+            : t('ereignis.erklaerung_ohne_frist', 'Ohne „Behalten“ wird der Clip gelöscht, wenn der Platz für Ereignisse voll ist.'));
+        $('eFrageText').textContent = txt;
+        $('eBehalten').disabled = $('eNein').disabled = false;
+    }
+    function ereignisAntwort(behalten) {
+        var o = eOffen[eOffen.length - 1];
+        if (!o) return;
+        $('eBehalten').disabled = $('eNein').disabled = true;
+        fetch(behalten ? '/api/aufnahmen/behalten' : '/api/ereignisse/erledigt', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ datei: o.datei })
+        }).then(function (r) { return r.ok ? r.json() : { ok: false }; })
+          .then(function (j) {
+              if (!j || !j.ok) { toast(t('ereignis.fehler', 'Das hat nicht geklappt. Bitte noch einmal versuchen.'), false); ereignisZeigen(); return; }
+              if (behalten) toast(t('ereignis.gespeichert', 'Wird behalten.'), true);
+              eOffen.pop();
+              ereignisZeigen();
+          }).catch(function () { toast(t('ereignis.fehler', 'Das hat nicht geklappt. Bitte noch einmal versuchen.'), false); ereignisZeigen(); });
+    }
+
     BYD.i18n.init().then(function () {
         BYD.core.init();
-        loadState(); loadHealth(); ladeEinstellungen();
+        loadState(); loadHealth(); ladeEinstellungen(); ereignisFrage();
+        $('eBehalten').onclick = function () { ereignisAntwort(true); };
+        $('eNein').onclick = function () { ereignisAntwort(false); };
         $('tRetBtn').onclick = setze72;
         setInterval(function () { if (!document.hidden) { loadState(); loadHealth(); } }, 30000);
     });

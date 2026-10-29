@@ -1384,7 +1384,9 @@ public class HardwareEventRecorderGpu {
             if (slash >= 0 && slash + 1 < name.length()) {
                 name = name.substring(slash + 1);
             }
-            return !name.startsWith("event_");
+            // Ereignis-Clips (0.1.27) verlassen das Auto nie automatisch.
+            return !name.startsWith("event_")
+                    && !name.startsWith(at.greenchili.surfmate.recording.EreignisClip.PRAEFIX);
         }
     }
     private VideoUploadPolicy videoUploadPolicy = VideoUploadPolicy.AUTOMATIC;

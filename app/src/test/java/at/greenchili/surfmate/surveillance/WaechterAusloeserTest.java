@@ -22,7 +22,7 @@ public class WaechterAusloeserTest {
     private static final Laenderprofil.Land UNBEKANNT = Laenderprofil.Land.UNBEKANNT;
 
     private static JSONArray garage() throws Exception {
-        return new JSONArray().put(new JSONObject().put("lat", 47.8).put("lon", 13.04).put("radiusM", 50));
+        return new JSONArray().put(new JSONObject().put("lat", 48.3).put("lon", 14.275).put("radiusM", 50));
     }
 
     /** 0.1.9.1 (SETUP_WIZARD Teil A): nichts gespeichert = nicht gewählt → keine Bewegungs-/KI-Auslösung. */
@@ -55,13 +55,13 @@ public class WaechterAusloeserTest {
 
     @Test
     public void modeSwitch() throws Exception {
-        WaechterAusloeser.Lage a = WaechterAusloeser.bestimme("shock", AT, garage(), 47.8, 13.04, true);
+        WaechterAusloeser.Lage a = WaechterAusloeser.bestimme("shock", AT, garage(), 48.3, 14.275, true);
         assertFalse(a.kiErlaubt);
         assertEquals("shock", a.wirksam);
         WaechterAusloeser.Lage b = WaechterAusloeser.bestimme("ai_everywhere", AT, null, 48.2, 16.37, true);
         assertTrue(b.kiErlaubt);
         assertTrue("b gewählt: nur nach KI-Bestätigung", b.kiPflicht);
-        WaechterAusloeser.Lage c = WaechterAusloeser.bestimme("ai_private", AT, garage(), 47.8, 13.04, true);
+        WaechterAusloeser.Lage c = WaechterAusloeser.bestimme("ai_private", AT, garage(), 48.3, 14.275, true);
         assertTrue(c.kiErlaubt);
         assertTrue(c.kiPflicht);
     }
@@ -69,10 +69,10 @@ public class WaechterAusloeserTest {
     @Test
     public void zoneBoundary() throws Exception {
         // 50 m Radius: 33 m innen ja, 60 m außen nein
-        assertTrue(WaechterAusloeser.bestimme("ai_private", AT, garage(), 47.8003, 13.04, true).kiErlaubt);
-        assertFalse(WaechterAusloeser.bestimme("ai_private", AT, garage(), 47.80054, 13.04, true).kiErlaubt);
-        assertFalse("ohne GPS-Fix nie KI bei c", WaechterAusloeser.bestimme("ai_private", AT, garage(), 47.8, 13.04, false).kiErlaubt);
-        assertEquals("shock", WaechterAusloeser.bestimme("ai_private", AT, new JSONArray(), 47.8, 13.04, true).wirksam);
+        assertTrue(WaechterAusloeser.bestimme("ai_private", AT, garage(), 48.3003, 14.275, true).kiErlaubt);
+        assertFalse(WaechterAusloeser.bestimme("ai_private", AT, garage(), 48.30054, 14.275, true).kiErlaubt);
+        assertFalse("ohne GPS-Fix nie KI bei c", WaechterAusloeser.bestimme("ai_private", AT, garage(), 48.3, 14.275, false).kiErlaubt);
+        assertEquals("shock", WaechterAusloeser.bestimme("ai_private", AT, new JSONArray(), 48.3, 14.275, true).wirksam);
     }
 
     @Test
@@ -80,7 +80,7 @@ public class WaechterAusloeserTest {
         WaechterAusloeser.Lage b = WaechterAusloeser.bestimme("ai_everywhere", CH, null, 47.37, 8.54, true);
         assertFalse(b.kiErlaubt);
         assertEquals("shock", b.wirksam);
-        WaechterAusloeser.Lage mitOrt = WaechterAusloeser.bestimme("ai_everywhere", CH, garage(), 47.8, 13.04, true);
+        WaechterAusloeser.Lage mitOrt = WaechterAusloeser.bestimme("ai_everywhere", CH, garage(), 48.3, 14.275, true);
         assertTrue("in CH fällt b auf c zurück", mitOrt.kiErlaubt);
         assertEquals("ai_private", mitOrt.wirksam);
         WaechterAusloeser.Lage alt = WaechterAusloeser.bestimme(null, CH, null, 47.37, 8.54, true);

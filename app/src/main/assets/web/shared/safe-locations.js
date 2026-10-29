@@ -149,9 +149,10 @@ window.SafeLocations = {
         const container = document.getElementById('safeLocMap');
         if (!container) return;
         if (typeof PanoptesMap === 'undefined') { setTimeout(() => this.initMap(), 500); return; }
-        const center = this.currentGps ? [this.currentGps.lng, this.currentGps.lat] : [13.045, 47.80];
+        // Ohne GPS keine feste Mitte: PanoptesMap zeigt dann grob Europa.
+        const center = this.currentGps ? [this.currentGps.lng, this.currentGps.lat] : undefined;
         this.map = PanoptesMap.create(container, {
-            center: center, zoom: this.currentGps ? 16 : 5, pitch: 0, terrain: false, live: false, followCar: false
+            center: center, zoom: 16, pitch: 0, terrain: false, live: false, followCar: false
         });
         if (this.currentGps) this.createEditCircle(this.currentGps.lat, this.currentGps.lng);
         else this.zeichne();

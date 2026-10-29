@@ -51,6 +51,7 @@ public final class Katalog {
     /** Abschnitt-ID → Reihenfolge. */
     public static final Map<String, Integer> ABSCHNITTE = new HashMap<>();
     static {
+        ABSCHNITTE.put("fahrt", 5);
         ABSCHNITTE.put("aufnahme", 10);
         ABSCHNITTE.put("abschreckung", 20);
         ABSCHNITTE.put("stopp", 30);
@@ -59,6 +60,22 @@ public final class Katalog {
     public static List<Feld> felder(Kontext k) {
         List<Feld> l = new ArrayList<>();
         int r = 0;
+
+        // ---------------------------------------------------------------- Wächter: Fahrt
+        // Ereignis-Clip (0.1.27, Koordination 29.10.2026): nicht gesetzt = Standard nach Land
+        // (Schweiz aus, sonst an); bewusst gesetzt gilt überall. Nur lokal, nie hochladen.
+        Feld ereignis = new Feld("recording." + at.greenchili.surfmate.recording.EreignisClip.SCHALTER,
+                Feld.Typ.BOOL);
+        ereignis.gruppe = "waechter"; ereignis.abschnitt = "fahrt"; ereignis.reihenfolge = r += 10;
+        ereignis.standard = at.greenchili.surfmate.recording.EreignisClip.standard(k.land);
+        if (k.land == Laenderprofil.Land.SCHWEIZ) ereignis.hilfeKey = "settings.recording.ereignisClip.helpCH";
+        l.add(ereignis);
+
+        Feld ereignisTg = new Feld("recording." + at.greenchili.surfmate.recording.EreignisClip.TELEGRAM,
+                Feld.Typ.BOOL);
+        ereignisTg.gruppe = "waechter"; ereignisTg.abschnitt = "fahrt"; ereignisTg.reihenfolge = r += 10;
+        ereignisTg.standard = false; ereignisTg.erweitert = true;
+        l.add(ereignisTg);
 
         // ---------------------------------------------------------------- Wächter: Aufnahme
         Feld trig = new Feld("surveillance.triggerMode", Feld.Typ.AUSWAHL);

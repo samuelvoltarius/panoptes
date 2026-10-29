@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ereignis-Clip 0.1.27: Meldung „Ereignis gesichert“ und Frage „Behalten?“ (ohne Ton, ohne Licht). -->
+<resources>
+    <string name="ereignis_gesichert">Gebeurtenis opgeslagen</string>
+    <string name="ereignis_frage" formatted="true">Gebeurtenis van %1$s opgeslagen – bewaren?</string>
+    <string name="ereignis_behalten">Bewaren</string>
+    <string name="ereignis_nein">Nee bedankt</string>
+    <string name="ereignis_erklaerung" formatted="true">Zonder „Bewaren” wordt de clip na %1$d uur automatisch verwijderd.</string>
+    <string name="ereignis_pflichttext_b" formatted="true">Je bewaart deze clip tot %1$d dagen. Alleen als je hem nodig hebt voor schade of een ongeluk.</string>
+    <string name="ereignis_gespeichert">Wordt bewaard.</string>
+    <string name="ereignis_fehler">Dat is niet gelukt. Probeer het opnieuw.</string>
+    <string name="recordings_segment_ereignisse">Gebeurtenissen</string>
+    <string name="recordings_segment_ereignisse_count">Gebeurtenissen · %d</string>
+    <string name="recording_lib_type_ereignis">GEBEURTENIS</string>
+    <string name="recording_headline_ereignis">Gebeurtenis opgeslagen</string>
+</resources>

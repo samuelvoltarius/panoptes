@@ -25,7 +25,7 @@ public class HaTest {
 
     @Test
     public void telemetrieOhnePositionUndVin() throws Exception {
-        JSONObject roh = new JSONObject().put("soc", 81.0).put("lat", 47.8).put("lon", 13.0).put("heading", 90)
+        JSONObject roh = new JSONObject().put("soc", 81.0).put("lat", 48.3).put("lon", 14.235).put("heading", 90)
                 .put("elevation", 430).put("vin", "LGX…").put("vin_hash", "x").put("utc", 123).put("is_parked", true)
                 .put("liste", new JSONArray().put(1)).put("gps_fix", 1);
         JSONObject t = HaZustand.telemetrie(roh);

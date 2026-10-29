@@ -59,13 +59,13 @@ public class GewohnheitenTest {
     @Test
     public void kontextTagestypUndOrt() throws Exception {
         JSONArray orte = new JSONArray()
-                .put(new JSONObject().put("id", "o1").put("lat", 47.80).put("lon", 13.04).put("r", 100)
+                .put(new JSONObject().put("id", "o1").put("lat", 48.30).put("lon", 14.275).put("r", 100)
                         .put("eigenschaften", new JSONObject().put("zuhause", true)))
-                .put(new JSONObject().put("id", "buero").put("lat", 47.90).put("lon", 13.10).put("r", 100));
+                .put(new JSONObject().put("id", "buero").put("lat", 48.40).put("lon", 14.335).put("r", 100));
         Kontext.Werte w = new Kontext.Werte();
         w.orte = orte;
-        w.lat = 47.8001;
-        w.lon = 13.0401;
+        w.lat = 48.3001;
+        w.lon = 14.2751;
         w.aussen = 3;
         JSONObject k = Kontext.bilde(ms(2026, 10, 26, 7, 2), Z, w);   // Montag
         assertEquals("werktag", k.getString("tag"));
@@ -74,7 +74,7 @@ public class GewohnheitenTest {
         assertEquals("zuhause", k.getString("ort"));
         assertEquals(3, k.getInt("aussen"));
         assertEquals("wochenende", Kontext.bilde(ms(2026, 10, 25, 9, 0), Z, w).getString("tag"));
-        assertEquals("buero", Kontext.ort(orte, 47.9001, 13.1001));
+        assertEquals("buero", Kontext.ort(orte, 48.4001, 14.3351));
         assertEquals("weg", Kontext.ort(orte, 48.5, 14.0));
         assertEquals("unbekannt", Kontext.ort(orte, Double.NaN, 13.0));
     }
@@ -370,12 +370,12 @@ public class GewohnheitenTest {
         public Kontext.Werte kontext() {
             Kontext.Werte w = new Kontext.Werte();
             try {
-                w.orte = new JSONArray().put(new JSONObject().put("id", "h").put("lat", 47.8).put("lon", 13.0).put("r", 50)
+                w.orte = new JSONArray().put(new JSONObject().put("id", "h").put("lat", 48.3).put("lon", 14.235).put("r", 50)
                         .put("eigenschaften", new JSONObject().put("zuhause", true)));
             } catch (Exception ignored) {
             }
-            w.lat = 47.8;
-            w.lon = 13.0;
+            w.lat = 48.3;
+            w.lon = 14.235;
             return w;
         }
         public Boolean zuendung() { return true; }

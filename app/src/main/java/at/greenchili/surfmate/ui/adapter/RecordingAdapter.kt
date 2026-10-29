@@ -211,6 +211,8 @@ class RecordingAdapter(
                         ctx.getString(R.string.recording_lib_type_oem)
                     RecordingFile.RecordingType.REPLAY ->
                         ctx.getString(R.string.recording_lib_type_replay)
+                    RecordingFile.RecordingType.EREIGNIS ->
+                        ctx.getString(R.string.recording_lib_type_ereignis)
                 }
                 badge.visibility = View.VISIBLE
             }

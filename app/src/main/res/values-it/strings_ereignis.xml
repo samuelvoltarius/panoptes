@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ereignis-Clip 0.1.27: Meldung „Ereignis gesichert“ und Frage „Behalten?“ (ohne Ton, ohne Licht). -->
+<resources>
+    <string name="ereignis_gesichert">Evento salvato</string>
+    <string name="ereignis_frage" formatted="true">Evento delle %1$s salvato – tenerlo?</string>
+    <string name="ereignis_behalten">Tieni</string>
+    <string name="ereignis_nein">No grazie</string>
+    <string name="ereignis_erklaerung" formatted="true">Senza “Tieni” la clip viene cancellata automaticamente dopo %1$d ore.</string>
+    <string name="ereignis_pflichttext_b" formatted="true">Tieni questa clip fino a %1$d giorni. Solo se ti serve per un danno o un incidente.</string>
+    <string name="ereignis_gespeichert">Verrà tenuta.</string>
+    <string name="ereignis_fehler">Non ha funzionato. Riprova.</string>
+    <string name="recordings_segment_ereignisse">Eventi</string>
+    <string name="recordings_segment_ereignisse_count">Eventi · %d</string>
+    <string name="recording_lib_type_ereignis">EVENTO</string>
+    <string name="recording_headline_ereignis">Evento salvato</string>
+</resources>

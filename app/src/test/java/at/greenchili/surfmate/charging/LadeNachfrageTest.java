@@ -69,12 +69,12 @@ public class LadeNachfrageTest {
         JSONObject c = cfg(null);
         c.getJSONObject("laden").put("karten", new JSONArray().put(new JSONObject().put("id", 4).put("anzeige", "Karte X")));
         JSONArray zeilen = new JSONArray()
-                .put(zeile(1, T, -1, "", "", "", "", true, 47.5000, 13.5000))
+                .put(zeile(1, T, -1, "", "", "", "", true, 48.0000, 14.7350))
                 .put(zeile(2, T - 1000, 0.3, "", "", "", "spaeter", false, 0, 0))
                 .put(zeile(3, T - 2000, 0.3, "t", "x", "", "", false, 47, 13));
-        JSONArray tarife = new JSONArray().put(new TariffProfile("Gratis-Ort", 47.5010, 13.5000, 100, 0, 0, "€") {{ setAcGratis(true); }}.toJson())
+        JSONArray tarife = new JSONArray().put(new TariffProfile("Gratis-Ort", 48.0010, 14.7350, 100, 0, 0, "€") {{ setAcGratis(true); }}.toJson())
                 .put(new TariffProfile("weit weg", 48.0, 14.0, 100, 0.4, 0, "€").toJson());
-        JSONArray stopps = new JSONArray().put(new JSONObject().put("name", "Ladepark Y").put("lat", 47.5005).put("lng", 13.5001));
+        JSONArray stopps = new JSONArray().put(new JSONObject().put("name", "Ladepark Y").put("lat", 48.0005).put("lng", 14.7351));
         JSONObject l = LadeNachfrage.liste(zeilen, c, tarife, stopps, true);
         assertEquals(2, l.getInt("anzahl"));
         assertEquals(1, l.getInt("spaeter"));
@@ -86,7 +86,7 @@ public class LadeNachfrageTest {
         assertEquals(2, v.length());   // Gratis-Ort (110 m) + Planer-Stopp, „weit weg“ nicht
         assertEquals("ortskreis", v.getJSONObject(0).getString("art"));
         assertEquals("planer_stopp", v.getJSONObject(1).getString("art"));
-        assertFalse("keine Koordinaten in der Liste", l.toString().contains("47.5") || l.toString().contains("\"lat\""));
+        assertFalse("keine Koordinaten in der Liste", l.toString().contains("14.735") || l.toString().contains("\"lat\""));
         JSONArray a = e.getJSONArray("auswahl");
         assertEquals("karte", a.getJSONObject(0).getString("art"));
         assertEquals("zuhause_gratis", a.getJSONObject(a.length() - 1).getString("art"));

@@ -76,7 +76,8 @@ public final class BrueckeVerbindung {
         Runnable klopfen = () -> {
             Thread t = new Thread(() -> {
                 try {
-                    at.greenchili.surfmate.planer.PlanerRoute.get().angeklopft(System.currentTimeMillis());
+                    log("meine-route gelesen ("
+                            + at.greenchili.surfmate.planer.PlanerRoute.get().angeklopft(System.currentTimeMillis()) + ")");
                 } catch (Throwable ignored) { }
             }, "Bruecke-Klopf");
             t.setDaemon(true);

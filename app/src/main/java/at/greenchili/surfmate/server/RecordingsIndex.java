@@ -103,6 +103,8 @@ public final class RecordingsIndex {
             Pattern.compile("cam(\\d+)?_(\\d{8})_(\\d{6})(?:_\\d+)?\\.mp4");
     private static final Pattern REPLAY_PATTERN =
             Pattern.compile("replay_(\\d{8})_(\\d{6})(?:_\\d+)?\\.mp4");
+    private static final Pattern EREIGNIS_PATTERN =
+            Pattern.compile("ereignis_(\\d{8})_(\\d{6})(?:_\\d+)?\\.mp4");
     private static final Pattern EVENT_PATTERN =
             Pattern.compile("event_(\\d{8})_(\\d{6})(?:_\\d+)?\\.mp4");
     private static final Pattern PROXIMITY_PATTERN =
@@ -1248,6 +1250,7 @@ public final class RecordingsIndex {
         scanDirNames(ids, sm.getAllRecordingsDirs());
         scanDirNames(ids, sm.getAllSurveillanceDirs());
         scanDirNames(ids, sm.getAllProximityDirs());
+        scanDirNames(ids, sm.getAllEreignisDirs());
         return ids.size();
     }
 
@@ -1300,6 +1303,7 @@ public final class RecordingsIndex {
         addDirFiles(entries, sm.getAllRecordingsDirs(), null);
         addDirFiles(entries, sm.getAllSurveillanceDirs(), null);
         addDirFiles(entries, sm.getAllProximityDirs(), null);
+        addDirFiles(entries, sm.getAllEreignisDirs(), null);
 
         // Dedup by row identity. Equal filenames on different volumes remain
         // distinct; repeated references to the same root/path collapse.
@@ -1627,7 +1631,8 @@ public final class RecordingsIndex {
         List<File> roots = new ArrayList<>();
         Set<String> seen = new HashSet<>();
         for (List<File> category : java.util.Arrays.asList(
-                sm.getAllRecordingsDirs(), sm.getAllSurveillanceDirs(), sm.getAllProximityDirs())) {
+                sm.getAllRecordingsDirs(), sm.getAllSurveillanceDirs(), sm.getAllProximityDirs(),
+                sm.getAllEreignisDirs())) {
             for (File root : category) {
                 if (root != null && seen.add(root.getAbsolutePath())) roots.add(root);
             }
@@ -1974,6 +1979,8 @@ public final class RecordingsIndex {
                             s.proximityCount = c; s.proximityBytes = b; s.proximityToday = tc;
                         } else if ("replay".equals(t)) {
                             s.replayCount = c; s.replayBytes = b; s.replayToday = tc;
+                        } else if ("ereignis".equals(t)) {
+                            s.ereignisCount = c; s.ereignisBytes = b; s.ereignisToday = tc;
                         }
                     }
                 }
@@ -2223,6 +2230,7 @@ public final class RecordingsIndex {
         // Type + timestamp from filename pattern.
         Matcher cam = CAM_PATTERN.matcher(name);
         Matcher replay = REPLAY_PATTERN.matcher(name);
+        Matcher ereignis = EREIGNIS_PATTERN.matcher(name);
         Matcher event = EVENT_PATTERN.matcher(name);
         Matcher prox = PROXIMITY_PATTERN.matcher(name);
         Matcher dvr = DVR_PATTERN.matcher(name);
@@ -2238,6 +2246,11 @@ public final class RecordingsIndex {
                 String camStr = cam.group(1);
                 r.cameraId = camStr != null ? Integer.parseInt(camStr) : 0;
                 r.tsMs = FMT_FILENAME.get().parse(cam.group(2) + "_" + cam.group(3)).getTime();
+            } else if (ereignis.matches()) {
+                r.type = "ereignis";
+                r.cameraId = 0;
+                r.tsMs = FMT_FILENAME.get().parse(
+                        ereignis.group(1) + "_" + ereignis.group(2)).getTime();
             } else if (replay.matches()) {
                 r.type = "replay";
                 r.cameraId = 0;
@@ -2683,9 +2696,10 @@ public final class RecordingsIndex {
         public long sentryCount, sentryBytes, sentryToday;
         public long proximityCount, proximityBytes, proximityToday;
         public long replayCount, replayBytes, replayToday;
-        public long totalCount() { return normalCount + sentryCount + proximityCount + replayCount; }
-        public long totalBytes() { return normalBytes + sentryBytes + proximityBytes + replayBytes; }
-        public long totalToday() { return normalToday + sentryToday + proximityToday + replayToday; }
+        public long ereignisCount, ereignisBytes, ereignisToday;
+        public long totalCount() { return normalCount + sentryCount + proximityCount + replayCount + ereignisCount; }
+        public long totalBytes() { return normalBytes + sentryBytes + proximityBytes + replayBytes + ereignisBytes; }
+        public long totalToday() { return normalToday + sentryToday + proximityToday + replayToday + ereignisToday; }
 
         /** Field-wise copy. The fields are public and mutable, so
          *  {@link RecordingsIndex#queryStats()} hands every caller its own copy
@@ -2700,6 +2714,7 @@ public final class RecordingsIndex {
             c.proximityCount = proximityCount; c.proximityBytes = proximityBytes;
             c.proximityToday = proximityToday;
             c.replayCount = replayCount; c.replayBytes = replayBytes; c.replayToday = replayToday;
+            c.ereignisCount = ereignisCount; c.ereignisBytes = ereignisBytes; c.ereignisToday = ereignisToday;
             return c;
         }
     }

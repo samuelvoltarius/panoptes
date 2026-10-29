@@ -86,9 +86,9 @@ public class H5H7H10Test {
 
     @Test
     public void ladenZuhauseUnterwegsKostenNurMitTarif() throws Exception {
-        List<Monatsbericht.Zone> z = Collections.singletonList(new Monatsbericht.Zone(47.80, 13.04, 100));
+        List<Monatsbericht.Zone> z = Collections.singletonList(new Monatsbericht.Zone(48.30, 14.275, 100));
         JSONArray s = new JSONArray()
-                .put(new JSONObject().put("energyAdded", 20.0).put("lat", 47.8001).put("lng", 13.0401)
+                .put(new JSONObject().put("energyAdded", 20.0).put("lat", 48.3001).put("lng", 14.2751)
                         .put("tariffId", "t1").put("cost", 5.0).put("currency", "EUR"))
                 .put(new JSONObject().put("energyAdded", 30.0).put("lat", 48.2).put("lng", 16.37))
                 .put(new JSONObject().put("energyAdded", 5.0).put("inProgress", true))
@@ -105,7 +105,7 @@ public class H5H7H10Test {
         assertTrue(b.isNull("vormonat"));
         assertTrue(b.getJSONObject("standverlust").isNull("prozent"));
         assertTrue(b.getJSONObject("akku").isNull("sohProzent"));
-        assertFalse(b.toString().contains("47.8"));   // keine Koordinaten im Bericht
+        assertFalse(b.toString().contains("48.3"));   // keine Koordinaten im Bericht
     }
 
     // ------------------------------------------------------------- H10

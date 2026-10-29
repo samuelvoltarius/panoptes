@@ -511,7 +511,7 @@ BYD.events = {
     async init() {
         const urlParams = new URLSearchParams(window.location.search);
         const filterParam = urlParams.get('filter');
-        if (filterParam && ['all', 'sentry', 'normal', 'proximity', 'replay'].includes(filterParam)) {
+        if (filterParam && ['all', 'sentry', 'normal', 'proximity', 'replay', 'ereignis'].includes(filterParam)) {
             this.currentFilter = filterParam;
             document.querySelectorAll('.filter-tab').forEach(tab => {
                 tab.classList.toggle('active', tab.dataset.filter === filterParam);
@@ -1124,6 +1124,7 @@ BYD.events = {
         if (this.currentFilter === 'sentry') suffixKey = 'events.title_sentry';
         else if (this.currentFilter === 'proximity') suffixKey = 'events.title_proximity';
         else if (this.currentFilter === 'replay') suffixKey = 'events.title_replay';
+        else if (this.currentFilter === 'ereignis') suffixKey = 'events.title_ereignis';
         else suffixKey = 'events.title_recordings';
         title.textContent = BYD.i18n.t(suffixKey, {prefix: prefix});
     },
@@ -1204,7 +1205,7 @@ BYD.events = {
                     this._warmingPollTimer = null;
                 }
                 this._hideWarmingBanner();
-                var unknownIds = ['normalCount', 'sentryCount', 'proximityCount', 'replayCount'];
+                var unknownIds = ['normalCount', 'sentryCount', 'proximityCount', 'replayCount', 'ereignisCount'];
                 for (var ui = 0; ui < unknownIds.length; ui++) {
                     var uel = document.getElementById(unknownIds[ui]);
                     if (uel) uel.textContent = '--';
@@ -1226,18 +1227,22 @@ BYD.events = {
                     normal: data.byType.normal || {},
                     sentry: data.byType.sentry || {},
                     proximity: data.byType.proximity || {},
-                    replay: data.byType.replay || {}
+                    replay: data.byType.replay || {},
+                    ereignis: data.byType.ereignis || {}
                 } : {
                     normal: { count: data.normalCount, bytes: data.normalSize, todayCount: data.normalTodayCount },
                     sentry: { count: data.sentryCount, bytes: data.sentrySize, todayCount: data.sentryTodayCount },
                     proximity: { count: data.proximityCount, bytes: data.proximitySize, todayCount: data.proximityTodayCount },
-                    replay: { count: data.replayCount, bytes: data.replaySize, todayCount: data.replayTodayCount }
+                    replay: { count: data.replayCount, bytes: data.replaySize, todayCount: data.replayTodayCount },
+                    ereignis: { count: data.ereignisCount, bytes: data.ereignisSize, todayCount: data.ereignisTodayCount }
                 };
                 document.getElementById('normalCount').textContent = counts.normal.count || 0;
                 document.getElementById('sentryCount').textContent = counts.sentry.count || 0;
                 document.getElementById('proximityCount').textContent = counts.proximity.count || 0;
                 const replayCountEl = document.getElementById('replayCount');
                 if (replayCountEl) replayCountEl.textContent = counts.replay.count || 0;
+                const ereignisCountEl = document.getElementById('ereignisCount');
+                if (ereignisCountEl) ereignisCountEl.textContent = counts.ereignis.count || 0;
 
                 // Daemon's recording index is still warming — surface a tiny
                 // inline notice and self-refresh until it finishes. The notice
@@ -1595,7 +1600,7 @@ BYD.events = {
         list.innerHTML = inflightHtml + visible.map(rec => {
             const recordingKey = this.recordingKey(rec);
             const thumbId = this._thumbDomId(recordingKey);
-            const badge = rec.type === 'sentry' ? BYD.i18n.t('events.badge_sentry') : rec.type === 'proximity' ? BYD.i18n.t('events.badge_proximity') : rec.type === 'replay' ? BYD.i18n.t('events.badge_replay') : BYD.i18n.t('events.badge_normal');
+            const badge = rec.type === 'sentry' ? BYD.i18n.t('events.badge_sentry') : rec.type === 'proximity' ? BYD.i18n.t('events.badge_proximity') : rec.type === 'replay' ? BYD.i18n.t('events.badge_replay') : rec.type === 'ereignis' ? BYD.i18n.t('events.badge_ereignis') : BYD.i18n.t('events.badge_normal');
             const fname = rec.filename.length > 28 ? rec.filename.substring(0, 25) + '...' : rec.filename;
             const isSelected = this.selectedFiles.has(recordingKey);
             

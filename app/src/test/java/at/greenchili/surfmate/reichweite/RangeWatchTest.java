@@ -12,15 +12,15 @@ import java.util.List;
 
 /**
  * F1 „Reicht es noch?“ (F1_KONZEPT.md). Trockenlauf mit nachgebildeter Fahrt entlang einer
- * geraden Planlinie (Ost-West, 47,8° N), keine Wirkung am Auto.
+ * geraden Planlinie (Ost-West, 48,2° N), keine Wirkung am Auto.
  */
 public class RangeWatchTest {
 
-    private static final double LAT = 47.8;
-    /** km je Längengrad bei 47,8° N. */
-    private static final double KM_PRO_GRAD = RangeWatch.distKm(LAT, 13.0, LAT, 14.0);
+    private static final double LAT = 48.2;
+    /** km je Längengrad bei 48,2° N. */
+    private static final double KM_PRO_GRAD = RangeWatch.distKm(LAT, 14.3, LAT, 15.3);
 
-    private static double lonBeiKm(double km) { return 13.0 + km / KM_PRO_GRAD; }
+    private static double lonBeiKm(double km) { return 14.3 + km / KM_PRO_GRAD; }
 
     /** 200 km Linie, Stopp bei 120 km (an 20 %, ab 80 %), Start 90 %, Ankunft 50 %, Reserve 10 %. */
     private static RangeWatch.Plan plan() {
