@@ -317,8 +317,8 @@ android {
         // value (e.g. `-PsurfmateVersionName=27.4 -PsurfmateVersionCode=12`)
         // without a source edit per release; the defaults track the current
         // rolling head so a plain local build is still accurate.
-        versionCode = (project.findProperty("surfmateVersionCode") as? String)?.toIntOrNull() ?: 45
-        versionName = (project.findProperty("surfmateVersionName") as? String) ?: "0.1.28.1"
+        versionCode = (project.findProperty("surfmateVersionCode") as? String)?.toIntOrNull() ?: 46
+        versionName = (project.findProperty("surfmateVersionName") as? String) ?: "0.1.29"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
         // Note: abiFilters removed - using splits.abi instead for size optimization

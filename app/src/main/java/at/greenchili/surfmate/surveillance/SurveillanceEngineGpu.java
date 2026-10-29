@@ -37,6 +37,8 @@ public class SurveillanceEngineGpu {
     // processFrameV2), so a plain long is sufficient — no separate timer thread
     // and therefore no start/stop lifecycle races.
     private long lastIdleKeyframePulseMs = 0;
+    /** 0.1.29: letzte Logzeile „Kachel verworfen“ je Kachel (VerworfenDiag). */
+    private final long[] letzteVerworfenLogMs = new long[MotionPipelineV2.NUM_QUADRANTS];
 
     // Parked-idle throttle fps-ramp edge detector. hasActiveMotion() is checked at
     // the TOP of every processFrameV2 tick; when it changes vs this last-observed
@@ -320,6 +322,9 @@ public class SurveillanceEngineGpu {
     // Every one is a POSITIVE test against a signal the FP produces, so absence
     // of evidence never triggers (the inverse of a fail-open — see the native
     // probe's identical stance).
+
+    /** 0.1.29: native Salienz-Prüfung (Rettung naher, großer Personen vor dem Lichtblitz-Filter) immer an. */
+    static final boolean SALIENZ_PRUEFUNG_NATIV = true;
 
     /** Master gate. Mirrors {@code surveillance.motionSalienceEnabled}. */
     private volatile boolean salienceEnabled = false;
@@ -1911,6 +1916,7 @@ public class SurveillanceEngineGpu {
             if (pipelineV2.init()) {
                 pipelineV2Config = new MotionPipelineV2.Config();
                 pipelineV2Config.applyEnvironmentPreset("outdoor");  // Default preset
+                pipelineV2Config.salienceEnabled = SALIENZ_PRUEFUNG_NATIV;
                 pipelineV2.applyConfig(pipelineV2Config);
                 logger.info("V2 per-quadrant pipeline initialized");
             } else {
@@ -2938,6 +2944,25 @@ public class SurveillanceEngineGpu {
         // Check if any quadrant detected motion at MEDIUM or higher threat.
         int maxThreat = pipelineV2.getMaxThreatLevel();
         boolean anyMotion = maxThreat >= MotionPipelineV2.THREAT_MEDIUM;
+        // 0.1.29 (Befund 29.10. 14:21): verworfene Kachel mit viel Bewegung ins Daemon-Log, gedrosselt
+        if (!anyMotion) {
+            long jetztDiag = System.currentTimeMillis();
+            for (int q = 0; q < MotionPipelineV2.NUM_QUADRANTS; q++) {
+                MotionPipelineV2.QuadrantResult r = results[q];
+                if (r == null || !VerworfenDiag.loggen(r.activeBlocks, r.motionDetected, jetztDiag,
+                        letzteVerworfenLogMs[q])) continue;
+                letzteVerworfenLogMs[q] = jetztDiag;
+                logger.info(String.format(java.util.Locale.ROOT,
+                        "  [%s] verworfen: %s | active=%d confirmed=%d component=%d luma=%.0f",
+                        MotionPipelineV2.QUADRANT_NAMES[q],
+                        VerworfenDiag.grund(r.brightnessSuppressed, r.salienceState, r.activeBlocks,
+                                r.confirmedBlocks, r.componentSize, r.centroidY,
+                                pipelineV2Config != null ? pipelineV2Config.minComponentSize : 1,
+                                pipelineV2Config != null ? pipelineV2Config.maxDistanceRow : 0,
+                                pipelineV2Config != null ? pipelineV2Config.alarmBlockThreshold : 2),
+                        r.activeBlocks, r.confirmedBlocks, r.componentSize, r.meanLuma));
+            }
+        }
         
         // SOTA: Tracker immunity from brightness suppression (Headlight Sweep Fix).
         // When a car's headlights sweep across the camera, the brightness suppression
@@ -7230,7 +7255,11 @@ public class SurveillanceEngineGpu {
             // >25% mass filter long enough to be measured) and the Java trigger
             // channel below. Keeping them on one flag means the Java side can never
             // wait on a signal the native side isn't producing.
-            pipelineV2Config.salienceEnabled = config.isMotionSalienceEnabled();
+            // 0.1.29 (Befund 28.10. 18:49 / 29.10. 14:21, Prüfstand): Die native Prüfung rettet eine nahe,
+            // große Person vor dem >25-%-Lichtblitz-Filter, der sie sonst verwirft. Sie ist darum immer an.
+            // Der Java-Auslöseweg der Salienz (salienceActive, eigene Haltezeit) bleibt beim Schalter
+            // motionSalienceEnabled: Gerettete Bilder laufen nur durch die normalen Wege (YOLO, Haltezeiten).
+            pipelineV2Config.salienceEnabled = SALIENZ_PRUEFUNG_NATIV;
             boolean[] cameras = config.getCameraEnabled();
             for (int i = 0; i < 4; i++) {
                 pipelineV2Config.quadrantEnabled[i] = cameras[i];
@@ -7240,7 +7269,7 @@ public class SurveillanceEngineGpu {
                     config.getEnvironmentPreset(), config.getSensitivityLevel(), aggSens,
                     config.getDetectionZone(), aggZone,
                     config.getLoiteringTimeSeconds(), cameras[0], cameras[1], cameras[2], cameras[3],
-                    !config.isMotionSalienceEnabled() ? "off"
+                    !config.isMotionSalienceEnabled() ? "off (native Pruefung an)"
                             : (pipelineV2.isNativeSalienceSupported() ? "on" : "on(native UNSUPPORTED → inert)")));
         }
 
