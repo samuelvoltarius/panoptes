@@ -920,6 +920,14 @@
       "network_hotspot_limit": {
         "label": "Hotspot data limit reached",
         "note": "When the hotspot goes over its set data limit; it is turned off at the same time. Raise or reset the limit to use it again."
+      },
+      "ereignis_gesichert": {
+        "label": "Event saved (hard braking or bump)",
+        "note": "An event video was saved in the car. You only get the time – no video, no place. Own topic, not tied to alarms."
+      },
+      "vehicle_health_battery12v": {
+        "label": "12 V battery getting weak",
+        "note": "Warns before the 12 V battery is too weak to start the car. At most once a day."
       }
     },
     "group": {
@@ -931,7 +939,8 @@
       "assistant": "Assistant",
       "parking": "Parking",
       "network": "Network",
-      "other": "Other"
+      "other": "Other",
+      "ereignisse": "Events"
     },
     "sev_pill_info": "info",
     "sev_pill_warn": "warn",
@@ -942,7 +951,8 @@
     "video_off": "Off",
     "telegram_kat_hier": "Which messages reach your Telegram chat is set on the Telegram page – each category separately.",
     "telegram_kat_link": "Set up Telegram messages",
-    "telegram_sub2": "Sends messages to a connected Telegram chat. Connect the bot and choose the categories on the Telegram page."
+    "telegram_sub2": "Sends messages to a connected Telegram chat. Connect the bot and choose the categories on the Telegram page.",
+    "alle_link": "All messages on one page"
   },
   "charge": {
     "title": "Charging",
@@ -4820,6 +4830,7 @@
     "page_guard_settings": "Guard settings",
     "page_recording": "Recording",
     "page_notifications": "Alerts",
+    "page_benachrichtigungen": "Notifications",
     "sec_car": "Car",
     "page_control": "Controls",
     "page_seats": "Seats",
@@ -5171,6 +5182,9 @@
     "handy_recht_route": "Send a route to the car (nothing starts by itself)",
     "handy_recht_update": "Update Panoptes (only when parked)",
     "handy_update_confirm": "This device may then update Panoptes – only to an approved version and only when the car is in P and switched off. You get a Telegram message every time it starts. Switch on?",
+    "handy_wort_ereignisclip": "Accident clips",
+    "handy_recht_ereignisclip": "Allow accident clips on the phone (only when you tap on the phone)",
+    "handy_ereignisclip_confirm": "Accident clips can show other people and passers-by. This phone may then load a clip when you tap “Save to phone” there – never by itself, never to a server. Every download is noted in the car. Turn on?",
     "req_update": "May update Panoptes (only when parked; can be changed later)",
     "handy_wallbox_confirm": "This phone can then start and stop charging and change the charging current from anywhere – only at the approved wallbox, never while driving. You get a Telegram message for every change. Switch on?",
     "req_wallbox": "Also control the wallbox (start/stop charging, current; can be changed later)"
@@ -6212,5 +6226,107 @@
     "erklaerung_ohne_frist": "If you do not keep it, the clip is deleted when the space for events is full.",
     "gespeichert": "Will be kept.",
     "fehler": "That did not work. Please try again."
+  },
+  "meldungen": {
+    "title": "All messages",
+    "lead": "Choose what the car sends you.",
+    "handy": "Phone",
+    "telegram": "Telegram",
+    "teilweise": "partly on",
+    "kein_handy": "No phone gets messages yet.",
+    "handy_verbinden": "Connect phone",
+    "kein_telegram": "Telegram is not connected.",
+    "telegram_verbinden": "Connect Telegram",
+    "ruhe_title": "Night rest",
+    "ruhe_text": "During this time only alarms come through.",
+    "ruhe_an": "Night rest on",
+    "von": "from",
+    "bis": "to",
+    "gespeichert": "Saved",
+    "fehler": "That did not work. Please tap again.",
+    "laden": "Loading …",
+    "genauer": "More settings",
+    "thema": {
+      "waechter": {
+        "label": "Someone at the car",
+        "note": "A person is close to the car or something comes very close."
+      },
+      "ereignis": {
+        "label": "Hard braking or bump",
+        "note": "The video stays in the car. You only get the time."
+      },
+      "batterie12v": {
+        "label": "12 V battery",
+        "note": "Warns before the car might not start any more."
+      },
+      "waechter_pause": {
+        "label": "Guard paused",
+        "note": "The guard sleeps to save power, or needs help."
+      },
+      "laden": {
+        "label": "Charging",
+        "note": "Charging finished or a charging fault."
+      },
+      "reifen": {
+        "label": "Tyres",
+        "note": "Too little air or a puncture."
+      },
+      "parken": {
+        "label": "Parking",
+        "note": "Parked and back at the car."
+      },
+      "camping": {
+        "label": "Camping",
+        "note": "Notices and battery warnings while camping."
+      },
+      "tueren": {
+        "label": "Door opened",
+        "note": "A door opens while the car is parked."
+      },
+      "wichtig": {
+        "label": "Other important messages",
+        "note": "Serious problems reported by the car."
+      },
+      "updates": {
+        "label": "New version",
+        "note": "A new Panoptes version is available."
+      }
+    }
+  },
+  "klima_laeuft": {
+    "unbestaetigt": "Started – the car has not confirmed it yet."
+  },
+  "abfahrt_klima": {
+    "title": "Warm when you leave",
+    "switch": "Warm up the car before you leave (cool it in summer)",
+    "lead": "How long before?",
+    "next": "Starts {start} · Leaving {abfahrt}",
+    "no_departure": "No departure time set (step 2).",
+    "hint": "Set the departure time below in step 2. If the car is on, Panoptes switches it in the car; if it is off, via BYD.",
+    "r_lokal": "Climate started in the car.",
+    "r_cloud": "Climate started via BYD.",
+    "r_zu_spaet": "Too late – not started.",
+    "r_akku_niedrig": "Battery too low – not started.",
+    "r_auto_an": "Someone is in the car – not started.",
+    "r_zustand_unklar": "Car not reachable – not started.",
+    "r_fehler_lokal": "That did not work.",
+    "r_fehler_cloud": "BYD did not confirm."
+  },
+  "fahrtenbuch_datei": {
+    "titel": "Logbook as a file",
+    "hinweis": "One month as a spreadsheet or for printing. The file is made in your car and stays with you. No places.",
+    "monat": "Month",
+    "tabelle": "Save as spreadsheet",
+    "drucken": "Print / PDF"
+  },
+  "einrichtung_p10": {
+    "ereignis_handy": "A clip only goes to your phone when you tap “Save to phone” there.",
+    "ereignis_ja": "Yes, save events",
+    "ereignis_nein": "No",
+    "stopp_frueh": "Stop sooner",
+    "stopp_normal": "Normal (recommended)",
+    "stopp_lang": "Watch longer",
+    "stopp_satz": "Battery below {akku} % or after {stunden} hours",
+    "stopp_12v": "Panoptes always protects the 12-volt battery as well."
   }
 }

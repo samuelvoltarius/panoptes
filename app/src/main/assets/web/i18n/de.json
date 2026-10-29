@@ -920,6 +920,14 @@
       "network_hotspot_limit": {
         "label": "Hotspot-Datenlimit erreicht",
         "note": "Wenn der Hotspot sein eingestelltes Datenlimit überschreitet; er wird dabei ausgeschaltet. Limit erhöhen oder zurücksetzen, um ihn wieder zu nutzen."
+      },
+      "ereignis_gesichert": {
+        "label": "Ereignis gesichert (Vollbremsung oder Stoß)",
+        "note": "Ein Ereignis-Video wurde im Auto gespeichert. Du bekommst nur die Uhrzeit – kein Video, kein Ort. Eigenes Thema, hängt nicht an den Alarmen."
+      },
+      "vehicle_health_battery12v": {
+        "label": "Starterbatterie (12 V) wird schwach",
+        "note": "Warnt, bevor die 12-V-Batterie zu schwach zum Starten ist. Höchstens einmal am Tag."
       }
     },
     "group": {
@@ -931,7 +939,8 @@
       "assistant": "Assistent",
       "parking": "Parken",
       "network": "Netzwerk",
-      "other": "Sonstiges"
+      "other": "Sonstiges",
+      "ereignisse": "Ereignisse"
     },
     "sev_pill_info": "Info",
     "sev_pill_warn": "Warnung",
@@ -942,7 +951,8 @@
     "video_off": "Ausgeschaltet",
     "telegram_kat_hier": "Welche Meldungen im Telegram-Chat ankommen, stellst du auf der Telegram-Seite ein – jede Kategorie einzeln.",
     "telegram_kat_link": "Telegram-Meldungen einstellen",
-    "telegram_sub2": "Schickt Meldungen in einen verbundenen Telegram-Chat. Verbinde den Bot und wähle die Kategorien auf der Telegram-Seite."
+    "telegram_sub2": "Schickt Meldungen in einen verbundenen Telegram-Chat. Verbinde den Bot und wähle die Kategorien auf der Telegram-Seite.",
+    "alle_link": "Alle Meldungen auf einer Seite"
   },
   "charge": {
     "title": "Laden",
@@ -4820,6 +4830,7 @@
     "page_guard_settings": "Wächter-Einstellungen",
     "page_recording": "Aufnahme",
     "page_notifications": "Meldungen",
+    "page_benachrichtigungen": "Benachrichtigungen",
     "sec_car": "Auto",
     "page_control": "Steuerung",
     "page_seats": "Sitze",
@@ -5171,6 +5182,9 @@
     "handy_recht_route": "Route ins Auto schicken (startet nichts von selbst)",
     "handy_recht_update": "Panoptes aktualisieren (nur geparkt)",
     "handy_update_confirm": "Dieses Gerät darf dann Panoptes aktualisieren – nur auf eine freigegebene Version und nur, wenn das Auto in P steht und aus ist. Du bekommst bei jedem Start eine Telegram-Nachricht. Einschalten?",
+    "handy_wort_ereignisclip": "Unfall-Clips",
+    "handy_recht_ereignisclip": "Unfall-Clips aufs Handy erlauben (nur auf Knopfdruck am Handy)",
+    "handy_ereignisclip_confirm": "Unfall-Clips können Beteiligte und Passanten zeigen. Dieses Handy darf dann einen Clip laden, wenn du dort auf „Aufs Handy laden“ tippst – nie von selbst, nie auf einen Server. Jedes Laden wird im Auto vermerkt. Einschalten?",
     "req_update": "Darf Panoptes aktualisieren (nur geparkt; später änderbar)",
     "handy_wallbox_confirm": "Dieses Handy darf dann von überall das Laden starten und stoppen und den Ladestrom ändern – nur an der freigegebenen Wallbox, nie während der Fahrt. Du bekommst bei jeder Änderung eine Telegram-Nachricht. Einschalten?",
     "req_wallbox": "Auch die Wallbox steuern (Laden starten/stoppen, Ladestrom; später änderbar)"
@@ -6212,5 +6226,107 @@
     "erklaerung_ohne_frist": "Ohne „Behalten“ wird der Clip gelöscht, wenn der Platz für Ereignisse voll ist.",
     "gespeichert": "Wird behalten.",
     "fehler": "Das hat nicht geklappt. Bitte noch einmal versuchen."
+  },
+  "meldungen": {
+    "title": "Alle Meldungen",
+    "lead": "Hier stellst du ein, was dir das Auto schickt.",
+    "handy": "Handy",
+    "telegram": "Telegram",
+    "teilweise": "teilweise an",
+    "kein_handy": "Noch kein Handy bekommt Meldungen.",
+    "handy_verbinden": "Handy verbinden",
+    "kein_telegram": "Telegram ist nicht verbunden.",
+    "telegram_verbinden": "Telegram verbinden",
+    "ruhe_title": "Nachtruhe",
+    "ruhe_text": "In dieser Zeit kommen nur Alarme.",
+    "ruhe_an": "Nachtruhe an",
+    "von": "von",
+    "bis": "bis",
+    "gespeichert": "Gespeichert",
+    "fehler": "Hat nicht geklappt. Bitte noch einmal tippen.",
+    "laden": "Lädt …",
+    "genauer": "Genauer einstellen",
+    "thema": {
+      "waechter": {
+        "label": "Jemand am Auto",
+        "note": "Eine Person ist nah am Auto oder etwas kommt sehr nah."
+      },
+      "ereignis": {
+        "label": "Vollbremsung oder Stoß",
+        "note": "Das Video bleibt im Auto. Du bekommst nur die Uhrzeit."
+      },
+      "batterie12v": {
+        "label": "Starterbatterie (12 V)",
+        "note": "Warnt, bevor das Auto vielleicht nicht mehr startet."
+      },
+      "waechter_pause": {
+        "label": "Wächter pausiert",
+        "note": "Der Wächter schläft, um Strom zu sparen, oder braucht Hilfe."
+      },
+      "laden": {
+        "label": "Laden",
+        "note": "Laden fertig oder ein Fehler beim Laden."
+      },
+      "reifen": {
+        "label": "Reifen",
+        "note": "Zu wenig Luft oder ein Loch."
+      },
+      "parken": {
+        "label": "Parken",
+        "note": "Abgestellt und zurück am Auto."
+      },
+      "camping": {
+        "label": "Camping",
+        "note": "Hinweise und Akku-Warnungen beim Camping."
+      },
+      "tueren": {
+        "label": "Tür geöffnet",
+        "note": "Eine Tür geht auf, während das Auto parkt."
+      },
+      "wichtig": {
+        "label": "Andere wichtige Meldungen",
+        "note": "Ernste Probleme, die das Auto meldet."
+      },
+      "updates": {
+        "label": "Neue Version",
+        "note": "Eine neue Panoptes-Version ist da."
+      }
+    }
+  },
+  "klima_laeuft": {
+    "unbestaetigt": "Gestartet – das Auto hat es noch nicht bestätigt."
+  },
+  "abfahrt_klima": {
+    "title": "Warm zur Abfahrt",
+    "switch": "Auto vor der Abfahrt warm machen (im Sommer kühlen)",
+    "lead": "Wie lange vorher?",
+    "next": "Startet {start} · Abfahrt {abfahrt}",
+    "no_departure": "Keine Abfahrt eingestellt (Schritt 2).",
+    "hint": "Die Abfahrtszeit stellst du unten bei Schritt 2 ein. Ist das Auto an, schaltet Panoptes im Auto; ist es aus, über BYD.",
+    "r_lokal": "Klima im Auto gestartet.",
+    "r_cloud": "Klima über BYD gestartet.",
+    "r_zu_spaet": "Zu spät – nicht gestartet.",
+    "r_akku_niedrig": "Akku zu leer – nicht gestartet.",
+    "r_auto_an": "Jemand ist im Auto – nicht gestartet.",
+    "r_zustand_unklar": "Auto nicht erreichbar – nicht gestartet.",
+    "r_fehler_lokal": "Hat nicht geklappt.",
+    "r_fehler_cloud": "BYD hat nicht bestätigt."
+  },
+  "fahrtenbuch_datei": {
+    "titel": "Fahrtenbuch als Datei",
+    "hinweis": "Ein Monat als Tabelle oder zum Drucken. Die Datei entsteht im Auto und bleibt bei dir. Ohne Orte.",
+    "monat": "Monat",
+    "tabelle": "Als Tabelle speichern",
+    "drucken": "Drucken / PDF"
+  },
+  "einrichtung_p10": {
+    "ereignis_handy": "Auf dein Handy kommt ein Clip nur, wenn du dort auf „Aufs Handy laden“ tippst.",
+    "ereignis_ja": "Ja, Ereignisse sichern",
+    "ereignis_nein": "Nein",
+    "stopp_frueh": "Früher aufhören",
+    "stopp_normal": "Normal (empfohlen)",
+    "stopp_lang": "Länger aufpassen",
+    "stopp_satz": "Akku unter {akku} % oder nach {stunden} Stunden",
+    "stopp_12v": "Die 12-Volt-Batterie schützt Panoptes immer zusätzlich."
   }
 }

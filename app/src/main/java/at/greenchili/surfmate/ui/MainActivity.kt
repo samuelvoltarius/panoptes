@@ -508,8 +508,12 @@ open class MainActivity : AppCompatActivity() {
     private fun handleNavigateExtra(intent: android.content.Intent) {
         val target = intent.getStringExtra(EXTRA_NAVIGATE_TO) ?: return
         intent.removeExtra(EXTRA_NAVIGATE_TO)
+        // 0.1.28 Rückkehr-Karte: „Ansehen“ spielt die erste Wächter-Aufnahme ab
+        val aufnahme = intent.getStringExtra(NavigateZiel.EXTRA_AUFNAHME)
+        intent.removeExtra(NavigateZiel.EXTRA_AUFNAHME)
         setIntent(intent)
-        val pfad = NavigateZiel.pfad(target) ?: return
+        val pfad = (if (target == NavigateZiel.ZIEL_AUFNAHME) NavigateZiel.aufnahmePfad(aufnahme)
+            else NavigateZiel.pfad(target)) ?: return
         navigateToWebSeite(pfad)
     }
 

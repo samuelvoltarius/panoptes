@@ -86,7 +86,8 @@ final class BrueckeWeiterleitung {
      * Brücke nur mit dem Kopplungsrecht „kamera“ (Standard aus) – egal ob Kanal „web“, v1 oder v2.
      */
     static final String[] KAMERA_PFADE = {"/video/", "/thumb/", "/snapshot/", "/api/recordings", "/api/events/",
-            "/parking/asset/", "/api/stream", "/api/bs/", "/api/camview/", "/ws", "/h264/"};
+            "/parking/asset/", "/api/stream", "/api/bs/", "/api/camview/", "/ws", "/h264/",
+            "/api/handy/v1/clips"};   // 0.1.28 P5 Clips am Handy (CLIP_VERTRAG_0128)
 
     static boolean istKameraPfad(String p) {
         String q = p.contains("?") ? p.substring(0, p.indexOf('?')) : p;
@@ -441,7 +442,20 @@ final class BrueckeWeiterleitung {
         boolean verbrauchen(long n);
     }
 
+    /** 0.1.28 P5: Ereignis-Clip-Weg (Freigabe + Datei) mit der Kopplungs-id des Kanals. */
+    interface ClipAufruf {
+        Strom oeffnen(String kid, String methode, String pfad, java.util.Map<String, String> kopf, byte[] body)
+                throws Exception;
+    }
+
     private StromAufruf stromAufruf = BrueckeWeiterleitung::loopbackStrom;
+    /** Ohne Einrichtung (Tests) ist der Clip-Weg zu. */
+    private ClipAufruf clipAufruf = (kid, m, p, k, b) -> new Strom(403, new java.util.HashMap<>(), null, null);
+
+    BrueckeWeiterleitung mitClipWeg(ClipAufruf c) {
+        this.clipAufruf = c;
+        return this;
+    }
     private MedienKonto konto = n -> true;
 
     MedienKonto konto() { return konto; }
@@ -512,11 +526,18 @@ final class BrueckeWeiterleitung {
                 aus.senden(v2Fehler(v.id, 403, "medien_kanal"));
                 return;
             }
+            // 0.1.28 P5: Ereignis-Clip aufs Handy nur auf dem Medien-Kanal, im Brücken-Prozess (nie über HTTP)
+            boolean clip = BrueckeClipWeg.zustaendig(v.p);
+            if (clip && !medienKanal) {
+                aus.senden(v2Fehler(v.id, 403, "nur_bruecke_medien"));
+                return;
+            }
             if (kamera && !konto.verbrauchen(0)) {
                 aus.senden(v2Fehler(v.id, 429, "medien_tageslimit"));
                 return;
             }
-            try (Strom st = stromAufruf.oeffnen(v.m, v.p, v.kopf, v.body);
+            try (Strom st = clip ? clipAufruf.oeffnen(kid, v.m, v.p, v.kopf, v.body)
+                    : stromAufruf.oeffnen(v.m, v.p, v.kopf, v.body);
                  InputStream daten = v.gzip && !kamera && st.daten != null && komprimierbar(st.status, st.kopf)
                          && laenge(st.kopf) >= GZIP_AB ? new GzipStrom(st.daten) : st.daten) {
                 JSONObject hk = kopfRaus(st.kopf, v.web);
@@ -677,7 +698,8 @@ final class BrueckeWeiterleitung {
                     ? at.greenchili.surfmate.auth.AuthManager.generateJwt(at.greenchili.surfmate.auth.WebSitzung.SCOPE, kid, 120)
                     : null;
         }, (kid, r) -> at.greenchili.surfmate.auth.Kopplungen.get().hatRecht(kid, r))
-                .mitStrom(BrueckeWeiterleitung::loopbackStrom, n -> Bruecke.get().medienVerbrauchen(n, System.currentTimeMillis()));
+                .mitStrom(BrueckeWeiterleitung::loopbackStrom, n -> Bruecke.get().medienVerbrauchen(n, System.currentTimeMillis()))
+                .mitClipWeg(BrueckeClipWeg.imDaemon()::oeffnen);
     }
 
     /** Loopback an den eigenen HTTP-Server – mit Tunnel-Kennzeichen, damit die Loopback-Ausnahme nicht greift. */

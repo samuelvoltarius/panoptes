@@ -114,7 +114,9 @@ public final class LadeplanDienst {
                 // 0.1.21: „Ich habe einen dynamischen Stromtarif (stündlicher Börsenpreis)“ – Standard aus; nur dann Börse
                 .put("dynamischerTarif", false)
                 .put("ladepunkt", JSONObject.NULL)
-                .put("freigabe", new JSONObject().put("an", false).put("zeit", JSONObject.NULL).put("ladepunkt", JSONObject.NULL));
+                .put("freigabe", new JSONObject().put("an", false).put("zeit", JSONObject.NULL).put("ladepunkt", JSONObject.NULL))
+                // 0.1.28 (P6): „zur Abfahrt warm“ – Standard aus, eigener Takt in AbfahrtKlima (schaltet das Klima, nie die Wallbox)
+                .put("vorklima", AbfahrtKlima.standard());
     }
 
     public synchronized JSONObject einstellungen() throws JSONException {
@@ -139,7 +141,22 @@ public final class LadeplanDienst {
         for (Iterator<String> it = neu.keys(); it.hasNext(); ) {
             String k = it.next();
             if (!s.has(k) || "v".equals(k)) continue;
+            if ("vorklima".equals(k) && neu.opt(k) instanceof JSONObject) {
+                // 0.1.28: Teil-Änderung ({an} oder {vorlaufMin}) mit dem Bestand zusammenführen
+                JSONObject vk = new JSONObject(s.getJSONObject(k).toString());
+                JSONObject n = neu.getJSONObject(k);
+                for (Iterator<String> i2 = n.keys(); i2.hasNext(); ) {
+                    String k2 = i2.next();
+                    if (vk.has(k2)) vk.put(k2, n.get(k2));
+                }
+                s.put(k, vk);
+                continue;
+            }
             s.put(k, neu.get(k));
+        }
+        // 0.1.28 (P6): Einschalten, dass Panoptes das Klima selbst startet, nur mit eigenem Login (wie die Freigabe)
+        if (extern && s.getJSONObject("vorklima").optBoolean("an") && !alt.getJSONObject("vorklima").optBoolean("an")) {
+            return "nur_am_auto";
         }
         String f = pruefe(s);
         if (f != null) return f;
@@ -197,7 +214,7 @@ public final class LadeplanDienst {
         }
         if (!s.isNull("ladepunkt") && !s.optString("ladepunkt").matches("[a-z]{2,8}:[A-Za-z0-9_.:-]{1,64}")) return "ladepunkt_ungueltig";
         if (s.optJSONObject("freigabe") == null) return "einstellung_ungueltig";
-        return null;
+        return AbfahrtKlima.pruefe(s.optJSONObject("vorklima"));
     }
 
     private static boolean zahl(JSONObject s, String k, int min, int max) {
@@ -205,6 +222,23 @@ public final class LadeplanDienst {
         if (!(v instanceof Number)) return false;
         double d = ((Number) v).doubleValue();
         return d == Math.rint(d) && d >= min && d <= max;
+    }
+
+    /** 0.1.28: Feiertags-Land wie im Plan (Zeittarif des ersten Heimorts), sonst "" – ohne Wallbox-Abruf. */
+    public synchronized String feiertagsLand() {
+        try {
+            JSONArray orte = u.orte();
+            for (int i = 0; orte != null && i < orte.length(); i++) {
+                JSONObject o = orte.optJSONObject(i);
+                JSONObject eig = o == null ? null : o.optJSONObject("eigenschaften");
+                if (eig == null || !eig.optBoolean("zuhause") || o.optJSONObject("verweise") == null) continue;
+                String tid = o.getJSONObject("verweise").optString("tarif", "");
+                TariffProfile t = tid.isEmpty() ? null : u.tarif(tid);
+                Zeittarif zt = t == null ? null : t.getZeittarif();
+                return zt != null ? zt.land() : "";
+            }
+        } catch (Exception ignored) { }
+        return "";
     }
 
     /**

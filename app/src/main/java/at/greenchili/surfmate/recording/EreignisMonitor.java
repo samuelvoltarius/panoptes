@@ -5,9 +5,6 @@ import at.greenchili.surfmate.logging.DaemonLogger;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -204,7 +201,10 @@ public final class EreignisMonitor {
         }
         sichertGerade = true;
         final long ereignisMs = System.currentTimeMillis();
-        logger.info("Ereignis erkannt: " + g + " – sichere Clip");
+        logger.info(String.format(java.util.Locale.ROOT, "Ereignis erkannt: %s – sichere Clip (Tempo %.0f km/h%s)",
+                g, erkenner.letzteKmh(),
+                g == EreignisErkenner.Grund.STOSS
+                        ? String.format(java.util.Locale.ROOT, ", Stoß %.1f m/s²", erkenner.letzteSpitze()) : ""));
         Thread t = new Thread(() -> {
             try {
                 sichern(g, ereignisMs);
@@ -292,14 +292,19 @@ public final class EreignisMonitor {
         EreignisAblage.pflege();
         meldungAmDisplay(ereignisMs);
         try {
-            if (EreignisClip.telegram(at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig())) {
-                String zeit = new SimpleDateFormat("HH:mm", Locale.ROOT).format(new Date(ereignisMs));
-                // Nur Text, ohne Video und ohne Ort (Rechtslage Nr. 8).
-                at.greenchili.surfmate.telegram.TelegramNotifier.sendMessage(
-                        "Panoptes: Ereignis um " + zeit + " gesichert (nur im Auto gespeichert).", "CRITICAL");
-            }
+            // 0.1.28 P1: eigene Kategorie „Ereignisse“ (vorher CRITICAL → mit „Alarme aus“ verschwunden).
+            // Schalter prüft TelegramNotifier frisch; nur Text, ohne Video und ohne Ort (Rechtslage Nr. 8).
+            at.greenchili.surfmate.telegram.TelegramNotifier.sendMessage(
+                    EreignisMeldung.telegramText(ereignisMs), EreignisMeldung.TELEGRAM_KATEGORIE);
         } catch (Throwable t) {
             logger.debug("Telegram-Text nicht gesendet: " + t.getMessage());
+        }
+        try {
+            // Handy-Push (Kategorie ereignis.gesichert, je Gerät abschaltbar). TelegramSink lässt sie aus.
+            at.greenchili.surfmate.notifications.NotificationBus.get().publish(
+                    EreignisMeldung.pushEreignis(ereignisMs));
+        } catch (Throwable t) {
+            logger.debug("Push nicht gesendet: " + t.getMessage());
         }
     }
 

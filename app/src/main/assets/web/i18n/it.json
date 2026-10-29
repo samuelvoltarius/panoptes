@@ -920,6 +920,14 @@
       "network_hotspot_limit": {
         "label": "Limite dati dell'hotspot raggiunto",
         "note": "Quando l'hotspot supera il limite di dati impostato; viene spento nello stesso momento. Aumenta o reimposta il limite per usarlo di nuovo."
+      },
+      "ereignis_gesichert": {
+        "label": "Evento salvato (frenata brusca o urto)",
+        "note": "Un video dell’evento è stato salvato nell’auto. Ricevi solo l’ora – niente video, niente luogo. Tema a sé, non legato agli allarmi."
+      },
+      "vehicle_health_battery12v": {
+        "label": "Batteria da 12 V debole",
+        "note": "Avvisa prima che la batteria da 12 V sia troppo debole per partire. Al massimo una volta al giorno."
       }
     },
     "group": {
@@ -931,7 +939,8 @@
       "assistant": "Assistente",
       "parking": "Parcheggio",
       "network": "Rete",
-      "other": "Altro"
+      "other": "Altro",
+      "ereignisse": "Eventi"
     },
     "sev_pill_info": "Info",
     "sev_pill_warn": "Avviso",
@@ -942,7 +951,8 @@
     "video_off": "Disattivato",
     "telegram_kat_hier": "Quali messaggi arrivano nella chat Telegram si imposta nella pagina Telegram – ogni categoria separatamente.",
     "telegram_kat_link": "Imposta i messaggi Telegram",
-    "telegram_sub2": "Invia messaggi a una chat Telegram collegata. Collega il bot e scegli le categorie nella pagina Telegram."
+    "telegram_sub2": "Invia messaggi a una chat Telegram collegata. Collega il bot e scegli le categorie nella pagina Telegram.",
+    "alle_link": "Tutti i messaggi in una pagina"
   },
   "charge": {
     "title": "Ricarica",
@@ -4820,6 +4830,7 @@
     "page_guard_settings": "Impostazioni del Guardiano",
     "page_recording": "Registrazione",
     "page_notifications": "Avvisi",
+    "page_benachrichtigungen": "Notifiche",
     "sec_car": "Auto",
     "page_control": "Comandi",
     "page_seats": "Sedili",
@@ -5171,6 +5182,9 @@
     "handy_recht_route": "Inviare un percorso all’auto (non parte nulla da solo)",
     "handy_recht_update": "Aggiornare Panoptes (solo da fermo)",
     "handy_update_confirm": "Questo dispositivo potrà aggiornare Panoptes – solo a una versione approvata e solo con l’auto in P e spenta. Ricevi un messaggio Telegram a ogni avvio. Attivare?",
+    "handy_wort_ereignisclip": "Clip di incidente",
+    "handy_recht_ereignisclip": "Consenti clip di incidente sul telefono (solo con un tocco sul telefono)",
+    "handy_ereignisclip_confirm": "Le clip di incidente possono mostrare altre persone e passanti. Questo telefono può allora caricare una clip quando lì tocchi «Salva sul telefono» – mai da solo, mai su un server. Ogni caricamento viene annotato nell’auto. Attivare?",
     "req_update": "Può aggiornare Panoptes (solo da fermo; modificabile dopo)",
     "handy_wallbox_confirm": "Questo telefono potrà avviare e fermare la ricarica e cambiare la corrente da ovunque – solo sulla wallbox autorizzata, mai durante la guida. Ricevi un messaggio Telegram a ogni modifica. Attivare?",
     "req_wallbox": "Comandare anche la wallbox (avvio/stop ricarica, corrente; modificabile dopo)"
@@ -6212,5 +6226,107 @@
     "erklaerung_ohne_frist": "Senza “Tieni” la clip viene cancellata quando lo spazio per gli eventi è pieno.",
     "gespeichert": "Verrà tenuta.",
     "fehler": "Non ha funzionato. Riprova."
+  },
+  "meldungen": {
+    "title": "Tutti i messaggi",
+    "lead": "Scegli cosa ti manda l’auto.",
+    "handy": "Telefono",
+    "telegram": "Telegram",
+    "teilweise": "in parte",
+    "kein_handy": "Nessun telefono riceve ancora messaggi.",
+    "handy_verbinden": "Collega il telefono",
+    "kein_telegram": "Telegram non è collegato.",
+    "telegram_verbinden": "Collega Telegram",
+    "ruhe_title": "Riposo notturno",
+    "ruhe_text": "In questo periodo arrivano solo gli allarmi.",
+    "ruhe_an": "Riposo notturno attivo",
+    "von": "dalle",
+    "bis": "alle",
+    "gespeichert": "Salvato",
+    "fehler": "Non ha funzionato. Tocca di nuovo.",
+    "laden": "Caricamento …",
+    "genauer": "Altre impostazioni",
+    "thema": {
+      "waechter": {
+        "label": "Qualcuno vicino all’auto",
+        "note": "Una persona è vicina all’auto o qualcosa si avvicina molto."
+      },
+      "ereignis": {
+        "label": "Frenata brusca o urto",
+        "note": "Il video resta nell’auto. Ricevi solo l’ora."
+      },
+      "batterie12v": {
+        "label": "Batteria da 12 V",
+        "note": "Avvisa prima che l’auto possa non partire più."
+      },
+      "waechter_pause": {
+        "label": "Guardiano in pausa",
+        "note": "Il guardiano dorme per risparmiare energia, o ha bisogno di aiuto."
+      },
+      "laden": {
+        "label": "Ricarica",
+        "note": "Ricarica finita o errore di ricarica."
+      },
+      "reifen": {
+        "label": "Pneumatici",
+        "note": "Poca aria o una foratura."
+      },
+      "parken": {
+        "label": "Parcheggio",
+        "note": "Parcheggiata e di nuovo all’auto."
+      },
+      "camping": {
+        "label": "Camping",
+        "note": "Avvisi e allarmi batteria in campeggio."
+      },
+      "tueren": {
+        "label": "Porta aperta",
+        "note": "Si apre una porta mentre l’auto è parcheggiata."
+      },
+      "wichtig": {
+        "label": "Altri messaggi importanti",
+        "note": "Problemi seri segnalati dall’auto."
+      },
+      "updates": {
+        "label": "Nuova versione",
+        "note": "È disponibile una nuova versione di Panoptes."
+      }
+    }
+  },
+  "klima_laeuft": {
+    "unbestaetigt": "Avviato – l’auto non l’ha ancora confermato."
+  },
+  "abfahrt_klima": {
+    "title": "Caldo alla partenza",
+    "switch": "Scaldare l’auto prima della partenza (rinfrescarla d’estate)",
+    "lead": "Quanto tempo prima?",
+    "next": "Parte {start} · Partenza {abfahrt}",
+    "no_departure": "Nessun orario di partenza (passo 2).",
+    "hint": "Imposta l’orario di partenza più sotto al passo 2. Auto accesa: Panoptes agisce nell’auto; spenta: tramite BYD.",
+    "r_lokal": "Clima avviato nell’auto.",
+    "r_cloud": "Clima avviato tramite BYD.",
+    "r_zu_spaet": "Troppo tardi – non avviato.",
+    "r_akku_niedrig": "Batteria troppo scarica – non avviato.",
+    "r_auto_an": "Qualcuno è nell’auto – non avviato.",
+    "r_zustand_unklar": "Auto non raggiungibile – non avviato.",
+    "r_fehler_lokal": "Non ha funzionato.",
+    "r_fehler_cloud": "BYD non ha confermato."
+  },
+  "fahrtenbuch_datei": {
+    "titel": "Diario di viaggio come file",
+    "hinweis": "Un mese come tabella o da stampare. Il file nasce nell'auto e resta a te. Senza luoghi.",
+    "monat": "Mese",
+    "tabelle": "Salva come tabella",
+    "drucken": "Stampa / PDF"
+  },
+  "einrichtung_p10": {
+    "ereignis_handy": "Un clip arriva sul telefono solo se lì tocchi «Salva sul telefono».",
+    "ereignis_ja": "Sì, salva gli eventi",
+    "ereignis_nein": "No",
+    "stopp_frueh": "Fermarsi prima",
+    "stopp_normal": "Normale (consigliato)",
+    "stopp_lang": "Sorvegliare più a lungo",
+    "stopp_satz": "Batteria sotto {akku} % o dopo {stunden} ore",
+    "stopp_12v": "Panoptes protegge sempre anche la batteria da 12 volt."
   }
 }

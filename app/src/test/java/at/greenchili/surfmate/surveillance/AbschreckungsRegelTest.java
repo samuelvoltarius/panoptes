@@ -58,11 +58,11 @@ public class AbschreckungsRegelTest {
     @Test
     public void wiring() throws Exception {
         String sd = lies("src/main/java/at/greenchili/surfmate/surveillance/ScreenDeterrent.java");
-        int m = sd.indexOf("public void onMotionDetected() {");
+        int m = sd.indexOf("public void zeige(boolean person, String grund) {");   // 0.1.28: Kern von onMotionDetected
         String body = sd.substring(m, sd.indexOf("private void cleanup()", m));
-        assertTrue(body.contains("if (!laufend && !regel.darfBeginnen(nowElapsed)) {"));
+        assertTrue(body.contains("if (!laufend && !regel.darfBeginnen(nowElapsed, person)) {"));
         assertTrue(body.contains("if (laufend && !regel.darfVerlaengern(nowElapsed)) {"));
-        assertTrue(body.contains("if (!laufend) regel.sitzungBeginnt(nowElapsed);"));
+        assertTrue(body.contains("regel.sitzungBeginnt(nowElapsed, person);"));
         int acc = body.indexOf("if (isAccUnsafe())");
         assertTrue("ACC-Sperre bleibt vor allem anderen", acc > 0 && acc < body.indexOf("regel."));
         int c = sd.indexOf("private void cleanup()");

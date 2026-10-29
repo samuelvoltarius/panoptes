@@ -58,11 +58,14 @@
     var MERK = 'panoptes.klimaAnzeige';
     var anzeige = 'grad';
     try { var gm = localStorage.getItem(MERK); if (gm === 'stufe' || gm === 'grad') anzeige = gm; } catch (e) { /* egal */ }
+    // 0.1.28 (P2): klima.cloudSkala = "gemessen" | "annahme"; bis zur Messung im Cloud-Weg ohne Stufenzahl
+    var cloudSkala = 'annahme';
     function laden() {
         if (!global.fetch) return;
         fetch('/api/system/capabilities', { cache: 'no-store' }).then(function (r) { return r.json(); })
             .then(function (c) {
                 var a = c && c.klima && c.klima.anzeige;
+                if (c && c.klima && c.klima.cloudSkala === 'gemessen') cloudSkala = 'gemessen';
                 if (a !== 'stufe' && a !== 'grad') return;
                 var neu = a !== anzeige;
                 anzeige = a;
@@ -72,6 +75,8 @@
     }
     laden();
     function stufen() { return anzeige === 'stufe'; }
+    /** 0.1.28: Ist die Cloud-Skala gemessen? Sonst Cloud-Weg nur „Heizen“/„Kühlen“ ({ohneStufe: true}). */
+    function cloudBelegt() { return cloudSkala === 'gemessen'; }
 
     /** Cloud-Rohwert (mainSettingTemp) → SDK-Wert: Surf Roh = Stufe (Annahme), sonst pyBYD °C − 14. */
     function sdkAusCloudRoh(roh) {
@@ -183,6 +188,7 @@
     global.PanoptesKlimaStufe = {
         SDK_MIN: SDK_MIN, SDK_MITTE: SDK_MITTE, SDK_MAX: SDK_MAX, HEIZEN_AB_SDK: 26,
         sdk: sdk, stufe: stufe, zuSdk: zuSdk, art: art, text: text, balken: balken,
-        stufen: stufen, sdkAusCloudRoh: sdkAusCloudRoh, vorklimaSdk: vorklimaSdk, hinweis: hinweis
+        stufen: stufen, sdkAusCloudRoh: sdkAusCloudRoh, vorklimaSdk: vorklimaSdk, hinweis: hinweis,
+        cloudBelegt: cloudBelegt
     };
 })(typeof window !== 'undefined' ? window : this);

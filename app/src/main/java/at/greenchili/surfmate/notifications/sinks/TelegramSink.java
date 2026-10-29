@@ -51,6 +51,12 @@ public final class TelegramSink implements NotificationBus.Sink {
             if (event.category != null && event.category.startsWith("surveillance.")) {
                 return;
             }
+            // 0.1.28: Ereignis-Clip (Kategorie EREIGNIS) und 12-V-Warnung (notifyBattery12v) gehen direkt an
+            // Telegram, jede mit eigenem Schalter – hier nicht noch einmal über criticalAlerts.
+            if (event.category != null && (event.category.startsWith("ereignis.")
+                    || event.category.equals("vehicle.health.battery12v"))) {
+                return;
+            }
             // Door open/close stays Web-Push-only. This sink rides the
             // criticalAlerts toggle, a blunt master switch (proximity,
             // low-battery, tyre, charging faults all ride it too), so it can't

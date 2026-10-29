@@ -129,6 +129,8 @@ public final class MessageOverlayService extends Service {
                 displayed = showKopplung(intent);
             } else if ("band".equalsIgnoreCase(kind)) {
                 displayed = showBand(intent);
+            } else if ("rueckkehr".equalsIgnoreCase(kind)) {
+                displayed = showRueckkehr(intent);
             } else {
                 displayed = showToast(intent);
             }
@@ -350,6 +352,113 @@ public final class MessageOverlayService extends Service {
                 }
                 handler.post(this::dismissAndStop);
             }, "KopplungKnopf").start();
+        });
+        return b;
+    }
+
+    // ── Rückkehr-Karte (0.1.28) ─────────────────────────────────────────────
+
+    /**
+     * „Während du weg warst: 3 Aufnahmen“ mit großen Knöpfen [Schließen] [Ansehen] (REGEL DAU). „Ansehen“ öffnet
+     * Panoptes auf der Aufnahmen-Seite und spielt die erste Aufnahme. Kurzkarten (nichts passiert / nicht scharf):
+     * nur Text, ein Tipp schließt, verschwinden von selbst. Kein Ton.
+     */
+    private boolean showRueckkehr(Intent intent) {
+        String art = orDefault(intent.getStringExtra("art"), "");
+        boolean aufnahmen = "aufnahmen".equals(art);
+        if (!aufnahmen && !"nichts".equals(art) && !"nicht_scharf".equals(art)) { stopSelf(); return false; }
+        String title = orDefault(intent.getStringExtra("title"), "");
+        String message = orDefault(intent.getStringExtra("message"), "");
+        String aufnahme = orDefault(intent.getStringExtra("aufnahme"), "");
+        int timeoutSec = intent.getIntExtra("timeoutSec", aufnahmen ? 120 : 8);
+
+        Context ctx = themedContext();
+        int pad = dp(ctx, 28);
+        FrameLayout scrim = new FrameLayout(ctx);
+        scrim.setBackgroundColor(aufnahmen ? 0x99000000 : 0x00000000);
+        LinearLayout card = new LinearLayout(ctx);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(pad, pad, pad, dp(ctx, 20));
+        GradientDrawable cardBg = new GradientDrawable();
+        cardBg.setColor(0xFF202124);
+        cardBg.setCornerRadius(dp(ctx, 20));
+        cardBg.setStroke(dp(ctx, 3), aufnahmen ? 0xFFF9AB00 : "nichts".equals(art) ? 0xFF1E8E3E : 0xFF5F6368);
+        card.setBackground(cardBg);
+
+        TextView tvTitle = new TextView(ctx);
+        tvTitle.setText(title);
+        tvTitle.setTextColor(Color.WHITE);
+        tvTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, aufnahmen ? 26 : 24);
+        tvTitle.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        card.addView(tvTitle);
+        if (!message.isEmpty()) {
+            TextView tvBody = new TextView(ctx);
+            tvBody.setText(message);
+            tvBody.setTextColor(0xFFE3E3E3);
+            tvBody.setTextSize(TypedValue.COMPLEX_UNIT_SP, aufnahmen ? 34 : 22);
+            if (aufnahmen) tvBody.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+            LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            blp.topMargin = dp(ctx, 10);
+            card.addView(tvBody, blp);
+        }
+        if (aufnahmen) {
+            LinearLayout reihe = new LinearLayout(ctx);
+            reihe.setOrientation(LinearLayout.HORIZONTAL);
+            reihe.setGravity(Gravity.END);
+            reihe.addView(rueckkehrKnopf(ctx, orDefault(intent.getStringExtra("schliessen"), "X"), 0xFF5F6368, null));
+            reihe.addView(rueckkehrKnopf(ctx, orDefault(intent.getStringExtra("ansehen"), "OK"), 0xFF0B57D0, aufnahme));
+            LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            rlp.topMargin = dp(ctx, 24);
+            card.addView(reihe, rlp);
+        } else {
+            // Kurzkarte: ein Tipp auf die Karte schließt sie
+            card.setOnClickListener(v -> dismissAndStop());
+        }
+
+        FrameLayout.LayoutParams clp = new FrameLayout.LayoutParams(dp(ctx, 560), ViewGroup.LayoutParams.WRAP_CONTENT);
+        clp.gravity = aufnahmen ? Gravity.CENTER : (Gravity.TOP | Gravity.CENTER_HORIZONTAL);
+        if (!aufnahmen) clp.topMargin = dp(ctx, 40);
+        scrim.addView(card, clp);
+        if (!replaceOverlay(scrim, dialogLayoutParams())) return false;
+        dialogShowing = true;
+        cancelDismiss();
+        scheduleDismiss(Math.max(5, Math.min(300, timeoutSec)) * 1000L);
+        return true;
+    }
+
+    /** {@code aufnahme == null}: Schließen; sonst Panoptes öffnen und diese Aufnahme abspielen. */
+    private Button rueckkehrKnopf(Context ctx, String text, int farbe, String aufnahme) {
+        Button b = new Button(ctx);
+        b.setText(text);
+        b.setAllCaps(false);
+        b.setTextColor(Color.WHITE);
+        b.setTextSize(TypedValue.COMPLEX_UNIT_SP, 22);
+        b.setMinHeight(dp(ctx, 64));
+        b.setMinWidth(dp(ctx, 160));
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(farbe);
+        bg.setCornerRadius(dp(ctx, 14));
+        b.setBackground(bg);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.leftMargin = dp(ctx, 16);
+        b.setLayoutParams(lp);
+        b.setOnClickListener(v -> {
+            if (aufnahme != null) {
+                try {
+                    Intent i = new Intent(this, at.greenchili.surfmate.ui.MainActivity.class);
+                    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP
+                            | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                    i.putExtra("navigate_to", at.greenchili.surfmate.ui.NavigateZiel.ZIEL_AUFNAHME);
+                    if (!aufnahme.isEmpty()) i.putExtra(at.greenchili.surfmate.ui.NavigateZiel.EXTRA_AUFNAHME, aufnahme);
+                    startActivity(i);
+                } catch (Throwable t) {
+                    logger.warn("Rückkehr-Karte: Ansehen fehlgeschlagen: " + t.getMessage());
+                }
+            }
+            dismissAndStop();
         });
         return b;
     }

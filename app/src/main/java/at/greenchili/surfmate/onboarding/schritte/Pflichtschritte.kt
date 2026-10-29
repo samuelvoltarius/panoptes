@@ -126,7 +126,22 @@ class WaechterSchritt(a: Assistent) : SchrittAnsicht("waechter", a) {
         tb.dazu(ton.ansicht)
         tonBlock = tb
         dazu(tb)
+        // 0.1.28 P10: Ereignis-Clip beim Fahren – eigene Frage, ohne Vorauswahl (Schweiz: eigener Hinweis)
+        dazu(a.text(t.web("settings.recording.ereignisClip.title", "Ereignisse automatisch sichern"), 21f, fett = true), 22f)
+        dazu(a.text(t.web("settings.recording.ereignisClip.help"), 16f))
+        chHinweis = a.text(t.web("settings.recording.ereignisClip.helpCH"), 16f).apply {
+            setTextColor(a.farbeWarnung); visibility = View.GONE
+        }
+        dazu(chHinweis!!)
+        dazu(a.text(t.web("einrichtung_p10.ereignis_handy",
+            "Auf dein Handy kommt ein Clip nur, wenn du dort auf „Aufs Handy laden“ tippst."), 16f, leise = true))
+        ereignis.option("ja", t.web("einrichtung_p10.ereignis_ja", "Ja, Ereignisse sichern"), null)
+        ereignis.option("nein", t.web("einrichtung_p10.ereignis_nein", "Nein"), null)
+        dazu(ereignis.ansicht)
     }
+
+    private val ereignis = Wahl(a, nebeneinander = true) { a.geaendert() }
+    private var chHinweis: View? = null
 
     private fun optionen() {
         liste.removeAllViews()
@@ -157,6 +172,17 @@ class WaechterSchritt(a: Assistent) : SchrittAnsicht("waechter", a) {
                 }
             }
             if (g.isNotEmpty()) { gesperrt = g; optionen() }
+            // Schweiz: das Feld trägt den eigenen Hilfetext (Katalog hilfeKey …helpCH)
+            r?.json?.optJSONArray("gruppen")?.let { gr ->
+                for (i in 0 until gr.length()) gr.optJSONObject(i)?.optJSONArray("felder")?.let { f ->
+                    for (j in 0 until f.length()) {
+                        val feld = f.optJSONObject(j) ?: continue
+                        if (feld.optString("key") == "recording.ereignisClip" && feld.optString("hilfeKey").endsWith("helpCH")) {
+                            chHinweis?.visibility = View.VISIBLE
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -170,6 +196,7 @@ class WaechterSchritt(a: Assistent) : SchrittAnsicht("waechter", a) {
         val m = wahlAktuell?.wert ?: return JSONObject()
         val o = JSONObject().put("modus", m)
         if (m == "aus") o.put("ton", false) else ton.wert?.let { o.put("ton", it == "an") }
+        ereignis.wert?.let { o.put("ereignisClip", it == "ja") }
         return o
     }
 }
@@ -177,8 +204,11 @@ class WaechterSchritt(a: Assistent) : SchrittAnsicht("waechter", a) {
 // ---------------------------------------------------------------- 9 Betrieb (ohne Vorauswahl, Empfehlungstext) + Wächter-Stopp
 class BetriebSchritt(a: Assistent) : SchrittAnsicht("betrieb", a) {
     override val spaeterZeigen = false
-    private val wahl = Wahl(a, nebeneinander = true) { a.geaendert() }
+    private val wahl = Wahl(a, nebeneinander = true) { onWahl(it) }
     private lateinit var stopp: LinearLayout
+    // 0.1.28 P10 (SETUP_WIZARD §2 Nr. 9): „Wächter stoppt …“ als eine einfache Wahl, nur bei „Immer an“
+    private val stoppWahl = Wahl(a) { a.geaendert() }
+    private var stoppBlock: View? = null
 
     override fun ansicht(): View = spalte().apply {
         dazu(titel(t.res(R.string.einr_betrieb_titel)), 0f)
@@ -190,7 +220,23 @@ class BetriebSchritt(a: Assistent) : SchrittAnsicht("betrieb", a) {
         dazu(a.text(t.web("guard.stop_title", "Wächter stoppt, wenn …"), 20f, fett = true), 20f)
         stopp = spalte()
         dazu(stopp, 6f)
+        val sb = spalte().apply { visibility = View.GONE }
+        STOPP_WERTE.forEach { (k, w) ->
+            stoppWahl.option(k, t.web("einrichtung_p10.stopp_$k", k),
+                t.web("einrichtung_p10.stopp_satz", "Akku unter {akku} % oder nach {stunden} Stunden",
+                    mapOf("akku" to w.first, "stunden" to w.second)))
+        }
+        sb.dazu(stoppWahl.ansicht, 8f)
+        sb.dazu(a.text(t.web("einrichtung_p10.stopp_12v", "Die 12-Volt-Batterie schützt Panoptes immer zusätzlich."), 16f, leise = true))
+        stoppBlock = sb
+        dazu(sb)
         dazu(a.text(t.res(R.string.einr_betrieb_anpassen), 16f, leise = true))
+    }
+
+    private fun onWahl(w: String) {
+        stoppBlock?.visibility = if (w == "immer") View.VISIBLE else View.GONE
+        stopp.visibility = if (w == "immer") View.GONE else View.VISIBLE   // bei „Immer an“ zeigt die Wahl die Werte
+        a.geaendert()
     }
 
     override fun betreten() {
@@ -211,7 +257,14 @@ class BetriebSchritt(a: Assistent) : SchrittAnsicht("betrieb", a) {
         }
     }
 
-    override fun antwort(): JSONObject? = wahl.wert?.let { JSONObject().put("modus", it) } ?: JSONObject()
+    override fun antwort(): JSONObject? = wahl.wert?.let { m ->
+        JSONObject().put("modus", m).apply { if (m == "immer") stoppWahl.wert?.let { put("stopp", it) } }
+    } ?: JSONObject()
+
+    companion object {
+        /** Wie EinrichtungApiHandler.STOPP: Akku unter %, Stunden geparkt. */
+        val STOPP_WERTE = listOf("frueh" to (30 to 12), "normal" to (20 to 24), "lang" to (15 to 48))
+    }
 }
 
 // ---------------------------------------------------------------- 10 Karte (drei Karten, ohne Vorauswahl, „was erfährt wer“)

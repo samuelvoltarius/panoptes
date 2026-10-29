@@ -498,6 +498,8 @@ public final class ParkingController implements ParkingHooks.Listener, Detection
         lastAccOnGeneration = generation;
         adoptedAwaitingEdge = false;
         ParkingSession s = current;
+        // 0.1.28 Rückkehr-Karte: die offene Parkphase oder die eben per Tür/Aufsperren beendete
+        ParkingSession rueckkehr = s != null ? s : kuerzlichBeendet(env.nowMs());
         if (s != null) {
             if (config.snapshots && !s.returnedSnapshotOk) captureReturned(s);
             if (ParkingConfig.END_TRIGGER_DRIVE_AWAY.equals(config.endTrigger)) {
@@ -520,8 +522,53 @@ public final class ParkingController implements ParkingHooks.Listener, Detection
         // is being driven. Tell the user only about a park they were told about.
         closeOtherOpenRows(current == null ? null : current.sessionId,
                 ParkingSession.END_RECOVERED, true);
+        zeigeRueckkehr(rueckkehr);
         scheduleSignageQueue(SIGNAGE_AFTER_ACC_ON_MS);
         schedule(this::retryMissingPlaces, SIGNAGE_AFTER_ACC_ON_MS);
+    }
+
+    // ---- 0.1.28 Rückkehr-Karte am Display
+
+    /** Per Tür/Aufsperren beendete Parkphase, deren Karte beim nächsten ACC an noch aussteht. */
+    private ParkingSession zuletztBeendet;
+    /** Für diese Sitzung wurde die Karte schon entschieden (nie zweimal). */
+    private String rueckkehrEntschiedenFuer;
+
+    private ParkingSession kuerzlichBeendet(long now) {
+        ParkingSession z = zuletztBeendet;
+        zuletztBeendet = null;
+        if (z == null || z.endedMs <= 0 || now - z.endedMs > RueckkehrKarte.GILT_MS) return null;
+        return z;
+    }
+
+    /**
+     * Entscheidet und zeigt die Karte genau einmal je Parkphase. Zahl der Aufnahmen über denselben Index wie die
+     * Meldung; zeigen (nur bei Stillstand) macht die Umgebung. Wirft nie.
+     */
+    RueckkehrKarte zeigeRueckkehr(ParkingSession s) {
+        if (s == null || s.sessionId == null || s.sessionId.equals(rueckkehrEntschiedenFuer)) return null;
+        rueckkehrEntschiedenFuer = s.sessionId;
+        try {
+            long now = env.nowMs();
+            int n = -1;
+            try {
+                n = env.countSentryEvents(s.startedMs, s.endedMs > 0 ? s.endedMs : now, false);
+            } catch (Throwable ignored) {}
+            if (n < 0 && s.eventCount > 0) n = s.eventCount;
+            String stopp = null;
+            try {
+                stopp = env.guardStopReasonSince(s.startedMs);
+            } catch (Throwable ignored) {}
+            RueckkehrKarte k = RueckkehrKarte.entscheide(s.sentryState, n, stopp,
+                    s.clockTrusted() ? s.durationMs(now) : -1);
+            env.log("Rückkehr-Karte " + s.sessionId + ": " + k.art + (k.anzahl > 0 ? " n=" + k.anzahl : "")
+                    + (k.grund != null ? " grund=" + k.grund : ""));
+            if (k.art != RueckkehrKarte.Art.KEINE) env.showReturnCard(s, k);
+            return k;
+        } catch (Throwable t) {
+            env.log("Rückkehr-Karte fehlgeschlagen: " + t.getMessage());
+            return null;
+        }
     }
 
     /**
@@ -753,6 +800,10 @@ public final class ParkingController implements ParkingHooks.Listener, Detection
     private void finalizeRow(ParkingSession s, String trigger, boolean notify, long now) {
         s.endedMs = now;
         s.endTrigger = trigger;
+        // 0.1.28 Rückkehr-Karte: beim Ende per Tür/Aufsperren kommt die Karte erst beim nächsten ACC an
+        if (notify && (ParkingSession.END_DOOR_OPEN.equals(trigger) || ParkingSession.END_UNLOCK.equals(trigger))) {
+            zuletztBeendet = s;
+        }
         // Energy bookend: only a GENUINE end-of-park close may stamp it. A repair
         // close (recovered after a restart with the car already driving,
         // superseded by a missed edge) reads SoC long after — or a drive after —

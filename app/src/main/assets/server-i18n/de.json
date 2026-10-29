@@ -350,13 +350,27 @@
       "gewohnheit_probe": {
         "label": "Gewohnheiten: Probelauf",
         "note": "Eine gelernte Regel im Probelauf meldet nur, was sie jetzt getan hätte – sie schaltet noch nichts."
+      },
+      "ereignis_gesichert": {
+        "label": "Ereignis gesichert (Vollbremsung oder Stoß)",
+        "note": "Ein Ereignis-Video wurde im Auto gespeichert. Du bekommst nur die Uhrzeit – kein Video, kein Ort. Eigenes Thema, hängt nicht an den Alarmen."
+      },
+      "vehicle_health_battery12v": {
+        "label": "Starterbatterie (12 V) wird schwach",
+        "note": "Warnt, bevor die 12-V-Batterie zu schwach zum Starten ist. Höchstens einmal am Tag."
       }
     },
     "cloud_uebergabe_titel": "„{0}“ will die BYD-Cloud übergeben",
     "cloud_uebergabe_text": "Prüfzahl {0}",
     "gewohnheit_probelauf": "Probelauf: Jetzt hätte ich deine Gewohnheit ausgeführt. Passt das?",
     "weiteres_geraet_titel": "Cockpit „{0}“ möchte ein Handy verbinden",
-    "weiteres_geraet_text": "Prüfzahl {0}"
+    "weiteres_geraet_text": "Prüfzahl {0}",
+    "ereignis_title": "Ereignis um {0} gesichert",
+    "ereignis_body": "Vollbremsung oder Stoß. Das Video ist nur im Auto gespeichert. Behalten?",
+    "battery12v_vor_title": "Starterbatterie wird schwächer: {0} V",
+    "battery12v_vor_body": "Wenn sie weiter fällt, startet das Auto vielleicht nicht. Fahr bald eine Runde oder lade es.",
+    "battery12v_niedrig_title": "Starterbatterie sehr schwach: {0} V",
+    "battery12v_niedrig_body": "Das Auto startet vielleicht bald nicht mehr. Fahr heute noch eine Runde oder lade es."
   },
   "parking": {
     "notify": {
@@ -738,7 +752,8 @@
     "alerts": {
       "charging_full": "🔌 *Laden fertig*",
       "charging_fault": "🚨 *Beim Laden ist etwas schiefgegangen*",
-      "battery12v_low": "🪫 *Starterbatterie schwach: {0} V*\nWenn sie weiter fällt, startet das Auto vielleicht nicht. Fahr bald eine Runde oder lade es."
+      "battery12v_low": "🪫 *Starterbatterie schwach: {0} V*\nWenn sie weiter fällt, startet das Auto vielleicht nicht. Fahr bald eine Runde oder lade es.",
+      "battery12v_sehr_niedrig": "🪫 *Starterbatterie sehr schwach: {0} V*\nDas Auto startet vielleicht bald nicht mehr. Fahr heute noch eine Runde oder lade es."
     },
     "charge": {
       "title": "🔋 *Laden*",
@@ -867,6 +882,9 @@
       "anfrage": "📱 *EV-Cockpit „{0}“ möchte ein Handy verbinden*\nPrüfzahl: *{1}*\n\nStimmt die Zahl mit der im Cockpit überein? Erlaubst du, zeigt das Cockpit einen Code zum Scannen. Die Anfrage gilt 5 Minuten.",
       "erlaubt": "✅ Erlaubt – das Cockpit zeigt jetzt den Code fürs Handy.",
       "abgelehnt": "❌ Abgelehnt."
+    },
+    "ereignis": {
+      "gesichert": "Panoptes: Ereignis um {0} gesichert (nur im Auto gespeichert)."
     }
   },
   "vehicle_control": {
@@ -2245,8 +2263,8 @@
     "recording": {
       "ereignisClip": {
         "title": "Ereignisse automatisch sichern",
-        "help": "Bei einer Vollbremsung oder einem Stoß sichert Panoptes 20 Sekunden davor und danach. Sonst wird nichts gespeichert. Die Clips bleiben nur im Auto bzw. auf dem Stick. Wirkt ab der nächsten Fahrt.",
-        "helpCH": "In der Schweiz standardmäßig aus, weil dort strengere Regeln für Autokameras gelten. Du kannst es selbst einschalten."
+        "help": "Bei einer Vollbremsung oder einem Stoß sichert Panoptes 20 Sekunden davor und danach. Sonst wird nichts gespeichert. Die Clips bleiben nur im Auto bzw. auf dem Stick. Wirkt ab der nächsten Fahrt. Beim langsamen Rangieren am Anfang einer Fahrt sichert Panoptes keinen Clip.",
+        "helpCH": "In der Schweiz standardmäßig aus, weil dort strengere Regeln für Autokameras gelten. Du kannst es selbst einschalten. Beim langsamen Rangieren am Anfang einer Fahrt sichert Panoptes keinen Clip."
       },
       "ereignisTelegram": {
         "title": "Telegram-Nachricht bei Ereignis",
@@ -2413,5 +2431,42 @@
   },
   "telegram_login": {
     "geraet_name": "Browser (Telegram)"
+  },
+  "fahrtenbuch_datei": {
+    "titel": "Fahrtenbuch {0}",
+    "hinweis": "Im Auto erstellt. Die Datei bleibt bei dir. Ohne Orte.",
+    "drucken": "Drucken / PDF",
+    "leer": "In diesem Monat gibt es keine Fahrten.",
+    "summe": "Summe: {0} Fahrten",
+    "spalte": {
+      "datum": "Datum",
+      "start": "Start",
+      "ende": "Ende",
+      "km": "km",
+      "dauer": "Minuten",
+      "kwh": "kWh",
+      "verbrauch": "kWh/100 km",
+      "soc_start": "Akku Start %",
+      "soc_ende": "Akku Ende %",
+      "kosten": "Kosten",
+      "waehrung": "Währung",
+      "temp": "Außen °C"
+    }
+  },
+  "rueckkehr": {
+    "titel_aufnahmen": "Während du weg warst",
+    "eine_aufnahme": "1 Aufnahme",
+    "n_aufnahmen": "{0} Aufnahmen",
+    "titel_nichts": "Wächter war scharf – nichts passiert",
+    "titel_nicht_scharf": "Wächter war nicht scharf",
+    "ansehen": "Ansehen",
+    "schliessen": "Schließen",
+    "grund_aus": "Der Wächter ist ausgeschaltet.",
+    "grund_sicherer_ort": "Sicherer Ort – hier macht der Wächter Pause.",
+    "grund_zeit": "Außerhalb der eingestellten Wächter-Zeiten.",
+    "grund_nur_fahrt": "Der Wächter läuft nur, wenn das Auto an ist.",
+    "grund_akku": "Gestoppt, um den Akku zu schützen.",
+    "grund_v12": "Gestoppt, um die kleine 12-V-Batterie zu schützen.",
+    "grund_lange_geparkt": "Nach langer Parkzeit gestoppt, um Strom zu sparen."
   }
 }

@@ -356,13 +356,27 @@
       "gewohnheit_probe": {
         "label": "Abitudini: prova",
         "note": "Una regola appresa in prova segnala solo cosa avrebbe fatto – non aziona ancora nulla."
+      },
+      "ereignis_gesichert": {
+        "label": "Evento salvato (frenata brusca o urto)",
+        "note": "Un video dell’evento è stato salvato nell’auto. Ricevi solo l’ora – niente video, niente luogo. Tema a sé, non legato agli allarmi."
+      },
+      "vehicle_health_battery12v": {
+        "label": "Batteria da 12 V debole",
+        "note": "Avvisa prima che la batteria da 12 V sia troppo debole per partire. Al massimo una volta al giorno."
       }
     },
     "cloud_uebergabe_titel": "“{0}” vuole passare il cloud BYD",
     "cloud_uebergabe_text": "Numero di controllo {0}",
     "gewohnheit_probelauf": "Prova: adesso avrei eseguito la tua abitudine. Va bene?",
     "weiteres_geraet_titel": "Cockpit «{0}» vuole collegare un telefono",
-    "weiteres_geraet_text": "Numero di controllo {0}"
+    "weiteres_geraet_text": "Numero di controllo {0}",
+    "ereignis_title": "Evento delle {0} salvato",
+    "ereignis_body": "Frenata brusca o urto. Il video è salvato solo nell’auto. Tenerlo?",
+    "battery12v_vor_title": "La batteria da 12 V si indebolisce: {0} V",
+    "battery12v_vor_body": "Se scende ancora, l’auto potrebbe non partire. Fai presto un giro o collegala alla corrente.",
+    "battery12v_niedrig_title": "Batteria da 12 V molto debole: {0} V",
+    "battery12v_niedrig_body": "Presto l’auto potrebbe non partire. Fai un giro oggi o collegala alla corrente."
   },
   "parking": {
     "notify": {
@@ -512,7 +526,8 @@
     "alerts": {
       "charging_full": "🔌 *Ricarica terminata*",
       "charging_fault": "🚨 *Qualcosa è andato storto durante la ricarica*",
-      "battery12v_low": "🪫 *Batteria da 12 V debole: {0} V*\nSe scende ancora, l’auto potrebbe non partire. Fai presto un giro o collegala alla corrente."
+      "battery12v_low": "🪫 *Batteria da 12 V debole: {0} V*\nSe scende ancora, l’auto potrebbe non partire. Fai presto un giro o collegala alla corrente.",
+      "battery12v_sehr_niedrig": "🪫 *Batteria da 12 V molto debole: {0} V*\nPresto l’auto potrebbe non partire. Fai un giro oggi o collegala alla corrente."
     },
     "charge": {
       "title": "🔋 *Ricarica*",
@@ -873,6 +888,9 @@
       "anfrage": "📱 *EV-Cockpit «{0}» vuole collegare un telefono*\nNumero di controllo: *{1}*\n\nIl numero corrisponde a quello nel Cockpit? Se lo consenti, il Cockpit mostra un codice da scansionare. La richiesta vale 5 minuti.",
       "erlaubt": "✅ Consentito – il Cockpit ora mostra il codice per il telefono.",
       "abgelehnt": "❌ Rifiutato."
+    },
+    "ereignis": {
+      "gesichert": "Panoptes: evento delle {0} salvato (solo nell’auto)."
     }
   },
   "vehicle_control": {
@@ -2251,8 +2269,8 @@
     "recording": {
       "ereignisClip": {
         "title": "Salva eventi automaticamente",
-        "help": "Dopo una frenata brusca o un urto, Panoptes salva 20 secondi prima e dopo. Nient’altro viene salvato. Le clip restano solo in auto o sulla chiavetta USB. Attivo dal prossimo viaggio.",
-        "helpCH": "Spento di default in Svizzera, perché lì le regole per le telecamere in auto sono più severe. Puoi attivarlo tu."
+        "help": "Dopo una frenata brusca o un urto, Panoptes salva 20 secondi prima e dopo. Nient’altro viene salvato. Le clip restano solo in auto o sulla chiavetta USB. Attivo dal prossimo viaggio. Durante le manovre lente all’inizio di un viaggio, Panoptes non salva nessuna clip.",
+        "helpCH": "Spento di default in Svizzera, perché lì le regole per le telecamere in auto sono più severe. Puoi attivarlo tu. Durante le manovre lente all’inizio di un viaggio, Panoptes non salva nessuna clip."
       },
       "ereignisTelegram": {
         "title": "Messaggio Telegram per un evento",
@@ -2419,5 +2437,42 @@
   },
   "telegram_login": {
     "geraet_name": "Browser (Telegram)"
+  },
+  "fahrtenbuch_datei": {
+    "titel": "Diario di viaggio {0}",
+    "hinweis": "Creato nell'auto. Il file resta a te. Senza luoghi.",
+    "drucken": "Stampa / PDF",
+    "leer": "Nessun viaggio in questo mese.",
+    "summe": "Totale: {0} viaggi",
+    "spalte": {
+      "datum": "Data",
+      "start": "Inizio",
+      "ende": "Fine",
+      "km": "km",
+      "dauer": "Minuti",
+      "kwh": "kWh",
+      "verbrauch": "kWh/100 km",
+      "soc_start": "Batteria inizio %",
+      "soc_ende": "Batteria fine %",
+      "kosten": "Costo",
+      "waehrung": "Valuta",
+      "temp": "Esterno °C"
+    }
+  },
+  "rueckkehr": {
+    "titel_aufnahmen": "Mentre eri via",
+    "eine_aufnahme": "1 registrazione",
+    "n_aufnahmen": "{0} registrazioni",
+    "titel_nichts": "Guardiano attivo – non è successo nulla",
+    "titel_nicht_scharf": "Guardiano non attivo",
+    "ansehen": "Guarda",
+    "schliessen": "Chiudi",
+    "grund_aus": "Il guardiano è spento.",
+    "grund_sicherer_ort": "Luogo sicuro – qui il guardiano fa una pausa.",
+    "grund_zeit": "Fuori dagli orari impostati per il guardiano.",
+    "grund_nur_fahrt": "Il guardiano funziona solo ad auto accesa.",
+    "grund_akku": "Fermato per proteggere la batteria.",
+    "grund_v12": "Fermato per proteggere la piccola batteria 12 V.",
+    "grund_lange_geparkt": "Fermato dopo una lunga sosta, per risparmiare energia."
   }
 }

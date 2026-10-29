@@ -217,6 +217,24 @@
       "severity": "warn",
       "defaultClickUrl": "/network.html",
       "note": "Fires when the hotspot passes its configured total data limit; the hotspot is turned off at the same time. Raise or reset the limit to use it again."
+    },
+    {
+      "id": "ereignis.gesichert",
+      "label": "Event saved (hard braking or bump)",
+      "group": "Ereignisse",
+      "defaultEnabled": true,
+      "severity": "warn",
+      "defaultClickUrl": "/local/waechter.html",
+      "note": "0.1.28: an event clip was saved in the car (hard braking or a bump). Text with the time only - no video, no place. Own category, not tied to alarms."
+    },
+    {
+      "id": "vehicle.health.battery12v",
+      "label": "12 V battery getting weak",
+      "group": "Vehicle",
+      "defaultEnabled": true,
+      "severity": "auto",
+      "defaultClickUrl": "/local/waechter.html",
+      "note": "0.1.28: warns before the 12 V starter battery is too weak to start the car (resting voltage close to the limit or falling over several days). At most once a day."
     }
   ],
   "telegramHinweis": "Telegram-Kategorien (0.1.11, Koordination): NUR Ein/Aus je Kategorie; stufe dient nur der Sortierung/Anzeige. Eine Quelle für Web, Cockpit und Kern. key = Schlüssel im Abschnitt telegram.",
@@ -347,6 +365,123 @@
       "standard": true,
       "label": "Updates",
       "note": "A new Panoptes version is available or was installed."
+    }
+  ],
+  "themenHinweis": "0.1.28 P4 (Kern A): eine Seite fuer alle Meldungen. Je Thema ein Schalter Handy (alle Geraete, Push-Kategorien push[]) und Telegram (Schluessel telegram[] im Abschnitt telegram, oder telegramEinstellung = Abschnitt.Schluessel). Nur Anzeige und Sammelschalter, beide Systeme bleiben getrennt.",
+  "themen": [
+    {
+      "id": "waechter",
+      "label": "Someone at the car",
+      "push": [
+        "surveillance.motion.alert",
+        "surveillance.motion.critical",
+        "surveillance.proximity"
+      ],
+      "telegram": [
+        "tierAlerts",
+        "tierCritical"
+      ]
+    },
+    {
+      "id": "ereignis",
+      "label": "Hard braking or bump",
+      "push": [
+        "ereignis.gesichert"
+      ],
+      "telegramEinstellung": "recording.ereignisTelegram"
+    },
+    {
+      "id": "batterie12v",
+      "label": "12 V battery",
+      "push": [
+        "vehicle.health.battery12v"
+      ],
+      "telegram": [
+        "batteryAlerts"
+      ]
+    },
+    {
+      "id": "waechter_pause",
+      "label": "Guard paused or needs help",
+      "push": [
+        "surveillance.guard_stop",
+        "surveillance.ai_off"
+      ],
+      "telegram": [
+        "guardStopAlerts",
+        "healthAlerts"
+      ]
+    },
+    {
+      "id": "laden",
+      "label": "Charging finished or fault",
+      "push": [
+        "vehicle.charging.full",
+        "vehicle.charging.fault"
+      ],
+      "telegram": [
+        "chargingAlerts"
+      ]
+    },
+    {
+      "id": "reifen",
+      "label": "Tyres",
+      "push": [
+        "vehicle.health.tyre.pressure",
+        "vehicle.health.tyre.leak"
+      ],
+      "telegram": [
+        "tyreAlerts"
+      ]
+    },
+    {
+      "id": "parken",
+      "label": "Parked and back at the car",
+      "push": [
+        "parking.session.started",
+        "parking.session.ended"
+      ],
+      "telegram": [
+        "parkingMessages"
+      ]
+    },
+    {
+      "id": "camping",
+      "label": "Camping",
+      "push": [
+        "camping.hinweis",
+        "camping.warnung"
+      ],
+      "telegram": [
+        "campingAlerts"
+      ]
+    },
+    {
+      "id": "tueren",
+      "label": "Door opened while parked",
+      "push": [
+        "vehicle.security.door.opened"
+      ],
+      "telegram": []
+    },
+    {
+      "id": "wichtig",
+      "label": "Other important messages",
+      "push": [
+        "vehicle.health.soh.frame_mismatch",
+        "network.hotspot.limit"
+      ],
+      "telegram": [
+        "criticalAlerts"
+      ]
+    },
+    {
+      "id": "updates",
+      "label": "Updates",
+      "push": [],
+      "telegram": [
+        "updateAlerts"
+      ]
     }
   ]
 }

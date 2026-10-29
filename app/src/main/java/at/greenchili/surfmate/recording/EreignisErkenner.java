@@ -46,6 +46,19 @@ public final class EreignisErkenner {
     static final double STOSS_EINZELN_MS2 = 25.0;
     static final long STOSS_FENSTER_MS = 150L;
     /**
+     * Unter {@link #MIN_START_KMH} (Rangieren, Garage, Ampel) zählt ein Stoß nur, wenn die Fahrt
+     * schon einmal schneller war, und dann nur zwei harte Schläge ≥ {@link #STOSS_EINZELN_MS2}
+     * innerhalb {@link #STOSS_FENSTER_MS}. Erster Lauf am Auto (0.1.27, 29.10.2026): Fehlauslösung
+     * bei ~6 km/h 24 s nach dem Losfahren aus einem Duplex-Parker (Rampe/Schwelle).
+     */
+    static final double LANGSAM_KMH = MIN_START_KMH;
+    /**
+     * Form eines echten Anpralls beim Rangieren: das Auto steht danach (oder stand schon, z. B.
+     * Auffahrunfall). Über eine Schwelle oder Rampe rollt es weiter – das zählt nicht.
+     */
+    static final double STEHT_KMH = 2.0;
+    static final long STEHT_BINNEN_MS = 1_500L;
+    /**
      * Sensor gilt als lebendig, wenn die letzte Probe so jung ist. Großzügig, weil der Sensor im
      * sparsamen Takt (PARK) bis zu 1 s im eigenen Speicher sammelt, bevor er liefert.
      */
@@ -91,6 +104,16 @@ public final class EreignisErkenner {
     private int iKopf;
     private int iAnzahl;
     private long stossErsterMs = Long.MIN_VALUE;
+    private long stossHartErsterMs = Long.MIN_VALUE;
+    /** Letztes bekanntes Tempo (NaN = unbekannt, gilt als langsam). */
+    private double letzteKmh = Double.NaN;
+    /** War diese Fahrt (seit der Fahrstufe) schon einmal ≥ {@link #LANGSAM_KMH}? */
+    private boolean warSchnell;
+    private double letzteSpitze;
+    // Langsamer Stoß, der noch auf „Auto steht danach“ wartet.
+    private boolean stossKandidat;
+    private long stossKandidatMs;
+    private double stossKandidatSpitze;
 
     private boolean fahrbereit;
     private long letzteAusloesung = Long.MIN_VALUE / 2;
@@ -106,10 +129,14 @@ public final class EreignisErkenner {
     public synchronized Grund tempo(long tMs, double kmh, boolean fahrstufe) {
         if (!fahrstufe) {
             fahrbereit = false;
+            warSchnell = false;
+            letzteKmh = Double.NaN;
             verlaufLeeren();
             return null;
         }
         fahrbereit = true;
+        letzteKmh = (Double.isNaN(kmh) || kmh < 0) ? Double.NaN : kmh;
+        if (!Double.isNaN(letzteKmh) && letzteKmh >= LANGSAM_KMH) warSchnell = true;
         if (Double.isNaN(kmh) || kmh < 0) {
             if (hatWartend && tMs - wartendT > LUECKE_MS) verlaufLeeren();
             return null;
@@ -118,6 +145,15 @@ public final class EreignisErkenner {
         if (hatWartend && tMs <= wartendT) return null;   // Uhr rückwärts / doppelt
 
         Grund g = null;
+        if (stossKandidat) {
+            if (tMs - stossKandidatMs > STEHT_BINNEN_MS || tMs < stossKandidatMs) {
+                stossKandidat = false;                        // rollte weiter: Schwelle/Rampe
+            } else if (kmh <= STEHT_KMH) {
+                stossKandidat = false;
+                letzteSpitze = stossKandidatSpitze;
+                g = ausloesen(tMs, Grund.STOSS);
+            }
+        }
         if (wartet && tMs - warteBis > IMU_WARTE_MS) {
             // Sensor liefert nicht nach: nach dem Tempo allein entscheiden.
             wartet = false;
@@ -241,15 +277,48 @@ public final class EreignisErkenner {
             Grund g = entscheide(tMs, warteA, warteV, imuSpitze(warteVon, warteBis));
             if (g != null) return g;
         }
-        if (waagrecht >= STOSS_EINZELN_MS2) return ausloesen(tMs, Grund.STOSS);
+        boolean langsam = Double.isNaN(letzteKmh) || letzteKmh < LANGSAM_KMH;
+        if (langsam) {
+            // Rangieren/Garage: nur nach einer schnelleren Fahrt und nur zwei harte Schläge.
+            if (!warSchnell || waagrecht < STOSS_EINZELN_MS2) return null;
+            if (stossHartErsterMs != Long.MIN_VALUE && tMs - stossHartErsterMs <= STOSS_FENSTER_MS) {
+                stossHartErsterMs = Long.MIN_VALUE;
+                if (!Double.isNaN(letzteKmh) && letzteKmh <= STEHT_KMH) {
+                    letzteSpitze = waagrecht;
+                    return ausloesen(tMs, Grund.STOSS);       // stand schon: Auffahrunfall
+                }
+                // rollt noch: erst auslösen, wenn das Auto binnen STEHT_BINNEN_MS steht
+                stossKandidat = true;
+                stossKandidatMs = tMs;
+                stossKandidatSpitze = waagrecht;
+                return null;
+            }
+            stossHartErsterMs = tMs;
+            return null;
+        }
+        if (waagrecht >= STOSS_EINZELN_MS2) {
+            letzteSpitze = waagrecht;
+            return ausloesen(tMs, Grund.STOSS);
+        }
         if (waagrecht >= STOSS_MS2) {
             if (stossErsterMs != Long.MIN_VALUE && tMs - stossErsterMs <= STOSS_FENSTER_MS) {
                 stossErsterMs = Long.MIN_VALUE;
+                letzteSpitze = waagrecht;
                 return ausloesen(tMs, Grund.STOSS);
             }
             stossErsterMs = tMs;
         }
         return null;
+    }
+
+    /** Waagrechter Anteil (m/s²) des letzten Stoßes, der ausgelöst hat – fürs Log. */
+    public synchronized double letzteSpitze() {
+        return letzteSpitze;
+    }
+
+    /** Tempo, das der Erkenner zuletzt gesehen hat (NaN = unbekannt) – fürs Log. */
+    public synchronized double letzteKmh() {
+        return letzteKmh;
     }
 
     private Grund ausloesen(long tMs, Grund g) {
@@ -289,6 +358,8 @@ public final class EreignisErkenner {
         pruefeRueckprall = false;
         wartet = false;
         stossErsterMs = Long.MIN_VALUE;
+        stossHartErsterMs = Long.MIN_VALUE;
+        stossKandidat = false;
     }
 
     private void anhaengen(long t, double v) {

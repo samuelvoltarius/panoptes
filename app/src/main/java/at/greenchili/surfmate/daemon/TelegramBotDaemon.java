@@ -1228,8 +1228,20 @@ public class TelegramBotDaemon {
             case "UPDATE":       return at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.isUpdateAlerts();
             case "CAMPING":      return at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.isCampingAlerts();
             case "PARKING":      return at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.isParkingMessages();
+            // 0.1.28 P1: Ereignis-Clip gesichert – eigener Schalter, nicht criticalAlerts.
+            case "EREIGNIS":     return ereignisTelegramAn();
             case "CRITICAL":
             default:             return criticalAlertsEnabled;
+        }
+    }
+
+    /** Schalter recording.ereignisTelegram (Standard aus); Lesefehler = aus (Meldung nur mit Zustimmung). */
+    static boolean ereignisTelegramAn() {
+        try {
+            return at.greenchili.surfmate.recording.EreignisClip.telegram(
+                    at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig());
+        } catch (Throwable t) {
+            return false;
         }
     }
 
@@ -1262,6 +1274,7 @@ public class TelegramBotDaemon {
             case "CRITICAL":
             case "BATTERY":
             case "GUARD_STOP":
+            case "EREIGNIS":   // 0.1.28: Stoß/Vollbremsung ist ein Alarm, wie bisher über CRITICAL
                 return true;
             default:
                 return false;
@@ -1825,7 +1838,10 @@ public class TelegramBotDaemon {
                     double volts = cmd.optDouble("volts", Double.NaN);
                     String vText = Double.isNaN(volts) ? "?"
                             : String.format(java.util.Locale.forLanguageTag(LocaleManager.get()), "%.1f", volts);
-                    boolean bOk = sendMessage(ownerChatId, tr("alerts.battery12v_low", vText));
+                    // 0.1.28 P8: stufe niedrig = sehr schwach; vor bzw. fehlt = bisheriger Text
+                    String bKey = "niedrig".equals(cmd.optString("stufe", ""))
+                            ? "alerts.battery12v_sehr_niedrig" : "alerts.battery12v_low";
+                    boolean bOk = sendMessage(ownerChatId, tr(bKey, vText));
                     response.put("status", bOk ? "ok" : "error");
                     break;
                 }

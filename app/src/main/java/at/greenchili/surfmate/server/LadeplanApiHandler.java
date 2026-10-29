@@ -27,7 +27,7 @@ public final class LadeplanApiHandler {
         if (!"/api/ladeplan".equals(p)) return false;
         LadeplanDienst d = Ladeplan.dienst();
         if ("GET".equals(method)) {
-            HttpResponse.sendJson(out, 200, d.status().toString());
+            HttpResponse.sendJson(out, 200, mitVorklima(d, d.status()).toString());
             return true;
         }
         if (!"POST".equals(method)) return false;
@@ -77,8 +77,17 @@ public final class LadeplanApiHandler {
             if (w.length() > 0) at.greenchili.surfmate.gewohnheiten.Gewohnheiten.melde(at.greenchili.surfmate.gewohnheiten.Aktionen.LADEPLAN, w);
         } catch (Exception ignored) {
         }
-        HttpResponse.sendJson(out, 200, d.status().toString());
+        HttpResponse.sendJson(out, 200, mitVorklima(d, d.status()).toString());
         return true;
+    }
+
+    /** 0.1.28 (P6): Stand „zur Abfahrt warm“ (nächster Start, letztes Ergebnis) an die Antwort hängen. */
+    private static JSONObject mitVorklima(LadeplanDienst d, JSONObject st) {
+        try {
+            st.put("vorklima", Ladeplan.abfahrtKlima().vorschau(d.einstellungen(), java.time.ZoneId.systemDefault(),
+                    d.feiertagsLand()));
+        } catch (Exception ignored) { }
+        return st;
     }
 
     private static java.util.List<String> iterierbar(java.util.Iterator<String> it) {

@@ -31,7 +31,7 @@
             }
         })();
     </script>
-    <script src="../shared/app-shell.js?v=pn26"></script>
+    <script src="../shared/app-shell.js?v=pn27"></script>
     <link rel="stylesheet" href="../shared/styles.css?v=pn11">
     <link rel="stylesheet" href="../shared/vehicle-control.css?v=47">
 </head>
@@ -249,6 +249,8 @@
                                     <span class="vc-readout" id="acTemp" data-i18n="klima_stufe.neutral">Neutral</span>
                                     <div id="acStufeBalken"></div>
                                     <p class="vc-hint" id="klimaStufeHinweis" hidden></p>
+                                    <!-- 0.1.28 (P3): „Gestartet, nicht bestätigt“ statt falschem „an“ -->
+                                    <p class="vc-hint" id="klimaLaeuftHinweis" hidden></p>
                                     <div class="vc-stufe-knoepfe">
                                         <button class="vc-tile" id="btnTempDown" title="Kühler" data-i18n-attr="title:vehicle_control.tip_temp_down"><span data-i18n="vehicle_control.tip_temp_down">Kühler</span></button>
                                         <button class="vc-tile" id="btnTempNeutral" title="Neutral" data-i18n-attr="title:klima_stufe.neutral"><span data-i18n="klima_stufe.neutral">Neutral</span></button>
@@ -672,7 +674,7 @@
          (12V, ACC, SOC, range, SOH, fuel, network). Without it those values
          all stay unread since vehicle-control.js only manages the 3D scene. -->
     <script src="../shared/core.js?v=pn6"></script>
-    <script src="../shared/klima-stufe.js?v=1"></script>
+    <script src="../shared/klima-stufe.js?v=2"></script>
     <!-- Mode-gated loader. In immersive mode this injects the heavy stack
          (SotaPlayer + three.js + Draco/GLTF/Orbit + gsap ≈ 820 KB of script,
          plus the 1.6 MB GLB the scene then fetches) in strict order via
@@ -693,7 +695,7 @@
                 '../shared/vendor/gsap.min.js?v=12'
             ];
             var chain = window.VC_LITE ? [] : window.VC_VENDOR_CHAIN.slice();
-            chain.push('../shared/vehicle-control.js?v=vclite35');
+            chain.push('../shared/vehicle-control.js?v=vclite36');
             for (var i = 0; i < chain.length; i++) {
                 var s = document.createElement('script');
                 s.src = chain[i];

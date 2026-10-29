@@ -511,7 +511,11 @@ public final class ManualClipService {
                 File output = ereignis != null ? prepareEreignisFile() : prepareOutputFile();
                 outputRef.set(output);
                 return output;
-            }, startPtsUs, endPtsUs, startTruncated);
+            }, startPtsUs, endPtsUs,
+                    // Ereignis-Clip: lieber vorne kürzen als gar nichts sichern. Erster Lauf am
+                    // Auto (0.1.27): der Ring verlor während des Nachlaufs ~1,9 s am Anfang, der
+                    // Encoder verweigerte darum den ganzen Clip ("does not cover request").
+                    startTruncated || ereignis != null);
             File output = outputRef.get();
             if (!exported || output == null) {
                 // output == null covers both "refused before the provider ran"
@@ -651,9 +655,20 @@ public final class ManualClipService {
             File base = storage.resolveTargetWithEnospcFallback(
                     storage.getRecordingsDir(), OUTPUT_RESERVE_BYTES, false);
             File dir = EreignisClip.ordner(base);
-            if (dir == null) return null;
-            if (!dir.exists() && !dir.mkdirs() && !dir.exists()) return null;
-            if (!storage.ensureRecordingsSpaceForRecorder(OUTPUT_RESERVE_BYTES, base)) return null;
+            if (dir == null) {
+                logger.warn("Ereignis-Clip: kein Aufnahmen-Ordner (Speicher nicht bereit)");
+                return null;
+            }
+            if (!dir.exists() && !dir.mkdirs() && !dir.exists()) {
+                logger.warn("Ereignis-Clip: Ordner nicht anlegbar: " + dir.getAbsolutePath()
+                        + " (Basis vorhanden=" + (base != null && base.isDirectory())
+                        + ", beschreibbar=" + (base != null && base.canWrite()) + ")");
+                return null;
+            }
+            if (!storage.ensureRecordingsSpaceForRecorder(OUTPUT_RESERVE_BYTES, base)) {
+                logger.warn("Ereignis-Clip: zu wenig Platz in " + base);
+                return null;
+            }
 
             String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
                     .format(new Date());

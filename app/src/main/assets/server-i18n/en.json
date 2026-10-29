@@ -350,13 +350,27 @@
       "gewohnheit_probe": {
         "label": "Habits: trial run",
         "note": "A learned rule in trial run only reports what it would have done – it does not switch anything yet."
+      },
+      "ereignis_gesichert": {
+        "label": "Event saved (hard braking or bump)",
+        "note": "An event video was saved in the car. You only get the time – no video, no place. Own topic, not tied to alarms."
+      },
+      "vehicle_health_battery12v": {
+        "label": "12 V battery getting weak",
+        "note": "Warns before the 12 V battery is too weak to start the car. At most once a day."
       }
     },
     "cloud_uebergabe_titel": "“{0}” wants to hand over the BYD cloud",
     "cloud_uebergabe_text": "Check number {0}",
     "gewohnheit_probelauf": "Trial run: I would have carried out your habit now. Is that right?",
     "weiteres_geraet_titel": "Cockpit “{0}” wants to connect a phone",
-    "weiteres_geraet_text": "Check number {0}"
+    "weiteres_geraet_text": "Check number {0}",
+    "ereignis_title": "Event at {0} saved",
+    "ereignis_body": "Hard braking or a bump. The video is stored in the car only. Keep it?",
+    "battery12v_vor_title": "12 V battery getting weaker: {0} V",
+    "battery12v_vor_body": "If it drops further, the car may not start. Go for a drive or plug it in soon.",
+    "battery12v_niedrig_title": "12 V battery very weak: {0} V",
+    "battery12v_niedrig_body": "The car may soon not start. Go for a drive today or plug it in."
   },
   "parking": {
     "notify": {
@@ -506,7 +520,8 @@
     "alerts": {
       "charging_full": "🔌 *Charging done*",
       "charging_fault": "🚨 *Something went wrong while charging*",
-      "battery12v_low": "🪫 *12 V battery low: {0} V*\nIf it drops further, the car may not start. Go for a drive or plug it in soon."
+      "battery12v_low": "🪫 *12 V battery low: {0} V*\nIf it drops further, the car may not start. Go for a drive or plug it in soon.",
+      "battery12v_sehr_niedrig": "🪫 *12 V battery very weak: {0} V*\nThe car may soon not start. Go for a drive today or plug it in."
     },
     "charge": {
       "title": "🔋 *Charging*",
@@ -867,6 +882,9 @@
       "anfrage": "📱 *EV-Cockpit “{0}” wants to connect a phone*\nCheck number: *{1}*\n\nDoes the number match the one in the Cockpit? If you allow it, the Cockpit shows a code to scan. The request is valid for 5 minutes.",
       "erlaubt": "✅ Allowed – the Cockpit now shows the code for the phone.",
       "abgelehnt": "❌ Declined."
+    },
+    "ereignis": {
+      "gesichert": "Panoptes: event at {0} saved (stored in the car only)."
     }
   },
   "vehicle_control": {
@@ -2245,8 +2263,8 @@
     "recording": {
       "ereignisClip": {
         "title": "Save events automatically",
-        "help": "After hard braking or a bump, Panoptes saves 20 seconds before and after. Nothing else is stored. Clips stay only in the car or on the USB stick. Works from the next drive.",
-        "helpCH": "Off by default in Switzerland because the rules for car cameras are stricter there. You can turn it on yourself."
+        "help": "After hard braking or a bump, Panoptes saves 20 seconds before and after. Nothing else is stored. Clips stay only in the car or on the USB stick. Works from the next drive. Panoptes does not save a clip while slowly manoeuvring at the start of a drive.",
+        "helpCH": "Off by default in Switzerland because the rules for car cameras are stricter there. You can turn it on yourself. Panoptes does not save a clip while slowly manoeuvring at the start of a drive."
       },
       "ereignisTelegram": {
         "title": "Telegram message on event",
@@ -2413,5 +2431,42 @@
   },
   "telegram_login": {
     "geraet_name": "Browser (Telegram)"
+  },
+  "fahrtenbuch_datei": {
+    "titel": "Logbook {0}",
+    "hinweis": "Made in your car. The file stays with you. No places.",
+    "drucken": "Print / PDF",
+    "leer": "No trips in this month.",
+    "summe": "Total: {0} trips",
+    "spalte": {
+      "datum": "Date",
+      "start": "Start",
+      "ende": "End",
+      "km": "km",
+      "dauer": "Minutes",
+      "kwh": "kWh",
+      "verbrauch": "kWh/100 km",
+      "soc_start": "Battery start %",
+      "soc_ende": "Battery end %",
+      "kosten": "Cost",
+      "waehrung": "Currency",
+      "temp": "Outside °C"
+    }
+  },
+  "rueckkehr": {
+    "titel_aufnahmen": "While you were away",
+    "eine_aufnahme": "1 recording",
+    "n_aufnahmen": "{0} recordings",
+    "titel_nichts": "Guard was on – nothing happened",
+    "titel_nicht_scharf": "Guard was not on",
+    "ansehen": "Watch",
+    "schliessen": "Close",
+    "grund_aus": "The guard is switched off.",
+    "grund_sicherer_ort": "Safe place – the guard takes a break here.",
+    "grund_zeit": "Outside the guard times you set.",
+    "grund_nur_fahrt": "The guard only runs when the car is on.",
+    "grund_akku": "Stopped to protect the battery.",
+    "grund_v12": "Stopped to protect the small 12 V battery.",
+    "grund_lange_geparkt": "Stopped after a long time parked, to save power."
   }
 }

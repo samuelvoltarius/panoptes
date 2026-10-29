@@ -920,6 +920,14 @@
       "network_hotspot_limit": {
         "label": "Datalimiet van de hotspot bereikt",
         "note": "Als de hotspot zijn ingestelde datalimiet overschrijdt; hij wordt dan uitgezet. Verhoog of reset de limiet om hem weer te gebruiken."
+      },
+      "ereignis_gesichert": {
+        "label": "Gebeurtenis opgeslagen (hard remmen of stoot)",
+        "note": "Er is een video van de gebeurtenis in de auto opgeslagen. Je krijgt alleen de tijd – geen video, geen plaats. Eigen onderwerp, los van de alarmen."
+      },
+      "vehicle_health_battery12v": {
+        "label": "12 V-accu wordt zwak",
+        "note": "Waarschuwt voordat de 12 V-accu te zwak is om te starten. Hooguit één keer per dag."
       }
     },
     "group": {
@@ -931,7 +939,8 @@
       "assistant": "Assistent",
       "parking": "Parkeren",
       "network": "Netwerk",
-      "other": "Overig"
+      "other": "Overig",
+      "ereignisse": "Gebeurtenissen"
     },
     "sev_pill_info": "Info",
     "sev_pill_warn": "Waarschuwing",
@@ -942,7 +951,8 @@
     "video_off": "Uit",
     "telegram_kat_hier": "Welke meldingen in de Telegram-chat aankomen, stel je in op de Telegram-pagina – elke categorie afzonderlijk.",
     "telegram_kat_link": "Telegram-meldingen instellen",
-    "telegram_sub2": "Stuurt meldingen naar een gekoppelde Telegram-chat. Koppel de bot en kies de categorieën op de Telegram-pagina."
+    "telegram_sub2": "Stuurt meldingen naar een gekoppelde Telegram-chat. Koppel de bot en kies de categorieën op de Telegram-pagina.",
+    "alle_link": "Alle meldingen op één pagina"
   },
   "charge": {
     "title": "Laden",
@@ -4820,6 +4830,7 @@
     "page_guard_settings": "Bewaker-instellingen",
     "page_recording": "Opname",
     "page_notifications": "Meldingen",
+    "page_benachrichtigungen": "Meldingen",
     "sec_car": "Auto",
     "page_control": "Bediening",
     "page_seats": "Stoelen",
@@ -5171,6 +5182,9 @@
     "handy_recht_route": "Route naar de auto sturen (er start niets vanzelf)",
     "handy_recht_update": "Panoptes bijwerken (alleen geparkeerd)",
     "handy_update_confirm": "Dit apparaat mag Panoptes dan bijwerken – alleen naar een vrijgegeven versie en alleen als de auto in P staat en uit is. Je krijgt bij elke start een Telegram-bericht. Inschakelen?",
+    "handy_wort_ereignisclip": "Ongelukclips",
+    "handy_recht_ereignisclip": "Ongelukclips op de telefoon toestaan (alleen als je op de telefoon tikt)",
+    "handy_ereignisclip_confirm": "Ongelukclips kunnen betrokkenen en voorbijgangers tonen. Deze telefoon mag dan een clip laden als je daar op „Op telefoon opslaan” tikt – nooit vanzelf, nooit naar een server. Elke download wordt in de auto vastgelegd. Inschakelen?",
     "req_update": "Mag Panoptes bijwerken (alleen geparkeerd; later te wijzigen)",
     "handy_wallbox_confirm": "Deze telefoon mag dan overal het laden starten en stoppen en de laadstroom wijzigen – alleen bij de vrijgegeven laadpaal, nooit tijdens het rijden. Je krijgt bij elke wijziging een Telegram-bericht. Inschakelen?",
     "req_wallbox": "Ook de laadpaal bedienen (laden starten/stoppen, laadstroom; later te wijzigen)"
@@ -6212,5 +6226,107 @@
     "erklaerung_ohne_frist": "Zonder „Bewaren” wordt de clip verwijderd als de ruimte voor gebeurtenissen vol is.",
     "gespeichert": "Wordt bewaard.",
     "fehler": "Dat is niet gelukt. Probeer het opnieuw."
+  },
+  "meldungen": {
+    "title": "Alle meldingen",
+    "lead": "Kies wat de auto je stuurt.",
+    "handy": "Telefoon",
+    "telegram": "Telegram",
+    "teilweise": "deels aan",
+    "kein_handy": "Nog geen telefoon krijgt meldingen.",
+    "handy_verbinden": "Telefoon koppelen",
+    "kein_telegram": "Telegram is niet gekoppeld.",
+    "telegram_verbinden": "Telegram koppelen",
+    "ruhe_title": "Nachtrust",
+    "ruhe_text": "In deze tijd komen alleen alarmen door.",
+    "ruhe_an": "Nachtrust aan",
+    "von": "van",
+    "bis": "tot",
+    "gespeichert": "Opgeslagen",
+    "fehler": "Dat lukte niet. Tik nog een keer.",
+    "laden": "Laden …",
+    "genauer": "Meer instellingen",
+    "thema": {
+      "waechter": {
+        "label": "Iemand bij de auto",
+        "note": "Iemand staat dicht bij de auto of iets komt heel dichtbij."
+      },
+      "ereignis": {
+        "label": "Hard remmen of stoot",
+        "note": "De video blijft in de auto. Je krijgt alleen de tijd."
+      },
+      "batterie12v": {
+        "label": "12 V-accu",
+        "note": "Waarschuwt voordat de auto misschien niet meer start."
+      },
+      "waechter_pause": {
+        "label": "Bewaker gepauzeerd",
+        "note": "De bewaker slaapt om stroom te sparen, of heeft hulp nodig."
+      },
+      "laden": {
+        "label": "Laden",
+        "note": "Laden klaar of een fout bij het laden."
+      },
+      "reifen": {
+        "label": "Banden",
+        "note": "Te weinig lucht of een lek."
+      },
+      "parken": {
+        "label": "Parkeren",
+        "note": "Geparkeerd en terug bij de auto."
+      },
+      "camping": {
+        "label": "Kamperen",
+        "note": "Meldingen en accuwaarschuwingen bij het kamperen."
+      },
+      "tueren": {
+        "label": "Deur geopend",
+        "note": "Een deur gaat open terwijl de auto geparkeerd staat."
+      },
+      "wichtig": {
+        "label": "Andere belangrijke meldingen",
+        "note": "Ernstige problemen die de auto meldt."
+      },
+      "updates": {
+        "label": "Nieuwe versie",
+        "note": "Er is een nieuwe Panoptes-versie."
+      }
+    }
+  },
+  "klima_laeuft": {
+    "unbestaetigt": "Gestart – de auto heeft het nog niet bevestigd."
+  },
+  "abfahrt_klima": {
+    "title": "Warm bij vertrek",
+    "switch": "Auto voor vertrek opwarmen (in de zomer koelen)",
+    "lead": "Hoe lang van tevoren?",
+    "next": "Start {start} · Vertrek {abfahrt}",
+    "no_departure": "Geen vertrektijd ingesteld (stap 2).",
+    "hint": "Stel de vertrektijd hieronder in bij stap 2. Staat de auto aan, dan schakelt Panoptes in de auto; staat hij uit, via BYD.",
+    "r_lokal": "Klimaat in de auto gestart.",
+    "r_cloud": "Klimaat via BYD gestart.",
+    "r_zu_spaet": "Te laat – niet gestart.",
+    "r_akku_niedrig": "Accu te leeg – niet gestart.",
+    "r_auto_an": "Er zit iemand in de auto – niet gestart.",
+    "r_zustand_unklar": "Auto niet bereikbaar – niet gestart.",
+    "r_fehler_lokal": "Dat is niet gelukt.",
+    "r_fehler_cloud": "BYD heeft niet bevestigd."
+  },
+  "fahrtenbuch_datei": {
+    "titel": "Rittenlogboek als bestand",
+    "hinweis": "Eén maand als tabel of om af te drukken. Het bestand wordt in de auto gemaakt en blijft bij jou. Zonder plaatsen.",
+    "monat": "Maand",
+    "tabelle": "Opslaan als tabel",
+    "drucken": "Afdrukken / PDF"
+  },
+  "einrichtung_p10": {
+    "ereignis_handy": "Een clip komt alleen op je telefoon als je daar op „Op telefoon opslaan” tikt.",
+    "ereignis_ja": "Ja, gebeurtenissen opslaan",
+    "ereignis_nein": "Nee",
+    "stopp_frueh": "Eerder stoppen",
+    "stopp_normal": "Normaal (aanbevolen)",
+    "stopp_lang": "Langer bewaken",
+    "stopp_satz": "Accu onder {akku} % of na {stunden} uur",
+    "stopp_12v": "Panoptes beschermt de 12-voltaccu altijd extra."
   }
 }

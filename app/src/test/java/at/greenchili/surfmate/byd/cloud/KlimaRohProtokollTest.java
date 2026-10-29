@@ -69,7 +69,7 @@ public class KlimaRohProtokollTest {
         } finally {
             at.greenchili.surfmate.byd.KlimaStufe.fuerTest(null);
         }
-        assertEquals("Cloud OPENAIR ok: mainSettingTemp=11 (= SDK 27, Heizen Stufe 2, Roh = Stufe) copilotSettingTemp=11"
+        assertEquals("Cloud OPENAIR ok: mainSettingTemp=11 (= SDK 27, Heizen, Roh = Stufe (Annahme)) copilotSettingTemp=11"
                 + " timeSpan=3 remoteMode=4 cycleMode=2", z);
         // anderes Modell: pyBYD °C − 14
         assertEquals("Cloud OPENAIR ok: mainSettingTemp=13 (= SDK 27, 27 °C, Roh = °C − 14) copilotSettingTemp=13"

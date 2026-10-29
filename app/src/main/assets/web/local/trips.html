@@ -13,7 +13,7 @@
     <meta name="theme-color" content="#0A2238">
     <script src="../shared/theme.js?v=13"></script>
     <script src="../shared/kartenquelle.js?v=5"></script>
-    <script src="../shared/app-shell.js?v=pn26"></script>
+    <script src="../shared/app-shell.js?v=pn27"></script>
     <!--
       Bottom-tab manifest for Trips. Tabs apply to the LIST VIEW only;
       the DETAIL VIEW (#tripDetailView) is a sequential drill-in and
@@ -1521,6 +1521,36 @@
                             <div class="summary-stat"><div class="summary-stat-value" id="summaryCost">--</div><div class="summary-stat-label" data-i18n="trip.summary.cost">Kosten</div></div>
                         </div>
                     </div>
+
+                    <!-- 0.1.28 P9: Fahrtenbuch als Datei (CSV / Drucken), entsteht im Auto, geht an keinen Server -->
+                    <div class="summary-card" data-tab="trips" id="fbDatei" style="margin-top:20px;">
+                        <div class="card-title" style="font-size:14px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;color:var(--brand-primary)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+                            <span data-i18n="fahrtenbuch_datei.titel">Fahrtenbuch als Datei</span>
+                        </div>
+                        <p style="margin:8px 0 12px;color:var(--text-secondary);font-size:14px;" data-i18n="fahrtenbuch_datei.hinweis">Ein Monat als Tabelle oder zum Drucken. Die Datei entsteht im Auto und bleibt bei dir. Ohne Orte.</p>
+                        <label style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:16px;">
+                            <span data-i18n="fahrtenbuch_datei.monat">Monat</span>
+                            <input type="month" id="fbMonat" style="font-size:16px;padding:8px;min-height:44px;">
+                        </label>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+                            <button class="btn btn-primary" type="button" id="fbCsv" style="min-height:48px;" data-i18n="fahrtenbuch_datei.tabelle">Als Tabelle speichern</button>
+                            <button class="btn" type="button" id="fbDruck" style="min-height:48px;" data-i18n="fahrtenbuch_datei.drucken">Drucken / PDF</button>
+                        </div>
+                    </div>
+                    <script>
+                        (function () {
+                            var m = document.getElementById('fbMonat');
+                            var d = new Date();
+                            m.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+                            function url(format) {
+                                var lang = (document.documentElement.lang || 'de').slice(0, 2);
+                                return '/api/trips/datei?monat=' + encodeURIComponent(m.value) + '&format=' + format + '&sprache=' + lang;
+                            }
+                            document.getElementById('fbCsv').onclick = function () { if (m.value) window.location.href = url('csv'); };
+                            document.getElementById('fbDruck').onclick = function () { if (m.value) window.open(url('druck'), '_blank'); };
+                        })();
+                    </script>
 
                     <!-- Trip Storage -->
                     <div class="card" data-tab="storage" style="margin-top:24px;">

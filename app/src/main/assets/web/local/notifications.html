@@ -11,7 +11,7 @@
     <title data-i18n="app.notifications_title">Meldungen – Panoptes</title>
     <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
     <script src="../shared/theme.js?v=13"></script>
-    <script src="../shared/app-shell.js?v=pn26"></script>
+    <script src="../shared/app-shell.js?v=pn27"></script>
     <!--
       WebView detection MUST run before app-tabs.js builds the tab bar so
       we can filter OT_TABS to the Telegram-only flow on the head unit.
@@ -693,6 +693,8 @@
                          status message (kept outside the tab system so it
                          can survive a tab switch during a save). -->
                     <div id="status" class="notif-status" style="display:none;"></div>
+                    <!-- 0.1.28 P4: alle Meldungen (Handy + Telegram) auf einer Seite -->
+                    <a href="meldungen.html" class="notif-btn" style="display:inline-block;margin:0 0 16px;text-decoration:none" data-i18n="notif.alle_link">Alle Meldungen auf einer Seite</a>
 
                     <!-- ============================================================
                          NOTIFICATION LOG (data-tab="log")

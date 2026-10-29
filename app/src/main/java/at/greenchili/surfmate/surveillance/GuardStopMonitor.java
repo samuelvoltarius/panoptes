@@ -37,6 +37,17 @@ public final class GuardStopMonitor {
             at.greenchili.surfmate.util.DaemonStorage.rebase(
                     "/data/user_de/0/com.android.shell/surfmate/guardstop_v12_ruhe_tage.json");
     private static final int RUHE_TAGE_BEHALTEN = 14;
+    /** 0.1.28 P8: letzte 12-V-Vorwarnung {stufe, zeit}, damit ein Daemon-Neustart nicht erneut meldet. */
+    private static final String WARNUNG_12V_FILE =
+            at.greenchili.surfmate.util.DaemonStorage.rebase(
+                    "/data/user_de/0/com.android.shell/surfmate/guardstop_v12_warnung.json");
+
+    /** Zustellung der 12-V-Warnung (in Tests ersetzbar). */
+    interface Melder12v {
+        void melden(Starterbatterie12v.Stufe stufe, double volt);
+    }
+
+    static volatile Melder12v melder12v = GuardStopMonitor::melden12v;
 
     /** Eingriff in den Kamera-Daemon (in Tests ersetzbar). */
     public interface Surveillance {
@@ -97,6 +108,22 @@ public final class GuardStopMonitor {
             parkedSinceMs = 0L;
             writeParkedSince(0L);
         }
+    }
+
+    /** 0.1.28 Rückkehr-Karte: letzter Stopp (Grund + Zeit). Bleibt über ACC an hinaus erhalten (resetForDrive löscht ihn nicht). */
+    private static volatile String letzterStoppGrund;
+    private static volatile long letzterStoppMs;
+
+    /** Grund eines Wächter-Stopps, der seit {@code abMs} begann, oder null. */
+    public static String stoppGrundSeit(long abMs) {
+        String g = letzterStoppGrund;
+        return g != null && letzterStoppMs > 0 && letzterStoppMs >= abMs ? g : null;
+    }
+
+    /** Nur für Tests. */
+    static void merkeStopp(String grund, long ms) {
+        letzterStoppGrund = grund;
+        letzterStoppMs = ms;
     }
 
     /** Grund des laufenden Wächter-Stopps oder null. */
@@ -174,6 +201,7 @@ public final class GuardStopMonitor {
         }
         in.v12 = v12.evaluate(cfg.v12Below, cfg.v12Resume, now);
         ruheTagMerken(now);
+        warnung12vPruefen(now, cfg, at.greenchili.surfmate.einstellungen.AkkuChemie.aktuell(root), ruheTage());
         try {
             in.inQuietZone = SafeLocationManager.getInstance().isInSafeZone();
         } catch (Throwable ignored) {
@@ -189,6 +217,7 @@ public final class GuardStopMonitor {
         if (active) {
             if (!wasActive) {
                 logger.info("Wächter-Stopp: " + policy.reason());
+                merkeStopp(policy.reason(), System.currentTimeMillis());
                 if (cfg.notify) GuardStopNotice.stopped(policy.reason());
                 // Server-Wächter S1: geplantes Schlafen, keine unerwartete Stille.
                 GuardStateReporter.schlaf("guardStop:" + policy.reason());
@@ -265,6 +294,87 @@ public final class GuardStopMonitor {
         } catch (Throwable ignored) {
         }
     }
+
+    // ------------------------------------------------------------------ 0.1.28 P8: Vorwarnung 12 V
+
+    private Starterbatterie12v.Merker merker12v;
+
+    /**
+     * Nur Ruhespannung (≥ 60 min geparkt, DC-DC lädt nicht). Meldet über {@link #melder12v}, höchstens einmal je
+     * Stufe und Tag (Merker auf Platte). Fehler dürfen den Wächter-Stopp nie stören.
+     */
+    synchronized void warnung12vPruefen(long now, GuardStopPolicy.Config cfg, String chemie, JSONObject ruheTage) {
+        try {
+            if (parkedSinceMs <= 0 || now - parkedSinceMs < at.greenchili.surfmate.einstellungen.AkkuChemie.RUHE_NACH_MS) return;
+            if (v12.isCharging()) return;
+            double ruhe = v12.lastMedian();
+            if (Double.isNaN(ruhe)) return;
+            double[] s = Starterbatterie12v.schwellen(cfg.v12Below, cfg.v12Resume, chemie);
+            String heute = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.ROOT).format(new java.util.Date(now));
+            Starterbatterie12v.Stufe stufe = Starterbatterie12v.bewerten(ruhe, s[0], chemie, ruheTage, heute);
+            if (merker12v == null) merker12v = leseMerker12v();
+            Starterbatterie12v.Merker neu = merker12v.nach(stufe, ruhe >= s[1], now);
+            if (neu.stufe != merker12v.stufe || neu.zeit != merker12v.zeit) schreibeMerker12v(neu);
+            merker12v = neu;
+            if (neu.melden) {
+                logger.info("12-V-Warnung: " + stufe + " (Ruhe " + Math.round(ruhe * 100) / 100.0 + " V, Stopp unter "
+                        + s[0] + " V, " + chemie + ")");
+                melder12v.melden(stufe, ruhe);
+            }
+        } catch (Throwable t) {
+            logger.debug("12-V-Warnung: " + t.getMessage());
+        }
+    }
+
+    /** Telegram (Kategorie Akku, Schalter batteryAlerts) + Handy-Push (vehicle.health.battery12v). */
+    static void melden12v(Starterbatterie12v.Stufe stufe, double volt) {
+        try {
+            at.greenchili.surfmate.telegram.TelegramNotifier.notifyBattery12v(volt, Starterbatterie12v.telegramStufe(stufe));
+        } catch (Throwable t) {
+            logger.debug("12-V-Telegram: " + t.getMessage());
+        }
+        try {
+            at.greenchili.surfmate.notifications.NotificationBus.get().publish(Starterbatterie12v.pushEreignis(
+                    stufe, volt, at.greenchili.surfmate.server.LocaleManager.get()));
+        } catch (Throwable t) {
+            logger.debug("12-V-Push: " + t.getMessage());
+        }
+    }
+
+    static Starterbatterie12v.Merker leseMerker12v() {
+        try {
+            File f = new File(WARNUNG_12V_FILE);
+            if (!f.isFile()) return Starterbatterie12v.Merker.leer();
+            return Starterbatterie12v.Merker.aus(new JSONObject(
+                    new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8)));
+        } catch (Throwable t) {
+            return Starterbatterie12v.Merker.leer();
+        }
+    }
+
+    private static void schreibeMerker12v(Starterbatterie12v.Merker m) {
+        try {
+            File f = new File(WARNUNG_12V_FILE);
+            File tmp = new File(WARNUNG_12V_FILE + ".tmp");
+            byte[] b = m.json().toString().getBytes(StandardCharsets.UTF_8);
+            Files.write(tmp.toPath(), b);
+            if (!tmp.renameTo(f)) {
+                Files.write(f.toPath(), b);
+                tmp.delete();
+            }
+        } catch (Throwable t) {
+            logger.debug("12-V-Merker nicht gespeichert: " + t.getMessage());
+        }
+    }
+
+    /** Für Tests: Auswertung mit festen Werten füttern. */
+    void v12ForTest(double volts, long readAtMs, long parkedSince, double below, double resume) {
+        parkedSinceMs = parkedSince;
+        v12.offer(volts, readAtMs, parkedSince);
+        v12.evaluate(below, resume, readAtMs);
+    }
+
+    void merker12vForTest(Starterbatterie12v.Merker m) { merker12v = m; }
 
     static boolean isDiLink3() {
         try {

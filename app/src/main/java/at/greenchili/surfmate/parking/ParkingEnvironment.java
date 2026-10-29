@@ -81,6 +81,18 @@ public interface ParkingEnvironment {
     /** Name of the safe zone the car is in, or null. */
     String currentSafeZoneName();
 
+    /**
+     * 0.1.28 Rückkehr-Karte: Grund eines Wächter-Stopps (GuardStopPolicy.REASON_*), der seit {@code abMs} begann,
+     * oder null.
+     */
+    default String guardStopReasonSince(long abMs) { return null; }
+
+    /**
+     * 0.1.28 Rückkehr-Karte am Display zeigen (nur bei Stillstand). {@code s} liefert Zeitraum und Sitzung für den
+     * Sprung zur ersten Aufnahme. Standard: nichts (Tests, andere Umgebungen).
+     */
+    default void showReturnCard(ParkingSession s, RueckkehrKarte karte) {}
+
     /** One of the {@link ParkingSession}{@code .SENTRY_*} constants. */
     String sentryState();
 

@@ -204,6 +204,37 @@ public class EinrichtungApiHandlerTest {
         assertEquals("nl", sp.locale);
     }
 
+    /** 0.1.28 P10: Ereignis-Clip im Wächter-Schritt, „Wächter stoppt …“ im Betriebs-Schritt (beides optional im Vertrag). */
+    @Test
+    public void ereignisClipUndWaechterStopp() throws Exception {
+        JSONObject root = schritt(new JSONObject(), "waechter",
+                new JSONObject().put("modus", "shock").put("ton", false).put("ereignisClip", false));
+        assertFalse(root.getJSONObject("recording").getBoolean("ereignisClip"));
+        root = schritt(root, "waechter", new JSONObject().put("modus", "shock").put("ton", false).put("ereignisClip", true));
+        assertTrue(root.getJSONObject("recording").getBoolean("ereignisClip"));
+        // ältere Oberfläche ohne die Frage: Standard nach Land bleibt (nichts geschrieben)
+        JSONObject alt = schritt(new JSONObject(), "waechter", new JSONObject().put("modus", "shock").put("ton", false));
+        assertFalse(alt.optJSONObject("recording") != null && alt.getJSONObject("recording").has("ereignisClip"));
+        assertEquals(422, EinrichtungApiHandler.schritt(new JSONObject(), "waechter",
+                new JSONObject().put("modus", "shock").put("ton", false).put("ereignisClip", "ja"), FELDER, false, 1L).code);
+
+        root = schritt(root, "betrieb", new JSONObject().put("modus", "immer").put("stopp", "frueh"));
+        assertEquals(30, root.getJSONObject("guardStop").getInt("socBelow"));
+        assertEquals(12, root.getJSONObject("guardStop").getInt("maxParkHours"));
+        root = schritt(root, "betrieb", new JSONObject().put("modus", "immer").put("stopp", "lang"));
+        assertEquals(15, root.getJSONObject("guardStop").getInt("socBelow"));
+        assertEquals(48, root.getJSONObject("guardStop").getInt("maxParkHours"));
+        // „Nur beim Fahren“: Panoptes läuft im Stand nicht – Wahl wird nicht geschrieben
+        JSONObject fahrt = schritt(new JSONObject(), "betrieb", new JSONObject().put("modus", "fahrt").put("stopp", "frueh"));
+        assertFalse(fahrt.has("guardStop"));
+        assertEquals(422, EinrichtungApiHandler.schritt(new JSONObject(), "betrieb",
+                new JSONObject().put("modus", "immer").put("stopp", "nie"), FELDER, false, 1L).code);
+        // „normal“ = Katalog-Standard
+        int[] normal = EinrichtungApiHandler.STOPP.get("normal");
+        assertEquals(20, normal[0]);
+        assertEquals(24, normal[1]);
+    }
+
     @Test
     public void neuSetztAlleMerkerZurueck() throws Exception {
         JSONObject root = schritt(bestand(true), "extra_telegram", new JSONObject());

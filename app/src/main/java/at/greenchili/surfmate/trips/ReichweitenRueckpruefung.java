@@ -14,6 +14,7 @@ import java.util.Map;
  * jeweils nächsten ≥ 100 km vorhergesagt hätten – jede Vorhersage nur aus den Fahrten davor – und nimmt als Spanne
  * P25–P75 des Verhältnisses echt/vorhergesagt (an Alfreds Auto 0,91–1,10 → bei 260 km etwa 236–287 km).
  * Unter {@link #MIN_FENSTER} Fenstern: kein Ergebnis („lernt noch“). Rein, ohne Datenbank, alles im Auto.
+ * 0.1.28 P7: Vorhersage mit {@link GewichteteToepfe} (jüngere Fahrten zählen mehr), wie die Anzeige.
  */
 public final class ReichweitenRueckpruefung {
 
@@ -28,11 +29,18 @@ public final class ReichweitenRueckpruefung {
     public static final class Ergebnis {
         public final double p25, p75;
         public final int fenster;
+        /** Mittlerer Fehler der 100-km-Vorhersage |vorher − echt| / echt (0.1.28, nur zur Prüfung/Anzeige im Log). */
+        final double fehler;
 
         Ergebnis(double p25, double p75, int fenster) {
+            this(p25, p75, fenster, Double.NaN);
+        }
+
+        Ergebnis(double p25, double p75, int fenster, double fehler) {
             this.p25 = p25;
             this.p75 = p75;
             this.fenster = fenster;
+            this.fehler = fehler;
         }
     }
 
@@ -77,6 +85,11 @@ public final class ReichweitenRueckpruefung {
      * @return null, solange weniger als {@link #MIN_FENSTER} Fenster vorliegen
      */
     public static Ergebnis rechne(List<TripRecord> fahrten, double nennKwh) {
+        return rechne(fahrten, nennKwh, true);
+    }
+
+    /** {@code gewichtet=false}: alte Töpfe ohne Alter (nur zum Vergleich in der Abnahme). */
+    static Ergebnis rechne(List<TripRecord> fahrten, double nennKwh, boolean gewichtet) {
         List<TripRecord> g = new ArrayList<>();
         List<Double> raten = new ArrayList<>();
         List<TripRecord> sortiert = new ArrayList<>(fahrten);
@@ -88,15 +101,18 @@ public final class ReichweitenRueckpruefung {
             raten.add(r);
         }
         List<Double> q = new ArrayList<>();
-        SpeicherToepfe toepfe = new SpeicherToepfe();
+        // 0.1.28 P7: dieselben gewichteten Töpfe wie die Anzeige (Halbwertszeit), Stand = Beginn des Fensters
+        GewichteteToepfe toepfe = new GewichteteToepfe();
+        SpeicherToepfe alt = new SpeicherToepfe();
         for (int i = 0; i < g.size(); i++) {
             TripRecord x = g.get(i);
             if (i >= VORLAUF && !kurz(x)) {
                 double km = 0, echt = 0, vorher = 0;
                 for (int j = i; j < g.size() && km < FENSTER_KM; j++) {
                     TripRecord y = g.get(j);
-                    RangeEstimator.BucketResult p = RangeEstimator.aufloesen(toepfe,
-                            y.avgSpeedKmh, y.extTempC, y.getOverallScore());
+                    RangeEstimator.BucketResult p = gewichtet
+                            ? toepfe.aufloesen(y.avgSpeedKmh, y.extTempC, y.getOverallScore(), x.startTime)
+                            : RangeEstimator.aufloesen(alt, y.avgSpeedKmh, y.extTempC, y.getOverallScore());
                     if (p == null || p.mean <= 0) { km = -1; break; }
                     km += y.distanceKm;
                     echt += raten.get(j) * y.distanceKm;
@@ -104,10 +120,14 @@ public final class ReichweitenRueckpruefung {
                 }
                 if (km >= FENSTER_KM && vorher > 0) q.add(echt / vorher);
             }
-            toepfe.dazu(RangeEstimator.computeBucketKey(x.avgSpeedKmh, x.extTempC, x.getOverallScore()), raten.get(i));
+            String key = RangeEstimator.computeBucketKey(x.avgSpeedKmh, x.extTempC, x.getOverallScore());
+            toepfe.dazu(key, raten.get(i), x.startTime);
+            alt.dazu(key, raten.get(i));
         }
         if (q.size() < MIN_FENSTER) return null;
+        double fehler = 0;
+        for (double v : q) fehler += Math.abs(1 - v) / v;
         Collections.sort(q);
-        return new Ergebnis(q.get(q.size() / 4), q.get(3 * q.size() / 4), q.size());
+        return new Ergebnis(q.get(q.size() / 4), q.get(3 * q.size() / 4), q.size(), fehler / q.size());
     }
 }

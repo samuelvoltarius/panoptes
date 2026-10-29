@@ -373,6 +373,86 @@ public final class DaemonParkingEnvironment implements ParkingEnvironment {
         }
     }
 
+    // ---- 0.1.28 Rückkehr-Karte
+
+    @Override
+    public String guardStopReasonSince(long abMs) {
+        try {
+            return at.greenchili.surfmate.surveillance.GuardStopMonitor.stoppGrundSeit(abMs);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /** Höchstens so lange auf Stillstand warten (ACC an, Auto noch nicht losgefahren). */
+    static final long RUECKKEHR_WARTEN_MS = 20_000L;
+
+    @Override
+    public void showReturnCard(ParkingSession s, RueckkehrKarte karte) {
+        if (s == null || karte == null || karte.art == RueckkehrKarte.Art.KEINE) return;
+        final long von = s.startedMs, bis = s.endedMs > 0 ? s.endedMs : System.currentTimeMillis();
+        final String sitzung = s.sessionId;
+        Thread t = new Thread(() -> {
+            try {
+                // Nur bei Stillstand bzw. P: kurz warten, bis der Zustand belegt ist; fährt das Auto, keine Karte
+                long ende = System.currentTimeMillis() + RUECKKEHR_WARTEN_MS;
+                Boolean still = stillstand();
+                while (still == null && System.currentTimeMillis() < ende) {
+                    Thread.sleep(2000);
+                    still = stillstand();
+                }
+                if (!Boolean.TRUE.equals(still)) {
+                    log("Rückkehr-Karte nicht gezeigt (kein Stillstand)");
+                    return;
+                }
+                String id = karte.art == RueckkehrKarte.Art.AUFNAHMEN ? ersteAufnahme(von, bis) : null;
+                at.greenchili.surfmate.byd.MessageOverlayController.showRueckkehr(karte.art.name().toLowerCase(),
+                        karte.titel(), karte.text(), RueckkehrKarte.knopfAnsehen(), RueckkehrKarte.knopfSchliessen(),
+                        id, karte.sichtbarSek());
+            } catch (Throwable e) {
+                log("Rückkehr-Karte: " + e.getMessage());
+            }
+        }, "Rueckkehr-" + sitzung);
+        t.setDaemon(true);
+        t.start();
+    }
+
+    /** true = steht (P oder 0 km/h), false = fährt, null = unbekannt. */
+    private Boolean stillstand() {
+        Boolean p = gearInPark();
+        if (Boolean.TRUE.equals(p)) return true;
+        try {
+            at.greenchili.surfmate.byd.BydVehicleData d = BydDataCollector.getInstance().getData();
+            if (d != null && !Double.isNaN(d.speedKmh) && d.speedKmh >= 0) {
+                if (d.speedKmh > 2) return false;
+                if (p == null) return true;   // Gang unbekannt, aber 0 km/h
+            }
+        } catch (Throwable ignored) { }
+        return Boolean.FALSE.equals(p) ? false : null;
+    }
+
+    /**
+     * Kennung der ersten (ältesten) Wächter-Aufnahme der Parkphase – unter den neuesten 12, damit sie auf der ersten
+     * Seite der Aufnahmen-Liste steht (pageSize 12). null = keine gefunden.
+     */
+    static String ersteAufnahme(long vonMs, long bisMs) {
+        try {
+            RecordingsIndex idx = RecordingsIndex.getInstance();
+            if (!idx.isAvailable()) return null;
+            RecordingsIndex.Filter f = new RecordingsIndex.Filter();
+            f.type = "sentry";
+            f.fromMs = vonMs;
+            f.toMs = bisMs;
+            List<JSONObject> l = idx.queryRecordings(f, 12, 0);
+            for (int i = l.size() - 1; i >= 0; i--) {
+                String id = l.get(i).optString("id", "");
+                if (id.isEmpty()) id = l.get(i).optString("filename", "");
+                if (at.greenchili.surfmate.ui.NavigateZiel.aufnahmeGueltig(id)) return id;
+            }
+        } catch (Throwable ignored) { }
+        return null;
+    }
+
     @Override
     public String signAssetToken(String subject, long ttlSec) {
         try { return AuthManager.signThumbToken(subject, ttlSec); } catch (Throwable t) { return null; }

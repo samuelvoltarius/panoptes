@@ -84,12 +84,18 @@ class EinrichtungModellTest {
 
     @Test fun antwortenOhneVorauswahlSindUnvollstaendig() {
         assertEquals(listOf("antwort"), Antworten.fehlt("waechter", null))
-        assertEquals(listOf("modus", "ton"), Antworten.fehlt("waechter", JSONObject()))
-        assertNull(Antworten.fehlt("waechter", JSONObject("""{"modus":"aus","ton":false}""")))
-        assertEquals(listOf("modus"), Antworten.fehlt("waechter", JSONObject("""{"modus":"alles","ton":true}""")))
+        assertEquals(listOf("modus", "ton", "ereignisClip"), Antworten.fehlt("waechter", JSONObject()))
+        assertNull(Antworten.fehlt("waechter", JSONObject("""{"modus":"aus","ton":false,"ereignisClip":false}""")))
+        // 0.1.28 P10: Ereignis-Clip ohne Vorauswahl
+        assertEquals(listOf("ereignisClip"), Antworten.fehlt("waechter", JSONObject("""{"modus":"aus","ton":false}""")))
+        assertEquals(listOf("modus"), Antworten.fehlt("waechter", JSONObject("""{"modus":"alles","ton":true,"ereignisClip":true}""")))
         assertEquals(listOf("gelesen"), Antworten.fehlt("haftung", JSONObject("""{"gelesen":false}""")))
         assertEquals(listOf("quelle"), Antworten.fehlt("karte", JSONObject()))
         assertNull(Antworten.fehlt("betrieb", JSONObject("""{"modus":"fahrt"}""")))
+        // 0.1.28 P10: bei „Immer an“ die Wahl „Wächter stoppt …“
+        assertEquals(listOf("stopp"), Antworten.fehlt("betrieb", JSONObject("""{"modus":"immer"}""")))
+        assertEquals(listOf("stopp"), Antworten.fehlt("betrieb", JSONObject("""{"modus":"immer","stopp":"nie"}""")))
+        assertNull(Antworten.fehlt("betrieb", JSONObject("""{"modus":"immer","stopp":"normal"}""")))
     }
 
     @Test fun updatesMobilfunkNurMitSim() {

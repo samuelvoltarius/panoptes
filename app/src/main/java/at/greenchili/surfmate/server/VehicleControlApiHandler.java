@@ -923,7 +923,27 @@ public class VehicleControlApiHandler {
         }
         Boolean remoteClimateActive = remoteClimateActive();
         if (remoteClimateActive != null) {
+            // Nur Uhr nach einem Cloud-Befehl, kein Beleg – Anzeige über „laeuft“ (0.1.28 P3)
             climate.put("remoteClimateActive", remoteClimateActive.booleanValue());
+        }
+        // 0.1.28 (P3): ehrlicher Dreizustand läuft / aus / unbekannt, plus „gestartet, nicht bestätigt“
+        try {
+            int air = -1;
+            long airAlter = -1;
+            at.greenchili.surfmate.byd.cloud.VehicleCloudSnapshot cs =
+                    at.greenchili.surfmate.byd.cloud.BydCloudDataProvider.getInstance().getSnapshot();
+            if (cs != null && cs.airRunState >= 0) {
+                air = cs.airRunState;
+                long t = cs.vehicleInfoTimestamp > 0 ? Math.min(cs.vehicleInfoTimestamp, cs.receivedAt) : cs.receivedAt;
+                airAlter = System.currentTimeMillis() - t;
+            }
+            at.greenchili.surfmate.byd.KlimaLaeuft.Ergebnis laeuft = at.greenchili.surfmate.byd.KlimaLaeuft.bewerte(
+                    diLink5 || vehiclePoweredOn,
+                    data.acStartState == BydVehicleData.UNAVAILABLE ? -1 : data.acStartState,
+                    air, airAlter, Boolean.TRUE.equals(remoteClimateActive));
+            climate.put("laeuft", laeuft.json());
+        } catch (Exception e) {
+            logger.debug("climate run state failed: " + e.getMessage());
         }
         response.put("climate", climate);
 

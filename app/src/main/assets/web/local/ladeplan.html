@@ -11,7 +11,7 @@
     <meta name="theme-color" content="#0A2238">
     <meta name="robots" content="noindex">
     <script src="../shared/theme.js?v=13"></script>
-    <script src="../shared/app-shell.js?v=pn26"></script>
+    <script src="../shared/app-shell.js?v=pn27"></script>
     <link rel="stylesheet" href="../shared/styles.css?v=pn11">
     <style>
         .lpl { padding: 0 28px 60px; max-width: 760px; box-sizing: border-box; }
@@ -75,6 +75,18 @@
                 <div class="balken" id="balken"></div>
                 <div class="achse" id="achse"></div>
                 <p class="hint" data-i18n="ladeplan.bars_hint">Grün = geplante Ladezeit, Balkenhöhe = Strompreis.</p>
+            </article>
+
+            <!-- 0.1.28 (P6): zur Abfahrt warm. Panoptes startet selbst und prüft genau dann, ob das Auto aus ist (kein BYD-Zeitplan). -->
+            <article class="tc">
+                <h2 data-i18n="abfahrt_klima.title">Warm zur Abfahrt</h2>
+                <label style="font-size:17px"><input type="checkbox" id="vkAn" style="width:22px;height:22px;vertical-align:middle">
+                    <span data-i18n="abfahrt_klima.switch">Auto vor der Abfahrt warm machen (im Sommer kühlen)</span></label>
+                <div class="reihe"><span class="hint" data-i18n="abfahrt_klima.lead">Wie lange vorher?</span>
+                    <select id="vkVorlauf"><option value="10">10 min</option><option value="15">15 min</option><option value="20">20 min</option><option value="30">30 min</option></select></div>
+                <p class="werte" id="vkNaechste"></p>
+                <p class="hint" id="vkLetztes"></p>
+                <p class="hint" data-i18n="abfahrt_klima.hint">Die Abfahrtszeit stellst du unten bei Schritt 2 ein. Ist das Auto an, schaltet Panoptes im Auto; ist es aus, über BYD.</p>
             </article>
 
             <article class="tc">
@@ -272,10 +284,26 @@
         var fr = e.freigabe;
         $('btnFrei').hidden = fr.an; $('btnNichtFrei').hidden = !fr.an;
         $('freiSeit').textContent = fr.an && fr.zeit ? t('ladeplan.allowed_since', 'Erlaubt seit {zeit}', { zeit: new Date(fr.zeit).toLocaleString() }) : '';
+        zeigeVorklima(d);
         $('log').innerHTML = (d.letzte || []).slice(0, 12).map(function (x) {
             var was = x.aktion === 'start' ? t('ladeplan.l_start', 'Start') : t('ladeplan.l_stop', 'Stopp');
             return '<li>' + esc(new Date(x.zeit).toLocaleString()) + ' – ' + esc(was) + ' · ' + esc(x.grund) + (x.ok ? '' : ' ✗') + '</li>';
         }).join('');
+    }
+    // 0.1.28 (P6) Warm zur Abfahrt – Stufe im Cloud-Weg bis zur Messung nur „Heizen“/„Kühlen“
+    var VK = { lokal: 'Klima im Auto gestartet.', cloud: 'Klima über BYD gestartet.', zu_spaet: 'Zu spät – nicht gestartet.',
+        akku_niedrig: 'Akku zu leer – nicht gestartet.', auto_an: 'Jemand ist im Auto – nicht gestartet.',
+        zustand_unklar: 'Auto nicht erreichbar – nicht gestartet.', fehler_lokal: 'Hat nicht geklappt.', fehler_cloud: 'BYD hat nicht bestätigt.' };
+    function zeigeVorklima(d) {
+        var e = d.einstellungen.vorklima || { an: false, vorlaufMin: 15 }, vs = d.vorklima || {};
+        if (document.activeElement !== $('vkAn')) $('vkAn').checked = !!e.an;
+        if (document.activeElement !== $('vkVorlauf')) $('vkVorlauf').value = String(e.vorlaufMin);
+        $('vkVorlauf').disabled = !e.an;
+        var n = vs.naechste;
+        $('vkNaechste').textContent = !e.an ? '' : n ? t('abfahrt_klima.next', 'Startet {start} · Abfahrt {abfahrt}', { start: tag(n.start), abfahrt: zeit(n.abfahrt) })
+            : t('abfahrt_klima.no_departure', 'Keine Abfahrt eingestellt (Schritt 2).');
+        var l = vs.letztes;
+        $('vkLetztes').textContent = l ? tag(l.zeit) + ' – ' + t('abfahrt_klima.r_' + l.ergebnis, VK[l.ergebnis] || l.ergebnis) : '';
     }
     function zeigeTarif() {
         [].forEach.call(document.querySelectorAll('#tarifWahl [data-tarif]'), function (b) { b.classList.toggle('an', b.getAttribute('data-tarif') === tarifArt); });
@@ -399,6 +427,11 @@
         };
         $('btnNichtFrei').onclick = function () { plan({ freigabe: { an: false } }); };
         $('dyn').onchange = function () { plan({ dynamischerTarif: $('dyn').checked }); };
+        $('vkAn').onchange = function () {
+            plan({ vorklima: { an: $('vkAn').checked, vorlaufMin: parseInt($('vkVorlauf').value, 10) } })
+                .then(function (d) { if (d) toast(t('ladeplan.saved', 'Gespeichert'), true); });
+        };
+        $('vkVorlauf').onchange = function () { plan({ vorklima: { vorlaufMin: parseInt($('vkVorlauf').value, 10) } }); };
         laden().then(ladepunkteLaden);
         setInterval(function () { if (!document.hidden && $('dlg').style.display !== 'flex') laden(); }, 20000);
     });

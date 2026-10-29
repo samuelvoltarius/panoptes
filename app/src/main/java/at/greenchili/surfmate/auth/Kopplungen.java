@@ -218,10 +218,13 @@ public final class Kopplungen {
             RECHT_ROUTE = "route",       // 0.1.25 Route ins Auto schicken (nur Anzeige, nichts startet von selbst); Standard AN
             // 0.1.26.1 Panoptes aktualisieren (nur freigegebene Version des Updaters, nur geparkt). Standard AN nur für
             // die erste Handy-Kopplung und die am Display bzw. mit Login erlaubten, sonst AUS
-            RECHT_UPDATE = "update";
+            RECHT_UPDATE = "update",
+            // 0.1.28 P5 (Koordination 29.10.): Unfall-/Ereignis-Clips aufs Handy laden; Standard AUS, nur der Besitzer
+            // schaltet es ein (Login/Display); zusätzlich zu „kamera“
+            RECHT_EREIGNISCLIP = "ereignisclip";
     public static final java.util.List<String> RECHTE = java.util.Collections.unmodifiableList(
             java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_AUFSPERREN, RECHT_PUSH, RECHT_WEB, RECHT_KAMERA,
-                    RECHT_WALLBOX, RECHT_ROUTE, RECHT_UPDATE));
+                    RECHT_WALLBOX, RECHT_ROUTE, RECHT_UPDATE, RECHT_EREIGNISCLIP));
     /** Standard bei neuer Handy-Kopplung: aufsperren, kamera und wallbox AUS, bis der Besitzer sie mit Login einschaltet. */
     static final java.util.List<String> HANDY_STANDARD = java.util.Collections.unmodifiableList(
             java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_PUSH, RECHT_WEB, RECHT_ROUTE));

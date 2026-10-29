@@ -42,6 +42,23 @@ public final class Ladeplan {
         return d;
     }
 
+    private static volatile AbfahrtKlima abfahrtKlima;
+
+    /** 0.1.28 (P6): Klima zur Abfahrt (eigener Takt, unabhängig vom Lade-Modus). */
+    public static AbfahrtKlima abfahrtKlima() {
+        AbfahrtKlima a = abfahrtKlima;
+        if (a == null) {
+            synchronized (Ladeplan.class) {
+                a = abfahrtKlima;
+                if (a == null) {
+                    a = new AbfahrtKlima(new File(DaemonStorage.path("abfahrt_klima.json")));
+                    abfahrtKlima = a;
+                }
+            }
+        }
+        return a;
+    }
+
     /** Letzter Zustand des Ladeplans für HA (ohne Abruf); null, solange noch nichts bekannt ist. */
     public static JSONObject schnappschuss() {
         try {
@@ -80,6 +97,21 @@ public final class Ladeplan {
                 logger.warn("Takt: " + t.getMessage());
             }
         }, 90, 60, java.util.concurrent.TimeUnit.SECONDS);
+        // 0.1.28 (P6): Klima zur Abfahrt – Standard aus; ohne Einstellung kein Befehl, kein Abruf
+        ex.scheduleWithFixedDelay(() -> {
+            try {
+                LadeplanDienst d = dienst();
+                JSONObject s = d.einstellungen();
+                JSONObject v = s.optJSONObject("vorklima");
+                if (v == null || !v.optBoolean("an")) {
+                    abfahrtKlima().takt(s, ZoneId.systemDefault(), "");
+                    return;
+                }
+                abfahrtKlima().takt(s, ZoneId.systemDefault(), d.feiertagsLand());
+            } catch (Throwable t) {
+                logger.warn("Abfahrt-Klima: " + t.getMessage());
+            }
+        }, 100, 60, java.util.concurrent.TimeUnit.SECONDS);
     }
 
     private static volatile BoersenPreise boerse;

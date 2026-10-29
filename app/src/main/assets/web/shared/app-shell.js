@@ -407,6 +407,8 @@
             { href: 'orte.html',            label: 'Orte',               i18n: 'shell.page_orte' },
             { href: 'network.html',         label: 'Netz',               i18n: 'shell.page_network' },
             { href: 'wireguard.html',       label: 'WireGuard',          i18n: 'shell.page_wireguard', hidden: true },
+            // 0.1.28 (Koordination): alle Benachrichtigungen auf einer Seite (Handy + Telegram je Thema)
+            { href: 'meldungen.html',       label: 'Benachrichtigungen', i18n: 'shell.page_benachrichtigungen' },
             { href: 'telegram.html',        label: 'Telegram',           i18n: 'nav.telegram' },
             { href: 'mqtt.html',            label: 'MQTT',               i18n: 'nav.mqtt' },
             // Fremde Anbindung (Koordination 0.1.8): nicht mehr unter Fahren, der eigene Routenplaner ersetzt sie.

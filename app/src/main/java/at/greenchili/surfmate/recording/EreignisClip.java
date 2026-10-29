@@ -33,6 +33,11 @@ public final class EreignisClip {
     public static final String TELEGRAM = "ereignisTelegram";
     public static final int VORHER_S = 20;
     public static final int NACHHER_S = 20;
+    /**
+     * Reserve im Ring über 20 s + 20 s hinaus. Am Auto (0.1.27) hielt der Ring bei 40 s nur
+     * ~38 s, weil er nach Bytes bemessen wird und die echte Bitrate schwankt (~8 MB RAM mehr).
+     */
+    public static final int RING_RESERVE_S = 4;
     public static final String PRAEFIX = "ereignis_";
     public static final String UNTERORDNER = "ereignisse";
     public static final long GRENZE_BYTES = 2L * 1024 * 1024 * 1024;
@@ -78,7 +83,7 @@ public final class EreignisClip {
 
     /** Ringgröße, die der Ereignis-Clip braucht (0 = aus). */
     public static int ringSekunden() {
-        return aktiv() ? VORHER_S + NACHHER_S : 0;
+        return aktiv() ? VORHER_S + NACHHER_S + RING_RESERVE_S : 0;
     }
 
     // ---------------------------------------------------------------- Dateien

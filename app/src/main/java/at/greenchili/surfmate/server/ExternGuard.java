@@ -41,6 +41,7 @@ public final class ExternGuard {
             "/api/trips",
             "/api/trips/summary",
             "/api/trips/range",       // 0.1.20 Handy-App: Reichweiten-Schätzung, keine Koordinaten
+            "/api/trips/datei",       // 0.1.28 P9: Fahrtenbuch als Datei (CSV/Druck), keine Orte – geht nur ans Gerät
             "/api/wallbox/status",    // 0.1.20 Handy-App/Cockpit: Wallbox-Zustand, NUR lesen (Steuern bleibt gesperrt)
             "/api/planer/identitaet",
             "/api/einstellungen",
@@ -98,7 +99,14 @@ public final class ExternGuard {
             "/api/handy/v1/push/aus",
             "/api/handy/v1/bruecke",   // 0.1.20 Panoptes-Brücke: Handy-Schlüssel + Zugang (BRUECKE_VERTRAG §2.4)
             "/api/handy/v1/bruecke/aus",
-            "/api/handy/v1/websitzung"   // 0.1.20 Weboberfläche in der Handy-App (HANDY_WEB_SITZUNG_VERTRAG)
+            "/api/handy/v1/websitzung",   // 0.1.20 Weboberfläche in der Handy-App (HANDY_WEB_SITZUNG_VERTRAG)
+            "/api/handy/v1/clips/behalten"   // 0.1.28 P5: im Auto behalten / Frist (Recht „kamera“ prüft der Handler)
+    )));
+
+    /** 0.1.28 P5: Lesepfade unter /api/handy/v1 nur für {@code handy} (Clip-Liste; Recht „kamera“ prüft der Handler). */
+    static final Set<String> HANDY_LESEN = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "/api/handy/v1/update",
+            "/api/handy/v1/clips"
     )));
 
     /** true, wenn die Anfrage eines gekoppelten Geräts abgelehnt werden muss. */
@@ -138,8 +146,8 @@ public final class ExternGuard {
         if (q >= 0) p = p.substring(0, q);
         if (p.length() > 1 && p.endsWith("/")) p = p.substring(0, p.length() - 1);
         if (p.contains("..") || p.contains("//")) return false;
-        // 0.1.26.1: Update-Stand lesen (HANDY_API_VERTRAG §8), einziger GET unter /api/handy/v1
-        if ("GET".equals(method)) return "/api/handy/v1/update".equals(p);
+        // 0.1.26.1: Update-Stand lesen (HANDY_API_VERTRAG §8); 0.1.28: Clip-Liste (CLIP_VERTRAG_0128)
+        if ("GET".equals(method)) return HANDY_LESEN.contains(p);
         return "POST".equals(method) && HANDY_SCHREIBEN.contains(p);
     }
 

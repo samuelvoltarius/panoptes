@@ -318,8 +318,22 @@ public final class ScreenDeterrent {
      * GL frame thread enters here on every confirmed motion. Must be cheap:
      * volatile reads + atomic CAS only. NO I/O, NO locks, NO allocations.
      * The hot cache is kept fresh by cacheScheduler on a separate thread.
+     * Ohne Personen-Wissen (Erschütterung, Weiterlauf) = wie eine Auslösung ohne Person.
      */
     public void onMotionDetected() {
+        zeige(regel.laufend() && regel.sitzungMitPerson(), null);
+    }
+
+    /** 0.1.28: Drosselung der Logzeile „Abschreckung unterdrückt“ (höchstens alle 10 s). */
+    private volatile long letzteUnterdrueckungLog = Long.MIN_VALUE / 2;
+    static final long UNTERDRUECKT_LOG_MS = 10_000L;
+
+    /**
+     * 0.1.28 (ABSCHRECKUNG_TABELLE_20261029): Anzeige mit Wissen, ob eine Person beteiligt ist.
+     * {@code grund} = „Person“, „Nahzone“, „Aufnahme“ … für die Logzeile; null = Weiterlauf ohne Logzeile.
+     * Eine Person durchbricht eine Ruhe aus einer Sitzung ohne Person (vorbeifahrendes Auto).
+     */
+    public void zeige(boolean person, String grund) {
         if (!hotCacheEnabled) return;
         // Camping „bewohnt“: nie Abschreckung (volatile Lesen, keine I/O)
         if (at.greenchili.surfmate.camping.Camping.ohneAbschreckung()) return;
@@ -341,13 +355,19 @@ public final class ScreenDeterrent {
 
         long nowElapsed = SystemClock.elapsedRealtime();
         boolean laufend = regel.laufend();
+        if (laufend && person) regel.personDazu(nowElapsed);   // erst Auto, dann Mensch: neuer Deckel
         if (laufend && !regel.darfVerlaengern(nowElapsed)) {
             // Sitzung hat ihren Deckel erreicht: nicht verlängern. Läuft nichts mehr, beginnt die Ruhezeit.
             if (!inFlight.get()) regel.sitzungEndet(nowElapsed);
             return;
         }
-        if (!laufend && !regel.darfBeginnen(nowElapsed)) {
-            return;   // Ruhegrenze: Display bleibt nach der letzten Anzeige eine Weile aus
+        if (!laufend && !regel.darfBeginnen(nowElapsed, person)) {
+            // Ruhegrenze: Display bleibt nach der letzten Anzeige eine Weile aus
+            if (grund != null && nowElapsed - letzteUnterdrueckungLog >= UNTERDRUECKT_LOG_MS) {
+                letzteUnterdrueckungLog = nowElapsed;
+                logger.info(unterdruecktZeile(grund, person, regel.ruheVonPerson(), regel.ruheRestMs(nowElapsed)));
+            }
+            return;
         }
         long durationMs = hotCacheDurationSec * 1000L;
         long newDeadline = Math.min(nowElapsed + durationMs,
@@ -360,7 +380,11 @@ public final class ScreenDeterrent {
         }
 
         if (!inFlight.compareAndSet(false, true)) return;
-        if (!laufend) regel.sitzungBeginnt(nowElapsed);
+        if (!laufend) {
+            regel.sitzungBeginnt(nowElapsed, person);
+            logger.info("Abschreckung gezeigt: " + (grund != null ? grund : "Weiterlauf")
+                    + (person ? " (Person)" : " (ohne Person)") + ", " + hotCacheDurationSec + " s");
+        }
 
         restorePanelAfterSession = false;
         cancelled.set(false);
@@ -380,6 +404,12 @@ public final class ScreenDeterrent {
                 cleanup();
             }
         });
+    }
+
+    /** Logzeile „Abschreckung unterdrückt: Grund, noch x s“ (rein, testbar). */
+    static String unterdruecktZeile(String grund, boolean person, boolean ruheVonPerson, long restMs) {
+        return "Abschreckung unterdrückt: Ruhezeit nach Anzeige " + (ruheVonPerson ? "mit Person" : "ohne Person")
+                + ", noch " + ((restMs + 999) / 1000) + " s (" + grund + (person ? ", Person" : ", ohne Person") + ")";
     }
 
     private void cleanup() {

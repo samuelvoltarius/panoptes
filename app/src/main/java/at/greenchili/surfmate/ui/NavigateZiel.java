@@ -13,6 +13,21 @@ public final class NavigateZiel {
             "trips", "charging", "roadsense", "recordings", "parking", "live", "vehicle",
             "dashboard", "assistant", "waechter", "navi", "system"};
 
+    /** 0.1.28 Rückkehr-Karte: Ziel „eine Wächter-Aufnahme abspielen“, Kennung im Extra {@link #EXTRA_AUFNAHME}. */
+    public static final String ZIEL_AUFNAHME = "aufnahme";
+    public static final String EXTRA_AUFNAHME = "aufnahme_id";
+
+    /** Aufnahme-Kennung bzw. Dateiname: nur harmlose Zeichen (kommt in eine URL). */
+    public static boolean aufnahmeGueltig(String id) {
+        return id != null && id.matches("[A-Za-z0-9_.-]{1,120}");
+    }
+
+    /** Aufnahmen-Seite, die genau diese Wächter-Aufnahme sofort abspielt ({@code events.js}: {@code ?id=}). */
+    public static String aufnahmePfad(String id) {
+        if (!aufnahmeGueltig(id)) return "/events?filter=sentry";
+        return "/events?filter=sentry&id=" + id;
+    }
+
     /** Web-Pfad für ein Ziel, oder null (unbekannt → ignorieren, vorwärts/rückwärts verträglich). */
     public static String pfad(String ziel) {
         if (ziel == null) return null;

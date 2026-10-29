@@ -148,6 +148,8 @@ data class EinrichtungStand(
 object Antworten {
     val WAECHTER = setOf("shock", "ai_everywhere", "ai_private", "aus")
     val BETRIEB = setOf("immer", "fahrt")
+    /** 0.1.28 P10: „Wächter stoppt …“ (Werte im Kern: EinrichtungApiHandler.STOPP). */
+    val STOPP = setOf("frueh", "normal", "lang")
     val KARTE = setOf("community", "osm", "keine")
     val UPDATE_MODUS = setOf("melden", "automatisch")
 
@@ -161,8 +163,13 @@ object Antworten {
             "waechter" -> {
                 if (a.optString("modus", "") !in WAECHTER) f.add("modus")
                 if (!a.has("ton") || a.isNull("ton")) f.add("ton")
+                // 0.1.28 P10: Ereignis-Clip ja/nein, ohne Vorauswahl
+                if (!a.has("ereignisClip") || a.isNull("ereignisClip")) f.add("ereignisClip")
             }
-            "betrieb" -> if (a.optString("modus", "") !in BETRIEB) f.add("modus")
+            "betrieb" -> {
+                if (a.optString("modus", "") !in BETRIEB) f.add("modus")
+                else if (a.optString("modus") == "immer" && a.optString("stopp", "") !in STOPP) f.add("stopp")
+            }
             "karte" -> if (a.optString("quelle", "") !in KARTE) f.add("quelle")
             "updates" -> {
                 if (!a.has("pruefen") || a.isNull("pruefen")) f.add("pruefen")

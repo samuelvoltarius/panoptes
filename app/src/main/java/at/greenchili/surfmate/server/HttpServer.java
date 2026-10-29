@@ -851,6 +851,9 @@ public class HttpServer {
                 if (!serveStaticFile(out, "local/telegram.html")) {
                     HttpResponse.sendError(out, 404, "telegram.html not found");
                 }
+            } else if (path.equals("/meldungen.html")) {
+                // 0.1.28 P4 (Kern A): alle Meldungen auf einer Seite; Daten aus /api/notifications/themen.
+                if (!serveStaticFile(out, "local/meldungen.html")) HttpResponse.sendError(out, 404, "meldungen.html not found");
             } else if (path.equals("/byd-cloud.html") || path.equals("/byd-cloud")) {
                 if (!serveStaticFile(out, "local/byd-cloud.html")) {
                     HttpResponse.sendError(out, 404, "byd-cloud.html not found");
@@ -1215,6 +1218,11 @@ public class HttpServer {
             return TelegramApiHandler.handle(method, path, body, out);
         }
         
+        // 0.1.28 P9 Fahrtenbuch als Datei (CSV / Druckansicht), entsteht im Auto
+        if (path.startsWith(at.greenchili.surfmate.trips.FahrtenbuchDatei.PFAD)
+                && at.greenchili.surfmate.trips.FahrtenbuchDatei.handle(method, path, out,
+                        at.greenchili.surfmate.trips.FahrtenbuchDatei.quelle(CameraDaemon.getTripAnalyticsManager()),
+                        java.time.ZoneId.systemDefault())) return true;
         // Trip Analytics API
         if (path.startsWith("/api/trips")) {
             at.greenchili.surfmate.trips.TripAnalyticsManager tam = CameraDaemon.getTripAnalyticsManager();
@@ -1425,6 +1433,9 @@ public class HttpServer {
         // 0.1.20 Panoptes-Brücke: Opt-in-Schalter und Status (nur Login/lokal)
         if (path.startsWith("/api/bruecke") && BrueckeApiHandler.handle(method, path, body, out)) return true;
         // 0.1.18 Handy-Rechte (HANDY_API_VERTRAG): nur Handy-Kopplungen, Befehle über den VehicleCommandRouter
+        // 0.1.28 P5 Clips am Handy (CLIP_VERTRAG_0128): Liste, Behalten, Protokoll; Ereignis-Clips nur über die Brücke
+        if (path.startsWith(HandyClipsApiHandler.PFAD)
+                && HandyClipsApiHandler.handle(method, path, body, out, AuthMiddleware.requestKopplungsId())) return true;
         if (path.startsWith("/api/handy/v1/")) {
             return HandyApiHandler.handle(method, path, body, out, AuthMiddleware.requestKopplungsId());
         }

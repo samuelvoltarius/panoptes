@@ -4441,6 +4441,8 @@ public class HardwareEventRecorderGpu {
             H264ByteRingBuffer ring = preRecordBuffer;
             videoFormat = savedFormat;
             if (ring == null || videoFormat == null || encoder == null) {
+                logger.warn("Manual clip refused: ring=" + (ring != null)
+                        + " format=" + (videoFormat != null) + " encoder=" + (encoder != null));
                 if (reservationAcquiredHere) manualClipExportInProgress = false;
                 return false;
             }

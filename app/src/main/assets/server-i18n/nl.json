@@ -356,13 +356,27 @@
       "gewohnheit_probe": {
         "label": "Gewoonten: proefrun",
         "note": "Een geleerde regel in proefrun meldt alleen wat hij nu zou hebben gedaan – hij schakelt nog niets."
+      },
+      "ereignis_gesichert": {
+        "label": "Gebeurtenis opgeslagen (hard remmen of stoot)",
+        "note": "Er is een video van de gebeurtenis in de auto opgeslagen. Je krijgt alleen de tijd – geen video, geen plaats. Eigen onderwerp, los van de alarmen."
+      },
+      "vehicle_health_battery12v": {
+        "label": "12 V-accu wordt zwak",
+        "note": "Waarschuwt voordat de 12 V-accu te zwak is om te starten. Hooguit één keer per dag."
       }
     },
     "cloud_uebergabe_titel": "‘{0}’ wil de BYD-cloud overdragen",
     "cloud_uebergabe_text": "Controlegetal {0}",
     "gewohnheit_probelauf": "Proefrun: nu zou ik je gewoonte hebben uitgevoerd. Klopt dat?",
     "weiteres_geraet_titel": "Cockpit „{0}” wil een telefoon verbinden",
-    "weiteres_geraet_text": "Controlegetal {0}"
+    "weiteres_geraet_text": "Controlegetal {0}",
+    "ereignis_title": "Gebeurtenis om {0} opgeslagen",
+    "ereignis_body": "Hard remmen of een stoot. De video staat alleen in de auto. Bewaren?",
+    "battery12v_vor_title": "12 V-accu wordt zwakker: {0} V",
+    "battery12v_vor_body": "Als hij verder zakt, start de auto misschien niet. Ga snel een stuk rijden of sluit hem aan.",
+    "battery12v_niedrig_title": "12 V-accu zeer zwak: {0} V",
+    "battery12v_niedrig_body": "De auto start straks misschien niet meer. Rijd vandaag een stuk of sluit hem aan."
   },
   "parking": {
     "notify": {
@@ -512,7 +526,8 @@
     "alerts": {
       "charging_full": "🔌 *Laden klaar*",
       "charging_fault": "🚨 *Er ging iets mis tijdens het laden*",
-      "battery12v_low": "🪫 *12 V-accu laag: {0} V*\nAls hij verder zakt, start de auto misschien niet. Ga snel een stuk rijden of sluit hem aan."
+      "battery12v_low": "🪫 *12 V-accu laag: {0} V*\nAls hij verder zakt, start de auto misschien niet. Ga snel een stuk rijden of sluit hem aan.",
+      "battery12v_sehr_niedrig": "🪫 *12 V-accu zeer zwak: {0} V*\nDe auto start straks misschien niet meer. Rijd vandaag een stuk of sluit hem aan."
     },
     "charge": {
       "title": "🔋 *Laden*",
@@ -873,6 +888,9 @@
       "anfrage": "📱 *EV-Cockpit „{0}” wil een telefoon verbinden*\nControlegetal: *{1}*\n\nKomt het getal overeen met dat in de Cockpit? Als je het toestaat, toont de Cockpit een code om te scannen. Het verzoek is 5 minuten geldig.",
       "erlaubt": "✅ Toegestaan – de Cockpit toont nu de code voor de telefoon.",
       "abgelehnt": "❌ Geweigerd."
+    },
+    "ereignis": {
+      "gesichert": "Panoptes: gebeurtenis om {0} opgeslagen (alleen in de auto)."
     }
   },
   "vehicle_control": {
@@ -2251,8 +2269,8 @@
     "recording": {
       "ereignisClip": {
         "title": "Gebeurtenissen automatisch opslaan",
-        "help": "Na hard remmen of een stoot slaat Panoptes 20 seconden ervoor en erna op. Verder wordt niets opgeslagen. Clips blijven alleen in de auto of op de USB-stick. Werkt vanaf de volgende rit.",
-        "helpCH": "In Zwitserland standaard uit, omdat de regels voor autocamera’s daar strenger zijn. Je kunt het zelf aanzetten."
+        "help": "Na hard remmen of een stoot slaat Panoptes 20 seconden ervoor en erna op. Verder wordt niets opgeslagen. Clips blijven alleen in de auto of op de USB-stick. Werkt vanaf de volgende rit. Bij langzaam manoeuvreren aan het begin van een rit slaat Panoptes geen clip op.",
+        "helpCH": "In Zwitserland standaard uit, omdat de regels voor autocamera’s daar strenger zijn. Je kunt het zelf aanzetten. Bij langzaam manoeuvreren aan het begin van een rit slaat Panoptes geen clip op."
       },
       "ereignisTelegram": {
         "title": "Telegram-bericht bij gebeurtenis",
@@ -2419,5 +2437,42 @@
   },
   "telegram_login": {
     "geraet_name": "Browser (Telegram)"
+  },
+  "fahrtenbuch_datei": {
+    "titel": "Rittenlogboek {0}",
+    "hinweis": "Gemaakt in de auto. Het bestand blijft bij jou. Zonder plaatsen.",
+    "drucken": "Afdrukken / PDF",
+    "leer": "Geen ritten in deze maand.",
+    "summe": "Totaal: {0} ritten",
+    "spalte": {
+      "datum": "Datum",
+      "start": "Start",
+      "ende": "Einde",
+      "km": "km",
+      "dauer": "Minuten",
+      "kwh": "kWh",
+      "verbrauch": "kWh/100 km",
+      "soc_start": "Accu start %",
+      "soc_ende": "Accu einde %",
+      "kosten": "Kosten",
+      "waehrung": "Valuta",
+      "temp": "Buiten °C"
+    }
+  },
+  "rueckkehr": {
+    "titel_aufnahmen": "Terwijl je weg was",
+    "eine_aufnahme": "1 opname",
+    "n_aufnahmen": "{0} opnames",
+    "titel_nichts": "Bewaker stond aan – er is niets gebeurd",
+    "titel_nicht_scharf": "Bewaker stond niet aan",
+    "ansehen": "Bekijken",
+    "schliessen": "Sluiten",
+    "grund_aus": "De bewaker staat uit.",
+    "grund_sicherer_ort": "Veilige plek – de bewaker pauzeert hier.",
+    "grund_zeit": "Buiten de ingestelde bewakingstijden.",
+    "grund_nur_fahrt": "De bewaker werkt alleen als de auto aan staat.",
+    "grund_akku": "Gestopt om de accu te sparen.",
+    "grund_v12": "Gestopt om de kleine 12V-accu te sparen.",
+    "grund_lange_geparkt": "Gestopt na lang parkeren, om stroom te sparen."
   }
 }

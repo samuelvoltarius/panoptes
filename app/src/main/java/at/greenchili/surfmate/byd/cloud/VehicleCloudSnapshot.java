@@ -69,6 +69,12 @@ public final class VehicleCloudSnapshot {
     /** Traction-battery preconditioning: 0=off, >0=heating, SENTINEL when not reported. */
     public final int batteryHeatState;
 
+    /**
+     * 0.1.28 (P3): Klima-Laufzustand {@code airRunState} roh, SENTINEL (-1) wenn nicht gemeldet. Welche Werte
+     * „läuft“ bzw. „aus“ heißen, ist ungemessen (PLAN_0128 §4) – Auswertung nur über {@code KlimaLaeuft}.
+     */
+    public final int airRunState;
+
     // ── Temperature (mergeable) ─────────────────────────────────────────
     public final double insideTempC;         // tempInCar
     public final double outsideTempC;        // tempOutCar
@@ -120,6 +126,7 @@ public final class VehicleCloudSnapshot {
         this.copilotSeatVentilationState = b.copilotSeatVentilationState;
         this.steeringWheelHeatState = b.steeringWheelHeatState;
         this.batteryHeatState = b.batteryHeatState;
+        this.airRunState = b.airRunState;
         this.insideTempC = b.insideTempC;
         this.outsideTempC = b.outsideTempC;
         this.pm25Inside = b.pm25Inside;
@@ -368,6 +375,7 @@ public final class VehicleCloudSnapshot {
         b.steeringWheelHeatState = cloudStatusIntOrDefault(WHEEL_HEAT_UNKNOWN, vi, hvac,
                 "steeringWheelHeatState", "stearingWheelHeatState");
         b.batteryHeatState = cloudStatusInt(vi, hvac, "batteryHeatState");
+        b.airRunState = cloudStatusInt(vi, hvac, "airRunState");
 
         // Temperature — from vehicleInfo or HVAC
         b.insideTempC = vi.optDouble("tempInCar", SENTINEL_TEMP);
@@ -495,6 +503,7 @@ public final class VehicleCloudSnapshot {
         int copilotSeatVentilationState = SENTINEL_INT;
         int steeringWheelHeatState = WHEEL_HEAT_UNKNOWN;
         int batteryHeatState = SENTINEL_INT;
+        int airRunState = SENTINEL_INT;
 
         double insideTempC = SENTINEL_TEMP;
         double outsideTempC = Double.NaN;

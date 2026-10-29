@@ -14,7 +14,8 @@ package at.greenchili.surfmate.byd;
  *   <li>lokal (SDK, bisher „°C“ 17–33): SDK = Stufe + 16 – belegt (Foto 23.10.)</li>
  *   <li>Cloud (OPENAIR/BOOKINGAIR {@code mainSettingTemp}): Roh = Stufe – <b>Annahme</b> (BYD-App zeigt den Rohwert
  *       als Stufe: Cloud-„27“ alt = Roh 13 = Anzeige 13). Bis 0.1.25 galt Roh = °C − 14, das war um 2 zu warm.
- *       Messung nach 0.1.26 mit Stufe 10 (Koordination); bis dahin zeigt der Cloud-Weg nur {@link #textOhneStufe}.</li>
+ *       Messung nach PLAN_0128 §4 (Tabelle {@link #CLOUD_MESSUNG}); bis dahin zeigt der Cloud-Weg nur
+ *       {@link #textOhneStufe} – über {@link #anzeigeCloud} (0.1.28: vorher wurde es nirgends verwendet).</li>
  * </ul>
  * Darum nie „°C“ für diesen Wert. Die echte Innen-/Außentemperatur bleibt in °C.
  */
@@ -213,6 +214,55 @@ public final class KlimaStufe {
         if (a == null) return "unknown";
         if (NEUTRAL.equals(a)) return "Neutral";
         return (HEIZEN.equals(a) ? "Heating" : "Cooling") + " level " + textStufe(stufe);
+    }
+
+    // ------------------------------------------------------------------ Cloud-Skala (P2, 0.1.28)
+
+    /**
+     * Messwerte Cloud-Roh → angezeigte Display-Stufe (PLAN_0128 §4, Dolphin Surf). Jede Zeile {@code {roh, stufe}}
+     * stammt aus einem echten Lauf (Auto aus, Alfreds GO, Deploy (2)) und bekommt einen Kommentar mit Datum.
+     * <b>Leer = ungemessen.</b> Bis dahin zeigt der Cloud-Weg nur „Heizen“/„Kühlen“/„Neutral“ ({@link #anzeigeCloud}).
+     */
+    static final int[][] CLOUD_MESSUNG = {
+            // noch keine Messung (Stand 29.10.2026)
+    };
+    /** So viele übereinstimmende Läufe braucht es, bis die Annahme „Roh = Stufe“ als belegt gilt. */
+    static final int CLOUD_MESSUNG_MIN = 2;
+
+    /**
+     * Ist die Cloud-Skala belegt? Erst wenn mindestens {@link #CLOUD_MESSUNG_MIN} Messungen vorliegen und alle zur
+     * Annahme Roh = Stufe passen. Passt eine nicht, bleibt sie unbelegt (dann muss die Umrechnung geändert werden).
+     */
+    public static boolean cloudSkalaBelegt() {
+        return skalaBelegt(CLOUD_MESSUNG);
+    }
+
+    static boolean skalaBelegt(int[][] messung) {
+        if (messung == null || messung.length < CLOUD_MESSUNG_MIN) return false;
+        for (int[] m : messung) {
+            if (m == null || m.length != 2 || !gueltig(m[1]) || zuCloudRoh(m[1]) != m[0]) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Anzeige für einen Sollwert, der über die Cloud ging oder aus der Cloud kommt. Stufen-Modell: solange
+     * {@link #cloudSkalaBelegt()} nicht gilt, nur {@link #textOhneStufe} („Heizen“), danach „Heizen Stufe 2“.
+     * Andere Modelle wie {@link #anzeige}.
+     */
+    public static String anzeigeCloud(double sdk) {
+        if (!stufenModell()) return anzeige(sdk);
+        return cloudSkalaBelegt() ? textAusSdk(sdk) : textOhneStufe(ausSdk(sdk));
+    }
+
+    /** Wie {@link #anzeigeCloud}, englisch (KI-Texte). */
+    public static String anzeigeCloudEn(double sdk) {
+        if (!stufenModell()) return anzeigeEn(sdk);
+        int s = ausSdk(sdk);
+        if (cloudSkalaBelegt()) return textEn(s);
+        String a = art(s);
+        if (a == null) return "unknown";
+        return HEIZEN.equals(a) ? "Heating" : KUEHLEN.equals(a) ? "Cooling" : "Neutral";
     }
 
     /** Bequem: Text direkt aus einem SDK-Wert (17–33). */

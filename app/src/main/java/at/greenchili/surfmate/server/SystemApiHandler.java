@@ -342,7 +342,9 @@ public class SystemApiHandler {
             // 0.1.26 Klima-Sollwert als Stufe 1–17: Cockpit/Handy senden „stufe“ nur, wenn sie das hier sehen.
             // anzeige: „stufe“ nur bei belegten Modellen (Dolphin Surf), sonst „grad“ wie bisher
             c.put("klima", new JSONObject().put("stufe", 1)
-                    .put("anzeige", at.greenchili.surfmate.byd.KlimaStufe.stufenModell() ? "stufe" : "grad"));
+                    .put("anzeige", at.greenchili.surfmate.byd.KlimaStufe.stufenModell() ? "stufe" : "grad")
+                    // 0.1.28 (P2): Cloud-Skala gemessen? Bis dahin zeigt der Cloud-Weg nur „Heizen“/„Kühlen“
+                    .put("cloudSkala", at.greenchili.surfmate.byd.KlimaStufe.cloudSkalaBelegt() ? "gemessen" : "annahme"));
             // 0.1.26.1 Update von außen (HANDY_API_VERTRAG §8): GET /api/handy/v1/update + Aktion update_starten
             c.put("update", new JSONObject().put("fern", 1));
         } catch (Exception ignored) { }

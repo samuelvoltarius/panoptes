@@ -21,6 +21,7 @@ import java.util.Map;
  * Endpoints:
  * <ul>
  *   <li>GET  /api/notifications/categories — registry JSON + VAPID public key</li>
+ *   <li>GET/POST /api/notifications/themen — 0.1.28 P4: alle Meldungen auf einer Seite (Handy + Telegram je Thema)</li>
  *   <li>POST /api/push/subscribe           — register a phone subscription</li>
  *   <li>POST /api/push/unsubscribe         — remove this device's subscription</li>
  *   <li>GET  /api/push/subscriptions       — list registered devices for settings UI</li>
@@ -118,6 +119,12 @@ public final class NotificationApiHandler {
             return true;
         }
 
+        if (logPath.equals("/api/notifications/themen")) {
+            if (method.equals("GET")) return getThemen(out);
+            if (method.equals("POST")) return postThemen(body, out);
+            HttpResponse.sendError(out, 405, "method not allowed");
+            return true;
+        }
         if (path.equals("/api/notifications/categories") && method.equals("GET")) {
             return getCategories(out);
         }
@@ -166,6 +173,120 @@ public final class NotificationApiHandler {
             } catch (Exception ignored) {
             }
         }
+    }
+
+    // ==================== 0.1.28 P4: ALLE MELDUNGEN AUF EINER SEITE ====================
+
+    /** Telegram-Abschnitt (mit dessen Migrationen) in einer Kopie der Konfiguration. */
+    private static JSONObject konfigFuerThemen() {
+        JSONObject root;
+        try {
+            at.greenchili.surfmate.config.UnifiedConfigManager.forceReload();
+            root = new JSONObject(at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig().toString());
+        } catch (Throwable t) {
+            root = new JSONObject();
+        }
+        try {
+            root.put("telegram", new JSONObject(
+                    at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.load().toString()));
+        } catch (Throwable ignored) {
+        }
+        return root;
+    }
+
+    private static boolean getThemen(OutputStream out) throws Exception {
+        String reg = registry.rawJson();
+        java.util.List<java.util.Set<String>> stumm = new java.util.ArrayList<>();
+        for (PushSubscription s : subStore.all()) stumm.add(new java.util.HashSet<>(s.mutedCategories));
+        boolean tg = at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.getOwnerChatId() > 0;
+        JSONObject r = new JSONObject();
+        r.put("success", true);
+        r.put("geraete", stumm.size());
+        r.put("telegramVerbunden", tg);
+        r.put("ruhezeit", at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.getQuietHours());
+        r.put("themen", at.greenchili.surfmate.notifications.MeldungsThemen.sicht(
+                at.greenchili.surfmate.notifications.MeldungsThemen.aus(reg), konfigFuerThemen(),
+                at.greenchili.surfmate.notifications.MeldungsThemen.telegramStandards(reg), stumm, tg));
+        HttpResponse.sendJson(out, r.toString());
+        return true;
+    }
+
+    private static void themaFehler(OutputStream out, String grund) throws Exception {
+        HttpResponse.sendJson(out, 422, new JSONObject().put("success", false).put("error", grund).toString());
+    }
+
+    /**
+     * {thema, handy?: bool, telegram?: bool} oder {ruhezeit: {an, von "HH:MM", bis "HH:MM"}}. Handy gilt für alle
+     * angemeldeten Geräte; Telegram schreibt nur die Schlüssel des Themas. Ruhezeit: Telegram und alle Geräte
+     * (Alarme kommen weiter). Antwort = neue Sicht.
+     */
+    private static boolean postThemen(String body, OutputStream out) throws Exception {
+        JSONObject j;
+        try {
+            j = new JSONObject(body == null || body.isEmpty() ? "{}" : body);
+        } catch (Exception e) {
+            themaFehler(out, "json");
+            return true;
+        }
+        if (j.has("ruhezeit")) {
+            JSONObject q = j.optJSONObject("ruhezeit");
+            Object an = q == null ? null : q.opt("an");
+            int von = q == null ? -1 : at.greenchili.surfmate.notifications.MeldungsThemen.minuten(q.optString("von", null));
+            int bis = q == null ? -1 : at.greenchili.surfmate.notifications.MeldungsThemen.minuten(q.optString("bis", null));
+            if (!(an instanceof Boolean) || von < 0 || bis < 0) {
+                themaFehler(out, "ruhezeit");
+                return true;
+            }
+            boolean ein = (Boolean) an;
+            at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.setQuietHours(ein,
+                    q.getString("von"), q.getString("bis"));
+            for (PushSubscription s : subStore.all()) {
+                s.quietHours = ein ? new PushSubscription.QuietHours(von, bis, true) : null;
+                subStore.put(s);
+            }
+            return getThemen(out);
+        }
+        java.util.List<at.greenchili.surfmate.notifications.MeldungsThemen.Thema> themen =
+                at.greenchili.surfmate.notifications.MeldungsThemen.aus(registry.rawJson());
+        at.greenchili.surfmate.notifications.MeldungsThemen.Thema t =
+                at.greenchili.surfmate.notifications.MeldungsThemen.finde(themen, j.optString("thema", ""));
+        if (t == null) {
+            themaFehler(out, "thema");
+            return true;
+        }
+        Object handy = j.opt("handy");
+        Object telegram = j.opt("telegram");
+        if ((handy != null && !(handy instanceof Boolean)) || (telegram != null && !(telegram instanceof Boolean))
+                || (handy == null && telegram == null)) {
+            themaFehler(out, "wert");
+            return true;
+        }
+        if ((handy != null && t.push.isEmpty()) || (telegram != null && !t.hatTelegram())) {
+            themaFehler(out, "kanal");
+            return true;
+        }
+        if (handy != null) {
+            for (PushSubscription s : subStore.all()) {
+                if (at.greenchili.surfmate.notifications.MeldungsThemen.handySetzen(t, s.mutedCategories, (Boolean) handy)) {
+                    subStore.put(s);
+                }
+            }
+        }
+        if (telegram != null) {
+            for (Map.Entry<String, JSONObject> e
+                    : at.greenchili.surfmate.notifications.MeldungsThemen.telegramDelta(t, (Boolean) telegram).entrySet()) {
+                if ("telegram".equals(e.getKey())) {
+                    java.util.Iterator<String> it = e.getValue().keys();
+                    while (it.hasNext()) {
+                        String k = it.next();
+                        at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.setBoolean(k, e.getValue().getBoolean(k));
+                    }
+                } else {
+                    at.greenchili.surfmate.config.UnifiedConfigManager.updateSection(e.getKey(), e.getValue());
+                }
+            }
+        }
+        return getThemen(out);
     }
 
     // ==================== NOTIFICATION LOG ====================

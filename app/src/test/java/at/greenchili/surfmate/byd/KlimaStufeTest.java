@@ -112,4 +112,42 @@ public class KlimaStufeTest {
         assertEquals("Heizen Stufe 3", KlimaStufe.text(KlimaStufe.vorklimaStufe(3)));
         assertEquals("Kühlen Stufe 3", KlimaStufe.text(KlimaStufe.vorklimaStufe(30)));
     }
+
+    // ------------------------------------------------------------------ 0.1.28 P2 Cloud-Skala
+
+    @Test
+    public void cloudSkalaUngemessenZeigtOhneStufe() {
+        assertFalse("Messung PLAN_0128 §4 steht aus – CLOUD_MESSUNG bleibt leer, bis ein Lauf belegt ist",
+                KlimaStufe.cloudSkalaBelegt());
+        KlimaStufe.fuerTest(Boolean.TRUE);
+        try {
+            assertEquals("Heizen", KlimaStufe.anzeigeCloud(27));
+            assertEquals("Kühlen", KlimaStufe.anzeigeCloud(22));
+            assertEquals("Neutral", KlimaStufe.anzeigeCloud(25));
+            assertEquals("unbekannt", KlimaStufe.anzeigeCloud(40));
+            assertEquals("Heating", KlimaStufe.anzeigeCloudEn(27));
+            // lokal bleibt die Stufe (belegt per Foto)
+            assertEquals("Heizen Stufe 2", KlimaStufe.anzeige(27));
+        } finally {
+            KlimaStufe.fuerTest(null);
+        }
+        KlimaStufe.fuerTest(Boolean.FALSE);
+        try {
+            assertEquals("andere Modelle wie bisher in °C", "27 °C", KlimaStufe.anzeigeCloud(27));
+        } finally {
+            KlimaStufe.fuerTest(null);
+        }
+    }
+
+    @Test
+    public void jedeMessungMussZurUmrechnungPassen() {
+        // Wer CLOUD_MESSUNG füllt: jede Zeile {roh, angezeigte Stufe} muss Roh = Stufe sein, sonst Umrechnung ändern
+        for (int[] m : KlimaStufe.CLOUD_MESSUNG) {
+            assertEquals("Messung roh " + m[0], KlimaStufe.zuCloudRoh(m[1]), m[0]);
+        }
+        assertFalse("eine Messung reicht nicht", KlimaStufe.skalaBelegt(new int[][]{{10, 10}}));
+        assertTrue(KlimaStufe.skalaBelegt(new int[][]{{10, 10}, {6, 6}}));
+        assertFalse("Abweichung = nicht belegt", KlimaStufe.skalaBelegt(new int[][]{{10, 10}, {6, 8}}));
+        assertFalse(KlimaStufe.skalaBelegt(new int[][]{{10, 10}, {0, 0}}));
+    }
 }

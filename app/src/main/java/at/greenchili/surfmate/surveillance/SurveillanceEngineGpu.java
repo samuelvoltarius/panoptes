@@ -3518,6 +3518,14 @@ public class SurveillanceEngineGpu {
                         // NEAR-only latch — feeds the confirmed close-range
                         // walk-past fast-path (unchanged, deliberately strict).
                         if (proxNear.tier == DistanceEstimator.Tier.NEAR) {
+                            if (!peakNearDuringSequence) {
+                                // 0.1.28: Abschreckung schon beim Eintritt in die Nahzone, nicht erst beim
+                                // Aufnahmestart (~4 s später). ACC-Sperre/Ruhe prüft ScreenDeterrent selbst.
+                                try {
+                                    ScreenDeterrent.getInstance().zeige(personInSequenz(), "Nahzone");
+                                } catch (Throwable ignored) {
+                                }
+                            }
                             peakNearDuringSequence = true;
                         }
                         // Close-zone latch (NEAR *or* MID, i.e. not FAR) — feeds
@@ -4699,7 +4707,7 @@ public class SurveillanceEngineGpu {
                         // Each one independently honors its own enabled flag and cooldown.
                         try {
                             at.greenchili.surfmate.byd.cloud.BydCloudDeterrent.getInstance().onMotionDetected();
-                            ScreenDeterrent.getInstance().onMotionDetected();
+                            ScreenDeterrent.getInstance().zeige(personInSequenz(), "Aufnahme");
                             deterrentFiredTime = now;  // Track when deterrent was dispatched
                         } catch (Exception e) {
                             logger.debug("Deterrent dispatch failed: " + e.getMessage());
@@ -4717,7 +4725,7 @@ public class SurveillanceEngineGpu {
                     // Per-deterrent cooldowns prevent spamming.
                     try {
                         at.greenchili.surfmate.byd.cloud.BydCloudDeterrent.getInstance().onMotionDetected();
-                        ScreenDeterrent.getInstance().onMotionDetected();
+                        ScreenDeterrent.getInstance().zeige(personInSequenz(), null);
                         deterrentFiredTime = now;  // Track latest deterrent dispatch
                     } catch (Exception e) {
                         // Fail silently — never block surveillance
@@ -4892,7 +4900,7 @@ public class SurveillanceEngineGpu {
                         }
                         try {
                             at.greenchili.surfmate.byd.cloud.BydCloudDeterrent.getInstance().onMotionDetected();
-                            ScreenDeterrent.getInstance().onMotionDetected();
+                            ScreenDeterrent.getInstance().zeige(personInSequenz(), "Aufnahme");
                             deterrentFiredTime = now;
                         } catch (Exception e) {
                             logger.debug("Deterrent dispatch failed: " + e.getMessage());
@@ -6230,6 +6238,11 @@ public class SurveillanceEngineGpu {
                                     lastPersonConfirmationTimeMs = System.currentTimeMillis();
                                     lastPersonConfirmationElapsedMs =
                                             android.os.SystemClock.elapsedRealtime();
+                                    // 0.1.28: Abschreckung beim ersten Personentreffer, nicht erst beim Aufnahmestart
+                                    try {
+                                        ScreenDeterrent.getInstance().zeige(true, "Person");
+                                    } catch (Throwable ignored) {
+                                    }
                                     break;
                                 }
                             }
@@ -12819,6 +12832,12 @@ public class SurveillanceEngineGpu {
      * 0.1.25 „Person kommt zum Auto“: in dieser Sequenz hat YOLO eine PERSON bestätigt (nach dem Sequenzbeginn),
      * die Nähe erreichte NEAR und es ist mindestens eine Annäherung (MEDIUM). Rein, testbar.
      */
+    /** 0.1.28: Hat die laufende Sequenz bzw. das Ereignis eine Person gesehen? (Abschreckung: Ruhe-Herkunft) */
+    private boolean personInSequenz() {
+        return eventEverSawPerson
+                || (firstMotionElapsedMs > 0 && lastPersonConfirmationElapsedMs >= firstMotionElapsedMs);
+    }
+
     static boolean personKommtZumAuto(boolean sequenzLaeuft, long letztePersonElapsedMs, long sequenzBeginnElapsedMs,
                                       boolean nahErreicht, boolean annaeherung) {
         return PERSON_APPROACH_TRIGGER_MS > 0 && sequenzLaeuft && letztePersonElapsedMs > 0

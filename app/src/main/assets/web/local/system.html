@@ -7,7 +7,7 @@
     <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
     <script src="../shared/theme.js?v=13"></script>
     <script src="../shared/kartenquelle.js?v=5"></script>
-    <script src="../shared/app-shell.js?v=pn26"></script>
+    <script src="../shared/app-shell.js?v=pn27"></script>
     <link rel="stylesheet" href="../shared/styles.css?v=pn11">
     <style>
         .sys-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -679,21 +679,23 @@
                     aufsperren: self.t('system.handy_wort_aufsperren', 'Aufsperren'), push: self.t('system.handy_wort_push', 'Mitteilungen'),
                     web: self.t('system.handy_wort_web', 'Weboberfläche'), kamera: self.t('system.handy_wort_kamera', 'Kamera'),
                     wallbox: self.t('system.handy_wort_wallbox', 'Wallbox'), route: self.t('system.handy_wort_route', 'Route'),
-                    update: self.t('system.handy_wort_update', 'Update') };
+                    update: self.t('system.handy_wort_update', 'Update'),
+                    ereignisclip: self.t('system.handy_wort_ereignisclip', 'Unfall-Clips') };
                 var namen = { klima: self.t('system.handy_recht_klima', 'Klima'), zusperren: self.t('system.handy_recht_zusperren', 'Zusperren'),
                     aufsperren: self.t('system.handy_recht_aufsperren', 'Aufsperren (mit Fingerabdruck/Face ID)'), push: self.t('system.handy_recht_push', 'Benachrichtigungen'),
                     web: self.t('system.handy_recht_web', 'Weboberfläche in der App (ohne PIN, Kopplungen, Netz, Updates)'),
                     kamera: self.t('system.handy_recht_kamera', 'Kamerabilder und Aufnahmen unterwegs'),
                     wallbox: self.t('system.handy_recht_wallbox', 'Wallbox starten, stoppen, Ladestrom'),
                     route: self.t('system.handy_recht_route', 'Route ins Auto schicken (startet nichts von selbst)'),
-                    update: self.t('system.handy_recht_update', 'Panoptes aktualisieren (nur geparkt)') };
+                    update: self.t('system.handy_recht_update', 'Panoptes aktualisieren (nur geparkt)'),
+                    ereignisclip: self.t('system.handy_recht_ereignisclip', 'Unfall-Clips aufs Handy erlauben (nur auf Knopfdruck am Handy)') };
                 function schalter(k, an) {
                     var info = namen[k] !== wort[k] ? '<span class="pn-recht-info">' + self.esc(namen[k]) + '</span>' : '';
                     return '<label class="pn-recht"><span class="pn-recht-text"><span class="pn-recht-wort">' + self.esc(wort[k]) + '</span>' + info + '</span>'
                         + '<span class="toggle-switch"><input type="checkbox" data-handy-recht="' + k + '" data-id="' + self.esc(g.id) + '"'
                         + (an ? ' checked' : '') + ' aria-label="' + self.esc(wort[k]) + '"><span class="toggle-slider"></span></span></label>';
                 }
-                var alle = ['klima', 'zusperren', 'aufsperren', 'push', 'web', 'kamera', 'wallbox', 'route', 'update'];
+                var alle = ['klima', 'zusperren', 'aufsperren', 'push', 'web', 'kamera', 'wallbox', 'route', 'update', 'ereignisclip'];
                 var hat = alle.filter(function (k) { return r.indexOf(k) >= 0; });
                 var fehlt = alle.filter(function (k) { return r.indexOf(k) < 0; });
                 var html = '<div class="pn-rechte">';
@@ -733,6 +735,12 @@
                 // 0.1.25 Kamera übers Internet: eigene Rückfrage (Passanten), Standard aus
                 if (cb.getAttribute('data-handy-recht') === 'kamera' && cb.checked
                     && !window.confirm(self.t('system.handy_kamera_confirm', 'Kamerabilder zeigen auch Passanten. Dieses Handy darf dann unterwegs Live-Bild und Aufnahmen ansehen – nur für dich, nichts wird auf einem Server gespeichert oder weitergegeben. Einschalten?'))) {
+                    cb.checked = false;
+                    return;
+                }
+                // 0.1.28 Unfall-Clips aufs Handy: eigene Rückfrage, Standard aus
+                if (cb.getAttribute('data-handy-recht') === 'ereignisclip' && cb.checked
+                    && !window.confirm(self.t('system.handy_ereignisclip_confirm', 'Unfall-Clips können Beteiligte und Passanten zeigen. Dieses Handy darf dann einen Clip laden, wenn du dort auf „Aufs Handy laden“ tippst – nie von selbst, nie auf einen Server. Jedes Laden wird im Auto vermerkt. Einschalten?'))) {
                     cb.checked = false;
                     return;
                 }

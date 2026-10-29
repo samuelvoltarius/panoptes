@@ -78,7 +78,9 @@ public class TelegramNotifier {
      * TelegramBotDaemon.processIpcCommand.
      */
     public enum Category { CRITICAL, CONNECTIVITY, MOTION, VIDEO, PARKING,
-            CHARGING, BATTERY, GUARD_STOP, UPDATE, HEALTH, CAMPING }
+            CHARGING, BATTERY, GUARD_STOP, UPDATE, HEALTH, CAMPING,
+            /** 0.1.28 P1: Ereignis-Clip gesichert (Schalter recording.ereignisTelegram, nicht criticalAlerts). */
+            EREIGNIS }
 
     /**
      * Read the matching pref directly from the unified config so a toggle
@@ -107,6 +109,8 @@ public class TelegramNotifier {
                 case HEALTH:       return UnifiedTelegramConfig.isHealthAlerts();
                 case UPDATE:       return UnifiedTelegramConfig.isUpdateAlerts();
                 case CAMPING:      return UnifiedTelegramConfig.isCampingAlerts();
+                case EREIGNIS:     return at.greenchili.surfmate.recording.EreignisClip.telegram(
+                                           UnifiedConfigManager.loadConfig());
                 default:           return true;
             }
         } catch (Exception e) {
@@ -455,7 +459,7 @@ public class TelegramNotifier {
      * with status="skipped" when disabled.
      *
      * @param text     message body (Telegram-Markdown allowed)
-     * @param category one of "CRITICAL", "MOTION", "CONNECTIVITY", "VIDEO";
+     * @param category one of "CRITICAL", "MOTION", "CONNECTIVITY", "VIDEO", "EREIGNIS" (0.1.28) …;
      *                 unknown values fall back to CRITICAL
      */
     public static void sendMessage(String text, String category) {
@@ -475,7 +479,7 @@ public class TelegramNotifier {
         try { parsed = (category != null) ? Category.valueOf(category) : Category.CRITICAL; }
         catch (IllegalArgumentException iae) { parsed = Category.CRITICAL; }
         cat = parsed;
-        ExecutorService lane = (cat == Category.CRITICAL) ? criticalExecutor : executor;
+        ExecutorService lane = (cat == Category.CRITICAL || cat == Category.EREIGNIS) ? criticalExecutor : executor;
         lane.execute(() -> {
             try {
                 if (!isEnabled(cat)) {
@@ -492,7 +496,7 @@ public class TelegramNotifier {
                 // down (ACC ON); so are charging/12 V. MOTION/CONNECTIVITY/VIDEO
                 // ad-hoc text is not spooled — low-value-if-late or rotates.
                 sendIpc(cmd, /*spoolOnDaemonDown=*/cat == Category.CRITICAL
-                        || cat == Category.CHARGING || cat == Category.BATTERY);
+                        || cat == Category.CHARGING || cat == Category.BATTERY || cat == Category.EREIGNIS);
             } catch (Exception e) {
                 Log.e(TAG, "sendMessage IPC error", e);
             }
@@ -631,12 +635,21 @@ public class TelegramNotifier {
 
     /** Starterbatterie (12 V) niedrig melden. */
     public static void notifyBattery12v(double volts) {
+        notifyBattery12v(volts, null);
+    }
+
+    /**
+     * 0.1.28 P8 (Aufrufer: GuardStopMonitor): {@code stufe} vor = Vorwarnung, niedrig = sehr schwach;
+     * null = alter Text.
+     */
+    public static void notifyBattery12v(double volts, String stufe) {
         criticalExecutor.execute(() -> {
             try {
                 if (!isEnabled(Category.BATTERY)) return;
                 JSONObject cmd = new JSONObject();
                 cmd.put("cmd", "notifyBattery12v");
                 cmd.put("volts", volts);
+                if (stufe != null) cmd.put("stufe", stufe);
                 sendIpc(cmd, /*spoolOnDaemonDown=*/true);
             } catch (Exception e) {
                 Log.e(TAG, "notifyBattery12v IPC error", e);

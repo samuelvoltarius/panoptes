@@ -51,6 +51,8 @@ public class RangeEstimator {
 
     /** 0.1.26.1: Spanne aus dem eigenen 100-km-Rückprüffehler; null = lernt noch. Neu bei jedem Lernlauf. */
     private volatile ReichweitenRueckpruefung.Ergebnis rueckpruefung;
+    /** 0.1.28 P7: gewichtete Töpfe aus den eigenen Fahrten (null bis zum ersten Lernlauf → Datenbank-Töpfe). */
+    private volatile GewichteteToepfe gelernt;
 
     /** Töpfe lesen (Datenbank im Daemon, Speicher in der Rückprüfung). */
     interface Toepfe {
@@ -536,6 +538,7 @@ public class RangeEstimator {
             }
             ReichweitenRueckpruefung.Ergebnis e = ReichweitenRueckpruefung.rechne(ev, sohEstimator.getNominalCapacityKwh());
             rueckpruefung = e;
+            gelernt = GewichteteToepfe.aus(ev, sohEstimator.getNominalCapacityKwh());
             logger.info(e == null ? "Rückprüfung: lernt noch (" + ev.size() + " Fahrten)"
                     : String.format(java.util.Locale.ROOT, "Rückprüfung: 100-km-Faktor P25–P75 %.2f–%.2f aus %d Fenstern",
                             e.p25, e.p75, e.fenster));
@@ -701,6 +704,11 @@ public class RangeEstimator {
      * Returns null if no data is available at all.
      */
     private BucketResult resolveConsumptionRate(double speedKmh, int tempC, int dnaScore) {
+        GewichteteToepfe g = gelernt;
+        if (g != null) {
+            BucketResult r = g.aufloesen(speedKmh, tempC, dnaScore, System.currentTimeMillis());
+            if (r != null) return r;
+        }
         return aufloesen(dbToepfe, speedKmh, tempC, dnaScore);
     }
 

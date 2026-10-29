@@ -197,10 +197,61 @@ public class EreignisErkennerTest {
     @Test
     public void stossWaagrechtLoestAus() {
         EreignisErkenner e = new EreignisErkenner();
-        e.tempo(0, 0, true);   // Fahrstufe, steht an der Ampel
+        e.tempo(0, 50, true);   // fährt mit 50 km/h
         sensorRuhig(e, 0, 5_000);
         assertNull(e.imu(5_000, 0f, 9.81f, 18f));
         assertEquals(EreignisErkenner.Grund.STOSS, e.imu(5_040, 0f, 9.81f, 17f));
+        assertEquals(17.0, e.letzteSpitze(), 0.5);
+    }
+
+    /** Erst fahren (über 20 km/h), dann an der Ampel stehen. */
+    private static EreignisErkenner nachFahrtImStand() {
+        EreignisErkenner e = new EreignisErkenner();
+        long t = 0;
+        for (; t < 3_000; t += TAKT) e.tempo(t, 50, true);
+        for (double v = 50; v > 0; v -= 2, t += TAKT) e.tempo(t, Math.max(0, Math.round(v)), true);
+        for (long ende = t + 5_000; t < ende; t += TAKT) e.tempo(t, 0, true);
+        sensorRuhig(e, 0, t);
+        return e;
+    }
+
+    @Test
+    public void garagenausfahrtSchrittempoNie() {
+        // Erster Lauf am Auto (0.1.27): Stoß bei ~6 km/h nach dem Losfahren aus dem Duplex-Parker.
+        EreignisErkenner e = new EreignisErkenner();
+        long t = 0;
+        for (; t < 30_000; t += TAKT) e.tempo(t, 6, true);
+        sensorRuhig(e, 0, 30_000);
+        assertNull(e.imu(30_000, 0f, 9.81f, 30f));
+        assertNull(e.imu(30_040, 0f, 9.81f, 30f));
+        assertNull(e.imu(30_080, 28f, 9.81f, 0f));
+    }
+
+    @Test
+    public void imStandNachFahrtNurZweiHarteSchlaege() {
+        EreignisErkenner e = nachFahrtImStand();
+        long t = 20_000;
+        sensorRuhig(e, 8_000, t);
+        // ein einzelner harter Schlag und zwei mittlere reichen im Stand nicht
+        assertNull(e.imu(t, 0f, 9.81f, 30f));
+        sensorRuhig(e, t + 40, t + 1_000);
+        assertNull(e.imu(t + 1_000, 0f, 9.81f, 18f));
+        assertNull(e.imu(t + 1_040, 0f, 9.81f, 18f));
+        sensorRuhig(e, t + 1_080, t + 2_000);
+        // Auffahrunfall an der Ampel: zwei harte Schläge kurz hintereinander
+        assertNull(e.imu(t + 2_000, 0f, 9.81f, 30f));
+        assertEquals(EreignisErkenner.Grund.STOSS, e.imu(t + 2_040, 0f, 9.81f, 27f));
+    }
+
+    @Test
+    public void parkenSetztSchnellZurueck() {
+        EreignisErkenner e = nachFahrtImStand();
+        e.tempo(9_000, Double.NaN, false);    // Gang P
+        long t = 10_000;
+        for (; t < 15_000; t += TAKT) e.tempo(t, 5, true);   // wieder losrangieren
+        sensorRuhig(e, 9_000, t);
+        assertNull(e.imu(t, 0f, 9.81f, 30f));
+        assertNull(e.imu(t + 40, 0f, 9.81f, 30f));
     }
 
     @Test
@@ -285,6 +336,40 @@ public class EreignisErkennerTest {
                 imuGeliefert = t;
             }
         }
+        assertEquals(0, n);
+    }
+
+    /** Nach einer schnelleren Fahrt langsam rangieren (v km/h) bis t. */
+    private static long rangieren(EreignisErkenner e, double v) {
+        long t = 0;
+        for (; t < 3_000; t += TAKT) e.tempo(t, 50, true);
+        for (double x = 50; x > v; x -= 2, t += TAKT) e.tempo(t, Math.round(x), true);
+        for (long ende = t + 5_000; t < ende; t += TAKT) e.tempo(t, v, true);
+        sensorRuhig(e, 0, t);
+        return t;
+    }
+
+    @Test
+    public void anprallBeimRangierenBisStillstandLoestAus() {
+        EreignisErkenner e = new EreignisErkenner();
+        long t = rangieren(e, 5);
+        assertNull(e.imu(t, 0f, 9.81f, 30f));
+        assertNull(e.imu(t + 40, 0f, 9.81f, 28f));     // rollt noch: wartet
+        assertNull(e.tempo(t + 250, 3, true));
+        assertEquals(EreignisErkenner.Grund.STOSS, e.tempo(t + 500, 0, true));
+        assertEquals(30.0, e.letzteSpitze(), 3.0);
+    }
+
+    @Test
+    public void schwelleUeberrollenNicht() {
+        EreignisErkenner e = new EreignisErkenner();
+        long t = rangieren(e, 6);
+        assertNull(e.imu(t, 0f, 9.81f, 30f));
+        assertNull(e.imu(t + 40, 0f, 9.81f, 28f));
+        int n = 0;
+        for (long x = t + 250; x < t + 4_000; x += TAKT) if (e.tempo(x, 6, true) != null) n++;
+        // auch ein späteres Anhalten (nach 1,5 s) macht daraus kein Ereignis
+        for (long x = t + 4_000; x < t + 6_000; x += TAKT) if (e.tempo(x, 0, true) != null) n++;
         assertEquals(0, n);
     }
 }

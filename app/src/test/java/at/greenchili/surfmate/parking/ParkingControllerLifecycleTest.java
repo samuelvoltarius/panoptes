@@ -131,6 +131,11 @@ public class ParkingControllerLifecycleTest {
             };
         }
         @Override public File recentDriveClip(long sessionStartMs) { return null; }
+        /** 0.1.28 Rückkehr-Karte: gezeigte Karten und ein scriptbarer Wächter-Stopp. */
+        final List<RueckkehrKarte> returnCards = new CopyOnWriteArrayList<>();
+        String guardStop;
+        @Override public void showReturnCard(ParkingSession s, RueckkehrKarte k) { returnCards.add(k); }
+        @Override public String guardStopReasonSince(long abMs) { return guardStop; }
         @Override public List<byte[]> extractTailFrames(File mp4, int count, long tailMs) { return Collections.emptyList(); }
     }
 

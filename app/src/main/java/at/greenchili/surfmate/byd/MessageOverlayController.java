@@ -183,6 +183,35 @@ public final class MessageOverlayController {
                 + " --ei timeoutSec " + Math.max(10, Math.min(300, timeoutSec));
     }
 
+    /**
+     * 0.1.28 Rückkehr-Karte nach dem Parken: {@code art} = aufnahmen | nichts | nicht_scharf. Bei „aufnahmen“ große
+     * Knöpfe [Schließen] [Ansehen]; „Ansehen“ öffnet die Aufnahmen-Seite und spielt {@code aufnahmeId} ab. Sonst
+     * nur Text, verschwindet nach {@code sichtbarSek}. Kein Ton, kein Ort.
+     */
+    public static boolean showRueckkehr(String art, String title, String message, String ansehen, String schliessen,
+                                        String aufnahmeId, int sichtbarSek) {
+        String cmd = rueckkehrCommand(art, title, message, ansehen, schliessen, aufnahmeId, sichtbarSek);
+        if (cmd == null) return false;
+        exec(cmd);
+        logger.info("showRueckkehr: " + art);
+        return true;
+    }
+
+    public static String rueckkehrCommand(String art, String title, String message, String ansehen,
+                                          String schliessen, String aufnahmeId, int sichtbarSek) {
+        if (!"aufnahmen".equals(art) && !"nichts".equals(art) && !"nicht_scharf".equals(art)) return null;
+        String id = at.greenchili.surfmate.ui.NavigateZiel.aufnahmeGueltig(aufnahmeId) ? aufnahmeId : "";
+        return "am start-foreground-service -n " + SERVICE
+                + " --es kind rueckkehr"
+                + " --es art " + q(art)
+                + " --es title " + q(orDefault(title, ""))
+                + " --es message " + q(orDefault(message, ""))
+                + " --es ansehen " + q(orDefault(ansehen, "OK"))
+                + " --es schliessen " + q(orDefault(schliessen, "X"))
+                + " --es aufnahme " + q(id)
+                + " --ei timeoutSec " + Math.max(5, Math.min(300, sichtbarSek));
+    }
+
     /** Schließt das Kopplungs-Overlay genau dieser Anfrage (anderswo entschieden). */
     public static void dismissKopplung(String ref) {
         if (ref == null || !ref.matches("^[0-9a-f]{16}$")) return;

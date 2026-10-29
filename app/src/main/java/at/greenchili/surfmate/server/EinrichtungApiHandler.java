@@ -64,6 +64,18 @@ public final class EinrichtungApiHandler {
      */
     public static volatile java.util.function.BooleanSupplier overdriveErkennung = () -> false;
 
+    /**
+     * 0.1.28 P10: Wahl „Wächter stoppt …“ → {Akku unter %, Stunden geparkt}. „normal“ = Katalog-Standard (20 %, 24 h).
+     */
+    public static final Map<String, int[]> STOPP;
+    static {
+        Map<String, int[]> m = new LinkedHashMap<>();
+        m.put("frueh", new int[]{30, 12});
+        m.put("normal", new int[]{20, 24});
+        m.put("lang", new int[]{15, 48});
+        STOPP = java.util.Collections.unmodifiableMap(m);
+    }
+
     /** Pflicht = ohne Antwort geht es nicht weiter, kein „Später“ (B4). */
     public static final Set<String> PFLICHT = new HashSet<>(Arrays.asList(
             "sprache", "haftung", "usb_freigabe", "auto", "waechter", "betrieb", "karte", "updates"));
@@ -586,6 +598,13 @@ public final class EinrichtungApiHandler {
                     direkt.computeIfAbsent("surveillance", x -> new HashMap<>()).put("surveillanceEnabled",
                             !TriggerModus.AUS.equals(m));
                 }
+                // 0.1.28 P10: Ereignis-Clip beim Fahren (Vollbremsung/Stoß) – eigene Frage ohne Vorauswahl.
+                // Optional für ältere Oberflächen; fehlt sie, gilt der Standard nach Land wie bisher.
+                Object ec = an.opt("ereignisClip");
+                if (ec != null && ec != JSONObject.NULL) {
+                    if (!(ec instanceof Boolean)) fehlt.put("ereignisClip");
+                    else if (fehlt.length() == 0) einst.put("recording." + at.greenchili.surfmate.recording.EreignisClip.SCHALTER, ec);
+                }
                 break;
             }
             case "betrieb": {
@@ -593,6 +612,18 @@ public final class EinrichtungApiHandler {
                 if (!"immer".equals(m) && !"fahrt".equals(m)) fehlt.put("modus");
                 else direkt.computeIfAbsent("surveillance", x -> new HashMap<>())
                         .put("operatingMode", "fahrt".equals(m) ? "onOnly" : "onAndOff");
+                // 0.1.28 P10 (SETUP_WIZARD §2 Nr. 9): „Wächter stoppt …“ als eine einfache Wahl; nur bei „Immer an“
+                // (sonst läuft Panoptes im Stand nicht). Optional für ältere Oberflächen. 12 V bleibt nach Akku-Art.
+                Object st = an.opt("stopp");
+                if (st != null && st != JSONObject.NULL) {
+                    int[] w = STOPP.get(String.valueOf(st));
+                    if (w == null) fehlt.put("stopp");
+                    else if ("immer".equals(m)) {
+                        einst.put("guardStop.enabled", true);
+                        einst.put("guardStop.socBelow", w[0]);
+                        einst.put("guardStop.maxParkHours", w[1]);
+                    }
+                }
                 break;
             }
             case "karte": {

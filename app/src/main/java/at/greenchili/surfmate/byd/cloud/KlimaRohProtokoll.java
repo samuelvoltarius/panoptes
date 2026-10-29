@@ -74,8 +74,11 @@ public final class KlimaRohProtokoll {
             // 0.1.26: Surf Roh = Stufe 1–17 (Annahme), sonst pyBYD °C − 14
             int sdk = at.greenchili.surfmate.byd.KlimaStufe.sdkAusCloudRoh(roh);
             b.append(": mainSettingTemp=").append(roh).append(" (= SDK ").append(sdk).append(", ")
-                    .append(at.greenchili.surfmate.byd.KlimaStufe.anzeige(sdk))
-                    .append(at.greenchili.surfmate.byd.KlimaStufe.stufenModell() ? ", Roh = Stufe" : ", Roh = °C − 14").append(")")
+                    // 0.1.28: Cloud-Weg ohne unbelegte Stufenzahl; die Rohzahl oben reicht für die Messung (P2)
+                    .append(at.greenchili.surfmate.byd.KlimaStufe.anzeigeCloud(sdk))
+                    .append(at.greenchili.surfmate.byd.KlimaStufe.stufenModell()
+                            ? (at.greenchili.surfmate.byd.KlimaStufe.cloudSkalaBelegt() ? ", Roh = Stufe" : ", Roh = Stufe (Annahme)")
+                            : ", Roh = °C − 14").append(")")
                     .append(" copilotSettingTemp=").append(p.opt("copilotSettingTemp"))
                     .append(" timeSpan=").append(p.opt("timeSpan"))
                     .append(" remoteMode=").append(p.opt("remoteMode"))

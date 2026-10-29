@@ -3686,12 +3686,19 @@ var VC = {
 
             // Climate
             if (data.climate) {
-                // A remote OPENAIR session is valid while the local SDK reports
-                // the sleeping vehicle as off. Prefer that explicit cloud-backed
-                // signal, but retain local AC state when no remote session exists.
-                if (data.climate.remoteClimateActive === true
+                // 0.1.28 (P3): „an“ nur mit Beleg (climate.laeuft). Eine Cloud-Sitzung nach der Uhr
+                // (remoteClimateActive) ist KEIN Beleg – dann „Gestartet, noch nicht bestätigt“.
+                var lf = data.climate.laeuft;
+                self.vehicleState.acUnbestaetigt = !!(lf && lf.unbestaetigt);
+                self.vehicleState.acQuelle = lf && lf.quelle ? lf.quelle : null;
+                if (lf && (lf.zustand === 'laeuft' || lf.zustand === 'aus')
                         && climatePowerRevision === self._climatePowerRevision
                         && !self._climatePending.power) {
+                    self.vehicleState.acOn = lf.zustand === 'laeuft';
+                } else if (!lf && data.climate.remoteClimateActive === true
+                        && climatePowerRevision === self._climatePowerRevision
+                        && !self._climatePending.power) {
+                    // älteres Panoptes ohne „laeuft“: wie bisher
                     self.vehicleState.acOn = true;
                 } else if (climatePowerRevision === self._climatePowerRevision
                         && !self._climatePending.power
@@ -4262,13 +4269,28 @@ var VC = {
         // 0.1.26: Sollwert als Stufe wie im Display (nie \u00B0C) plus Balken mit 17 Strichen
         var tempEl = document.getElementById('acTemp');
         if (tempEl && window.PanoptesKlimaStufe) {
-            tempEl.textContent = PanoptesKlimaStufe.text(this.vehicleState.acTemp);
+            // 0.1.28 (P2): läuft das Klima über die Cloud, ist die Stufenzahl bis zur Messung unbelegt → nur „Heizen“
+            var cloudWeg = (this.vehicleState.acUnbestaetigt || this.vehicleState.acQuelle === 'cloud')
+                && !(PanoptesKlimaStufe.cloudBelegt && PanoptesKlimaStufe.cloudBelegt());
+            tempEl.textContent = PanoptesKlimaStufe.text(this.vehicleState.acTemp, { ohneStufe: cloudWeg });
             tempEl.removeAttribute('data-i18n');
-            PanoptesKlimaStufe.balken(document.getElementById('acStufeBalken'), this.vehicleState.acTemp);
+            var balkenEl = document.getElementById('acStufeBalken');
+            PanoptesKlimaStufe.balken(balkenEl, this.vehicleState.acTemp);
+            if (balkenEl && cloudWeg) balkenEl.hidden = true;
             // „Neutral“ gibt es nur auf der Stufen-Skala; sonst einmaliger Hinweis „Stufen statt Grad? melden“
             var neutral = document.getElementById('btnTempNeutral');
             if (neutral) neutral.hidden = !PanoptesKlimaStufe.stufen();
             PanoptesKlimaStufe.hinweis(document.getElementById('klimaStufeHinweis'));
+        }
+
+        // 0.1.28 (P3): ehrlich sagen, wenn das Auto den Start noch nicht bestätigt hat
+        var laeuftEl = document.getElementById('klimaLaeuftHinweis');
+        if (laeuftEl) {
+            laeuftEl.hidden = !this.vehicleState.acUnbestaetigt;
+            if (this.vehicleState.acUnbestaetigt) {
+                laeuftEl.textContent = this.translatedText('klima_laeuft.unbestaetigt',
+                    'Gestartet – das Auto hat es noch nicht bestätigt.');
+            }
         }
 
         var fanEl = document.getElementById('acFan');
@@ -4716,7 +4738,8 @@ var VC = {
         // 0.1.26: Buchung läuft über die Cloud – bis die Cloud-Skala gemessen ist, nur Heizen/Kühlen/Neutral
         var tempReadout = document.getElementById('climateBookingTemp');
         if (tempReadout && window.PanoptesKlimaStufe) {
-            tempReadout.textContent = PanoptesKlimaStufe.text(typeof s.temp === 'number' ? s.temp : 22, { ohneStufe: true });
+            tempReadout.textContent = PanoptesKlimaStufe.text(typeof s.temp === 'number' ? s.temp : 22,
+                { ohneStufe: !(PanoptesKlimaStufe.cloudBelegt && PanoptesKlimaStufe.cloudBelegt()) });
             tempReadout.removeAttribute('data-i18n');
         }
         var tempUp = document.getElementById('btnBookingTempUp');
@@ -4749,7 +4772,8 @@ var VC = {
                 var gebucht = typeof s.reportedTemp === 'number' ? s.reportedTemp : s.temp;
                 note.textContent = BYD.i18n.t('vehicle.precondition_booked', {
                     time: s.reportedTime,
-                    stufe: window.PanoptesKlimaStufe ? PanoptesKlimaStufe.text(gebucht, { ohneStufe: true }) : '',
+                    stufe: window.PanoptesKlimaStufe ? PanoptesKlimaStufe.text(gebucht,
+                        { ohneStufe: !(PanoptesKlimaStufe.cloudBelegt && PanoptesKlimaStufe.cloudBelegt()) }) : '',
                     minutes: s.reportedDuration || minutes
                 });
             } else if (s.bookingId) {

@@ -356,13 +356,27 @@
       "gewohnheit_probe": {
         "label": "Habitudes : essai",
         "note": "Une règle apprise en essai indique seulement ce qu’elle aurait fait – elle n’actionne encore rien."
+      },
+      "ereignis_gesichert": {
+        "label": "Événement enregistré (freinage brusque ou choc)",
+        "note": "Une vidéo d’événement a été enregistrée dans la voiture. Vous recevez seulement l’heure – pas de vidéo, pas de lieu. Thème à part, indépendant des alarmes."
+      },
+      "vehicle_health_battery12v": {
+        "label": "La batterie 12 V faiblit",
+        "note": "Prévient avant que la batterie 12 V soit trop faible pour démarrer. Au plus une fois par jour."
       }
     },
     "cloud_uebergabe_titel": "« {0} » veut transmettre le cloud BYD",
     "cloud_uebergabe_text": "Code de contrôle {0}",
     "gewohnheit_probelauf": "Essai : j’aurais exécuté ton habitude maintenant. C’est bon ?",
     "weiteres_geraet_titel": "Cockpit « {0} » veut connecter un téléphone",
-    "weiteres_geraet_text": "Numéro de contrôle {0}"
+    "weiteres_geraet_text": "Numéro de contrôle {0}",
+    "ereignis_title": "Événement de {0} enregistré",
+    "ereignis_body": "Freinage brusque ou choc. La vidéo est enregistrée uniquement dans la voiture. La garder ?",
+    "battery12v_vor_title": "La batterie 12 V faiblit : {0} V",
+    "battery12v_vor_body": "Si elle baisse encore, la voiture risque de ne pas démarrer. Faites bientôt un tour ou branchez-la.",
+    "battery12v_niedrig_title": "Batterie 12 V très faible : {0} V",
+    "battery12v_niedrig_body": "La voiture risque bientôt de ne plus démarrer. Faites un tour aujourd’hui ou branchez-la."
   },
   "parking": {
     "notify": {
@@ -512,7 +526,8 @@
     "alerts": {
       "charging_full": "🔌 *Recharge terminée*",
       "charging_fault": "🚨 *Un problème est survenu pendant la recharge*",
-      "battery12v_low": "🪫 *Batterie 12 V faible : {0} V*\nSi elle baisse encore, la voiture risque de ne pas démarrer. Faites bientôt un tour ou branchez-la."
+      "battery12v_low": "🪫 *Batterie 12 V faible : {0} V*\nSi elle baisse encore, la voiture risque de ne pas démarrer. Faites bientôt un tour ou branchez-la.",
+      "battery12v_sehr_niedrig": "🪫 *Batterie 12 V très faible : {0} V*\nLa voiture risque bientôt de ne plus démarrer. Faites un tour aujourd’hui ou branchez-la."
     },
     "charge": {
       "title": "🔋 *Recharge*",
@@ -873,6 +888,9 @@
       "anfrage": "📱 *EV-Cockpit « {0} » veut connecter un téléphone*\nNuméro de contrôle : *{1}*\n\nLe numéro correspond-il à celui du Cockpit ? Si tu autorises, le Cockpit affiche un code à scanner. La demande est valable 5 minutes.",
       "erlaubt": "✅ Autorisé – le Cockpit affiche maintenant le code pour le téléphone.",
       "abgelehnt": "❌ Refusé."
+    },
+    "ereignis": {
+      "gesichert": "Panoptes : événement de {0} enregistré (uniquement dans la voiture)."
     }
   },
   "vehicle_control": {
@@ -2251,8 +2269,8 @@
     "recording": {
       "ereignisClip": {
         "title": "Sauvegarder les événements automatiquement",
-        "help": "En cas de freinage d’urgence ou de choc, Panoptes sauvegarde 20 secondes avant et après. Rien d’autre n’est enregistré. Les clips restent dans la voiture ou sur la clé USB. Actif dès le prochain trajet.",
-        "helpCH": "Désactivé par défaut en Suisse, car les règles pour les caméras de voiture y sont plus strictes. Vous pouvez l’activer vous-même."
+        "help": "En cas de freinage d’urgence ou de choc, Panoptes sauvegarde 20 secondes avant et après. Rien d’autre n’est enregistré. Les clips restent dans la voiture ou sur la clé USB. Actif dès le prochain trajet. En manœuvrant lentement au début d’un trajet, Panoptes ne sauvegarde pas de clip.",
+        "helpCH": "Désactivé par défaut en Suisse, car les règles pour les caméras de voiture y sont plus strictes. Vous pouvez l’activer vous-même. En manœuvrant lentement au début d’un trajet, Panoptes ne sauvegarde pas de clip."
       },
       "ereignisTelegram": {
         "title": "Message Telegram en cas d’événement",
@@ -2419,5 +2437,42 @@
   },
   "telegram_login": {
     "geraet_name": "Navigateur (Telegram)"
+  },
+  "fahrtenbuch_datei": {
+    "titel": "Carnet de trajets {0}",
+    "hinweis": "Créé dans la voiture. Le fichier reste chez vous. Sans lieux.",
+    "drucken": "Imprimer / PDF",
+    "leer": "Aucun trajet ce mois-ci.",
+    "summe": "Total : {0} trajets",
+    "spalte": {
+      "datum": "Date",
+      "start": "Départ",
+      "ende": "Arrivée",
+      "km": "km",
+      "dauer": "Minutes",
+      "kwh": "kWh",
+      "verbrauch": "kWh/100 km",
+      "soc_start": "Batterie début %",
+      "soc_ende": "Batterie fin %",
+      "kosten": "Coût",
+      "waehrung": "Devise",
+      "temp": "Extérieur °C"
+    }
+  },
+  "rueckkehr": {
+    "titel_aufnahmen": "Pendant votre absence",
+    "eine_aufnahme": "1 enregistrement",
+    "n_aufnahmen": "{0} enregistrements",
+    "titel_nichts": "Gardien actif – rien ne s’est passé",
+    "titel_nicht_scharf": "Gardien pas actif",
+    "ansehen": "Regarder",
+    "schliessen": "Fermer",
+    "grund_aus": "Le gardien est désactivé.",
+    "grund_sicherer_ort": "Lieu sûr – le gardien fait une pause ici.",
+    "grund_zeit": "En dehors des heures réglées pour le gardien.",
+    "grund_nur_fahrt": "Le gardien ne fonctionne que voiture allumée.",
+    "grund_akku": "Arrêté pour protéger la batterie.",
+    "grund_v12": "Arrêté pour protéger la petite batterie 12 V.",
+    "grund_lange_geparkt": "Arrêté après un long stationnement, pour économiser l’énergie."
   }
 }
