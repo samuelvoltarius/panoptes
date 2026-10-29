@@ -37,6 +37,15 @@ final class AbschreckungsRegel {
         return ruheS;
     }
 
+    /**
+     * 0.1.29.1 (29.10.): Eine neue Anzeige beginnt nur mit Personentreffer, für alle Autos. Ohne Person
+     * (vorbeifahrendes Auto, Licht, Nahzone ohne Person) bleibt das Display aus. Eine laufende Sitzung (sie hat
+     * eine Person) darf wie bisher weiterlaufen.
+     */
+    static boolean darfAnzeigen(boolean laufend, boolean person) {
+        return laufend || person;
+    }
+
     /** Läuft gerade eine Sitzung (begonnen, noch nicht beendet)? */
     boolean laufend() {
         return sitzungStart >= 0;

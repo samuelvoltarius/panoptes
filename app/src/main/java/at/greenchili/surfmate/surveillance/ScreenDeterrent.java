@@ -355,6 +355,16 @@ public final class ScreenDeterrent {
 
         long nowElapsed = SystemClock.elapsedRealtime();
         boolean laufend = regel.laufend();
+        // 0.1.29.1 (Projektinhaber 29.10. „ja“, alle Autos): neue Anzeige nur mit Personentreffer. „Nahzone ohne Person“
+        // (vorbeifahrendes Auto, Licht) weckte abends und nachts alle 10–30 min das Display. Eine laufende Sitzung
+        // hat immer eine Person (nur sie beginnt eine), ihr Weiterlauf bleibt wie bisher.
+        if (!AbschreckungsRegel.darfAnzeigen(laufend, person)) {
+            if (grund != null && nowElapsed - letzteOhnePersonLog >= OHNE_PERSON_LOG_MS) {
+                letzteOhnePersonLog = nowElapsed;
+                logger.info(nichtGezeigtZeile(grund));
+            }
+            return;
+        }
         if (laufend && person) regel.personDazu(nowElapsed);   // erst Auto, dann Mensch: neuer Deckel
         if (laufend && !regel.darfVerlaengern(nowElapsed)) {
             // Sitzung hat ihren Deckel erreicht: nicht verlängern. Läuft nichts mehr, beginnt die Ruhezeit.
@@ -404,6 +414,15 @@ public final class ScreenDeterrent {
                 cleanup();
             }
         });
+    }
+
+    /** 0.1.29.1: Drosselung der Logzeile „Abschreckung nicht gezeigt: keine Person“ (höchstens alle 60 s). */
+    private volatile long letzteOhnePersonLog = Long.MIN_VALUE / 2;
+    static final long OHNE_PERSON_LOG_MS = 60_000L;
+
+    /** Logzeile „Abschreckung nicht gezeigt: keine Person (Grund)“ (rein, testbar). */
+    static String nichtGezeigtZeile(String grund) {
+        return "Abschreckung nicht gezeigt: keine Person (" + grund + ")";
     }
 
     /** Logzeile „Abschreckung unterdrückt: Grund, noch x s“ (rein, testbar). */
