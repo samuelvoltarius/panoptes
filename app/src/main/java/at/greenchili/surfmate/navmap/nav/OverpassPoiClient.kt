@@ -118,11 +118,14 @@ object OverpassPoiClient {
         val east = maxOf(minLng, maxLng)
         if (south == north || west == east) return emptyList()
 
-        val key = cacheKey(south, west, north, east, kinds)
+        // 0.1.32.1: nur mit Schalter und nur grober Ausschnitt, nach außen gerundet (Regel Nr. 2)
+        if (!KartenSuchePrivat.erlaubt()) return emptyList()
+        val (grobS, grobW, grobN, grobO) = KartenSuchePrivat.ausschnitt(south, west, north, east)
+        val key = cacheKey(grobS, grobW, grobN, grobO, kinds)
         cacheGet(key)?.let { return it }
 
         return try {
-            val query = buildQuery(south, west, north, east, kinds)
+            val query = buildQuery(grobS, grobW, grobN, grobO, kinds)
             val req = Request.Builder()
                 .url(OVERPASS_ENDPOINT)
                 .header("User-Agent", USER_AGENT)

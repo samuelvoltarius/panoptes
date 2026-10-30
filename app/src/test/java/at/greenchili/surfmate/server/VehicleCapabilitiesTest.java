@@ -208,4 +208,17 @@ public class VehicleCapabilitiesTest {
         assertEquals(null, VehicleCapabilities.ausTabelle(t, "seal", null, "ueberProjektion", "carplay"));
         assertEquals(null, VehicleCapabilities.ausTabelle(t, "seal", 4, "ueberProjektion", "carplay"));
     }
+
+    @Test
+    public void belegteWerteUeberlebenNeustartLueckenBleibenSichtbar() throws Exception {
+        JSONObject gemerkt = new JSONObject();
+        JSONObject erst = new JSONObject().put("ladestand", "ja").put("reifendruck", "unbekannt");
+        assertTrue(VehicleCapabilities.werteAbgleichen(erst, gemerkt));
+        JSONObject nachStart = new JSONObject().put("ladestand", "unbekannt").put("reifendruck", "unbekannt");
+        assertFalse(VehicleCapabilities.werteAbgleichen(nachStart, gemerkt));
+        assertEquals("ja", nachStart.getString("ladestand"));
+        assertEquals("nie belegt bleibt unbekannt", "unbekannt", nachStart.getString("reifendruck"));
+        assertTrue(VehicleCapabilities.hatLuecke(new JSONObject().put("werte", nachStart)));
+        assertFalse(VehicleCapabilities.hatLuecke(new JSONObject().put("werte", new JSONObject().put("ladestand", "ja"))));
+    }
 }

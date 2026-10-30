@@ -90,10 +90,8 @@ public final class Kopplungen {
             if (art != null && ARTEN.contains(art)) g.put("art", art);
             // 0.1.18 Handy-Vertrag §1: Standardrechte klima, zusperren, push – aufsperren erst per Web mit Login
             if (ART_HANDY.equals(art)) {
-                JSONArray r = new JSONArray(HANDY_STANDARD);
-                // 0.1.26.1: die erste Handy-Kopplung ist die des Besitzers → darf aktualisieren
-                if (aeltesteHandyId(null) == null) r.put(RECHT_UPDATE);
-                g.put("rechte", r).put("rechteStand", RECHTE_STAND);
+                // 0.1.32.1: auch die erste Handy-Kopplung ohne „update“: nur der Besitzer schaltet es ein
+                g.put("rechte", new JSONArray(HANDY_STANDARD)).put("rechteStand", RECHTE_STAND);
             }
         } catch (Exception ignored) { }
         JSONArray neu = kopie(l);
@@ -223,8 +221,8 @@ public final class Kopplungen {
             RECHT_KAMERA = "kamera",   // 0.1.25 Kamerabilder/Aufnahmen übers Internet (Brücke); Standard AUS (Passanten)
             RECHT_WALLBOX = "wallbox",   // 0.1.25 Wallbox starten/stoppen/Ladestrom vom Handy; Standard AUS
             RECHT_ROUTE = "route",       // 0.1.25 Route ins Auto schicken (nur Anzeige, nichts startet von selbst); Standard AN
-            // 0.1.26.1 Panoptes aktualisieren (nur freigegebene Version des Updaters, nur geparkt). Standard AN nur für
-            // die erste Handy-Kopplung und die am Display bzw. mit Login erlaubten, sonst AUS
+            // 0.1.26.1 Panoptes aktualisieren (nur freigegebene Version des Updaters, nur geparkt). Standard AUS
+            // (0.1.32.1), nur der Besitzer schaltet es ein; Bestand behält, was er hat
             RECHT_UPDATE = "update",
             // 0.1.28 P5 (Koordination 29.10.): Unfall-/Ereignis-Clips aufs Handy laden; Standard AUS, nur der Besitzer
             // schaltet es ein (Login/Display); zusätzlich zu „kamera“

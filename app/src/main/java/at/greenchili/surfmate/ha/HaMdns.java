@@ -21,20 +21,30 @@ public final class HaMdns {
 
     private HaMdns() {}
 
+    /** 0.1.32.1: eigene Kennung {@code ha.mdnsId}, einmal erzeugt; auch ohne mDNS, {@code geraet.haId} braucht sie. */
+    public static synchronized String kennung() {
+        JSONObject ha = UnifiedConfigManager.loadConfig().optJSONObject("ha");
+        String id = ha == null ? "" : ha.optString("mdnsId", "");
+        if (kennungGueltig(id)) return id;
+        byte[] b = new byte[4];
+        new SecureRandom().nextBytes(b);
+        StringBuilder sb = new StringBuilder();
+        for (byte x : b) sb.append(String.format("%02x", x & 0xff));
+        id = sb.toString();
+        java.util.Map<String, Object> v = new java.util.HashMap<>();
+        v.put("mdnsId", id);
+        UnifiedConfigManager.updateValues("ha", v);
+        return id;
+    }
+
+    static boolean kennungGueltig(String id) {
+        return id != null && id.matches("^[0-9a-f]{8}$");
+    }
+
     static void start() {
         JSONObject ha = UnifiedConfigManager.loadConfig().optJSONObject("ha");
         if (ha == null || !ha.optBoolean("mdns", false)) return;
-        String id = ha.optString("mdnsId", "");
-        if (!id.matches("^[0-9a-f]{8}$")) {
-            byte[] b = new byte[4];
-            new SecureRandom().nextBytes(b);
-            StringBuilder sb = new StringBuilder();
-            for (byte x : b) sb.append(String.format("%02x", x & 0xff));
-            id = sb.toString();
-            java.util.Map<String, Object> v = new java.util.HashMap<>();
-            v.put("mdnsId", id);
-            UnifiedConfigManager.updateValues("ha", v);
-        }
+        String id = kennung();
         android.content.Context c = at.greenchili.surfmate.daemon.DaemonBootstrap.context();   // 0.1.20: im Daemon der CameraDaemon-Context
         if (c == null) {
             logger.warn("kein Context – keine Ankündigung");

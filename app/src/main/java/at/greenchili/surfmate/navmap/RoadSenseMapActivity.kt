@@ -3225,9 +3225,19 @@ open class RoadSenseMapActivity : AppCompatActivity() {
     }
 
     /** Photon typeahead off the looper; a monotonic token discards stale results. */
+    /** 0.1.32.1 Regel Nr. 2: beim ersten Suchen einmal sagen, was wohin geht. */
+    private fun sucheHinweisEinmal() {
+        val prefs = getSharedPreferences(PREFS_NAVMAP, MODE_PRIVATE)
+        if (prefs.getBoolean("sucheHinweisGezeigt", false)
+            || !at.greenchili.surfmate.navmap.nav.KartenSuchePrivat.erlaubt()) return
+        prefs.edit().putBoolean("sucheHinweisGezeigt", true).apply()
+        Toast.makeText(this, R.string.karte_suche_hinweis, Toast.LENGTH_LONG).show()
+    }
+
     private fun runAutocomplete(query: String) {
         val focus = lastFix
         val token = ++acToken
+        sucheHinweisEinmal()
         ioExecutor().execute {
             // Local matches (saved places + recents whose label contains the query) —
             // they need no network and make a place the user once saved permanently
@@ -3648,6 +3658,7 @@ open class RoadSenseMapActivity : AppCompatActivity() {
         val saveKind = pendingSaveKind
         hideSearchDropdown()
         val focus = lastFix
+        sucheHinweisEinmal()
         showSnackbar(getString(R.string.roadsense_map_searching))
         ioExecutor().execute {
             val results = ForwardGeocoder.search(query.trim(), 1, focus?.lat, focus?.lng)
@@ -3664,6 +3675,8 @@ open class RoadSenseMapActivity : AppCompatActivity() {
                         at.greenchili.surfmate.navmap.nav.ForwardGeocoder.SearchError.TIMEOUT,
                         at.greenchili.surfmate.navmap.nav.ForwardGeocoder.SearchError.NETWORK ->
                             R.string.roadsense_map_search_network
+                        at.greenchili.surfmate.navmap.nav.ForwardGeocoder.SearchError.AUS ->
+                            R.string.karte_suche_aus
                         else -> R.string.roadsense_map_no_results
                     }
                     showSnackbar(getString(msg))

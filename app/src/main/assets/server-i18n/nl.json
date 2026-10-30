@@ -2065,6 +2065,10 @@
       }
     },
     "karte": {
+      "sucheInternet": {
+        "title": "Kaart: zoeken op internet",
+        "help": "Als je op de kaart zoekt, gaan je zoektekst en je geschatte locatie (afgerond op ongeveer 1 km) naar Photon, Nominatim en Overpass, zonder kenmerk. Uit: er wordt niets verzonden, je vindt alleen opgeslagen plaatsen en coördinaten."
+      },
       "quelle": {
         "help": "Waar Panoptes de kaartbeelden vandaan haalt. De gekozen bron ziet je IP-adres en het kaartgebied, dus ongeveer waar je auto staat. „Geen”: er worden geen kaarten geladen. Fabrieksinstelling: Geen. Panoptes schakelt nooit uit zichzelf over naar een andere bron."
       }
@@ -2439,6 +2443,7 @@
     "zuendung_an": "Bijwerken kan alleen als de auto uit is. Zet hem uit en probeer het opnieuw.",
     "zustand_unbekannt": "Panoptes weet nu niet zeker of de auto stilstaat. Probeer het zo opnieuw.",
     "wartet_wlan": "Updates staan op „alleen wifi”, en de auto heeft nu geen wifi.",
+    "mobil_frage": "De auto heeft nu geen wifi. De update heeft ongeveer {0} mobiele data nodig. Alleen voor deze versie laden?",
     "zu_alt": "Voor deze update heeft Panoptes eerst een nieuwere versie nodig. Werk bij in de auto.",
     "andere_version": "Deze versie is niet vrijgegeven. Vrijgegeven is {0}.",
     "bestaetigung_fehlt": "Bevestig de update eerst.",

@@ -32,10 +32,14 @@ public final class GuardStopMonitor {
     private static final String PARKED_SINCE_FILE =
             at.greenchili.surfmate.util.DaemonStorage.rebase(
                     "/data/user_de/0/com.android.shell/surfmate/guardstop_parked_since");
-    /** 0.1.11: Ruhespannung je Tag (nach ≥ 60 min Parken, ohne Laden) für die 12-V-Chemie-Heuristik, 14 Tage. */
+    /**
+     * 0.1.11: Ruhespannung je Tag (nach ≥ 60 min Parken, ohne Laden) für die 12-V-Chemie-Heuristik, 14 Tage.
+     * 0.1.32.1: neue Datei, nur noch Oberkanten. In der alten stehen Tiefpunkte, die fälschlich „Blei“ belegen; bis neue
+     * Tage da sind, gelten die Übergangs-Hinweise in {@link at.greenchili.surfmate.einstellungen.AkkuChemie}.
+     */
     private static final String RUHE_TAGE_FILE =
             at.greenchili.surfmate.util.DaemonStorage.rebase(
-                    "/data/user_de/0/com.android.shell/surfmate/guardstop_v12_ruhe_tage.json");
+                    "/data/user_de/0/com.android.shell/surfmate/guardstop_v12_ruhe_oben.json");
     private static final int RUHE_TAGE_BEHALTEN = 14;
     /** 0.1.28 P8: letzte 12-V-Vorwarnung {stufe, zeit}, damit ein Daemon-Neustart nicht erneut meldet. */
     private static final String WARNUNG_12V_FILE =

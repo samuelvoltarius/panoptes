@@ -14,7 +14,14 @@ public final class UpdateRegel {
     /** Auto muss mindestens so lange geparkt (aus) sein, bevor „automatisch“ installiert. */
     public static final long AUTOMATISCH_NACH_MS = 10 * 60_000L;
     /** Prüftakt im Hintergrund. */
+    public static final String WARTET_WLAN = "wartet_wlan";
     public static final long PRUEF_TAKT_MS = 6 * 3_600_000L;
+    /** 0.1.32.1: nach einem Fehlversuch (kein Netz im Stand) nicht 6 h warten, sonst kommt ein Update viel später an. */
+    public static final long PRUEF_FEHLER_TAKT_MS = 30 * 60_000L;
+
+    public static boolean pruefenFaellig(long jetzt, long letztePruefung, boolean fehlgeschlagen) {
+        return jetzt - letztePruefung >= (fehlgeschlagen ? PRUEF_FEHLER_TAKT_MS : PRUEF_TAKT_MS);
+    }
     /** Zweiter Nachweis muss so lange stabil sein. */
     public static final long ZWEITER_NACHWEIS_MS = 15 * 60_000L;
 
@@ -64,7 +71,7 @@ public final class UpdateRegel {
             return "zustand_unbekannt";
         }
         // „nur WLAN“: nur ein eindeutig erkanntes WLAN zählt (Ethernet/unbekannt kann die SIM der T-Box sein)
-        if (l.nurWlan && !l.mobilEinmal && !NETZ_WLAN.equals(l.netz)) return "wartet_wlan";
+        if (l.nurWlan && !l.mobilEinmal && !NETZ_WLAN.equals(l.netz)) return WARTET_WLAN;
         return null;
     }
 

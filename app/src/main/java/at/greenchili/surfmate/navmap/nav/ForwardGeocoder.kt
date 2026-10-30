@@ -58,9 +58,10 @@ object ForwardGeocoder {
      *   TIMEOUT  — a provider connect/read timed out (slow network or proxy hop)
      *   NETWORK  — other transport failure (DNS / connection reset / proxy down / blocked host)
      *   EMPTY    — every provider responded but none had a hit (a real zero-result query)
+     *   AUS      — 0.1.32.1: Schalter „Karte: Suche im Internet“ ist aus, nichts wurde gesendet
      * Best-effort + @Volatile (one foreground submit at a time, like ValhallaRouteClient).
      */
-    enum class SearchError { NONE, TIMEOUT, NETWORK, EMPTY }
+    enum class SearchError { NONE, TIMEOUT, NETWORK, EMPTY, AUS }
 
     @Volatile
     var lastError: SearchError = SearchError.NONE
@@ -164,6 +165,10 @@ object ForwardGeocoder {
 
         // 1) Offline smart-input — exact coordinate the user already supplied.
         CoordinateInputParser.parse(q, focusLat, focusLng)?.let { return listOf(it) }
+        if (!KartenSuchePrivat.erlaubt()) {
+            lastError = SearchError.AUS
+            return emptyList()
+        }
         // 1b) Submit-only: a shortened share link needs a redirect to reveal coords.
         if (looksLikeShortLink(q)) {
             expandShortLink(q)?.let { expanded ->
@@ -223,6 +228,7 @@ object ForwardGeocoder {
         val n = if (limit < 1) 1 else limit
 
         CoordinateInputParser.parse(q, focusLat, focusLng)?.let { return listOf(it) }
+        if (!KartenSuchePrivat.erlaubt()) return emptyList()
 
         stadiaCreds()?.let { (base, key) ->
             val stadia = stadiaAutocomplete(base, key, q, n, focusLat, focusLng)
@@ -289,8 +295,9 @@ object ForwardGeocoder {
             .append("&size=").append(if (limit < 1) 1 else limit)
             .append("&lang=").append(enc(MapNetworking.lang))
         if (focusLat != null && focusLng != null) {
-            sb.append("&focus.point.lat=").append(focusLat)
-                .append("&focus.point.lon=").append(focusLng)
+            // 0.1.32.1: nur grob, Regel Nr. 2
+            sb.append("&focus.point.lat=").append(KartenSuchePrivat.rund(focusLat))
+                .append("&focus.point.lon=").append(KartenSuchePrivat.rund(focusLng))
         }
         sb.append("&api_key=").append(enc(key))
         return sb.toString()
@@ -376,7 +383,9 @@ object ForwardGeocoder {
                 // Language-aware: return place names in the user's app language.
                 .append("&lang=").append(enc(MapNetworking.lang))
             if (focusLat != null && focusLng != null) {
-                sb.append("&lat=").append(focusLat).append("&lon=").append(focusLng)
+                // 0.1.32.1: nur grob, Regel Nr. 2
+                sb.append("&lat=").append(KartenSuchePrivat.rund(focusLat))
+                    .append("&lon=").append(KartenSuchePrivat.rund(focusLng))
                     // Strengthen the focus bias so nearby matches rank above distant
                     // same-name places (Photon's default bias is weak without this).
                     .append("&location_bias_scale=").append(PHOTON_BIAS_SCALE)
@@ -418,6 +427,7 @@ object ForwardGeocoder {
      * @return the nearest place's label at the tapped coordinate, or null
      */
     fun reverse(lat: Double, lng: Double): SearchResult? {
+        if (!KartenSuchePrivat.erlaubt()) return null
         return try {
             val url = StringBuilder(PHOTON_REVERSE_BASE)
                 .append("?lat=").append(lat)

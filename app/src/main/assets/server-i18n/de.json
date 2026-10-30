@@ -2059,6 +2059,10 @@
       }
     },
     "karte": {
+      "sucheInternet": {
+        "title": "Karte: Suche im Internet",
+        "help": "Beim Suchen in der Karte gehen dein Suchtext und der ungefähre Ort (auf etwa 1 km gerundet) an Photon, Nominatim und Overpass, ohne Kennung. Aus: Es wird nichts gesendet, du findest nur gespeicherte Orte und Koordinaten."
+      },
       "quelle": {
         "help": "Woher Panoptes die Kartenbilder lädt. Die gewählte Quelle sieht deine IP-Adresse und den Kartenausschnitt, also ungefähr, wo dein Auto steht. „Keine“: Es werden keine Karten geladen. Ab Werk: Keine. Panoptes wechselt nie von selbst auf eine andere Quelle."
       }
@@ -2433,6 +2437,7 @@
     "zuendung_an": "Update geht nur, wenn das Auto aus ist. Bitte ausschalten und noch einmal versuchen.",
     "zustand_unbekannt": "Panoptes weiß gerade nicht sicher, ob das Auto steht. Bitte gleich noch einmal versuchen.",
     "wartet_wlan": "Updates sind auf „nur WLAN“ eingestellt, und das Auto hat gerade kein WLAN.",
+    "mobil_frage": "Das Auto hat gerade kein WLAN. Das Update braucht etwa {0} mobile Daten. Nur für diese Version laden?",
     "zu_alt": "Für dieses Update braucht Panoptes zuerst eine neuere Version. Bitte am Auto aktualisieren.",
     "andere_version": "Diese Version ist nicht freigegeben. Freigegeben ist {0}.",
     "bestaetigung_fehlt": "Bitte das Update zuerst bestätigen.",

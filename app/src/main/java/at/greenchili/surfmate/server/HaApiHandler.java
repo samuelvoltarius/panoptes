@@ -68,7 +68,8 @@ public final class HaApiHandler {
         try {
             z.put("version", HaZustand.VERSION);
             JSONObject g = new JSONObject();
-            g.put("autoId", nullSafe(EinstellungenApiHandler.autoId()));
+            g.put("autoId", nullSafe(EinstellungenApiHandler.autoId()));   // bleibt für Bestand
+            g.put("haId", at.greenchili.surfmate.ha.HaMdns.kennung());   // 0.1.32.1: passt zur mDNS-Entdeckung
             g.put("name", nullSafe(geraetName()));
             // 0.1.20: Modell (Anzeigename, String wie im HA_VERTRAG) + Kennung + offizieller Lack, nur lesen
             JSONObject aussehen = ModelsApiHandler.fahrzeugAussehen();

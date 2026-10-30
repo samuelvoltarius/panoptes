@@ -200,7 +200,8 @@ public class BrueckeV2Test {
         BrueckeTest.Aufbau x = new BrueckeTest.Aufbau();
         x.b.einschalten();
         long mb = 1024L * 1024L, tag = 20_000L * 86_400_000L;
-        assertEquals("Standard 500 MB", 500, x.b.medienTagMb());
+        assertEquals("0.1.32.1 neu: kein Limit", Bruecke.MEDIEN_KEIN_LIMIT, x.b.medienTagMb());
+        assertEquals("bleibt nach Neustart", Bruecke.MEDIEN_KEIN_LIMIT, x.platte[0].getInt("medienTagMb"));
         assertFalse("nur Stufen", x.b.medienTagMbSetzen(123));
         assertTrue(x.b.medienTagMbSetzen(100));
         assertTrue(x.b.medienVerbrauchen(60 * mb, tag));

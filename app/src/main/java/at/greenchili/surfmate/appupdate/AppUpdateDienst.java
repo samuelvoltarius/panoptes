@@ -237,6 +237,8 @@ public final class AppUpdateDienst {
                 }
                 String nicht = nichtWeil(l);
                 o.put("installierbar", nicht == null);
+                // 0.1.32.1: ohne WLAN fragen wie die Karte (nur neue Einrichtungen, Größe, nur diese Version)
+                o.put("mobilFrage", UpdateRegel.WARTET_WLAN.equals(nicht) && mobilMerker());
                 o.put("nichtWeil", nicht == null ? JSONObject.NULL : nicht);
                 o.put("phase", aktuellePhase(l));
                 o.put("prozent", prozent == null ? JSONObject.NULL : prozent);
@@ -263,12 +265,23 @@ public final class AppUpdateDienst {
 
     /** POST /api/appupdate/installieren {versionCode} → null = gestartet, sonst Grund. */
     public String installieren(int versionCode) {
+        return installieren(versionCode, false);
+    }
+
+    /** {@code mobil} = Einwilligung für genau diesen einen Download; greift nur nach der Frage ({@code mobilFrage}). */
+    public String installieren(int versionCode, boolean mobil) {
         synchronized (lock) {
             if (installiertGerade) return "laeuft_schon";
+            boolean einmal = mobil && mobilMerker() && verfuegbar != null && verfuegbar.versionCode == versionCode;
+            if (einmal) UpdateHinweis.mobilErlauben(hinweis, versionCode, env.jetzt());
             UpdateRegel.Lage l = lage();
             String nicht = nichtWeil(l);
-            if (nicht != null) return nicht;
+            if (nicht != null) {
+                if (einmal) UpdateHinweis.mobilErlauben(hinweis, 0, 0);
+                return nicht;
+            }
             if (verfuegbar.versionCode != versionCode) return "anderer_stand";
+            if (einmal) speichern();
             installiertGerade = true;
         }
         final Freigabe f = verfuegbar;
@@ -409,7 +422,7 @@ public final class AppUpdateDienst {
     void takt() {
         long now = env.jetzt();
         // update.pruefen aus (Ersteinrichtung „Nein“): kein Abruf bei GitHub im Hintergrund, nichts von selbst
-        if (pruefenAn() && now - letztePruefung >= UpdateRegel.PRUEF_TAKT_MS) pruefen(false);
+        if (pruefenAn() && UpdateRegel.pruefenFaellig(now, letztePruefung, fehler != null)) pruefen(false);
         Freigabe f;
         boolean alsVorgemerkt;
         synchronized (lock) {

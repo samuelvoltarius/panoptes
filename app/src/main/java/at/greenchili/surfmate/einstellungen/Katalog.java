@@ -360,6 +360,11 @@ public final class Katalog {
         karte.optionen.add(new Feld.Option(Kartenquelle.OSM, "kartenquelle.q_osm"));
         karte.optionen.add(new Feld.Option(Kartenquelle.KEINE, "kartenquelle.q_keine"));
         l.add(karte);
+        // 0.1.32.1 Regel Nr. 2: Kartensuche fragt fremde Dienste; bisher ohne Schalter, Standard wie bisher an
+        Feld suche = new Feld("karte.sucheInternet", Feld.Typ.BOOL);
+        suche.gruppe = "datenschutz"; suche.reihenfolge = 11; suche.standard = true;
+        suche.nurLesendExtern = true;
+        l.add(suche);
         // Energie (ENERGIE_INTERVALLE.md): Profil + Einzelwerte; nicht gesetzt = normal (bisheriges Verhalten)
         Feld prof = new Feld("energie.profil", Feld.Typ.AUSWAHL);
         prof.gruppe = "energie"; prof.reihenfolge = 10; prof.standard = Energie.NORMAL; prof.empfohlen = Energie.SPARSAM;

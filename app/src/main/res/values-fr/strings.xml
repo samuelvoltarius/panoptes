@@ -1129,6 +1129,8 @@
     <string name="roadsense_map_action_failed">État de la route ne répond pas. Réessayez.</string>
     <string name="roadsense_map_no_location">Recherche d\'un signal GPS…</string>
     <string name="karte_keine_quelle">Aucune source de carte choisie. Sélectionnez-en une sous Système → Source de carte.</string>
+    <string name="karte_suche_hinweis">La recherche sur la carte interroge Photon, Nominatim et Overpass avec ton texte et ton lieu approximatif, sans identifiant. Désactiver sous Réglages → Confidentialité.</string>
+    <string name="karte_suche_aus">La recherche sur Internet est désactivée. L\'activer sous Réglages → Confidentialité.</string>
     <string name="roadsense_map_search_hint">Où allez-vous ?</string>
     <string name="roadsense_map_search_action">Chercher</string>
     <string name="roadsense_map_searching">Recherche…</string>

@@ -172,4 +172,16 @@ public class HaTest {
         assertTrue(h.contains("positionGewuenscht && positionErlaubt()"));
         assertTrue(h.contains("HaZustand.telemetrie(roh)"));
     }
+
+    @Test
+    public void geraetLiefertHaIdNebenAutoId() throws Exception {
+        String h = new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(
+                new java.io.File("src/main/java").isDirectory() ? "src/main/java/at/greenchili/surfmate/server/HaApiHandler.java"
+                        : "app/src/main/java/at/greenchili/surfmate/server/HaApiHandler.java")), "UTF-8");
+        assertTrue(h.contains("g.put(\"haId\", at.greenchili.surfmate.ha.HaMdns.kennung())"));
+        assertTrue("autoId bleibt für Bestand", h.contains("g.put(\"autoId\""));
+        assertTrue(HaMdns.kennungGueltig("0a1b2c3d"));
+        assertFalse(HaMdns.kennungGueltig("0A1B2C3D"));
+        assertFalse(HaMdns.kennungGueltig(""));
+    }
 }

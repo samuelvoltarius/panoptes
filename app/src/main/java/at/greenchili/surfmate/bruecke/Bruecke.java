@@ -60,6 +60,15 @@ public final class Bruecke {
         JSONObject geladen = null;
         try { geladen = platte.lade(); } catch (Throwable ignored) { }
         this.z = geladen == null ? new JSONObject() : geladen;
+        // 0.1.32.1: Bestand ohne gewählte Grenze behält die bisherigen 500 MB; neu = kein Limit, geht mit dem ersten
+        // Speichern auf die Platte (sonst sähe der nächste Start einen Stand ohne Grenze als Bestand)
+        if (!z.has("medienTagMb")) {
+            try {
+                boolean bestand = z.length() > 0;
+                z.put("medienTagMb", bestand ? MEDIEN_BESTAND_MB : MEDIEN_STANDARD_MB);
+                if (bestand) platte.speichere(z);
+            } catch (Throwable ignored) { }
+        }
     }
 
     // ------------------------------------------------------------------ Kodierung
@@ -305,9 +314,13 @@ public final class Bruecke {
 
     // ------------------------------------------------------------------ 0.1.25 Tagesgrenze Kamera-Daten (BRUECKE_MEDIEN §5)
 
-    /** Erlaubte Einstellungen in MB pro Tag (0 = keine Kamera-Daten übers Internet). Standard 500. */
-    public static final int[] MEDIEN_STUFEN_MB = {0, 100, 250, 500, 1000, 2000};
-    static final int MEDIEN_STANDARD_MB = 500;
+    /** 0.1.32.1 Stufe „kein Limit“: Abruf ist eine bewusste Handlung, die Größe steht vorher in der Liste. */
+    public static final int MEDIEN_KEIN_LIMIT = -1;
+    /** Erlaubte Einstellungen in MB pro Tag (0 = keine Kamera-Daten übers Internet). */
+    public static final int[] MEDIEN_STUFEN_MB = {0, 100, 250, 500, 1000, 2000, MEDIEN_KEIN_LIMIT};
+    /** Standard neuer Installationen; wer schon einen Brücken-Stand hat, behält {@link #MEDIEN_BESTAND_MB}. */
+    static final int MEDIEN_STANDARD_MB = MEDIEN_KEIN_LIMIT;
+    static final int MEDIEN_BESTAND_MB = 500;
     private static final long MB = 1024L * 1024L;
     private long medienTag = -1, medienHeute, medienGespeichert;
 
@@ -333,8 +346,9 @@ public final class Bruecke {
     /** Kamera-Daten über die Brücke zählen; false = Tagesgrenze erreicht (n = 0: nur prüfen). */
     public synchronized boolean medienVerbrauchen(long n, long jetzt) {
         medienTagPruefen(jetzt);
-        long grenze = medienTagMb() * MB;
-        if (medienHeute + n > grenze || (n == 0 && medienHeute >= grenze)) return false;
+        int tagMb = medienTagMb();
+        long grenze = tagMb * MB;
+        if (tagMb != MEDIEN_KEIN_LIMIT && (medienHeute + n > grenze || (n == 0 && medienHeute >= grenze))) return false;
         medienHeute += n;
         if (medienHeute - medienGespeichert >= 10 * MB) {   // nicht bei jedem Stück auf die Platte
             try {

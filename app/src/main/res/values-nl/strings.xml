@@ -1129,6 +1129,8 @@
     <string name="roadsense_map_action_failed">Wegconditie reageert niet. Probeer het opnieuw.</string>
     <string name="roadsense_map_no_location">Zoeken naar gps-signaal…</string>
     <string name="karte_keine_quelle">Geen kaartbron gekozen. Kies er een onder Systeem → Kaartbron.</string>
+    <string name="karte_suche_hinweis">Zoeken op de kaart vraagt Photon, Nominatim en Overpass met je zoektekst en geschatte locatie, zonder kenmerk. Uitschakelen onder Instellingen → Privacy.</string>
+    <string name="karte_suche_aus">Zoeken op internet staat uit. Inschakelen onder Instellingen → Privacy.</string>
     <string name="roadsense_map_search_hint">Waarheen?</string>
     <string name="roadsense_map_search_action">Zoeken</string>
     <string name="roadsense_map_searching">Zoeken…</string>

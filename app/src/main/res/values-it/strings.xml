@@ -1129,6 +1129,8 @@
     <string name="roadsense_map_action_failed">Lo Stato della strada non ha risposto. Riprova.</string>
     <string name="roadsense_map_no_location">Ricerca del segnale GPS…</string>
     <string name="karte_keine_quelle">Nessuna fonte della mappa scelta. Scegline una in Sistema → Fonte della mappa.</string>
+    <string name="karte_suche_hinweis">La ricerca sulla mappa interroga Photon, Nominatim e Overpass con il testo e la posizione approssimativa, senza identificativo. Disattiva in Impostazioni → Privacy.</string>
+    <string name="karte_suche_aus">La ricerca su Internet è spenta. Attivala in Impostazioni → Privacy.</string>
     <string name="roadsense_map_search_hint">Dove vuoi andare?</string>
     <string name="roadsense_map_search_action">Cerca</string>
     <string name="roadsense_map_searching">Ricerca…</string>

@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /** 0.1.26.1 Recht „update“ und Update vom Handy/Cockpit/Web (HANDY_API_VERTRAG §8). */
@@ -76,7 +77,7 @@ public class HandyUpdateTest {
         String a = kopplungen.anlegen("Pixel", Kopplungen.ART_HANDY, jetzt + 1);
         String b = kopplungen.anlegen("iPhone", Kopplungen.ART_HANDY, jetzt + 2);
         assertFalse(kopplungen.hatRecht(cockpit, Kopplungen.RECHT_UPDATE));
-        assertTrue("erste Handy-Kopplung", kopplungen.hatRecht(a, Kopplungen.RECHT_UPDATE));
+        assertFalse("0.1.32.1: auch die erste Handy-Kopplung nicht", kopplungen.hatRecht(a, Kopplungen.RECHT_UPDATE));
         assertFalse("weitere: AUS", kopplungen.hatRecht(b, Kopplungen.RECHT_UPDATE));
         // Häkchen später
         List<String> r = kopplungen.rechte(b);
@@ -144,6 +145,7 @@ public class HandyUpdateTest {
     @Test
     public void aktionStartetFreigegebeneVersionMitGeraetename() throws Exception {
         String k = kopplungen.anlegen("Pixel 8", Kopplungen.ART_HANDY, jetzt);
+        assertTrue(kopplungen.rechteSetzen(k, Arrays.asList(Kopplungen.RECHT_UPDATE)));
         JSONObject ohne = HandyApiHandler.aktion(new JSONObject().put("aktion", "update_starten")
                 .put("version", "0.1.26.1"), k);
         assertEquals("bestaetigung_fehlt", ohne.getString("grund"));
@@ -157,6 +159,7 @@ public class HandyUpdateTest {
     @Test
     public void getUpdateFuerHandy() throws Exception {
         String k = kopplungen.anlegen("Pixel", Kopplungen.ART_HANDY, jetzt);
+        assertTrue(kopplungen.rechteSetzen(k, Arrays.asList(Kopplungen.RECHT_UPDATE)));
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         assertTrue(HandyApiHandler.handle("GET", "/api/handy/v1/update?sprache=de", "", out, k));
         String s = out.toString("UTF-8");
@@ -217,7 +220,7 @@ public class HandyUpdateTest {
         String html = lies("src/main/assets/web/local/system.html");
         assertTrue(html.contains("'route', 'update'"));
         assertTrue(html.contains("system.handy_update_confirm"));
-        assertTrue(html.contains("update: !!(upd && upd.checked)"));
+        assertTrue(html.contains("update: bestaetigt(upd,"));
     }
 
     static String lies(String pfad) throws Exception {

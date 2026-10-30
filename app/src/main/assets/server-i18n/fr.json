@@ -2065,6 +2065,10 @@
       }
     },
     "karte": {
+      "sucheInternet": {
+        "title": "Carte : recherche sur Internet",
+        "help": "Quand tu cherches sur la carte, ton texte et ton lieu approximatif (arrondi à environ 1 km) vont à Photon, Nominatim et Overpass, sans identifiant. Désactivé : rien n’est envoyé, tu trouves seulement les lieux enregistrés et les coordonnées."
+      },
       "quelle": {
         "help": "D’où Panoptes charge les images de carte. La source choisie voit votre adresse IP et la zone de carte, donc à peu près où se trouve votre voiture. « Aucune » : aucune carte n’est chargée. Réglage d’usine : Aucune. Panoptes ne passe jamais de lui-même à une autre source."
       }
@@ -2439,6 +2443,7 @@
     "zuendung_an": "La mise à jour ne fonctionne que si la voiture est éteinte. Veuillez l’éteindre et réessayer.",
     "zustand_unbekannt": "Panoptes ne sait pas avec certitude si la voiture est à l’arrêt. Veuillez réessayer dans un instant.",
     "wartet_wlan": "Les mises à jour sont réglées sur « Wi-Fi uniquement » et la voiture n’a pas de Wi-Fi pour l’instant.",
+    "mobil_frage": "La voiture n’a pas de Wi-Fi pour le moment. La mise à jour demande environ {0} de données mobiles. Charger pour cette version seulement ?",
     "zu_alt": "Pour cette mise à jour, Panoptes a d’abord besoin d’une version plus récente. Veuillez mettre à jour dans la voiture.",
     "andere_version": "Cette version n’est pas validée. La version validée est {0}.",
     "bestaetigung_fehlt": "Veuillez d’abord confirmer la mise à jour.",

@@ -93,8 +93,8 @@ public final class AppUpdateApiHandler {
                 b = new JSONObject();
             }
             HttpResponse.sendJson(out, at.greenchili.surfmate.appupdate.FernUpdate.get().starten(b.optString("version", null),
-                    b.optBoolean("bestaetigt", false), at.greenchili.surfmate.auth.Kopplungen.get().anzeigeName(kid), sprache)
-                    .toString());
+                    b.optBoolean("bestaetigt", false), b.optBoolean("mobil", false),
+                    at.greenchili.surfmate.auth.Kopplungen.get().anzeigeName(kid), sprache).toString());
             return true;
         }
         if (pathOnly.equals("/api/appupdate/suchen")) {
@@ -103,13 +103,16 @@ public final class AppUpdateApiHandler {
             return true;
         }
         int vc;
+        boolean mobil;
         try {
-            vc = new JSONObject(body == null || body.isEmpty() ? "{}" : body).getInt("versionCode");
+            JSONObject b = new JSONObject(body == null || body.isEmpty() ? "{}" : body);
+            vc = b.getInt("versionCode");
+            mobil = b.optBoolean("mobil", false);
         } catch (Exception e) {
             HttpResponse.sendJson(out, 400, "{\"ok\":false,\"grund\":\"versionCode\"}");
             return true;
         }
-        String grund = d.installieren(vc);
+        String grund = d.installieren(vc, mobil);
         HttpResponse.sendJson(out, grund == null ? "{\"ok\":true}"
                 : new JSONObject().put("ok", false).put("grund", grund).toString());
         return true;

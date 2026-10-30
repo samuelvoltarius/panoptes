@@ -136,7 +136,8 @@
                             <div class="sys-note" id="brueckeStatus"></div>
                             <!-- 0.1.25 Tagesgrenze für Bilder/Videos übers Internet (Datenvolumen am Auto) -->
                             <div class="sys-note" id="brueckeMedienBox" style="display:none;margin-top:6px;"><span id="brueckeMedienText"></span>
-                                <select id="brueckeMedienMb" style="margin-left:8px;"><option value="0">0 MB</option><option value="100">100 MB</option><option value="250">250 MB</option><option value="500">500 MB</option><option value="1000">1 GB</option><option value="2000">2 GB</option></select></div>
+                                <select id="brueckeMedienMb" style="margin-left:8px;"><option value="0">0 MB</option><option value="100">100 MB</option><option value="250">250 MB</option><option value="500">500 MB</option><option value="-1" data-i18n="system.bridge_media_unlimited">Kein Limit</option><option value="1000">1 GB</option><option value="2000">2 GB</option></select></div>
+                            <div class="sys-note" id="brueckeMedienHinweis" style="display:none;" data-i18n="system.bridge_media_hint">Die Größe steht vor dem Laden in der Liste. Im Mobilfunk kann ein Video viel Datenvolumen brauchen.</div>
                             <!-- 0.1.24 Zustimmung (28.10.): Häkchen vor dem Einschalten; Bestand: einmal nachfragen -->
                             <label id="brueckeZustimmungBox" class="sys-note" style="display:none;gap:10px;align-items:flex-start;margin-top:8px;"><input type="checkbox" id="brueckeZustimmung" style="width:22px;height:22px;flex:none;"> <span><span data-i18n="system.bridge_consent">Ich möchte mein Handy übers Internet verbinden. Dafür läuft verschlüsselter Verkehr über unseren Server in Deutschland. Der Server sieht keine Fahrzeugdaten.</span> <a id="brueckeDatenschutz" href="https://byd.serveone.at/datenschutz#bruecke" target="_blank" rel="noopener" data-i18n="system.bridge_consent_link">Datenschutz ›</a></span></label>
                         </div>
@@ -798,7 +799,7 @@
                     cb.checked = false;
                     return;
                 }
-                // 0.1.26.1 Panoptes aktualisieren vom Handy: eigene Rückfrage, Standard aus (außer erste Kopplung / am Display erlaubt)
+                // 0.1.26.1 Panoptes aktualisieren vom Handy: eigene Rückfrage, Standard aus
                 if (cb.getAttribute('data-handy-recht') === 'update' && cb.checked
                     && !window.confirm(self.t('system.handy_update_confirm', 'Dieses Gerät darf dann Panoptes aktualisieren – nur auf eine freigegebene Version und nur, wenn das Auto in P steht und aus ist. Du bekommst bei jedem Start eine Telegram-Nachricht. Einschalten?'))) {
                     cb.checked = false;
@@ -881,7 +882,7 @@
                             + self.esc(self.t('system.req_unlock', 'Auch Aufsperren erlauben (mit Fingerabdruck am Handy, später unter Kopplungen änderbar)')) + '</label>'
                             + '<label class="sys-note" style="display:flex;gap:10px;align-items:center;margin:4px 0 10px;"><input type="checkbox" data-wb="' + self.esc(a.ref) + '" style="width:22px;height:22px;"> '
                             + self.esc(self.t('system.req_wallbox', 'Auch die Wallbox steuern (Laden starten/stoppen, Ladestrom; später änderbar)')) + '</label>'
-                            + '<label class="sys-note" style="display:flex;gap:10px;align-items:center;margin:4px 0 10px;"><input type="checkbox" checked data-upd="' + self.esc(a.ref) + '" style="width:22px;height:22px;"> '
+                            + '<label class="sys-note" style="display:flex;gap:10px;align-items:center;margin:4px 0 10px;"><input type="checkbox" data-upd="' + self.esc(a.ref) + '" style="width:22px;height:22px;"> '
                             + self.esc(self.t('system.req_update', 'Darf Panoptes aktualisieren (nur geparkt; später änderbar)')) + '</label>' : '')
                         + '<div class="sys-actions">'
                         + '<button class="btn btn-primary" type="button" style="min-width:140px;min-height:48px;font-size:16px;" data-req="' + self.esc(a.ref) + '" data-art="' + self.esc(a.art || '') + '" data-was="erlauben">' + self.esc(self.t('system.req_allow', 'Erlauben')) + '</button> '
@@ -899,9 +900,14 @@
                 Array.prototype.forEach.call(document.querySelectorAll('#pairReq input[data-auf]'), function (x) { if (x.getAttribute('data-auf') === ref) auf = x; });
                 var wb = null;   // 0.1.25 „Auch die Wallbox steuern“ (nur Handy-Anfragen)
                 Array.prototype.forEach.call(document.querySelectorAll('#pairReq input[data-wb]'), function (x) { if (x.getAttribute('data-wb') === ref) wb = x; });
-                var upd = null;   // 0.1.26.1 „Darf Panoptes aktualisieren“ (nur Handy-Anfragen, Standard an)
+                var upd = null;   // 0.1.26.1 „Darf Panoptes aktualisieren“ (nur Handy-Anfragen, 0.1.32.1 Standard aus)
                 Array.prototype.forEach.call(document.querySelectorAll('#pairReq input[data-upd]'), function (x) { if (x.getAttribute('data-upd') === ref) upd = x; });
-                var body = was !== 'erlauben' ? '{}' : JSON.stringify({ aufsperren: !!(auf && auf.checked), wallbox: !!(wb && wb.checked), update: !!(upd && upd.checked) });
+                // 0.1.32.1: dieselbe Rückfrage wie unter Gekoppelte Geräte, nichts geht still mit
+                function bestaetigt(x, text) { return !!(x && x.checked) && was === 'erlauben' && window.confirm(text); }
+                var body = was !== 'erlauben' ? '{}' : JSON.stringify({
+                    aufsperren: bestaetigt(auf, self.t('system.handy_aufsperren_confirm', 'Dieses Handy darf das Auto dann aufsperren – nur nach Fingerabdruck bzw. Face ID am Handy, und du bekommst bei jedem Aufsperren eine Telegram-Meldung. Einschalten?')),
+                    wallbox: bestaetigt(wb, self.t('system.handy_wallbox_confirm', 'Dieses Handy darf dann von überall das Laden starten und stoppen und den Ladestrom ändern – nur an der freigegebenen Wallbox, nie während der Fahrt. Du bekommst bei jeder Änderung eine Telegram-Nachricht. Einschalten?')),
+                    update: bestaetigt(upd, self.t('system.handy_update_confirm', 'Dieses Gerät darf dann Panoptes aktualisieren – nur auf eine freigegebene Version und nur, wenn das Auto in P steht und aus ist. Du bekommst bei jedem Start eine Telegram-Nachricht. Einschalten?')) });
                 var url = art === 'weiteres' && /^r-[0-9a-f]{16}$/.test(ref) ? '/api/kopplung/weiteres-geraet/' + ref + '/' + was   // 0.1.25
                     : /^r-[0-9a-f]{16}$/.test(ref) ? '/api/cloud-uebergabe/' + ref + '/' + was   // 0.1.21 BYD-Cloud-Übergabe
                     : '/api/kopplung/anfrage/' + encodeURIComponent(ref) + '/' + was;
@@ -979,6 +985,7 @@
                 if (d.ein && typeof d.medienTagMb === 'number') {
                     document.getElementById('brueckeMedienText').textContent = this.t('system.bridge_media',
                         'Bilder und Videos übers Internet heute: {h} MB. Höchstens pro Tag:', { h: d.medienHeuteMb || 0 });
+                    document.getElementById('brueckeMedienHinweis').style.display = d.medienTagMb < 0 ? '' : 'none';
                     mSel.value = String(d.medienTagMb);
                     var self = this;
                     mSel.onchange = function () {

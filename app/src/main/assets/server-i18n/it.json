@@ -2065,6 +2065,10 @@
       }
     },
     "karte": {
+      "sucheInternet": {
+        "title": "Mappa: ricerca su Internet",
+        "help": "Quando cerchi sulla mappa, il testo e la posizione approssimativa (arrotondata a circa 1 km) vanno a Photon, Nominatim e Overpass, senza identificativo. Spento: non viene inviato nulla, trovi solo luoghi salvati e coordinate."
+      },
       "quelle": {
         "help": "Da dove Panoptes carica le immagini della mappa. La fonte scelta vede il tuo indirizzo IP e l’area della mappa, quindi più o meno dove si trova la tua auto. «Nessuna»: non viene caricata alcuna mappa. Impostazione di fabbrica: Nessuna. Panoptes non passa mai da solo a un’altra fonte."
       }
@@ -2439,6 +2443,7 @@
     "zuendung_an": "L’aggiornamento funziona solo con l’auto spenta. Spegnila e riprova.",
     "zustand_unbekannt": "Panoptes ora non sa con certezza se l’auto è ferma. Riprova tra un momento.",
     "wartet_wlan": "Gli aggiornamenti sono impostati su «solo Wi-Fi» e l’auto ora non ha Wi-Fi.",
+    "mobil_frage": "L’auto ora non ha Wi-Fi. L’aggiornamento richiede circa {0} di dati mobili. Scaricare solo per questa versione?",
     "zu_alt": "Per questo aggiornamento Panoptes ha prima bisogno di una versione più recente. Aggiorna nell’auto.",
     "andere_version": "Questa versione non è approvata. La versione approvata è {0}.",
     "bestaetigung_fehlt": "Conferma prima l’aggiornamento.",

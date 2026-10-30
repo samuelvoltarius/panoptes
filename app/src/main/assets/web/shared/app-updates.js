@@ -113,6 +113,8 @@
                 txt = t('system.upd_vorgemerkt', 'Vorgemerkt: Panoptes installiert das Update etwa 10 Minuten, nachdem du das Auto abgestellt hast. Der Wächter ist dabei ein paar Minuten aus.');
             } else if (v && d.automatischGeplant) {
                 txt = t('system.upd_auto_planned', 'Wird automatisch installiert, sobald das Auto geparkt und die Zündung aus ist.');
+            } else if (v && d.mobilFrage) {
+                txt = t('system.upd_mobil_hinweis', 'Kein WLAN. Du kannst über mobile Daten laden, Panoptes fragt vorher.');
             } else if (v && !d.installierbar) {
                 txt = this.grundText(d.nichtWeil);
             } else if (v) {
@@ -133,7 +135,7 @@
             $('updBar').style.width = prozent + '%';
 
             var inst = $('updInstall');
-            inst.style.display = v && d.installierbar && !laeuft && d.phase !== 'pausiert' ? '' : 'none';
+            inst.style.display = v && (d.installierbar || d.mobilFrage) && !laeuft && d.phase !== 'pausiert' ? '' : 'none';
             $('updSearch').disabled = laeuft;
             $('updCancel').style.display = v && d.vorgemerkt && !laeuft ? '' : 'none';
 
@@ -181,6 +183,10 @@
             if (!v) return;
             // 0.1.26.1: gleiche Rückfrage wie in der Handy-App (HANDY_API_VERTRAG §8)
             if (!window.confirm(t('system.upd_confirm_fern', 'Panoptes wird jetzt auf {v} aktualisiert. Wächter und Verbindung sind ca. 3–8 Minuten weg. Läuft die neue Version nicht sauber, kehrt Panoptes von selbst zur jetzigen zurück.', { v: v.version }))) return;
+            // 0.1.32.1: ohne WLAN wie die Karte: Größe nennen, gilt nur für diesen Download
+            var mobil = !!d.mobilFrage;
+            if (mobil && !window.confirm(t('system.upd_mobil_frage', 'Das Auto hat gerade kein WLAN. Das Update braucht etwa {g} mobile Daten. Nur für diese Version laden?',
+                { g: v.groesseBytes > 0 ? Math.round(v.groesseBytes / 1000000) + ' MB' : '70 MB' }))) return;
             var b = $('updInstall');
             b.disabled = true;
             this.alteVersion = d.aktuell && d.aktuell.version;
@@ -188,7 +194,7 @@
                 .then(function (s) { if (s && s.appVersion) self.alteVersion = s.appVersion; }, function () {})
                 .then(function () {
                     return fetch('/api/appupdate/installieren', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ versionCode: v.versionCode, version: v.version, bestaetigt: true }) });
+                        body: JSON.stringify({ versionCode: v.versionCode, version: v.version, bestaetigt: true, mobil: mobil }) });
                 })
                 .then(function (r) {
                     if (r.status === 403) return { ok: false, grund: 'kein_recht' };

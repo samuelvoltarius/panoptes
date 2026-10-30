@@ -2059,6 +2059,10 @@
       }
     },
     "karte": {
+      "sucheInternet": {
+        "title": "Map: search on the internet",
+        "help": "When you search on the map, your search text and your approximate location (rounded to about 1 km) go to Photon, Nominatim and Overpass, without any ID. Off: nothing is sent, you only find saved places and coordinates."
+      },
       "quelle": {
         "help": "Where Panoptes loads map images from. The chosen source sees your IP address and the map area, so roughly where your car is. “None”: no maps are loaded. Factory default: None. Panoptes never switches to another source by itself."
       }
@@ -2433,6 +2437,7 @@
     "zuendung_an": "Updates only work when the car is switched off. Please switch it off and try again.",
     "zustand_unbekannt": "Panoptes cannot tell for sure right now whether the car is parked. Please try again in a moment.",
     "wartet_wlan": "Updates are set to “Wi-Fi only”, and the car has no Wi-Fi right now.",
+    "mobil_frage": "The car has no Wi-Fi right now. The update needs about {0} of mobile data. Load for this version only?",
     "zu_alt": "For this update Panoptes first needs a newer version. Please update in the car.",
     "andere_version": "This version is not approved. The approved version is {0}.",
     "bestaetigung_fehlt": "Please confirm the update first.",

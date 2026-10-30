@@ -189,6 +189,14 @@ public class FehlerMeldenTest {
         v.put("modelId", "seal").put("modelSource", "default");
         assertEquals("Anzeige-Rückfall zählt nicht", AutoAngaben.UNBEKANNT, AutoAngaben.modell(new JSONObject().put("vehicle", v)));
         assertEquals(AutoAngaben.UNBEKANNT, AutoAngaben.modell(new JSONObject()));
+        v.put("modelId", "seagull").put("modelSource", "legacy");
+        assertEquals("0.1.32.1: Alt-Wahl zählt", "Dolphin Surf", AutoAngaben.modell(new JSONObject().put("vehicle", v)));
+        v.remove("modelSource");
+        assertEquals("ohne Herkunft = legacy", "Dolphin Surf", AutoAngaben.modell(new JSONObject().put("vehicle", v)));
+        v.put("modelId", "seal").put("modelSource", "legacy");
+        assertEquals("seal aus alter Neuinstallation zählt nie", AutoAngaben.UNBEKANNT, AutoAngaben.modell(new JSONObject().put("vehicle", v)));
+        v.put("modelId", "seagull").put("modelSource", "unset");
+        assertEquals(AutoAngaben.UNBEKANNT, AutoAngaben.modell(new JSONObject().put("vehicle", v)));
 
         JSONArray m = new JSONObject(Quelltext.lies(Paths.get("src/main/assets/web/shared/models/manifest.json")))
                 .getJSONArray("models");

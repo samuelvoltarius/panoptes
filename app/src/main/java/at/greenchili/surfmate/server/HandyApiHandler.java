@@ -313,7 +313,7 @@ public final class HandyApiHandler {
                 return wallbox(req, kid, u);
             case "update_starten":
                 return update().starten(req.optString("version", null), req.optBoolean("bestaetigt", false),
-                        k().anzeigeName(kid), EinstellungenApiHandler.sprache("sprache=" + req.optString("sprache", "")));
+                        req.optBoolean("mobil", false), k().anzeigeName(kid), EinstellungenApiHandler.sprache("sprache=" + req.optString("sprache", "")));
             case "route":
                 // Weg A (Koordination 28.10.): planen ab Auto-Position, ins Planer-Postfach; Karte am Display bleibt der
                 // einzige Weg ins Navi – nichts startet von selbst

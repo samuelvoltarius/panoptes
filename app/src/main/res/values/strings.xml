@@ -1679,6 +1679,8 @@
     <string name="roadsense_map_action_failed">Road watch didn\'t respond. Try again.</string>
     <string name="roadsense_map_no_location">Looking for a GPS signal…</string>
     <string name="karte_keine_quelle">No map source chosen. Pick one under System → Map source.</string>
+    <string name="karte_suche_hinweis">Map search asks Photon, Nominatim and Overpass with your search text and approximate location, without any ID. Turn off under Settings → Privacy.</string>
+    <string name="karte_suche_aus">Internet search is off. Turn it on under Settings → Privacy.</string>
     <!-- Navigation: search + routing + turn-by-turn -->
     <string name="roadsense_map_search_hint">Where to?</string>
     <string name="roadsense_map_search_action">Find</string>

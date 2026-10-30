@@ -69,10 +69,17 @@
                             <div style="flex:1;min-width:0;">
                                 <h2 id="cpTitel" data-i18n="camping.off">Camping ist aus</h2>
                                 <div class="cp-sub" id="cpSub"></div>
-                                <div class="cp-probe" id="cpProbe" data-i18n="camping.trial">Probelauf: Panoptes heizt in dieser Version noch nicht – es zeigt nur, was es tun würde.</div>
+                                <div class="cp-probe" id="cpProbe" data-i18n="camping.trial">Probelauf: Panoptes schaltet nichts und zeigt nur, was es tun würde.</div>
                             </div>
                             <button class="btn btn-primary cp-schalter" id="cpSchalter" type="button" data-i18n="camping.switch_on">Einschalten</button>
                         </div>
+                        <label class="cp-sub" style="display:block;margin:10px 0;"><span data-i18n="camping.weg_titel">Wie soll Panoptes heizen?</span>
+                            <select id="cpWeg" style="display:block;width:100%;min-height:48px;margin-top:4px;font-size:16px;">
+                                <option value="probelauf" data-i18n="camping.weg_probelauf">Probelauf: nichts schalten, nur zeigen</option>
+                                <option value="auto_an" data-i18n="camping.weg_auto_an">Heizen, wenn das Auto an ist</option>
+                                <option value="auto_an_und_cloud" data-i18n="camping.weg_cloud">Heizen, auch wenn das Auto aus ist (BYD-Cloud)</option>
+                            </select>
+                        </label>
                         <div id="cpKacheln" class="cp-grid"></div>
                         <div class="cp-tipps" id="cpTipps" style="display:none;">
                             <button class="btn" type="button" data-art="zu_kalt" data-i18n="camping.too_cold">Zu kalt</button>
@@ -189,6 +196,8 @@
                 h += this.kachel(this.t('camping.outside', 'Außen'), this.zahl(s.aussenC, 0), '°C', '');
                 h += this.kachel(this.t('camping.v12', 'Bordnetz'), this.zahl(s.v12, 1), 'V', '');
                 document.getElementById('cpKacheln').innerHTML = h;
+                var weg = document.getElementById('cpWeg');
+                if (s.heizweg && document.activeElement !== weg) weg.value = s.heizweg;
                 var probe = s.trockenlauf !== false;
                 document.getElementById('cpProbe').style.display = probe ? '' : 'none';
                 document.getElementById('cpProtoTitel').textContent = probe
@@ -252,6 +261,21 @@
                 var self = this;
                 document.getElementById('cpSchalter').onclick = function () {
                     self.senden('/api/camping', { an: !(self.s && self.s.aktiv) });
+                };
+                document.getElementById('cpWeg').onchange = function () {
+                    var w = this.value, alt = (self.s && self.s.heizweg) || 'probelauf';
+                    // 0.1.32.1: Cloud weckt das Auto bei jedem Heizen, darum eigene Rückfrage
+                    if (w === 'auto_an_und_cloud' && !window.confirm(self.t('camping.weg_cloud_frage',
+                        'Panoptes startet dann bei ausgeschaltetem Auto die Heizung über die BYD-Cloud und weckt das Auto dabei jedes Mal. Einschalten?'))) {
+                        this.value = alt;
+                        return;
+                    }
+                    fetch('/api/einstellungen', { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ werte: { 'camping.heizweg': w } }) })
+                        .then(function (r) { return r.ok; }, function () { return false; }).then(function (ok) {
+                            if (window.BYD && BYD.utils && BYD.utils.toast) BYD.utils.toast(ok ? self.t('system.handy_gespeichert', 'Gespeichert') : self.t('system.handy_fehler', 'Konnte nicht speichern.'), ok ? 'success' : 'error');
+                            self.laden();
+                        });
                 };
                 var tipps = document.querySelectorAll('[data-art]');
                 for (var i = 0; i < tipps.length; i++) {

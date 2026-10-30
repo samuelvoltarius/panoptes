@@ -138,9 +138,14 @@ public final class EinstellungenApiHandler {
                 JSONObject b = new JSONObject(body == null || body.isEmpty() ? "{}" : body);
                 aufsperren = erlauben && b.optBoolean("aufsperren", false);
                 wallbox = erlauben && b.optBoolean("wallbox", false);   // 0.1.25 Recht „wallbox“ gleich beim Koppeln
-                // 0.1.26.1 Recht „update“: Display und Panoptes-Web senden es (Häkchen, Standard an), Telegram nie
+                // 0.1.26.1 Recht „update“: nur Panoptes-Web mit Häkchen und Rückfrage (0.1.32.1), Display und Telegram nie
                 update = erlauben && b.optBoolean("update", false);
             } catch (Exception ignored) {
+            }
+            // 0.1.32.1: Zusatzrechte sichtbar im Log, damit eine Vergabe nachvollziehbar bleibt
+            if (aufsperren || wallbox || update) {
+                at.greenchili.surfmate.logging.DaemonLogger.getInstance("Kopplung").info("Erlauben mit Zusatzrechten:"
+                        + (aufsperren ? " aufsperren" : "") + (wallbox ? " wallbox" : "") + (update ? " update" : ""));
             }
             at.greenchili.surfmate.auth.KopplungsAnfragen.Entscheid e =
                     at.greenchili.surfmate.auth.KopplungsAnfragen.get().entscheiden(ref, erlauben, aufsperren, wallbox, update,

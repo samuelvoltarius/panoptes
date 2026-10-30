@@ -1210,6 +1210,8 @@
     <string name="roadsense_map_action_failed">Straßenzustand antwortet nicht. Versuche es noch einmal.</string>
     <string name="roadsense_map_no_location">Suche GPS-Signal…</string>
     <string name="karte_keine_quelle">Keine Kartenquelle gewählt. Auswahl unter System → Kartenquelle.</string>
+    <string name="karte_suche_hinweis">Die Kartensuche fragt Photon, Nominatim und Overpass mit deinem Suchtext und dem ungefähren Ort, ohne Kennung. Abschalten unter Einstellungen → Datenschutz.</string>
+    <string name="karte_suche_aus">Die Suche im Internet ist aus. Einschalten unter Einstellungen → Datenschutz.</string>
     <!-- Navigation: search + routing + turn-by-turn -->
     <string name="roadsense_map_search_hint">Wohin?</string>
     <string name="roadsense_map_search_action">Suchen</string>

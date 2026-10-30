@@ -341,11 +341,8 @@ public final class MessageOverlayService extends Service {
                     c = at.greenchili.surfmate.util.DaemonHttpClient.open(
                             pfad + (erlauben ? "/erlauben" : "/ablehnen"), "POST", 3000, 5000);
                     c.setDoOutput(true);
-                    // 0.1.26.1: am Display erlaubte Handys dürfen Panoptes aktualisieren (Recht „update“)
-                    byte[] koerper = erlauben && pfad.startsWith("/api/kopplung/anfrage/")
-                            ? "{\"update\":true}".getBytes(java.nio.charset.StandardCharsets.UTF_8) : new byte[0];
-                    if (koerper.length > 0) c.setRequestProperty("Content-Type", "application/json");
-                    try (java.io.OutputStream o = c.getOutputStream()) { o.write(koerper); }
+                    // 0.1.32.1: am Display nie Zusatzrechte; die schaltet der Besitzer einzeln mit Rückfrage ein
+                    try (java.io.OutputStream o = c.getOutputStream()) { o.write(new byte[0]); }
                     logger.info("Kopplung am Display: " + (erlauben ? "erlaubt" : "abgelehnt") + " -> " + c.getResponseCode());
                 } catch (Throwable t) {
                     logger.warn("Kopplung am Display fehlgeschlagen: " + t.getMessage());

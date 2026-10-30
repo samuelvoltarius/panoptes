@@ -57,7 +57,7 @@ public final class KopplungsAnfragen {
             if (aufsperren) aufsperrenErlauben(kid);
         }
 
-        /** 0.1.26.1: dazu {@code update} = Recht „update“ (am Display bzw. mit Login erlaubt). */
+        /** 0.1.26.1: dazu {@code update} = Recht „update“ (nur mit Login gewählt). */
         default void zusatzRechte(String kid, boolean aufsperren, boolean wallbox, boolean update) {
             zusatzRechte(kid, aufsperren, wallbox);
         }
@@ -71,7 +71,7 @@ public final class KopplungsAnfragen {
         boolean aufsperren;
         /** 0.1.25: beim Erlauben zusätzlich „wallbox“ gewählt (nur Handy). */
         boolean wallbox;
-        /** 0.1.26.1: beim Erlauben zusätzlich „update“ (am Display bzw. mit Login; Telegram nicht). */
+        /** 0.1.26.1: beim Erlauben zusätzlich „update“ (nur mit Login gewählt; Display und Telegram nie). */
         boolean update;
         final long angelegt;
         Status status = Status.WARTET;

@@ -26,6 +26,8 @@ public final class FernUpdate {
         JSONObject status(String sprache);
         /** {@link AppUpdateDienst#installieren}: null = gestartet, sonst Grund. */
         String installieren(int versionCode);
+        /** 0.1.32.1: wie oben; {@code mobil} = Einwilligung für diesen einen Download ohne WLAN. */
+        default String installieren(int versionCode, boolean mobil) { return installieren(versionCode); }
         /** Fahrsperre: null = steht in P bzw. Auto aus; sonst Grund (DrivingSafetyGuard). */
         String fahrsperre();
         void telegram(String version, String geraet);
@@ -99,6 +101,15 @@ public final class FernUpdate {
      * version}} oder {@code {ok:false, grund, text}}. {@code darf} prüft der Aufrufer (Recht „update“).
      */
     public JSONObject starten(String version, boolean bestaetigt, String geraet, String sprache) throws Exception {
+        return starten(version, bestaetigt, false, geraet, sprache);
+    }
+
+    /**
+     * 0.1.32.1: {@code mobil} = Einwilligung für diesen einen Download ohne WLAN. Fehlt sie und das Auto darf fragen,
+     * kommt {@code {ok:false, grund:"wartet_wlan", mobilFrage:true, groesseBytes, text}}; das Gerät fragt und ruft neu.
+     */
+    public JSONObject starten(String version, boolean bestaetigt, boolean mobil, String geraet, String sprache)
+            throws Exception {
         if (!bestaetigt) return fehler("bestaetigung_fehlt", sprache, null);
         JSONObject s = env.status(sprache);
         if (s == null) return fehler("nicht_bereit", sprache, null);
@@ -112,9 +123,17 @@ public final class FernUpdate {
             return fehler("andere_version", sprache, v.optString("version"));
         }
         String grund = hindernis(s, true);
-        if (grund != null) return fehler(grund, sprache, v.optString("version"));
+        boolean frage = UpdateRegel.WARTET_WLAN.equals(grund) && s.optBoolean("mobilFrage", false);
+        if (frage && !mobil) {
+            long g = v.optLong("groesseBytes", 0);
+            return new JSONObject().put("ok", false).put("grund", grund).put("mobilFrage", true)
+                    .put("groesseBytes", g > 0 ? g : JSONObject.NULL)
+                    .put("text", text(sprache, "mobil_frage", UpdateRegel.groesseText(
+                            g > 0 ? g : UpdateHinweis.MOBIL_GROESSE_RUECKFALL), null));
+        }
+        if (grund != null && !frage) return fehler(grund, sprache, v.optString("version"));
         int vc = v.optInt("versionCode");
-        String g = env.installieren(vc);
+        String g = frage ? env.installieren(vc, true) : env.installieren(vc);
         if (g != null) return fehler(g, sprache, v.optString("version"));
         merken(vc, version, geraet);
         try {
@@ -232,6 +251,7 @@ public final class FernUpdate {
         DEUTSCH.put("zuendung_an", "Update geht nur, wenn das Auto aus ist. Bitte ausschalten und noch einmal versuchen.");
         DEUTSCH.put("zustand_unbekannt", "Panoptes weiß gerade nicht sicher, ob das Auto steht. Bitte gleich noch einmal versuchen.");
         DEUTSCH.put("wartet_wlan", "Updates sind auf „nur WLAN“ eingestellt, und das Auto hat gerade kein WLAN.");
+        DEUTSCH.put("mobil_frage", "Das Auto hat gerade kein WLAN. Das Update braucht etwa {0} mobile Daten. Nur für diese Version laden?");
         DEUTSCH.put("zu_alt", "Für dieses Update braucht Panoptes zuerst eine neuere Version. Bitte am Auto aktualisieren.");
         DEUTSCH.put("andere_version", "Diese Version ist nicht freigegeben. Freigegeben ist {0}.");
         DEUTSCH.put("bestaetigung_fehlt", "Bitte das Update zuerst bestätigen.");
@@ -250,6 +270,11 @@ public final class FernUpdate {
         public String installieren(int versionCode) {
             AppUpdateDienst d = AppUpdateDienst.get();
             return d == null ? "nicht_bereit" : d.installieren(versionCode);
+        }
+
+        public String installieren(int versionCode, boolean mobil) {
+            AppUpdateDienst d = AppUpdateDienst.get();
+            return d == null ? "nicht_bereit" : d.installieren(versionCode, mobil);
         }
 
         public String fahrsperre() {

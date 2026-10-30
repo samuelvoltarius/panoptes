@@ -33,6 +33,11 @@ public final class VehicleCapabilities {
             "/data/user_de/0/com.android.shell/surfmate/web/shared/faehigkeiten_belegt.json");
 
     private static final long CACHE_MS = 10 * 60 * 1000L;
+    /** 0.1.32.1: fehlen noch Werte (Daemon eben gestartet, Telemetrie läuft erst an), bald wieder nachsehen. */
+    private static final long CACHE_LUECKE_MS = 30 * 1000L;
+    /** 0.1.32.1: einmal belegte Werte überleben den Neustart; eine Momentaufnahme ohne Wert beweist kein „unbekannt“. */
+    static final String WERTE_DATEI = at.greenchili.surfmate.util.DaemonStorage.rebase(
+            "/data/user_de/0/com.android.shell/surfmate/faehigkeiten_werte.json");
     private static JSONObject cache;
     private static long cacheAt;
 
@@ -40,7 +45,7 @@ public final class VehicleCapabilities {
 
     public static synchronized JSONObject get() {
         long now = System.currentTimeMillis();
-        if (cache != null && now - cacheAt < CACHE_MS) return cache;
+        if (cache != null && now - cacheAt < (hatLuecke(cache) ? CACHE_LUECKE_MS : CACHE_MS)) return cache;
         try {
             String singleOs = run("getprop ro.build.system.fission_single_os", 3).trim();
             String displays = run("dumpsys display 2>/dev/null | grep -E 'mDisplayId=|  mName=|DisplayDeviceInfo\\{' ", 6);
@@ -50,6 +55,7 @@ public final class VehicleCapabilities {
                 String pakete = run("pm list packages 2>/dev/null", 5);
                 erweitere(cache, kamera, dilink5(), pakete, modellId(), werteSchnappschuss(), projektionPakete());
                 ueberProjektion(cache, modellId(), dilinkStufe(), tabelle(), nutzerAngaben());
+                werteMerken();
             } catch (Exception ignored) {
                 erweitere(cache, null, false, null, null, null);   // alles „unbekannt“
             }
@@ -66,6 +72,47 @@ public final class VehicleCapabilities {
     public static synchronized void neuErkennen() {
         cache = null;
         cacheAt = 0;
+        new java.io.File(WERTE_DATEI).delete();
+    }
+
+    /** Belegte Werte aus {@code gemerkt} übernehmen und umgekehrt; true, wenn {@code gemerkt} dazugelernt hat. */
+    static boolean werteAbgleichen(JSONObject werte, JSONObject gemerkt) throws Exception {
+        boolean neu = false;
+        java.util.List<String> namen = new java.util.ArrayList<>();
+        java.util.Iterator<String> it = werte.keys();
+        while (it.hasNext()) namen.add(it.next());
+        for (String k : namen) {
+            if (JA.equals(werte.optString(k))) {
+                if (!JA.equals(gemerkt.optString(k))) { gemerkt.put(k, JA); neu = true; }
+            } else if (JA.equals(gemerkt.optString(k))) {
+                werte.put(k, JA);
+            }
+        }
+        return neu;
+    }
+
+    static boolean hatLuecke(JSONObject c) {
+        JSONObject w = c.optJSONObject("werte");
+        if (w == null) return false;
+        java.util.Iterator<String> it = w.keys();
+        while (it.hasNext()) if (!JA.equals(w.optString(it.next()))) return true;
+        return false;
+    }
+
+    private static void werteMerken() {
+        JSONObject w = cache.optJSONObject("werte");
+        if (w == null) return;
+        try {
+            java.io.File f = new java.io.File(WERTE_DATEI);
+            JSONObject gemerkt = f.isFile()
+                    ? new JSONObject(new String(java.nio.file.Files.readAllBytes(f.toPath()),
+                            java.nio.charset.StandardCharsets.UTF_8))
+                    : new JSONObject();
+            if (werteAbgleichen(w, gemerkt)) {
+                java.nio.file.Files.write(f.toPath(), gemerkt.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     public static boolean hasCluster() { return get().optBoolean("cluster", false); }

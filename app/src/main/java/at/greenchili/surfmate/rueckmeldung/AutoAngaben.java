@@ -1,5 +1,6 @@
 package at.greenchili.surfmate.rueckmeldung;
 
+import at.greenchili.surfmate.config.VehicleModelSelection;
 import at.greenchili.surfmate.planer.FahrzeugWahl;
 
 import org.json.JSONObject;
@@ -40,11 +41,24 @@ public final class AutoAngaben {
         NAMEN = Collections.unmodifiableMap(m);
     }
 
-    /** Modellname des Autos: nur echte Wahl, nie der Anzeige-Rückfall (Regel 1). */
+    /**
+     * Modellname des Autos: nur echte Wahl, nie der Anzeige-Rückfall (Regel 1). 0.1.32.1: auch Quelle „legacy“ (Wahl aus
+     * der Zeit vor der Herkunfts-Angabe), außer „seal“: das schrieben alte Neuinstallationen bei jedem Auto.
+     */
     public static String modell(JSONObject root) {
         String id = FahrzeugWahl.erkanntesModell(root);
+        if (id == null) id = altWahl(root);
         String name = id == null ? null : NAMEN.get(id);
         return name == null ? UNBEKANNT : name;
+    }
+
+    private static String altWahl(JSONObject root) {
+        JSONObject v = root == null ? null : root.optJSONObject("vehicle");
+        if (v == null) return null;
+        String raw = v.optString("modelId", "").trim().toLowerCase(java.util.Locale.ROOT);
+        if (raw.isEmpty() || "seal".equals(raw)) return null;
+        return VehicleModelSelection.SOURCE_LEGACY.equals(
+                VehicleModelSelection.normalizeSource(v.optString("modelSource", ""), raw)) ? raw : null;
     }
 
     /** Rein: 5 und 4 aus der gewählten Plattform; bis Android 10 ist es DiLink 3; sonst nicht sicher bekannt. */
