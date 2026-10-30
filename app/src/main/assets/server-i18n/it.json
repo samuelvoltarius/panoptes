@@ -26,6 +26,8 @@
     "rate_limited_locked_for_seconds": "Troppi tentativi — bloccato per {0} s",
     "invalid_device_token": "Questo token del dispositivo non è valido",
     "only_car_or_pin": "Questo è possibile solo in auto o con il PIN",
+    "kamera_recht_fehlt": "Manca il permesso telecamera – attivalo in Panoptes in Dispositivi collegati.",
+    "standbild_recht_fehlt": "Manca il permesso immagine – attivalo in Panoptes in Dispositivi collegati.",
     "web_link_expired": "Il link è scaduto. Aprilo di nuovo nell'app.",
     "invalid_request_with_detail": "La richiesta non è valida: {0}",
     "bydcloud_not_configured": "L'account BYD non è configurato",

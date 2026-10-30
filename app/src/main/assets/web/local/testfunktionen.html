@@ -44,6 +44,30 @@
                 <button class="tbtn" type="button" id="bzOff" data-i18n="testf.off">Aus</button>
                 <p id="bzNa" hidden data-i18n="testf.na">Diese Testfunktion kommt mit dem nächsten Update.</p>
             </article>
+            <article class="tc" id="tt">
+                <h2 data-i18n="testf.tacho_title">Tacho-Test (Beta)</h2>
+                <p data-i18n="testf.tacho_lead">Prüft nur, was dein Tacho kann. Es wird nichts an den Tacho geschickt. Geht nur im Stand.</p>
+                <div id="ttErg"></div>
+                <button class="tbtn lime" type="button" id="ttStart" data-i18n="testf.tacho_start">Test starten</button>
+                <button class="tbtn" type="button" id="ttCopy" hidden data-i18n="testf.tacho_copy">Ergebnis kopieren</button>
+                <p id="ttHinweis" hidden data-i18n="testf.tacho_share">Willst du uns helfen? Kopiere das Ergebnis und schick es über die Wunsch-Box. Es enthält nur Modell, Software-Stand und die drei Antworten – keine Kennung, keinen Ort.</p>
+            </article>
+            <article class="tc" id="tn" hidden>
+                <h2 data-i18n="testf.navi_title">Navi-App am Tacho (Beta)</h2>
+                <p data-i18n="testf.navi_lead">Zeigt eine Navi-App auf dem Tacho. Nur Navi-Apps aus der Liste. Ausschalten holt die Tacho-Anzeige sofort zurück.</p>
+                <select id="tnPaket" class="tbtn"></select>
+                <div>
+                    <button class="tbtn" type="button" id="tnProbe" data-i18n="testf.navi_probe">Probe im Stand (20 s)</button>
+                </div>
+                <p id="tnFrage" hidden data-i18n="testf.navi_frage">Schau auf den Tacho: Sind alle Warnleuchten und das Tempo noch zu sehen?</p>
+                <div id="tnAntwort" hidden>
+                    <button class="tbtn lime" type="button" id="tnJa" data-i18n="testf.navi_ja">Ja, alles zu sehen</button>
+                    <button class="tbtn" type="button" id="tnNein" data-i18n="testf.navi_nein">Nein, etwas ist verdeckt</button>
+                </div>
+                <div class="big" id="tnState">…</div>
+                <button class="tbtn lime" type="button" id="tnOn" data-i18n="testf.navi_on">Einschalten</button>
+                <button class="tbtn" type="button" id="tnOff" data-i18n="testf.off">Aus</button>
+            </article>
         </div>
     </main>
 </div>
@@ -95,10 +119,109 @@
             .then(function () { $('bzOn').disabled = false; laden(); });   // echten Stand zurücklesen
     }
 
+    // ---- Tacho-Test (nur lesend) + Navi-App am Tacho (Kern Tacho 0.1.30)
+    var ttText = '', tnDaten = null, ttApps = null;
+    function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+    function grundText(g) {
+        var m = {
+            nur_im_stand: t('testf.tacho_stand', 'Geht nur im Stand (Gang P).'),
+            nur_in_p: t('testf.tacho_stand', 'Geht nur im Stand (Gang P).'),
+            auf_diesem_auto_nicht_angeboten: t('testf.navi_na', 'Auf diesem Auto nicht angeboten. Mach zuerst den Tacho-Test und die Probe.'),
+            nicht_erlaubt: t('testf.navi_nicht_erlaubt', 'Diese App ist nicht in der Navi-Liste.'),
+            start_fehlgeschlagen: t('testf.fail', 'Das hat nicht geklappt.')
+        };
+        return m[g] || t('testf.fail', 'Das hat nicht geklappt.');
+    }
+    function ttZeige(d) {
+        var zeilen = [['totwinkel', t('testf.tacho_bs', 'Totwinkel am Tacho')], ['karte', t('testf.tacho_map', 'Karte am Tacho')],
+                      ['andereApps', t('testf.tacho_apps', 'Andere Apps am Tacho')]];
+        var h = '';
+        zeilen.forEach(function (z) {
+            var u = d[z[0]] || {};
+            var s = u.status === 'ja' ? t('testf.ja', 'ja') : u.status === 'nein' ? t('testf.nein', 'nein') : t('testf.unbekannt', 'noch offen');
+            h += '<p><b>' + esc(z[1]) + ': ' + esc(s) + '</b><br>' + esc(u.grund || '') + '</p>';
+        });
+        if (d.hinweis) h += '<p>' + esc(d.hinweis) + '</p>';
+        $('ttErg').innerHTML = h;
+        ttText = d.text || '';
+        $('ttCopy').hidden = !ttText;
+        $('ttHinweis').hidden = !ttText;
+        ttApps = d.andereApps || null;
+        $('tn').hidden = !(ttApps && String(ttApps.code || '').indexOf('warnleuchten_') === 0);
+        if (!$('tn').hidden) tnLaden();
+    }
+    function ttStart() {
+        $('ttStart').disabled = true;
+        fetch('/api/tacho/faehigkeit', { cache: 'no-store' }).then(function (r) {
+            return r.json().then(function (d) { return { ok: r.ok, d: d }; });
+        }).then(function (x) {
+            if (!x.ok) { $('ttErg').innerHTML = '<p>' + esc(grundText(x.d && x.d.grund)) + '</p>'; return; }
+            ttZeige(x.d);
+        }, function () { toast(t('testf.fail', 'Das hat nicht geklappt.'), false); })
+          .then(function () { $('ttStart').disabled = false; });
+    }
+    function ttKopieren() {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(ttText).then(function () { toast(t('testf.tacho_copied', 'Kopiert.'), true); },
+                function () { window.prompt('', ttText); });
+        } else { window.prompt('', ttText); }
+    }
+    function tnZeige(d) {
+        tnDaten = d;
+        var sel = $('tnPaket');
+        if (!sel.options.length) {
+            (d.erlaubt || []).forEach(function (a) {
+                if (!a.installiert) return;
+                var o = document.createElement('option');
+                o.value = a.paket; o.textContent = a.name; sel.appendChild(o);
+            });
+            if (!sel.options.length) {
+                var o = document.createElement('option');
+                o.value = ''; o.textContent = t('testf.navi_keine', 'Keine Navi-App installiert'); sel.appendChild(o);
+            }
+        }
+        if (d.paket) sel.value = d.paket;
+        $('tnState').textContent = d.an ? t('testf.navi_an', 'An') : t('testf.navi_aus', 'Aus');
+        $('tnState').className = 'big' + (d.an ? ' on' : '');
+        $('tnOff').disabled = !d.an;
+        $('tnOn').disabled = d.warnleuchtenFrei !== 'ja' || !sel.value;
+        $('tnProbe').disabled = !sel.value || d.probeLaeuft;
+    }
+    function tnLaden() {
+        fetch('/api/tacho/navi', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (d) { if (d) tnZeige(d); }, function () {});
+    }
+    function tnSende(url, methode, daten, danach) {
+        return fetch(url, { method: methode, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(daten) })
+            .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+            .then(function (x) {
+                if (!x.ok) toast(grundText(x.d && x.d.grund), false);
+                else if (danach) danach(x.d);
+            }, function () { toast(t('testf.fail', 'Das hat nicht geklappt.'), false); })
+            .then(tnLaden);   // echten Stand zurücklesen
+    }
+
     BYD.i18n.init().then(function () {
         BYD.core.init();
         $('bzOn').onclick = function () { setze(true); };
         $('bzOff').onclick = function () { setze(false); };
+        $('ttStart').onclick = ttStart;
+        $('ttCopy').onclick = ttKopieren;
+        $('tnProbe').onclick = function () {
+            tnSende('/api/tacho/navi/probe', 'POST', { paket: $('tnPaket').value }, function () {
+                $('tnFrage').hidden = false; $('tnAntwort').hidden = false;
+            });
+        };
+        $('tnJa').onclick = function () {
+            $('tnFrage').hidden = true; $('tnAntwort').hidden = true;
+            tnSende('/api/tacho/navi/warnleuchten', 'PUT', { frei: 'ja' }, ttStart);
+        };
+        $('tnNein').onclick = function () {
+            $('tnFrage').hidden = true; $('tnAntwort').hidden = true;
+            tnSende('/api/tacho/navi/warnleuchten', 'PUT', { frei: 'nein' }, ttStart);
+        };
+        $('tnOn').onclick = function () { tnSende('/api/tacho/navi', 'PUT', { an: true, paket: $('tnPaket').value }); };
+        $('tnOff').onclick = function () { tnSende('/api/tacho/navi', 'PUT', { an: false }); };
         laden();
     });
 })();

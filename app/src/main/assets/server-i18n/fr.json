@@ -26,6 +26,8 @@
     "rate_limited_locked_for_seconds": "Trop d’essais — bloqué pendant {0} s",
     "invalid_device_token": "Ce jeton d'appareil n'est pas valide",
     "only_car_or_pin": "Cela n'est possible que dans la voiture ou avec le code PIN",
+    "kamera_recht_fehlt": "Autorisation caméra manquante – à activer dans Panoptes sous Appareils associés.",
+    "standbild_recht_fehlt": "Autorisation image fixe manquante – à activer dans Panoptes sous Appareils associés.",
     "web_link_expired": "Ce lien a expiré. Veuillez l'ouvrir à nouveau dans l'application.",
     "invalid_request_with_detail": "La requête n’est pas valide : {0}",
     "bydcloud_not_configured": "Le compte BYD n'est pas configuré",

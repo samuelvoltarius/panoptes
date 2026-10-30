@@ -179,6 +179,7 @@ public final class Kopplungen {
                 o.put("zuletzt", g.optLong("zuletzt"));
                 o.put("abgelaufen", nowMs - g.optLong("zuletzt", 0) > GUELTIG_OHNE_NUTZUNG_MS);
                 if (g.has("art")) o.put("art", g.optString("art"));
+                if (traegtFremdRechte(g.optString("art"))) o.put("rechte", rechteVon(g));   // 0.1.30
                 if (ART_HANDY.equals(g.optString("art"))) {
                     o.put("rechte", rechteVon(g));
                     // nur ob ein Aufsperr-Schlüssel hinterlegt ist, nie der Schlüssel selbst
@@ -194,7 +195,13 @@ public final class Kopplungen {
     }
 
     public static final java.util.Set<String> ARTEN = java.util.Collections.unmodifiableSet(
-            new java.util.HashSet<>(java.util.Arrays.asList("cockpit", "homeassistant", "handy", "web")));
+            new java.util.HashSet<>(java.util.Arrays.asList("cockpit", "homeassistant", "handy", "web", "dienst")));
+
+    /**
+     * 0.1.30 Kern Sicherheit: fremder Dienst (z. B. Xaventra). Darf nur Wächter-Ereignisse hören und – mit Recht
+     * {@code standbild} – ein Standbild je Ereignis holen; sonst nichts (ExternGuard, geringste Rechte).
+     */
+    public static final String ART_DIENST = "dienst";
 
     /** 0.1.21: Browser, angemeldet per Telegram-Erlauben – nur Web-Sitzung ohne Sicherheitsrechte (TelegramAnmeldung). */
     public static final String ART_WEB = "web";
@@ -221,10 +228,23 @@ public final class Kopplungen {
             RECHT_UPDATE = "update",
             // 0.1.28 P5 (Koordination 29.10.): Unfall-/Ereignis-Clips aufs Handy laden; Standard AUS, nur der Besitzer
             // schaltet es ein (Login/Display); zusätzlich zu „kamera“
-            RECHT_EREIGNISCLIP = "ereignisclip";
+            RECHT_EREIGNISCLIP = "ereignisclip",
+            // 0.1.30 Kern Sicherheit: genau EIN Standbild je Wächter-Ereignis (nie Clip, nie Live); Standard AUS
+            RECHT_STANDBILD = "standbild";
     public static final java.util.List<String> RECHTE = java.util.Collections.unmodifiableList(
             java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_AUFSPERREN, RECHT_PUSH, RECHT_WEB, RECHT_KAMERA,
-                    RECHT_WALLBOX, RECHT_ROUTE, RECHT_UPDATE, RECHT_EREIGNISCLIP));
+                    RECHT_WALLBOX, RECHT_ROUTE, RECHT_UPDATE, RECHT_EREIGNISCLIP, RECHT_STANDBILD));
+    /**
+     * 0.1.30 Kern Sicherheit: Rechte, die auch Kopplungen ohne Handy-Rechte (cockpit, homeassistant, dienst) tragen
+     * können. Standard AUS, nie automatisch gesetzt (auch nicht bei der Umstellung); nur der Besitzer schaltet sie ein.
+     */
+    public static final java.util.List<String> FREMD_RECHTE = java.util.Collections.unmodifiableList(
+            java.util.Arrays.asList(RECHT_KAMERA, RECHT_STANDBILD));
+
+    /** Arten, die {@link #FREMD_RECHTE} tragen können (web und Alt-Kopplungen ohne Art nie). */
+    static boolean traegtFremdRechte(String art) {
+        return "cockpit".equals(art) || "homeassistant".equals(art) || ART_DIENST.equals(art);
+    }
     /** Standard bei neuer Handy-Kopplung: aufsperren, kamera und wallbox AUS, bis der Besitzer sie mit Login einschaltet. */
     static final java.util.List<String> HANDY_STANDARD = java.util.Collections.unmodifiableList(
             java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_PUSH, RECHT_WEB, RECHT_ROUTE));
@@ -249,6 +269,15 @@ public final class Kopplungen {
     }
 
     private JSONArray rechteVon(JSONObject g) {
+        if (!ART_HANDY.equals(g.optString("art"))) {
+            // 0.1.30: nur gespeicherte Fremd-Rechte, keine Standardwerte, keine Umstellung
+            JSONArray out = new JSONArray();
+            JSONArray r = traegtFremdRechte(g.optString("art")) ? g.optJSONArray("rechte") : null;
+            for (int i = 0; r != null && i < r.length(); i++) {
+                if (FREMD_RECHTE.contains(r.optString(i))) out.put(r.optString(i));
+            }
+            return out;
+        }
         JSONArray r = g.optJSONArray("rechte");
         int stand = r == null ? 0 : g.optInt("rechteStand", 1);
         if (stand >= RECHTE_STAND) return r;
@@ -286,11 +315,11 @@ public final class Kopplungen {
         return best;
     }
 
-    /** Aktuelle Rechte einer Handy-Kopplung (leer bei anderen Arten). */
+    /** Aktuelle Rechte einer Kopplung (Handy: alle; cockpit/homeassistant/dienst: nur {@link #FREMD_RECHTE}). */
     public synchronized java.util.List<String> rechte(String id) {
         java.util.List<String> out = new java.util.ArrayList<>();
         JSONObject g = finde(id);
-        if (g == null || !ART_HANDY.equals(g.optString("art"))) return out;
+        if (g == null) return out;
         JSONArray r = rechteVon(g);
         for (int i = 0; i < r.length(); i++) out.add(r.optString(i));
         return out;
@@ -306,10 +335,10 @@ public final class Kopplungen {
         return ART_HANDY.equals(art(id));
     }
 
-    /** Recht einer Handy-Kopplung; andere Arten haben keine Handy-Rechte. */
+    /** Recht einer Kopplung. Nicht-Handy-Arten haben höchstens {@link #FREMD_RECHTE}, nie Handy-Rechte. */
     public synchronized boolean hatRecht(String id, String recht) {
         JSONObject g = finde(id);
-        if (g == null || !ART_HANDY.equals(g.optString("art"))) return false;
+        if (g == null) return false;
         JSONArray r = rechteVon(g);
         for (int i = 0; i < r.length(); i++) if (recht.equals(r.optString(i))) return true;
         return false;
@@ -318,9 +347,11 @@ public final class Kopplungen {
     /** Rechte setzen (nur aus Panoptes-Web mit Login). Unbekannte Rechte werden verworfen. */
     public synchronized boolean rechteSetzen(String id, java.util.Collection<String> rechte) {
         JSONObject g = finde(id);
-        if (g == null || !ART_HANDY.equals(g.optString("art"))) return false;
+        if (g == null) return false;
+        boolean handy = ART_HANDY.equals(g.optString("art"));
+        if (!handy && !traegtFremdRechte(g.optString("art"))) return false;
         JSONArray r = new JSONArray();
-        for (String x : RECHTE) if (rechte != null && rechte.contains(x)) r.put(x);
+        for (String x : handy ? RECHTE : FREMD_RECHTE) if (rechte != null && rechte.contains(x)) r.put(x);
         try { g.put("rechte", r).put("rechteStand", RECHTE_STAND); } catch (Exception e) { return false; }
         return speichernSofort();
     }

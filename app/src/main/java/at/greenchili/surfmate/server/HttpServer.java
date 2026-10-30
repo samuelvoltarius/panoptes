@@ -713,6 +713,18 @@ public class HttpServer {
                 client.close();
                 return;
             }
+            // 0.1.30 Kern Sicherheit: Kamerabilder/Clips nur mit Recht „kamera“, Standbild mit „standbild“ (oder
+            // „kamera“). Nie automatisch gesetzt; der Client zeigt den Satz aus „text“.
+            if (AuthMiddleware.isExternRequest()) {
+                String noetig = ExternGuard.noetigesRecht(pathOnly);
+                final String kid = AuthMiddleware.requestKopplungsId();
+                if (!ExternGuard.rechtReicht(noetig,
+                        r -> at.greenchili.surfmate.auth.Kopplungen.get().hatRecht(kid, r))) {
+                    HttpResponse.sendJson(out, 403, ExternGuard.rechtFehltAntwort(noetig).toString());
+                    client.close();
+                    return;
+                }
+            }
             // 0.1.20 Web-Sitzung der Handy-App (Stufe B): Sicherheits-Einstellungen nur am Auto oder mit PIN
             // 0.1.26.1: Update-Pfade nur mit Recht „update“ der Kopplung dahinter (WebHandyGuard.updateErlaubt)
             if (AuthMiddleware.isHandyWebRequest() && (WebHandyGuard.blocks(method, pathOnly)
@@ -1426,6 +1438,10 @@ public class HttpServer {
             return true;
         }
         if (path.startsWith("/api/einrichtung") && EinrichtungApiHandler.handle(method, path, body, out)) return true;
+        // 0.1.30 Kern Tacho: Fähigkeitstest (nur lesend) + Navi-App am Tacho (Schalter, Standard aus)
+        if (path.startsWith("/api/tacho/") && TachoApiHandler.handle(method, path, body, out)) return true;
+        // 0.1.30 Kern Sicherheit: ein Standbild je Wächter-Ereignis (Recht standbild/kamera prüft der Guard oben)
+        if (path.startsWith(ExternGuard.STANDBILD_PFAD) && WaechterStandbild.handle(method, path, out)) return true;
         // 0.1.11 ORTE_VERTRAG: eine Ortsliste (Kreis + Eigenschaften), verlässt das Auto nie
         if (path.startsWith("/api/orte") && OrteApiHandler.handle(method, path, body, out)) return true;
         // 0.1.14 Notzugang (zweiter, eigener tailscaled für die Fernwartung, optional)

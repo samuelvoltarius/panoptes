@@ -46,10 +46,15 @@ public final class HaDienst {
 
     static void weiter(NotificationEvent e) {
         if (e == null) return;
+        // 0.1.30 Kern Sicherheit: jede Wächter-Meldung (auch die entprellte Endmeldung mit Bild) fürs Standbild merken
+        String ereignisId = null;
+        try {
+            ereignisId = at.greenchili.surfmate.server.WaechterStandbild.merke(e);
+        } catch (Throwable ignored) { }
         String art = HaEreignisse.artAus(e.category, e.data);
         if (art == null) return;
         if (!durchlassen(art, e.timestamp)) return;
-        HaEreignisse.waechterEreignis(art, e.timestamp);
+        HaEreignisse.waechterEreignis(art, e.timestamp, ereignisId);
     }
 
     /** Je Art höchstens ein Ereignis in {@link #ENTPRELLEN_MS} (Meldungen kommen in Stufen mehrfach). */

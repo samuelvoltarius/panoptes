@@ -23,7 +23,9 @@ public class GekoppelteGeraeteAnzeigeTest {
         // Rückfragen bleiben
         assertTrue(h.contains("system.handy_kamera_confirm") && h.contains("system.handy_aufsperren_confirm"));
         // ältere Kopplung ohne art
-        assertTrue(h.contains("(g.art === 'handy' ? self.handyBlock(g) : (!g.art ? self.altBlock(g) : ''))"));
+        // 0.1.30 Kern Sicherheit: dahinter Cockpit/HA/Dienst mit eigenem Block (Kamera, Standbild)
+        assertTrue(h.contains("(g.art === 'handy' ? self.handyBlock(g) : (!g.art ? self.altBlock(g)"));
+        assertTrue(h.contains("['cockpit', 'homeassistant', 'dienst'].indexOf(g.art) >= 0 ? self.fremdBlock(g)"));
         assertTrue(h.contains("data-neu-koppeln"));
         // 403 vom Server ehrlich melden (nur am Autobildschirm bzw. angemeldet)
         assertTrue(h.contains("r.status === 403 ? 'login'"));

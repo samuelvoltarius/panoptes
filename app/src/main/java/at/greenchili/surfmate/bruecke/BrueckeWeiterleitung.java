@@ -97,6 +97,12 @@ final class BrueckeWeiterleitung {
         return false;
     }
 
+    /** 0.1.30 Kern Sicherheit: Standbild je Wächter-Ereignis (eigenes Recht „standbild“, kein KAMERA_PFAD). */
+    static boolean istStandbildPfad(String p) {
+        String q = p.contains("?") ? p.substring(0, p.indexOf('?')) : p;
+        return q.startsWith(at.greenchili.surfmate.server.ExternGuard.STANDBILD_PFAD);
+    }
+
     private final JwtPruefer pruefer;
     private final Aufruf aufruf;
     private final WebZugang webZugang;
@@ -212,6 +218,12 @@ final class BrueckeWeiterleitung {
         if (jwtKid == null || !jwtKid.equals(kid)) { v.fehler = fehler(id, 401, "kopplung"); return v; }
         if (istKameraPfad(p) && !recht.hat(kid, at.greenchili.surfmate.auth.Kopplungen.RECHT_KAMERA)) {
             v.fehler = fehler(id, 403, "kamera");
+            return v;
+        }
+        // 0.1.30 Kern Sicherheit: Standbild je Ereignis nur mit „standbild“ (oder „kamera“)
+        if (istStandbildPfad(p) && !recht.hat(kid, at.greenchili.surfmate.auth.Kopplungen.RECHT_STANDBILD)
+                && !recht.hat(kid, at.greenchili.surfmate.auth.Kopplungen.RECHT_KAMERA)) {
+            v.fehler = fehler(id, 403, "standbild");
             return v;
         }
         if (web) {

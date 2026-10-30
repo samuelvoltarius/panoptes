@@ -9034,6 +9034,15 @@ public class CameraDaemon {
         lastNotifiedGear = gear;
         if (!redundant) {
             log("Gear changed to: " + gearName);
+            // Kern Tacho 0.1.30: leaving P ends any non-navi cluster cast (video only in P).
+            // Own thread: ClusterCast.stop() may reparent tasks and must not stall the gear poll.
+            if (gear != at.greenchili.surfmate.monitor.GearMonitor.GEAR_P) {
+                Thread tachoGear = new Thread(
+                        () -> at.greenchili.surfmate.tacho.TachoNaviApp.beiGangwechsel(gear),
+                        "TachoNaviGear");
+                tachoGear.setDaemon(true);
+                tachoGear.start();
+            }
         }
 
         // DiLink 5 deliberately does NOT arbitrate the cameras on gear changes.

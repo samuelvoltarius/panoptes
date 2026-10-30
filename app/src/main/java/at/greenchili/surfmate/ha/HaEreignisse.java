@@ -101,8 +101,18 @@ public final class HaEreignisse {
 
     /** {@code event: ereignis} mit Art + Zeit (bewegung|person|erschuetterung). */
     public static void waechterEreignis(String art, long zeit) {
+        waechterEreignis(art, zeit, null);
+    }
+
+    /**
+     * 0.1.30 Kern Sicherheit: mit {@code ereignisId} (32 hex), damit ein Client mit Recht „standbild“ genau ein Bild
+     * holen kann ({@code GET /api/waechter/standbild/<ereignisId>}). Kein Bild, kein Dateiname, kein Ort.
+     */
+    public static void waechterEreignis(String art, long zeit, String ereignisId) {
         try {
-            melde("ereignis", new JSONObject().put("art", art).put("zeit", zeit));
+            JSONObject d = new JSONObject().put("art", art).put("zeit", zeit);
+            if (ereignisId != null) d.put("ereignisId", ereignisId);
+            melde("ereignis", d);
         } catch (Exception ignored) { }
     }
 

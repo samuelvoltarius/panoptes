@@ -64,8 +64,33 @@ public final class ExternGuard {
             "/api/recordings/stats"
     )));
 
-    /** Lesen mit genau einer Aufnahme-ID (32 hex): Clip (mit Range) und Vorschaubild. */
-    static final String[] LESEN_MIT_ID = {"/video/id/", "/thumb/id/"};
+    /** 0.1.30 Kern Sicherheit: ein Standbild je Wächter-Ereignis (nur JPEG, nie Clip). */
+    public static final String STANDBILD_PFAD = "/api/waechter/standbild/";
+
+    /**
+     * Lesen mit genau einer Aufnahme-ID (32 hex): Clip (mit Range) und Vorschaubild; 0.1.30 Standbild je
+     * Wächter-Ereignis (ereignisId, 32 hex). Welches Recht dafür nötig ist, sagt {@link #noetigesRecht}.
+     */
+    static final String[] LESEN_MIT_ID = {"/video/id/", "/thumb/id/", STANDBILD_PFAD};
+
+    /**
+     * 0.1.30 Kern Sicherheit: Pfade mit Kamerabildern oder Clips. Für Kopplungen nur mit Recht „kamera“ (Standard
+     * aus, nie automatisch gesetzt) – Liste, Tage, Zahlen, Clip, Vorschaubild; dazu die Handy-Clips (prüft der
+     * Handler schon selbst, hier zusätzlich).
+     */
+    static final String[] KAMERA_LESEN = {"/api/recordings", "/video/id/", "/thumb/id/", "/api/handy/v1/clips"};
+
+    /**
+     * 0.1.30 Kern Sicherheit: Art {@code dienst} (fremder Dienst, z. B. Xaventra) – geringste Rechte: nur
+     * Wächter-Ereignisse hören, Wächter-Zustand lesen, Standbild holen (Recht prüft {@link #noetigesRecht}),
+     * Sitzung erneuern/abmelden. Keine Telemetrie, kein GPS, keine Aufnahmen-Liste, kein Clip.
+     */
+    static final Set<String> DIENST_LESEN = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "/api/ha/v1/ereignisse",
+            "/api/surveillance/status")));
+    static final Set<String> DIENST_SCHREIBEN = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "/api/sitzung/erneuern",
+            "/api/sitzung/abmelden")));
     private static final java.util.regex.Pattern AUFNAHME_ID = java.util.regex.Pattern.compile("[0-9a-f]{32}");
 
     /** Genau diese Pfade dürfen schreiben (POST/PUT). */
@@ -116,6 +141,9 @@ public final class ExternGuard {
 
     /** Wie {@link #blocks(String, String)}, mit der Art der Kopplung (Handy-Pfade nur für {@code handy}). */
     public static boolean blocks(String method, String pathOnly, String kopplungsArt) {
+        if (at.greenchili.surfmate.auth.Kopplungen.ART_DIENST.equals(kopplungsArt)) {
+            return !dienstErlaubt(method, pathOnly);
+        }
         if (erlaubt(method, pathOnly)) return false;
         if (cockpitErlaubt(method, pathOnly, kopplungsArt)) return false;
         return !handyErlaubt(method, pathOnly, kopplungsArt);
@@ -137,6 +165,75 @@ public final class ExternGuard {
         if ("/api/kopplung/weiteres-geraet".equals(p)) return "POST".equals(method);
         if (p.matches("/api/kopplung/weiteres-geraet/r-[0-9a-f]{16}")) return "GET".equals(method);
         return p.matches("/api/cloud-uebergabe/r-[0-9a-f]{16}") && ("GET".equals(method) || "POST".equals(method));
+    }
+
+    /** 0.1.30: Art {@code dienst} – nur {@link #DIENST_LESEN}, Standbild und {@link #DIENST_SCHREIBEN}. */
+    static boolean dienstErlaubt(String method, String pathOnly) {
+        String p = normal(pathOnly);
+        if (p == null || method == null) return false;
+        if ("GET".equals(method) || "HEAD".equals(method)) {
+            return DIENST_LESEN.contains(p) || istStandbild(p);
+        }
+        return "POST".equals(method) && DIENST_SCHREIBEN.contains(p);
+    }
+
+    /**
+     * 0.1.30 Kern Sicherheit: Recht, das eine Kopplung für diesen (bereits erlaubten) Pfad zusätzlich braucht.
+     * {@code kamera} für Kamerabilder/Clips ({@link #KAMERA_LESEN}); {@code standbild} für das Standbild je
+     * Ereignis ({@code kamera} genügt dort auch); sonst null.
+     */
+    public static String noetigesRecht(String pathOnly) {
+        String p = normal(pathOnly);
+        if (p == null) return null;
+        if (istStandbild(p)) return at.greenchili.surfmate.auth.Kopplungen.RECHT_STANDBILD;
+        for (String k : KAMERA_LESEN) {
+            if (p.equals(k) || p.startsWith(k.endsWith("/") ? k : k + "/")) {
+                return at.greenchili.surfmate.auth.Kopplungen.RECHT_KAMERA;
+            }
+        }
+        return null;
+    }
+
+    /** Hat die Kopplung das nötige Recht? {@code kamera} schließt {@code standbild} ein, nie umgekehrt. */
+    public static boolean rechtReicht(String noetig, java.util.function.Predicate<String> hat) {
+        if (noetig == null) return true;
+        if (hat == null) return false;
+        if (hat.test(noetig)) return true;
+        return at.greenchili.surfmate.auth.Kopplungen.RECHT_STANDBILD.equals(noetig)
+                && hat.test(at.greenchili.surfmate.auth.Kopplungen.RECHT_KAMERA);
+    }
+
+    /**
+     * 403-Antwort, wenn ein Recht fehlt: {@code {"ok":false,"grund":"nicht_erlaubt","recht":"kamera","text":"…"}}.
+     * {@code grund} wie bei den Handy-Clips (die Handy-App erkennt es schon); der Satz sagt dem Nutzer, wo er das
+     * Recht einschaltet (Gekoppelte Geräte).
+     */
+    public static org.json.JSONObject rechtFehltAntwort(String recht) {
+        org.json.JSONObject o = new org.json.JSONObject();
+        try {
+            boolean standbild = at.greenchili.surfmate.auth.Kopplungen.RECHT_STANDBILD.equals(recht);
+            String key = standbild ? "errors.standbild_recht_fehlt" : "errors.kamera_recht_fehlt";
+            String fallback = standbild
+                    ? "Standbild-Recht fehlt – in Panoptes unter Gekoppelte Geräte einschalten."
+                    : "Kamera-Recht fehlt – in Panoptes unter Gekoppelte Geräte einschalten.";
+            String text = Messages.text(key, fallback);
+            o.put("ok", false).put("grund", "nicht_erlaubt").put("recht", recht).put("text", text);
+        } catch (Exception ignored) { }
+        return o;
+    }
+
+    static boolean istStandbild(String p) {
+        return p.startsWith(STANDBILD_PFAD) && AUFNAHME_ID.matcher(p.substring(STANDBILD_PFAD.length())).matches();
+    }
+
+    private static String normal(String pathOnly) {
+        if (pathOnly == null) return null;
+        String p = pathOnly;
+        int q = p.indexOf('?');
+        if (q >= 0) p = p.substring(0, q);
+        if (p.length() > 1 && p.endsWith("/")) p = p.substring(0, p.length() - 1);
+        if (p.contains("..") || p.contains("//")) return null;
+        return p;
     }
 
     static boolean handyErlaubt(String method, String pathOnly, String kopplungsArt) {

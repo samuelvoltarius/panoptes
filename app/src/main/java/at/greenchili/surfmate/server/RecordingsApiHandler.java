@@ -1552,6 +1552,21 @@ public class RecordingsApiHandler {
     }
 
     /** Ereignis-Clips (0.1.27) nur im Auto bzw. im lokalen Netz, nie von außen (Brücke/Cockpit). */
+    /**
+     * 0.1.30 Kern Sicherheit (Standbild je Wächter-Ereignis): löst NUR ein vorhandenes Hero-JPEG neben der Aufnahme
+     * auf – nie ein MP4, kein Dekodieren, keine Unfall-/Ereignis-Clips. null, wenn es das Bild nicht gibt.
+     */
+    static File standbildDatei(String jpegName) {
+        if (jpegName == null || jpegName.isEmpty() || jpegName.contains("..") || jpegName.contains("/")
+                || jpegName.contains("\\") || !jpegName.toLowerCase(Locale.US).endsWith(".jpg")) {
+            return null;
+        }
+        File f = findSiblingJpeg(jpegName);
+        if (f == null || !f.isFile() || f.length() <= 0) return null;
+        if (at.greenchili.surfmate.recording.EreignisClip.istEreignisPfad(f.getPath())) return null;
+        return f;
+    }
+
     private static boolean ereignisVonAussen(String pfad) {
         return pfad != null && AuthMiddleware.isExternRequest()
                 && at.greenchili.surfmate.recording.EreignisClip.istEreignisPfad(pfad);

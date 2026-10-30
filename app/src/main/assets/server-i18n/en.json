@@ -20,6 +20,8 @@
     "rate_limited_locked_for_seconds": "Too many tries — blocked for {0}s",
     "invalid_device_token": "This device token isn't valid",
     "only_car_or_pin": "This only works in the car or with the PIN",
+    "kamera_recht_fehlt": "Camera permission missing – switch it on in Panoptes under Paired devices.",
+    "standbild_recht_fehlt": "Still image permission missing – switch it on in Panoptes under Paired devices.",
     "web_link_expired": "This link has expired. Please open it again in the app.",
     "invalid_request_with_detail": "The request isn't valid: {0}",
     "bydcloud_not_configured": "BYD account isn't set up",

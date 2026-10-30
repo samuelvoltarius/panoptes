@@ -2098,12 +2098,38 @@ public final class ClusterProjectionController {
         return sendInfoMarkedResult(AUTO_CONTAINER_SERVICE, op);
     }
 
+    /**
+     * Kern Tacho 0.1.30: the only AutoContainer opcodes this app may ever send on the
+     * legacy (DiLink 3/4) path — size profiles 29/30/31, projection 16/35, close 18,
+     * restore 0. Everything else is refused before any Binder or {@code service call}
+     * dispatch. Opcodes 2 and 3 switch cluster WARNING LAMPS and must never leave this
+     * process, not even from tests, config values or a garbled size profile.
+     */
+    static boolean isPermittedLegacyContainerOpcode(int op) {
+        if (isForbiddenWarningLampOpcode(op)) return false;
+        return op == OP_REFRESH
+                || op == OP_FULLSCREEN_ON
+                || op == OP_DI4_MODE
+                || op == OP_CLOSE
+                || isKnownLegacySizeProfile(op);
+    }
+
+    /** AutoContainer opcodes 2/3 = cluster warning lamps. NEVER send (Kern 10, 30.10.). */
+    public static boolean isForbiddenWarningLampOpcode(int op) {
+        return op == 2 || op == 3;
+    }
+
     private static LegacyCommandResult sendInfoStaticResult(int op) {
         return sendInfoMarkedResult(AUTO_CONTAINER_SERVICE, op);
     }
 
     private static LegacyCommandResult sendInfoMarkedResult(
             String service, int op) {
+        if (!isPermittedLegacyContainerOpcode(op)) {
+            logger.error("refusing AutoContainer opcode " + op
+                    + " (not on the projection allow-list)");
+            return LegacyCommandResult.REJECTED;
+        }
         synchronized (LEGACY_COMMAND_DISPATCH_LOCK) {
             LegacyCommandMarkerResult markerResult =
                     markLegacyCommandInFlight();
@@ -2179,6 +2205,9 @@ public final class ClusterProjectionController {
 
     private static LegacyTransportResult
             sendInfoBinderTransportResult(String service, int op) {
+        if (!isPermittedLegacyContainerOpcode(op)) {
+            return LegacyTransportResult.REJECTED;
+        }
         final Object iface;
         final Method send;
         try {
@@ -2616,6 +2645,9 @@ public final class ClusterProjectionController {
 
     private static DiLink5EndpointResult sendDiLink5InfoShell(
             String service, int op) {
+        if (!isAllowedDiLink5ContainerOpcode(op)) {
+            return DiLink5EndpointResult.REJECTED;
+        }
         Process p = null;
         try {
             String[] cmd = {SYSTEM_SERVICE_BIN, "call", service, "2",
@@ -2752,6 +2784,9 @@ public final class ClusterProjectionController {
 
     private static LegacyCommandResult sendInfoShellMarkedResult(
             String service, int op) {
+        if (!isPermittedLegacyContainerOpcode(op)) {
+            return LegacyCommandResult.REJECTED;
+        }
         LegacyCommandMarkerResult markerResult =
                 markLegacyCommandInFlight();
         if (markerResult

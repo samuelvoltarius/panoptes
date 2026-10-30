@@ -20,6 +20,8 @@
     "rate_limited_locked_for_seconds": "Zu viele Versuche – gesperrt für {0} s",
     "invalid_device_token": "Das Geräte-Token stimmt nicht",
     "only_car_or_pin": "Das geht nur am Auto oder mit PIN",
+    "kamera_recht_fehlt": "Kamera-Recht fehlt – in Panoptes unter Gekoppelte Geräte einschalten.",
+    "standbild_recht_fehlt": "Standbild-Recht fehlt – in Panoptes unter Gekoppelte Geräte einschalten.",
     "web_link_expired": "Der Link ist abgelaufen. Bitte in der App noch einmal öffnen.",
     "invalid_request_with_detail": "Die Anfrage passt nicht: {0}",
     "bydcloud_not_configured": "BYD-Konto ist nicht eingerichtet",

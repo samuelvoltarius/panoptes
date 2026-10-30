@@ -581,6 +581,16 @@ public final class ClusterCast {
      * the async resume race.
      */
     public static synchronized boolean start(String pkg) {
+        // Kern Tacho 0.1.30: only navi apps from the allow-list may reach the cluster while the
+        // car is not parked; any other app (video, games …) only in P. Fail-closed on unknown state.
+        String fahrtSperre = at.greenchili.surfmate.tacho.TachoNaviApp.fahrtSperre(
+                pkg, drivingBlockReason());
+        if (fahrtSperre != null) {
+            logger.warn("cluster cast: " + pkg + " refused (" + fahrtSperre + ")");
+            lastDrivingRefusal = fahrtSperre;
+            return false;
+        }
+        lastDrivingRefusal = "";
         if (at.greenchili.surfmate.camera.dilink5.DiLink5Platform.isSelected()) {
             return DiLink5ClusterCast.start(pkg);
         }
@@ -687,6 +697,13 @@ public final class ClusterCast {
      * fire-and-forget callers. Legacy platforms keep their established behavior.
      */
     public static boolean startAndAwait(String pkg, long timeoutMs) {
+        String fahrtSperre = at.greenchili.surfmate.tacho.TachoNaviApp.fahrtSperre(
+                pkg, drivingBlockReason());
+        if (fahrtSperre != null) {
+            logger.warn("cluster cast: " + pkg + " refused (" + fahrtSperre + ")");
+            lastDrivingRefusal = fahrtSperre;
+            return false;
+        }
         if (at.greenchili.surfmate.camera.dilink5.DiLink5Platform.isSelected()) {
             return DiLink5ClusterCast.startAndAwait(pkg, timeoutMs);
         }
@@ -699,8 +716,21 @@ public final class ClusterCast {
     }
 
     public static String getLastStartFailure() {
+        if (!lastDrivingRefusal.isEmpty()) return lastDrivingRefusal;
         return at.greenchili.surfmate.camera.dilink5.DiLink5Platform.isSelected()
                 ? DiLink5ClusterCast.getLastFailureReason() : "";
+    }
+
+    // Kern Tacho 0.1.30: last "only in P" refusal from start(), "" after an admitted start.
+    private static volatile String lastDrivingRefusal = "";
+
+    /** Live movement gate (null = parked or ACC off); any failure counts as moving. */
+    private static String drivingBlockReason() {
+        try {
+            return at.greenchili.surfmate.byd.routing.DrivingSafetyGuard.getMovementBlockReason();
+        } catch (Throwable t) {
+            return "state_unknown";
+        }
     }
 
     /**

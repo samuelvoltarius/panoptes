@@ -414,6 +414,11 @@ public class AccMonitor {
                 CameraDaemon.log(reason
                         + ": auto-casting projection app " + projPkg);
                 at.greenchili.surfmate.launcher.ClusterCast.start(projPkg);
+            } else if (at.greenchili.surfmate.tacho.TachoNaviApp.sollBeiAccStarten()) {
+                // Kern Tacho 0.1.30: user-chosen navi app (switch default OFF).
+                String naviPkg = at.greenchili.surfmate.tacho.TachoNaviApp.paket();
+                CameraDaemon.log(reason + ": Navi-App am Tacho " + naviPkg);
+                at.greenchili.surfmate.launcher.ClusterCast.start(naviPkg);
             }
         } catch (Throwable t) {
             CameraDaemon.log(reason

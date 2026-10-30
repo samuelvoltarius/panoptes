@@ -26,6 +26,8 @@
     "rate_limited_locked_for_seconds": "Te veel pogingen — geblokkeerd voor {0} s",
     "invalid_device_token": "Dit apparaattoken is niet geldig",
     "only_car_or_pin": "Dit kan alleen in de auto of met de pincode",
+    "kamera_recht_fehlt": "Camerarecht ontbreekt – zet het aan in Panoptes onder Gekoppelde apparaten.",
+    "standbild_recht_fehlt": "Recht voor stilstaand beeld ontbreekt – zet het aan in Panoptes onder Gekoppelde apparaten.",
     "web_link_expired": "Deze link is verlopen. Open hem opnieuw in de app.",
     "invalid_request_with_detail": "Het verzoek is niet geldig: {0}",
     "bydcloud_not_configured": "BYD-account is niet ingesteld",

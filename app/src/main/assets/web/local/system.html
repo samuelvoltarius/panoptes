@@ -647,7 +647,8 @@
                                 + self.esc(g.name || self.t('system.paired_noname', 'Gerät ohne Namen'))
                                 + (g.abgelaufen ? ' · ' + self.esc(self.t('system.paired_expired', 'abgelaufen')) : '') + '</div>'
                                 + '<div class="sys-meta">' + self.esc(self.t('system.paired_meta', 'Gekoppelt {a} · zuletzt {z}', { a: self.datum(g.angelegt), z: self.datum(g.zuletzt) })) + '</div>'
-                                + (g.art === 'handy' ? self.handyBlock(g) : (!g.art ? self.altBlock(g) : '')) + '</div>'
+                                + (g.art === 'handy' ? self.handyBlock(g) : (!g.art ? self.altBlock(g)
+                                    : (['cockpit', 'homeassistant', 'dienst'].indexOf(g.art) >= 0 ? self.fremdBlock(g) : ''))) + '</div>'
                                 + '<button class="btn" type="button" data-id="' + self.esc(g.id) + '" data-name="' + self.esc(g.name || '') + '">'
                                 + self.esc(self.t('system.paired_remove', 'Entfernen')) + '</button></div>';
                         }).join('');
@@ -657,6 +658,10 @@
                         // 0.1.18 Handy-Rechte (HANDY_API_VERTRAG §1): nur mit Login änderbar
                         Array.prototype.forEach.call(rows.querySelectorAll('input[data-handy-recht]'), function (cb) {
                             cb.onchange = function () { self.handyRechte(cb); };
+                        });
+                        // 0.1.30 Kern Sicherheit: Kamera / Standbild für Cockpit, Home Assistant und Dienste
+                        Array.prototype.forEach.call(rows.querySelectorAll('input[data-fremd-recht]'), function (cb) {
+                            cb.onchange = function () { self.fremdRechte(cb); };
                         });
                         Array.prototype.forEach.call(rows.querySelectorAll('button[data-handy-schluessel]'), function (b) {
                             b.onclick = function () { self.handySchluesselWeg(b); };
@@ -712,6 +717,48 @@
                 if (g.schluessel) html += ' <button class="btn" type="button" data-handy-schluessel="' + self.esc(g.id) + '">'
                     + self.esc(self.t('system.handy_schluessel_weg', 'Schlüssel entfernen')) + '</button>';
                 return html + '</div>';
+            },
+            // 0.1.30 Kern Sicherheit: Cockpit, Home Assistant und fremde Dienste haben nur zwei Rechte, beide Standard aus.
+            // Nie automatisch gesetzt – fehlt eins, sagt das Gerät „… in Panoptes unter Gekoppelte Geräte einschalten“.
+            fremdBlock: function (g) {
+                var self = this, r = Array.isArray(g.rechte) ? g.rechte : [];
+                var texte = {
+                    kamera: [self.t('system.fremd_wort_kamera', 'Aufnahmen'),
+                        self.t('system.fremd_recht_kamera', 'Wächter-Aufnahmen und Vorschaubilder ansehen')],
+                    standbild: [self.t('system.fremd_wort_standbild', 'Standbild bei Ereignis'),
+                        self.t('system.fremd_recht_standbild', 'Ein Foto, wenn der Wächter etwas bemerkt. Kein Video.')]
+                };
+                var html = '<div class="pn-rechte">';
+                ['kamera', 'standbild'].forEach(function (k) {
+                    html += '<label class="pn-recht"><span class="pn-recht-text"><span class="pn-recht-wort">' + self.esc(texte[k][0])
+                        + '</span><span class="pn-recht-info">' + self.esc(texte[k][1]) + '</span></span>'
+                        + '<span class="toggle-switch"><input type="checkbox" data-fremd-recht="' + k + '" data-id="' + self.esc(g.id) + '"'
+                        + (r.indexOf(k) >= 0 ? ' checked' : '') + ' aria-label="' + self.esc(texte[k][0]) + '"><span class="toggle-slider"></span></span></label>';
+                });
+                return html + '</div>';
+            },
+            fremdRechte: function (cb) {
+                var self = this, id = cb.getAttribute('data-id'), k = cb.getAttribute('data-fremd-recht');
+                if (cb.checked && k === 'kamera'
+                    && !window.confirm(self.t('system.fremd_kamera_confirm', 'Aufnahmen zeigen auch Passanten. Dieses Gerät darf dann Wächter-Aufnahmen und Vorschaubilder ansehen. Einschalten?'))) {
+                    cb.checked = false;
+                    return;
+                }
+                if (cb.checked && k === 'standbild'
+                    && !window.confirm(self.t('system.fremd_standbild_confirm', 'Fotos können Passanten zeigen. Dieses Gerät darf dann bei jedem Wächter-Ereignis ein Foto holen – kein Video, nichts Älteres als 15 Minuten. Einschalten?'))) {
+                    cb.checked = false;
+                    return;
+                }
+                var rechte = Array.prototype.filter.call(document.querySelectorAll('input[data-fremd-recht][data-id="' + id + '"]'),
+                    function (x) { return x.checked; }).map(function (x) { return x.getAttribute('data-fremd-recht'); });
+                fetch('/api/kopplung/rechte', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id, rechte: rechte }) })
+                    .then(function (r) { return r.ok ? 'ok' : (r.status === 403 ? 'login' : 'fehler'); }).catch(function () { return 'fehler'; }).then(function (e) {
+                        var text = e === 'ok' ? self.t('system.handy_gespeichert', 'Gespeichert')
+                            : e === 'login' ? self.t('system.handy_nur_login', 'Ändern geht nur am Autobildschirm oder angemeldet.')
+                            : self.t('system.handy_fehler', 'Konnte nicht speichern.');
+                        if (window.BYD && BYD.utils && BYD.utils.toast) BYD.utils.toast(text, e === 'ok' ? 'success' : 'error');
+                        self.liste();   // echten Stand zurücklesen
+                    });
             },
             // 0.1.26.1: Kopplung aus einer alten Version ohne „art“ – Rechte sind unklar, also ehrlich neu koppeln lassen
             altBlock: function (g) {
