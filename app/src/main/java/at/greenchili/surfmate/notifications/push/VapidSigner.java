@@ -21,6 +21,12 @@ import java.security.interfaces.ECPrivateKey;
  */
 public final class VapidSigner {
 
+    /**
+     * Fester Projekt-Kontakt für den {@code sub}-Eintrag: Apples Push-Dienst verlangt ihn. Für alle Autos gleich,
+     * nie eine persönliche Adresse. Der Push-Dienst sieht ihn, sonst geht dadurch nichts nach außen.
+     */
+    public static final String PROJEKT_KONTAKT = "https://byd.serveone.at/panoptes/";
+
     private final VapidKeyStore keyStore;
     /** Optional contact email/URL (RFC 8292 §2.1). Empty string is acceptable. */
     private final String contact;
@@ -35,29 +41,13 @@ public final class VapidSigner {
      * the push endpoint.
      */
     public String signFor(String endpoint) throws Exception {
-        URI uri = URI.create(endpoint);
-        String audience = uri.getScheme() + "://" + uri.getAuthority();
-
-        long nowSec = System.currentTimeMillis() / 1000L;
-        long expSec = nowSec + 12 * 3600L;
-
         // Header
         JSONObject header = new JSONObject();
         header.put("typ", "JWT");
         header.put("alg", "ES256");
 
-        // Claims
-        JSONObject claims = new JSONObject();
-        claims.put("aud", audience);
-        claims.put("exp", expSec);
-        if (!contact.isEmpty()) {
-            // Per RFC 8292 the sub claim should be a contact URI (mailto: or https:)
-            claims.put("sub", contact.startsWith("mailto:") || contact.startsWith("http")
-                    ? contact : "mailto:" + contact);
-        }
-
         String headerB64 = B64Url.enc(header.toString().getBytes("UTF-8"));
-        String claimsB64 = B64Url.enc(claims.toString().getBytes("UTF-8"));
+        String claimsB64 = B64Url.enc(claims(endpoint, System.currentTimeMillis() / 1000L).toString().getBytes("UTF-8"));
         String signingInput = headerB64 + "." + claimsB64;
 
         ECPrivateKey priv = keyStore.privateKey();
@@ -68,6 +58,20 @@ public final class VapidSigner {
 
         byte[] rawSig = derToRawP1363(derSig, 32);
         return signingInput + "." + B64Url.enc(rawSig);
+    }
+
+    /** Der Inhalt des JWT: nur aud, exp und sub. */
+    JSONObject claims(String endpoint, long nowSec) throws Exception {
+        URI uri = URI.create(endpoint);
+        JSONObject claims = new JSONObject();
+        claims.put("aud", uri.getScheme() + "://" + uri.getAuthority());
+        claims.put("exp", nowSec + 12 * 3600L);
+        if (!contact.isEmpty()) {
+            // Per RFC 8292 the sub claim should be a contact URI (mailto: or https:)
+            claims.put("sub", contact.startsWith("mailto:") || contact.startsWith("http")
+                    ? contact : "mailto:" + contact);
+        }
+        return claims;
     }
 
     /**

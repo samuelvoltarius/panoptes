@@ -352,7 +352,8 @@ public class SystemApiHandler {
         // Eigener Block, damit ein Fehler oben das Feld nicht verschluckt. Nie der private Teil.
         try {
             String vapid = NotificationApiHandler.vapidOeffentlich();
-            if (vapid != null) c.put("push", new JSONObject().put("vapid", vapid));
+            // 0.1.32: apple = Web-Push am iPhone möglich (VapidSigner schickt den Kontakt, den Apple verlangt)
+            if (vapid != null) c.put("push", new JSONObject().put("vapid", vapid).put("apple", 1));
         } catch (Exception ignored) { }
         return c;
     }

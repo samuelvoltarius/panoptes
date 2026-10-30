@@ -10347,7 +10347,8 @@ public class CameraDaemon {
         subStore.load();
 
         at.greenchili.surfmate.notifications.push.VapidSigner signer =
-                new at.greenchili.surfmate.notifications.push.VapidSigner(keyStore, "");
+                new at.greenchili.surfmate.notifications.push.VapidSigner(keyStore,
+                        at.greenchili.surfmate.notifications.push.VapidSigner.PROJEKT_KONTAKT);
 
         // Persistent notification log (Notifications ▸ Log tab). Dedicated H2
         // store; the HistorySink writes EVERY bus event so history captures all

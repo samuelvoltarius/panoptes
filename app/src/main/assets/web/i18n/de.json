@@ -5609,10 +5609,10 @@
     "akkustopp": "Bei welchem Akkustand der Wächter aufhört, stellst du unter Wächter → „Wächter stoppt, wenn …“ ein."
   },
   "einr": {
-    "lead": "Der Einrichtungsassistent läuft am Bildschirm im Auto. Hier siehst du, was noch offen ist, und kannst ihn neu starten.",
-    "offen_titel": "Noch offen",
+    "lead": "Der Einrichtungsassistent läuft am Bildschirm im Auto. Hier siehst du, was noch fehlt, und kannst ihn neu starten.",
+    "offen_titel": "Noch einrichten",
     "offen_keins": "Nichts offen – die Einrichtung ist vollständig.",
-    "offen_hinweis": "Erledigen kannst du das am Bildschirm im Auto im Einrichtungsassistenten.",
+    "offen_hinweis": "Alles freiwillig. Tippe auf einen Punkt.",
     "neu_knopf": "Einrichtung erneut starten",
     "neu_frage": "Einrichtung wirklich neu starten? Der Assistent fragt dann am Bildschirm im Auto alles noch einmal ab. Deine Einstellungen bleiben, bis du sie dort änderst; Freigaben musst du neu bestätigen.",
     "neu_ok": "Zurückgesetzt. Der Assistent erscheint beim nächsten Start der App am Bildschirm im Auto.",

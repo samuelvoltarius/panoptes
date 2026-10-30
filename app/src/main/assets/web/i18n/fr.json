@@ -5610,10 +5610,10 @@
   },
   "einr": {
     "titel": "Installation",
-    "lead": "L’assistant d’installation s’exécute sur l’écran de la voiture. Ici, vous voyez ce qui reste à faire et pouvez le relancer.",
-    "offen_titel": "Encore à faire",
+    "lead": "L’assistant de configuration s’exécute sur l’écran de la voiture. Ici, vous voyez ce qui manque et pouvez le relancer.",
+    "offen_titel": "Encore à configurer",
     "offen_keins": "Rien en attente – l’installation est complète.",
-    "offen_hinweis": "Vous pouvez le faire sur l’écran de la voiture dans l’assistant d’installation.",
+    "offen_hinweis": "Tout est facultatif. Touchez un élément.",
     "neu_knopf": "Relancer l’installation",
     "neu_frage": "Vraiment relancer l’installation ? L’assistant reposera alors toutes les questions sur l’écran de la voiture. Vos réglages restent jusqu’à ce que vous les y modifiiez ; vous devrez reconfirmer les partages de données.",
     "neu_ok": "Réinitialisé. L’assistant apparaîtra sur l’écran de la voiture au prochain démarrage de l’app.",

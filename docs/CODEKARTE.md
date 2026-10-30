@@ -1,6 +1,6 @@
 # Codekarte Panoptes
 
-**Stand: Version 0.1.31, Commit 26d29bb0**
+**Stand: Version 0.1.32, Commit 21aa9376**
 
 Wegweiser durch den Code. Zuerst hier suchen, dann gezielt die genannte Datei öffnen.
 Die Karte nennt Dateien und Klassen, keine Zeilennummern. Kurze Pfade gelten ab
@@ -144,9 +144,10 @@ Jedes Paket steht hier, auch Unterpakete. Pfade ab dem Wurzelpaket. Lose Dateien
 | Kopplungen und Rechte | `Kopplungen` (Arten, Rechte `RECHT_*`), `KopplungsAnfragen`, `KopplungsMelder`, `PairingCodes`, `WeiteresGeraet` | `Kopplungen` |
 | ExternGuard | `ExternGuard` (Erlaubnisliste Kopplungen), `WebHandyGuard` (Web-Sitzung Handy), `AuthMiddleware` (Login, Loopback) | Abschnitt 5 |
 | Login, PIN, JWT | `AuthManager`, `PinManager`, `WebSitzung`, `TelegramAnmeldung`, `AuthApiHandler` | `AuthManager` |
+| Push (Handy, iPhone) | `PushSink`, `VapidSigner` (fester Projekt-Kontakt), `capabilities.push` in `SystemApiHandler` | `VapidSigner` |
 | Handy-App-API | `HandyApiHandler`, `HandyClipsApiHandler`, `HandySignatur`, `HandyRatenlimit` | `HandyApiHandler` |
 | Brücke | `Bruecke`, `BrueckeVerbindung`, `BrueckeWeiterleitung`, `BrueckeLive`, `NoiseIK` | `BrueckeWeiterleitung` |
-| Update-Hinweis am Display | `UpdateHinweis` (reine Regeln), Karte in `MessageOverlayService`, Schalter `update.hinweis` | `UpdateHinweis` |
+| Update-Hinweis am Display | `UpdateHinweis` (reine Regeln, auch Einwilligung Mobilfunk je Download), Karte in `MessageOverlayService`, Schalter `update.hinweis`, `update.mobilfunkEinmal` | `UpdateHinweis` |
 | Updater | `AppUpdateDienst`, `UpdateQuelle`, `Freigabe`, `UpdateRegel`, `ApkZertifikat`, `FernUpdate`, `AutostartNachUpdate`, `UpdateLifecycle`, `AppUpdater` (Erbe; Versionsanzeige, Daemons stoppen, Installation abgekoppelt starten) | `AppUpdateDienst` |
 | Tacho | `TachoFaehigkeit`, `TachoNaviApp`, `TachoApiHandler`, `ClusterProjectionController`, `ClusterCast`, `DiLink5ClusterCast` | `TachoFaehigkeit` |
 | Fähigkeiten je Auto | `VehicleCapabilities`, `/api/system/capabilities` | `VehicleCapabilities` |
@@ -158,7 +159,7 @@ Jedes Paket steht hier, auch Unterpakete. Pfade ab dem Wurzelpaket. Lose Dateien
 | Fehler melden | `FehlerMelden`, `RueckmeldungApiHandler`, Seite `fehler-melden.html` | `FehlerMelden` |
 | Einstellungs-Katalog | `Katalog`, `LadenKatalog`, `Feld`, `Einstellungen`, `Energie`, `EinstellungenApiHandler` | `Katalog` |
 | Gesamt-Konfiguration | `UnifiedConfigManager`, `Geheimnisse`, `QualitySettingsApiHandler` | `UnifiedConfigManager` |
-| Einrichtung | `EinrichtungApiHandler`, `onboarding/schritte/`, `Selbsttest`, `SetupGuideDialog` | `EinrichtungApiHandler` |
+| Einrichtung (Schnellstart, Liste „Noch einrichten“) | `EinrichtungApiHandler` (`SCHNELLSTART`, `PFLICHT`), `onboarding/schritte/`, `HandySchritt`, `Selbsttest`, `SetupGuideDialog` | `EinrichtungApiHandler` |
 | i18n | `assets/web/i18n/`, `assets/server-i18n/`, `Messages`, `LocaleManager`, `web/shared/lang-picker.js`, `res/values*/strings.xml`, `tools/sprache/` | Abschnitt 6 |
 | Web-Seiten | `assets/web/local/`, Menü in `web/shared/app-shell.js`, Auslieferung in `HttpServer` | Abschnitt 4 |
 | Telegram | `TelegramBotDaemon`, `daemon/telegram/` (Befehle, `CommandRouter`), `TelegramNotifier`, `TelegramSpool`, `UnifiedTelegramConfig`, `TelegramApiHandler` | `CommandRouter` |

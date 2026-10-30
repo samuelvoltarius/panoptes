@@ -16,11 +16,19 @@ class Vorlauf(ctx: Context) {
         prefs.edit().putString(KEY + id, antwort.toString()).putBoolean(ERL + id, true).apply()
     }
 
+    /** „Später“ vor der USB-Freigabe: zählt im Vorlauf als erledigt, geht danach als „später“ an §0. */
+    fun merkeSpaeter(ids: List<String>) {
+        val e = prefs.edit()
+        ids.forEach { e.putBoolean(SP + it, true).putBoolean(ERL + it, true) }
+        e.apply()
+    }
+
     fun erledigt(): Set<String> = Einrichtung.VORLAUF.filter { prefs.getBoolean(ERL + it, false) }.toSet()
 
     /** Blockierend (Hintergrund): offene Vorlauf-Antworten an §0 schicken; bei Erfolg lokal löschen. */
     fun nachreichen() {
         for (id in Einrichtung.VORLAUF) {
+            if (prefs.getBoolean(SP + id, false) && EinrichtungApi.spaeter(id).ok) prefs.edit().remove(SP + id).apply()
             val s = prefs.getString(KEY + id, null) ?: continue
             val antwort = try { JSONObject(s) } catch (_: Throwable) { null } ?: continue
             val r = EinrichtungApi.schritt(id, antwort)
@@ -36,5 +44,6 @@ class Vorlauf(ctx: Context) {
         const val PREFS = "surfmate_einrichtung_vorlauf"
         private const val KEY = "antwort_"
         private const val ERL = "erledigt_"
+        private const val SP = "spaeter_"
     }
 }

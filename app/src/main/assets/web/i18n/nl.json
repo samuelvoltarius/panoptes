@@ -5610,10 +5610,10 @@
   },
   "einr": {
     "titel": "Installatie",
-    "lead": "De installatieassistent draait op het scherm in de auto. Hier zie je wat nog openstaat en kun je hem opnieuw starten.",
-    "offen_titel": "Nog open",
+    "lead": "De installatie-assistent draait op het scherm in de auto. Hier zie je wat nog ontbreekt en kun je hem opnieuw starten.",
+    "offen_titel": "Nog instellen",
     "offen_keins": "Niets open – de installatie is compleet.",
-    "offen_hinweis": "Dit doe je op het scherm in de auto in de installatieassistent.",
+    "offen_hinweis": "Alles is vrijwillig. Tik op een punt.",
     "neu_knopf": "Installatie opnieuw starten",
     "neu_frage": "Installatie echt opnieuw starten? De assistent vraagt dan alles nog een keer op het scherm in de auto. Je instellingen blijven tot je ze daar wijzigt; gegevens delen moet je opnieuw bevestigen.",
     "neu_ok": "Teruggezet. De assistent verschijnt op het scherm in de auto bij de volgende start van de app.",

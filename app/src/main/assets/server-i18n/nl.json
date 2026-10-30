@@ -1948,7 +1948,7 @@
       },
       "mobilfunk": {
         "title": "Updates ook via mobiel internet downloaden",
-        "help": "Veel auto's zijn alleen via de ingebouwde simkaart online, daarom staat dit aan. Een update is meestal 70 tot 120 MB; de grootte staat vooraf in de melding. Uit = Panoptes downloadt alleen als de auto op wifi zit. Het downloaden gebeurt alleen als de auto geparkeerd staat en gaat na een onderbreking verder waar het was."
+        "help": "Uit na een nieuwe installatie: je staat dan elke download toe op de updatemelding. Een update is meestal 70 tot 120 MB; de grootte staat vooraf in de melding. Uit = Panoptes downloadt alleen als de auto op wifi zit. Het downloaden gebeurt alleen als de auto geparkeerd staat en gaat na een onderbreking verder waar het was."
       },
       "quelle": {
         "title": "Updatebron",
@@ -2470,6 +2470,7 @@
     }
   },
   "update_hinweis": {
+    "mobil": "Ongeveer {0} via mobiele data.",
     "titel": "Nieuwe versie {0}",
     "frage": "Panoptes nu bijwerken?",
     "installieren": "Nu installeren",

@@ -84,9 +84,9 @@ public class NotzugangTest {
         assertEquals("spaeter", z.getJSONObject("schritte").getString("extra_notzugang"));
         JSONObject sicht = EinrichtungApiHandler.sicht(root, z, null, null);
         assertEquals("fertig", sicht.getString("aktuell"));
-        // ganz neuer Nutzer: Schritt ist ganz normal offen
+        // ganz neuer Nutzer (0.1.32): steht freiwillig in „Noch einrichten“, Standard aus
         JSONObject frisch = EinrichtungApiHandler.zustand(new JSONObject());
-        assertEquals("offen", frisch.getJSONObject("schritte").getString("extra_notzugang"));
+        assertEquals("spaeter", frisch.getJSONObject("schritte").getString("extra_notzugang"));
     }
 
     // ------------------------------------------------------------------ 0.1.15 adb-Weiterleitung (echte Shell)

@@ -73,12 +73,12 @@ class EinrichtungModellTest {
         assertFalse(v.vomKern)
         assertEquals(Einrichtung.VORLAUF, v.schritte.map { it.id })
         assertEquals("haftung", v.startSchritt())
-        assertEquals(Pair(1, 6), v.fortschritt("sprache"))
+        assertEquals(Pair(1, 7), v.fortschritt("sprache"))
     }
 
     @Test fun pflichtAusListeWennKernNichtsSagt() {
-        val s = stand("""{"schritte":[{"id":"karte","status":"offen"},{"id":"daten","status":"offen"}]}""")
-        assertTrue(s.schritt("karte")!!.pflicht)
+        val s = stand("""{"schritte":[{"id":"waechter","status":"offen"},{"id":"daten","status":"offen"}]}""")
+        assertTrue(s.schritt("waechter")!!.pflicht)
         assertFalse(s.schritt("daten")!!.pflicht)
     }
 
@@ -98,11 +98,65 @@ class EinrichtungModellTest {
         assertNull(Antworten.fehlt("betrieb", JSONObject("""{"modus":"immer","stopp":"normal"}""")))
     }
 
-    @Test fun updatesMobilfunkNurMitSim() {
+    private val schnell = """
+        {"version":1,"abgeschlossen":false,"aktuell":"ueberlagerung",
+         "schritte":[
+           {"id":"sprache","pflicht":true,"status":"erledigt","schnellstart":true},
+           {"id":"autostart","pflicht":false,"status":"offen","schnellstart":true},
+           {"id":"ueberlagerung","pflicht":false,"status":"offen","schnellstart":true},
+           {"id":"rechte","pflicht":false,"status":"erledigt","schnellstart":true},
+           {"id":"waechter","pflicht":true,"status":"offen","schnellstart":true},
+           {"id":"karte","pflicht":false,"status":"spaeter","schnellstart":false},
+           {"id":"extra_handy","pflicht":false,"status":"offen","schnellstart":true},
+           {"id":"extra_fernzugang","pflicht":false,"status":"spaeter","schnellstart":false},
+           {"id":"fertig","pflicht":false,"status":"offen","schnellstart":true}],
+         "offen_spaeter":["karte","extra_fernzugang"],"faehigkeiten":null,"selbsttest":null}
+    """
+
+    @Test fun schnellstartZeigtNurSeineSchritte() {
+        val s = stand(schnell)
+        assertEquals(listOf("sprache", "autostart", "waechter", "extra_handy", "fertig"), s.sichtbar.map { it.id })
+        assertEquals(Pair(4, 4), s.fortschritt("extra_handy"))
+        assertNull("freiwillig: keine Nummer", s.fortschritt("karte"))
+        assertEquals("Sammelschritt steht für alle drei Freigaben", "autostart", s.startSchritt())
+        assertEquals("waechter", s.naechster("autostart"))
+        assertNull("aus der Liste: kein Nachfolger", s.naechster("karte"))
+        assertTrue(s.spaeterErlaubt("karte"))
+        assertTrue(s.nochOffen().containsAll(listOf("karte", "extra_fernzugang")))
+    }
+
+    @Test fun handyQrWieImWeb() {
+        val br = JSONObject("""{"ein":true,"p":"PUB","a":"ADR","qrBasis":"https://x.example/p/"}""")
+        val q = HandyQr.inhalt("123456", "https://auto.example", br, "EIN")
+        assertTrue(q.startsWith("https://x.example/p/#k="))
+        assertFalse("kein Füllzeichen", q.endsWith("="))
+        val j = JSONObject(String(java.util.Base64.getUrlDecoder().decode(q.substringAfter("#k=")), Charsets.UTF_8))
+        assertEquals(2, j.getInt("v"))
+        assertEquals("123456", j.getString("c"))
+        assertEquals("https://auto.example", j.getJSONArray("u").getString(0))
+        assertEquals("PUB", j.getJSONObject("b").getString("p"))
+        assertEquals("ADR", j.getJSONObject("b").getString("a"))
+        assertEquals("EIN", j.getJSONObject("b").getString("z"))
+        // Brücke aus: kein b, Standard-Basis
+        val aus = HandyQr.inhalt("1", null, JSONObject("""{"ein":false,"p":"P","a":"A"}"""), "EIN")
+        assertTrue(aus.startsWith("https://byd.serveone.at/p/#k="))
+        val ja = JSONObject(String(java.util.Base64.getUrlDecoder().decode(aus.substringAfter("#k=")), Charsets.UTF_8))
+        assertFalse(ja.has("b"))
+        assertFalse(ja.has("u"))
+    }
+
+    @Test fun handyZustimmungUndKopplungen() {
+        assertFalse(HandyQr.zugestimmt(null))
+        assertFalse(HandyQr.zugestimmt(JSONObject("""{"zustimmungVersion":2}""")))
+        assertFalse("alte Fassung", HandyQr.zugestimmt(JSONObject("""{"zustimmung":{"version":1},"zustimmungVersion":2}""")))
+        assertTrue(HandyQr.zugestimmt(JSONObject("""{"zustimmung":{"version":2},"zustimmungVersion":2}""")))
+        assertEquals(setOf("a"), HandyQr.handyIds(JSONObject("""{"geraete":[{"id":"a","art":"handy"},{"id":"b","art":"cockpit"}]}""")))
+        assertEquals(emptySet<String>(), HandyQr.handyIds(null))
+    }
+
+    @Test fun updatesEineFrage() {
         assertEquals(listOf("pruefen"), Antworten.fehlt("updates", JSONObject()))
         assertNull(Antworten.fehlt("updates", JSONObject("""{"pruefen":false}""")))
-        assertEquals(listOf("mobilfunk", "modus"), Antworten.fehlt("updates", JSONObject("""{"pruefen":true}""")))
-        assertEquals(listOf("modus"), Antworten.fehlt("updates", JSONObject("""{"pruefen":true}"""), mitSim = false))
-        assertNull(Antworten.fehlt("updates", JSONObject("""{"pruefen":true,"mobilfunk":false,"modus":"melden"}""")))
+        assertNull(Antworten.fehlt("updates", JSONObject("""{"pruefen":true}""")))
     }
 }

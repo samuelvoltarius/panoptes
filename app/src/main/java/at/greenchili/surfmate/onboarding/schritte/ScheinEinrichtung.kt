@@ -28,16 +28,18 @@ object ScheinEinrichtung {
 
     private val status = linkedMapOf(
         "sprache" to "erledigt", "haftung" to "erledigt", "autostart" to "erledigt", "ueberlagerung" to "spaeter",
-        "rechte" to "erledigt", "usb_freigabe" to "erledigt", "auto" to "offen", "kameras" to "offen",
-        "waechter" to "offen", "betrieb" to "offen", "karte" to "offen", "daten" to "offen", "blitzer" to "offen",
-        "updates" to "offen", "extra_telegram" to "offen", "extra_handy" to "offen", "extra_planer" to "offen",
-        "extra_cockpit" to "offen", "extra_overdrive" to "offen", "extra_fernzugang" to "offen", "fertig" to "offen",
+        "rechte" to "erledigt", "usb_freigabe" to "erledigt", "auto" to "spaeter", "kameras" to "spaeter",
+        "waechter" to "offen", "betrieb" to "spaeter", "karte" to "spaeter", "daten" to "spaeter", "blitzer" to "spaeter",
+        "updates" to "offen", "extra_telegram" to "spaeter", "extra_handy" to "offen", "extra_planer" to "spaeter",
+        "extra_cockpit" to "spaeter", "extra_overdrive" to "spaeter", "extra_fernzugang" to "spaeter", "fertig" to "offen",
     )
-    private val pflicht = setOf("sprache", "haftung", "usb_freigabe", "auto", "waechter", "betrieb", "karte", "updates")
+    private val pflicht = setOf("sprache", "haftung", "usb_freigabe", "waechter", "updates")
+    private val schnellstart = setOf("sprache", "haftung", "autostart", "ueberlagerung", "rechte", "usb_freigabe", "waechter", "updates", "extra_handy", "fertig")
+    private var brueckeEin = false
 
     private fun stand(): JSONObject {
         val arr = JSONArray()
-        status.forEach { (id, st) -> arr.put(JSONObject().put("id", id).put("pflicht", id in pflicht).put("status", st)) }
+        status.forEach { (id, st) -> arr.put(JSONObject().put("id", id).put("pflicht", id in pflicht).put("status", st).put("schnellstart", id in schnellstart)) }
         val aktuell = status.entries.firstOrNull { it.value == "offen" }?.key ?: "fertig"
         return JSONObject().put("version", 1).put("abgeschlossen", status.none { it.key in pflicht && it.value == "offen" })
             .put("aktuell", aktuell).put("schritte", arr).put("neuZaehler", 0).put("art", "neu")
@@ -59,7 +61,7 @@ object ScheinEinrichtung {
         p == "/api/einrichtung/schritt" && b != null -> {
             val id = b.optString("id"); val a = b.optJSONObject("antwort") ?: JSONObject()
             val fehlt = Antworten.fehlt(id, a)
-            if (id in pflicht && id in SchrittAnsicht.MIT_ANTWORT && fehlt != null) EinrichtungApi.Antwort(422, JSONObject().put("error", "fehlt").put("fehlt", JSONArray(fehlt)))
+            if (id in SchrittAnsicht.MIT_ANTWORT && fehlt != null) EinrichtungApi.Antwort(422, JSONObject().put("error", "fehlt").put("fehlt", JSONArray(fehlt)))
             else { status[id] = if (a.has("ok") && !a.optBoolean("ok")) "offen" else "erledigt"; ok(JSONObject().put("success", true)) }
         }
         p == "/api/einrichtung/spaeter" && b != null -> {
@@ -73,6 +75,12 @@ object ScheinEinrichtung {
             .put(JSONObject().put("id", "speicher").put("text", "Speicher frei (21 GB)").put("status", "ok"))
             .put(JSONObject().put("id", "planer").put("text", "Routenplaner verbunden").put("status", "fehlt").put("ziel", "extra_planer"))
             .put(JSONObject().put("id", "fernzugang").put("text", "Fernzugang").put("status", "ungeprueft"))))
+        p == "/api/bruecke" && m == "GET" -> ok(JSONObject().put("ein", brueckeEin).put("p", "c2NoZWlu").put("a", "schein").put("zustimmungVersion", 1)
+            .apply { if (brueckeEin) put("zustimmung", JSONObject().put("version", 1)) })
+        p == "/api/bruecke" && m == "POST" -> { brueckeEin = true; ok(JSONObject().put("ok", true).put("ein", true)) }
+        p == "/api/kopplung/code" -> ok(JSONObject().put("code", "123456").put("gueltigBis", System.currentTimeMillis() + 600_000).put("brueckeEinmal", "schein"))
+        p == "/api/kopplungen" -> ok(JSONObject().put("geraete", JSONArray()))
+        p == "/api/system/tailscale" -> ok(JSONObject())
         p == "/api/einstellungen" && m == "GET" -> ok(JSONObject().put("etag", "e-1").put("werte", JSONObject()
             .put("guardStop.socBelow", JSONObject().put("wert", 20)).put("guardStop.v12Below", JSONObject().put("wert", 12.2))
             .put("guardStop.maxParkHours", JSONObject().put("wert", 24)).put("update.mobilfunk", JSONObject().put("wert", true))))

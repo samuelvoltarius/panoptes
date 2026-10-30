@@ -74,10 +74,10 @@ public class BrueckeZustimmungTest {
 
     @Test
     public void hakenAmDisplayUndImWeb() throws Exception {
-        String kt = WebHandyGuardTest.quelle("java/at/greenchili/surfmate/onboarding/schritte/WeitereSchritte.kt");
-        assertTrue("nie vorausgewählt", kt.contains("isChecked = false\n                a.grosserHaken(this)")
-                || kt.contains("isChecked = false\r\n                a.grosserHaken(this)"));
-        assertTrue("Knopf erst mit Haken", kt.contains("knopf.isEnabled = false") && kt.contains("knopf.isEnabled = an"));
+        String kt = WebHandyGuardTest.quelle("java/at/greenchili/surfmate/onboarding/schritte/HandySchritt.kt");
+        assertTrue("nie vorausgewählt", kt.contains("isChecked = false\n            a.grosserHaken(this)")
+                || kt.contains("isChecked = false\r\n            a.grosserHaken(this)"));
+        assertTrue("Knopf erst mit Haken", kt.contains("apply { isEnabled = false }") && kt.contains("knopf.isEnabled = an"));
         assertTrue(kt.contains("put(\"zustimmung\", true).put(\"quelle\", \"einrichtung\")"));
         String html = WebHandyGuardTest.quelle("assets/web/local/system.html");
         assertTrue(html.contains("id=\"brueckeZustimmung\""));

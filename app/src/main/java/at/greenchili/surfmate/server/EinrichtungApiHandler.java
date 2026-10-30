@@ -76,9 +76,21 @@ public final class EinrichtungApiHandler {
         STOPP = java.util.Collections.unmodifiableMap(m);
     }
 
-    /** Pflicht = ohne Antwort geht es nicht weiter, kein „Später“ (B4). */
+    /**
+     * Pflicht = ohne Antwort geht es nicht weiter, kein „Später“ (B4). 0.1.32 Schnellstart: nur noch, was rechtlich
+     * bzw. technisch ohne Antwort nicht geht. Rest läuft mit sicherem Standard, bis die Liste „Noch einrichten“ dran ist.
+     */
     public static final Set<String> PFLICHT = new HashSet<>(Arrays.asList(
+            "sprache", "haftung", "usb_freigabe", "waechter", "updates"));
+
+    /** Bis 0.1.31 Pflicht: Eine vorhandene Antwort zählt beim Bestand weiter als erledigt, nichts wird neu gefragt. */
+    static final Set<String> FRUEHER_PFLICHT = new HashSet<>(Arrays.asList(
             "sprache", "haftung", "usb_freigabe", "auto", "waechter", "betrieb", "karte", "updates"));
+
+    /** 0.1.32: der Ablauf einer neuen Einrichtung. Alles andere steht danach in „Noch einrichten“ (Status später). */
+    public static final Set<String> SCHNELLSTART = new HashSet<>(Arrays.asList(
+            "sprache", "haftung", "autostart", "ueberlagerung", "rechte", "usb_freigabe", "waechter", "updates",
+            "extra_handy", "fertig"));
 
     /** Gab es schon in 0.1.9 (für Bestandsnutzer nicht erneut, B2). */
     /** Prüf-Schritte: die App stellt sie fest und meldet {geprueft:true, ok}; ok:false lässt den Schritt offen. */
@@ -267,6 +279,7 @@ public final class EinrichtungApiHandler {
         }
         if (!z.has("gruende")) z.put("gruende", new JSONObject());
         if ("bestand".equals(z.optString("art"))) bestandNachpruefen(root, s);
+        else schnellstartNachziehen(s);
         if (!z.has("werte")) z.put("werte", new JSONObject());
         z.put("version", VERSION);
         return z;
@@ -280,13 +293,17 @@ public final class EinrichtungApiHandler {
     static void bestandNachpruefen(JSONObject root, JSONObject s) throws Exception {
         for (String id : SCHRITTE) {
             if ("fertig".equals(id) || !OFFEN.equals(s.optString(id))) continue;
-            if (PFLICHT.contains(id)) {
-                if (antwortVorhanden(root, id)) s.put(id, ERLEDIGT);
-            } else if (!BESTAND_019.contains(id)) {
-                s.put(id, SPAETER);
-            }
+            if (FRUEHER_PFLICHT.contains(id) && antwortVorhanden(root, id)) s.put(id, ERLEDIGT);
+            else if (!PFLICHT.contains(id) && !BESTAND_019.contains(id)) s.put(id, SPAETER);
         }
         if (OFFEN.equals(s.optString("fertig")) && alleAnderenErledigt(s)) s.put("fertig", ERLEDIGT);
+    }
+
+    /** 0.1.32: Was nicht zum Schnellstart gehört, öffnet nie den Assistenten, auch nicht aus einem älteren Zwischenstand. */
+    static void schnellstartNachziehen(JSONObject s) throws Exception {
+        for (String id : SCHRITTE) {
+            if (!SCHNELLSTART.contains(id) && OFFEN.equals(s.optString(id))) s.put(id, SPAETER);
+        }
     }
 
     static boolean istBestand(JSONObject root) {
@@ -309,8 +326,10 @@ public final class EinrichtungApiHandler {
         for (String id : SCHRITTE) {
             String st = OFFEN;
             if (bestand) {
-                if (PFLICHT.contains(id)) {
-                    st = antwortVorhanden(root, id) ? ERLEDIGT : OFFEN;
+                if (FRUEHER_PFLICHT.contains(id) && antwortVorhanden(root, id)) {
+                    st = ERLEDIGT;
+                } else if (PFLICHT.contains(id)) {
+                    st = OFFEN;
                 } else if (BESTAND_019.contains(id)) {
                     st = ENTFAELLT;
                     g.put(id, "einr.grund.bestand");
@@ -320,6 +339,7 @@ public final class EinrichtungApiHandler {
             }
             s.put(id, st);
         }
+        if (!bestand) schnellstartNachziehen(s);
         if (bestand && !alleAnderenErledigt(s)) s.put("fertig", OFFEN);
         else if (bestand) s.put("fertig", ERLEDIGT);
         return new JSONObject().put("version", VERSION).put("art", bestand ? "bestand" : "neu")
@@ -393,7 +413,7 @@ public final class EinrichtungApiHandler {
         if (faehigkeiten != null && faehigkeiten.optJSONObject("kameras") != null
                 && faehigkeiten.getJSONObject("kameras").has("anzahl")
                 && faehigkeiten.getJSONObject("kameras").optInt("anzahl", -1) == 0
-                && OFFEN.equals(s.optString("kameras"))) {
+                && (OFFEN.equals(s.optString("kameras")) || SPAETER.equals(s.optString("kameras")))) {
             s.put("kameras", ENTFAELLT);
             g.put("kameras", "einr.grund.keine_kameras");
         }
@@ -417,6 +437,7 @@ public final class EinrichtungApiHandler {
             String st = s.optString(id, OFFEN);
             JSONObject e = new JSONObject().put("id", id).put("pflicht", PFLICHT.contains(id)).put("status", st);
             if (FORTGESCHRITTEN.contains(id)) e.put("gruppe", "fortgeschritten");
+            e.put("schnellstart", SCHNELLSTART.contains(id));
             if (g.has(id)) e.put("grund", g.getString(id));
             liste.put(e);
             if (aktuell == null && OFFEN.equals(st)) aktuell = id;
@@ -526,6 +547,28 @@ public final class EinrichtungApiHandler {
         if (z == null || !"neu".equals(z.optString("art"))) return false;
         JSONObject s = z.optJSONObject("schritte");
         return s == null || !ERLEDIGT.equals(s.optString("betrieb"));
+    }
+
+    /**
+     * 0.1.32: {@code update.pruefen} ungesetzt heißt „an“, das gilt nur für den Bestand. Eine neue Einrichtung, die die
+     * Update-Frage noch nicht beantwortet hat, ruft nichts ab (Regel 2). Handprüfung und gesetzte Werte bleiben unberührt.
+     */
+    public static boolean updatesUnbeantwortet(JSONObject root) {
+        if (root == null) return false;
+        JSONObject u = root.optJSONObject("update");
+        if (u != null && u.has("pruefen")) return false;
+        JSONObject z = root.optJSONObject(ABSCHNITT);
+        // neuZaehler > 0: „Einrichtung erneut starten“ an einem laufenden Auto, das prüft weiter wie bisher
+        if (z == null || !"neu".equals(z.optString("art")) || z.optInt("neuZaehler", 0) > 0) return false;
+        JSONObject s = z.optJSONObject("schritte");
+        return s == null || !ERLEDIGT.equals(s.optString("updates"));
+    }
+
+    /** Erste Einrichtung dieses Autos: kein Bestand, nie „erneut gestartet“, Mobilfunk-Wert nie gesetzt. */
+    static boolean ersteEinrichtung(JSONObject root) throws Exception {
+        JSONObject z = zustand(root);
+        JSONObject u = root == null ? null : root.optJSONObject("update");
+        return "neu".equals(z.optString("art")) && z.optInt("neuZaehler", 0) == 0 && (u == null || !u.has("mobilfunk"));
     }
 
     static String tonVon(JSONObject root) {
@@ -645,6 +688,13 @@ public final class EinrichtungApiHandler {
                     einst.put("update.pruefen", an.getBoolean("pruefen"));
                     einst.put("update.modus", mo);
                     if (mob instanceof Boolean) einst.put("update.mobilfunk", mob);
+                    else if (ersteEinrichtung(root)) {
+                        // 0.1.32 fremdes Datenvolumen: nur neue Einrichtungen laden im WLAN, jeden Mobilfunk-Download
+                        // erlaubt der Tipp am Hinweis einzeln. Der Bestand behält seinen Wert.
+                        Map<String, Object> u = direkt.computeIfAbsent("update", x -> new HashMap<>());
+                        u.put("mobilfunk", false);
+                        u.put("mobilfunkEinmal", true);
+                    }
                 }
                 break;
             }
@@ -744,14 +794,19 @@ public final class EinrichtungApiHandler {
     }
 
     /**
-     * B3: alle Schritte wieder offen, Zähler +1 (die App löscht daraufhin ihre lokalen Merker,
+     * B3: Schnellstart wieder offen, Zähler +1 (die App löscht daraufhin ihre lokalen Merker,
      * {@code OnboardingState.abgleichen}). Gewählte Einstellungen bleiben in der Config; {@code werte}
      * bleibt als Vorschlag – Einwilligungen zeigt die Oberfläche trotzdem ohne Vorauswahl.
+     * 0.1.32: Erledigtes außerhalb des Schnellstarts bleibt erledigt (ein Bestand verliert so z. B. nicht „updates“).
      */
     public static Antwort neu(JSONObject root) throws Exception {
         JSONObject z = zustand(root);
+        JSONObject alt = z.getJSONObject("schritte");
         JSONObject s = new JSONObject();
-        for (String id : SCHRITTE) s.put(id, OFFEN);
+        for (String id : SCHRITTE) {
+            s.put(id, !SCHNELLSTART.contains(id) && ERLEDIGT.equals(alt.optString(id)) ? ERLEDIGT : OFFEN);
+        }
+        schnellstartNachziehen(s);
         z.put("schritte", s);
         z.put("gruende", new JSONObject());
         z.put("art", "neu");

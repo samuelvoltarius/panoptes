@@ -59,29 +59,27 @@ public class EinrichtungHandyOhneTailscaleTest {
         String de = at.greenchili.surfmate.server.WebHandyGuardTest.quelle("res/values-de/strings_einrichtung.xml");
         assertTrue(de.contains("name=\"einr_extra_handy_titel\""));
         assertTrue("PC nicht versprochen (Brücke nur über die App)", zeile(de, "einr_extra_handy_titel").endsWith(">Handy verbinden"));
-        String handy = zeile(de, "einr_extra_handy_text");
+        String handy = zeile(de, "einr_handy_zustimmung");
         // REGEL DAU (28.10.): keine Fachwörter außerhalb von „Für Fortgeschrittene“
-        for (String k : new String[]{"einr_extra_handy_titel", "einr_extra_handy_text", "einr_extra_telegram_text", "einr_handy_knopf"}) {
+        for (String k : new String[]{"einr_extra_handy_titel", "einr_handy_kurz", "einr_extra_telegram_text", "einr_handy_qr_knopf"}) {
             String z = zeile(de, k);
             for (String fach : new String[]{"Tailscale", "Brücke", "Noise", "Tailnet", "VPN", "IP-Adresse"}) {
                 assertFalse(k + " ohne „" + fach + "“", z.contains(fach));
             }
         }
         assertTrue("übers Internet", handy.contains("übers Internet"));
-        assertTrue("drei kurze Schritte mit Häkchen", handy.contains("Setze unten das Häkchen"));
-        assertTrue("ehrlich: Live-Bild/Videos noch nicht", handy.contains("Live-Bild und Videos gehen unterwegs noch nicht"));
-        assertTrue("PC: EV-Cockpit", handy.contains("EV-Cockpit (ab Version 1.22)"));
         assertTrue("Telegram ohne Zusatzprogramm", zeile(de, "einr_extra_telegram_text").contains("übers Internet"));
         assertTrue(zeile(de, "einr_extra_fernzugang_text").contains("Fernwartung (adb)"));
         for (String l : new String[]{"", "-fr", "-it", "-nl"}) {
             String x = at.greenchili.surfmate.server.WebHandyGuardTest.quelle("res/values" + l + "/strings_einrichtung.xml");
-            for (String k : new String[]{"einr_fortgeschritten", "einr_extra_handy_titel", "einr_extra_handy_text", "einr_handy_knopf"}) {
+            for (String k : new String[]{"einr_fortgeschritten", "einr_extra_handy_titel", "einr_handy_kurz", "einr_handy_qr_knopf"}) {
                 assertTrue(l + " " + k, x.contains("name=\"" + k + "\""));
             }
         }
         String kt = at.greenchili.surfmate.server.WebHandyGuardTest.quelle(
-                "java/at/greenchili/surfmate/onboarding/schritte/WeitereSchritte.kt");
-        assertTrue("Knopf schaltet ein und öffnet Koppeln", kt.contains("host.seiteOeffnen(\"system.html#kopplung\") }") && kt.contains("EinrichtungApi.transport(\"POST\", \"/api/bruecke\","));
+                "java/at/greenchili/surfmate/onboarding/schritte/HandySchritt.kt");
+        assertTrue("Knopf schaltet ein und zeigt den QR-Code", kt.contains("r.json.optBoolean(\"ok\", true)) qrHolen()") && kt.contains("EinrichtungApi.transport(\"POST\", \"/api/bruecke\","));
+        assertTrue("Häkchen nie vorausgewählt", kt.contains("isChecked = false"));
     }
 
     private static String zeile(String xml, String key) {

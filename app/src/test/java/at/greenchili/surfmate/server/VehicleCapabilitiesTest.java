@@ -120,9 +120,9 @@ public class VehicleCapabilitiesTest {
     @Test
     public void kameraSchrittEntfaelltNurBeiBelegterNull() throws Exception {
         JSONObject root = new JSONObject();
-        // media.camera 0 reicht nicht (Inventur Surf): der Schritt bleibt offen
+        // media.camera 0 reicht nicht (Inventur Surf): der Schritt bleibt in „Noch einrichten“
         JSONObject null0 = VehicleCapabilities.erweitere(new JSONObject(), "Number of camera devices: 0", false, null, null, null);
-        assertEquals("offen", status(EinrichtungApiHandler.sicht(root, EinrichtungApiHandler.zustand(root), null0, null), "kameras"));
+        assertEquals("spaeter", status(EinrichtungApiHandler.sicht(root, EinrichtungApiHandler.zustand(root), null0, null), "kameras"));
         // nur eine belegte Anzahl 0 (künftige Quelle) lässt ihn entfallen
         JSONObject belegt0 = new JSONObject().put("kameras", new JSONObject().put("anzahl", 0).put("status", "nein"));
         JSONObject s = EinrichtungApiHandler.sicht(root, EinrichtungApiHandler.zustand(root), belegt0, null);
@@ -130,7 +130,7 @@ public class VehicleCapabilitiesTest {
         assertTrue(s.toString().contains("einr.grund.keine_kameras"));
         JSONObject unbekannt = VehicleCapabilities.erweitere(new JSONObject(), "Number of camera devices: 0", true, null, null, null);
         JSONObject s2 = EinrichtungApiHandler.sicht(root, EinrichtungApiHandler.zustand(root), unbekannt, null);
-        assertEquals("offen", status(s2, "kameras"));
+        assertEquals("spaeter", status(s2, "kameras"));
         assertEquals("unbekannt", s2.getJSONObject("faehigkeiten").getJSONObject("kameras").getString("status"));
     }
 

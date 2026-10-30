@@ -65,7 +65,8 @@ public class CapabilitiesVapidTest {
 
         JSONObject c = capabilities();
         JSONObject push = c.getJSONObject("push");
-        assertEquals("nur das eine Feld", 1, push.length());
+        assertEquals("nur diese zwei Felder", 2, push.length());
+        assertEquals(1, push.getInt("apple"));
         String vapid = push.getString("vapid");
         assertEquals(erwartet, vapid);
         byte[] roh = Base64.getUrlDecoder().decode(vapid);

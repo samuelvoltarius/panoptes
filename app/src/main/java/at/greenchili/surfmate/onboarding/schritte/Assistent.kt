@@ -148,9 +148,10 @@ class Assistent(
     /** Nach erfolgreichem Speichern: Stand neu lesen und zum nächsten offenen bzw. folgenden Schritt. */
     fun weiterNach(id: String) {
         laden { s ->
-            val naechster = s.naechster(id)
-            // erst den nächsten in der Liste, sonst den ersten noch offenen, sonst Abschluss
-            zeige(naechster ?: s.startSchritt())
+            // 0.1.32: der erste noch offene, damit ein Bestand nichts Beantwortetes wieder sieht; aus „Noch einrichten“ zurück
+            // zum Abschluss. Bleibt ein Schritt offen (Prüfung nicht ok), geht es trotzdem weiter.
+            val start = s.startSchritt()
+            zeige(if (start == id) s.naechster(id) ?: "fertig" else start)
         }
     }
 
@@ -166,7 +167,10 @@ class Assistent(
     private fun aufSpaeter() {
         val a = aktuell ?: return
         spaeter.isEnabled = false
-        imHintergrund({ if (stand.vomKern) EinrichtungApi.spaeter(a.id) else EinrichtungApi.Antwort(200, JSONObject()) }) { r ->
+        imHintergrund({
+            if (stand.vomKern) a.spaeterIds.map { EinrichtungApi.spaeter(it) }.lastOrNull()
+            else { vorlauf.merkeSpaeter(a.spaeterIds); EinrichtungApi.Antwort(200, JSONObject()) }
+        }) { r ->
             spaeter.isEnabled = true
             if (r != null && r.ok) weiterNach(a.id) else zeigeMeldung(texte.res(R.string.einr_fehler_speichern))
         }
@@ -324,6 +328,8 @@ abstract class SchrittAnsicht(val id: String, protected val a: Assistent) {
     protected val t: Texte get() = a.texte
     open val spaeterZeigen: Boolean = true
     open val weiterZeigen: Boolean = true
+    /** Was „Später“ zurückstellt. */
+    open val spaeterIds: List<String> get() = listOf(id)
 
     abstract fun ansicht(): View
 
@@ -332,11 +338,10 @@ abstract class SchrittAnsicht(val id: String, protected val a: Assistent) {
 
     open fun weiterMoeglich(): Boolean {
         val ant = antwort()
-        return if (id in Einrichtung.PFLICHT && id in MIT_ANTWORT) Antworten.fehlt(id, ant, mitSim()) == null else true
+        return if (id in MIT_ANTWORT) Antworten.fehlt(id, ant) == null else true
     }
 
     open fun weiterText(): String? = null
-    open fun mitSim(): Boolean = true
     open fun betreten() {}
     /** Beim Verlassen: nur eigene verzögerte Aufgaben entfernen (der Handler ist geteilt). */
     open fun verlassen() { a.haupt.removeCallbacksAndMessages(this) }
@@ -360,7 +365,7 @@ abstract class SchrittAnsicht(val id: String, protected val a: Assistent) {
     protected fun titel(s: CharSequence) = a.text(s, 26f, fett = true)
 
     companion object {
-        /** Pflichtschritte mit §0-Antwort (Prüfung über [Antworten.fehlt]). */
+        /** Schritte mit §0-Antwort (Prüfung über [Antworten.fehlt]; 0.1.32: auch die freiwilligen aus „Noch einrichten“). */
         val MIT_ANTWORT = setOf("sprache", "haftung", "waechter", "betrieb", "karte", "updates")
     }
 }

@@ -29,103 +29,64 @@ interface AssistentHost {
 
 // ================================================================ Teil D: Rechte
 
-class AutostartSchritt(a: Assistent, private val host: AssistentHost) : SchrittAnsicht("autostart", a) {
-    private lateinit var status: android.widget.TextView
-    private var erledigt = false
-    // 0.1.20 P7: „Panoptes bei Zündung an öffnen“ – einfache Frage, Standard aus, sofort gespeichert
-    private var zuendung: Switch? = null
-    private var zuendungGeladen = false
+/**
+ * 0.1.32 Schnellstart: Autostart, Anzeige über anderen Apps und Android-Rechte auf einem Bildschirm.
+ * [id] ist der Schritt, über den man kam; gespeichert werden immer alle drei (Prüf-Schritte, §0).
+ */
+class FreigabenSchritt(id: String, a: Assistent) : SchrittAnsicht(id, a) {
+    private lateinit var liste: LinearLayout
+    private val ids = listOf("autostart", "ueberlagerung", "rechte")
+
+    override val spaeterIds: List<String> get() = ids
+
+    private fun autostartOk() = !SetupGuideDialog.autostartFehlt(a.activity)
+    private fun anzeigeOk() = !SetupGuideDialog.ueberlagerungFehlt(a.activity)
+    private fun erteilt(p: String) = a.activity.checkSelfPermission(p) == PackageManager.PERMISSION_GRANTED
+    private fun rechteOk() = ANDROID_RECHTE.all { erteilt(it) }
+    private fun ok(schritt: String) = when (schritt) { "autostart" -> autostartOk(); "ueberlagerung" -> anzeigeOk(); else -> rechteOk() }
 
     override fun ansicht(): View = spalte().apply {
-        dazu(titel(t.res(R.string.einr_autostart_titel)), 0f)
-        dazu(a.text(t.res(R.string.einr_autostart_text)))
-        // Bilder je DiLink-Version folgen (Community-Tester); bis dahin Textanleitung
-        dazu(a.text(t.res(R.string.einr_autostart_anleitung), 17f, leise = true))
-        dazu(a.knopf(t.res(R.string.einr_autostart_knopf), primaer = false) { SetupGuideDialog.autostartEinrichten(a.activity) }, 18f)
-        status = a.text("", 18f, fett = true)
-        dazu(status)
-        zuendung = Switch(a.activity).apply {
-            text = t.web("settings.autostart.beiZuendung.title", "Panoptes bei Zündung an öffnen")
-            setTextSize(TypedValue.COMPLEX_UNIT_PX, a.schrift(19f))
-            setTextColor(a.farbeText)
-            minHeight = a.knopfHoehe
-            isChecked = false
-            setOnCheckedChangeListener { _, an ->
-                if (!zuendungGeladen) return@setOnCheckedChangeListener
-                a.imHintergrund({ EinrichtungApi.einstellungSetzen(JSONObject().put("autostart.beiZuendung", an)) }) { _ -> }
+        dazu(titel(t.res(R.string.einr_freigaben_titel)), 0f)
+        dazu(a.text(t.res(R.string.einr_freigaben_text), 17f, leise = true))
+        liste = spalte()
+        dazu(liste, 16f)
+    }
+
+    override fun betreten() { pruefe() }
+
+    private fun pruefe() {
+        liste.removeAllViews()
+        zeile(R.string.einr_freigabe_autostart, autostartOk()) { SetupGuideDialog.autostartEinrichten(a.activity) }
+        zeile(R.string.einr_freigabe_anzeige, anzeigeOk()) { SetupGuideDialog.ueberlagerungOeffnen(a.activity) }
+        zeile(R.string.einr_freigabe_rechte, rechteOk()) {
+            a.activity.requestPermissions(ANDROID_RECHTE.filter { !erteilt(it) }.toTypedArray(), 4711)
+        }
+        a.geaendert()
+        if (!ids.all { ok(it) }) nachher(2000) { pruefe() }
+    }
+
+    private fun zeile(text: Int, ok: Boolean, klick: () -> Unit) {
+        val z = LinearLayout(a.activity).apply { orientation = LinearLayout.HORIZONTAL; gravity = android.view.Gravity.CENTER_VERTICAL }
+        z.addView(a.text((if (ok) "✓ " else "✗ ") + t.res(text), 21f, fett = true).apply { if (!ok) setTextColor(a.farbeWarnung) },
+            LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        if (!ok) z.addView(a.knopf(t.res(R.string.einr_freigabe_knopf), primaer = true, klick = klick))
+        liste.dazu(z, 12f)
+    }
+
+    override fun weiterMoeglich(): Boolean = ids.all { ok(it) }
+
+    override fun weiter(fertig: (Boolean, String?) -> Unit) {
+        fun speichere(rest: List<String>) {
+            val s = rest.firstOrNull() ?: return fertig(true, null)
+            a.speichereAntwort(s, JSONObject().put("geprueft", true).put("ok", ok(s))) { gut, text ->
+                if (gut) speichere(rest.drop(1)) else fertig(false, text)
             }
         }
-        dazu(zuendung!!, 22f)
-        dazu(a.text(t.web("settings.autostart.beiZuendung.help", ""), 16f, leise = true), 2f)
+        speichere(ids)
     }
-
-    override fun betreten() {
-        pruefe()
-        if (a.stand().vomKern) a.imHintergrund({ EinrichtungApi.get("/api/einstellungen") }) { r ->
-            val w = r?.json?.optJSONObject("werte")?.optJSONObject("autostart.beiZuendung")
-            zuendungGeladen = false
-            zuendung?.isChecked = w?.optBoolean("wert", false) ?: false
-            zuendungGeladen = true
-        }
-    }
-    private fun pruefe() {
-        erledigt = !SetupGuideDialog.autostartFehlt(a.activity)
-        status.text = if (erledigt) "✓ " + t.res(R.string.einr_autostart_ok) else "✗ " + t.res(R.string.einr_autostart_fehlt)
-        a.geaendert()
-        nachher(2000) { if (!erledigt) pruefe() }
-    }
-
-    // Bewusstes „Später“ (Kern: pflicht:false, löst die Dauererinnerung aus Teil K aus); Weiter erst nach der Rückprüfung
-    override fun weiterMoeglich(): Boolean = erledigt
-    override fun antwort(): JSONObject = JSONObject().put("geprueft", true).put("ok", erledigt)
-}
-
-class UeberlagerungSchritt(a: Assistent) : SchrittAnsicht("ueberlagerung", a) {
-    private lateinit var status: android.widget.TextView
-    override fun ansicht(): View = spalte().apply {
-        dazu(titel(t.res(R.string.einr_ueberlagerung_titel)), 0f)
-        dazu(a.text(t.res(R.string.einr_ueberlagerung_text)))
-        dazu(a.knopf(t.res(R.string.einr_einstellungen_oeffnen)) { SetupGuideDialog.ueberlagerungOeffnen(a.activity) }, 18f)
-        status = a.text("", 18f, fett = true)
-        dazu(status)
-    }
-    override fun betreten() { pruefe() }
-    private fun pruefe() {
-        val ok = !SetupGuideDialog.ueberlagerungFehlt(a.activity)
-        status.text = if (ok) "✓ " + t.res(R.string.einr_erteilt) else "✗ " + t.res(R.string.einr_nicht_erteilt)
-        if (!ok) nachher(2000) { pruefe() }
-    }
-    override fun antwort(): JSONObject = JSONObject().put("geprueft", true).put("ok", !SetupGuideDialog.ueberlagerungFehlt(a.activity))
-}
-
-class RechteSchritt(a: Assistent) : SchrittAnsicht("rechte", a) {
-    private lateinit var liste: LinearLayout
-    private val rechte = ANDROID_RECHTE.zip(listOf(R.string.einr_recht_kamera, R.string.einr_recht_standort, R.string.einr_recht_speicher))
-    override fun ansicht(): View = spalte().apply {
-        dazu(titel(t.res(R.string.einr_rechte_titel)), 0f)
-        dazu(a.text(t.res(R.string.einr_rechte_text), 17f, leise = true))
-        liste = spalte()
-        dazu(liste)
-    }
-    override fun betreten() { zeichne() }
-    private fun erteilt(p: String) = a.activity.checkSelfPermission(p) == PackageManager.PERMISSION_GRANTED
-    private fun zeichne() {
-        liste.removeAllViews()
-        var fehlt = false
-        for ((p, txt) in rechte) {
-            val ok = erteilt(p)
-            if (!ok) fehlt = true
-            liste.dazu(a.text((if (ok) "✓ " else "✗ ") + t.res(txt), 19f).apply { if (!ok) setTextColor(a.farbeWarnung) }, 10f)
-        }
-        if (fehlt) liste.dazu(a.knopf(t.res(R.string.einr_erneut_versuchen)) {
-            a.activity.requestPermissions(rechte.map { it.first }.filter { !erteilt(it) }.toTypedArray(), 4711)
-            nachher(1500) { zeichne() }
-        }, 16f)
-    }
-    override fun antwort(): JSONObject = JSONObject().put("geprueft", true).put("ok", rechte.all { erteilt(it.first) })
 
     companion object {
-        /** Die Rechte dieses Schritts (auch für den Abgleich beim App-Start, OnboardingHost). */
+        /** Die Android-Rechte (auch für den Abgleich beim App-Start, OnboardingHost). */
         val ANDROID_RECHTE = listOf(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.WRITE_EXTERNAL_STORAGE)
     }
 }
@@ -176,7 +137,6 @@ class UsbFreigabeSchritt(a: Assistent, private val host: AssistentHost) : Schrit
 // ================================================================ Teil E: Auto + Kameras
 
 class AutoSchritt(a: Assistent, private val host: AssistentHost) : SchrittAnsicht("auto", a) {
-    override val spaeterZeigen = false
     private var modell: String? = null
     private lateinit var modellText: android.widget.TextView
 
@@ -326,7 +286,7 @@ class BlitzerSchritt(a: Assistent) : SchrittAnsicht("blitzer", a) {
     }
 }
 
-// ================================================================ Teil I: Extras (alle „Später“-fähig)
+// ================================================================ Teil I: Extras (alle „Später“-fähig; Handy: HandySchritt)
 
 class ExtraSchritt(id: String, a: Assistent, private val host: AssistentHost) : SchrittAnsicht(id, a) {
     private var erledigt = false
@@ -334,8 +294,6 @@ class ExtraSchritt(id: String, a: Assistent, private val host: AssistentHost) : 
         val sid = this@ExtraSchritt.id
         val (titelId, textId) = when (sid) {
             "extra_telegram" -> R.string.einr_extra_telegram_titel to R.string.einr_extra_telegram_text
-            // 0.1.24: Standardweg ohne Tailscale – Schalter „Handy-App unterwegs nutzen“ + Kopplungs-QR auf der System-Seite
-            "extra_handy" -> R.string.einr_extra_handy_titel to R.string.einr_extra_handy_text
             "extra_planer" -> R.string.einr_extra_planer_titel to R.string.einr_extra_planer_text
             "extra_cockpit" -> R.string.einr_extra_cockpit_titel to R.string.einr_extra_cockpit_text
             // 0.1.14: Notzugang (Kern 7) – Standard aus; eingerichtet wird nur auf der System-Seite (Auth-Key nie im Assistenten)
@@ -346,44 +304,15 @@ class ExtraSchritt(id: String, a: Assistent, private val host: AssistentHost) : 
         if (sid in FORTGESCHRITTEN) dazu(a.text(t.res(R.string.einr_fortgeschritten), 14f, fett = true, leise = true), 0f)
         dazu(titel(t.res(titelId)), 0f)
         dazu(a.text(t.res(textId)))
-        // 0.1.24 Zustimmung (28.10.): ein Satz mit Häkchen, nie vorausgewählt; ohne Häkchen kein „Jetzt verbinden“
-        var haken: CheckBox? = null
-        val meldung = a.text("", 16f).apply { visibility = View.GONE }
-        if (sid == "extra_handy") {
-            haken = CheckBox(a.activity).apply {
-                text = t.res(R.string.einr_handy_zustimmung)
-                setTextSize(TypedValue.COMPLEX_UNIT_PX, a.schrift(18f))
-                setTextColor(a.farbeText)
-                minHeight = a.knopfHoehe
-                isChecked = false
-                a.grosserHaken(this)
-            }
-            dazu(haken, 16f)
-            dazu(a.text(t.res(R.string.einr_handy_datenschutz), 14f, leise = true), 4f)
-        }
-        val knopf = a.knopf(t.res(if (sid == "extra_handy") R.string.einr_handy_knopf else R.string.einr_jetzt_einrichten), primaer = sid == "extra_handy") {
+        dazu(a.knopf(t.res(R.string.einr_jetzt_einrichten)) {
             when (sid) {
                 "extra_telegram" -> host.seiteOeffnen("telegram.html")
-                // Zustimmung speichern und die Verbindung gleich einschalten; danach „Neues Gerät koppeln“ auf der Seite
-                "extra_handy" -> a.imHintergrund({
-                    EinrichtungApi.transport("POST", "/api/bruecke",
-                        JSONObject().put("ein", true).put("zustimmung", true).put("quelle", "einrichtung"))
-                }) { r ->
-                    if (r.ok) { meldung.visibility = View.GONE; host.seiteOeffnen("system.html#kopplung") }
-                    else { meldung.text = t.res(R.string.einr_handy_fehler); meldung.visibility = View.VISIBLE }
-                }
                 "extra_planer" -> host.seiteOeffnen("system.html#planerKarte")
                 "extra_cockpit" -> host.seiteOeffnen("system.html#kopplung")
                 "extra_notzugang" -> host.seiteOeffnen("system.html#notzugang")
                 else -> host.fernzugang { ok -> erledigt = ok; a.geaendert() }
             }
-        }
-        haken?.let { h ->
-            knopf.isEnabled = false
-            h.setOnCheckedChangeListener { _, an -> knopf.isEnabled = an }
-        }
-        dazu(knopf, 18f)
-        dazu(meldung, 8f)
+        }, 18f)
     }
     override fun antwort(): JSONObject = JSONObject()
 
@@ -440,6 +369,28 @@ class FertigSchritt(a: Assistent, private val host: AssistentHost) : SchrittAnsi
             if (status == "fehlt" && ziel.isNotEmpty()) zeile.addView(a.knopf(t.res(R.string.einr_beheben)) { a.zeige(ziel) })
             liste.dazu(zeile, 8f)
         }
+        nochEinrichten()
+    }
+
+    /** 0.1.32: ruhige Liste, alles freiwillig; ein Tipp öffnet genau diesen Schritt, danach geht es hierher zurück. */
+    private fun nochEinrichten() {
+        val offen = a.stand().nochOffen()
+        if (offen.isEmpty()) return
+        liste.dazu(a.text(t.res(R.string.einr_noch_titel), 21f, fett = true), 24f)
+        liste.dazu(a.text(t.res(R.string.einr_noch_text), 16f, leise = true), 2f)
+        val (einfach, fortgeschritten) = offen.partition { it !in ExtraSchritt.FORTGESCHRITTEN }
+        einfach.forEach { eintrag(it) }
+        if (fortgeschritten.isNotEmpty()) {
+            liste.dazu(a.text(t.res(R.string.einr_fortgeschritten), 16f, leise = true), 16f)
+            fortgeschritten.forEach { eintrag(it) }
+        }
+    }
+
+    private fun eintrag(id: String) {
+        val zeile = LinearLayout(a.activity).apply { orientation = LinearLayout.HORIZONTAL; gravity = android.view.Gravity.CENTER_VERTICAL }
+        zeile.addView(a.text(t.web("einr.schritt.$id", id), 18f), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        zeile.addView(a.knopf(t.res(R.string.einr_noch_knopf)) { a.zeige(id) })
+        liste.dazu(zeile, 6f)
     }
 
     /** Name je Punkt-ID (Kern G), mit Wert (Kameras n, Speicher GB, Wächter-Modus). Unbekannte IDs: Text des Kerns bzw. die ID. */

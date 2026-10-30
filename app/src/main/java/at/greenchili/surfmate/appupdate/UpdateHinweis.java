@@ -19,6 +19,10 @@ import org.json.JSONArray;
  * „automatisch“ ({@link #vorgemerktAb}). Der Tipp ist die Zustimmung (Koordination 30.10.); zurücknehmen geht direkt
  * auf der Karte und unter System → Updates. Die Vormerkung gilt nur für genau diese Version und höchstens
  * {@link #VORGEMERKT_GILT_MS}; danach und nach {@link #VORGEMERKT_MAX_FEHLVERSUCHE} Fehlversuchen verfällt sie.
+ *
+ * <p>0.1.32 fremdes Datenvolumen: Neue Einrichtungen laden nur im WLAN ({@code update.mobilfunk} aus, Merker
+ * {@code update.mobilfunkEinmal}). Bei ihnen nennt die Karte ohne WLAN die Größe, und der Tipp erlaubt genau diesen einen
+ * Download über Mobilfunk. Der Bestand kennt den Merker nicht und bleibt unverändert.
  */
 public final class UpdateHinweis {
 
@@ -52,6 +56,34 @@ public final class UpdateHinweis {
         /** Frühester nächster Versuch. */
         public long versuchAb;
         public int fehlversuche;
+        /** Diese Version darf einmal über Mobilfunk laden (0 = keine) und seit wann. */
+        public int mobilVc;
+        public long mobilAm;
+    }
+
+    /** Größe, wenn der Server keine nennt (typische APK). */
+    public static final long MOBIL_GROESSE_RUECKFALL = 70_000_000L;
+
+    public static void mobilErlauben(Stand s, int versionCode, long jetzt) {
+        s.mobilVc = versionCode;
+        s.mobilAm = jetzt;
+    }
+
+    /** Einwilligung gilt: genau diese Version, nicht abgelaufen (Uhr rückwärts = abgelaufen). */
+    public static boolean mobilGilt(Stand s, int versionCode, long jetzt) {
+        return s.mobilVc > 0 && s.mobilVc == versionCode && jetzt >= s.mobilAm && jetzt - s.mobilAm < VORGEMERKT_GILT_MS;
+    }
+
+    /** Braucht der Download gerade die Einwilligung am Hinweis? */
+    public static boolean mobilFragen(boolean merker, boolean nurWlan, String netz) {
+        return merker && nurWlan && !UpdateRegel.NETZ_WLAN.equals(netz);
+    }
+
+    /** Zusatz für die Karte, sonst leer. */
+    public static String mobilSatz(boolean fragen, long bytes) {
+        if (!fragen) return "";
+        return Messages.text("update_hinweis.mobil", "About {0} over mobile data.",
+                UpdateRegel.groesseText(bytes > 0 ? bytes : MOBIL_GROESSE_RUECKFALL));
     }
 
     /** Vormerkung gilt: genau diese Version, nicht abgelaufen (Uhr rückwärts = abgelaufen). */
@@ -69,6 +101,7 @@ public final class UpdateHinweis {
 
     public static void vergessen(Stand s) {
         vormerken(s, 0, 0);
+        mobilErlauben(s, 0, 0);
     }
 
     /** Versuch ist vorbei: Pause; nach zu vielen Fehlschlägen verfällt die Vormerkung (die Karte kommt wieder). */

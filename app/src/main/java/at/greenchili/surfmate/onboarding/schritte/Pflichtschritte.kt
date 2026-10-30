@@ -10,8 +10,8 @@ import at.greenchili.surfmate.server.LocaleManager
 import org.json.JSONObject
 
 /*
- * Pflichtschritte (WIZARD_AUFTRAG_NEUBAU Teil C, SETUP_WIZARD §2):
- *   sprache · haftung · waechter · betrieb · karte · updates
+ * Wahl-Schritte (WIZARD_AUFTRAG_NEUBAU Teil C, SETUP_WIZARD §2):
+ *   Schnellstart: sprache · haftung · waechter. „Noch einrichten“: betrieb · karte · updates.
  * Keine Vorauswahl bei Einwilligungen/Pflichtwahlen (Ausnahme Sprache). Rechtstexte wörtlich aus dem Web-Katalog.
  */
 
@@ -203,7 +203,6 @@ class WaechterSchritt(a: Assistent) : SchrittAnsicht("waechter", a) {
 
 // ---------------------------------------------------------------- 9 Betrieb (ohne Vorauswahl, Empfehlungstext) + Wächter-Stopp
 class BetriebSchritt(a: Assistent) : SchrittAnsicht("betrieb", a) {
-    override val spaeterZeigen = false
     private val wahl = Wahl(a, nebeneinander = true) { onWahl(it) }
     private lateinit var stopp: LinearLayout
     // 0.1.28 P10 (SETUP_WIZARD §2 Nr. 9): „Wächter stoppt …“ als eine einfache Wahl, nur bei „Immer an“
@@ -269,7 +268,6 @@ class BetriebSchritt(a: Assistent) : SchrittAnsicht("betrieb", a) {
 
 // ---------------------------------------------------------------- 10 Karte (drei Karten, ohne Vorauswahl, „was erfährt wer“)
 class KarteSchritt(a: Assistent) : SchrittAnsicht("karte", a) {
-    override val spaeterZeigen = false
     private val wahl = Wahl(a, nebeneinander = true) { a.geaendert() }
 
     override fun ansicht(): View = spalte().apply {
@@ -285,64 +283,28 @@ class KarteSchritt(a: Assistent) : SchrittAnsicht("karte", a) {
     override fun antwort(): JSONObject? = wahl.wert?.let { JSONObject().put("quelle", it) } ?: JSONObject()
 }
 
-// ---------------------------------------------------------------- 13 Updates (drei Fragen, ohne Vorauswahl; Mobilfunk nur mit SIM)
+// ---------------------------------------------------------------- 13 Updates (0.1.32: ein Satz, zwei Knöpfe, ohne Vorauswahl)
 class UpdatesSchritt(a: Assistent) : SchrittAnsicht("updates", a) {
     override val spaeterZeigen = false
-    private val pruefen = Wahl(a, nebeneinander = true) { onPruefen() }
-    private val mobil = Wahl(a, nebeneinander = true) { a.geaendert() }
-    private val modus = Wahl(a, nebeneinander = true) { a.geaendert() }
-    private var rest: View? = null
-    private var mobilBlock: View? = null
-    private var sim = true
+    override val weiterZeigen = false
 
     override fun ansicht(): View = spalte().apply {
-        dazu(titel(t.res(R.string.einr_updates_titel)), 0f)
-        dazu(a.text(t.res(R.string.einr_updates_frage_pruefen), 20f, fett = true))
-        pruefen.option("ja", t.res(R.string.einr_ja), t.res(R.string.einr_updates_pruefen_ja))
-        pruefen.option("nein", t.res(R.string.einr_nein), t.res(R.string.einr_updates_pruefen_nein))
-        dazu(pruefen.ansicht, 8f)
-        val r = spalte().apply { visibility = View.GONE }
-        val mb = spalte()
-        mb.dazu(a.text(t.res(R.string.einr_updates_frage_mobil), 20f, fett = true), 18f)
-        mb.dazu(a.text(t.res(R.string.einr_updates_mobil_kosten), 16f, leise = true), 4f)
-        mobil.option("ja", t.res(R.string.einr_ja), t.res(R.string.einr_updates_mobil_ja))
-        mobil.option("nein", t.res(R.string.einr_nein), t.res(R.string.einr_updates_mobil_nein))
-        mb.dazu(mobil.ansicht, 8f)
-        mobilBlock = mb
-        r.dazu(mb, 0f)
-        r.dazu(a.text(t.res(R.string.einr_updates_frage_modus), 20f, fett = true), 18f)
-        modus.option("melden", t.res(R.string.einr_updates_melden), t.res(R.string.einr_updates_melden_satz))
-        modus.option("automatisch", t.res(R.string.einr_updates_auto), t.res(R.string.einr_updates_auto_satz))
-        r.dazu(modus.ansicht, 8f)
-        rest = r
-        dazu(r)
+        dazu(titel(t.res(R.string.einr_updates_frage_pruefen)), 0f)
+        dazu(a.text(t.res(R.string.einr_updates_github), 19f))
+        dazu(a.text(t.res(R.string.einr_updates_mobil_kosten), 17f, leise = true))
+        val zeile = LinearLayout(a.activity).apply { orientation = LinearLayout.HORIZONTAL }
+        zeile.addView(a.knopf(t.res(R.string.einr_updates_ja_knopf)) { antworte(true) },
+            LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        zeile.addView(a.knopf(t.res(R.string.einr_nein)) { antworte(false) },
+            LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { leftMargin = a.px(16f) })
+        dazu(zeile, 24f)
+        dazu(a.text(t.res(R.string.einr_updates_pruefen_nein), 16f, leise = true), 12f)
     }
 
-    override fun betreten() {
-        // Aktueller Wert update.mobilfunk (Standard an) – keine Einwilligung, darum vorbelegt und änderbar
-        if (a.stand().vomKern) a.imHintergrund({ EinrichtungApi.get("/api/einstellungen") }) { r ->
-            val w = r?.json?.optJSONObject("werte")?.optJSONObject("update.mobilfunk")?.opt("wert")
-            if (w is Boolean && mobil.wert == null) mobil.waehle(if (w) "ja" else "nein")
+    /** Mobilfunk und Installationsart bleiben beim Standard, änderbar unter System. */
+    private fun antworte(pruefen: Boolean) {
+        a.speichereAntwort(id, JSONObject().put("pruefen", pruefen)) { ok, text ->
+            if (ok) a.weiterNach(id) else a.zeigeMeldung(text ?: t.res(R.string.einr_fehler_speichern))
         }
-        // Ohne SIM entfällt die Mobilfunk-Frage (Fähigkeit aus Kern E: faehigkeiten.sim)
-        val f = a.stand().faehigkeiten
-        if (f != null && f.has("sim")) {
-            sim = f.optBoolean("sim", true)
-            mobilBlock?.visibility = if (sim) View.VISIBLE else View.GONE
-        }
-    }
-
-    private fun onPruefen() { rest?.visibility = if (pruefen.wert == "ja") View.VISIBLE else View.GONE; a.geaendert() }
-
-    override fun mitSim(): Boolean = sim
-
-    override fun antwort(): JSONObject? {
-        val p = pruefen.wert ?: return JSONObject()
-        val o = JSONObject().put("pruefen", p == "ja")
-        if (p == "ja") {
-            if (!sim) o.put("mobilfunk", JSONObject.NULL) else mobil.wert?.let { o.put("mobilfunk", it == "ja") }
-            modus.wert?.let { o.put("modus", it) }
-        }
-        return o
     }
 }

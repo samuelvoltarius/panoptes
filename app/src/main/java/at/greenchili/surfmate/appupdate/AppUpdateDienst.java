@@ -86,6 +86,9 @@ public final class AppUpdateDienst {
         /** ACC autoritativ aus → TRUE, autoritativ an → FALSE, nicht autoritativ/unbekannt → null. */
         Boolean accAus();
         String config(String key);
+
+        /** 0.1.32: neue Einrichtung, Update-Frage noch offen: kein Abruf im Hintergrund. */
+        default boolean updatesUnbeantwortet() { return false; }
         File basis();
         File arbeitsordner();
         /** SHA-256 des Zertifikats der installierten App oder null (nicht lesbar). */
@@ -113,6 +116,10 @@ public final class AppUpdateDienst {
         /** Gang P: TRUE/FALSE, null = unbekannt. */
         default Boolean gangP() { return null; }
         /** Update-Hinweis zeigen; true = steht wirklich am Display. */
+        default boolean zeigeHinweis(String griff, Freigabe f, String notizen, String zusatz) {
+            return zeigeHinweis(griff, f, notizen);
+        }
+
         default boolean zeigeHinweis(String griff, Freigabe f, String notizen) { return false; }
         /** Update-Hinweis mit diesem Griff wegnehmen. */
         default void nimmHinweisWeg(String griff) { }
@@ -283,10 +290,23 @@ public final class AppUpdateDienst {
      * Antwort {@code {ok, vorgemerkt, text}}.
      */
     public JSONObject hinweisInstallieren(FernUpdate fern, String version, String sprache) throws Exception {
+        synchronized (lock) {
+            // 0.1.32: Der Tipp ist die Einwilligung für genau diesen einen Download (die Karte nannte die Größe)
+            if (mobilMerker() && verfuegbar != null && verfuegbar.versionName.equals(version)) {
+                UpdateHinweis.mobilErlauben(hinweis, verfuegbar.versionCode, env.jetzt());
+                speichern();
+            }
+        }
         JSONObject r = fern.starten(version, true, UpdateHinweis.geraetName(), sprache);
         if (r.optBoolean("ok", false)) return r.put("vorgemerkt", false);
         String grund = r.optString("grund", "");
-        if (!UpdateHinweis.vormerkbar(grund)) return r.put("vorgemerkt", false);
+        if (!UpdateHinweis.vormerkbar(grund)) {
+            synchronized (lock) {
+                UpdateHinweis.mobilErlauben(hinweis, 0, 0);
+                speichern();
+            }
+            return r.put("vorgemerkt", false);
+        }
         synchronized (lock) {
             if (verfuegbar == null || !verfuegbar.versionName.equals(version)
                     || verfuegbar.versionCode == rueckfallVc() || !UpdateHinweis.kanalPasst(verfuegbar, kanal())) {
@@ -341,6 +361,7 @@ public final class AppUpdateDienst {
             return;
         }
         Freigabe f;
+        String zusatz;
         synchronized (lock) {
             hinweisRuhigSeit = !ruhig ? -1 : hinweisRuhigSeit < 0 ? now : hinweisRuhigSeit;
             if (now < hinweisPauseBis) return;
@@ -357,12 +378,14 @@ public final class AppUpdateDienst {
             l.jetzt = now;
             if (UpdateHinweis.nichtWeil(l, hinweis) != null) return;
             f = verfuegbar;
+            zusatz = UpdateHinweis.mobilSatz(UpdateHinweis.mobilFragen(mobilMerker(),
+                    !UpdateRegel.an(env.config("mobilfunk")), env.netz()), groesseCache);
         }
         String neuerGriff = String.format("%016x", new SecureRandom().nextLong());
         boolean gezeigt = false;
         try {
             gezeigt = env.zeigeHinweis(neuerGriff, f, UpdateHinweis.notizenText(
-                    f.notizen(at.greenchili.surfmate.server.LocaleManager.get())));
+                    f.notizen(at.greenchili.surfmate.server.LocaleManager.get())), zusatz);
         } catch (Throwable t) {
             logger.warn("Update-Hinweis: " + t.getMessage());
         }
@@ -841,8 +864,15 @@ public final class AppUpdateDienst {
         l.laeuftSchon = new File(env.basis(), ".deploy.lock").exists();   // eigener Ablauf: installiertGerade
         l.rueckfallVc = rueckfallVc();
         l.nurWlan = !UpdateRegel.an(env.config("mobilfunk"));
+        l.mobilEinmal = verfuegbar != null && mobilMerker()
+                && UpdateHinweis.mobilGilt(hinweis, verfuegbar.versionCode, jetzt);
         l.netz = env.netz();
         return l;
+    }
+
+    /** {@code update.mobilfunkEinmal}: nur neue Einrichtungen, siehe {@link UpdateHinweis}. */
+    private boolean mobilMerker() {
+        return "true".equals(env.config("mobilfunkEinmal"));
     }
 
     private static String nichtWeil(UpdateRegel.Lage l) {
@@ -892,7 +922,7 @@ public final class AppUpdateDienst {
 
     /** {@code update.pruefen}: nicht gesetzt (Bestand) = an; die Ersteinrichtung fragt ohne Vorauswahl. */
     private boolean pruefenAn() {
-        return UpdateRegel.an(env.config("pruefen"));
+        return UpdateRegel.an(env.config("pruefen")) && !env.updatesUnbeantwortet();
     }
 
     // ------------------------------------------------------------------ Speicher
@@ -926,6 +956,8 @@ public final class AppUpdateDienst {
             hinweis.vorgemerktAm = j.optLong("vorgemerktAm", 0);
             hinweis.versuchAb = j.optLong("vorgemerktVersuchAb", 0);
             hinweis.fehlversuche = j.optInt("vorgemerktFehlversuche", 0);
+            hinweis.mobilVc = j.optInt("mobilVc", 0);
+            hinweis.mobilAm = j.optLong("mobilAm", 0);
         } catch (Exception e) {
             verfuegbar = null;
         }
@@ -945,7 +977,8 @@ public final class AppUpdateDienst {
                     .put("hinweisVc", hinweis.vc).put("hinweisAnzahl", hinweis.anzahl)
                     .put("hinweisZuletzt", hinweis.zuletzt).put("vorgemerktVc", hinweis.vorgemerktVc)
                     .put("vorgemerktAm", hinweis.vorgemerktAm).put("vorgemerktVersuchAb", hinweis.versuchAb)
-                    .put("vorgemerktFehlversuche", hinweis.fehlversuche);
+                    .put("vorgemerktFehlversuche", hinweis.fehlversuche)
+                    .put("mobilVc", hinweis.mobilVc).put("mobilAm", hinweis.mobilAm);
             File f = standDatei();
             File tmp = new File(f.getPath() + ".tmp");
             Files.write(tmp.toPath(), j.toString().getBytes(StandardCharsets.UTF_8));
@@ -1164,6 +1197,16 @@ public final class AppUpdateDienst {
             }
         }
 
+        @Override
+        public boolean updatesUnbeantwortet() {
+            try {
+                return at.greenchili.surfmate.server.EinrichtungApiHandler.updatesUnbeantwortet(
+                        at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig());
+            } catch (Throwable t) {
+                return false;
+            }
+        }
+
         @Override public File basis() { return new File(at.greenchili.surfmate.util.DaemonStorage.rebase(NEU)); }
         @Override public File arbeitsordner() { return new File(at.greenchili.surfmate.util.DaemonStorage.rebase(DD)); }
 
@@ -1279,9 +1322,10 @@ public final class AppUpdateDienst {
         }
 
         @Override
-        public boolean zeigeHinweis(String griff, Freigabe f, String notizen) {
+        public boolean zeigeHinweis(String griff, Freigabe f, String notizen, String zusatz) {
             return at.greenchili.surfmate.byd.MessageOverlayController.showUpdateHinweis(griff, f.versionName,
-                    UpdateHinweis.titel(f.versionName), UpdateHinweis.frage(), notizen,
+                    UpdateHinweis.titel(f.versionName),
+                    zusatz.isEmpty() ? UpdateHinweis.frage() : UpdateHinweis.frage() + "\n\n" + zusatz, notizen,
                     UpdateHinweis.knopfInstallieren(), UpdateHinweis.knopfSpaeter(), UpdateHinweis.knopfWasNeu(),
                     UpdateHinweis.knopfSchliessen(), UpdateHinweis.knopfZuruecknehmen(), UpdateHinweis.textFehler(),
                     UpdateHinweis.SICHTBAR_SEK);

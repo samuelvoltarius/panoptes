@@ -80,8 +80,9 @@ public class EinrichtungApiHandlerTest {
         assertEquals("offen", status(s, "waechter"));
         assertEquals("offen", status(s, "autostart"));
         assertEquals("erledigt", status(s, "usb_freigabe"));   // der Dienst antwortet = Freigabe da
-        // Koordination 22.10.: update.mobilfunk bleibt Standard an, kein „Noch offen“-Eintrag dafür
-        assertEquals(0, s.getJSONArray("offen_spaeter").length());
+        // 0.1.32: „updates“ ist Pflichtfrage im Schnellstart; ohne Antwort ruft nichts ab
+        assertEquals("offen", status(s, "updates"));
+        assertTrue(s.getJSONArray("offen_spaeter").toString().contains("extra_telegram"));
     }
 
     private static JSONObject bestand(boolean mitWaechter) throws Exception {
@@ -198,7 +199,7 @@ public class EinrichtungApiHandlerTest {
         assertEquals("osm", root.getJSONObject("karte").getString("quelle"));
         root = schritt(root, "updates", new JSONObject().put("pruefen", true).put("mobilfunk", JSONObject.NULL));
         assertTrue(root.getJSONObject("update").getBoolean("pruefen"));
-        assertFalse("null = nicht gesetzt", root.getJSONObject("update").has("mobilfunk"));
+        assertFalse("null = neue Einrichtung: nur WLAN", root.getJSONObject("update").getBoolean("mobilfunk"));
         Antwort sp = EinrichtungApiHandler.schritt(new JSONObject(), "sprache",
                 new JSONObject().put("locale", "nl"), FELDER, false, 1L);
         assertEquals("nl", sp.locale);
@@ -242,7 +243,9 @@ public class EinrichtungApiHandlerTest {
         JSONObject r = anwenden(root, a);
         JSONObject s = sicht(r);
         for (String id : EinrichtungApiHandler.SCHRITTE) {
-            if (!"usb_freigabe".equals(id) && !"extra_overdrive".equals(id)) assertEquals(id, "offen", status(s, id));
+            if ("usb_freigabe".equals(id) || "extra_overdrive".equals(id)) continue;
+            if (EinrichtungApiHandler.SCHNELLSTART.contains(id)) assertEquals(id, "offen", status(s, id));
+            else assertFalse(id, "offen".equals(status(s, id)));   // 0.1.32: Rest bleibt in „Noch einrichten“
         }
         assertEquals(1, s.getInt("neuZaehler"));
         assertEquals("community", r.getJSONObject("karte").getString("quelle"));   // Wert bleibt als Vorschlag
@@ -292,7 +295,7 @@ public class EinrichtungApiHandlerTest {
         java.util.function.BooleanSupplier vorher = EinrichtungApiHandler.overdriveErkennung;
         try {
             EinrichtungApiHandler.overdriveErkennung = () -> true;
-            assertEquals("offen", status(sicht(new JSONObject()), "extra_overdrive"));
+            assertEquals("spaeter", status(sicht(new JSONObject()), "extra_overdrive"));
             EinrichtungApiHandler.overdriveErkennung = () -> { throw new IllegalStateException("x"); };
             assertEquals("entfaellt", status(sicht(new JSONObject()), "extra_overdrive"));
         } finally {

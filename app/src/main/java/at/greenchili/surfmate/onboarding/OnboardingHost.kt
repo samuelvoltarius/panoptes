@@ -90,7 +90,7 @@ class OnboardingHost(
     private fun rechteNachmelden(json: org.json.JSONObject) {
         try {
             if (!at.greenchili.surfmate.onboarding.schritte.EinrichtungStand.ausJson(json).rechteNachmelden()) return
-            val alle = at.greenchili.surfmate.onboarding.schritte.RechteSchritt.ANDROID_RECHTE.all {
+            val alle = at.greenchili.surfmate.onboarding.schritte.FreigabenSchritt.ANDROID_RECHTE.all {
                 activity.checkSelfPermission(it) == android.content.pm.PackageManager.PERMISSION_GRANTED
             }
             if (alle) at.greenchili.surfmate.onboarding.schritte.EinrichtungApi.schritt("rechte",

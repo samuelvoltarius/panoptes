@@ -5610,10 +5610,10 @@
   },
   "einr": {
     "titel": "Configurazione",
-    "lead": "L’assistente di configurazione si avvia sullo schermo dell’auto. Qui vedi cosa manca ancora e puoi riavviarlo.",
-    "offen_titel": "Ancora da fare",
+    "lead": "La procedura guidata funziona sullo schermo dell’auto. Qui vedi cosa manca e puoi riavviarla.",
+    "offen_titel": "Ancora da configurare",
     "offen_keins": "Niente in sospeso – la configurazione è completa.",
-    "offen_hinweis": "Puoi farlo sullo schermo dell’auto nell’assistente di configurazione.",
+    "offen_hinweis": "Tutto facoltativo. Tocca una voce.",
     "neu_knopf": "Riavvia la configurazione",
     "neu_frage": "Riavviare davvero la configurazione? L’assistente chiederà di nuovo tutto sullo schermo dell’auto. Le tue impostazioni restano finché non le cambi lì; dovrai confermare di nuovo le condivisioni dei dati.",
     "neu_ok": "Reimpostato. L’assistente comparirà sullo schermo dell’auto al prossimo avvio dell’app.",

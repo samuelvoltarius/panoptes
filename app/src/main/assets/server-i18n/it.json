@@ -1948,7 +1948,7 @@
       },
       "mobilfunk": {
         "title": "Scarica gli aggiornamenti anche con la rete mobile",
-        "help": "Molte auto sono online solo tramite la SIM integrata, per questo è attivo. Un aggiornamento pesa di solito da 70 a 120 MB; la dimensione viene mostrata prima. Disattivato = Panoptes scarica solo quando l'auto è in Wi-Fi. Il download avviene solo ad auto parcheggiata e riprende da dove si era interrotto."
+        "help": "Disattivato dopo una nuova configurazione: consenti ogni download sul messaggio di aggiornamento. Un aggiornamento pesa di solito da 70 a 120 MB; la dimensione viene mostrata prima. Disattivato = Panoptes scarica solo quando l'auto è in Wi-Fi. Il download avviene solo ad auto parcheggiata e riprende da dove si era interrotto."
       },
       "quelle": {
         "title": "Fonte degli aggiornamenti",
@@ -2470,6 +2470,7 @@
     }
   },
   "update_hinweis": {
+    "mobil": "Circa {0} con i dati mobili.",
     "titel": "Nuova versione {0}",
     "frage": "Aggiornare Panoptes adesso?",
     "installieren": "Installa ora",

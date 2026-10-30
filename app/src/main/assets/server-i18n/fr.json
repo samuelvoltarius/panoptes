@@ -1948,7 +1948,7 @@
       },
       "mobilfunk": {
         "title": "Télécharger aussi via le réseau mobile",
-        "help": "Beaucoup de voitures ne sont en ligne que par leur carte SIM intégrée, c'est pourquoi cette option est activée. Une mise à jour fait en général 70 à 120 Mo ; la taille est indiquée à l'avance. Désactivé = Panoptes ne télécharge que lorsque la voiture est en Wi-Fi. Le téléchargement n'a lieu que voiture garée et reprend là où il s'était arrêté."
+        "help": "Désactivé après une nouvelle configuration : vous autorisez alors chaque téléchargement sur le message de mise à jour. Une mise à jour fait en général 70 à 120 Mo ; la taille est indiquée à l'avance. Désactivé = Panoptes ne télécharge que lorsque la voiture est en Wi-Fi. Le téléchargement n'a lieu que voiture garée et reprend là où il s'était arrêté."
       },
       "quelle": {
         "title": "Source des mises à jour",
@@ -2470,6 +2470,7 @@
     }
   },
   "update_hinweis": {
+    "mobil": "Environ {0} via les données mobiles.",
     "titel": "Nouvelle version {0}",
     "frage": "Mettre à jour Panoptes maintenant ?",
     "installieren": "Installer maintenant",

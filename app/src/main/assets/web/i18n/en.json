@@ -5610,10 +5610,10 @@
   },
   "einr": {
     "titel": "Setup",
-    "lead": "The setup assistant runs on the car screen. Here you can see what is still open and restart it.",
-    "offen_titel": "Still open",
+    "lead": "The setup assistant runs on the car screen. Here you can see what is still missing and restart it.",
+    "offen_titel": "Still to set up",
     "offen_keins": "Nothing open – setup is complete.",
-    "offen_hinweis": "You can do this on the car screen in the setup assistant.",
+    "offen_hinweis": "All optional. Tap an item.",
     "neu_knopf": "Restart setup",
     "neu_frage": "Really restart setup? The assistant will then ask everything again on the car screen. Your settings stay until you change them there; you will have to confirm data sharing again.",
     "neu_ok": "Reset. The assistant appears on the car screen the next time the app starts.",

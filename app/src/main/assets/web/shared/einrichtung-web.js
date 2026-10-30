@@ -16,18 +16,16 @@
     'use strict';
 
     var DE = {
-        'lead': 'Der Einrichtungsassistent läuft am Bildschirm im Auto. Hier siehst du, was noch offen ist, und kannst ihn neu starten.',
-        'offen_titel': 'Noch offen',
+        'lead': 'Der Einrichtungsassistent läuft am Bildschirm im Auto. Hier siehst du, was noch fehlt, und kannst ihn neu starten.',
+        'offen_titel': 'Noch einrichten',
         'offen_keins': 'Nichts offen – die Einrichtung ist vollständig.',
-        'offen_hinweis': 'Erledigen kannst du das am Bildschirm im Auto im Einrichtungsassistenten.',
+        'offen_hinweis': 'Alles freiwillig. Tippe auf einen Punkt.',
         'neu_knopf': 'Einrichtung erneut starten',
         'neu_frage': 'Einrichtung wirklich neu starten? Der Assistent fragt dann am Bildschirm im Auto alles noch einmal ab. Deine Einstellungen bleiben, bis du sie dort änderst; Freigaben musst du neu bestätigen.',
         'neu_ok': 'Zurückgesetzt. Der Assistent erscheint beim nächsten Start der App am Bildschirm im Auto.',
         'neu_fehler': 'Das hat nicht geklappt. Bitte später nochmal versuchen.',
         'abbrechen': 'Abbrechen',
         'ja': 'Neu starten',
-        'status.offen': 'offen',
-        'status.spaeter': 'später',
         'schritt.sprache': 'Sprache',
         'schritt.haftung': 'Hinweise zur Nutzung',
         'schritt.autostart': 'Autostart',
@@ -89,6 +87,15 @@
         'akku_fehler': 'Übernehmen hat nicht geklappt. Die Akkugröße ist unverändert.',
         'hinweis.sparsam_bis_betrieb': 'Bis du wählst, wann Panoptes laufen soll, läuft es sparsam.',
         'hinweis.keine_karte': 'Bis du eine Kartenquelle wählst, bleibt die Karte leer und es geht nichts raus.'
+    };
+
+    // 0.1.32 „Noch einrichten“: wo jeder Punkt im Web liegt. Ohne Eintrag (Auto, Kameras, Rechte) geht es nur im Assistenten am Display.
+    var ZIEL = {
+        betrieb: 'surveillance.html', karte: 'system.html#kartenquelle', daten: 'system.html#datenschutz',
+        blitzer: 'system.html#blitzer', updates: 'system.html#updates', strompreis: 'charging.html#settings',
+        extra_telegram: 'telegram.html', extra_handy: 'system.html#kopplung', extra_planer: 'system.html#planerKarte',
+        extra_cockpit: 'system.html#kopplung', extra_overdrive: 'system.html#umzug',
+        extra_fernzugang: 'system.html#tailscaleKarte', extra_notzugang: 'system.html#notzugang'
     };
 
     function t(k) {
@@ -278,8 +285,16 @@
                 var ul = el('ul');
                 ul.style.cssText = 'margin:6px 0 0 18px;padding:0';
                 teil.forEach(function (o) {
-                    var li = el('li', null, t('schritt.' + o.id) + ' (' + t('status.' + (o.status === 'offen' ? 'offen' : 'spaeter')) + ')');
+                    var li = el('li');
                     li.setAttribute('data-schritt', o.id);
+                    if (ZIEL[o.id]) {
+                        var a = el('a', null, t('schritt.' + o.id));
+                        a.href = ZIEL[o.id];
+                        a.style.cssText = 'color:var(--sm-aqua);font-weight:600';
+                        li.appendChild(a);
+                    } else {
+                        li.textContent = t('schritt.' + o.id);
+                    }
                     ul.appendChild(li);
                 });
                 inhalt.appendChild(ul);

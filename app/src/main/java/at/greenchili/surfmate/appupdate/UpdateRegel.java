@@ -41,6 +41,8 @@ public final class UpdateRegel {
         public int rueckfallVc = -1;
         /** {@code update.mobilfunk} aus: nur im WLAN laden (21.10.: Standard an, viele Autos haben nur SIM). */
         public boolean nurWlan;
+        /** Einwilligung am Hinweis: genau dieser Download darf über Mobilfunk ({@link UpdateHinweis#mobilGilt}). */
+        public boolean mobilEinmal;
         /** "wlan" | "mobil" | "unbekannt". */
         public String netz = NETZ_UNBEKANNT;
     }
@@ -62,7 +64,7 @@ public final class UpdateRegel {
             return "zustand_unbekannt";
         }
         // „nur WLAN“: nur ein eindeutig erkanntes WLAN zählt (Ethernet/unbekannt kann die SIM der T-Box sein)
-        if (l.nurWlan && !NETZ_WLAN.equals(l.netz)) return "wartet_wlan";
+        if (l.nurWlan && !l.mobilEinmal && !NETZ_WLAN.equals(l.netz)) return "wartet_wlan";
         return null;
     }
 

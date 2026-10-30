@@ -1942,7 +1942,7 @@
       },
       "mobilfunk": {
         "title": "Download updates over mobile data too",
-        "help": "Many cars are only online through their built-in SIM, so this is on. An update is usually 70 to 120 MB; the size is shown in the notice beforehand. Off = Panoptes only downloads while the car is on Wi-Fi. The download only runs while the car is parked and resumes where it stopped after an interruption."
+        "help": "Off after a new setup: you then allow each download on the update notice. An update is usually 70 to 120 MB; the size is shown in the notice beforehand. Off = Panoptes only downloads while the car is on Wi-Fi. The download only runs while the car is parked and resumes where it stopped after an interruption."
       },
       "quelle": {
         "title": "Update source",
@@ -2464,6 +2464,7 @@
     }
   },
   "update_hinweis": {
+    "mobil": "About {0} over mobile data.",
     "titel": "New version {0}",
     "frage": "Update Panoptes now?",
     "installieren": "Install now",
