@@ -13,10 +13,11 @@ public class AkkuChemieRuheTageTest {
     @Test
     public void jeTagDerKleinsteWertZaehlt() throws Exception {
         JSONObject t = new JSONObject();
-        assertTrue(AkkuChemie.ruheTagEintragen(t, "2026-10-20", 13.25, 14));
-        assertFalse("höherer Wert ändert nichts", AkkuChemie.ruheTagEintragen(t, "2026-10-20", 13.4, 14));
         assertTrue(AkkuChemie.ruheTagEintragen(t, "2026-10-20", 12.95, 14));
+        assertFalse("tieferer Wert ändert nichts", AkkuChemie.ruheTagEintragen(t, "2026-10-20", 12.7, 14));
         assertEquals(0, AkkuChemie.tageAb(t, 13.0));
+        assertTrue(AkkuChemie.ruheTagEintragen(t, "2026-10-20", 13.25, 14));
+        assertEquals(1, AkkuChemie.tageAb(t, 13.0));
         assertFalse("Unsinn wird nicht gemerkt", AkkuChemie.ruheTagEintragen(t, "2026-10-21", 0.0, 14));
     }
 

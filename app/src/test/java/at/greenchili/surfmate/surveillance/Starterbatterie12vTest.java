@@ -166,22 +166,21 @@ public class Starterbatterie12vTest {
     }
 
     @Test
-    public void monitorMeldetNurRuhespannungUndNurEinmal() {
+    public void monitorMeldetNurOberkanteUndNurEinmal() {
         List<String> gemeldet = new ArrayList<>();
         GuardStopMonitor.melder12v = (s, v) -> gemeldet.add(s + "@" + Math.round(v * 10) / 10.0);
         GuardStopMonitor m = new GuardStopMonitor(new Still(), Battery12vEvaluator.Profile.DEFAULT);
         m.merker12vForTest(Merker.leer());
         long park = T0;
-        // 30 min geparkt: noch keine Ruhespannung → nichts
-        m.v12ForTest(12.3, park + 29 * MIN, park, 12.2, 12.5);
-        m.v12ForTest(12.3, park + 30 * MIN, park, 12.2, 12.5);
-        m.warnung12vPruefen(park + 30 * MIN, cfg(12.2, 12.5), "blei", null);
+        // 11 h geparkt, kein Nachladen gesehen: Oberkante noch nicht sicher → nichts
+        long t = park + 11 * MIN;
+        for (; t <= park + 11 * 60 * MIN; t += 5 * MIN) m.v12ForTest(12.3, t, park, 12.2, 12.5);
+        m.warnung12vPruefen(t, cfg(12.2, 12.5), "blei", null);
         assertEquals(0, gemeldet.size());
-        // 70 min: Ruhe 12,3 V knapp über 12,2 → Vorwarnung, genau einmal
-        m.v12ForTest(12.3, park + 69 * MIN, park, 12.2, 12.5);
-        m.v12ForTest(12.3, park + 70 * MIN, park, 12.2, 12.5);
-        m.warnung12vPruefen(park + 70 * MIN, cfg(12.2, 12.5), "blei", null);
-        m.warnung12vPruefen(park + 71 * MIN, cfg(12.2, 12.5), "blei", null);
+        // 13 h: Oberkante 12,3 V knapp über 12,2 → Vorwarnung, genau einmal
+        for (; t <= park + 13 * 60 * MIN; t += 5 * MIN) m.v12ForTest(12.3, t, park, 12.2, 12.5);
+        m.warnung12vPruefen(t, cfg(12.2, 12.5), "blei", null);
+        m.warnung12vPruefen(t + MIN, cfg(12.2, 12.5), "blei", null);
         assertEquals("[VOR@12.3]", gemeldet.toString());
     }
 

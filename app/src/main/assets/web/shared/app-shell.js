@@ -416,10 +416,15 @@
             { href: 'performance.html',     label: 'Leistung',           i18n: 'nav.performance' },
             { href: 'remote-dev-view.html', label: 'Fernansicht',        i18n: 'shell.page_devview' },
             { href: 'about.html',           label: 'Über',               i18n: 'shell.page_about' }
+        ] },
+        // 0.1.31 „Fehler melden“: eigener Punkt, damit ihn jeder findet (REGEL DAU)
+        { id: 'hilfe', label: 'Hilfe', i18n: 'shell.sec_hilfe', icon: 'hilfe', pages: [
+            { href: 'fehler-melden.html',   label: 'Fehler melden',      i18n: 'shell.page_fehler' }
         ] }
     ];
 
     var ICONS = {
+        hilfe: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.7 2.2c-.8.5-1.2 1-1.2 1.8"/><path d="M12 17h.01" stroke-linecap="round"/>',
         home:  '<path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" stroke-linejoin="round"/>',
         route: '<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h6.5" stroke-linecap="round"/>',
         eye:   '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
@@ -815,6 +820,10 @@
             });
             if (!sitzungMerker('pn.neu.ok')) baustein('../shared/neuigkeiten.js?v=3', function () {
                 if (window.PanoptesNeu) window.PanoptesNeu.pruefen();
+            });
+            // 0.1.31 Regel 2: einmalige Frage zu Modell und DiLink, nur im Stand
+            if (!sitzungMerker('pn.zaehlfrage.ok')) baustein('../shared/zaehlen-frage.js?v=1', function () {
+                if (window.PanoptesZaehlFrage) window.PanoptesZaehlFrage.pruefen();
             });
         };
         var p = null;

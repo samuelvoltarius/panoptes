@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0A2238">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="../shared/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-title" content="Panoptes">
+    <title data-i18n="rueckmeldung.titel">Fehler melden</title>
+    <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
+    <script src="../shared/theme.js?v=13"></script>
+    <script src="../shared/app-shell.js?v=pn27"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn11">
+    <link rel="manifest" href="/manifest.json">
+    <style>
+        .fm-body { max-width: 720px; margin: 0 auto; }
+        .fm-karte {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 16px;
+        }
+        .fm-label { display: block; font-size: 20px; font-weight: 600; margin-bottom: 10px; color: var(--text-primary); }
+        .fm-text {
+            width: 100%; box-sizing: border-box; min-height: 150px; padding: 14px;
+            font: inherit; font-size: 18px; line-height: 1.4; resize: vertical;
+            color: var(--text-primary); background: var(--bg-primary, transparent);
+            border: 1px solid var(--border-subtle); border-radius: 10px;
+        }
+        .fm-leise { color: var(--text-secondary); font-size: 15px; line-height: 1.5; margin: 8px 0 0; }
+        .fm-zaehler { text-align: right; }
+        .fm-haken { display: flex; align-items: center; gap: 14px; min-height: 56px; font-size: 18px; font-weight: 600; cursor: pointer; }
+        .fm-haken input { width: 28px; height: 28px; flex-shrink: 0; }
+        .fm-vorschau {
+            max-height: 260px; overflow: auto; margin: 10px 0 0; padding: 12px;
+            font-family: var(--family-mono); font-size: 12px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere;
+            background: var(--bg-hover); border-radius: 8px;
+        }
+        .fm-zeile { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--border-subtle); font-size: 16px; }
+        .fm-zeile:last-of-type { border-bottom: 0; }
+        .fm-zeile span:first-child { color: var(--text-secondary); }
+        .fm-knopf {
+            width: 100%; min-height: 64px; border: 0; border-radius: 12px; cursor: pointer;
+            font: inherit; font-size: 20px; font-weight: 700;
+            color: #06202f; background: var(--brand-primary);
+        }
+        .fm-knopf:disabled { opacity: 0.5; cursor: default; }
+        .fm-knopf.zweit { color: var(--text-primary); background: var(--bg-hover); margin-top: 12px; }
+        .fm-meldung { font-size: 18px; line-height: 1.5; margin: 14px 0 0; }
+        .fm-meldung:empty { display: none; }
+        .fm-danke { font-size: 22px; font-weight: 600; line-height: 1.4; }
+        .fm-code { display: block; font-family: var(--family-mono); font-size: 34px; font-weight: 700; margin: 12px 0; letter-spacing: 0.04em; user-select: all; -webkit-user-select: all; }
+        [hidden] { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <div id="app-shell-mount"></div>
+        <main class="main-content">
+            <div class="mobile-header">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+                </button>
+                <span style="font-weight:600;" data-i18n="rueckmeldung.titel">Fehler melden</span>
+                <div style="width:40px;"></div>
+            </div>
+            <header class="page-header">
+                <h1 class="page-title" data-i18n="rueckmeldung.titel">Fehler melden</h1>
+            </header>
+            <div class="page-body">
+                <div class="fm-body">
+                    <div class="fm-karte" id="fmFahrt" hidden>
+                        <p class="fm-danke" data-i18n="rueckmeldung.fahrt">Bitte erst anhalten. Melden geht im Stand.</p>
+                    </div>
+
+                    <div id="fmForm">
+                        <div class="fm-karte">
+                            <label class="fm-label" for="fmText" data-i18n="rueckmeldung.frage">Was ist passiert?</label>
+                            <textarea class="fm-text" id="fmText" maxlength="1000" data-i18n-placeholder="rueckmeldung.platzhalter" placeholder="Zum Beispiel: Die Karte bleibt beim Starten weiß."></textarea>
+                            <p class="fm-leise fm-zaehler"><span id="fmZaehler">0</span> / 1000</p>
+                            <p class="fm-leise" data-i18n="rueckmeldung.kein_name">Bitte keine Namen, Adressen oder Kennzeichen eintragen.</p>
+                        </div>
+
+                        <div class="fm-karte">
+                            <label class="fm-haken"><input type="checkbox" id="fmDiagnose"><span data-i18n="rueckmeldung.haken">Diagnose-Auszug mitschicken</span></label>
+                            <p class="fm-leise" data-i18n="rueckmeldung.haken_hilfe">Hilft uns, den Fehler zu finden: die letzten Warnungen und Fehler. Private Angaben schwärzt Panoptes vorher im Auto.</p>
+                            <div id="fmVorschauBox" hidden>
+                                <p class="fm-leise" data-i18n="rueckmeldung.vorschau_titel">Genau das geht mit:</p>
+                                <pre class="fm-vorschau" id="fmVorschau"></pre>
+                            </div>
+                        </div>
+
+                        <div class="fm-karte">
+                            <div class="fm-label" data-i18n="rueckmeldung.auto_titel">Das geht automatisch mit</div>
+                            <div class="fm-zeile"><span data-i18n="rueckmeldung.auto_version">Panoptes-Version</span><span id="fmVersion">—</span></div>
+                            <div class="fm-zeile"><span>DiLink</span><span id="fmDilink">—</span></div>
+                            <div class="fm-zeile"><span data-i18n="rueckmeldung.auto_modell">Modell</span><span id="fmModell">—</span></div>
+                            <div class="fm-zeile"><span data-i18n="rueckmeldung.auto_sprache">Sprache</span><span id="fmSprache">—</span></div>
+                            <p class="fm-leise" data-i18n="rueckmeldung.auto_nicht">Keine Kennung, kein Ort, keine Fahrgestellnummer, kein Telegram- oder Konto-Name.</p>
+                        </div>
+
+                        <button class="fm-knopf" type="button" id="fmSenden" data-i18n="rueckmeldung.absenden">Absenden</button>
+                        <p class="fm-meldung" id="fmMeldung" role="status"></p>
+                    </div>
+
+                    <div class="fm-karte" id="fmDanke" hidden>
+                        <div class="fm-danke" id="fmDankeText"></div>
+                        <span class="fm-code" id="fmCode"></span>
+                        <p class="fm-leise" id="fmCodeHilfe" data-i18n="rueckmeldung.code_hilfe">Mit diesem Code kannst du dich später auf deine Meldung beziehen.</p>
+                        <button class="fm-knopf zweit" type="button" id="fmNeu" data-i18n="rueckmeldung.neu">Noch eine Meldung</button>
+                    </div>
+
+                    <p class="fm-leise" id="fmOffen" hidden></p>
+                    <div class="fm-karte" id="fmCodes" hidden>
+                        <div class="fm-label" data-i18n="rueckmeldung.codes_titel">Deine letzten Meldungs-Codes</div>
+                        <div id="fmCodesListe"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="../shared/auth.js"></script>
+    <script src="../shared/pwa-init.js?v=index1"></script>
+    <script src="../shared/core.js?v=pn6"></script>
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+
+        (function () {
+            'use strict';
+            var API = '/api/rueckmeldung/fehler';
+            var SPRACHEN = { de: 'Deutsch', en: 'English', fr: 'Français', it: 'Italiano', nl: 'Nederlands' };
+            var vorschauId = '';
+            function $(id) { return document.getElementById(id); }
+            function tx(key, fb) {
+                try {
+                    if (window.BYD && BYD.i18n && typeof BYD.i18n.t === 'function') {
+                        var v = BYD.i18n.t(key);
+                        if (v && v !== key) return v;
+                    }
+                } catch (e) { /* Rückfall */ }
+                return fb;
+            }
+            function holen(diagnose) {
+                return fetch(API + (diagnose ? '?diagnose=1' : ''), { credentials: 'same-origin', cache: 'no-store' })
+                    .then(function (r) { if (!r.ok) throw new Error('status'); return r.json(); });
+            }
+            function anzeigen(d) {
+                $('fmVersion').textContent = d.version || '—';
+                $('fmDilink').textContent = d.dilink || tx('rueckmeldung.unbekannt', 'unbekannt');
+                $('fmModell').textContent = !d.modell || d.modell === 'unbekannt' ? tx('rueckmeldung.unbekannt', 'unbekannt') : d.modell;
+                $('fmSprache').textContent = SPRACHEN[d.sprache] || d.sprache || '—';
+                // Am Auto-Display nicht während der Fahrt tippen
+                var fahrt = !!d.fahrt && !!window.AndroidBridge;
+                $('fmFahrt').hidden = !fahrt;
+                $('fmForm').hidden = fahrt || !$('fmDanke').hidden;
+                $('fmOffen').hidden = !d.offen;
+                if (d.offen) $('fmOffen').textContent = tx('rueckmeldung.offen', 'Wartet auf Internet: {n}').replace('{n}', d.offen);
+                var codes = d.codes || [];
+                $('fmCodes').hidden = !codes.length;
+                var box = $('fmCodesListe');
+                box.innerHTML = '';
+                for (var i = codes.length - 1; i >= 0; i--) {
+                    var z = document.createElement('div');
+                    z.className = 'fm-zeile';
+                    var a = document.createElement('span');
+                    a.textContent = new Date(codes[i].zeit).toLocaleDateString();
+                    var b = document.createElement('span');
+                    b.textContent = codes[i].code;
+                    z.appendChild(a); z.appendChild(b);
+                    box.appendChild(z);
+                }
+            }
+            function meldung(text) { $('fmMeldung').textContent = text || ''; }
+            function ladeVorschau() {
+                vorschauId = '';
+                $('fmVorschauBox').hidden = false;
+                $('fmVorschau').textContent = tx('rueckmeldung.vorschau_laedt', 'Wird geladen …');
+                $('fmSenden').disabled = true;
+                return holen(true).then(function (d) {
+                    vorschauId = d.vorschauId || '';
+                    $('fmVorschau').textContent = d.diagnose || tx('rueckmeldung.vorschau_leer', 'Gerade gibt es keine Warnungen oder Fehler. Es geht nichts mit.');
+                    $('fmSenden').disabled = false;
+                }).catch(function () {
+                    $('fmDiagnose').checked = false;
+                    $('fmVorschauBox').hidden = true;
+                    $('fmSenden').disabled = false;
+                    meldung(tx('rueckmeldung.fehler', 'Das hat nicht geklappt. Bitte versuche es später noch einmal.'));
+                });
+            }
+            function danke(r) {
+                $('fmForm').hidden = true;
+                $('fmDanke').hidden = false;
+                var gemerkt = r.stand === 'gemerkt';
+                $('fmDankeText').textContent = gemerkt
+                    ? tx('rueckmeldung.gemerkt', 'Gerade kein Internet. Deine Meldung ist gemerkt und geht raus, sobald wieder Netz da ist.')
+                    : tx(r.code ? 'rueckmeldung.danke' : 'rueckmeldung.danke_ohne', r.code ? 'Danke! Dein Meldungs-Code:' : 'Danke! Deine Meldung ist angekommen.');
+                $('fmCode').hidden = !r.code;
+                $('fmCode').textContent = r.code || '';
+                $('fmCodeHilfe').hidden = !r.code;
+                holen(false).then(anzeigen).catch(function () {});
+            }
+            function senden() {
+                var text = $('fmText').value.trim();
+                if (!text) { meldung(tx('rueckmeldung.text_fehlt', 'Bitte schreib kurz, was passiert ist.')); $('fmText').focus(); return; }
+                var body = { text: text };
+                if ($('fmDiagnose').checked && vorschauId) body.vorschauId = vorschauId;
+                meldung(tx('rueckmeldung.sendet', 'Wird gesendet …'));
+                $('fmSenden').disabled = true;
+                fetch(API, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+                    .then(function (r) { return r.json().then(function (j) { return { status: r.status, j: j }; }); })
+                    .then(function (a) {
+                        $('fmSenden').disabled = false;
+                        if (a.j.ok) { meldung(''); danke(a.j); return; }
+                        if (a.j.grund === 'vorschauAlt') {
+                            ladeVorschau();
+                            meldung(tx('rueckmeldung.vorschau_alt', 'Der Auszug war zu alt und wurde neu geladen. Bitte noch einmal auf Absenden tippen.'));
+                            return;
+                        }
+                        meldung(a.status === 429 ? tx('rueckmeldung.zuviel', 'Für heute sind 5 Meldungen erreicht. Morgen geht es wieder.')
+                            : tx('rueckmeldung.fehler', 'Das hat nicht geklappt. Bitte versuche es später noch einmal.'));
+                    })
+                    .catch(function () {
+                        $('fmSenden').disabled = false;
+                        meldung(tx('rueckmeldung.fehler', 'Das hat nicht geklappt. Bitte versuche es später noch einmal.'));
+                    });
+            }
+            $('fmText').addEventListener('input', function () {
+                $('fmZaehler').textContent = this.value.length;
+                meldung('');
+            });
+            $('fmDiagnose').addEventListener('change', function () {
+                if (this.checked) { ladeVorschau(); return; }
+                vorschauId = '';
+                $('fmVorschauBox').hidden = true;
+            });
+            $('fmSenden').addEventListener('click', senden);
+            $('fmNeu').addEventListener('click', function () {
+                $('fmText').value = '';
+                $('fmZaehler').textContent = '0';
+                $('fmDiagnose').checked = false;
+                $('fmVorschauBox').hidden = true;
+                vorschauId = '';
+                $('fmDanke').hidden = true;
+                $('fmForm').hidden = false;
+                holen(false).then(anzeigen).catch(function () {});
+            });
+            holen(false).then(anzeigen).catch(function () {
+                meldung(tx('rueckmeldung.fehler', 'Das hat nicht geklappt. Bitte versuche es später noch einmal.'));
+            });
+        })();
+    </script>
+</body>
+</html>

@@ -50,6 +50,12 @@ public final class EreignisMonitor {
 
     private EreignisMonitor() {}
 
+    /** 0.1.31: gerade wird ein Ereignis gesichert (der Update-Hinweis wartet dann). */
+    public static boolean sichertGerade() {
+        EreignisMonitor m = instance;
+        return m != null && m.sichertGerade;
+    }
+
     public static synchronized void start() {
         if (instance != null) return;
         EreignisMonitor m = new EreignisMonitor();

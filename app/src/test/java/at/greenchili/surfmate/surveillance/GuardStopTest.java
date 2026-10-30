@@ -33,15 +33,19 @@ public class GuardStopTest {
     }
 
     @Test
-    public void v12LowNeedsTwoEvaluationsAndResumesWithHysteresis() {
+    public void v12LowNeedsHalfAnHourAndResumesWithHysteresis() {
         Battery12vEvaluator e = new Battery12vEvaluator(Battery12vEvaluator.Profile.DILINK3);
         long park = T0;
         long t = park + 21 * MIN;
         for (int i = 0; i < 4; i++) e.offer(12.0, t + i * 90_000L, park);
         long now = t + 3 * 90_000L;
-        assertEquals(Battery12vEvaluator.State.OK, e.evaluate(12.2, 12.5, now));   // 1. Mal zu tief
-        e.offer(12.1, now + 90_000L, park);
-        assertEquals(Battery12vEvaluator.State.LOW, e.evaluate(12.2, 12.5, now + 90_000L));
+        assertEquals(Battery12vEvaluator.State.OK, e.evaluate(12.2, 12.5, now));   // wenige Minuten reichen nicht
+        for (int i = 1; i <= 20; i++) {
+            now += 90_000L;
+            e.offer(12.1, now, park);
+            e.evaluate(12.2, 12.5, now);
+        }
+        assertEquals(Battery12vEvaluator.State.LOW, e.state());
         // 12,3 V reicht nicht zum Wieder-Ein (Resume 12,5)
         long t2 = now + 20 * MIN;
         for (int i = 0; i < 4; i++) e.offer(12.3, t2 + i * 90_000L, park);

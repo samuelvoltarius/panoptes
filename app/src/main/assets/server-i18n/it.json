@@ -378,7 +378,7 @@
     "battery12v_vor_title": "La batteria da 12 V si indebolisce: {0} V",
     "battery12v_vor_body": "Se scende ancora, l’auto potrebbe non partire. Fai presto un giro o collegala alla corrente.",
     "battery12v_niedrig_title": "Batteria da 12 V molto debole: {0} V",
-    "battery12v_niedrig_body": "Presto l’auto potrebbe non partire. Fai un giro oggi o collegala alla corrente."
+    "battery12v_niedrig_body": "Non si riprende più da sola. Presto l’auto potrebbe non partire. Fai un giro oggi o collegala alla corrente."
   },
   "parking": {
     "notify": {
@@ -529,7 +529,7 @@
       "charging_full": "🔌 *Ricarica terminata*",
       "charging_fault": "🚨 *Qualcosa è andato storto durante la ricarica*",
       "battery12v_low": "🪫 *Batteria da 12 V debole: {0} V*\nSe scende ancora, l’auto potrebbe non partire. Fai presto un giro o collegala alla corrente.",
-      "battery12v_sehr_niedrig": "🪫 *Batteria da 12 V molto debole: {0} V*\nPresto l’auto potrebbe non partire. Fai un giro oggi o collegala alla corrente."
+      "battery12v_sehr_niedrig": "🪫 *Batteria da 12 V molto debole: {0} V*\nNon si riprende più da sola. Presto l’auto potrebbe non partire. Fai un giro oggi o collegala alla corrente."
     },
     "charge": {
       "title": "🔋 *Ricarica*",
@@ -1942,6 +1942,10 @@
         "title": "Cerca aggiornamenti",
         "help": "Ogni 6 ore Panoptes chiede a GitHub se esiste una nuova versione. GitHub vede l'indirizzo IP dell'auto e l'ora; non viene inviato nient'altro. Disattivato = nessun controllo in background; puoi comunque cercare tu stesso in qualsiasi momento."
       },
+      "hinweis": {
+        "title": "Avviso di aggiornamento sullo schermo",
+        "help": "Mostra una nuova versione sullo schermo dell’auto, solo quando è in P. Senza suoni e senza luci. Spento = solo il badge in Aggiornamenti."
+      },
       "mobilfunk": {
         "title": "Scarica gli aggiornamenti anche con la rete mobile",
         "help": "Molte auto sono online solo tramite la SIM integrata, per questo è attivo. Un aggiornamento pesa di solito da 70 a 120 MB; la dimensione viene mostrata prima. Disattivato = Panoptes scarica solo quando l'auto è in Wi-Fi. Il download avviene solo ad auto parcheggiata e riprende da dove si era interrotto."
@@ -2220,7 +2224,7 @@
     "zaehlen": {
       "an": {
         "title": "Conteggio anonimo",
-        "help": "Una volta al giorno Panoptes invia solo un identificativo casuale e il numero di versione, nessun dato su di te o sulla tua auto. Disattivato di default. Disattivarlo cancella il conteggio anche sul server."
+        "help": "Una volta al giorno Panoptes invia un identificativo casuale e il numero di versione e, con il tuo consenso, anche il modello dell'auto e il livello DiLink. Disattivato di serie. Disattivando, il conteggio viene cancellato anche sul server."
       },
       "kennung": {
         "title": "Identificativo casuale",
@@ -2319,6 +2323,10 @@
     "ladekurveEinwilligung": {
       "title": "Condividere la curva di ricarica in forma anonima?",
       "text": "Cosa: per ogni fascia di livello di carica (5 %), la potenza di ricarica DC tipica del tuo modello e su quante ricariche si basa. Nessun luogo, nessun orario, nessuna data, nessun VIN, nessuna singola ricarica, nessun account. Dove: byd.serveone.at (pianificatore), con un ID casuale usato solo per questo. Perché: tempi di ricarica realistici per tutti con lo stesso modello. Disattivarlo cancella la tua curva anche sul server."
+    },
+    "zaehlenEinwilligung": {
+      "title": "Contare in modo anonimo?",
+      "text": "Cosa: un identificativo casuale, la versione di Panoptes, il modello della tua auto (per esempio Seal) e il livello DiLink (3, 4 o 5). Nessun numero di telaio, nessuna targa, nessun luogo, nessun chilometraggio, nessun account. Dove: byd.serveone.at. Quanto spesso: una volta al giorno e dopo ogni aggiornamento. Per quanto tempo: dopo 90 giorni senza segnale resta solo un numero totale. A che scopo: per vedere quali auto usano Panoptes. Disattivando, la voce viene cancellata anche sul server."
     }
   },
   "genai": {
@@ -2460,6 +2468,19 @@
       "waehrung": "Valuta",
       "temp": "Esterno °C"
     }
+  },
+  "update_hinweis": {
+    "titel": "Nuova versione {0}",
+    "frage": "Aggiornare Panoptes adesso?",
+    "installieren": "Installa ora",
+    "spaeter": "Più tardi",
+    "was_neu": "Novità",
+    "schliessen": "Chiudi",
+    "fehler": "Non ha funzionato. Riprova più tardi.",
+    "vorgemerkt": "Panoptes installa l’aggiornamento circa 10 minuti dopo che hai parcheggiato l’auto. Il guardiano resta spento per qualche minuto.",
+    "vorgemerkt_wlan": "Panoptes installa l’aggiornamento circa 10 minuti dopo che hai parcheggiato l’auto, appena ha il Wi-Fi. Il guardiano resta spento per qualche minuto.",
+    "zuruecknehmen": "Annulla",
+    "geraet": "display dell’auto"
   },
   "rueckkehr": {
     "titel_aufnahmen": "Mentre eri via",

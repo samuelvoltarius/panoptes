@@ -14,6 +14,9 @@ import java.util.Iterator;
  *   <li>Heuristik: Ruhespannung ≥ 13,0 V nach ≥ 60 min Parken an mindestens 3 Tagen → {@code lfp} (vermutet),
  *       sonst {@code blei} (vermutet) → Quelle {@code vermutet}</li>
  * </ol>
+ * 0.1.31: Die Spannung läuft im Stand als Sägezahn (13,2 → 12,7 V, dann lädt das Auto selbst nach). Als Ruhespannung
+ * zählt deshalb die Oberkante, nicht der Tiefpunkt vor dem Nachladen, und schon ein Tag ≥ 13,0 V schließt
+ * {@code ruhetage_blei} aus: Blei ruht nicht so hoch. Alte Tage mit Tiefpunkten dürfen das nicht überstimmen.
  * Übergang (Koordination 22.10.): Solange die Ruhetage weder LFP (3 Tage ≥ 13,0 V) noch Blei (3 Tage &lt; 12,9 V)
  * belegen, zählen die bisherigen LFP-Hinweise weiter – aktueller Ruhe-Median ≥ 13,0 V oder Plattform DiLink 3 –,
  * damit niemand still von 12,8 auf 12,2 V fällt. Ein vom Nutzer gesetzter Schwellwert
@@ -85,7 +88,7 @@ public final class AkkuChemie {
         if (gueltig(einstellung)) return new Ergebnis(einstellung, QUELLE_NUTZER);
         if (gueltig(profil)) return new Ergebnis(profil, QUELLE_PROFIL);
         if (tageAb(ruheTage, LFP_RUHE_V) >= LFP_TAGE) return new Ergebnis(LFP, QUELLE_VERMUTET, "ruhetage_lfp");
-        if (tageUnter(ruheTage, BLEI_RUHE_V) >= LFP_TAGE) return new Ergebnis(BLEI, QUELLE_VERMUTET, "ruhetage_blei");
+        if (tageAb(ruheTage, LFP_RUHE_V) == 0 && tageUnter(ruheTage, BLEI_RUHE_V) >= LFP_TAGE) return new Ergebnis(BLEI, QUELLE_VERMUTET, "ruhetage_blei");
         // Übergang: keine belegten Ruhetage – bisherige LFP-Hinweise gelten weiter (nie still auf 12,2 V)
         if (!Double.isNaN(liveMedian) && liveMedian >= LFP_RUHE_V) return new Ergebnis(LFP, QUELLE_VERMUTET, "live_median");
         if (diLink3) return new Ergebnis(LFP, QUELLE_VERMUTET, "plattform");
@@ -127,15 +130,15 @@ public final class AkkuChemie {
     }
 
     /**
-     * Trägt eine Ruhemessung ein (je Tag der KLEINSTE Wert – ein Tag zählt nur als „≥ 13,0 V“, wenn die Ruhe den
-     * ganzen Tag so hoch war) und behält höchstens {@code behalten} Tage (die neuesten).
+     * Trägt eine Ruhemessung ein (je Tag der GRÖSSTE Wert der Oberkante, ein Tiefpunkt vor dem Nachladen ersetzt ihn
+     * nicht) und behält höchstens {@code behalten} Tage (die neuesten).
      *
      * @return true, wenn sich etwas geändert hat (dann speichern)
      */
     public static boolean ruheTagEintragen(JSONObject tage, String tag, double volt, int behalten) throws Exception {
         if (!(volt > 5 && volt < 20)) return false;
         double alt = tage.optDouble(tag, Double.NaN);
-        if (!Double.isNaN(alt) && alt <= volt) return false;
+        if (!Double.isNaN(alt) && alt >= volt) return false;
         tage.put(tag, Math.round(volt * 100) / 100.0);
         while (tage.length() > behalten) {
             String aeltester = null;
@@ -171,7 +174,8 @@ public final class AkkuChemie {
         boolean di3 = false;
         try {
             tage = at.greenchili.surfmate.surveillance.GuardStopMonitor.ruheTage();
-            median = at.greenchili.surfmate.surveillance.GuardStopMonitor.ruheMedian12v();
+            median = at.greenchili.surfmate.surveillance.GuardStopMonitor.ruheOben12v();
+            if (Double.isNaN(median)) median = at.greenchili.surfmate.surveillance.GuardStopMonitor.ruheMedian12v();
             di3 = at.greenchili.surfmate.surveillance.GuardStopMonitor.istDiLink3();
         } catch (Throwable ignored) {
         }

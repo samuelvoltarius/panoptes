@@ -894,6 +894,10 @@ public class HttpServer {
                 if (!serveStaticFile(out, "local/key-mapping.html")) {
                     HttpResponse.sendError(out, 404, "key-mapping.html not found");
                 }
+            } else if (path.equals("/fehler-melden.html")) {
+                if (!serveStaticFile(out, "local/fehler-melden.html")) {
+                    HttpResponse.sendError(out, 404, "fehler-melden.html not found");
+                }
             } else if (path.equals("/about.html") || path.equals("/about")) {
                 if (!serveStaticFile(out, "local/about.html")) {
                     HttpResponse.sendError(out, 404, "about.html not found");
@@ -1526,6 +1530,11 @@ public class HttpServer {
         if (path.startsWith("/api/cloud-uebergabe") && CloudUebergabeApiHandler.handle(method, path, body, out)) return true;
         if (path.startsWith("/api/kopplung/weiteres-geraet") && WeiteresGeraetApiHandler.handle(method, path, body, out)) return true;
 
+        // 0.1.31 „Fehler melden“ und einmalige Frage zum Mitzählen
+        if (path.startsWith("/api/rueckmeldung/")
+                && RueckmeldungApiHandler.handle(method, path, body, out)) {
+            return true;
+        }
         // H10 „Was ist neu“ + Firmware-Hinweis, H7 Monatsbericht
         if (path.startsWith("/api/neuigkeiten")
                 && NeuigkeitenApiHandler.handle(method, path, body, out)) {

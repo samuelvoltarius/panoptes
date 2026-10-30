@@ -314,9 +314,12 @@ public final class Katalog {
         l.add(vorl);
         // 0.1.17 „Anonym mitzählen“ (27.10.2026): Standard AUS, Frage im Einrichten („Daten teilen“).
         // Einmal am Tag nur Zufallskennung + Version (analytics/Mitzaehlen). Kennung neu/löschen über kennungAktion.
+        // 0.1.31: Einschalten nur mit dem Text, der Modell und DiLink nennt; alte Zustimmungen gelten dafür nicht.
         Feld zaehlen = new Feld("zaehlen.an", Feld.Typ.BOOL);
         zaehlen.gruppe = "datenschutz"; zaehlen.reihenfolge = 30; zaehlen.standard = false;
-        zaehlen.nurLesendExtern = true;
+        zaehlen.nurLesendExtern = true; zaehlen.bestaetigung = "planer.zaehlenEinwilligung";
+        zaehlen.bestaetigungZeitKey = "zaehlen.zustimmungAm";
+        zaehlen.zugriff = at.greenchili.surfmate.analytics.Mitzaehlen.anZugriff();
         l.add(zaehlen);
         Feld kennung = new Feld("zaehlen.kennung", Feld.Typ.TEXT);
         kennung.gruppe = "datenschutz"; kennung.reihenfolge = 31; kennung.nurLesend = true; kennung.nurLesendExtern = true;
@@ -388,6 +391,10 @@ public final class Katalog {
         Feld pruefen = new Feld("update.pruefen", Feld.Typ.BOOL);
         pruefen.gruppe = "update"; pruefen.reihenfolge = 5; pruefen.standard = true;
         l.add(pruefen);
+        // 0.1.31: Karte am Display bei neuer Version, nur im Stand (appupdate.UpdateHinweis); aus = nur noch Abzeichen
+        Feld hinweis = new Feld("update.hinweis", Feld.Typ.BOOL);
+        hinweis.gruppe = "update"; hinweis.reihenfolge = 25; hinweis.standard = true;
+        l.add(hinweis);
         // Projektinhaber 21.10.: viele Autos haben nur die SIM → Mobilfunk Standard an; aus = nur im WLAN laden
         Feld mobil = new Feld("update.mobilfunk", Feld.Typ.BOOL);
         mobil.gruppe = "update"; mobil.reihenfolge = 30; mobil.standard = true;
@@ -590,6 +597,8 @@ public final class Katalog {
                     } else {
                         v.put("kennung", "");
                         v.put("an", false);
+                        v.put("version", 1);
+                        v.put("frageErledigt", false);
                     }
                 }
                 Map<String, Map<String, Object>> out = new HashMap<>();

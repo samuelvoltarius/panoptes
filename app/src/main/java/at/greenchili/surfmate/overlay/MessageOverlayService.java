@@ -131,6 +131,8 @@ public final class MessageOverlayService extends Service {
                 displayed = showBand(intent);
             } else if ("rueckkehr".equalsIgnoreCase(kind)) {
                 displayed = showRueckkehr(intent);
+            } else if ("update_hinweis".equalsIgnoreCase(kind)) {
+                displayed = showUpdateHinweis(intent);
             } else {
                 displayed = showToast(intent);
             }
@@ -461,6 +463,169 @@ public final class MessageOverlayService extends Service {
             dismissAndStop();
         });
         return b;
+    }
+
+    // ── Update-Hinweis (0.1.31) ─────────────────────────────────────────────
+
+    /**
+     * „Neue Version 0.1.31“ mit großen Knöpfen [Was ist neu?] [Später] [Jetzt installieren] (REGEL DAU). „Was ist neu?“
+     * zeigt die Notizen in derselben Karte. „Später“ schließt nur, gezählt hat der Daemon schon beim Zeigen. Eine
+     * offene Karte (Kopplung, Rückkehr) wird nicht verdrängt. Kein Ton.
+     */
+    private boolean showUpdateHinweis(Intent intent) {
+        String ref = orDefault(intent.getStringExtra("ref"), "");
+        String version = orDefault(intent.getStringExtra("version"), "");
+        if (!ref.matches("^[0-9a-f]{16}$") || version.isEmpty()) { stopSelf(); return false; }
+        if (dialogShowing && overlayView != null) return false;
+        String notizen = orDefault(intent.getStringExtra("notizen"), "");
+        String schliessen = orDefault(intent.getStringExtra("schliessen"), "X");
+        String zuruecknehmen = orDefault(intent.getStringExtra("zuruecknehmen"), "X");
+        String fehler = orDefault(intent.getStringExtra("fehler"), "");
+        long sichtbarMs = Math.max(10, Math.min(300, intent.getIntExtra("timeoutSec", 120))) * 1000L;
+
+        Context ctx = themedContext();
+        int pad = dp(ctx, 28);
+        FrameLayout scrim = new FrameLayout(ctx);
+        scrim.setBackgroundColor(0x99000000);
+        LinearLayout card = new LinearLayout(ctx);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(pad, pad, pad, dp(ctx, 20));
+        GradientDrawable cardBg = new GradientDrawable();
+        cardBg.setColor(0xFF202124);
+        cardBg.setCornerRadius(dp(ctx, 20));
+        cardBg.setStroke(dp(ctx, 3), 0xFF0B57D0);
+        card.setBackground(cardBg);
+
+        TextView tvTitle = new TextView(ctx);
+        tvTitle.setText(orDefault(intent.getStringExtra("title"), ""));
+        tvTitle.setTextColor(Color.WHITE);
+        tvTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30);
+        tvTitle.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        card.addView(tvTitle);
+
+        TextView tvBody = new TextView(ctx);
+        tvBody.setText(orDefault(intent.getStringExtra("message"), ""));
+        tvBody.setTextColor(0xFFE3E3E3);
+        tvBody.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24);
+        android.widget.ScrollView rolle = new android.widget.ScrollView(ctx);
+        rolle.addView(tvBody);
+        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        blp.topMargin = dp(ctx, 12);
+        card.addView(rolle, blp);
+
+        LinearLayout reihe = new LinearLayout(ctx);
+        reihe.setOrientation(LinearLayout.HORIZONTAL);
+        reihe.setGravity(Gravity.END);
+        Button wasNeu = hinweisKnopf(ctx, orDefault(intent.getStringExtra("wasNeu"), "?"), 0xFF5F6368);
+        wasNeu.setOnClickListener(v -> {
+            tvBody.setText(notizen);
+            tvBody.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
+            int hoehe = (int) (ctx.getResources().getDisplayMetrics().heightPixels * 0.45f);
+            rolle.post(() -> {
+                if (rolle.getHeight() > hoehe) {
+                    blp.height = hoehe;
+                    rolle.setLayoutParams(blp);
+                }
+            });
+            v.setVisibility(View.GONE);
+            scheduleDismiss(sichtbarMs);
+        });
+        if (!notizen.isEmpty()) reihe.addView(wasNeu);
+        Button spaeter = hinweisKnopf(ctx, orDefault(intent.getStringExtra("spaeter"), "X"), 0xFF5F6368);
+        spaeter.setOnClickListener(v -> dismissAndStop());
+        reihe.addView(spaeter);
+        Button installieren = hinweisKnopf(ctx, orDefault(intent.getStringExtra("installieren"), "OK"), 0xFF0B57D0);
+        installieren.setOnClickListener(v -> {
+            for (int i = 0; i < reihe.getChildCount(); i++) reihe.getChildAt(i).setEnabled(false);
+            cancelDismiss();
+            new Thread(() -> {
+                org.json.JSONObject antwort = hinweisAktion("installieren", version);
+                String text = antwort == null ? "" : antwort.optString("text", "");
+                handler.post(() -> {
+                    tvBody.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24);
+                    tvBody.setText(text.isEmpty() ? fehler : text);
+                    reihe.removeAllViews();
+                    if (antwort != null && antwort.optBoolean("vorgemerkt", false)) {
+                        Button nein = hinweisKnopf(ctx, zuruecknehmen, 0xFF5F6368);
+                        nein.setOnClickListener(x -> {
+                            x.setEnabled(false);
+                            new Thread(() -> {
+                                hinweisAktion("zuruecknehmen", version);
+                                handler.post(this::dismissAndStop);
+                            }, "UpdateHinweisKnopf").start();
+                        });
+                        reihe.addView(nein);
+                    }
+                    Button zu = hinweisKnopf(ctx, schliessen, 0xFF0B57D0);
+                    zu.setOnClickListener(x -> dismissAndStop());
+                    reihe.addView(zu);
+                    scheduleDismiss(30_000L);
+                });
+            }, "UpdateHinweisKnopf").start();
+        });
+        reihe.addView(installieren);
+        LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        rlp.topMargin = dp(ctx, 24);
+        card.addView(reihe, rlp);
+
+        int breite = Math.min(dp(ctx, 760), (int) (ctx.getResources().getDisplayMetrics().widthPixels * 0.94f));
+        FrameLayout.LayoutParams clp = new FrameLayout.LayoutParams(breite, ViewGroup.LayoutParams.WRAP_CONTENT);
+        clp.gravity = Gravity.CENTER;
+        scrim.addView(card, clp);
+        if (!replaceOverlay(scrim, dialogLayoutParams())) return false;
+        dialogShowing = true;
+        kopplungRef = ref;   // der Daemon nimmt die Karte beim Gangwechsel gezielt weg (DISMISS_KOPPLUNG)
+        cancelDismiss();
+        scheduleDismiss(sichtbarMs);
+        return true;
+    }
+
+    private Button hinweisKnopf(Context ctx, String text, int farbe) {
+        Button b = new Button(ctx);
+        b.setText(text);
+        b.setAllCaps(false);
+        b.setTextColor(Color.WHITE);
+        b.setTextSize(TypedValue.COMPLEX_UNIT_SP, 22);
+        b.setMinHeight(dp(ctx, 72));
+        b.setMinWidth(dp(ctx, 150));
+        b.setPadding(dp(ctx, 20), 0, dp(ctx, 20), 0);
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(farbe);
+        bg.setCornerRadius(dp(ctx, 14));
+        b.setBackground(bg);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.leftMargin = dp(ctx, 16);
+        b.setLayoutParams(lp);
+        return b;
+    }
+
+    /** Antwort des Daemons (Text in der Sprache des Nutzers), null = hat nicht geklappt. */
+    private org.json.JSONObject hinweisAktion(String aktion, String version) {
+        java.net.HttpURLConnection c = null;
+        try {
+            c = at.greenchili.surfmate.util.DaemonHttpClient.open("/api/appupdate/hinweis", "POST", 3000, 15000);
+            c.setDoOutput(true);
+            c.setRequestProperty("Content-Type", "application/json");
+            byte[] koerper = new org.json.JSONObject().put("aktion", aktion).put("version", version)
+                    .toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            try (java.io.OutputStream o = c.getOutputStream()) { o.write(koerper); }
+            if (c.getResponseCode() != 200) return null;
+            StringBuilder s = new StringBuilder();
+            try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(
+                    c.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))) {
+                String z;
+                while ((z = r.readLine()) != null) s.append(z);
+            }
+            return new org.json.JSONObject(s.toString());
+        } catch (Throwable t) {
+            logger.warn("Update-Hinweis: " + aktion + " fehlgeschlagen: " + t.getMessage());
+            return null;
+        } finally {
+            if (c != null) c.disconnect();
+        }
     }
 
     // ── Dialog ───────────────────────────────────────────────────────────────

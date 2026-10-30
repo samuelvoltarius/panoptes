@@ -378,7 +378,7 @@
     "battery12v_vor_title": "12 V-accu wordt zwakker: {0} V",
     "battery12v_vor_body": "Als hij verder zakt, start de auto misschien niet. Ga snel een stuk rijden of sluit hem aan.",
     "battery12v_niedrig_title": "12 V-accu zeer zwak: {0} V",
-    "battery12v_niedrig_body": "De auto start straks misschien niet meer. Rijd vandaag een stuk of sluit hem aan."
+    "battery12v_niedrig_body": "Hij herstelt niet meer vanzelf. De auto start straks misschien niet meer. Rijd vandaag een stuk of sluit hem aan."
   },
   "parking": {
     "notify": {
@@ -529,7 +529,7 @@
       "charging_full": "🔌 *Laden klaar*",
       "charging_fault": "🚨 *Er ging iets mis tijdens het laden*",
       "battery12v_low": "🪫 *12 V-accu laag: {0} V*\nAls hij verder zakt, start de auto misschien niet. Ga snel een stuk rijden of sluit hem aan.",
-      "battery12v_sehr_niedrig": "🪫 *12 V-accu zeer zwak: {0} V*\nDe auto start straks misschien niet meer. Rijd vandaag een stuk of sluit hem aan."
+      "battery12v_sehr_niedrig": "🪫 *12 V-accu zeer zwak: {0} V*\nHij herstelt niet meer vanzelf. De auto start straks misschien niet meer. Rijd vandaag een stuk of sluit hem aan."
     },
     "charge": {
       "title": "🔋 *Laden*",
@@ -1942,6 +1942,10 @@
         "title": "Naar updates zoeken",
         "help": "Elke 6 uur vraagt Panoptes bij GitHub of er een nieuwe versie is. GitHub ziet daarbij het IP-adres van de auto en het tijdstip; verder wordt niets verstuurd. Uit = geen controle op de achtergrond; je kunt altijd zelf zoeken."
       },
+      "hinweis": {
+        "title": "Updatemelding op het scherm",
+        "help": "Toont een nieuwe versie op het autoscherm, alleen als de auto in P staat. Zonder geluid en zonder licht. Uit = alleen het badge onder Updates."
+      },
       "mobilfunk": {
         "title": "Updates ook via mobiel internet downloaden",
         "help": "Veel auto's zijn alleen via de ingebouwde simkaart online, daarom staat dit aan. Een update is meestal 70 tot 120 MB; de grootte staat vooraf in de melding. Uit = Panoptes downloadt alleen als de auto op wifi zit. Het downloaden gebeurt alleen als de auto geparkeerd staat en gaat na een onderbreking verder waar het was."
@@ -2220,7 +2224,7 @@
     "zaehlen": {
       "an": {
         "title": "Anoniem meetellen",
-        "help": "Panoptes meldt één keer per dag alleen een willekeurige ID en het versienummer, geen gegevens over jou of je auto. Standaard uit. Uitzetten wist de telling ook op de server."
+        "help": "Panoptes meldt eenmaal per dag een willekeurige ID en het versienummer, met jouw toestemming ook het automodel en DiLink-niveau. Standaard uit. Uitzetten wist de telling ook op de server."
       },
       "kennung": {
         "title": "Willekeurige ID",
@@ -2319,6 +2323,10 @@
     "ladekurveEinwilligung": {
       "title": "Laadcurve anoniem delen?",
       "text": "Wat: per laadniveaubereik (5 %) het typische DC-laadvermogen van je model en op hoeveel laadbeurten dat berust. Geen locatie, geen tijdstip, geen datum, geen VIN, geen afzonderlijke laadbeurten, geen account. Waarheen: byd.serveone.at (routeplanner), met een willekeurige ID alleen hiervoor. Waarom: realistische laadtijden voor iedereen met hetzelfde model. Uitzetten verwijdert je curve ook op de server."
+    },
+    "zaehlenEinwilligung": {
+      "title": "Anoniem meetellen?",
+      "text": "Wat: een willekeurige ID, de Panoptes-versie, je automodel (bijvoorbeeld Seal) en het DiLink-niveau (3, 4 of 5). Geen chassisnummer, geen kenteken, geen locatie, geen kilometers, geen account. Waarheen: byd.serveone.at. Hoe vaak: eenmaal per dag en na elke update. Hoe lang: na 90 dagen zonder melding blijft alleen een totaal over. Waarvoor: zodat we zien welke auto's Panoptes gebruiken. Uitzetten wist je vermelding ook op de server."
     }
   },
   "genai": {
@@ -2460,6 +2468,19 @@
       "waehrung": "Valuta",
       "temp": "Buiten °C"
     }
+  },
+  "update_hinweis": {
+    "titel": "Nieuwe versie {0}",
+    "frage": "Panoptes nu bijwerken?",
+    "installieren": "Nu installeren",
+    "spaeter": "Later",
+    "was_neu": "Wat is er nieuw?",
+    "schliessen": "Sluiten",
+    "fehler": "Dat is niet gelukt. Probeer het later nog eens.",
+    "vorgemerkt": "Panoptes installeert de update ongeveer 10 minuten nadat je de auto hebt geparkeerd. De bewaker staat dan een paar minuten uit.",
+    "vorgemerkt_wlan": "Panoptes installeert de update ongeveer 10 minuten nadat je de auto hebt geparkeerd, zodra die wifi heeft. De bewaker staat dan een paar minuten uit.",
+    "zuruecknehmen": "Ongedaan maken",
+    "geraet": "autoscherm"
   },
   "rueckkehr": {
     "titel_aufnahmen": "Terwijl je weg was",

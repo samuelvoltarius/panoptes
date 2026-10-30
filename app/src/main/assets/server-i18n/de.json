@@ -372,7 +372,7 @@
     "battery12v_vor_title": "Starterbatterie wird schwächer: {0} V",
     "battery12v_vor_body": "Wenn sie weiter fällt, startet das Auto vielleicht nicht. Fahr bald eine Runde oder lade es.",
     "battery12v_niedrig_title": "Starterbatterie sehr schwach: {0} V",
-    "battery12v_niedrig_body": "Das Auto startet vielleicht bald nicht mehr. Fahr heute noch eine Runde oder lade es."
+    "battery12v_niedrig_body": "Sie erholt sich nicht mehr von selbst. Das Auto startet vielleicht bald nicht mehr. Fahr heute noch eine Runde oder lade es."
   },
   "parking": {
     "notify": {
@@ -755,7 +755,7 @@
       "charging_full": "🔌 *Laden fertig*",
       "charging_fault": "🚨 *Beim Laden ist etwas schiefgegangen*",
       "battery12v_low": "🪫 *Starterbatterie schwach: {0} V*\nWenn sie weiter fällt, startet das Auto vielleicht nicht. Fahr bald eine Runde oder lade es.",
-      "battery12v_sehr_niedrig": "🪫 *Starterbatterie sehr schwach: {0} V*\nDas Auto startet vielleicht bald nicht mehr. Fahr heute noch eine Runde oder lade es."
+      "battery12v_sehr_niedrig": "🪫 *Starterbatterie sehr schwach: {0} V*\nSie erholt sich nicht mehr von selbst. Das Auto startet vielleicht bald nicht mehr. Fahr heute noch eine Runde oder lade es."
     },
     "charge": {
       "title": "🔋 *Laden*",
@@ -1936,6 +1936,10 @@
         "title": "Nach Updates suchen",
         "help": "Panoptes fragt alle 6 Stunden bei GitHub nach, ob es eine neue Version gibt. Dabei sieht GitHub die IP-Adresse des Autos und die Uhrzeit, sonst wird nichts gesendet. Aus = keine Abfrage im Hintergrund; du kannst trotzdem jederzeit selbst suchen."
       },
+      "hinweis": {
+        "title": "Update-Hinweis am Bildschirm",
+        "help": "Zeigt eine neue Version am Auto-Bildschirm, nur wenn das Auto in P steht. Ohne Ton und ohne Licht. Aus = nur noch das Abzeichen unter Updates."
+      },
       "mobilfunk": {
         "title": "Updates auch über Mobilfunk laden",
         "help": "Viele Autos sind nur über die eingebaute SIM online, deshalb ist das an. Ein Update hat meist 70 bis 120 MB; die Größe steht vorher in der Meldung. Aus = Panoptes lädt nur, wenn das Auto im WLAN ist. Der Download läuft nur bei geparktem Auto und setzt nach einer Unterbrechung dort fort, wo er war."
@@ -2214,7 +2218,7 @@
     "zaehlen": {
       "an": {
         "title": "Anonym mitzählen",
-        "help": "Panoptes meldet einmal am Tag nur eine zufällige Kennung und die Versionsnummer, keine Daten über dich oder dein Auto. Standard aus. Ausschalten löscht die Zählung auch am Server."
+        "help": "Panoptes meldet einmal am Tag eine zufällige Kennung und die Versionsnummer, mit deiner Zustimmung auch Automodell und DiLink-Stufe. Standard aus. Ausschalten löscht die Zählung auch am Server."
       },
       "kennung": {
         "title": "Zufallskennung",
@@ -2313,6 +2317,10 @@
     "ladekurveEinwilligung": {
       "title": "Ladekurve anonym teilen?",
       "text": "Was: je Ladestand-Bereich (5 %) die typische DC-Ladeleistung deines Modells und wie viele Ladungen dahinterstehen. Kein Ort, keine Uhrzeit, kein Datum, keine VIN, keine einzelnen Ladungen, kein Konto. Wohin: byd.serveone.at (Routenplaner), mit einer Zufallskennung nur für diesen Zweck. Wofür: realistische Ladezeiten für alle mit demselben Modell. Ausschalten löscht deine Kurve auch am Server."
+    },
+    "zaehlenEinwilligung": {
+      "title": "Anonym mitzählen?",
+      "text": "Was: eine Zufallskennung, die Panoptes-Version, dein Automodell (zum Beispiel Seal) und die DiLink-Stufe (3, 4 oder 5). Keine Fahrgestellnummer, kein Kennzeichen, kein Ort, keine Kilometer, kein Konto. Wohin: byd.serveone.at. Wie oft: einmal am Tag und nach jedem Update. Wie lange: Nach 90 Tagen ohne Meldung bleibt nur noch eine Gesamtzahl. Wofür: Damit wir sehen, welche Autos Panoptes nutzen. Ausschalten löscht deinen Eintrag auch am Server."
     }
   },
   "genai": {
@@ -2454,6 +2462,19 @@
       "waehrung": "Währung",
       "temp": "Außen °C"
     }
+  },
+  "update_hinweis": {
+    "titel": "Neue Version {0}",
+    "frage": "Panoptes jetzt aktualisieren?",
+    "installieren": "Jetzt installieren",
+    "spaeter": "Später",
+    "was_neu": "Was ist neu?",
+    "schliessen": "Schließen",
+    "fehler": "Das hat nicht geklappt. Bitte später noch einmal versuchen.",
+    "vorgemerkt": "Panoptes installiert das Update etwa 10 Minuten, nachdem du das Auto abgestellt hast. Der Wächter ist dabei ein paar Minuten aus.",
+    "vorgemerkt_wlan": "Panoptes installiert das Update etwa 10 Minuten, nachdem du das Auto abgestellt hast, sobald es WLAN hat. Der Wächter ist dabei ein paar Minuten aus.",
+    "zuruecknehmen": "Zurücknehmen",
+    "geraet": "Auto-Display"
   },
   "rueckkehr": {
     "titel_aufnahmen": "Während du weg warst",

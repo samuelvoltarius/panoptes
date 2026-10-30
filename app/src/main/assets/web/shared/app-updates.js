@@ -4,6 +4,7 @@
  *   GET  /api/appupdate/status          Stand: Kanal, Modus, installiert, verfügbar, letzte Suche, installierbar
  *   POST /api/appupdate/suchen          sofort suchen (Server begrenzt auf 1× je 60 s)
  *   POST /api/appupdate/installieren    {versionCode} – nur mit vollem Login, Server prüft „geparkt + Zündung aus“
+ *   POST /api/appupdate/hinweis         {aktion:"zuruecknehmen"} – vorgemerktes Update (Karte am Display) doch nicht
  *
  * Kanal und Modus kommen aus dem Einstellungs-Schema (Gruppe „update“) und werden mit einstellungen.js
  * gezeichnet – so stehen sie auch im EV-Cockpit. Fehlt die API (älteres Panoptes) oder gibt es 403
@@ -108,6 +109,8 @@
                 txt = this.fehlerText(d.fehler);
             } else if (v && v.zurueckgerollt) {
                 txt = t('system.upd_rolled_back', 'Diese Version lief hier schon einmal nicht sauber; Panoptes ist damals zurückgekehrt. Installieren nur, wenn du es noch einmal versuchen willst.');
+            } else if (v && d.vorgemerkt) {
+                txt = t('system.upd_vorgemerkt', 'Vorgemerkt: Panoptes installiert das Update etwa 10 Minuten, nachdem du das Auto abgestellt hast. Der Wächter ist dabei ein paar Minuten aus.');
             } else if (v && d.automatischGeplant) {
                 txt = t('system.upd_auto_planned', 'Wird automatisch installiert, sobald das Auto geparkt und die Zündung aus ist.');
             } else if (v && !d.installierbar) {
@@ -132,6 +135,7 @@
             var inst = $('updInstall');
             inst.style.display = v && d.installierbar && !laeuft && d.phase !== 'pausiert' ? '' : 'none';
             $('updSearch').disabled = laeuft;
+            $('updCancel').style.display = v && d.vorgemerkt && !laeuft ? '' : 'none';
 
             var self = this;
             clearTimeout(this.timer);
@@ -199,6 +203,14 @@
                 .then(function () { b.disabled = false; });
         },
 
+        zuruecknehmen: function () {
+            var self = this;
+            fetch('/api/appupdate/hinweis', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ aktion: 'zuruecknehmen' }) })
+                .then(function (r) { if (!r.ok) throw new Error('nein'); return self.laden(); })
+                .then(null, function () { toast(t('system.req_fail', 'Das hat nicht geklappt.'), 'error'); });
+        },
+
         einstellungen: function () {
             var self = this, box = $('updSettings');
             if (!window.PanoptesEinstellungen) return;
@@ -215,6 +227,7 @@
             var self = this;
             $('updSearch').onclick = function () { self.suchen(); };
             $('updInstall').onclick = function () { self.installieren(); };
+            $('updCancel').onclick = function () { self.zuruecknehmen(); };
             this.laden().then(function (d) {
                 if (!d) return;
                 self.einstellungen();

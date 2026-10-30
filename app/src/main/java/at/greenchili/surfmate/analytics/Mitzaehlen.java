@@ -18,16 +18,22 @@ import java.util.concurrent.TimeUnit;
  * <p>Gesendet wird höchstens einmal am Tag (UTC) genau {@code {"id":…,"version":…}} – 0.1.24 zusätzlich einmal, wenn
  * sich die Version seit dem letzten Ping geändert hat (sonst meldete ein Auto nach einem Update bis zum nächsten
  * UTC-Tag die alte Version): eine lokal
- * erzeugte Zufallskennung (UUID, nichts vom Auto oder Gerät abgeleitet) und die Versionsnummer. Kein Modell, keine
- * Position, keine Fahrzeugdaten. Ohne Netz oder bei Fehler passiert nichts: keine Meldung, kein Log, Versuch im
- * nächsten Takt.
+ * erzeugte Zufallskennung (UUID, nichts vom Auto oder Gerät abgeleitet) und die Versionsnummer. Keine Position,
+ * keine Kilometer, keine FIN. Ohne Netz oder bei Fehler passiert nichts: keine Meldung, kein Log, Versuch im nächsten
+ * Takt.
+ *
+ * <p>0.1.31 (30.10.2026): nur mit Zustimmungsstand {@code version >= 2} ({@link #STAND_MODELL}) zusätzlich
+ * {@code modell} und {@code dilink}. Alte Zustimmungen gelten dafür NICHT: Wer vorher schon mitzählte, schickt weiter
+ * nur id und version, bis er den neuen Text einmal bestätigt (Regel 2).
  *
  * <p>Regel 2: Ausschalten, „neue Kennung“ und „Kennung löschen“ stellen die bisherige Kennung in die Löschliste;
  * der Takt schickt {@code {"id":…,"loeschen":true}}, bis der Server antwortet. 4xx gilt als erledigt (nicht
- * wiederholen), außer 429 (Überlast): dann frühestens im nächsten Stundentakt wieder.
+ * wiederholen), außer 429 (Überlast): dann frühestens im nächsten Stundentakt wieder. 0.1.31: Ausschalten wirkt
+ * sofort auf die Kennung ({@link #anZugriff}), Wiedereinschalten bringt immer eine neue.
  *
  * <p>Config-Abschnitt {@code zaehlen}: {@code an}, {@code kennung}, {@code letzterTag}, {@code letzteVersion}, {@code loeschen}
- * (Kennungen mit Komma getrennt), {@code url} (leer = {@link #STANDARD_URL}).
+ * (Kennungen mit Komma getrennt), {@code url} (leer = {@link #STANDARD_URL}), {@code version} (Zustimmungsstand),
+ * {@code frageErledigt} (einmalige Frage beantwortet), {@code zustimmungAm}.
  */
 public final class Mitzaehlen {
 
@@ -38,6 +44,8 @@ public final class Mitzaehlen {
     public static final String STANDARD_URL = "https://byd.serveone.at/panoptes/ping";
     /** So viele ausstehende Löschungen höchstens merken. */
     static final int LOESCHEN_MAX = 5;
+    /** Zustimmungsstand, ab dem modell und dilink mitgehen. */
+    public static final int STAND_MODELL = 2;
 
     public interface Speicher {
         /** Abschnitt {@code zaehlen} oder null. */
@@ -49,6 +57,14 @@ public final class Mitzaehlen {
     public interface Sender {
         /** HTTP-Status; wirft bei fehlendem Netz. */
         int post(String url, String json) throws Exception;
+    }
+
+    /** Was nur mit Zustimmungsstand {@link #STAND_MODELL} mitgeht. */
+    public interface Fahrzeug {
+        /** Modellname aus der festen Liste oder „unbekannt“. */
+        String modell();
+        /** 3, 4, 5 oder null, wenn nicht sicher erkannt. */
+        Integer dilink();
     }
 
     /** Neue Zufallskennung (UUID v4). */
@@ -77,8 +93,65 @@ public final class Mitzaehlen {
         return f.format(new Date(ms));
     }
 
-    /** Ein Takt (stündlich aus dem Daemon). Wirft nie. */
+    /** Hat der Nutzer dem Text mit Modell und DiLink zugestimmt? */
+    public static boolean modellErlaubt(JSONObject z) {
+        return z != null && z.optBoolean("an", false) && z.optInt("version", 1) >= STAND_MODELL;
+    }
+
+    /** Einmalige Frage noch offen: zählt schon mit, alte Zustimmung, noch nicht beantwortet. */
+    public static boolean frageOffen(JSONObject z) {
+        return z != null && z.optBoolean("an", false) && z.optInt("version", 1) < STAND_MODELL
+                && !z.optBoolean("frageErledigt", false);
+    }
+
+    /** Antwort auf die Frage als Config-Teil. Bei „Ja“ geht der nächste Ping sofort mit Modell raus. */
+    public static JSONObject antwort(boolean ja, String jetztIso) throws org.json.JSONException {
+        JSONObject t = new JSONObject().put("frageErledigt", true);
+        if (ja) t.put("version", STAND_MODELL).put("zustimmungAm", jetztIso).put("letzterTag", "");
+        return t;
+    }
+
+    /**
+     * Schalter {@code zaehlen.an}. Einschalten geht nur mit Bestätigung des neuen Texts (Feld.bestaetigung), setzt also
+     * den neuen Zustimmungsstand. Ausschalten verwirft die Kennung sofort, auch wenn bis zum nächsten Takt wieder
+     * eingeschaltet wird: Die alte Zeile wird gelöscht, nicht weitergeführt.
+     */
+    public static at.greenchili.surfmate.einstellungen.Feld.Zugriff anZugriff() {
+        return new at.greenchili.surfmate.einstellungen.Feld.Zugriff() {
+            public Object lese(JSONObject root) {
+                JSONObject z = root == null ? null : root.optJSONObject(ABSCHNITT);
+                return z == null || !z.has("an") || z.isNull("an") ? null : z.opt("an");
+            }
+            public java.util.Map<String, java.util.Map<String, Object>> schreibe(Object wert, JSONObject root) {
+                JSONObject z = root == null ? null : root.optJSONObject(ABSCHNITT);
+                java.util.Map<String, Object> v = new java.util.HashMap<>();
+                v.put("an", wert == null ? JSONObject.NULL : wert);
+                if (Boolean.TRUE.equals(wert)) {
+                    v.put("version", STAND_MODELL);
+                    v.put("frageErledigt", true);
+                } else if (Boolean.FALSE.equals(wert)) {
+                    String alt = z == null ? "" : z.optString("kennung", "");
+                    v.put("loeschen", loeschenDazu(z == null ? "" : z.optString("loeschen", ""), alt));
+                    v.put("kennung", "");
+                    v.put("letzterTag", "");
+                    v.put("letzteVersion", "");
+                    v.put("version", 1);
+                    v.put("frageErledigt", false);
+                }
+                java.util.Map<String, java.util.Map<String, Object>> out = new java.util.HashMap<>();
+                out.put(ABSCHNITT, v);
+                return out;
+            }
+        };
+    }
+
+    /** Ein Takt ohne Fahrzeugangaben. */
     public static void takt(long jetztMs, String version, Speicher speicher, Sender sender) {
+        takt(jetztMs, version, null, speicher, sender);
+    }
+
+    /** Ein Takt (stündlich aus dem Daemon). Wirft nie. */
+    public static void takt(long jetztMs, String version, Fahrzeug fahrzeug, Speicher speicher, Sender sender) {
         try {
             JSONObject z = speicher.lese();
             if (z == null) z = new JSONObject();
@@ -119,6 +192,11 @@ public final class Mitzaehlen {
                     JSONObject p = new JSONObject().put("id", id);
                     // Server-Format (PANOPTES_PING.md); sonst nur die Kennung
                     if (!v.isEmpty()) p.put("version", v);
+                    if (fahrzeug != null && modellErlaubt(z)) {
+                        p.put("modell", fahrzeug.modell());
+                        Integer d = fahrzeug.dilink();
+                        if (d != null) p.put("dilink", (int) d);
+                    }
                     if (ok(sender, url, p)) neu.put("letzterTag", heute).put("letzteVersion", v);
                 }
             }
@@ -141,7 +219,15 @@ public final class Mitzaehlen {
 
     /** Daemon: Config über UnifiedConfigManager, HTTP über den Proxy-Weg wie die übrigen Dienste. */
     public static void taktImDaemon(long jetztMs) {
-        takt(jetztMs, at.greenchili.surfmate.BuildConfig.VERSION_NAME, new Speicher() {
+        takt(jetztMs, at.greenchili.surfmate.BuildConfig.VERSION_NAME, new Fahrzeug() {
+            public String modell() {
+                return at.greenchili.surfmate.rueckmeldung.AutoAngaben.modell(
+                        at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig());
+            }
+            public Integer dilink() {
+                return at.greenchili.surfmate.rueckmeldung.AutoAngaben.dilink();
+            }
+        }, new Speicher() {
             public JSONObject lese() {
                 return at.greenchili.surfmate.config.UnifiedConfigManager.forceReload().optJSONObject(ABSCHNITT);
             }

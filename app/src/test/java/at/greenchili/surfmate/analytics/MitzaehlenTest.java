@@ -229,4 +229,124 @@ public class MitzaehlenTest {
         String m = Quelltext.lies(Paths.get("src/main/java/at/greenchili/surfmate/analytics/Mitzaehlen.java"));
         assertFalse("kein Fehlerbericht", m.contains("logger") || m.contains("Log."));
     }
+
+    // ---------------------------------------------------------------- 0.1.31 Modell und DiLink (Regel 2)
+
+    private final Mitzaehlen.Fahrzeug auto = new Mitzaehlen.Fahrzeug() {
+        public String modell() { return "Seal"; }
+        public Integer dilink() { return 4; }
+    };
+
+    private void taktMitAuto(long ms) {
+        Mitzaehlen.takt(ms, "0.1.31", auto, speicher, sender);
+    }
+
+    /** Pflichttest: Alte Zustimmung (an, ohne version) schickt weiter genau id und version. */
+    @Test
+    public void ohneNeueZustimmungKeinModellUndKeinDilink() throws Exception {
+        zustand.put("an", true).put("kennung", "alt-kennung-1234567");
+        taktMitAuto(T0);
+        JSONObject p = gesendet.get(0);
+        assertEquals("genau id und version", 2, p.length());
+        assertFalse(p.has("modell"));
+        assertFalse(p.has("dilink"));
+        assertTrue("Frage ist offen", Mitzaehlen.frageOffen(zustand));
+
+        // „Nein, so lassen“: bleibt so, keine zweite Frage
+        speicher.schreibe(Mitzaehlen.antwort(false, "2026-10-30T10:00:00Z"));
+        assertFalse(Mitzaehlen.frageOffen(zustand));
+        taktMitAuto(T0 + TAG);
+        assertEquals(2, gesendet.get(1).length());
+    }
+
+    @Test
+    public void nachJaGehenModellUndDilinkSofortMit() throws Exception {
+        zustand.put("an", true);
+        taktMitAuto(T0);
+        speicher.schreibe(Mitzaehlen.antwort(true, "2026-10-30T10:00:00Z"));
+        assertFalse(Mitzaehlen.frageOffen(zustand));
+        taktMitAuto(T0 + 60_000L);
+        assertEquals("nicht erst morgen", 2, gesendet.size());
+        JSONObject p = gesendet.get(1);
+        assertEquals("genau diese vier Felder", 4, p.length());
+        assertEquals("Seal", p.getString("modell"));
+        assertEquals(4, p.getInt("dilink"));
+    }
+
+    @Test
+    public void dilinkFehltWennNichtSicherErkannt() throws Exception {
+        zustand.put("an", true).put("version", Mitzaehlen.STAND_MODELL);
+        Mitzaehlen.takt(T0, "0.1.31", new Mitzaehlen.Fahrzeug() {
+            public String modell() { return "unbekannt"; }
+            public Integer dilink() { return null; }
+        }, speicher, sender);
+        JSONObject p = gesendet.get(0);
+        assertEquals("unbekannt", p.getString("modell"));
+        assertFalse(p.has("dilink"));
+    }
+
+    /** Neu einschalten geht nur mit dem neuen Text. */
+    @Test
+    public void einschaltenBrauchtDenNeuenText() throws Exception {
+        Katalog.Kontext k = new Katalog.Kontext();
+        List<Feld> felder = Katalog.felder(k);
+        Feld f = Katalog.finde(felder, "zaehlen.an");
+        assertEquals("planer.zaehlenEinwilligung", f.bestaetigung);
+
+        JSONObject root = new JSONObject();
+        Map<String, Map<String, Object>> geschrieben = new java.util.HashMap<>();
+        at.greenchili.surfmate.einstellungen.Einstellungen.Schreiber schreiber = (a, w) -> {
+            geschrieben.computeIfAbsent(a, x -> new java.util.HashMap<>()).putAll(w);
+            return true;
+        };
+        JSONObject ohne = new JSONObject().put("werte", new JSONObject().put("zaehlen.an", true));
+        at.greenchili.surfmate.einstellungen.Einstellungen.Ergebnis e =
+                at.greenchili.surfmate.einstellungen.Einstellungen.aendern(felder, root, k, ohne, false, schreiber, T0);
+        assertEquals("bestaetigungFehlt", e.fehler.getString("zaehlen.an"));
+        assertTrue(geschrieben.isEmpty());
+
+        JSONObject mit = new JSONObject(ohne.toString()).put("bestaetigt", new org.json.JSONArray().put("zaehlen.an"));
+        at.greenchili.surfmate.einstellungen.Einstellungen.aendern(felder, root, k, mit, false, schreiber, T0);
+        assertEquals(Boolean.TRUE, geschrieben.get("zaehlen").get("an"));
+        assertEquals(Mitzaehlen.STAND_MODELL, geschrieben.get("zaehlen").get("version"));
+        assertTrue(geschrieben.get("zaehlen").containsKey("zustimmungAm"));
+    }
+
+    /** Widerruf: Auch aus- und gleich wieder einschalten darf die alte Zeile nicht weiterführen. */
+    @Test
+    public void ausUndWiederEinBringtNeueKennungUndLoeschtDieAlte() throws Exception {
+        zustand.put("an", true).put("version", Mitzaehlen.STAND_MODELL);
+        taktMitAuto(T0);
+        String alt = zustand.getString("kennung");
+        Feld f = Katalog.finde(Katalog.felder(new Katalog.Kontext()), "zaehlen.an");
+
+        for (Map.Entry<String, Object> w : f.zugriff.schreibe(false, new JSONObject().put("zaehlen", zustand)).get("zaehlen").entrySet()) {
+            zustand.put(w.getKey(), w.getValue());
+        }
+        assertEquals("", zustand.getString("kennung"));
+        assertEquals(alt, zustand.getString("loeschen"));
+        assertEquals("Zustimmung ist weg", 1, zustand.getInt("version"));
+
+        for (Map.Entry<String, Object> w : f.zugriff.schreibe(true, new JSONObject().put("zaehlen", zustand)).get("zaehlen").entrySet()) {
+            zustand.put(w.getKey(), w.getValue());
+        }
+        taktMitAuto(T0 + 60_000L);
+        JSONObject loeschen = gesendet.get(gesendet.size() - 2);
+        assertEquals(alt, loeschen.getString("id"));
+        assertTrue(loeschen.getBoolean("loeschen"));
+        assertEquals(2, loeschen.length());
+        JSONObject ping = gesendet.get(gesendet.size() - 1);
+        assertFalse("neue Kennung", alt.equals(ping.getString("id")));
+        assertEquals("Seal", ping.getString("modell"));
+    }
+
+    @Test
+    public void einwilligungstextNenntModellUndDilinkInAllenSprachen() throws Exception {
+        for (String l : new String[]{"de", "en", "fr", "it", "nl"}) {
+            JSONObject d = new JSONObject(Quelltext.lies(Paths.get("src/main/assets/server-i18n/" + l + ".json")));
+            String text = d.getJSONObject("planer").getJSONObject("zaehlenEinwilligung").getString("text");
+            assertTrue(l, text.contains("DiLink") && text.contains("Seal") && text.contains("byd.serveone.at"));
+            assertTrue(l, d.getJSONObject("settings").getJSONObject("zaehlen").getJSONObject("an").getString("help").contains("DiLink"));
+        }
+    }
 }

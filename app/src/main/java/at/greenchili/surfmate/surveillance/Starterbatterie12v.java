@@ -15,12 +15,14 @@ import java.util.TimeZone;
  * 0.1.28 P8: Warnung, BEVOR die Starterbatterie (12 V) das Auto nicht mehr starten lässt.
  *
  * <p>Ausgewertet wird nur die Ruhespannung (≥ {@link AkkuChemie#RUHE_NACH_MS} geparkt, der DC-DC-Wandler lädt
- * nicht) – dieselbe, die {@link GuardStopMonitor} je Tag merkt. Zwei Stufen:
+ * nicht). Seit 0.1.31 ist das die Oberkante des Sägezahns ({@link Battery12vEvaluator#ruheOben()}) – dieselbe,
+ * die {@link GuardStopMonitor} je Tag merkt –, denn der Tiefpunkt vor dem Nachladen sagt nichts über die
+ * Batterie. Zwei Stufen:
  * <ul>
- *   <li>{@link Stufe#VOR}: Ruhespannung knapp über der Stopp-Schwelle (Abstand je Chemie) <b>oder</b> fällt über
+ *   <li>{@link Stufe#VOR}: Oberkante knapp über der Stopp-Schwelle (Abstand je Chemie) <b>oder</b> sie fällt über
  *       die letzten Standtage so, dass sie in {@link #TREND_VORSCHAU_TAGE} Tagen unter der Schwelle wäre. Bei LFP
  *       ist der Abstand Ruhe (13,1 V) → Stopp (12,8 V) klein, dort trägt vor allem der Trend.</li>
- *   <li>{@link Stufe#NIEDRIG}: Ruhespannung unter der Stopp-Schwelle.</li>
+ *   <li>{@link Stufe#NIEDRIG}: nur wenn {@link Battery12vEvaluator} {@code LOW} urteilt, siehe {@link #bestaetigt}.</li>
  * </ul>
  * Meldung höchstens einmal je Stufe und Tag; eine höhere Stufe meldet sofort. Erholt sich die Batterie (Ruhe ≥
  * Wieder-Ein-Schwelle), ist der Merker gelöscht. Die Schwellen sind die des Wächter-Stopps (Einstellung, sonst
@@ -71,6 +73,15 @@ public final class Starterbatterie12v {
             return Stufe.VOR;
         }
         return Stufe.KEINE;
+    }
+
+    /**
+     * „Sehr schwach“ (CRITICAL) braucht das Urteil der Auswertung: Ohne {@code LOW} ist es höchstens eine Vorwarnung,
+     * mit {@code LOW} immer {@link Stufe#NIEDRIG}.
+     */
+    static Stufe bestaetigt(Stufe stufe, boolean v12Low) {
+        if (v12Low) return Stufe.NIEDRIG;
+        return stufe == Stufe.NIEDRIG ? Stufe.VOR : stufe;
     }
 
     /** Steigung (Volt je Tag, kleinste Quadrate) der Ruhetage im Fenster; NaN = zu wenig Punkte. */
@@ -184,7 +195,7 @@ public final class Starterbatterie12v {
                 at.greenchili.surfmate.server.Messages.text(t,
                         niedrig ? "12 V battery very weak: {0} V" : "12 V battery getting weaker: {0} V", v),
                 at.greenchili.surfmate.server.Messages.text(b, niedrig
-                        ? "The car may soon not start. Drive today or plug it in."
+                        ? "It no longer recovers by itself. The car may soon not start. Go for a drive today or plug it in."
                         : "If it drops further, the car may not start. Go for a drive or plug it in soon."),
                 "battery12v", "/local/waechter.html", data);
     }

@@ -49,8 +49,16 @@
                 <p data-i18n="testf.tacho_lead">Prüft nur, was dein Tacho kann. Es wird nichts an den Tacho geschickt. Geht nur im Stand.</p>
                 <div id="ttErg"></div>
                 <button class="tbtn lime" type="button" id="ttStart" data-i18n="testf.tacho_start">Test starten</button>
+                <button class="tbtn lime" type="button" id="ttSenden" hidden data-i18n="testf.tacho_send">Ergebnis senden</button>
                 <button class="tbtn" type="button" id="ttCopy" hidden data-i18n="testf.tacho_copy">Ergebnis kopieren</button>
-                <p id="ttHinweis" hidden data-i18n="testf.tacho_share">Willst du uns helfen? Kopiere das Ergebnis und schick es über die Wunsch-Box. Es enthält nur Modell, Software-Stand und die drei Antworten – keine Kennung, keinen Ort.</p>
+                <p id="ttHinweis" hidden data-i18n="testf.tacho_share">Willst du uns helfen? Schick uns das Ergebnis. Es enthält nur Modell, Software-Stand und die drei Antworten – keine Kennung, keinen Ort.</p>
+                <div id="ttVorschau" hidden>
+                    <p data-i18n="testf.tacho_preview">Genau das geht an uns:</p>
+                    <pre id="ttVorschauText" style="max-height:220px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px"></pre>
+                    <button class="tbtn lime" type="button" id="ttSendenJa" data-i18n="testf.tacho_send_ja">Jetzt senden</button>
+                    <button class="tbtn" type="button" id="ttSendenNein" data-i18n="testf.tacho_send_nein">Abbrechen</button>
+                </div>
+                <p id="ttGesendet" hidden></p>
             </article>
             <article class="tc" id="tn" hidden>
                 <h2 data-i18n="testf.navi_title">Navi-App am Tacho (Beta)</h2>
@@ -145,6 +153,9 @@
         $('ttErg').innerHTML = h;
         ttText = d.text || '';
         $('ttCopy').hidden = !ttText;
+        $('ttSenden').hidden = !ttText;
+        $('ttVorschau').hidden = true;
+        $('ttGesendet').hidden = true;
         $('ttHinweis').hidden = !ttText;
         ttApps = d.andereApps || null;
         $('tn').hidden = !(ttApps && String(ttApps.code || '').indexOf('warnleuchten_') === 0);
@@ -165,6 +176,33 @@
             navigator.clipboard.writeText(ttText).then(function () { toast(t('testf.tacho_copied', 'Kopiert.'), true); },
                 function () { window.prompt('', ttText); });
         } else { window.prompt('', ttText); }
+    }
+    // 0.1.31 Gleicher Weg wie „Fehler melden“: Vorschau, dann eigener Klick = Einwilligung für genau diese Sendung
+    function ttVorschau() {
+        $('ttVorschauText').textContent = ttText;
+        $('ttVorschau').hidden = false;
+        $('ttSenden').hidden = true;
+        $('ttGesendet').hidden = true;
+    }
+    function ttSenden() {
+        $('ttSendenJa').disabled = true;
+        fetch('/api/rueckmeldung/fehler', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: ttText, art: 'tacho_test' })
+        }).then(function (r) {
+            return r.json().then(function (j) { return { status: r.status, j: j }; });
+        }).then(function (a) {
+            var m = a.j.stand === 'gemerkt'
+                ? t('rueckmeldung.gemerkt', 'Gerade kein Internet. Deine Meldung ist gemerkt und geht raus, sobald wieder Netz da ist.')
+                : a.j.ok ? t('rueckmeldung.danke', 'Danke! Dein Meldungs-Code:') + ' ' + (a.j.code || '')
+                : a.status === 429 ? t('rueckmeldung.zuviel', 'Für heute sind 5 Meldungen erreicht. Morgen geht es wieder.')
+                : t('testf.fail', 'Das hat nicht geklappt.');
+            $('ttGesendet').textContent = m;
+            $('ttGesendet').hidden = false;
+            $('ttVorschau').hidden = true;
+            if (!a.j.ok) $('ttSenden').hidden = false;
+        }, function () { toast(t('testf.fail', 'Das hat nicht geklappt.'), false); })
+          .then(function () { $('ttSendenJa').disabled = false; });
     }
     function tnZeige(d) {
         tnDaten = d;
@@ -207,6 +245,9 @@
         $('bzOff').onclick = function () { setze(false); };
         $('ttStart').onclick = ttStart;
         $('ttCopy').onclick = ttKopieren;
+        $('ttSenden').onclick = ttVorschau;
+        $('ttSendenJa').onclick = ttSenden;
+        $('ttSendenNein').onclick = function () { $('ttVorschau').hidden = true; $('ttSenden').hidden = false; };
         $('tnProbe').onclick = function () {
             tnSende('/api/tacho/navi/probe', 'POST', { paket: $('tnPaket').value }, function () {
                 $('tnFrage').hidden = false; $('tnAntwort').hidden = false;

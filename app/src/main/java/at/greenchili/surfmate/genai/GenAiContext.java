@@ -1131,7 +1131,8 @@ public final class GenAiContext {
         return out;
     }
 
-    private static JSONObject diagnosticLogs() {
+    /** Auch für „Fehler melden“: dieselben geschwärzten Auszüge wie im Assistenten (genai.confirm_diagnostic_logs). */
+    public static JSONObject diagnosticLogs() {
         JSONObject out = new JSONObject();
         JSONArray sources = new JSONArray();
         int totalLines = 0;

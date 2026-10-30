@@ -42,6 +42,12 @@ public final class GuardStopMonitor {
             at.greenchili.surfmate.util.DaemonStorage.rebase(
                     "/data/user_de/0/com.android.shell/surfmate/guardstop_v12_warnung.json");
 
+    /** 0.1.31: Stand der 12-V-Auswertung, damit ein Daemon-Neustart den Zyklus nicht von vorn beginnt. */
+    private static final String V12_STAND_FILE =
+            at.greenchili.surfmate.util.DaemonStorage.rebase(
+                    "/data/user_de/0/com.android.shell/surfmate/guardstop_v12_stand.json");
+    private static final long V12_STAND_TAKT_MS = 10 * 60_000L;
+
     /** Zustellung der 12-V-Warnung (in Tests ersetzbar). */
     interface Melder12v {
         void melden(Starterbatterie12v.Stufe stufe, double volt);
@@ -75,6 +81,7 @@ public final class GuardStopMonitor {
         GuardStopMonitor m = new GuardStopMonitor(surveillance,
                 isDiLink3() ? Battery12vEvaluator.Profile.DILINK3 : Battery12vEvaluator.Profile.DEFAULT);
         m.parkedSinceMs = readParkedSince();
+        if (m.parkedSinceMs > 0L) m.v12.wiederherstellen(leseV12Stand(m.parkedSinceMs), System.currentTimeMillis());
         m.exec = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "GuardStopMonitor");
             t.setDaemon(true);
@@ -103,6 +110,7 @@ public final class GuardStopMonitor {
         }
         policy.reset();
         v12.reset();
+        schreibeV12Stand(v12.stand());
         stoppedByUs = false;
         if (parkedSinceMs != 0L) {
             parkedSinceMs = 0L;
@@ -178,10 +186,10 @@ public final class GuardStopMonitor {
             writeParkedSince(now);
         }
         JSONObject root = loadRoot();
+        String chemie = at.greenchili.surfmate.einstellungen.AkkuChemie.aktuell(root);
         GuardStopPolicy.Config cfg = GuardStopPolicy.Config.from(
                 root == null ? null : root.optJSONObject("guardStop"),
-                at.greenchili.surfmate.einstellungen.AkkuChemie.v12Standard(
-                        at.greenchili.surfmate.einstellungen.AkkuChemie.aktuell(root)));
+                at.greenchili.surfmate.einstellungen.AkkuChemie.v12Standard(chemie));
         BydVehicleData d = null;
         try {
             d = BydDataCollector.getInstance().getData();
@@ -199,9 +207,12 @@ public final class GuardStopMonitor {
             in.socPercent = d.socPercent > 0 && d.socPercent <= 100 ? d.socPercent : Double.NaN;
             v12.offer(d.voltage12v, d.voltage12vAtMs, parkedSinceMs);
         }
-        in.v12 = v12.evaluate(cfg.v12Below, cfg.v12Resume, now);
+        // Auch bei abgeschalteter Stopp-Regel auswerten: Die Warnung hängt nicht daran (GuardStopPolicy prüft v12Below selbst).
+        double[] v12Schwellen = Starterbatterie12v.schwellen(cfg.v12Below, cfg.v12Resume, chemie);
+        in.v12 = v12.evaluate(v12Schwellen[0], v12Schwellen[1], now);
+        v12StandMerken(now);
         ruheTagMerken(now);
-        warnung12vPruefen(now, cfg, at.greenchili.surfmate.einstellungen.AkkuChemie.aktuell(root), ruheTage());
+        warnung12vPruefen(now, cfg, chemie, ruheTage());
         try {
             in.inQuietZone = SafeLocationManager.getInstance().isInSafeZone();
         } catch (Throwable ignored) {
@@ -258,6 +269,12 @@ public final class GuardStopMonitor {
         return m.v12.lastMedian();
     }
 
+    /** 0.1.31: Oberkante der Ruhespannung ({@link Battery12vEvaluator#ruheOben()}), NaN = noch unbekannt. */
+    public static double ruheOben12v() {
+        GuardStopMonitor m = instance;
+        return m == null ? Double.NaN : m.v12.ruheOben();
+    }
+
     public static boolean istDiLink3() { return isDiLink3(); }
 
     /** 0.1.11: gemerkte Ruhespannungen je Tag (Kopie; leer, wenn keine). */
@@ -271,17 +288,17 @@ public final class GuardStopMonitor {
         }
     }
 
-    /** Nach ≥ 60 min Parken und ohne Laden: Ruhe-Median des Tages merken (je Tag der kleinste Wert). */
+    /** Nach ≥ 60 min Parken und ohne Laden: Oberkante der Ruhe des Tages merken (je Tag der größte Wert). */
     private void ruheTagMerken(long now) {
         try {
             if (parkedSinceMs <= 0 || now - parkedSinceMs < at.greenchili.surfmate.einstellungen.AkkuChemie.RUHE_NACH_MS) return;
             if (v12.isCharging()) return;
-            double med = v12.lastMedian();
-            if (Double.isNaN(med)) return;
+            double oben = v12.ruheOben();
+            if (Double.isNaN(oben)) return;
             String tag = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.ROOT).format(new java.util.Date(now));
             synchronized (GuardStopMonitor.class) {
                 JSONObject t = ruheTage();
-                if (at.greenchili.surfmate.einstellungen.AkkuChemie.ruheTagEintragen(t, tag, med, RUHE_TAGE_BEHALTEN)) {
+                if (at.greenchili.surfmate.einstellungen.AkkuChemie.ruheTagEintragen(t, tag, oben, RUHE_TAGE_BEHALTEN)) {
                     File f = new File(RUHE_TAGE_FILE);
                     File tmp = new File(RUHE_TAGE_FILE + ".tmp");
                     Files.write(tmp.toPath(), t.toString().getBytes(StandardCharsets.UTF_8));
@@ -300,18 +317,22 @@ public final class GuardStopMonitor {
     private Starterbatterie12v.Merker merker12v;
 
     /**
-     * Nur Ruhespannung (≥ 60 min geparkt, DC-DC lädt nicht). Meldet über {@link #melder12v}, höchstens einmal je
-     * Stufe und Tag (Merker auf Platte). Fehler dürfen den Wächter-Stopp nie stören.
+     * Nur Ruhespannung (≥ 60 min geparkt, DC-DC lädt nicht). „Sehr schwach“ nur mit dem Urteil der Auswertung
+     * ({@link Battery12vEvaluator.State#LOW}), die Vorwarnung nur aus der Oberkante; der Tiefpunkt des Sägezahns
+     * warnt nie. Meldet über {@link #melder12v}, höchstens einmal je Stufe und Tag (Merker auf Platte). Fehler
+     * dürfen den Wächter-Stopp nie stören.
      */
     synchronized void warnung12vPruefen(long now, GuardStopPolicy.Config cfg, String chemie, JSONObject ruheTage) {
         try {
             if (parkedSinceMs <= 0 || now - parkedSinceMs < at.greenchili.surfmate.einstellungen.AkkuChemie.RUHE_NACH_MS) return;
             if (v12.isCharging()) return;
-            double ruhe = v12.lastMedian();
+            boolean tief = v12.state() == Battery12vEvaluator.State.LOW;
+            double ruhe = tief ? v12.lastMedian() : v12.ruheOben();
             if (Double.isNaN(ruhe)) return;
             double[] s = Starterbatterie12v.schwellen(cfg.v12Below, cfg.v12Resume, chemie);
             String heute = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.ROOT).format(new java.util.Date(now));
-            Starterbatterie12v.Stufe stufe = Starterbatterie12v.bewerten(ruhe, s[0], chemie, ruheTage, heute);
+            Starterbatterie12v.Stufe stufe = Starterbatterie12v.bestaetigt(
+                    Starterbatterie12v.bewerten(ruhe, s[0], chemie, ruheTage, heute), tief);
             if (merker12v == null) merker12v = leseMerker12v();
             Starterbatterie12v.Merker neu = merker12v.nach(stufe, ruhe >= s[1], now);
             if (neu.stufe != merker12v.stufe || neu.zeit != merker12v.zeit) schreibeMerker12v(neu);
@@ -349,6 +370,47 @@ public final class GuardStopMonitor {
                     new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8)));
         } catch (Throwable t) {
             return Starterbatterie12v.Merker.leer();
+        }
+    }
+
+    private long v12StandGeschriebenMs;
+    private boolean v12StandLow;
+
+    private void v12StandMerken(long now) {
+        Battery12vEvaluator.Stand st = v12.stand();
+        if (st.low == v12StandLow && now - v12StandGeschriebenMs < V12_STAND_TAKT_MS) return;
+        v12StandGeschriebenMs = now;
+        v12StandLow = st.low;
+        schreibeV12Stand(st);
+    }
+
+    /** null, wenn nichts da ist oder der Stand aus einem früheren Parken stammt. */
+    private static Battery12vEvaluator.Stand leseV12Stand(long parkedSince) {
+        try {
+            File f = new File(V12_STAND_FILE);
+            if (!f.isFile()) return null;
+            JSONObject j = new JSONObject(new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8));
+            long letzte = j.optLong("letzteMessungMs", 0L);
+            if (letzte < parkedSince) return null;
+            return new Battery12vEvaluator.Stand(j.optLong("zyklusMs", 0L), letzte, j.optBoolean("low", false));
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    private static void schreibeV12Stand(Battery12vEvaluator.Stand st) {
+        try {
+            byte[] b = new JSONObject().put("zyklusMs", st.zyklusMs).put("letzteMessungMs", st.letzteMessungMs)
+                    .put("low", st.low).toString().getBytes(StandardCharsets.UTF_8);
+            File f = new File(V12_STAND_FILE);
+            File tmp = new File(V12_STAND_FILE + ".tmp");
+            Files.write(tmp.toPath(), b);
+            if (!tmp.renameTo(f)) {
+                Files.write(f.toPath(), b);
+                tmp.delete();
+            }
+        } catch (Throwable t) {
+            logger.debug("12-V-Stand nicht gespeichert: " + t.getMessage());
         }
     }
 

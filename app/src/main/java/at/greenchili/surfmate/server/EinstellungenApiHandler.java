@@ -428,6 +428,11 @@ public final class EinstellungenApiHandler {
             } catch (Throwable ignored) {
             }
         }
+        // 0.1.31 Regel 2: Widerruf nicht bis zum Stundentakt liegen lassen (ohne Netz bleibt er in der Löschliste)
+        if (e.gespeichert.has("zaehlen.an") || e.gespeichert.has("zaehlen.kennungAktion")) {
+            new Thread(() -> at.greenchili.surfmate.analytics.Mitzaehlen.taktImDaemon(System.currentTimeMillis()),
+                    "ZaehlenSofort").start();
+        }
     }
 
     static Katalog.Kontext kontext(JSONObject root) {

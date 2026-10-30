@@ -378,7 +378,7 @@
     "battery12v_vor_title": "La batterie 12 V faiblit : {0} V",
     "battery12v_vor_body": "Si elle baisse encore, la voiture risque de ne pas démarrer. Faites bientôt un tour ou branchez-la.",
     "battery12v_niedrig_title": "Batterie 12 V très faible : {0} V",
-    "battery12v_niedrig_body": "La voiture risque bientôt de ne plus démarrer. Faites un tour aujourd’hui ou branchez-la."
+    "battery12v_niedrig_body": "Elle ne se rétablit plus d’elle-même. La voiture risque bientôt de ne plus démarrer. Faites un tour aujourd’hui ou branchez-la."
   },
   "parking": {
     "notify": {
@@ -529,7 +529,7 @@
       "charging_full": "🔌 *Recharge terminée*",
       "charging_fault": "🚨 *Un problème est survenu pendant la recharge*",
       "battery12v_low": "🪫 *Batterie 12 V faible : {0} V*\nSi elle baisse encore, la voiture risque de ne pas démarrer. Faites bientôt un tour ou branchez-la.",
-      "battery12v_sehr_niedrig": "🪫 *Batterie 12 V très faible : {0} V*\nLa voiture risque bientôt de ne plus démarrer. Faites un tour aujourd’hui ou branchez-la."
+      "battery12v_sehr_niedrig": "🪫 *Batterie 12 V très faible : {0} V*\nElle ne se rétablit plus d’elle-même. La voiture risque bientôt de ne plus démarrer. Faites un tour aujourd’hui ou branchez-la."
     },
     "charge": {
       "title": "🔋 *Recharge*",
@@ -1942,6 +1942,10 @@
         "title": "Rechercher des mises à jour",
         "help": "Toutes les 6 heures, Panoptes demande à GitHub s'il existe une nouvelle version. GitHub voit alors l'adresse IP de la voiture et l'heure ; rien d'autre n'est envoyé. Désactivé = aucune vérification en arrière-plan ; vous pouvez toujours rechercher vous-même."
       },
+      "hinweis": {
+        "title": "Avis de mise à jour à l’écran",
+        "help": "Affiche une nouvelle version sur l’écran de la voiture, uniquement quand elle est sur P. Sans son ni lumière. Désactivé = seulement le badge dans Mises à jour."
+      },
       "mobilfunk": {
         "title": "Télécharger aussi via le réseau mobile",
         "help": "Beaucoup de voitures ne sont en ligne que par leur carte SIM intégrée, c'est pourquoi cette option est activée. Une mise à jour fait en général 70 à 120 Mo ; la taille est indiquée à l'avance. Désactivé = Panoptes ne télécharge que lorsque la voiture est en Wi-Fi. Le téléchargement n'a lieu que voiture garée et reprend là où il s'était arrêté."
@@ -2220,7 +2224,7 @@
     "zaehlen": {
       "an": {
         "title": "Compter anonymement",
-        "help": "Une fois par jour, Panoptes transmet uniquement un identifiant aléatoire et le numéro de version, aucune donnée sur toi ou ta voiture. Désactivé par défaut. Le désactiver supprime aussi le comptage sur le serveur."
+        "help": "Une fois par jour, Panoptes envoie un identifiant aléatoire et le numéro de version et, avec votre accord, aussi le modèle de la voiture et le niveau DiLink. Désactivé par défaut. La désactivation supprime aussi le comptage sur le serveur."
       },
       "kennung": {
         "title": "Identifiant aléatoire",
@@ -2319,6 +2323,10 @@
     "ladekurveEinwilligung": {
       "title": "Partager la courbe de recharge anonymement ?",
       "text": "Quoi : pour chaque tranche de niveau de charge (5 %), la puissance de recharge DC typique de ton modèle et le nombre de recharges. Aucun lieu, aucune heure, aucune date, aucun VIN, aucune recharge individuelle, aucun compte. Où : byd.serveone.at (planificateur), avec un identifiant aléatoire réservé à cet usage. Pourquoi : des temps de recharge réalistes pour tous ceux qui ont le même modèle. Le désactiver supprime aussi ta courbe sur le serveur."
+    },
+    "zaehlenEinwilligung": {
+      "title": "Compter de façon anonyme ?",
+      "text": "Quoi : un identifiant aléatoire, la version de Panoptes, le modèle de votre voiture (par exemple Seal) et le niveau DiLink (3, 4 ou 5). Aucun numéro de châssis, aucune plaque, aucun lieu, aucun kilométrage, aucun compte. Où : byd.serveone.at. À quelle fréquence : une fois par jour et après chaque mise à jour. Combien de temps : après 90 jours sans signal, il ne reste qu'un nombre total. Pourquoi : pour voir quelles voitures utilisent Panoptes. La désactivation supprime aussi votre entrée sur le serveur."
     }
   },
   "genai": {
@@ -2460,6 +2468,19 @@
       "waehrung": "Devise",
       "temp": "Extérieur °C"
     }
+  },
+  "update_hinweis": {
+    "titel": "Nouvelle version {0}",
+    "frage": "Mettre à jour Panoptes maintenant ?",
+    "installieren": "Installer maintenant",
+    "spaeter": "Plus tard",
+    "was_neu": "Quoi de neuf ?",
+    "schliessen": "Fermer",
+    "fehler": "Cela n’a pas fonctionné. Merci de réessayer plus tard.",
+    "vorgemerkt": "Panoptes installe la mise à jour environ 10 minutes après que vous avez garé la voiture. Le gardien est alors coupé quelques minutes.",
+    "vorgemerkt_wlan": "Panoptes installe la mise à jour environ 10 minutes après que vous avez garé la voiture, dès qu’elle a le Wi-Fi. Le gardien est alors coupé quelques minutes.",
+    "zuruecknehmen": "Annuler",
+    "geraet": "écran de la voiture"
   },
   "rueckkehr": {
     "titel_aufnahmen": "Pendant votre absence",

@@ -13,6 +13,8 @@ import java.io.OutputStream;
  *   <li>{@code GET /api/appupdate/status?sprache=de} – Login oder Kopplung (ExternGuard LESEN)</li>
  *   <li>{@code POST /api/appupdate/suchen} – nur Login; höchstens 1× je 60 s, sonst {@code {ok:false, grund:"ratenlimit"}}</li>
  *   <li>{@code POST /api/appupdate/installieren {versionCode}} – nur Login; prüft selbst Auto aus + keine Sperre</li>
+ *   <li>{@code POST /api/appupdate/hinweis {aktion, version}} – 0.1.31, nur am Auto bzw. mit vollem Login: Knopf der
+ *       Karte am Display („installieren“) und „zuruecknehmen“ unter System → Updates</li>
  * </ul>
  */
 public final class AppUpdateApiHandler {
@@ -45,6 +47,29 @@ public final class AppUpdateApiHandler {
                 s.put("autostart", at.greenchili.surfmate.appupdate.AutostartNachUpdate.get().zustand(System.currentTimeMillis()));
             } catch (Exception ignored) { }
             HttpResponse.sendJson(out, s.toString());
+            return true;
+        }
+        if (pathOnly.equals("/api/appupdate/hinweis") && method.equals("POST")) {
+            if (AuthMiddleware.isExternRequest() || AuthMiddleware.isHandyWebRequest()) {
+                HttpResponse.sendJson(out, 403, "{\"ok\":false,\"grund\":\"nur_am_auto\"}");
+                return true;
+            }
+            JSONObject b;
+            try {
+                b = new JSONObject(body == null || body.isEmpty() ? "{}" : body);
+            } catch (Exception e) {
+                b = new JSONObject();
+            }
+            String aktion = b.optString("aktion", "");
+            if ("zuruecknehmen".equals(aktion)) {
+                d.hinweisZuruecknehmen();
+                HttpResponse.sendJson(out, "{\"ok\":true}");
+            } else if ("installieren".equals(aktion)) {
+                HttpResponse.sendJson(out, d.hinweisInstallieren(at.greenchili.surfmate.appupdate.FernUpdate.get(),
+                        b.optString("version", null), sprache).toString());
+            } else {
+                HttpResponse.sendJson(out, 400, "{\"ok\":false,\"grund\":\"aktion\"}");
+            }
             return true;
         }
         boolean schreibend = method.equals("POST")

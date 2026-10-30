@@ -372,7 +372,7 @@
     "battery12v_vor_title": "12 V battery getting weaker: {0} V",
     "battery12v_vor_body": "If it drops further, the car may not start. Go for a drive or plug it in soon.",
     "battery12v_niedrig_title": "12 V battery very weak: {0} V",
-    "battery12v_niedrig_body": "The car may soon not start. Go for a drive today or plug it in."
+    "battery12v_niedrig_body": "It no longer recovers by itself. The car may soon not start. Go for a drive today or plug it in."
   },
   "parking": {
     "notify": {
@@ -523,7 +523,7 @@
       "charging_full": "🔌 *Charging done*",
       "charging_fault": "🚨 *Something went wrong while charging*",
       "battery12v_low": "🪫 *12 V battery low: {0} V*\nIf it drops further, the car may not start. Go for a drive or plug it in soon.",
-      "battery12v_sehr_niedrig": "🪫 *12 V battery very weak: {0} V*\nThe car may soon not start. Go for a drive today or plug it in."
+      "battery12v_sehr_niedrig": "🪫 *12 V battery very weak: {0} V*\nIt no longer recovers by itself. The car may soon not start. Go for a drive today or plug it in."
     },
     "charge": {
       "title": "🔋 *Charging*",
@@ -1936,6 +1936,10 @@
         "title": "Check for updates",
         "help": "Every 6 hours Panoptes asks GitHub whether a new version exists. GitHub sees the car's IP address and the time; nothing else is sent. Off = no background check; you can still search yourself at any time."
       },
+      "hinweis": {
+        "title": "Update notice on the screen",
+        "help": "Shows a new version on the car screen, only while the car is in P. No sound and no lights. Off = only the badge under Updates."
+      },
       "mobilfunk": {
         "title": "Download updates over mobile data too",
         "help": "Many cars are only online through their built-in SIM, so this is on. An update is usually 70 to 120 MB; the size is shown in the notice beforehand. Off = Panoptes only downloads while the car is on Wi-Fi. The download only runs while the car is parked and resumes where it stopped after an interruption."
@@ -2214,7 +2218,7 @@
     "zaehlen": {
       "an": {
         "title": "Count anonymously",
-        "help": "Once a day Panoptes reports only a random ID and the version number, no data about you or your car. Off by default. Switching it off also deletes the count on the server."
+        "help": "Once a day Panoptes reports a random ID and the version number, and with your consent also the car model and DiLink level. Off by default. Switching off also deletes the count on the server."
       },
       "kennung": {
         "title": "Random ID",
@@ -2313,6 +2317,10 @@
     "ladekurveEinwilligung": {
       "title": "Share charging curve anonymously?",
       "text": "What: for each charge-level band (5 %), the typical DC charging power of your model and how many charges it is based on. No location, no time of day, no date, no VIN, no individual charges, no account. Where: byd.serveone.at (route planner), with a random ID used only for this. Why: realistic charging times for everyone with the same model. Turning it off also deletes your curve on the server."
+    },
+    "zaehlenEinwilligung": {
+      "title": "Count anonymously?",
+      "text": "What: a random ID, the Panoptes version, your car model (for example Seal) and the DiLink level (3, 4 or 5). No VIN, no number plate, no location, no mileage, no account. Where to: byd.serveone.at. How often: once a day and after each update. How long: after 90 days without a report only a total number remains. What for: so we can see which cars use Panoptes. Switching off also deletes your entry on the server."
     }
   },
   "genai": {
@@ -2454,6 +2462,19 @@
       "waehrung": "Currency",
       "temp": "Outside °C"
     }
+  },
+  "update_hinweis": {
+    "titel": "New version {0}",
+    "frage": "Update Panoptes now?",
+    "installieren": "Install now",
+    "spaeter": "Later",
+    "was_neu": "What's new?",
+    "schliessen": "Close",
+    "fehler": "That didn't work. Please try again later.",
+    "vorgemerkt": "Panoptes installs the update about 10 minutes after you park the car. The guard is off for a few minutes while it does.",
+    "vorgemerkt_wlan": "Panoptes installs the update about 10 minutes after you park the car, as soon as it has Wi-Fi. The guard is off for a few minutes while it does.",
+    "zuruecknehmen": "Undo",
+    "geraet": "car display"
   },
   "rueckkehr": {
     "titel_aufnahmen": "While you were away",

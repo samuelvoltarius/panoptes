@@ -212,6 +212,39 @@ public final class MessageOverlayController {
                 + " --ei timeoutSec " + Math.max(5, Math.min(300, sichtbarSek));
     }
 
+    /**
+     * 0.1.31 Update-Hinweis: [Was ist neu?] [Später] [Jetzt installieren]. Wartet auf die Bestätigung des Overlays,
+     * damit nur eine wirklich gezeigte Karte zählt. {@code griff} schließt sie gezielt ({@link #dismissKopplung}).
+     * Kein Ton.
+     */
+    public static boolean showUpdateHinweis(String griff, String version, String title, String message,
+                                            String notizen, String installieren, String spaeter, String wasNeu,
+                                            String schliessen, String zuruecknehmen, String fehler,
+                                            int sichtbarSek) {
+        return dispatchAcknowledged(ackArgs -> updateHinweisCommand(griff, version, title, message, notizen,
+                installieren, spaeter, wasNeu, schliessen, zuruecknehmen, fehler, sichtbarSek) + ackArgs).displayed;
+    }
+
+    public static String updateHinweisCommand(String griff, String version, String title, String message,
+                                              String notizen, String installieren, String spaeter, String wasNeu,
+                                              String schliessen, String zuruecknehmen, String fehler,
+                                              int sichtbarSek) {
+        return "am start-foreground-service -n " + SERVICE
+                + " --es kind update_hinweis"
+                + " --es ref " + q(griff)
+                + " --es version " + q(orDefault(version, ""))
+                + " --es title " + q(orDefault(title, ""))
+                + " --es message " + q(orDefault(message, ""))
+                + " --es notizen " + q(notizen == null ? "" : notizen)
+                + " --es installieren " + q(orDefault(installieren, "OK"))
+                + " --es spaeter " + q(orDefault(spaeter, "X"))
+                + " --es wasNeu " + q(orDefault(wasNeu, "?"))
+                + " --es schliessen " + q(orDefault(schliessen, "X"))
+                + " --es zuruecknehmen " + q(orDefault(zuruecknehmen, "X"))
+                + " --es fehler " + q(orDefault(fehler, ""))
+                + " --ei timeoutSec " + Math.max(10, Math.min(300, sichtbarSek));
+    }
+
     /** Schließt das Kopplungs-Overlay genau dieser Anfrage (anderswo entschieden). */
     public static void dismissKopplung(String ref) {
         if (ref == null || !ref.matches("^[0-9a-f]{16}$")) return;

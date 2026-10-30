@@ -28,7 +28,8 @@ import java.util.concurrent.TimeUnit;
  * {@code .deploy.lock} besteht (Deploy-Sitzung oder ein laufendes Update); Modus „melden“ (Standard) installiert
  * nie von selbst. Eine zurückgerollte Version wird nicht automatisch erneut versucht. Vorabversionen (Kanal test)
  * werden nie automatisch installiert. Fehlschläge (404/401/kein Netz) landen nur im Protokoll, als Warnung höchstens
- * einmal je Version und Tag ({@link UpdateRegel#berichtSchluessel}); keine Meldung am Display.
+ * einmal je Version und Tag ({@link UpdateRegel#berichtSchluessel}); keine Meldung am Display. Eine neue Version
+ * meldet ab 0.1.31 zusätzlich die Karte am Display, nur im Stand ({@link UpdateHinweis}).
  */
 public final class AppUpdateDienst {
 
@@ -103,6 +104,18 @@ public final class AppUpdateDienst {
         default void melde(Freigabe f, long groesseBytes) { }
         /** Schreibt Werte in den Config-Abschnitt {@code update}; true = gespeichert. */
         default boolean setzeConfig(java.util.Map<String, Object> werte) { return false; }
+        /** Fahrsperre: null = steht in P bzw. Auto aus; sonst Grund (DrivingSafetyGuard). */
+        default String fahrsperre() { return "state_unknown"; }
+        /** Wächter-Ereignis oder Abschreckungs-Anzeige läuft gerade. */
+        default boolean waechterEreignis() { return true; }
+        /** Es wird gerade aufgenommen (vor einer vorgemerkten Installation). */
+        default boolean aufnahmeLaeuft() { return true; }
+        /** Gang P: TRUE/FALSE, null = unbekannt. */
+        default Boolean gangP() { return null; }
+        /** Update-Hinweis zeigen; true = steht wirklich am Display. */
+        default boolean zeigeHinweis(String griff, Freigabe f, String notizen) { return false; }
+        /** Update-Hinweis mit diesem Griff wegnehmen. */
+        default void nimmHinweisWeg(String griff) { }
     }
 
     private static volatile AppUpdateDienst instance;
@@ -129,6 +142,14 @@ public final class AppUpdateDienst {
     private String quelleKennung;
     /** Version@Tag der letzten Warnung im Protokoll (Drossel: eine je Version und Tag). */
     private String berichtSchluessel;
+    /** 0.1.31 Update-Hinweis, Stand je Version (gespiegelt). */
+    private final UpdateHinweis.Stand hinweis = new UpdateHinweis.Stand();
+    /** Griff der gerade gezeigten Karte (null = keine) und Ablauf; nur im Speicher. */
+    private String hinweisGriff;
+    private long hinweisBis;
+    private long hinweisPauseBis;
+    private long hinweisRuhigSeit = -1;
+    private long hinweisBlick;
 
     AppUpdateDienst(Netz netz, Umgebung env) {
         this.netz = netz;
@@ -154,6 +175,18 @@ public final class AppUpdateDienst {
                 logger.warn("takt: " + t.getMessage());
             }
         }, 10 * 60, 60, TimeUnit.SECONDS);
+        // eigener Faden: takt() kann beim Laden lange blockieren, die Karte muss beim Gangwechsel sofort weg
+        Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "AppUpdate-Hinweis");
+            t.setDaemon(true);
+            return t;
+        }).scheduleWithFixedDelay(() -> {
+            try {
+                d.hinweisTakt();
+            } catch (Throwable t) {
+                logger.warn("hinweis: " + t.getMessage());
+            }
+        }, 60, 1, TimeUnit.SECONDS);
         instance = d;
     }
 
@@ -204,6 +237,7 @@ public final class AppUpdateDienst {
                 o.put("geladenBytes", geladen > 0 ? geladen : JSONObject.NULL);
                 long ab = UpdateRegel.automatischAb(l, automatisch(), pruefenAn(), ausSeit);
                 o.put("automatischGeplant", ab > 0 ? ab : JSONObject.NULL);
+                o.put("vorgemerkt", vorgemerkt());
             } catch (Exception ignored) { }
             return o;
         }
@@ -243,6 +277,110 @@ public final class AppUpdateDienst {
         return null;
     }
 
+    /**
+     * {@code POST /api/appupdate/hinweis {aktion:"installieren", version}} vom Knopf der Karte: startet über den
+     * normalen Weg ({@link FernUpdate#starten}, gleiche Regeln). Fehlt nur noch „Auto aus“, merkt es sich die Version.
+     * Antwort {@code {ok, vorgemerkt, text}}.
+     */
+    public JSONObject hinweisInstallieren(FernUpdate fern, String version, String sprache) throws Exception {
+        JSONObject r = fern.starten(version, true, UpdateHinweis.geraetName(), sprache);
+        if (r.optBoolean("ok", false)) return r.put("vorgemerkt", false);
+        String grund = r.optString("grund", "");
+        if (!UpdateHinweis.vormerkbar(grund)) return r.put("vorgemerkt", false);
+        synchronized (lock) {
+            if (verfuegbar == null || !verfuegbar.versionName.equals(version)
+                    || verfuegbar.versionCode == rueckfallVc() || !UpdateHinweis.kanalPasst(verfuegbar, kanal())) {
+                return r.put("vorgemerkt", false);
+            }
+            UpdateHinweis.vormerken(hinweis, verfuegbar.versionCode, env.jetzt());
+            speichern();
+        }
+        logger.info("Update-Hinweis: " + version + " vorgemerkt (" + grund + ")");
+        return new JSONObject().put("ok", true).put("vorgemerkt", true)
+                .put("text", at.greenchili.surfmate.server.Messages.withLocale(sprache,
+                        () -> UpdateHinweis.textVorgemerkt("wartet_wlan".equals(grund))));
+    }
+
+    /** {@code POST /api/appupdate/hinweis {aktion:"zuruecknehmen"}}: doch nicht von selbst installieren. */
+    public void hinweisZuruecknehmen() {
+        synchronized (lock) {
+            UpdateHinweis.vergessen(hinweis);
+            speichern();
+        }
+    }
+
+    private boolean vorgemerkt() {
+        return verfuegbar != null && verfuegbar.versionCode > env.installierterVc()
+                && UpdateHinweis.vorgemerktGilt(hinweis, verfuegbar.versionCode, env.jetzt());
+    }
+
+    private boolean vorgemerktFrei() {
+        return UpdateHinweis.installFrei(env.fahrsperre(), env.gangP(), env.waechterEreignis(), env.aufnahmeLaeuft());
+    }
+
+    /**
+     * Sekundentakt der Karte am Display: Solange sie steht, nimmt jede Änderung am Stand sie sofort weg. Sonst wird
+     * alle {@value #HINWEIS_BLICK_MS} ms nachgesehen, und das nur, wenn es überhaupt etwas Neues gibt (ohne Netz).
+     */
+    void hinweisTakt() {
+        long now = env.jetzt();
+        String griff;
+        synchronized (lock) {
+            griff = hinweisGriff;
+            if (griff == null) {
+                if (verfuegbar == null || verfuegbar.versionCode <= env.installierterVc()) return;
+                if (now >= hinweisBlick && now - hinweisBlick < HINWEIS_BLICK_MS) return;
+                hinweisBlick = now;
+            }
+        }
+        boolean ruhig = UpdateHinweis.ruhig(env.accAus(), env.fahrsperre(), env.kmh(), env.waechterEreignis());
+        if (griff != null) {
+            if (ruhig && now < hinweisBis) return;
+            synchronized (lock) { hinweisGriff = null; hinweisRuhigSeit = -1; }
+            env.nimmHinweisWeg(griff);
+            return;
+        }
+        Freigabe f;
+        synchronized (lock) {
+            hinweisRuhigSeit = !ruhig ? -1 : hinweisRuhigSeit < 0 ? now : hinweisRuhigSeit;
+            if (now < hinweisPauseBis) return;
+            UpdateHinweis.Lage l = new UpdateHinweis.Lage();
+            l.schalterAn = UpdateRegel.an(env.config("hinweis"));
+            l.pruefenAn = pruefenAn();
+            l.automatisch = automatisch();
+            l.kanal = kanal();
+            l.installiert = env.installierterVc();
+            l.verfuegbar = verfuegbar;
+            l.rueckfallVc = rueckfallVc();
+            l.laeuftSchon = installiertGerade || phase != null || new File(env.basis(), ".deploy.lock").exists();
+            l.ruhigSeit = hinweisRuhigSeit;
+            l.jetzt = now;
+            if (UpdateHinweis.nichtWeil(l, hinweis) != null) return;
+            f = verfuegbar;
+        }
+        String neuerGriff = String.format("%016x", new SecureRandom().nextLong());
+        boolean gezeigt = false;
+        try {
+            gezeigt = env.zeigeHinweis(neuerGriff, f, UpdateHinweis.notizenText(
+                    f.notizen(at.greenchili.surfmate.server.LocaleManager.get())));
+        } catch (Throwable t) {
+            logger.warn("Update-Hinweis: " + t.getMessage());
+        }
+        synchronized (lock) {
+            if (!gezeigt) {
+                hinweisPauseBis = now + UpdateHinweis.PAUSE_NACH_FEHLVERSUCH_MS;
+                return;
+            }
+            hinweisGriff = neuerGriff;
+            hinweisBis = now + UpdateHinweis.SICHTBAR_SEK * 1000L;
+            UpdateHinweis.gezeigt(hinweis, f.versionCode, now);
+            speichern();
+        }
+        logger.info("Update-Hinweis gezeigt: " + f.versionName + " (" + hinweis.anzahl + ". Mal)");
+    }
+
+    private static final long HINWEIS_BLICK_MS = 5_000L;
+
     // ------------------------------------------------------------------ Ablauf
 
     void takt() {
@@ -250,23 +388,40 @@ public final class AppUpdateDienst {
         // update.pruefen aus (Ersteinrichtung „Nein“): kein Abruf bei GitHub im Hintergrund, nichts von selbst
         if (pruefenAn() && now - letztePruefung >= UpdateRegel.PRUEF_TAKT_MS) pruefen(false);
         Freigabe f;
+        boolean alsVorgemerkt;
         synchronized (lock) {
             UpdateRegel.Lage l = lage();
             boolean frei = nichtWeil(l) == null;
             if (!frei) ausSeit = -1;
             else if (ausSeit < 0) ausSeit = now;
-            long ab = UpdateRegel.automatischAb(l, automatisch(), pruefenAn(), ausSeit);
+            alsVorgemerkt = vorgemerkt() && !automatisch();
+            long ab = alsVorgemerkt
+                    ? UpdateHinweis.vorgemerktAb(l, hinweis, kanal(), vorgemerktFrei(), now, ausSeit)
+                    : UpdateRegel.automatischAb(l, automatisch(), pruefenAn(), ausSeit);
             if (ab < 0 || now < ab || installiertGerade) return;
             installiertGerade = true;
+            laufVorgemerkt = alsVorgemerkt;
+            laufGescheitert = false;
             f = verfuegbar;
         }
         logger.info("automatisch: installiere " + f.versionName + " (vC " + f.versionCode + ")");
         try {
             ausfuehren(f);
         } finally {
-            synchronized (lock) { installiertGerade = false; }
+            synchronized (lock) {
+                installiertGerade = false;
+                if (alsVorgemerkt) {
+                    UpdateHinweis.versuchVorbei(hinweis, laufGescheitert, env.jetzt());
+                    speichern();
+                }
+                laufVorgemerkt = false;
+            }
         }
     }
+
+    /** Dieser Lauf kommt aus einer Vormerkung: Vor dem Start gilt zusätzlich {@link #vorgemerktFrei()}. */
+    private boolean laufVorgemerkt;
+    private boolean laufGescheitert;
 
     private volatile long groesseCache = -1;
 
@@ -524,6 +679,13 @@ public final class AppUpdateDienst {
                 scheitern("signatur", grund, teil);
                 return;
             }
+            synchronized (lock) {
+                if (laufVorgemerkt && !vorgemerktFrei()) {
+                    phase = null; prozent = null;
+                    logger.info("Vorgemerkte Installation verschoben: Wächter oder Aufnahme");
+                    return;   // Teildatei bleibt geprüft liegen, kein zweiter Download
+                }
+            }
             apk.delete();
             if (!teil.renameTo(apk)) {
                 scheitern("nicht_erreichbar", "Umbenennen fehlgeschlagen", teil);
@@ -653,6 +815,7 @@ public final class AppUpdateDienst {
             prozent = null;
             fehler = grund;
             ergebnis = "fehler";
+            laufGescheitert = true;
             speichern();
         }
         berichte("Update abgebrochen (" + grund + "): " + text);
@@ -756,6 +919,13 @@ public final class AppUpdateDienst {
             }
             groesseCache = j.optLong("groesse", -1);
             gemeldetVc = j.optInt("gemeldetVc", 0);
+            hinweis.vc = j.optInt("hinweisVc", 0);
+            hinweis.anzahl = j.optInt("hinweisAnzahl", 0);
+            hinweis.zuletzt = j.optLong("hinweisZuletzt", 0);
+            hinweis.vorgemerktVc = j.optInt("vorgemerktVc", 0);
+            hinweis.vorgemerktAm = j.optLong("vorgemerktAm", 0);
+            hinweis.versuchAb = j.optLong("vorgemerktVersuchAb", 0);
+            hinweis.fehlversuche = j.optInt("vorgemerktFehlversuche", 0);
         } catch (Exception e) {
             verfuegbar = null;
         }
@@ -771,7 +941,11 @@ public final class AppUpdateDienst {
                     .put("apkUrl", verfuegbar == null || verfuegbar.apkUrl() == null ? JSONObject.NULL
                             : verfuegbar.apkUrl())
                     .put("quelle", quelleKennung == null ? JSONObject.NULL : quelleKennung)
-                    .put("bericht", berichtSchluessel == null ? JSONObject.NULL : berichtSchluessel);
+                    .put("bericht", berichtSchluessel == null ? JSONObject.NULL : berichtSchluessel)
+                    .put("hinweisVc", hinweis.vc).put("hinweisAnzahl", hinweis.anzahl)
+                    .put("hinweisZuletzt", hinweis.zuletzt).put("vorgemerktVc", hinweis.vorgemerktVc)
+                    .put("vorgemerktAm", hinweis.vorgemerktAm).put("vorgemerktVersuchAb", hinweis.versuchAb)
+                    .put("vorgemerktFehlversuche", hinweis.fehlversuche);
             File f = standDatei();
             File tmp = new File(f.getPath() + ".tmp");
             Files.write(tmp.toPath(), j.toString().getBytes(StandardCharsets.UTF_8));
@@ -1070,6 +1244,52 @@ public final class AppUpdateDienst {
                     ? at.greenchili.surfmate.telegram.TelegramMessages.get("update.available", f.versionName)
                     : at.greenchili.surfmate.telegram.TelegramMessages.get("update.available_size", f.versionName, g);
             at.greenchili.surfmate.telegram.TelegramNotifier.sendMessage(text, "UPDATE");
+        }
+
+        @Override
+        public String fahrsperre() {
+            return at.greenchili.surfmate.byd.routing.DrivingSafetyGuard.getMovementBlockReason();
+        }
+
+        @Override
+        public boolean waechterEreignis() {
+            try {
+                return at.greenchili.surfmate.surveillance.ScreenDeterrent.getInstance().laeuft()
+                        || at.greenchili.surfmate.recording.EreignisMonitor.sichertGerade();
+            } catch (Throwable t) {
+                return true;
+            }
+        }
+
+        @Override
+        public boolean aufnahmeLaeuft() {
+            return at.greenchili.surfmate.surveillance.ScreenDeterrent.aufnahmeLaeuft();
+        }
+
+        @Override
+        public Boolean gangP() {
+            try {
+                String g = at.greenchili.surfmate.monitor.GearMonitor.gearToString(
+                        at.greenchili.surfmate.byd.BydDataCollector.getInstance().getData().gearMode);
+                if ("P".equals(g)) return Boolean.TRUE;
+                return g.startsWith("UNKNOWN") ? null : Boolean.FALSE;
+            } catch (Throwable t) {
+                return null;
+            }
+        }
+
+        @Override
+        public boolean zeigeHinweis(String griff, Freigabe f, String notizen) {
+            return at.greenchili.surfmate.byd.MessageOverlayController.showUpdateHinweis(griff, f.versionName,
+                    UpdateHinweis.titel(f.versionName), UpdateHinweis.frage(), notizen,
+                    UpdateHinweis.knopfInstallieren(), UpdateHinweis.knopfSpaeter(), UpdateHinweis.knopfWasNeu(),
+                    UpdateHinweis.knopfSchliessen(), UpdateHinweis.knopfZuruecknehmen(), UpdateHinweis.textFehler(),
+                    UpdateHinweis.SICHTBAR_SEK);
+        }
+
+        @Override
+        public void nimmHinweisWeg(String griff) {
+            at.greenchili.surfmate.byd.MessageOverlayController.dismissKopplung(griff);
         }
     }
 }

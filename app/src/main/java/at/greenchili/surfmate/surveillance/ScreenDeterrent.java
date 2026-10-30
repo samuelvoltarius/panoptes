@@ -224,6 +224,16 @@ public final class ScreenDeterrent {
     }
 
     /** Called by SurveillanceIpcServer when the focused Activity opens its tokened socket. */
+    /** 0.1.31: Abschreckungs-Anzeige läuft gerade (der Update-Hinweis wartet dann). */
+    public boolean laeuft() {
+        return inFlight.get();
+    }
+
+    /** 0.1.31: Es wird gerade aufgenommen (eine vorgemerkte Installation wartet dann). */
+    public static boolean aufnahmeLaeuft() {
+        return isRecordingNow();
+    }
+
     public static long openInputCapture(String token) {
         ScreenDeterrent current = instance;
         return current == null ? 0L : current.acceptInputCapture(token);

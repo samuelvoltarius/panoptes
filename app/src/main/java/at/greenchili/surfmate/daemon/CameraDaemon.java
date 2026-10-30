@@ -2564,6 +2564,15 @@ public class CameraDaemon {
             }
         }, 2, 60, java.util.concurrent.TimeUnit.MINUTES);
 
+        // 0.1.31 „Fehler melden“: ohne Netz gemerkte Meldungen nachsenden. Ohne offene Meldung geht nichts raus.
+        memoryLogScheduler.scheduleAtFixedRate(() -> {
+            try {
+                at.greenchili.surfmate.rueckmeldung.FehlerMelden.taktImDaemon(System.currentTimeMillis());
+            } catch (Throwable ignored) {
+                // still
+            }
+        }, 3, 5, java.util.concurrent.TimeUnit.MINUTES);
+
         // 0.1.19 Ladekurve: ruhende Ladung abschließen, Startkurve einmalig aus dem eigenen Verlauf, anonym teilen nur
         // mit Einwilligung (ladekurve.teilen, Standard AUS). Wirft nie; try/catch schützt nur die Planung.
         memoryLogScheduler.scheduleAtFixedRate(() -> {
