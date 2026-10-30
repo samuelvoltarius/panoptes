@@ -29,6 +29,8 @@ public final class HandySignatur {
     public static final String GRUND_ZEIT = "signatur_zeit";
     public static final String GRUND_NONCE = "signatur_nonce";
     public static final String GRUND_KEIN_GERAET = "kein_geraet";
+    public static final String GRUND_UV = "signatur_uv";
+    public static final String GRUND_ZAEHLER = "signatur_zaehler";
 
     private static final Pattern NONCE = Pattern.compile("[A-Za-z0-9_-]{8,64}");
     private final LinkedHashSet<String> gesehen = new LinkedHashSet<>();
@@ -62,10 +64,17 @@ public final class HandySignatur {
     public static final class Ergebnis {
         public final String grund;
         public final Freigabe freigabe;
+        /** Neuer Signaturzähler des Passkeys; nur bei {@link #pruefeAufsperrenWebauthn} gesetzt. */
+        public final long zaehler;
 
         private Ergebnis(String grund, Freigabe freigabe) {
+            this(grund, freigabe, 0L);
+        }
+
+        private Ergebnis(String grund, Freigabe freigabe, long zaehler) {
             this.grund = grund;
             this.freigabe = freigabe;
+            this.zaehler = zaehler;
         }
     }
 
@@ -74,6 +83,53 @@ public final class HandySignatur {
                                      String sigBase64, String geraet, long jetztMs) {
         String g = pruefe(schluesselBase64, AUFSPERREN, kopplungId, zeitMs, nonce, sigBase64, jetztMs);
         return g != null ? new Ergebnis(g, null) : new Ergebnis(null, new Freigabe(kopplungId, geraet, jetztMs));
+    }
+
+    /**
+     * 0.1.33 Aufsperren mit Passkey (Kopplung {@code plattform:"web"}): Reihenfolge wie {@link #pruefe}, die Signatur
+     * zuerst. Signiert ist {@code authenticatorData ‖ SHA-256(clientDataJSON)}, die Challenge rechnet das Auto selbst
+     * nach. Die Nonce wird erst verbraucht, wenn alles andere bestanden ist.
+     */
+    public synchronized Ergebnis pruefeAufsperrenWebauthn(String schluesselBase64, String gespeicherteId,
+                                                          long gespeicherterZaehler, String kopplungId, long zeitMs,
+                                                          String nonce, String credentialId, String clientDataB64,
+                                                          String authDatenB64, String signaturB64, String geraet,
+                                                          long jetztMs) {
+        PublicKey k = schluessel(schluesselBase64);
+        if (k == null || gespeicherteId == null || gespeicherteId.isEmpty()) return new Ergebnis(GRUND_KEIN_GERAET, null);
+        if (nonce == null || !NONCE.matcher(nonce).matches() || credentialId == null || clientDataB64 == null
+                || authDatenB64 == null || signaturB64 == null
+                || credentialId.length() + clientDataB64.length() + authDatenB64.length() + signaturB64.length()
+                > WebAuthn.MAX_GESAMT
+                || !gespeicherteId.equals(credentialId)) {
+            return new Ergebnis(GRUND_SIGNATUR, null);
+        }
+        byte[] clientData = WebAuthn.dekodiere(clientDataB64), auth = WebAuthn.dekodiere(authDatenB64),
+                sig = WebAuthn.dekodiere(signaturB64);
+        if (clientData == null || auth == null || sig == null || sig.length > WebAuthn.MAX_SIGNATUR) {
+            return new Ergebnis(GRUND_SIGNATUR, null);
+        }
+        try {
+            Signature s = Signature.getInstance("SHA256withECDSA");
+            s.initVerify(k);
+            s.update(auth);
+            s.update(WebAuthn.sha256(clientData));
+            if (!s.verify(sig)) return new Ergebnis(GRUND_SIGNATUR, null);
+        } catch (Exception e) {
+            return new Ergebnis(GRUND_SIGNATUR, null);
+        }
+        if (!WebAuthn.clientDataGueltig(clientData, "webauthn.get", WebAuthn.aufsperrChallenge(kopplungId, zeitMs, nonce))) {
+            return new Ergebnis(GRUND_SIGNATUR, null);
+        }
+        String kopf = WebAuthn.kopfGrund(auth);
+        if (kopf != null) return new Ergebnis(kopf, null);
+        if (Math.abs(jetztMs - zeitMs) > ZEIT_FENSTER_MS) return new Ergebnis(GRUND_ZEIT, null);
+        long zaehler = WebAuthn.zaehler(auth);
+        if ((zaehler > 0 || gespeicherterZaehler > 0) && zaehler <= gespeicherterZaehler) {
+            return new Ergebnis(GRUND_ZAEHLER, null);
+        }
+        if (!nonceMerken(kopplungId, nonce)) return new Ergebnis(GRUND_NONCE, null);
+        return new Ergebnis(null, new Freigabe(kopplungId, geraet, jetztMs), zaehler);
     }
 
     /** Text, der signiert wird. */
@@ -115,14 +171,19 @@ public final class HandySignatur {
             return GRUND_SIGNATUR;
         }
         if (Math.abs(jetztMs - zeitMs) > ZEIT_FENSTER_MS) return GRUND_ZEIT;
+        return nonceMerken(kopplungId, nonce) ? null : GRUND_NONCE;
+    }
+
+    /** false, wenn die Nonce schon gesehen wurde. */
+    private boolean nonceMerken(String kopplungId, String nonce) {
         String n = kopplungId + "|" + nonce;
-        if (gesehen.contains(n)) return GRUND_NONCE;
+        if (gesehen.contains(n)) return false;
         gesehen.add(n);
         while (gesehen.size() > NONCES) {
             Iterator<String> it = gesehen.iterator();
             it.next();
             it.remove();
         }
-        return null;
+        return true;
     }
 }

@@ -817,7 +817,7 @@
     document.addEventListener('panoptes:klima-anzeige', function () { Home.loadVehicleState(); });
 
     function slowLoop() {
-        if (document.hidden) return;
+        if (document.hidden || window.pnPausiert) return;
         Home.loadVehicleState();
     }
 
@@ -882,8 +882,8 @@
         Home.loadTrips();
         Home.loadCustom();
         setInterval(slowLoop, 6000);
-        setInterval(function () { if (!document.hidden) { Home.loadGuard(); Home.loadRange(); } }, 60000);
-        setInterval(function () { if (!document.hidden) { Home.loadCharging(); Home.loadTrips(); } }, 300000);
+        setInterval(function () { if (!document.hidden && !window.pnPausiert) { Home.loadGuard(); Home.loadRange(); } }, 60000);
+        setInterval(function () { if (!document.hidden && !window.pnPausiert) { Home.loadCharging(); Home.loadTrips(); } }, 300000);
         document.addEventListener('visibilitychange', function () { if (!document.hidden) slowLoop(); });
     });
 })();

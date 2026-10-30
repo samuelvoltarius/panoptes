@@ -736,6 +736,8 @@ public class HttpServer {
                 return;
             }
             SchreibProtokoll.melde(method, path, AuthMiddleware.isExternRequest(), client.getInetAddress() != null && client.getInetAddress().isLoopbackAddress());
+            ZugriffsLog.zaehle(AuthMiddleware.isHandyWebRequest() ? "web:" + AuthMiddleware.requestWebKopplungsId()
+                    : AuthMiddleware.requestKopplungsId(), pathOnly, System.currentTimeMillis());
             // 0.1.22 Gewohnheiten: Herkunft dieser Anfrage (Display, Handy, Cockpit, HA) für die Dauer des Handlers
             at.greenchili.surfmate.gewohnheiten.Herkunft.setze(at.greenchili.surfmate.gewohnheiten.Herkunft.ausAnfrage(
                     AuthMiddleware.isExternRequest(),

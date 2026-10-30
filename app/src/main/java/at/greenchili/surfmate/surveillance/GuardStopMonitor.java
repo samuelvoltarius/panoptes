@@ -273,6 +273,12 @@ public final class GuardStopMonitor {
         return m.v12.lastMedian();
     }
 
+    /** 0.1.33: Urteil der 12-V-Auswertung für Camping; bis zum ersten LOW (auch ohne Monitor) false. */
+    public static boolean v12Low() {
+        GuardStopMonitor m = instance;
+        return m != null && m.v12.state() == Battery12vEvaluator.State.LOW;
+    }
+
     /** 0.1.31: Oberkante der Ruhespannung ({@link Battery12vEvaluator#ruheOben()}), NaN = noch unbekannt. */
     public static double ruheOben12v() {
         GuardStopMonitor m = instance;

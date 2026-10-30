@@ -301,6 +301,13 @@ public final class HaApiHandler {
 
     // ------------------------------------------------------------------ SSE
 
+    /** 0.1.33: Alle Streams teilen einen Aufbau je Takt. Nur lesen, das Objekt gehört allen. */
+    private static final KurzSpeicher<JSONObject> ZUSTAND = new KurzSpeicher<>(TAKT_MS - 500L);
+
+    private static JSONObject zustandGeteilt() throws Exception {
+        return ZUSTAND.hol(System.currentTimeMillis(), () -> zustand(false));
+    }
+
     private static void sse(OutputStream out) throws Exception {
         String kid = AuthMiddleware.requestKopplungsId();
         HaEreignisse.Abo abo = HaEreignisse.abonnieren(kid);
@@ -312,7 +319,7 @@ public final class HaApiHandler {
             out.write(("HTTP/1.1 200 OK\r\nContent-Type: text/event-stream; charset=utf-8\r\n"
                     + "Cache-Control: no-cache\r\nConnection: keep-alive\r\nX-Accel-Buffering: no\r\n\r\n")
                     .getBytes(StandardCharsets.UTF_8));
-            JSONObject letzt = zustand(false);
+            JSONObject letzt = zustandGeteilt();
             senden(out, "zustand", letzt.toString());
             long letzterPing = System.currentTimeMillis();
             long letzterZustand = letzterPing;
@@ -322,7 +329,7 @@ public final class HaApiHandler {
                 long now = System.currentTimeMillis();
                 if (kid != null && !Kopplungen.get().pruefe(kid, now)) break;   // widerrufen → zu
                 if (e != null && e[0] != null) senden(out, e[0], e[1]);
-                JSONObject neu = zustand(false);
+                JSONObject neu = zustandGeteilt();
                 JSONObject d = HaZustand.diff(letzt, neu);
                 boolean waechterWechsel = d.has("waechter");
                 if (d.length() > 0 && (waechterWechsel || now - letzterZustand >= ZUSTAND_MIN_MS)) {

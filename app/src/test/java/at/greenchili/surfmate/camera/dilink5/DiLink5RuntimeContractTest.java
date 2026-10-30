@@ -1919,7 +1919,7 @@ public class DiLink5RuntimeContractTest {
         assertTrue(collector.contains(
                 "if (isDiLink5ProducerProcess()) return true;"));
         assertTrue(collector.contains(
-                "pollIntervalMs(accIsOn, isDiLink5ProducerActive())"));
+                "pollIntervalMs(accIsOn, isDiLink5ProducerActive(), parkedPollMs())"));
         assertTrue(collector.contains(
                 "for (int attempt = 0; attempt < 2; attempt++)"));
         assertTrue(collector.contains(

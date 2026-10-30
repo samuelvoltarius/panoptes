@@ -72,6 +72,8 @@ public class AuthMiddleware {
     private static final ThreadLocal<String> REQUEST_SCOPE = new ThreadLocal<>();
     /** Kopplungs-id ({@code kid}) der laufenden Anfrage, nur bei Kopplungs-JWT. */
     private static final ThreadLocal<String> REQUEST_KID = new ThreadLocal<>();
+    /** Gegenstelle der laufenden Anfrage; null, wenn sie Tunnel-Merkmale trägt. */
+    private static final ThreadLocal<java.net.SocketAddress> REQUEST_PEER = new ThreadLocal<>();
 
     /** Kopplungs-id der laufenden Anfrage oder null. */
     public static String requestKopplungsId() {
@@ -91,6 +93,26 @@ public class AuthMiddleware {
     /** true, wenn die laufende Anfrage mit einem Kopplungs-JWT kam (EV-Cockpit u. a.). */
     public static boolean isExternRequest() {
         return at.greenchili.surfmate.auth.PairingCodes.SCOPE.equals(REQUEST_SCOPE.get());
+    }
+
+    /**
+     * 0.1.33: true nur für den Autobildschirm selbst: voller Zugriff (kein Kopplungs-JWT, keine Web-Sitzung), echte
+     * Loopback-Verbindung, nicht über tailscaled oder einen Tunnel. Ein Login aus der Ferne reicht hier nicht.
+     */
+    public static boolean isDirektAmAuto() {
+        java.net.SocketAddress peer = REQUEST_PEER.get();
+        return peer != null && !isExternRequest() && !isHandyWebRequest()
+                && istLoopback(peer) && !relayedByTailscaled(peer);
+    }
+
+    private static boolean istLoopback(java.net.SocketAddress a) {
+        String s = a.toString();
+        return s.contains("127.0.0.1") || s.contains("/0:0:0:0:0:0:0:1");
+    }
+
+    /** Für Tests: Gegenstelle der laufenden Anfrage. */
+    static void setRequestPeerForTest(java.net.SocketAddress peer) {
+        REQUEST_PEER.set(peer);
     }
 
     /** Für Tests und Handler-Prüfungen. */
@@ -138,6 +160,8 @@ public class AuthMiddleware {
         // Jede Anfrage beginnt ohne Scope (Threads werden wiederverwendet).
         REQUEST_SCOPE.remove();
         REQUEST_KID.remove();
+        if (hasTunnelHeaders || clientAddress == null) REQUEST_PEER.remove();
+        else REQUEST_PEER.set(clientAddress);
         // Tier 0 — public paths (login UI, static assets, login submission)
         if (isPublicPath(path)) {
             return true;
@@ -206,9 +230,7 @@ public class AuthMiddleware {
         // alone is not proof of a local caller: reject loopback connections
         // whose client socket belongs to tailscaled (see LoopbackPeer).
         if (!hasTunnelHeaders && clientAddress != null) {
-            String addrStr = clientAddress.toString();
-            boolean isLoopback = addrStr.contains("127.0.0.1") || addrStr.contains("/0:0:0:0:0:0:0:1");
-            if (isLoopback && !relayedByTailscaled(clientAddress)) {
+            if (istLoopback(clientAddress) && !relayedByTailscaled(clientAddress)) {
                 return true;
             }
         }
@@ -226,6 +248,7 @@ public class AuthMiddleware {
                                        OutputStream out) throws Exception {
         REQUEST_SCOPE.remove();
         REQUEST_KID.remove();
+        REQUEST_PEER.remove();
         String jwt = jwtFromHeaders(cookieHeader, authHeader);
         if (jwt != null && !jwt.isEmpty()) {
             AuthManager.JwtValidation validation = AuthManager.validateJwt(jwt);

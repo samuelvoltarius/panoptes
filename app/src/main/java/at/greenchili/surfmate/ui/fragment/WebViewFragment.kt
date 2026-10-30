@@ -2032,7 +2032,7 @@ class WebViewFragment : Fragment() {
         // explicit lifecycle signal as well; stream.js deduplicates this with
         // visibilitychange so only one decoder/socket is created.
         webView?.evaluateJavascript(
-            "(function(){if(window.BYD&&BYD.stream&&BYD.stream.resumeAfterBackground){" +
+            "(function(){window.pnPausiert=false;if(window.BYD&&BYD.stream&&BYD.stream.resumeAfterBackground){" +
                 "BYD.stream.resumeAfterBackground(true);}})();",
             null
         )
@@ -2201,7 +2201,7 @@ class WebViewFragment : Fragment() {
         // units don't always deliver the Page Visibility event, and webView
         // .onPause() stops neither JS timers nor the socket.
         webView?.evaluateJavascript(
-            "(function(){if(window.BYD&&BYD.stream&&BYD.stream.pauseForBackground){" +
+            "(function(){window.pnPausiert=true;if(window.BYD&&BYD.stream&&BYD.stream.pauseForBackground){" +
                 "BYD.stream.pauseForBackground();}})();",
             null
         )

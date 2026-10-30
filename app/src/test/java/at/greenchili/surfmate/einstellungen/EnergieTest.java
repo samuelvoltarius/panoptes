@@ -117,4 +117,15 @@ public class EnergieTest {
         assertTrue(o.contains("if (!w.optBoolean(\"gesetzt\", false)) neu.put(key, wert)"));
         assertTrue(o.contains("if (!replayMode) setRetentionDefaultIfUnset()"));
     }
+
+    /** 0.1.33: Bestand bleibt bei 90 s; über 180 s verpasst der Wächter-Stopp kurze Nachladungen. */
+    @Test
+    public void parkLesenStandardGrenzen() throws Exception {
+        assertEquals(90, Energie.parkLeseSekunden(null));
+        assertEquals(90, Energie.parkLeseSekunden(new JSONObject()));
+        assertEquals(90, Energie.parkLeseSekunden(new JSONObject().put("energie", new JSONObject().put("profil", "minimal"))));
+        assertEquals(120, Energie.parkLeseSekunden(new JSONObject().put("energie", new JSONObject().put("parkLeseSekunden", 120))));
+        assertEquals(180, Energie.parkLeseSekunden(new JSONObject().put("energie", new JSONObject().put("parkLeseSekunden", 900))));
+        assertEquals(90, Energie.parkLeseSekunden(new JSONObject().put("energie", new JSONObject().put("parkLeseSekunden", 5))));
+    }
 }

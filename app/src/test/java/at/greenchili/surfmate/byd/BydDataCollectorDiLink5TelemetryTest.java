@@ -50,6 +50,9 @@ public class BydDataCollectorDiLink5TelemetryTest {
         assertEquals(5_000L, BydDataCollector.pollIntervalMs(true, true));
         assertEquals(5_000L, BydDataCollector.pollIntervalMs(true, false));
         assertEquals(90_000L, BydDataCollector.pollIntervalMs(false, false));
+        assertEquals(180_000L, BydDataCollector.pollIntervalMs(false, false, 180_000L));
+        assertEquals("Fahren bleibt 5 s", 5_000L, BydDataCollector.pollIntervalMs(true, false, 180_000L));
+        assertEquals("DiLink 5 bleibt 5 s", 5_000L, BydDataCollector.pollIntervalMs(false, true, 180_000L));
     }
 
     @Test

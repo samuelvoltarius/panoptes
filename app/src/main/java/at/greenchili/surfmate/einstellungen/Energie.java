@@ -78,6 +78,15 @@ public final class Energie {
         return MINIMAL.equals(profil(root)) ? 10 : 5;
     }
 
+    /**
+     * 0.1.33: Sekunden zwischen zwei Lesungen im Parken bei Auto aus. Standard 90 = bisher. Höchstens 180: Der
+     * Wächter-Stopp erkennt das Nachladen an 2 Werten in Folge, seltener verpasst er kurze Nachladungen.
+     */
+    public static int parkLeseSekunden(JSONObject root) {
+        JSONObject e = abschnitt(root, "energie");
+        return e != null && e.has("parkLeseSekunden") ? klemme(e.optInt("parkLeseSekunden", 90), 90, 180) : 90;
+    }
+
     /** Erlaubte Stufen für {@code kamera.fpsRuhe} / {@code kamera.fpsBewegung} (Koordination 0.1.9, Neubau 2). */
     public static final int[] KAMERA_STUFEN = {2, 5, 10, 15};
 

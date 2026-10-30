@@ -33,7 +33,8 @@ public final class CampingRegler {
         public boolean morgens;
         public int weckMinuteDesTages = -1;                // −1 = keine Weckzeit
         public int socGrenze = 20;
-        public double v12Grenze = Double.NaN;              // NaN = aus
+        /** 0.1.33: Heizen endet beim LOW-Urteil der 12-V-Auswertung; aus = {@code camping.v12Warnung} leer oder 0. */
+        public boolean v12Schutz = true;
         public int hoechstdauerStunden = 12;
         /** 0.1.17: Camping endet Weckzeit + so viele Minuten (ohne ausdrückliches Plan-Ende). */
         public int nachlaufMinuten = 60;
@@ -45,7 +46,10 @@ public final class CampingRegler {
         public int minuteDesTages;
         public Fahrt fahrt = Fahrt.UNBEKANNT;
         public double soc = Double.NaN;
+        /** Nur Anzeige; die Sperre hängt allein an {@link #v12Low}. */
         public double v12Median = Double.NaN;
+        /** 0.1.33: LOW-Urteil von {@code Battery12vEvaluator}; der Tiefpunkt des Sägezahns ist keines. */
+        public boolean v12Low;
         public double aussenC = Double.NaN;
         /** Beobachtet: läuft das Klima? null = unbekannt. Nur außerhalb des Trockenlaufs ausgewertet. */
         public Boolean klimaLaeuft;
@@ -195,7 +199,7 @@ public final class CampingRegler {
         } else {
             sperre = sperre == null ? "soc_unbekannt" : sperre;
         }
-        if (!Double.isNaN(e.v12Grenze) && !Double.isNaN(l.v12Median) && l.v12Median < e.v12Grenze) {
+        if (e.v12Schutz && l.v12Low) {
             sperre = "v12";
             if (!v12Gemeldet) { d.meldungen.add("v12_niedrig_heizen_aus"); v12Gemeldet = true; }
         }

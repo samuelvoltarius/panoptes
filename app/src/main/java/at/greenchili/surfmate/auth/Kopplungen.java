@@ -140,6 +140,7 @@ public final class Kopplungen {
             if (g != null && id.equals(g.optString("id"))) {
                 gefunden = true;
                 pushId = g.optString("pushId", null);
+                at.greenchili.surfmate.handy.PasskeyFenster.get().schliessen(id);   // 0.1.33
                 continue;
             }
             if (g != null) neu.put(g);
@@ -185,6 +186,11 @@ public final class Kopplungen {
                     if (g.has("geraeteName")) o.put("geraeteName", g.optString("geraeteName"));
                     if (g.has("plattform")) o.put("plattform", g.optString("plattform"));
                     o.put("push", !g.optString("pushId", "").isEmpty());
+                    // 0.1.33 Web-Aufsperren: nur Zustand, nie Schlüssel oder credentialId
+                    o.put("nurPasskey", g.optBoolean("nurPasskey", false));
+                    if (g.optBoolean("synchronisiert", false)) o.put("synchronisiert", true);
+                    JSONObject f = at.greenchili.surfmate.handy.PasskeyFenster.get().zustand(g.optString("id"), nowMs);
+                    if (f != null) o.put("passkeyFenster", f);
                 }
             } catch (Exception ignored) { }
             out.put(o);
@@ -254,7 +260,10 @@ public final class Kopplungen {
     static final int RECHTE_STAND = 3;
 
     public static final int SCHLUESSEL_GESPEICHERT = 1, SCHLUESSEL_SCHON = 2, SCHLUESSEL_FEHLER = 0,
-            SCHLUESSEL_KEINE_HANDY_KOPPLUNG = 3;
+            SCHLUESSEL_KEINE_HANDY_KOPPLUNG = 3, SCHLUESSEL_NUR_PASSKEY = 4;
+
+    /** 0.1.33: Kopplung, die nur mit Passkey aufsperrt. Das Einrichten am Auto schreibt {@code plattform:"web"}. */
+    public static final String PLATTFORM_WEB = "web";
 
     private JSONObject finde(String id) {
         if (id == null || id.isEmpty()) return null;
@@ -363,6 +372,8 @@ public final class Kopplungen {
         JSONObject g = finde(id);
         if (g == null || !ART_HANDY.equals(g.optString("art"))) return SCHLUESSEL_KEINE_HANDY_KOPPLUNG;
         if (!g.optString("geraeteSchluessel", "").isEmpty()) return SCHLUESSEL_SCHON;
+        // 0.1.33: Der Code der Web-App kommt vom Server. Dieser Weg darf den Passkey samt Rückfrage am Auto nie umgehen
+        if (PLATTFORM_WEB.equals(plattform) || g.optBoolean("nurPasskey", false)) return SCHLUESSEL_NUR_PASSKEY;
         try {
             g.put("geraeteSchluessel", oeffentlicherSchluessel);
             g.put("plattform", "ios".equals(plattform) ? "ios" : "android");
@@ -392,6 +403,80 @@ public final class Kopplungen {
         JSONObject g = finde(id);
         if (g == null) return false;
         g.remove("geraeteSchluessel");
+        g.remove("credentialId");
+        g.remove("rpId");
+        g.remove("zaehler");
+        g.remove("synchronisiert");
+        if (PLATTFORM_WEB.equals(g.optString("plattform"))) g.remove("plattform");
+        return speichernSofort();
+    }
+
+    // ---------------------------------------------------------------- 0.1.33 Web-Aufsperren
+
+    /** Bestätigten Passkey hinterlegen, first write wins. Nur nach „Stimmt“ am Auto. */
+    public synchronized int passkeyHinterlegen(String id, at.greenchili.surfmate.handy.WebAuthn.Anlage a,
+                                               String geraeteName) {
+        JSONObject g = finde(id);
+        if (g == null || !ART_HANDY.equals(g.optString("art"))) return SCHLUESSEL_KEINE_HANDY_KOPPLUNG;
+        if (!g.optString("geraeteSchluessel", "").isEmpty()) return SCHLUESSEL_SCHON;
+        try {
+            g.put("geraeteSchluessel", a.schluessel);
+            g.put("plattform", PLATTFORM_WEB);
+            g.put("credentialId", a.credentialId);
+            g.put("rpId", at.greenchili.surfmate.handy.WebAuthn.RP_ID);
+            g.put("zaehler", a.zaehler);
+            g.put("nurPasskey", true);
+            if (a.synchronisiert) g.put("synchronisiert", true);
+            g.put("geraeteName", bereinigeName(geraeteName));
+        } catch (Exception e) {
+            return SCHLUESSEL_FEHLER;
+        }
+        return speichernSofort() ? SCHLUESSEL_GESPEICHERT : SCHLUESSEL_FEHLER;
+    }
+
+    /** true, wenn diese Kopplung einen Passkey hinterlegt hat. */
+    public synchronized boolean istPasskey(String id) {
+        JSONObject g = finde(id);
+        return g != null && PLATTFORM_WEB.equals(g.optString("plattform"))
+                && !g.optString("geraeteSchluessel", "").isEmpty();
+    }
+
+    public synchronized String credentialId(String id) {
+        JSONObject g = finde(id);
+        return g == null ? null : g.optString("credentialId", null);
+    }
+
+    public synchronized long zaehler(String id) {
+        JSONObject g = finde(id);
+        return g == null ? 0L : g.optLong("zaehler", 0L);
+    }
+
+    /** Neuer Signaturzähler; false = nicht auf Platte, dann wird nicht aufgesperrt. */
+    public synchronized boolean zaehlerSetzen(String id, long zaehler) {
+        JSONObject g = finde(id);
+        if (g == null) return false;
+        try { g.put("zaehler", zaehler); } catch (Exception e) { return false; }
+        return speichernSofort();
+    }
+
+    public synchronized boolean nurPasskey(String id) {
+        JSONObject g = finde(id);
+        return g != null && g.optBoolean("nurPasskey", false);
+    }
+
+    /**
+     * Sperrt den alten Schlüssel-Weg dieser Kopplung. Einschalten darf auch das Gerät selbst (Einbahnstraße),
+     * zurücknehmen nur der Besitzer am Auto.
+     */
+    public synchronized boolean nurPasskeySetzen(String id, boolean an) {
+        JSONObject g = finde(id);
+        if (g == null || !ART_HANDY.equals(g.optString("art"))) return false;
+        try {
+            if (an) g.put("nurPasskey", true);
+            else g.remove("nurPasskey");
+        } catch (Exception e) {
+            return false;
+        }
         return speichernSofort();
     }
 

@@ -126,6 +126,11 @@ public class SystemApiHandler {
             HttpResponse.sendJson(out, eingriffeStand().put("success", r.contains("ok")).toString());
             return true;
         }
+        // 0.1.33: Abrufe je Gerät und Minute (ExternGuard sperrt den Pfad für Kopplungen)
+        if (path.equals("/api/system/zugriffe") && method.equals("GET")) {
+            HttpResponse.sendJson(out, ZugriffsLog.alsJson().toString());
+            return true;
+        }
         if (path.equals("/api/system/status") && method.equals("GET")) {
             sendStatus(out);
             return true;
@@ -347,6 +352,9 @@ public class SystemApiHandler {
                     .put("cloudSkala", at.greenchili.surfmate.byd.KlimaStufe.cloudSkalaBelegt() ? "gemessen" : "annahme"));
             // 0.1.26.1 Update von außen (HANDY_API_VERTRAG §8): GET /api/handy/v1/update + Aktion update_starten
             c.put("update", new JSONObject().put("fern", 1));
+            // 0.1.33 Web-Aufsperren: Passkey, Prüfung im Auto
+            c.put("aufsperren", new JSONObject().put("webauthn", 1)
+                    .put("rpId", at.greenchili.surfmate.handy.WebAuthn.RP_ID));
         } catch (Exception ignored) { }
         // 0.1.26.1 (HANDY_API_VERTRAG §4): öffentlicher VAPID-Schlüssel für UnifiedPush mit FCM-Verteiler.
         // Eigener Block, damit ein Fehler oben das Feld nicht verschluckt. Nie der private Teil.

@@ -32,7 +32,7 @@ public final class WebHandyGuard {
             "/api/kopplung/weiteres-geraet",   // 0.1.25: Erlauben/Ablehnen nur am Auto bzw. mit Login
             "/api/abrp/token",
             "/api/backup/",
-            "/api/system/tailscale", "/api/tailscale/", "/api/wireguard", "/api/notzugang", "/api/hotspot",
+            "/api/system/tailscale", "/api/system/zugriffe", "/api/tailscale/", "/api/wireguard", "/api/notzugang", "/api/hotspot",
             "/api/bruecke", "/api/dev-view/",
             "/api/appupdate", "/api/update/",
             "/api/handy/",

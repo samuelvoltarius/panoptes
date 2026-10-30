@@ -662,7 +662,7 @@
     var guardFromApi = false;
     function pollGuard() {
         function run() {
-            if (document.hidden) return;
+            if (document.hidden || window.pnPausiert) return;
             fetch('/api/surveillance/status', { cache: 'no-store' }).then(function (r) { return r.json(); })
                 .then(function (d) {
                     var st = d && d.success && d.status;
@@ -760,7 +760,7 @@
         if (seite === 'system.html') return;   // dort steht die Liste selbst
         var timer = null;
         function run() {
-            if (document.hidden) return;
+            if (document.hidden || window.pnPausiert) return;
             fetch('/api/kopplung/anfragen', { cache: 'no-store' }).then(function (r) {
                 if (r.status === 403 || r.status === 404) { clearInterval(timer); return null; }
                 return r.ok ? r.json() : null;
@@ -770,12 +770,13 @@
             }).catch(function () {});
         }
         run();
-        timer = setInterval(run, 10000);
+        timer = setInterval(run, 30000);   // 0.1.33: seltener, beim Zurückkommen sofort
+        document.addEventListener('visibilitychange', run);
     }
 
     function pollTailnet() {
         function run() {
-            if (document.hidden) return;
+            if (document.hidden || window.pnPausiert) return;
             fetch('/api/system/tailscale', { cache: 'no-store' }).then(function (r) { return r.json(); })
                 .then(function (t) {
                     if (t && t.success && t.online) setPill('pnPillTail', tr('shell.pill_tail_on', 'Tailnet · verbunden'), 'aq');

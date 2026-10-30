@@ -1983,7 +1983,21 @@ public class BydDataCollector {
     private static final long POLL_INTERVAL_PARKED_MS = 90000; // 90 seconds when ACC off — listener callbacks keep the snapshot fresh between polls
 
     static long pollIntervalMs(boolean accOn, boolean diLink5Producer) {
-        return accOn || diLink5Producer ? POLL_INTERVAL_MS : POLL_INTERVAL_PARKED_MS;
+        return pollIntervalMs(accOn, diLink5Producer, POLL_INTERVAL_PARKED_MS);
+    }
+
+    /** 0.1.33: {@code parkedMs} = Takt aus {@code energie.parkLeseSekunden}; wirkt ab dem nächsten Takt-Neustart. */
+    static long pollIntervalMs(boolean accOn, boolean diLink5Producer, long parkedMs) {
+        return accOn || diLink5Producer ? POLL_INTERVAL_MS : parkedMs;
+    }
+
+    private static long parkedPollMs() {
+        try {
+            return at.greenchili.surfmate.einstellungen.Energie.parkLeseSekunden(
+                    at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig()) * 1000L;
+        } catch (Throwable t) {
+            return POLL_INTERVAL_PARKED_MS;
+        }
     }
 
     private String lastSummaryHash = "";
@@ -3312,7 +3326,7 @@ public class BydDataCollector {
         // Honour the CURRENT ACC state. This used to hard-code the 5s ACC-on interval, so a
         // re-init while parked (context recovery / watchdog) left the poll at 5s for the whole
         // park — 18x the intended rate — with no ACC edge left to correct it.
-        long interval = pollIntervalMs(accIsOn, isDiLink5ProducerActive());
+        long interval = pollIntervalMs(accIsOn, isDiLink5ProducerActive(), parkedPollMs());
         long schedulerGeneration = pollSchedulerGeneration.incrementAndGet();
         pollScheduler = java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "BydDataPoll");
@@ -3824,7 +3838,7 @@ public class BydDataCollector {
         // Restart poll scheduler at the appropriate rate
         if (initialized && pollScheduler != null && !pollScheduler.isShutdown()) {
             pollScheduler.shutdownNow();
-            long interval = pollIntervalMs(isOn, isDiLink5ProducerActive());
+            long interval = pollIntervalMs(isOn, isDiLink5ProducerActive(), parkedPollMs());
             long schedulerGeneration = pollSchedulerGeneration.incrementAndGet();
             pollScheduler = java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r -> {
                 Thread t = new Thread(r, "BydDataPoll");

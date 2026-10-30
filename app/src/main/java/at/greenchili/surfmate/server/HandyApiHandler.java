@@ -6,6 +6,8 @@ import at.greenchili.surfmate.byd.routing.CloudPowerGate;
 import at.greenchili.surfmate.byd.routing.VehicleCommandRouter;
 import at.greenchili.surfmate.handy.HandyRatenlimit;
 import at.greenchili.surfmate.handy.HandySignatur;
+import at.greenchili.surfmate.handy.PasskeyFenster;
+import at.greenchili.surfmate.handy.WebAuthn;
 
 import org.json.JSONObject;
 
@@ -129,6 +131,16 @@ public final class HandyApiHandler {
             case "/api/handy/v1/geraet":
                 geraet(req, out, kopplungId);
                 return true;
+            case "/api/handy/v1/passkey/start":
+                passkeyStart(out, kopplungId);
+                return true;
+            case "/api/handy/v1/passkey":
+                passkeyMelden(req, out, kopplungId);
+                return true;
+            case "/api/handy/v1/passkey/nur-passkey":
+                HttpResponse.sendJson(out, (k().nurPasskeySetzen(kopplungId, true)
+                        ? new JSONObject().put("ok", true) : fehler("speichern")).toString());
+                return true;
             case "/api/handy/v1/aktion":
                 HttpResponse.sendJson(out, aktion(req, kopplungId).toString());
                 return true;
@@ -175,6 +187,10 @@ public final class HandyApiHandler {
             HttpResponse.sendJson(out, 409, fehler("schon_gemeldet").toString());
             return;
         }
+        if (r == Kopplungen.SCHLUESSEL_NUR_PASSKEY) {
+            HttpResponse.sendJson(out, 403, fehler("nicht_erlaubt").toString());
+            return;
+        }
         if (r != Kopplungen.SCHLUESSEL_GESPEICHERT) {
             HttpResponse.sendJson(out, 500, fehler("speichern").toString());
             return;
@@ -182,6 +198,109 @@ public final class HandyApiHandler {
         // damit ein fremder Eintrag auffällt
         umgebung.telegram("handy.schluessel", k().anzeigeName(kid));
         HttpResponse.sendJson(out, new JSONObject().put("ok", true).toString());
+    }
+
+    // ------------------------------------------------------------------ 0.1.33 Web-Aufsperren: Einrichten
+
+    /** Grund, warum diese Kopplung gerade keinen Passkey anlegen darf, sonst null. */
+    private static String passkeyGesperrt(String kid, long jetzt) {
+        if (!k().hatRecht(kid, Kopplungen.RECHT_AUFSPERREN)) return "nicht_erlaubt";
+        if (k().schluessel(kid) != null) return "schon_gemeldet";
+        PasskeyFenster f = PasskeyFenster.get();
+        if (!f.istOffen(kid, jetzt)) return "nicht_erlaubt";
+        return f.wartend(kid, jetzt) != null ? "schon_gemeldet" : null;
+    }
+
+    private static void passkeyFehler(OutputStream out, String grund) throws Exception {
+        HttpResponse.sendJson(out, "schon_gemeldet".equals(grund) ? 409 : 403, fehler(grund).toString());
+    }
+
+    static void passkeyStart(OutputStream out, String kid) throws Exception {
+        long jetzt = umgebung.jetzt();
+        String g = passkeyGesperrt(kid, jetzt);
+        if (g != null) {
+            passkeyFehler(out, g);
+            return;
+        }
+        if (!LIMIT.erlauben(kid, false, jetzt)) {
+            HttpResponse.sendJson(out, 429, fehler("ratenlimit").toString());
+            return;
+        }
+        String challenge = PasskeyFenster.get().neueChallenge(kid, jetzt);
+        if (challenge == null) {
+            passkeyFehler(out, "nicht_erlaubt");
+            return;
+        }
+        HttpResponse.sendJson(out, new JSONObject().put("ok", true).put("challenge", challenge)
+                .put("rpId", WebAuthn.RP_ID)
+                .put("userId", WebAuthn.kodiere(WebAuthn.sha256(kid.getBytes(java.nio.charset.StandardCharsets.UTF_8))))
+                .put("gueltigMs", PasskeyFenster.CHALLENGE_MS).toString());
+    }
+
+    /** Geprüfte Anlage wartet auf „Stimmt“ am Auto; aktiv ist sie erst nach {@link #passkeyBestaetigen}. */
+    static void passkeyMelden(JSONObject req, OutputStream out, String kid) throws Exception {
+        long jetzt = umgebung.jetzt();
+        String g = passkeyGesperrt(kid, jetzt);
+        if (g != null) {
+            passkeyFehler(out, g);
+            return;
+        }
+        PasskeyFenster f = PasskeyFenster.get();
+        String challenge = f.challengeNehmen(kid, jetzt);
+        if (challenge == null) {
+            passkeyFehler(out, "nicht_erlaubt");
+            return;
+        }
+        WebAuthn.Pruefung p = WebAuthn.pruefeAnlage(challenge, req.optString("credentialId", ""),
+                req.optString("clientDataJSON", ""), req.optString("authenticatorData", ""));
+        if (p.grund != null) {
+            HttpResponse.sendJson(out, 400, fehler(p.grund).toString());
+            return;
+        }
+        if (!f.anlageMerken(kid, p.anlage, req.optString("name", ""), jetzt)) {
+            passkeyFehler(out, "nicht_erlaubt");
+            return;
+        }
+        HttpResponse.sendJson(out, new JSONObject().put("ok", true).put("pruefzahl", p.anlage.pruefzahl).toString());
+    }
+
+    /** Am Auto: Recht setzen, alten Schlüssel-Weg sperren, Fenster öffnen. Die Seite fragt vorher mit den Risiken nach. */
+    static JSONObject passkeyOeffnen(String id) throws Exception {
+        if (!k().istHandy(id)) return fehler("nicht_erlaubt");
+        if (k().schluessel(id) != null) return fehler("schon_gemeldet");
+        java.util.List<String> rechte = k().rechte(id);
+        if (!rechte.contains(Kopplungen.RECHT_AUFSPERREN)) rechte.add(Kopplungen.RECHT_AUFSPERREN);
+        if (!k().rechteSetzen(id, rechte) || !k().nurPasskeySetzen(id, true)) return fehler("speichern");
+        PasskeyFenster.get().oeffnen(id, umgebung.jetzt());
+        return new JSONObject().put("ok", true).put("gueltigMs", PasskeyFenster.FENSTER_MS);
+    }
+
+    /** Am Auto: Prüfzahl bestätigt oder verworfen. Das Fenster schließt in beiden Fällen. */
+    static JSONObject passkeyBestaetigen(String id, boolean stimmt) throws Exception {
+        PasskeyFenster f = PasskeyFenster.get();
+        long jetzt = umgebung.jetzt();
+        WebAuthn.Anlage a = f.wartend(id, jetzt);
+        String name = f.wartendName(id, jetzt);
+        f.schliessen(id);
+        if (a == null) return fehler("nicht_erlaubt");
+        if (!stimmt) return new JSONObject().put("ok", true).put("aktiv", false);
+        if (!k().hatRecht(id, Kopplungen.RECHT_AUFSPERREN)) return fehler("nicht_erlaubt");
+        int r = k().passkeyHinterlegen(id, a, name);
+        if (r == Kopplungen.SCHLUESSEL_SCHON) return fehler("schon_gemeldet");
+        if (r != Kopplungen.SCHLUESSEL_GESPEICHERT) return fehler("speichern");
+        umgebung.telegram("handy.schluessel", k().anzeigeName(id));
+        return new JSONObject().put("ok", true).put("aktiv", true);
+    }
+
+    /** Am Auto: Einrichtung zurücknehmen, solange kein Schlüssel hinterlegt ist. Das Recht geht mit. */
+    static JSONObject passkeyZuruecknehmen(String id) throws Exception {
+        if (!k().istHandy(id)) return fehler("nicht_erlaubt");
+        PasskeyFenster.get().schliessen(id);
+        if (k().schluessel(id) != null) return fehler("schon_gemeldet");
+        java.util.List<String> rechte = k().rechte(id);
+        rechte.remove(Kopplungen.RECHT_AUFSPERREN);
+        if (!k().rechteSetzen(id, rechte) || !k().nurPasskeySetzen(id, false)) return fehler("speichern");
+        return new JSONObject().put("ok", true);
     }
 
     // ------------------------------------------------------------------ 0.1.20 Web-Sitzung (Stufe B)
@@ -370,19 +489,32 @@ public final class HandyApiHandler {
     static JSONObject aufsperren(JSONObject req, String kid, Umgebung u, long jetzt) throws Exception {
         String name = k().anzeigeName(kid);
         String schluessel = k().schluessel(kid);
-        if (schluessel == null) {
+        boolean passkey = k().istPasskey(kid);
+        // 0.1.33: Kopplung nur mit Passkey, aber ein alter Schlüssel liegt noch da: gilt nicht
+        if (schluessel == null || (k().nurPasskey(kid) && !passkey)) {
             u.telegram("handy.aufsperren_abgelehnt", name, HandySignatur.GRUND_KEIN_GERAET);
             return fehler(HandySignatur.GRUND_KEIN_GERAET);
         }
-        JSONObject s = req.optJSONObject("signatur");
-        HandySignatur.Ergebnis e = s == null
-                ? null
-                : SIGNATUR.pruefeAufsperren(schluessel, kid, s.optLong("zeit", -1), s.optString("nonce", ""),
-                        s.optString("sig", ""), name, jetzt);
+        // 0.1.33: Die beiden Wege vertreten sich nie, jede Kopplung hat genau einen
+        JSONObject s = req.optJSONObject("signatur"), w = req.optJSONObject("webauthn");
+        HandySignatur.Ergebnis e = null;
+        if (passkey && w != null && !req.has("signatur")) {
+            e = SIGNATUR.pruefeAufsperrenWebauthn(schluessel, k().credentialId(kid), k().zaehler(kid), kid,
+                    w.optLong("zeit", -1), w.optString("nonce", ""), w.optString("credentialId", ""),
+                    w.optString("clientDataJSON", ""), w.optString("authenticatorData", ""),
+                    w.optString("signature", ""), name, jetzt);
+        } else if (!passkey && s != null && !req.has("webauthn")) {
+            e = SIGNATUR.pruefeAufsperren(schluessel, kid, s.optLong("zeit", -1), s.optString("nonce", ""),
+                    s.optString("sig", ""), name, jetzt);
+        }
         if (e == null || e.grund != null) {
             String g = e == null ? HandySignatur.GRUND_SIGNATUR : e.grund;
             u.telegram("handy.aufsperren_abgelehnt", name, g);
             return fehler(g);
+        }
+        if (passkey && e.zaehler > 0 && !k().zaehlerSetzen(kid, e.zaehler)) {
+            u.telegram("handy.aufsperren_abgelehnt", name, "speichern");
+            return fehler("speichern");
         }
         VehicleCommandRouter.HandyUnlockCommand cmd = new VehicleCommandRouter.HandyUnlockCommand(e.freigabe);
         CloudPowerGate.Decision d = u.gate(cmd.name());

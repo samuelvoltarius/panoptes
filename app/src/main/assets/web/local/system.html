@@ -668,6 +668,14 @@
                         Array.prototype.forEach.call(rows.querySelectorAll('button[data-handy-schluessel]'), function (b) {
                             b.onclick = function () { self.handySchluesselWeg(b); };
                         });
+                        // 0.1.33 Web-Aufsperren: Einrichten, Prüfzahl, Zurücknehmen
+                        Array.prototype.forEach.call(rows.querySelectorAll('button[data-passkey]'), function (b) {
+                            b.onclick = function () { self.passkey(b); };
+                        });
+                        clearTimeout(self.passkeyTakt);
+                        if (d.geraete.some(function (g) { return g.passkeyFenster; })) {
+                            self.passkeyTakt = setTimeout(function () { if (!document.hidden) self.liste(); }, 3000);
+                        }
                         Array.prototype.forEach.call(rows.querySelectorAll('button[data-neu-koppeln]'), function (b) {
                             b.onclick = function () { self.neuKoppeln(); };
                         });
@@ -718,7 +726,46 @@
                     : self.t('system.handy_schluessel_fehlt', 'Noch kein Aufsperr-Schlüssel hinterlegt.'));
                 if (g.schluessel) html += ' <button class="btn" type="button" data-handy-schluessel="' + self.esc(g.id) + '">'
                     + self.esc(self.t('system.handy_schluessel_weg', 'Schlüssel entfernen')) + '</button>';
-                return html + '</div>';
+                return html + '</div>' + self.passkeyBlock(g);
+            },
+            // 0.1.33 Web-Aufsperren: Standard aus, nur der Autobildschirm kann es einrichten (Server: nur_am_auto).
+            passkeyBlock: function (g) {
+                var self = this, f = g.passkeyFenster;
+                function knopf(was, text) {
+                    return ' <button class="btn" type="button" data-passkey="' + was + '" data-id="' + self.esc(g.id) + '">' + self.esc(text) + '</button>';
+                }
+                if (f && f.pruefzahl) {
+                    return '<div class="sys-meta"><strong>' + self.esc(self.t('system.handy_passkey_zahl', 'Steht am iPhone diese Zahl? {z}', { z: f.pruefzahl })) + '</strong>'
+                        + knopf('stimmt', self.t('system.handy_passkey_stimmt', 'Stimmt')) + knopf('nein', self.t('system.handy_passkey_nein', 'Stimmt nicht')) + '</div>';
+                }
+                if (f) {
+                    return '<div class="sys-meta">' + self.esc(self.t('system.handy_passkey_warte', 'Jetzt am iPhone in der Web-App „Aufsperren einrichten“ tippen.'))
+                        + knopf('zurueck', self.t('system.handy_passkey_zurueck', 'Einrichtung zurücknehmen')) + '</div>';
+                }
+                if (g.plattform === 'web' && g.schluessel) {
+                    return '<div class="sys-meta">' + self.esc(self.t('system.handy_passkey_da', 'Aufsperren mit Face ID ist eingerichtet.'))
+                        + (g.synchronisiert ? ' ' + self.esc(self.t('system.handy_passkey_icloud', 'Der Schlüssel liegt im iCloud-Schlüsselbund.')) : '') + '</div>';
+                }
+                if (g.schluessel) return '';
+                return '<div class="sys-meta">' + knopf('oeffnen', self.t('system.handy_passkey_knopf', 'Aufsperren einrichten (iPhone Web-App)'))
+                    + (g.nurPasskey ? knopf('zurueck', self.t('system.handy_passkey_zurueck', 'Einrichtung zurücknehmen')) : '') + '</div>';
+            },
+            passkey: function (b) {
+                var self = this, was = b.getAttribute('data-passkey'), id = b.getAttribute('data-id');
+                if (was === 'oeffnen' && !window.confirm(self.t('system.handy_passkey_confirm',
+                    'Dieses iPhone darf das Auto dann mit Face ID aufsperren. Zwei Risiken: 1. Die Web-App kommt von unserem Server. Würde er übernommen, könnte Face ID unter falschem Vorwand ausgelöst werden. 2. Der Schlüssel liegt meist im iCloud-Schlüsselbund und wandert auf deine anderen Apple-Geräte. Du bekommst bei jedem Aufsperren eine Telegram-Nachricht. Einschalten?'))) return;
+                var pfad = was === 'oeffnen' ? 'oeffnen' : was === 'zurueck' ? 'zuruecknehmen' : 'bestaetigen';
+                b.disabled = true;
+                fetch('/api/kopplung/passkey/' + pfad, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id, stimmt: was === 'stimmt' }) })
+                    .then(function (r) { return r.json(); }).catch(function () { return {}; }).then(function (d) {
+                        var toast = window.BYD && BYD.utils && BYD.utils.toast;
+                        if (toast && !d.ok) {
+                            BYD.utils.toast(d.grund === 'nur_am_auto' ? self.t('system.handy_passkey_nur_auto', 'Das geht nur direkt am Autobildschirm.')
+                                : d.grund === 'schon_gemeldet' ? self.t('system.handy_passkey_schon', 'Erst den alten Schlüssel entfernen.')
+                                : self.t('system.handy_fehler', 'Konnte nicht speichern.'), 'error');
+                        }
+                        self.liste();
+                    });
             },
             // 0.1.30 Kern Sicherheit: Cockpit, Home Assistant und fremde Dienste haben nur zwei Rechte, beide Standard aus.
             // Nie automatisch gesetzt – fehlt eins, sagt das Gerät „… in Panoptes unter Gekoppelte Geräte einschalten“.

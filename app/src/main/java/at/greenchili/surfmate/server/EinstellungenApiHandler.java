@@ -222,6 +222,36 @@ public final class EinstellungenApiHandler {
             HttpResponse.sendJson(out, ok ? 200 : 404, new JSONObject().put("ok", ok).toString());
             return true;
         }
+        // 0.1.33 Web-Aufsperren: Einrichten, Bestätigen und Zurücknehmen nur direkt am Autobildschirm, kein Login aus der Ferne
+        if (pathOnly.startsWith("/api/kopplung/passkey/") && method.equals("POST")) {
+            if (!AuthMiddleware.isDirektAmAuto()) {
+                HttpResponse.sendJson(out, 403, HandyApiHandler.fehler("nur_am_auto").toString());
+                return true;
+            }
+            JSONObject req;
+            try {
+                req = new JSONObject(body == null || body.isEmpty() ? "{}" : body);
+            } catch (Exception e) {
+                req = new JSONObject();
+            }
+            String id = req.optString("id", "");
+            JSONObject r;
+            switch (pathOnly) {
+                case "/api/kopplung/passkey/oeffnen":
+                    r = HandyApiHandler.passkeyOeffnen(id);
+                    break;
+                case "/api/kopplung/passkey/bestaetigen":
+                    r = HandyApiHandler.passkeyBestaetigen(id, req.optBoolean("stimmt", false));
+                    break;
+                case "/api/kopplung/passkey/zuruecknehmen":
+                    r = HandyApiHandler.passkeyZuruecknehmen(id);
+                    break;
+                default:
+                    r = HandyApiHandler.fehler("unbekannt");
+            }
+            HttpResponse.sendJson(out, r.toString());
+            return true;
+        }
         // Gekoppeltes Gerät meldet sich selbst ab (z. B. HA-Integration wird entfernt): widerruft nur die
         // eigene Kopplung (kid aus dem JWT); Alfreds Login und andere Kopplungen bleiben unberührt.
         if (pathOnly.equals("/api/sitzung/abmelden") && method.equals("POST")) {

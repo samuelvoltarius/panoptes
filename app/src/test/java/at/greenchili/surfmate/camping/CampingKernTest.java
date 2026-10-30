@@ -277,15 +277,38 @@ public class CampingKernTest {
     public void zwoelfVoltUndHoechstdauerSperren() {
         CampingRegler r = new CampingRegler(tab, true);
         CampingRegler.Einstellung e = new CampingRegler.Einstellung();
-        e.v12Grenze = 12.0; e.vorheizenMin = 0; e.hoechstdauerStunden = 2;
+        e.vorheizenMin = 0; e.hoechstdauerStunden = 2;
         r.einschalten(e, lage(0, Fahrt.STEHT, 80));
         CampingRegler.Lage l = lage(10 * MIN, Fahrt.STEHT, 80);
-        l.v12Median = 11.8;
+        l.v12Low = true;
         CampingRegler.Entscheidung d = r.takt(e, l);
         assertEquals("v12", d.sperrGrund);
         assertTrue(d.meldungen.contains("v12_niedrig_heizen_aus"));
         d = r.takt(e, lage(121 * MIN, Fahrt.STEHT, 80));
         assertEquals("hoechstdauer", d.sperrGrund);
+    }
+
+    /** 0.1.33: Der Tiefpunkt des Sägezahns (Median unter jeder alten Grenze, kein LOW) sperrt nicht mehr. */
+    @Test
+    public void saegezahnTiefpunktOhneLowSperrtNicht() {
+        CampingRegler r = new CampingRegler(tab, true);
+        CampingRegler.Einstellung e = new CampingRegler.Einstellung();
+        e.vorheizenMin = 0;
+        r.einschalten(e, lage(0, Fahrt.STEHT, 80));
+        CampingRegler.Lage l = lage(10 * MIN, Fahrt.STEHT, 80);
+        l.v12Median = 12.5;
+        assertFalse("v12".equals(r.takt(e, l).sperrGrund));
+    }
+
+    @Test
+    public void zwoelfVoltSchutzLaesstSichAusschalten() {
+        CampingRegler r = new CampingRegler(tab, true);
+        CampingRegler.Einstellung e = new CampingRegler.Einstellung();
+        e.vorheizenMin = 0; e.v12Schutz = false;
+        r.einschalten(e, lage(0, Fahrt.STEHT, 80));
+        CampingRegler.Lage l = lage(10 * MIN, Fahrt.STEHT, 80);
+        l.v12Low = true;
+        assertFalse("v12".equals(r.takt(e, l).sperrGrund));
     }
 
     @Test

@@ -2010,7 +2010,7 @@
       },
       "v12Warnung": {
         "title": "12 V warning",
-        "help": "If the starter battery drops below this, heating stops and you get a message. Empty = off."
+        "help": "If the starter battery really gets weak, heating stops and you get a message. Panoptes detects this itself. Empty = off."
       },
       "nachlaufMinuten": {
         "title": "Run-on after wake-up",
@@ -2050,6 +2050,10 @@
       "weckMinuten": {
         "title": "Self-healing every … minutes",
         "help": "How often Android wakes Panoptes if all its parts were stopped at once. At most 10 minutes, otherwise the car cuts the connection. Empty = from profile."
+      },
+      "parkLeseSekunden": {
+        "title": "Read while parked every … seconds",
+        "help": "How often Panoptes reads the values while the car is off. 90 = as before. Guard and doors still report at once."
       }
     },
     "wetter": {

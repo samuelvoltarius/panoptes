@@ -2010,7 +2010,7 @@
       },
       "v12Warnung": {
         "title": "12-V-Warnung",
-        "help": "Liegt die Starterbatterie darunter, hört das Heizen auf und es kommt eine Meldung. Leer = aus."
+        "help": "Wird die Starterbatterie wirklich schwach, hört das Heizen auf und es kommt eine Meldung. Panoptes erkennt das selbst. Leer = aus."
       },
       "nachlaufMinuten": {
         "title": "Nachlauf nach der Weckzeit",
@@ -2050,6 +2050,10 @@
       "weckMinuten": {
         "title": "Selbstheilung alle … Minuten",
         "help": "Wie oft Android Panoptes weckt, falls alle Teile gleichzeitig beendet wurden. Höchstens 10 Minuten, weil das Auto sonst die Verbindung kappt. Leer = vom Profil."
+      },
+      "parkLeseSekunden": {
+        "title": "Lesen im Parken alle … Sekunden",
+        "help": "Wie oft Panoptes bei abgestelltem Auto die Werte liest. 90 = wie bisher. Wächter und Türen melden trotzdem sofort."
       }
     },
     "wetter": {

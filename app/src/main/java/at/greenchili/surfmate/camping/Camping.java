@@ -627,6 +627,10 @@ public final class Camping {
             }
             l.v12Median = Double.isNaN(ruhe) ? v.voltage12v : ruhe;
         }
+        try {
+            l.v12Low = at.greenchili.surfmate.surveillance.GuardStopMonitor.v12Low();
+        } catch (Throwable ignored) {
+        }
         l.gelerntK = lernen.verschiebungK(l.aussenC);
         // Raten: gemessen, sonst Kennfeld × Kapazität (aus Fahrzeugwerten, nie fest)
         VerbrauchSchaetzer.Ergebnis e = verbrauch.schaetzen();
@@ -673,9 +677,8 @@ public final class Camping {
     static CampingRegler.Einstellung einstellung() {
         CampingRegler.Einstellung e = new CampingRegler.Einstellung();
         JSONObject c = null;
-        JSONObject root = null;
         try {
-            root = UnifiedConfigManager.loadConfig();
+            JSONObject root = UnifiedConfigManager.loadConfig();
             c = root == null ? null : root.optJSONObject("camping");
         } catch (Throwable ignored) {
         }
@@ -685,15 +688,7 @@ public final class Camping {
         e.morgens = c.optBoolean("morgensHeizen", false);
         e.weckMinuteDesTages = minuten(c.optString("weckzeit", ""));
         e.socGrenze = clamp(c.optInt("socGrenze", 20), 5, 80);
-        double v12 = c.optDouble("v12Warnung", Double.NaN);
-        if (Double.isNaN(v12)) {
-            try {
-                v12 = at.greenchili.surfmate.einstellungen.AkkuChemie.v12Standard(
-                        at.greenchili.surfmate.einstellungen.AkkuChemie.aktuell(root))[0];
-            } catch (Throwable ignored) {
-            }
-        }
-        e.v12Grenze = v12;
+        e.v12Schutz = !c.has("v12Warnung") || (!c.isNull("v12Warnung") && c.optDouble("v12Warnung", 1.0) != 0.0);
         e.hoechstdauerStunden = clamp(c.optInt("hoechstdauerStunden", 12), 1, 24);
         e.nachlaufMinuten = clamp(c.optInt("nachlaufMinuten", 60), 0, 240);
         return e;

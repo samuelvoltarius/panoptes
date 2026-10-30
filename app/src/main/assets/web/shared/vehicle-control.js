@@ -3581,6 +3581,7 @@ var VC = {
     },
 
     fetchState: function() {
+        if (window.pnPausiert) return;   // 0.1.33: Headunit meldet Unsichtbar nicht immer
         var self = this;
         var climatePowerRevision = this._climatePowerRevision;
         var climateTempRevision = this._climateTempRevision;

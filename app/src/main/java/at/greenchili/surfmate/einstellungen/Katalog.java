@@ -380,6 +380,10 @@ public final class Katalog {
         weck.gruppe = "energie"; weck.reihenfolge = 30; weck.standard = null; weck.min = 5.0; weck.max = 10.0;
         weck.schritt = 1.0; weck.einheit = "min"; weck.erweitert = true;
         l.add(weck);
+        Feld parkLesen = new Feld("energie.parkLeseSekunden", Feld.Typ.INT);
+        parkLesen.gruppe = "energie"; parkLesen.reihenfolge = 40; parkLesen.standard = 90; parkLesen.min = 90.0; parkLesen.max = 180.0;
+        parkLesen.schritt = 10.0; parkLesen.einheit = "s"; parkLesen.erweitert = true;
+        l.add(parkLesen);
         // In-App-Updater (NEUBAU2 §1): Kanal stabil/test, Modus melden/automatisch (Standard melden)
         Feld kanal = new Feld("update.kanal", Feld.Typ.AUSWAHL);
         kanal.gruppe = "update"; kanal.reihenfolge = 10; kanal.standard = "stabil";

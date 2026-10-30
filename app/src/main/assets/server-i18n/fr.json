@@ -2016,7 +2016,7 @@
       },
       "v12Warnung": {
         "title": "Alerte 12 V",
-        "help": "Si la batterie de démarrage descend en dessous, le chauffage s'arrête et un message est envoyé. Vide = désactivé."
+        "help": "Si la batterie de démarrage faiblit vraiment, le chauffage s'arrête et un message est envoyé. Panoptes le détecte tout seul. Vide = désactivé."
       },
       "nachlaufMinuten": {
         "title": "Prolongation après le réveil",
@@ -2056,6 +2056,10 @@
       "weckMinuten": {
         "title": "Autoréparation toutes les … minutes",
         "help": "Fréquence à laquelle Android réveille Panoptes si toutes ses parties ont été arrêtées en même temps. 10 minutes au maximum, sinon la voiture coupe la connexion. Vide = selon le profil."
+      },
+      "parkLeseSekunden": {
+        "title": "Lecture à l'arrêt toutes les … secondes",
+        "help": "Fréquence de lecture des valeurs quand la voiture est éteinte. 90 = comme avant. La surveillance et les portes signalent toujours tout de suite."
       }
     },
     "wetter": {

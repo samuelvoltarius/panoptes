@@ -101,6 +101,7 @@ public class VehicleControlApiHandler {
 
     public static boolean handle(String method, String path, String body, OutputStream out) throws Exception {
         String cleanPath = path.contains("?") ? path.substring(0, path.indexOf("?")) : path;
+        if (method.equals("POST") && cleanPath.startsWith("/api/vehicle/")) STATE.leeren();   // Antwort auf Befehl frisch
 
         if (cleanPath.equals("/api/system/ivi-reboot")
                 && method.equals("POST")) {
@@ -684,7 +685,14 @@ public class VehicleControlApiHandler {
      * Returns current vehicle state relevant to the control page:
      * doors, windows, trunk, lock status, SOC, range.
      */
+    /** 0.1.33: Alle Clients teilen eine Antwort; {@code getData()} liest nur den Speicher, der Bau kostet CPU. */
+    private static final KurzSpeicher<String> STATE = new KurzSpeicher<>(2_000L);
+
     private static void handleGetState(OutputStream out) throws Exception {
+        HttpResponse.sendJson(out, STATE.hol(System.currentTimeMillis(), VehicleControlApiHandler::baueState));
+    }
+
+    private static String baueState() throws Exception {
         JSONObject response = new JSONObject();
         boolean diLink5Selected =
                 at.greenchili.surfmate.camera.dilink5.DiLink5Platform.isSelected();
@@ -696,8 +704,7 @@ public class VehicleControlApiHandler {
         if (data == null) {
             response.put("success", false);
             response.put("error", Messages.get("errors.vehicle_data_unavailable"));
-            HttpResponse.sendJson(out, response.toString());
-            return;
+            return response.toString();
         }
 
         response.put("success", true);
@@ -1029,7 +1036,7 @@ public class VehicleControlApiHandler {
         // field against the cluster's own readout first.
 
         response.put("timestamp", data.timestamp);
-        HttpResponse.sendJson(out, response.toString());
+        return response.toString();
     }
 
     /**

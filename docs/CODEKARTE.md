@@ -1,6 +1,6 @@
 # Codekarte Panoptes
 
-**Stand: Version 0.1.32.1, Commit d7dbb3f0**
+**Stand: Version 0.1.33, Commit 6ea265b2**
 
 Wegweiser durch den Code. Zuerst hier suchen, dann gezielt die genannte Datei öffnen.
 Die Karte nennt Dateien und Klassen, keine Zeilennummern. Kurze Pfade gelten ab
@@ -142,10 +142,12 @@ Jedes Paket steht hier, auch Unterpakete. Pfade ab dem Wurzelpaket. Lose Dateien
 | Standby, Weg 2 | `Weg2Regel`, `Weg2Waechter`, `StandWeckRegel`, `Di5ParkedPowerHold` | `Weg2Regel` |
 | Gesundheitswächter | `GesundheitsDienst`, `Gesundheit`, `AusfuehrerWaechter`, `deploy/sm-watchdog.sh` | `GesundheitsDienst` |
 | Kopplungen und Rechte | `Kopplungen` (Arten, Rechte `RECHT_*`), `KopplungsAnfragen`, `KopplungsMelder`, `PairingCodes`, `WeiteresGeraet` | `Kopplungen` |
+| Sparsam | `KurzSpeicher` (geteilte Antwort für `/api/vehicle/state` und SSE), `ZugriffsLog` (`/api/system/zugriffe`), Takt `energie.parkLeseSekunden` | `ZugriffsLog` |
 | ExternGuard | `ExternGuard` (Erlaubnisliste Kopplungen), `WebHandyGuard` (Web-Sitzung Handy), `AuthMiddleware` (Login, Loopback) | Abschnitt 5 |
 | Login, PIN, JWT | `AuthManager`, `PinManager`, `WebSitzung`, `TelegramAnmeldung`, `AuthApiHandler` | `AuthManager` |
 | Push (Handy, iPhone) | `PushSink`, `VapidSigner` (fester Projekt-Kontakt), `capabilities.push` in `SystemApiHandler` | `VapidSigner` |
 | Handy-App-API | `HandyApiHandler`, `HandyClipsApiHandler`, `HandySignatur`, `HandyRatenlimit` | `HandyApiHandler` |
+| Aufsperren mit Passkey (Web-App) | `WebAuthn` (reine Prüfung, feste COSE-Form statt CBOR-Leser), `PasskeyFenster` (nur im Speicher), `HandySignatur.pruefeAufsperrenWebauthn`, Einrichten nur direkt am Auto (`AuthMiddleware.isDirektAmAuto`), siehe `WebAufsperrenTest` | `WebAuthn` |
 | Brücke | `Bruecke`, `BrueckeVerbindung`, `BrueckeWeiterleitung`, `BrueckeLive`, `NoiseIK` | `BrueckeWeiterleitung` |
 | Update-Hinweis am Display | `UpdateHinweis` (reine Regeln, auch Einwilligung Mobilfunk je Download), Karte in `MessageOverlayService`, Schalter `update.hinweis`, `update.mobilfunkEinmal` | `UpdateHinweis` |
 | Updater | `AppUpdateDienst`, `UpdateQuelle`, `Freigabe`, `UpdateRegel`, `ApkZertifikat`, `FernUpdate`, `AutostartNachUpdate`, `UpdateLifecycle`, `AppUpdater` (Erbe; Versionsanzeige, Daemons stoppen, Installation abgekoppelt starten) | `AppUpdateDienst` |
@@ -223,6 +225,7 @@ Extern, ist die Route für Kopplungen gesperrt.
 | `/api/einstellungen` | `EinstellungenApiHandler` | Login; Extern lesen und schreiben, Felder `nurLesendExtern` nur lesen |
 | `/api/kopplung/`, `/api/kopplungen`, `/api/sitzung/` | `EinstellungenApiHandler` | Login; Extern nur `/api/sitzung/erneuern`, `/api/sitzung/abmelden` |
 | `/api/kopplung/weiteres-geraet` | `WeiteresGeraetApiHandler` | Login |
+| `/api/kopplung/passkey/` | `EinstellungenApiHandler` | nur direkt am Autobildschirm, Login aus der Ferne reicht nicht |
 | `/api/planer/`, `/api/test/blitzer` | `EinstellungenApiHandler` | Login; Extern `/api/planer/identitaet` lesen |
 | `/api/einrichtung` | `EinrichtungApiHandler` | Login |
 | `/api/settings/` | `QualitySettingsApiHandler` | Login; Handy-Web ohne geheime Abschnitte |
@@ -250,7 +253,7 @@ Extern, ist die Route für Kopplungen gesperrt.
 
 | Route | Handler | Rechte |
 |---|---|---|
-| `/api/handy/v1/` | `HandyApiHandler` | nur Kopplung Art `handy`, Rechte je Aktion im Handler |
+| `/api/handy/v1/` | `HandyApiHandler` | nur Kopplung Art `handy`, Rechte je Aktion im Handler; `passkey`, `passkey/start` nur bei offenem Fenster, `passkey/nur-passkey` sperrt den alten Schlüssel-Weg |
 | `/api/handy/v1/clips` | `HandyClipsApiHandler` | Art `handy` mit Recht `kamera` |
 | `/api/ha/v1/` | `HaApiHandler` | Extern `zustand`, `regeln`, `ereignisse`, `aktion` |
 | `/api/bruecke` | `BrueckeApiHandler` | Login; für Handy-Web gesperrt |

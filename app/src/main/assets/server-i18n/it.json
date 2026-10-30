@@ -2016,7 +2016,7 @@
       },
       "v12Warnung": {
         "title": "Avviso 12 V",
-        "help": "Se la batteria di avviamento scende sotto questo valore, il riscaldamento si ferma e arriva un messaggio. Vuoto = spento."
+        "help": "Se la batteria di avviamento è davvero debole, il riscaldamento si ferma e arriva un messaggio. Panoptes lo rileva da solo. Vuoto = spento."
       },
       "nachlaufMinuten": {
         "title": "Prosecuzione dopo la sveglia",
@@ -2056,6 +2056,10 @@
       "weckMinuten": {
         "title": "Autoriparazione ogni … minuti",
         "help": "Ogni quanto Android risveglia Panoptes se tutte le sue parti sono state chiuse insieme. Al massimo 10 minuti, altrimenti l'auto interrompe la connessione. Vuoto = dal profilo."
+      },
+      "parkLeseSekunden": {
+        "title": "Lettura da parcheggiata ogni … secondi",
+        "help": "Quanto spesso Panoptes legge i valori ad auto spenta. 90 = come prima. Guardia e porte avvisano comunque subito."
       }
     },
     "wetter": {

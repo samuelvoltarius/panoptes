@@ -118,6 +118,9 @@ public final class ExternGuard {
      */
     static final Set<String> HANDY_SCHREIBEN = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             "/api/handy/v1/geraet",
+            "/api/handy/v1/passkey/start",        // 0.1.33 Web-Aufsperren: nur bei offenem Fenster am Auto
+            "/api/handy/v1/passkey",
+            "/api/handy/v1/passkey/nur-passkey",  // Einbahnstraße: alten Schlüssel-Weg dieser Kopplung sperren
             "/api/handy/v1/aktion",
             "/api/handy/v1/gewohnheit",   // 0.1.23 Gewohnheiten: Karte lesen/beantworten
             "/api/handy/v1/push",

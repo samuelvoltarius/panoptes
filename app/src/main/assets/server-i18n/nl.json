@@ -2016,7 +2016,7 @@
       },
       "v12Warnung": {
         "title": "12V-waarschuwing",
-        "help": "Zakt de startaccu daaronder, dan stopt het verwarmen en komt er een melding. Leeg = uit."
+        "help": "Wordt de startaccu echt zwak, dan stopt het verwarmen en komt er een melding. Panoptes merkt dat zelf. Leeg = uit."
       },
       "nachlaufMinuten": {
         "title": "Uitloop na de wektijd",
@@ -2056,6 +2056,10 @@
       "weckMinuten": {
         "title": "Zelfherstel elke … minuten",
         "help": "Hoe vaak Android Panoptes wekt als alle onderdelen tegelijk zijn gestopt. Maximaal 10 minuten, anders verbreekt de auto de verbinding. Leeg = volgens profiel."
+      },
+      "parkLeseSekunden": {
+        "title": "Lezen bij parkeren elke … seconden",
+        "help": "Hoe vaak Panoptes de waarden leest als de auto uit staat. 90 = zoals eerder. Bewaking en deuren melden nog steeds meteen."
       }
     },
     "wetter": {
