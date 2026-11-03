@@ -47,6 +47,15 @@ ohne Logos und ohne fremde Vorlagen. Lizenz: [CC0 1.0](https://creativecommons.o
 - BYD Tang (Panoptes-Eigenbau)
 - BYD M6 (Panoptes-Eigenbau)
 - BYD Seal 5 DM-i (Panoptes-Eigenbau)
+- BYD Shark (Panoptes-Eigenbau; eigene Pickup-Geometrie, kein Seal-Ersatzmodell)
+- BYD Seal 6 GT (Panoptes-Eigenbau)
+- BYD Seal 6 DM-i Touring (Panoptes-Eigenbau)
+
+Maßquellen für die drei Ergänzungen (nur Maße/technische Daten, keine fremde Geometrie oder Texturen übernommen):
+
+- Shark: https://media.byd.com/section/byd-shark/?lang=eng
+- Seal 6 GT / Seal 06 GT: https://prod.byd.com/cn/ocean-home/models/haibao/26-haibao-06-GT
+- Seal 6 DM-i Touring: https://media.byd.com/byd-launches-seal-6-dm-i-sedan-and-wagon-bringing-the-freedom-of-super-hybrid-technology/?lang=eng
 
 ## Fahrzeugbilder der Startkarte (seit 0.1.20)
 

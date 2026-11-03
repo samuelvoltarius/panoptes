@@ -141,7 +141,7 @@ public class Di5ParkedKeepAliveContractTest {
                 < release.indexOf("releaseApLocked(\"release\")"));
         // Cross-process status file the API reads.
         assertTrue(hold.contains(
-                "DEFAULT_STATUS_PATH =\n            \"/data/user_de/0/com.android.shell/surfmate/surfmate_di5_keepalive.status\""));
+                "DEFAULT_STATUS_PATH =\n            at.greenchili.surfmate.util.DaemonStorage.rebase(\"/data/user_de/0/com.android.shell/surfmate/surfmate_di5_keepalive.status\")"));
     }
 
     @Test

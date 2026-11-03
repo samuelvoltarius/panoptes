@@ -53,7 +53,9 @@ public final class FahrzeugWahl {
         if (v == null) return null;
         String quelle = v.optString("modelSource", "");
         if (!"user".equals(quelle) && !"auto".equals(quelle)) return null;
-        String m = v.optString("modelId", "").trim().toLowerCase(Locale.ROOT);
+        String canonical = at.greenchili.surfmate.config.VehicleModelSelection.canonicalModelId(
+                v.optString("modelId", ""));
+        String m = canonical == null ? "" : canonical.toLowerCase(Locale.ROOT);
         return m.isEmpty() ? null : m;
     }
 

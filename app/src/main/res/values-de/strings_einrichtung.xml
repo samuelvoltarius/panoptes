@@ -62,6 +62,9 @@
     <string name="einr_fehler_pflicht">Bitte triff zuerst eine Wahl.</string>
     <string name="einr_fehler_speichern">Speichern hat nicht geklappt. Bitte nochmal versuchen.</string>
     <string name="einr_fehler_verbindung">Panoptes läuft noch nicht. Bitte einen Moment warten und nochmal versuchen.</string>
+    <string name="einr_unbekannter_schritt_titel">Einrichtung kann nicht fortfahren</string>
+    <string name="einr_unbekannter_schritt_text">Diese Panoptes-Version kennt den Einrichtungsschritt „%1$s“ noch nicht. Installiere unter System → App-Updates die neueste Version und starte die Einrichtung danach erneut. Es wurde nichts als fertig markiert.</string>
+    <string name="einr_unbekannter_schritt_schliessen">Einrichtung schließen</string>
     <string name="einr_sprache_titel">Sprache</string>
     <string name="einr_sprache_text">In welcher Sprache soll Panoptes mit dir sprechen?</string>
     <string name="einr_autostart_spaeter">Ich mache es später</string>
@@ -69,8 +72,13 @@
     <string name="einr_usb_warum">Damit Panoptes im Hintergrund weiterlaufen und sich selbst reparieren kann, braucht es eine einmalige Freigabe.</string>
     <string name="einr_usb_popup">Gleich erscheint ein Fenster von Android: „USB-Debugging zulassen?“. Setze dort den Haken bei „Immer von diesem Computer zulassen“ und tippe auf „Zulassen“.</string>
     <string name="einr_usb_knopf">Freigabe anfragen</string>
+    <string name="einr_usb_knopf_warte">Freigabe wird angefragt …</string>
+    <string name="einr_usb_knopf_nochmal">Erneut anfragen</string>
+    <string name="einr_usb_knopf_nur_auto">Nur am Fahrzeugdisplay</string>
     <string name="einr_usb_popup_jetzt">Bitte im Android-Fenster „Immer zulassen“ ankreuzen und „Zulassen“ tippen.</string>
     <string name="einr_usb_warte">Warte auf die Freigabe …</string>
+    <string name="einr_usb_zeit_abgelaufen">Das Android-Fenster ist nicht erschienen. Öffne die Android-Einstellungen und prüfe unter „Entwickleroptionen“:\n1. „USB-Debugging“ ist eingeschaltet.\n2. Schalte es einmal aus und wieder ein.\n3. Falls angeboten: „USB-Debugging-Autorisierungen widerrufen“.\nKehre danach zu Panoptes zurück und tippe auf „Erneut anfragen“.</string>
+    <string name="einr_usb_nur_infotainment">Diese Panoptes-Kern-App läuft nur direkt auf dem BYD-Infotainment. Auf einem normalen Android-Handy fehlt der lokale ADB-Dienst; deshalb kann hier kein Freigabefenster erscheinen. Installiere und öffne Panoptes am Fahrzeugdisplay.</string>
     <string name="einr_usb_ok">Freigabe erteilt, Panoptes läuft.</string>
     <string name="einr_auto_titel">Dein Auto kann …</string>
     <string name="einr_auto_unbekannt">Panoptes konnte noch nicht prüfen, was dein Auto kann. Das holt es später nach.</string>

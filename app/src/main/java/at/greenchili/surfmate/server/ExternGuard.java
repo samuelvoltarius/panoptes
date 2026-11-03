@@ -134,7 +134,8 @@ public final class ExternGuard {
     /** 0.1.28 P5: Lesepfade unter /api/handy/v1 nur für {@code handy} (Clip-Liste; Recht „kamera“ prüft der Handler). */
     static final Set<String> HANDY_LESEN = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             "/api/handy/v1/update",
-            "/api/handy/v1/clips"
+            "/api/handy/v1/clips",
+            "/api/handy/v1/protokoll"   // 0.1.34 Befehls-Log: eigene Einträge, alle nur mit Recht „protokoll“
     )));
 
     /** true, wenn die Anfrage eines gekoppelten Geräts abgelehnt werden muss. */

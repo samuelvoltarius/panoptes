@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Testfunktionen – Panoptes</title>
+    <title data-i18n="testf.title">Testfunktionen</title>
     <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="../shared/apple-touch-icon.png">
@@ -11,7 +11,7 @@
     <meta name="theme-color" content="#0A2238">
     <meta name="robots" content="noindex">
     <script src="../shared/theme.js?v=13"></script>
-    <script src="../shared/app-shell.js?v=pn27"></script>
+    <script src="../shared/app-shell.js?v=pn28"></script>
     <link rel="stylesheet" href="../shared/styles.css?v=pn11">
     <style>
         .tf { padding: 0 28px 60px; max-width: 720px; box-sizing: border-box; }
@@ -61,8 +61,8 @@
                 <p id="ttGesendet" hidden></p>
             </article>
             <article class="tc" id="tn" hidden>
-                <h2 data-i18n="testf.navi_title">Navi-App am Tacho (Beta)</h2>
-                <p data-i18n="testf.navi_lead">Zeigt eine Navi-App auf dem Tacho. Nur Navi-Apps aus der Liste. Ausschalten holt die Tacho-Anzeige sofort zurück.</p>
+                <h2 data-i18n="testf.navi_title">App am Tacho (Beta)</h2>
+                <p data-i18n="testf.navi_lead">Jede installierte startbare App kann einzeln geprüft und freigegeben werden. Die Probe geht nur in P; Ausschalten holt die Tacho-Anzeige sofort zurück.</p>
                 <select id="tnPaket" class="tbtn"></select>
                 <div>
                     <button class="tbtn" type="button" id="tnProbe" data-i18n="testf.navi_probe">Probe im Stand (20 s)</button>
@@ -82,7 +82,7 @@
 <div id="toastContainer" class="toast-container"></div>
 
 <script src="../shared/auth.js"></script>
-<script src="../shared/pwa-init.js?v=index1"></script>
+<script src="../shared/pwa-init.js?v=index2"></script>
 <script src="../shared/core.js?v=pn6"></script>
 <script>
 (function () {
@@ -135,7 +135,10 @@
             nur_im_stand: t('testf.tacho_stand', 'Geht nur im Stand (Gang P).'),
             nur_in_p: t('testf.tacho_stand', 'Geht nur im Stand (Gang P).'),
             auf_diesem_auto_nicht_angeboten: t('testf.navi_na', 'Auf diesem Auto nicht angeboten. Mach zuerst den Tacho-Test und die Probe.'),
-            nicht_erlaubt: t('testf.navi_nicht_erlaubt', 'Diese App ist nicht in der Navi-Liste.'),
+            nicht_freigegeben: t('testf.navi_nicht_erlaubt', 'Diese App ist noch nicht für die Fahrt freigegeben.'),
+            nicht_installiert: t('testf.navi_keine', 'Die App ist nicht mehr installiert oder nicht startbar.'),
+            ungueltiges_paket: t('testf.navi_nicht_erlaubt', 'Diese App kann nicht auf das Fahrerdisplay.'),
+            probe_noetig: t('testf.navi_na', 'Prüfe diese App zuerst in P.'),
             start_fehlgeschlagen: t('testf.fail', 'Das hat nicht geklappt.')
         };
         return m[g] || t('testf.fail', 'Das hat nicht geklappt.');
@@ -222,7 +225,8 @@
         $('tnState').textContent = d.an ? t('testf.navi_an', 'An') : t('testf.navi_aus', 'Aus');
         $('tnState').className = 'big' + (d.an ? ' on' : '');
         $('tnOff').disabled = !d.an;
-        $('tnOn').disabled = d.warnleuchtenFrei !== 'ja' || !sel.value;
+        var app = (d.apps || d.erlaubt || []).filter(function (a) { return a.paket === sel.value; })[0];
+        $('tnOn').disabled = !(app && app.freigegeben);
         $('tnProbe').disabled = !sel.value || d.probeLaeuft;
     }
     function tnLaden() {
@@ -255,14 +259,15 @@
         };
         $('tnJa').onclick = function () {
             $('tnFrage').hidden = true; $('tnAntwort').hidden = true;
-            tnSende('/api/tacho/navi/warnleuchten', 'PUT', { frei: 'ja' }, ttStart);
+            tnSende('/api/tacho/navi/warnleuchten', 'PUT', { frei: 'ja', paket: $('tnPaket').value }, ttStart);
         };
         $('tnNein').onclick = function () {
             $('tnFrage').hidden = true; $('tnAntwort').hidden = true;
-            tnSende('/api/tacho/navi/warnleuchten', 'PUT', { frei: 'nein' }, ttStart);
+            tnSende('/api/tacho/navi/warnleuchten', 'PUT', { frei: 'nein', paket: $('tnPaket').value }, ttStart);
         };
         $('tnOn').onclick = function () { tnSende('/api/tacho/navi', 'PUT', { an: true, paket: $('tnPaket').value }); };
         $('tnOff').onclick = function () { tnSende('/api/tacho/navi', 'PUT', { an: false }); };
+        $('tnPaket').onchange = function () { if (tnDaten) tnZeige(tnDaten); };
         laden();
     });
 })();

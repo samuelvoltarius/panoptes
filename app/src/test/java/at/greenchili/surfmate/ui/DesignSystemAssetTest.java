@@ -8,6 +8,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.junit.Test;
 
@@ -79,8 +81,7 @@ public class DesignSystemAssetTest {
                         assertFalse(path + " must not load remote fonts",
                                 text.contains("fonts.googleapis.com")
                                         || text.contains("fonts.gstatic.com"));
-                        assertFalse(path + " must not use negative tracking",
-                                text.matches("(?s).*letter-spacing:\\s*-[0-9.]+(?:em|px).*"));
+                        assertRestrainedNegativeTracking(path, text);
                     });
         }
 
@@ -89,10 +90,15 @@ public class DesignSystemAssetTest {
         String styles = readRepositoryFile("app/src/main/assets/web/shared/styles.css");
         String tabs = readRepositoryFile("app/src/main/assets/web/shared/app-tabs.css");
         String themePicker = readRepositoryFile("app/src/main/assets/web/shared/theme.js");
-        assertTrue(tokens.contains("--family-sans: system-ui"));
+        assertTrue(tokens.contains("@font-face { font-family: 'Sora'"));
+        assertTrue(tokens.contains("@font-face { font-family: 'Manrope'"));
+        assertTrue(tokens.contains("url('fonts/sora-latin-wght.woff2')"));
+        assertTrue(tokens.contains("url('fonts/manrope-latin-wght.woff2')"));
+        assertTrue(tokens.contains("--family-sans: 'Manrope', system-ui"));
         assertTrue(styles.contains("button:focus,"));
         assertTrue(styles.contains("min-height: 48px"));
-        assertTrue(tabs.contains("height: 48px"));
+        assertTrue(tabs.contains("height: 78px"));
+        assertTrue(tabs.contains("min-height: 48px"));
         assertTrue(tabs.contains("html[data-android-embed=\"1\"] .bottom-tabs"));
         assertTrue(tabs.contains("html[data-app-shell=\"1\"] .bottom-tabs"));
         assertFalse(tabs.contains("78px + var(--safe-bottom"));
@@ -118,14 +124,35 @@ public class DesignSystemAssetTest {
     }
 
     @Test
-    public void collapsedSidebarGroupsLeaveTheFlexLayout() throws IOException {
-        String shell =
+    public void hiddenRailEntriesLeaveTheCurrentNavigationLayout() throws IOException {
+        String css =
                 readRepositoryFile("app/src/main/assets/web/shared/app-shell.css");
+        String shell =
+                readRepositoryFile("app/src/main/assets/web/shared/app-shell.js");
 
-        assertTrue(shell.contains(
-                ".sidebar-nav [hidden] {\n    display: none !important;\n}"));
-        assertFalse(shell.contains(
+        assertTrue(shell.contains("if (p.hidden && p.href !== base) continue;"));
+        assertTrue(css.contains(".pn-pill[hidden] { display: none !important; }"));
+        assertFalse(css.contains(
                 ".sidebar-nav [hidden] {\n    display: flex !important;"));
+    }
+
+    private static void assertRestrainedNegativeTracking(Path path, String text) {
+        Matcher matcher = Pattern.compile(
+                "letter-spacing:\\s*(-[0-9.]+)(em|px|vh)").matcher(text);
+        while (matcher.find()) {
+            double value = Double.parseDouble(matcher.group(1));
+            String unit = matcher.group(2);
+            if ("em".equals(unit)) {
+                assertTrue(path + " display tracking is too tight: " + matcher.group(),
+                        value >= -0.03);
+            } else if ("vh".equals(unit)) {
+                assertTrue(path + " viewport tracking is only allowed for the camping clock",
+                        path.getFileName().toString().equals("camping.html") && value >= -0.5);
+            } else {
+                throw new AssertionError(path + " must not use negative pixel tracking: "
+                        + matcher.group());
+            }
+        }
     }
 
     @Test

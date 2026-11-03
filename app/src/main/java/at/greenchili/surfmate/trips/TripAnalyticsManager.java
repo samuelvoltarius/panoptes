@@ -1151,6 +1151,9 @@ public class TripAnalyticsManager {
         if (lastCharge == null || !lastCharge.has("rate")) return new Satz(0, "fehlt", "");
         double r = lastCharge.optDouble("rate", -1);
         if (!(r >= 0) || Double.isInfinite(r)) return new Satz(0, "fehlt", "");
+        // 03.11.2026: Preis je Akku-kWh nach der abgerechneten Menge (LadeAbrechnung, wie die Ladeanzeige)
+        double abg = lastCharge.optDouble("rateAbgerechnet", Double.NaN);
+        if (Double.isFinite(abg) && abg >= 0) r = abg;
         String label = lastCharge.optString("tariffLabel", "");
         if (r == 0 && label.isEmpty()) label = "gratis";
         return new Satz(r, "charge", label);

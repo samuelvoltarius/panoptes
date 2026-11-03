@@ -77,7 +77,12 @@
         zeige: function (d) {
             this.stand = d;
             var v = d.verfuegbar, badge = $('updBadge'), laeuft = this.laeuft(d);
-            $('updNow').textContent = (d.aktuell && d.aktuell.version) || '--';
+            var aktuell = d.aktuell || {}, aktuellKanal = aktuell.kanal;
+            var aktuellText = aktuell.label || aktuell.version || '--';
+            if (aktuellKanal === 'test') aktuellText += ' · ' + t('system.upd_test_tag', 'Test');
+            else if (aktuellKanal === 'stabil') aktuellText += ' · ' + t('system.upd_stable_tag', 'Stabil');
+            if (aktuell.versionCode) aktuellText += ' · ' + t('system.upd_build_tag', 'Build {n}', { n: aktuell.versionCode });
+            $('updNow').textContent = aktuellText;
             $('updNew').textContent = v ? v.version + (v.kanal === 'test' ? ' · ' + t('system.upd_test_tag', 'Test') : '') : '–';
             $('updLast').textContent = datum(d.letztePruefung)
                 + (d.netz === 'wlan' ? ' · ' + t('system.upd_net_wlan', 'WLAN')
@@ -124,6 +129,8 @@
                 txt = t('system.upd_why_check_off', 'Die automatische Suche nach Updates ist ausgeschaltet.');
             } else if (d.kanal === 'test') {
                 txt = t('system.upd_test_note', 'Kanal Test: Neue Versionen kommen früher, sind aber weniger geprüft.');
+            } else if (aktuellKanal === 'test' && d.kanal === 'stabil') {
+                txt = t('system.upd_stable_wait', 'Kanal Stabil ist gewählt. Diese Testversion bleibt installiert, bis eine stabile Version mit einer höheren Buildnummer verfügbar ist.');
             }
             st.textContent = txt;
 

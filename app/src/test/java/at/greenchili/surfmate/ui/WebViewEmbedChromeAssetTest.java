@@ -85,6 +85,43 @@ public class WebViewEmbedChromeAssetTest {
         assertTrue(showBody.contains("View.VISIBLE"));
     }
 
+    @Test
+    public void stuckMainFrameEndsOnRetryScreen() throws IOException {
+        String fragment = readRepositoryFile(FRAGMENT);
+
+        assertTrue(fragment.contains("PAGE_LOAD_TIMEOUT_MS = 20_000L"));
+        assertTrue(fragment.contains("private fun armPageLoadTimeout()"));
+        assertTrue(fragment.contains("webView?.stopLoading()"));
+        assertTrue(fragment.contains("showError()"));
+        assertTrue(fragment.contains("cancelPageLoadTimeout()"));
+    }
+
+    @Test
+    public void systemPageCanOpenCameraMappingWithoutLegacyMenu() throws IOException {
+        String fragment = readRepositoryFile(FRAGMENT);
+        String system = readRepositoryFile("app/src/main/assets/web/local/system.html");
+
+        assertTrue(fragment.contains("fun openCameraMapping(): String"));
+        assertTrue(fragment.contains("act.invokeReconfigureCameraAction()"));
+        assertTrue(system.contains("id=\"nativeVehicleTools\""));
+        assertTrue(system.contains("AndroidBridge.openCameraMapping()"));
+    }
+
+    @Test
+    public void systemPageOffersProjectionOnlyAfterNativeFailClosedCheck() throws IOException {
+        String fragment = readRepositoryFile(FRAGMENT);
+        String system = readRepositoryFile("app/src/main/assets/web/local/system.html");
+
+        assertTrue(fragment.contains("fun refreshProjectionAvailability(): String"));
+        assertTrue(fragment.contains("at.greenchili.surfmate.tacho.TachoNaviApp.status()"));
+        assertTrue(fragment.contains("status.optBoolean(\"angeboten\", false)"));
+        assertTrue(fragment.contains("fun openProjection(): String"));
+        assertTrue(fragment.contains("navigateDrillDown(R.id.projectionFragment)"));
+        assertTrue(system.contains("id=\"projectionTool\" style=\"display:none"));
+        assertTrue(system.contains("AndroidBridge.refreshProjectionAvailability()"));
+        assertTrue(system.contains("AndroidBridge.openProjection()"));
+    }
+
     private static String readRepositoryFile(String relativePath) throws IOException {
         Path current = Paths.get(System.getProperty("user.dir")).toAbsolutePath().normalize();
         while (current != null) {

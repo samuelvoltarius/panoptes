@@ -37,8 +37,37 @@ public final class AppLauncher {
     private static final DaemonLogger logger = DaemonLogger.getInstance("AppLauncher");
     // ponytail: one global lock; split by display only if launch contention becomes measurable.
     private static final Object APP_LAUNCH_LOCK = new Object();
+    private static volatile Boolean splitScreenSupported;
 
     private AppLauncher() {}
+
+    /**
+     * Fail-closed platform check for the normal two-app picker. Android's activity
+     * shell exposes the same capability used by SystemUI before it offers split
+     * screen. Unknown/unsupported command output is deliberately false; the picker
+     * must never promise a mode the head unit cannot create.
+     */
+    public static boolean isSplitScreenSupported() {
+        Boolean cached = splitScreenSupported;
+        if (Boolean.TRUE.equals(cached)) return true;
+        boolean supported = parseBooleanShellResult(
+                runShellCapture("am supports-split-screen-multi-window"));
+        // Cache only a positive answer. During early boot ActivityManager may not
+        // answer yet; a transient failure must not disable the picker until restart.
+        if (supported) splitScreenSupported = Boolean.TRUE;
+        return supported;
+    }
+
+    static boolean parseBooleanShellResult(String output) {
+        if (output == null) return false;
+        String normalized = output.trim().toLowerCase(java.util.Locale.US);
+        if ("true".equals(normalized)) return true;
+        if ("false".equals(normalized)) return false;
+        // Accept one known vendor decoration, but never arbitrary output merely
+        // ending in "true" (for example an error message).
+        return "supported: true".equals(normalized)
+                || "supported=true".equals(normalized);
+    }
 
     /**
      * Launch the given package (full-screen) by resolving its default launcher activity.
@@ -62,6 +91,10 @@ public final class AppLauncher {
      * dispatched as a split pair.
      */
     public static boolean launchSplitPair(String primaryPkg, String secondaryPkg) {
+        if (!isSplitScreenSupported()) {
+            logger.warn("openAppPair: platform does not confirm split-screen support");
+            return false;
+        }
         if (primaryPkg == null || secondaryPkg == null) {
             logger.warn("openAppPair: missing package");
             return false;

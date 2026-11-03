@@ -62,6 +62,9 @@
     <string name="einr_fehler_pflicht">Prima fai una scelta.</string>
     <string name="einr_fehler_speichern">Salvataggio non riuscito. Riprova.</string>
     <string name="einr_fehler_verbindung">Panoptes non è ancora in esecuzione. Attendi un momento e riprova.</string>
+    <string name="einr_unbekannter_schritt_titel">La configurazione non può continuare</string>
+    <string name="einr_unbekannter_schritt_text">Questa versione di Panoptes non conosce ancora il passaggio di configurazione «%1$s». Installa la versione più recente in Sistema → Aggiornamenti app, quindi riavvia la configurazione. Nulla è stato contrassegnato come completato.</string>
+    <string name="einr_unbekannter_schritt_schliessen">Chiudi configurazione</string>
     <string name="einr_sprache_titel">Lingua</string>
     <string name="einr_sprache_text">Quale lingua deve usare Panoptes?</string>
     <string name="einr_autostart_spaeter">Lo faccio più tardi</string>
@@ -69,8 +72,13 @@
     <string name="einr_usb_warum">Perché Panoptes possa continuare a funzionare in background e ripararsi da solo, serve un’autorizzazione una tantum.</string>
     <string name="einr_usb_popup">Android mostrerà ora una finestra: «Consentire il debug USB?». Spunta «Consenti sempre da questo computer» e tocca «Consenti».</string>
     <string name="einr_usb_knopf">Richiedi autorizzazione</string>
+    <string name="einr_usb_knopf_warte">Richiesta in corso …</string>
+    <string name="einr_usb_knopf_nochmal">Richiedi di nuovo</string>
+    <string name="einr_usb_knopf_nur_auto">Solo sul display del veicolo</string>
     <string name="einr_usb_popup_jetzt">Nella finestra di Android spunta «Consenti sempre» e tocca «Consenti».</string>
     <string name="einr_usb_warte">In attesa dell’autorizzazione …</string>
+    <string name="einr_usb_zeit_abgelaufen">La finestra di Android non è comparsa. Apri le impostazioni Android e controlla in «Opzioni sviluppatore»:\n1. «Debug USB» è attivo.\n2. Disattivalo e riattivalo una volta.\n3. Se disponibile, tocca «Revoca autorizzazioni debug USB».\nPoi torna a Panoptes e tocca «Richiedi di nuovo».</string>
+    <string name="einr_usb_nur_infotainment">Questa app principale di Panoptes funziona solo sul sistema di infotainment BYD. Un normale telefono Android non dispone del servizio ADB locale, quindi qui non può apparire alcuna finestra di autorizzazione. Installa e apri Panoptes sul display del veicolo.</string>
     <string name="einr_usb_ok">Autorizzazione concessa, Panoptes è in esecuzione.</string>
     <string name="einr_auto_titel">La tua auto può …</string>
     <string name="einr_auto_unbekannt">Panoptes non ha ancora potuto verificare cosa può fare la tua auto. Lo farà più tardi.</string>

@@ -2227,6 +2227,18 @@
       "acStandard": {
         "title": "AC-laden op onbekende plekken kost",
         "help": "Geldt voor alle AC-laadbeurten op niet opgeslagen plekken (bijv. thuis), dan vraagt Panoptes daar niet. 0 = gratis. Leeg = elke keer vragen."
+      },
+      "verlustAc": {
+        "title": "Laadverlies AC (wallbox, thuis)",
+        "help": "Zoveel meer rekent een AC-laadpunt af dan er in de accu aankomt. Voorstel: 12 %. Geldt alleen voor laadbeurten zonder ingevulde kWh van de paal; die waarden staan met „~”."
+      },
+      "verlustDc": {
+        "title": "Laadverlies DC (snellader)",
+        "help": "Zoveel meer rekent een DC-paal af dan er in de accu aankomt. Voorstel: 8 %. Geldt alleen voor laadbeurten zonder ingevulde kWh van de paal; die waarden staan met „~”."
+      },
+      "verlustHinweis": {
+        "title": "Melding over laadverlies tonen",
+        "help": "Legt één keer uit dat de kosten het laadverlies bevatten. Uit na „Begrepen”."
       }
     },
     "zaehlen": {

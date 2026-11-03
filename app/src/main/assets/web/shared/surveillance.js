@@ -5660,7 +5660,7 @@ window.BydCloud = {
                     country: ctry, region: label
                 });
             } else {
-                summary.textContent = 'Für den Ländercode ' + ctry + ' nutzt BYD den Server ' + label + '.';
+                summary.textContent = ctry + ' · ' + label;
             }
         }
     },

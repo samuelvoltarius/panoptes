@@ -21,7 +21,7 @@ public class WireGuardLauncherContractTest {
         assertEquals(WireGuardPaths.HOME + "/wg0.conf", WireGuardPaths.CONFIG);
         assertEquals(WireGuardPaths.HOME + "/status.json", WireGuardPaths.STATUS);
         assertEquals(WireGuardPaths.HOME + "/proxy_enabled", WireGuardPaths.PROXY_FLAG);
-        assertEquals(8541, WireGuardPaths.SOCKS_PORT);
+        assertEquals(8641, WireGuardPaths.SOCKS_PORT);
         assertEquals(3, WireGuardPaths.RELOAD_EXIT_CODE);
     }
 
@@ -42,7 +42,7 @@ public class WireGuardLauncherContractTest {
 
         assertTrue(command.startsWith("nohup sh -c 'while :; do "));
         assertTrue(command.contains(WireGuardPaths.BINARY + " -config " + WireGuardPaths.CONFIG));
-        assertTrue(command.contains("-socks 127.0.0.1:8541"));
+        assertTrue(command.contains("-socks 127.0.0.1:8641"));
         assertTrue(command.contains("-status " + WireGuardPaths.STATUS));
         assertTrue(command.contains("-proxy-flag " + WireGuardPaths.PROXY_FLAG));
         assertTrue(command.contains("[ $? -eq 3 ] || break; done'"));
@@ -57,9 +57,9 @@ public class WireGuardLauncherContractTest {
         assertFalse(WireGuardLauncher.buildLaunchCommand(true, false).contains("-expose"));
 
         String command = WireGuardLauncher.buildLaunchCommand(false, true);
-        assertTrue(command.contains(" -expose 8080=127.0.0.1:8080"));
+        assertTrue(command.contains(" -expose 8180=127.0.0.1:8180"));
         assertTrue(command.indexOf("-expose") < command.indexOf("[ $? -eq 3 ]"));
-        assertTrue(WireGuardLauncher.buildLaunchCommand(true, true).contains("-upstream 127.0.0.1:8119 -expose"));
+        assertTrue(WireGuardLauncher.buildLaunchCommand(true, true).contains("-upstream 127.0.0.1:8219 -expose"));
     }
 
     @Test
@@ -71,7 +71,7 @@ public class WireGuardLauncherContractTest {
     public void launchCommandUsesSingBoxUpstreamWhenRequested() {
         String command = WireGuardLauncher.buildLaunchCommand(true);
 
-        assertTrue(command.contains("-upstream 127.0.0.1:8119"));
+        assertTrue(command.contains("-upstream 127.0.0.1:8219"));
         assertTrue(command.indexOf("-upstream") < command.indexOf("[ $? -eq 3 ]"));
     }
 

@@ -30,8 +30,10 @@ public class DashboardFreshnessAssetTest {
                 "self.vehicleStateFailureCount++"));
         assertTrue(page.contains(
                 "self.markVehicleStateUnavailable()"));
+        assertTrue(page.contains("this.vstate = null"));
         assertTrue(page.contains(
-                "this.updateVehicleState({"));
+                "['sDoors', 'sWin', 'sClim', 'sTyre'].forEach"));
+        assertTrue(page.contains("this.renderState();"));
     }
 
     @Test
@@ -54,15 +56,17 @@ public class DashboardFreshnessAssetTest {
     }
 
     @Test
-    public void speedRequiresPowerAndARecentProviderFix()
+    public void gpsLiveLabelRequiresARecentUncachedProviderFix()
             throws IOException {
         String page = readRepositoryFile(
                 "app/src/main/assets/web/local/index.html");
         String gps = readRepositoryFile(
                 "app/src/main/java/at/greenchili/surfmate/monitor/GpsMonitor.java");
 
-        assertTrue(page.contains("var gpsFresh = powerOn"));
-        assertTrue(page.contains("gps.isFixStale !== true"));
+        assertTrue(page.contains(
+                "var live = !(gps.isStale || gps.isCached || gps.isFixStale);"));
+        assertTrue(page.contains(
+                "live ? t('home.gps_live', 'GPS live')"));
         assertTrue(gps.contains("fixAgeMs"));
         assertTrue(gps.contains("isFixStale"));
         assertTrue(gps.contains("LIVE_SPEED_FIX_MAX_AGE_MS = 5_000L"));
@@ -77,17 +81,17 @@ public class DashboardFreshnessAssetTest {
         String core = readRepositoryFile(
                 "app/src/main/assets/web/shared/core.js");
 
-        assertTrue(page.contains("status.battery.isStale !== true"));
         assertTrue(page.contains(
-                "setText('dash12v', batteryFresh"));
+                "bat.available !== false && !bat.isStale && v > 0"));
+        assertTrue(page.contains("else el.hidden = true;"));
         assertTrue(core.contains("status.battery.isStale !== true"));
         assertTrue(core.contains("? voltage.toFixed(1) + 'V' : '--'"));
-        assertTrue(page.contains("var climateKnown = remoteKnown || localKnown"));
-        assertTrue(page.contains(": '--';"));
-        assertTrue(page.contains("setStatusHealth: function(state)"));
-        assertTrue(page.contains("BYD.core.pollFailureCount"));
-        assertTrue(page.contains(
-                ">= BYD.core.POLL_STALE_AFTER_FAILURES"));
+        assertTrue(page.contains("this.vstate = null"));
+        assertTrue(page.contains("setText(id, '--')"));
+        assertTrue(page.contains("this.climateOn = false"));
+        assertTrue(core.contains("this.pollFailureCount++"));
+        assertTrue(core.contains(
+                "this.pollFailureCount >= this.POLL_STALE_AFTER_FAILURES"));
     }
 
     @Test

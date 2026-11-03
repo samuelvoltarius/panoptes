@@ -352,8 +352,8 @@
     <string name="reset_warning">Das lässt sich nicht rückgängig machen. Aufnahmen, Fahrtenbuch und Akkuverlauf sind dann für immer weg.</string>
     <string name="reset_cat_trips">Fahrtenbuch</string>
     <string name="reset_cat_trips_desc">Fahrtenverlauf, Strecken, Wochen- und Monatssummen</string>
-    <string name="reset_cat_soc_history">Ladestand und 12-V-Verlauf</string>
-    <string name="reset_cat_soc_history_desc">Ladestand-Messwerte, Ladevorgänge, Spannungsprotokolle</string>
+    <string name="reset_cat_soc_history">Akku und 12-V-Verlauf</string>
+    <string name="reset_cat_soc_history_desc">Akku-Messwerte, Ladevorgänge, Spannungsprotokolle</string>
     <string name="reset_cat_soh">Kalibrierung der Akku-Gesundheit</string>
     <string name="reset_cat_soh_desc">Erkennt die Nennkapazität neu und setzt die Schätzung aus dem BMS neu an</string>
     <string name="reset_cat_abrp_token">ABRP-Token</string>
@@ -599,7 +599,7 @@
     <string name="traffic_monitor_tap_to_check">Verkehrsmonitor – zum Prüfen tippen</string>
     <!-- Reset categories -->
     <string name="reset_label_trips">Fahrtenbuch</string>
-    <string name="reset_label_soc_history">Verlauf von Ladestand und Starterbatterie (12 V)</string>
+    <string name="reset_label_soc_history">Verlauf von Akku und Starterbatterie (12 V)</string>
     <string name="reset_label_soh">Abgleich der Akku-Gesundheit</string>
     <string name="reset_label_abrp_token">ABRP-Token</string>
     <string name="reset_label_byd_cloud">BYD-Konto-Zugangsdaten</string>
@@ -906,7 +906,7 @@
     <!-- ============================================================== -->
     <!-- Hero card -->
     <!-- SOTA hero headline. Static identity statement (not a time-of-day
-         greeting) — pairs with the SURFMATE overline above and the live
+         greeting) — pairs with the PANOPTES overline above and the live
          status row of chips below. Locale catalogs auto-translate. -->
     <string name="dashboard_hero_headline">Wächter wach</string>
     <string name="dashboard_subtitle_all_systems">Alles läuft</string>
@@ -953,7 +953,7 @@
     <!-- ============================================================ -->
     <!-- Hero -->
     <string name="settings_hero_title">Einstellungen</string>
-    <string name="settings_hero_overline">SURFMATE</string>
+    <string name="settings_hero_overline">PANOPTES</string>
     <string name="settings_hero_subtitle">Stelle Aussehen, Aufnahme, Wächter und Gerätedaten ein.</string>
     <!-- Section overlines -->
     <string name="settings_overline_preferences">OPTIONEN</string>

@@ -41,7 +41,7 @@ public class ProxyHelperWireGuardContractTest {
     public void wireGuardPortSpeaksSocksOnly() throws Exception {
         String source = read("app/src/main/java/at/greenchili/surfmate/mqtt/ProxyHelper.java");
 
-        assertTrue(source.contains("private static final int WIREGUARD_PROXY_PORT = 8541;"));
+        assertTrue(source.contains("private static final int WIREGUARD_PROXY_PORT = 8641;"));
         assertTrue(source.contains(
                 "proxyPort == TAILSCALE_PROXY_PORT || proxyPort == WIREGUARD_PROXY_PORT"));
     }

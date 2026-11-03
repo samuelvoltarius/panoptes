@@ -120,6 +120,8 @@ BYD.roadSense = {
         // section (read by the daemon on ACC-on); the live projecting state is NOT
         // a config value — it comes from GET /api/navmap/cluster/status.
         autoProjectCluster: false,
+        oemTurnGuidance: false,
+        externalNotificationGuidance: false,
         // The Projection feature's own auto-cast-on-ACC-on preference (UCM
         // `projection` section, key autoStartOnAcc). Read-only here — its UI lives
         // in a native fragment. The driver cluster is a single surface, so this and
@@ -376,6 +378,8 @@ BYD.roadSense = {
             if (data && data.success && data.config && data.config.navMap) {
                 const nm = data.config.navMap;
                 if (typeof nm.autoProjectCluster === 'boolean') this.config.autoProjectCluster = nm.autoProjectCluster;
+                if (typeof nm.oemTurnGuidance === 'boolean') this.config.oemTurnGuidance = nm.oemTurnGuidance;
+                if (typeof nm.externalNotificationGuidance === 'boolean') this.config.externalNotificationGuidance = nm.externalNotificationGuidance;
             }
             // Projection feature's auto-cast-on-ACC-on preference (its own UCM
             // section, toggled from a native fragment). Read it so toggleClusterAuto
@@ -451,6 +455,8 @@ BYD.roadSense = {
         if (clusterCard) {
             clusterCard.style.display = '';
             this._setChecked('rsClusterAuto', c.autoProjectCluster);
+            this._setChecked('rsOemTurnGuidance', c.oemTurnGuidance);
+            this._setChecked('rsExternalNavGuidance', c.externalNotificationGuidance);
             if (loadLiveStatus) this.loadClusterStatus();
         }
 
@@ -1449,6 +1455,59 @@ BYD.roadSense = {
             this._toastFailed();
         } finally {
             el.disabled = false;
+        }
+    },
+
+    async toggleOemTurnGuidance() {
+        var el = document.getElementById('rsOemTurnGuidance');
+        if (!el) return;
+        var on = !!el.checked;
+        el.disabled = true;
+        try {
+            var data = await this._saveSection('navMap', { oemTurnGuidance: on });
+            if (data && data.success) {
+                this.config.oemTurnGuidance = on;
+                this._toastSaved();
+            } else {
+                el.checked = !on;
+                this._toastFailed();
+            }
+        } catch (e) {
+            el.checked = !on;
+            this._toastFailed();
+        } finally {
+            el.disabled = false;
+        }
+    },
+
+    async toggleExternalNavGuidance() {
+        var el = document.getElementById('rsExternalNavGuidance');
+        if (!el) return;
+        var on = !!el.checked;
+        el.disabled = true;
+        try {
+            var data = await this._saveSection('navMap', { externalNotificationGuidance: on });
+            if (data && data.success) {
+                this.config.externalNotificationGuidance = on;
+                this._toastSaved();
+                if (on && window.AndroidBridge && typeof AndroidBridge.openNotificationAccessSettings === 'function') {
+                    AndroidBridge.openNotificationAccessSettings();
+                }
+            } else {
+                el.checked = !on;
+                this._toastFailed();
+            }
+        } catch (e) {
+            el.checked = !on;
+            this._toastFailed();
+        } finally {
+            el.disabled = false;
+        }
+    },
+
+    openNotificationAccessSettings() {
+        if (window.AndroidBridge && typeof AndroidBridge.openNotificationAccessSettings === 'function') {
+            AndroidBridge.openNotificationAccessSettings();
         }
     },
 

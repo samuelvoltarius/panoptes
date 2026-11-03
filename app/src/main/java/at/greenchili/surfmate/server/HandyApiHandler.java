@@ -89,6 +89,8 @@ public final class HandyApiHandler {
     static volatile Kopplungen kopplungen;
     static final HandySignatur SIGNATUR = new HandySignatur();
     static final HandyRatenlimit LIMIT = new HandyRatenlimit();
+    /** 0.1.34 Befehls-Log lesen: gleiche Grenze wie Aktionen, aber eigener Zähler (Lesen sperrt nie das Aufsperren). */
+    static final HandyRatenlimit PROTOKOLL_LIMIT = new HandyRatenlimit();
 
     private HandyApiHandler() {}
 
@@ -110,6 +112,15 @@ public final class HandyApiHandler {
             String q = path.contains("?") ? path.substring(path.indexOf('?') + 1) : "";
             HttpResponse.sendJson(out, update().stand(EinstellungenApiHandler.sprache(q.replace("lang=", "sprache=")),
                     k().hatRecht(kopplungId, Kopplungen.RECHT_UPDATE)).toString());
+            return true;
+        }
+        // 0.1.34 Befehls-Log: eigene Einträge; alle Geräte nur mit Recht „protokoll“ (Standard aus)
+        if ("/api/handy/v1/protokoll".equals(p) && "GET".equals(method)) {
+            if (kopplungId == null || !k().istHandy(kopplungId)) {
+                HttpResponse.sendJson(out, 403, fehler("nur_handy").toString());
+                return true;
+            }
+            protokoll(path, kopplungId, out);
             return true;
         }
         if (!"POST".equals(method)) {
@@ -363,6 +374,27 @@ public final class HandyApiHandler {
             default:
                 HttpResponse.sendJson(out, 502, fehler(e.name().toLowerCase(java.util.Locale.ROOT)).toString());
         }
+    }
+
+    /**
+     * 0.1.34 Befehls-Log für Handy und Web-Sitzung dahinter: höchstens {@link BefehlsLog#MAX_HANDY} Einträge,
+     * Ratenlimit je Kopplung; ohne Recht „protokoll“ nur die eigenen.
+     */
+    static void protokoll(String path, String kid, OutputStream out) throws Exception {
+        if (!PROTOKOLL_LIMIT.erlauben(kid, false, umgebung.jetzt())) {
+            HttpResponse.sendJson(out, 429, fehler("ratenlimit").toString());
+            return;
+        }
+        int max = BefehlsLog.MAX_HANDY;
+        int q = path.indexOf("max=");
+        if (q > 0) {
+            try {
+                max = Integer.parseInt(path.substring(q + 4).replaceAll("[^0-9].*$", ""));
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        HttpResponse.sendJson(out, BefehlsLog.fuerKopplung(kid, k().hatRecht(kid, Kopplungen.RECHT_PROTOKOLL), max,
+                umgebung.jetzt()).toString());
     }
 
     // ------------------------------------------------------------------ §3 Aktionen

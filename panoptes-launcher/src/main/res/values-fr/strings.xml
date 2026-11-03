@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Panoptes Launcher</string><string name="title">Cockpit Panoptes</string>
+    <string name="connecting">Connexion à Panoptes …</string><string name="offline">Panoptes est inaccessible. Démarrez Panoptes puis réessayez.</string><string name="retry">Réessayer</string>
+    <string name="vehicle_unknown">Véhicule</string><string name="range_format">Autonomie : %1$s km</string><string name="soc_format">Batterie : %1$s%%</string><string name="state_format">%1$s · Rapport %2$s</string>
+    <string name="traffic_format">À proximité : %1$d · en approche : %2$d</string><string name="traffic_empty">Aucun usager à proximité signalé.</string><string name="history_format">Dernier trajet : %1$s km · dernière charge : %2$s kWh</string><string name="history_empty">Aucun trajet ou recharge récent.</string>
+    <string name="apps">Applications</string><string name="apps_empty">Aucune application disponible.</string><string name="launch_failed">Impossible de démarrer l’application.</string><string name="open_panoptes">Ouvrir Panoptes</string><string name="unknown">—</string>
+</resources>

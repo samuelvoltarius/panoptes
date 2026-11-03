@@ -105,6 +105,9 @@ public class TachoFaehigkeitTest {
         assertEquals(2, p.getJSONObject("tachoDisplay").getInt("id"));
         assertEquals("1920x720", p.getJSONObject("tachoDisplay").getString("groesse"));
         assertEquals("ja", r.getJSONObject("karte").getString("status"));
+        assertEquals("nein", r.getJSONObject("andereApps").getString("status"));
+        assertEquals("dilink5_totwinkel_nicht_belegt",
+                r.getJSONObject("andereApps").getString("code"));
     }
 
     @Test

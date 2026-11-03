@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Panoptes Launcher</string><string name="title">Panoptes Cockpit</string>
+    <string name="connecting">Verbinden met Panoptes …</string><string name="offline">Panoptes is niet bereikbaar. Start Panoptes en probeer opnieuw.</string><string name="retry">Opnieuw proberen</string>
+    <string name="vehicle_unknown">Voertuig</string><string name="range_format">Bereik: %1$s km</string><string name="soc_format">Accu: %1$s%%</string><string name="state_format">%1$s · Versnelling %2$s</string>
+    <string name="traffic_format">In de buurt: %1$d · nadert: %2$d</string><string name="traffic_empty">Geen weggebruikers in de buurt gemeld.</string><string name="history_format">Laatste rit: %1$s km · laatste lading: %2$s kWh</string><string name="history_empty">Nog geen recente rit of laadsessie.</string>
+    <string name="apps">Apps</string><string name="apps_empty">Geen startbare apps gemeld.</string><string name="launch_failed">De app kon niet worden gestart.</string><string name="open_panoptes">Panoptes openen</string><string name="unknown">—</string>
+</resources>

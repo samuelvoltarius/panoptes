@@ -48,4 +48,28 @@ public class GekoppelteGeraeteAnzeigeTest {
         int a = e.indexOf("pathOnly.equals(\"/api/kopplung/rechte\")");
         assertTrue(e.indexOf("if (AuthMiddleware.isExternRequest()) return verboten(out);", a) - a < 120);
     }
+
+    @Test
+    public void homeAssistantDirektwegIstSichtbarAberBleibtPruefzahlGeschuetzt() throws Exception {
+        String h = LiveQualitaetNurSitzungTest.lies("src/main/assets/web/local/system.html");
+        assertTrue(h.contains("<div class=\"card\" id=\"homeassistant\">"));
+        assertFalse(h.contains("HA_KARTE_AN"));
+        assertFalse(h.contains("pn.test.ha"));
+        assertTrue(h.contains("/api/kopplungen"));
+        assertTrue(h.contains("g.art === 'homeassistant'"));
+        assertTrue("Handy-Kopplungen sehen Besitzer-Einrichtung nicht",
+                h.contains("html[data-einbettung=\"handy\"] #homeassistant"));
+        assertTrue("Vertrag nennt weiterhin Prüfzahl-Anfrage",
+                h.contains("/auth/kopplung/anfrage") && h.contains("vierstelliger Prüfzahl"));
+
+        for (String l : new String[]{"de", "en", "fr", "it", "nl"}) {
+            JSONObject sys = new JSONObject(LiveQualitaetNurSitzungTest.lies(
+                    "src/main/assets/web/i18n/" + l + ".json")).getJSONObject("system");
+            for (String k : new String[]{"ha_refresh", "ha_connected", "ha_not_connected",
+                    "ha_connected_count", "ha_ready", "ha_no_address", "ha_status_error", "ha_status_retry"}) {
+                assertFalse(l + " " + k, sys.optString(k, "").trim().isEmpty());
+            }
+            assertTrue(l + " count placeholder", sys.getString("ha_connected_count").contains("{n}"));
+        }
+    }
 }

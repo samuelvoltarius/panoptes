@@ -2273,7 +2273,7 @@ public class DiLink5RuntimeContractTest {
         assertTrue(telegram.contains("if (elapsed > 5_000)"));
 
         assertTrue(config.contains(
-                "val defaultModel = if (isDilink5Selected(config)) \"sealion7\" else \"seal\""));
+                "val defaultModel = autoDetectedModel ?: if (isDilink5Selected(config)) \"sealion7\" else \"seal\""));
         assertTrue(config.contains(
                 "DiLink5Platform.isSelected("));
         assertFalse(config.contains(

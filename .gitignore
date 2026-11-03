@@ -17,6 +17,8 @@ captures/
 # IDE
 .idea/
 .kotlin/
+__pycache__/
+*.py[cod]
 *.iml
 .cursor
 

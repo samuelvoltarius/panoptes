@@ -1,5 +1,6 @@
 package at.greenchili.surfmate.tacho;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -111,6 +112,9 @@ public final class TachoFaehigkeit {
         JSONObject res = new JSONObject();
         res.put("success", true);
         res.put("plattform", plattform);
+        if (dilink5) {
+            res.put("dilink5Abnahme", DiLink5TachoAbnahme.diagnose(plattform));
+        }
         if (sperre != null) {
             res.put("totwinkel", urteil(NEIN, sperre, sperreGrund, false));
             res.put("karte", urteil(NEIN, sperre, sperreGrund, false));
@@ -124,7 +128,15 @@ public final class TachoFaehigkeit {
             res.put("karte", urteil(JA, "projektion_da",
                     basis + " Die Panoptes-Karte kann dorthin, noch Beta.", true));
             String wf = trim(e.warnleuchtenFrei);
-            if (NEIN.equals(wf)) {
+            if (dilink5) {
+                // DI5ClusterCast verschiebt die App auf die OEM-Projektionsflaeche,
+                // besitzt aber noch keinen belegten Totwinkel-Layer-/Restore-Pfad.
+                // Freie Apps bleiben deshalb dort fail-closed, statt das fuer DI3/4
+                // geltende Kamera-vor-App-Versprechen vorzutäuschen.
+                res.put("andereApps", urteil(NEIN, "dilink5_totwinkel_nicht_belegt",
+                        "Auf DiLink 5 fehlen Fahrzeugmessungen fuer linken und rechten Kamera-Vorrang, "
+                                + "Paket-/Geometrie-Restore und sicheren Fehler-Fallback. Die Appwahl bleibt aus.", false));
+            } else if (NEIN.equals(wf)) {
                 res.put("andereApps", urteil(NEIN, "warnleuchten_verdeckt",
                         "Du hast gemeldet, dass dabei Warnleuchten verdeckt werden. Deshalb aus.", false));
             } else if (JA.equals(wf)) {
@@ -145,6 +157,26 @@ public final class TachoFaehigkeit {
                     + "aber ohne Gegenstück im Tacho. Er kann deshalb keine Bilder zeigen.");
         }
         return res;
+    }
+
+    /**
+     * Fail-closed admission for the built-in map projection.  This deliberately
+     * evaluates the platform evidence, not the current display list: on supported
+     * Dual-OS cars the writable fission display is created by opening the OEM
+     * projection and therefore does not necessarily exist before {@code start()}.
+     */
+    public static boolean karteVerfuegbar(Eingaben e) {
+        try {
+            JSONObject karte = bewerte(e).optJSONObject("karte");
+            return karte != null && JA.equals(karte.optString("status"));
+        } catch (Exception ex) {
+            return false;
+        }
+    }
+
+    /** Read-only live variant used by every cluster-map entry point. */
+    public static boolean karteVerfuegbar() {
+        return karteVerfuegbar(erhebe());
     }
 
     /** Erste Anzeige ≠ 0 mit Tacho-typischem Namen (fission, xdja, cluster, instrument, meter). */
@@ -241,6 +273,17 @@ public final class TachoFaehigkeit {
                     : "karte".equals(k) ? "Karte am Tacho" : "Andere Apps am Tacho";
             sb.append(titel).append(": ").append(u.optString("status")).append(" – ")
                     .append(u.optString("grund")).append('\n');
+        }
+        JSONObject di5 = r.optJSONObject("dilink5Abnahme");
+        if (di5 != null) {
+            sb.append("DiLink-5-Appfreigabe: gesperrt (nur Diagnose)\n");
+            JSONArray offen = di5.optJSONArray("offeneFahrzeugmessungen");
+            if (offen != null) {
+                for (int i = 0; i < offen.length(); i++) {
+                    JSONObject m = offen.optJSONObject(i);
+                    if (m != null) sb.append("- offen: ").append(m.optString("code")).append('\n');
+                }
+            }
         }
         return sb.toString();
     }

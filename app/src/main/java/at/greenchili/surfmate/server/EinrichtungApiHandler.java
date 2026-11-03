@@ -87,9 +87,14 @@ public final class EinrichtungApiHandler {
     static final Set<String> FRUEHER_PFLICHT = new HashSet<>(Arrays.asList(
             "sprache", "haftung", "usb_freigabe", "auto", "waechter", "betrieb", "karte", "updates"));
 
-    /** 0.1.32: der Ablauf einer neuen Einrichtung. Alles andere steht danach in „Noch einrichten“ (Status später). */
+    /**
+     * Ablauf einer neuen Einrichtung. Seit 0.1.34 gehört die Kamera-Zuordnung wieder in den geführten
+     * Ablauf: Der Abschluss darf einen Nutzer nicht erstmals mit „Kameras … fehlt“ überraschen und ihn
+     * anschließend in die Diagnose schicken. Fahrzeuge mit belegten 0 Kameras blenden den Schritt über
+     * {@link #sicht(JSONObject, JSONObject, JSONObject, JSONObject)} weiterhin aus.
+     */
     public static final Set<String> SCHNELLSTART = new HashSet<>(Arrays.asList(
-            "sprache", "haftung", "autostart", "ueberlagerung", "rechte", "usb_freigabe", "waechter", "updates",
+            "sprache", "haftung", "autostart", "ueberlagerung", "rechte", "usb_freigabe", "kameras", "waechter", "updates",
             "extra_handy", "fertig"));
 
     /** Gab es schon in 0.1.9 (für Bestandsnutzer nicht erneut, B2). */

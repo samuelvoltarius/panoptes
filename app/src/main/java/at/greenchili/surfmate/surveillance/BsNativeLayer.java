@@ -106,11 +106,12 @@ public final class BsNativeLayer {
             return;
         }
         if (stack == this.layerStack) return;
-        this.layerStack = stack;
-        if (surfaceControl != null) {
+        if (surfaceControl == null) {
+            this.layerStack = stack;
+        } else if (applyLayerStack(surfaceControl, stack)) {
             // Re-assert stack on the live handle. Re-uses applyGeometry's transaction
             // path with the current visibility so we don't flash or move the card.
-            applyLayerStack(surfaceControl, stack);
+            this.layerStack = stack;
         }
     }
 
@@ -201,9 +202,10 @@ public final class BsNativeLayer {
      */
     public synchronized void setGeometry(int x, int y, int w, int h) {
         if (surfaceControl == null) return;
-        applyGeometry(surfaceControl, 0, 0, bufferW, bufferH, x, y, w, h, zOrder, true,
-                bufferW, bufferH, layerStack, bufferRotation);
-        shown = true;
+        if (applyGeometry(surfaceControl, 0, 0, bufferW, bufferH, x, y, w, h,
+                zOrder, true, bufferW, bufferH, layerStack, bufferRotation)) {
+            shown = true;
+        }
     }
 
     /**
@@ -217,9 +219,29 @@ public final class BsNativeLayer {
     public synchronized void setGeometry(Rect src, int x, int y, int w, int h) {
         if (surfaceControl == null) return;
         Rect s = clampSrc(src);
-        applyGeometry(surfaceControl, s.left, s.top, s.width(), s.height(), x, y, w, h,
-                zOrder, true, bufferW, bufferH, layerStack, bufferRotation);
-        shown = true;
+        if (applyGeometry(surfaceControl, s.left, s.top, s.width(), s.height(), x, y, w, h,
+                zOrder, true, bufferW, bufferH, layerStack, bufferRotation)) {
+            shown = true;
+        }
+    }
+
+    /**
+     * Atomically retarget, place and show the blind-spot layer on the cluster.
+     *
+     * <p>Unlike the legacy void setters this reports transaction failure to the caller. Internal
+     * state is committed only after SurfaceFlinger's transaction applied successfully, allowing
+     * the pipeline to fail closed instead of claiming that an invisible safety layer is shown.</p>
+     */
+    public synchronized boolean placeOnLayerStackChecked(int stack,
+                                                          int x, int y, int w, int h) {
+        if (surfaceControl == null || stack < 0) return false;
+        boolean applied = applyGeometry(surfaceControl, 0, 0, bufferW, bufferH,
+                x, y, w, h, zOrder, true, bufferW, bufferH, stack, bufferRotation);
+        if (applied) {
+            layerStack = stack;
+            shown = true;
+        }
+        return applied;
     }
 
     /** Position the layer WITHOUT showing it (single transaction, show=false).
@@ -257,15 +279,13 @@ public final class BsNativeLayer {
     /** Hide the layer (keeps it allocated for a fast re-show). */
     public synchronized void hide() {
         if (surfaceControl == null || !shown) return;
-        applyVisibility(surfaceControl, false);
-        shown = false;
+        if (applyVisibility(surfaceControl, false)) shown = false;
     }
 
     /** Re-show at the last geometry (cheap transaction). */
     public synchronized void show() {
         if (surfaceControl == null || shown) return;
-        applyVisibility(surfaceControl, true);
-        shown = true;
+        if (applyVisibility(surfaceControl, true)) shown = true;
     }
 
     /** Hide, reparent-null, and release the layer + Surface. */
@@ -331,21 +351,22 @@ public final class BsNativeLayer {
         }
     }
 
-    private static void applyGeometry(Object sc, int srcX, int srcY, int srcW, int srcH,
-                                      int x, int y, int w, int h, int z, boolean show,
-                                      int bufW, int bufH, int layerStack, int rotationDeg) {
+    private static boolean applyGeometry(Object sc, int srcX, int srcY, int srcW, int srcH,
+                                         int x, int y, int w, int h, int z, boolean show,
+                                         int bufW, int bufH, int layerStack, int rotationDeg) {
         try {
             Class<?> scCls = Class.forName("android.view.SurfaceControl");
             Class<?> txCls = Class.forName("android.view.SurfaceControl$Transaction");
             Object tx = txCls.getDeclaredConstructor().newInstance();
-            try { txCls.getMethod("setLayer", scCls, int.class).invoke(tx, sc, z); } catch (Throwable ignored) {}
+            txCls.getMethod("setLayer", scCls, int.class).invoke(tx, sc, z);
             // Retarget to the cluster's layerStack ONLY when non-zero. When 0 (head-unit
             // default) we emit nothing here, so the transaction is byte-for-byte the
             // pre-feature head-unit path. setLayerStack(SurfaceControl,int) proven live.
             if (layerStack != 0) {
-                try { txCls.getMethod("setLayerStack", scCls, int.class).invoke(tx, sc, layerStack); } catch (Throwable ignored) {}
+                txCls.getMethod("setLayerStack", scCls, int.class)
+                        .invoke(tx, sc, layerStack);
             }
-            try { txCls.getMethod("setAlpha", scCls, float.class).invoke(tx, sc, 1.0f); } catch (Throwable ignored) {}
+            txCls.getMethod("setAlpha", scCls, float.class).invoke(tx, sc, 1.0f);
             // setGeometry(sc, sourceCrop, destFrame, orientation) — validated present
             // on this firmware. Scales the source-crop sub-rect of the buffer into the
             // dest rect, rotating it by `orientation` (a NATIVE_WINDOW_TRANSFORM_* /
@@ -379,9 +400,12 @@ public final class BsNativeLayer {
                 // rotated card is placed best-effort (may be offset from the exact dest
                 // corner) — never stretched or mirrored. The primary setGeometry path is
                 // the one used on this firmware (validated present on API 29).
+                boolean positioned = false;
+                boolean matrixSet = false;
                 try {
                     txCls.getMethod("setPosition", scCls, float.class, float.class)
                             .invoke(tx, sc, (float) x, (float) y);
+                    positioned = true;
                 } catch (Throwable ignored) {}
                 try {
                     java.lang.reflect.Method setMatrix = txCls.getMethod("setMatrix",
@@ -398,25 +422,32 @@ public final class BsNativeLayer {
                     } else {
                         setMatrix.invoke(tx, sc, s, 0f, 0f, s);
                     }
+                    matrixSet = true;
                 } catch (Throwable ignored) {}
+                geom = positioned && matrixSet;
             }
-            if (show) try { txCls.getMethod("show", scCls).invoke(tx, sc); } catch (Throwable ignored) {}
+            if (!geom) return false;
+            if (show) txCls.getMethod("show", scCls).invoke(tx, sc);
             txCls.getMethod("apply").invoke(tx);
+            return true;
         } catch (Throwable t) {
             logger.warn("applyGeometry failed: " + t.getMessage());
+            return false;
         }
     }
 
-    private static void applyVisibility(Object sc, boolean show) {
+    private static boolean applyVisibility(Object sc, boolean show) {
         try {
             Class<?> scCls = Class.forName("android.view.SurfaceControl");
             Class<?> txCls = Class.forName("android.view.SurfaceControl$Transaction");
             Object tx = txCls.getDeclaredConstructor().newInstance();
             String m = show ? "show" : "hide";
-            try { txCls.getMethod(m, scCls).invoke(tx, sc); } catch (Throwable ignored) {}
+            txCls.getMethod(m, scCls).invoke(tx, sc);
             txCls.getMethod("apply").invoke(tx);
+            return true;
         } catch (Throwable t) {
             logger.warn("applyVisibility failed: " + t.getMessage());
+            return false;
         }
     }
 
@@ -424,15 +455,18 @@ public final class BsNativeLayer {
      *  Used by {@link #setLayerStack} for a mid-session target flip. A no-op stack of
      *  0 still issues the call to MOVE the layer back to the head-unit if it was on
      *  the cluster — callers only invoke this when the value actually changed. */
-    private static void applyLayerStack(Object sc, int layerStack) {
+    private static boolean applyLayerStack(Object sc, int layerStack) {
         try {
             Class<?> scCls = Class.forName("android.view.SurfaceControl");
             Class<?> txCls = Class.forName("android.view.SurfaceControl$Transaction");
             Object tx = txCls.getDeclaredConstructor().newInstance();
-            try { txCls.getMethod("setLayerStack", scCls, int.class).invoke(tx, sc, layerStack); } catch (Throwable ignored) {}
+            txCls.getMethod("setLayerStack", scCls, int.class)
+                    .invoke(tx, sc, layerStack);
             txCls.getMethod("apply").invoke(tx);
+            return true;
         } catch (Throwable t) {
             logger.warn("applyLayerStack failed: " + t.getMessage());
+            return false;
         }
     }
 

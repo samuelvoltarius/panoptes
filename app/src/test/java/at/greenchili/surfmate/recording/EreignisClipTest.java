@@ -162,6 +162,27 @@ public class EreignisClipTest {
     }
 
     @Test
+    public void offeneEntscheidungSchuetztFrischGesichertenClipVorPflege() throws Exception {
+        JSONObject root = new JSONObject();
+        root.put("ereignisse", EreignisClip.mitOffen(
+                root, "ereignis_20261102_010203", 1L, true));
+
+        java.util.Set<String> geschuetzt = EreignisClip.offeneStaemme(root);
+        assertTrue(geschuetzt.contains("ereignis_20261102_010203"));
+        geschuetzt.add("ereignis_20261001_000000");
+
+        List<EreignisClip.Datei> dateien = Arrays.asList(
+                new EreignisClip.Datei("ereignis_20261001_000000.mp4",
+                        EreignisClip.GRENZE_BYTES, 1L),
+                new EreignisClip.Datei("ereignis_20261102_010203.mp4", 50L, 2L));
+        // Selbst wenn geschützte Altclips die Grenze bereits ausfüllen, darf der neue Clip nicht
+        // vor der Entscheidung still gelöscht werden.
+        assertTrue(EreignisClip.zuLoeschen(dateien, 3L, 0L, geschuetzt,
+                EreignisClip.GRENZE_BYTES).stream()
+                .noneMatch(d -> d.name.equals("ereignis_20261102_010203.mp4")));
+    }
+
+    @Test
     public void offeneFragenBegrenzt() throws Exception {
         JSONObject root = new JSONObject();
         for (int i = 0; i < 30; i++) {

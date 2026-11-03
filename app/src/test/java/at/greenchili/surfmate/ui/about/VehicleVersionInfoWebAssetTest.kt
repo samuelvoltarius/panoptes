@@ -48,18 +48,22 @@ class VehicleVersionInfoWebAssetTest {
     }
 
     @Test
-    fun vehicleInformationDoesNotInterruptContributorIntroduction() {
+    fun vehicleInformationFollowsReleaseNewsAndPrecedesLegalInformation() {
         val html = readRepositoryFile("app/src/main/assets/web/local/about.html")
 
+        val version = html.indexOf("id=\"pnVersion\"")
+        val feedback = html.indexOf("id=\"fehlerMelden\"")
+        val whatsNew = html.indexOf("id=\"neu\"")
         val vehicleInfo = html.indexOf("id=\"vehicleInfoSection\"")
-        val poweredByPeople = html.indexOf("data-i18n=\"about.support.section\"")
-        val contributors = html.indexOf("id=\"contributorsList\"")
+        val notices = html.indexOf("id=\"hinweise\"")
+        val backup = html.indexOf("id=\"backupMount\"")
 
-        assertTrue("Vehicle information should remain prominent above the people section", vehicleInfo >= 0)
-        assertTrue("Missing Powered by people like you section", poweredByPeople >= 0)
-        assertTrue("Missing contributors list", contributors >= 0)
-        assertTrue("Vehicle information should appear before the people introduction", vehicleInfo < poweredByPeople)
-        assertTrue("The people introduction should lead directly into contributors", poweredByPeople < contributors)
+        assertTrue("Missing current About sections", listOf(
+            version, feedback, whatsNew, vehicleInfo, notices, backup
+        ).all { it >= 0 })
+        assertTrue("About sections must keep their user-facing priority",
+            version < feedback && feedback < whatsNew && whatsNew < vehicleInfo &&
+                vehicleInfo < notices && notices < backup)
     }
 
     private fun readRepositoryFile(relative: String): String {

@@ -12,6 +12,110 @@
 (function () {
     'use strict';
 
+    // app-shell.js loads this centrally; a few older pages still include it
+    // explicitly. Make both paths safe until those legacy tags disappear.
+    if (window.__panoptesPwaInitLoaded) return;
+    window.__panoptesPwaInitLoaded = true;
+
+    var deferredInstallPrompt = null;
+    var installedKey = 'panoptes.pwaInstalliert';
+
+    function standalone() {
+        try {
+            return window.navigator.standalone === true
+                || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+        } catch (e) { return false; }
+    }
+
+    function rememberedInstalled() {
+        try { return window.localStorage.getItem(installedKey) === '1'; }
+        catch (e) { return false; }
+    }
+
+    function secureForInstall() {
+        var h = window.location.hostname;
+        return window.location.protocol === 'https:'
+            || h === 'localhost' || h === '127.0.0.1' || h === '0.0.0.0';
+    }
+
+    function platform() {
+        var ua = window.navigator.userAgent || '';
+        if (/iPhone|iPad|iPod/.test(ua)
+                || (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1)) return 'ios';
+        if (/Android/i.test(ua)) return 'android';
+        return 'other';
+    }
+
+    function installState() {
+        return {
+            installed: standalone() || rememberedInstalled(),
+            standalone: standalone(),
+            canPrompt: !!deferredInstallPrompt,
+            secure: secureForInstall(),
+            platform: platform()
+        };
+    }
+
+    function announceInstallState() {
+        var event;
+        try { event = new CustomEvent('panoptes:pwa-install-state', { detail: installState() }); }
+        catch (e) {
+            event = document.createEvent('CustomEvent');
+            event.initCustomEvent('panoptes:pwa-install-state', false, false, installState());
+        }
+        document.dispatchEvent(event);
+    }
+
+    window.addEventListener('beforeinstallprompt', function (event) {
+        // Chrome otherwise decides itself when to show a small ambient prompt.
+        // Keeping the event lets the explicit, understandable button remain the
+        // only user-triggered installation path.
+        event.preventDefault();
+        deferredInstallPrompt = event;
+        announceInstallState();
+    });
+
+    window.addEventListener('appinstalled', function () {
+        deferredInstallPrompt = null;
+        try { window.localStorage.setItem(installedKey, '1'); } catch (e) {}
+        announceInstallState();
+    });
+
+    window.PanoptesPwaInstall = {
+        state: installState,
+        install: function () {
+            if (standalone() || rememberedInstalled()) {
+                return Promise.resolve({ ok: true, installed: true });
+            }
+            if (!secureForInstall()) {
+                return Promise.resolve({ ok: false, reason: 'https-required' });
+            }
+            if (!deferredInstallPrompt) {
+                return Promise.resolve({ ok: false, reason: 'prompt-unavailable' });
+            }
+            var prompt = deferredInstallPrompt;
+            deferredInstallPrompt = null;
+            announceInstallState();
+            try { prompt.prompt(); }
+            catch (e) {
+                announceInstallState();
+                return Promise.resolve({ ok: false, reason: 'prompt-failed' });
+            }
+            return Promise.resolve(prompt.userChoice).then(function (choice) {
+                var accepted = choice && choice.outcome === 'accepted';
+                if (accepted) {
+                    try { window.localStorage.setItem(installedKey, '1'); } catch (e) {}
+                }
+                announceInstallState();
+                return { ok: accepted, reason: accepted ? '' : 'dismissed' };
+            }, function () {
+                announceInstallState();
+                return { ok: false, reason: 'prompt-failed' };
+            });
+        }
+    };
+    announceInstallState();
+
     if (typeof navigator === 'undefined') return;
     if (!('serviceWorker' in navigator)) return;
 

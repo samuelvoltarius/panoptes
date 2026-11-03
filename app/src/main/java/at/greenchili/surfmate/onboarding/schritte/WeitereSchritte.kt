@@ -18,6 +18,8 @@ import org.json.JSONObject
 interface AssistentHost {
     /** Daemon starten → das Android-Popup „USB-Debugging zulassen?“ erscheint (erst NACH der Erklärung). */
     fun usbAnfragen()
+    /** Nur das BYD-Infotainment stellt den lokalen ADB-Dienst bereit; ein normales Android-Handy nicht. */
+    fun istBydInfotainment(): Boolean
     fun daemonLaeuft(ergebnis: (Boolean) -> Unit)
     fun fahrzeugWaehlen(fertig: (Boolean) -> Unit)
     fun kamerasZuordnen(fertig: (Boolean) -> Unit)
@@ -95,7 +97,9 @@ class UsbFreigabeSchritt(a: Assistent, private val host: AssistentHost) : Schrit
     override val spaeterZeigen = false
     private lateinit var status: android.widget.TextView
     private var laeuft = false
-    private var angefragt = false
+    private val ablauf = UsbFreigabeAblauf()
+    private var zustand = UsbFreigabeAblauf.Zustand.BEREIT
+    private var unterstuetzt = true
 
     override fun ansicht(): View = spalte().apply {
         dazu(titel(t.res(R.string.einr_usb_titel)), 0f)
@@ -105,26 +109,48 @@ class UsbFreigabeSchritt(a: Assistent, private val host: AssistentHost) : Schrit
         status = a.text("", 18f, fett = true)
         dazu(status)
     }
-    override fun betreten() { pruefe() }
+    override fun betreten() {
+        unterstuetzt = host.istBydInfotainment()
+        if (!unterstuetzt) {
+            zustand = UsbFreigabeAblauf.Zustand.NICHT_UNTERSTUETZT
+            status.text = t.res(R.string.einr_usb_nur_infotainment)
+            a.geaendert()
+            return
+        }
+        pruefe()
+    }
     private fun pruefe() {
         host.daemonLaeuft { ok ->
             a.haupt.post {
                 laeuft = ok
-                status.text = when {
-                    ok -> "✓ " + t.res(R.string.einr_usb_ok)
-                    angefragt -> t.res(R.string.einr_usb_warte)
-                    else -> ""
+                zustand = ablauf.zustand(unterstuetzt, ok, android.os.SystemClock.elapsedRealtime())
+                status.text = when (zustand) {
+                    UsbFreigabeAblauf.Zustand.NICHT_UNTERSTUETZT -> t.res(R.string.einr_usb_nur_infotainment)
+                    UsbFreigabeAblauf.Zustand.ERLEDIGT -> "✓ " + t.res(R.string.einr_usb_ok)
+                    UsbFreigabeAblauf.Zustand.WARTET -> t.res(R.string.einr_usb_warte)
+                    UsbFreigabeAblauf.Zustand.ZEIT_ABGELAUFEN -> t.res(R.string.einr_usb_zeit_abgelaufen)
+                    UsbFreigabeAblauf.Zustand.BEREIT -> ""
                 }
                 a.geaendert()
-                if (!ok && angefragt) nachher(2000) { pruefe() }
+                if (!ok && zustand == UsbFreigabeAblauf.Zustand.WARTET) nachher(2000) { pruefe() }
             }
         }
     }
-    override fun weiterText(): String? = if (laeuft) null else t.res(R.string.einr_usb_knopf)
-    override fun weiterMoeglich(): Boolean = true
+    override fun weiterText(): String? = when (zustand) {
+        UsbFreigabeAblauf.Zustand.NICHT_UNTERSTUETZT -> t.res(R.string.einr_usb_knopf_nur_auto)
+        UsbFreigabeAblauf.Zustand.ERLEDIGT -> null
+        UsbFreigabeAblauf.Zustand.WARTET -> t.res(R.string.einr_usb_knopf_warte)
+        UsbFreigabeAblauf.Zustand.ZEIT_ABGELAUFEN -> t.res(R.string.einr_usb_knopf_nochmal)
+        UsbFreigabeAblauf.Zustand.BEREIT -> t.res(R.string.einr_usb_knopf)
+    }
+    override fun weiterMoeglich(): Boolean = zustand != UsbFreigabeAblauf.Zustand.WARTET &&
+        zustand != UsbFreigabeAblauf.Zustand.NICHT_UNTERSTUETZT
     override fun weiter(fertig: (Boolean, String?) -> Unit) {
         if (!laeuft) {
-            angefragt = true
+            ablauf.anfragen(android.os.SystemClock.elapsedRealtime())
+            zustand = UsbFreigabeAblauf.Zustand.WARTET
+            status.text = t.res(R.string.einr_usb_warte)
+            a.geaendert()
             host.usbAnfragen()
             pruefe()
             fertig(false, t.res(R.string.einr_usb_popup_jetzt))
@@ -306,10 +332,10 @@ class ExtraSchritt(id: String, a: Assistent, private val host: AssistentHost) : 
         dazu(a.text(t.res(textId)))
         dazu(a.knopf(t.res(R.string.einr_jetzt_einrichten)) {
             when (sid) {
-                "extra_telegram" -> host.seiteOeffnen("telegram.html")
-                "extra_planer" -> host.seiteOeffnen("system.html#planerKarte")
-                "extra_cockpit" -> host.seiteOeffnen("system.html#kopplung")
-                "extra_notzugang" -> host.seiteOeffnen("system.html#notzugang")
+                "extra_telegram" -> host.seiteOeffnen("/telegram")
+                "extra_planer" -> host.seiteOeffnen("/system#planerKarte")
+                "extra_cockpit" -> host.seiteOeffnen("/system#kopplung")
+                "extra_notzugang" -> host.seiteOeffnen("/system#notzugang")
                 else -> host.fernzugang { ok -> erledigt = ok; a.geaendert() }
             }
         }, 18f)
@@ -323,6 +349,26 @@ class ExtraSchritt(id: String, a: Assistent, private val host: AssistentHost) : 
 }
 
 // ================================================================ Teil G: Fertig – Selbsttest (nur echte Prüfungen)
+
+/**
+ * Fail-closed screen for a server step this APK does not know yet. Falling through to
+ * [FertigSchritt] would incorrectly mark setup as complete; instead the user gets an explicit
+ * update hint and may close the assistant without setting the completion flag.
+ */
+class UnbekannterSchritt(private val unbekannteId: String, a: Assistent) : SchrittAnsicht(unbekannteId, a) {
+    override val spaeterZeigen = false
+
+    override fun ansicht(): View = spalte().apply {
+        dazu(titel(t.res(R.string.einr_unbekannter_schritt_titel)), 0f)
+        dazu(a.text(t.res(R.string.einr_unbekannter_schritt_text, unbekannteId), 18f), 18f)
+    }
+
+    override fun weiterText(): String = t.res(R.string.einr_unbekannter_schritt_schliessen)
+
+    override fun weiter(fertig: (Boolean, String?) -> Unit) {
+        a.beenden(false)
+    }
+}
 
 class FertigSchritt(a: Assistent, private val host: AssistentHost) : SchrittAnsicht("fertig", a) {
     override val spaeterZeigen = false
@@ -366,7 +412,14 @@ class FertigSchritt(a: Assistent, private val host: AssistentHost) : SchrittAnsi
                 LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
             val ziel = p.optString("ziel", "")
             // „Beheben“ nur mit Ziel-Schritt; Punkte mit „einstellungen“ (z. B. projektion) nennen die Einstellung im Text
-            if (status == "fehlt" && ziel.isNotEmpty()) zeile.addView(a.knopf(t.res(R.string.einr_beheben)) { a.zeige(ziel) })
+            if (status == "fehlt" && ziel.isNotEmpty()) {
+                val buttonText = if (id == "kameras") {
+                    t.res(R.string.einr_kameras_knopf)
+                } else {
+                    t.res(R.string.einr_beheben)
+                }
+                zeile.addView(a.knopf(buttonText) { a.zeige(ziel) })
+            }
             liste.dazu(zeile, 8f)
         }
         nochEinrichten()

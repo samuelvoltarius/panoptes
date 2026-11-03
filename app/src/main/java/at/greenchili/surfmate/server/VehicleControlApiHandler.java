@@ -459,9 +459,9 @@ public class VehicleControlApiHandler {
                         : (modeRequired
                             ? "dilink5_mode_required"
                             : "cast_failed"));
-                String detail = diLink5
-                        ? at.greenchili.surfmate.launcher.ClusterCast.getLastStartFailure()
-                        : "";
+                String detail = at.greenchili.surfmate.launcher.ClusterCast.getLastStartFailure();
+                String reason = detail != null && !detail.isEmpty() ? detail : "cast_failed";
+                if (installed && !modeRequired) response.put("reason", reason);
                 response.put("error", !installed
                         ? "app is not installed"
                         : (modeRequired

@@ -99,6 +99,9 @@ public final class Kopplungen {
         if (!speicher.speichere(neu)) return null;
         geraete = neu;
         zuletztGespeichert = nowMs;
+        // 0.1.34 Befehls-Log: neue Kopplung mit Art (an der laufenden Anfrage oder mit Herkunft des Threads)
+        at.greenchili.surfmate.server.BefehlsLog.ereignis("kopplung.angelegt" + (art != null && ARTEN.contains(art) ? "." + art : ""),
+                "ok", id, g.optString("name", null));
         return id;
     }
 
@@ -134,18 +137,22 @@ public final class Kopplungen {
         JSONArray l = liste();
         JSONArray neu = new JSONArray();
         boolean gefunden = false;
-        String pushId = null;
+        String pushId = null, name = null;
         for (int i = 0; i < l.length(); i++) {
             JSONObject g = l.optJSONObject(i);
             if (g != null && id.equals(g.optString("id"))) {
                 gefunden = true;
                 pushId = g.optString("pushId", null);
+                name = g.optString("geraeteName", "").isEmpty() ? g.optString("name", null) : g.optString("geraeteName");
                 at.greenchili.surfmate.handy.PasskeyFenster.get().schliessen(id);   // 0.1.33
                 continue;
             }
             if (g != null) neu.put(g);
         }
-        if (!gefunden) return UNBEKANNT;
+        if (!gefunden) {
+            at.greenchili.surfmate.server.BefehlsLog.ereignis("kopplung.widerrufen", "unbekannt", id, null);
+            return UNBEKANNT;
+        }
         geraete = neu;
         at.greenchili.surfmate.ha.HaEreignisse.schliessen(id);   // offene HA-Streams dieser Kopplung sofort zu
         // 0.1.20: offene Web-Einmal-Codes verwerfen (der Web-JWT selbst fällt bei der nächsten Anfrage durch)
@@ -160,7 +167,11 @@ public final class Kopplungen {
                 at.greenchili.surfmate.handy.HandyPush.entfernen(pushId);
             } catch (Throwable ignored) { }
         }
-        return speicher.speichere(kopie(neu)) ? WIDERRUFEN : NUR_IM_SPEICHER;
+        int r = speicher.speichere(kopie(neu)) ? WIDERRUFEN : NUR_IM_SPEICHER;
+        // 0.1.34 Befehls-Log
+        at.greenchili.surfmate.server.BefehlsLog.ereignis("kopplung.widerrufen", r == WIDERRUFEN ? "widerrufen" : "nur_im_speicher",
+                id, name);
+        return r;
     }
 
     /** Liste für die Oberfläche (ohne Geheimnisse; es gibt keine). */
@@ -234,10 +245,14 @@ public final class Kopplungen {
             // schaltet es ein (Login/Display); zusätzlich zu „kamera“
             RECHT_EREIGNISCLIP = "ereignisclip",
             // 0.1.30 Kern Sicherheit: genau EIN Standbild je Wächter-Ereignis (nie Clip, nie Live); Standard AUS
-            RECHT_STANDBILD = "standbild";
+            RECHT_STANDBILD = "standbild",
+            // 0.1.34 Befehls-Log (Koordination + Projektinhaber 03.11.): ganzes Protokoll lesen, also auch was ANDERE Geräte am
+            // Auto gemacht haben. Standard AUS, nie automatisch (auch nicht für Bestand), nur der Besitzer schaltet es ein.
+            // Ohne das Recht sieht ein Handy nur seine eigenen Einträge.
+            RECHT_PROTOKOLL = "protokoll";
     public static final java.util.List<String> RECHTE = java.util.Collections.unmodifiableList(
             java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_AUFSPERREN, RECHT_PUSH, RECHT_WEB, RECHT_KAMERA,
-                    RECHT_WALLBOX, RECHT_ROUTE, RECHT_UPDATE, RECHT_EREIGNISCLIP, RECHT_STANDBILD));
+                    RECHT_WALLBOX, RECHT_ROUTE, RECHT_UPDATE, RECHT_EREIGNISCLIP, RECHT_STANDBILD, RECHT_PROTOKOLL));
     /**
      * 0.1.30 Kern Sicherheit: Rechte, die auch Kopplungen ohne Handy-Rechte (cockpit, homeassistant, dienst) tragen
      * können. Standard AUS, nie automatisch gesetzt (auch nicht bei der Umstellung); nur der Besitzer schaltet sie ein.
@@ -360,7 +375,13 @@ public final class Kopplungen {
         JSONArray r = new JSONArray();
         for (String x : handy ? RECHTE : FREMD_RECHTE) if (rechte != null && rechte.contains(x)) r.put(x);
         try { g.put("rechte", r).put("rechteStand", RECHTE_STAND); } catch (Exception e) { return false; }
-        return speichernSofort();
+        boolean ok = speichernSofort();
+        // 0.1.34 Befehls-Log: welche Rechte jetzt gelten (Namen aus RECHTE, keine Werte)
+        StringBuilder neu = new StringBuilder();
+        for (int i = 0; i < r.length(); i++) neu.append(i == 0 ? "" : "+").append(r.optString(i));
+        at.greenchili.surfmate.server.BefehlsLog.ereignis("kopplung.rechte=" + (neu.length() == 0 ? "keine" : neu),
+                ok ? "gesetzt" : "fehler", id, anzeigeName(id));
+        return ok;
     }
 
     /**

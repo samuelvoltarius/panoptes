@@ -18,8 +18,8 @@ import java.util.TimeZone;
  * {@code planner.zustandSenden} (Regel 2, Standard AUS).
  *
  * <ul>
- *   <li>Gesendet werden SoC, Reichweite laut Auto, ob/mit wie viel kW geladen wird und die Messzeit –
- *       NIE Position, VIN oder Kennzeichen (der Body wird nur aus diesen Feldern gebaut).</li>
+ *   <li>Gesendet werden SoC, Reichweite laut Auto, ob/mit wie viel kW geladen wird und die Messzeit.
+ *       Position kommt ausschließlich mit eigener Einwilligung hinzu; VIN und Kennzeichen nie.</li>
  *   <li>Bei Änderung (SoC ±1 %, Wechsel laedt, Ladeleistung ±1 kW), höchstens alle 5 min; nicht, solange
  *       das Auto schläft (keine frische Messung).</li>
  *   <li>Netzfehler (DNS/Socket): Backoff 1 → 30 min, ehrlicher Status; 429 → warte_s abwarten.</li>
@@ -41,6 +41,8 @@ public final class AutoZustand {
     /** Server-Bremse: mindestens so viel Abstand, auch beim Abstell-Versand. */
     static final long SERVER_BREMSE_MS = 60_000L;
     static final long GPS_FRISCH_MS = 2 * 60_000L;
+    /** Kürzer als die 15-minütige RAM-Gültigkeit des Planers, damit „Mein Auto“ nicht verschwindet. */
+    static final long POSITION_AUFFRISCHEN_MS = 10 * 60_000L;
     /** Löschen des Zustands bei Widerruf – eigener Aufruf, der das Gerät NICHT entfernt (mit dem Planer abzustimmen). */
     static final String WIDERRUF_OP = "auto-zustand/loeschen";
 
@@ -195,13 +197,19 @@ public final class AutoZustand {
         if (m == null || Double.isNaN(m.soc) || now - m.zeitMs > FRISCH_MS) { status = "auto_schlaeft"; return; }
         boolean abgestellt = Boolean.TRUE.equals(letzteAcc) && Boolean.FALSE.equals(m.accAn);
         if (m.accAn != null) letzteAcc = m.accAn;
+        boolean frischePosition = env.positionEinwilligung()
+                && gueltig(m.lat, m.lon)
+                && now - m.gpsZeitMs <= GPS_FRISCH_MS;
+        boolean positionNeu = frischePosition && !env.hatPositionGesendet();
+        boolean positionAuffrischen = frischePosition && env.hatPositionGesendet()
+                && zuletzt != null && now - letzterVersandMs >= POSITION_AUFFRISCHEN_MS;
         if (abgestellt) {
             // Beim Abstellen einmal senden (Server-Bremse 60 s beachten).
             if (zuletzt != null && now - letzterVersandMs < SERVER_BREMSE_MS) return;
         } else {
             boolean vorliebenNeu = vorlieben != null && !vorlieben.toString().equals(vorliebenGesendet);
-            if (vorliebenNeu) {
-                // geänderte Vorlieben: bald senden, aber die Server-Bremse (60 s) beachten
+            if (vorliebenNeu || positionNeu || positionAuffrischen) {
+                // Einwilligung/Position/Vorlieben: bald senden, aber die Server-Bremse (60 s) beachten.
                 if (zuletzt != null && now - letzterVersandMs < SERVER_BREMSE_MS) return;
             } else {
                 if (zuletzt != null && now - letzterVersandMs < MIN_ABSTAND_MS) return;

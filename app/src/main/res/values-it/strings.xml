@@ -960,7 +960,7 @@
     <string name="dashboard_action_trips">Diario di viaggio</string>
     <string name="dashboard_action_vehicle_control">Comandi</string>
     <string name="settings_hero_title">Impostazioni</string>
-    <string name="settings_hero_overline">SURFMATE</string>
+    <string name="settings_hero_overline">PANOPTES</string>
     <string name="settings_hero_subtitle">Regola l\'aspetto, le registrazioni, il Guardiano e i dati su questo dispositivo.</string>
     <string name="settings_overline_preferences">OPZIONI</string>
     <string name="settings_overline_about_data">I TUOI DATI</string>

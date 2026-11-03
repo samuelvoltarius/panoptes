@@ -38,19 +38,19 @@ public class SafeLocationsUiAssetTest {
         assertTrue(script.contains("async editZone(id)"));
         assertTrue(script.contains("method: 'PUT'"));
         assertTrue(script.contains("BYD.utils.confirmDialog"));
-        assertTrue(script.contains("popupName.textContent = zone.name"));
+        assertTrue(script.contains("name.textContent = z.name"));
         assertTrue(api.contains("mgr.updateZone(id, req)"));
 
         assertTrue(styles.contains(".safe-zone-row"));
         assertTrue(styles.contains(".safe-zone-icon-btn"));
         assertTrue(styles.contains(".safe-zone-dialog"));
-        assertTrue(html.contains("safe-locations.js?v=4"));
-        assertTrue(html.contains("styles.css?v=35"));
+        assertTrue(html.contains("safe-locations.js?v=ml4"));
+        assertTrue(html.contains("styles.css?v=pn11"));
         assertTrue(html.contains("data-i18n=\"safe_loc.saved_zones\""));
 
-        assertTrue(english.contains("\"edit_title\": \"Edit safe zone\""));
-        assertTrue(english.contains("\"zone_updated\": \"\\\"{name}\\\" updated\""));
-        assertTrue(english.contains("\"delete_title\": \"Delete safe zone?\""));
+        assertTrue(english.contains("\"edit_title\": \"Change quiet zone\""));
+        assertTrue(english.contains("\"zone_updated\": \"“{name}” changed\""));
+        assertTrue(english.contains("\"delete_title\": \"Remove quiet zone?\""));
     }
 
     @Test

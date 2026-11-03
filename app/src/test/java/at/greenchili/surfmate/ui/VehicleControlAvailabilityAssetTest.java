@@ -19,8 +19,8 @@ public class VehicleControlAvailabilityAssetTest {
         String html = readRepositoryFile("app/src/main/assets/web/local/vehicle-control.html");
         String script = readRepositoryFile("app/src/main/assets/web/shared/vehicle-control.js");
 
-        assertTrue(html.contains("<span id=\"lockStatus\">NO DATA</span>"));
-        assertTrue(html.contains("<span id=\"cloudStatusText\">Checking...</span>"));
+        assertTrue(html.contains("<span id=\"lockStatus\">—</span>"));
+        assertTrue(html.contains("<span id=\"cloudStatusText\">—</span>"));
         assertFalse(html.contains("id=\"lockStatus\" data-i18n="));
         assertFalse(html.contains("id=\"cloudStatusText\" data-i18n="));
         assertTrue(script.contains("self.updateCloudIndicator();"));
@@ -62,7 +62,7 @@ public class VehicleControlAvailabilityAssetTest {
         assertFalse(html.contains(
                 "id=\"btnTrunkOpen\" title=\"Open Trunk\" data-requires-cloud=\"true\""));
         assertTrue(html.contains(
-                "id=\"btnStartCharging\" title=\"Start charging now\""
+                "id=\"btnStartCharging\" title=\"Jetzt laden\""
                         + " data-i18n-attr=\"title:vehicle_control.start_charge\""
                         + " data-requires-cloud=\"true\""));
         assertFalse(html.contains(

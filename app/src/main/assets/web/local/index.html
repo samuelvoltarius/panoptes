@@ -13,7 +13,8 @@
     <meta name="theme-color" content="#0A2238">
     <script src="../shared/theme.js?v=13"></script>
     <script src="../shared/kartenquelle.js?v=5"></script>
-    <script src="../shared/app-shell.js?v=pn27"></script>
+    <script src="../shared/app-shell.js?v=pn28"></script>
+    <script src="../shared/home-layout.js?v=2"></script>
     <link rel="stylesheet" href="../shared/styles.css?v=pn11">
     <style>
         /* Startseite nach design/mockup/start.html */
@@ -103,6 +104,25 @@
         .stat .v.ok { color: var(--sm-lime); } .stat .v.warn { color: var(--status-warning); } .stat .v.alert { color: var(--status-danger); }
         .stat .s { font-size: 12px; color: var(--on-surface-variant); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+        /* Bereits erzeugter KI-Tipp. Das Anzeigen fragt keinen Anbieter an;
+           der Text kommt nur aus Panoptes' lokalem Tipp-Postfach. */
+        .dash-ai-insight { position: relative; grid-column: span 12; width: 100%; display: grid; grid-template-columns: 44px minmax(0, 1fr) 22px; gap: 14px;
+                      align-items: center; padding: 16px; overflow: hidden; text-align: left; color: inherit; cursor: pointer;
+                      border: 1px solid var(--outline-variant); border-radius: var(--radius-lg); background: var(--surface-container); }
+        .dash-ai-insight::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--sm-lime); }
+        .dash-ai-insight[hidden] { display: none; }
+        .dash-ai-insight .ai-ic { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center;
+                            justify-content: center; background: rgba(181,242,61,.12); color: var(--sm-lime); }
+        .dash-ai-insight .ai-ic svg, .dash-ai-insight .ai-arrow { width: 22px; height: 22px; }
+        .dash-ai-insight .ai-copy { min-width: 0; display: flex; flex-direction: column; }
+        .dash-ai-insight .ai-copy small { color: var(--outline); margin-top: 5px; }
+        .dash-ai-insight .ai-kicker { color: var(--sm-lime); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+        .dash-ai-insight .ai-text { color: var(--on-surface-variant); margin-top: 5px; line-height: 1.45; white-space: pre-line;
+                              display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+        .dash-ai-insight.is-expanded .ai-text { display: block; overflow: visible; white-space: pre-wrap; -webkit-line-clamp: unset; }
+        .dash-ai-insight .ai-arrow { transition: transform .16s ease; }
+        .dash-ai-insight.is-expanded .ai-arrow { transform: rotate(180deg); }
+
         /* Laden & Kosten, Fahrten */
         .big { font-family: var(--family-display); font-size: 30px; font-weight: 700; letter-spacing: -.02em; color: var(--on-surface); }
         .spark { width: 100%; height: 70px; margin-top: 6px; display: block; }
@@ -119,10 +139,110 @@
         .list .empty { color: var(--on-surface-variant); font-size: 13px; }
         a.li { color: inherit; text-decoration: none; display: contents; }
 
-        @media (max-width: 980px) { .c-7, .c-5 { grid-column: span 12; } }
+        /* Fünf Startansichten, aber weiterhin genau ein Widget-Baum und ein Datenzyklus. */
+        .home-grid[data-home-layout="fahren"] [data-home-widget="hero"] { order: 1; grid-column: span 7; }
+        .home-grid[data-home-layout="fahren"] [data-home-widget="location"] { order: 2; grid-column: span 5; }
+        .home-grid[data-home-layout="fahren"] [data-home-widget="trips"] { order: 3; grid-column: span 7; }
+        .home-grid[data-home-layout="fahren"] [data-home-widget="charging"] { order: 4; grid-column: span 5; }
+        .home-grid[data-home-layout="fahren"] [data-home-widget="quick"] { order: 5; grid-column: span 5; }
+        .home-grid[data-home-layout="fahren"] [data-home-widget="condition"] { order: 6; grid-column: span 7; }
+        .home-grid[data-home-layout="fahren"] [data-home-widget="ai"] { order: 7; }
+
+        .home-grid[data-home-layout="fahrzeug"] [data-home-widget="hero"] { order: 1; }
+        .home-grid[data-home-layout="fahrzeug"] [data-home-widget="quick"] { order: 2; }
+        .home-grid[data-home-layout="fahrzeug"] [data-home-widget="condition"] { order: 3; grid-column: span 12; }
+        .home-grid[data-home-layout="fahrzeug"] [data-home-widget="charging"] { order: 4; }
+        .home-grid[data-home-layout="fahrzeug"] [data-home-widget="location"] { order: 5; }
+        .home-grid[data-home-layout="fahrzeug"] [data-home-widget="trips"] { order: 6; }
+        .home-grid[data-home-layout="fahrzeug"] [data-home-widget="ai"] { order: 7; }
+        .vehicle-3d-entry { display: none; min-height: 72px; margin: 0 0 14px; padding: 12px 16px; box-sizing: border-box;
+                            align-items: center; color: var(--on-surface); text-decoration: none; border: 1px solid var(--sm-line);
+                            border-radius: 16px; background: rgba(95, 214, 230, .10); }
+        .vehicle-3d-entry svg { width: 34px; height: 34px; flex: none; margin-right: 14px; color: var(--sm-aqua); }
+        .vehicle-3d-entry strong, .vehicle-3d-entry small { display: block; }
+        .vehicle-3d-entry small { margin-top: 4px; color: var(--on-surface-variant); line-height: 1.35; }
+        .vehicle-3d-entry .vehicle-3d-arrow { margin-left: auto; width: 22px; height: 22px; }
+        .home-grid[data-home-layout="fahrzeug"] .vehicle-3d-entry { display: flex; }
+
+        .home-grid[data-home-layout="kompakt"] [data-home-widget="hero"] { order: 1; grid-column: span 12; }
+        .home-grid[data-home-layout="kompakt"] [data-home-widget="quick"] { order: 2; grid-column: span 5; }
+        .home-grid[data-home-layout="kompakt"] [data-home-widget="condition"] { order: 3; grid-column: span 7; }
+        .home-grid[data-home-layout="kompakt"] [data-home-widget="ai"],
+        .home-grid[data-home-layout="kompakt"] [data-home-widget="location"],
+        .home-grid[data-home-layout="kompakt"] [data-home-widget="charging"],
+        .home-grid[data-home-layout="kompakt"] [data-home-widget="trips"] { display: none; }
+        .home-grid[data-home-layout="kompakt"] .c-hero { grid-template-columns: 140px minmax(0, 1fr); padding: 20px; }
+        .home-grid[data-home-layout="kompakt"] .gauge { width: 140px; height: 172px; border-radius: 70px 70px 28px 28px; }
+
+        /* Cockpit: eigenständige, dichte Kacheloptik für breite Fahrzeugdisplays.
+           Es bleiben exakt dieselben Widgets, Daten und sicheren Befehle wie in Panoptes. */
+        html[data-home-layout="cockpit"] body.home-page {
+            background:
+                radial-gradient(circle at 48% 34%, rgba(64, 153, 201, .22), transparent 34%),
+                linear-gradient(145deg, #07121d 0%, #101d2c 48%, #071019 100%);
+        }
+        html[data-home-layout="cockpit"] .home { max-width: 1520px; padding-left: 18px; padding-right: 18px; }
+        .home-grid[data-home-layout="cockpit"] { gap: 10px; align-items: stretch; }
+        .home-grid[data-home-layout="cockpit"] .hc {
+            border-radius: 14px; padding: 14px;
+            background: linear-gradient(145deg, rgba(35, 50, 67, .92), rgba(18, 29, 42, .88));
+            border-color: rgba(186, 211, 232, .19);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 8px 24px rgba(0,0,0,.18);
+        }
+        .home-grid[data-home-layout="cockpit"] .hc h2 { margin-bottom: 10px; color: #b8c8d8; }
+        .home-grid[data-home-layout="cockpit"] [data-home-widget="hero"] { order: 1; grid-column: span 4; }
+        .home-grid[data-home-layout="cockpit"] [data-home-widget="condition"] { order: 2; grid-column: span 5; }
+        .home-grid[data-home-layout="cockpit"] [data-home-widget="quick"] { order: 3; grid-column: span 3; }
+        .home-grid[data-home-layout="cockpit"] [data-home-widget="location"] { order: 4; grid-column: span 5; }
+        .home-grid[data-home-layout="cockpit"] [data-home-widget="charging"] { order: 5; grid-column: span 3; }
+        .home-grid[data-home-layout="cockpit"] [data-home-widget="trips"] { order: 6; grid-column: span 4; }
+        .home-grid[data-home-layout="cockpit"] [data-home-widget="ai"] { order: 7; }
+        .home-grid[data-home-layout="cockpit"] .c-hero { grid-template-columns: 112px minmax(0, 1fr); gap: 14px; padding: 16px; }
+        .home-grid[data-home-layout="cockpit"] .gauge { width: 112px; height: 142px; border-radius: 56px 56px 22px 22px; }
+        .home-grid[data-home-layout="cockpit"] .gauge .val b { font-size: 35px; }
+        .home-grid[data-home-layout="cockpit"] .gauge .val b small { font-size: 18px; }
+        .home-grid[data-home-layout="cockpit"] .h-range { font-size: 44px; }
+        .home-grid[data-home-layout="cockpit"] .h-band { margin-bottom: 12px; }
+        .home-grid[data-home-layout="cockpit"] .band-bar { margin-bottom: 10px; }
+        .home-grid[data-home-layout="cockpit"] .vehicle-3d-entry {
+            display: flex; min-height: 96px; margin-bottom: 10px;
+            background: radial-gradient(circle at 50% 115%, rgba(73,170,220,.38), rgba(21,34,48,.78) 64%);
+        }
+        .home-grid[data-home-layout="cockpit"] .vehicle-3d-entry > svg:first-child { width: 64px; height: 64px; }
+        .home-grid[data-home-layout="cockpit"] .stats { gap: 7px; }
+        .home-grid[data-home-layout="cockpit"] .stat { padding: 10px; background: rgba(4,12,20,.42); }
+        .home-grid[data-home-layout="cockpit"] .stat .v { font-size: 17px; margin-top: 3px; }
+        .home-grid[data-home-layout="cockpit"] .acts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+        .home-grid[data-home-layout="cockpit"] .act { min-height: 68px; padding: 9px 4px; border-radius: 12px; }
+        .home-grid[data-home-layout="cockpit"] .act svg { margin-bottom: 5px; }
+        .home-grid[data-home-layout="cockpit"] .map { height: 190px; }
+        .home-grid[data-home-layout="cockpit"] .list li { padding: 8px 0; }
+        .home-grid[data-home-layout="cockpit"] .spark { height: 48px; }
+        .home-grid[data-home-layout="cockpit"] .dash-ai-insight { border-radius: 14px; }
+
+        @media (max-width: 980px) {
+            .c-7, .c-5,
+            .home-grid[data-home-layout="fahren"] [data-home-widget],
+            .home-grid[data-home-layout="kompakt"] [data-home-widget] { grid-column: span 12; }
+            .home-grid[data-home-layout="cockpit"] [data-home-widget="hero"],
+            .home-grid[data-home-layout="cockpit"] [data-home-widget="condition"],
+            .home-grid[data-home-layout="cockpit"] [data-home-widget="location"] { grid-column: span 6; }
+            .home-grid[data-home-layout="cockpit"] [data-home-widget="quick"],
+            .home-grid[data-home-layout="cockpit"] [data-home-widget="charging"],
+            .home-grid[data-home-layout="cockpit"] [data-home-widget="trips"] { grid-column: span 6; }
+        }
         @media (max-width: 720px) {
             .home { padding: 0 16px 24px; }
-            .c-hero { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; }
+            .c-hero,
+            .home-grid[data-home-layout="kompakt"] .c-hero {
+                grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center;
+            }
+            .home-grid[data-home-layout="cockpit"] [data-home-widget] { grid-column: span 12; }
+            .home-grid[data-home-layout="cockpit"] .c-hero {
+                grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center;
+            }
+            .home-grid[data-home-layout="cockpit"] .h-state,
+            .home-grid[data-home-layout="cockpit"] .chips { justify-content: center; }
             .h-state, .chips { justify-content: center; }
             .band-bar { margin-left: auto; margin-right: auto; width: 100%; }
             .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -173,10 +293,10 @@
             <p style="margin:6px 0 12px" id="hAutostartText" data-i18n="home.autostart_text">Nach dem Update hat BYD den Autostart von Panoptes ausgeschaltet. Ohne ihn startet Panoptes nicht von selbst.</p>
             <button type="button" class="act" id="hAutostartKnopf" style="width:100%;min-height:64px;font-size:1.2em" data-i18n="home.autostart_btn">Autostart wieder einschalten</button>
         </div>
-        <!-- 0.1.21 PWA Stufe 1: nur in Safari am iPhone/iPad über https und noch nicht als App installiert -->
+        <!-- PWA-Installation: Android-Prompt, ehrlicher Fallback und bestehende iOS-Anleitung -->
         <div class="hc" id="hAppHinweis" style="display:none;margin:0 0 14px;padding:16px 18px;">
             <b data-i18n="home.pwa_title">Panoptes als App</b>
-            <p style="margin:6px 0 10px" data-i18n="home.pwa_text">Unten auf „Teilen“ tippen → „Zum Home-Bildschirm“. Dann startet Panoptes wie eine App und kann dir Meldungen schicken.</p>
+            <p style="margin:6px 0 10px" id="hAppHinweisText" data-i18n="home.pwa_text">Tippe unten auf „Teilen“ und dann auf „Zum Home-Bildschirm“. Danach öffnet sich Panoptes wie eine App.</p>
             <button type="button" class="act" id="hAppHinweisZu" data-i18n="home.pwa_ok">Verstanden</button>
         </div>
         <!-- 0.1.26: stoppt Klima UND Akku heizen, ohne Rückfrage (Stoppen ist sicher) -->
@@ -185,7 +305,7 @@
         <section class="home-grid">
 
             <!-- Ladestand als Pegel -->
-            <article class="hc c-7 c-hero">
+            <article class="hc c-7 c-hero" data-home-widget="hero">
                 <div class="gauge" id="hGauge" style="--lvl:0%">
                     <div class="water"></div>
                     <svg class="wave b" viewBox="0 0 400 26" preserveAspectRatio="none"><path d="M0 13 Q25 0 50 13 T100 13 T150 13 T200 13 T250 13 T300 13 T350 13 T400 13 V26 H0z" fill="#2fb4c8"/></svg>
@@ -209,7 +329,7 @@
             </article>
 
             <!-- Schnellaktionen -->
-            <article class="hc c-5">
+            <article class="hc c-5" data-home-widget="quick">
                 <h2 data-i18n="home.quick">Schnell</h2>
                 <div class="acts">
                     <button class="act primary" type="button" onclick="Home.command(this,'/api/vehicle/lock',null,'home.confirm_lock')"><svg><use href="#i-lock"/></svg><span data-i18n="home.lock">Zusperren</span></button>
@@ -222,8 +342,14 @@
                 <div class="acts custom" id="hCustom" hidden></div>
             </article>
 
+            <button class="dash-ai-insight" id="dashAiInsight" data-home-widget="ai" type="button" aria-expanded="false" aria-live="polite" hidden>
+                <span class="ai-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="6" width="16" height="13" rx="3"/><path d="M9 3v3M8 12h.01M16 12h.01M9 16h6"/></svg></span>
+                <span class="ai-copy"><span class="ai-kicker" data-i18n="dashboard.ai_insight_kicker">Frag Panoptes</span><strong id="dashAiInsightTitle">—</strong><span class="ai-text" id="dashAiInsightText"></span><small id="dashAiInsightMeta"></small></span>
+                <svg class="ai-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+
             <!-- Standort -->
-            <article class="hc c-7">
+            <article class="hc c-7" data-home-widget="location">
                 <h2><span data-i18n="home.location">Standort</span><a class="more" href="navi.html" data-i18n="home.to_map">Zur Karte</a></h2>
                 <div class="map" id="hMap"></div>
                 <div class="row">
@@ -234,7 +360,7 @@
             </article>
 
             <!-- Laden & Kosten -->
-            <article class="hc c-5">
+            <article class="hc c-5" data-home-widget="charging">
                 <h2><span data-i18n="home.charging">Laden &amp; Kosten</span><a class="more" href="charging.html" data-i18n="home.details">Details</a></h2>
                 <div class="big" id="hMonthCost">--</div>
                 <div class="muted" id="hMonthInfo">&nbsp;</div>
@@ -247,8 +373,15 @@
             </article>
 
             <!-- Zustand -->
-            <article class="hc c-7">
+            <article class="hc c-7" data-home-widget="condition">
                 <h2><span data-i18n="home.condition">Zustand</span><a class="more" href="vehicle-control.html" data-i18n="home.to_control">Steuerung</a></h2>
+                <!-- Bewusster Einstieg in den vorhandenen 3D-Renderer. Kein zweiter Canvas,
+                     keine zweite WebGL- oder Fahrzeugdaten-Schleife auf der Startseite. -->
+                <a class="vehicle-3d-entry" id="hVehicle3dEntry" href="vehicle-control.html" data-home-vehicle-entry>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 16v-3l2-5a2 2 0 0 1 1.9-1.4h8.2A2 2 0 0 1 18 8l2 5v3M3 16h18v3h-3v-1.5H6V19H3z" stroke-linejoin="round"/><circle cx="7.5" cy="13.5" r="1"/><circle cx="16.5" cy="13.5" r="1"/></svg>
+                    <span><strong data-i18n="home.vehicle_3d_title">3D-Fahrzeug öffnen</strong><small id="hVehicle3dText" data-i18n="home.vehicle_3d_ready">Gewähltes Modell mit Türen, Fenstern, Klima und Schloss anzeigen.</small></span>
+                    <svg class="vehicle-3d-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                </a>
                 <div class="stats">
                     <div class="stat"><div class="k" data-i18n="home.doors">Türen</div><div class="v" id="sDoors">--</div><div class="s" id="sDoorsS">&nbsp;</div></div>
                     <div class="stat"><div class="k" data-i18n="home.windows">Fenster</div><div class="v" id="sWin">--</div><div class="s" id="sWinS">&nbsp;</div></div>
@@ -260,7 +393,7 @@
             </article>
 
             <!-- Letzte Fahrten -->
-            <article class="hc c-5">
+            <article class="hc c-5" data-home-widget="trips">
                 <h2><span data-i18n="home.trips">Letzte Fahrten</span><a class="more" href="trips.html" data-i18n="home.logbook">Fahrtenbuch</a></h2>
                 <ul class="list" id="hTrips"><li class="empty">&nbsp;</li></ul>
             </article>
@@ -271,8 +404,9 @@
 <div id="toastContainer" class="toast-container"></div>
 
 <script src="../shared/auth.js"></script>
-<script src="../shared/pwa-init.js?v=index1"></script>
+<script src="../shared/pwa-init.js?v=index2"></script>
 <script src="../shared/core.js?v=pn6"></script>
+<script src="../shared/ladeverlust-hinweis.js?v=1"></script>
 <script src="../shared/klima-stufe.js?v=2"></script>
 <script src="../shared/panoptes-map.js?v=12"></script>
 <script src="../shared/laden-nachfrage.js?v=1"></script>
@@ -324,6 +458,13 @@
         if (ts >= today - 86400000) return t('home.yesterday', 'Gestern') + ', ' + hm;
         return d.getDate() + '.' + (d.getMonth() + 1) + '., ' + hm;
     }
+    // 03.11.2026: Ladeort kurz. Der Ortsname kommt als „Ortsteil, Gemeinde“ (PlaceResult.mediumLabel); der Ortsteil
+    // allein ist oft unbekannt (z. B. ein Weiler neben dem Markt). Die Gemeinde kennt jeder. Ein Name ohne Komma
+    // (eigener Ort wie „Zuhause“) bleibt, wie er ist.
+    function ortKurz(label) {
+        var teile = String(label).split(',');
+        return (teile.length > 1 ? teile[teile.length - 1] : teile[0]).trim();
+    }
     function toast(msg, ok) { if (window.BYD && BYD.utils && BYD.utils.toast) BYD.utils.toast(msg, ok ? 'success' : 'error'); }
 
     var Home = window.Home = {
@@ -331,11 +472,19 @@
         vstate: null,
         range: null,
         map: null,
+        vehicleStateFailureCount: 0,
+        vehicleStateRequest: null,
+        vehicleStateRefreshQueued: false,
+        vehicleStatePollTimer: null,
+        aiInsightTimer: null,
+        aiInsightEnabled: false,
 
         // ---------------- Ladestand, Reichweite, Zustand der Fahrt
         fromStatus: function (st) {
             if (!st) return;
             this.status = st;
+            var status = st;
+            this.setAiInsightEnabled(status.genAiDashboardEnabled === true);
             var soc = st.soc && num(st.soc.percent) ? st.soc.percent : null;
             var g = $('hGauge');
             if (soc !== null) {
@@ -372,7 +521,7 @@
                 var p = Number(c.powerKw || c.chargingPowerKW || 0);
                 if (p > 0 && c.powerSource !== 'nominalPlaceholder') bits.push((c.isEstimated ? '~' : '') + fmt(p, 1) + ' kW');
                 if (c.timeToFullMin > 0) bits.push(t('home.full_in', 'voll in {t}', { t: Math.floor(c.timeToFullMin / 60) + ' h ' + (c.timeToFullMin % 60) + ' min' }));
-                if (c.sessionKwh > 0) bits.push('+' + fmt(c.sessionKwh, 1) + ' kWh');
+                if (c.sessionKwh > 0) bits.push('+' + (c.sessionEnergyEstimated ? '~' : '') + fmt(c.sessionKwh, 1) + ' kWh');
                 ch.textContent = t('home.charging_now', 'Lädt') + (bits.length ? ' · ' + bits.join(' · ') : '');
                 ch.className = 'h-charge on';
             } else ch.className = 'h-charge';
@@ -493,6 +642,7 @@
         // ---------------- Türen, Fenster, Klima, Reifen
         fromVehicleState: function (d) {
             if (!d || d.success !== true) return;
+            this.vehicleStateFailureCount = 0;
             this.vstate = d;
             var doors = d.doors || {}, open = d.doorOpen || {};
             var openNames = [];
@@ -578,8 +728,115 @@
 
         loadVehicleState: function () {
             var self = this;
-            fetch('/api/vehicle/state', { cache: 'no-store' }).then(function (r) { return r.json(); })
-                .then(function (d) { self.fromVehicleState(d); }).catch(function () {});
+            if (this.vehicleStateRequest) {
+                this.vehicleStateRefreshQueued = true;
+                return this.vehicleStateRequest;
+            }
+            this.vehicleStateRequest = fetch('/api/vehicle/state', { cache: 'no-store' }).then(function (r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            }).then(function (d) {
+                if (!d || d.success !== true) throw new Error('invalid vehicle state');
+                self.fromVehicleState(d);
+            }).catch(function () {
+                self.vehicleStateFailureCount++;
+                // Ein einzelner Funk-Aussetzer soll nicht flackern. Nach zwei
+                // Fehlschlägen dürfen aber alte Schloss-/Fenster-/Klima-Werte
+                // nicht weiter als aktueller Fahrzeugzustand erscheinen.
+                if (self.vehicleStateFailureCount >= 2) self.markVehicleStateUnavailable();
+            }).finally(function () {
+                self.vehicleStateRequest = null;
+                if (self.vehicleStateRefreshQueued) {
+                    self.vehicleStateRefreshQueued = false;
+                    self.loadVehicleState();
+                }
+            });
+            return this.vehicleStateRequest;
+        },
+
+        startVehicleStatePolling: function() {
+            var self = this;
+            if (this.vehicleStatePollTimer || document.hidden || window.pnPausiert) return;
+            this.loadVehicleState();
+            this.vehicleStatePollTimer = setInterval(function () {
+                if (!document.hidden && !window.pnPausiert) self.loadVehicleState();
+            }, 6000);
+        },
+
+        stopVehicleStatePolling: function() {
+            if (this.vehicleStatePollTimer) clearInterval(this.vehicleStatePollTimer);
+            this.vehicleStatePollTimer = null;
+        },
+
+        initVehicleStatePolling: function() {
+            var self = this;
+            this.startVehicleStatePolling();
+            document.addEventListener('visibilitychange', function () {
+                if (document.hidden) self.stopVehicleStatePolling();
+                else self.startVehicleStatePolling();
+            });
+        },
+
+        markVehicleStateUnavailable: function () {
+            this.vstate = null;
+            ['sDoors', 'sWin', 'sClim', 'sTyre'].forEach(function (id) { setText(id, '--'); setCls(id, 'v', ''); });
+            ['sDoorsS', 'sWinS', 'sClimS', 'sTyreS'].forEach(function (id) { setText(id, ''); });
+            this.climateOn = false;
+            this.aussenC = null;
+            this.renderState();
+        },
+
+        setAiInsightEnabled: function (enabled) {
+            enabled = !!enabled;
+            if (this.aiInsightEnabled === enabled) return;
+            this.aiInsightEnabled = enabled;
+            if (!enabled) {
+                if (this.aiInsightTimer) clearTimeout(this.aiInsightTimer);
+                this.aiInsightTimer = null;
+                this.renderAiInsight(null);
+                return;
+            }
+            this.refreshAiInsight();
+        },
+
+        refreshAiInsight: function () {
+            var self = this;
+            if (this.aiInsightTimer) { clearTimeout(this.aiInsightTimer); this.aiInsightTimer = null; }
+            if (document.hidden || !this.aiInsightEnabled) return;
+            var language = lang();
+            fetch('/api/genai/insights/dashboard?lang=' + encodeURIComponent(language), { cache: 'no-store' })
+                .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                .then(function (d) {
+                    if (lang() !== language) return;
+                    self.renderAiInsight(d && d.enabled === true ? d.item : null);
+                    if (d && d.enabled === true) self.aiInsightTimer = setTimeout(function () { self.refreshAiInsight(); }, 300000);
+                }).catch(function () { self.renderAiInsight(null); });
+        },
+
+        renderAiInsight: function (item) {
+            var card = $('dashAiInsight');
+            if (!card) return;
+            var text = item && typeof item.text === 'string' ? item.text.trim() : '';
+            var created = item ? Number(item.createdAt) : 0;
+            if (!text || !isFinite(created) || created <= 0 || Date.now() - created > 30 * 86400000) {
+                card.hidden = true;
+                card.classList.remove('is-expanded');
+                card.setAttribute('aria-expanded', 'false');
+                return;
+            }
+            document.getElementById('dashAiInsightTitle').textContent = (typeof item.title === 'string' && item.title.trim()) || t('dashboard.ai_insight_default_title', 'Dein Auto kurz gefasst');
+            document.getElementById('dashAiInsightText').textContent = text;
+            document.getElementById('dashAiInsightMeta').textContent = ago(created) + (item.model ? ' · ' + item.model : '');
+            card.hidden = false;
+        },
+
+        toggleAiInsight: function () {
+            var card = $('dashAiInsight');
+            if (!card || card.hidden) return;
+            var open = !card.classList.contains('is-expanded');
+            card.classList.toggle('is-expanded', open);
+            card.setAttribute('aria-expanded', open ? 'true' : 'false');
+            card.setAttribute('aria-label', t(open ? 'dashboard.ai_insight_collapse' : 'dashboard.ai_insight_show_full', open ? 'Weniger zeigen' : 'Ganze Antwort lesen'));
         },
 
         loadGuard: function () {
@@ -603,16 +860,21 @@
                 var s = d && d.summary;
                 if (!s) return;
                 var months = t('home.months', 'Jänner,Februar,März,April,Mai,Juni,Juli,August,September,Oktober,November,Dezember').split(',');
-                setText('hMonthCost', money(s.periodCost || 0));
+                // 03.11.2026: Kosten nach der Menge, die die Säule abrechnet (eingetragen bzw. mit Ladeverlust „~“)
+                var abgCost = num(s.periodCostAbgerechnet) ? s.periodCostAbgerechnet : (s.periodCost || 0);
+                var abgKwh = num(s.periodEnergyAbgerechnetKwh) ? s.periodEnergyAbgerechnetKwh : (s.periodEnergyKwh || 0);
+                var abgAvg = num(s.avgCostPerKwhAbgerechnet) ? s.avgCostPerKwhAbgerechnet : (s.avgCostPerKwh || 0);
+                var ca = (s.periodAbgerechnetGeschaetzt || 0) > 0 ? '~' : '';
+                setText('hMonthCost', ca + money(abgCost));
                 setText('hMonthInfo', t('home.month_info', '{m} bisher · {k} kWh · {p} €/kWh im Schnitt', {
-                    m: months[now.getMonth()] || '', k: fmt(s.periodEnergyKwh || 0), p: fmt(s.avgCostPerKwh || 0, 2) }));
+                    m: months[now.getMonth()] || '', k: ca + fmt(abgKwh), p: ca + fmt(abgAvg, 2) }));
                 // Kosten je Tag, aufsummiert über den Monat
                 var days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
                 var perDay = [];
                 for (var i = 0; i < days; i++) perDay.push(0);
                 (s.daily || []).forEach(function (x) {
                     var di = new Date(x.day).getDate() - 1;
-                    if (di >= 0 && di < days) perDay[di] += x.cost || 0;
+                    if (di >= 0 && di < days) perDay[di] += (num(x.costAbgerechnet) ? x.costAbgerechnet : x.cost) || 0;
                 });
                 var cum = [], acc = 0, today = now.getDate();
                 for (var j = 0; j < today; j++) { acc += perDay[j]; cum.push(acc); }
@@ -638,11 +900,19 @@
                     var ic = document.createElement('span'); ic.className = 'ic';
                     ic.innerHTML = '<svg><use href="' + (c.isDc ? '#i-flash' : '#i-plug') + '"/></svg>';
                     var tx = document.createElement('span'); tx.className = 't';
-                    tx.textContent = (c.placeLabel ? c.placeLabel.split(',')[0] : t('home.charge', 'Ladung')) + ' · ' + (c.isDc ? 'DC' : 'AC');
+                    tx.textContent = (c.placeLabel ? ortKurz(c.placeLabel) : t('home.charge', 'Ladung')) + ' · ' + (c.isDc ? 'DC' : 'AC');
                     var r = document.createElement('span'); r.className = 'r';
-                    r.textContent = num(c.cost) ? money(c.cost, c.currency) : '--';
+                    var kAbg = num(c.kostenAbgerechnet) ? c.kostenAbgerechnet : (c.abrechnungQuelle != null ? null : c.cost);
+                    r.textContent = num(kAbg) ? (c.kostenAbgerechnetGeschaetzt ? '~' : '') + money(kAbg, c.currency) : '--';
                     var sm = document.createElement('small');
-                    sm.textContent = (num(c.energyAdded) ? fmt(c.energyAdded, 1) + ' kWh · ' : '') + dayLabel(c.startTime);
+                    // Akku-kWh und abgerechnete kWh beide sichtbar; geschätzt mit „~“
+                    var kwhTxt = num(c.energyAdded)
+                        ? (num(c.kwhAbgerechnet)
+                            ? t('home.kwh_akku_saeule', 'Akku {a} · Säule {s} kWh', {
+                                a: fmt(c.energyAdded, 1), s: (c.kwhAbgerechnetGeschaetzt ? '~' : '') + fmt(c.kwhAbgerechnet, 1) })
+                            : fmt(c.energyAdded, 1) + ' kWh') + ' · '
+                        : '';
+                    sm.textContent = kwhTxt + dayLabel(c.startTime);
                     r.appendChild(sm);
                     li.appendChild(ic); li.appendChild(tx); li.appendChild(r);
                     list.appendChild(li);
@@ -804,6 +1074,20 @@
                 var pr = (e && e.profile) || PanoptesShell.profile();
                 self.map.setAppearance({ modelId: pr.modelId, color: pr.color });
             });
+        },
+
+        // Fahrzeug-Profil: Einstieg in die bestehende Steuerungsseite. Dort laufen
+        // Manifest, Modellwahl, 3D und die echten Zustandsdaten bereits zusammen.
+        // Die Startseite erzeugt bewusst keinen zweiten Canvas oder Poll-Zyklus.
+        updateVehicle3dEntry: function () {
+            var p = window.PanoptesShell && PanoptesShell.profile ? PanoptesShell.profile() : {};
+            var fehlt = !p || p.modellGewaehlt === false || !p.modelId;
+            var key = fehlt ? 'home.vehicle_3d_missing' : 'home.vehicle_3d_ready';
+            var text = $('hVehicle3dText');
+            if (text) text.setAttribute('data-i18n', key);
+            setText('hVehicle3dText', fehlt
+                ? t(key, 'Noch kein Modell gewählt. In der Steuerung auswählen.')
+                : t(key, 'Gewähltes Modell mit Türen, Fenstern, Klima und Schloss anzeigen.'));
         }
     };
 
@@ -816,26 +1100,70 @@
     // 0.1.26: Anzeige Stufe/Grad kam aus /api/system/capabilities → neu zeichnen
     document.addEventListener('panoptes:klima-anzeige', function () { Home.loadVehicleState(); });
 
-    function slowLoop() {
-        if (document.hidden || window.pnPausiert) return;
-        Home.loadVehicleState();
-    }
-
-    // 0.1.21 PWA Stufe 1: Hinweis „Zum Home-Bildschirm“ – nur iOS-Safari, nur sicherer Kontext (https), nicht installiert
+    // PWA-Installation auf dem Handy. Android bekommt den echten Browser-Prompt;
+    // fehlt er, nennen wir ehrlich den Chrome-Menüweg. iOS behält seine Anleitung.
     function appHinweis() {
-        try {
-            var ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-            var installiert = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+        var k = document.getElementById('hAppHinweis');
+        var text = document.getElementById('hAppHinweisText');
+        var knopf = document.getElementById('hAppHinweisZu');
+        function tt(key, fallback) {
+            try { var value = BYD.i18n.t(key); return value && value !== key ? value : fallback; }
+            catch (e) { return fallback; }
+        }
+        function ausblenden(merken) {
+            k.style.display = 'none';
+            if (merken) try { localStorage.setItem('panoptes.pwaHinweisWeg', '1'); } catch (e) {}
+        }
+        function rendern() {
+            var api = window.PanoptesPwaInstall;
+            var zustand = api && api.state ? api.state() : null;
+            var ua = navigator.userAgent || '';
+            var ios = zustand ? zustand.platform === 'ios' : /iPhone|iPad|iPod/.test(ua);
+            var android = zustand ? zustand.platform === 'android' : /Android/i.test(ua);
+            var installiert = zustand ? zustand.installed
+                : (window.navigator.standalone === true || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches));
             var weg = false;
             try { weg = localStorage.getItem('panoptes.pwaHinweisWeg') === '1'; } catch (e) {}
-            if (!ios || installiert || weg || location.protocol !== 'https:') return;
-            var k = document.getElementById('hAppHinweis');
+            if (document.documentElement.getAttribute('data-anzeige') === 'auto'
+                    || document.documentElement.hasAttribute('data-android-app')
+                    || installiert || weg || (!ios && !android)) {
+                ausblenden(false);
+                return;
+            }
             k.style.display = '';
-            document.getElementById('hAppHinweisZu').onclick = function () {
-                k.style.display = 'none';
-                try { localStorage.setItem('panoptes.pwaHinweisWeg', '1'); } catch (e) {}
+            knopf.style.display = '';
+            knopf.disabled = false;
+            if (ios) {
+                text.textContent = tt('home.pwa_text', 'Tippe unten auf „Teilen“ und dann auf „Zum Home-Bildschirm“. Danach öffnet sich Panoptes wie eine App.');
+                knopf.textContent = tt('home.pwa_ok', 'Verstanden');
+                knopf.onclick = function () { ausblenden(true); };
+                return;
+            }
+            if (zustand && !zustand.secure) {
+                text.textContent = tt('home.pwa_https', 'Android kann Panoptes nur über eine sichere HTTPS-Adresse als App installieren. Über eine direkte http://-Adresse im Autonetz ist das nicht möglich.');
+                knopf.textContent = tt('home.pwa_ok', 'Verstanden');
+                knopf.onclick = function () { ausblenden(true); };
+                return;
+            }
+            text.textContent = tt('home.pwa_android_text', 'Installiere Panoptes auf deinem Startbildschirm. Danach öffnet es sich ohne Browserleiste wie eine App.');
+            knopf.textContent = tt('home.pwa_install', 'Panoptes installieren');
+            knopf.onclick = function () {
+                knopf.disabled = true;
+                knopf.textContent = tt('home.pwa_installing', 'Installation wird geöffnet …');
+                var install = api && api.install ? api.install() : Promise.resolve({ ok: false, reason: 'prompt-unavailable' });
+                install.then(function (ergebnis) {
+                    if (ergebnis && (ergebnis.ok || ergebnis.installed)) { ausblenden(false); return; }
+                    text.textContent = tt('home.pwa_fallback', 'Falls kein Android-Fenster erscheint: Öffne in Chrome oben rechts ⋮ und tippe auf „App installieren“ oder „Zum Startbildschirm hinzufügen“.');
+                    knopf.disabled = false;
+                    knopf.textContent = tt('home.pwa_ok', 'Verstanden');
+                    knopf.onclick = function () { ausblenden(true); };
+                });
             };
-        } catch (e) {}
+        }
+        document.addEventListener('panoptes:pwa-install-state', rendern);
+        rendern();
+        window.setTimeout(rendern, 500);
+        if (window.BYD && BYD.i18n && typeof BYD.i18n.onChange === 'function') BYD.i18n.onChange(rendern);
     }
 
     // 0.1.21: Autostart nach Update. EIN Knopf statt Dauer-Dialog; nur am Display und nur bei frei === false
@@ -876,15 +1204,21 @@
         autostartKarte();
         Home.initMap();
         Home.loadRange();
-        Home.loadVehicleState();
+        BYD.dashboard = Home;
+        BYD.dashboard.initVehicleStatePolling();
         Home.loadGuard();
         Home.loadCharging();
         Home.loadTrips();
         Home.loadCustom();
-        setInterval(slowLoop, 6000);
+        Home.updateVehicle3dEntry();
+        document.addEventListener('panoptes:profile', function () { Home.updateVehicle3dEntry(); });
+        if (window.BYD && BYD.i18n && typeof BYD.i18n.onChange === 'function') {
+            BYD.i18n.onChange(function () { Home.updateVehicle3dEntry(); });
+        }
+        $('dashAiInsight').onclick = function () { Home.toggleAiInsight(); };
         setInterval(function () { if (!document.hidden && !window.pnPausiert) { Home.loadGuard(); Home.loadRange(); } }, 60000);
         setInterval(function () { if (!document.hidden && !window.pnPausiert) { Home.loadCharging(); Home.loadTrips(); } }, 300000);
-        document.addEventListener('visibilitychange', function () { if (!document.hidden) slowLoop(); });
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) Home.refreshAiInsight(); });
     });
 })();
 </script>

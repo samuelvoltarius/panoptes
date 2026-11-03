@@ -11,7 +11,7 @@
     "proximity_yellow": "Annäherung · nah (0–0,8 m)",
     "charging_started": "Laden beginnt · {0} kW",
     "charging_stopped": "Laden bei {0}% beendet",
-    "charging_complete": "Ladestand {0}% – der Stecker kann raus",
+    "charging_complete": "Akku {0}% – der Stecker kann raus",
     "recording_started": "Aufnahme beginnt",
     "recording_ended": "Aufnahme endet",
     "location_prefix": "Ort: {0}"
@@ -186,8 +186,8 @@
     "charging_complete": "Fertig geladen",
     "charging_nearly_complete": "Gleich fertig geladen",
     "charging_fault": "Problem beim Laden",
-    "battery_ready_to_unplug": "Ladestand {0}% – du kannst jetzt abstecken",
-    "battery_nearly_full": "Ladestand {0}% – gleich fertig",
+    "battery_ready_to_unplug": "Akku {0}% – du kannst jetzt abstecken",
+    "battery_nearly_full": "Akku {0}% – gleich fertig",
     "charging_state": {
       "ready": "Bereit",
       "charging": "Lädt",
@@ -396,11 +396,11 @@
       "sentry_pipeline_down": "Kamera läuft nicht",
       "sentry_unknown": "unbekannt",
       "btn_walk": "Auf der Karte zeigen (öffnet OpenStreetMap)",
-      "energy_charged_soc": "+{0} % Ladestand (geladen)",
-      "energy_used_soc": "−{0} % Ladestand",
+      "energy_charged_soc": "+{0} % Akku (geladen)",
+      "energy_used_soc": "−{0} % Akku",
       "energy_charged": "{0} kWh geladen{1}",
       "energy_used": "{0} kWh verbraucht{1}",
-      "soc_suffix": " ({0}{1} % Ladestand)"
+      "soc_suffix": " ({0}{1} % Akku)"
     }
   },
   "telegram": {
@@ -511,7 +511,7 @@
       "camera": "/kamera – Ein Bild von allen Kameras, jetzt",
       "clips": "/aufnahmen – Die letzten Aufnahmen (z. B. `/aufnahmen 12`)",
       "where": "/wo – Wo das Auto steht",
-      "charge": "/laden – Ladestand, Reichweite, lädt es?",
+      "charge": "/laden – Akku, Reichweite, lädt es?",
       "remote": "/fernzugang – Link zur Panoptes-Oberfläche",
       "services": "/dienste – Welche Dienste laufen, starten/stoppen",
       "backup": "/sicherung – Einstellungen als Datei schicken (`/sicherung fahrten` mit Fahrtenbuch)",
@@ -720,8 +720,8 @@
       "guard_awake": "🛡 Wächter: *wach* – passt gerade auf",
       "guard_waiting": "🛡 Wächter: *an* – wird wach, sobald du das Auto abstellst",
       "guard_asleep": "😴 Wächter: *schläft* – passt nicht auf",
-      "soc": "🔋 Ladestand: {0} %",
-      "soc_range": "🔋 Ladestand: {0} % · etwa {1} km",
+      "soc": "🔋 Akku: {0} %",
+      "soc_range": "🔋 Akku: {0} % · etwa {1} km",
       "v12": "🔌 Starterbatterie: {0} V",
       "v12_low": "🪫 Starterbatterie: {0} V – *schwach*",
       "temp": "🌡 Gerät: {0} °C",
@@ -740,7 +740,7 @@
     "guard_stop": {
       "title": "😴 *Der Wächter hat sich schlafen gelegt*",
       "reason": {
-        "soc": "Grund: Der Ladestand ist auf {0} gefallen.",
+        "soc": "Grund: Der Akku ist auf {0} % gefallen.",
         "v12": "Grund: Die Starterbatterie hat nur noch {0}.",
         "park_hours": "Grund: Das Auto steht schon {0}.",
         "window": "Grund: Deine eingestellte Zeit ({0}) ist um.",
@@ -760,7 +760,7 @@
     "charge": {
       "title": "🔋 *Laden*",
       "unavailable": "⚠️ Vom Auto kommen gerade keine Ladewerte. Ist es eingeschlafen? Später noch einmal probieren.",
-      "soc": "Ladestand: *{0} %*",
+      "soc": "Akku: *{0} %*",
       "range": "Reichweite: etwa {0} km",
       "charging": "⚡ Lädt gerade",
       "charging_kw": "⚡ Lädt gerade mit {0} kW",
@@ -837,7 +837,7 @@
       },
       "fahrzeug_akku": {
         "label": "Akku",
-        "note": "Warnungen zum Akku (Ladestand, 12 V)."
+        "note": "Warnungen zum Akku (Antrieb, 12 V)."
       },
       "laden_status": {
         "label": "Laden",
@@ -1081,12 +1081,12 @@
     "percent": "Prozent",
     "window_state": "Fensterstatus",
     "window_state_description": "Zeigt, ob die Fenster offen oder zu sind. Bei „Alle“ gilt: offen, sobald irgendein Fenster offen ist.",
-    "battery_level": "Ladestand",
+    "battery_level": "Akku",
     "battery_level_description": "Wie voll der Akku ist, in Prozent. Der Tank eines Hybrids zählt nicht mit.",
-    "target_soc": "Ziel-Ladestand",
+    "target_soc": "Akku-Ziel",
     "target_soc_description": "Das Ladeziel, das gerade im Auto eingestellt ist, in Prozent.",
-    "set_target_soc": "Ziel-Ladestand festlegen",
-    "set_target_soc_description": "Legt fest, auf welchem Ladestand ein Plug-in-Hybrid (PHEV) beim Fahren bleiben soll: 15 bis 70 %. Bei DM2.5 sind es mindestens 25 %. Speichert nur den Wert. „Akku halten“ wird dadurch nicht eingeschaltet.",
+    "set_target_soc": "Akku-Ziel festlegen",
+    "set_target_soc_description": "Legt fest, bei welchem Akkuwert ein Plug-in-Hybrid (PHEV) beim Fahren bleiben soll: 15 bis 70 %. Bei DM2.5 sind es mindestens 25 %. Speichert nur den Wert. „Akku halten“ wird dadurch nicht eingeschaltet.",
     "estimated_range": "Geschätzte Reichweite",
     "estimated_range_description": "Die Reichweite, die das Auto schätzt, in km. Nur elektrisch. Die Extra-Reichweite durch Sprit bei Hybriden zählt nicht mit.",
     "lights": "Licht",
@@ -1217,7 +1217,7 @@
     "set_powertrain_mode": "Antrieb wechseln",
     "set_powertrain_mode_description": "Wechselt bei DM-/PHEV-Autos zwischen elektrisch (EV) und Hybrid (HEV).",
     "hold_battery": "Motorbetrieb (HEV)",
-    "hold_battery_description": "Schaltet auf HEV um. Dann fährt der Motor das Auto statt des Akkus. Nur bei Plug-in-Hybriden. Hinweis: Bei manchen Ausführungen lädt der Motor den Akku im HEV-Betrieb trotzdem. Willst du den Ladestand auf einem festen Wert halten, nimm stattdessen „Ladelimit“.",
+    "hold_battery_description": "Schaltet auf HEV um. Dann fährt der Motor das Auto statt des Akkus. Nur bei Plug-in-Hybriden. Hinweis: Bei manchen Ausführungen lädt der Motor den Akku im HEV-Betrieb trotzdem. Willst du den Akku auf einem festen Wert halten, nimm stattdessen „Ladelimit“.",
     "soc_hold_percent": "Ladelimit festlegen",
     "soc_hold_percent_description": "Legt das Ladelimit fest, also den Stand, bei dem das Laden endet (50 bis 100). Speichere den Wert, bevor du das Ladelimit einschaltest. Es ist getrennt von „Akku halten“, das für das Fahren mit dem PHEV gedacht ist.",
     "soc_hold_enabled": "Ladelimit",
@@ -1642,10 +1642,10 @@
     "compute_variable_description": "Rechnet eine Zahl aus und speichert sie in einer Variable. Möglich sind + - * / %, Klammern und die Funktionen min, max, clamp, round, floor, ceil, abs, sqrt und pow. Nimm ${signal:NAME} für einen aktuellen Wert vom Auto und ${var:NAME} für eine andere Variable, zum Beispiel 500 + (${signal:batteryLevel} - 20) * 3.75. Lässt sich ein Wert nicht lesen (etwa weil er noch nichts gemeldet hat), bleibt die Variable, wie sie war.",
     "variable_expression": "Formel",
     "capture_variable": "Aktuellen Wert speichern",
-    "capture_variable_description": "Speichert die aktuelle Medienlautstärke oder den Ladestand des Akkus als benannte Variable. Die Zahl ist eine Momentaufnahme, die spätere Aktionen nutzen können, zum Beispiel um die Medienlautstärke wiederherzustellen.",
+    "capture_variable_description": "Speichert die aktuelle Medienlautstärke oder den Akkuwert als benannte Variable. Die Zahl ist eine Momentaufnahme, die spätere Aktionen nutzen können, zum Beispiel um die Medienlautstärke wiederherzustellen.",
     "capture_source": "Was gespeichert wird",
     "capture_media_volume": "Medienlautstärke",
-    "capture_battery_soc": "Ladestand (%)",
+    "capture_battery_soc": "Akku (%)",
     "loop": "Wiederholen",
     "loop_description": "Wiederholt die Aktionen darin eine feste Anzahl von Malen, oder solange bzw. bis eine Bedingung für einen Wert gilt.",
     "loop_mode": "Art der Wiederholung",
@@ -1682,9 +1682,9 @@
     "mode_fuel": "Sprit",
     "mode_keep": "Unverändert",
     "battery_hold": "Akku halten",
-    "battery_hold_description": "Hält den Akkustand mit der eigenen Haltefunktion des Autos. „Ziel-Ladestand verwenden“ schaltet den extra eingestellten Ziel-Ladestand ein, ohne ihn zu ersetzen. „Aktuellen Ladestand halten“ nimmt den aktuellen Stand, höchstens 50 %. „Auf Minimum entladen“ nutzt die Reserve des Autos. (Nur PHEV.)",
-    "battery_hold_at_current": "Aktuellen Ladestand halten",
-    "battery_hold_at_target": "Ziel-Ladestand verwenden",
+    "battery_hold_description": "Hält den Akku mit der eigenen Haltefunktion des Autos. „Akku-Ziel verwenden“ schaltet das extra eingestellte Akku-Ziel ein, ohne es zu ersetzen. „Aktuellen Akkuwert halten“ nimmt den aktuellen Wert, höchstens 50 %. „Auf Minimum entladen“ nutzt die Reserve des Autos. (Nur PHEV.)",
+    "battery_hold_at_current": "Aktuellen Akkuwert halten",
+    "battery_hold_at_target": "Akku-Ziel verwenden",
     "battery_hold_at_floor": "Auf Minimum entladen",
     "ac_zone": "Bereich",
     "ac_zone_both": "Beide",
@@ -1817,7 +1817,7 @@
       },
       "socBelow": {
         "title": "Fahrakku unter",
-        "help": "Ladestand der großen Batterie."
+        "help": "Akkuwert der großen Batterie."
       },
       "v12Below": {
         "title": "Starterbatterie unter",
@@ -1877,7 +1877,7 @@
       },
       "zustandSenden": {
         "title": "Zustand an Routenplaner senden",
-        "help": "Sendet Ladestand, Reichweite und ob gerade geladen wird an den Routenplaner – nie die Position."
+        "help": "Sendet Akku, Reichweite und ob gerade geladen wird an den Routenplaner – nie die Position."
       },
       "positionSenden": {
         "title": "Position für den Routenstart senden",
@@ -2197,11 +2197,11 @@
       },
       "ankunftSocMin": {
         "title": "Ankommen mit mindestens",
-        "help": "Ladestand bei Ankunft am Ziel und an jedem Ladestopp. Gilt auch für „Reicht es noch?“. Leer = Standard des Planers."
+        "help": "Akku bei Ankunft am Ziel und an jedem Ladestopp. Gilt auch für „Reicht es noch?“. Leer = Standard des Planers."
       },
       "ladenBis": {
         "title": "Laden bis",
-        "help": "Bis zu welchem Ladestand an einem Ladestopp geladen wird. Leer = Standard des Planers."
+        "help": "Bis zu welchem Akkuwert an einem Ladestopp geladen wird. Leer = Standard des Planers."
       },
       "modus": {
         "title": "Planung",
@@ -2221,6 +2221,18 @@
       "acStandard": {
         "title": "AC-Laden ohne bekannten Ort kostet",
         "help": "Gilt für alle AC-Ladungen ohne gemerkten Ort (z. B. zu Hause), dann fragt Panoptes dort nicht. 0 = gratis. Leer = jedes Mal fragen."
+      },
+      "verlustAc": {
+        "title": "Ladeverlust AC (Wallbox, Haushalt)",
+        "help": "So viel mehr rechnet eine AC-Ladestelle ab, als im Akku ankommt. Vorschlag 12 %. Gilt nur für Ladungen ohne eingetragene kWh laut Säule; diese Werte stehen mit „~“."
+      },
+      "verlustDc": {
+        "title": "Ladeverlust DC (Schnelllader)",
+        "help": "So viel mehr rechnet eine DC-Säule ab, als im Akku ankommt. Vorschlag 8 %. Gilt nur für Ladungen ohne eingetragene kWh laut Säule; diese Werte stehen mit „~“."
+      },
+      "verlustHinweis": {
+        "title": "Hinweis zum Ladeverlust zeigen",
+        "help": "Einmal erklären, dass die Kosten den Ladeverlust enthalten. Nach „Verstanden“ aus."
       }
     },
     "zaehlen": {
@@ -2247,7 +2259,7 @@
     "ladekurve": {
       "teilen": {
         "title": "Ladekurve anonym teilen",
-        "help": "Beim DC-Laden misst Panoptes, mit wie viel kW bei welchem Ladestand geladen wird, und speichert das im Auto. Eingeschaltet geht höchstens einmal am Tag eine Zusammenfassung je Modell an den Routenplaner: Ladestand-Bereiche, typische kW, Anzahl Ladungen. Kein Ort, keine Zeit, keine VIN, nicht deinem Konto zugeordnet. Standard aus. Ausschalten löscht sie auch am Server."
+        "help": "Beim DC-Laden misst Panoptes, mit wie viel kW bei welchem Akkuwert geladen wird, und speichert das im Auto. Eingeschaltet geht höchstens einmal am Tag eine Zusammenfassung je Modell an den Routenplaner: Akku-Bereiche, typische kW, Anzahl Ladungen. Kein Ort, keine Zeit, keine VIN, nicht deinem Konto zugeordnet. Standard aus. Ausschalten löscht sie auch am Server."
       },
       "kennung": {
         "title": "Zufallskennung (Ladekurve)",
@@ -2269,7 +2281,7 @@
       },
       "vergessen": {
         "title": "Gewohnheiten vergessen",
-        "help": "Löscht alles Gemerkte und alle abgelehnten Vorschläge. Schon angelegte Automationen bleiben.",
+        "help": "Löscht alles Gemerkte und alle abgelehnten Vorschläge. Schon angelegte Regeln bleiben.",
         "behalten": "Behalten",
         "loeschen": "Alles vergessen"
       }
@@ -2301,7 +2313,7 @@
   "planer": {
     "zustandEinwilligung": {
       "title": "Zustand an Routenplaner senden?",
-      "text": "Was: Ladestand, Reichweite laut Auto, ob und mit wie viel kW geladen wird, Zeitpunkt. Keine Position, keine VIN. Wohin: byd.serveone.at (Routenplaner), nur in dein Konto. Gespeichert wird nur der letzte Wert, kein Verlauf. Wofür: Start-Ladestand beim Planen. Ausschalten löscht die Daten auch am Server."
+      "text": "Was: Akku, Reichweite laut Auto, ob und mit wie viel kW geladen wird, Zeitpunkt. Keine Position, keine VIN. Wohin: byd.serveone.at (Routenplaner), nur in dein Konto. Gespeichert wird nur der letzte Wert, kein Verlauf. Wofür: Akku beim Start der Planung. Ausschalten löscht die Daten auch am Server."
     },
     "positionEinwilligung": {
       "title": "Position für den Routenstart senden?",
@@ -2320,11 +2332,11 @@
     },
     "vorliebenEinwilligung": {
       "title": "Lade-Vorlieben an den Routenplaner senden?",
-      "text": "Was: deine Ladekarten (nur welche, keine Ladevorgänge), bevorzugte und gemiedene Ladenetze, Umweg, „nur geöffnet“, Mindestleistung, Stecker, Ankunfts-Ladestand, „Laden bis“, Planungsart. Keine Position. Wohin: byd.serveone.at (Ladeplaner), nur in dein Konto. Wie lange: bis zu 24 Stunden im Arbeitsspeicher, nie auf Platte, nicht protokolliert. Wofür: /ev/ im Browser plant mit den Vorlieben aus deinem Auto. Ausschalten löscht sie sofort am Server."
+      "text": "Was: deine Ladekarten (nur welche, keine Ladevorgänge), bevorzugte und gemiedene Ladenetze, Umweg, „nur geöffnet“, Mindestleistung, Stecker, Akku bei Ankunft, „Laden bis“, Planungsart. Keine Position. Wohin: byd.serveone.at (Ladeplaner), nur in dein Konto. Wie lange: bis zu 24 Stunden im Arbeitsspeicher, nie auf Platte, nicht protokolliert. Wofür: /ev/ im Browser plant mit den Vorlieben aus deinem Auto. Ausschalten löscht sie sofort am Server."
     },
     "ladekurveEinwilligung": {
       "title": "Ladekurve anonym teilen?",
-      "text": "Was: je Ladestand-Bereich (5 %) die typische DC-Ladeleistung deines Modells und wie viele Ladungen dahinterstehen. Kein Ort, keine Uhrzeit, kein Datum, keine VIN, keine einzelnen Ladungen, kein Konto. Wohin: byd.serveone.at (Routenplaner), mit einer Zufallskennung nur für diesen Zweck. Wofür: realistische Ladezeiten für alle mit demselben Modell. Ausschalten löscht deine Kurve auch am Server."
+      "text": "Was: je Akku-Bereich (5 %) die typische DC-Ladeleistung deines Modells und wie viele Ladungen dahinterstehen. Kein Ort, keine Uhrzeit, kein Datum, keine VIN, keine einzelnen Ladungen, kein Konto. Wohin: byd.serveone.at (Routenplaner), mit einer Zufallskennung nur für diesen Zweck. Wofür: realistische Ladezeiten für alle mit demselben Modell. Ausschalten löscht deine Kurve auch am Server."
     },
     "zaehlenEinwilligung": {
       "title": "Anonym mitzählen?",

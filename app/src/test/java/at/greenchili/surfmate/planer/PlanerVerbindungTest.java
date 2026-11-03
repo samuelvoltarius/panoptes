@@ -19,8 +19,9 @@ import java.util.List;
 /** „Mit Routenplaner verbinden“ (Planer-Vertrag §6) gegen einen nachgebauten Planer, ohne Netz. */
 public class PlanerVerbindungTest {
 
-    static final String POLL = "0123456789abcdef0123456789abcdef";
-    static final String KEY = "aa" + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd";
+    static final String POLL = "01".repeat(16);
+    static final String KEY = "aa".repeat(32);
+    static final String MEMBER_TOKEN = "10".repeat(16);
 
     /** Nachgebauter Planer: Antworten der Reihe nach, merkt Aufrufe. */
     static final class Planer implements PlanerVerbindung.Netz {
@@ -155,13 +156,13 @@ public class PlanerVerbindungTest {
     public void deviceKeyPreferredMemberKeyAsFallback() throws Exception {
         PlanerSchluessel.Entschluessler e = g -> g.startsWith("ENC:") ? g.substring(4) : g;
         String[] k = PlanerSchluessel.kopf(new JSONObject().put("geraeteSchluessel", "ENC:" + KEY)
-                .put("memberToken", "0123456789abcdef0123456789abcdef"), e);
+                .put("memberToken", MEMBER_TOKEN), e);
         assertEquals("X-Geraete-Token", k[0]);
         assertEquals(KEY, k[1]);
-        String[] m = PlanerSchluessel.kopf(new JSONObject().put("memberToken", "0123456789abcdef0123456789abcdef"), e);
+        String[] m = PlanerSchluessel.kopf(new JSONObject().put("memberToken", MEMBER_TOKEN), e);
         assertEquals("X-Member-Token", m[0]);
         String[] kaputt = PlanerSchluessel.kopf(new JSONObject().put("geraeteSchluessel", "ENC:xx")
-                .put("memberToken", "0123456789abcdef0123456789abcdef"), g -> "");
+                .put("memberToken", MEMBER_TOKEN), g -> "");
         assertEquals("unlesbarer Geräte-Schlüssel → Rückfall", "X-Member-Token", kaputt[0]);
         assertNull(PlanerSchluessel.kopf(new JSONObject(), e));
         assertNull(PlanerSchluessel.kopf(null, e));

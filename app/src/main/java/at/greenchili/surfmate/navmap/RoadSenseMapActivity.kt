@@ -4782,6 +4782,9 @@ open class RoadSenseMapActivity : AppCompatActivity() {
                 }
                 val m = state.currentManeuver
                 if (m != null) {
+                    if (!clusterMode) {
+                        at.greenchili.surfmate.navmap.oem.OemNavigationClient.publish(state)
+                    }
                     // Bucketed turn distance (stable "50 m", not jittery "47 m").
                     val dist = at.greenchili.surfmate.navmap.nav.MapNetworking.formatTurnDistance(state.distanceToManeuverM)
                     // Roundabout: append the exit ordinal when Valhalla gave one and
@@ -5392,6 +5395,7 @@ open class RoadSenseMapActivity : AppCompatActivity() {
 
     private fun stopGuidance() {
         navigating = false
+        if (!clusterMode) at.greenchili.surfmate.navmap.oem.OemNavigationClient.stop()
         // Nav ended (arrived / end-nav) → drop the persisted trip so a later re-entry
         // opens fresh, not back into a finished route.
         if (!clusterMode) NavTripStore.clear(applicationContext)

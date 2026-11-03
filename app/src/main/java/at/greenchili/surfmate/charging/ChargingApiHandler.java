@@ -42,6 +42,7 @@ public class ChargingApiHandler {
     // POST fallback for per-session delete (the in-app WebView can drop DELETE).
     private static final Pattern SESSION_DELETE_PATTERN = Pattern.compile("^/api/charging/(\\d+)/delete$");
     private static final Pattern SESSION_COST_PATTERN = Pattern.compile("^/api/charging/(\\d+)/cost$");
+    private static final Pattern SESSION_SAEULE_PATTERN = Pattern.compile("^/api/charging/(\\d+)/saeule$");
 
     private final ChargingSessionManager manager;
     private final Supplier<TripAnalyticsManager>
@@ -139,6 +140,13 @@ public class ChargingApiHandler {
             if (costMatcher.matches() && "POST".equals(method)) {
                 long id = Long.parseLong(costMatcher.group(1));
                 return handleUpdateSessionCost(id, body);
+            }
+
+            // POST /api/charging/{id}/saeule — kWh und Betrag laut Säule (LadeAbrechnung).
+            Matcher saeuleMatcher = SESSION_SAEULE_PATTERN.matcher(path);
+            if (saeuleMatcher.matches() && "POST".equals(method)) {
+                long id = Long.parseLong(saeuleMatcher.group(1));
+                return handleSetSaeule(id, body);
             }
 
             // GET/DELETE /api/charging/{id}
@@ -492,6 +500,44 @@ public class ChargingApiHandler {
         } catch (Exception e) {
             logger.error("Error updating cost for session " + id, e);
             return errorResponse("Failed to update cost", 500);
+        }
+    }
+
+    /**
+     * POST /api/charging/{id}/saeule — {@code {"kwh": Zahl|null, "betrag": Zahl|null}}: Menge und Betrag laut Säule
+     * bzw. Rechnung. null oder fehlend = Feld leeren (dann gilt wieder der Ladeverlust-Zuschlag).
+     */
+    private JSONObject handleSetSaeule(long id, String body) {
+        try {
+            JSONObject req;
+            try {
+                req = new JSONObject(body != null && !body.isEmpty() ? body : "{}");
+            } catch (org.json.JSONException e) {
+                return errorResponse("Invalid JSON payload", 400);
+            }
+            double kwh = Double.NaN, betrag = Double.NaN;
+            Object k = req.opt("kwh"), b = req.opt("betrag");
+            if (k != null && k != JSONObject.NULL) {
+                if (!(k instanceof Number)) return errorResponse("'kwh' must be a number", 400);
+                kwh = ((Number) k).doubleValue();
+                if (Double.isNaN(LadeAbrechnung.gueltigeKwh(kwh))) return errorResponse("'kwh' out of range", 400);
+            }
+            if (b != null && b != JSONObject.NULL) {
+                if (!(b instanceof Number)) return errorResponse("'betrag' must be a number", 400);
+                betrag = ((Number) b).doubleValue();
+                if (Double.isNaN(LadeAbrechnung.gueltigerBetrag(betrag))) return errorResponse("'betrag' out of range", 400);
+            }
+            if (!db().setChargingSaeule(id, kwh, betrag)) {
+                return errorResponse("Session not found or still charging", 409);
+            }
+            JSONObject response = new JSONObject();
+            response.put("success", true);
+            JSONObject row = db().getChargingSessionById(id);
+            if (row != null) response.put("session", row);
+            return response;
+        } catch (Exception e) {
+            logger.error("Error setting Saeule values for session " + id, e);
+            return errorResponse("Failed to save", 500);
         }
     }
 

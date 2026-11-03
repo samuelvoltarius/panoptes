@@ -745,7 +745,11 @@ public class SocHistoryDatabase {
                 // Kern 5 (0.1.10, LADENACHFRAGE_VERTRAG): Herkunft des Preises (tarif|nutzer|standard|ersatz|fehlt|
                 // overdrive; '' = vor 0.1.10) und Stand der Nachfrage „Wo hast du geladen?“ (''|offen|spaeter|erledigt).
                 "preis_quelle VARCHAR(16) DEFAULT ''",
-                "nachfrage VARCHAR(12) DEFAULT ''"
+                "nachfrage VARCHAR(12) DEFAULT ''",
+                // 03.11.2026 (LadeAbrechnung): vom Nutzer eingetragen laut Säule bzw. Rechnung. NULL = nicht eingetragen,
+                // dann schätzt die Anzeige mit dem Ladeverlust-Zuschlag. energy_added_kwh/session_cost bleiben Akku-Basis.
+                "saeule_kwh DOUBLE DEFAULT NULL",
+                "saeule_betrag DOUBLE DEFAULT NULL"
             };
             for (String col : newChargingCols) {
                 try {
@@ -6800,8 +6804,13 @@ public class SocHistoryDatabase {
             // Kern 5 (0.1.10.1, mit Kern 4 abgestimmt): die jüngste Ladung mit BEKANNTEM Preis – Tarif, Nutzerangabe
             // (Ladenachfrage/Preis-Weg) oder AC-Standard, auch gratis (0). „fehlt“ und „ersatz“ (globaler Satz) zählen
             // nicht. Altzeilen ohne preis_quelle: Tarif-eigen mit Preis > 0 bzw. AC-Standard-Label.
+            // 03.11.2026: dazu Akku-Menge und Werte laut Säule, damit die Fahrt denselben Preis je Akku-kWh bekommt wie
+            // die Ladeanzeige (LadeAbrechnung). Fehlt eine Spalte (alte Tabelle), bleibt es beim gespeicherten Preis.
+            String extra = (spalteDa(conn, "ENERGY_ADDED_KWH") ? ", energy_added_kwh" : ", CAST(NULL AS DOUBLE)")
+                    + (spalteDa(conn, "SAEULE_BETRAG") ? ", saeule_kwh, saeule_betrag"
+                            : ", CAST(NULL AS DOUBLE), CAST(NULL AS DOUBLE)");
             StringBuilder sql = new StringBuilder(
-                    "SELECT end_time, electricity_rate, currency, tariff_id, tariff_label, is_dc, preis_quelle " +
+                    "SELECT end_time, electricity_rate, currency, tariff_id, tariff_label, is_dc, preis_quelle" + extra + " " +
                     "FROM " + TABLE_CHARGING +
                     " WHERE end_time IS NOT NULL AND electricity_rate >= 0 AND ("
                     + "preis_quelle IN ('tarif','nutzer','standard')"
@@ -6858,8 +6867,21 @@ public class SocHistoryDatabase {
                     out.put("tariffId", tId != null ? tId : "");
                     out.put("tariffLabel", tLabel != null ? tLabel : "");
                     int isDc = rs.getInt(6);
-                    out.put("isDc", rs.wasNull() || (isDc != 0 && isDc != 1)
-                            ? JSONObject.NULL : Boolean.valueOf(isDc == 1));
+                    Boolean dc = rs.wasNull() || (isDc != 0 && isDc != 1) ? null : Boolean.valueOf(isDc == 1);
+                    out.put("isDc", dc == null ? JSONObject.NULL : dc);
+                    double akku = rs.getDouble(8);
+                    if (rs.wasNull()) akku = Double.NaN;
+                    double sk = rs.getDouble(9);
+                    if (rs.wasNull()) sk = Double.NaN;
+                    double sb = rs.getDouble(10);
+                    if (rs.wasNull()) sb = Double.NaN;
+                    JSONObject cfg = null;
+                    try {
+                        cfg = at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig();
+                    } catch (Throwable ignored) {
+                    }
+                    double abg = at.greenchili.surfmate.charging.LadeAbrechnung.preisJeAkkuKwh(rate, akku, dc, sk, sb, cfg);
+                    if (Double.isFinite(abg) && abg >= 0) out.put("rateAbgerechnet", abg);
                     noteReadOk();
                     return out;
                 }
@@ -10062,6 +10084,36 @@ public class SocHistoryDatabase {
         "tariff_id, tariff_label, energy_source, energy_soc_kwh, energy_incomplete, " +
         "counter_energy_kwh";
 
+    /**
+     * Spaltenliste samt {@code saeule_kwh}/{@code saeule_betrag}, wenn die Tabelle sie hat. Eine Tabelle, deren
+     * Migration (noch) fehlt, liefert die Liste weiter, nur ohne Werte laut Säule.
+     */
+    private String chargingV2Cols(Connection conn) {
+        if (conn != saeuleSpaltenConn) {
+            saeuleSpaltenDa = spalteDa(conn, "SAEULE_BETRAG");
+            // 03.11.2026: preis_quelle/nachfrage fehlten in der Liste – chargingRowToJson fiel dadurch für JEDE Zeile in
+            // den Fehlerzweig (preisQuelle null), und LadeKosten zählte Ladungen ohne Tarif als „ohne Preis“.
+            preisQuelleDa = spalteDa(conn, "PREIS_QUELLE") && spalteDa(conn, "NACHFRAGE");
+            saeuleSpaltenConn = conn;
+        }
+        return CHARGING_V2_COLS
+                + (preisQuelleDa ? ", preis_quelle, nachfrage" : "")
+                + (saeuleSpaltenDa ? ", saeule_kwh, saeule_betrag" : "");
+    }
+
+    private boolean preisQuelleDa;
+
+    private static boolean spalteDa(Connection conn, String spalte) {
+        try (ResultSet rs = conn.getMetaData().getColumns(null, null, "CHARGING_SESSIONS", spalte)) {
+            return rs.next();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private Connection saeuleSpaltenConn;
+    private boolean saeuleSpaltenDa;
+
     /** Non-finite -> JSON null; JSON numeric values must be finite. */
     private static Object jsonNum(double v) {
         return Double.isFinite(v) ? Double.valueOf(v) : JSONObject.NULL;
@@ -10348,6 +10400,21 @@ public class SocHistoryDatabase {
             at.greenchili.surfmate.battery.ChargingSessionQuality.enrich(
                     o, false, Double.NaN, "unknown");
         }
+        // 03.11.2026: abgerechnete Menge (laut Säule bzw. Ladeverlust-Zuschlag) – NUR Anzeige, nach der Live-Anreicherung.
+        double saeuleKwh = Double.NaN, saeuleBetrag = Double.NaN;
+        try {
+            double v = rs.getDouble("saeule_kwh");
+            if (!rs.wasNull()) saeuleKwh = v;
+            v = rs.getDouble("saeule_betrag");
+            if (!rs.wasNull()) saeuleBetrag = v;
+        } catch (Exception ignored) {
+        }
+        org.json.JSONObject abrCfg = null;
+        try {
+            abrCfg = at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig();
+        } catch (Throwable ignored) {
+        }
+        at.greenchili.surfmate.charging.LadeAbrechnung.anreichern(o, saeuleKwh, saeuleBetrag, abrCfg);
         return o;
     }
 
@@ -10588,7 +10655,7 @@ public class SocHistoryDatabase {
         JSONArray results = new JSONArray();
         final Connection conn = requireChargingHistoryReadConnection();
         try {
-            String sql = "SELECT " + CHARGING_V2_COLS + " FROM " + TABLE_CHARGING +
+            String sql = "SELECT " + chargingV2Cols(conn) + " FROM " + TABLE_CHARGING +
                 " WHERE start_time >= ? AND start_time <= ? ORDER BY start_time DESC LIMIT ? OFFSET ?;";
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setLong(1, fromMs);
@@ -10623,7 +10690,7 @@ public class SocHistoryDatabase {
             throws java.sql.SQLException {
         final Connection conn = requireChargingHistoryReadConnection();
         try {
-            String sql = "SELECT " + CHARGING_V2_COLS + " FROM " + TABLE_CHARGING + " WHERE id = ?;";
+            String sql = "SELECT " + chargingV2Cols(conn) + " FROM " + TABLE_CHARGING + " WHERE id = ?;";
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setLong(1, id);
                 try (ResultSet rs = pstmt.executeQuery()) {
@@ -10878,6 +10945,33 @@ public class SocHistoryDatabase {
             out.put("periodEstimatedSessions", periodEstimated);
             out.put("avgCostPerKwh", periodEnergy > 0 && periodCost > 0 ? periodCost / periodEnergy : JSONObject.NULL);
 
+            // 03.11.2026: dieselben Zeiträume mit der abgerechneten Menge (laut Säule bzw. Ladeverlust-Zuschlag).
+            // Nur gelesen und gerechnet; charging_daily bleibt Akku-Basis.
+            JSONObject abrCfg = null;
+            try {
+                abrCfg = at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig();
+            } catch (Throwable ignored) {
+            }
+            java.util.Map<Long, double[]> abrTage = abrechnungJeTag(conn, sinceDay, untilExclusive, abrCfg);
+            double periodEnergyAbr = 0, periodCostAbr = 0;
+            int periodAbrGeschaetzt = 0;
+            for (int i = 0; i < daily.length(); i++) {
+                JSONObject d = daily.getJSONObject(i);
+                double[] a = abrTage.get(Long.valueOf(d.getLong("day")));
+                double e = a == null ? d.optDouble("energy", 0) : a[0];
+                double c = a == null ? d.optDouble("cost", 0) : a[1];
+                d.put("energyAbgerechnet", e);
+                d.put("costAbgerechnet", c);
+                periodEnergyAbr += e;
+                periodCostAbr += c;
+                if (a != null) periodAbrGeschaetzt += (int) a[2];
+            }
+            out.put("periodEnergyAbgerechnetKwh", periodEnergyAbr);
+            out.put("periodCostAbgerechnet", periodCostAbr);
+            out.put("periodAbgerechnetGeschaetzt", periodAbrGeschaetzt);
+            out.put("avgCostPerKwhAbgerechnet", periodEnergyAbr > 0 && periodCostAbr > 0
+                    ? periodCostAbr / periodEnergyAbr : JSONObject.NULL);
+
             // Lifetime totals (entire charging_daily — survives the prune).
             try (Statement st = conn.createStatement();
                  ResultSet rs = st.executeQuery(
@@ -10893,6 +10987,13 @@ public class SocHistoryDatabase {
             out.put("lifetimeEstimatedSessions",
                     countEstimatedEnergySessions(
                             conn, 0L, Long.MAX_VALUE));
+            double lifeEnergyAbr = 0, lifeCostAbr = 0;
+            for (double[] a : abrechnungJeTag(conn, 0L, Long.MAX_VALUE, abrCfg).values()) {
+                lifeEnergyAbr += a[0];
+                lifeCostAbr += a[1];
+            }
+            out.put("lifetimeEnergyAbgerechnetKwh", lifeEnergyAbr);
+            out.put("lifetimeCostAbgerechnet", lifeCostAbr);
 
             // SOH-degradation trend from soc_daily.
             JSONArray sohTrend = new JSONArray();
@@ -10953,6 +11054,47 @@ public class SocHistoryDatabase {
                 return rs.next() ? rs.getInt(1) : 0;
             }
         }
+    }
+
+    /**
+     * Je Tag (wie charging_daily: Tag des Ladeendes) {abgerechnete kWh, Kosten dazu, Anzahl geschätzt}. Gleiche
+     * Auswahl wie {@link #rebuildChargingDailyDay}: abgeschlossene Zeilen, Energie und Kosten nur positiv.
+     */
+    private java.util.Map<Long, double[]> abrechnungJeTag(
+            Connection conn, long fromInclusive, long toExclusive, JSONObject cfg) throws java.sql.SQLException {
+        java.util.Map<Long, double[]> tage = new java.util.HashMap<>();
+        String saeule = chargingV2Cols(conn).contains("saeule_betrag")
+                ? "saeule_kwh, saeule_betrag" : "CAST(NULL AS DOUBLE), CAST(NULL AS DOUBLE)";
+        String sql = "SELECT end_time, energy_added_kwh, session_cost, is_dc, " + saeule + " FROM "
+                + TABLE_CHARGING
+                + " WHERE end_time IS NOT NULL AND end_time >= ?"
+                + (toExclusive == Long.MAX_VALUE ? "" : " AND end_time < ?") + ";";
+        try (PreparedStatement query = conn.prepareStatement(sql)) {
+            query.setLong(1, fromInclusive);
+            if (toExclusive != Long.MAX_VALUE) query.setLong(2, toExclusive);
+            try (ResultSet rs = query.executeQuery()) {
+                while (rs.next()) {
+                    long day = (rs.getLong(1) / 86_400_000L) * 86_400_000L;
+                    double akku = rs.getDouble(2);
+                    if (rs.wasNull() || !(akku > 0)) akku = Double.NaN;
+                    double kosten = rs.getDouble(3);
+                    if (rs.wasNull() || !Double.isFinite(kosten) || kosten < 0) kosten = Double.NaN;
+                    int dc = rs.getInt(4);
+                    Boolean isDc = rs.wasNull() || (dc != 0 && dc != 1) ? null : Boolean.valueOf(dc == 1);
+                    double sk = rs.getDouble(5);
+                    if (rs.wasNull()) sk = Double.NaN;
+                    double sb = rs.getDouble(6);
+                    if (rs.wasNull()) sb = Double.NaN;
+                    at.greenchili.surfmate.charging.LadeAbrechnung.Ergebnis e =
+                            at.greenchili.surfmate.charging.LadeAbrechnung.berechne(akku, kosten, isDc, sk, sb, cfg);
+                    double[] a = tage.computeIfAbsent(Long.valueOf(day), k -> new double[3]);
+                    if (Double.isFinite(e.kwh) && e.kwh > 0) a[0] += e.kwh;
+                    if (Double.isFinite(e.kosten) && e.kosten > 0) a[1] += e.kosten;
+                    if (e.kwhGeschaetzt) a[2] += 1;
+                }
+            }
+        }
+        return tage;
     }
 
     private java.util.Map<Long, Integer>
@@ -11309,6 +11451,32 @@ public class SocHistoryDatabase {
     }
 
     /**
+     * Menge und Betrag laut Säule bzw. Rechnung für eine abgeschlossene Ladung eintragen (nur auf Wunsch des Nutzers).
+     * NaN = Feld leeren. Ändert nur {@code saeule_kwh}/{@code saeule_betrag}; Akku-Energie, gespeicherte Kosten und
+     * Tagesrollup bleiben unverändert (die abgerechneten Werte entstehen beim Lesen, {@code LadeAbrechnung}).
+     */
+    public synchronized boolean setChargingSaeule(long id, double kwh, double betrag) {
+        final Connection conn = connection;
+        if (!isInitialized || conn == null) return false;
+        double k = at.greenchili.surfmate.charging.LadeAbrechnung.gueltigeKwh(kwh);
+        double b = at.greenchili.surfmate.charging.LadeAbrechnung.gueltigerBetrag(betrag);
+        if ((!Double.isNaN(kwh) && Double.isNaN(k)) || (!Double.isNaN(betrag) && Double.isNaN(b))) return false;
+        try (PreparedStatement ps = conn.prepareStatement(
+                "UPDATE " + TABLE_CHARGING + " SET saeule_kwh = ?, saeule_betrag = ?"
+                        + " WHERE id = ? AND end_time IS NOT NULL AND end_time > start_time;")) {
+            if (Double.isNaN(k)) ps.setNull(1, java.sql.Types.DOUBLE); else ps.setDouble(1, k);
+            if (Double.isNaN(b)) ps.setNull(2, java.sql.Types.DOUBLE); else ps.setDouble(2, b);
+            ps.setLong(3, id);
+            boolean ok = ps.executeUpdate() == 1;
+            if (ok) logger.info("Charging session " + id + ": Werte laut Saeule gesetzt");
+            return ok;
+        } catch (Exception e) {
+            logger.error("setChargingSaeule failed for " + id, e);
+            return false;
+        }
+    }
+
+    /**
      * Konsistenter Export der Lade-Tabellen (Sitzungen + Tagesrollup) als JSON, gelesen in EINER Lese-Transaktion
      * über die Daemon-Verbindung (kein Kopieren der offenen .mv.db). Für die Sicherung vor einer Nachbepreisung.
      */
@@ -11385,15 +11553,24 @@ public class SocHistoryDatabase {
                     throw new java.sql.SQLException(
                             "manual charging cost produced a non-finite rate");
                 }
+                // 03.11.2026: ein vom Nutzer gesetzter Gesamtbetrag ist der abgerechnete Betrag – kein Ladeverlust-
+                // Zuschlag darauf (LadeAbrechnung). „Zurücksetzen“ (-1) löscht ihn wieder.
+                boolean mitSaeule = spalteDa(connection, "SAEULE_BETRAG");
                 try (PreparedStatement update = connection.prepareStatement(
                         "UPDATE " + TABLE_CHARGING
                                 + " SET electricity_rate = ?, session_cost = ?,"
                                 + " tariff_id = '', tariff_label = '',"
+                                + (mitSaeule ? " saeule_betrag = ?," : "")
                                 + " post_commit_tariff_applied = 1"
                                 + " WHERE id = ?;")) {
                     update.setDouble(1, rate);
                     update.setDouble(2, newCost);
-                    update.setLong(3, id);
+                    int pi = 3;
+                    if (mitSaeule) {
+                        if (newCost < 0) update.setNull(pi++, java.sql.Types.DOUBLE);
+                        else update.setDouble(pi++, newCost);
+                    }
+                    update.setLong(pi, id);
                     if (update.executeUpdate() != 1) {
                         throw new java.sql.SQLException(
                                 "charging session disappeared before cost update: " + id);

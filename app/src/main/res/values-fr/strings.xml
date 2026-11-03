@@ -960,7 +960,7 @@
     <string name="dashboard_action_trips">Carnet de trajets</string>
     <string name="dashboard_action_vehicle_control">Commandes</string>
     <string name="settings_hero_title">Options</string>
-    <string name="settings_hero_overline">SURFMATE</string>
+    <string name="settings_hero_overline">PANOPTES</string>
     <string name="settings_hero_subtitle">Réglez l\'apparence, les enregistrements, le Gardien et les données de cet appareil.</string>
     <string name="settings_overline_preferences">OPTIONS</string>
     <string name="settings_overline_about_data">VOS DONNÉES</string>

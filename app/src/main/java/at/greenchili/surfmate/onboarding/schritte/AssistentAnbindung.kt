@@ -54,10 +54,25 @@ internal class AssistentAnbindung(
 
     override fun usbAnfragen() {
         // Erst hier (nach der Erklärung) den Start auslösen; das Android-Popup erscheint dabei.
-        val ausgeloest = (activity as? at.greenchili.surfmate.ui.MainActivity)?.onboardingDaemonStarten() ?: false
-        // Erneut tippen (Popup weggedrückt bzw. Start schon gelaufen): eine ADB-Verbindung bringt das Popup wieder;
-        // nach „Zulassen“ übernimmt der vorhandene onAuthGranted-Weg in MainActivity.
+        val ausgeloest = (activity as? at.greenchili.surfmate.ui.MainActivity)
+            ?.onboardingDaemonStarten(erneut = true) ?: false
+        // Nur bei einem anderen Host direkt prüfen. MainActivity startet bei „erneut“ den echten Daemon-Weg neu;
+        // ein bloßer Prozess-Check würde nach einem fehlgeschlagenen ersten Versuch nichts reparieren.
         if (!ausgeloest) adbLauncher.isDaemonRunning { }
+    }
+
+    override fun istBydInfotainment(): Boolean {
+        val berechtigung = try {
+            activity.packageManager.getPermissionInfo("android.permission.BYDAUTO_BODYWORK_GET", 0)
+            true
+        } catch (_: android.content.pm.PackageManager.NameNotFoundException) {
+            false
+        }
+        return UsbFreigabePlattform.istBydInfotainment(
+            berechtigung,
+            android.os.Build.MANUFACTURER,
+            android.os.Build.MODEL,
+        )
     }
 
     override fun daemonLaeuft(ergebnis: (Boolean) -> Unit) {
@@ -113,7 +128,11 @@ internal class AssistentAnbindung(
             Gravity.BOTTOM or Gravity.END).apply { setMargins(32, 32, 32, 32) })
         wurzel.addView(ebene, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         webEbene = ebene
-        val web = WebViewFragment().apply { arguments = Bundle().apply { putString(WebViewFragment.ARG_PAGE_PATH, pfad) } }
+        val web = WebViewFragment().apply {
+            arguments = Bundle().apply {
+                putString(WebViewFragment.ARG_PAGE_PATH, normalisiereAssistentWebPfad(pfad))
+            }
+        }
         fa.supportFragmentManager.beginTransaction().replace(WEB_INHALT_ID, web, TAG_WEB).commitAllowingStateLoss()
     }
 
@@ -130,5 +149,19 @@ internal class AssistentAnbindung(
         private const val WEB_EBENE_ID = 0x0F1E0001
         private const val WEB_INHALT_ID = 0x0F1E0002
         private const val TAG_WEB = "einrichtung_web"
+    }
+}
+
+/**
+ * [WebViewFragment] hängt diesen Wert direkt an `http://127.0.0.1:<port>`.
+ * Ohne führenden Slash entsteht z. B. `:8180system.html` und die Ladeblende
+ * bleibt auf alten WebViews ohne verwertbaren Fehler stehen.
+ */
+internal fun normalisiereAssistentWebPfad(pfad: String): String {
+    val sauber = pfad.trim()
+    return when {
+        sauber.isEmpty() -> "/"
+        sauber.startsWith("/") -> sauber
+        else -> "/$sauber"
     }
 }

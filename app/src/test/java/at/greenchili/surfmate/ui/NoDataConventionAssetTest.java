@@ -49,11 +49,14 @@ public class NoDataConventionAssetTest {
         String strings = readRepositoryFile("app/src/main/res/values/strings.xml");
         for (String name : new String[]{
                 "dashboard_metric_value_pending",
-                "recordings_summary_pending",
                 "recording_preview_not_available"}) {
             assertTrue(name, strings.contains(
                     "<string name=\"" + name + "\">\u2014</string>"));
         }
+        // The recordings header is a progress placeholder while the first
+        // count is still being loaded, not a settled missing value.
+        assertTrue(strings.contains(
+                "<string name=\"recordings_summary_pending\">…</string>"));
 
         // The storage line is a value slot, so its unanswered state is the dash, not prose.
         for (String path : new String[]{

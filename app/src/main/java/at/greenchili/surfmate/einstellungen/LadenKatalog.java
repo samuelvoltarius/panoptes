@@ -101,6 +101,23 @@ public final class LadenKatalog {
         gruppe(acs, r += 10);
         acs.zugriff = Feld.standardZugriff("laden.acStandard");
         l.add(acs);
+        // Ladeverlust-Zuschlag (03.11.2026): die Säule rechnet mehr ab, als im Akku ankommt. Gilt nur, wenn bei der
+        // Ladung keine kWh laut Säule eingetragen sind; Anzeige dann mit „~“ (LadeAbrechnung). Ohne laden.stand.
+        for (String art : new String[] {"Ac", "Dc"}) {
+            Feld v = zahl("laden.verlust" + art,
+                    "Ac".equals(art) ? at.greenchili.surfmate.charging.LadeAbrechnung.VORSCHLAG_AC
+                            : at.greenchili.surfmate.charging.LadeAbrechnung.VORSCHLAG_DC,
+                    0, at.greenchili.surfmate.charging.LadeAbrechnung.MAX_PROZENT, "%", false);
+            gruppe(v, r += 10);
+            v.zugriff = Feld.standardZugriff(v.key);
+            l.add(v);
+        }
+        // Einmaliger Hinweis „Kosten enthalten jetzt den Ladeverlust“ (ladeverlust-hinweis.js); „Verstanden“ schaltet ab.
+        Feld hw = new Feld("laden.verlustHinweis", Feld.Typ.BOOL);
+        hw.standard = true;
+        gruppe(hw, r += 10);
+        hw.zugriff = Feld.standardZugriff("laden.verlustHinweis");
+        l.add(hw);
         return l;
     }
 

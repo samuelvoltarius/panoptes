@@ -339,6 +339,9 @@ class SettingsFragment : Fragment() {
     }
 
     private fun setupSectionShortcuts(view: View) {
+        view.findViewById<View>(R.id.cardCameraMapping)?.setOnClickListener {
+            (activity as? MainActivity)?.invokeReconfigureCameraAction()
+        }
         view.findViewById<View>(R.id.cardSectionRecording)?.setOnClickListener {
             findNavController().navigateDrillDown(R.id.recordingSettingsWebFragment)
         }

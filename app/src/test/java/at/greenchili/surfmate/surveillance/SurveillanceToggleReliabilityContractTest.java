@@ -27,7 +27,7 @@ public class SurveillanceToggleReliabilityContractTest {
         assertTrue(html.contains(
                 "<main class=\"main-content\" aria-busy=\"true\" inert style=\"pointer-events:none\">"));
         assertTrue(html.contains("settings-hydration.js?v=1"));
-        assertTrue(html.contains("surveillance.js?v=survtoggle11"));
+        assertTrue(html.contains("surveillance.js?v=survtoggle12"));
         // 0.1.10: CDR-Aufräumen steht nur noch auf recording.html (Doppelstelle auf surveillance.html gelöscht)
         String rec = readRepositoryFile("app/src/main/assets/web/local/recording.html");
         assertTrue(rec.contains("id=\"cdrCleanupEnabled\" disabled"));

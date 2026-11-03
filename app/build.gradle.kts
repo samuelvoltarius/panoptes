@@ -317,8 +317,16 @@ android {
         // value (e.g. `-PsurfmateVersionName=27.4 -PsurfmateVersionCode=12`)
         // without a source edit per release; the defaults track the current
         // rolling head so a plain local build is still accurate.
-        versionCode = (project.findProperty("surfmateVersionCode") as? String)?.toIntOrNull() ?: 52
-        versionName = (project.findProperty("surfmateVersionName") as? String) ?: "0.1.33"
+        versionCode = (project.findProperty("surfmateVersionCode") as? String)?.toIntOrNull() ?: 59
+        versionName = (project.findProperty("surfmateVersionName") as? String) ?: "0.1.35"
+        // The public release identity is separate from Android's versionName:
+        // versionName intentionally stays semver-only for compatibility, while
+        // users must still be able to distinguish stable and test artifacts.
+        // release.yml stamps both values from the immutable Git tag.
+        val releaseChannel = (project.findProperty("surfmateReleaseChannel") as? String) ?: "entwicklung"
+        val releaseLabel = (project.findProperty("surfmateReleaseLabel") as? String) ?: versionName.orEmpty()
+        buildConfigField("String", "RELEASE_CHANNEL", "\"${releaseChannel.replace("\"", "")}\"")
+        buildConfigField("String", "RELEASE_LABEL", "\"${releaseLabel.replace("\"", "")}\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
         // Note: abiFilters removed - using splits.abi instead for size optimization
@@ -343,6 +351,12 @@ android {
         // (ENTWICKLUNG = true) starten nach einem In-App-Update selbst minimiert neu.
         buildConfigField("boolean", "IDE_START",
             if ((project.findProperty("panoptesIdeStart") as? String) == "true") "true" else "false")
+        // Stationaerer Fahrerdisplay-Fail-safe-Test. Standardmaessig in JEDEM Build aus;
+        // nur ein bewusst mit -PpanoptesPhysicalSafetyTestHooks=true gebauter,
+        // signierter Testkandidat akzeptiert den kurzlebigen lokalen ADB-Marker.
+        // Es gibt absichtlich keinen Web-, Intent- oder dauerhaften Config-Schalter.
+        buildConfigField("boolean", "PHYSICAL_SAFETY_TEST_HOOKS",
+            if ((project.findProperty("panoptesPhysicalSafetyTestHooks") as? String) == "true") "true" else "false")
     }
 
     buildFeatures {
@@ -552,6 +566,9 @@ val bydautoStubsJar = tasks.register<Jar>("bydautoStubsJar") {
 }
 
 dependencies {
+    // OEM NaviInfo payload for the BYD AutoContainer turn-by-turn channel.
+    // Apache-2.0; see THIRD_PARTY_NOTICES.md.
+    implementation("com.google.flatbuffers:flatbuffers-java:1.12.0")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)

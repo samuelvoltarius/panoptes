@@ -1308,7 +1308,7 @@
 
     <!-- Hero card -->
     <!-- SOTA hero headline. Static identity statement (not a time-of-day
-         greeting) — pairs with the SURFMATE overline above and the live
+         greeting) — pairs with the PANOPTES overline above and the live
          status row of chips below. Locale catalogs auto-translate. -->
     <string name="dashboard_hero_headline">Guardian awake</string>
     <string name="dashboard_subtitle_all_systems">Everything is running</string>
@@ -1364,7 +1364,7 @@
 
     <!-- Hero -->
     <string name="settings_hero_title">Options</string>
-    <string name="settings_hero_overline">SURFMATE</string>
+    <string name="settings_hero_overline">PANOPTES</string>
     <string name="settings_hero_subtitle">Adjust the look, clips, Guardian and the data on this device.</string>
 
     <!-- Section overlines -->

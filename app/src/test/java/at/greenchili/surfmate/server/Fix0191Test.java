@@ -38,7 +38,8 @@ public class Fix0191Test {
     @Test
     public void f3_geraeteSchluesselZuerstMitRueckfall() throws Exception {
         String g = "ab".repeat(32);
-        JSONObject root = new JSONObject().put("planner", new JSONObject().put("memberToken", "0123456789abcdef0123456789abcdef"));
+        String memberToken = "01".repeat(16);
+        JSONObject root = new JSONObject().put("planner", new JSONObject().put("memberToken", memberToken));
         List<Pair<String, String>> k = CommunityZugang.INSTANCE.kandidaten(root, g);
         assertEquals(2, k.size());
         assertEquals("X-Geraete-Token", k.get(0).getFirst());

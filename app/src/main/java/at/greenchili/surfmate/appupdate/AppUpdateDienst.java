@@ -218,7 +218,9 @@ public final class AppUpdateDienst {
                 o.put("mobilfunk", !l.nurWlan);
                 o.put("netz", l.netz);
                 o.put("aktuell", new JSONObject().put("version", env.installierteVersion())
-                        .put("versionCode", env.installierterVc()));
+                        .put("versionCode", env.installierterVc())
+                        .put("label", at.greenchili.surfmate.BuildConfig.RELEASE_LABEL)
+                        .put("kanal", at.greenchili.surfmate.BuildConfig.RELEASE_CHANNEL));
                 o.put("letztePruefung", letztePruefung > 0 ? letztePruefung : JSONObject.NULL);
                 o.put("ergebnis", ergebnis);
                 o.put("fehler", fehler == null ? JSONObject.NULL : fehler);
@@ -757,6 +759,8 @@ public final class AppUpdateDienst {
             setzePhase("installiert", null);
             logger.warn("Installation " + f.versionName + " (vC " + f.versionCode + ", " + f.tag
                     + ") startet – Totmannschalter 30 min, Selbstbestätigung nach 3 gesunden Prüfungen");
+            // 0.1.34 Befehls-Log: Installation läuft oft im eigenen Thread, daher eigener Eintrag (nur Versionsnummer)
+            at.greenchili.surfmate.server.BefehlsLog.ereignis("update.installieren.vc" + f.versionCode, "gestartet", null, null);
             try {
                 env.starteAbgekoppelt(skript, apk, schluessel, f.versionCode, f.tag);
                 gestartet[0] = true;   // ab hier gehört die Sperre dem Skript (Totmann, Selbstbestätigung)

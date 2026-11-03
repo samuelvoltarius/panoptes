@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+    <title data-i18n="apps.title">Apps nebeneinander</title>
+    <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
+    <script src="../shared/theme.js?v=13"></script>
+    <script src="../shared/app-shell.js?v=pn28"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn11">
+    <style>
+        .apps-pair { display:grid; grid-template-columns:minmax(0,1fr) 56px minmax(0,1fr); gap:12px; align-items:end; }
+        .apps-field label { display:block; margin-bottom:7px; color:var(--text-muted); font-size:13px; font-weight:600; }
+        .apps-field select { width:100%; min-height:52px; padding:10px 12px; border:1px solid var(--border-default); border-radius:10px; background:var(--bg-elevated); color:var(--text-primary); font-size:16px; }
+        .apps-swap { min-width:52px; min-height:52px; padding:0; font-size:22px; }
+        .apps-status { min-height:22px; margin-top:12px; color:var(--text-muted); line-height:1.45; }
+        .apps-status.error { color:var(--status-error); }
+        .apps-status.success { color:var(--status-success); }
+        @media (max-width:720px) {
+            .apps-pair { grid-template-columns:1fr; }
+            .apps-swap { justify-self:center; transform:rotate(90deg); }
+        }
+    </style>
+</head>
+<body>
+<div class="app-layout">
+    <div id="app-shell-mount"></div>
+    <main class="main-content">
+        <div class="mobile-header"><span style="font-weight:600" data-i18n="apps.title">Apps nebeneinander</span></div>
+        <header class="page-header"><h1 class="page-title" data-i18n="apps.title">Apps nebeneinander</h1></header>
+        <div class="page-body">
+            <div class="card">
+                <div class="card-header"><div class="card-title" data-i18n="apps.card_title">Zwei Apps auf dem Mittelschirm</div></div>
+                <div class="card-body">
+                    <p class="setting-desc" data-i18n="apps.lead">Wähle zwei verschiedene installierte Apps. Panoptes öffnet sie links und rechts auf dem Mittelschirm.</p>
+                    <div class="apps-pair">
+                        <div class="apps-field"><label for="appPrimary" data-i18n="apps.primary">Erste App</label><select id="appPrimary" disabled></select></div>
+                        <button class="btn apps-swap" id="appSwap" type="button" aria-label="Apps tauschen" data-i18n-aria-label="apps.swap" disabled>⇄</button>
+                        <div class="apps-field"><label for="appSecondary" data-i18n="apps.secondary">Zweite App</label><select id="appSecondary" disabled></select></div>
+                    </div>
+                    <div class="apps-status" id="appsStatus" role="status" aria-live="polite" data-i18n="apps.loading">Installierte Apps werden geladen …</div>
+                    <div class="sys-actions" style="display:flex;justify-content:flex-end;margin-top:14px">
+                        <button class="btn btn-primary" id="appsLaunch" type="button" data-nur-display disabled data-i18n="apps.launch">Nebeneinander öffnen</button>
+                    </div>
+                    <p class="setting-desc" style="margin-top:12px" data-i18n="apps.note">Das betrifft nur den Mittelschirm, nicht das Fahrerdisplay. Nicht jede fremde App unterstützt den geteilten Bildschirm.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<script src="../shared/core.js?v=pn6"></script>
+<script>
+(function () {
+    'use strict';
+    var primary = document.getElementById('appPrimary');
+    var secondary = document.getElementById('appSecondary');
+    var swap = document.getElementById('appSwap');
+    var launch = document.getElementById('appsLaunch');
+    var status = document.getElementById('appsStatus');
+
+    function t(key, fallback) {
+        try { var value = BYD.i18n.t(key); if (value && value !== key) return value; } catch (e) {}
+        return fallback;
+    }
+    function show(message, kind) {
+        status.textContent = message;
+        status.className = 'apps-status' + (kind ? ' ' + kind : '');
+    }
+    function request(url, options) {
+        return fetch(url, options || {}).then(function (response) {
+            return response.json().then(function (body) { return { ok: response.ok, body: body || {} }; });
+        });
+    }
+    function addOptions(select, apps) {
+        select.innerHTML = '';
+        for (var i = 0; i < apps.length; i++) {
+            var option = document.createElement('option');
+            option.value = apps[i].package || '';
+            option.textContent = apps[i].label || apps[i].package || '';
+            select.appendChild(option);
+        }
+    }
+    function validate() {
+        var ready = !primary.disabled && primary.value && secondary.value && primary.value !== secondary.value;
+        launch.disabled = !ready;
+        if (!primary.disabled && primary.value === secondary.value) show(t('apps.choose_different', 'Bitte zwei verschiedene Apps wählen.'), 'error');
+        else if (!primary.disabled) show(t('apps.ready', 'Bereit. Beide Apps werden erst beim Tippen geöffnet.'), '');
+    }
+    function load() {
+        Promise.all([request('/api/apps/list', { cache: 'no-store' }), request('/api/apps/capabilities', { cache: 'no-store' })])
+            .then(function (results) {
+                var list = results[0].body, capabilities = results[1].body;
+                if (!results[0].ok || !list.success) throw new Error('list');
+                if (!results[1].ok || !capabilities.success || !capabilities.splitScreen) {
+                    show(t('apps.unsupported', 'Dieses System bestätigt keinen sicheren geteilten Bildschirm.'), 'error');
+                    return;
+                }
+                var apps = list.apps || [];
+                if (apps.length < 2) {
+                    show(t('apps.too_few', 'Es wurden nicht genug startbare Apps gefunden.'), 'error');
+                    return;
+                }
+                addOptions(primary, apps); addOptions(secondary, apps);
+                secondary.selectedIndex = 1;
+                primary.disabled = false; secondary.disabled = false;
+                swap.disabled = false;
+                validate();
+            }, function () { show(t('apps.load_failed', 'Die App-Liste konnte nicht geladen werden.'), 'error'); });
+    }
+    swap.onclick = function () {
+        var value = primary.value; primary.value = secondary.value; secondary.value = value; validate();
+    };
+    primary.onchange = validate;
+    secondary.onchange = validate;
+    launch.onclick = function () {
+        if (launch.disabled) return;
+        launch.disabled = true;
+        show(t('apps.opening', 'Apps werden geöffnet …'), '');
+        request('/api/apps/launch', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ package: primary.value, secondaryPackage: secondary.value, split: true })
+        }).then(function (result) {
+            if (result.ok && result.body.success) show(t('apps.opened', 'Beide Apps wurden im geteilten Bildschirm geöffnet.'), 'success');
+            else if (result.body.error === 'split_screen_not_supported') show(t('apps.unsupported', 'Dieses System bestätigt keinen sicheren geteilten Bildschirm.'), 'error');
+            else show(t('apps.open_failed', 'Die Apps konnten nicht sicher nebeneinander geöffnet werden.'), 'error');
+            validate();
+        }, function () { show(t('apps.open_failed', 'Die Apps konnten nicht sicher nebeneinander geöffnet werden.'), 'error'); validate(); });
+    };
+    BYD.i18n.init().then(load, load);
+}());
+</script>
+</body>
+</html>

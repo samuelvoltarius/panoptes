@@ -52,9 +52,9 @@ public class AutomationPickerGroupingAssetTest {
                 "'automation.operating_mode_help_on_only'"));
         assertTrue(automations.contains(
                 "'automation.operating_mode_help_on_and_off'"));
-        assertTrue(english.contains("entire SurfMate daemon stack"));
-        assertTrue(english.contains("all SurfMate daemons shut down"));
-        assertTrue(english.contains("uses more parked battery"));
+        assertTrue(english.contains("all of Panoptes's background services"));
+        assertTrue(english.contains("every Panoptes service stops"));
+        assertTrue(english.contains("It takes more power from the battery"));
     }
 
     @Test

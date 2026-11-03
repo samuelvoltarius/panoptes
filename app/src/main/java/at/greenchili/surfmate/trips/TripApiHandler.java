@@ -1061,7 +1061,8 @@ public class TripApiHandler {
                 org.json.JSONObject lastCharge = at.greenchili.surfmate.monitor.SocHistoryDatabase
                         .getInstance().getLastChargeRate(60);
                 if (lastCharge != null && lastCharge.optDouble("rate", 0) > 0) {
-                    configJson.put("lastChargeRate", lastCharge.optDouble("rate", 0));
+                    configJson.put("lastChargeRate", lastCharge.optDouble("rateAbgerechnet",
+                            lastCharge.optDouble("rate", 0)));   // 03.11.2026: wie die Fahrt (LadeAbrechnung)
                     configJson.put("lastChargeCurrency", lastCharge.optString("currency", ""));
                     configJson.put("lastChargeTariffLabel", lastCharge.optString("tariffLabel", ""));
                     configJson.put("lastChargeAt", lastCharge.optLong("endTime", 0));

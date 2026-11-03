@@ -25,6 +25,38 @@
 (function () {
     'use strict';
 
+    // Every normal Panoptes page is a possible entry point from a bookmark,
+    // notification or shared link. Keep PWA discovery in the common shell so
+    // Android does not lose installability merely because the user landed on
+    // System, Apps or another page that historically omitted the manifest.
+    // Diagnostic sandboxes do not load app-shell.js and therefore stay out.
+    (function () {
+        if (!document.querySelector('link[rel="manifest"]')) {
+            var manifest = document.createElement('link');
+            manifest.rel = 'manifest';
+            manifest.href = '/manifest.json';
+            document.head.appendChild(manifest);
+        }
+        if (!document.querySelector('link[rel~="apple-touch-icon"]')) {
+            var apple = document.createElement('link');
+            apple.rel = 'apple-touch-icon';
+            apple.href = '../shared/apple-touch-icon.png';
+            document.head.appendChild(apple);
+        }
+        if (!document.querySelector('meta[name="theme-color"]')) {
+            var theme = document.createElement('meta');
+            theme.name = 'theme-color';
+            theme.content = '#0A2238';
+            document.head.appendChild(theme);
+        }
+        if (!document.getElementById('pnPwaBootstrap')) {
+            var bootstrap = document.createElement('script');
+            bootstrap.id = 'pnPwaBootstrap';
+            bootstrap.src = '../shared/pwa-init.js?v=index2';
+            document.head.appendChild(bootstrap);
+        }
+    })();
+
     // 0.1.20 Weboberfläche in der Handy-App (HANDY_WEB_SITZUNG_VERTRAG): ?einbettung=handy blendet die eigene
     // Leiste und Kopfzeile aus (dieselbe Regel wie die Android-Hülle: data-android-embed). Für die Sitzung gemerkt,
     // weil Links innerhalb der Oberfläche den Parameter nicht tragen.
@@ -396,6 +428,7 @@
         ] },
         { id: 'car', label: 'Auto', i18n: 'shell.sec_car', icon: 'car', pages: [
             { href: 'vehicle-control.html', label: 'Steuerung',          i18n: 'shell.page_control' },
+            { href: 'apps.html',            label: 'Apps nebeneinander', i18n: 'shell.page_apps' },
             { href: 'camping.html',         label: 'Camping',            i18n: 'shell.page_camping' },
             { href: 'seat-positions.html',  label: 'Sitze',              i18n: 'shell.page_seats' },
             { href: 'automations.html',     label: 'Regeln',             i18n: 'shell.page_rules' },
@@ -403,7 +436,7 @@
             { href: 'byd-cloud.html',       label: 'BYD Cloud',          i18n: 'nav.byd_cloud' }
         ] },
         { id: 'system', label: 'System', i18n: 'shell.sec_system', icon: 'gear', pages: [
-            { href: 'system.html',          label: 'Dienste',            i18n: 'shell.page_services' },
+            { href: 'system.html',          label: 'System',             i18n: 'nav.system' },
             { href: 'orte.html',            label: 'Orte',               i18n: 'shell.page_orte' },
             { href: 'network.html',         label: 'Netz',               i18n: 'shell.page_network' },
             { href: 'wireguard.html',       label: 'WireGuard',          i18n: 'shell.page_wireguard', hidden: true },

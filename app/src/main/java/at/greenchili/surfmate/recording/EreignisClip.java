@@ -8,6 +8,7 @@ import org.json.JSONObject;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -160,6 +161,26 @@ public final class EreignisClip {
         JSONObject a = root == null ? null : root.optJSONObject(OFFEN_ABSCHNITT);
         JSONArray l = a == null ? null : a.optJSONArray("offen");
         return l == null ? new JSONArray() : l;
+    }
+
+    /**
+     * Clips, deren „Behalten?“-Entscheidung noch offen ist. Diese Dateien sind bis zur
+     * Nutzerentscheidung ebenso geschützt wie ausdrücklich behaltene Clips. Andernfalls könnte
+     * ein gerade gesicherter Unfallclip bei bereits voller Ereignis-Ablage sofort wieder gelöscht
+     * werden, bevor die Frage am Display erscheint.
+     */
+    static Set<String> offeneStaemme(JSONObject root) {
+        Set<String> ergebnis = new HashSet<>();
+        JSONArray l = offen(root);
+        for (int i = 0; i < l.length(); i++) {
+            JSONObject o = l.optJSONObject(i);
+            if (o == null) continue;
+            String stamm = o.optString("datei", "");
+            if (at.greenchili.surfmate.storage.Aufbewahrung.gueltigerStamm(stamm)) {
+                ergebnis.add(stamm);
+            }
+        }
+        return ergebnis;
     }
 
     /** Neuer Abschnitt mit {@code stamm} als offene Frage (hinzu) bzw. ohne (weg). */

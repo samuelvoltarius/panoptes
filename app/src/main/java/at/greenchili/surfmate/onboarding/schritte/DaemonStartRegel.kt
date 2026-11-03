@@ -24,3 +24,36 @@ object DaemonStartRegel {
     /** Blockierend (nie auf dem Main-Thread): antwortet der lokale Daemon über HTTP? Nie über ADB (ADB löst das Popup aus). */
     fun daemonAntwortet(): Boolean = EinrichtungApi.get("/status").status != 0
 }
+
+/**
+ * Kleine, Android-freie Zustandsmaschine für die USB-Freigabe. Der Systemdialog kann ausbleiben
+ * (ADB aus, Dialog verworfen, Hersteller-adbd hängt); deshalb darf „Warte …“ nie endlos sein.
+ */
+internal class UsbFreigabeAblauf(private val zeitlimitMs: Long = ZEITLIMIT_MS) {
+    enum class Zustand { NICHT_UNTERSTUETZT, BEREIT, WARTET, ZEIT_ABGELAUFEN, ERLEDIGT }
+
+    private var angefragtSeit: Long? = null
+
+    fun anfragen(jetztMs: Long) {
+        angefragtSeit = jetztMs
+    }
+
+    fun zustand(unterstuetzt: Boolean, daemonLaeuft: Boolean, jetztMs: Long): Zustand {
+        if (!unterstuetzt) return Zustand.NICHT_UNTERSTUETZT
+        if (daemonLaeuft) return Zustand.ERLEDIGT
+        val seit = angefragtSeit ?: return Zustand.BEREIT
+        return if (jetztMs - seit >= zeitlimitMs) Zustand.ZEIT_ABGELAUFEN else Zustand.WARTET
+    }
+
+    companion object {
+        const val ZEITLIMIT_MS = 20_000L
+    }
+}
+
+/** Fail-closed Plattformgrenze: Die Kern-App mit lokalem ADB-Daemon gehört aufs BYD-Infotainment. */
+internal object UsbFreigabePlattform {
+    fun istBydInfotainment(bydBerechtigungVorhanden: Boolean, hersteller: String?, modell: String?): Boolean {
+        if (bydBerechtigungVorhanden) return true
+        return listOf(hersteller, modell).any { it?.contains("BYD", ignoreCase = true) == true }
+    }
+}

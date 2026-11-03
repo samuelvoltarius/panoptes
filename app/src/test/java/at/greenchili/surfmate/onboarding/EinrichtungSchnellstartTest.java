@@ -73,6 +73,7 @@ public class EinrichtungSchnellstartTest {
     public void pflichtBleibtNurDasWirklichNoetige() {
         assertEquals(new HashSet<>(Arrays.asList("sprache", "haftung", "usb_freigabe", "waechter", "updates")), EinrichtungApiHandler.PFLICHT);
         assertTrue("alle Pflichtschritte im Schnellstart", EinrichtungApiHandler.SCHNELLSTART.containsAll(EinrichtungApiHandler.PFLICHT));
+        assertTrue("Kameras werden vor dem Selbsttest geführt zugeordnet", EinrichtungApiHandler.SCHNELLSTART.contains("kameras"));
         assertTrue("QR am Ende", EinrichtungApiHandler.SCHNELLSTART.contains("extra_handy"));
         assertTrue(EinrichtungApiHandler.SCHRITTE.containsAll(EinrichtungApiHandler.SCHNELLSTART));
     }
@@ -87,8 +88,8 @@ public class EinrichtungSchnellstartTest {
             assertEquals(e.toString(), EinrichtungApiHandler.SCHNELLSTART.contains(e.getString("id")), e.getBoolean("schnellstart"));
             if ("offen".equals(e.getString("status"))) offen.add(e.getString("id"));
         }
-        assertEquals(Arrays.asList("sprache", "haftung", "autostart", "ueberlagerung", "rechte", "waechter", "updates", "extra_handy", "fertig"), offen);
-        for (String id : new String[]{"auto", "kameras", "betrieb", "karte", "daten", "blitzer", "strompreis", "extra_telegram",
+        assertEquals(Arrays.asList("sprache", "haftung", "autostart", "ueberlagerung", "rechte", "kameras", "waechter", "updates", "extra_handy", "fertig"), offen);
+        for (String id : new String[]{"auto", "betrieb", "karte", "daten", "blitzer", "strompreis", "extra_telegram",
                 "extra_planer", "extra_cockpit", "extra_fernzugang", "extra_notzugang"}) {
             assertEquals(id, "spaeter", status(s, id));
         }
@@ -103,6 +104,8 @@ public class EinrichtungSchnellstartTest {
         for (String id : new String[]{"autostart", "ueberlagerung", "rechte"}) {
             r = schritt(r, id, new JSONObject().put("geprueft", true).put("ok", true));
         }
+        assertEquals("kameras", sicht(r).getString("aktuell"));
+        r = schritt(r, "kameras", new JSONObject().put("geprueft", true).put("ok", true));
         assertEquals("waechter", sicht(r).getString("aktuell"));
         assertFalse(sicht(r).getBoolean("abgeschlossen"));
         r = schritt(r, "waechter", new JSONObject().put("modus", "shock").put("ton", false).put("ereignisClip", false));

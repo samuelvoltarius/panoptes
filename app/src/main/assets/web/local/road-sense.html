@@ -6,7 +6,7 @@
     <title data-i18n="app.road_sense_title">Straßenzustand – Panoptes</title>
     <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
     <script src="../shared/theme.js?v=13"></script>
-    <script src="../shared/app-shell.js?v=pn27"></script>
+    <script src="../shared/app-shell.js?v=pn28"></script>
     <!--
       Bottom-tab manifest. Tabs grouping the RoadSense settings cards:
         General      — master enable + calibration mode
@@ -224,12 +224,37 @@
                         </div>
                         <div class="setting-row">
                             <div class="setting-info">
+                                <div class="setting-name" data-i18n="road_sense.external_nav_guidance">Google Maps/Waze-Pfeile übernehmen</div>
+                                <div class="setting-desc" data-i18n="road_sense.external_nav_guidance_desc">Android erteilt technisch Zugriff auf alle Meldungen; Panoptes verarbeitet nur Abbiegerichtung und Entfernung von Google Maps/Waze. Straßenname, Ziel und Position werden nicht übernommen. Auf nicht unterstützten Fahrerdisplays bleibt die Funktion gesperrt.</div>
+                                <button type="button" class="btn" style="margin-top:8px;" onclick="RoadSenseSettings.openNotificationAccessSettings()" data-i18n="road_sense.external_nav_guidance_permission">Benachrichtigungszugriff öffnen</button>
+                            </div>
+                            <div class="setting-control">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="rsExternalNavGuidance" onchange="RoadSenseSettings.toggleExternalNavGuidance()">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
                                 <div class="setting-name" data-i18n="road_sense.map_cluster_auto">Mit dem Auto starten</div>
                                 <div class="setting-desc" data-i18n="road_sense.map_cluster_auto_desc">Legt die Karte jedes Mal von selbst aufs Fahrerdisplay, wenn das Auto eingeschaltet wird.</div>
                             </div>
                             <div class="setting-control">
                                 <label class="toggle-switch">
                                     <input type="checkbox" id="rsClusterAuto" onchange="RoadSenseSettings.toggleClusterAuto()">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-name" data-i18n="road_sense.oem_turn_guidance">Abbiegepfeile im Fahrerdisplay</div>
+                                <div class="setting-desc" data-i18n="road_sense.oem_turn_guidance_desc">Zeigt die nächsten Abbiegepfeile der Panoptes-Navigation in der vorhandenen BYD-Navigationsanzeige. Nur auf ausdrücklich unterstützten Fahrzeugen; beim Dolphin Surf bleibt die Funktion gesperrt.</div>
+                            </div>
+                            <div class="setting-control">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="rsOemTurnGuidance" onchange="RoadSenseSettings.toggleOemTurnGuidance()">
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>

@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#007A62">
     <script src="../shared/theme.js?v=13"></script>
-    <script src="../shared/app-shell.js?v=pn27"></script>
+    <script src="../shared/app-shell.js?v=pn28"></script>
     <!--
       Bottom-tab manifest for Charging. Tabs apply to the LIST VIEW only;
       the DETAIL VIEW (#chargingDetail) is a sequential drill-in and ignores
@@ -898,7 +898,7 @@
                                 <canvas id="socCircleCanvas" width="112" height="112" data-css-size="112" aria-hidden="true"></canvas>
                                 <div class="dashboard-soc-gauge-copy">
                                     <strong class="dashboard-soc-gauge-value" id="socCircleValue">--</strong>
-                                    <span class="dashboard-soc-gauge-label" data-i18n="charge.hero_soc">Ladestand</span>
+                                    <span class="dashboard-soc-gauge-label" data-i18n="charge.hero_soc">Akku</span>
                                 </div>
                             </div>
                             <div class="dashboard-soc-meta">
@@ -946,7 +946,7 @@
                     </div>
                     <details class="ch-estimate-disclosure" data-tab="stats" id="statsEstimateDisclosure" style="display:none;">
                         <summary data-i18n="charge.estimated_values">Geschätzte Werte</summary>
-                        <p data-i18n="charge.estimated_explanation">Wenn das Auto einen Wert nicht direkt meldet, markiert Panoptes ihn als geschätzt. Die geschätzte Leistung wird aus den Akkudaten berechnet. Geschätzte Energie und Kosten stammen aus der Änderung des Ladestands und aus deinem Preis. Die höchste Leistung kommt nur aus echten Messwerten.</p>
+                        <p data-i18n="charge.estimated_explanation">Wenn das Auto einen Wert nicht direkt meldet, markiert Panoptes ihn als geschätzt. Die geschätzte Leistung wird aus den Akkudaten berechnet. Geschätzte Energie und Kosten stammen aus der Änderung beim Akku und aus deinem Preis. Die höchste Leistung kommt nur aus echten Messwerten.</p>
                     </details>
 
                     <!-- SoC over time (Stats tab) -->
@@ -954,7 +954,7 @@
                         <div class="ch-card-head">
                             <h3 class="stats-card-title">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 1h6v3"/><path d="M9 14h6"/></svg>
-                                <span data-i18n="charge.chart_soc_title">Ladestand im Verlauf</span>
+                                <span data-i18n="charge.chart_soc_title">Akku im Verlauf</span>
                             </h3>
                             <div class="filter-tabs ch-period-tabs" id="socPeriodTabs">
                                 <button class="filter-tab" data-hours="24" onclick="CHARGING.socPeriod(24, this)" data-i18n="charge.period_24h">1 Tag</button>
@@ -1049,14 +1049,14 @@
                     <div data-tab="sessions" id="chargeSummary">
                         <div class="ch-stat-grid">
                             <div class="ch-stat ch-stat--sessions app-surface-card"><div class="ch-stat-head"><span class="ch-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 12a4 4 0 0 1 4-4h3a4 4 0 0 1 0 8h-1"/><path d="M16 12a4 4 0 0 1-4 4H9a4 4 0 0 1 0-8h1"/></svg></span><div class="ch-stat-copy"><span data-i18n="charge.summary_sessions">Ladungen</span><strong id="summarySessions">--</strong></div></div><small data-i18n="charge.summary_sessions_desc">Anzahl der Ladungen</small></div>
-                            <div class="ch-stat ch-stat--energy app-surface-card"><div class="ch-stat-head"><span class="ch-stat-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.4 2 4.8 13.2h6.1L9.8 22l9.4-12.5h-6.1L13.4 2z"/></svg></span><div class="ch-stat-copy"><span data-i18n="charge.summary_energy">Energie</span><strong id="summaryEnergy">--</strong></div></div><small data-i18n="charge.summary_energy_desc">Alle geladene Energie</small></div>
+                            <div class="ch-stat ch-stat--energy app-surface-card"><div class="ch-stat-head"><span class="ch-stat-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.4 2 4.8 13.2h6.1L9.8 22l9.4-12.5h-6.1L13.4 2z"/></svg></span><div class="ch-stat-copy"><span data-i18n="charge.summary_energy">Energie</span><strong id="summaryEnergy">--</strong></div></div><small id="summaryEnergyDesc" data-i18n="charge.summary_energy_desc">Alle geladene Energie</small></div>
                             <div class="ch-stat ch-stat--cost app-surface-card"><div class="ch-stat-head"><span class="ch-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7a3 3 0 0 1 3-3h11v16H7a3 3 0 0 1-3-3V7z"/><path d="M4 8h14M14 12h7v5h-7a2.5 2.5 0 0 1 0-5z"/></svg></span><div class="ch-stat-copy"><span data-i18n="charge.summary_cost">Kosten</span><strong id="summaryCost">--</strong></div></div><small data-i18n="charge.summary_cost_desc">Alle Ladekosten</small></div>
                             <div class="ch-stat ch-stat--type app-surface-card"><div class="ch-stat-head"><span class="ch-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="4"/><path d="M8 9v3M16 9v3M8 17h8"/></svg></span><div class="ch-stat-copy"><span data-i18n="charge.summary_dc_ac">DC / AC</span><strong id="summaryDcAc">--</strong></div></div><small data-i18n="charge.summary_dc_ac_desc">Schnelle (DC) und normale (AC) Ladungen</small></div>
-                            <div class="ch-stat ch-stat--range app-surface-card"><div class="ch-stat-head"><span class="ch-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.5"/></svg></span><div class="ch-stat-copy"><span id="summaryRangeTitle">Nachgeladene Reichweite</span><strong id="summaryRangeGained">--</strong></div></div><small id="summaryRangeDesc">—</small></div>
+                            <div class="ch-stat ch-stat--range app-surface-card"><div class="ch-stat-head"><span class="ch-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.5"/></svg></span><div class="ch-stat-copy"><span id="summaryRangeTitle" data-i18n="charge.summary_range_gained">Mehr Reichweite (geschätzt)</span><strong id="summaryRangeGained">--</strong></div></div><small id="summaryRangeDesc">—</small></div>
                         </div>
                         <details class="ch-estimate-disclosure" id="summaryEstimateDisclosure" style="display:none;">
                             <summary data-i18n="charge.estimated_values">Geschätzte Werte</summary>
-                            <p data-i18n="charge.estimated_explanation">Wenn das Auto einen Wert nicht direkt meldet, markiert Panoptes ihn als geschätzt. Die geschätzte Leistung wird aus den Akkudaten berechnet. Geschätzte Energie und Kosten stammen aus der Änderung des Ladestands und aus deinem Preis. Die höchste Leistung kommt nur aus echten Messwerten.</p>
+                            <p data-i18n="charge.estimated_explanation">Wenn das Auto einen Wert nicht direkt meldet, markiert Panoptes ihn als geschätzt. Die geschätzte Leistung wird aus den Akkudaten berechnet. Geschätzte Energie und Kosten stammen aus der Änderung beim Akku und aus deinem Preis. Die höchste Leistung kommt nur aus echten Messwerten.</p>
                         </details>
                     </div>
 
@@ -1307,7 +1307,7 @@
                         </div>
                         <div class="ch-detail-overview-item ch-detail-overview-item--soc">
                             <svg class="ch-detail-overview-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="17" rx="2"/><path d="M9 2h6v3M9 10h6M9 14h6"/></svg>
-                            <div class="ch-detail-overview-copy"><div class="ch-detail-soc-top"><div class="ch-detail-kicker" data-i18n="charge.hero_soc">Ladestand</div><div class="ch-detail-caption" id="detailSocCaption" data-i18n="charge.soc_start_end">Start → Ende</div></div><div class="ch-detail-value" id="detailSocValue">--</div><div class="ch-detail-soc-track"><span class="ch-detail-soc-fill" id="detailSocFill"></span></div></div>
+                            <div class="ch-detail-overview-copy"><div class="ch-detail-soc-top"><div class="ch-detail-kicker" data-i18n="charge.hero_soc">Akku</div><div class="ch-detail-caption" id="detailSocCaption" data-i18n="charge.soc_start_end">Start → Ende</div></div><div class="ch-detail-value" id="detailSocValue">--</div><div class="ch-detail-soc-track"><span class="ch-detail-soc-fill" id="detailSocFill"></span></div></div>
                         </div>
                         <div class="ch-detail-overview-item ch-detail-overview-item--location" id="detailLocRow" style="display:none;">
                             <svg class="ch-detail-overview-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-6-5.5-6-10a6 6 0 0 1 12 0c0 4.5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg>
@@ -1319,6 +1319,7 @@
                         <div class="ch-detail-metric-column">
                             <div class="ch-detail-metric-head"><span data-i18n="charge.detail_metric">Messwert</span><span data-i18n="charge.detail_value">Wert</span></div>
                             <div class="ch-detail-metric-row"><div class="ch-detail-metric-name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="5" width="12" height="16" rx="2"/><path d="M9 2h6v3M9 9h6M9 13h6"/></svg><span data-i18n="charge.detail_energy_added">Geladene Energie</span></div><strong class="ch-detail-metric-value" id="detailEnergy">--</strong></div>
+                            <button type="button" class="ch-detail-metric-row ch-detail-cost-edit" id="detailSaeuleRow" onclick="CHARGING.editSaeule()" title="Laut Säule eintragen" aria-label="Laut Säule eintragen" data-i18n-attr="title:charge.saeule_eintragen;aria-label:charge.saeule_eintragen"><div class="ch-detail-metric-name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="9" height="18" rx="1"/><path d="M8 7h3M14 9h2a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0V8l-3-3"/></svg><span data-i18n="charge.saeule_titel">Laut Säule</span></div><div class="ch-detail-cost-value"><strong class="ch-detail-metric-value" id="detailSaeule">--</strong><span class="ch-detail-cost-rate" id="detailSaeuleHint"></span><svg class="ch-detail-cost-edit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/></svg></div></button>
                             <div class="ch-detail-metric-row"><div class="ch-detail-metric-name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h3l2-7 4 14 3-10 2 3h4"/></svg><span id="detailAvgPowerLabel" data-i18n="charge.detail_avg_power">Mittlere Leistung</span></div><strong class="ch-detail-metric-value" id="detailAvgPower">--</strong></div>
                             <div class="ch-detail-metric-row"><div class="ch-detail-metric-name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span data-i18n="charge.detail_peak_power">Höchste Leistung</span></div><strong class="ch-detail-metric-value" id="detailPeakPower">--</strong></div>
                             <div class="ch-detail-metric-row"><div class="ch-detail-metric-name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-6-5.5-6-10a6 6 0 0 1 12 0c0 4.5-6 10-6 10z"/></svg><span data-i18n="charge.detail_range_reicht_titel">Reicht für</span></div><strong class="ch-detail-metric-value" id="detailRangeGained">--</strong></div>
@@ -1326,13 +1327,13 @@
                         </div>
                         <div class="ch-detail-metric-column">
                             <div class="ch-detail-metric-head"><span data-i18n="charge.detail_metric">Messwert</span><span data-i18n="charge.detail_value">Wert</span></div>
-                            <button type="button" class="ch-detail-metric-row ch-detail-cost-edit" onclick="CHARGING.editCost()" title="Kosten ändern" aria-label="Kosten ändern" data-i18n-attr="title:charge.edit_cost;aria-label:charge.edit_cost"><div class="ch-detail-metric-name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7a3 3 0 0 1 3-3h11v16H7a3 3 0 0 1-3-3z"/></svg><span data-i18n="charge.detail_cost">Kosten</span></div><div class="ch-detail-cost-value"><strong class="ch-detail-metric-value" id="detailCost">--</strong><span class="ch-detail-cost-rate" id="detailCostRate"></span><svg class="ch-detail-cost-edit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/></svg></div></button>
+                            <button type="button" class="ch-detail-metric-row ch-detail-cost-edit" onclick="CHARGING.editSaeule()" title="Kosten ändern" aria-label="Kosten ändern" data-i18n-attr="title:charge.edit_cost;aria-label:charge.edit_cost"><div class="ch-detail-metric-name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7a3 3 0 0 1 3-3h11v16H7a3 3 0 0 1-3-3z"/></svg><span data-i18n="charge.detail_cost">Kosten</span></div><div class="ch-detail-cost-value"><strong class="ch-detail-metric-value" id="detailCost">--</strong><span class="ch-detail-cost-rate" id="detailCostRate"></span><svg class="ch-detail-cost-edit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/></svg></div></button>
                             <div class="ch-detail-metric-row"><div class="ch-detail-metric-name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2v5M15 2v5M6 7h12v3a6 6 0 0 1-12 0zM12 16v6"/></svg><span data-i18n="charge.detail_type">Art</span></div><strong class="ch-detail-metric-value" id="detailType">--</strong></div>
                             <div class="ch-detail-metric-row"><div class="ch-detail-metric-name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 14.5V5a3 3 0 0 1 6 0v9.5a5 5 0 1 1-6 0z"/></svg><span data-i18n="charge.detail_temp">Akku-Temperatur</span></div><strong class="ch-detail-metric-value" id="detailTemp">--</strong></div>
                             <div class="ch-detail-metric-row"><div class="ch-detail-metric-name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/></svg><span data-i18n="charge.detail_time_to_full">Bis voll</span></div><strong class="ch-detail-metric-value" id="detailTimeToFull">--</strong></div>
                             <div class="ch-detail-metric-row" id="detailTariffStat" style="display:none;"><div class="ch-detail-metric-name"><span data-i18n="charge.detail_tariff">Preis</span></div><strong class="ch-detail-metric-value" id="detailTariff">--</strong></div>
                         </div>
-                        <details class="ch-estimate-disclosure" id="detailEstimateDisclosure" style="display:none;"><summary data-i18n="charge.estimated_values">Geschätzte Werte</summary><p data-i18n="charge.estimated_explanation">Wenn das Auto einen Wert nicht direkt meldet, markiert Panoptes ihn als geschätzt. Die geschätzte Leistung wird aus den Akkudaten berechnet. Geschätzte Energie und Kosten stammen aus der Änderung des Ladestands und aus deinem Preis. Die höchste Leistung kommt nur aus echten Messwerten.</p></details>
+                        <details class="ch-estimate-disclosure" id="detailEstimateDisclosure" style="display:none;"><summary data-i18n="charge.estimated_values">Geschätzte Werte</summary><p data-i18n="charge.estimated_explanation">Wenn das Auto einen Wert nicht direkt meldet, markiert Panoptes ihn als geschätzt. Die geschätzte Leistung wird aus den Akkudaten berechnet. Geschätzte Energie und Kosten stammen aus der Änderung beim Akku und aus deinem Preis. Die höchste Leistung kommt nur aus echten Messwerten.</p></details>
                     </section>
 
                     <div class="ch-detail-chart-grid">
@@ -1379,7 +1380,8 @@
     <div id="toastContainer" class="toast-container"></div>
 
     <script src="../shared/core.js?v=pn6"></script>
-    <script src="../shared/charging.js?v=50"></script>
+    <script src="../shared/charging.js?v=51"></script>
+<script src="../shared/ladeverlust-hinweis.js?v=1"></script>
     <script src="../shared/einstellungen.js?v=pn8"></script>
     <script src="../shared/laden-vorlieben.js?v=2"></script>
     <script src="../shared/laden-nachfrage.js?v=1"></script>

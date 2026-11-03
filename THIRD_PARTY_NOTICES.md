@@ -7,6 +7,12 @@ Panoptes' own source code is licensed under the MIT License (see [LICENSE](LICEN
 Panoptes is based on **OverDrive** by Yash Srivastava, published under the MIT License. Its copyright
 and permission notice is retained in [LICENSE](LICENSE) and in the app (`app/src/main/assets/licenses/LICENSES.txt`).
 
+The OEM navigation-payload layout, BYD cluster icon mapping and AutoContainer message contract are
+derived from **BYD DashCast** by Cedric Carre (https://github.com/Kiroha/byd-dashcast,
+reviewed commit `174fcf89a2ec22a5cdfa11b844d240e001b1f6c3`), MIT License.
+Panoptes reimplements the transport and lifecycle around its own navigation engine; DashCast's full
+MIT notice is retained in `app/src/main/assets/licenses/LICENSES.txt`.
+
 The MIT License applies **only** to the code of Panoptes and OverDrive. The app bundles the third-party
 components listed below. Each of them stays under its own license, and those licenses, not MIT,
 govern these components.
@@ -48,7 +54,7 @@ contained three files derived from [FAST_CAM_CAPTURE](https://github.com/frances
 
 ## Java/Kotlin libraries (Gradle dependencies)
 
-Including AndroidX and Material Components (Apache-2.0), MapLibre Native Android (BSD-2-Clause),
+Including AndroidX and Material Components (Apache-2.0), FlatBuffers Java (Apache-2.0), MapLibre Native Android (BSD-2-Clause),
 dadb (Apache-2.0), OkHttp (Apache-2.0), ZXing (Apache-2.0), TensorFlow Lite Java (Apache-2.0),
 Eclipse Paho MQTT (EPL-2.0 / EDL-1.0), H2 Database (MPL-2.0 / EPL-1.0) and Java-WebSocket (MIT).
 The exact list and versions are in `app/build.gradle.kts` and `gradle/libs.versions.toml`.

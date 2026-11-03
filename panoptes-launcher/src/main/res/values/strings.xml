@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Panoptes Launcher</string>
+    <string name="title">Panoptes Cockpit</string>
+    <string name="connecting">Connecting to Panoptes …</string>
+    <string name="offline">Panoptes is not reachable. Start Panoptes and try again.</string>
+    <string name="retry">Try again</string>
+    <string name="vehicle_unknown">Vehicle</string>
+    <string name="range_format">%1$s km range</string>
+    <string name="soc_format">%1$s%% battery</string>
+    <string name="state_format">%1$s · Gear %2$s</string>
+    <string name="traffic_format">Nearby: %1$d · approaching: %2$d</string>
+    <string name="traffic_empty">No nearby road users reported.</string>
+    <string name="history_format">Last trip: %1$s km · last charge: %2$s kWh</string>
+    <string name="history_empty">No recent trip or charge yet.</string>
+    <string name="apps">Apps</string>
+    <string name="apps_empty">No startable apps reported.</string>
+    <string name="launch_failed">Could not start the app.</string>
+    <string name="open_panoptes">Open Panoptes</string>
+    <string name="unknown">—</string>
+</resources>

@@ -1,5 +1,6 @@
 package at.greenchili.surfmate.ui;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -16,14 +17,14 @@ public class WebSettingsToggleReliabilityContractTest {
     public void immediateSavePagesLockUntilHydratedAndSerializeWrites() throws IOException {
         assertPageLock("recording.html", "recording.js?v=budget18");
         assertPageLock("road-sense.html", "road-sense.js?v=chimevolume8");
-        assertPageLock("trips.html", "trips.js?v=history13");
-        assertPageLock("abrp.html", "abrp.js?v=toggle3");
-        assertPageLock("surveillance.html", "surveillance.js?v=survtoggle11");
-        assertPageLock("byd-cloud.html", "surveillance.js?v=survtoggle11");
+        assertPageLock("trips.html", "trips.js?v=panoptes8");
+        assertPageLock("abrp.html", "abrp.js?v=apikey1");
+        assertPageLock("surveillance.html", "surveillance.js?v=survtoggle12");
+        assertPageLock("byd-cloud.html", "surveillance.js?v=survtoggle12");
         assertTrue(read("app/src/main/assets/web/local/live-view.html").contains(
-                "surveillance.js?v=survtoggle11"));
+                "surveillance.js?v=survtoggle12"));
         assertTrue(read("app/src/main/assets/web/local/notifications.html").contains(
-                "surveillance.js?v=survtoggle11"));
+                "surveillance.js?v=survtoggle12"));
 
         String hydration = read("app/src/main/assets/web/shared/settings-hydration.js");
         assertTrue(hydration.contains("event.stopImmediatePropagation();"));
@@ -126,8 +127,12 @@ public class WebSettingsToggleReliabilityContractTest {
         String notifications = read("app/src/main/assets/web/local/notifications.html");
         assertTrue(notifications.contains(
                 "id=\"v2TelegramSendStartPing\" disabled onchange=\"SurvSettings.updateTelegramStartPing()\""));
-        assertTrue(notifications.contains(
-                "id=\"v2TelegramNotices\" disabled onchange=\"SurvSettings.updateTelegramTiers()\""));
+        // Kategorien werden seit 0.1.11 nur noch an einer Stelle gepflegt: auf der Telegram-Seite.
+        // Die Meldungsseite darf deshalb keine zweite, beim Laden kurz bedienbare Schalterkopie tragen.
+        assertFalse(notifications.contains("id=\"v2TelegramNotices\""));
+        assertFalse(notifications.contains("id=\"v2TelegramAlerts\""));
+        assertFalse(notifications.contains("id=\"v2TelegramCritical\""));
+        assertTrue(notifications.contains("href=\"telegram.html#alertsCard\""));
         assertTrue(surveillance.contains("_geocodingWriteVersion"));
         assertTrue(surveillance.contains("_layoutWriteVersion"));
         assertTrue(surveillance.contains("_telemetryWriteVersion"));

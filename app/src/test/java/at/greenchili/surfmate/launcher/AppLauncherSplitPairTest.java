@@ -9,6 +9,15 @@ import org.junit.Test;
 public class AppLauncherSplitPairTest {
 
     @Test
+    public void splitScreenCapabilityParserFailsClosed() {
+        assertTrue(AppLauncher.parseBooleanShellResult("true\n"));
+        assertTrue(AppLauncher.parseBooleanShellResult("supported: true"));
+        assertFalse(AppLauncher.parseBooleanShellResult("false"));
+        assertFalse(AppLauncher.parseBooleanShellResult("permission denied"));
+        assertFalse(AppLauncher.parseBooleanShellResult(null));
+    }
+
+    @Test
     public void splitPairRequiresTwoDistinctValidPackages() {
         assertTrue(AppLauncher.isValidSplitPair("com.maps.app", "com.music.app"));
         assertFalse(AppLauncher.isValidSplitPair("com.maps.app", "com.maps.app"));

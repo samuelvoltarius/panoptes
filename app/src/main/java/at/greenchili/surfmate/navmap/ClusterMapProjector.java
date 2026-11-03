@@ -140,11 +140,21 @@ public final class ClusterMapProjector {
      * sustained projection hold, waits for the fission display, then launches the
      * map Activity onto it. Runs the wait+launch off the caller's thread.
      */
-    public static synchronized void start() {
+    public static synchronized boolean start() {
+        // Central admission gate for EVERY caller (Web API, ACC auto-start and
+        // post-cast map restore). Evaluate the proven platform path, not the
+        // pre-activation display list: on supported Dual-OS cars the fission
+        // VirtualDisplay is often created only BY opening the OEM projection.
+        // Single-OS, missing projection service, missing shell rights and unknown
+        // evidence all fail closed before any state publication or acquire.
+        if (!at.greenchili.surfmate.tacho.TachoFaehigkeit.karteVerfuegbar()) {
+            logger.warn("cluster map projection rejected: platform path not admitted");
+            return false;
+        }
         if (active) {
             if (!at.greenchili.surfmate.camera.dilink5.DiLink5Platform.isSelected()
                     || at.greenchili.surfmate.launcher.DiLink5ClusterCast.isMapActive()) {
-                return;
+                return true;
             }
             active = false;
             publishActiveFlag(false);
@@ -159,8 +169,9 @@ public final class ClusterMapProjector {
                 active = false;
                 publishActiveFlag(false);
                 logger.warn("DI5 cluster map projection was not accepted");
+                return false;
             }
-            return;
+            return true;
         }
         boolean acquired = false;
         try {
@@ -173,11 +184,12 @@ public final class ClusterMapProjector {
             active = false;
             publishActiveFlag(false);
             logger.warn("legacy cluster map projection was not admitted");
-            return;
+            return false;
         }
         launchThread = new Thread(ClusterMapProjector::waitAndLaunch, "ClusterMapLaunch");
         launchThread.setDaemon(true);
         launchThread.start();
+        return true;
     }
 
     /** Stop projecting: release the sustained hold (the controller restores gauges)

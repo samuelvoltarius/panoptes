@@ -21,7 +21,7 @@ public class BatteryChemistryMetadataTest {
     private static final Set<String> EXPECTED_MODELS = new HashSet<>(Arrays.asList(
             "seal", "sealion7", "seal-u", "seal-u-dmi", "dolphin", "atto3",
             "atto3-evo", "atto2", "han", "tang", "m6", "seagull", "destroyer",
-            "shark"));
+            "shark", "seal6-gt", "seal6-dmi-touring"));
     private static final Map<String, String> EXPECTED_MODEL_SOURCES = new HashMap<>();
 
     static {
@@ -38,13 +38,15 @@ public class BatteryChemistryMetadataTest {
         EXPECTED_MODEL_SOURCES.put("m6", "https://www.byd.com/material/byd-site/sg/2025-m6/BYD-M6-SPEC-SHEET.pdf");
         EXPECTED_MODEL_SOURCES.put("seagull", "https://www.byd.com/content/dam/byd-site/za/product/dolphin-surf/Dolphin%20Surf%20Spec.pdf");
         EXPECTED_MODEL_SOURCES.put("destroyer", "https://media.byd.com/byd-launches-seal-5-dm-i-offering-long-range-super-dm-hybrid-tech-and-low-running-costs/?lang=eng");
-        EXPECTED_MODEL_SOURCES.put("shark", "https://media.byd.com/byd-shark-pickup-truck-global-debut/?lang=eng");
+        EXPECTED_MODEL_SOURCES.put("shark", "https://media.byd.com/section/byd-shark/?lang=eng");
+        EXPECTED_MODEL_SOURCES.put("seal6-gt", "https://prod.byd.com/cn/ocean-home/models/haibao/26-haibao-06-GT");
+        EXPECTED_MODEL_SOURCES.put("seal6-dmi-touring", "https://media.byd.com/byd-launches-seal-6-dm-i-sedan-and-wagon-bringing-the-freedom-of-super-hybrid-technology/?lang=eng");
     }
 
     @Test
     public void everySupportedConfigurationHasManufacturerEvidenceAndResolvesLfp() throws Exception {
         JSONObject manifest = manifest();
-        assertEquals(13, manifest.getInt("version"));
+        assertEquals(19, manifest.getInt("version"));
 
         JSONArray models = manifest.getJSONArray("models");
         Set<String> actual = new HashSet<>();

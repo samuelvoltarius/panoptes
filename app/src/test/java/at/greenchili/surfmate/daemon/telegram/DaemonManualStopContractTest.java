@@ -31,7 +31,7 @@ public class DaemonManualStopContractTest {
                 .allMatch(command -> command.contains("grep -v acc_sentry_daemon")));
         assertTrue(context.commands.stream().anyMatch(command ->
                 command.contains("sentry_daemon.pid")
-                        && command.contains("127.0.0.1 19879")));
+                        && command.contains("127.0.0.1 19979")));
         assertTrue(context.messages.contains("tr:daemon.stopped"));
     }
 

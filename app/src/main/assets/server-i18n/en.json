@@ -2221,6 +2221,18 @@
       "acStandard": {
         "title": "AC charging at unknown places costs",
         "help": "Applies to all AC charges at places you have not saved (e.g. at home), so Panoptes does not ask there. 0 = free. Empty = ask every time."
+      },
+      "verlustAc": {
+        "title": "Charging loss AC (wallbox, home)",
+        "help": "How much more an AC charger bills than reaches the battery. Suggested: 12 %. Only used for charges without kWh entered from the charger; those values show a “~”."
+      },
+      "verlustDc": {
+        "title": "Charging loss DC (fast charger)",
+        "help": "How much more a DC charger bills than reaches the battery. Suggested: 8 %. Only used for charges without kWh entered from the charger; those values show a “~”."
+      },
+      "verlustHinweis": {
+        "title": "Show charging-loss notice",
+        "help": "Explains once that costs include the charging loss. Turns off after “Got it”."
       }
     },
     "zaehlen": {

@@ -51,10 +51,37 @@ public final class LadeKosten {
 
     /** Ist der Preis dieser Ladung bekannt (Tarif, Nutzer, AC-Standard; gratis = 0 ist bekannt)? */
     static boolean preisBekannt(JSONObject s) {
-        String q = s.optString("preisQuelle", "");
-        boolean bekannt = !s.optString("tariffId", "").isEmpty()
+        String q = s.isNull("preisQuelle") ? "" : s.optString("preisQuelle", "");
+        // 03.11.2026: Herkunft unbekannt (preisQuelle null, z. B. Ad-hoc-Preis aus einer Zeile ohne Herkunftsspalte), aber
+        // ein Preis je kWh > 0 ist gespeichert → bepreist. „fehlt“ und „ersatz“ bleiben unbekannt.
+        boolean herkunftUnbekannt = s.has("preisQuelle") && s.isNull("preisQuelle")
+                && s.optDouble("electricityRate", -1) > 0;
+        boolean bekannt = !s.optString("tariffId", "").isEmpty() || herkunftUnbekannt
                 || "tarif".equals(q) || "nutzer".equals(q) || "standard".equals(q);
         return bekannt && s.has("cost") && !s.isNull("cost") && s.optDouble("cost", -1) >= 0;
+    }
+
+    /**
+     * Abgerechnete Kosten (LadeAbrechnung: Betrag laut Säule bzw. Kosten × abgerechnete ÷ Akku-kWh) oder NaN.
+     * Ein eingetragener Betrag macht auch eine Ladung ohne Preis bekannt.
+     */
+    static double kostenAbgerechnet(JSONObject s) {
+        if (!s.isNull("saeuleBetrag") && s.has("saeuleBetrag")) {
+            double b = s.optDouble("saeuleBetrag", Double.NaN);
+            if (Double.isFinite(b) && b >= 0) return b;
+        }
+        if (!preisBekannt(s)) return Double.NaN;
+        if (s.has("kostenAbgerechnet") && !s.isNull("kostenAbgerechnet")) {
+            double k = s.optDouble("kostenAbgerechnet", Double.NaN);
+            if (Double.isFinite(k) && k >= 0) return k;
+        }
+        return s.optDouble("cost");
+    }
+
+    /** Abgerechnete kWh (eingetragen oder mit Zuschlag), sonst die Akku-kWh. */
+    static double kwhAbgerechnet(JSONObject s) {
+        double k = s.isNull("kwhAbgerechnet") ? Double.NaN : s.optDouble("kwhAbgerechnet", Double.NaN);
+        return Double.isFinite(k) && k > 0 ? k : s.optDouble("energyAdded");
     }
 
     static boolean zaehlt(JSONObject s) {
@@ -63,8 +90,8 @@ public final class LadeKosten {
 
     /** Antwort für {@code GET /api/laden/kosten}. */
     public static JSONObject kosten(JSONArray sitzungen, double km, String zeitraum, long von, long bis) throws Exception {
-        int n = 0, ohne = 0, gratis = 0;
-        double kwh = 0, kwhOhne = 0, summe = 0;
+        int n = 0, ohne = 0, gratis = 0, ohneAbg = 0, geschaetzt = 0;
+        double kwh = 0, kwhOhne = 0, summe = 0, kwhAbg = 0, summeAbg = 0;
         String waehrung = null;
         for (int i = 0; sitzungen != null && i < sitzungen.length(); i++) {
             JSONObject s = sitzungen.optJSONObject(i);
@@ -72,6 +99,11 @@ public final class LadeKosten {
             double e = s.optDouble("energyAdded");
             n++;
             kwh += e;
+            kwhAbg += kwhAbgerechnet(s);
+            if (s.optBoolean("kwhAbgerechnetGeschaetzt", false)) geschaetzt++;
+            double ka = kostenAbgerechnet(s);
+            if (Double.isNaN(ka)) ohneAbg++;
+            else summeAbg += ka;
             if (preisBekannt(s)) {
                 double k = s.optDouble("cost");
                 summe += k;
@@ -100,6 +132,15 @@ public final class LadeKosten {
         o.put("anteil_ohne_preis_kwh", kwh > 0 ? Math.round(kwhOhne / kwh * 1000) / 1000.0 : 0);
         o.put("vollstaendig", ohne == 0);
         o.put("waehrung", waehrung == null ? JSONObject.NULL : waehrung);
+        // 03.11.2026 (LadeAbrechnung): dasselbe mit der Menge, die die Säule abrechnet (eingetragen bzw. Zuschlag).
+        // Die Felder oben bleiben Akku-Basis.
+        o.put("kwh_abgerechnet", Math.round(kwhAbg * 10) / 10.0);
+        o.put("kosten_summe_abgerechnet", Math.round(summeAbg * 100) / 100.0);
+        o.put("kosten_je_100km_abgerechnet", mitKm ? (Object) (Math.round(summeAbg / km * 100 * 100) / 100.0) : JSONObject.NULL);
+        o.put("kwh_je_100km_abgerechnet", mitKm ? (Object) (Math.round(kwhAbg / km * 100 * 10) / 10.0) : JSONObject.NULL);
+        o.put("ladungen_ohne_preis_abgerechnet", ohneAbg);
+        o.put("ladungen_geschaetzt", geschaetzt);
+        o.put("vollstaendig_abgerechnet", ohneAbg == 0);
         return o;
     }
 
@@ -129,6 +170,9 @@ public final class LadeKosten {
             x.put("kwh", Math.round((x.getDouble("kwh") + s.optDouble("energyAdded")) * 10) / 10.0);
             if (preisBekannt(s)) x.put("kosten", Math.round((x.getDouble("kosten") + s.optDouble("cost")) * 100) / 100.0);
             else x.put("ohne_preis", x.getInt("ohne_preis") + 1);
+            x.put("kwh_abgerechnet", Math.round((x.optDouble("kwh_abgerechnet", 0) + kwhAbgerechnet(s)) * 10) / 10.0);
+            double ka = kostenAbgerechnet(s);
+            x.put("kosten_abgerechnet", Math.round((x.optDouble("kosten_abgerechnet", 0) + (Double.isNaN(ka) ? 0 : ka)) * 100) / 100.0);
         }
         JSONArray ma = new JSONArray();
         for (JSONObject x : monate.values()) ma.put(x.put("vollstaendig", x.getInt("ohne_preis") == 0));
@@ -156,6 +200,10 @@ public final class LadeKosten {
         e.put("waehrung", s.optString("currency", ""));
         e.put("quelle", s.isNull("preisQuelle") ? "" : s.optString("preisQuelle", ""));
         e.put("tarifName", s.isNull("tariffLabel") ? JSONObject.NULL : s.opt("tariffLabel"));
+        e.put("kwh_abgerechnet", Math.round(kwhAbgerechnet(s) * 100) / 100.0);
+        e.put("kwh_abgerechnet_geschaetzt", s.optBoolean("kwhAbgerechnetGeschaetzt", false));
+        double ka = kostenAbgerechnet(s);
+        e.put("kosten_abgerechnet", Double.isNaN(ka) ? JSONObject.NULL : (Object) (Math.round(ka * 100) / 100.0));
         String ort = s.isNull("placeLabel") ? "" : s.optString("placeLabel", "");
         e.put("ort", ort.isEmpty() ? JSONObject.NULL : ort);
         return e;

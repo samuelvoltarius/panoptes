@@ -19,8 +19,8 @@ public class RemoteDevViewAssetTest {
         String html = read("src/main/assets/web/local/remote-dev-view.html");
 
         assertFalse(html.contains("id=\"confirmStart\""));
-        assertTrue(html.contains("Controls the real SurfMate app"));
-        assertTrue(html.contains("Use only while parked"));
+        assertTrue(html.contains("Du bedienst die echte App im Auto"));
+        assertTrue(html.contains("Mach das nur im Stand"));
         assertTrue(html.contains("id=\"startButton\" class=\"dev-button primary\""));
         assertFalse(html.contains("id=\"startButton\" class=\"dev-button primary\" disabled"));
         assertFalse(html.contains("warning-card"));
@@ -34,8 +34,8 @@ public class RemoteDevViewAssetTest {
         String html = read("src/main/assets/web/local/remote-dev-view.html");
 
         int auth = html.indexOf("../shared/auth.js");
-        int core = html.indexOf("../shared/core.js?v=23");
-        int view = html.indexOf("../shared/remote-dev-view.js?v=10");
+        int core = html.indexOf("../shared/core.js?v=pn6");
+        int view = html.indexOf("../shared/remote-dev-view.js?v=11");
         assertTrue(auth >= 0);
         assertTrue(core > auth);
         assertTrue(view > core);
@@ -58,9 +58,9 @@ public class RemoteDevViewAssetTest {
         assertFalse(script.contains("/api/dev-view/frame?"));
         assertFalse(script.contains("localStorage.setItem"));
         assertTrue(script.contains("maxWidth: 960, quality: 55"));
-        assertTrue(script.contains("Waiting for a stable app frame"));
+        assertTrue(script.contains("Waiting for a stable frame"));
         assertTrue(script.contains(": 100"));
-        assertTrue(html.contains("remote-dev-view.js?v=10"));
+        assertTrue(html.contains("remote-dev-view.js?v=11"));
     }
 
     @Test
@@ -108,7 +108,7 @@ public class RemoteDevViewAssetTest {
         assertTrue(server.contains("AuthMiddleware.checkJwtOnly"));
         assertTrue(server.contains("RemoteDevViewWebSocketStream.PATH"));
         int strictStart = middleware.indexOf("public static boolean checkJwtOnly");
-        int strictEnd = middleware.indexOf("private static String jwtFromHeaders", strictStart);
+        int strictEnd = middleware.indexOf("Decides whether a loopback client socket", strictStart);
         String strictCheck = middleware.substring(strictStart, strictEnd);
         assertFalse(strictCheck.contains("isLoopback"));
         assertFalse(strictCheck.contains("clientAddress"));
@@ -119,7 +119,7 @@ public class RemoteDevViewAssetTest {
         assertTrue(main.contains("if (remoteDevSession) return"));
         assertTrue(script.contains("frameContext.clearRect"));
         assertTrue(script.contains("data.pixelCopyResult === 'LOCKED'"));
-        assertTrue(script.contains("clearFrame('Return to this tab"));
+        assertTrue(script.contains("clearFrame(t('remote_dev.resume_tab'"));
     }
 
     @Test
@@ -216,7 +216,7 @@ public class RemoteDevViewAssetTest {
         assertTrue(manifest.contains("at.greenchili.surfmate.remote.RemoteDevViewBridgeService"));
         assertTrue(manifest.contains("android:exported=\"false\""));
         assertTrue(service.contains("InetAddress.getLoopbackAddress()"));
-        assertTrue(service.contains("const val PORT = 19881"));
+        assertTrue(service.contains("const val PORT = 19981"));
         assertTrue(service.contains("rememberNonce(authenticated.nonce"));
         assertTrue(auth.contains("HmacSHA256"));
         assertTrue(auth.contains("MessageDigest.isEqual"));

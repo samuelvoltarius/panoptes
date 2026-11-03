@@ -41,6 +41,7 @@ class WebViewFragment : Fragment() {
     companion object {
         const val ARG_PAGE_PATH = "page_path"
         private const val KEY_SAVED_URL = "saved_url"
+        private const val PAGE_LOAD_TIMEOUT_MS = 20_000L
 
         // Hides the in-page PWA chrome before the first paint. INJECT_JS runs
         // on onPageFinished, which is late enough for the sidebar to flash.
@@ -447,6 +448,12 @@ class WebViewFragment : Fragment() {
     // an in-flight load — overlapping loadUrl + reload on Chrome 58 WebView
     // is the source of the "spinner forever" hang.
     private var loadInProgress = false
+    // Old BYD WebViews occasionally swallow both onPageFinished and
+    // onReceivedError (notably for malformed/unreachable navigation URLs).
+    // A dedicated watchdog prevents the full-screen spinner from becoming a
+    // dead end and falls back to the existing retry UI.
+    private val pageLoadHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var pageLoadRound = 0
     // Only allow the auth retry to trigger one reload across the fragment's
     // lifetime. After the first auth-driven reload, any further auth state
     // changes are picked up by the caller (Settings → Re-login → manual
@@ -1124,11 +1131,13 @@ class WebViewFragment : Fragment() {
                     // load.
                     pageLoadFailed = false
                     loadInProgress = true
+                    armPageLoadTimeout()
                     applyLoadChrome()
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
+                    cancelPageLoadTimeout()
                     loadInProgress = false
                     if (url != null && url == startSeiteFuer) {
                         pageLoadFailed = true
@@ -1156,6 +1165,7 @@ class WebViewFragment : Fragment() {
                     view: WebView?, request: WebResourceRequest?, error: WebResourceError?
                 ) {
                     if (request?.isForMainFrame == true) {
+                        cancelPageLoadTimeout()
                         pageLoadFailed = true
                         loadInProgress = false
                         zeigeStart()
@@ -1171,6 +1181,7 @@ class WebViewFragment : Fragment() {
                     super.onReceivedHttpError(view, request, errorResponse)
                     if (at.greenchili.surfmate.ui.StartWarten.istStartFehler(
                             request?.isForMainFrame == true, errorResponse?.statusCode ?: 0)) {
+                        cancelPageLoadTimeout()
                         pageLoadFailed = true
                         loadInProgress = false
                         zeigeStart()
@@ -1562,6 +1573,24 @@ class WebViewFragment : Fragment() {
             }
         }
 
+        /** Opens Android's own notification-listener consent page; no permission is granted by Panoptes. */
+        @android.webkit.JavascriptInterface
+        fun openNotificationAccessSettings(): String {
+            return try {
+                val act = activity ?: return "no_context"
+                act.runOnUiThread {
+                    try {
+                        act.startActivity(android.content.Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                    } catch (e: Exception) {
+                        android.util.Log.w("WebViewFragment", "notification access settings failed: ${e.message}")
+                    }
+                }
+                "ok"
+            } catch (e: Exception) {
+                "error"
+            }
+        }
+
         /**
          * Navigate to a native destination named by the page. `dest` is matched
          * against an allowlist — a page must never be able to name an arbitrary
@@ -1571,6 +1600,84 @@ class WebViewFragment : Fragment() {
         /** „Erweitert (alt)“ aus der Web-Oberfläche (Neubau 2 prüft auf AndroidBridge.openLegacy). */
         @android.webkit.JavascriptInterface
         fun openLegacy(): String = navigate("erweitert")
+
+        /** Direkter, absichtlich enger Weg aus System → Kameras zuordnen. */
+        @android.webkit.JavascriptInterface
+        fun openCameraMapping(): String {
+            return try {
+                val act = activity as? at.greenchili.surfmate.ui.MainActivity ?: return "no_context"
+                act.runOnUiThread {
+                    if (isAdded && !isDetached && view != null) {
+                        act.invokeReconfigureCameraAction()
+                    }
+                }
+                "ok"
+            } catch (e: Exception) {
+                android.util.Log.w("WebViewFragment", "openCameraMapping bridge failed: ${e.message}")
+                "error"
+            }
+        }
+
+        /**
+         * Prüft die Fahrerdisplay-Plattform im Hintergrund und meldet das Ergebnis
+         * an die Systemseite. Die generische `cluster`-Fähigkeit reicht hier nicht:
+         * Single-OS und DiLink 5 müssen durch dieselbe TachoFaehigkeit/Totwinkel-
+         * Policy wie alle anderen Startwege abgelehnt werden.
+         */
+        @android.webkit.JavascriptInterface
+        fun refreshProjectionAvailability(): String {
+            Thread({
+                val result = try {
+                    val status = at.greenchili.surfmate.tacho.TachoNaviApp.status()
+                    org.json.JSONObject()
+                        .put("offered", status.optBoolean("angeboten", false))
+                        .put("reason", status.optString("grund", "faehigkeit_unbekannt"))
+                } catch (e: Throwable) {
+                    org.json.JSONObject().put("offered", false).put("reason", "faehigkeit_unbekannt")
+                }
+                webView?.post {
+                    webView?.evaluateJavascript(
+                        "window.PanoptesProjectionAvailability&&window.PanoptesProjectionAvailability(" +
+                            result.toString() + ");", null
+                    )
+                }
+            }, "ProjectionAvailability").apply { isDaemon = true }.start()
+            return "checking"
+        }
+
+        /** Öffnet die native App-Projektion nur nach einer frischen fail-closed Prüfung. */
+        @android.webkit.JavascriptInterface
+        fun openProjection(): String {
+            Thread({
+                var offered = false
+                var reason = "faehigkeit_unbekannt"
+                try {
+                    val status = at.greenchili.surfmate.tacho.TachoNaviApp.status()
+                    offered = status.optBoolean("angeboten", false)
+                    reason = status.optString("grund", reason)
+                } catch (_: Throwable) { }
+                val allowed = offered
+                val why = reason
+                val act = activity
+                act?.runOnUiThread {
+                    if (allowed && isAdded && !isDetached && view != null) {
+                        try {
+                            androidx.navigation.fragment.NavHostFragment
+                                .findNavController(this@WebViewFragment)
+                                .navigateDrillDown(R.id.projectionFragment)
+                        } catch (e: Exception) {
+                            android.util.Log.w("WebViewFragment", "openProjection failed: ${e.message}")
+                        }
+                    } else {
+                        webView?.evaluateJavascript(
+                            "window.PanoptesProjectionOpenResult&&window.PanoptesProjectionOpenResult(false," +
+                                org.json.JSONObject.quote(why) + ");", null
+                        )
+                    }
+                }
+            }, "ProjectionOpenCheck").apply { isDaemon = true }.start()
+            return "checking"
+        }
 
         @android.webkit.JavascriptInterface
         fun navigate(dest: String): String {
@@ -1868,8 +1975,28 @@ class WebViewFragment : Fragment() {
 
     private fun loadPage() {
         pageLoadFailed = false
+        loadInProgress = true
+        armPageLoadTimeout()
         applyLoadChrome()
         currentUrl?.let { webView?.loadUrl(it) }
+    }
+
+    private fun armPageLoadTimeout() {
+        val round = ++pageLoadRound
+        pageLoadHandler.removeCallbacksAndMessages(null)
+        pageLoadHandler.postDelayed({
+            if (round != pageLoadRound || !loadInProgress || view == null) return@postDelayed
+            android.util.Log.w("WebViewFragment", "Page load timed out: $currentUrl")
+            pageLoadFailed = true
+            loadInProgress = false
+            webView?.stopLoading()
+            showError()
+        }, PAGE_LOAD_TIMEOUT_MS)
+    }
+
+    private fun cancelPageLoadTimeout() {
+        pageLoadRound++
+        pageLoadHandler.removeCallbacksAndMessages(null)
     }
 
     private fun retryLoad() {
@@ -2210,6 +2337,7 @@ class WebViewFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        cancelPageLoadTimeout()
         // If a file picker is pending, release its callback so the WebView
         // doesn't hang onto a dangling handle.
         pendingFileCallback?.onReceiveValue(null)

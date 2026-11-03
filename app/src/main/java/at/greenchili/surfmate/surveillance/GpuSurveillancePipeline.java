@@ -7725,6 +7725,7 @@ public class GpuSurveillancePipeline {
         // this call. The fireBsVisibilityChanged listener (RMM.reconcileCameraProfile)
         // takes only its own reconcileLock AFTER bsLifecycleLock — the same order
         // disableBlindSpot already uses — so no lock-inversion/deadlock.
+        Throwable showFailure = null;
         bsLifecycleLock.lock();
         try {
             bsLayerVisible = true;
@@ -7781,12 +7782,49 @@ public class GpuSurveillancePipeline {
                     logger.warn("clusterShowWhenReady: projection no longer open — declining show");
                     return;
                 }
+                // The physical fail-safe test hook is compile-time dormant unless a
+                // deliberately built test candidate enables it. Even then it consumes a
+                // fresh shell-owned marker only while P, castapp ownership and this live
+                // blind-spot lane are all proven. It throws INSIDE this normal recovery
+                // try/catch so the test exercises the production failure path.
+                at.greenchili.surfmate.surveillance.BsOverlayFailureTestHook
+                        .failOnceIfArmed(
+                                !at.greenchili.surfmate.camera.dilink5.DiLink5Platform
+                                        .isSelected(),
+                                at.greenchili.surfmate.surveillance
+                                        .ClusterProjectionController
+                                        .holdsTokenStatic("castapp"),
+                                blindSpotEnabled && bsLayerVisible,
+                                ctrl.isOpen(),
+                                at.greenchili.surfmate.monitor.GearMonitor.getInstance()
+                                        .getCurrentGearIfFresh());
+                int[] g = bsGeomRect;
+                if (!layer.placeOnLayerStackChecked(live, g[0], g[1], g[2], g[3])) {
+                    throw new IllegalStateException(
+                            "cluster blind-spot layer transaction failed");
+                }
                 bsClusterStack = live;
-                layer.setLayerStack(bsClusterStack);
-                int[] g = bsGeomRect; layer.setGeometry(g[0], g[1], g[2], g[3]);   // shows it
             }
+        } catch (Throwable t) {
+            showFailure = t;
         } finally {
             bsLifecycleLock.unlock();
+        }
+        if (showFailure != null) {
+            // A cast app is a sustained holder underneath this safety layer. If the
+            // indicator card cannot be placed, keeping that app visible would silently
+            // lose the safety overlay. Fail closed to the normal gauges instead; the
+            // controller drops every holder, restores the instrument display and
+            // ClusterCast reconciles its active state from the missing castapp token.
+            logger.warn("cluster blind-spot overlay failed; restoring gauges: "
+                    + showFailure.getMessage());
+            try {
+                at.greenchili.surfmate.surveillance.ClusterProjectionController
+                        .getInstance().forceClose("bs-overlay-failed");
+            } catch (Throwable closeFailure) {
+                logger.warn("cluster blind-spot fail-safe close failed: "
+                        + closeFailure.getMessage());
+            }
         }
     }
 

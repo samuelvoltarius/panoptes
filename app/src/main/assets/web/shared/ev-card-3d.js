@@ -160,6 +160,7 @@
         }
         var entry = findEntry();
         if (!entry) { cb(null, 'unknown model: ' + modelId); return; }
+        if (entry.verfuegbar === false) { cb(null, 'model unavailable: ' + modelId); return; }
 
         // Bundled GLBs always resolve through the relative path.
         if (entry.bundled) { cb('../shared/models/' + entry.file); return; }

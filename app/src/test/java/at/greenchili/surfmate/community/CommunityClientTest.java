@@ -36,7 +36,7 @@ import java.util.List;
  */
 public class CommunityClientTest {
 
-    static final String TOKEN = "0123456789abcdef0123456789abcdef";
+    static final String TOKEN = "01".repeat(16);
 
     static JSONObject cfg(String json) throws Exception {
         return new JSONObject(json);

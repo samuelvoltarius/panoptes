@@ -52,8 +52,8 @@ public class NavMapApiHandler {
         // Cluster projection: start / stop / status for projecting the map onto
         // the driver-cluster display (a SUSTAINED holder of ClusterProjectionController).
         if (cleanPath.equals("/api/navmap/cluster/start") && method.equals("POST")) {
-            at.greenchili.surfmate.navmap.ClusterMapProjector.start();
-            sendClusterStatus(out);
+            boolean accepted = at.greenchili.surfmate.navmap.ClusterMapProjector.start();
+            sendClusterStatus(out, accepted);
             return true;
         }
         if (cleanPath.equals("/api/navmap/cluster/stop") && method.equals("POST")) {
@@ -70,10 +70,17 @@ public class NavMapApiHandler {
 
     /** Current cluster-projection state. */
     private static void sendClusterStatus(OutputStream out) throws Exception {
+        sendClusterStatus(out, true);
+    }
+
+    private static void sendClusterStatus(OutputStream out, boolean operationAccepted)
+            throws Exception {
         JSONObject response = new JSONObject();
         try {
-            response.put("success", true);
+            response.put("success", operationAccepted);
+            response.put("available", at.greenchili.surfmate.tacho.TachoFaehigkeit.karteVerfuegbar());
             response.put("projecting", at.greenchili.surfmate.navmap.ClusterMapProjector.isActive());
+            if (!operationAccepted) response.put("error", "cluster_not_available_or_not_admitted");
         } catch (Exception e) {
             response.put("success", false);
             response.put("error", e.getMessage());

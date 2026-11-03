@@ -251,6 +251,10 @@ var VC = {
             self._gespeichert = selected ? { paintId: selected.paintId || null, color: selected.color || null } : null;
             // Server has already validated modelId against the manifest, so trust the response.
             var chosenId = (selected && selected.modelId) || self.manifest['default'] || 'seagull';
+            var chosenEntry = self.ModelStore.findEntry(self.manifest, chosenId);
+            if (!chosenEntry || chosenEntry.verfuegbar === false) {
+                chosenId = self.manifest['default'] || 'seagull';
+            }
             var sel = document.getElementById('modelPicker');
             if (sel) sel.value = chosenId;
             self.syncModelMenu();
@@ -551,6 +555,8 @@ var VC = {
         var self = this;
         this.ModelStore.refreshManifest(
             function onChanged(newManifest) {
+                var oldEntry = self.ModelStore.findEntry(self.manifest, self.activeModelId);
+                var newEntry = self.ModelStore.findEntry(newManifest, self.activeModelId);
                 self.manifest = newManifest;
                 self.initModelPicker();
                 // initModelPicker rebuilds <option>s and resets selection to the
@@ -558,6 +564,13 @@ var VC = {
                 var sel = document.getElementById('modelPicker');
                 if (sel && self.activeModelId) sel.value = self.activeModelId;
                 self.syncModelMenu();
+                // A release may replace a GLB without changing its id/file name.
+                // Retry the active selection with the NEW size/hash immediately;
+                // otherwise a failed v14 request could keep retrying stale metadata
+                // until the user leaves and reopens the page.
+                if (self.ModelStore.metadataChanged(oldEntry, newEntry)) {
+                    self.loadModel(self.activeModelId);
+                }
             },
             function onResult(stale) {
                 self._setStale(stale);
@@ -1875,6 +1888,24 @@ var VC = {
             return null;
         },
 
+        metadataChanged: function(before, after) {
+            if (!before || !after) return before !== after;
+            return before.file !== after.file
+                || Number(before.sizeBytes || 0) !== Number(after.sizeBytes || 0)
+                || String(before.sha256 || '').toLowerCase() !== String(after.sha256 || '').toLowerCase();
+        },
+
+        friendlyError: function(error) {
+            var raw = String(error || '');
+            if (/HTTP\s+(404|410)|not[ -]?found|nicht[ -]?gefunden/i.test(raw)) {
+                return BYD.i18n.t('vehicle.model_file_not_found');
+            }
+            if (/size mismatch|sha-?256 mismatch|validation/i.test(raw)) {
+                return BYD.i18n.t('vehicle.model_validation_failed');
+            }
+            return BYD.i18n.t('vehicle.download_failed');
+        },
+
         modelUrl: function(file) {
             // The server falls back to the persistent download cache for any
             // shared/models/*.glb miss, so this URL works for bundled and downloaded alike.
@@ -1891,8 +1922,8 @@ var VC = {
         ensureLoaded: function(id, manifest, onDone, onProgress) {
             var self = this;
             var entry = this.findEntry(manifest, id);
-            if (!entry) {
-                onDone(null, 'Unknown model: ' + id);
+            if (!entry || entry.verfuegbar === false) {
+                onDone(null, BYD.i18n.t('vehicle.model_file_not_found'));
                 return;
             }
             var url = this.modelUrl(entry.file);
@@ -1952,8 +1983,10 @@ var VC = {
             xhr.onload = function() {
                 if (xhr.status >= 200 && xhr.status < 300) {
                     self._poll(id, entry, url, onDone, onProgress);
+                } else if (xhr.status === 404 || xhr.status === 410) {
+                    onDone(null, BYD.i18n.t('vehicle.model_file_not_found'));
                 } else {
-                    onDone(null, BYD.i18n.t('vehicle.download_request_failed', {status: xhr.status}));
+                    onDone(null, BYD.i18n.t('vehicle.download_request_failed'));
                 }
             };
             xhr.onerror = function() { onDone(null, BYD.i18n.t('vehicle.network_starting_download')); };
@@ -1984,12 +2017,16 @@ var VC = {
                     try { s = JSON.parse(xhr.responseText); }
                     catch(e) { setTimeout(tick, 500); return; }
 
-                    if (s.state === 'done' || s.downloaded === true) {
+                    if (s.downloaded === true) {
                         onDone(url);
                         return;
                     }
+                    if (s.state === 'done' || s.state === 'stale') {
+                        self._download(id, entry, url, onDone, onProgress);
+                        return;
+                    }
                     if (s.state === 'error') {
-                        onDone(null, s.error || BYD.i18n.t('vehicle.download_failed'));
+                        onDone(null, self.friendlyError(s.error));
                         return;
                     }
                     if (onProgress) {
@@ -2018,6 +2055,7 @@ var VC = {
         sel.innerHTML = '';
         for (var i = 0; i < this.manifest.models.length; i++) {
             var m = this.manifest.models[i];
+            if (m.verfuegbar === false) continue;
             var opt = document.createElement('option');
             opt.value = m.id;
             opt.textContent = BYD.i18n.modelName(m.id, m.name);
@@ -2135,11 +2173,9 @@ var VC = {
     refreshModelPickerNames: function() {
         var sel = document.getElementById('modelPicker');
         if (!sel || !this.manifest || !this.manifest.models) return;
-        for (var i = 0; i < this.manifest.models.length; i++) {
-            var m = this.manifest.models[i];
-            if (sel.options[i]) {
-                sel.options[i].textContent = BYD.i18n.modelName(m.id, m.name);
-            }
+        for (var i = 0; i < sel.options.length; i++) {
+            var m = this.ModelStore.findEntry(this.manifest, sel.options[i].value);
+            if (m) sel.options[i].textContent = BYD.i18n.modelName(m.id, m.name);
         }
         this.syncModelMenu();
     },
@@ -2253,6 +2289,20 @@ var VC = {
             if (this.vehicleState.engineSoundOn) toggle.classList.add('active');
             else toggle.classList.remove('active');
         }
+    },
+
+    /** Translate the stable server reason without exposing binder/SDK details. */
+    localizeSoundResult: function(result) {
+        if (!result || result.success || !result.reason) return result;
+        var keys = {
+            park_required: 'vehicle.avas_park_required',
+            invalid_request: 'vehicle.avas_invalid_request',
+            unavailable: 'vehicle.avas_unavailable',
+            unsupported: 'vehicle.avas_unavailable',
+            command_failed: 'vehicle.avas_failed'
+        };
+        if (keys[result.reason]) result.error = BYD.i18n.t(keys[result.reason]);
+        return result;
     },
 
     /** Update tab dot indicators based on vehicle state */
@@ -3125,6 +3175,7 @@ var VC = {
                 self.bindBtn(btn.id, function() {
                     self.triggerSonarVFX(0, 0.6, 0, new THREE.Color(0xFBBF24));
                     self.apiPost('/api/audio/avas-tone', { pattern: pattern }).then(function(r) {
+                        r = self.localizeSoundResult(r);
                         self.toastFromResult(r, BYD.i18n.t('vehicle.avas_playing'), BYD.i18n.t('vehicle.avas_failed'));
                     });
                 });
@@ -3132,12 +3183,14 @@ var VC = {
         }
         this.bindBtn('btnAvasStop', function() {
             self.apiPost('/api/audio/avas-tone', { stop: true }).then(function(r) {
+                r = self.localizeSoundResult(r);
                 self.toastFromResult(r, BYD.i18n.t('vehicle.avas_stopped'), BYD.i18n.t('vehicle.avas_failed'));
             });
         });
         this.bindBtn('btnEngineToggle', function() {
             var next = !self.vehicleState.engineSoundOn;
             self.apiPost('/api/audio/engine-sound', { on: next, preset: self.vehicleState.enginePreset || 1 }).then(function(r) {
+                r = self.localizeSoundResult(r);
                 if (r.success) { self.vehicleState.engineSoundOn = next; self.updateEngineSoundUI(); }
                 self.toastFromResult(r, BYD.i18n.t('vehicle.engine_sound'), BYD.i18n.t('vehicle.avas_failed'));
             });
@@ -3145,19 +3198,23 @@ var VC = {
         this.bindBtn('btnEngineNext', function() {
             var p = (self.vehicleState.enginePreset || 1) + 1;
             self.apiPost('/api/audio/engine-sound', { preset: p }).then(function(r) {
+                r = self.localizeSoundResult(r);
                 if (r.success && typeof r.preset === 'number' && r.preset >= 1) {
                     self.vehicleState.enginePreset = r.preset;
                     self.updateEngineSoundUI();
                 }
+                if (!r.success) self.toastFromResult(r, null, BYD.i18n.t('vehicle.avas_failed'));
             });
         });
         this.bindBtn('btnEnginePrev', function() {
             var p = Math.max(1, (self.vehicleState.enginePreset || 1) - 1);
             self.apiPost('/api/audio/engine-sound', { preset: p }).then(function(r) {
+                r = self.localizeSoundResult(r);
                 if (r.success && typeof r.preset === 'number' && r.preset >= 1) {
                     self.vehicleState.enginePreset = r.preset;
                     self.updateEngineSoundUI();
                 }
+                if (!r.success) self.toastFromResult(r, null, BYD.i18n.t('vehicle.avas_failed'));
             });
         });
 

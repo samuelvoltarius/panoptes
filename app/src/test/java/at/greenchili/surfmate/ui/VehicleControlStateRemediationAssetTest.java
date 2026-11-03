@@ -24,7 +24,7 @@ public class VehicleControlStateRemediationAssetTest {
         assertTrue("preset selection must follow a successful response", markPreset > accepted);
         assertTrue(script.contains("self.updateWindowBars();\n                                    self.fetchState();"));
         assertTrue(script.contains("var open = data.windowOpen || {};"));
-        assertTrue(script.contains("this.translatedText('vehicle.open', 'Open')"));
+        assertTrue(script.contains("this.translatedText('vehicle.open', 'Öffnen')"));
     }
 
     @Test

@@ -29,6 +29,8 @@ public final class AutoAngaben {
         m.put("shark", "Shark");
         m.put("seal-u", "Seal U");
         m.put("seal-u-dmi", "Seal U DM-i");
+        m.put("seal6-gt", "Seal 6 GT");
+        m.put("seal6-dmi-touring", "Seal 6 DM-i Touring");
         m.put("dolphin", "Dolphin");
         m.put("atto3", "Atto 3");
         m.put("atto3-evo", "Atto 3 Evo");
@@ -55,7 +57,8 @@ public final class AutoAngaben {
     private static String altWahl(JSONObject root) {
         JSONObject v = root == null ? null : root.optJSONObject("vehicle");
         if (v == null) return null;
-        String raw = v.optString("modelId", "").trim().toLowerCase(java.util.Locale.ROOT);
+        String canonical = VehicleModelSelection.canonicalModelId(v.optString("modelId", ""));
+        String raw = canonical == null ? "" : canonical.toLowerCase(java.util.Locale.ROOT);
         if (raw.isEmpty() || "seal".equals(raw)) return null;
         return VehicleModelSelection.SOURCE_LEGACY.equals(
                 VehicleModelSelection.normalizeSource(v.optString("modelSource", ""), raw)) ? raw : null;

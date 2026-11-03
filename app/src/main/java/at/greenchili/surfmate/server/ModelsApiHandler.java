@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Models API Handler — manages 3D vehicle models for the vehicle-control page.
@@ -57,19 +58,21 @@ public class ModelsApiHandler {
     private static final String MANIFEST_REMOTE_CACHE = at.greenchili.surfmate.util.DaemonStorage.rebase("/data/user_de/0/com.android.shell/surfmate/surfmate/models/manifest.json");
     // GitHub release manifest URL — same baseUrl convention as the GLBs themselves.
     private static final String MANIFEST_REMOTE_URL =
-            "https://byd.serveone.at/tiles/models/manifest.json"; // eigene Modelle (CC BY 4.0, Nazh Design), Lizenz in assets/licenses/MODELLE_LIZENZEN.md
+            "https://byd.serveone.at/tiles/models/manifest.json"; // CC BY 4.0 (Nazh) und CC0-Eigenbau, Details in assets/licenses/MODELLE_LIZENZEN.md
 
     // Two concurrent downloads is plenty — the BYD AVN's storage and LTE both serialize anyway.
     private static final ExecutorService downloadExec = Executors.newFixedThreadPool(2);
 
     // Per-model download state. Concurrent because handler threads read while downloader writes.
-    private static final ConcurrentHashMap<String, DownloadState> downloads = new ConcurrentHashMap<>();
+    static final ConcurrentHashMap<String, DownloadState> downloads = new ConcurrentHashMap<>();
     // Avoid re-hashing every cached GLB on repeated /list and /status calls.
     // The key includes file metadata plus the manifest hash, so either an APK
     // manifest update or an on-disk replacement forces a fresh validation.
     private static final ConcurrentHashMap<String, Boolean> cachedModelValidations =
             new ConcurrentHashMap<>();
     private static final Object MODEL_SELECTION_LOCK = new Object();
+    private static final Object MODEL_ASSET_LOCK = new Object();
+    private static final AtomicLong downloadGeneration = new AtomicLong();
 
     public static final class SelectedModelConfigUnavailableException
             extends IllegalStateException {
@@ -85,11 +88,36 @@ public class ModelsApiHandler {
     private static volatile String lastManifestEtag = null;
     private static volatile long lastSuccessfulRefreshMs = 0;
 
-    private static class DownloadState {
-        volatile String state = "idle";        // idle | downloading | done | error
+    static final class DownloadState {
+        volatile String state = "idle";        // idle | downloading | done | stale | error
         volatile long bytesDownloaded = 0;
         volatile long totalBytes = 0;
         volatile String error = null;
+        final long generation;
+        final int manifestVersion;
+        final String fileName;
+        final long expectedSize;
+        final String expectedSha;
+
+        DownloadState(JSONObject entry, int version) {
+            generation = downloadGeneration.incrementAndGet();
+            manifestVersion = version;
+            fileName = entry != null ? entry.optString("file", "") : "";
+            expectedSize = entry != null ? entry.optLong("sizeBytes", 0) : 0;
+            expectedSha = entry != null
+                    ? entry.optString("sha256", "").toLowerCase(java.util.Locale.ROOT)
+                    : "";
+            totalBytes = expectedSize;
+        }
+
+        boolean matches(JSONObject entry, int version) {
+            return entry != null
+                    && manifestVersion == version
+                    && fileName.equals(entry.optString("file", ""))
+                    && expectedSize == entry.optLong("sizeBytes", 0)
+                    && expectedSha.equals(entry.optString("sha256", "")
+                            .toLowerCase(java.util.Locale.ROOT));
+        }
 
         JSONObject toJson() throws Exception {
             JSONObject j = new JSONObject();
@@ -187,7 +215,11 @@ public class ModelsApiHandler {
             // Strictly-newer rule: equal versions mean no-op, older means someone rolled
             // the release back and we shouldn't clobber a locally-cached newer copy.
             if (remoteVersion > beforeVersion) {
-                if (writeRemoteCache(result.manifest)) {
+                boolean written;
+                synchronized (MODEL_ASSET_LOCK) {
+                    written = writeRemoteCache(result.manifest);
+                }
+                if (written) {
                     updated = true;
                     logger.info(TAG + ": manifest updated v" + beforeVersion + " -> v" + remoteVersion);
                 }
@@ -742,6 +774,7 @@ public class ModelsApiHandler {
             o.put("file", file);
             o.put("sizeBytes", m.optLong("sizeBytes", 0));
             o.put("bundled", m.optBoolean("bundled", false));
+            o.put("verfuegbar", m.optBoolean("verfuegbar", true));
 
             File cached = validatedCachedModelFile(m);
             o.put("downloaded", m.optBoolean("bundled", false) || cached != null);
@@ -779,7 +812,12 @@ public class ModelsApiHandler {
             JSONObject entry = findModel(manifest, id);
             if (entry != null) {
                 File cached = validatedCachedModelFile(entry);
-                response.put("downloaded", entry.optBoolean("bundled", false) || cached != null);
+                boolean downloaded = entry.optBoolean("bundled", false) || cached != null;
+                response.put("downloaded", downloaded);
+                if (ds != null && "done".equals(ds.state)
+                        && (!downloaded || !ds.matches(entry, manifest.optInt("version", 0)))) {
+                    response.put("state", "stale");
+                }
             }
         }
         HttpResponse.sendJson(out, response.toString());
@@ -796,7 +834,7 @@ public class ModelsApiHandler {
             return;
         }
         JSONObject entry = findModel(manifest, id);
-        if (entry == null) {
+        if (entry == null || !entry.optBoolean("verfuegbar", true)) {
             HttpResponse.sendJsonError(out, Messages.get("errors.models_unknown_id_with_id", id));
             return;
         }
@@ -805,7 +843,7 @@ public class ModelsApiHandler {
         // even if it bypassed the /list check (e.g. user mashed the dropdown).
         File cached = validatedCachedModelFile(entry);
         if (cached != null || entry.optBoolean("bundled", false)) {
-            DownloadState ds = new DownloadState();
+            DownloadState ds = new DownloadState(entry, manifest.optInt("version", 0));
             ds.state = "done";
             ds.totalBytes = cached != null ? cached.length() : entry.optLong("sizeBytes", 0);
             ds.bytesDownloaded = ds.totalBytes;
@@ -816,12 +854,14 @@ public class ModelsApiHandler {
 
         // Idempotency: if a download is already in flight for this id, just acknowledge.
         DownloadState existing = downloads.get(id);
-        if (existing != null && "downloading".equals(existing.state)) {
+        int manifestVersion = manifest.optInt("version", 0);
+        if (existing != null && "downloading".equals(existing.state)
+                && existing.matches(entry, manifestVersion)) {
             HttpResponse.sendJson(out, "{\"ok\":true,\"inFlight\":true}");
             return;
         }
 
-        DownloadState fresh = new DownloadState();
+        DownloadState fresh = new DownloadState(entry, manifestVersion);
         fresh.state = "downloading";
         fresh.totalBytes = entry.optLong("sizeBytes", 0);
         downloads.put(id, fresh);
@@ -846,7 +886,7 @@ public class ModelsApiHandler {
             return;
         }
 
-        File tmp = new File(modelsDir, fileName + ".tmp");
+        File tmp = new File(modelsDir, fileName + "." + ds.generation + ".tmp");
         File dest = new File(modelsDir, fileName);
 
         HttpURLConnection conn = null;
@@ -894,12 +934,21 @@ public class ModelsApiHandler {
                 }
             }
 
-            if (dest.exists()) dest.delete();
-            if (!tmp.renameTo(dest)) {
-                ds.state = "error";
-                ds.error = "Rename failed";
-                tmp.delete();
-                return;
+            synchronized (MODEL_ASSET_LOCK) {
+                JSONObject currentManifest = readManifest();
+                if (!mayPublishDownload(id, ds, currentManifest)) {
+                    ds.state = "stale";
+                    ds.error = "Manifest changed during download";
+                    tmp.delete();
+                    return;
+                }
+                if (dest.exists()) dest.delete();
+                if (!tmp.renameTo(dest)) {
+                    ds.state = "error";
+                    ds.error = "Rename failed";
+                    tmp.delete();
+                    return;
+                }
             }
             dest.setReadable(true, false);
             cachedModelValidations.clear();
@@ -913,6 +962,13 @@ public class ModelsApiHandler {
         } finally {
             if (conn != null) conn.disconnect();
         }
+    }
+
+    /** Package-visible: generation guard used by the real download race test. */
+    static boolean mayPublishDownload(String id, DownloadState state, JSONObject manifest) {
+        if (state == null || manifest == null || downloads.get(id) != state) return false;
+        JSONObject currentEntry = findModel(manifest, id);
+        return state.matches(currentEntry, manifest.optInt("version", 0));
     }
 
     private static HttpURLConnection openWithRedirects(String urlStr, int maxRedirects) throws Exception {
@@ -1082,9 +1138,11 @@ public class ModelsApiHandler {
     private static JSONObject findModel(JSONObject manifest, String id) {
         JSONArray arr = manifest.optJSONArray("models");
         if (arr == null) return null;
+        String canonical = VehicleModelSelection.canonicalModelId(id);
+        if (canonical == null) return null;
         for (int i = 0; i < arr.length(); i++) {
             JSONObject m = arr.optJSONObject(i);
-            if (m != null && id.equals(m.optString("id"))) return m;
+            if (m != null && canonical.equals(m.optString("id"))) return m;
         }
         return null;
     }

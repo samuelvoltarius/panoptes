@@ -21,9 +21,97 @@ BYD.pip = {
     decoderMode: null,
     currentViewMode: -1, // -1 = none selected (stream not started)
     streamStarted: false,
+    streamOwned: false,
+    initialized: false,
+    capabilityOk: false,
+    availabilityTimer: null,
+    gateGeneration: 0,
     
     isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent) || 
            (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.userAgent)),
+
+    allowedPages: {
+        'system.html': true,
+        'surveillance.html': true
+    },
+
+    pageName() {
+        const parts = (window.location.pathname || '').split('/');
+        return parts[parts.length - 1] || 'index.html';
+    },
+
+    isLocalAndroidSurface() {
+        const root = document.documentElement;
+        if (!this.allowedPages[this.pageName()]) return false;
+        if (root.getAttribute('data-einbettung') === 'handy') return false;
+        if (/(?:^|[?&])einbettung=handy(?:&|$)/.test(window.location.search || '')) return false;
+        return root.hasAttribute('data-android-app')
+            || /PanoptesDisplay/.test(navigator.userAgent || '');
+    },
+
+    async json(url, options) {
+        const opts = options || {};
+        opts.credentials = 'same-origin';
+        if (!opts.cache) opts.cache = 'no-store';
+        const response = await fetch(url, opts);
+        let data = null;
+        try { data = await response.json(); } catch (e) {}
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        return data || {};
+    },
+
+    async cameraCapability() {
+        if (!this.isLocalAndroidSurface()) return false;
+        try {
+            const caps = await this.json('/api/system/capabilities');
+            return caps.success !== false && caps.kameras
+                && caps.kameras.status === 'ja';
+        } catch (e) { return false; }
+    },
+
+    statusIsParked(status) {
+        if (!status) return false;
+        const recording = status.recordingStatus || {};
+        const gear = String(recording.gear || status.gear || '').toUpperCase();
+        const gps = status.gps || {};
+        const speed = (gps.isStale || gps.isCached || gps.isFixStale)
+            ? 0 : Number(gps.speed);
+        if (Number.isFinite(speed) && speed > 1.5) return false;
+        if (gear && gear !== 'P') return false;
+        const acc = typeof status.acc === 'boolean' ? status.acc
+            : (typeof recording.accOn === 'boolean' ? recording.accOn : null);
+        return gear === 'P' || acc === false;
+    },
+
+    async parkedNow() {
+        if (!this.isLocalAndroidSurface()) return false;
+        if (document.documentElement.getAttribute('data-fahrt') === '1') return false;
+        try { return this.statusIsParked(await this.json('/status')); }
+        catch (e) { return false; }
+    },
+
+    async allowedNow(refreshCapability) {
+        if (!this.isLocalAndroidSurface()) return false;
+        if (refreshCapability || !this.capabilityOk) {
+            this.capabilityOk = await this.cameraCapability();
+        }
+        return this.capabilityOk && await this.parkedNow();
+    },
+
+    async refreshAvailability() {
+        const generation = ++this.gateGeneration;
+        const allowed = await this.allowedNow(false);
+        if (generation !== this.gateGeneration) return false;
+        const button = document.getElementById('pipToggleBtn');
+        if (button) button.style.display = allowed ? '' : 'none';
+        if (!allowed && (this.isVisible || this.streamStarted)) {
+            this.close(true);
+            if (window.BYD && BYD.utils && BYD.utils.toast) {
+                BYD.utils.toast(BYD.i18n.t('pip.parked_only'), 'warning');
+            }
+        }
+        return allowed;
+    },
     
     /**
      * Create and inject PiP container
@@ -140,11 +228,14 @@ BYD.pip = {
     /**
      * Toggle PiP visibility
      */
-    toggle() {
+    async toggle() {
         if (this.isVisible) {
             this.close();
         } else {
-            this.show();
+            if (await this.allowedNow(true)) this.show();
+            else if (window.BYD && BYD.utils && BYD.utils.toast) {
+                BYD.utils.toast(BYD.i18n.t('pip.unavailable'), 'warning');
+            }
         }
     },
     
@@ -178,17 +269,25 @@ BYD.pip = {
     /**
      * Close PiP and stop streaming
      */
-    close() {
+    close(fromGate) {
         this.stopStream();
         this.hide();
         this.currentViewMode = -1;
         this.streamStarted = false;
+        if (!fromGate) this.refreshAvailability();
     },
     
     /**
      * Set camera view with toggle behavior
      */
     async setView(mode) {
+        if (!(await this.allowedNow(false))) {
+            this.close(true);
+            if (window.BYD && BYD.utils && BYD.utils.toast) {
+                BYD.utils.toast(BYD.i18n.t('pip.parked_only'), 'warning');
+            }
+            return;
+        }
         const viewNames = [BYD.i18n.t('pip.view_all'), BYD.i18n.t('pip.view_front'), BYD.i18n.t('pip.view_right'), BYD.i18n.t('pip.view_rear'), BYD.i18n.t('pip.view_left')];
         const btn = document.getElementById('pip_vm' + mode);
         
@@ -216,7 +315,8 @@ BYD.pip = {
         // If already streaming, just switch the view mode
         if (this.streamStarted) {
             try {
-                await fetch('/api/stream/view/' + mode);
+                const changed = await this.json('/api/stream/view/' + mode, { method: 'POST' });
+                if (changed.success === false && !changed.starting) throw new Error('view rejected');
                 if (btn) {
                     btn.classList.remove('loading');
                     btn.classList.add('active');
@@ -229,7 +329,11 @@ BYD.pip = {
         }
 
         // Start streaming
-        await this.startStream(mode);
+        const started = await this.startStream(mode);
+        if (!started) {
+            if (btn) btn.classList.remove('loading', 'active');
+            return;
+        }
 
         if (btn) {
             btn.classList.remove('loading');
@@ -247,16 +351,20 @@ BYD.pip = {
         this.showPlaceholder(BYD.i18n.t('pip.connecting'));
 
         try {
+            if (!(await this.allowedNow(false))) throw new Error('not parked');
+            await this.loadDecoderDependencies();
             // 1. Set view mode first
-            await fetch('/api/stream/view/' + viewMode);
+            const view = await this.json('/api/stream/view/' + viewMode, { method: 'POST' });
+            if (view.success === false && !view.starting) throw new Error('view rejected');
 
             // 2. Enable streaming
-            await fetch('/api/stream/enable', { method: 'POST' });
+            const enabled = await this.json('/api/stream/enable', { method: 'POST' });
+            if (enabled.success === false) throw new Error('stream rejected');
+            this.streamOwned = true;
 
             // 3. Fetch active preset fps for JMuxer timing accuracy
             try {
-                const qRes = await fetch('/api/stream/quality');
-                const qData = await qRes.json();
+                const qData = await this.json('/api/stream/quality');
                 if (qData.current && qData.options) {
                     const preset = qData.options.find(o => o.id === qData.current);
                     if (preset && preset.fps) this.activeFps = preset.fps;
@@ -264,13 +372,44 @@ BYD.pip = {
             } catch (e) {}
 
             // 4. Initialize decoder and connect
-            await this.initDecoder();
+            const decoderReady = await this.initDecoder();
+            if (!decoderReady) throw new Error('decoder unavailable');
 
             this.streamStarted = true;
+            return true;
         } catch (e) {
             console.error('[PiP] Failed to start stream:', e);
+            this.stopStream();
             this.showPlaceholder(BYD.i18n.t('pip.connection_failed'));
+            return false;
         }
+    },
+
+    loadScript(src, ready) {
+        if (ready()) return Promise.resolve();
+        return new Promise((resolve, reject) => {
+            const existing = document.querySelector('script[data-pip-src="' + src + '"]');
+            if (existing) {
+                existing.addEventListener('load', resolve, { once: true });
+                existing.addEventListener('error', reject, { once: true });
+                return;
+            }
+            const script = document.createElement('script');
+            script.src = src;
+            script.async = false;
+            script.setAttribute('data-pip-src', src);
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    },
+
+    async loadDecoderDependencies() {
+        await this.loadScript('../shared/SotaPlayer.js?v=13', () => typeof SotaPlayer !== 'undefined');
+        await this.loadScript('../shared/vendor/jmuxer-2.0.4.min.js', () => typeof JMuxer !== 'undefined');
+        await this.loadScript('../shared/Decoder.js', () => typeof Decoder !== 'undefined');
+        await this.loadScript('../shared/YUVCanvas.js', () => typeof YUVCanvas !== 'undefined');
+        await this.loadScript('../shared/Player.js', () => typeof Player !== 'undefined');
     },
     
     /**
@@ -514,6 +653,8 @@ BYD.pip = {
      * Stop streaming
      */
     stopStream() {
+        const owned = this.streamOwned;
+        this.streamOwned = false;
         // Stop SotaPlayer
         if (this.sotaPlayer) {
             this.sotaPlayer.stop();
@@ -540,6 +681,9 @@ BYD.pip = {
         
         this.decoderMode = null;
         this.streamStarted = false;
+        if (owned) {
+            this.json('/api/stream/disable', { method: 'POST', keepalive: true }).catch(function () {});
+        }
         
         // Hide decoder badge
         const badge = document.getElementById('pipDecoderBadge');
@@ -601,6 +745,8 @@ BYD.pip = {
         btn.id = 'pipToggleBtn';
         btn.className = 'pip-toggle-btn';
         btn.title = BYD.i18n.t('pip.title_toggle');
+        btn.setAttribute('aria-label', BYD.i18n.t('pip.title_toggle'));
+        btn.style.display = 'none';
         btn.innerHTML = `
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
@@ -614,7 +760,41 @@ BYD.pip = {
     /**
      * Initialize PiP module (call on settings pages)
      */
-    init() {
+    async init() {
+        if (this.initialized || !this.isLocalAndroidSurface()) return;
+        this.initialized = true;
         this.createToggleButton();
+        this.capabilityOk = await this.cameraCapability();
+        await this.refreshAvailability();
+        this.availabilityTimer = window.setInterval(() => this.refreshAvailability(), 3000);
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && this.streamStarted) this.close(true);
+            else if (!document.hidden) this.refreshAvailability();
+        });
+        window.addEventListener('pagehide', () => this.stopStream());
     }
 };
+
+(function armPanoptesPip() {
+    function start() {
+        if (BYD.pip.isLocalAndroidSurface()) {
+            BYD.pip.init();
+            return true;
+        }
+        return false;
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () {
+            if (start()) return;
+            if (!window.MutationObserver) return;
+            const observer = new MutationObserver(function () {
+                if (start()) observer.disconnect();
+            });
+            observer.observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['data-android-app', 'data-einbettung']
+            });
+            window.setTimeout(function () { observer.disconnect(); }, 5000);
+        });
+    } else start();
+})();

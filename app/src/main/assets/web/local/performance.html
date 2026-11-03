@@ -6,7 +6,7 @@
     <title data-i18n="app.performance_title">Leistung – Panoptes</title>
     <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
     <script src="../shared/theme.js?v=13"></script>
-    <script src="../shared/app-shell.js?v=pn27"></script>
+    <script src="../shared/app-shell.js?v=pn28"></script>
     <!--
       Bottom-tab manifest — performance dashboard splits into 4 tabs
       so the long single-scroll page stops being a wall of charts:
@@ -827,7 +827,7 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;margin-right:8px;stroke:var(--success);">
                                 <rect x="6" y="7" width="12" height="10" rx="1"/><path d="M6 10H4a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2"/><path d="M18 10h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2"/>
                             </svg>
-                            <span data-i18n="performance.soc_history">Ladestand-Verlauf</span>
+                            <span data-i18n="performance.soc_history">Akku-Verlauf</span>
                         </div>
                         <div class="soc-time-selector" id="socTimeSelector">
                             <button class="time-btn" data-hours="24" onclick="BYD.performance.setSocTimeRange(24)" data-i18n="performance.range_24h">24 Std.</button>
@@ -847,7 +847,7 @@
                         <canvas id="socChart" class="chart-canvas"></canvas>
                     </div>
                     <div class="chart-legend" style="margin-top:12px;justify-content:center;">
-                        <div class="legend-item"><span class="legend-dot" style="background:var(--success);"></span><span data-i18n="performance.legend_soc">Ladestand %</span></div>
+                        <div class="legend-item"><span class="legend-dot" style="background:var(--success);"></span><span data-i18n="performance.legend_soc">Akku %</span></div>
                         <div class="legend-item"><span class="legend-dot" style="background:var(--brand-secondary);"></span><span data-i18n="abrp.charging">Lädt</span></div>
                     </div>
                 </div>
@@ -1017,7 +1017,7 @@
                         <!-- top-style (per-core) readout for cross-checking with a live `top`.
                              100% = one fully-busy core; ceiling = cores × 100 (e.g. 800% on 8 cores). -->
                         <div class="metric-subtitle" style="font-family:'JetBrains Mono',monospace;font-size:11px;opacity:0.7;margin-top:4px">
-                            top · app <span id="cpuTopApp">--</span>% · sys <span id="cpuTopSys">--</span>% · <span id="cpuCores">--</span> cores (max <span id="cpuTopMax">--</span>%)
+                            <span data-i18n="performance.cpu_top">Spitze</span> · <span data-i18n="performance.data_usage_app">App</span> <span id="cpuTopApp">--</span>% · <span data-i18n="performance.legend_system">System</span> <span id="cpuTopSys">--</span>% · <span id="cpuCores">--</span> <span data-i18n="performance.cpu_cores">Kerne</span> (<span data-i18n="performance.label_max">Max.</span> <span id="cpuTopMax">--</span>%)
                         </div>
                         <div class="stats-row">
                             <div class="stat-item">
@@ -1137,7 +1137,7 @@
                         <div class="metric-bar"><div class="metric-bar-fill ev-battery" id="evSocBar" style="width: 0%"></div></div>
                         <div class="stats-row">
                             <div class="stat-item">
-                                <span class="stat-label" data-i18n="performance.card_range">Reichweite</span>
+                                <span class="stat-label" data-i18n="performance.card_range">Reichweite laut Auto</span>
                                 <span class="stat-value" id="evRangeValue">-- km</span>
                             </div>
                             <div class="stat-item">
@@ -1328,8 +1328,8 @@
                         </div>
                         <div class="setting-row">
                             <div class="setting-info">
-                                <div class="setting-name" data-i18n="performance.cat_soc_history_label">Ladestand &amp; 12-V-Verlauf</div>
-                                <div class="setting-desc" data-i18n="performance.cat_soc_history_desc">Alle Ladestand-Werte, Ladevorgänge und Spannungsverläufe der Starterbatterie</div>
+                                <div class="setting-name" data-i18n="performance.cat_soc_history_label">Akku &amp; 12-V-Verlauf</div>
+                                <div class="setting-desc" data-i18n="performance.cat_soc_history_desc">Alle Akku-Werte, Ladevorgänge und Spannungsverläufe der Starterbatterie</div>
                             </div>
                             <div class="setting-control">
                                 <label class="toggle-switch"><input type="checkbox" data-cat="socHistory"><span class="toggle-slider"></span></label>

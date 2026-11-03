@@ -14,6 +14,7 @@ import java.io.OutputStream;
  *
  * <ul>
  *   <li>GET  /api/apps/list   — {@code {success, apps:[{package,label}]}} launchable apps, sorted by label.</li>
+ *   <li>GET  /api/apps/capabilities — fail-closed split-screen capability.</li>
  *   <li>POST /api/apps/launch — body {@code {package, split?, secondaryPackage?}} →
  *       launch one app, or a deterministic two-app split pair when both
  *       {@code split=true} and {@code secondaryPackage} are supplied. This is the endpoint
@@ -32,6 +33,13 @@ public final class AppsApiHandler {
 
         if (cleanPath.equals("/api/apps/list") && method.equals("GET")) {
             handleList(out);
+            return true;
+        }
+        if (cleanPath.equals("/api/apps/capabilities") && method.equals("GET")) {
+            JSONObject resp = new JSONObject();
+            resp.put("success", true);
+            resp.put("splitScreen", AppLauncher.isSplitScreenSupported());
+            HttpResponse.sendJson(out, resp.toString());
             return true;
         }
         if (cleanPath.equals("/api/apps/launch") && method.equals("POST")) {
@@ -87,6 +95,12 @@ public final class AppsApiHandler {
             if (pairRequested && pkg.trim().equals(secondaryPkg.trim())) {
                 resp.put("success", false);
                 resp.put("error", "Split-screen apps must be different");
+                HttpResponse.sendJson(out, resp.toString());
+                return;
+            }
+            if (pairRequested && !AppLauncher.isSplitScreenSupported()) {
+                resp.put("success", false);
+                resp.put("error", "split_screen_not_supported");
                 HttpResponse.sendJson(out, resp.toString());
                 return;
             }

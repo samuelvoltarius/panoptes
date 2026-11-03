@@ -146,7 +146,9 @@ public class ParkingHooksContractTest {
             }
             // Panoptes: Hilfe ist zeilenweise (help.where); ältere Kataloge haben noch help.text.
             JSONObject help = cat.getJSONObject("telegram").getJSONObject("help");
-            assertTrue(help.optString("where", help.optString("text")).contains("/where"));
+            String hilfe = help.optString("where", help.optString("text"));
+            // Deutsch heißt der Befehl /wo, /where bleibt dort Alias (CommandRouter).
+            assertTrue(lang, hilfe.contains("/where") || (lang.equals("de") && hilfe.contains("/wo")));
         }
         for (String lang : new String[] {"en", "de", "fr", "it", "nl"}) {
             JSONObject web = new JSONObject(read("app/src/main/assets/web/i18n/" + lang + ".json"));

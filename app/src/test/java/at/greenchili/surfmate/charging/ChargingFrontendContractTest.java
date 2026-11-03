@@ -14,29 +14,28 @@ import org.junit.Test;
 public class ChargingFrontendContractTest {
 
     @Test
-    public void dashboardClearsMissingStateAndPrioritizesActiveTaper() throws IOException {
+    public void startseiteZeigtGemeindeStattOrtsteil() throws IOException {
+        // 03.11.2026: „Ortsteil, Gemeinde“ → Gemeinde; vorher Teil vor dem ersten Komma (der Ortsteil)
+        String dashboard = readRepositoryFile("app/src/main/assets/web/local/index.html");
+        assertTrue(dashboard.contains("ortKurz(c.placeLabel)"));
+        assertTrue(dashboard.contains("teile.length > 1 ? teile[teile.length - 1] : teile[0]"));
+        assertTrue(!dashboard.contains("c.placeLabel.split(',')[0]"));
+    }
+
+    @Test
+    public void dashboardPrioritizesLiveChargingAndMarksEstimates() throws IOException {
         String dashboard = readRepositoryFile("app/src/main/assets/web/local/index.html");
 
-        assertTrue(dashboard.contains("c.charging ? 'charge.state_charging'"));
-        assertTrue(dashboard.contains("c.full ? 'charge.state_full'"));
-        assertTrue(dashboard.indexOf("c.charging ? 'charge.state_charging'")
-                < dashboard.indexOf("c.full ? 'charge.state_full'"));
-        assertTrue(dashboard.contains("idleDot.className = 'ic_status_dot dot-idle'"));
-        assertTrue(dashboard.contains("setText('dashChargePower', '--')"));
-        assertTrue(dashboard.contains(
-                "c.powerSource !== 'nominalPlaceholder'"));
-        assertTrue(dashboard.contains(
-                "(c.isEstimated ? '~' : '') + dashboardPower.toFixed(1) + ' kW'"));
-        assertTrue(dashboard.contains(
-                "c.sessionEnergyIncomplete === true"));
-        assertTrue(dashboard.contains(
-                "c.sessionEnergyEstimated === true"));
-        assertTrue(dashboard.contains(
-                "c.sessionEnergySource !== 'metered_counter'"));
-        assertTrue(dashboard.contains(
-                "(dashboardEnergyApproximate ? '~' : '')"));
-        assertTrue(dashboard.contains("setText('dashChargeKwh', '--')"));
-        assertTrue(dashboard.contains("setText('dashChargeTtf', '--')"));
+        int fault = dashboard.indexOf("if (c.fault)");
+        int charging = dashboard.indexOf("else if (c.charging)", fault);
+        int driving = dashboard.indexOf("else if (powerOn", charging);
+        assertTrue(fault >= 0 && charging > fault && driving > charging);
+        assertTrue(dashboard.contains("if (c.charging) {"));
+        assertTrue(dashboard.contains("c.powerSource !== 'nominalPlaceholder'"));
+        assertTrue(dashboard.contains("(c.isEstimated ? '~' : '') + fmt(p, 1) + ' kW'"));
+        assertTrue(dashboard.contains("(c.sessionEnergyEstimated ? '~' : '')"));
+        assertTrue(dashboard.contains("ch.className = 'h-charge on'"));
+        assertTrue(dashboard.contains("else ch.className = 'h-charge';"));
     }
 
     @Test
@@ -187,7 +186,7 @@ public class ChargingFrontendContractTest {
         assertTrue(charging.contains(
                 "d.repricingStatus !== 'complete'"));
         assertTrue(charging.contains(
-                "'Tariff saved. Past charges will be re-priced automatically when storage is ready.'"));
+                "'Preis gespeichert. Frühere Ladungen werden von selbst neu berechnet, sobald der Speicher bereit ist.'"));
         assertTrue(charging.contains(
                 "this._toast(warning, warningType)"));
         assertTrue(charging.contains(
@@ -245,11 +244,11 @@ public class ChargingFrontendContractTest {
                 "self._typeIcon(kind) + '<span>'"));
         assertTrue(charging.contains("self._esc(typeLabel)"));
         assertTrue(charging.contains(
-                "return this._t('charge.type_dc', 'DC fast')"));
+                "return this._t('charge.type_dc', 'Schnell (DC)')"));
         assertTrue(charging.contains(
-                "return this._t('charge.type_fast', 'AC fast')"));
+                "return this._t('charge.type_fast', 'Zügig (AC)')"));
         assertTrue(charging.contains(
-                "return this._t('charge.type_slow', 'AC slow')"));
+                "return this._t('charge.type_slow', 'Langsam (AC)')"));
         assertTrue(html.contains(
                 "flex: 0 0 auto; white-space: nowrap;"));
 
@@ -295,14 +294,14 @@ public class ChargingFrontendContractTest {
         assertTrue(charging.contains(
                 "(powerEstimated ? '≈' : '') + livePowerKw.toFixed(1) + ' kW'"));
         assertTrue(charging.contains(
-                "'Power & energy estimated'"));
+                "'Leistung und Energie sind geschätzt'"));
         assertTrue(charging.contains(
-                "'Power estimated'"));
+                "'Leistung ist geschätzt'"));
         assertTrue(charging.contains(
-                "'Energy estimated'"));
+                "'Energie ist geschätzt'"));
         assertTrue(charging.contains(
-                "this._t('charge.not_measured', 'Not measured')"));
-        assertTrue(html.contains("charging.js?v=50"));
+                "this._t('charge.not_measured', 'Nicht gemessen')"));
+        assertTrue(html.contains("charging.js?v=51"));
     }
 
     @Test
@@ -318,7 +317,7 @@ public class ChargingFrontendContractTest {
                 "app/src/main/java/at/greenchili/surfmate/charging/ChargingApiHandler.java");
 
         assertTrue(english.contains(
-                "\"sessions_title\": \"Charging sessions\""));
+                "\"sessions_title\": \"Your charges\""));
         assertTrue(html.contains("data-i18n=\"charge.sessions_title\""));
         assertTrue(html.contains("id=\"socRangeValue\""));
         assertTrue(html.contains("id=\"socSohValue\""));

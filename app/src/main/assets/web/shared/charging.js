@@ -858,6 +858,11 @@ var CHARGING = {
             || liveEnergyApproximate;
         var lifetimeEnergyApproximate =
             (s.lifetimeEstimatedSessions || s.lifetimeIncompleteSessions || 0) > 0;
+        // 03.11.2026: Kosten nach der Menge, die die Säule abrechnet (eingetragen oder mit Ladeverlust-Zuschlag „~“).
+        var abgGeschaetzt = (s.periodAbgerechnetGeschaetzt || 0) > 0;
+        var abgPeriodCost = s.periodCostAbgerechnet != null ? s.periodCostAbgerechnet : s.periodCost;
+        var abgAvg = s.avgCostPerKwhAbgerechnet != null ? s.avgCostPerKwhAbgerechnet : s.avgCostPerKwh;
+        var abgLifetimeCost = s.lifetimeCostAbgerechnet != null ? s.lifetimeCostAbgerechnet : s.lifetimeCost;
 
         var completion = this._chargingCompletion(live);
         this._showCard('completionHeroCard', !!completion);
@@ -891,19 +896,19 @@ var CHARGING = {
         // Cost hero. A flat "cost per kWh" (just the configured rate) carried no
         // information. Show the running COST OF THIS SESSION while charging
         // (sessionKwh × rate), else this period's total cost, else the rate.
-        var measured = (s.avgCostPerKwh !== undefined && s.avgCostPerKwh !== null) ? s.avgCostPerKwh : 0;
+        var measured = (abgAvg !== undefined && abgAvg !== null) ? abgAvg : 0;
         var liveRate = this._liveRate();  // DC tariff when the open session is DC fast, else base
         if (isCharging && liveKwh > 0 && liveRate > 0) {
             this._setText('costHeroLabel', this._t('charge.hero_cost_session', 'Kosten dieser Ladung'));
             this._setText('costHeroValue', this._money(liveKwh * liveRate));
             this._setText('costHeroSub', this._t('charge.cost_estimated', 'geschätzt'));
-        } else if (s.periodCost && s.periodCost > 0) {
+        } else if (abgPeriodCost && abgPeriodCost > 0) {
             this._setText('costHeroLabel', this._t('charge.hero_cost_period', 'Kosten in diesem Zeitraum'));
             this._setText('costHeroValue',
-                (periodEnergyApproximate ? '~' : '')
-                    + this._money(s.periodCost));
+                (periodEnergyApproximate || abgGeschaetzt ? '~' : '')
+                    + this._money(abgPeriodCost));
             this._setText('costHeroSub', measured > 0
-                ? (periodEnergyApproximate ? '~' : '')
+                ? (periodEnergyApproximate || abgGeschaetzt ? '~' : '')
                     + this._money(measured)
                     + this._t('charge.per_kwh', 'pro kWh')
                 : '');
@@ -925,16 +930,23 @@ var CHARGING = {
         var liveCost = (isCharging && liveKwh > 0 && liveRate > 0) ? liveKwh * liveRate : 0;
         var pSessions = (s.periodSessions || 0) + (isCharging ? 1 : 0);
         var pEnergy = energy + (isCharging ? liveKwh : 0);
-        var pCost = (s.periodCost || 0) + liveCost;
+        var pCost = (abgPeriodCost || 0) + liveCost;
+        var pEnergyAbg = (s.periodEnergyAbgerechnetKwh != null ? s.periodEnergyAbgerechnetKwh : energy)
+            + (isCharging ? liveKwh : 0);
         this._setText('summarySessions', pSessions > 0 ? pSessions : '--');
         this._setText('summaryEnergy', pEnergy > 0
             ? (periodEnergyApproximate ? '~' : '')
                 + pEnergy.toFixed(1) + ' kWh'
             : '--');
         this._setText('summaryCost', pCost > 0
-            ? (periodEnergyApproximate ? '~' : '')
+            ? (periodEnergyApproximate || abgGeschaetzt ? '~' : '')
                 + this._money(pCost)
             : '--');
+        // Akku-kWh oben, abgerechnete kWh darunter (beide sichtbar)
+        if (pEnergyAbg > 0 && s.periodEnergyAbgerechnetKwh != null) {
+            this._setText('summaryEnergyDesc', this._t('charge.laut_saeule_kurz', 'Säule {kwh} kWh',
+                { kwh: (abgGeschaetzt || periodEnergyApproximate ? '~' : '') + this._num(pEnergyAbg, 1) }));
+        }
         // DC/AC: the live session's tier is known from its peak-power class.
         var liveDc = 0, liveAc = 0;
         if (isCharging && this._liveSession) {
@@ -978,9 +990,9 @@ var CHARGING = {
             ? (lifetimeEnergyApproximate ? '~' : '')
                 + s.lifetimeEnergyKwh.toFixed(0) + ' kWh'
             : '--');
-        this._setText('lifetimeCost', (s.lifetimeCost && s.lifetimeCost > 0)
-            ? (lifetimeEnergyApproximate ? '~' : '')
-                + this._money(s.lifetimeCost)
+        this._setText('lifetimeCost', (abgLifetimeCost && abgLifetimeCost > 0)
+            ? (lifetimeEnergyApproximate || abgGeschaetzt ? '~' : '')
+                + this._money(abgLifetimeCost)
             : '--');
 
         // Show the session-derived cards ONLY when there's data to fill them —
@@ -1261,11 +1273,12 @@ var CHARGING = {
                     : '--';
                 var socRange = self._socRangeText(s);
                 var dur = (s.durationMinutes != null) ? self._fmtDuration(s.durationMinutes) : '';
-                var costStr = s.preisFehlt
+                var costAbg = self._kostenAbg(s);
+                var costStr = (s.preisFehlt && costAbg == null)
                     ? self._t('charge.preis_fehlt', 'Preis fehlt')
-                    : (s.cost != null && s.cost > 0)
-                    ? (energyApproximate ? '~' : '')
-                        + self._money(s.cost)
+                    : (costAbg != null && costAbg > 0)
+                    ? (energyApproximate || s.kostenAbgerechnetGeschaetzt ? '~' : '')
+                        + self._money(costAbg)
                     : '';
                 // Odometer at charge start (unit-aware), only when captured (>0).
                 var odoStr = (s.startOdometerKm != null && s.startOdometerKm > 0) ? self._dist(s.startOdometerKm) : '';
@@ -1814,12 +1827,22 @@ var CHARGING = {
                 { kwh: (energyApproximate ? '~' : '') + this._num(s.energyAdded, 1), km: this._dist(s.rangeGained) })
             : '—');
         this._setText('detailOdometer', (s.startOdometerKm != null && s.startOdometerKm > 0) ? this._dist(s.startOdometerKm) : '--');
-        this._setText('detailCost', s.preisFehlt
+        var detailCostAbg = this._kostenAbg(s);
+        this._setText('detailCost', (s.preisFehlt && detailCostAbg == null)
             ? this._t('charge.preis_fehlt', 'Preis fehlt')
-            : (s.cost != null && s.cost >= 0)
-            ? (energyApproximate ? '~' : '')
-                + this._money(s.cost)
+            : (detailCostAbg != null && detailCostAbg >= 0)
+            ? (energyApproximate || s.kostenAbgerechnetGeschaetzt ? '~' : '')
+                + this._money(detailCostAbg)
             : '--');
+        // 03.11.2026: Menge laut Säule – eingetragen (ohne „~“) oder Akku + Ladeverlust-Zuschlag (mit „~“)
+        this._setText('detailSaeule', (!poisoned && s.kwhAbgerechnet > 0)
+            ? (s.kwhAbgerechnetGeschaetzt ? '~' : '') + this._num(s.kwhAbgerechnet, 1) + ' kWh'
+            : '--');
+        this._setText('detailSaeuleHint', (!poisoned && s.kwhAbgerechnet > 0 && s.ladeverlustProzent != null)
+            ? (s.abrechnungQuelle === 'saeule'
+                ? this._t('charge.saeule_eingetragen', 'eingetragen · {p} % mehr als Akku', { p: this._num(s.ladeverlustProzent, 0) })
+                : this._t('charge.saeule_geschaetzt', '+{p} % Ladeverlust', { p: this._num(s.ladeverlustProzent, 0) }))
+            : '');
         this._setText('detailCostRate',
             s.cost != null && s.cost >= 0
                     && s.electricityRate != null
@@ -2147,6 +2170,82 @@ var CHARGING = {
         }).catch(function () {
             self._toast(self._t(
                 'charge.cost_update_failed', 'Die Kosten ließen sich nicht ändern'), 'error');
+        });
+    },
+
+    /**
+     * 03.11.2026: „Laut Säule“ – zwei kurze Fragen: kWh auf der Säule bzw. Rechnung, dann der bezahlte Betrag (leer =
+     * weiß ich nicht). Leere kWh = Eintrag löschen, dann gilt wieder der Ladeverlust-Zuschlag. Akku-kWh bleiben gespeichert.
+     */
+    editSaeule: async function () {
+        var self = this;
+        var sessionId = this.currentSessionId;
+        var s = this._currentDetailSession;
+        if (sessionId == null || !s
+                || this._detailSessionId == null
+                || String(this._detailSessionId) !== String(sessionId)) {
+            return;
+        }
+        if (this._detailInProgress || s.endTime == null || s.endTime <= 0) {
+            this._toast(this._t('charge.saeule_erst_danach', 'Erst nach dem Laden eintragen'), 'error');
+            return;
+        }
+        var ask = function (title, body, value, placeholder, einheit) {
+            return window.BYD && BYD.utils && typeof BYD.utils.promptDialog === 'function'
+                ? BYD.utils.promptDialog({ title: title, body: body, label: einheit, confirmLabel: self._t('charge.saeule_weiter', 'Weiter'),
+                    value: value, placeholder: placeholder, inputType: 'text', inputMode: 'decimal' })
+                : Promise.resolve(window.prompt(body, value));
+        };
+        var zahl = function (txt) {
+            var t = String(txt == null ? '' : txt).trim().replace(',', '.');
+            return t === '' ? null : Number(t);
+        };
+        var kwhIn = await ask(this._t('charge.saeule_titel', 'Laut Säule'),
+            this._t('charge.saeule_kwh_frage', 'Wie viele kWh zeigt die Säule oder die Rechnung? Leer = schätzen lassen.'),
+            s.saeuleKwh != null ? this._num(s.saeuleKwh, 1) : '', s.kwhAbgerechnet > 0 ? this._num(s.kwhAbgerechnet, 1) : '', 'kWh');
+        if (kwhIn === null) return;
+        var kwh = zahl(kwhIn);
+        if (kwh !== null && !(isFinite(kwh) && kwh > 0 && kwh <= 500)) {
+            this._toast(this._t('charge.saeule_ungueltig', 'Bitte eine Zahl größer als 0 eingeben'), 'error');
+            return;
+        }
+        var betragIn = await ask(this._t('charge.saeule_titel', 'Laut Säule'),
+            this._t('charge.saeule_betrag_frage', 'Was hast du bezahlt? Leer = weiß ich nicht.'),
+            s.saeuleBetrag != null ? this._num(s.saeuleBetrag, 2) : '', '', s.currency || this.currency || '€');
+        if (betragIn === null) return;
+        var betrag = zahl(betragIn);
+        if (betrag !== null && !(isFinite(betrag) && betrag >= 0 && betrag <= 10000)) {
+            this._toast(this._t('charge.saeule_ungueltig', 'Bitte eine Zahl größer als 0 eingeben'), 'error');
+            return;
+        }
+        fetch('/api/charging/' + sessionId + '/saeule', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ kwh: kwh, betrag: betrag })
+        }).then(function (response) {
+            return response.json().then(function (body) {
+                if (!response.ok || !body || body.success !== true) throw new Error('saeule rejected');
+                return body;
+            });
+        }).then(function (body) {
+            var neu = body.session;
+            if (neu) {
+                for (var i = 0; i < self.sessions.length; i++) {
+                    if (self.sessions[i] && String(self.sessions[i].id) === String(sessionId)) {
+                        self.sessions[i] = neu;
+                        break;
+                    }
+                }
+                self._currentDetailSession = neu;
+                self._renderSessionCards();
+                if (self.currentSessionId != null && String(self.currentSessionId) === String(sessionId)) {
+                    self._fillDetailHeader(neu, sessionId);
+                }
+            }
+            self.loadSummary();
+            self._toast(self._t('charge.saeule_gespeichert', 'Gespeichert'));
+        }).catch(function () {
+            self._toast(self._t('charge.saeule_fehler', 'Konnte nicht speichern'), 'error');
         });
     },
 
@@ -3972,6 +4071,14 @@ var CHARGING = {
     _hideSkeleton: function () {
         var skel = document.getElementById('sessionListSkeleton');
         if (skel) skel.style.display = 'none';
+    },
+
+    /** 03.11.2026: Kosten nach der abgerechneten Menge (LadeAbrechnung), sonst die gespeicherten; null = unbekannt. */
+    _kostenAbg: function (s) {
+        if (!s) return null;
+        if (s.kostenAbgerechnet != null && isFinite(s.kostenAbgerechnet)) return s.kostenAbgerechnet;
+        if (s.abrechnungQuelle != null) return null;   // Kern hat gerechnet: Preis unbekannt
+        return (s.cost != null && s.cost >= 0) ? s.cost : null;
     },
 
     /** 0.1.11: angezeigte Energie – Kern-Nachrechnung (energyAddedNachgerechnet) vor dem gespeicherten Wert. */

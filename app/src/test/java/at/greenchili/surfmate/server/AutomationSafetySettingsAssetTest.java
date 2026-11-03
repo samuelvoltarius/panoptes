@@ -98,11 +98,11 @@ public class AutomationSafetySettingsAssetTest {
         assertTrue(api.contains("resp.put(\"drivingSafety\", DrivingSafetyGuard.getGuardSettings())"));
         assertTrue(api.contains("Unknown drivingSafety setting: "));
         assertTrue(api.contains("\"drivingSafety\", safetyUpdate"));
-        assertTrue(english.contains("\"safety_title\": \"Driving safety guards\""));
+        assertTrue(english.contains("\"safety_title\": \"Safety locks while driving\""));
         assertTrue(english.contains(
-                "matching vehicle actions started through SurfMate's Automations, Action Groups, Key Mapping, Quick Controls, MQTT, Vehicle Controls, and saved seat positions"));
+                "car actions started from Panoptes's Rules, action groups, Buttons, Shortcuts, MQTT, Controls and saved seat positions"));
         assertTrue(english.contains(
-                "Advanced raw shell, CAN, and diagnostic actions are outside these guards"));
+                "Advanced raw shell, CAN and diagnostic actions are not covered"));
         assertTrue(positionsApi.contains("target.put(\"positioningBlocked\""));
         assertTrue(positionsApi.contains("putGateState(cur)"));
         assertTrue(positionsApi.contains("BodyworkSeatProbe.applyFull(ctx, overrides)"));

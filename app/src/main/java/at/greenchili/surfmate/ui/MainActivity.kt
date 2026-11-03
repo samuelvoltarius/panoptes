@@ -560,6 +560,7 @@ open class MainActivity : AppCompatActivity() {
      * Der Startweg [runDaemonStartupJetzt] ist unverändert; nur der Zeitpunkt des Aufrufs ändert sich.
      */
     @Volatile private var daemonStartAufgeschoben: Pair<android.content.Intent?, Boolean>? = null
+    @Volatile private var daemonStartVomAssistentenAngefordert = false
     @Volatile private var speicherAufgeschoben = false
 
     private fun runDaemonStartup(intent: android.content.Intent?, fromOnCreate: Boolean) {
@@ -574,7 +575,8 @@ open class MainActivity : AppCompatActivity() {
             val antwortet = try { regel.daemonAntwortet() } catch (_: Throwable) { false }
             runOnUiThread {
                 if (isFinishing || isDestroyed) return@runOnUiThread
-                if (regel.aufschieben(st.daemonAuthorized, st.onboardingComplete, antwortet, nachUpdate)) {
+                if (regel.aufschieben(st.daemonAuthorized, st.onboardingComplete, antwortet, nachUpdate) &&
+                    !daemonStartVomAssistentenAngefordert) {
                     android.util.Log.i("MainActivity", "Daemon-Start aufgeschoben bis zum Einrichtungsschritt „Freigabe für Panoptes“")
                     daemonStartAufgeschoben = Pair(intent, fromOnCreate)
                 } else {
@@ -4498,10 +4500,21 @@ open class MainActivity : AppCompatActivity() {
      * Einrichtungsassistent, Schritt „Freigabe für Panoptes“: Daemon-Start auslösen (dabei erscheint das
      * Android-Popup „USB-Debugging zulassen?“). Derselbe Weg wie beim App-Start.
      */
-    /** @return true, wenn ein aufgeschobener Start jetzt ausgelöst wurde; false = war nicht aufgeschoben (läuft/startet schon). */
-    fun onboardingDaemonStarten(): Boolean {
+    /**
+     * @param erneut true bei einem ausdrücklichen Tastendruck: auch nach einem verlorenen Dialog oder
+     * fehlgeschlagenen ersten Start den echten Startweg erneut anstoßen. Beim bloßen Schließen des Assistenten
+     * bleibt der Aufruf wie bisher ein No-op, wenn nichts aufgeschoben war.
+     * @return true, wenn ein Start ausgelöst oder erneut angestoßen wurde.
+     */
+    fun onboardingDaemonStarten(erneut: Boolean = false): Boolean {
         if (speicherAufgeschoben) { speicherAufgeschoben = false; runOnUiThread { setupStorageDirectoriesNachgeholt() } }
-        val p = daemonStartAufgeschoben ?: return false
+        if (erneut) daemonStartVomAssistentenAngefordert = true
+        val p = daemonStartAufgeschoben
+        if (p == null) {
+            if (!erneut) return false
+            runOnUiThread { daemonStartupManager.initializeOnAppLaunch() }
+            return true
+        }
         daemonStartAufgeschoben = null
         runOnUiThread { runDaemonStartupJetzt(p.first, p.second) }
         return true

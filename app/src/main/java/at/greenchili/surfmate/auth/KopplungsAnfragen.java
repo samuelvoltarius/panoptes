@@ -183,6 +183,10 @@ public final class KopplungsAnfragen {
             a.update = erlauben && update && Kopplungen.ART_HANDY.equals(a.art);
             a.entschieden = now;
         }
+        // 0.1.34 Befehls-Log: Entscheid über eine Kopplungs-Anfrage (Gerätename, Art, Zusatzrechte – kein Code)
+        String zusatz = (aufsperren ? "+aufsperren" : "") + (wallbox ? "+wallbox" : "") + (update ? "+update" : "");
+        at.greenchili.surfmate.server.BefehlsLog.ereignis("kopplung.anfrage" + (erlauben && !zusatz.isEmpty() ? "=" + zusatz.substring(1) : ""),
+                erlauben ? "erlaubt" : "abgelehnt", null, null);
         Beobachter b = beobachter;
         if (b != null) {
             try { b.entschieden(ref, erlauben); } catch (Throwable ignored) { }

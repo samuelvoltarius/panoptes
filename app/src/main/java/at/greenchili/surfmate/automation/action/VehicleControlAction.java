@@ -13,11 +13,15 @@ import at.greenchili.surfmate.mqtt.VehicleControlCatalog;
 import at.greenchili.surfmate.server.Messages;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class VehicleControlAction extends BaseAction {
     private static final String TYPE = "vehicle-control";
+    private static final Pattern LOCAL_TOKEN = Pattern.compile("\\$\\{([^}]+)\\}");
 
     private final Label label;
     private final String description;
@@ -83,8 +87,9 @@ public class VehicleControlAction extends BaseAction {
      * vehicle instead of hardcoded — e.g. a charge cap of {@code MIN(${signal:batteryLevel},50)}
      * ("hold at where I am now, but never above 50"), which previously had to be a fixed number.
      *
-     * <p>Two stages, both fail-safe:
+     * <p>Three stages, all fail-safe:
      * <ol>
+     *   <li>Bare placeholders matching this action's parameters are substituted locally.</li>
      *   <li>{@link TextInterpolator} substitutes {@code ${var:…}} / {@code ${signal:…}}. An
      *       unresolvable reference is left LITERAL (its documented behaviour).</li>
      *   <li>If the result still looks arithmetic, {@link ExpressionEvaluator} evaluates it and
@@ -96,15 +101,10 @@ public class VehicleControlAction extends BaseAction {
      * returned and the entity's own parser decides — never a silently substituted 0, which on a
      * charge cap or a mode select would command something the user did not ask for.
      */
-    private static String resolvePayload(String raw) {
+    static String resolvePayload(String raw, Map<String, Object> actionVariables) {
         if (raw == null || raw.isEmpty()) return raw;
-        String text = raw;
-        try {
-            if (text.indexOf("${") >= 0) text = TextInterpolator.interpolate(text);
-        } catch (Throwable t) {
-            logger.warn("Payload interpolation failed for '" + raw + "', using it literally");
-            return raw;
-        }
+        String text = resolveParameter(raw, actionVariables);
+        if (text == null) return raw;
         // Only attempt arithmetic when the text actually contains an operator or a function
         // call. A bare word ("eco", "at_current") or a plain number must never reach the
         // evaluator — and words like "on"/"off" must not be coerced to a number.
@@ -115,6 +115,36 @@ public class VehicleControlAction extends BaseAction {
             return text;
         }
         return ExpressionEvaluator.format(value);
+    }
+
+    /** Resolve local action variables and explicit live references without numeric coercion. */
+    static String resolveParameter(String raw, Map<String, Object> actionVariables) {
+        if (raw == null || raw.isEmpty()) return raw;
+        try {
+            // Resolve this action's own parameters first. TextInterpolator deliberately treats
+            // a bare ${name} as a global automation variable; in a vehicle-control payload,
+            // however, ${temperature}, ${zone}, etc. must prefer the values stored on this
+            // action, exactly as ApiAction templates do. Explicit ${var:...}/${signal:...}
+            // references remain owned by TextInterpolator. Never expand ${payload} into itself.
+            Matcher matcher = LOCAL_TOKEN.matcher(raw);
+            StringBuffer local = new StringBuffer();
+            while (matcher.find()) {
+                String key = matcher.group(1).trim();
+                Object own = actionVariables != null && !"payload".equals(key)
+                        ? actionVariables.get(key) : null;
+                String value = own != null
+                        ? TextInterpolator.interpolate(own.toString())
+                        : matcher.group(0);
+                matcher.appendReplacement(local, Matcher.quoteReplacement(value));
+            }
+            matcher.appendTail(local);
+            String text = local.toString();
+            if (text.indexOf("${") >= 0) text = TextInterpolator.interpolate(text);
+            return text;
+        } catch (Throwable t) {
+            logger.warn("Vehicle-control interpolation failed for '" + raw + "', using it literally");
+            return raw;
+        }
     }
 
     /** Whether the text is worth handing to the arithmetic evaluator (operator or function call). */
@@ -135,8 +165,6 @@ public class VehicleControlAction extends BaseAction {
      * Trigger a vehicle control action
      * The variables stored will be concatenated and sent as the control payload
      * <p>
-     * This method needs to be updated to implement the sub variable to allow more vehicle controls
-     *
      * @param automationAction The AutomationAction with the variables needed to trigger this action
      */
     public void trigger(AutomationAction automationAction) {
@@ -163,8 +191,12 @@ public class VehicleControlAction extends BaseAction {
         if (automationAction.getVariables().size() > 1) {
             // Add variables other than the key to the vehicle control id to allow seat_heat_driver and others to be built with variables
             String suffix = this.variables.stream()
-                    .filter(variable -> !"payload".equals(variable.getLabel().getId()))
-                    .map(variable -> Objects.requireNonNullElse(automationAction.getVariables().get(variable.getLabel().getId()), "").toString())
+                    .filter(variable -> !"payload".equals(variable.getLabel().getId())
+                            && !"sub".equals(variable.getLabel().getId()))
+                    .map(variable -> resolveParameter(
+                            Objects.requireNonNullElse(automationAction.getVariables()
+                                    .get(variable.getLabel().getId()), "").toString(),
+                            automationAction.getVariables()))
                     .filter(variable -> !variable.isBlank())
                     .collect(Collectors.joining("_"));
             logger.info("Built entity with variables: " + getLabel().getId() + "_" + suffix);
@@ -177,16 +209,18 @@ public class VehicleControlAction extends BaseAction {
             logger.error("Entity for vehicle control automation missing: " + getLabel().getId());
             return false;
         }
-        // Vehicle control currently only uses a single variable for an action
         String payload = Objects.requireNonNullElse(automationAction.getVariables().get("payload"), "").toString();
-        payload = resolvePayload(payload);
-        // TODO: Add other variables in to sub for actions like climate control
+        payload = resolvePayload(payload, automationAction.getVariables());
+        String sub = resolveParameter(
+                Objects.requireNonNullElse(automationAction.getVariables().get("sub"), "").toString(),
+                automationAction.getVariables());
+        if (sub != null && sub.isBlank()) sub = null;
         // Pass the latest vehicle snapshot so composite commands can preserve sibling state (e.g. a
         // seat_heat_driver command reads the other zones' current levels from the snapshot; a null
         // snapshot would reset them all to 0). getData() may still be null before the first collect,
         // which the catalog handlers already tolerate.
         BydVehicleData snapshot = BydDataCollector.getInstance().getData();
-        VehicleControlCatalog.ControlAction action = entity.toAction(null, payload, snapshot);
+        VehicleControlCatalog.ControlAction action = entity.toAction(sub, payload, snapshot);
         if (action == null || action.command == null) {
             logger.error("Action for vehicle control automation entity missing: " + getLabel().getId());
             return false;

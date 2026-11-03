@@ -749,6 +749,9 @@ public class CameraDaemon {
         //   it's wired up — the user can still hit /api/storage/config to
         //   force surveillanceStorageType=INTERNAL and unblock the rest.
         tcpServer = new TcpCommandServer(TCP_PORT);
+        // 0.1.34 Befehls-Log: dauerhaft neben den übrigen Daemon-Dateien (übersteht Neustart und App-Update)
+        at.greenchili.surfmate.server.BefehlsLog.starten(
+                new java.io.File(at.greenchili.surfmate.util.DaemonStorage.path("befehlslog")));
         httpServer = new HttpServer(HTTP_PORT);
         ipcServer = new SurveillanceIpcServer(19977);
         aacIngestServer = new at.greenchili.surfmate.server.AacIngestServer();

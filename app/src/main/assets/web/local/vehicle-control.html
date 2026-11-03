@@ -31,7 +31,7 @@
             }
         })();
     </script>
-    <script src="../shared/app-shell.js?v=pn27"></script>
+    <script src="../shared/app-shell.js?v=pn28"></script>
     <link rel="stylesheet" href="../shared/styles.css?v=pn11">
     <link rel="stylesheet" href="../shared/vehicle-control.css?v=47">
 </head>
@@ -71,7 +71,7 @@
                     <div class="vc-status-bar">
                         <div class="vc-status-slot vc-status-slot--start">
                             <div class="vc-pill compact-status-pill is-sk">
-                                <span class="dot grey compact-status-pill__dot"></span><span id="lockStatus" data-i18n="vehicle.tyre_no_data">KEIN WERT</span>
+                                <span class="dot grey compact-status-pill__dot"></span><span id="lockStatus">—</span>
                                 <div class="sk sk-cover vc-sk-pill" data-sk-group="vcLock"></div>
                             </div>
                         </div>
@@ -101,7 +101,7 @@
                         </div>
                         <div class="vc-status-slot vc-status-slot--end">
                             <div class="vc-pill compact-status-pill is-sk" id="cloudStatus">
-                                <span class="dot amber compact-status-pill__dot"></span><span id="cloudStatusText" data-i18n="vehicle.checking">Prüfe …</span>
+                                <span class="dot amber compact-status-pill__dot"></span><span id="cloudStatusText">—</span>
                                 <div class="sk sk-cover vc-sk-pill" data-sk-group="vcCloud"></div>
                             </div>
                         </div>
@@ -297,11 +297,11 @@
                                     <div class="vc-block vc-block--stepper">
                                         <span class="vc-block-title" data-i18n="vehicle.climate_level">Klima-Stufe</span>
                                         <div class="vc-stepper">
-                                            <button class="vc-mini" id="btnBookingTempDown" title="Temperatur fürs Vorab-Klimatisieren senken" data-i18n-attr="title:vehicle.precondition_temp_down">
+                                            <button class="vc-mini" id="btnBookingTempDown" title="Fürs Vorab-Klimatisieren kühler" data-i18n-attr="title:vehicle.precondition_temp_down">
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                             </button>
                                             <span class="vc-readout" id="climateBookingTemp" data-i18n="klima_stufe.cool">Kühlen</span>
-                                            <button class="vc-mini" id="btnBookingTempUp" title="Temperatur fürs Vorab-Klimatisieren erhöhen" data-i18n-attr="title:vehicle.precondition_temp_up">
+                                            <button class="vc-mini" id="btnBookingTempUp" title="Fürs Vorab-Klimatisieren wärmer" data-i18n-attr="title:vehicle.precondition_temp_up">
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                             </button>
                                         </div>
@@ -379,6 +379,28 @@
                                 </svg>
                                 <span data-i18n="vehicle_control.label_reboot_ivi">Bildschirmgerät neu starten</span>
                             </button>
+                            <section class="vc-block vc-block--full vc-block--divider" id="clusterAppApproval">
+                                <div class="vc-block-head">
+                                    <span class="vc-block-title" data-i18n="vehicle_control.cluster_app_title">App am Fahrerdisplay</span>
+                                    <span class="vc-readout" id="clusterAppState">—</span>
+                                </div>
+                                <div class="vc-block-caption" data-i18n="vehicle_control.cluster_app_lead">Wähle eine installierte App. Die Freigabe wird nur angeboten, wenn App-Projektion und Totwinkel-Vorrang für diese Plattform belegt sind; DiLink 5 bleibt derzeit gesperrt. Dann prüfst du 20 Sekunden in P: Tempo und Warnleuchten bleiben sichtbar, beim Blinken liegt die Kamera vor der App und danach kehrt dieselbe App zurück.</div>
+                                <select id="clusterAppPackage" style="width:100%;margin:10px 0;padding:10px;border-radius:10px;background:var(--surface-container);color:var(--on-surface);border:1px solid var(--outline-variant);"></select>
+                                <div class="vc-segmented vc-segmented-full">
+                                    <button class="vc-seg" id="clusterAppProbe" data-i18n="vehicle_control.cluster_app_probe">In P prüfen</button>
+                                    <button class="vc-seg" id="clusterAppEnable" data-i18n="vehicle_control.cluster_app_enable">Starten</button>
+                                    <button class="vc-seg" id="clusterAppRevoke" data-i18n="vehicle_control.cluster_app_revoke">Widerrufen</button>
+                                    <button class="vc-seg" id="clusterAppStop" data-i18n="vehicle_control.cluster_app_stop">Stopp</button>
+                                </div>
+                                <div id="clusterAppQuestion" class="vc-block-caption" style="display:none;margin-top:10px;">
+                                    <span data-i18n="vehicle_control.cluster_app_question">Sind Tempo und alle Warnleuchten sichtbar? Nach deiner Antwort kommt die Tacho-Anzeige zurück.</span>
+                                    <div class="vc-segmented" style="margin-top:8px;">
+                                        <button class="vc-seg" id="clusterAppYes" data-i18n="vehicle_control.cluster_app_yes">Ja, freigeben</button>
+                                        <button class="vc-seg" id="clusterAppNo" data-i18n="vehicle_control.cluster_app_no">Nein, sperren</button>
+                                    </div>
+                                </div>
+                                <div id="clusterAppMessage" class="vc-block-caption" aria-live="polite"></div>
+                            </section>
                         </div>
                         <!-- Seats controls -->
                         <div class="vc-panel-row" id="panelSeats" style="display:none;">
@@ -669,12 +691,13 @@
          install its global fetch override that auto-attaches the JWT bearer
          token (works through tunnels where cookies are stripped). -->
     <script src="../shared/auth.js?v=12"></script>
-    <script src="../shared/pwa-init.js?v=index1"></script>
+    <script src="../shared/pwa-init.js?v=index2"></script>
     <!-- core.js polls /status every 5s and populates the sidebar status card
          (12V, ACC, SOC, range, SOH, fuel, network). Without it those values
          all stay unread since vehicle-control.js only manages the 3D scene. -->
     <script src="../shared/core.js?v=pn6"></script>
     <script src="../shared/klima-stufe.js?v=2"></script>
+    <script src="../shared/tacho-appwahl.js?v=1"></script>
     <!-- Mode-gated loader. In immersive mode this injects the heavy stack
          (SotaPlayer + three.js + Draco/GLTF/Orbit + gsap ≈ 820 KB of script,
          plus the 1.6 MB GLB the scene then fetches) in strict order via
@@ -695,7 +718,7 @@
                 '../shared/vendor/gsap.min.js?v=12'
             ];
             var chain = window.VC_LITE ? [] : window.VC_VENDOR_CHAIN.slice();
-            chain.push('../shared/vehicle-control.js?v=vclite36');
+            chain.push('../shared/vehicle-control.js?v=vclite37');
             for (var i = 0; i < chain.length; i++) {
                 var s = document.createElement('script');
                 s.src = chain[i];

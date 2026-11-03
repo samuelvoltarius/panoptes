@@ -107,7 +107,7 @@ class Assistent(
     fun zeige(id: String) {
         if (!aktiv) return
         aktuell?.verlassen()
-        val ansicht = SchrittKatalog.erzeuge(id, this) ?: SchrittKatalog.erzeuge("fertig", this)!!
+        val ansicht = SchrittKatalog.erzeuge(id, this) ?: UnbekannterSchritt(id, this)
         aktuell = ansicht
         meldung.text = ""; meldung.visibility = View.GONE
         // Fortschritt: „Schritt n von m“ (fertig ohne Nummer)

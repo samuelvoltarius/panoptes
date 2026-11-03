@@ -39,7 +39,8 @@ import okhttp3.Response;
 public class AppUpdater {
 
     private static final String TAG = "AppUpdater";
-    // Kein GitHub-Abruf mehr (F16, 0.1.9.1): Updates nur über appupdate/AppUpdateDienst (panoptes-releases).
+    // Kein direkter GitHub-Abruf mehr: Updates laufen über appupdate/AppUpdateDienst.
+    // Dessen öffentliche Standardquelle ist samuelvoltarius/panoptes; dieses Altmodul bleibt deaktiviert.
     private static final String GITHUB_REPO = "";
     // SurfMate is installed by its owner via adb; it never pulls updates itself.
     private static final boolean UPDATES_DISABLED = true;
@@ -1655,6 +1656,18 @@ public class AppUpdater {
      * release in build.gradle.kts.
      */
     public static String getInstalledVersion() {
+        // Public artifacts are stamped from their immutable Git tag. Keep
+        // Android's versionName semver-only, but show people which release
+        // channel/build is actually running (for example
+        // "0.1.34-test.6 · Test · Build 58"). Local/IDE builds retain the
+        // historical fallback below.
+        String releaseChannel = BuildConfig.RELEASE_CHANNEL;
+        String releaseLabel = BuildConfig.RELEASE_LABEL;
+        if (releaseLabel != null && !releaseLabel.isEmpty()
+                && ("test".equals(releaseChannel) || "stabil".equals(releaseChannel))) {
+            String channelLabel = "test".equals(releaseChannel) ? "Test" : "Stabil";
+            return releaseLabel + " · " + channelLabel + " · Build " + BuildConfig.VERSION_CODE;
+        }
         String channel = BuildConfig.UPDATE_CHANNEL;
         String ver = BuildConfig.VERSION_NAME;
         if (ver == null || ver.isEmpty()) return DISPLAY_VERSION_FALLBACK;

@@ -38,6 +38,8 @@ import java.util.regex.Pattern;
  *   <li>{@code GET  /api/system/capabilities} — was dieses Auto kann (Tacho-Anzeige, Head-up-Anzeige)</li>
  *   <li>{@code GET  /api/system/profile} — Anrede und Fahrzeugname für die Kopfzeile</li>
  *   <li>{@code POST /api/system/profile} — {@code {"displayName":"…","vehicleName":"…"}}</li>
+ *   <li>{@code GET|POST /api/system/manual-vehicle} — unbekanntes Fahrzeug mit Name,
+ *       Akkugröße und manuellem SoC erfassen</li>
  * </ul>
  */
 public class SystemApiHandler {
@@ -131,6 +133,34 @@ public class SystemApiHandler {
             HttpResponse.sendJson(out, ZugriffsLog.alsJson().toString());
             return true;
         }
+        // 0.1.34 Befehls-Log: wer hat was wann gemacht – ganz nur am Auto oder mit Login (ExternGuard sperrt den Pfad
+        // für Kopplungen); die Web-Sitzung der Handy-App sieht wie das Handy selbst nur die eigenen Einträge, alle nur
+        // mit Recht „protokoll“
+        if ((path.equals("/api/system/befehle") || path.startsWith("/api/system/befehle?")) && method.equals("GET")) {
+            if (AuthMiddleware.isExternRequest()) {
+                HttpResponse.sendJson(out, 403, "{\"success\":false,\"error\":\"nur_im_auto\"}");
+                return true;
+            }
+            if (AuthMiddleware.isHandyWebRequest()) {
+                String kid = AuthMiddleware.requestWebKopplungsId();
+                if (kid == null) {
+                    HttpResponse.sendJson(out, 403, "{\"success\":false,\"error\":\"nur_im_auto\"}");
+                    return true;
+                }
+                HandyApiHandler.protokoll(path, kid, out);
+                return true;
+            }
+            int max = 500;
+            int q = path.indexOf("max=");
+            if (q > 0) {
+                try {
+                    max = Math.max(1, Math.min(5000, Integer.parseInt(path.substring(q + 4).replaceAll("[^0-9].*$", ""))));
+                } catch (NumberFormatException ignored) {
+                }
+            }
+            HttpResponse.sendJson(out, BefehlsLog.alsJson(max, System.currentTimeMillis()).toString());
+            return true;
+        }
         if (path.equals("/api/system/status") && method.equals("GET")) {
             sendStatus(out);
             return true;
@@ -157,6 +187,14 @@ public class SystemApiHandler {
         }
         if (path.equals("/api/system/profile") && method.equals("POST")) {
             setProfile(body, out);
+            return true;
+        }
+        if (path.equals("/api/system/manual-vehicle") && method.equals("GET")) {
+            HttpResponse.sendJson(out, manualVehicle().toString());
+            return true;
+        }
+        if (path.equals("/api/system/manual-vehicle") && method.equals("POST")) {
+            setManualVehicle(body, out);
             return true;
         }
         return false;
@@ -414,6 +452,96 @@ public class SystemApiHandler {
             return;
         }
         HttpResponse.sendJson(out, profile().toString());
+    }
+
+    /**
+     * Profil für Fahrzeuge, die noch nicht im Modellkatalog stehen. Der manuelle SoC ist
+     * ausdrücklich nur ein Ersatzwert: echte Fahrzeugtelemetrie hat immer Vorrang.
+     */
+    private static JSONObject manualVehicle() {
+        JSONObject res = new JSONObject();
+        try {
+            JSONObject cfg = UnifiedConfigManager.loadConfig();
+            JSONObject p = cfg.optJSONObject(PROFILE_SECTION);
+            JSONObject v = cfg.optJSONObject("vehicle");
+            res.put("success", true);
+            res.put("name", p != null ? p.optString("vehicleName", "") : "");
+            res.put("batteryKwh", v != null ? v.optDouble("nominalKwh", 0) : 0);
+            res.put("manualSoc", v != null && v.has("manualSoc")
+                    ? v.optDouble("manualSoc", Double.NaN) : JSONObject.NULL);
+            res.put("manualSocUpdatedAt", v != null ? v.optLong("manualSocUpdatedAt", 0) : 0);
+            at.greenchili.surfmate.monitor.BatterySocData live =
+                    at.greenchili.surfmate.monitor.VehicleDataMonitor.getInstance().getBatterySoc();
+            res.put("liveSoc", live != null ? live.socPercent : JSONObject.NULL);
+            res.put("socSource", live != null ? "vehicle" :
+                    (manualSocFallback() != null ? "manual" : "none"));
+        } catch (Exception e) {
+            return error("manual vehicle unavailable");
+        }
+        return res;
+    }
+
+    private static void setManualVehicle(String body, OutputStream out) throws Exception {
+        JSONObject req;
+        try {
+            req = new JSONObject(body == null || body.isEmpty() ? "{}" : body);
+        } catch (Exception e) {
+            HttpResponse.sendJson(out, 400, error("invalid json").toString());
+            return;
+        }
+        String name = req.optString("name", "").replaceAll("[\\p{Cntrl}<>]", " ")
+                .replaceAll("\\s+", " ").trim();
+        if (name.isEmpty() || name.length() > PROFILE_MAX) {
+            HttpResponse.sendJson(out, 400, error("name must contain 1 to 40 characters").toString());
+            return;
+        }
+        double kwh;
+        double soc;
+        try {
+            kwh = req.getDouble("batteryKwh");
+            soc = req.getDouble("soc");
+        } catch (Exception e) {
+            HttpResponse.sendJson(out, 400, error("batteryKwh and soc must be numbers").toString());
+            return;
+        }
+        if (!Double.isFinite(kwh) || kwh < 5 || kwh > 120) {
+            HttpResponse.sendJson(out, 400, error("batteryKwh must be between 5 and 120").toString());
+            return;
+        }
+        if (!Double.isFinite(soc) || soc < 0 || soc > 100) {
+            HttpResponse.sendJson(out, 400, error("soc must be between 0 and 100").toString());
+            return;
+        }
+
+        JSONObject cfg = UnifiedConfigManager.loadConfig();
+        JSONObject profile = cfg.optJSONObject(PROFILE_SECTION);
+        profile = profile != null ? new JSONObject(profile.toString()) : new JSONObject();
+        profile.put("vehicleName", name);
+        JSONObject vehicle = cfg.optJSONObject("vehicle");
+        vehicle = vehicle != null ? new JSONObject(vehicle.toString()) : new JSONObject();
+        vehicle.put("nominalKwh", Math.round(kwh * 10.0) / 10.0);
+        vehicle.put("manualSoc", Math.round(soc * 10.0) / 10.0);
+        vehicle.put("manualSocUpdatedAt", System.currentTimeMillis());
+        vehicle.put("manualProfile", true);
+
+        if (!UnifiedConfigManager.updateSection(PROFILE_SECTION, profile)
+                || !UnifiedConfigManager.setVehicle(vehicle)) {
+            HttpResponse.sendJson(out, 500, error("could not save").toString());
+            return;
+        }
+        HttpResponse.sendJson(out, manualVehicle().toString());
+    }
+
+    /** Manual SoC while no real vehicle value exists. Null means no usable manual value. */
+    static Double manualSocFallback() {
+        try {
+            JSONObject v = UnifiedConfigManager.loadConfig().optJSONObject("vehicle");
+            if (v == null || !v.optBoolean("manualProfile", false) || !v.has("manualSoc")) return null;
+            double soc = v.optDouble("manualSoc", Double.NaN);
+            return Double.isFinite(soc) && soc >= 0 && soc <= 100 ? soc : null;
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     private static JSONObject error(String msg) {

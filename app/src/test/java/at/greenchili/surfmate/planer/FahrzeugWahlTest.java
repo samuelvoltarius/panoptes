@@ -58,6 +58,19 @@ public class FahrzeugWahlTest {
     }
 
     @Test
+    public void sealUDmiAliasWirdExaktKanonisiertOhneSealOderSealionFalschmatch() throws Exception {
+        JSONArray profile = new JSONArray("[{\"name\":\"Seal U DM-i 19\",\"modell_id\":\"seal-u-dmi\",\"akku_kwh\":19},"
+                + "{\"name\":\"Seal U EV\",\"modell_id\":\"seal-u\",\"akku_kwh\":71.8},"
+                + "{\"name\":\"Sealion 7\",\"modell_id\":\"sealion7\",\"akku_kwh\":82.5}]");
+        assertEquals("seal-u-dmi", FahrzeugWahl.erkanntesModell(root("BYD Song Plus DM-i", "auto", null)));
+        assertEquals("Seal U DM-i 19", FahrzeugWahl.wirksam(
+                root("Seal U DMI", "auto", null), profile, Double.NaN));
+        assertNull(FahrzeugWahl.wirksam(root("Seal", "auto", null), profile, Double.NaN));
+        assertEquals("Seal U EV", FahrzeugWahl.wirksam(root("seal-u", "auto", null), profile, Double.NaN));
+        assertEquals("Sealion 7", FahrzeugWahl.wirksam(root("sealion7", "auto", null), profile, Double.NaN));
+    }
+
+    @Test
     public void einsetzen_nurWennFehlt() throws Exception {
         assertEquals("X", new JSONObject(FahrzeugWahl.einsetzen("{\"fahrzeug\":null}", "X")).getString("fahrzeug"));
         assertEquals("X", new JSONObject(FahrzeugWahl.einsetzen("{\"fahrzeug\":\" \"}", "X")).getString("fahrzeug"));

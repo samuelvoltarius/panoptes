@@ -693,6 +693,18 @@
                 android:value="Owner-initiated BYD powertrain mode control" />
         </service>
 
+        <!-- Optional Google Maps/Waze turn import. Android grants this binder only
+             after the driver explicitly enables Panoptes under Notification access. -->
+        <service
+            android:name="at.greenchili.surfmate.navmap.oem.ExternalNavigationNotificationService"
+            android:label="@string/app_name"
+            android:exported="false"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
         <!-- Hotspot Bridge Service - only a real app process can drive the
              tethering binder, so the uid-2000 daemon reaches HotspotManager via
              `am start-foreground-service -n at.greenchili.surfmate/.services.HotspotBridgeService`.

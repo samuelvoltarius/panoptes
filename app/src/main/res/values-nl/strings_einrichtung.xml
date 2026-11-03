@@ -62,6 +62,9 @@
     <string name="einr_fehler_pflicht">Maak eerst een keuze.</string>
     <string name="einr_fehler_speichern">Opslaan is niet gelukt. Probeer het opnieuw.</string>
     <string name="einr_fehler_verbindung">Panoptes draait nog niet. Wacht even en probeer het opnieuw.</string>
+    <string name="einr_unbekannter_schritt_titel">De configuratie kan niet doorgaan</string>
+    <string name="einr_unbekannter_schritt_text">Deze Panoptes-versie kent de configuratiestap ‘%1$s’ nog niet. Installeer onder Systeem → App-updates de nieuwste versie en start de configuratie daarna opnieuw. Er is niets als voltooid gemarkeerd.</string>
+    <string name="einr_unbekannter_schritt_schliessen">Configuratie sluiten</string>
     <string name="einr_sprache_titel">Taal</string>
     <string name="einr_sprache_text">Welke taal moet Panoptes gebruiken?</string>
     <string name="einr_autostart_spaeter">Ik doe het later</string>
@@ -69,8 +72,13 @@
     <string name="einr_usb_warum">Om op de achtergrond te blijven draaien en zichzelf te herstellen, heeft Panoptes eenmalig goedkeuring nodig.</string>
     <string name="einr_usb_popup">Android toont zo meteen een venster: ‘USB-foutopsporing toestaan?’. Vink daar ‘Altijd toestaan vanaf deze computer’ aan en tik op ‘Toestaan’.</string>
     <string name="einr_usb_knopf">Goedkeuring vragen</string>
+    <string name="einr_usb_knopf_warte">Goedkeuring wordt gevraagd …</string>
+    <string name="einr_usb_knopf_nochmal">Opnieuw vragen</string>
+    <string name="einr_usb_knopf_nur_auto">Alleen op het voertuigdisplay</string>
     <string name="einr_usb_popup_jetzt">Vink in het Android-venster ‘Altijd toestaan’ aan en tik op ‘Toestaan’.</string>
     <string name="einr_usb_warte">Wachten op goedkeuring …</string>
+    <string name="einr_usb_zeit_abgelaufen">Het Android-venster is niet verschenen. Open de Android-instellingen en controleer onder ‘Ontwikkelaarsopties’:\n1. ‘USB-foutopsporing’ staat aan.\n2. Zet het eenmaal uit en weer aan.\n3. Tik, indien beschikbaar, op ‘USB-foutopsporingsautorisaties intrekken’.\nGa daarna terug naar Panoptes en tik op ‘Opnieuw vragen’.</string>
+    <string name="einr_usb_nur_infotainment">Deze Panoptes-kernapp werkt alleen op het BYD-infotainmentsysteem. Een gewone Android-telefoon heeft de lokale ADB-service niet, waardoor hier geen goedkeuringsvenster kan verschijnen. Installeer en open Panoptes op het voertuigdisplay.</string>
     <string name="einr_usb_ok">Goedkeuring gegeven, Panoptes draait.</string>
     <string name="einr_auto_titel">Dit kan je auto …</string>
     <string name="einr_auto_unbekannt">Panoptes kon nog niet controleren wat je auto kan. Dat doet Panoptes later.</string>

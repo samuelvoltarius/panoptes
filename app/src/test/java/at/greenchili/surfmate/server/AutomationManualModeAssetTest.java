@@ -34,7 +34,7 @@ public class AutomationManualModeAssetTest {
         assertTrue(script.contains("grid.append(this.createModeField());"));
         assertTrue(css.contains("#automationList .status-dot.manual"));
         assertTrue(css.contains(".automation-mode-select"));
-        assertTrue(english.contains("\"mode_manual\": \"Manual only\""));
+        assertTrue(english.contains("\"mode_manual\": \"Only on tap\""));
         assertTrue(api.contains("/api/automations/mode/"));
         assertTrue(html.contains("automations.css?v=av53"));
         assertTrue(html.contains("automations.js?v=av72"));

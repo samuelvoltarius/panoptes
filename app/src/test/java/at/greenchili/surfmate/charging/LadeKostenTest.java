@@ -26,6 +26,24 @@ public class LadeKostenTest {
     }
 
     @Test
+    public void adHocPreis_ohneHerkunft_zaehltAlsBepreist() throws Exception {
+        // 03.11.2026: echte DC-Ladung mit Ad-hoc-Preis 0,29 €/kWh, kein Tarif, preisQuelle null
+        JSONObject adhoc = new JSONObject().put("id", 1).put("startTime", 1000).put("endTime", 2000).put("inProgress", false)
+                .put("energyAdded", 25.488).put("cost", 7.39152).put("electricityRate", 0.29).put("currency", "€")
+                .put("preisQuelle", JSONObject.NULL).put("tariffId", JSONObject.NULL).put("tariffLabel", "ad hoc").put("isDc", true);
+        JSONObject k = LadeKosten.kosten(new JSONArray().put(adhoc), 160, "monat", 0, 9);
+        assertEquals(0, k.getInt("ladungen_ohne_preis"));
+        assertTrue(k.getBoolean("vollstaendig"));
+        assertEquals(7.39, k.getDouble("kosten_summe"), 0.001);
+        assertEquals(4.62, k.getDouble("kosten_je_100km"), 0.001);
+        // „fehlt“ bzw. null ohne Preis bleiben unbepreist
+        JSONObject ohne = new JSONObject(adhoc.toString()).put("electricityRate", JSONObject.NULL).put("cost", JSONObject.NULL);
+        assertEquals(1, LadeKosten.kosten(new JSONArray().put(ohne), 160, "monat", 0, 9).getInt("ladungen_ohne_preis"));
+        JSONObject ersatz = new JSONObject(adhoc.toString()).put("preisQuelle", "ersatz");
+        assertEquals(1, LadeKosten.kosten(new JSONArray().put(ersatz), 160, "monat", 0, 9).getInt("ladungen_ohne_preis"));
+    }
+
+    @Test
     public void kosten_je100km_gratisNull_ohnePreisNichtNull() throws Exception {
         JSONArray a = new JSONArray()
                 .put(s(1, 1000, 30, 8.70, "tarif", "t1"))       // Lidl 0,29

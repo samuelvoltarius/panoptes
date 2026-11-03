@@ -2700,15 +2700,21 @@ const TRIPS = {
                     return;
                 }
                 const cur = d.waehrung || this.currency || '€';
-                this.setEl('kostenWert', d.kosten_je_100km != null ? zahl(d.kosten_je_100km * f, 2) + ' ' + cur : '--');
+                // 03.11.2026: Kosten nach der Menge, die die Säule abrechnet (eingetragen bzw. Ladeverlust „~“)
+                const abg = d.kosten_je_100km_abgerechnet !== undefined;
+                const ca = abg && d.ladungen_geschaetzt > 0 ? '~' : '';
+                const k100 = abg ? d.kosten_je_100km_abgerechnet : d.kosten_je_100km;
+                const summe = abg ? d.kosten_summe_abgerechnet : d.kosten_summe;
+                const ohneN = abg ? d.ladungen_ohne_preis_abgerechnet : d.ladungen_ohne_preis;
+                this.setEl('kostenWert', k100 != null ? ca + zahl(k100 * f, 2) + ' ' + cur : '--');
                 this.setEl('kostenKwh', d.kwh_je_100km != null ? zahl(d.kwh_je_100km * f, 1) + ' kWh / ' + je : '--');
                 this.setEl('kostenBasis', d.km != null && d.km >= 1
-                    ? t('trip.kosten.basis', '{km} gefahren · {n} Ladungen · {summe}', { km: BYD.units.dist(d.km), n: d.ladungen || 0, summe: zahl(d.kosten_summe || 0, 2) + ' ' + cur })
+                    ? t('trip.kosten.basis', '{km} gefahren · {n} Ladungen · {summe}', { km: BYD.units.dist(d.km), n: d.ladungen || 0, summe: ca + zahl(summe || 0, 2) + ' ' + cur })
                     : t('trip.kosten.zu_wenig', 'Noch zu wenig gefahren für einen Wert.'));
                 if (ohne) {
-                    if (d.vollstaendig === false && d.ladungen_ohne_preis > 0) {
+                    if (ohneN > 0) {
                         ohne.textContent = '';
-                        ohne.appendChild(document.createTextNode(t('trip.kosten.ohne_preis', '{n} Ladungen ohne Preis – der Wert ist zu niedrig.', { n: d.ladungen_ohne_preis }) + ' '));
+                        ohne.appendChild(document.createTextNode(t('trip.kosten.ohne_preis', '{n} Ladungen ohne Preis – der Wert ist zu niedrig.', { n: ohneN }) + ' '));
                         const a = document.createElement('a');
                         a.href = 'charging.html#nachfrage';
                         a.style.cssText = 'color:var(--sm-aqua);font-weight:600';

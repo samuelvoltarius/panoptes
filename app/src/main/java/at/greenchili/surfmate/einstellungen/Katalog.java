@@ -271,6 +271,17 @@ public final class Katalog {
         darst.optionen.add(new Feld.Option("leicht", "settings.anzeige.darstellung.leicht"));
         darst.optionen.add(new Feld.Option("voll", "settings.anzeige.darstellung.voll"));
         l.add(darst);
+        // Startseite: dieselben Widgets, je nach Einsatz anders geordnet. Am Auto dauerhaft im Kern;
+        // Handy/PC verwenden browserlokal denselben Katalog der vier Werte.
+        Feld startAnsicht = new Feld("anzeige.startAnsicht", Feld.Typ.AUSWAHL);
+        startAnsicht.gruppe = "system"; startAnsicht.reihenfolge = 5; startAnsicht.standard = "panoptes";
+        startAnsicht.nurLesendExtern = true;
+        startAnsicht.optionen.add(new Feld.Option("panoptes", "settings.anzeige.startAnsicht.panoptes"));
+        startAnsicht.optionen.add(new Feld.Option("fahren", "settings.anzeige.startAnsicht.fahren"));
+        startAnsicht.optionen.add(new Feld.Option("fahrzeug", "settings.anzeige.startAnsicht.fahrzeug"));
+        startAnsicht.optionen.add(new Feld.Option("kompakt", "settings.anzeige.startAnsicht.kompakt"));
+        startAnsicht.optionen.add(new Feld.Option("cockpit", "settings.anzeige.startAnsicht.cockpit"));
+        l.add(startAnsicht);
         // Band am Display (Blitzer, „Reicht es noch?“), 0.1.9.1 nach Alfreds Fahrt: Standard groß und oben Mitte
         Feld bandG = new Feld("anzeige.bandGroesse", Feld.Typ.AUSWAHL);
         bandG.gruppe = "system"; bandG.reihenfolge = 6; bandG.standard = "gross";

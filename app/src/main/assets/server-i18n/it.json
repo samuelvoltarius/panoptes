@@ -2227,6 +2227,18 @@
       "acStandard": {
         "title": "La ricarica AC in luoghi sconosciuti costa",
         "help": "Vale per tutte le ricariche AC in luoghi non salvati (ad es. a casa), così Panoptes non chiede. 0 = gratis. Vuoto = chiedi ogni volta."
+      },
+      "verlustAc": {
+        "title": "Perdita di ricarica AC (wallbox, casa)",
+        "help": "Quanto una colonnina AC fattura in più rispetto a ciò che arriva nella batteria. Consigliato: 12 %. Vale solo per ricariche senza kWh inseriti dalla colonnina; questi valori sono segnati con «~»."
+      },
+      "verlustDc": {
+        "title": "Perdita di ricarica DC (colonnina rapida)",
+        "help": "Quanto una colonnina DC fattura in più rispetto a ciò che arriva nella batteria. Consigliato: 8 %. Vale solo per ricariche senza kWh inseriti dalla colonnina; questi valori sono segnati con «~»."
+      },
+      "verlustHinweis": {
+        "title": "Mostra avviso sulla perdita di ricarica",
+        "help": "Spiega una volta che i costi includono la perdita di ricarica. Si spegne dopo «Capito»."
       }
     },
     "zaehlen": {

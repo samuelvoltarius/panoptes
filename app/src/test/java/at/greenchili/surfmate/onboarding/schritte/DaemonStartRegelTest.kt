@@ -44,6 +44,25 @@ class DaemonStartRegelTest {
         assertEquals(1, aufgeschoben)
     }
 
+    @Test fun usbFreigabeBeendetWartenUndLaesstErneuteAnfrageZu() {
+        val a = UsbFreigabeAblauf(20_000)
+        assertEquals(UsbFreigabeAblauf.Zustand.BEREIT, a.zustand(true, false, 1_000))
+        a.anfragen(1_000)
+        assertEquals(UsbFreigabeAblauf.Zustand.WARTET, a.zustand(true, false, 20_999))
+        assertEquals(UsbFreigabeAblauf.Zustand.ZEIT_ABGELAUFEN, a.zustand(true, false, 21_000))
+        a.anfragen(22_000)
+        assertEquals(UsbFreigabeAblauf.Zustand.WARTET, a.zustand(true, false, 22_001))
+        assertEquals(UsbFreigabeAblauf.Zustand.ERLEDIGT, a.zustand(true, true, 22_002))
+    }
+
+    @Test fun normalesAndroidHandyWartetNichtAufEinenUnmoeglichenDialog() {
+        val a = UsbFreigabeAblauf()
+        assertEquals(UsbFreigabeAblauf.Zustand.NICHT_UNTERSTUETZT, a.zustand(false, false, 0))
+        assertFalse(UsbFreigabePlattform.istBydInfotainment(false, "Google", "Pixel 9"))
+        assertTrue(UsbFreigabePlattform.istBydInfotainment(true, "unknown", "unknown"))
+        assertTrue(UsbFreigabePlattform.istBydInfotainment(false, "BYD", "AUTO"))
+    }
+
     /** Quelltext-Vertrag: MainActivity schiebt nur über die Regel auf, Startweg unverändert, Ende des Assistenten startet. */
     @Test fun mainActivityNutztDieRegelUndStartetSpaetestensAmEnde() {
         val ma = String(Files.readAllBytes(Paths.get("src/main/java/at/greenchili/surfmate/ui/MainActivity.kt")), Charsets.UTF_8)
@@ -54,7 +73,8 @@ class DaemonStartRegelTest {
         // Schnellweg ohne HTTP für Bestand/Update/onNewIntent
         assertTrue(entscheidung.contains("if (!fromOnCreate || !regel.mussPruefen(st.daemonAuthorized, st.onboardingComplete, nachUpdate))"))
         // Aufschieben nur, wenn die Regel es sagt; sonst sofort
-        assertTrue(entscheidung.contains("if (regel.aufschieben(st.daemonAuthorized, st.onboardingComplete, antwortet, nachUpdate))"))
+        assertTrue(entscheidung.contains("regel.aufschieben(st.daemonAuthorized, st.onboardingComplete, antwortet, nachUpdate)"))
+        assertTrue(entscheidung.contains("!daemonStartVomAssistentenAngefordert"))
         assertTrue(entscheidung.contains("runDaemonStartupJetzt(intent, fromOnCreate)"))
         // Kein ADB in der Entscheidung (ADB würde das Popup auslösen)
         assertFalse(entscheidung.contains("adbLauncher") || entscheidung.contains("clearStaleSentinels"))
@@ -63,8 +83,9 @@ class DaemonStartRegelTest {
         assertTrue(rest.contains("daemonStartupManager.clearStaleSentinels()"))
         assertTrue(rest.contains("daemonStartupManager.initializeOnAppLaunch()"))
         // Nachholen: onboardingDaemonStarten ruft den unveränderten Startweg
-        val nach = ma.substring(ma.indexOf("fun onboardingDaemonStarten()"))
+        val nach = ma.substring(ma.indexOf("fun onboardingDaemonStarten("))
         assertTrue(nach.substring(0, 700).contains("runDaemonStartupJetzt(p.first, p.second)"))
+        assertTrue(nach.substring(0, 700).contains("daemonStartupManager.initializeOnAppLaunch()"))
         // Ende des Assistenten (auch ACC-ON) startet spätestens dann
         val host = String(Files.readAllBytes(Paths.get("src/main/java/at/greenchili/surfmate/onboarding/OnboardingHost.kt")), Charsets.UTF_8)
         val dismiss = host.substring(host.indexOf("fun dismiss()"))

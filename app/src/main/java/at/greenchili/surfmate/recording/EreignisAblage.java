@@ -28,7 +28,11 @@ public final class EreignisAblage {
         try {
             StorageManager sm = StorageManager.getInstance();
             List<EreignisClip.Datei> dateien = new ArrayList<>();
-            Set<String> behalten = new HashSet<>();
+            org.json.JSONObject config = UnifiedConfigManager.loadConfig();
+            // Eine noch unbeantwortete „Behalten?“-Frage schützt den frisch gesicherten Clip.
+            // Erst „Nein danke“ entfernt diesen temporären Schutz; „Behalten“ legt den
+            // dauerhaften Aufbewahrungs-Merker an.
+            Set<String> behalten = new HashSet<>(EreignisClip.offeneStaemme(config));
             for (File dir : sm.getAllEreignisDirs()) {
                 if (dir == null || !dir.isDirectory()) continue;
                 File[] files = sm.listMp4Files(dir);
@@ -39,7 +43,7 @@ public final class EreignisAblage {
                     if (Aufbewahrung.istBehalten(f.getName())) behalten.add(EreignisClip.stamm(f.getName()));
                 }
             }
-            long maxAlter = Aufbewahrung.maxAlterMs(UnifiedConfigManager.loadConfig());
+            long maxAlter = Aufbewahrung.maxAlterMs(config);
             List<EreignisClip.Datei> weg = EreignisClip.zuLoeschen(
                     dateien, System.currentTimeMillis(), maxAlter, behalten,
                     EreignisClip.GRENZE_BYTES);

@@ -165,6 +165,13 @@ public class TcpCommandServer {
                 response.put("message", "pong");
                 break;
 
+            case "oemNavigation":
+                // Semantic guidance only: no coordinates and no route/road names cross
+                // the app→daemon boundary. The daemon owns the opt-in + hardware gate.
+                response = at.greenchili.surfmate.tacho.oem.OemNavigationBridge
+                        .handle(cmd.optJSONObject("data"));
+                break;
+
             case "getFrame":
                 int frameViewId = cmd.optInt("camera", 1);
                 // GPU pipeline: get frame from GPU camera extractor

@@ -2227,6 +2227,18 @@
       "acStandard": {
         "title": "La recharge AC dans un lieu inconnu coûte",
         "help": "Vaut pour toutes les recharges AC dans un lieu non enregistré (par ex. à domicile) ; Panoptes ne demande alors pas. 0 = gratuit. Vide = demander à chaque fois."
+      },
+      "verlustAc": {
+        "title": "Perte de charge AC (wallbox, domicile)",
+        "help": "Ce qu'une borne AC facture en plus de ce qui arrive dans la batterie. Suggestion : 12 %. Vaut seulement pour les recharges sans kWh saisis depuis la borne ; ces valeurs sont marquées « ~ »."
+      },
+      "verlustDc": {
+        "title": "Perte de charge DC (borne rapide)",
+        "help": "Ce qu'une borne DC facture en plus de ce qui arrive dans la batterie. Suggestion : 8 %. Vaut seulement pour les recharges sans kWh saisis depuis la borne ; ces valeurs sont marquées « ~ »."
+      },
+      "verlustHinweis": {
+        "title": "Afficher l’info sur la perte de charge",
+        "help": "Explique une fois que les coûts incluent la perte de charge. Désactivé après « Compris »."
       }
     },
     "zaehlen": {

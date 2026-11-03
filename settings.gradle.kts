@@ -25,4 +25,4 @@ dependencyResolutionManagement {
 rootProject.name = "SurfMate"
 include(":app")
 include(":dilink-probe")
- 
+include(":panoptes-launcher")

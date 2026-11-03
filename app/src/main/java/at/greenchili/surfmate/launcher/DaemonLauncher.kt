@@ -620,8 +620,8 @@ class DaemonLauncher(
             // daemon is the highest-volume stdout logger, so real-time
             // bounding of cam_daemon.log (the UI-shown file) matters most here.
             val appProcessLine =
-                "  CLASSPATH=\$([ -f /system/framework/bmmcamera.jar ] && echo /system/framework/bmmcamera.jar:)$apkPath app_process " +
-                "-Djava.library.path=$nativeLibDir:/system/lib64:/vendor/lib64:/product/lib64:/odm/lib64 " +
+                "  CLASSPATH=/system/framework/bmmcamera.jar:\$APK_PATH app_process " +
+                "-Djava.library.path=\$NATIVE_LIB_DIR:/system/lib64:/vendor/lib64:/product/lib64:/odm/lib64 " +
                 "${proxyArgs}/system/bin " +
                 "--nice-name=$CAMERA_DAEMON_PROCESS " +
                 "at.greenchili.surfmate.daemon.CameraDaemon " +
@@ -650,6 +650,16 @@ class DaemonLauncher(
                 "    echo \"[\$(date)] Daemon disabled by user (sentinel file exists). Exiting watchdog.\" >> \"\$LOG_FILE\"",
                 "    exit 0",
                 "  fi",
+                // An update replaces base.apk while this detached watchdog keeps
+                // running. Resolve the installed package for every launch instead
+                // of retaining the path embedded when the script was written.
+                "  APK_PATH=\$(pm path at.greenchili.surfmate 2>/dev/null | grep '/base.apk\$' | head -n 1 | sed 's/^package://')",
+                "  if [ -z \"\$APK_PATH\" ] || [ ! -f \"\$APK_PATH\" ]; then",
+                "    echo \"[\$(date)] Installed SurfMate APK not found, retrying in 10s...\" >> \"\$LOG_FILE\"",
+                "    sleep 10",
+                "    continue",
+                "  fi",
+                "  NATIVE_LIB_DIR=\"\${APK_PATH%/base.apk}/lib/arm64\"",
                 "  echo \"[\$(date)] Starting CameraDaemon...\" >> \"\$LOG_FILE\"",
                 "  START_EPOCH=\$(awk '{print int(\$1)}' /proc/uptime 2>/dev/null || date +%s)",
                 "",

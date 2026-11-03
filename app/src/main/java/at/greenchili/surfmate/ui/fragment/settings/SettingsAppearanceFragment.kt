@@ -54,6 +54,9 @@ class SettingsAppearanceFragment : Fragment() {
         setupThemePicker(view)
         setupLanguagePicker(view)
         setupNavigationPicker(view)
+        view.findViewById<View>(R.id.cardCameraMapping).setOnClickListener {
+            (activity as? MainActivity)?.invokeReconfigureCameraAction()
+        }
     }
 
     private fun setupThemePicker(view: View) {

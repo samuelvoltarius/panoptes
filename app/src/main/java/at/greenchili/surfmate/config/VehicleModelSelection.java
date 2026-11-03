@@ -21,6 +21,39 @@ public final class VehicleModelSelection {
     }
 
     /**
+     * Canonicalises only exact, unambiguous catalogue aliases. In particular, plain {@code Seal},
+     * {@code Seal U} and every {@code Sealion} spelling deliberately remain untouched: they are
+     * different vehicles and must never select the DM-i model through a fuzzy substring match.
+     */
+    public static String canonicalModelId(String modelId) {
+        if (!hasModelId(modelId)) return null;
+        String raw = modelId.trim();
+        String key = raw.toLowerCase(Locale.US)
+                .replaceAll("[\\s_\\-–—]+", "");
+        if ("sealudmi".equals(key) || "bydsealudmi".equals(key)
+                || "songplusdmi".equals(key) || "bydsongplusdmi".equals(key)) {
+            return "seal-u-dmi";
+        }
+        return raw;
+    }
+
+    /**
+     * Exact fail-closed detection for Android product identity fields. Unknown values are ignored;
+     * two different recognised identities are treated as ambiguous instead of choosing one.
+     */
+    public static String detectExactModelId(String... identities) {
+        String found = null;
+        if (identities == null) return null;
+        for (String identity : identities) {
+            String canonical = canonicalModelId(identity);
+            if (!"seal-u-dmi".equals(canonical)) continue;
+            if (found != null && !found.equals(canonical)) return null;
+            found = canonical;
+        }
+        return found;
+    }
+
+    /**
      * Normalize persisted provenance. Configs written before provenance was
      * introduced keep their model as a legacy selection for compatibility.
      */
@@ -47,7 +80,7 @@ public final class VehicleModelSelection {
     }
 
     public static String resolvedModelId(String modelId, String source) {
-        return isResolvedSelection(modelId, source) ? modelId.trim() : null;
+        return isResolvedSelection(modelId, source) ? canonicalModelId(modelId) : null;
     }
 
     /**

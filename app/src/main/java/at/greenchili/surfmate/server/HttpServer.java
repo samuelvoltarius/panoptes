@@ -352,7 +352,8 @@ public class HttpServer {
             // The platform default on Android is UTF-8 anyway, but pinning it
             // here removes the implicit dependency on the JVM property.
             BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream(), "UTF-8"));
-            OutputStream out = new BufferedOutputStream(client.getOutputStream());
+            // 0.1.34 Befehls-Log: Status und Anfang der Antwort mitschneiden (für „ok / abgelehnt + Grund“)
+            OutputStream out = new BefehlsLog.Mitschnitt(new BufferedOutputStream(client.getOutputStream()));
 
             String requestLine = reader.readLine();
             if (requestLine == null) {
@@ -415,6 +416,8 @@ public class HttpServer {
             // Tailscale Serve, zrok and ngrok inject X-Forwarded-*;
             // Cloudflared injects Cf-*.
             boolean hasTunnelHeaders = hasProxyProtocol;
+            // 0.1.34 Befehls-Log: Anfrage kam über die Panoptes-Brücke (BrueckeWeiterleitung setzt das; nur fürs Log)
+            boolean ueberBruecke = false;
             String forwardedFor = proxySourceAddress;
             String hostHeader = null;
             String originHeader = null;
@@ -469,9 +472,11 @@ public class HttpServer {
                     String v = line.substring(17).trim();
                     int comma = v.indexOf(',');
                     forwardedHostHeader = (comma > 0 ? v.substring(0, comma) : v).trim();
+                } else if (lower.startsWith("forwarded:")) {
+                    hasTunnelHeaders = true;
+                    ueberBruecke = lower.contains("for=panoptes-bruecke");
                 } else if (lower.startsWith("x-forwarded-proto:")
                         || lower.startsWith("x-real-ip:")
-                        || lower.startsWith("forwarded:")
                         || lower.startsWith("cf-connecting-ip:")
                         || lower.startsWith("cf-ray:")
                         || lower.startsWith("cf-visitor:")
@@ -705,10 +710,15 @@ public class HttpServer {
                 client.close();
                 return;
             }
+            // 0.1.34 Befehls-Log: wer (Kopplung + Name + Art), welcher Weg, welche Aktion – Zeile im finally
+            BefehlsLog.beginne(method, path, body, AuthMiddleware.isExternRequest() ? AuthMiddleware.requestKopplungsId()
+                    : AuthMiddleware.requestWebKopplungsId(), AuthMiddleware.isHandyWebRequest(),
+                    AuthMiddleware.isDirektAmAuto(), ueberBruecke, out, System.currentTimeMillis());
             // Regel A/B: gekoppelte Geräte (scope "kopplung") dürfen nur, was ExternGuard ausdrücklich
             // erlaubt (Erlaubnisliste: lesen + Einstellungen); alles andere 403.
             if (AuthMiddleware.isExternRequest() && ExternGuard.blocks(method, pathOnly,
                     at.greenchili.surfmate.auth.Kopplungen.get().art(AuthMiddleware.requestKopplungsId()))) {
+                BefehlsLog.grund("nicht_fuer_kopplung");
                 HttpResponse.sendError(out, 403, "Nicht für gekoppelte Geräte");
                 client.close();
                 return;
@@ -720,6 +730,7 @@ public class HttpServer {
                 final String kid = AuthMiddleware.requestKopplungsId();
                 if (!ExternGuard.rechtReicht(noetig,
                         r -> at.greenchili.surfmate.auth.Kopplungen.get().hatRecht(kid, r))) {
+                    BefehlsLog.grund("recht_fehlt");
                     HttpResponse.sendJson(out, 403, ExternGuard.rechtFehltAntwort(noetig).toString());
                     client.close();
                     return;
@@ -731,11 +742,14 @@ public class HttpServer {
                     || WebHandyGuard.blocksEinstellungsAbschnitt(method, pathOnly, body))
                     && !WebHandyGuard.updateErlaubt(method, pathOnly, at.greenchili.surfmate.auth.Kopplungen.get()
                             .hatRecht(AuthMiddleware.requestWebKopplungsId(), at.greenchili.surfmate.auth.Kopplungen.RECHT_UPDATE))) {
+                BefehlsLog.grund("web_gesperrt");
                 WebHandyGuard.sendeGesperrt(out, pathOnly);
                 client.close();
                 return;
             }
-            SchreibProtokoll.melde(method, path, AuthMiddleware.isExternRequest(), client.getInetAddress() != null && client.getInetAddress().isLoopbackAddress());
+            SchreibProtokoll.melde(method, path, AuthMiddleware.isExternRequest(), client.getInetAddress() != null && client.getInetAddress().isLoopbackAddress(),
+                    AuthMiddleware.isExternRequest() ? AuthMiddleware.requestKopplungsId() : AuthMiddleware.requestWebKopplungsId(),
+                    BefehlsLog.aktion());
             ZugriffsLog.zaehle(AuthMiddleware.isHandyWebRequest() ? "web:" + AuthMiddleware.requestWebKopplungsId()
                     : AuthMiddleware.requestKopplungsId(), pathOnly, System.currentTimeMillis());
             // 0.1.22 Gewohnheiten: Herkunft dieser Anfrage (Display, Handy, Cockpit, HA) für die Dauer des Handlers
@@ -857,6 +871,10 @@ public class HttpServer {
                 if (!serveStaticFile(out, "local/automations.html")) {
                     HttpResponse.sendError(out, 404, "automations.html not found");
                 }
+            } else if (path.equals("/apps.html") || path.equals("/apps")) {
+                if (!serveStaticFile(out, "local/apps.html")) {
+                    HttpResponse.sendError(out, 404, "apps.html not found");
+                }
             } else if (path.equals("/vehicle-control.html") || path.equals("/vehicle-control")) {
                 if (!serveStaticFile(out, "local/vehicle-control.html")) {
                     HttpResponse.sendError(out, 404, "vehicle-control.html not found");
@@ -964,6 +982,7 @@ public class HttpServer {
         } catch (Exception e) {
             CameraDaemon.log("HTTP error: " + e.getMessage());
         } finally {
+            BefehlsLog.abschliessen();
             at.greenchili.surfmate.gewohnheiten.Herkunft.setze(null);
             try { client.close(); } catch (Exception e) {}
         }
@@ -1303,7 +1322,14 @@ public class HttpServer {
             return AudioApiHandler.handleRawRanged(path, rangeHeader, out);
         }
 
-        // Audio API (library playback + AVAS speaker)
+        // Exterior-speaker production boundary. Authentication, ExternGuard and
+        // WebHandyGuard have already run before routeToHandlers is entered.
+        if (path.startsWith("/api/audio/engine-sound")
+                || path.startsWith("/api/audio/avas-tone")) {
+            return VehicleSoundApiHandler.handle(method, path, body, out);
+        }
+
+        // Audio library API. Diagnostic microphone/AVAS handlers are not routed.
         if (path.startsWith("/api/audio/")) {
             return AudioApiHandler.handle(method, path, body, out);
         }
@@ -1692,7 +1718,22 @@ public class HttpServer {
                 soc.put("isLow", socData.isLow);
                 soc.put("isCritical", socData.isCritical);
                 soc.put("status", socData.getStatus());
+                soc.put("source", "vehicle");
                 status.put("soc", soc);
+            } else {
+                // Community vehicles whose exact BYD telemetry is not available may provide a
+                // manual starting value. It is display/planning fallback only; it never enters
+                // the monitor, charge history, safety rules or vehicle control.
+                Double manualSoc = SystemApiHandler.manualSocFallback();
+                if (manualSoc != null) {
+                    JSONObject soc = new JSONObject();
+                    soc.put("percent", manualSoc);
+                    soc.put("isLow", manualSoc < 20);
+                    soc.put("isCritical", manualSoc < 10);
+                    soc.put("status", manualSoc < 10 ? "critical" : manualSoc < 20 ? "low" : "normal");
+                    soc.put("source", "manual");
+                    status.put("soc", soc);
+                }
             }
             
             at.greenchili.surfmate.monitor.DrivingRangeData rangeData = vehicleMonitor.getDrivingRange();

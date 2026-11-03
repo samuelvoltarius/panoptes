@@ -1088,6 +1088,12 @@ object UnifiedConfigManager {
         // Auto-project the map onto the driver cluster on ACC-on. Off by default;
         // the daemon reads this on power-up, the Map tab toggles it.
         if (!navMap.has("autoProjectCluster")) navMap.put("autoProjectCluster", false)
+        // OEM turn arrows are separate from full map/app projection. Default OFF until
+        // the driver opts in and the daemon proves a supported BYD AutoContainer path.
+        if (!navMap.has("oemTurnGuidance")) navMap.put("oemTurnGuidance", false)
+        // Optional import of turn instructions from Google Maps/Waze notifications.
+        // Separate opt-in: notification access alone never publishes to the cluster.
+        if (!navMap.has("externalNotificationGuidance")) navMap.put("externalNotificationGuidance", false)
         // Daemon→Activity coordination flag: ClusterMapProjector sets it true on
         // start and false on stop/abort; the launched cluster map Activity polls it
         // and self-finishes when false (the OEM projection close never destroys the
@@ -1121,20 +1127,33 @@ object UnifiedConfigManager {
         // to camera/SOH logic as a selected physical model on fresh installs.
         // Existing configs predate provenance, so preserve their prior model
         // behavior with the legacy source.
-        val defaultModel = if (isDilink5Selected(config)) "sealion7" else "seal"
-        if (!vehicle.has("modelId") ||
+        val autoDetectedModel = VehicleModelSelection.detectExactModelId(
+            android.os.Build.MODEL,
+            android.os.Build.PRODUCT,
+            android.os.Build.DEVICE
+        )
+        val defaultModel = autoDetectedModel ?: if (isDilink5Selected(config)) "sealion7" else "seal"
+        val sourceBefore = vehicle.optString("modelSource", VehicleModelSelection.SOURCE_UNSET)
+        val autoOwnsSelection = autoDetectedModel != null &&
+            sourceBefore == VehicleModelSelection.SOURCE_UNSET &&
+            (!vehicle.has("modelId") || vehicle.optString("modelId", "") == "seal" ||
+                vehicle.optString("modelId", "") == "sealion7")
+        if (!vehicle.has("modelId") || autoOwnsSelection ||
             (defaultModel == "sealion7" &&
                 vehicle.optString("modelId", "") == "seal" &&
-                vehicle.optString("modelSource", VehicleModelSelection.SOURCE_UNSET) ==
-                    VehicleModelSelection.SOURCE_UNSET)
+                sourceBefore == VehicleModelSelection.SOURCE_UNSET)
         ) {
             vehicle.put("modelId", defaultModel)
         }
-        if (!vehicle.has("modelSource")) {
+        if (autoOwnsSelection) {
+            vehicle.put("modelSource", VehicleModelSelection.SOURCE_AUTO)
+        } else if (!vehicle.has("modelSource")) {
             vehicle.put(
                 "modelSource",
                 if (hadPersistedModel) {
                     VehicleModelSelection.SOURCE_LEGACY
+                } else if (autoDetectedModel != null) {
+                    VehicleModelSelection.SOURCE_AUTO
                 } else {
                     VehicleModelSelection.SOURCE_UNSET
                 }

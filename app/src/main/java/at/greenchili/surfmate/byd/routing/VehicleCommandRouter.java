@@ -1987,7 +1987,18 @@ public final class VehicleCommandRouter {
         at.greenchili.surfmate.gewohnheiten.BefehlsHaken.vor(cmd);
         CommandResult r = executeOhneHaken(cmd);
         at.greenchili.surfmate.gewohnheiten.BefehlsHaken.nach(cmd, r);
+        befehlsLog(cmd, r);
         return r;
+    }
+
+    /** 0.1.34 Befehls-Log: jeder Fahrzeugbefehl mit Ausgang und Weg (nur Name, nie Werte). */
+    private static void befehlsLog(VehicleCommand cmd, CommandResult r) {
+        try {
+            at.greenchili.surfmate.server.BefehlsLog.fahrzeug(cmd == null ? null : cmd.name(),
+                    r == null || r.outcome == null ? null : r.outcome.name(),
+                    r == null || r.path == null ? null : r.path.name());
+        } catch (Throwable ignored) {
+        }
     }
 
     private CommandResult executeOhneHaken(VehicleCommand cmd) {
@@ -2226,6 +2237,12 @@ public final class VehicleCommandRouter {
      * catalog should not have offered them in the first place).
      */
     public CommandResult executeSdkOnly(VehicleCommand cmd) {
+        CommandResult r = executeSdkOnlyOhneLog(cmd);
+        befehlsLog(cmd, r);
+        return r;
+    }
+
+    private CommandResult executeSdkOnlyOhneLog(VehicleCommand cmd) {
         // See execute(): this must happen before checkDrivingSafety() in the
         // unserialized helper so STOP invalidates an already-entered request.
         long tailgateOpenStopGeneration = tailgateOpenStopGeneration(cmd);

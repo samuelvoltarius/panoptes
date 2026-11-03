@@ -581,8 +581,9 @@ public final class ClusterCast {
      * the async resume race.
      */
     public static synchronized boolean start(String pkg) {
-        // Kern Tacho 0.1.30: only navi apps from the allow-list may reach the cluster while the
-        // car is not parked; any other app (video, games …) only in P. Fail-closed on unknown state.
+        // Shared driver-display policy: every normal start path (native UI, Web, key mapping,
+        // automation and ACC) needs the exact package's explicit user approval. The only
+        // unapproved start is TachoNaviApp's bounded probe in P.
         String fahrtSperre = at.greenchili.surfmate.tacho.TachoNaviApp.fahrtSperre(
                 pkg, drivingBlockReason());
         if (fahrtSperre != null) {
@@ -721,7 +722,7 @@ public final class ClusterCast {
                 ? DiLink5ClusterCast.getLastFailureReason() : "";
     }
 
-    // Kern Tacho 0.1.30: last "only in P" refusal from start(), "" after an admitted start.
+    // Last package-policy refusal from start(), "" after an admitted start.
     private static volatile String lastDrivingRefusal = "";
 
     /** Live movement gate (null = parked or ACC off); any failure counts as moving. */

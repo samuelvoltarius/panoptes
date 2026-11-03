@@ -18,10 +18,10 @@ public class TailscaleDashboardServeContractTest {
                 "app/src/main/java/at/greenchili/surfmate/launcher/TailscaleLauncher.kt");
 
         assertEquals(
-                "serve --bg --proxy-protocol=1 --tcp=8080 tcp://127.0.0.1:8080",
+                "serve --bg --proxy-protocol=1 --tcp=8180 tcp://127.0.0.1:8180",
                 TailscaleLauncher.secureDashboardServeArgs());
         assertTrue(launcher.contains("\"http://$ip:$DASHBOARD_PORT\""));
-        assertFalse(launcher.contains("callback(\"http://${output.trim()}:8080\")"));
+        assertFalse(launcher.contains("callback(\"http://${output.trim()}:8180\")"));
     }
 
     @Test
@@ -34,7 +34,7 @@ public class TailscaleDashboardServeContractTest {
                 "app/src/main/res/layout/dialog_tailscale_settings.xml");
 
         assertEquals(
-                "serve --bg --https=443 http://127.0.0.1:8080",
+                "serve --bg --https=443 http://127.0.0.1:8180",
                 TailscaleLauncher.secureHttpsServeArgs());
         assertEquals(
                 "serve --https=443 off",
@@ -63,7 +63,7 @@ public class TailscaleDashboardServeContractTest {
                 "app/src/main/java/at/greenchili/surfmate/launcher/TailscaleLauncher.kt");
 
         assertEquals(
-                "serve --bg --tcp=8080 tcp://127.0.0.1:1",
+                "serve --bg --tcp=8180 tcp://127.0.0.1:1",
                 TailscaleLauncher.denyDashboardServeArgs());
         assertTrue(launcher.contains(
                 "buildKillFingerprintCommand(daemonFingerprint)"));

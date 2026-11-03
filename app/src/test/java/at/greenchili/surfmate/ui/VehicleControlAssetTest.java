@@ -181,11 +181,11 @@ public class VehicleControlAssetTest {
 
         assertTrue(html.contains("m801-458-66-44 13-21"));
         assertTrue(html.contains("m561-458-66-44 13-21"));
-        assertTrue(html.contains(">Left heat</span>"));
-        assertTrue(html.contains(">Left cool</span>"));
-        assertTrue(html.contains(">Right heat</span>"));
-        assertTrue(html.contains(">Right cool</span>"));
-        assertTrue(en.contains("\"driver_heat\": \"Left heat\""));
+        assertTrue(html.contains(">Links heizen</span>"));
+        assertTrue(html.contains(">Links kühlen</span>"));
+        assertTrue(html.contains(">Rechts heizen</span>"));
+        assertTrue(html.contains(">Rechts kühlen</span>"));
+        assertTrue(en.contains("\"driver_heat\": \"Heat left\""));
         assertFalse(html.contains("D.Heat"));
         assertFalse(html.contains("P.Cool"));
     }
@@ -638,7 +638,7 @@ public class VehicleControlAssetTest {
                 + count(html, "data-state=\"3\" disabled")
                 + count(html, "data-state=\"4\" disabled")
                 + count(html, "data-state=\"5\" disabled"));
-        assertTrue(html.contains("vehicle-control.js?v=vclite36"));
+        assertTrue(html.contains("vehicle-control.js?v=vclite37"));
         assertTrue(script.contains("fetch('/api/vehicle/ac-charge-current-limit')"));
         assertTrue(script.contains("self.apiPost('/api/vehicle/ac-charge-current-limit'"));
         assertTrue(script.contains("startAcChargeCurrentSync: function()"));

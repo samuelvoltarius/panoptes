@@ -217,6 +217,9 @@ public class HandyUpdateTest {
         String js = lies("src/main/assets/web/shared/app-updates.js");
         assertTrue(js.contains("bestaetigt: true"));
         assertTrue(js.contains("system.upd_confirm_fern"));
+        assertTrue("installierter Testkanal sichtbar", js.contains("aktuellKanal === 'test'"));
+        assertTrue("Buildnummer sichtbar", js.contains("system.upd_build_tag"));
+        assertTrue("stabiler Kanal erklaert statt unsicherem Downgrade", js.contains("system.upd_stable_wait"));
         String html = lies("src/main/assets/web/local/system.html");
         assertTrue(html.contains("'route', 'update'"));
         assertTrue(html.contains("system.handy_update_confirm"));

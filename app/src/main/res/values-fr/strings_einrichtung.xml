@@ -62,6 +62,9 @@
     <string name="einr_fehler_pflicht">Veuillez d’abord faire un choix.</string>
     <string name="einr_fehler_speichern">L’enregistrement a échoué. Veuillez réessayer.</string>
     <string name="einr_fehler_verbindung">Panoptes n’est pas encore démarré. Patientez un instant, puis réessayez.</string>
+    <string name="einr_unbekannter_schritt_titel">La configuration ne peut pas continuer</string>
+    <string name="einr_unbekannter_schritt_text">Cette version de Panoptes ne connaît pas encore l’étape de configuration « %1$s ». Installez la dernière version dans Système → Mises à jour de l’appli, puis relancez la configuration. Rien n’a été marqué comme terminé.</string>
+    <string name="einr_unbekannter_schritt_schliessen">Fermer la configuration</string>
     <string name="einr_sprache_titel">Langue</string>
     <string name="einr_sprache_text">Quelle langue Panoptes doit-il utiliser ?</string>
     <string name="einr_autostart_spaeter">Je le ferai plus tard</string>
@@ -69,8 +72,13 @@
     <string name="einr_usb_warum">Pour que Panoptes puisse continuer à tourner en arrière-plan et se réparer lui-même, il lui faut une autorisation unique.</string>
     <string name="einr_usb_popup">Android va afficher une fenêtre : « Autoriser le débogage USB ? ». Cochez « Toujours autoriser depuis cet ordinateur », puis appuyez sur « Autoriser ».</string>
     <string name="einr_usb_knopf">Demander l’autorisation</string>
+    <string name="einr_usb_knopf_warte">Demande en cours …</string>
+    <string name="einr_usb_knopf_nochmal">Demander à nouveau</string>
+    <string name="einr_usb_knopf_nur_auto">Écran du véhicule uniquement</string>
     <string name="einr_usb_popup_jetzt">Dans la fenêtre Android, cochez « Toujours autoriser », puis appuyez sur « Autoriser ».</string>
     <string name="einr_usb_warte">En attente de l’autorisation …</string>
+    <string name="einr_usb_zeit_abgelaufen">La fenêtre Android n’est pas apparue. Ouvrez les paramètres Android et vérifiez sous « Options pour les développeurs » :\n1. « Débogage USB » est activé.\n2. Désactivez-le puis réactivez-le.\n3. Si proposé, appuyez sur « Révoquer les autorisations de débogage USB ».\nRevenez ensuite à Panoptes et appuyez sur « Demander à nouveau ».</string>
+    <string name="einr_usb_nur_infotainment">Cette application principale Panoptes fonctionne uniquement sur le système d’infodivertissement BYD. Un téléphone Android normal ne fournit pas le service ADB local ; aucune fenêtre d’autorisation ne peut donc apparaître ici. Installez et ouvrez Panoptes sur l’écran du véhicule.</string>
     <string name="einr_usb_ok">Autorisation accordée, Panoptes fonctionne.</string>
     <string name="einr_auto_titel">Ce que sait faire votre voiture …</string>
     <string name="einr_auto_unbekannt">Panoptes n’a pas encore pu vérifier ce que sait faire votre voiture. Il le fera plus tard.</string>

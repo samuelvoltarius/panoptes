@@ -188,6 +188,32 @@ public class AutoZustandTest {
     }
 
     @Test
+    public void positionWirdNachEinwilligungSofortGesendetUndVorAblaufAufgefrischt() throws Exception {
+        Netz n = new Netz();
+        Env e = new Env();
+        AutoZustand z = new AutoZustand(n, e);
+
+        e.m = m(50, false, Double.NaN, 1_000L).mitPosition(48.3, 14.235, 1_000L);
+        z.takt(1_000L);
+        assertFalse(n.bodies.get(0).has("position"));
+
+        // Nur die Einwilligung ändert sich, der Fahrzeugzustand bleibt gleich.
+        e.positionEin = true;
+        e.m = m(50, false, Double.NaN, 62_000L).mitPosition(48.3, 14.235, 62_000L);
+        z.takt(62_000L);
+        assertEquals(2, n.bodies.size());
+        assertTrue(n.bodies.get(1).has("position"));
+        assertTrue(e.positionGesendet);
+
+        // Der Planer verwirft Positionen nach 15 min. Auch ohne SoC-Änderung vorher auffrischen.
+        long refresh = 62_000L + AutoZustand.POSITION_AUFFRISCHEN_MS;
+        e.m = m(50, false, Double.NaN, refresh).mitPosition(48.301, 14.236, refresh);
+        z.takt(refresh);
+        assertEquals(3, n.bodies.size());
+        assertEquals(48.301, n.bodies.get(2).getJSONObject("position").getDouble("lat"), 1e-9);
+    }
+
+    @Test
     public void beimAbstellenEinmalSenden() {
         Netz n = new Netz();
         Env e = new Env();
