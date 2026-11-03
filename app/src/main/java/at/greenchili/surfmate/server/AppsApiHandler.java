@@ -1,6 +1,7 @@
 package at.greenchili.surfmate.server;
 
 import at.greenchili.surfmate.launcher.AppLauncher;
+import at.greenchili.surfmate.launcher.AppSperre;
 import at.greenchili.surfmate.logging.DaemonLogger;
 
 import org.json.JSONArray;
@@ -46,7 +47,125 @@ public final class AppsApiHandler {
             handleLaunch(out, body);
             return true;
         }
+        // 0.1.37 Apps deaktivieren/aktivieren (nur Nutzer-Apps, harte Sperrliste in AppSperre, Rückfrage per Marke)
+        if (cleanPath.equals(VERWALTUNG) && method.equals("GET")) {
+            handleVerwaltung(out);
+            return true;
+        }
+        if (cleanPath.equals(VERWALTUNG + "/frage") && method.equals("POST")) {
+            handleFrage(out, body);
+            return true;
+        }
+        if (cleanPath.equals(VERWALTUNG + "/deaktivieren") && method.equals("POST")) {
+            handleDeaktivieren(out, body);
+            return true;
+        }
+        if (cleanPath.equals(VERWALTUNG + "/aktivieren") && method.equals("POST")) {
+            handleAktivieren(out, body);
+            return true;
+        }
         return false;
+    }
+
+    /** Pfad der App-Verwaltung (nicht in der Automations-Erlaubnisliste, für Handy-Web gesperrt). */
+    public static final String VERWALTUNG = "/api/apps/verwaltung";
+    static final Rueckfrage RUECKFRAGE = new Rueckfrage();
+    static volatile AppSperre.Shell shell = AppSperre.ECHT;
+    /** Bewegungs-Grund ({@code DrivingSafetyGuard}); Tests ersetzen ihn. Deaktivieren nur im Stand. */
+    interface Stand {
+        String bewegungsGrund();
+    }
+
+    static volatile Stand stand = () -> {
+        try {
+            return at.greenchili.surfmate.byd.routing.DrivingSafetyGuard.getMovementBlockReason();
+        } catch (Throwable t) {
+            return "state_unknown";
+        }
+    };
+
+    private static void handleVerwaltung(OutputStream out) throws Exception {
+        AppSperre.Lage l = AppSperre.lese(shell);
+        java.util.Map<String, String> namen = new java.util.HashMap<>();
+        try {
+            JSONArray alle = AppLauncher.listLaunchableApps();
+            for (int i = 0; i < alle.length(); i++) {
+                JSONObject a = alle.getJSONObject(i);
+                namen.put(a.optString("package"), a.optString("label"));
+            }
+        } catch (Throwable ignored) {
+        }
+        JSONArray apps = new JSONArray();
+        for (String pkg : l.nutzerApps) {
+            String grund = AppSperre.grundGegenDeaktivieren(pkg, l.nutzerApps, l.startseite, l.tastatur);
+            boolean aus = l.deaktiviert.contains(pkg);
+            if (grund != null && !aus) continue;   // gesperrte Apps gar nicht anbieten
+            String label = namen.get(pkg);
+            apps.put(new JSONObject().put("package", pkg).put("label", label == null || label.isEmpty() ? pkg : label)
+                    .put("deaktiviert", aus));
+        }
+        HttpResponse.sendJson(out, new JSONObject().put("success", true).put("apps", apps).toString());
+    }
+
+    private static String paket(String body) {
+        try {
+            return new JSONObject(body == null || body.isEmpty() ? "{}" : body).optString("package", "").trim();
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    /** Rückfrage: Marke für genau diese App, gilt 2 Minuten, einmal. */
+    private static void handleFrage(OutputStream out, String body) throws Exception {
+        String pkg = paket(body);
+        AppSperre.Lage l = AppSperre.lese(shell);
+        String g = AppSperre.grundGegenDeaktivieren(pkg, l.nutzerApps, l.startseite, l.tastatur);
+        if (g == null && stand.bewegungsGrund() != null) g = "nicht_in_p";
+        if (g != null) {
+            HttpResponse.sendJson(out, 409, new JSONObject().put("success", false).put("grund", g).toString());
+            return;
+        }
+        String marke = RUECKFRAGE.frage("deaktivieren", pkg, System.currentTimeMillis());
+        HttpResponse.sendJson(out, new JSONObject().put("success", true).put("marke", marke).toString());
+    }
+
+    private static void handleDeaktivieren(OutputStream out, String body) throws Exception {
+        String pkg = paket(body);
+        String marke;
+        try {
+            marke = new JSONObject(body == null || body.isEmpty() ? "{}" : body).optString("marke", "");
+        } catch (Exception e) {
+            marke = "";
+        }
+        String g;
+        if (!RUECKFRAGE.bestaetigt(marke, "deaktivieren", pkg, System.currentTimeMillis())) g = "rueckfrage";
+        else if (stand.bewegungsGrund() != null) g = "nicht_in_p";
+        else g = AppSperre.deaktivieren(shell, pkg);
+        BefehlsLog.ereignis("apps.deaktivieren", g == null ? "ok" : g, ziel(pkg), pkg);
+        logger.info("apps/deaktivieren " + pkg + " -> " + (g == null ? "ok" : g));
+        if (g != null) {
+            HttpResponse.sendJson(out, 409, new JSONObject().put("success", false).put("grund", g).toString());
+            return;
+        }
+        HttpResponse.sendJson(out, new JSONObject().put("success", true).toString());
+    }
+
+    private static void handleAktivieren(OutputStream out, String body) throws Exception {
+        String pkg = paket(body);
+        String g = AppSperre.aktivieren(shell, pkg);
+        BefehlsLog.ereignis("apps.aktivieren", g == null ? "ok" : g, ziel(pkg), pkg);
+        logger.info("apps/aktivieren " + pkg + " -> " + (g == null ? "ok" : g));
+        if (g != null) {
+            HttpResponse.sendJson(out, 409, new JSONObject().put("success", false).put("grund", g).toString());
+            return;
+        }
+        HttpResponse.sendJson(out, new JSONObject().put("success", true).toString());
+    }
+
+    /** Kurze Kennung fürs Befehls-Log (Paketnamen enthalten Punkte, die das Log als Ziel nicht nimmt). */
+    static String ziel(String pkg) {
+        if (!AppSperre.gueltigerName(pkg)) return null;
+        return "app-" + pkg.replace('.', '_').substring(0, Math.min(60, pkg.length()));
     }
 
     private static void handleList(OutputStream out) throws Exception {

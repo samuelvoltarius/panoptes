@@ -44,6 +44,8 @@
     <uses-permission android:name="android.permission.READ_LOGS" />
     <uses-permission android:name="android.permission.WRITE_SETTINGS" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- 0.1.37 Display-Werkzeuge: Hintergrundbild des Zentraldisplays setzen/zurücksetzen (normales Recht) -->
+    <uses-permission android:name="android.permission.SET_WALLPAPER" />
     
     <!-- Location permissions for GPS tracking -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -363,6 +365,19 @@
             android:name="at.greenchili.surfmate.navmap.RoadSenseClusterMapActivity"
             android:exported="true"
             android:taskAffinity="at.greenchili.surfmate.cluster"
+            android:launchMode="singleInstance"
+            android:excludeFromRecents="true"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|uiMode|density|fontScale"
+            android:theme="@style/Theme.SurfMate.M3" />
+
+        <!-- Panoptes-Tacho-Ansicht (0.1.37): nur fuer das Fahrerdisplay. Exportiert, weil der
+             Shell-Daemon (uid 2000) sie per am start auf die Projektionsflaeche legt (wie die
+             Cluster-Karte). Kein Launcher-Eintrag. Startweg nur ClusterCast nach fahrtSperre;
+             auf Display 0 oder ohne aktive Projektion beendet sie sich selbst. -->
+        <activity
+            android:name="at.greenchili.surfmate.tacho.TachoAnsichtActivity"
+            android:exported="true"
+            android:taskAffinity="at.greenchili.surfmate.tachoansicht"
             android:launchMode="singleInstance"
             android:excludeFromRecents="true"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|uiMode|density|fontScale"

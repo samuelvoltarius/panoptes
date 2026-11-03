@@ -9,9 +9,12 @@ and permission notice is retained in [LICENSE](LICENSE) and in the app (`app/src
 
 The OEM navigation-payload layout, BYD cluster icon mapping and AutoContainer message contract are
 derived from **BYD DashCast** by Cedric Carre (https://github.com/Kiroha/byd-dashcast,
-reviewed commit `174fcf89a2ec22a5cdfa11b844d240e001b1f6c3`), MIT License.
-Panoptes reimplements the transport and lifecycle around its own navigation engine; DashCast's full
-MIT notice is retained in `app/src/main/assets/licenses/LICENSES.txt`.
+reviewed commit `174fcf89a2ec22a5cdfa11b844d240e001b1f6c3`), MIT License. The inactive multi-app
+driver-display layout model and transaction design were informed by the same project.
+Panoptes reimplements the transport and lifecycle around its own navigation engine and does not
+bundle DashCast's daemons or UI. DashCast's full MIT notice is retained in
+[`LICENSES/DashCast-MIT.txt`](LICENSES/DashCast-MIT.txt) and in the app
+(`app/src/main/assets/licenses/LICENSES.txt`).
 
 The MIT License applies **only** to the code of Panoptes and OverDrive. The app bundles the third-party
 components listed below. Each of them stays under its own license, and those licenses, not MIT,

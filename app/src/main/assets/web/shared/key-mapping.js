@@ -1114,6 +1114,11 @@ window.KM = (function () {
             })
         }).then(function (r) { return r.json(); })
           .then(function (d) {
+              // 0.1.37: Taste schaltet ein Assistenzsystem aus → einmal den Haftungshinweis bestätigen, dann neu speichern
+              if (window.PanoptesAssistenz && PanoptesAssistenz.braucht(d)) {
+                  PanoptesAssistenz.zeigen().then(function (ok) { if (ok) persist(cb); else if (cb) cb(false); });
+                  return;
+              }
               // The save response echoes the live a11y state (the daemon may have
               // just auto-enabled the service on the enable edge), so adopt it and
               // let paint() hide the nag without waiting for a full reload.

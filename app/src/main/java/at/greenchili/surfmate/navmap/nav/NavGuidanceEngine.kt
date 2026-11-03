@@ -123,6 +123,32 @@ class NavGuidanceEngine {
         Log.i(TAG, "guidance started: ${route.points.size} pts, ${route.maneuvers.size} maneuvers")
     }
 
+    /**
+     * The route ahead of the last matched position as local metres {x east, y north}
+     * relative to ([lat], [lng]), up to [maxM] along the route (at most [maxPts] points).
+     * Only for the driver-display route sketch (TachoAnsichtManoever): the result carries
+     * no absolute coordinates. Empty without a route or before the first match.
+     */
+    fun aheadLocal(lat: Double, lng: Double, maxM: Double = 900.0, maxPts: Int = 48): List<DoubleArray> {
+        val pts = route?.points ?: return emptyList()
+        val start = matchedSegIndex
+        if (start !in 0 until pts.size - 1) return emptyList()
+        val mPerLat = 111_320.0
+        val mPerLng = 111_320.0 * kotlin.math.cos(Math.toRadians(lat))
+        val out = ArrayList<DoubleArray>()
+        out.add(doubleArrayOf(0.0, 0.0))
+        var px = 0.0; var py = 0.0; var along = 0.0
+        for (i in start + 1 until pts.size) {
+            val x = (pts[i].lng - lng) * mPerLng
+            val y = (pts[i].lat - lat) * mPerLat
+            along += kotlin.math.hypot(x - px, y - py)
+            out.add(doubleArrayOf(x, y))
+            px = x; py = y
+            if (along >= maxM || out.size >= maxPts) break
+        }
+        return out
+    }
+
     /** Stop guidance and clear all state. Subsequent [update] calls no-op. */
     fun stop() {
         this.route = null

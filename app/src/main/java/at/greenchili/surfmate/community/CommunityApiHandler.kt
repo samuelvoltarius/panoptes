@@ -467,6 +467,15 @@ object CommunityApiHandler {
         // Never inherit the publisher's run stats — a fresh import has never fired here.
         rules.remove("triggerCount")
         rules.remove("lastTriggered")
+        // 0.1.37: Regel schaltet ein Assistenzsystem aus → erst den Haftungshinweis bestätigen (wie beim Speichern)
+        val assistenzSystem = at.greenchili.surfmate.byd.routing.AssistenzHinweis.regelSchaltetAb(rules)
+        val assistenzGrund = at.greenchili.surfmate.byd.routing.AssistenzHinweis.speichernGrund(assistenzSystem)
+        if (assistenzGrund != null) {
+            at.greenchili.surfmate.server.BefehlsLog.grund(assistenzGrund)
+            HttpResponse.sendJson(out,
+                at.greenchili.surfmate.byd.routing.AssistenzHinweis.ablehnung(assistenzSystem, assistenzGrund).toString())
+            return true
+        }
         // Reuse the exact create path the automations API uses (validates + saves + mints UUID).
         if (!Automations.updateAutomation(null, rules)) {
             safeError(out, 400, "shared automation does not match this app's schema")

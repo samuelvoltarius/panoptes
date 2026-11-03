@@ -3907,7 +3907,8 @@ public class VehicleControlApiHandler {
         }
     }
 
-    private static int climateSetpointToCelsius(int setpoint) {
+    /** Paketweit, auch für die nur lesende Klima-Anzeige des Launchers (LauncherApiHandler.buildKlima). */
+    static int climateSetpointToCelsius(int setpoint) {
         if (setpoint >= BydDataCollector.AC_SETPOINT_MIN_F
                 && setpoint <= BydDataCollector.AC_SETPOINT_MAX_F) {
             return (int) Math.round((setpoint - 32) * 5.0 / 9.0);

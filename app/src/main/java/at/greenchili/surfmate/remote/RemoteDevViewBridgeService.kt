@@ -86,9 +86,14 @@ class RemoteDevViewBridgeService : Service() {
                 val authenticated = RemoteDevViewBridgeAuth.verify(line)
                 rememberNonce(authenticated.nonce, authenticated.timestampMs)
                 val request = authenticated.request
-                when (request.optString("command", "")) {
+                val command = request.optString("command", "")
+                // 0.1.37: jeder Zugriff der Fernansicht frischt den Hinweis „Bildschirm wird geteilt“ auf
+                if (command in FERNANSICHT_BEFEHLE) TeilenHinweis.zugriff()
+                when (command) {
                     "launch" -> {
+                        TeilenHinweis.gestartet(application, request.optString("hinweis", ""))
                         val launch = RemoteDevVirtualDisplay.start(application)
+                        if (!launch.success) TeilenHinweis.beendet()
                         response.put("success", launch.success)
                         response.put("launchRequested", launch.success)
                         response.put("captureBackend", launch.backend)
@@ -107,6 +112,7 @@ class RemoteDevViewBridgeService : Service() {
                         response.put("displayId", RemoteDevVirtualDisplay.displayId())
                     }
                     "stop" -> {
+                        TeilenHinweis.beendet()
                         RemoteDevVirtualDisplay.stop()
                         response.put("success", true)
                         response.put("stopped", true)
@@ -147,6 +153,21 @@ class RemoteDevViewBridgeService : Service() {
                         response,
                         RemoteDevViewController.dispatchText(request.optString("text", "")),
                     )
+                    // 0.1.37 Display-Werkzeuge: Hintergrundbild und Display-Sperre (nur vom Daemon, HMAC wie oben)
+                    "hintergrund" -> {
+                        val r = when (request.optString("aktion", "")) {
+                            "setzen" -> at.greenchili.surfmate.overlay.Hintergrund.setzen(
+                                application, request.optString("marke", ""))
+                            else ->
+                            at.greenchili.surfmate.overlay.Hintergrund.standard(application)
+                        }
+                        val keys = r.keys()
+                        while (keys.hasNext()) { val k = keys.next(); response.put(k, r.get(k)) }
+                    }
+                    "valet" -> {
+                        at.greenchili.surfmate.overlay.ValetOverlay.befehl(application, request)
+                        response.put("success", true)
+                    }
                     else -> {
                         response.put("success", false)
                         response.put("error", "Unknown bridge command")
@@ -209,6 +230,7 @@ class RemoteDevViewBridgeService : Service() {
 
     companion object {
         const val PORT = 19981
+        private val FERNANSICHT_BEFEHLE = setOf("launch", "status", "capture", "touch", "key", "text")
 
         private const val TAG = "RemoteDevViewBridge"
         private const val BACKLOG = 8

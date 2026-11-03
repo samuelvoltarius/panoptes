@@ -6,7 +6,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.OutputStream;
@@ -41,7 +40,9 @@ import java.io.OutputStream;
  *   <li>{@code GET  /api/launcher/v1/traffic}     — live actors for drive view (§2.2)</li>
  *   <li>{@code GET  /api/launcher/v1/apps}        — proxy of {@link AppsApiHandler} list (§2.3)</li>
  *   <li>{@code POST /api/launcher/v1/apps/launch} — proxy of app launch (§2.3)</li>
- *   <li>{@code POST /api/launcher/v1/vehicle/<cmd>} — passthrough to {@link VehicleControlApiHandler} (§2.4)</li>
+ *   <li>{@code /api/launcher/v1/vehicle/*} — gesperrt, 404 (0.1.37, REGEL A+)</li>
+ *   <li>{@code POST /api/launcher/v1/klima} — nur Klima, nur Launcher-APK ({@link LauncherKlimaBefehl})</li>
+ *   <li>{@code GET  /api/launcher/v1/update}, {@code POST …/update/installieren} — Update-Karte (Stufe 4)</li>
  *   <li>{@code GET  /api/launcher/v1/appearance}  — theme + locale + material + launcherMode (§2.5)</li>
  * </ul>
  *
@@ -75,6 +76,11 @@ public final class LauncherApiHandler {
      * error envelope ({@code {ok:false,error}}).
      */
     public static boolean handle(String method, String path, String body, OutputStream out) throws Exception {
+        return handle(method, path, body, null, out);
+    }
+
+    /** Wie {@link #handle(String, String, String, OutputStream)}, mit Range-Kopf für das Hintergrund-Video. */
+    public static boolean handle(String method, String path, String body, String rangeHeader, OutputStream out) throws Exception {
         String cleanPath = path.contains("?") ? path.substring(0, path.indexOf("?")) : path;
         try {
             if (cleanPath.equals("/api/launcher/v1/summary") && "GET".equals(method)) {
@@ -94,9 +100,48 @@ public final class LauncherApiHandler {
                 sendAppLaunch(out, body);
                 return true;
             }
-            // Vehicle command passthrough — /api/launcher/v1/vehicle/<cmd>.
-            if (cleanPath.startsWith("/api/launcher/v1/vehicle/") && "POST".equals(method)) {
-                sendVehicleCommand(out, cleanPath, body);
+            // 0.1.37 Stufe 4: einziger Fahrzeugweg, nur Klima (an/aus, Sollwert ±1 Stufe, Gebläse ±1), nur von der
+            // Launcher-APK mit Panoptes-Signatur (LauncherAufrufer), über die Router-Klimabefehle mit allen Sperren.
+            if (cleanPath.equals(KLIMA_PFAD) && "POST".equals(method)) {
+                if (!launcherDarf(out)) return true;
+                Object[] r = LauncherKlimaBefehl.ausfuehren(body, System.currentTimeMillis());
+                JSONObject o = (JSONObject) r[1];
+                if ((int) r[0] == 200) o.put("klima", buildKlima());
+                HttpResponse.sendJson(out, (int) r[0], o.toString());
+                return true;
+            }
+            // 0.1.37 „Tacho wieder normal“: stoppt jede Projektion am Fahrerdisplay (nur Richtung sicher), nur von der
+            // Launcher-APK mit Panoptes-Signatur, wie Klima und Update.
+            if (cleanPath.equals(TACHO_NORMAL_PFAD) && "POST".equals(method)) {
+                if (!launcherDarf(out)) return true;
+                HttpResponse.sendJson(out, at.greenchili.surfmate.tacho.TachoNaviApp.tachoNormal().toString());
+                return true;
+            }
+            // Update-Karte im Launcher (Stufe 4): Stand von Panoptes und Launcher lesen, installieren nur vom Launcher.
+            if (cleanPath.equals(UPDATE_PFAD) && "GET".equals(method)) {
+                sendUpdate(out);
+                return true;
+            }
+            if (cleanPath.equals(UPDATE_PFAD + "/installieren") && "POST".equals(method)) {
+                if (!launcherDarf(out)) return true;
+                sendUpdateInstallieren(out, body);
+                return true;
+            }
+            // Fahrzeugbefehle sind über den Launcher-Weg GESPERRT (0.1.37, REGEL A+): früher reichte
+            // dieser Pfad lock/trunk/window/climate/flash/find an VehicleControlApiHandler durch.
+            // Keiner davon ist rein lesend, flash/find sind Licht/Hupe. Der Launcher braucht sie
+            // nicht; Fahrzeugsteuerung bleibt in der Panoptes-Hauptapp (LAUNCHER_SPEC §3).
+            if (cleanPath.startsWith("/api/launcher/v1/vehicle")) {
+                HttpResponse.sendJson(out, 404, "{\"ok\":false,\"error\":\"unknown launcher endpoint\"}");
+                return true;
+            }
+            // Eigener Hintergrund (Bild/Video) aus der Dateiablage, nur lesen.
+            if (cleanPath.equals(HINTERGRUND_BILD_PFAD) && "GET".equals(method)) {
+                sendHintergrund(out, false, rangeHeader);
+                return true;
+            }
+            if (cleanPath.equals(HINTERGRUND_VIDEO_PFAD) && "GET".equals(method)) {
+                sendHintergrund(out, true, rangeHeader);
                 return true;
             }
             if (cleanPath.equals("/api/launcher/v1/appearance") && "GET".equals(method)) {
@@ -123,7 +168,80 @@ public final class LauncherApiHandler {
         }
     }
 
+    static final String KLIMA_PFAD = "/api/launcher/v1/klima";
+    static final String UPDATE_PFAD = "/api/launcher/v1/update";
+    static final String TACHO_NORMAL_PFAD = "/api/launcher/v1/tacho/normal";
+    static final String LAUNCHER_PAKET = at.greenchili.surfmate.appupdate.LauncherPaket.PAKET;
+
+    /** Schreibende Launcher-Wege: nur die Launcher-APK mit Panoptes-Signatur, sonst 403 mit Grund im Befehls-Log. */
+    private static boolean launcherDarf(OutputStream out) throws Exception {
+        String grund = LauncherAufrufer.pruefe();
+        if (grund == null) return true;
+        BefehlsLog.grund(grund);
+        HttpResponse.sendJson(out, 403, new JSONObject().put("ok", false).put("grund", grund).toString());
+        return false;
+    }
+
+    /** {@code {panoptes: <Updater-Status>, launcher: <Launcher-Stand>}}; ohne Updater {@code null} je Teil. */
+    private static void sendUpdate(OutputStream out) throws Exception {
+        at.greenchili.surfmate.appupdate.AppUpdateDienst d = at.greenchili.surfmate.appupdate.AppUpdateDienst.get();
+        JSONObject o = new JSONObject();
+        o.put("panoptes", d == null ? JSONObject.NULL : d.status(LocaleManager.get()));
+        o.put("launcher", d == null ? JSONObject.NULL : d.launcherStatus());
+        HttpResponse.sendJson(out, o.toString());
+    }
+
+    /**
+     * {@code {paket: "panoptes", version}} wie der Knopf der Update-Karte am Display (sofort bei Auto aus, sonst
+     * vorgemerkt; Totmannschalter), {@code {paket: "launcher", versionCode, mobil}} nicht während der Fahrt.
+     * {@code mobil} = Einwilligung für genau diesen Download.
+     */
+    private static void sendUpdateInstallieren(OutputStream out, String body) throws Exception {
+        at.greenchili.surfmate.appupdate.AppUpdateDienst d = at.greenchili.surfmate.appupdate.AppUpdateDienst.get();
+        if (d == null) {
+            HttpResponse.sendJson(out, 503, "{\"ok\":false,\"grund\":\"nicht_bereit\"}");
+            return;
+        }
+        JSONObject b;
+        try {
+            b = new JSONObject(body == null || body.isEmpty() ? "{}" : body);
+        } catch (Exception e) {
+            b = new JSONObject();
+        }
+        String paket = b.optString("paket", "");
+        int vc = b.optInt("versionCode", -1);
+        boolean mobil = b.optBoolean("mobil", false);
+        String grund;
+        if ("panoptes".equals(paket)) {
+            // wie der Knopf der Update-Karte am Display: sofort, wenn alles passt, sonst vormerken bis „Auto aus“
+            JSONObject r = d.hinweisInstallieren(at.greenchili.surfmate.appupdate.FernUpdate.get(),
+                    b.optString("version", null), LocaleManager.get());
+            BefehlsLog.ereignis("launcher.update.panoptes", r.optBoolean("ok", false) ? "gestartet" : "abgelehnt",
+                    null, null);
+            HttpResponse.sendJson(out, r.toString());
+            return;
+        }
+        if ("launcher".equals(paket)) grund = d.launcherInstallieren(vc, mobil);
+        else grund = "paket";
+        BefehlsLog.ereignis("launcher.update.launcher", grund == null ? "gestartet" : "abgelehnt", null, null);
+        JSONObject r = new JSONObject().put("ok", grund == null);
+        if (grund != null) r.put("grund", grund);
+        HttpResponse.sendJson(out, r.toString());
+    }
+
     // ==================== §2.1 SUMMARY ====================
+
+    /** Nur lesend: läuft gerade etwas am Fahrerdisplay? Dann zeigt der Launcher „Tacho wieder normal“. */
+    static JSONObject buildTacho() {
+        JSONObject t = new JSONObject();
+        try {
+            t.put("aktiv", at.greenchili.surfmate.launcher.ClusterCast.isActive()
+                    || at.greenchili.surfmate.tacho.TachoNaviApp.istAn());
+        } catch (Throwable e) {
+            try { t.put("aktiv", false); } catch (Exception ignored) { }
+        }
+        return t;
+    }
 
     private static void sendSummary(OutputStream out) throws Exception {
         JSONObject root = new JSONObject();
@@ -139,6 +257,10 @@ public final class LauncherApiHandler {
         root.put("air",       buildAir());
         root.put("media",     JSONObject.NULL);   // no daemon-side MediaSession source (see report)
         root.put("env",       buildEnv());
+        root.put("navi",      buildNavi());
+        root.put("waechter",  buildWaechter());
+        root.put("klima",     buildKlima());
+        root.put("tacho",     buildTacho());
         HttpResponse.sendJson(out, root.toString());
     }
 
@@ -251,6 +373,14 @@ public final class LauncherApiHandler {
 
             // parked: gear == P.
             o.put("parked", gear != null && "P".equals(gear));
+            // speedKmh (0.1.37, Launcher-Fahrzeugfeld): nur ein echter Messwert, sonst null.
+            Object speed = JSONObject.NULL;
+            try {
+                at.greenchili.surfmate.byd.BydVehicleData vd =
+                        at.greenchili.surfmate.byd.BydDataCollector.getInstance().getData();
+                speed = speedOrNull(vd == null ? Double.NaN : vd.speedKmh);
+            } catch (Throwable ignored) {}
+            o.put("speedKmh", speed);
             return o;
         } catch (Throwable t) {
             return JSONObject.NULL;
@@ -940,65 +1070,24 @@ public final class LauncherApiHandler {
             mode = req.optString("mode", "full");
         } catch (Throwable ignored) {}
         JSONObject fwd = new JSONObject();
+        if ("neben".equals(mode)) {
+            // 0.1.37: „Apps neben dem Launcher öffnen“ – Launcher links (primär), die App rechts, über den
+            // belegten Weg AppLauncher.launchSplitPair (fail-closed, kein Vollbild-Rückfall im Kern; den macht
+            // der Launcher selbst mit Hinweis).
+            if (pkg == null || pkg.isEmpty() || LAUNCHER_PAKET.equals(pkg)) {
+                HttpResponse.sendJson(out, 400, "{\"success\":false,\"error\":\"package\"}");
+                return;
+            }
+            fwd.put("package", LAUNCHER_PAKET);
+            fwd.put("secondaryPackage", pkg);
+            fwd.put("split", true);
+            AppsApiHandler.handle("POST", "/api/apps/launch", fwd.toString(), out);
+            return;
+        }
         fwd.put("package", pkg == null ? "" : pkg);
         fwd.put("split", "split".equals(mode));
         // Delegate to the real handler (writes the {success,...} response).
         AppsApiHandler.handle("POST", "/api/apps/launch", fwd.toString(), out);
-    }
-
-    // ==================== §2.4 VEHICLE (command passthrough) ====================
-
-    /** Passthrough to {@link VehicleControlApiHandler}, reshaped to {@code {ok,
-     *  reason}} (spec §2.4). Core still enforces all speed/gear gating; the
-     *  launcher only shows the control disabled when gear != P. */
-    private static void sendVehicleCommand(OutputStream out, String cleanPath, String body) throws Exception {
-        String cmd = cleanPath.substring("/api/launcher/v1/vehicle/".length());
-        String corePath = mapVehicleCmd(cmd);
-        if (corePath == null) {
-            JSONObject r = new JSONObject();
-            r.put("ok", false);
-            r.put("reason", "unsupported command: " + cmd);
-            HttpResponse.sendJson(out, r.toString());
-            return;
-        }
-        JSONObject resp = new JSONObject();
-        try {
-            // Capture the core handler's full HTTP response into a buffer, then
-            // extract + re-shape its JSON body to {ok, reason}.
-            ByteArrayOutputStream buf = new ByteArrayOutputStream();
-            VehicleControlApiHandler.handle("POST", corePath, body == null ? "" : body, buf);
-            JSONObject core = extractJsonBody(buf.toByteArray());
-            boolean ok = false;
-            String reason = "";
-            if (core != null) {
-                ok = core.optBoolean("success", core.optBoolean("ok", false));
-                reason = core.optString("message",
-                         core.optString("reason",
-                         core.optString("error", "")));
-            } else {
-                reason = "no response from vehicle handler";
-            }
-            resp.put("ok", ok);
-            resp.put("reason", reason);
-        } catch (Throwable t) {
-            resp.put("ok", false);
-            resp.put("reason", t.getMessage() != null ? t.getMessage() : "vehicle command failed");
-        }
-        HttpResponse.sendJson(out, resp.toString());
-    }
-
-    /** cmd ∈ {lock,unlock,trunk,window,climate,flash,find} → core path. */
-    private static String mapVehicleCmd(String cmd) {
-        if (cmd == null) return null;
-        switch (cmd) {
-            case "lock":    return "/api/vehicle/lock";
-            case "trunk":   return "/api/vehicle/trunk";
-            case "window":  return "/api/vehicle/window";
-            case "climate": return "/api/vehicle/climate";
-            case "flash":   return "/api/vehicle/flash";
-            case "find":    return "/api/vehicle/find-car";
-            default:        return null;
-        }
     }
 
     // ==================== §2.5 APPEARANCE ====================
@@ -1016,6 +1105,9 @@ public final class LauncherApiHandler {
             // theme: accept a launcher theme name if one has been stored,
             // otherwise "auto".
             String theme = app.optString("theme", "auto");
+            // modus: Hell/Dunkel wie die Panoptes-Weboberfläche (appearance.theme dark|light|auto,
+            // Standard dark wie getAppearance()). Der Launcher zeichnet damit dieselben Tokens.
+            o.put("modus", modusPruefen(app.optString("theme", "dark")));
             if (!("polar".equals(theme) || "glacier".equals(theme)
                     || "ember".equals(theme) || "signal".equals(theme) || "auto".equals(theme))) {
                 theme = "auto";
@@ -1040,6 +1132,8 @@ public final class LauncherApiHandler {
             // launcherMode: whether the launcher HOME role is enabled. No core
             // side-effect tracks it; default false until the launcher sets it.
             o.put("launcherMode", app.optBoolean("launcherMode", false));
+            o.put("startAnsicht", startAnsicht());
+            o.put("hintergrund", buildHintergrund());
         } catch (Throwable t) {
             // Safe, spec-valid defaults on total failure.
             o = new JSONObject();
@@ -1047,8 +1141,179 @@ public final class LauncherApiHandler {
             o.put("locale", "auto");
             o.put("material", "crystal");
             o.put("launcherMode", false);
+            o.put("modus", "dark");
+            o.put("startAnsicht", "panoptes");
+            o.put("hintergrund", new JSONObject().put("bild", false).put("video", false));
         }
         HttpResponse.sendJson(out, o.toString());
+    }
+
+    // ==================== 0.1.37 WIDGETS / LAYOUT / HINTERGRUND ====================
+
+    static final String HINTERGRUND_BILD_PFAD = "/api/launcher/v1/hintergrund/bild";
+    static final String HINTERGRUND_VIDEO_PFAD = "/api/launcher/v1/hintergrund/video";
+    /** Feste Dateinamen in der Dateiablage (Handy → Auto, dateien.html). Keine freien Pfade. */
+    static final String[] HINTERGRUND_BILDER = {"launcher-hintergrund.jpg", "launcher-hintergrund.png"};
+    static final String HINTERGRUND_VIDEO = "launcher-hintergrund.mp4";
+    static final String[] START_ANSICHTEN = {"panoptes", "fahren", "fahrzeug", "kompakt", "cockpit"};
+
+    /** anzeige.startAnsicht (Kern-Einstellung der Weboberfläche), nur bekannte Werte, sonst panoptes. */
+    static String startAnsicht() {
+        try {
+            JSONObject a = at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig().optJSONObject("anzeige");
+            return startAnsichtPruefen(a == null ? null : a.optString("startAnsicht", null));
+        } catch (Throwable t) {
+            return "panoptes";
+        }
+    }
+
+    static Object speedOrNull(double kmh) {
+        if (Double.isNaN(kmh) || Double.isInfinite(kmh) || kmh < 0 || kmh > 400) return JSONObject.NULL;
+        return Math.round(kmh);
+    }
+
+    static String modusPruefen(String roh) {
+        if ("light".equals(roh) || "auto".equals(roh)) return roh;
+        return "dark";
+    }
+
+    static String startAnsichtPruefen(String roh) {
+        if (roh != null) for (String s : START_ANSICHTEN) if (s.equals(roh)) return s;
+        return "panoptes";
+    }
+
+    /** anzeige.launcherVideo, Standard aus. */
+    static boolean videoErlaubt() {
+        try {
+            JSONObject a = at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig().optJSONObject("anzeige");
+            return a != null && a.optBoolean("launcherVideo", false);
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /** Nur reguläre Dateien direkt im Ablageordner, keine Verknüpfungen, nicht leer. */
+    static File ablageDatei(File ordner, String name) {
+        if (ordner == null) return null;
+        File f = new File(ordner, name);
+        try {
+            java.nio.file.Path p = f.toPath();
+            if (!java.nio.file.Files.isRegularFile(p, java.nio.file.LinkOption.NOFOLLOW_LINKS)) return null;
+            if (f.length() <= 0) return null;
+        } catch (Throwable t) {
+            return null;
+        }
+        return f;
+    }
+
+    private static File ablageOrdner() {
+        try {
+            return new File(at.greenchili.surfmate.util.DaemonStorage.path("dateien"));
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    static File hintergrundBild(File ordner) {
+        for (String n : HINTERGRUND_BILDER) {
+            File f = ablageDatei(ordner, n);
+            if (f != null) return f;
+        }
+        return null;
+    }
+
+    /** {bild, video}: was der Launcher abrufen darf. Video nur mit Schalter UND Datei.
+     *  Ob es läuft (nur in P), entscheidet zusätzlich der Launcher anhand von state.gear. */
+    static JSONObject buildHintergrund() throws Exception {
+        File ordner = ablageOrdner();
+        return new JSONObject()
+                .put("bild", hintergrundBild(ordner) != null)
+                .put("video", videoErlaubt() && ablageDatei(ordner, HINTERGRUND_VIDEO) != null);
+    }
+
+    private static void sendHintergrund(OutputStream out, boolean video, String rangeHeader) throws Exception {
+        File ordner = ablageOrdner();
+        File f = video ? (videoErlaubt() ? ablageDatei(ordner, HINTERGRUND_VIDEO) : null) : hintergrundBild(ordner);
+        if (f == null) {
+            HttpResponse.sendJson(out, 404, "{\"ok\":false,\"error\":\"kein_hintergrund\"}");
+            return;
+        }
+        String typ = video ? "video/mp4" : (f.getName().endsWith(".png") ? "image/png" : "image/jpeg");
+        HttpResponse.sendMediaFileRanged(out, f, typ, rangeHeader);
+    }
+
+    /** Navi-Kachel: Stand von „Reicht es noch?“ (RangeWatchDienst), nur lesen und gekürzt. */
+    static Object buildNavi() {
+        try {
+            return naviAus(at.greenchili.surfmate.reichweite.RangeWatchDienst.status());
+        } catch (Throwable t) {
+            return JSONObject.NULL;
+        }
+    }
+
+    static Object naviAus(JSONObject s) throws Exception {
+        if (s == null) return JSONObject.NULL;
+        JSONObject o = new JSONObject();
+        boolean aktiv = s.optBoolean("aktiv", false);
+        o.put("aktiv", aktiv);
+        o.put("grund", s.has("grund") ? s.optString("grund") : JSONObject.NULL);
+        JSONObject n = s.optJSONObject("naechsterStopp");
+        if (aktiv && n != null) {
+            o.put("naechsterStopp", n.has("name") ? n.optString("name") : JSONObject.NULL);
+            o.put("naechsterKm", n.has("km") ? (Object) n.optDouble("km") : JSONObject.NULL);
+            o.put("istZiel", n.optBoolean("istZiel", false));
+        } else {
+            o.put("naechsterStopp", JSONObject.NULL);
+            o.put("naechsterKm", JSONObject.NULL);
+            o.put("istZiel", false);
+        }
+        o.put("prognoseProzent", aktiv && s.has("prognoseProzent") ? (Object) s.optDouble("prognoseProzent") : JSONObject.NULL);
+        return o;
+    }
+
+    /** Klima-Anzeige im Dock: NUR LESEN (Sollwert, Gebläsestufe, Innenraum). Gleiche Regeln wie
+     *  VehicleControlApiHandler (Sollwert/Gebläse nur bei Zündung an). Bedienen bleibt in Panoptes. */
+    static Object buildKlima() {
+        try {
+            at.greenchili.surfmate.byd.BydVehicleData vd =
+                    at.greenchili.surfmate.byd.BydDataCollector.getInstance().getData();
+            if (vd == null) return JSONObject.NULL;
+            boolean an = false;
+            try { an = at.greenchili.surfmate.monitor.AccMonitor.isAccOn(); } catch (Throwable ignored) {}
+            int u = at.greenchili.surfmate.byd.BydVehicleData.UNAVAILABLE;
+            JSONObject o = new JSONObject();
+            o.put("sollC", an && vd.acSetpointDriver != u
+                    ? (Object) VehicleControlApiHandler.climateSetpointToCelsius(vd.acSetpointDriver) : JSONObject.NULL);
+            o.put("stufe", an && vd.acFanLevel != u ? (Object) vd.acFanLevel : JSONObject.NULL);
+            o.put("innenC", vd.hasFreshCabinTemperature() && !Double.isNaN(vd.insideTempC)
+                    ? (Object) round1(vd.insideTempC) : JSONObject.NULL);
+            // 0.1.37 Stufe 4: läuft die Klimaanlage? (für den An/Aus-Knopf im Dock; gleiche Regel wie acOn)
+            o.put("an", an && vd.acStartState != u ? (Object) (vd.acStartState == 1) : JSONObject.NULL);
+            if (o.isNull("sollC") && o.isNull("stufe") && o.isNull("innenC")) return JSONObject.NULL;
+            return o;
+        } catch (Throwable t) {
+            return JSONObject.NULL;
+        }
+    }
+
+    /** Wächter-Kachel: eingeschaltet, scharf, nimmt auf, Zustand. Nur lesen. */
+    static Object buildWaechter() {
+        try {
+            return waechterAus(at.greenchili.surfmate.daemon.CameraDaemon.getSurveillanceStatus());
+        } catch (Throwable t) {
+            return JSONObject.NULL;
+        }
+    }
+
+    static Object waechterAus(java.util.Map<String, Object> m) throws Exception {
+        if (m == null) return JSONObject.NULL;
+        JSONObject o = new JSONObject();
+        o.put("an", m.get("enabled") instanceof Boolean ? m.get("enabled") : JSONObject.NULL);
+        o.put("scharf", m.get("active") instanceof Boolean ? m.get("active") : JSONObject.NULL);
+        o.put("aufnahme", m.get("recording") instanceof Boolean ? m.get("recording") : JSONObject.NULL);
+        Object z = m.get("zustand");
+        o.put("zustand", z == null ? JSONObject.NULL : String.valueOf(z));
+        return o;
     }
 
     // ==================== HELPERS ====================
@@ -1099,20 +1364,4 @@ public final class LauncherApiHandler {
         }
     }
 
-    /** Extract and parse the JSON body from a raw HTTP response the internal
-     *  handlers write via {@link HttpResponse} (headers + CRLFCRLF + body). */
-    private static JSONObject extractJsonBody(byte[] raw) {
-        if (raw == null || raw.length == 0) return null;
-        try {
-            String s = new String(raw, "UTF-8");
-            int sep = s.indexOf("\r\n\r\n");
-            String body = (sep >= 0) ? s.substring(sep + 4) : s;
-            body = body.trim();
-            if (body.isEmpty()) return null;
-            Object v = new JSONTokener(body).nextValue();
-            return (v instanceof JSONObject) ? (JSONObject) v : null;
-        } catch (Throwable t) {
-            return null;
-        }
-    }
 }

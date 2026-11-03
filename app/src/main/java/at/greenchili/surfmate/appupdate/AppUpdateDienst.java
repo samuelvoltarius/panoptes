@@ -123,6 +123,11 @@ public final class AppUpdateDienst {
         default boolean zeigeHinweis(String griff, Freigabe f, String notizen) { return false; }
         /** Update-Hinweis mit diesem Griff wegnehmen. */
         default void nimmHinweisWeg(String griff) { }
+
+        /** 0.1.37 Stufe 4: Launcher-APK am Gerät (Standard: nicht installiert). */
+        default LauncherPaket.Stand launcherStand() { return LauncherPaket.ausListe(""); }
+        /** {@code pm install -r} der geprüften Launcher-APK; null = ok. */
+        default String launcherInstallieren(File apk) { return "nicht_verfuegbar"; }
     }
 
     private static volatile AppUpdateDienst instance;
@@ -515,6 +520,8 @@ public final class AppUpdateDienst {
         }
         long g = -1;
         if (neu != null && neu.versionCode > env.installierterVc()) g = netz.groesse(neu.apkUrl());
+        long gl = -1;
+        if (neu != null && neu.launcher != null && neu.launcher.apkUrl() != null) gl = netz.groesse(neu.launcher.apkUrl());
         boolean melden = false;
         synchronized (lock) {
             letztePruefung = env.jetzt();
@@ -529,6 +536,7 @@ public final class AppUpdateDienst {
                 fehler = null;
                 ergebnis = neu.versionCode > env.installierterVc() ? "verfuegbar" : "aktuell";
                 groesseCache = g;
+                launcherGroesse = gl;
                 if (neu.versionCode > env.installierterVc() && neu.versionCode > gemeldetVc) {
                     gemeldetVc = neu.versionCode;   // je Version nur einmal melden
                     melden = true;
@@ -558,7 +566,8 @@ public final class AppUpdateDienst {
 
     /** Ohne Token: die APK liegt unter der öffentlichen Download-Adresse desselben Releases. */
     private static Freigabe mitApk(UpdateQuelle q, Freigabe f) {
-        return f.mitApkUrl(q.download(f.tag, f.apk));
+        Freigabe m = f.mitApkUrl(q.download(f.tag, f.apk));
+        return m.launcher == null ? m : m.mitLauncherUrl(q.download(f.tag, m.launcher.apk));
     }
 
     /** Mit Token: version.json und APK als API-Assets der Release-Beschreibung (private Repos). */
@@ -568,7 +577,8 @@ public final class AppUpdateDienst {
         Freigabe f = Freigabe.lies(netz.text(vj));
         String apk = UpdateQuelle.asset(releaseJson, f.apk);
         if (apk == null) throw new Freigabe.Fehler("nicht_erreichbar", "Release ohne " + f.apk);
-        return f.mitApkUrl(apk);
+        Freigabe m = f.mitApkUrl(apk);
+        return m.launcher == null ? m : m.mitLauncherUrl(UpdateQuelle.asset(releaseJson, m.launcher.apk));
     }
 
     /** 401/403 (oder 404 mit Token, so antwortet GitHub bei fehlendem Recht) → kein_zugang, sonst nicht_erreichbar. */
@@ -865,6 +875,188 @@ public final class AppUpdateDienst {
         synchronized (lock) { phase = p; prozent = pr; }
     }
 
+    // ------------------------------------------------------------------ Launcher (0.1.37 Stufe 4)
+
+    private volatile long launcherGroesse = -1;
+    private boolean launcherLaeuft;
+    private String launcherPhase;
+    private Integer launcherProzent;
+    private String launcherFehler;
+
+    private LauncherRegel.Lage launcherLage() {
+        LauncherRegel.Lage l = new LauncherRegel.Lage();
+        l.verfuegbar = verfuegbar == null ? null : verfuegbar.launcher;
+        l.fahrsperre = env.fahrsperre();
+        l.gangP = env.gangP();
+        l.kmh = env.kmh();
+        l.netz = env.netz();
+        l.laeuft = launcherLaeuft;
+        return l;
+    }
+
+    /**
+     * {@code GET /api/appupdate/launcher} und Update-Karte im Launcher: installiert (versionCode oder null), verfügbar
+     * (Version, Größe), ob jetzt installierbar und warum nicht, ob nach Mobilfunk gefragt werden muss.
+     */
+    public JSONObject launcherStatus() {
+        LauncherPaket.Stand st = env.launcherStand();
+        synchronized (lock) {
+            JSONObject o = new JSONObject();
+            try {
+                LauncherRegel.Lage l = launcherLage();
+                o.put("paket", LauncherPaket.PAKET);
+                o.put("installiert", st.installiert() ? (Object) st.versionCode : JSONObject.NULL);
+                Freigabe.Launcher f = l.verfuegbar;
+                if (f != null && f.apkUrl() != null) {
+                    o.put("verfuegbar", new JSONObject().put("version", f.versionName).put("versionCode", f.versionCode)
+                            .put("groesseBytes", launcherGroesse > 0 ? launcherGroesse : JSONObject.NULL));
+                } else {
+                    o.put("verfuegbar", JSONObject.NULL);
+                }
+                boolean neuer = LauncherRegel.neuer(f, st.versionCode);
+                o.put("neuer", neuer);
+                String nicht = LauncherRegel.nichtWeil(l, false);
+                o.put("installierbar", nicht == null && neuer);
+                o.put("mobilFrage", LauncherRegel.WARTET_WLAN.equals(nicht));
+                o.put("nichtWeil", nicht == null ? JSONObject.NULL : nicht);
+                o.put("phase", launcherPhase == null ? JSONObject.NULL : launcherPhase);
+                o.put("prozent", launcherProzent == null ? JSONObject.NULL : launcherProzent);
+                o.put("fehler", launcherFehler == null ? JSONObject.NULL : launcherFehler);
+            } catch (Exception ignored) { }
+            return o;
+        }
+    }
+
+    /**
+     * Launcher installieren oder aktualisieren, nur auf Tipp. {@code versionCode} muss der bekannten Freigabe
+     * entsprechen; {@code mobil} = Einwilligung für genau diesen Download. null = gestartet, sonst Grund.
+     */
+    public String launcherInstallieren(int versionCode, boolean mobil) {
+        final Freigabe.Launcher f;
+        synchronized (lock) {
+            LauncherRegel.Lage l = launcherLage();
+            String nicht = LauncherRegel.nichtWeil(l, mobil);
+            if (nicht != null) return nicht;
+            if (l.verfuegbar.versionCode != versionCode) return LauncherRegel.ANDERER_STAND;
+            launcherLaeuft = true;
+            launcherFehler = null;
+            f = l.verfuegbar;
+        }
+        Thread t = new Thread(() -> {
+            try {
+                launcherAusfuehren(f, mobil);
+            } finally {
+                synchronized (lock) {
+                    launcherLaeuft = false;
+                    launcherPhase = null;
+                    launcherProzent = null;
+                }
+            }
+        }, "AppUpdate-Launcher");
+        t.setDaemon(true);
+        t.start();
+        return null;
+    }
+
+    /** Bekannte Launcher-Freigabe; ohne eine erst nachsehen (Knopf in Panoptes vor der allerersten Prüfung). */
+    public Freigabe.Launcher launcherFreigabe(boolean nachsehen) {
+        synchronized (lock) {
+            if (verfuegbar != null && verfuegbar.launcher != null && verfuegbar.launcher.apkUrl() != null) {
+                return verfuegbar.launcher;
+            }
+            if (!nachsehen || env.jetzt() - letztesSuchen < UpdateRegel.SUCHEN_MIN_ABSTAND_MS) return null;
+            letztesSuchen = env.jetzt();
+        }
+        pruefen(true);
+        synchronized (lock) {
+            return verfuegbar == null ? null : verfuegbar.launcher;
+        }
+    }
+
+    File launcherTeil(Freigabe.Launcher f) {
+        return new File(env.arbeitsordner(), "neu-launcher-" + f.versionCode + "-" + f.sha256.substring(0, 12)
+                + ".apk.part");
+    }
+
+    /** Laden (fortsetzbar) → sha256 → Zertifikat wie Panoptes → {@code pm install -r}. */
+    void launcherAusfuehren(Freigabe.Launcher f, boolean mobil) {
+        File dd = env.arbeitsordner();
+        //noinspection ResultOfMethodCallIgnored
+        dd.mkdirs();
+        File teil = launcherTeil(f);
+        if (!UpdateQuelle.erlaubteAdresse(f.apkUrl())) {
+            launcherScheitern("nicht_erreichbar", "keine Download-Adresse", null);
+            return;
+        }
+        netz.zugang(quelle().token);
+        try {
+            // fertig geladene, passende Datei von einem früheren Versuch: nicht noch einmal laden
+            boolean schonDa = teil.isFile() && f.sha256.equals(sha256(teil));
+            long gesamt = launcherGroesse;
+            synchronized (lock) { launcherPhase = "laedt"; launcherProzent = 0; }
+            while (!schonDa) {
+                String nicht;
+                synchronized (lock) {
+                    LauncherRegel.Lage l = launcherLage();
+                    l.laeuft = false;
+                    nicht = LauncherRegel.nichtWeil(l, mobil);
+                }
+                if (nicht != null) {
+                    launcherScheitern(nicht, "Download pausiert bei " + teil.length() + " B", null);
+                    return;
+                }
+                long ab = teil.exists() ? teil.length() : 0;
+                if (gesamt > 0 && ab >= gesamt) break;
+                long g = netz.ladenStueck(f.apkUrl(), teil, ab, STUECK_BYTES, MAX_APK_BYTES);
+                if (g > MAX_APK_BYTES) throw new java.io.IOException("zu groß");
+                if (g > 0) gesamt = g;
+                long nun = teil.exists() ? teil.length() : 0;
+                synchronized (lock) { launcherProzent = prozentVon(nun, gesamt); }
+                if (gesamt <= 0) break;
+                if (nun == ab) throw new java.io.IOException("keine Daten ab " + ab);
+            }
+            synchronized (lock) { launcherPhase = "prueft"; }
+            String sha = sha256(teil);
+            if (!f.sha256.equals(sha)) {
+                launcherScheitern("pruefsumme", "sha256 " + sha + " ≠ " + f.sha256, teil);
+                return;
+            }
+            // dieselbe Signatur wie das installierte Panoptes (gleicher Schlüssel, gleiche Lineage)
+            String cert = ApkZertifikat.sha256(teil);
+            String eigen = env.installiertesZertifikat();
+            if (!Freigabe.zulaessig(cert) || eigen == null || !eigen.equals(cert)) {
+                launcherScheitern("signatur", "Zertifikat " + cert, teil);
+                return;
+            }
+            synchronized (lock) { launcherPhase = "installiert"; }
+            File apk = new File(dd, "neu-launcher-" + f.versionCode + ".apk");
+            //noinspection ResultOfMethodCallIgnored
+            apk.delete();
+            if (!teil.renameTo(apk)) {
+                launcherScheitern("nicht_erreichbar", "Umbenennen fehlgeschlagen", teil);
+                return;
+            }
+            at.greenchili.surfmate.server.BefehlsLog.ereignis("update.launcher.vc" + f.versionCode, "gestartet", null, null);
+            String grund = env.launcherInstallieren(apk);
+            //noinspection ResultOfMethodCallIgnored
+            apk.delete();
+            if (grund != null) {
+                launcherScheitern("installation", grund, null);
+                return;
+            }
+            logger.info("Launcher " + f.versionName + " (vC " + f.versionCode + ") installiert");
+        } catch (Exception e) {
+            launcherScheitern("nicht_erreichbar", e.getMessage(), null);
+        }
+    }
+
+    private void launcherScheitern(String grund, String text, File weg) {
+        //noinspection ResultOfMethodCallIgnored
+        if (weg != null) weg.delete();
+        synchronized (lock) { launcherFehler = grund; }
+        berichte("Launcher-Update abgebrochen (" + grund + "): " + text);
+    }
+
     // ------------------------------------------------------------------ Lage
 
     UpdateRegel.Lage lage() {
@@ -963,7 +1155,10 @@ public final class AppUpdateDienst {
             // ohne gültige Adresse (Stand vor 0.1.15) gilt der Fund nicht; die nächste Prüfung holt ihn neu
             if (v != null && UpdateQuelle.erlaubteAdresse(apkUrl)) {
                 verfuegbar = Freigabe.lies(v.toString()).mitApkUrl(apkUrl);
+                String lUrl = j.isNull("launcherApkUrl") ? null : j.optString("launcherApkUrl", null);
+                verfuegbar = verfuegbar.mitLauncherUrl(UpdateQuelle.erlaubteAdresse(lUrl) ? lUrl : null);
             }
+            launcherGroesse = j.optLong("launcherGroesse", -1);
             groesseCache = j.optLong("groesse", -1);
             gemeldetVc = j.optInt("gemeldetVc", 0);
             hinweis.vc = j.optInt("hinweisVc", 0);
@@ -995,7 +1190,10 @@ public final class AppUpdateDienst {
                     .put("hinweisZuletzt", hinweis.zuletzt).put("vorgemerktVc", hinweis.vorgemerktVc)
                     .put("vorgemerktAm", hinweis.vorgemerktAm).put("vorgemerktVersuchAb", hinweis.versuchAb)
                     .put("vorgemerktFehlversuche", hinweis.fehlversuche)
-                    .put("mobilVc", hinweis.mobilVc).put("mobilAm", hinweis.mobilAm);
+                    .put("mobilVc", hinweis.mobilVc).put("mobilAm", hinweis.mobilAm)
+                    .put("launcherApkUrl", verfuegbar == null || verfuegbar.launcher == null
+                            || verfuegbar.launcher.apkUrl() == null ? JSONObject.NULL : verfuegbar.launcher.apkUrl())
+                    .put("launcherGroesse", launcherGroesse);
             File f = standDatei();
             File tmp = new File(f.getPath() + ".tmp");
             Files.write(tmp.toPath(), j.toString().getBytes(StandardCharsets.UTF_8));
@@ -1352,5 +1550,8 @@ public final class AppUpdateDienst {
         public void nimmHinweisWeg(String griff) {
             at.greenchili.surfmate.byd.MessageOverlayController.dismissKopplung(griff);
         }
+
+        @Override public LauncherPaket.Stand launcherStand() { return LauncherPaket.stand(LauncherPaket.SHELL); }
+        @Override public String launcherInstallieren(File apk) { return LauncherPaket.installieren(LauncherPaket.SHELL, apk); }
     }
 }

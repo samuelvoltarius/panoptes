@@ -148,6 +148,21 @@ public final class ExternGuard {
             "/api/dateien/start", "/api/dateien/teil", "/api/dateien/fertig", "/api/dateien/abbrechen",
             "/api/dateien/holen", "/api/dateien/loeschen")));
 
+    /**
+     * 0.1.37 „Was zeigt der Tacho?“: Auswahl lesen/setzen und „Tacho wieder normal“, nur für Kopplungen der Art
+     * {@code handy} und {@code cockpit} und nur mit Recht {@code tacho} ({@link #noetigesRecht}). Starten prüft
+     * danach dieselbe Freigabe-Policy wie am Auto ({@code TachoNaviApp}).
+     */
+    static final String TACHO_AUSWAHL = "/api/tacho/auswahl", TACHO_NORMAL = "/api/tacho/normal";
+
+    static boolean tachoErlaubt(String method, String pathOnly, String kopplungsArt) {
+        if (!"handy".equals(kopplungsArt) && !"cockpit".equals(kopplungsArt)) return false;
+        String p = normal(pathOnly);
+        if (p == null || method == null) return false;
+        if (TACHO_AUSWAHL.equals(p)) return "GET".equals(method) || "POST".equals(method);
+        return TACHO_NORMAL.equals(p) && "POST".equals(method);
+    }
+
     /** true, wenn die Anfrage eines gekoppelten Geräts abgelehnt werden muss. */
     public static boolean blocks(String method, String pathOnly) {
         return !erlaubt(method, pathOnly);
@@ -160,6 +175,7 @@ public final class ExternGuard {
         }
         if (erlaubt(method, pathOnly)) return false;
         if (cockpitErlaubt(method, pathOnly, kopplungsArt)) return false;
+        if (tachoErlaubt(method, pathOnly, kopplungsArt)) return false;
         return !handyErlaubt(method, pathOnly, kopplungsArt);
     }
 
@@ -203,6 +219,7 @@ public final class ExternGuard {
         if (p.equals("/api/dateien") || p.startsWith("/api/dateien/")) {
             return at.greenchili.surfmate.auth.Kopplungen.RECHT_DATEIEN;
         }
+        if (p.equals(TACHO_AUSWAHL) || p.equals(TACHO_NORMAL)) return at.greenchili.surfmate.auth.Kopplungen.RECHT_TACHO;
         for (String k : KAMERA_LESEN) {
             if (p.equals(k) || p.startsWith(k.endsWith("/") ? k : k + "/")) {
                 return at.greenchili.surfmate.auth.Kopplungen.RECHT_KAMERA;

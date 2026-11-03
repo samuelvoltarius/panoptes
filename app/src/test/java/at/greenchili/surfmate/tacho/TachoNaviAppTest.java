@@ -157,8 +157,9 @@ public class TachoNaviAppTest {
         assertTrue(start.contains("drivingBlockReason()"));
         String policy = TachoFaehigkeitTest.lies(
                 "app/src/main/java/at/greenchili/surfmate/tacho/TachoNaviApp.java");
-        assertTrue(policy.contains("if (bewegungsGrund != null && !istNavi(paket)) return \"nur_im_stand\";"));
-        assertTrue(policy.contains("mussBeiGangStoppen(gang, p, p != null && istFreigegeben(p))"));
+        assertTrue(policy.contains("if (bewegungsGrund != null && !fahrt) return \"nur_im_stand\";"));
+        assertTrue(policy.contains("istStartbar(p), istFreigegeben(p), p.equals(probeStartPaket), fahrtErlaubt(p));"));
+        assertTrue(policy.contains("mussBeiGangStoppen(gang, p, p != null && istFreigegeben(p), p != null && fahrtErlaubt(p))"));
     }
 
     @Test
@@ -210,7 +211,7 @@ public class TachoNaviAppTest {
     }
 
     @Test
-    public void webUnterAutoNutztPaketbezogeneProbeUndWiderruf() throws IOException {
+    public void webUnterAutoNutztPaketbezogeneFreigabeUndWiderruf() throws IOException {
         String html = TachoFaehigkeitTest.lies(
                 "app/src/main/assets/web/local/vehicle-control.html");
         String js = TachoFaehigkeitTest.lies(
@@ -219,7 +220,11 @@ public class TachoNaviAppTest {
                 "app/src/main/java/at/greenchili/surfmate/server/TachoApiHandler.java");
         assertTrue(html.contains("id=\"clusterAppApproval\""));
         assertTrue(html.contains("Tempo und Warnleuchten"));
-        assertTrue(js.contains("/api/tacho/navi/probe"));
+        // 0.1.37: Freigabe ohne Probe, Sicherheitsknopf „Tacho wieder normal“
+        assertFalse(js.contains("/api/tacho/navi/probe"));
+        assertTrue(js.contains("{frei:'ja', paket:p}"));
+        assertTrue(js.contains("/api/tacho/normal"));
+        assertTrue(html.contains("id=\"clusterTachoNormal\""));
         assertTrue(js.contains("{frei:'nein', paket:selected()}"));
         assertTrue(js.contains("data.angeboten === false"));
         assertTrue(js.contains("cluster_app_dilink5_blocked"));

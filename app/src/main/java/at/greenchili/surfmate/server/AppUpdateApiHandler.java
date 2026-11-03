@@ -15,6 +15,8 @@ import java.io.OutputStream;
  *   <li>{@code POST /api/appupdate/installieren {versionCode}} – nur Login; prüft selbst Auto aus + keine Sperre</li>
  *   <li>{@code POST /api/appupdate/hinweis {aktion, version}} – 0.1.31, nur am Auto bzw. mit vollem Login: Knopf der
  *       Karte am Display („installieren“) und „zuruecknehmen“ unter System → Updates</li>
+ *   <li>{@code GET/POST /api/appupdate/launcher} – 0.1.37, Panoptes Launcher: Stand; installieren/öffnen/entfernen
+ *       nur am Auto bzw. mit vollem Login ({@link #launcherAktion})</li>
  * </ul>
  */
 public final class AppUpdateApiHandler {
@@ -47,6 +49,20 @@ public final class AppUpdateApiHandler {
                 s.put("autostart", at.greenchili.surfmate.appupdate.AutostartNachUpdate.get().zustand(System.currentTimeMillis()));
             } catch (Exception ignored) { }
             HttpResponse.sendJson(out, s.toString());
+            return true;
+        }
+        // 0.1.37 Stufe 4: Panoptes Launcher installieren / öffnen / entfernen (Knopf unter System → Updates)
+        if (pathOnly.equals("/api/appupdate/launcher")) {
+            if (method.equals("GET")) {
+                HttpResponse.sendJson(out, d.launcherStatus().toString());
+                return true;
+            }
+            if (!method.equals("POST")) return false;
+            if (AuthMiddleware.isExternRequest() || AuthMiddleware.isHandyWebRequest()) {
+                HttpResponse.sendJson(out, 403, "{\"ok\":false,\"grund\":\"nur_am_auto\"}");
+                return true;
+            }
+            HttpResponse.sendJson(out, launcherAktion(d, body).toString());
             return true;
         }
         if (pathOnly.equals("/api/appupdate/hinweis") && method.equals("POST")) {
@@ -116,5 +132,43 @@ public final class AppUpdateApiHandler {
         HttpResponse.sendJson(out, grund == null ? "{\"ok\":true}"
                 : new JSONObject().put("ok", false).put("grund", grund).toString());
         return true;
+    }
+
+    /**
+     * {@code {aktion: installieren|oeffnen|entfernen, mobil}}. „Öffnen“ startet den Launcher nur als App; Panoptes
+     * setzt ihn nie als Standard-Startbildschirm (das macht nur der Nutzer selbst in Android).
+     */
+    static JSONObject launcherAktion(AppUpdateDienst d, String body) throws Exception {
+        JSONObject b;
+        try {
+            b = new JSONObject(body == null || body.isEmpty() ? "{}" : body);
+        } catch (Exception e) {
+            b = new JSONObject();
+        }
+        String aktion = b.optString("aktion", "");
+        at.greenchili.surfmate.appupdate.LauncherPaket.Geraet g = at.greenchili.surfmate.appupdate.LauncherPaket.SHELL;
+        String grund;
+        switch (aktion) {
+            case "installieren": {
+                at.greenchili.surfmate.appupdate.Freigabe.Launcher f = d.launcherFreigabe(true);
+                grund = f == null ? at.greenchili.surfmate.appupdate.LauncherRegel.KEIN_LAUNCHER
+                        : d.launcherInstallieren(f.versionCode, b.optBoolean("mobil", false));
+                break;
+            }
+            case "oeffnen":
+                grund = at.greenchili.surfmate.appupdate.LauncherPaket.stand(g).installiert()
+                        ? at.greenchili.surfmate.appupdate.LauncherPaket.oeffnen(g) : "nicht_installiert";
+                break;
+            case "entfernen":
+                grund = at.greenchili.surfmate.appupdate.LauncherPaket.stand(g).installiert()
+                        ? at.greenchili.surfmate.appupdate.LauncherPaket.entfernen(g) : null;
+                break;
+            default:
+                return new JSONObject().put("ok", false).put("grund", "aktion");
+        }
+        BefehlsLog.ereignis("launcher." + aktion, grund == null ? "ok" : "abgelehnt", null, null);
+        JSONObject r = d.launcherStatus().put("ok", grund == null);
+        if (grund != null) r.put("grund", grund);
+        return r;
     }
 }

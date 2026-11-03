@@ -40,6 +40,14 @@
     function aktion(e) {
         if (e.aktion && AKTIONEN[e.aktion]) return T(AKTIONEN[e.aktion][0], AKTIONEN[e.aktion][1]);
         var ev = (e.ereignisse && e.ereignisse[0]) || '';
+        // 0.1.37: Abschaltung eines Assistenzsystems mit Herkunft (Nutzer, Automation, Handy …)
+        if (ev.indexOf('assistenz_aus.') === 0) {
+            var her = { nutzer: ['protokoll.h_nutzer', 'Nutzer'], automation: ['protokoll.h_automation', 'Automation'],
+                handy: ['protokoll.h_handy', 'Handy'], ha: ['protokoll.w_ha', 'Home Assistant'],
+                telegram: ['protokoll.w_telegram', 'Telegram'] }[e.herkunft] || ['protokoll.h_automation', 'Automation'];
+            return T('protokoll.a_assistenz_aus', 'Assistenzsystem aus') + ' (' + (e.system || ev.substring(14).split(':')[0])
+                + ') · ' + T('protokoll.herkunft', 'Herkunft') + ': ' + T(her[0], her[1]);
+        }
         if (ev.indexOf('fahrzeug.unlock') === 0) return T('protokoll.a_aufsperren', 'Aufsperren');
         if (ev.indexOf('fahrzeug.lock') === 0) return T('protokoll.a_zusperren', 'Zusperren');
         if (ev.indexOf('fahrzeug.climate') === 0) return T('protokoll.a_klima', 'Klima');

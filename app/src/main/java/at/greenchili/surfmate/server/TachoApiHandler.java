@@ -1,6 +1,9 @@
 package at.greenchili.surfmate.server;
 
 import at.greenchili.surfmate.tacho.DiLink5TachoAbnahme;
+import at.greenchili.surfmate.tacho.TachoAnsicht;
+import at.greenchili.surfmate.tacho.TachoAuswahl;
+import at.greenchili.surfmate.tacho.TachoRueckmeldung;
 import at.greenchili.surfmate.tacho.TachoFaehigkeit;
 import at.greenchili.surfmate.tacho.TachoNaviApp;
 
@@ -20,12 +23,23 @@ import java.net.URLDecoder;
  *   <li>{@code PUT  /api/tacho/navi} {@code {an, paket}} – Ausschalten immer, Einschalten nur im Stand und
  *       nur fuer eine zuvor in P gepruefte und freigegebene App.</li>
  *   <li>{@code POST /api/tacho/navi/probe} {@code {paket}} – 20 s im Stand, dann von selbst zurück.</li>
+ *   <li>{@code POST /api/tacho/rueckmeldung} {@code {einwilligung: true, text}} – Tacho-Test-Ergebnis
+ *       ueber „Fehler melden“; nur mit Einwilligung und nur exakt der gezeigte Text.</li>
+ *   <li>{@code PUT  /api/tacho/navi/hinweis} {@code {verstanden: true}} – einmaliger Hinweis vor der
+ *       ersten Probe bzw. dem ersten Start.</li>
+ *   <li>{@code PUT  /api/tacho/ansicht} {@code {design}} – Design der Panoptes-Tacho-Ansicht.</li>
+ *   <li>{@code GET  /api/tacho/auswahl}, {@code POST /api/tacho/auswahl} {@code {id}} – „Was zeigt der
+ *       Tacho?“: Designs, Navi- und freigegebene Apps, {@code normal} ({@link TachoAuswahl}).</li>
  *   <li>{@code PUT  /api/tacho/navi/warnleuchten} {@code {frei: ja|nein, paket}} – Antwort nach
  *       der Probe oder paketbezogener Widerruf.</li>
  * </ul>
- * Nur Login/lokal, nie Kopplungs-Zugänge. Nichts wird an einen Server geschickt.
+ * Nur Login/lokal, nie Kopplungs-Zugänge. An einen Server geht nur die Tacho-Rueckmeldung, und nur
+ * nach ausdruecklicher Einwilligung je Sendung.
  */
 public final class TachoApiHandler {
+
+    /** Gemeinsame Auswahl fuer Web, Handy-Apps und Cockpit (Vertrag TACHO_AUSWAHL_API.md). */
+    public static final String AUSWAHL = "/api/tacho/auswahl";
 
     private TachoApiHandler() {}
 
@@ -34,7 +48,7 @@ public final class TachoApiHandler {
         int q = p.indexOf('?');
         if (q >= 0) p = p.substring(0, q);
         if (!p.startsWith("/api/tacho/")) return false;
-        if (AuthMiddleware.isExternRequest()) {
+        if (AuthMiddleware.isExternRequest() && !kopplungDarf(p)) {
             HttpResponse.sendJson(out, 403, "{\"ok\":false,\"grund\":\"nur_mit_login\"}");
             return true;
         }
@@ -49,7 +63,61 @@ public final class TachoApiHandler {
             }
             JSONObject r = TachoFaehigkeit.bewerte(TachoFaehigkeit.erhebe());
             r.put("text", TachoFaehigkeit.alsText(r));
+            r.put("rueckmeldung", TachoRueckmeldung.text(r));
             HttpResponse.sendJson(out, r.toString());
+            return true;
+        }
+        if (p.equals("/api/tacho/rueckmeldung") && method.equals("POST")) {
+            // Nur mit Einwilligung fuer genau diese Sendung und nur exakt der gezeigte Text.
+            String aktuell = TachoRueckmeldung.text(TachoFaehigkeit.bewerte(TachoFaehigkeit.erhebe()));
+            JSONObject r = TachoRueckmeldung.senden(in.opt("einwilligung"), in.optString("text", ""),
+                    aktuell, RueckmeldungApiHandler::sendeTachoTest);
+            String grund = r.optString("grund");
+            int status = r.optBoolean("ok") ? 200 : "keine_einwilligung".equals(grund) ? 400
+                    : "vorschau_alt".equals(grund) ? 409 : "zuviel".equals(r.optString("stand")) ? 429 : 502;
+            HttpResponse.sendJson(out, status, r.toString());
+            return true;
+        }
+        // 0.1.37 „Was zeigt der Tacho?“: eine Auswahl aus Designs, Navi- und freigegebenen Apps.
+        if (p.equals(AUSWAHL) && method.equals("GET")) {
+            HttpResponse.sendJson(out, TachoAuswahl.liste().toString());
+            return true;
+        }
+        if (p.equals(AUSWAHL) && (method.equals("PUT") || method.equals("POST"))) {
+            JSONObject r = TachoAuswahl.waehle(in.optString("id", ""));
+            HttpResponse.sendJson(out, r.optBoolean("ok") ? 200
+                    : "ungueltige_auswahl".equals(r.optString("grund")) ? 400 : 409, r.toString());
+            return true;
+        }
+        // 0.1.37 „Tacho wieder normal“: stoppt jede Projektion (App, Spiegel, Karte), Instrumentenanzeige zurueck.
+        if (p.equals("/api/tacho/normal") && method.equals("POST")) {
+            HttpResponse.sendJson(out, TachoNaviApp.tachoNormal().toString());
+            return true;
+        }
+        // 0.1.37 „auch beim Fahren“ je App: eigener Haftungshinweis, dann Option setzen. Nur mit Login
+        // (Kopplungen oben abgewiesen, Handy-Web per WebHandyGuard, Automation/KI nicht in der Erlaubnisliste).
+        if (p.equals("/api/tacho/navi/fahrt/hinweis") && (method.equals("PUT") || method.equals("POST"))) {
+            JSONObject r = TachoNaviApp.fahrtHinweisBestaetigen(in.optString("version", ""));
+            HttpResponse.sendJson(out, r.optBoolean("ok") ? 200 : 400, r.toString());
+            return true;
+        }
+        if (p.equals("/api/tacho/navi/fahrt") && (method.equals("PUT") || method.equals("POST"))) {
+            JSONObject r = TachoNaviApp.setzeFahrt(in.optString("paket", ""), in.optBoolean("an", false));
+            HttpResponse.sendJson(out, r.optBoolean("ok") ? 200 : 409, r.toString());
+            return true;
+        }
+        if (p.equals("/api/tacho/navi/hinweis") && (method.equals("PUT") || method.equals("POST"))) {
+            if (!in.optBoolean("verstanden", false)) {
+                HttpResponse.sendJson(out, 400, "{\"ok\":false,\"grund\":\"verstanden_noetig\"}");
+                return true;
+            }
+            HttpResponse.sendJson(out, TachoNaviApp.hinweisBestaetigen().toString());
+            return true;
+        }
+        if (p.equals("/api/tacho/ansicht") && (method.equals("PUT") || method.equals("POST"))) {
+            boolean ok = TachoAnsicht.setzeDesign(in.optString("design", ""));
+            HttpResponse.sendJson(out, ok ? 200 : 400, new JSONObject().put("ok", ok)
+                    .put("design", TachoAnsicht.design()).toString());
             return true;
         }
         if (p.equals("/api/tacho/dilink5-abnahme") && method.equals("GET")) {
@@ -87,6 +155,20 @@ public final class TachoApiHandler {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Kopplungen nur fuer Auswahl und „Tacho wieder normal“, und nur mit Recht {@code tacho}. HttpServer prueft
+     * das schon ueber {@code ExternGuard}; hier noch einmal, damit dieser Handler allein dicht ist.
+     */
+    private static boolean kopplungDarf(String p) {
+        if (!AUSWAHL.equals(p) && !"/api/tacho/normal".equals(p)) return false;
+        try {
+            return at.greenchili.surfmate.auth.Kopplungen.get().hatRecht(AuthMiddleware.requestKopplungsId(),
+                    at.greenchili.surfmate.auth.Kopplungen.RECHT_TACHO);
+        } catch (Throwable t) {
+            return false;
+        }
     }
 
     private static String bewegungsGrund() {

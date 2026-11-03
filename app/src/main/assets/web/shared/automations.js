@@ -674,6 +674,13 @@ BYD.automations = {
             if (automation.name) {
                 result += '<strong class="automation-name">' + escapeHtml(automation.name) + '</strong><br>';
             }
+            // 0.1.37: Kennzeichnung für Regeln, die ein Assistenzsystem ausschalten
+            if (window.PanoptesAssistenz && PanoptesAssistenz.schaltetAb(automation, this._assistenzGruppen())) {
+                result += '<span class="automation-assistenz" style="display:inline-block;margin:2px 0 4px;padding:1px 8px;'
+                    + 'border-radius:10px;font-size:12px;font-weight:600;background:var(--status-warning-bg,rgba(255,194,102,.18));'
+                    + 'color:var(--status-warning,#FFC266);">' + escapeHtml(BYD.i18n.t('assistenz.kennzeichnung'))
+                    + '</span><br>';
+            }
             const runs = automation.triggerCount || 0;
             if (runs > 0) {
                 let stats = BYD.i18n.t('automation.stats_runs').replace('{n}', runs);
@@ -3625,6 +3632,12 @@ BYD.automations = {
                         this.hideForm();
                         return this.toast(BYD.i18n.t('toast.saved'), 'success');
                     }
+                    // 0.1.37: Regel schaltet ein Assistenzsystem aus → einmal den Haftungshinweis bestätigen
+                    if (window.PanoptesAssistenz && PanoptesAssistenz.braucht(result)) {
+                        if (await PanoptesAssistenz.zeigen()) return this.saveForm();
+                        return;
+                    }
+                    if (result.error) return this.toast(result.error, 'error');
                 }
                 // Rejected (e.g. 400): surface the daemon's actual reason instead of a
                 // generic "save failed". The error endpoint replies text/plain OR a
@@ -3712,6 +3725,13 @@ BYD.automations = {
 
     groupData: null,      // the group currently open in the editor, or null
     _groups: [],          // cached [{id, name, actions}] for the list
+
+    // 0.1.37: Gruppen als id → {actions} für die Assistenz-Kennzeichnung (PanoptesAssistenz.schaltetAb).
+    _assistenzGruppen() {
+        const m = {};
+        for (const g of (this._groups || [])) m[g.id] = { actions: g.actions || [] };
+        return m;
+    },
 
     // Load + render the saved groups into #groupList (called on init + after any change).
     async loadGroups() {
@@ -3963,6 +3983,11 @@ BYD.automations = {
                 await this.loadGroups();
                 this.hideGroupForm();
                 return this.toast(BYD.i18n.t('toast.saved'), 'success');
+            }
+            // 0.1.37: Gruppe schaltet ein Assistenzsystem aus → einmal den Haftungshinweis bestätigen
+            if (window.PanoptesAssistenz && PanoptesAssistenz.braucht(result)) {
+                if (await PanoptesAssistenz.zeigen()) return this.saveGroup();
+                return;
             }
             // Surface the daemon's own reason when it sent one — a persistence failure explains
             // that the group is live NOW but would be lost on restart, which the generic

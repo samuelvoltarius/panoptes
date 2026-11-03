@@ -93,6 +93,15 @@
       "note": "Pet mode on or off, climate running again."
     },
     {
+      "id": "display.valet",
+      "label": "Display lock",
+      "group": "Display",
+      "defaultEnabled": true,
+      "severity": "warn",
+      "defaultClickUrl": "/local/system.html#anzeige",
+      "note": "Someone entered a wrong PIN several times at the locked display."
+    },
+    {
       "id": "gewohnheit.probe",
       "label": "Habits: trial run",
       "group": "Gewohnheiten",

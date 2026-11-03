@@ -252,17 +252,20 @@ public final class Kopplungen {
             RECHT_PROTOKOLL = "protokoll",
             // Dateien zwischen Handy und Auto (/api/dateien): Standard AUS, nie automatisch (auch nicht für Bestand),
             // nur der Besitzer schaltet es ein (am Auto oder im Web mit Login).
-            RECHT_DATEIEN = "dateien";
+            RECHT_DATEIEN = "dateien",
+            // 0.1.37 „Was zeigt der Tacho?“ (/api/tacho/auswahl, /api/tacho/normal): Standard AUS, nie automatisch
+            // (auch nicht für Bestand), nur der Besitzer schaltet es ein. Auch für das Cockpit setzbar.
+            RECHT_TACHO = "tacho";
     public static final java.util.List<String> RECHTE = java.util.Collections.unmodifiableList(
             java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_AUFSPERREN, RECHT_PUSH, RECHT_WEB, RECHT_KAMERA,
                     RECHT_WALLBOX, RECHT_ROUTE, RECHT_UPDATE, RECHT_EREIGNISCLIP, RECHT_STANDBILD, RECHT_PROTOKOLL,
-                    RECHT_DATEIEN));
+                    RECHT_DATEIEN, RECHT_TACHO));
     /**
      * 0.1.30 Kern Sicherheit: Rechte, die auch Kopplungen ohne Handy-Rechte (cockpit, homeassistant, dienst) tragen
      * können. Standard AUS, nie automatisch gesetzt (auch nicht bei der Umstellung); nur der Besitzer schaltet sie ein.
      */
     public static final java.util.List<String> FREMD_RECHTE = java.util.Collections.unmodifiableList(
-            java.util.Arrays.asList(RECHT_KAMERA, RECHT_STANDBILD));
+            java.util.Arrays.asList(RECHT_KAMERA, RECHT_STANDBILD, RECHT_TACHO));
 
     /** Arten, die {@link #FREMD_RECHTE} tragen können (web und Alt-Kopplungen ohne Art nie). */
     static boolean traegtFremdRechte(String art) {

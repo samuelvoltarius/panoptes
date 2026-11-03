@@ -60,7 +60,11 @@ public final class BefehlsLog {
             "/api/kopplung", "/api/einstellungen", "/api/appupdate/", "/api/update/", "/api/ha/",
             "/api/telegram-anmeldung/", "/api/cloud-uebergabe", "/api/notzugang", "/api/sitzung/", "/api/bruecke",
             "/api/wireguard", "/api/tailscale", "/api/backup/",
-            "/api/tiermodus"};   // 0.1.36: Tiermodus schaltet das Klima
+            "/api/tiermodus",   // 0.1.36: Tiermodus schaltet das Klima
+            "/api/display/", "/api/apps/verwaltung/", "/api/dateien/wechsel/",   // 0.1.37 Display-Werkzeuge
+            "/api/tacho/navi/fahrt", "/api/tacho/normal",   // 0.1.37 Tacho: auch beim Fahren, wieder normal
+            "/api/launcher/v1/klima", "/api/launcher/v1/update", "/api/launcher/v1/tacho/",   // 0.1.37: Launcher-Klima und -Updates
+            "/api/tacho/auswahl"};   // 0.1.37 „Was zeigt der Tacho?“
 
     /** Gründe, die ein technischer Fehler sind (sonst gilt ok:false als Ablehnung). */
     static final Set<String> FEHLER_GRUENDE = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
@@ -196,6 +200,40 @@ public final class BefehlsLog {
         String w = weg == null ? null : weg.toLowerCase(Locale.ROOT);
         ereignis("fahrzeug." + (befehl == null ? "?" : befehl.replaceAll("[^a-z0-9_-]", "")),
                 o + (w == null || "none".equals(w) ? "" : "@" + w), null, null);
+    }
+
+    /** Herkünfte einer Assistenz-Abschaltung (sonst {@code automation}). */
+    static final Set<String> HERKUENFTE = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "nutzer", "handy", "automation", "ha", "telegram")));
+
+    /**
+     * 0.1.37: Abschaltung eines Assistenzsystems (auch abgelehnte) als eigene Pflicht-Zeile mit Herkunft. In einer
+     * laufenden Anfrage übernimmt die Zeile Gerät und Weg der Anfrage, sonst {@code intern} mit der Herkunft als
+     * {@code wer}. Nur Kennwörter: System-Schlüssel, Herkunft, Ausgang, Grund – keine Werte.
+     */
+    public static void assistenzAus(String system, String herkunft, String outcome, String grund) {
+        try {
+            String sys = system == null ? "?" : system.replaceAll("[^a-z0-9_]", "");
+            if (sys.isEmpty() || sys.length() > 40) sys = "?";
+            String h = herkunft != null && HERKUENFTE.contains(herkunft) ? herkunft : "automation";
+            String o = outcome == null ? "null" : outcome.toLowerCase(Locale.ROOT);
+            JSONObject z = new JSONObject();
+            Anfrage r = LAUFEND.get();
+            if (r != null) {
+                z.put("t", System.currentTimeMillis()).put("wer", r.wer);
+                if (r.name != null) z.put("name", r.name);
+                z.put("art", r.art).put("weg", r.weg);
+            } else {
+                z.put("t", System.currentTimeMillis()).put("wer", h).put("art", "intern").put("weg", "lokal");
+            }
+            z.put("herkunft", h).put("system", sys);
+            z.put("ereignisse", new JSONArray().put("assistenz_aus." + sys + ":" + o));
+            String e = ergebnisKlasse(o);
+            z.put("ergebnis", e);
+            if (!OK.equals(e)) z.put("grund", grund != null && KENNWORT.matcher(grund).matches() ? grund : o);
+            schreibe(PFLICHT, z);
+        } catch (Throwable ignored) {
+        }
     }
 
     /** {@code success}/{@code ok} → ok, Fehler-Ausgänge → fehler, sonst abgelehnt. */

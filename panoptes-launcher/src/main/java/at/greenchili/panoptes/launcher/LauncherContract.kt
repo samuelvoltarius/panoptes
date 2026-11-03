@@ -7,28 +7,168 @@ data class LauncherSummary(
     val rangeKm: Double?,
     val socPct: Double?,
     val acc: String?,
-    val gear: String?
+    val gear: String?,
+    val charging: LauncherCharging? = null,
+    val healthPct: Double? = null,
+    val navi: LauncherNavi? = null,
+    val waechter: LauncherWaechter? = null,
+    val media: LauncherMedia? = null,
+    val modelId: String? = null,
+    val farbe: String? = null,
+    val speedKmh: Double? = null,
+    val reifen: LauncherReifen? = null,
+    val luft: LauncherLuft? = null,
+    val klima: LauncherKlima? = null,
+    /** Läuft gerade etwas am Fahrerdisplay (dann zeigt der Launcher „Tacho wieder normal“)? */
+    val tachoAktiv: Boolean = false
 )
+
+data class LauncherReifen(val vl: Double?, val vr: Double?, val hl: Double?, val hr: Double?, val unten: Double?, val oben: Double?)
+data class LauncherLuft(val innen: Double?, val aussen: Double?)
+data class LauncherKlima(val sollC: Double?, val stufe: Int?, val innenC: Double?, val an: Boolean? = null)
+
+/** Antwort von `POST klima`: ok, Grund bei Ablehnung, neuer Klima-Stand (falls mitgeschickt). */
+data class KlimaAntwort(val ok: Boolean, val grund: String?, val klima: LauncherKlima?)
+
+/** Ein Paket der Update-Karte (Panoptes oder Launcher). */
+data class UpdatePaket(
+    val version: String,
+    val versionCode: Int,
+    val groesseBytes: Long?,
+    val installierbar: Boolean,
+    val mobilFrage: Boolean,
+    val nichtWeil: String?,
+    val phase: String?
+)
+
+/** `GET update`: was es Neues gibt; null je Paket = nichts Neueres. */
+data class UpdateStand(val panoptes: UpdatePaket?, val launcher: UpdatePaket?)
+
+data class LauncherCharging(val active: Boolean, val kw: Double?, val targetPct: Double?, val etaMin: Double?)
+data class LauncherNavi(
+    val aktiv: Boolean,
+    val grund: String?,
+    val naechsterStopp: String?,
+    val naechsterKm: Double?,
+    val istZiel: Boolean,
+    val prognoseProzent: Double?
+)
+data class LauncherWaechter(val an: Boolean?, val scharf: Boolean?, val aufnahme: Boolean?, val zustand: String?)
+data class LauncherMedia(val title: String?, val artist: String?)
 
 data class LaunchableApp(val packageName: String, val label: String)
 data class LauncherTraffic(val nearby: Int, val approaching: Int)
 data class LauncherHistory(val lastTripKm: Double?, val lastChargeKwh: Double?)
-data class LauncherAppearance(val theme: String, val material: String)
+data class LauncherAppearance(
+    val theme: String,
+    val material: String,
+    val startAnsicht: String = "panoptes",
+    val hintergrundBild: Boolean = false,
+    val hintergrundVideo: Boolean = false,
+    val modus: String = "dark"
+)
 
 object LauncherContract {
+    val START_ANSICHTEN = setOf("panoptes", "fahren", "fahrzeug", "kompakt", "cockpit")
+
     fun parseSummary(json: String): LauncherSummary {
         val root = JSONObject(json)
         val vehicle = root.optJSONObject("vehicle")
         val range = root.optJSONObject("range")
         val state = root.optJSONObject("state")
+        val battery = root.optJSONObject("battery")
+        val charging = root.optJSONObject("charging")
+        val navi = root.optJSONObject("navi")
+        val waechter = root.optJSONObject("waechter")
+        val media = root.optJSONObject("media")
         return LauncherSummary(
             vehicle?.nullableString("name"),
             range?.nullableDouble("totalKm"),
-            range?.nullableDouble("socPct"),
+            range?.nullableDouble("socPct") ?: battery?.nullableDouble("socPct"),
             state?.nullableString("acc"),
-            state?.nullableString("gear")
+            state?.nullableString("gear"),
+            charging?.let {
+                LauncherCharging(it.optBoolean("active", false), it.nullableDouble("kw"), it.nullableDouble("targetPct"), it.nullableDouble("etaMin"))
+            },
+            battery?.nullableDouble("healthPct"),
+            navi?.let {
+                LauncherNavi(
+                    it.optBoolean("aktiv", false),
+                    it.nullableString("grund"),
+                    it.nullableString("naechsterStopp"),
+                    it.nullableDouble("naechsterKm"),
+                    it.optBoolean("istZiel", false),
+                    it.nullableDouble("prognoseProzent")
+                )
+            },
+            waechter?.let {
+                LauncherWaechter(it.nullableBoolean("an"), it.nullableBoolean("scharf"), it.nullableBoolean("aufnahme"), it.nullableString("zustand"))
+            },
+            media?.let { LauncherMedia(it.nullableString("title"), it.nullableString("artist")) },
+            vehicle?.nullableString("modelId")?.takeIf { it.matches(Regex("^[a-z0-9_-]{1,40}$")) },
+            vehicle?.nullableString("color")?.takeIf { it.matches(Regex("^#[0-9A-Fa-f]{6}$")) },
+            state?.nullableDouble("speedKmh"),
+            root.optJSONObject("tyres")?.let {
+                LauncherReifen(it.nullableDouble("flBar"), it.nullableDouble("frBar"), it.nullableDouble("rlBar"),
+                    it.nullableDouble("rrBar"), it.nullableDouble("loBar"), it.nullableDouble("hiBar"))
+            },
+            root.optJSONObject("air")?.let { LauncherLuft(it.nullableDouble("pm25Inside"), it.nullableDouble("pm25Outside")) }
+                ?.takeIf { it.innen != null || it.aussen != null },
+            root.optJSONObject("klima")?.let { klima(it) },
+            root.optJSONObject("tacho")?.optBoolean("aktiv", false) == true
         )
     }
+
+    private fun klima(it: JSONObject) =
+        LauncherKlima(it.nullableDouble("sollC"), it.nullableDouble("stufe")?.toInt(), it.nullableDouble("innenC"), it.nullableBoolean("an"))
+
+    /** Die sechs Aktionen des Kern-Klimawegs; nichts anderes wird je gesendet. */
+    val KLIMA_AKTIONEN = setOf("an", "aus", "temp_hoch", "temp_runter", "luft_hoch", "luft_runter")
+
+    fun klimaBody(aktion: String): String {
+        require(aktion in KLIMA_AKTIONEN) { "aktion" }
+        return JSONObject().put("aktion", aktion).toString()
+    }
+
+    /** Antwort (auch 4xx-Körper); kaputt = abgelehnt ohne Grund. */
+    fun parseKlima(json: String?): KlimaAntwort = try {
+        val root = JSONObject(json ?: "")
+        KlimaAntwort(root.optBoolean("ok", false), root.nullableString("grund"), root.optJSONObject("klima")?.let { klima(it) })
+    } catch (_: Exception) {
+        KlimaAntwort(false, null, null)
+    }
+
+    /**
+     * Update-Karte: Panoptes nur, wenn `verfuegbar` gesetzt ist (der Kern meldet dort nur Neueres), der Launcher nur,
+     * wenn `neuer` true ist und er schon installiert ist (sonst wäre es nicht dieser Launcher).
+     */
+    fun parseUpdate(json: String): UpdateStand {
+        val root = JSONObject(json)
+        val p = root.optJSONObject("panoptes")?.let { st ->
+            st.optJSONObject("verfuegbar")?.let { v ->
+                paket(v, st.optBoolean("installierbar", false), st.optBoolean("mobilFrage", false), st.nullableString("nichtWeil"),
+                    st.nullableString("phase")?.takeIf { it != "pausiert" })
+            }
+        }
+        val l = root.optJSONObject("launcher")?.let { st ->
+            if (!st.optBoolean("neuer", false) || st.isNull("installiert")) null
+            else st.optJSONObject("verfuegbar")?.let { v ->
+                paket(v, st.optBoolean("installierbar", false), st.optBoolean("mobilFrage", false), st.nullableString("nichtWeil"),
+                    st.nullableString("phase"))
+            }
+        }
+        return UpdateStand(p, l)
+    }
+
+    private fun paket(v: JSONObject, installierbar: Boolean, mobilFrage: Boolean, nichtWeil: String?, phase: String?): UpdatePaket? {
+        val version = v.nullableString("version")?.takeIf { it.matches(Regex("^[0-9]{1,3}(\\.[0-9]{1,3}){1,3}$")) } ?: return null
+        val vc = v.optInt("versionCode", -1).takeIf { it > 0 } ?: return null
+        val groesse = v.nullableDouble("groesseBytes")?.toLong()?.takeIf { it > 0 }
+        return UpdatePaket(version, vc, groesse, installierbar, mobilFrage, nichtWeil, phase)
+    }
+
+    fun installierenBody(paket: String, p: UpdatePaket, mobil: Boolean): String =
+        JSONObject().put("paket", paket).put("version", p.version).put("versionCode", p.versionCode).put("mobil", mobil).toString()
 
     fun parseApps(json: String): List<LaunchableApp> {
         val root = JSONObject(json)
@@ -70,12 +210,18 @@ object LauncherContract {
             .takeIf { it in setOf("auto", "polar", "glacier", "ember", "signal") } ?: "auto"
         val material = root.optString("material", "crystal")
             .takeIf { it == "crystal" || it == "smoke" } ?: "crystal"
-        return LauncherAppearance(theme, material)
+        val ansicht = root.optString("startAnsicht", "panoptes").takeIf { it in START_ANSICHTEN } ?: "panoptes"
+        val hg = root.optJSONObject("hintergrund")
+        // Fail-closed: nur ein echtes true schaltet Bild/Video frei.
+        val bild = hg?.opt("bild") == true
+        val video = hg?.opt("video") == true
+        val modus = root.optString("modus", "dark").takeIf { it == "dark" || it == "light" || it == "auto" } ?: "dark"
+        return LauncherAppearance(theme, material, ansicht, bild, video, modus)
     }
 
-    fun launchBody(packageName: String): String = JSONObject()
+    fun launchBody(packageName: String, mode: String = "full"): String = JSONObject()
         .put("package", packageName)
-        .put("mode", "full")
+        .put("mode", mode)
         .toString()
 
     fun launchSucceeded(json: String): Boolean {
@@ -88,4 +234,7 @@ object LauncherContract {
 
     private fun JSONObject.nullableDouble(key: String): Double? =
         if (!has(key) || isNull(key)) null else optDouble(key).takeUnless { it.isNaN() }
+
+    private fun JSONObject.nullableBoolean(key: String): Boolean? =
+        if (!has(key) || isNull(key)) null else (opt(key) as? Boolean)
 }

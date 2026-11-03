@@ -1,12 +1,12 @@
 # Codekarte Panoptes
 
-**Stand: Version 0.1.36.1, Commit a8b748ac**
+**Stand: Version 0.1.37, Commit 12cdf188**
 
 Wegweiser durch den Code. Zuerst hier suchen, dann gezielt die genannte Datei öffnen.
 Die Karte nennt Dateien und Klassen, keine Zeilennummern. Kurze Pfade gelten ab
 `app/src/main/java/at/greenchili/surfmate/` (Java/Kotlin) bzw. `app/src/main/assets/`.
 
-`CodekarteAktuellTest` hält die Karte ehrlich, siehe „Karte pflegen“ am Ende.
+`CodekarteAktuellTest` hält die Karte ehrlich, siehe „Karte pflegen“ am Ende. Regeln für Agenten: `CLAUDE.md`, `AGENTS.md` (Codex).
 
 ## 1. Überblick
 
@@ -155,8 +155,8 @@ Jedes Paket steht hier, auch Unterpakete. Pfade ab dem Wurzelpaket. Lose Dateien
 | Aufsperren mit Passkey (Web-App) | `WebAuthn` (reine Prüfung, feste COSE-Form statt CBOR-Leser), `PasskeyFenster` (nur im Speicher), `HandySignatur.pruefeAufsperrenWebauthn`, Einrichten nur direkt am Auto (`AuthMiddleware.isDirektAmAuto`), Tests `WebAufsperrenTest`, Grenzen in `WEB_AUFSPERREN_STAND.md` | `WebAuthn` |
 | Brücke | `Bruecke`, `BrueckeVerbindung`, `BrueckeWeiterleitung`, `BrueckeLive`, `NoiseIK` | `BrueckeWeiterleitung` |
 | Update-Hinweis am Display | `UpdateHinweis` (reine Regeln, auch Einwilligung Mobilfunk je Download), Karte in `MessageOverlayService`, Schalter `update.hinweis`, `update.mobilfunkEinmal` | `UpdateHinweis` |
-| Updater | `AppUpdateDienst`, `UpdateQuelle`, `Freigabe`, `UpdateRegel`, `ApkZertifikat`, `FernUpdate`, `AutostartNachUpdate`, `UpdateLifecycle`, `AppUpdater` (Erbe; Versionsanzeige, Daemons stoppen, Installation abgekoppelt starten) | `AppUpdateDienst` |
-| Fahrerdisplay-Appwahl | `TachoFaehigkeit`, `TachoNaviApp` (gemeinsame Freigabepolicy für Web/nativ/Automation; außerhalb von P nur `NAVI_PAKETE`, andere Apps stoppen beim Verlassen von P), `TachoApiHandler`, Web unter Auto in `vehicle-control.html` + `web/shared/tacho-appwahl.js`, `ProjectionFragment`, `ClusterProjectionController`, `ClusterCast`, `DiLink5ClusterCast`; geprüfte Totwinkel-Layer-Platzierung und der standardmäßig abgeschaltete stationäre ADB-Testhook in `BsNativeLayer` und `BsOverlayFailureTestHook`; Vertrag und physische Abnahme in `TACHO_APPWAHL_ABNAHME.md` (freie Apps auf DiLink 5 bis zum belegten Totwinkel-Restore fail-closed) | `TachoNaviApp` |
+| Updater | `AppUpdateDienst`, `UpdateQuelle`, `Freigabe`, `UpdateRegel`, `ApkZertifikat`, `FernUpdate`, `AutostartNachUpdate`, `UpdateLifecycle`, `AppUpdater` (Erbe; Versionsanzeige, Daemons stoppen, Installation abgekoppelt starten); zweites Paket Launcher-APK (`Freigabe.Launcher` aus der version.json, `LauncherRegel`, `LauncherPaket`: `pm install -r`/`uninstall`/`am start`, nie Standard-Home), Karte `web/shared/launcher-karte.js` in `system.html` | `AppUpdateDienst` |
+| Fahrerdisplay-Appwahl | `TachoFaehigkeit`, `TachoNaviApp` (gemeinsame Freigabepolicy für Web/nativ/Automation; Freigabe ohne Probe nach Tacho-Hinweis; außerhalb von P nur Apps mit „auch beim Fahren“ (Standard `NAVI_PAKETE`, sonst je App nach eigenem Hinweis `FAHRT_HINWEIS_VERSION`, Video-Apps gekennzeichnet), andere stoppen beim Verlassen von P; `tachoNormal` = Knopf „Tacho wieder normal“, auch auf der Startseite), `TachoApiHandler`, Web unter Auto in `vehicle-control.html` + `web/shared/tacho-appwahl.js`, `ProjectionFragment`, `ClusterProjectionController`, `ClusterCast`, `DiLink5ClusterCast`; geprüfte Totwinkel-Layer-Platzierung und der standardmäßig abgeschaltete stationäre ADB-Testhook in `BsNativeLayer` und `BsOverlayFailureTestHook`; Vertrag und physische Abnahme in `TACHO_APPWAHL_ABNAHME.md` (freie Apps auf DiLink 5 bis zum belegten Totwinkel-Restore fail-closed); Mehrfach-App-Analyse und hart inaktiver Policy-/Transaktionsunterbau in `TACHO_MEHRFACH_APPS_ANALYSE.md`, `TachoMehrfachLayout`, `TachoMehrfachZulassung`, `TachoMehrfachWechselPlan`, `TachoMehrfachPrioritaet`; Panoptes-Tacho-Ansicht als eigenes Ziel derselben Appwahl (`TachoAnsicht`, `TachoAnsichtActivity`, `TachoAnsichtManoever`, TCP-Befehl `tachoAnsicht` in `TcpCommandServer`, nur mittlerer Bereich, kein Video; fünf Designs Klar/Sport/Nacht/Horizont/Route aus einem Renderer `web/shared/tacho-designs.js`, am Fahrerdisplay als WebView ohne Netz in `tacho-ansicht.html`, in der Web-Oberfläche als Vorschau in `vehicle-control.html`; Routenskizze relativ zum Auto aus `NavGuidanceEngine`); „Was zeigt der Tacho?“ als EINE Auswahl `TachoAuswahl` (Designs, Navi- und freigegebene Apps, normal; startet nur über `TachoNaviApp.setze`/`tachoNormal`), Web `web/shared/tacho-auswahl.js` in `vehicle-control.html`, Recht `tacho` für Handy/Cockpit, nicht im Launcher, einmaliger Hinweis `tachoNavi.hinweisVerstanden` vor der ersten Probe bzw. dem ersten Start, Rückmeldung zum Tacho-Test `TachoRueckmeldung` (nur mit Einwilligung je Sendung über `FehlerMelden`) | `TachoNaviApp` |
 | Ladebelegung in der Navi | `navi.html` Umkreissuche, Stoppliste und Ladestopp über `web/shared/belegung.js` (Position nur auf 2 Nachkommastellen, Radius +1 km, enger nachfragen bei Ausdünnung, Feinsortierung im Gerät, „Stand vor x min“, ohne Daten keine Anzeige; Reiter „Günstigste in der Nähe“ rechnet Ladung + Hin- und Rückweg im Gerät, Lademenge `laden.standardKwh`, Verbrauch `verbrauchKwh100` aus `/status`; erster Preis ist der eigene „Laut Säule“-Preis je Betreiber und Stromart, `preis_eigen` setzt `NaviApiHandler.mitEigenenPreisen` über `LadePreisVorschlag.eigenePreiseEintragen`, nur im Auto); `NaviApiHandler` rundet `umkreis` zusätzlich; Ladestopp unterwegs `StoppBelegung` (`standVorS`) | `NaviApiHandler` |
 | OEM-Navigationspfeile | `OemNavigationClient` → `TcpCommandServer` → `OemNavigationBridge`, `OemNavigationTransport` (Erlaubt-Liste nur 5/0 und 4, nie 1000 oder 2/3), `NaviInfoPayload`, `OemTurnIcon`; Opt-in `navMap.oemTurnGuidance`, Grenzen in `OEM_NAVIGATIONSPFEILE.md` | `OemNavigationBridge` |
 | Fähigkeiten je Auto | `VehicleCapabilities` (belegte Werte bleiben über Neustarts gemerkt), `/api/system/capabilities` | `VehicleCapabilities` |
@@ -167,7 +167,8 @@ Jedes Paket steht hier, auch Unterpakete. Pfade ab dem Wurzelpaket. Lose Dateien
 | Aufbewahrung, Speicher | `Aufbewahrung`, `StorageManager`, `ExternalStorageCleaner` | `Aufbewahrung` |
 | Ziel aus Karten-Link | `ZielLink` (Google, Waze inkl. Geohash, `geo:`, OSM, Apple; Kurzlink nur auf Wunsch per HEAD, nur der Location-Kopf), `POST /api/navi/link` in `NaviApiHandler`, Suchfeld in `navi.html` | `ZielLink` |
 | Kartensuche im Internet | `ForwardGeocoder`, `OverpassPoiClient`, `KartenSuchePrivat` (Schalter `karte.sucheInternet`, Position nur grob) | `KartenSuchePrivat` |
-| Dateien Handy ↔ Auto | `Dateiablage` (eigener Ordner, max. 200 MB, Teile zu 2 MB, keine APKs, `NOFOLLOW_LINKS`, Löschen einzeln), `DateienApiHandler`, Seite `dateien.html`, Recht `dateien` | `Dateiablage` |
+| Dateien Handy ↔ Auto | `Dateiablage` (eigener Ordner, max. 200 MB, Teile zu 2 MB, keine APKs, `NOFOLLOW_LINKS`, Löschen einzeln), `DateienApiHandler`, Seite `dateien.html`, Recht `dateien`; SD/USB `Wechselspeicher` (nur gemeldete Wechselspeicher, keine Symlinks, ohne Dashcam-Ordner, Löschen/Kopieren nur mit Rückfrage, für Kopplungen zu) | `Dateiablage` |
+| Display-Werkzeuge (0.1.37) | Hintergrundbild `HintergrundRegel` (20 MB, nur jpg/png/webp, Inhalt geprüft; Video kein belegter Weg) und `Hintergrund` (App-Prozess, Android-Hintergrunddienst); Display-Sperre `ValetRegel` (rein: nur in P, weicht bei R/Fahrt, Kamera/Anruf, Neustart), `ValetSperreDienst` (Daemon, nur im Speicher, 5 Fehlversuche → Meldung `display.valet`), `ValetOverlay` (App-Prozess); Hinweis „Bildschirm wird geteilt“ `TeilenHinweis`, `TeilenHinweisRegel`; alles über die HMAC-Brücke `RemoteDevViewBridgeService`; Apps aus/an `AppSperre` (nur Nutzer-Apps, harte Sperrliste) in `AppsApiHandler`; Rückfrage-Marken `Rueckfrage`; Oberfläche `web/shared/display-werkzeuge.js` | `ValetRegel` |
 | Bildschirm reinigen | `web/shared/reinigung.js` (30 s alle Berührungen schlucken, nur in P, lang drücken beendet, liest nur `/status`), Knopf in `system.html` | `reinigung.js` |
 | Mitzählen | `Mitzaehlen` (Schalter `zaehlen.an`, Standard aus), `AutoAngaben`, `web/shared/zaehlen-frage.js` | `Mitzaehlen` |
 | Weckwort-Messung | `WeckwortMessRegeln` (Schalter `sprache.weckwortMessung`, Standard aus), `WeckwortMessung` (Mikrofon, nur Zahlen) im eigenen Prozess `:weckwort` über `WeckwortMessDienst`, `WeckwortMessAnzeige`, `VoskErkenner`; Start nur über `WeckwortSteuerung` aus der JS-Brücke in `WebViewFragment`, Karte in `testfunktionen.html`, `WeckwortMessApiHandler` | `WeckwortMessung` |
@@ -189,6 +190,7 @@ Jedes Paket steht hier, auch Unterpakete. Pfade ab dem Wurzelpaket. Lose Dateien
 | Home Assistant | `HaApiHandler`, `HaDienst`, `HaEreignisse`, `HaZustand`, `HaMdns` | `HaApiHandler` |
 | Regeln (Automation) | `Automations`, `AutomationQueue`, `Actions`, `Conditions`, `AutomationApiHandler` | `Automations` |
 | KI-Sperre (REGEL A+) | `KiSperre` ist eine Erlaubnisliste, zentral vor jedem KI-Vorschlag, beim Ausführen und bei KI-Entwürfen: die KI darf über Regeln nur Klima, Sitzheizung, Sonnenrollo, Anzeigen und reinen Ablauf auslösen, rekursiv über Aktionsgruppe, Wenn/Schleife und „Regel einschalten“; neue Aktionen in `Actions` sind für die KI automatisch gesperrt (`KiSperreTest`); nur `GenAiAction`/`GenAiAutomation` rufen sie, Nutzerwege nie | `KiSperre` |
+| Assistenzsysteme abschalten | `AssistenzHinweis` (Haftungshinweis wie Tiermodus: `HINWEIS_VERSION`, nur Version und Zeit; Ausschalten erst nach Bestätigung, Grund `hinweis_fehlt`, Einschalten immer, AEB nur ein `nur_einschalten`), Sperre in `VehicleCommandRouter.checkAssistenzHinweis` (beide Eingänge), Speichern in `AutomationApiHandler`, `KeymapApiHandler`, `CommunityApiHandler`; Log `BefehlsLog.assistenzAus` mit Herkunft; Web `web/shared/assistenz-hinweis.js` (Dialog, Kennzeichnung in `automations.html`); KI bleibt über `KiSperre` gesperrt; DMS/DDAW/ADDW ohne BYD-Weg, nicht gebaut | `AssistenzHinweis` |
 | Fernzugang | `TailscaleLauncher`, `TailscaledProzesse`, `WireGuardLauncher`, `Notzugang`, `assets/notzugang/notzugang.sh` | `TailscaleLauncher` |
 | Native Bibliotheken | `app/src/main/cpp/CMakeLists.txt` (`surveillance`, `dilink5_camera`, `fast_cam_release_guard`, `od`) | `CMakeLists.txt` |
 | Lizenzen | `LICENSE`, `THIRD_PARTY_NOTICES.md`, `LICENSES/` | |
@@ -225,13 +227,15 @@ Extern, ist die Route für Kopplungen gesperrt.
 | `/api/vehicle`, `/api/vehicle/lock`, `/api/vehicle/flash`, `/api/system/ivi-reboot`, `/api/system/background-access` | `VehicleControlApiHandler` | Login; Extern nur `state`, `status` lesen |
 | `/api/quick-controls` | `QuickControlsApiHandler` | Login |
 | `/api/keymap` | `KeymapApiHandler` | Login |
+| `/api/assistenz/hinweis` | `AssistenzHinweis` | Login; Stand lesen, Haftungshinweis bestätigen; für Kopplungen zu |
 | `/api/tyres/` | `TyreLimitsApiHandler` | Login |
 | `/api/bydcloud` | `BydCloudApiHandler` | Login; Einrichten für Handy-Web gesperrt |
 | `/api/gps` | `GpsApiHandler` | Login; Extern lesen, siehe `GpsFreigabe` |
-| `/api/tacho/` | `TachoApiHandler` | Login |
+| `/api/tacho/` | `TachoApiHandler` | Login; `navi/fahrt` auch für Handy-Web gesperrt; `/api/tacho/auswahl` und `/api/tacho/normal` auch für Kopplungen der Art `handy`/`cockpit` mit Recht `tacho`, Handy-Web nur `auswahl` mit Recht `tacho` |
 | `/api/positions` | `PositionsApiHandler` | Login |
-| `/api/apps/` | `AppsApiHandler` | Login |
-| `/api/launcher/` | `LauncherApiHandler` | Login; Extern `/api/launcher/v1/summary` lesen |
+| `/api/apps/` | `AppsApiHandler` | Login; `/api/apps/verwaltung` für Handy-Web gesperrt |
+| `/api/display/` | `DisplayApiHandler` | Login; für Handy-Web gesperrt; `sperre/aus` am Display nur mit PIN |
+| `/api/launcher/` | `LauncherApiHandler` | Login; Extern `/api/launcher/v1/summary` lesen; `vehicle/*` → 404; `apps/launch` mit `mode:"neben"` = Split neben dem Launcher; einziger Fahrzeugweg `klima` (`LauncherKlimaBefehl`) und `update/installieren` sowie „Tacho wieder normal“ `tacho/normal` nur von der Launcher-APK mit Panoptes-Signatur (`LauncherAufrufer`) |
 | `/api/about/vehicle-info` | `AboutApiHandler` | Login |
 
 ### Einstellungen, Konto, Kopplung
@@ -294,7 +298,7 @@ Extern, ist die Route für Kopplungen gesperrt.
 |---|---|---|
 | `/api/system/` | `SystemApiHandler` | Login; Extern `capabilities`, `daemon` lesen; `zugriffe` nie für Kopplungen und Handy-Web; `befehle` nie für Kopplungen, Handy-Web nur eigene (alle mit `protokoll`) |
 | `/api/weckwort-messung` | `WeckwortMessApiHandler` | nur direkt am Autobildschirm, nur lesen |
-| `/api/appupdate/` | `AppUpdateApiHandler` | Login; Extern `status` lesen; Handy-Web nur mit Recht `update`; `/api/appupdate/hinweis` nur am Auto oder voller Login |
+| `/api/appupdate/` | `AppUpdateApiHandler` | Login; Extern `status` lesen; Handy-Web nur mit Recht `update`; `/api/appupdate/hinweis` und `/api/appupdate/launcher` (schreibend) nur am Auto oder voller Login |
 | `/api/update/` | `HttpServer` selbst | stillgelegt, antwortet 410 |
 | `/api/rueckmeldung/` | `RueckmeldungApiHandler` | Login; für Kopplungen doppelt gesperrt |
 | `/api/neuigkeiten` | `NeuigkeitenApiHandler` | Login; Extern lesen |
@@ -337,15 +341,14 @@ Weitere Handler ohne eigene Route in `HttpServer`: `AudioTestApiHandler`.
 Unter `assets/web/local/`, ausgeliefert durch `HttpServer`; gemeinsames Menü in `web/shared/app-shell.js`.
 
 `about.html`, `abrp.html`, `apps.html`, `assistant.html`, `automations.html`, `bericht.html`, `byd-cloud.html`, `camping.html`,
-`charging.html`, `communicate.html`, `dateien.html`, `events.html`, `fehler-melden.html`, `index.html`, `key-mapping.html`, `ladeplan.html`,
+`charging.html`, `communicate.html`, `dateien.html`, `events.html`, `fehler-melden.html`, `index.html`, `key-mapping.html`, `ladeplan.html`, `launcher-fahrzeug.html`,
 `live-view.html`, `login.html`, `meldungen.html`, `mqtt.html`, `navi.html`, `network.html`, `notifications.html`,
 `orte.html`, `parking.html`, `performance.html`, `recording.html`, `remote-dev-view.html`, `road-sense.html`,
-`seat-positions.html`, `surveillance.html`, `system.html`, `telegram.html`, `testfunktionen.html`, `tiermodus.html`, `trips.html`,
+`seat-positions.html`, `surveillance.html`, `system.html`, `tacho-ansicht.html` (nur Fahrerdisplay), `telegram.html`, `testfunktionen.html`, `tiermodus.html`, `trips.html`,
 `vehicle-control-3d-test.html`, `vehicle-control.html`, `waechter.html`, `wallbox.html`, `wireguard.html`
 
-`waechter.html` ist die Übersicht, `surveillance.html` sind die Wächter-Einstellungen.
-`testfunktionen.html` bleibt absichtlich hinter sieben schnellen Tipps auf die Version unter „Über“ verborgen.
-`vehicle-control-3d-test.html` ist ein interner 3D-Diagnose-Sandkasten ohne Menüeintrag und keine normale Oberfläche.
+`waechter.html` ist die Übersicht, `surveillance.html` sind die Wächter-Einstellungen. `testfunktionen.html` bleibt absichtlich hinter sieben schnellen Tipps auf die Version unter „Über“ verborgen.
+`vehicle-control-3d-test.html` ist ein interner 3D-Diagnose-Sandkasten ohne Menüeintrag und keine normale Oberfläche. `launcher-fahrzeug.html` zeigt nur das 3D-Fahrzeug aus dem Modellkatalog für die Fahrzeug-Kachel der Launcher-APK (`:panoptes-launcher`), ohne Menü und ohne Daten außer Modell und Farbe.
 
 ## 5. Rechte in Kürze
 
@@ -360,7 +363,7 @@ auch Ablehnungen mitkommen; die Zeile schreibt `BefehlsLog.abschliessen` im `fin
 - `WebHandyGuard` ist eine Sperrliste: Zugang, Netz, Sicherung, Updates. Neue geheime Bereiche dort eintragen,
   neue geheime Konfig-Abschnitte in `GEHEIME_ABSCHNITTE`.
 - `Geheimnisse` maskiert Tokens und Schlüssel beim Lesen der Gesamt-Konfiguration.
-- `Kopplungen` setzt `kamera` und `standbild` nie automatisch, neue Kopplungen auch nie `aufsperren`, `wallbox`, `update`, `protokoll`, `dateien` (auch Bestand nie `protokoll`, `dateien`).
+- `Kopplungen` setzt `kamera` und `standbild` nie automatisch, neue Kopplungen auch nie `aufsperren`, `wallbox`, `update`, `protokoll`, `dateien`, `tacho` (auch Bestand nie `protokoll`, `dateien`, `tacho`).
   Beim Erlauben gibt es sie nur per Häkchen plus Rückfrage in `system.html`, Display und Telegram senden keine.
 - Am Auto gilt: Fahrzeugbefehle laufen nie über `/api/einstellungen`. Aufsperren braucht die Bestätigung im
   Moment, keine Automation.

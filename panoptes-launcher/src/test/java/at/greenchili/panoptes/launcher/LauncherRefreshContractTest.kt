@@ -10,7 +10,7 @@ class LauncherRefreshContractTest {
         val source = String(
             Files.readAllBytes(Paths.get("src/main/java/at/greenchili/panoptes/launcher/MainActivity.kt")),
             Charsets.UTF_8
-        )
+        ).replace("\r\n", "\n") // Windows-Checkout (autocrlf) wie LF lesen
         assertTrue(source.contains("private val refreshInFlight = AtomicBoolean(false)"))
         assertTrue(source.contains("if (!refreshInFlight.compareAndSet(false, true)) return"))
         assertTrue(source.contains("finally {\n                refreshInFlight.set(false)"))

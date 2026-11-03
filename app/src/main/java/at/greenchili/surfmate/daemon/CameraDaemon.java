@@ -1096,6 +1096,10 @@ public class CameraDaemon {
         // 0.1.16 Camping vor dem Wächter-Init: hängt nicht von der Kamera-Pipeline ab (Wächter-Eingriff
         // greift erst, wenn sie läuft) und bleibt so auch erreichbar, falls der Wächter-Start scheitert.
         startCamping();
+        // 0.1.37 Stufe 4: Updater ebenso vor dem Wächter-Init (Rückweg: ein Update muss auch dann ankommen, wenn der
+        // Wächter-Start scheitert; der Launcher liest seine Update-Karte hier). start() ist idempotent, der Aufruf
+        // weiter unten bleibt wirkungslos stehen. Erste Netzprüfung frühestens nach 10 min wie bisher.
+        try { at.greenchili.surfmate.appupdate.AppUpdateDienst.start(); } catch (Throwable t) { log("AppUpdate früh: " + t); }
 
         // Explicit diagnostic only. The helper consumes its sentinel before
         // entering vendor code and hard-bounds the raw AVMCamera lifecycle, so

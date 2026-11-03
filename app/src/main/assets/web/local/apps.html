@@ -29,6 +29,17 @@
         <div class="mobile-header"><span style="font-weight:600" data-i18n="apps.title">Apps nebeneinander</span></div>
         <header class="page-header"><h1 class="page-title" data-i18n="apps.title">Apps nebeneinander</h1></header>
         <div class="page-body">
+            <!-- 0.1.37: BYDs eigene Projektions-Apps, nur sichtbar wenn installiert und startbar (Liste /api/apps/list) -->
+            <div class="card" id="projektion" style="display:none">
+                <div class="card-header"><div class="card-title" data-i18n="apps.projektion_title">Handy im Auto</div></div>
+                <div class="card-body">
+                    <div class="sys-actions" style="display:flex;gap:10px;flex-wrap:wrap">
+                        <button class="btn" id="appAndroidAuto" type="button" data-nur-display style="display:none" data-i18n="apps.android_auto">Android Auto</button>
+                        <button class="btn" id="appCarplay" type="button" data-nur-display style="display:none" data-i18n="apps.carplay">CarPlay</button>
+                    </div>
+                    <p class="setting-desc" style="margin-top:10px" data-i18n="apps.projektion_note">Öffnet die App des Autos für Android Auto bzw. CarPlay.</p>
+                </div>
+            </div>
             <div class="card">
                 <div class="card-header"><div class="card-title" data-i18n="apps.card_title">Zwei Apps auf dem Mittelschirm</div></div>
                 <div class="card-body">
@@ -45,10 +56,16 @@
                     <p class="setting-desc" style="margin-top:12px" data-i18n="apps.note">Das betrifft nur den Mittelschirm, nicht das Fahrerdisplay. Nicht jede fremde App unterstützt den geteilten Bildschirm.</p>
                 </div>
             </div>
+            <!-- 0.1.37 Apps deaktivieren und wieder einschalten (display-werkzeuge.js, /api/apps/verwaltung) -->
+            <div class="card">
+                <div class="card-header"><div class="card-title" data-i18n="display.apps_titel">Apps ausschalten</div></div>
+                <div class="card-body"><div id="appVerwaltung"></div></div>
+            </div>
         </div>
     </main>
 </div>
 <script src="../shared/core.js?v=pn6"></script>
+<script src="../shared/display-werkzeuge.js?v=1"></script>
 <script>
 (function () {
     'use strict';
@@ -86,7 +103,28 @@
         if (!primary.disabled && primary.value === secondary.value) show(t('apps.choose_different', 'Bitte zwei verschiedene Apps wählen.'), 'error');
         else if (!primary.disabled) show(t('apps.ready', 'Bereit. Beide Apps werden erst beim Tippen geöffnet.'), '');
     }
+    // Android Auto / CarPlay: BYD-Pakete starten (nur der Launch-Intent der App, sonst nichts)
+    var PROJEKTION = { 'com.byd.androidauto': 'appAndroidAuto', 'com.byd.carplay.ui': 'appCarplay' };
+    function projektion(apps) {
+        var sichtbar = false;
+        Object.keys(PROJEKTION).forEach(function (paket) {
+            var knopf = document.getElementById(PROJEKTION[paket]);
+            var da = apps.some(function (a) { return a.package === paket; });
+            knopf.style.display = da ? '' : 'none';
+            if (da) {
+                sichtbar = true;
+                knopf.onclick = function () {
+                    request('/api/apps/launch', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ package: paket }) }).then(function (r) {
+                        if (!(r.ok && r.body.success)) show(t('apps.open_failed', 'Die Apps konnten nicht sicher nebeneinander geöffnet werden.'), 'error');
+                    });
+                };
+            }
+        });
+        document.getElementById('projektion').style.display = sichtbar ? '' : 'none';
+    }
     function load() {
+        request('/api/apps/list', { cache: 'no-store' }).then(function (r) { if (r.ok && r.body.success) projektion(r.body.apps || []); }, function () {});
         Promise.all([request('/api/apps/list', { cache: 'no-store' }), request('/api/apps/capabilities', { cache: 'no-store' })])
             .then(function (results) {
                 var list = results[0].body, capabilities = results[1].body;

@@ -394,6 +394,10 @@
       "vehicle_health_battery12v": {
         "label": "La batterie 12 V faiblit",
         "note": "Prévient avant que la batterie 12 V soit trop faible pour démarrer. Au plus une fois par jour."
+      },
+      "display_valet": {
+        "label": "Verrouillage de l’écran",
+        "note": "Quelqu’un a saisi plusieurs fois un PIN erroné sur l’écran verrouillé."
       }
     },
     "cloud_uebergabe_titel": "« {0} » veut transmettre le cloud BYD",
@@ -959,6 +963,8 @@
     }
   },
   "vehicle_control": {
+    "assistenz_hinweis_fehlt": "Veuillez d’abord confirmer l’avis sur les systèmes d’aide à la conduite.",
+    "assistenz_nur_einschalten": "Le freinage d’urgence ne peut être qu’activé.",
     "blocked_driving": "Impossible pendant que la voiture roule",
     "cloud_gate_unlock_never": "Le déverrouillage à distance est désactivé dans Panoptes.",
     "cloud_gate_car_on": "La voiture est allumée – veuillez la commander depuis la voiture. Via le cloud BYD, cela ne fonctionne que lorsque la voiture est éteinte.",
@@ -2657,5 +2663,17 @@
   },
   "dateien": {
     "recht_fehlt": "Autorisation Fichiers manquante – activez-la dans Panoptes sous Appareils associés."
+  },
+  "display": {
+    "teilen_hinweis": "Écran en cours de partage",
+    "valet_titel": "Écran verrouillé",
+    "valet_hilfe": "Pour déverrouiller, appuyez longuement puis saisissez le PIN.",
+    "valet_pin": "PIN",
+    "valet_ok": "OK",
+    "valet_falsch": "PIN erroné.",
+    "valet_warten": "Veuillez patienter {s} secondes.",
+    "valet_fehler": "Impossible pour le moment. Réessayez tout de suite.",
+    "valet_fehlversuche_titel": "Verrouillage de l’écran : PIN erroné",
+    "valet_fehlversuche_text": "Un PIN erroné a été saisi {0} fois sur l’écran."
   }
 }

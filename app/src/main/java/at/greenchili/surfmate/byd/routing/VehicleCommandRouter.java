@@ -268,6 +268,15 @@ public final class VehicleCommandRouter {
             return new CommandResult(Outcome.BLOCKED_DRIVING, Path.NONE, msg, 0, null);
         }
 
+        /**
+         * 0.1.37 Assistenzsysteme: nichts wurde ans Auto geschickt. {@code hinweis_fehlt} = erst den Haftungshinweis
+         * bestätigen ({@link AssistenzHinweis}); {@code nur_einschalten} = Notbremsassistent bleibt nur einschaltbar.
+         */
+        public static CommandResult assistenzGesperrt(String grund, String msg) {
+            Outcome o = AssistenzHinweis.GRUND_NUR_EIN.equals(grund) ? Outcome.NOT_SUPPORTED : Outcome.AUTH_REQUIRED;
+            return new CommandResult(o, Path.NONE, msg, 0, null, grund);
+        }
+
         public String pathString() {
             switch (path) {
                 case CLOUD: return "cloud";
@@ -1999,6 +2008,27 @@ public final class VehicleCommandRouter {
                     r == null || r.path == null ? null : r.path.name());
         } catch (Throwable ignored) {
         }
+        // 0.1.37: jede Abschaltung eines Assistenzsystems eigens, mit Herkunft (nutzer, handy, automation, ha …)
+        try {
+            String system = AssistenzHinweis.abschaltung(cmd);
+            if (system != null) {
+                at.greenchili.surfmate.server.BefehlsLog.assistenzAus(system, AssistenzHinweis.herkunft(),
+                        r == null || r.outcome == null ? null : r.outcome.name(), r == null ? null : r.grund);
+            }
+        } catch (Throwable ignored) {
+        }
+    }
+
+    /**
+     * 0.1.37 Assistenzsysteme (03.11.2026): Ausschalten nur nach bestätigtem Haftungshinweis, AEB nie aus.
+     * Einschalten läuft immer durch. Steht in beiden Eingängen direkt hinter der Fahrsperre, vor jedem Weg.
+     */
+    static CommandResult checkAssistenzHinweis(VehicleCommand cmd) {
+        String grund = AssistenzHinweis.sperrGrund(cmd);
+        if (grund == null) return null;
+        logger.warn("Blocked '" + cmd.name() + "' — " + grund);
+        return CommandResult.assistenzGesperrt(grund, msg(AssistenzHinweis.GRUND_NUR_EIN.equals(grund)
+                ? "assistenz_nur_einschalten" : "assistenz_hinweis_fehlt"));
     }
 
     private CommandResult executeOhneHaken(VehicleCommand cmd) {
@@ -2032,6 +2062,8 @@ public final class VehicleCommandRouter {
     private CommandResult executeUnserialized(VehicleCommand cmd, long tailgateOpenStopGeneration) {
         CommandResult blocked = checkDrivingSafety(cmd);
         if (blocked != null) return blocked;
+        CommandResult assistenz = checkAssistenzHinweis(cmd);
+        if (assistenz != null) return assistenz;
 
         if (cmd instanceof TrunkOpenCommand) {
             // The composite flow safely unlocks and opens when the default
@@ -2269,6 +2301,8 @@ public final class VehicleCommandRouter {
                                                      long tailgateOpenStopGeneration) {
         CommandResult blocked = checkDrivingSafety(cmd);
         if (blocked != null) return blocked;
+        CommandResult assistenz = checkAssistenzHinweis(cmd);
+        if (assistenz != null) return assistenz;
         CommandResult result = isSdkOnlyTrunkOpen(cmd)
                 ? runSdkOnlyTrunkOpen(cmd, tailgateOpenStopGeneration) : runSdkOnly(cmd);
         // Same AC-auto-off retirement as execute(). This is a SECOND public entry point —

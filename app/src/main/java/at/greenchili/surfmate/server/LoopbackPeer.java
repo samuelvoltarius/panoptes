@@ -71,6 +71,36 @@ final class LoopbackPeer {
         return -1;
     }
 
+    /**
+     * 0.1.37 Launcher: Linux-UID des Aufrufers einer Loopback-Verbindung (Spalte uid der Zeile
+     * local = loopback:clientPort, remote = loopback:serverPort), sonst -1.
+     */
+    static int clientUid(int clientPort, int serverPort) {
+        for (String table : new String[] {"/proc/net/tcp", "/proc/net/tcp6"}) {
+            int uid = findClientUid(readOrEmpty(Paths.get(table)), clientPort, serverPort);
+            if (uid >= 0) return uid;
+        }
+        return -1;
+    }
+
+    /** Wie {@link #findClientInode}, liefert aber die uid-Spalte; -1 ohne passende Zeile. */
+    static int findClientUid(String table, int clientPort, int serverPort) {
+        String[] lines = table.split("\n");
+        for (int i = 1; i < lines.length; i++) {
+            String[] f = lines[i].trim().split("\\s+");
+            if (f.length < 10) continue;
+            if (isLoopbackEndpoint(f[1], clientPort) && isLoopbackEndpoint(f[2], serverPort)) {
+                try {
+                    int uid = Integer.parseInt(f[7]);
+                    if (uid >= 0) return uid;
+                } catch (NumberFormatException ignored) {
+                    // malformed row
+                }
+            }
+        }
+        return -1;
+    }
+
     /** "0100007F:1FF4", IPv4-mapped "...FFFF00000100007F:1FF4" or ::1 "...01000000:1FF4". */
     static boolean isLoopbackEndpoint(String endpoint, int port) {
         int colon = endpoint.indexOf(':');

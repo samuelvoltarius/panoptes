@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panoptes Launcher – Fahrzeug</title>
+    <!--
+        0.1.37 Panoptes Launcher: nur das Fahrzeug aus dem Modellkatalog (manifest.json), für die
+        Fahrzeug-Kachel der Launcher-APK. Gleicher Renderer wie die Seitenleiste (ev-card-3d.js),
+        zeichnet nur bei Bedarf (keine Dauerschleife), durchsichtiger Hintergrund, kein Text,
+        keine Daten außer Modell und Farbe aus der Adresse.
+    -->
+    <style>
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: transparent; overflow: hidden; }
+        canvas { display: block; width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+<canvas id="auto" aria-hidden="true"></canvas>
+<script src="../shared/ev-card-3d.js?v=1"></script>
+<script>
+    (function () {
+        var q = {};
+        (location.search || '').replace(/^\?/, '').split('&').forEach(function (t) {
+            var i = t.indexOf('=');
+            if (i > 0) q[decodeURIComponent(t.slice(0, i))] = decodeURIComponent(t.slice(i + 1));
+        });
+        var modell = /^[a-z0-9_-]{1,40}$/.test(q.modell || '') ? q.modell : null;
+        var farbe = /^#[0-9A-Fa-f]{6}$/.test(q.farbe || '') ? q.farbe : '#E8E8EC';
+        if (!modell || typeof window.SurfMateEvCard3D !== 'function') return;
+        var karte = new window.SurfMateEvCard3D(document.getElementById('auto'), { view: 'three-quarter' });
+        karte.setColor(farbe);
+        karte.setModel(modell);
+        window.addEventListener('pagehide', function () { try { karte.dispose(); } catch (e) {} });
+    })();
+</script>
+</body>
+</html>

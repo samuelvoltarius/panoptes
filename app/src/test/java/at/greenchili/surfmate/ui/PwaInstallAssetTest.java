@@ -20,7 +20,11 @@ import org.junit.Test;
 public class PwaInstallAssetTest {
 
     private static final Set<String> NON_PRODUCT_PAGES = new HashSet<>(Arrays.asList(
-            "login.html", "testfunktionen.html", "vehicle-control-3d-test.html"));
+            "login.html", "testfunktionen.html", "vehicle-control-3d-test.html",
+            // 0.1.37: nur das 3D-Fahrzeug für die Kachel der Launcher-APK, keine Produktseite
+            "launcher-fahrzeug.html",
+            // Nur fuer das Fahrerdisplay (TachoAnsichtActivity, ohne Netz), keine Seite der Web-App.
+            "tacho-ansicht.html"));
 
     @Test
     public void everyProductPageLoadsTheCentralPwaBootstrap() throws Exception {

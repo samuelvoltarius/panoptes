@@ -24,6 +24,20 @@ import java.util.concurrent.ConcurrentHashMap;
  * und wird beim Verlassen von P sofort gestoppt ({@link #beiGangwechsel} → {@code ClusterCast.stop()},
  * zurueck zur Instrumentenanzeige). Gilt fuer alle Startwege (Display, Web, Tastenbelegung,
  * Automation, ACC-Autostart), weil alle durch {@link #fahrtSperre} laufen.
+ *
+ * <p>0.1.37: Die eigene {@link TachoAnsicht} ist ein zusaetzliches Ziel derselben Appwahl (gleiche
+ * Probe, gleiche Freigabe, gleiche Sperre). Vor der ersten Probe bzw. dem ersten Start muss der
+ * Nutzer einmal den Hinweis „neu, eigenes Risiko, Warnleuchten muessen sichtbar bleiben“ mit
+ * „Verstanden“ bestaetigen ({@link #hinweisVerstanden}).
+ *
+ * <p>0.1.37 („wir wollen keine Probe, das verstehen die nicht“): Freigeben heisst App waehlen und
+ * einmal den Tacho-Hinweis bestaetigen; die 20-s-Probe ist keine Pflicht mehr. Die Faehigkeitspruefung
+ * (Surf/DiLink 5/unbekannt gesperrt) bleibt. „Tacho wieder normal“ ({@link #tachoNormal}) stoppt jede Projektion.
+ *
+ * <p>0.1.37 („das sollen die selbst entscheiden“): je freigegebener App eine Option „auch beim Fahren“
+ * ({@link #FAHRT}). Ohne Eintrag gilt: Navi-Apps der festen Liste ja, alles andere nein (wie 0.1.36.1).
+ * Einschalten nur mit Login (nie Kopplung, KI oder Automation) und nach dem eigenen Haftungshinweis
+ * ({@link #FAHRT_HINWEIS_VERSION}); jede Aenderung steht im Befehls-Log.
  */
 public final class TachoNaviApp {
     @FunctionalInterface
@@ -33,6 +47,11 @@ public final class TachoNaviApp {
     static final String SEKTION = "tachoNavi";
     static final String FREIGABEN = "freigaben";
     static final long PROBE_MS = 20_000L;
+    /** Je Paket „auch beim Fahren“: true/false ausdruecklich, fehlt = {@link #istNavi}. */
+    static final String FAHRT = "fahrt";
+    static final String FAHRT_HINWEIS = "fahrtHinweis";
+    /** Neue Textversion = neu bestaetigen (Muster Tiermodus/AssistenzHinweis). */
+    public static final String FAHRT_HINWEIS_VERSION = "2026-11-03";
 
     private static volatile long probeBis;
     private static volatile String probePaket;
@@ -58,18 +77,147 @@ public final class TachoNaviApp {
             SELF_PACKAGE                              // Panoptes selbst
     )));
 
+    /**
+     * Bekannte Video- und Streaming-Apps: der Fahrt-Hinweis zeigt dann deutlich „Video-App“. Keine Sperre.
+     * Paketnamen aus dem Gedaechtnis, nicht gegen den Play Store geprueft.
+     */
+    static final Set<String> VIDEO_PAKETE = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "com.google.android.youtube", "com.google.android.apps.youtube.kids", "com.netflix.mediaclient",
+            "com.amazon.avod.thirdpartyclient", "com.disney.disneyplus", "tv.twitch.android.app",
+            "org.videolan.vlc", "org.xbmc.kodi", "com.mxtech.videoplayer.ad", "com.plexapp.android",
+            "org.schabi.newpipe", "com.zhiliaoapp.musically", "com.ss.android.ugc.trill", "tv.danmaku.bili",
+            "com.tencent.qqlive", "com.youku.phone", "com.qiyi.video", "com.wbd.stream",
+            "de.zdf.android.mediathek", "de.swr.avp.ard", "de.prosiebensat1digital.seventv", "com.dazn",
+            "com.vimeo.android.videoapp", "com.dailymotion.dailymotion")));
+
     private TachoNaviApp() {}
+
+    /** Bekannte Video-/Streaming-App (nur fuer den Hinweis, keine harte Sperre)? */
+    public static boolean istVideo(String paket) {
+        return paket != null && VIDEO_PAKETE.contains(paket.trim());
+    }
+
+    /** Darf diese App auch ausserhalb von P laufen? Ausdruecklicher Eintrag, sonst nur Navi der festen Liste. */
+    static boolean fahrtErlaubt(String paket, JSONObject fahrt) {
+        if (paket == null) return false;
+        String p = paket.trim();
+        if (fahrt != null && fahrt.has(p)) return fahrt.optBoolean(p, false);
+        return istNavi(p);
+    }
+
+    public static boolean fahrtErlaubt(String paket) {
+        return fahrtErlaubt(paket, fahrtListe());
+    }
+
+    private static JSONObject fahrtListe() {
+        JSONObject f = sektion().optJSONObject(FAHRT);
+        return f == null ? new JSONObject() : f;
+    }
+
+    /** Eigener Haftungshinweis fuer „auch beim Fahren“ in der aktuellen Textversion bestaetigt? */
+    public static boolean fahrtHinweisBestaetigt() {
+        return fahrtHinweisBestaetigt(sektion().optJSONObject(FAHRT_HINWEIS));
+    }
+
+    static boolean fahrtHinweisBestaetigt(JSONObject h) {
+        return h != null && FAHRT_HINWEIS_VERSION.equals(h.optString("version")) && h.optLong("zeit", 0L) > 0L;
+    }
+
+    /** Bestaetigt den Fahrt-Hinweis; nur die aktuelle Version wird angenommen. Speichert nur Version und Zeit. */
+    public static synchronized JSONObject fahrtHinweisBestaetigen(String version) throws Exception {
+        if (!FAHRT_HINWEIS_VERSION.equals(version == null ? "" : version.trim())) {
+            return new JSONObject().put("ok", false).put("grund", "version");
+        }
+        Map<String, Object> w = new HashMap<>();
+        w.put(FAHRT_HINWEIS, new JSONObject().put("version", FAHRT_HINWEIS_VERSION)
+                .put("zeit", System.currentTimeMillis()));
+        boolean ok = speichere(w);
+        logFahrt("hinweis", ok ? "ok" : "fehlgeschlagen", null);
+        return new JSONObject().put("ok", ok);
+    }
+
+    /** Grund, warum „auch beim Fahren“ nicht gesetzt werden darf, sonst null. Ausschalten geht immer. */
+    static String fahrtSperreSetzen(String paket, boolean an, boolean freigegeben, boolean hinweisBestaetigt) {
+        if (!gueltigesZiel(paket)) return "ungueltiges_paket";
+        if (!an) return null;
+        if (!freigegeben) return "nicht_freigegeben";
+        if (!hinweisBestaetigt) return "fahrt_hinweis_noetig";
+        return null;
+    }
+
+    /**
+     * Option „auch beim Fahren“ fuer ein Paket setzen. Nur ueber {@code TachoApiHandler} (Login, keine Kopplung,
+     * keine Automation, keine KI). Ausschalten ausserhalb von P stoppt die App sofort.
+     */
+    public static synchronized JSONObject setzeFahrt(String paket, boolean an) throws Exception {
+        String p = paket == null ? "" : paket.trim();
+        String sperre = fahrtSperreSetzen(p, an, istFreigegeben(p), fahrtHinweisBestaetigt());
+        if (sperre != null) {
+            logFahrt(an ? "an" : "aus", sperre, p);
+            return new JSONObject().put("ok", false).put("grund", sperre);
+        }
+        JSONObject f = new JSONObject(fahrtListe().toString());
+        f.put(p, an);
+        Map<String, Object> w = new HashMap<>();
+        w.put(FAHRT, f);
+        boolean ok = speichere(w);
+        logFahrt(an ? "an" : "aus", ok ? "ok" : "fehlgeschlagen", p);
+        if (!an && bewegungsGrund() != null) stoppePaket(p);
+        return new JSONObject().put("ok", ok).put("paket", p).put("fahrt", ok ? an : fahrtErlaubt(p));
+    }
+
+    private static void logFahrt(String was, String ergebnis, String paket) {
+        try {
+            at.greenchili.surfmate.server.BefehlsLog.ereignis("tacho.fahrt." + was, ergebnis, null, null);
+        } catch (Throwable ignored) { }
+        logger.info("Tacho auch beim Fahren " + was + ": " + ergebnis + (paket == null ? "" : " (" + paket + ")"));
+    }
+
+    /** Ein Stopp-Schritt (Tests ersetzen sie). */
+    interface Stopper { boolean stoppe() throws Exception; }
+
+    /** Echte Stopps: App-Projektion, Spiegel/Totwinkel-Projektion, Panoptes-Karte am Tacho. */
+    static volatile Stopper[] stopper = {
+            () -> at.greenchili.surfmate.launcher.ClusterCast.stop(),
+            () -> { at.greenchili.surfmate.surveillance.ClusterMirrorController.getInstance().stop(); return true; },
+            () -> at.greenchili.surfmate.navmap.ClusterMapProjector.stop()
+    };
+
+    /**
+     * „Tacho wieder normal“: stoppt jede Projektion und kehrt zur Instrumentenanzeige zurueck; der ACC-Autostart
+     * der gewaehlten App ist danach aus. Freigaben bleiben. Jede Stufe laeuft, auch wenn eine vorige scheitert.
+     */
+    public static synchronized JSONObject tachoNormal() throws Exception {
+        probeBis = 0; probePaket = null; probeStartPaket = null;
+        Map<String, Object> w = new HashMap<>();
+        w.put("an", false);
+        boolean gespeichert = speichere(w);
+        boolean alle = true;
+        for (Stopper s : stopper) {
+            try { alle &= s.stoppe(); }
+            catch (Throwable t) { alle = false; logger.warn("Tacho wieder normal: " + t.getMessage()); }
+        }
+        try {
+            at.greenchili.surfmate.server.BefehlsLog.ereignis("tacho.normal", alle ? "ok" : "unvollstaendig", null, null);
+        } catch (Throwable ignored) { }
+        logger.info("Tacho wieder normal (" + (alle ? "ok" : "unvollstaendig") + ")");
+        return new JSONObject().put("ok", alle).put("success", alle).put("gespeichert", gespeichert);
+    }
 
     /** Gilt dieses Paket als Navigation (darf auch ausserhalb von P laufen)? */
     public static boolean istNavi(String paket) {
         return paket != null && NAVI_PAKETE.contains(paket.trim());
     }
 
-    /** Muss die aktive App beim Gangwechsel weg? Ausserhalb von P: jede Nicht-Navi-App und jede nicht freigegebene. */
+    /** Muss die aktive App beim Gangwechsel weg? Ausserhalb von P: jede nicht freigegebene und jede ohne „auch beim Fahren“. */
     static boolean mussBeiGangStoppen(int gang, String aktivPaket, boolean freigegeben) {
+        return mussBeiGangStoppen(gang, aktivPaket, freigegeben, istNavi(aktivPaket));
+    }
+
+    static boolean mussBeiGangStoppen(int gang, String aktivPaket, boolean freigegeben, boolean fahrt) {
         if (gang == at.greenchili.surfmate.monitor.GearMonitor.GEAR_P) return false;
         if (aktivPaket == null || aktivPaket.trim().isEmpty()) return false;
-        return !freigegeben || !istNavi(aktivPaket);
+        return !freigegeben || !fahrt;
     }
 
     static boolean gueltigesFremdpaket(String paket) {
@@ -86,8 +234,27 @@ public final class TachoNaviApp {
         return true;
     }
 
+    /**
+     * Ziel der Appwahl: jede gueltige Fremd-App oder die eigene Panoptes-Tacho-Ansicht
+     * ({@link TachoAnsicht}). Panoptes selbst ist sonst nie waehlbar.
+     */
+    static boolean gueltigesZiel(String paket) {
+        return gueltigesFremdpaket(paket) || TachoAnsicht.istAnsicht(paket);
+    }
+
+    static final String HINWEIS = "hinweisVerstanden";
+
+    /** Einmaliger Hinweis „neu, eigenes Risiko, Warnleuchten muessen sichtbar bleiben“ bestaetigt? */
+    public static boolean hinweisVerstanden() { return sektion().optLong(HINWEIS, 0L) > 0L; }
+
+    public static synchronized JSONObject hinweisBestaetigen() throws Exception {
+        Map<String, Object> w = new HashMap<>();
+        w.put(HINWEIS, System.currentTimeMillis());
+        return new JSONObject().put("ok", speichere(w));
+    }
+
     static boolean istFreigegeben(String paket, JSONObject freigaben) {
-        if (!gueltigesFremdpaket(paket) || freigaben == null) return false;
+        if (!gueltigesZiel(paket) || freigaben == null) return false;
         Object wert = freigaben.opt(paket.trim());
         return Boolean.TRUE.equals(wert) || wert instanceof Number;
     }
@@ -98,6 +265,7 @@ public final class TachoNaviApp {
     }
 
     private static boolean istStartbar(String paket) {
+        if (TachoAnsicht.istAnsicht(paket)) return true; // eigene Activity, immer vorhanden
         return gueltigesFremdpaket(paket)
                 && at.greenchili.surfmate.launcher.AppLauncher.isLaunchable(paket.trim());
     }
@@ -106,12 +274,18 @@ public final class TachoNaviApp {
     public static String fahrtSperre(String paket, String bewegungsGrund) {
         String p = paket == null ? "" : paket.trim();
         return fahrtSperreAuswertung(p, andereApps(p), bewegungsGrund,
-                istStartbar(p), istFreigegeben(p), p.equals(probeStartPaket));
+                istStartbar(p), istFreigegeben(p), p.equals(probeStartPaket), fahrtErlaubt(p));
     }
 
     static String fahrtSperreAuswertung(String paket, JSONObject andereApps, String bewegungsGrund,
                                         boolean startbar, boolean freigegeben, boolean probe) {
-        if (!gueltigesFremdpaket(paket)) return "ungueltiges_paket";
+        return fahrtSperreAuswertung(paket, andereApps, bewegungsGrund, startbar, freigegeben, probe,
+                istNavi(paket));
+    }
+
+    static String fahrtSperreAuswertung(String paket, JSONObject andereApps, String bewegungsGrund,
+                                        boolean startbar, boolean freigegeben, boolean probe, boolean fahrt) {
+        if (!gueltigesZiel(paket)) return "ungueltiges_paket";
         if (!startbar) return "nicht_installiert";
         String status = andereApps == null ? "" : andereApps.optString("status");
         String code = andereApps == null ? "" : andereApps.optString("code");
@@ -120,14 +294,20 @@ public final class TachoNaviApp {
             return code.startsWith("warnleuchten_") ? null : "auf_diesem_auto_nicht_angeboten";
         }
         if (!freigegeben) return "nicht_freigegeben";
-        // 0.1.36.1: ausserhalb von P (oder Zustand unbekannt) nur Navigation.
-        if (bewegungsGrund != null && !istNavi(paket)) return "nur_im_stand";
+        // 0.1.36.1: ausserhalb von P (oder Zustand unbekannt) nur Navigation; 0.1.37: oder „auch beim Fahren“.
+        if (bewegungsGrund != null && !fahrt) return "nur_im_stand";
         return TachoFaehigkeit.JA.equals(status) ? null : "auf_diesem_auto_nicht_angeboten";
     }
 
     static String einschaltSperre(String paket, JSONObject andereApps, String bewegungsGrund,
+                                  boolean startbar, boolean freigegeben, boolean hinweisVerstanden) {
+        if (!hinweisVerstanden) return "hinweis_noetig";
+        return einschaltSperre(paket, andereApps, bewegungsGrund, startbar, freigegeben);
+    }
+
+    static String einschaltSperre(String paket, JSONObject andereApps, String bewegungsGrund,
                                   boolean startbar, boolean freigegeben) {
-        if (!gueltigesFremdpaket(paket)) return "ungueltiges_paket";
+        if (!gueltigesZiel(paket)) return "ungueltiges_paket";
         if (!startbar) return "nicht_installiert";
         if (!freigegeben) return "nicht_freigegeben";
         if (bewegungsGrund != null) return "nur_im_stand";
@@ -137,9 +317,31 @@ public final class TachoNaviApp {
         return null;
     }
 
+    /**
+     * 0.1.37: Freigabe ohne Probe. Noetig: Tacho-Hinweis bestaetigt, App startbar und Plattform angeboten
+     * (Faehigkeitspruefung: Surf, DiLink 5 und Unbekanntes bleiben gesperrt).
+     */
+    static String freigabeSperre(String paket, JSONObject andereApps, boolean startbar, boolean hinweisVerstanden) {
+        if (!gueltigesZiel(paket)) return "ungueltiges_paket";
+        if (!hinweisVerstanden) return "hinweis_noetig";
+        if (!startbar) return "nicht_installiert";
+        String code = andereApps == null ? "" : andereApps.optString("code");
+        String status = andereApps == null ? "" : andereApps.optString("status");
+        if (!code.startsWith("warnleuchten_") && !TachoFaehigkeit.JA.equals(status)) {
+            return "auf_diesem_auto_nicht_angeboten";
+        }
+        return null;
+    }
+
+    static String probeSperre(String paket, JSONObject andereApps, String bewegungsGrund,
+                              boolean startbar, boolean hinweisVerstanden) {
+        if (!hinweisVerstanden) return "hinweis_noetig";
+        return probeSperre(paket, andereApps, bewegungsGrund, startbar);
+    }
+
     static String probeSperre(String paket, JSONObject andereApps, String bewegungsGrund,
                               boolean startbar) {
-        if (!gueltigesFremdpaket(paket)) return "ungueltiges_paket";
+        if (!gueltigesZiel(paket)) return "ungueltiges_paket";
         if (!startbar) return "nicht_installiert";
         if (bewegungsGrund != null) return "nur_im_stand";
         String code = andereApps == null ? "" : andereApps.optString("code");
@@ -239,19 +441,35 @@ public final class TachoNaviApp {
         r.put("angeboten", angeboten);
         r.put("grund", angeboten ? "" : (probeApps == null ? "faehigkeit_unbekannt" : probeApps.optString("code")));
         r.put("plattform", probeUrteil == null ? JSONObject.NULL : probeUrteil.opt("plattform"));
+        r.put("hinweisVerstanden", hinweisVerstanden());
+        r.put("fahrtHinweis", new JSONObject().put("version", FAHRT_HINWEIS_VERSION)
+                .put("bestaetigt", fahrtHinweisBestaetigt()));
+        JSONObject fahrt = fahrtListe();
+        r.put("ansicht", new JSONObject().put("paket", TachoAnsicht.PAKET)
+                .put("design", TachoAnsicht.design()).put("designs", new JSONArray(TachoAnsicht.DESIGNS)));
         JSONArray liste = new JSONArray();
-        JSONArray apps = at.greenchili.surfmate.launcher.AppLauncher.listLaunchableApps();
         JSONObject f = freigaben();
+        // Eigene Panoptes-Tacho-Ansicht zuerst; gleiche Freigabe-Regeln wie jede App.
+        boolean ansichtFrei = !widerrufen.contains(TachoAnsicht.PAKET) && istFreigegeben(TachoAnsicht.PAKET, f);
+        liste.put(new JSONObject().put("paket", TachoAnsicht.PAKET).put("name", TachoAnsicht.NAME)
+                .put("installiert", true).put("panoptes", true)
+                .put("freigegeben", ansichtFrei && startPlattform)
+                .put("gespeichertFreigegeben", ansichtFrei)
+                .put("navi", true).put("video", false)
+                .put("fahrt", fahrtErlaubt(TachoAnsicht.PAKET, fahrt)));
+        JSONArray apps = at.greenchili.surfmate.launcher.AppLauncher.listLaunchableApps();
         for (int i = 0; i < apps.length(); i++) {
             JSONObject app = apps.optJSONObject(i);
             if (app == null) continue;
             String p = app.optString("package", "");
-            if (!istStartbar(p)) continue;
+            if (TachoAnsicht.istAnsicht(p) || !istStartbar(p)) continue;
             boolean gespeichertFrei = !widerrufen.contains(p) && istFreigegeben(p, f);
             liste.put(new JSONObject().put("paket", p).put("name", app.optString("label", p))
                     .put("installiert", true)
                     .put("freigegeben", gespeichertFrei && startPlattform)
-                    .put("gespeichertFreigegeben", gespeichertFrei));
+                    .put("gespeichertFreigegeben", gespeichertFrei)
+                    .put("navi", istNavi(p)).put("video", istVideo(p))
+                    .put("fahrt", fahrtErlaubt(p, fahrt)));
         }
         r.put("erlaubt", liste); // Altes Feld bleibt fuer bereits ausgelieferte Web-Dateien.
         r.put("apps", liste);
@@ -269,7 +487,7 @@ public final class TachoNaviApp {
         }
         String p = paket == null ? "" : paket.trim();
         String sperre = einschaltSperre(p, andereApps(p), bewegungsGrund(),
-                istStartbar(p), istFreigegeben(p));
+                istStartbar(p), istFreigegeben(p), hinweisVerstanden());
         if (sperre != null) return r.put("ok", false).put("grund", sperre);
         Map<String, Object> w = new HashMap<>();
         w.put("an", true); w.put("paket", p);
@@ -287,7 +505,8 @@ public final class TachoNaviApp {
     public static synchronized JSONObject probe(String paket) throws Exception {
         JSONObject r = new JSONObject();
         String p = paket == null ? "" : paket.trim();
-        String sperre = probeSperre(p, andereApps(p), bewegungsGrund(), istStartbar(p));
+        String sperre = probeSperre(p, andereApps(p), bewegungsGrund(), istStartbar(p),
+                hinweisVerstanden());
         if (sperre != null) return r.put("ok", false).put("grund", sperre);
         probeStartPaket = p;
         boolean gestartet;
@@ -312,15 +531,11 @@ public final class TachoNaviApp {
             return r.put("ok", false).put("grund", "ja_oder_nein");
         String p = paket == null ? "" : paket.trim();
         if (p.isEmpty()) p = probePaket == null ? "" : probePaket;
-        if (!gueltigesFremdpaket(p)) return r.put("ok", false).put("grund", "ungueltiges_paket");
+        if (!gueltigesZiel(p)) return r.put("ok", false).put("grund", "ungueltiges_paket");
         if (TachoFaehigkeit.JA.equals(frei)) {
-            if (probeBis <= System.currentTimeMillis() || !p.equals(probePaket))
-                return r.put("ok", false).put("grund", "probe_noetig");
-            if (bewegungsGrund() != null) {
-                beendeProbe("nicht_mehr_in_p");
-                return r.put("ok", false).put("grund", "nur_im_stand");
-            }
-            if (!istStartbar(p)) return r.put("ok", false).put("grund", "nicht_installiert");
+            // 0.1.37: keine Probe mehr noetig – Hinweis bestaetigt und Plattform angeboten genuegen.
+            String sperre = freigabeSperre(p, andereApps(p), istStartbar(p), hinweisVerstanden());
+            if (sperre != null) return r.put("ok", false).put("grund", sperre);
         }
         // getConfig()/optJSONObject liefert den gecachten Live-Baum. Bei JA deshalb nie
         // vor dem dauerhaften Commit darin mutieren: ein Schreibfehler darf keine
@@ -356,8 +571,8 @@ public final class TachoNaviApp {
             synchronized (TachoNaviApp.class) { if (probeBis > 0) beendeProbe("gang_" + gang); }
             if (!at.greenchili.surfmate.launcher.ClusterCast.isActive()) return;
             String p = at.greenchili.surfmate.launcher.ClusterCast.getCastPackage();
-            if (mussBeiGangStoppen(gang, p, p != null && istFreigegeben(p))) {
-                logger.info("Gang " + gang + ": " + p + (istNavi(p) ? " nicht freigegeben" : " keine Navigation, nur in P")
+            if (mussBeiGangStoppen(gang, p, p != null && istFreigegeben(p), p != null && fahrtErlaubt(p))) {
+                logger.info("Gang " + gang + ": " + p + (fahrtErlaubt(p) ? " nicht freigegeben" : " nicht fuer die Fahrt freigegeben, nur in P")
                         + " - Tacho zurueck");
                 at.greenchili.surfmate.launcher.ClusterCast.stop();
             }

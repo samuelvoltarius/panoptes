@@ -28,7 +28,9 @@ SOFTWARE.
 
 --------------------------------------------
 
-Parts of the OEM navigation-guidance implementation are derived from BYD DashCast:
+Parts of the OEM navigation-guidance implementation are derived from BYD DashCast, and the
+inactive multi-app driver-display layout model was informed by it (analysed at commit
+`174fcf89a2ec22a5cdfa11b844d240e001b1f6c3`). Panoptes does not bundle DashCast's daemons or UI:
 https://github.com/Kiroha/byd-dashcast
 
 MIT License

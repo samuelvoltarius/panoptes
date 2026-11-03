@@ -379,25 +379,50 @@
                                 </svg>
                                 <span data-i18n="vehicle_control.label_reboot_ivi">Bildschirmgerät neu starten</span>
                             </button>
+                            <!-- 0.1.37 „Was zeigt der Tacho?“: EINE Auswahl (Designs, Navi- und freigegebene Apps, normal), /api/tacho/auswahl -->
+                            <section class="vc-block vc-block--full vc-block--divider" id="tachoAuswahl">
+                                <div class="vc-block-head">
+                                    <span class="vc-block-title" data-i18n="vehicle_control.tacho_auswahl_titel">Was zeigt der Tacho?</span>
+                                </div>
+                                <div class="vc-block-caption" data-i18n="vehicle_control.tacho_auswahl_lead">Tippe auf ein Bild. Navi-Apps und Apps, die du unten freigibst, erscheinen hier auch.</div>
+                                <div id="tachoAuswahlKacheln" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-top:10px;"></div>
+                                <div id="tachoAuswahlMeldung" class="vc-block-caption" aria-live="polite" style="margin-top:8px;font-size:1.05em;"></div>
+                            </section>
                             <section class="vc-block vc-block--full vc-block--divider" id="clusterAppApproval">
                                 <div class="vc-block-head">
                                     <span class="vc-block-title" data-i18n="vehicle_control.cluster_app_title">App am Fahrerdisplay</span>
                                     <span class="vc-readout" id="clusterAppState">—</span>
                                 </div>
-                                <div class="vc-block-caption" data-i18n="vehicle_control.cluster_app_lead">Wähle eine installierte App. Die Freigabe wird nur angeboten, wenn App-Projektion und Totwinkel-Vorrang für diese Plattform belegt sind; DiLink 5 bleibt derzeit gesperrt. Dann prüfst du 20 Sekunden in P: Tempo und Warnleuchten bleiben sichtbar, beim Blinken liegt die Kamera vor der App und danach kehrt dieselbe App zurück.</div>
+                                <div class="vc-block-caption" data-i18n="vehicle_control.cluster_app_lead">Wähle eine installierte App und tippe auf „Freigeben“. Das geht nur, wenn dein Auto Apps am Fahrerdisplay kann; DiLink 5 bleibt derzeit gesperrt. Beim Fahren laufen nur Navi-Apps, außer du erlaubst eine App ausdrücklich „auch beim Fahren“.</div>
                                 <select id="clusterAppPackage" style="width:100%;margin:10px 0;padding:10px;border-radius:10px;background:var(--surface-container);color:var(--on-surface);border:1px solid var(--outline-variant);"></select>
                                 <div class="vc-segmented vc-segmented-full">
-                                    <button class="vc-seg" id="clusterAppProbe" data-i18n="vehicle_control.cluster_app_probe">In P prüfen</button>
+                                    <button class="vc-seg" id="clusterAppApprove" data-i18n="vehicle_control.cluster_app_approve">Freigeben</button>
                                     <button class="vc-seg" id="clusterAppEnable" data-i18n="vehicle_control.cluster_app_enable">Starten</button>
                                     <button class="vc-seg" id="clusterAppRevoke" data-i18n="vehicle_control.cluster_app_revoke">Widerrufen</button>
                                     <button class="vc-seg" id="clusterAppStop" data-i18n="vehicle_control.cluster_app_stop">Stopp</button>
                                 </div>
-                                <div id="clusterAppQuestion" class="vc-block-caption" style="display:none;margin-top:10px;">
-                                    <span data-i18n="vehicle_control.cluster_app_question">Sind Tempo und alle Warnleuchten sichtbar? Nach deiner Antwort kommt die Tacho-Anzeige zurück.</span>
+                                <div class="vc-segmented vc-segmented-full" style="margin-top:8px;">
+                                    <button class="vc-seg" id="clusterAppFahrt">Auch beim Fahren: aus</button>
+                                </div>
+                                <button class="vc-seg" id="clusterTachoNormal" type="button" style="width:100%;margin-top:10px;padding:14px;font-weight:700;color:var(--status-danger);border:2px solid var(--status-danger);border-radius:12px;" data-i18n="vehicle_control.cluster_tacho_normal">Tacho wieder normal</button>
+                                <div id="clusterAppHinweis" class="vc-block-caption" style="display:none;margin-top:10px;" role="alert">
+                                    <b data-i18n="vehicle_control.cluster_hinweis_titel">Neu: Apps am Fahrerdisplay</b><br>
+                                    <span data-i18n="vehicle_control.cluster_hinweis_text">Das ist neu und nicht an jedem Auto geprüft. Achte beim ersten Start darauf, dass Tempo und Warnleuchten sichtbar bleiben. Wenn nicht, schalte die App am Tacho wieder aus: Knopf „Tacho wieder normal“. Videos laufen nur in P, außer du erlaubst es selbst. Du nutzt das auf eigenes Risiko.</span>
                                     <div class="vc-segmented" style="margin-top:8px;">
-                                        <button class="vc-seg" id="clusterAppYes" data-i18n="vehicle_control.cluster_app_yes">Ja, freigeben</button>
-                                        <button class="vc-seg" id="clusterAppNo" data-i18n="vehicle_control.cluster_app_no">Nein, sperren</button>
+                                        <button class="vc-seg" id="clusterAppHinweisOk" data-i18n="vehicle_control.cluster_hinweis_ok">Verstanden</button>
                                     </div>
+                                </div>
+                                <div id="clusterFahrtHinweis" class="vc-block-caption" style="display:none;margin-top:10px;" role="alert">
+                                    <b id="clusterFahrtVideo" style="display:none;color:var(--status-danger);font-size:1.15em;" data-i18n="vehicle_control.cluster_fahrt_video">Video-App</b>
+                                    <b data-i18n="vehicle_control.cluster_fahrt_titel">Auch beim Fahren erlauben?</b><br>
+                                    <span data-i18n="vehicle_control.cluster_fahrt_text">Inhalte am Fahrerdisplay lenken während der Fahrt ab. Videos während der Fahrt sind in vielen Ländern verboten und können Strafen und Probleme mit der Versicherung bringen. Du entscheidest und bist selbst verantwortlich. Panoptes übernimmt keine Haftung.</span>
+                                    <div class="vc-segmented" style="margin-top:8px;">
+                                        <button class="vc-seg" id="clusterFahrtOk" data-i18n="vehicle_control.cluster_fahrt_ok">Verstanden, ich entscheide selbst</button>
+                                        <button class="vc-seg" id="clusterFahrtAbbrechen" data-i18n="vehicle_control.cluster_fahrt_abbrechen">Abbrechen</button>
+                                    </div>
+                                </div>
+                                <div id="clusterAnsicht" class="vc-block-caption" style="display:none;margin-top:10px;">
+                                    <span data-i18n="vehicle_control.cluster_ansicht_info">„Panoptes-Tacho“ zeigt Tempo, Akku, Reichweite und beim Navigieren den nächsten Abbiegepfeil, in der Mitte des Fahrerdisplays. Das Aussehen wählst du oben unter „Was zeigt der Tacho?“.</span>
                                 </div>
                                 <div id="clusterAppMessage" class="vc-block-caption" aria-live="polite"></div>
                             </section>
@@ -697,7 +722,10 @@
          all stay unread since vehicle-control.js only manages the 3D scene. -->
     <script src="../shared/core.js?v=pn6"></script>
     <script src="../shared/klima-stufe.js?v=2"></script>
-    <script src="../shared/tacho-appwahl.js?v=1"></script>
+    <script src="../shared/tacho-designs.js?v=1"></script>
+    <script src="../shared/tacho-appwahl.js?v=5"></script>
+    <script src="../shared/tacho-auswahl.js?v=1"></script>
+    <script src="../shared/assistenz-hinweis.js?v=1"></script>
     <!-- Mode-gated loader. In immersive mode this injects the heavy stack
          (SotaPlayer + three.js + Draco/GLTF/Orbit + gsap ≈ 820 KB of script,
          plus the 1.6 MB GLB the scene then fetches) in strict order via
@@ -718,7 +746,7 @@
                 '../shared/vendor/gsap.min.js?v=12'
             ];
             var chain = window.VC_LITE ? [] : window.VC_VENDOR_CHAIN.slice();
-            chain.push('../shared/vehicle-control.js?v=vclite37');
+            chain.push('../shared/vehicle-control.js?v=vclite38');
             for (var i = 0; i < chain.length; i++) {
                 var s = document.createElement('script');
                 s.src = chain[i];

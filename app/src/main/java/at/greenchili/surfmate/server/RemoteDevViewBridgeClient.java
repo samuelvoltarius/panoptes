@@ -34,9 +34,17 @@ final class RemoteDevViewBridgeClient {
 
     Response start(boolean launchActivity) {
         JSONObject request = new JSONObject();
-        try { request.put("command", launchActivity ? "launch" : "status"); }
-        catch (Exception ignored) {}
+        try {
+            request.put("command", launchActivity ? "launch" : "status");
+            // 0.1.37: Band „Bildschirm wird geteilt“ am Auto-Display, Text in der gewählten Sprache
+            if (launchActivity) request.put("hinweis", teilenHinweis());
+        } catch (Exception ignored) {}
         return send(request);
+    }
+
+    /** Text des Hinweises am Auto-Display (server-i18n {@code display.teilen_hinweis}, alle 5 Sprachen). */
+    static String teilenHinweis() {
+        return Messages.text("display.teilen_hinweis", "Screen is being shared");
     }
 
     Response send(JSONObject request) {

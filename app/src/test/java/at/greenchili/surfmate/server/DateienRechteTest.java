@@ -83,7 +83,8 @@ public class DateienRechteTest {
         assertFalse("nicht im Standard", k.substring(s, s + 250).contains("DATEIEN"));
         // system.html: eigener Schalter mit Rückfrage
         String sys = Quelltext.lies(Paths.get("src/main/assets/web/local/system.html"));
-        assertTrue(sys.contains("'protokoll', 'dateien']"));
+        assertTrue(sys.contains("'protokoll', 'dateien'"));   // 0.1.37: danach folgt 'tacho'
+        assertTrue(sys.contains("'protokoll', 'dateien', 'tacho']"));
         assertTrue(sys.contains("cb.getAttribute('data-handy-recht') === 'dateien' && cb.checked"));
     }
 

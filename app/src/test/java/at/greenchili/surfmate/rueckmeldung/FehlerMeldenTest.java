@@ -69,7 +69,10 @@ public class FehlerMeldenTest {
         assertNull("sonst gilt die normale Grenze", FehlerMelden.koerper(new String(z), "0.1.31", 3, "Seal", "de", null, "x"));
         assertFalse(FehlerMelden.koerper("x", "0.1.31", 3, "Seal", "de", null, "erfunden").has("art"));
         String h = Quelltext.lies(Paths.get("src/main/assets/web/local/testfunktionen.html"));
-        assertTrue("eigener Klick nach Vorschau", h.contains("id=\"ttSendenJa\"") && h.contains("art: 'tacho_test'"));
+        // 0.1.37: Die Seite sendet ueber /api/tacho/rueckmeldung mit Einwilligung; die Art setzt der Server.
+        assertTrue("eigener Klick nach Vorschau", h.contains("id=\"ttSendenJa\"") && h.contains("einwilligung: true"));
+        String api = Quelltext.lies(Paths.get("src/main/java/at/greenchili/surfmate/server/RueckmeldungApiHandler.java"));
+        assertTrue(api.contains("FehlerMelden.ART_TACHO"));
     }
 
     @Test

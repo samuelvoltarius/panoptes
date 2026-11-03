@@ -745,7 +745,9 @@ public class HttpServer {
                     && !WebHandyGuard.updateErlaubt(method, pathOnly, at.greenchili.surfmate.auth.Kopplungen.get()
                             .hatRecht(AuthMiddleware.requestWebKopplungsId(), at.greenchili.surfmate.auth.Kopplungen.RECHT_UPDATE))
                     && !WebHandyGuard.dateienErlaubt(pathOnly, at.greenchili.surfmate.auth.Kopplungen.get()
-                            .hatRecht(AuthMiddleware.requestWebKopplungsId(), at.greenchili.surfmate.auth.Kopplungen.RECHT_DATEIEN))) {
+                            .hatRecht(AuthMiddleware.requestWebKopplungsId(), at.greenchili.surfmate.auth.Kopplungen.RECHT_DATEIEN))
+                    && !WebHandyGuard.tachoErlaubt(pathOnly, at.greenchili.surfmate.auth.Kopplungen.get()
+                            .hatRecht(AuthMiddleware.requestWebKopplungsId(), at.greenchili.surfmate.auth.Kopplungen.RECHT_TACHO))) {
                 BefehlsLog.grund("web_gesperrt");
                 WebHandyGuard.sendeGesperrt(out, pathOnly);
                 client.close();
@@ -1152,11 +1154,11 @@ public class HttpServer {
         }
 
         // Launcher aggregation API — stable public /api/launcher/v1/* face over
-        // existing internal handlers (summary/traffic/apps/vehicle/appearance).
+        // existing internal handlers (summary/traffic/apps/appearance/history/hintergrund; keine Fahrzeugbefehle).
         // Additive, read-mostly; dispatched here like the other modular handlers.
         // See LauncherApiHandler + docs/LAUNCHER_SPEC.md §2.
         if (path.startsWith("/api/launcher/")) {
-            return LauncherApiHandler.handle(method, path, body, out);
+            return LauncherApiHandler.handle(method, path, body, rangeHeader, out);
         }
 
         // Authenticated, read-only metadata for the web About page. VIN deliberately never enters
@@ -1511,6 +1513,9 @@ public class HttpServer {
                 && NaviApiHandler.handle(method, path, body, out)) {
             return true;
         }
+        // 0.1.37 Display-Werkzeuge: Hintergrundbild, Display-Sperre; nur Login, für Kopplungen und Handy-Web zu
+        if ((path.equals("/api/display") || path.startsWith("/api/display/") || path.startsWith("/api/display?"))
+                && DisplayApiHandler.handle(method, path, body, out)) return true;
         // Dateien Handy ↔ Auto: eigener Ordner, max. 200 MB, keine APKs; Rechte vorher (ExternGuard, WebHandyGuard)
         if ((path.equals("/api/dateien") || path.startsWith("/api/dateien/") || path.startsWith("/api/dateien?"))
                 && DateienApiHandler.handle(method, path, body, out)) return true;
@@ -1541,6 +1546,12 @@ public class HttpServer {
         // Camping-Modus (0.1.16, CAMPING_PLAN.md): Panoptes-Funktion, in Stufe 2a ohne Heizwirkung
         if (path.startsWith("/api/camping")
                 && CampingApiHandler.handle(method, path, body, out)) {
+            return true;
+        }
+
+        // 0.1.37 Haftungshinweis Assistenzsysteme: Stand lesen und bestätigen (Login; Kopplungen über ExternGuard zu)
+        if (path.startsWith("/api/assistenz/hinweis")
+                && at.greenchili.surfmate.byd.routing.AssistenzHinweis.handle(method, path, body, out)) {
             return true;
         }
 

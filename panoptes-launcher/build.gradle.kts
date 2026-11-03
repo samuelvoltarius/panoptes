@@ -16,11 +16,16 @@ android {
         applicationId = "at.greenchili.panoptes.launcher"
         minSdk = 28
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.1.37"
     }
 
     buildTypes {
+        debug {
+            // Wie die Haupt-App (0.1.15): nicht debuggable, kein run-as, keine Debugger-Anbindung. Die Release-
+            // Pipeline signiert genau diesen Build und verteilt ihn über die version.json.
+            isDebuggable = false
+        }
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")

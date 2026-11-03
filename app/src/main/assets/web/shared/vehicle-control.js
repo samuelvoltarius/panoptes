@@ -2569,9 +2569,16 @@ var VC = {
         }
 
         // === ADAS CONTROLS ===
-        this.bindBtn('btnSLW', function() {
+        // 0.1.37: Ausschalten verlangt einmal den Haftungshinweis (grund "hinweis_fehlt"); nach „Verstanden“ nochmal.
+        function assistenzNochmal(result, nochmal) {
+            if (!(window.PanoptesAssistenz && PanoptesAssistenz.braucht(result))) return false;
+            PanoptesAssistenz.zeigen().then(function(ok) { if (ok) nochmal(); });
+            return true;
+        }
+        this.bindBtn('btnSLW', function slwSenden() {
             var enable = !(self.vehicleState.adas && self.vehicleState.adas.speedLimitWarning);
             self.apiPost('/api/vehicle/adas', { target: 'speedLimitWarning', enable: enable }).then(function(result) {
+                if (assistenzNochmal(result, slwSenden)) return;
                 if (result.success) {
                     self.vehicleState.adas.speedLimitWarning = enable;
                     self.updateAdasUI();
@@ -2581,9 +2588,10 @@ var VC = {
                     BYD.i18n.t('vehicle.slw_failed'));
             });
         });
-        this.bindBtn('btnCPD', function() {
+        this.bindBtn('btnCPD', function cpdSenden() {
             var enable = !(self.vehicleState.setting && self.vehicleState.setting.childPresenceDetection);
             self.apiPost('/api/vehicle/setting', { target: 'childPresenceDetection', value: enable ? 1 : 2 }).then(function(result) {
+                if (assistenzNochmal(result, cpdSenden)) return;
                 if (result.success) {
                     self.vehicleState.setting.childPresenceDetection = enable;
                     self.updateAdasUI();

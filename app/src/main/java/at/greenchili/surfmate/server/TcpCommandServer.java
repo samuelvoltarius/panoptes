@@ -172,6 +172,12 @@ public class TcpCommandServer {
                         .handle(cmd.optJSONObject("data"));
                 break;
 
+            case "tachoAnsicht":
+                // Panoptes-Tacho-Ansicht (0.1.37): nur lesend, Tempo/Akku/Reichweite/Design und
+                // ob die Ansicht die aktive Projektion ist. Keine Position, keine Kennung.
+                response = at.greenchili.surfmate.tacho.TachoAnsicht.daten();
+                break;
+
             case "getFrame":
                 int frameViewId = cmd.optInt("camera", 1);
                 // GPU pipeline: get frame from GPU camera extractor

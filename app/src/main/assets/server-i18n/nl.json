@@ -394,6 +394,10 @@
       "vehicle_health_battery12v": {
         "label": "12 V-accu wordt zwak",
         "note": "Waarschuwt voordat de 12 V-accu te zwak is om te starten. Hooguit één keer per dag."
+      },
+      "display_valet": {
+        "label": "Schermvergrendeling",
+        "note": "Iemand heeft op het vergrendelde scherm meerdere keren een verkeerde pincode ingevoerd."
       }
     },
     "cloud_uebergabe_titel": "‘{0}’ wil de BYD-cloud overdragen",
@@ -959,6 +963,8 @@
     }
   },
   "vehicle_control": {
+    "assistenz_hinweis_fehlt": "Bevestig eerst de melding over rijhulpsystemen.",
+    "assistenz_nur_einschalten": "De noodremassistent kan alleen worden ingeschakeld.",
     "blocked_driving": "Dit kan niet terwijl de auto rijdt",
     "cloud_gate_unlock_never": "Op afstand ontgrendelen is uitgezet in Panoptes.",
     "cloud_gate_car_on": "De auto is aan – bedien hem in de auto. Via de BYD-cloud werkt dit alleen als de auto uit is.",
@@ -2657,5 +2663,17 @@
   },
   "dateien": {
     "recht_fehlt": "Recht Bestanden ontbreekt – zet het aan in Panoptes onder Gekoppelde apparaten."
+  },
+  "display": {
+    "teilen_hinweis": "Scherm wordt gedeeld",
+    "valet_titel": "Scherm vergrendeld",
+    "valet_hilfe": "Om te ontgrendelen lang drukken en de pincode invoeren.",
+    "valet_pin": "Pincode",
+    "valet_ok": "OK",
+    "valet_falsch": "Verkeerde pincode.",
+    "valet_warten": "Wacht {s} seconden.",
+    "valet_fehler": "Nu niet mogelijk. Probeer het zo opnieuw.",
+    "valet_fehlversuche_titel": "Schermvergrendeling: verkeerde pincode",
+    "valet_fehlversuche_text": "Op het scherm is {0} keer een verkeerde pincode ingevoerd."
   }
 }

@@ -132,6 +132,22 @@ public final class RueckmeldungApiHandler {
                 : e.stand == FehlerMelden.Stand.ZUVIEL ? 429 : e.stand == FehlerMelden.Stand.ABGELEHNT ? 502 : 200, res.toString());
     }
 
+    /**
+     * Tacho-Test-Ergebnis (0.1.37) ueber denselben Weg wie „Fehler melden“. Aufruf nur aus
+     * {@code TachoApiHandler} nach ausdruecklicher Einwilligung fuer genau diesen Text.
+     */
+    static JSONObject sendeTachoTest(String text) throws Exception {
+        JSONObject k = FehlerMelden.koerper(text, BuildConfig.VERSION_NAME, AutoAngaben.dilink(),
+                AutoAngaben.modell(UnifiedConfigManager.loadConfig()), LocaleManager.get(), null,
+                FehlerMelden.ART_TACHO);
+        FehlerMelden.Ergebnis e = FehlerMelden.absenden(System.currentTimeMillis(), k,
+                FehlerMelden.DATEI_SPEICHER, FehlerMelden.NETZ);
+        JSONObject res = new JSONObject().put("ok", e.stand == FehlerMelden.Stand.GESENDET
+                || e.stand == FehlerMelden.Stand.GEMERKT).put("stand", e.stand.name().toLowerCase(java.util.Locale.ROOT));
+        if (e.code != null) res.put("code", e.code);
+        return res;
+    }
+
     private static void antworten(String body, OutputStream out) throws Exception {
         JSONObject req;
         try {

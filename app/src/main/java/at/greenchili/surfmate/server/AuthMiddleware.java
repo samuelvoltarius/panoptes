@@ -105,6 +105,16 @@ public class AuthMiddleware {
                 && istLoopback(peer) && !relayedByTailscaled(peer);
     }
 
+    /**
+     * 0.1.37 Launcher: Quellport der laufenden Anfrage, nur für {@link #isDirektAmAuto()} (sonst -1). Daraus liest
+     * {@link LauncherAufrufer}, welche App am anderen Ende sitzt.
+     */
+    static int direktQuellport() {
+        java.net.SocketAddress peer = REQUEST_PEER.get();
+        if (!isDirektAmAuto() || !(peer instanceof java.net.InetSocketAddress)) return -1;
+        return ((java.net.InetSocketAddress) peer).getPort();
+    }
+
     private static boolean istLoopback(java.net.SocketAddress a) {
         String s = a.toString();
         return s.contains("127.0.0.1") || s.contains("/0:0:0:0:0:0:0:1");

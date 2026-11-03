@@ -181,11 +181,25 @@ public final class AutomationApiHandler {
     }
 
     /** Create/update an action group from { name, actions:[...] }. */
+    /**
+     * 0.1.37 Assistenzsysteme: Speichern einer Regel/Gruppe, die ein Assistenzsystem ausschaltet, nur mit bestätigtem
+     * Haftungshinweis ({@code grund: hinweis_fehlt}); AEB aus nie ({@code nur_einschalten}). true = abgelehnt.
+     */
+    private static boolean assistenzAbgelehnt(String system, OutputStream out) throws Exception {
+        String grund = at.greenchili.surfmate.byd.routing.AssistenzHinweis.speichernGrund(system);
+        if (grund == null) return false;
+        at.greenchili.surfmate.server.BefehlsLog.grund(grund);
+        HttpResponse.sendJson(out,
+                at.greenchili.surfmate.byd.routing.AssistenzHinweis.ablehnung(system, grund).toString());
+        return true;
+    }
+
     private static boolean saveActionGroup(String id, String body, OutputStream out) throws Exception {
         if (body == null || body.isEmpty()) { HttpResponse.sendError(out, 400, "Missing body."); return true; }
         JSONObject json;
         try { json = new JSONObject(body); }
         catch (JSONException e) { HttpResponse.sendError(out, 400, "Malformed JSON body."); return true; }
+        if (assistenzAbgelehnt(at.greenchili.surfmate.byd.routing.AssistenzHinweis.regelSchaltetAb(json), out)) return true;
         at.greenchili.surfmate.automation.ActionGroups.SaveResult saved =
                 at.greenchili.surfmate.automation.ActionGroups.saveWithResult(id, json);
         if (saved.isValid()) {
@@ -259,6 +273,7 @@ public final class AutomationApiHandler {
         JSONObject map = json.optJSONObject("automations");
         boolean replace = json.optBoolean("replace", false);
         if (map == null) map = json; // bare map (no wrapper) → merge
+        if (assistenzAbgelehnt(at.greenchili.surfmate.byd.routing.AssistenzHinweis.sammlungSchaltetAb(map), out)) return true;
         int count = Automations.importAutomations(map, replace);
         JSONObject resp = new JSONObject();
         resp.put("success", count > 0);
@@ -302,6 +317,7 @@ public final class AutomationApiHandler {
         JSONObject map = json.optJSONObject("actionGroups");
         boolean replace = json.optBoolean("replace", false);
         if (map == null) map = json; // bare map (no wrapper) → merge
+        if (assistenzAbgelehnt(at.greenchili.surfmate.byd.routing.AssistenzHinweis.sammlungSchaltetAb(map), out)) return true;
         int count = at.greenchili.surfmate.automation.ActionGroups.importGroups(map, replace);
         // -1 = parsed but NOT persisted. Answer 500 rather than confirming a save that would
         // vanish at the next daemon restart (Invariant 7).
@@ -565,6 +581,8 @@ public final class AutomationApiHandler {
             HttpResponse.sendError(out, 400, "Invalid automation provided. Check the automation follows the schema");
             return true;
         }
+        // 0.1.37: Regel schaltet ein Assistenzsystem aus → erst den Haftungshinweis bestätigen
+        if (assistenzAbgelehnt(at.greenchili.surfmate.byd.routing.AssistenzHinweis.regelSchaltetAb(json), out)) return true;
         if (Automations.updateAutomation(id, parsed)) {
             HttpResponse.sendJsonSuccess(out);
         } else {

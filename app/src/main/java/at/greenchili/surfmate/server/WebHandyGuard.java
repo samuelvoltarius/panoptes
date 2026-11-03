@@ -37,6 +37,10 @@ public final class WebHandyGuard {
             "/api/appupdate", "/api/update/",
             "/api/handy/",
             "/api/dateien",   // Dateien Handy ↔ Auto: nur mit Recht „dateien“ der Kopplung dahinter (dateienErlaubt)
+            "/api/display",   // 0.1.37 Hintergrundbild und Display-Sperre: nur am Auto oder mit vollem Login
+            "/api/apps/verwaltung",   // 0.1.37 Apps deaktivieren/aktivieren: nur am Auto oder mit vollem Login
+            "/api/tacho/navi/fahrt",   // 0.1.37 „auch beim Fahren“: nur am Auto oder mit vollem Login
+            "/api/tacho/auswahl",   // 0.1.37 „Was zeigt der Tacho?“: nur mit Recht „tacho“ der Kopplung (tachoErlaubt)
     };
 
     /** Seiten, die nur Sicherheits-Funktionen tragen. */
@@ -122,6 +126,15 @@ public final class WebHandyGuard {
      * Dateien Handy ↔ Auto: die Web-Sitzung darf {@code /api/dateien} nur, wenn die Kopplung dahinter das Recht
      * {@code dateien} hat (Standard aus, nie automatisch). Pfad-Tricks bleiben zu.
      */
+    /** 0.1.37: „Was zeigt der Tacho?“ in der Web-Sitzung nur mit Recht {@code tacho} der Kopplung dahinter. */
+    public static boolean tachoErlaubt(String pathOnly, boolean rechtTacho) {
+        if (!rechtTacho || pathOnly == null) return false;
+        String p = pathOnly;
+        int q = p.indexOf('?');
+        if (q >= 0) p = p.substring(0, q);
+        return p.equals("/api/tacho/auswahl");
+    }
+
     public static boolean dateienErlaubt(String pathOnly, boolean rechtDateien) {
         if (!rechtDateien || pathOnly == null) return false;
         String p = pathOnly;

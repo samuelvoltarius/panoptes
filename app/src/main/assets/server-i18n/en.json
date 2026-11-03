@@ -388,6 +388,10 @@
       "vehicle_health_battery12v": {
         "label": "12 V battery getting weak",
         "note": "Warns before the 12 V battery is too weak to start the car. At most once a day."
+      },
+      "display_valet": {
+        "label": "Display lock",
+        "note": "Someone entered a wrong PIN several times at the locked display."
       }
     },
     "cloud_uebergabe_titel": "“{0}” wants to hand over the BYD cloud",
@@ -953,6 +957,8 @@
     }
   },
   "vehicle_control": {
+    "assistenz_hinweis_fehlt": "Please confirm the notice about driver assistance systems first.",
+    "assistenz_nur_einschalten": "The emergency braking assistant can only be switched on.",
     "blocked_driving": "This can't be done while the car is moving",
     "cloud_gate_unlock_never": "Remote unlock is disabled in Panoptes.",
     "cloud_gate_car_on": "The car is on – please operate it in the car. Via the BYD cloud this only works while the car is off.",
@@ -2651,5 +2657,17 @@
   },
   "dateien": {
     "recht_fehlt": "File permission missing – switch it on in Panoptes under Paired devices."
+  },
+  "display": {
+    "teilen_hinweis": "Screen is being shared",
+    "valet_titel": "Display locked",
+    "valet_hilfe": "To unlock, press and hold, then enter the PIN.",
+    "valet_pin": "PIN",
+    "valet_ok": "OK",
+    "valet_falsch": "Wrong PIN.",
+    "valet_warten": "Please wait {s} seconds.",
+    "valet_fehler": "Not possible right now. Please try again.",
+    "valet_fehlversuche_titel": "Display lock: wrong PIN",
+    "valet_fehlversuche_text": "Someone entered a wrong PIN {0} times at the display."
   }
 }

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Panoptes-Tacho</title>
+<!--
+  Panoptes-Tacho-Ansicht (0.1.37). Läuft in der TachoAnsichtActivity auf dem Fahrerdisplay,
+  geladen aus den App-Assets, ohne Netz. Die Activity schiebt 1× pro Sekunde
+  PanoptesTacho.setze({...}) herein. Im Browser zeigt ?demo=1&design=sport Beispieldaten.
+-->
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<canvas id="tacho"></canvas>
+<script src="../shared/tacho-designs.js"></script>
+<script>
+(function () {
+    var q = {};
+    location.search.replace(/[?&]([^=&]+)=([^&]*)/g, function (_, k, v) { q[k] = decodeURIComponent(v); });
+    var t = PanoptesTacho.create(document.getElementById('tacho'), { design: q.design });
+    // Schnittstelle für die Activity (evaluateJavascript).
+    window.tachoSetze = function (d) { t.setze(d); };
+    if (q.demo) {
+        var start = Date.now();
+        var tick = function () {
+            var d = PanoptesTacho.demo((Date.now() - start) / 1000 + Number(q.t || 0));
+            d.design = q.design;
+            if (q.ohneNavi) d.navi = null;
+            t.setze(d);
+        };
+        tick();
+        if (q.standbild) t.jetztZeichnen(); else setInterval(tick, 1000);
+    }
+})();
+</script>
+</body>
+</html>

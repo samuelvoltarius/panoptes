@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Panoptes-Logo, quadratisch: design/logo/square.svg als Vektor (gleiche Pfade und Farben). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="512dp" android:height="512dp"
+    android:viewportWidth="512" android:viewportHeight="512">
+    <path android:pathData="M0,0h512v512h-512z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="0" android:startY="0" android:endX="512" android:endY="512"
+                android:startColor="#0A2238" android:endColor="#0B5C66"/>
+        </aapt:attr>
+    </path>
+    <path android:pathData="M74,396C148,396 168,318 196,258C228,190 270,132 316,132A124,124 0,0 1,440 256A96,96 0,0 1,344 352A70,70 0,0 1,274 282"
+        android:strokeWidth="52" android:strokeLineCap="round" android:strokeLineJoin="round">
+        <aapt:attr name="android:strokeColor">
+            <gradient android:type="linear" android:startX="0" android:startY="512" android:endX="512" android:endY="0"
+                android:startColor="#5FD6E6" android:endColor="#FFFFFF"/>
+        </aapt:attr>
+    </path>
+    <path android:fillColor="#B8F33B" android:pathData="M360,214L318,274L344,274L326,324L378,254L350,254L370,214Z"/>
+</vector>

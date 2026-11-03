@@ -1,30 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Nur Loopback-HTTP zum Panoptes-Kern (Launcher-Schnittstelle und 3D-Fahrzeugseite). -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Nur für die Statusleiste: WLAN an/aus und Bluetooth an/aus anzeigen (keine Verbindungen, kein Scan). -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <queries>
         <package android:name="at.greenchili.surfmate" />
+        <!-- Nur lesen: welcher Startbildschirm (BYD) ist da, damit der Knopf dorthin zurückführt. -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.HOME" />
+        </intent>
+        <!-- App-Schublade: alle startbaren Apps wie in jedem Launcher. -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
     </queries>
 
     <application
         android:allowBackup="false"
+        android:icon="@mipmap/ic_panoptes"
+        android:roundIcon="@mipmap/ic_panoptes"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.PanoptesLauncher"
         android:usesCleartextTraffic="true">
+        <!--
+            Bewusst KEIN HOME-Filter (Stand 0.1.37, LAUNCHER_SPEC §1): Der Rückweg zum
+            BYD-Startbildschirm ist am Auto nicht belegt. Diese App startet wie jede
+            normale App und kann nie Standard-Home werden. HOME erst nach belegtem Rückweg.
+        -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
-            android:screenOrientation="landscape">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.HOME" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
+            android:screenOrientation="landscape"
+            android:configChanges="uiMode|orientation|screenSize|keyboardHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- Medien-Session und Benachrichtigungspunkt; nur aktiv, wenn der Nutzer den Zugriff selbst erlaubt. -->
+        <service
+            android:name=".MedienDienst"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>

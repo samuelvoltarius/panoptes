@@ -68,6 +68,53 @@ public final class Freigabe {
     public final JSONObject notizen;
     /** Download-Adresse der APK; setzt der Dienst je nach {@link UpdateQuelle} (nie aus version.json). */
     private final String apkAdresse;
+    /** 0.1.37 Stufe 4: Launcher-APK desselben Releases (optional, sonst null). */
+    public final Launcher launcher;
+
+    /**
+     * Zweites Paket im selben Release: {@code "launcher": {versionCode, versionName, apk, sha256}} in version.json.
+     * Signiert mit demselben Schlüssel ({@link #zertifikat}); fehlt es oder ist es fehlerhaft, gilt nur Panoptes.
+     */
+    public static final class Launcher {
+        public final int versionCode;
+        public final String versionName;
+        public final String apk;
+        public final String sha256;
+        /** Download-Adresse; setzt der Dienst je nach {@link UpdateQuelle}. */
+        private final String apkAdresse;
+
+        Launcher(int versionCode, String versionName, String apk, String sha256, String apkAdresse) {
+            this.versionCode = versionCode; this.versionName = versionName; this.apk = apk; this.sha256 = sha256;
+            this.apkAdresse = apkAdresse;
+        }
+
+        public String apkUrl() {
+            return apkAdresse;
+        }
+
+        Launcher mitApkUrl(String url) {
+            return new Launcher(versionCode, versionName, apk, sha256, url);
+        }
+
+        /** null bei fehlender oder fehlerhafter Angabe (nie ein Fehler für das Panoptes-Update). */
+        static Launcher lies(JSONObject j) {
+            if (j == null) return null;
+            int vc = j.optInt("versionCode", -1);
+            String name = j.optString("versionName", "");
+            String apk = j.optString("apk", "");
+            String sha = j.optString("sha256", "").toLowerCase(Locale.ROOT);
+            if (vc <= 0 || vc > 1_000_000) return null;
+            if (!NAME.matcher(name).matches()) return null;
+            if (!APK.matcher(apk).matches() || apk.startsWith(".")) return null;
+            if (!HEX64.matcher(sha).matches()) return null;
+            return new Launcher(vc, name, apk, sha, null);
+        }
+
+        JSONObject alsJson() throws Exception {
+            return new JSONObject().put("versionCode", versionCode).put("versionName", versionName).put("apk", apk)
+                    .put("sha256", sha256);
+        }
+    }
 
     public static final class Fehler extends Exception {
         public final String grund;
@@ -75,15 +122,23 @@ public final class Freigabe {
     }
 
     private Freigabe(int vc, String name, String kanal, String tag, String apk, String sha, int minV, String cert,
-                     JSONObject notizen, String apkAdresse) {
+                     JSONObject notizen, String apkAdresse, Launcher launcher) {
         this.versionCode = vc; this.versionName = name; this.kanal = kanal; this.tag = tag; this.apk = apk;
         this.sha256 = sha; this.minVersion = minV; this.zertifikat = cert; this.notizen = notizen;
-        this.apkAdresse = apkAdresse;
+        this.apkAdresse = apkAdresse; this.launcher = launcher;
     }
 
     /** Dieselbe Freigabe mit der Download-Adresse der APK. */
     public Freigabe mitApkUrl(String url) {
-        return new Freigabe(versionCode, versionName, kanal, tag, apk, sha256, minVersion, zertifikat, notizen, url);
+        return new Freigabe(versionCode, versionName, kanal, tag, apk, sha256, minVersion, zertifikat, notizen, url,
+                launcher);
+    }
+
+    /** Dieselbe Freigabe mit der Download-Adresse der Launcher-APK; null = Launcher nicht im Release erreichbar. */
+    public Freigabe mitLauncherUrl(String url) {
+        Launcher l = launcher == null || url == null ? null : launcher.mitApkUrl(url);
+        return new Freigabe(versionCode, versionName, kanal, tag, apk, sha256, minVersion, zertifikat, notizen,
+                apkAdresse, l);
     }
 
     public static Freigabe lies(String json) throws Fehler {
@@ -123,7 +178,9 @@ public final class Freigabe {
                 try { notizen.put(sprache, sauber); } catch (Exception ignored) { }
             }
         }
-        return new Freigabe(vc, name, kanal, tag, apk, sha, Math.max(0, minV), cert, notizen, null);
+        Launcher l = Launcher.lies(j.optJSONObject("launcher"));
+        if (l != null && l.apk.equals(apk)) l = null;   // nie dieselbe Datei wie Panoptes
+        return new Freigabe(vc, name, kanal, tag, apk, sha, Math.max(0, minV), cert, notizen, null, l);
     }
 
     /** Download-Adresse der APK (öffentlich oder API-Asset) oder null, wenn noch keine Quelle sie gesetzt hat. */
@@ -144,6 +201,7 @@ public final class Freigabe {
             o.put("versionCode", versionCode).put("versionName", versionName).put("kanal", kanal).put("tag", tag)
                     .put("apk", apk).put("sha256", sha256).put("zertifikatSha256", zertifikat)
                     .put("minVersion", minVersion).put("notizen", notizen);
+            if (launcher != null) o.put("launcher", launcher.alsJson());
         } catch (Exception ignored) { }
         return o;
     }

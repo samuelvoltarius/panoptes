@@ -388,6 +388,10 @@
       "vehicle_health_battery12v": {
         "label": "Starterbatterie (12 V) wird schwach",
         "note": "Warnt, bevor die 12-V-Batterie zu schwach zum Starten ist. Höchstens einmal am Tag."
+      },
+      "display_valet": {
+        "label": "Display-Sperre",
+        "note": "Jemand hat am gesperrten Display mehrmals eine falsche PIN eingegeben."
       }
     },
     "cloud_uebergabe_titel": "„{0}“ will die BYD-Cloud übergeben",
@@ -953,6 +957,8 @@
     }
   },
   "vehicle_control": {
+    "assistenz_hinweis_fehlt": "Erst den Hinweis zu Assistenzsystemen bestätigen.",
+    "assistenz_nur_einschalten": "Der Notbremsassistent lässt sich nur einschalten.",
     "blocked_driving": "Das geht nicht, solange das Auto fährt",
     "cloud_gate_unlock_never": "Aufsperren aus der Ferne ist in Panoptes abgeschaltet.",
     "cloud_gate_car_on": "Das Auto ist an – bitte im Auto bedienen. Über die BYD-Cloud geht das nur bei ausgeschaltetem Auto.",
@@ -2651,5 +2657,17 @@
   },
   "dateien": {
     "recht_fehlt": "Dateien-Recht fehlt – in Panoptes unter Gekoppelte Geräte einschalten."
+  },
+  "display": {
+    "teilen_hinweis": "Bildschirm wird geteilt",
+    "valet_titel": "Display gesperrt",
+    "valet_hilfe": "Zum Entsperren lange drücken und PIN eingeben.",
+    "valet_pin": "PIN",
+    "valet_ok": "OK",
+    "valet_falsch": "PIN falsch.",
+    "valet_warten": "Bitte {s} Sekunden warten.",
+    "valet_fehler": "Gerade nicht möglich. Bitte gleich nochmal.",
+    "valet_fehlversuche_titel": "Display-Sperre: falsche PIN",
+    "valet_fehlversuche_text": "Am Display wurde {0} Mal eine falsche PIN eingegeben."
   }
 }

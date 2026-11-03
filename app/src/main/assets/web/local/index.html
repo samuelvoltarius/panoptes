@@ -338,6 +338,10 @@
                     <button class="act" type="button" onclick="Home.command(this,'/api/vehicle/find-car',null,'home.confirm_find')"><svg><use href="#i-pin"/></svg><span data-i18n="home.find">Finden</span></button>
                     <button class="act" type="button" onclick="Home.command(this,'/api/vehicle/trunk',{action:'open'},'home.confirm_trunk')"><svg><use href="#i-trunk"/></svg><span data-i18n="home.trunk">Kofferraum</span></button>
                 </div>
+                <!-- 0.1.37 „Tacho wieder normal“: nur wenn das Auto Apps am Fahrerdisplay kann oder gerade etwas läuft -->
+                <div class="acts" id="hTachoNormal" hidden>
+                    <button class="act" type="button" style="color:var(--status-danger);border-color:var(--status-danger);" onclick="Home.tachoNormal(this)"><svg><use href="#i-nav"/></svg><span data-i18n="home.tacho_normal">Tacho wieder normal</span></button>
+                </div>
                 <!-- Eigene Knöpfe (GET /api/quick-controls), erst sichtbar, wenn es welche gibt -->
                 <div class="acts custom" id="hCustom" hidden></div>
             </article>
@@ -952,6 +956,26 @@
             }).catch(function () {});
         },
 
+        // 0.1.37: Sicherheitsknopf ohne Rückfrage, stoppt jede Projektion am Fahrerdisplay.
+        loadTachoNormal: function () {
+            fetch('/api/tacho/navi', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+                $('hTachoNormal').hidden = !(d && (d.angeboten || d.aktiv));
+            }).catch(function () {});
+        },
+
+        tachoNormal: function (btn) {
+            if (!btn || btn.classList.contains('pending')) return;
+            btn.classList.add('pending');
+            fetch('/api/tacho/normal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    var ok = !!(d && d.success);
+                    toast(ok ? t('home.tacho_normal_ok', 'Der Tacho zeigt wieder die normale Anzeige.') : t('home.failed', 'Hat nicht geklappt'), ok);
+                })
+                .catch(function () { toast(t('home.failed', 'Hat nicht geklappt'), false); })
+                .then(function () { btn.classList.remove('pending'); });
+        },
+
         loadCustom: function () {
             fetch('/api/quick-controls').then(function (r) { return r.json(); }).then(function (d) {
                 var grid = $('hCustom');
@@ -1210,6 +1234,7 @@
         Home.loadCharging();
         Home.loadTrips();
         Home.loadCustom();
+        Home.loadTachoNormal();
         Home.updateVehicle3dEntry();
         document.addEventListener('panoptes:profile', function () { Home.updateVehicle3dEntry(); });
         if (window.BYD && BYD.i18n && typeof BYD.i18n.onChange === 'function') {

@@ -536,6 +536,16 @@ public final class KeymapApiHandler {
             HttpResponse.sendJson(out, 400, error.toString());
             return;
         }
+        // 0.1.37: Eine Taste, die ein Assistenzsystem ausschaltet (auch „umschalten“), nur mit bestätigtem
+        // Haftungshinweis; AEB aus nie. Nichts wird gespeichert, die Oberfläche zeigt den Hinweis und speichert neu.
+        String assistenz = at.greenchili.surfmate.byd.routing.AssistenzHinweis.tastenSchaltenAb(bindings);
+        String assistenzGrund = at.greenchili.surfmate.byd.routing.AssistenzHinweis.speichernGrund(assistenz);
+        if (assistenzGrund != null) {
+            BefehlsLog.grund(assistenzGrund);
+            HttpResponse.sendJson(out,
+                    at.greenchili.surfmate.byd.routing.AssistenzHinweis.ablehnung(assistenz, assistenzGrund).toString());
+            return;
+        }
         // Preserve all existing binding kinds as sent. manualClip is validated
         // above (and again at fire time) because a malformed action would still
         // consume its physical key while doing nothing.

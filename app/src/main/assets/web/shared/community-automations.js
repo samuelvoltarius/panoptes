@@ -612,9 +612,20 @@ BYD.communityAutomations = {
             cancelLabel: self._t('common.cancel')
         }).then(function (ok) {
             if (!ok) return;
+            self._importSenden(id);
+        });
+    },
+
+    _importSenden: function (id) {
+        var self = this;
             fetch('/api/community/import/' + encodeURIComponent(id), { method: 'POST' })
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
+                    // 0.1.37: Regel schaltet ein Assistenzsystem aus → einmal den Haftungshinweis bestätigen
+                    if (window.PanoptesAssistenz && PanoptesAssistenz.braucht(data)) {
+                        PanoptesAssistenz.zeigen().then(function (bestaetigt) { if (bestaetigt) self._importSenden(id); });
+                        return;
+                    }
                     if (data && data.success) {
                         self._toast(self._t('community.added_disabled'), 'success');
                         // Refresh the local list so the newly-imported (disabled)
@@ -627,7 +638,6 @@ BYD.communityAutomations = {
                     }
                 })
                 .catch(function () { self._toast(self._t('community.add_failed'), 'error'); });
-        });
     },
 
     // ── Publish (augmented onto existing automation cards) ──────────────────────

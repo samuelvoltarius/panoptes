@@ -394,6 +394,10 @@
       "vehicle_health_battery12v": {
         "label": "Batteria da 12 V debole",
         "note": "Avvisa prima che la batteria da 12 V sia troppo debole per partire. Al massimo una volta al giorno."
+      },
+      "display_valet": {
+        "label": "Blocco display",
+        "note": "Qualcuno ha inserito più volte un PIN errato sul display bloccato."
       }
     },
     "cloud_uebergabe_titel": "“{0}” vuole passare il cloud BYD",
@@ -959,6 +963,8 @@
     }
   },
   "vehicle_control": {
+    "assistenz_hinweis_fehlt": "Conferma prima l’avviso sui sistemi di assistenza alla guida.",
+    "assistenz_nur_einschalten": "La frenata d’emergenza si può solo attivare.",
     "blocked_driving": "Non si può fare mentre l'auto è in movimento",
     "cloud_gate_unlock_never": "Lo sblocco da remoto è disattivato in Panoptes.",
     "cloud_gate_car_on": "L'auto è accesa – usala direttamente nell'auto. Tramite il cloud BYD funziona solo con l'auto spenta.",
@@ -2657,5 +2663,17 @@
   },
   "dateien": {
     "recht_fehlt": "Manca l’autorizzazione File – attivala in Panoptes in Dispositivi associati."
+  },
+  "display": {
+    "teilen_hinweis": "Schermo condiviso",
+    "valet_titel": "Display bloccato",
+    "valet_hilfe": "Per sbloccare, tieni premuto e inserisci il PIN.",
+    "valet_pin": "PIN",
+    "valet_ok": "OK",
+    "valet_falsch": "PIN errato.",
+    "valet_warten": "Attendi {s} secondi.",
+    "valet_fehler": "Non possibile ora. Riprova subito.",
+    "valet_fehlversuche_titel": "Blocco display: PIN errato",
+    "valet_fehlversuche_text": "Sul display è stato inserito {0} volte un PIN errato."
   }
 }

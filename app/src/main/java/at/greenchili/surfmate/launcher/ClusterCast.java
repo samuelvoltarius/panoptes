@@ -500,6 +500,13 @@ public final class ClusterCast {
             }
         }
         boolean rehomed = false;
+        if (at.greenchili.surfmate.tacho.TachoAnsicht.istAnsicht(pkg)) {
+            // Ansicht findet keine aktive Projektion und beendet sich selbst.
+            synchronized (ClusterCast.class) {
+                if (castPkg == null) clearStrandedCastPkg();
+            }
+            return true;
+        }
         try {
             rehomed = AppLauncher.reparentToDisplay0(pkg);
         } catch (Throwable t) {
@@ -610,7 +617,11 @@ public final class ClusterCast {
             return false;
         }
         pkg = pkg.trim();
-        final String component = AppLauncher.resolveLauncherComponent(pkg);
+        // 0.1.37: Die eigene Panoptes-Tacho-Ansicht hat eine feste Activity; sie kommt erst
+        // nach derselben fahrtSperre oben hierher (kein eigener Startweg).
+        final String component = at.greenchili.surfmate.tacho.TachoAnsicht.istAnsicht(pkg)
+                ? at.greenchili.surfmate.tacho.TachoAnsicht.KOMPONENTE
+                : AppLauncher.resolveLauncherComponent(pkg);
         if (component == null) {
             logger.warn("cluster cast: could not resolve launcher component for " + pkg);
             return false;
@@ -834,7 +845,12 @@ public final class ClusterCast {
         // only when the move was attempted but couldn't complete (e.g. no display-0 stack
         // parsed) — in which case the app may still be stranded, so we keep the recovery flag.
         boolean rehomed = true;
-        if (rehomeMode == FOREGROUND) {
+        if (at.greenchili.surfmate.tacho.TachoAnsicht.istAnsicht(pkg)) {
+            // Die Panoptes-Tacho-Ansicht beendet sich selbst, sobald sie nicht mehr die aktive
+            // Projektion ist oder auf Display 0 landet. Kein move-task: der wuerde sonst die
+            // Haupt-Task von Panoptes am Infotainment treffen.
+            rehomed = true;
+        } else if (rehomeMode == FOREGROUND) {
             // Explicit user "move back to head unit" — bring it to the front on display 0.
             try { rehomed = AppLauncher.launchOnDisplay(pkg, 0); }
             catch (Throwable t) { rehomed = false; logger.warn("cluster cast: re-home to display 0 failed: " + t.getMessage()); }

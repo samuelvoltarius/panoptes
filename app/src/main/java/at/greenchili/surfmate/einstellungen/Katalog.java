@@ -306,6 +306,11 @@ public final class Katalog {
         startAnsicht.optionen.add(new Feld.Option("kompakt", "settings.anzeige.startAnsicht.kompakt"));
         startAnsicht.optionen.add(new Feld.Option("cockpit", "settings.anzeige.startAnsicht.cockpit"));
         l.add(startAnsicht);
+        // Panoptes Launcher (eigene APK): Video-Hintergrund. Standard aus; der Launcher spielt ihn nur in Gang P.
+        Feld launcherVideo = new Feld("anzeige.launcherVideo", Feld.Typ.BOOL);
+        launcherVideo.gruppe = "system"; launcherVideo.reihenfolge = 8; launcherVideo.standard = false;
+        launcherVideo.nurLesendExtern = true;
+        l.add(launcherVideo);
         // Band am Display (Blitzer, „Reicht es noch?“), 0.1.9.1 nach Alfreds Fahrt: Standard groß und oben Mitte
         Feld bandG = new Feld("anzeige.bandGroesse", Feld.Typ.AUSWAHL);
         bandG.gruppe = "system"; bandG.reihenfolge = 6; bandG.standard = "gross";
