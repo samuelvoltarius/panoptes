@@ -303,21 +303,53 @@ class DaemonLauncher(
          * before it ever reaches its first log statement. `printf` with a
          * fixed `%s\n` format preserves the escaped argument literally.
          */
+        @JvmStatic
         fun buildWatchdogScriptWriteCommand(
             scriptPath: String,
             scriptLines: List<String>
         ): String = buildString {
-            append("rm -f $scriptPath 2>/dev/null; ")
+            // 0.1.36.1: nie mehr direkt in das Ziel schreiben. Eine eigene Temp-Datei je
+            // Shell ($$), dann sh -n + Zeilenzahl, dann mv. So kann ein zweiter Schreiber
+            // (AccSentry zeilenweise, UI in einem Zug) keine Zeilen mehr anhängen.
+            val tmp = skriptTempPfad(scriptPath, "\$\$")
+            append("rm -f $tmp 2>/dev/null; ")
             scriptLines.forEachIndexed { index, line ->
-                append(buildScriptLineWriteCommand(line, index == 0, scriptPath))
+                append(buildScriptLineWriteCommand(line, index == 0, tmp))
                 append("; ")
             }
-            append("chmod 755 $scriptPath")
+            append(buildSkriptEinsetzenCommand(tmp, scriptPath, scriptLines.size, "755"))
         }
 
         /**
+         * Temp-Datei neben dem Ziel (gleiches Dateisystem, damit `mv` ein atomares rename ist).
+         * [tag] muss je Schreiber eindeutig sein (Shell-PID `$$` oder Java-Nonce).
+         */
+        @JvmStatic
+        fun skriptTempPfad(scriptPath: String, tag: String): String = "$scriptPath.neu.$tag"
+
+        /**
+         * 0.1.36.1: Fertige Temp-Datei prüfen und atomar einsetzen. Erst wenn `sh -n` ok ist
+         * und die Zeilenzahl stimmt, ersetzt `mv` das Ziel. Sonst bleibt das alte Skript
+         * unverändert, die Temp-Datei geht weg und der Befehl endet mit Exit 3 und der
+         * Meldung `SKRIPT_FEHLER` (Aufrufer melden das als Fehler, Start unterbleibt).
+         * Muss der letzte Teil des Befehls sein.
+         */
+        @JvmStatic
+        fun buildSkriptEinsetzenCommand(
+            tmpPath: String, scriptPath: String, erwarteteZeilen: Int, modus: String
+        ): String =
+            "SK_N=\$(wc -l < $tmpPath 2>/dev/null | tr -d ' \\t\\r'); " +
+            "SK_F=\$(sh -n $tmpPath 2>&1); SK_RC=\$?; " +
+            "if [ \"\$SK_RC\" = \"0\" ] && [ \"\$SK_N\" = \"$erwarteteZeilen\" ]; then " +
+            "chmod $modus $tmpPath && mv -f $tmpPath $scriptPath && echo \"SKRIPT_OK $scriptPath\"; " +
+            "else rm -f $tmpPath 2>/dev/null; " +
+            "echo \"SKRIPT_FEHLER $scriptPath rc=\$SK_RC zeilen=\$SK_N/$erwarteteZeilen \$SK_F\"; " +
+            "echo \"SKRIPT_FEHLER $scriptPath rc=\$SK_RC zeilen=\$SK_N/$erwarteteZeilen\" >&2; exit 3; fi"
+
+        /**
          * Eine Skriptzeile byte-gleich schreiben (`printf '%s\n'`, nie `echo`).
-         * Auch AccSentryDaemon schreibt start_telegram.sh so, Zeile für Zeile (0.1.36).
+         * Auch AccSentryDaemon schreibt start_telegram.sh so, Zeile für Zeile (0.1.36),
+         * seit 0.1.36.1 nur noch in eine eigene Temp-Datei ([skriptTempPfad]).
          */
         @JvmStatic
         fun buildScriptLineWriteCommand(line: String, first: Boolean, scriptPath: String): String {
@@ -854,13 +886,12 @@ class DaemonLauncher(
         // Step 1: Kill old processes and clean up.
         // Use script-via-tmpfile so toybox `pkill -f 'cam_daemon'` can't
         // self-match the calling shell's argv. Order: clear sentinel,
-        // remove the deployable script, kill the old owner, settle, then
+        // kill the old owner (the script stays until the checked mv), settle, then
         // remove daemon + watchdog ownership artifacts. Ownership cleanup
         // stays AFTER the kill so no second watchdog can acquire while the
         // old shell is still alive.
         val cleanupScript = buildString {
             append("rm -f /data/user_de/0/com.android.shell/surfmate/camera_daemon.disabled 2>/dev/null\n")
-            append("rm -f $scriptPath 2>/dev/null\n")
             append(psAwkKillLine("cam_daemon"))
             append("killall -9 $CAMERA_DAEMON_PROCESS 2>/dev/null\n")
             append("sleep 1\n")
@@ -1284,11 +1315,10 @@ class DaemonLauncher(
         
         // Use script-via-tmpfile so toybox `pkill -f 'acc_sentry'` can't
         // self-match the calling shell's argv. Order: clear sentinel,
-        // remove the deployable script, kill the old owner, settle, then
+        // kill the old owner (the script stays until the checked mv), settle, then
         // remove daemon + watchdog ownership artifacts.
         val cleanupScript = buildString {
             append("rm -f /data/user_de/0/com.android.shell/surfmate/acc_sentry_daemon.disabled 2>/dev/null\n")
-            append("rm -f $watchdogScriptPath 2>/dev/null\n")
             append(psAwkKillLine("acc_sentry"))
             append("sleep 1\n")
             append("rm -f $lockFilePath $ACC_SENTRY_WATCHDOG_PID_FILE 2>/dev/null\n")
@@ -1608,7 +1638,6 @@ class DaemonLauncher(
         // others' daemons, those watchdogs respawn instantly, repeat).
         val cleanupScript =
             "rm -f /data/user_de/0/com.android.shell/surfmate/telegram_bot_daemon.disabled 2>/dev/null\n" +
-            "rm -f $watchdogScriptPath 2>/dev/null\n" +
             psAwkKillLine("start_telegram.sh") +
             psAwkKillLine("telegram_bot_daemon") +
             "sleep 1\n" +
@@ -1638,22 +1667,11 @@ class DaemonLauncher(
         // healthy-uptime reset at 300s, backoff capped at 60s.
         val scriptLines = buildTelegramWatchdogScript(apkPath, proxyArgs)
 
-        val writeCmd = buildString {
-            append("rm -f $scriptPath 2>/dev/null; ")
-            scriptLines.forEachIndexed { index, line ->
-                val escaped = line
-                        .replace("\\", "\\\\")
-                        .replace("\"", "\\\"")
-                        .replace("\$", "\\$")
-                        .replace("`", "\\`")
-                if (index == 0) {
-                    append("echo \"$escaped\" > $scriptPath; ")
-                } else {
-                    append("echo \"$escaped\" >> $scriptPath; ")
-                }
-            }
-            append("chmod 755 $scriptPath")
-        }
+        // 0.1.36.1: gleicher Weg wie Kamera/AccSentry (printf in eigene Temp-Datei, sh -n,
+        // mv). Vorher echo direkt ins Ziel: mksh machte aus \000 ein NUL, und lief AccSentry
+        // gleichzeitig, hängte es seine restlichen Zeilen hinter dieses Skript (Auto 0.1.36:
+        // 334 statt 220 Zeilen, sh -n "unexpected 'fi'" in Zeile 221).
+        val writeCmd = buildWatchdogScriptWriteCommand(scriptPath, scriptLines)
 
         adbShellExecutor.execute(
             command = writeCmd,

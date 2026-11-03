@@ -8863,42 +8863,59 @@ public class AccSentryDaemon {
             // Write line-by-line — heredoc through execShell isn't reliable
             // across all toybox builds. Same pattern as
             // DaemonCommandHandler.startCameraDaemonWithWatchdog.
-            shellResult = runTelegramShell(
-                    transitionGeneration,
-                    true,
-                    "rm -f " + scriptPath + " 2>/dev/null");
-            if (!shellResult.success) {
-                return shellResult.canceled;
-            }
-            boolean first = true;
-            for (String line : lines) {
+            //
+            // 0.1.36.1: nie mehr direkt ins Ziel. Auto 0.1.36: der UI-Weg schrieb
+            // start_telegram.sh in einem Zug neu, waehrend dieser Weg zeilenweise
+            // schrieb; die restlichen Zeilen landeten per >> hinter dem fertigen
+            // Skript (334 statt 220 Zeilen, sh -n Fehler Zeile 221). Jetzt eigene
+            // Temp-Datei je Lauf, dann sh -n + Zeilenzahl + mv. Faellt die Pruefung
+            // durch, bleibt das alte Skript stehen und der Start unterbleibt.
+            String tmpPath = at.greenchili.surfmate.launcher.DaemonLauncher
+                    .skriptTempPfad(scriptPath, "acc" + android.os.Process.myPid()
+                            + "_" + Long.toUnsignedString(System.nanoTime(), 36));
+            boolean eingesetzt = false;
+            try {
+                boolean first = true;
+                for (String line : lines) {
+                    if (shouldAbortTelegramReconciliation(
+                            transitionGeneration, true, "watchdog write")) {
+                        return true;
+                    }
+                    // 0.1.36: printf '%s\n' statt echo. mksh wertet in echo Folgen
+                    // wie \000 aus (tr der Besitzer-Pruefung) und schrieb so ein
+                    // anderes Skript als den Java-Text.
+                    shellResult = runTelegramShell(
+                            transitionGeneration,
+                            true,
+                            at.greenchili.surfmate.launcher.DaemonLauncher
+                                    .buildScriptLineWriteCommand(line, first, tmpPath));
+                    if (!shellResult.success) {
+                        return shellResult.canceled;
+                    }
+                    first = false;
+                }
                 if (shouldAbortTelegramReconciliation(
-                        transitionGeneration, true, "watchdog write")) {
+                        transitionGeneration, true, "watchdog install")) {
                     return true;
                 }
-                // 0.1.36: printf '%s\n' statt echo. mksh wertet in echo Folgen
-                // wie \000 aus (tr der Besitzer-Pruefung) und schrieb so ein
-                // anderes Skript als den Java-Text.
                 shellResult = runTelegramShell(
                         transitionGeneration,
                         true,
                         at.greenchili.surfmate.launcher.DaemonLauncher
-                                .buildScriptLineWriteCommand(line, first, scriptPath));
+                                .buildSkriptEinsetzenCommand(
+                                        tmpPath, scriptPath, lines.size(), "755"));
                 if (!shellResult.success) {
+                    if (!shellResult.canceled) {
+                        log("Telegram watchdog NOT replaced, old script kept: "
+                                + shellResult.output.trim());
+                    }
                     return shellResult.canceled;
                 }
-                first = false;
-            }
-            if (shouldAbortTelegramReconciliation(
-                    transitionGeneration, true, "watchdog chmod")) {
-                return true;
-            }
-            shellResult = runTelegramShell(
-                    transitionGeneration,
-                    true,
-                    "chmod 755 " + scriptPath);
-            if (!shellResult.success) {
-                return shellResult.canceled;
+                eingesetzt = true;
+            } finally {
+                if (!eingesetzt) {
+                    try { new java.io.File(tmpPath).delete(); } catch (Throwable ignored) { }
+                }
             }
         } catch (Throwable t) {
             if (shouldAbortTelegramReconciliation(

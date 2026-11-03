@@ -102,6 +102,65 @@ public class TachoNaviAppTest {
                 p, urteil("ja", "warnleuchten_frei"), null, true, true, false));
     }
 
+    /** 0.1.36.1: Video/Spiele/unbekannte Apps nur in P, Navigation auch beim Fahren. */
+    @Test
+    public void gangPnachDStopptNichtNaviAppNaviLaeuftWeiter() {
+        int p = at.greenchili.surfmate.monitor.GearMonitor.GEAR_P;
+        int d = at.greenchili.surfmate.monitor.GearMonitor.GEAR_D;
+        String video = "com.google.android.youtube";
+        String unbekannt = "org.example.any";
+        for (String nicht : new String[] {video, unbekannt, "org.schabi.newpipe"}) {
+            assertTrue(nicht, TachoNaviApp.mussBeiGangStoppen(d, nicht, true));
+            assertFalse("in P bleibt " + nicht, TachoNaviApp.mussBeiGangStoppen(p, nicht, true));
+        }
+        for (String navi : new String[] {"com.google.android.apps.maps", "com.waze", "net.osmand", "net.osmand.plus",
+                "com.iternio.abrpapp", "com.here.app.maps", "com.sygic.aura", "com.generalmagic.magicearth"}) {
+            assertTrue(navi, TachoNaviApp.istNavi(navi));
+            assertFalse("Navi läuft weiter: " + navi, TachoNaviApp.mussBeiGangStoppen(d, navi, true));
+            assertTrue("nicht freigegeben weg: " + navi, TachoNaviApp.mussBeiGangStoppen(d, navi, false));
+        }
+        assertTrue(TachoNaviApp.istNavi("at.greenchili.surfmate"));
+        assertFalse(TachoNaviApp.istNavi(video));
+        assertFalse(TachoNaviApp.istNavi(null));
+        assertFalse("nichts aktiv", TachoNaviApp.mussBeiGangStoppen(d, null, true));
+        // unbekannter Gang (nicht P) gilt wie Fahrt
+        assertTrue(TachoNaviApp.mussBeiGangStoppen(0, video, true));
+    }
+
+    @Test
+    public void keinStartEinerNichtNaviAppAusserhalbVonP() throws Exception {
+        JSONObject ja = urteil("ja", "warnleuchten_frei");
+        String video = "com.google.android.youtube";
+        for (String grund : new String[] {"not_park", "moving", "gear_unknown", "state_unknown", "speed_unknown"}) {
+            assertEquals(grund, "nur_im_stand",
+                    TachoNaviApp.fahrtSperreAuswertung(video, ja, grund, true, true, false));
+            assertNull("Navi darf: " + grund,
+                    TachoNaviApp.fahrtSperreAuswertung("com.waze", ja, grund, true, true, false));
+        }
+        assertNull("in P darf jede freigegebene App",
+                TachoNaviApp.fahrtSperreAuswertung(video, ja, null, true, true, false));
+        assertEquals("Freigabe bleibt Pflicht", "nicht_freigegeben",
+                TachoNaviApp.fahrtSperreAuswertung("com.waze", ja, null, true, false, false));
+        assertEquals("Probe weiter nur in P", "nur_im_stand",
+                TachoNaviApp.fahrtSperreAuswertung("com.waze", urteil("unbekannt", "warnleuchten_ungeprueft"),
+                        "not_park", true, false, true));
+    }
+
+    /** Alle Startwege (ACC-Autostart, Tastenbelegung, Automation, Web) laufen durch fahrtSperre mit Fahrzustand. */
+    @Test
+    public void alleStartwegeNutzenDieFahrtSperreMitFahrzustand() throws IOException {
+        String cast = TachoFaehigkeitTest.lies(
+                "app/src/main/java/at/greenchili/surfmate/launcher/ClusterCast.java");
+        String start = cast.substring(cast.indexOf("public static synchronized boolean start(String pkg)"));
+        start = start.substring(0, start.indexOf("lastDrivingRefusal = \"\";"));
+        assertTrue(start.contains("TachoNaviApp.fahrtSperre("));
+        assertTrue(start.contains("drivingBlockReason()"));
+        String policy = TachoFaehigkeitTest.lies(
+                "app/src/main/java/at/greenchili/surfmate/tacho/TachoNaviApp.java");
+        assertTrue(policy.contains("if (bewegungsGrund != null && !istNavi(paket)) return \"nur_im_stand\";"));
+        assertTrue(policy.contains("mussBeiGangStoppen(gang, p, p != null && istFreigegeben(p))"));
+    }
+
     @Test
     public void probeNurStartbarUndEindeutigInP() throws Exception {
         String p = "org.example.any";

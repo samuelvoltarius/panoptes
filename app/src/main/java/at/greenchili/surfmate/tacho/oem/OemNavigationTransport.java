@@ -23,15 +23,45 @@ final class OemNavigationTransport {
     });
     private static volatile boolean poisoned;
 
+    /** Navigations-Modus an: {@code sendInfo(5, 0, "")}. */
+    static final int TYP_NAVI_MODUS = 5;
+    static final int INFO_NAVI_MODUS = 0;
+    /** Navigations-Daten: {@code sendInfo2(4, payload)}. */
+    static final int TYP_NAVI_DATEN = 4;
+    /** Cluster-Kanal der Projektion ({@code ClusterProjectionController.CLUSTER_TYPE}); hier nie. */
+    static final int TYP_CLUSTER = 1000;
+
     private OemNavigationTransport() {}
 
+    /**
+     * 0.1.36.1: Erlaubt-Liste fuer diesen zweiten AutoContainer-Sender. Nur genau die zwei
+     * Navi-Befehle. Nie der Cluster-Kanal 1000, nie die Warnleuchten-Opcodes 2/3
+     * ({@code ClusterProjectionController.isForbiddenWarningLampOpcode}), auch nicht als Typ.
+     */
+    static boolean istErlaubtSendInfo(int typ, int info) {
+        if (typ == TYP_CLUSTER) return false;
+        if (at.greenchili.surfmate.surveillance.ClusterProjectionController.isForbiddenWarningLampOpcode(typ)
+                || at.greenchili.surfmate.surveillance.ClusterProjectionController.isForbiddenWarningLampOpcode(info)) {
+            return false;
+        }
+        return typ == TYP_NAVI_MODUS && info == INFO_NAVI_MODUS;
+    }
+
+    static boolean istErlaubtSendInfo2(int typ) {
+        if (typ == TYP_CLUSTER) return false;
+        if (at.greenchili.surfmate.surveillance.ClusterProjectionController.isForbiddenWarningLampOpcode(typ)) {
+            return false;
+        }
+        return typ == TYP_NAVI_DATEN;
+    }
+
     static boolean enableNavigationMode() {
-        return bounded(() -> sendInfo(5, 0, ""));
+        return bounded(() -> sendInfo(TYP_NAVI_MODUS, INFO_NAVI_MODUS, ""));
     }
 
     static boolean sendNavigationPayload(byte[] payload) {
         if (payload == null || payload.length == 0 || payload.length > 4096) return false;
-        return bounded(() -> sendInfo2(4, payload));
+        return bounded(() -> sendInfo2(TYP_NAVI_DATEN, payload));
     }
 
     private static boolean bounded(Callable<Result> op) {
@@ -54,6 +84,11 @@ final class OemNavigationTransport {
     }
 
     private static Result sendInfo(int type, int info, String text) {
+        if (!istErlaubtSendInfo(type, info)) {
+            logger.error("refusing AutoContainer navigation sendInfo " + type + "/" + info
+                    + " (not on the navigation allow-list)");
+            return Result.REJECTED;
+        }
         Endpoint endpoint = resolve();
         if (endpoint == null) return Result.UNAVAILABLE;
         try {
@@ -69,6 +104,11 @@ final class OemNavigationTransport {
     }
 
     private static Result sendInfo2(int type, byte[] payload) {
+        if (!istErlaubtSendInfo2(type)) {
+            logger.error("refusing AutoContainer navigation sendInfo2 " + type
+                    + " (not on the navigation allow-list)");
+            return Result.REJECTED;
+        }
         Endpoint endpoint = resolve();
         if (endpoint == null) return Result.UNAVAILABLE;
         try {

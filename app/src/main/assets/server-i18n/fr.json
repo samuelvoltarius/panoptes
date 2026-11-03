@@ -932,6 +932,7 @@
       "reichweite": "Autonomie (selon la voiture) : {0} km",
       "spannung": "Batterie 12 V : {0} V",
       "sicherheit": "Gardien actif : {0} · Verrouillée : {1}",
+      "sicherheit_ohne_schloss": "Gardien actif : {0}",
       "ja": "oui",
       "nein": "non",
       "unbekannt": "inconnu"

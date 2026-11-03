@@ -926,6 +926,7 @@
       "reichweite": "Range (from car): {0} km",
       "spannung": "12 V battery: {0} V",
       "sicherheit": "Guardian awake: {0} · Locked: {1}",
+      "sicherheit_ohne_schloss": "Guardian awake: {0}",
       "ja": "yes",
       "nein": "no",
       "unbekannt": "unknown"

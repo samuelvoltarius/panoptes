@@ -932,6 +932,7 @@
       "reichweite": "Autonomia (secondo l’auto): {0} km",
       "spannung": "Batteria da 12 V: {0} V",
       "sicherheit": "Guardiano attivo: {0} · Chiusa: {1}",
+      "sicherheit_ohne_schloss": "Guardiano attivo: {0}",
       "ja": "sì",
       "nein": "no",
       "unbekannt": "sconosciuto"

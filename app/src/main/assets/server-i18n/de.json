@@ -926,6 +926,7 @@
       "reichweite": "Reichweite laut Auto: {0} km",
       "spannung": "Starterbatterie (12 V): {0} V",
       "sicherheit": "Wächter wach: {0} · Zugesperrt: {1}",
+      "sicherheit_ohne_schloss": "Wächter wach: {0}",
       "ja": "ja",
       "nein": "nein",
       "unbekannt": "unbekannt"

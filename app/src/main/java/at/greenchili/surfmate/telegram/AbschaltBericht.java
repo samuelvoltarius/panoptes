@@ -29,6 +29,23 @@ import java.util.concurrent.TimeUnit;
  * <p>Ablauf: Zündung aus → {@link #VERZOEGERUNG_MS} warten (Fahrt abgeschlossen, Wächter scharf, Schloss zu) →
  * Wächter-Zustand für „Verlust im Stand“ an der Zündungs-Zeile nachtragen (immer, auch ohne Telegram) →
  * Bericht senden, falls eingeschaltet. Geht die Zündung vorher wieder an, entfällt beides.
+ *
+ * <p>0.1.36.1 (Befund Auto nach dem Update auf 0.1.36): Ein Daemon-Start meldet „Zündung aus“ als
+ * ersten Zustand ({@code CameraDaemon.onAccStateChanged}: vorheriger Zustand {@code null} zählt als
+ * Wechsel). Das löste einen Bericht über die letzte Fahrt vor dem Update aus. Jetzt gilt:
+ * <ul>
+ *   <li>Bericht nur nach einem echten Übergang an → aus, den <b>dieser Prozess</b> gesehen hat
+ *       ({@link #beiAccAn} vor {@link #beiAccAus}). Start, Neustart und Update melden nichts; ihre
+ *       Fahrten werden still als gemeldet gemerkt.</li>
+ *   <li>Einmal je Fahrt: höchste gemeldete Fahrt-ID in {@code abschalt_bericht.json} und im Speicher.</li>
+ *   <li>Kategorie {@code PARKING} (normale Info wie andere Park-Meldungen, Schalter „Park-Meldungen“,
+ *       Ruhezeit gilt), nicht mehr {@code CRITICAL}.</li>
+ *   <li>Schloss nach 90 s frisch über {@code VehicleControlApiHandler.sperrStand} (OTA-Fahrertür, frische
+ *       Cloud, SDK – dieselbe Quelle wie die Fahrzeugseite), ohne Cloud-Abruf anzustoßen. Unbekannt:
+ *       zweimal nach {@link #NACHFASSEN_MS} nachfassen, sonst fällt „Zugesperrt“ weg. Vorher kam der Wert
+ *       nur aus {@code BydVehicleData.doorLockStatus}, das {@code BydDataCollector.collectDoorLock} auf
+ *       den meisten Autos mit -1 füllt – daher immer „unbekannt“.</li>
+ * </ul>
  */
 public final class AbschaltBericht {
 
@@ -38,9 +55,18 @@ public final class AbschaltBericht {
     /** Ohne bekanntes „Zündung an“: nur Fahrten, die in diesem Fenster vor dem Abstellen endeten. */
     static final long FENSTER_OHNE_AN_MS = 6 * 3_600_000L;
 
+    /** Schloss unbekannt: so lange warten und neu lesen (zweimal). */
+    static final long NACHFASSEN_MS = 15_000L;
+    static final int NACHFASSEN_VERSUCHE = 2;
+    /** Kategorie wie andere Park-Meldungen (keine Warnstufe). */
+    static final String KATEGORIE = "PARKING";
+
     private static final Object LOCK = new Object();
     private static volatile long letztesAus;
+    /** Letztes „Zündung an“, das DIESER Prozess gesehen hat (0 = noch keins, z. B. direkt nach Start). */
     private static volatile long letztesAn;
+    /** Höchste gemeldete Fahrt-ID im Speicher (falls die Datei nicht geschrieben werden konnte). */
+    private static volatile long gemeldetImSpeicher = -1;
     private static ScheduledExecutorService exec;
 
     private AbschaltBericht() {}
@@ -143,7 +169,12 @@ public final class AbschaltBericht {
         }
         if (d.reichweiteKm != null) z.add(new Object[] {"abschalt.reichweite", String.valueOf(d.reichweiteKm)});
         if (d.volt12 != null) z.add(new Object[] {"abschalt.spannung", zahl(d.volt12, 1, sprache)});
-        z.add(new Object[] {"abschalt.sicherheit", janein(d.scharf), janein(d.verriegelt)});
+        if (d.verriegelt != null) {
+            z.add(new Object[] {"abschalt.sicherheit", janein(d.scharf), janein(d.verriegelt)});
+        } else {
+            // 0.1.36.1: Schloss auch nach Nachfassen unbekannt -> Zeile ohne „Zugesperrt“.
+            z.add(new Object[] {"abschalt.sicherheit_ohne_schloss", janein(d.scharf)});
+        }
         return z;
     }
 
@@ -191,9 +222,37 @@ public final class AbschaltBericht {
 
     // ---------------- Laufzeit (Kamera-Daemon) ----------------
 
+    /**
+     * Echter Übergang an → aus in diesem Prozess? Nur dann gibt es einen Bericht. Direkt nach Daemon-Start,
+     * Neustart oder Update ist {@code anInProzess} 0 (erste Meldung ist „aus“), dann nie.
+     */
+    static boolean berichtVorgesehen(long anInProzess, long ausMs) {
+        return anInProzess > 0 && anInProzess <= ausMs;
+    }
+
+    /** Zündung aus vermerken; true = für diesen Nachlauf ist ein Bericht vorgesehen. */
+    static boolean merkeAus(long jetzt) {
+        letztesAus = jetzt;
+        return berichtVorgesehen(letztesAn, jetzt);
+    }
+
+    /** Nur für Tests: Zustand wie nach einem frischen Daemon-Start. */
+    static void zuruecksetzenFuerTest() {
+        letztesAus = 0;
+        letztesAn = 0;
+        gemeldetImSpeicher = -1;
+    }
+
     /** Zündung aus: Nachlauf planen (blockiert den Übergang nie). */
     public static void beiAccAus(long jetzt) {
-        letztesAus = jetzt;
+        final boolean bericht = merkeAus(jetzt);
+        try {
+            // 0.1.36.1: sichtbar machen, ob dieses „aus“ einen Bericht bekommt (Prüfpunkt am Auto/Emulator).
+            at.greenchili.surfmate.daemon.CameraDaemon.log("Abschaltbericht: Zuendung aus, "
+                    + (bericht ? "Bericht vorgesehen (echter Uebergang an -> aus)"
+                               : "kein Bericht (Start/Neustart/Update, kein 'an' in diesem Prozess)"));
+        } catch (Throwable ignored) {
+        }
         try {
             ScheduledExecutorService e;
             synchronized (LOCK) {
@@ -206,7 +265,7 @@ public final class AbschaltBericht {
                 }
                 e = exec;
             }
-            e.schedule(() -> nachlauf(jetzt), VERZOEGERUNG_MS, TimeUnit.MILLISECONDS);
+            e.schedule(() -> nachlauf(jetzt, bericht), VERZOEGERUNG_MS, TimeUnit.MILLISECONDS);
         } catch (Throwable ignored) {
         }
     }
@@ -216,7 +275,23 @@ public final class AbschaltBericht {
         letztesAn = jetzt;
     }
 
-    private static void nachlauf(long ausMs) {
+    /**
+     * Welche Fahrten meldet dieses Abstellen? Leer, wenn kein echter Übergang ({@code bericht} false)
+     * oder alles schon gemeldet ist.
+     */
+    static List<TripRecord> zuMelden(List<TripRecord> kandidaten, long ausMs, long letztesAnMs,
+                                     long gemeldetBisId, boolean bericht) {
+        List<TripRecord> f = auswahl(kandidaten, ausMs, letztesAnMs, gemeldetBisId);
+        return bericht ? f : new ArrayList<>();
+    }
+
+    static long hoechsteId(List<TripRecord> fahrten) {
+        long id = -1;
+        if (fahrten != null) for (TripRecord t : fahrten) if (t != null) id = Math.max(id, t.id);
+        return id;
+    }
+
+    private static void nachlauf(long ausMs, boolean bericht) {
         try {
             if (letztesAus != ausMs || letztesAn > ausMs) return;
             Boolean scharf = at.greenchili.surfmate.daemon.CameraDaemon.waechterZustandBelegt();
@@ -231,9 +306,15 @@ public final class AbschaltBericht {
             at.greenchili.surfmate.trips.TripAnalyticsManager tam =
                     at.greenchili.surfmate.daemon.CameraDaemon.getTripAnalyticsManager();
             if (tam == null || tam.getDatabase() == null) return;
-            long gemeldet = gemeldetBis();
-            List<TripRecord> fahrten = auswahl(tam.getDatabase().getTrips(2, 30), ausMs,
-                    db.letztesAccAnVor(ausMs), gemeldet);
+            long gemeldet = Math.max(gemeldetBis(), gemeldetImSpeicher);
+            List<TripRecord> kandidaten = tam.getDatabase().getTrips(2, 30);
+            long anVor = db.letztesAccAnVor(ausMs);
+            if (!bericht) {
+                // Start/Neustart/Update: nichts senden, aber diese Fahrten als gemeldet merken.
+                merkeGemeldet(hoechsteId(auswahl(kandidaten, ausMs, anVor, gemeldet)));
+                return;
+            }
+            List<TripRecord> fahrten = zuMelden(kandidaten, ausMs, anVor, gemeldet, true);
             if (fahrten.isEmpty()) return;
             Daten d = zusammenfassen(fahrten);
             merkeGemeldet(d.letzteFahrtId);
@@ -249,16 +330,66 @@ public final class AbschaltBericht {
                         d.reichweiteKm = v.elecRangeKm;
                     }
                     if (!Double.isNaN(v.voltage12v) && v.voltage12v > 5 && v.voltage12v < 20) d.volt12 = v.voltage12v;
-                    d.verriegelt = verriegelt(v.doorLockStatus,
-                            at.greenchili.surfmate.camera.dilink5.DiLink5Platform.isSelected());
                 }
             } catch (Throwable ignored) {
             }
+            d.verriegelt = mitNachfassen(AbschaltBericht::schlossJetzt, NACHFASSEN_VERSUCHE, NACHFASSEN_MS,
+                    () -> letztesAus != ausMs || letztesAn > ausMs);
+            if (letztesAus != ausMs || letztesAn > ausMs) return;
             Locale sprache = Locale.forLanguageTag(String.valueOf(at.greenchili.surfmate.server.LocaleManager.get()));
             String text = text(zeilen(d, sprache), TelegramMessages::get);
-            TelegramNotifier.sendMessage(text, "CRITICAL");
+            TelegramNotifier.sendMessage(text, KATEGORIE);
         } catch (Throwable ignored) {
         }
+    }
+
+    interface Leser { Boolean lies(); }
+    interface Abbruch { boolean jetzt(); }
+
+    /** Lesen; ist es unbekannt, bis zu {@code versuche} Mal nach {@code warteMs} neu lesen. */
+    static Boolean mitNachfassen(Leser leser, int versuche, long warteMs, Abbruch abbruch) {
+        Boolean b = sicher(leser);
+        for (int i = 0; b == null && i < versuche; i++) {
+            try {
+                Thread.sleep(warteMs);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                return null;
+            }
+            if (abbruch != null && abbruch.jetzt()) return null;
+            b = sicher(leser);
+        }
+        return b;
+    }
+
+    private static Boolean sicher(Leser l) {
+        try {
+            return l.lies();
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /** Schloss frisch lesen, ohne Cloud-Abruf anzustoßen (dieselbe Zusammenführung wie die Fahrzeugseite). */
+    private static Boolean schlossJetzt() {
+        try {
+            at.greenchili.surfmate.byd.BydDataCollector c = at.greenchili.surfmate.byd.BydDataCollector.getInstance();
+            at.greenchili.surfmate.byd.BydVehicleData v = c != null && c.isInitialized() ? c.getData() : null;
+            if (v == null) return null;
+            return schlossAusSperrStand(
+                    at.greenchili.surfmate.server.VehicleControlApiHandler.sperrStand(v, false));
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /** {@code sperrStand}-Ergebnis: overall 1 = zu, 2 = offen, sonst unbekannt. */
+    static Boolean schlossAusSperrStand(JSONObject doors) {
+        if (doors == null) return null;
+        int o = doors.optInt("overall", -1);
+        if (o == 1) return Boolean.TRUE;
+        if (o == 2) return Boolean.FALSE;
+        return null;
     }
 
     /** Gesamtschloss wie die Startseite: alt 1 = zu, 2 = offen; DiLink 5 (Cloud-Kodierung) 2 = zu, 1 = offen. */
@@ -292,6 +423,8 @@ public final class AbschaltBericht {
 
     private static void merkeGemeldet(long id) {
         if (id < 0) return;
+        if (id > gemeldetImSpeicher) gemeldetImSpeicher = id;
+        if (id <= gemeldetBis()) return;
         try {
             File f = datei();
             File tmp = new File(f.getPath() + ".tmp");

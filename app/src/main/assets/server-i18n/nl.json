@@ -932,6 +932,7 @@
       "reichweite": "Bereik (volgens auto): {0} km",
       "spannung": "12 V-accu: {0} V",
       "sicherheit": "Bewaker actief: {0} · Vergrendeld: {1}",
+      "sicherheit_ohne_schloss": "Bewaker actief: {0}",
       "ja": "ja",
       "nein": "nee",
       "unbekannt": "onbekend"

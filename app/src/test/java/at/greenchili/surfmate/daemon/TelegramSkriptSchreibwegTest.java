@@ -41,7 +41,7 @@ public class TelegramSkriptSchreibwegTest {
         if (!Files.exists(p)) p = Paths.get("..").resolve(QUELLE);
         String src = new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
         assertFalse("echo-Schreibweg fuer start_telegram.sh ist zurueck", src.contains("\"echo \\\"\" + escaped"));
-        assertTrue(src.contains(".buildScriptLineWriteCommand(line, first, scriptPath)"));
+        assertTrue(src.contains(".buildScriptLineWriteCommand(line, first, tmpPath)")); // 0.1.36.1: Temp-Datei, dann mv
     }
 
     @Test

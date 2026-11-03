@@ -111,7 +111,9 @@ public class AbschaltBerichtTest {
         assertFalse("kein erfundener Akku", text.contains("Akku"));
         assertFalse(text.contains("Reichweite"));
         assertFalse(text.contains("12 V"));
-        assertTrue(text, text.contains("Wächter wach: unbekannt · Zugesperrt: unbekannt"));
+        // 0.1.36.1: Schloss unbekannt -> „Zugesperrt“ fällt weg, Wächter bleibt ehrlich „unbekannt“.
+        assertTrue(text, text.contains("Wächter wach: unbekannt"));
+        assertFalse(text, text.contains("Zugesperrt"));
     }
 
     @Test
@@ -214,6 +216,126 @@ public class AbschaltBerichtTest {
         assertTrue(k.contains("abschalt.standard = true"));
         assertTrue(k.contains("abschaltM.standard = 300"));
         assertTrue(k.contains("abschaltMin.standard = 2"));
+    }
+
+    // ---------------- 0.1.36.1 ----------------
+
+    /** Daemon-Start, Neustart und Update: erste Meldung „aus“ ohne gesehenes „an“ -> kein Bericht. */
+    @Test
+    public void neustartOhneBericht() {
+        AbschaltBericht.zuruecksetzenFuerTest();
+        try {
+            assertFalse("Start/Update meldet aus", AbschaltBericht.merkeAus(1_000_000L));
+            assertFalse("Heartbeat aus nach Start", AbschaltBericht.merkeAus(1_005_000L));
+            AbschaltBericht.beiAccAn(2_000_000L);
+            assertTrue("echter Übergang an -> aus", AbschaltBericht.merkeAus(3_000_000L));
+            // Neuer Prozess (Neustart): Zustand weg, wieder kein Bericht
+            AbschaltBericht.zuruecksetzenFuerTest();
+            assertFalse(AbschaltBericht.merkeAus(4_000_000L));
+            assertFalse(AbschaltBericht.berichtVorgesehen(0, 5_000L));
+            assertFalse("an nach aus zählt nicht", AbschaltBericht.berichtVorgesehen(6_000L, 5_000L));
+            assertTrue(AbschaltBericht.berichtVorgesehen(5_000L, 5_000L));
+        } finally {
+            AbschaltBericht.zuruecksetzenFuerTest();
+        }
+    }
+
+    @Test
+    public void neustartMeldetDieFahrtVorDemUpdateNie() {
+        long an = 10_000_000L;
+        long aus = an + 60 * MIN;
+        TripRecord a = fahrt(11, an + 2 * MIN, 2.4, 600, 80, 78, 0, 0);
+        List<TripRecord> alle = Collections.singletonList(a);
+        assertTrue("Neustart: nichts senden",
+                AbschaltBericht.zuMelden(alle, aus, an, -1, false).isEmpty());
+        // ... aber still merken, damit sie später nicht nachkommt
+        long gemerkt = AbschaltBericht.hoechsteId(AbschaltBericht.auswahl(alle, aus, an, -1));
+        assertEquals(11, gemerkt);
+        assertTrue(AbschaltBericht.zuMelden(alle, aus + 5 * MIN, -1, gemerkt, true).isEmpty());
+    }
+
+    @Test
+    public void einBerichtJeFahrt() {
+        long an = 10_000_000L;
+        long aus = an + 60 * MIN;
+        TripRecord a = fahrt(21, an + 2 * MIN, 8, 900, 80, 77, 0, 0);
+        TripRecord b = fahrt(22, an + 30 * MIN, 4, 600, 77, 74, 0, 0);
+        List<TripRecord> alle = Arrays.asList(a, b);
+        List<TripRecord> erst = AbschaltBericht.zuMelden(alle, aus, an, -1, true);
+        assertEquals(2, erst.size());
+        long gemeldet = AbschaltBericht.zusammenfassen(erst).letzteFahrtId;
+        assertEquals(22, gemeldet);
+        // kurz an (ohne neue Fahrt) und wieder aus: nichts doppelt
+        long an2 = aus + 5 * MIN;
+        assertTrue(AbschaltBericht.zuMelden(alle, an2 + MIN, an2, gemeldet, true).isEmpty());
+        // auch ohne bekanntes „an“ (6-h-Fenster) nicht doppelt
+        assertTrue(AbschaltBericht.zuMelden(alle, aus + MIN, -1, gemeldet, true).isEmpty());
+        // neue Fahrt danach: nur sie
+        TripRecord c = fahrt(23, an2 + 2 * MIN, 5, 700, 74, 71, 0, 0);
+        List<TripRecord> neu = AbschaltBericht.zuMelden(Arrays.asList(a, b, c), an2 + 20 * MIN, an2, gemeldet, true);
+        assertEquals(1, neu.size());
+        assertEquals(23, neu.get(0).id);
+    }
+
+    @Test
+    public void kategorieIstNormaleParkInfo() throws Exception {
+        assertEquals("PARKING", AbschaltBericht.KATEGORIE);
+        assertEquals(TelegramNotifier.Category.PARKING, TelegramNotifier.Category.valueOf(AbschaltBericht.KATEGORIE));
+        String src = lies("app/src/main/java/at/greenchili/surfmate/telegram/AbschaltBericht.java");
+        assertTrue(src.contains("TelegramNotifier.sendMessage(text, KATEGORIE)"));
+        assertFalse("keine Warnstufe mehr", src.contains("sendMessage(text, \"CRITICAL\")"));
+        // Ruhezeit gilt für PARKING (nur Alarm-Kategorien kommen nachts durch)
+        String tg = lies("app/src/main/java/at/greenchili/surfmate/daemon/TelegramBotDaemon.java");
+        String quiet = tg.substring(tg.indexOf("static boolean passesQuiet("));
+        quiet = quiet.substring(0, quiet.indexOf("default:"));
+        assertFalse(quiet.contains("\"PARKING\""));
+    }
+
+    @Test
+    public void schlossAusSperrStandUndNachfassen() throws Exception {
+        assertEquals(Boolean.TRUE, AbschaltBericht.schlossAusSperrStand(new JSONObject().put("overall", 1)));
+        assertEquals(Boolean.FALSE, AbschaltBericht.schlossAusSperrStand(new JSONObject().put("overall", 2)));
+        assertNull(AbschaltBericht.schlossAusSperrStand(new JSONObject().put("overall", -1)));
+        assertNull(AbschaltBericht.schlossAusSperrStand(new JSONObject()));
+        assertNull(AbschaltBericht.schlossAusSperrStand(null));
+
+        int[] n = {0};
+        Boolean[] folge = {null, null, Boolean.TRUE};
+        assertEquals(Boolean.TRUE, AbschaltBericht.mitNachfassen(() -> folge[n[0]++], 2, 1, () -> false));
+        assertEquals("einmal + zweimal nachfassen", 3, n[0]);
+
+        int[] m = {0};
+        assertNull(AbschaltBericht.mitNachfassen(() -> { m[0]++; return null; }, 2, 1, () -> false));
+        assertEquals(3, m[0]);
+
+        int[] k = {0};
+        assertNull("Zündung wieder an: abbrechen",
+                AbschaltBericht.mitNachfassen(() -> { k[0]++; return null; }, 2, 1, () -> true));
+        assertEquals(1, k[0]);
+
+        assertEquals(Boolean.FALSE, AbschaltBericht.mitNachfassen(() -> Boolean.FALSE, 2, 1, () -> false));
+        assertNull("Ausnahme = unbekannt", AbschaltBericht.mitNachfassen(() -> { throw new IllegalStateException(); }, 0, 1, null));
+        assertEquals(15_000L, AbschaltBericht.NACHFASSEN_MS);
+        assertEquals(2, AbschaltBericht.NACHFASSEN_VERSUCHE);
+
+        String src = lies("app/src/main/java/at/greenchili/surfmate/telegram/AbschaltBericht.java");
+        assertTrue("Quelle wie Fahrzeugseite, ohne Cloud-Abruf", src.contains("VehicleControlApiHandler.sperrStand(v, false)"));
+    }
+
+    @Test
+    public void ohneSchlossFaelltZugesperrtWegInAllenSprachen() throws Exception {
+        String[] wort = {"Zugesperrt", "Locked", "Verrouill", "Chiusa", "Vergrendeld"};
+        for (int i = 0; i < SPRACHEN.length; i++) {
+            AbschaltBericht.Daten d = voll();
+            d.verriegelt = null;
+            String text = AbschaltBericht.text(AbschaltBericht.zeilen(d, Locale.forLanguageTag(SPRACHEN[i])),
+                    katalog(SPRACHEN[i]));
+            assertFalse(SPRACHEN[i] + ": " + text, text.contains(wort[i]));
+            assertFalse(SPRACHEN[i] + ": " + text, text.contains("{") || text.contains("abschalt."));
+            d.verriegelt = Boolean.TRUE;
+            text = AbschaltBericht.text(AbschaltBericht.zeilen(d, Locale.forLanguageTag(SPRACHEN[i])), katalog(SPRACHEN[i]));
+            assertTrue(SPRACHEN[i] + ": " + text, text.contains(wort[i]));
+        }
     }
 
     static String lies(String relativePath) throws Exception {

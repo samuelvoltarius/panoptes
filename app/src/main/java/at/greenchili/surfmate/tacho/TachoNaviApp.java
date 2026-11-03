@@ -3,7 +3,10 @@ package at.greenchili.surfmate.tacho;
 import at.greenchili.surfmate.logging.DaemonLogger;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,6 +18,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * Automation bleiben jedoch gesperrt, bis der Nutzer genau dieses Paket in P auf dem echten
  * Fahrerdisplay geprueft und freie Tempo-/Warnleuchten bestaetigt hat. Alle Startwege laufen
  * weiter ueber {@code ClusterCast}; {@link #fahrtSperre} ist ihre gemeinsame Policy.
+ *
+ * <p>0.1.36.1 (Vorgabe „Kein Video waehrend der Fahrt“): Ausserhalb von P laufen nur bekannte
+ * Navigations-Apps ({@link #NAVI_PAKETE}). Jede andere App (Video, Spiele, unbekannt) startet nur in P
+ * und wird beim Verlassen von P sofort gestoppt ({@link #beiGangwechsel} → {@code ClusterCast.stop()},
+ * zurueck zur Instrumentenanzeige). Gilt fuer alle Startwege (Display, Web, Tastenbelegung,
+ * Automation, ACC-Autostart), weil alle durch {@link #fahrtSperre} laufen.
  */
 public final class TachoNaviApp {
     @FunctionalInterface
@@ -32,7 +41,36 @@ public final class TachoNaviApp {
     /** Ein fehlgeschlagener Persistenzschreibzug darf einen Widerruf nie wieder oeffnen. */
     private static final Set<String> widerrufen = ConcurrentHashMap.newKeySet();
 
+    /**
+     * Pakete, die als Navigation gelten und auch beim Fahren am Fahrerdisplay bleiben duerfen.
+     * Nur bekannte Pakete; alles andere gilt als „nur in P“.
+     */
+    static final Set<String> NAVI_PAKETE = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "com.google.android.apps.maps",          // Google Maps
+            "com.google.android.apps.mapslite",      // Google Maps Go
+            "com.waze",                               // Waze
+            "net.osmand",                             // OsmAnd
+            "net.osmand.plus",                        // OsmAnd+
+            "com.iternio.abrpapp",                    // A Better Routeplanner
+            "com.here.app.maps",                      // HERE WeGo
+            "com.sygic.aura",                         // Sygic
+            "com.generalmagic.magicearth",            // Magic Earth
+            SELF_PACKAGE                              // Panoptes selbst
+    )));
+
     private TachoNaviApp() {}
+
+    /** Gilt dieses Paket als Navigation (darf auch ausserhalb von P laufen)? */
+    public static boolean istNavi(String paket) {
+        return paket != null && NAVI_PAKETE.contains(paket.trim());
+    }
+
+    /** Muss die aktive App beim Gangwechsel weg? Ausserhalb von P: jede Nicht-Navi-App und jede nicht freigegebene. */
+    static boolean mussBeiGangStoppen(int gang, String aktivPaket, boolean freigegeben) {
+        if (gang == at.greenchili.surfmate.monitor.GearMonitor.GEAR_P) return false;
+        if (aktivPaket == null || aktivPaket.trim().isEmpty()) return false;
+        return !freigegeben || !istNavi(aktivPaket);
+    }
 
     static boolean gueltigesFremdpaket(String paket) {
         if (paket == null) return false;
@@ -82,6 +120,8 @@ public final class TachoNaviApp {
             return code.startsWith("warnleuchten_") ? null : "auf_diesem_auto_nicht_angeboten";
         }
         if (!freigegeben) return "nicht_freigegeben";
+        // 0.1.36.1: ausserhalb von P (oder Zustand unbekannt) nur Navigation.
+        if (bewegungsGrund != null && !istNavi(paket)) return "nur_im_stand";
         return TachoFaehigkeit.JA.equals(status) ? null : "auf_diesem_auto_nicht_angeboten";
     }
 
@@ -306,15 +346,19 @@ public final class TachoNaviApp {
         return istAn() && fahrtSperre(p, null) == null;
     }
 
-    /** Verlassen von P beendet jede Probe und jede nicht freigegebene aktive App. */
+    /**
+     * Verlassen von P beendet jede Probe, jede nicht freigegebene aktive App und (0.1.36.1) jede
+     * App, die nicht als Navigation gilt (Video, Spiele, unbekannt) – sofort, zurueck zum Tacho.
+     */
     public static void beiGangwechsel(int gang) {
         if (gang == at.greenchili.surfmate.monitor.GearMonitor.GEAR_P) return;
         try {
             synchronized (TachoNaviApp.class) { if (probeBis > 0) beendeProbe("gang_" + gang); }
             if (!at.greenchili.surfmate.launcher.ClusterCast.isActive()) return;
             String p = at.greenchili.surfmate.launcher.ClusterCast.getCastPackage();
-            if (p != null && !istFreigegeben(p)) {
-                logger.info("Gang " + gang + ": " + p + " nicht freigegeben - Tacho zurueck");
+            if (mussBeiGangStoppen(gang, p, p != null && istFreigegeben(p))) {
+                logger.info("Gang " + gang + ": " + p + (istNavi(p) ? " nicht freigegeben" : " keine Navigation, nur in P")
+                        + " - Tacho zurueck");
                 at.greenchili.surfmate.launcher.ClusterCast.stop();
             }
         } catch (Throwable t) { logger.warn("beiGangwechsel: " + t.getMessage()); }

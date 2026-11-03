@@ -488,7 +488,6 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
             "#!/system/bin/sh\n" +
             "# Telegram-side cam_daemon stop sequence\n" +
             "rm -f /data/user_de/0/com.android.shell/surfmate/camera_daemon.disabled 2>/dev/null\n" +
-            "rm -f " + scriptPath + " 2>/dev/null\n" +
             "if [ -f /data/user_de/0/com.android.shell/surfmate/cam_watchdog.pid ]; then kill -9 $(cat /data/user_de/0/com.android.shell/surfmate/cam_watchdog.pid) 2>/dev/null; fi\n" +
             "MY_PID=$$; ps -A -o PID,ARGS | grep -F 'cam_daemon' | grep -v grep "
                 + "| awk '{print $1}' | while read pid; do "
@@ -543,20 +542,22 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
         // Heredoc body comes from stdin not argv — no self-match risk
         // even though watchdog body contains daemon patterns. The
         // delimiter is a unique marker that must not appear in the body.
-        ctx.execShell(
-            "cat > " + scriptPath + " <<'__CAM_WATCHDOG_EOF__'\n" +
+        // 0.1.36.1: in eine eigene Temp-Datei, dann sh -n + Zeilenzahl + mv (atomar).
+        // Faellt die Pruefung durch, bleibt das alte Skript und es wird nicht gestartet.
+        String camTmp = skriptTemp(scriptPath);
+        String verify = ctx.execShell(
+            "cat > " + camTmp + " <<'__CAM_WATCHDOG_EOF__'\n" +
             camBody.toString() +
             "__CAM_WATCHDOG_EOF__\n" +
-            "chmod 755 " + scriptPath
+            at.greenchili.surfmate.launcher.DaemonLauncher.buildSkriptEinsetzenCommand(
+                camTmp, scriptPath, camLines.size(), "755")
         );
-        
-        // Verify script exists
-        String verify = ctx.execShell("test -f " + scriptPath + " && wc -l < " + scriptPath);
-        if (verify == null || verify.trim().isEmpty() || "0".equals(verify.trim())) {
-            ctx.log("Failed to write watchdog script");
+        if (!skriptEingesetzt(verify)) {
+            ctx.log("Watchdog script NOT replaced, old script kept: "
+                + (verify == null ? "" : verify.trim()));
             return false;
         }
-        ctx.log("Script written (" + verify.trim() + " lines)");
+        ctx.log("Script written (" + camLines.size() + " lines, sh -n ok)");
         
         // Step 3: Launch watchdog script (same as DaemonLauncher.launchCamDaemonScript).
         // spawnDetached — the watchdog re-spawns the daemon forever, so its
@@ -572,6 +573,17 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
         return running;
     }
     
+    /** 0.1.36.1: eigene Temp-Datei je Schreibzug neben dem Ziel (mv bleibt atomar). */
+    static String skriptTemp(String scriptPath) {
+        return at.greenchili.surfmate.launcher.DaemonLauncher.skriptTempPfad(scriptPath,
+                "tg" + android.os.Process.myPid() + "_" + Long.toUnsignedString(System.nanoTime(), 36));
+    }
+
+    /** Hat buildSkriptEinsetzenCommand das neue Skript eingesetzt? */
+    static boolean skriptEingesetzt(String ausgabe) {
+        return ausgabe != null && ausgabe.contains("SKRIPT_OK ") && !ausgabe.contains("SKRIPT_FEHLER");
+    }
+
     /**
      * Replicates DaemonLauncher.launchAccSentryDaemon() flow.
      */
@@ -587,7 +599,6 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
             "#!/system/bin/sh\n" +
             "# Telegram-side acc_sentry_daemon stop sequence\n" +
             "rm -f /data/user_de/0/com.android.shell/surfmate/acc_sentry_daemon.disabled 2>/dev/null\n" +
-            "rm -f " + scriptPath + " 2>/dev/null\n" +
             "MY_PID=$$; ps -A -o PID,ARGS | grep -F 'acc_sentry' | grep -v grep "
                 + "| awk '{print $1}' | while read pid; do "
                 + "if [ \"$pid\" != \"$MY_PID\" ]; then kill -9 $pid 2>/dev/null; fi; done\n" +
@@ -623,13 +634,20 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
         for (String line : accLines) {
             accBody.append(line).append('\n');
         }
-        ctx.execShell(
-            "cat > " + scriptPath + " <<'__ACC_WATCHDOG_EOF__'\n" +
+        String accTmp = skriptTemp(scriptPath);
+        String accVerify = ctx.execShell(
+            "cat > " + accTmp + " <<'__ACC_WATCHDOG_EOF__'\n" +
             accBody.toString() +
             "__ACC_WATCHDOG_EOF__\n" +
-            "chmod 755 " + scriptPath
+            at.greenchili.surfmate.launcher.DaemonLauncher.buildSkriptEinsetzenCommand(
+                accTmp, scriptPath, accLines.size(), "755")
         );
-        
+        if (!skriptEingesetzt(accVerify)) {
+            ctx.log("Watchdog script NOT replaced, old script kept: "
+                + (accVerify == null ? "" : accVerify.trim()));
+            return false;
+        }
+
         // Step 3: Launch — spawnDetached, see CameraDaemon launch above for why.
         ctx.log("Launching watchdog...");
         ctx.spawnDetached("sh " + scriptPath);
@@ -659,13 +677,15 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
             body.append(line).append('\n');
         }
 
+        String guardTmp = skriptTemp(TAILSCALE_DASHBOARD_GUARD_SCRIPT);
         String writeResult = ctx.execShell(
                 "mkdir -p /data/user_de/0/com.android.shell/surfmate/.tailscale && "
-                        + "cat > " + TAILSCALE_DASHBOARD_GUARD_SCRIPT
+                        + "cat > " + guardTmp
                         + " <<'__TAILSCALE_DASHBOARD_GUARD_EOF__'\n"
                         + body
                         + "__TAILSCALE_DASHBOARD_GUARD_EOF__\n"
-                        + "chmod 700 " + TAILSCALE_DASHBOARD_GUARD_SCRIPT
+                        + at.greenchili.surfmate.launcher.DaemonLauncher.buildSkriptEinsetzenCommand(
+                                guardTmp, TAILSCALE_DASHBOARD_GUARD_SCRIPT, lines.size(), "700")
                         + " && echo ready");
         if (writeResult == null || !writeResult.trim().endsWith("ready")) {
             ctx.log("Failed to write the Tailscale dashboard security guard");
