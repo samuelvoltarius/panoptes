@@ -176,6 +176,7 @@ public class SystemCommandHandler implements TelegramCommandHandler {
                 at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.REMOTE_GUARD);
         sb.append(ctx.tr(guard ? "help.guard" : "help.guard_view")).append("\n");
         sb.append(ctx.tr(guard ? "help.camping" : "help.camping_view")).append("\n");
+        sb.append(ctx.tr("help.tier")).append("\n");
         String[][] optional = {
                 {at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.REMOTE_CAMERA, "help.camera"},
                 {at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.REMOTE_CAMERA, "help.clips"},

@@ -17,6 +17,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -43,6 +44,7 @@ public class ChargingApiHandler {
     private static final Pattern SESSION_DELETE_PATTERN = Pattern.compile("^/api/charging/(\\d+)/delete$");
     private static final Pattern SESSION_COST_PATTERN = Pattern.compile("^/api/charging/(\\d+)/cost$");
     private static final Pattern SESSION_SAEULE_PATTERN = Pattern.compile("^/api/charging/(\\d+)/saeule$");
+    private static final Pattern SESSION_STATION_PATTERN = Pattern.compile("^/api/charging/(\\d+)/station$");
 
     private final ChargingSessionManager manager;
     private final Supplier<TripAnalyticsManager>
@@ -147,6 +149,18 @@ public class ChargingApiHandler {
             if (saeuleMatcher.matches() && "POST".equals(method)) {
                 long id = Long.parseLong(saeuleMatcher.group(1));
                 return handleSetSaeule(id, body);
+            }
+
+            // 03.11.2026: erkannte Ladesäule – lesen (Kandidaten, Preis-Vorschlag) und ändern.
+            Matcher stationMatcher = SESSION_STATION_PATTERN.matcher(path);
+            if (stationMatcher.matches()) {
+                long id = Long.parseLong(stationMatcher.group(1));
+                if ("GET".equals(method)) return handleGetStation(id);
+                if ("POST".equals(method)) return handleSetStation(id, body);
+            }
+            // Knopf „Ladestationen nachtragen“ (alte Ladungen, nie automatisch).
+            if (path.equals("/api/charging/stationen/nachtragen") && "POST".equals(method)) {
+                return handleStationenNachtragen();
             }
 
             // GET/DELETE /api/charging/{id}
@@ -538,6 +552,121 @@ public class ChargingApiHandler {
         } catch (Exception e) {
             logger.error("Error setting Saeule values for session " + id, e);
             return errorResponse("Failed to save", 500);
+        }
+    }
+
+    /**
+     * GET /api/charging/{id}/station — {@code {success, zuordnung, station, kandidaten[≤3], vorschlaege[], schalter}}.
+     * Nur gespeicherte Daten, keine neue Planer-Anfrage. Keine Koordinaten, nur Abstände in Metern.
+     */
+    private JSONObject handleGetStation(long id) {
+        try {
+            JSONObject row = db().getChargingSessionById(id);
+            if (row == null) return errorResponse("Not found", 404);
+            JSONObject o = new JSONObject();
+            o.put("success", true);
+            o.put("zuordnung", row.opt("zuordnung"));
+            String sid = row.isNull("stationId") ? "" : row.optString("stationId", "");
+            JSONObject station = null;
+            if (!row.isNull("stationName") || !row.isNull("betreiber")) {
+                station = new JSONObject();
+                station.put("id", sid.isEmpty() ? JSONObject.NULL : sid);
+                station.put("name", row.opt("stationName"));
+                station.put("betreiber", row.opt("betreiber"));
+                station.put("art", row.opt("stationArt"));
+            }
+            o.put("station", station == null ? JSONObject.NULL : station);
+            List<JSONObject> kand = LadesaeuleZuordnung.kandidatenAus(db().getChargingStationKandidaten(id));
+            JSONArray ka = new JSONArray();
+            JSONObject gewaehlt = null;
+            for (JSONObject k : kand) {
+                ka.put(k);
+                if (gewaehlt == null && !sid.isEmpty() && sid.equals(k.optString("id", ""))) gewaehlt = k;
+            }
+            o.put("kandidaten", ka);
+            int isDc = row.isNull("isDc") ? -1 : (row.optBoolean("isDc") ? 1 : 0);
+            String betreiber = row.isNull("betreiber") ? "" : row.optString("betreiber", "");
+            JSONArray sitz = db().getChargingSessionsV2Range(0, System.currentTimeMillis() + 86_400_000L, 5000, 0);
+            o.put("vorschlaege", betreiber.isEmpty() && gewaehlt == null ? new JSONArray()
+                    : LadePreisVorschlag.vorschlaege(betreiber, isDc, gewaehlt, sitz, id));
+            o.put("schalter", LadesaeuleDienst.schalterAn(LadesaeuleDienst.config()));
+            return o;
+        } catch (Exception e) {
+            logger.error("Error reading station for session " + id + ": " + e.getClass().getSimpleName());
+            return errorResponse("Failed to read station", 500);
+        }
+    }
+
+    /**
+     * POST /api/charging/{id}/station — {@code {"stationId": "…"}} (eine der gespeicherten Kandidaten),
+     * {@code {"name": "…"}} (freier Name) oder {@code {"keine": true}}; optional {@code "gemerktTarif": "<Tarif-ID>"}
+     * nach „Säule merken“ (Ort mit Tarif über {@code POST /api/laden/nachfrage} mit {@code ortMerken}).
+     */
+    private JSONObject handleSetStation(long id, String body) {
+        try {
+            JSONObject req;
+            try {
+                req = new JSONObject(body != null && !body.isEmpty() ? body : "{}");
+            } catch (org.json.JSONException e) {
+                return errorResponse("Invalid JSON payload", 400);
+            }
+            String stationId = null, name = null, betreiber = null, art = null;
+            if (req.optBoolean("keine", false)) {
+                // nichts
+            } else if (!req.optString("stationId", "").isEmpty()) {
+                JSONObject k = null;
+                for (JSONObject x : LadesaeuleZuordnung.kandidatenAus(db().getChargingStationKandidaten(id))) {
+                    if (req.optString("stationId").equals(x.optString("id", ""))) {
+                        k = x;
+                        break;
+                    }
+                }
+                if (k == null) return errorResponse("Unknown station", 400);
+                stationId = k.optString("id");
+                name = k.optString("name", "");
+                betreiber = k.optString("betreiber", "");
+                art = k.optString("art", "");
+            } else {
+                name = LadesaeuleZuordnung.einzeilig(req.optString("name", ""), 120);
+                if (name.isEmpty()) return errorResponse("'stationId', 'name' or 'keine' required", 400);
+                betreiber = name;
+            }
+            if (!db().setChargingStation(id, LadesaeuleZuordnung.NUTZER, stationId, name, betreiber, art, null)) {
+                return errorResponse("Session not found or still charging", 409);
+            }
+            String tarif = req.optString("gemerktTarif", "").trim();
+            JSONObject response = new JSONObject();
+            response.put("success", true);
+            if (!tarif.isEmpty() && tarif.length() <= 32 && name != null && !name.isEmpty()) {
+                boolean gemerkt = false;
+                try {
+                    JSONObject cfg = LadesaeuleDienst.config();
+                    JSONArray neu = LadesaeuleDienst.merke(LadesaeuleDienst.gemerktListe(cfg), tarif, stationId, name,
+                            betreiber, art);
+                    gemerkt = at.greenchili.surfmate.config.UnifiedConfigManager.updateSection(
+                            LadesaeuleDienst.ABSCHNITT_GEMERKT, new JSONObject().put("gemerkt", neu));
+                } catch (Throwable ignored) {
+                }
+                response.put("gemerkt", gemerkt);
+            }
+            JSONObject row = db().getChargingSessionById(id);
+            if (row != null) response.put("session", row);
+            return response;
+        } catch (Exception e) {
+            logger.error("Error setting station for session " + id + ": " + e.getClass().getSimpleName());
+            return errorResponse("Failed to save", 500);
+        }
+    }
+
+    /** POST /api/charging/stationen/nachtragen — alte Ladungen, nur auf Tipp; höchstens 10 Anfragen je Tipp. */
+    private JSONObject handleStationenNachtragen() {
+        try {
+            JSONObject o = LadesaeuleDienst.nachtragenJetzt(db());
+            o.put("success", o.optBoolean("ok"));
+            return o;
+        } catch (Exception e) {
+            logger.error("Error backfilling stations: " + e.getClass().getSimpleName());
+            return errorResponse("Failed", 500);
         }
     }
 

@@ -189,6 +189,8 @@ public class HttpServer {
         // Initialize auth system
         AuthManager.initialize();
         CameraDaemon.log("Auth system initialized");
+        // 03.11.2026: Ladesäulen-Erkennung nach Ladeende nur im Daemon (in Tests bleibt sie aus).
+        at.greenchili.surfmate.charging.LadesaeuleDienst.aktivieren();
         
         while (running && CameraDaemon.isRunning()) {
             try {
@@ -741,7 +743,9 @@ public class HttpServer {
             if (AuthMiddleware.isHandyWebRequest() && (WebHandyGuard.blocks(method, pathOnly)
                     || WebHandyGuard.blocksEinstellungsAbschnitt(method, pathOnly, body))
                     && !WebHandyGuard.updateErlaubt(method, pathOnly, at.greenchili.surfmate.auth.Kopplungen.get()
-                            .hatRecht(AuthMiddleware.requestWebKopplungsId(), at.greenchili.surfmate.auth.Kopplungen.RECHT_UPDATE))) {
+                            .hatRecht(AuthMiddleware.requestWebKopplungsId(), at.greenchili.surfmate.auth.Kopplungen.RECHT_UPDATE))
+                    && !WebHandyGuard.dateienErlaubt(pathOnly, at.greenchili.surfmate.auth.Kopplungen.get()
+                            .hatRecht(AuthMiddleware.requestWebKopplungsId(), at.greenchili.surfmate.auth.Kopplungen.RECHT_DATEIEN))) {
                 BefehlsLog.grund("web_gesperrt");
                 WebHandyGuard.sendeGesperrt(out, pathOnly);
                 client.close();
@@ -846,10 +850,16 @@ public class HttpServer {
             } else if (path.equals("/orte.html")) {
                 // Orte (0.1.11, ORTE_VERTRAG): Seite nur Anzeige/Formular; /api/orte prüft Login und sperrt die Kopplung.
                 if (!serveStaticFile(out, "local/orte.html")) HttpResponse.sendError(out, 404, "orte.html not found");
+            } else if (path.equals("/dateien.html")) {
+                // Dateien Handy ↔ Auto: Seite nur Anzeige/Formular; /api/dateien prüft Login bzw. Recht „dateien“.
+                if (!serveStaticFile(out, "local/dateien.html")) HttpResponse.sendError(out, 404, "dateien.html not found");
             } else if (path.equals("/camping.html")) {
                 // 0.1.16 Camping (Kern 9): Seite nur Anzeige/Formular; /api/camping prüft Login und Fahrt-Sperre.
                 // Fehlte im Merge (Emulator-Abnahme 23.10.: „Not Found“).
                 if (!serveStaticFile(out, "local/camping.html")) HttpResponse.sendError(out, 404, "camping.html not found");
+            } else if (path.equals("/tiermodus.html")) {
+                // Tiermodus (03.11.2026): große Anzeige fürs Display; /api/tiermodus prüft Login und „direkt am Auto“.
+                if (!serveStaticFile(out, "local/tiermodus.html")) HttpResponse.sendError(out, 404, "tiermodus.html not found");
             } else if (path.equals("/bericht.html") || path.equals("/bericht")) {
                 // Monatsbericht (H7): Seite nur lesend, Daten aus /api/bericht/monat.
                 if (!serveStaticFile(out, "local/bericht.html")) {
@@ -1489,6 +1499,8 @@ public class HttpServer {
         }
         // 0.1.16: BLE-Zählen (nur lesen, nur Anzahl/Typen, schaltet Bluetooth/Standort nie ein)
         if (path.startsWith("/api/ble/") && BleApiHandler.handle(method, path, out)) return true;
+        // Weckwort-Messung Stufe 1: nur Zahlen lesen, nur direkt am Autobildschirm (Start/Stopp nur in der App)
+        if (path.startsWith("/api/weckwort-messung") && WeckwortMessApiHandler.handle(method, path, out)) return true;
         if (path.startsWith("/api/system/")
                 && SystemApiHandler.handle(method, path, body, out)) {
             return true;
@@ -1499,6 +1511,9 @@ public class HttpServer {
                 && NaviApiHandler.handle(method, path, body, out)) {
             return true;
         }
+        // Dateien Handy ↔ Auto: eigener Ordner, max. 200 MB, keine APKs; Rechte vorher (ExternGuard, WebHandyGuard)
+        if ((path.equals("/api/dateien") || path.startsWith("/api/dateien/") || path.startsWith("/api/dateien?"))
+                && DateienApiHandler.handle(method, path, body, out)) return true;
         if (path.startsWith("/api/laden") && LadenApiHandler.handle(method, path, body, out)) return true;   // Kern 5
         if (path.startsWith("/api/uebernahme/") && UebernahmeApiHandler.handle(method, path, body, out)) return true;   // Kern 5
 
@@ -1526,6 +1541,12 @@ public class HttpServer {
         // Camping-Modus (0.1.16, CAMPING_PLAN.md): Panoptes-Funktion, in Stufe 2a ohne Heizwirkung
         if (path.startsWith("/api/camping")
                 && CampingApiHandler.handle(method, path, body, out)) {
+            return true;
+        }
+
+        // Tiermodus (03.11.2026): Display-Seite; Einschalten nur direkt am Auto, für Kopplungen und Automationen zu
+        if (path.startsWith("/api/tiermodus")
+                && TiermodusApiHandler.handle(method, path, body, out)) {
             return true;
         }
 
@@ -1736,6 +1757,16 @@ public class HttpServer {
                 }
             }
             
+            // 03.11.2026 „Günstigste in der Nähe“: Durchschnittsverbrauch des Autos (kWh/100 km) für Hin- und Rückweg.
+            // Nur ein plausibler Wert, sonst fehlt das Feld (die Navi nimmt dann einen Rückfallwert).
+            try {
+                at.greenchili.surfmate.byd.BydVehicleData vd =
+                        at.greenchili.surfmate.byd.BydDataCollector.getInstance().getData();
+                double v = vd == null ? Double.NaN : vd.avgElecConPer100Km;
+                if (Double.isFinite(v) && v >= 5 && v <= 60) status.put("verbrauchKwh100", Math.round(v * 10) / 10.0);
+            } catch (Throwable ignored) {
+            }
+
             at.greenchili.surfmate.monitor.DrivingRangeData rangeData = vehicleMonitor.getDrivingRange();
             if (rangeData != null) {
                 JSONObject range = new JSONObject();

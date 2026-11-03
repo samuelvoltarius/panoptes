@@ -25,6 +25,8 @@ public final class StoppBelegung {
     public boolean statusBekannt;
     public int frei, ladepunkte, belegt, defekt;
     public long alterS;
+    /** Der Planer hat ein Alter der Live-Daten mitgeliefert ({@code live_alter_s}); sonst kein „Stand vor x min“. */
+    public boolean standBekannt;
     /** Laut Live-Belegung voll oder außer Betrieb (nur bei bekanntem Status). */
     public boolean voll;
     public String ausweichName;
@@ -73,6 +75,8 @@ public final class StoppBelegung {
         b.belegt = treffer.optInt("belegt_n", 0);
         b.defekt = treffer.optInt("defekt_n", 0);
         b.alterS = treffer.optLong("live_alter_s", 0);
+        b.standBekannt = treffer.has("live_alter_s") && !treffer.isNull("live_alter_s")
+                && treffer.optLong("live_alter_s", -1) >= 0;
         b.voll = b.statusBekannt && b.frei == 0;
         if (b.voll) {
             double bestA = Double.MAX_VALUE;
@@ -95,8 +99,21 @@ public final class StoppBelegung {
 
     /** Für die Antwort von /api/navi/unterwegs ({@code naechsterStopp.belegung}). */
     public JSONObject alsJson() {
+        return alsJson(-1);
+    }
+
+    /**
+     * Wie {@link #alsJson()}, dazu {@code standVorS}: Alter der Live-Daten JETZT (Alter beim Abruf + Zeit seit dem
+     * Abruf), nur wenn der Planer ein Alter geliefert hat. Ohne Alter fehlt das Feld (dann kein Zeitstempel).
+     *
+     * @param seitAbrufMs Millisekunden seit der Antwort des Planers, negativ = unbekannt
+     */
+    public JSONObject alsJson(long seitAbrufMs) {
         JSONObject o = new JSONObject();
         try {
+            if (statusBekannt && standBekannt && seitAbrufMs >= 0) {
+                o.put("standVorS", alterS + seitAbrufMs / 1000);
+            }
             o.put("gefunden", gefunden);
             o.put("statusBekannt", statusBekannt);
             o.put("frei", frei);

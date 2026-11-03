@@ -88,6 +88,15 @@ public final class TelegramSink implements NotificationBus.Sink {
                         event.severity != NotificationEvent.Severity.INFO);
                 return;
             }
+            // Tiermodus (03.11.2026): Start, Ende und Probleme immer an Telegram, über die CRITICAL-Spur (wird
+            // gepuffert, wenn der Bot gerade nicht läuft). Alarme gehen auch in der Ruhezeit durch.
+            if (event.category != null && event.category.startsWith("tiermodus.")) {
+                boolean alarm = event.severity == NotificationEvent.Severity.CRITICAL;
+                StringBuilder msg = new StringBuilder(alarm ? "🚨 *" : "🐾 *").append(md(event.title)).append("*");
+                if (event.body != null && !event.body.isEmpty()) msg.append("\n").append(md(event.body));
+                TelegramNotifier.sendMessage(msg.toString(), "CRITICAL", alarm);
+                return;
+            }
             if (event.category != null && event.category.startsWith("parking.")) {
                 forwardParking(event);
                 return;

@@ -176,6 +176,26 @@
     "camping_aus_hoechstdauer": "Camping aus (Höchstdauer erreicht)",
     "camping_plan_fehler": "Camping: geplanter Start nicht möglich – Grund in Panoptes",
     "camping_tuer_offen": "Camping: {0} geöffnet",
+    "tiermodus_an": "Tiermodus an – Klima läuft",
+    "tiermodus_aus": "Tiermodus aus",
+    "tiermodus_aus_losgefahren": "Tiermodus aus: losgefahren",
+    "tiermodus_ohne_fuehler": "Dieses Auto meldet keine Innentemperatur. Panoptes überwacht, ob das Klima läuft.",
+    "tiermodus_wieder_ok": "Tiermodus: Klima läuft wieder",
+    "tiermodus_akku_bald": "Tiermodus: Akku bald an der Untergrenze ({0} %)",
+    "tiermodus_alarm_klima_aus": "Klima AUS – Tier prüfen!",
+    "tiermodus_alarm_zu_warm": "Zu warm im Auto – Tier prüfen!",
+    "tiermodus_alarm_unklar": "Klima unklar – Tier prüfen!",
+    "tiermodus_alarm_innen_veraltet": "Innentemperatur nicht messbar – Tier prüfen!",
+    "tiermodus_grund_klima_aus": "Die Klimaanlage ist aus.",
+    "tiermodus_grund_auto_aus": "Das Auto ist ausgeschaltet.",
+    "tiermodus_grund_klima_unbekannt": "Panoptes kann nicht prüfen, ob das Klima läuft.",
+    "tiermodus_grund_zu_warm": "Innen {0} °C.",
+    "tiermodus_grund_innen_veraltet": "Die Innentemperatur ist veraltet – der Hitzeschutz sieht gerade nichts.",
+    "tiermodus_grund_akku_grenze": "Akku an der Untergrenze ({0} %) – Klima ausgeschaltet.",
+    "tiermodus_grund_v12_niedrig": "Starterbatterie schwach – Klima ausgeschaltet.",
+    "tiermodus_gesehen_hinweis": "Gesehen? In der App auf „Gesehen“ tippen oder /tier ok schicken.",
+    "tiermodus_hinweis_text": "Der Tiermodus ist eine Hilfe, keine Garantie. Klima, Akku oder Software können ausfallen. Meldungen können verspätet oder gar nicht ankommen. Lass dein Tier nie unbeaufsichtigt im Auto, wenn du nicht in wenigen Minuten zurück sein kannst. Du bleibst selbst verantwortlich, Panoptes übernimmt keine Haftung.",
+    "tiermodus_hinweis_knopf": "Verstanden, ich bin selbst verantwortlich",
     "guard_stop_reason_soc": "Fahrakku zu leer",
     "guard_stop_reason_v12": "Starterbatterie zu schwach",
     "guard_stop_reason_park": "lange geparkt",
@@ -288,6 +308,14 @@
       "camping_warnung": {
         "label": "Camping: Warnungen",
         "note": "Camping: Akku nahe oder an der Untergrenze, schwache 12-V-Batterie, Höchstdauer erreicht."
+      },
+      "tiermodus_alarm": {
+        "label": "Tiermodus: Alarm",
+        "note": "Klima aus, Auto aus, zu warm, Akku oder 12 V an der Grenze. Kommt wieder, bis jemand „Gesehen“ tippt."
+      },
+      "tiermodus_hinweis": {
+        "label": "Tiermodus: Hinweise",
+        "note": "Tiermodus an oder aus, Klima läuft wieder."
       },
       "surveillance_guard_stop": {
         "label": "Wächter angehalten / wieder an",
@@ -425,6 +453,24 @@
       "btn_fine": "✓ passt",
       "btn_warm": "☀ zu warm"
     },
+    "tier": {
+      "status_off": "🐾 Der Tiermodus ist aus. Einschalten geht nur am Autobildschirm oder in der Panoptes-App.",
+      "status_ok": "🐾 *Tiermodus an* – Klima läuft.",
+      "status_check": "🚨 *Tiermodus an – bitte Tier prüfen!*",
+      "failed": "⚠️ Den Tiermodus konnte ich gerade nicht abfragen.",
+      "seen": "✅ Gesehen – die Meldung kommt erst wieder, wenn etwas Neues passiert.",
+      "inside": "Innen: {0} °C",
+      "only_app": "Ein- und Ausschalten nur am Auto oder in der App.",
+      "btn_seen": "✅ Gesehen",
+      "btn_refresh": "🔄 Neu laden",
+      "problem_klima_aus": "Klimaanlage ist aus",
+      "problem_auto_aus": "Auto ist ausgeschaltet",
+      "problem_klima_unbekannt": "Klima-Zustand unbekannt",
+      "problem_zu_warm": "Zu warm im Auto",
+      "problem_innen_veraltet": "Innentemperatur veraltet – nicht messbar",
+      "problem_akku_grenze": "Akku an der Untergrenze – Klima aus",
+      "problem_v12_niedrig": "Starterbatterie schwach – Klima aus"
+    },
     "recording_caption": "🎞 Aufnahme ({0}) · {1} s",
     "recording_caption_no_label": "🎞 Aufnahme · {0} s",
     "recording_label": {
@@ -508,6 +554,7 @@
       "guard_view": "/waechter – Ist der Wächter wach?",
       "camping": "/camping an · /camping aus – Camping (Wächter bewohnt, Akku im Blick)",
       "camping_view": "/camping – Läuft Camping?",
+      "tier": "/tier – Wie geht es dem Tier im Auto? (`/tier ok` = Gesehen)",
       "camera": "/kamera – Ein Bild von allen Kameras, jetzt",
       "clips": "/aufnahmen – Die letzten Aufnahmen (z. B. `/aufnahmen 12`)",
       "where": "/wo – Wo das Auto steht",
@@ -862,11 +909,26 @@
       "aufsperren_unbestaetigt": "🔓 Aufsperr-Befehl über Handy „{0}“ gesendet – die Bestätigung vom Auto fehlt.",
       "aufsperren_abgelehnt": "🔒 Aufsperren über Handy „{0}“ abgelehnt ({1}).",
       "wallbox": "🔌 Wallbox vom Handy „{0}“ gesteuert: {1}",
+      "tiermodus_an": "🐾 Tiermodus eingeschaltet über Handy „{0}“.",
+      "tiermodus_aus": "🐾 Tiermodus ausgeschaltet über Handy „{0}“.",
       "update_gestartet": "⬆️ Update auf {0} gestartet von „{1}“. Panoptes ist ca. 3–8 Minuten weg."
     },
     "zurueck": {
       "text": "🚗 Willkommen zurück am Auto. Es stand {0}.",
       "mit_ereignissen": "🚗 Willkommen zurück am Auto. Es stand {0}, dabei gab es {1} Ereignisse. Ansehen unter /wo oder in Panoptes."
+    },
+    "abschalt": {
+      "titel": "🅿️ *Abgestellt*",
+      "fahrt": "Fahrt: {0} km · {1} · {2} kWh/100 km",
+      "fahrt_ohne_verbrauch": "Fahrt: {0} km · {1}",
+      "akku": "Akku: {0} % → {1} %",
+      "akku_jetzt": "Akku: {0} %",
+      "reichweite": "Reichweite laut Auto: {0} km",
+      "spannung": "Starterbatterie (12 V): {0} V",
+      "sicherheit": "Wächter wach: {0} · Zugesperrt: {1}",
+      "ja": "ja",
+      "nein": "nein",
+      "unbekannt": "unbekannt"
     },
     "anmeldung": {
       "anfrage": "🔑 Ein Browser möchte sich bei Panoptes anmelden.\nPrüfzahl: {0}\nErlaube nur, wenn dieselbe Zahl auf deinem Bildschirm steht. Die Anmeldung kann nicht aufsperren und keine Sicherheits-Einstellungen ändern.",
@@ -1755,6 +1817,7 @@
       "system": "System",
       "update": "App-Updates",
       "camping": "Camping",
+      "tiermodus": "Tiermodus",
       "energie": "Energie",
       "datenschutz": "Datenschutz",
       "laden": "Laden"
@@ -2035,6 +2098,28 @@
         "help": "Ohne Berührung wird der Bildschirm nach so vielen Sekunden zum dunklen Nachtbildschirm."
       }
     },
+    "tiermodus": {
+      "wunsch": {
+        "title": "Wunschtemperatur",
+        "help": "So stellt Panoptes die Klimaanlage ein; das Auto regelt selbst. Bei Autos mit Stufen-Anzeige (z. B. Dolphin Surf) ist der Wert eine Stufe: 21 = Kühlen Stufe 4, 25 = Neutral."
+      },
+      "alarmC": {
+        "title": "Alarm ab Innentemperatur",
+        "help": "Wird es innen so warm, kommt sofort eine Meldung. Geht nur bei Autos, die die Innentemperatur wirklich messen."
+      },
+      "socGrenze": {
+        "title": "Akku-Untergrenze",
+        "help": "Hier schaltet der Tiermodus das Klima aus und meldet laut „Klima AUS – Tier prüfen!“. Nie unter 15 %."
+      },
+      "wiederholenMinuten": {
+        "title": "Meldung wiederholen alle",
+        "help": "So oft kommt die Meldung wieder, bis jemand „Gesehen“ tippt."
+      },
+      "cloud": {
+        "title": "Bei Auto aus: Klima über die BYD-Cloud",
+        "help": "Geht das Auto aus, versucht Panoptes Fernklima über die BYD-Cloud (höchstens 30 Minuten am Stück, dann Pause). Die Meldung „Klima AUS“ kommt trotzdem. Standard aus."
+      }
+    },
     "energie": {
       "profil": {
         "title": "Energie im Stand",
@@ -2054,6 +2139,16 @@
       "parkLeseSekunden": {
         "title": "Lesen im Parken alle … Sekunden",
         "help": "Wie oft Panoptes bei abgestelltem Auto die Werte liest. 90 = wie bisher. Wächter und Türen melden trotzdem sofort."
+      }
+    },
+    "logs": {
+      "tage": {
+        "title": "Protokolle aufbewahren … Tage",
+        "help": "Wie lange Panoptes alte Protokolle behält, damit man später nachsehen kann, was passiert ist. Gilt auch über Updates und Neustarts. Ältere werden zuerst gelöscht. Standard 7."
+      },
+      "mb": {
+        "title": "Protokolle höchstens … MB je Art",
+        "help": "So viel Platz dürfen alte Protokolle je Art höchstens belegen. Ist der Speicher fast voll, nimmt Panoptes automatisch weniger. Standard 50."
       }
     },
     "wetter": {
@@ -2079,6 +2174,18 @@
       "zurueckAmAuto": {
         "title": "Meldung „zurück am Auto“",
         "help": "Schickt beim Einschalten der Zündung nach mindestens 10 Minuten Parken eine kurze Telegram-Nachricht mit Parkdauer und Anzahl der Ereignisse. Standard: aus."
+      },
+      "abschaltBericht": {
+        "title": "Abschaltbericht in Telegram",
+        "help": "Schickt beim Abstellen eine kurze Telegram-Nachricht: Strecke, Dauer und Verbrauch der Fahrt, Akku vorher und nachher, Reichweite, Starterbatterie (12 V), ob der Wächter wach und das Auto zugesperrt ist. Ohne Ort. Nach kurzem Rangieren kommt nichts. Standard: an, wirkt nur mit eingerichtetem Telegram."
+      },
+      "abschaltBerichtMinMeter": {
+        "title": "Abschaltbericht erst ab Strecke",
+        "help": "Kürzere Fahrten, zum Beispiel Rangieren, schicken keinen Bericht. Standard: 300 m."
+      },
+      "abschaltBerichtMinMinuten": {
+        "title": "Abschaltbericht erst ab Fahrzeit",
+        "help": "Kürzere Fahrten schicken keinen Bericht. Standard: 2 min."
       }
     },
     "hinweise": {
@@ -2233,6 +2340,20 @@
       "verlustHinweis": {
         "title": "Hinweis zum Ladeverlust zeigen",
         "help": "Einmal erklären, dass die Kosten den Ladeverlust enthalten. Nach „Verstanden“ aus."
+      },
+      "saeuleNachschlagen": {
+        "title": "Säule beim Planer nachschlagen",
+        "help": "Nach dem Laden fragt Panoptes einmal den Routenplaner, welche Säule es war (z. B. „Lidl …“). Die Position geht nur grob (rund 1 km) hinaus, ohne Konto. Nie zu Hause und an privaten Orten."
+      },
+      "standardKwh": {
+        "title": "Lademenge für „Günstigste in der Nähe“",
+        "help": "Mit dieser Menge vergleicht die Navi die Säulen in der Nähe, inklusive Hin- und Rückweg."
+      }
+    },
+    "sprache": {
+      "weckwortMessung": {
+        "title": "Weckwort-Messung erlauben",
+        "help": "Nur zum Messen: Erlaubt, am Autobildschirm unter Testfunktionen eine Messung zu starten, ob ein Sprach-Weckwort neben dem BYD-Sprachassistenten möglich ist. Misst nur Zahlen (Rechenlast, Speicher, Fehlauslösungen). Kein Ton wird gespeichert oder gesendet. Während der Messung steht oben „Mikrofon an (Messung)“. Standard aus."
       }
     },
     "zaehlen": {
@@ -2357,6 +2478,8 @@
     },
     "automation_run_accepted": "Regel wird ausgeführt.",
     "automation_created_manual": "Angelegt und nur zum Auslösen von Hand gespeichert. Prüf sie, bevor du sie automatisch laufen lässt.",
+    "ki_sperre_start": "Das darf der Assistent nicht starten: Er darf nur Regeln mit Klima, Sitzheizung, Sonnenrollo oder Hinweisen am Display auslösen. Diese Regel macht mehr (zum Beispiel Licht, Hupe, Fenster, Kofferraum, Schloss, Ton oder MQTT), auch über eine Aktionsgruppe. Starte sie selbst unter Regeln oder mit einer Taste.",
+    "ki_sperre_entwurf": "Der Assistent legt nur Regeln mit Klima, Sitzheizung, Sonnenrollo oder Hinweisen am Display an. Andere Regeln legst du selbst im Regel-Editor an.",
     "insight_title": {
       "vehicle_state": "Zustand des Autos",
       "latest_trip": "Letzte Fahrt",
@@ -2513,5 +2636,19 @@
     "grund_akku": "Gestoppt, um den Akku zu schützen.",
     "grund_v12": "Gestoppt, um die kleine 12-V-Batterie zu schützen.",
     "grund_lange_geparkt": "Nach langer Parkzeit gestoppt, um Strom zu sparen."
+  },
+  "rechte_heilung": {
+    "titel": "Panoptes hat Rechte verloren",
+    "text": "Das Auto hat Panoptes diese Rechte weggenommen, und Panoptes konnte sie nicht selbst zurückholen: {0}. Bitte Panoptes einmal am Autobildschirm öffnen. Hilft das nicht: Android-Einstellungen, Apps, Panoptes, Berechtigungen, und die genannten erlauben.",
+    "wort_kamera": "Kamera",
+    "wort_mikrofon": "Mikrofon",
+    "wort_standort": "Standort",
+    "wort_speicher": "Speicher",
+    "wort_ueberlagern": "Über anderen Apps anzeigen",
+    "wort_hintergrund": "Im Hintergrund laufen",
+    "wort_einstellungen": "Systemeinstellungen ändern"
+  },
+  "dateien": {
+    "recht_fehlt": "Dateien-Recht fehlt – in Panoptes unter Gekoppelte Geräte einschalten."
   }
 }

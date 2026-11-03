@@ -222,6 +222,9 @@ public final class Aufbewahrung {
     static void takt() {
         // Ereignis-Clips: eigener Ordner, eigene Grenze – auch ohne gesetzte Frist pflegen.
         at.greenchili.surfmate.recording.EreignisAblage.pflege();
+        // 0.1.36: Log-Archiv (Tage, MB, wenig Platz) und Auslöser-Dateien ohne Clip
+        at.greenchili.surfmate.logging.LogArchiv.pflege();
+        at.greenchili.surfmate.recording.AusloeserInfo.waisenPflegen();
         try {
             long maxAge = maxAlterMs(UnifiedConfigManager.loadConfig());
             if (maxAge <= 0) return;

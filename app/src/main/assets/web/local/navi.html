@@ -11,7 +11,7 @@
     <meta name="theme-color" content="#0A2238">
     <script src="../shared/theme.js?v=13"></script>
     <script src="../shared/kartenquelle.js?v=5"></script>
-    <script src="../shared/app-shell.js?v=pn28"></script>
+    <script src="../shared/app-shell.js?v=pn30"></script>
     <link rel="stylesheet" href="../shared/styles.css?v=pn11">
     <style>
         .navi-page .main-content { padding: 0; }
@@ -65,6 +65,16 @@
         .n-stops .no { width: 24px; height: 24px; border-radius: 50%; background: var(--sm-lime); color: #1d2a00; flex: none;
                        display: flex; align-items: center; justify-content: center; font: 700 12px var(--family-display); margin-right: 10px; }
         .n-stops small { display: block; color: var(--outline); font-size: 12px; margin-top: 2px; }
+        .n-stops small.n-occ.ok { color: var(--sm-lime); }
+        .n-stops small.n-occ.warn { color: #FFB86B; }
+        .n-occ-q { color: var(--outline); font-size: 11px; margin-top: 6px; }
+        .n-nah { margin-top: 10px; }
+        .n-tabs { display: flex; gap: 6px; }
+        .n-tabs button { border: 1px solid var(--sm-line); background: rgba(255,255,255,.06); color: var(--on-surface); border-radius: 999px;
+                         padding: 5px 12px; font: 600 12px var(--family-body, sans-serif); cursor: pointer; }
+        .n-tabs button.on { background: var(--sm-aqua); color: #04101b; border-color: var(--sm-aqua); }
+        .n-nah li { cursor: pointer; }
+        .n-nah .basis { color: var(--outline); font-size: 11px; margin-top: 6px; }
         details.n-turns { margin-top: 10px; font-size: 13px; color: var(--on-surface-variant); }
         details.n-turns summary { cursor: pointer; color: var(--sm-aqua); font-weight: 600; padding: 6px 0; }
         details.n-turns ol { margin: 6px 0 0; padding-left: 20px; max-height: 240px; overflow-y: auto; }
@@ -138,6 +148,7 @@
                     <span class="grow"></span>
                     <button class="nbtn" type="button" id="nNearby"><svg><use href="#i-flash"/></svg><span data-i18n="navi.nearby">Säulen in der Nähe</span></button>
                 </div>
+                <div class="n-nah" id="nNah" hidden></div>
                 <div id="nOut"></div>
                 <div class="n-fg-weg" id="nFgWeg" hidden><a role="button" tabindex="0" data-i18n="navi.fg_weg">Freigabe „Ortssuche und Routen“ zurücknehmen</a></div>
             </section>
@@ -149,6 +160,7 @@
 <script src="../shared/auth.js"></script>
 <script src="../shared/pwa-init.js?v=index2"></script>
 <script src="../shared/core.js?v=pn6"></script>
+<script src="../shared/belegung.js?v=2"></script>
 <script src="../shared/panoptes-map.js?v=12"></script>
 <script src="../shared/einstellungen.js?v=pn8"></script>
 <script>
@@ -160,6 +172,11 @@
     function lang() { return (window.BYD && BYD.i18n && BYD.i18n.getLang && BYD.i18n.getLang()) || 'de'; }
     function fmt(v, dg) { try { return Number(v).toLocaleString(lang(), { minimumFractionDigits: dg || 0, maximumFractionDigits: dg || 0 }); } catch (e) { return Number(v).toFixed(dg || 0); } }
     function dur(min) { min = Math.round(min || 0); return min >= 60 ? Math.floor(min / 60) + ' h ' + ('0' + (min % 60)).slice(-2) : min + ' min'; }
+    // 03.11.: Live-Belegung (frei/belegt) mit „Stand vor x min“; ohne Daten wird nichts angezeigt
+    var PB = window.PanoptesBelegung;
+    function standHtml(ms) {
+        return ms == null ? '' : ' · <span data-stand="' + ms + '">' + esc(PB.standText(ms, t)) + '</span>';
+    }
     function toast(msg, ok) { if (window.BYD && BYD.utils && BYD.utils.toast) BYD.utils.toast(msg, ok ? 'success' : 'error'); }
     function post(url, body) {
         return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -227,7 +244,7 @@
             var self = this;
             if (document.hidden) return;
             fetch('/api/navi/unterwegs', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; })
-                .then(function (d) { self.zeige(d); }).catch(function () { self.zeige(null); });
+                .then(function (d) { self.empfangen = Date.now(); self.zeige(d); }).catch(function () { self.zeige(null); });
         },
         zeige: function (d) {
             var box = $('nUw');
@@ -311,14 +328,15 @@
             var b = n && n.belegung;
             if (!b || !b.gefunden || !b.statusBekannt) return '';
             var name = n.name || t('navi.uw_stop', 'Nächster Stopp');
+            var stand = standHtml(PB.standMs(b.standVorS, this.empfangen));
             if (b.voll) {
                 var a = b.ausweich;
                 return '<div class="ln warn">' + esc(t('navi.uw_full', '{s} ist gerade voll', { s: name }))
                     + (a && a.name ? ' · ' + esc(t('navi.uw_alt', 'Ausweich-Säule: {name} · {km} km weiter', { name: a.name, km: fmt(a.km, 1) }))
-                        + (a.frei != null ? ' (' + esc(t('navi.uw_free', '{n} frei', { n: a.frei })) + ')' : '') : '') + '</div>';
+                        + (a.frei != null ? ' (' + esc(t('navi.uw_free', '{n} frei', { n: a.frei })) + ')' : '') : '') + stand + '</div>';
             }
             return '<div class="ln">' + esc(t('navi.uw_occ', '{s}: {f} von {p} Ladepunkten frei', { s: name, f: b.frei, p: b.ladepunkte }))
-                + (b.defekt > 0 ? ' · ' + esc(t('navi.uw_broken', '{n} defekt', { n: b.defekt })) : '') + '</div>';
+                + (b.defekt > 0 ? ' · ' + esc(t('navi.uw_broken', '{n} defekt', { n: b.defekt })) : '') + stand + '</div>';
         },
         // Soll gegen Ist über die km (Kern verlauf, ≤ 50 Punkte). Erst ab 2 Punkten.
         kurve: function (v, reserve) {
@@ -504,6 +522,39 @@
             });
         },
 
+        // ---------- Ziel aus Link (POST /api/navi/link). Kurzlinks erst nach Tippen auf „Nachfragen“:
+        // dann fragt das Auto per HEAD beim Kurzlink-Dienst nach, wohin er zeigt (nur der Link geht hinaus).
+        istLink: function (q) {
+            return /^(https?:\/\/|geo:)/i.test(q) || /(^|\s)(https?:\/\/)?(maps\.app\.goo\.gl|goo\.gl\/maps|(www\.)?waze\.com\/|maps\.google\.)/i.test(q)
+                || /\shttps?:\/\//i.test(q);
+        },
+        linkZiel: function (q, aufloesen) {
+            var self = this, list = $('nResults'), gen = this.searchGen;
+            list.innerHTML = '<li class="n-msg">' + esc(t('ziellink.lese', 'Link wird gelesen …')) + '</li>';
+            post('/api/navi/link', { link: q, aufloesen: !!aufloesen }).then(function (d) {
+                if (gen !== self.searchGen) return;
+                if (d && d.ok) {
+                    self.choose({ name: d.name || t('ziellink.ziel', 'Ziel aus dem Link'), full: (+d.lat).toFixed(5) + ', ' + (+d.lng).toFixed(5), lat: +d.lat, lng: +d.lng });
+                    return;
+                }
+                var g = (d && d.grund) || '';
+                if (g === 'kurzlink') {
+                    list.innerHTML = '<li class="n-msg">' + esc(t('ziellink.kurz', 'Kurzlink ohne Koordinaten. Panoptes kann einmal beim Kurzlink-Dienst nachfragen, wohin er zeigt. Dabei geht nur dieser Link hinaus, keine Position.'))
+                        + ' <button class="btn" type="button" id="nLinkFrag">' + esc(t('ziellink.fragen', 'Nachfragen')) + '</button></li>';
+                    $('nLinkFrag').onclick = function () { self.linkZiel(q, true); };
+                    return;
+                }
+                var texte = {
+                    kein_ort: t('ziellink.kein_ort', 'In diesem Link steht kein Punkt, nur ein Suchtext. Bitte den Ort teilen, nicht die Suche.'),
+                    unbekannter_link: t('ziellink.unbekannt', 'Diesen Link kennt Panoptes nicht. Es gehen Google Maps, Waze, geo:, OpenStreetMap und Apple Karten.'),
+                    nicht_aufloesbar: t('ziellink.nicht_aufloesbar', 'Der Kurzlink ließ sich nicht auflösen. Bitte den langen Link teilen.')
+                };
+                list.innerHTML = '<li class="n-msg err">' + esc(texte[g] || texte.unbekannter_link) + '</li>';
+            }).catch(function () {
+                if (gen === self.searchGen) list.innerHTML = '<li class="n-msg err">' + esc(t('ziellink.nicht_aufloesbar', 'Der Kurzlink ließ sich nicht auflösen. Bitte den langen Link teilen.')) + '</li>';
+            });
+        },
+
         choose: function (dest) {
             this.dest = dest;
             $('nResults').innerHTML = '';
@@ -543,6 +594,7 @@
                 if (self.dest !== dest) return;
                 if (!d || d.fehler || !d.route) throw new Error((d && d.fehler) || t('navi.offline', 'Planer nicht erreichbar'));
                 self.plan = d;
+                self.planEmpfangen = Date.now();
                 self.draw(d);
             }).catch(function (e) {
                 if (self.dest !== dest) return;
@@ -598,11 +650,22 @@
                 h += '<ul class="n-stops">';
                 d.stopps.forEach(function (st, i) {
                     var s = st.saeule;
+                    var bl = PB.belegung(s);
                     h += '<li><span class="no">' + (i + 1) + '</span><span>' + esc(s.name) + ' · ' + esc(s.kw || '?') + ' kW'
                         + '<small>km ' + fmt(s.km_auf_route) + ' · ' + fmt(st.soc_vorher) + ' → ' + fmt(st.soc_nachher) + ' % · ~' + fmt(st.ladedauer_min) + ' min'
-                        + (s.preis_live_ct_kwh ? ' · ' + fmt(s.preis_live_ct_kwh) + ' ct/kWh' : '') + '</small></span></li>';
+                        + (s.preis_live_ct_kwh ? ' · ' + fmt(s.preis_live_ct_kwh) + ' ct/kWh' : '') + '</small>'
+                        + (bl ? '<small class="n-occ ' + (bl.frei > 0 ? 'ok' : 'warn') + '">'
+                            + esc(t('navi.stop_frei', '{f} von {p} Ladepunkten frei', { f: bl.frei, p: bl.ladepunkte }))
+                            + standHtml(PB.standMs(s.frei_stand_min == null ? null : s.frei_stand_min * 60, self.planEmpfangen))
+                            + '</small>' : '')
+                        + '</span></li>';
                 });
                 h += '</ul>';
+                // Pflicht-Namensnennung der Live-Quellen, nur wenn eine Belegung angezeigt wird
+                var lq = (d.live_quellen || []).filter(function (q) { return typeof q === 'string' && q; });
+                if (lq.length && d.stopps.some(function (st) { return PB.belegung(st.saeule); })) {
+                    h += '<div class="n-occ-q">' + esc(t('navi.live_quelle', 'Belegung: {q}', { q: lq.join(', ') })) + '</div>';
+                }
             }
             (d.warnungen || []).filter(function (w) { return w.indexOf('deckt nicht alle') < 0; }).slice(0, 2).forEach(function (w) {
                 h += '<div class="n-warn">' + esc(w) + '</div>';
@@ -631,26 +694,92 @@
               .then(function () { if (btn) btn.disabled = false; });
         },
 
-        // ---------- Ladesäulen rund ums Auto (live belegt/frei in AT)
+        // ---------- Ladesäulen rund ums Auto (live belegt/frei, wo der Planer Live-Daten hat)
+        // Datenschutz 03.11.: Position nur auf 2 Nachkommastellen (~1 km) hinaus, Radius +1 km; welche Säulen die
+        // nächsten sind, rechnet das Gerät mit der genauen Position (PanoptesBelegung.naechste).
         nearby: function () {
             var self = this, c = this.car() || (this.map && this.map.map ? { lat: this.map.map.getCenter().lat, lng: this.map.map.getCenter().lng } : null);
             if (!c) return;
             var btn = $('nNearby'); btn.disabled = true;
-            planer('/api/navi/umkreis', { lat: +c.lat.toFixed(4), lon: +c.lng.toFixed(4), radius: 10, kwh: 20, nur_frei: 0, nur_mit_preis: 0, min_kw: 0 })
-                .then(function (d) {
-                    var ms = [];
-                    // Außerhalb AT liefert der Planer auch weit entfernte AT-Stationen: nur den abgefragten Kreis nehmen.
-                    ((d && d.stationen) || []).filter(function (s) { return !(s.entfernung_km > 10); }).slice(0, 60).forEach(function (s) {
-                        var known = s.status_bekannt;
-                        ms.push({ lat: s.lat, lng: s.lon, kind: known ? (s.frei > 0 ? 'free' : 'busy') : 'ac',
+            var kwh = self.standardKwh > 0 ? self.standardKwh : PB.STANDARD_KWH;
+            PB.holen(function (body) { return planer('/api/navi/umkreis', body); }, c.lat, c.lng, 10, 60,
+                     { kwh: kwh, meineKarten: true })
+                .then(function (r) {
+                    var ms = [], jetzt = Date.now();
+                    self.nah = { r: r, c: c, kwh: kwh, empfangen: jetzt };
+                    self.nahZeigen();
+                    r.stationen.forEach(function (s) {
+                        var bl = PB.belegung(s), sm = bl ? PB.standMs(s.live_alter_s, jetzt) : null;
+                        ms.push({ lat: s.lat, lng: s.lon, kind: bl ? (bl.frei > 0 ? 'free' : 'busy') : 'ac',
                                   label: s.kw >= 50 ? 'DC' : 'AC',
-                                  title: s.name + ' · ' + (s.kw || '?') + ' kW' + (known ? ' · ' + s.frei + '/' + s.ladepunkte + ' ' + t('navi.free', 'frei') : '') });
+                                  title: s.name + ' · ' + (s.kw || '?') + ' kW' + (bl ? ' · ' + bl.frei + '/' + bl.ladepunkte + ' ' + t('navi.free', 'frei')
+                                      + (sm != null ? ' · ' + PB.standText(sm, t) : '') : '') });
                     });
                     if (self.dest) ms.push({ lat: self.dest.lat, lng: self.dest.lng, kind: 'dest', label: '◎', title: self.dest.name });
                     self.map.setMarkers(ms);
                     toast(t('navi.nearby_n', '{n} Säulen im Umkreis von 10 km', { n: ms.length - (self.dest ? 1 : 0) }), true);
                 }).catch(function (e) { toast(e.message || t('navi.offline', 'Planer nicht erreichbar'), false); })
                 .then(function () { btn.disabled = false; });
+        },
+
+        // ---------- „Nächste“ / „Günstigste in der Nähe“ (03.11.2026, Rechnung im Gerät, keine weitere Anfrage)
+        nahTab: 'naechste',
+        nahZeigen: function () {
+            var self = this, box = $('nNah'), n = this.nah;
+            if (!n) { box.hidden = true; return; }
+            var tab = this.nahTab, h = '<div class="n-tabs">'
+                + '<button type="button" data-nah="naechste"' + (tab === 'naechste' ? ' class="on"' : '') + '>' + esc(t('navi.nah_naechste', 'Nächste')) + '</button>'
+                + '<button type="button" data-nah="guenstig"' + (tab === 'guenstig' ? ' class="on"' : '') + '>' + esc(t('navi.nah_guenstig', 'Günstigste in der Nähe')) + '</button></div>';
+            var ziele = [];
+            function belegtHtml(bl, s) {
+                if (!bl) return '';
+                var sm = PB.standMs(s.live_alter_s, n.empfangen);
+                return ' · <span class="' + (bl.frei > 0 ? 'ok' : 'warn') + '">'
+                    + esc(bl.frei > 0 ? t('navi.stop_frei', '{f} von {p} Ladepunkten frei', { f: bl.frei, p: bl.ladepunkte }) : t('navi.nah_belegt', 'belegt'))
+                    + '</span>' + standHtml(sm);
+            }
+            if (tab === 'naechste') {
+                var liste = n.r.stationen.slice(0, 8);
+                h += '<ul class="n-stops">';
+                liste.forEach(function (s, i) {
+                    ziele.push(s);
+                    var km = PB.distKm(n.c.lat, n.c.lng, s.lat, s.lon);
+                    h += '<li data-i="' + i + '"><span class="no">' + (i + 1) + '</span><span>' + esc(s.name) + ' · ' + esc(s.kw || '?') + ' kW'
+                        + '<small>' + fmt(km, 1) + ' km' + belegtHtml(PB.belegung(s), s) + '</small></span></li>';
+                });
+                h += '</ul>';
+            } else {
+                var g = PB.guenstigste(n.r.stationen, n.c.lat, n.c.lng, { kwh: n.kwh, verbrauch: this.status && this.status.verbrauchKwh100 });
+                if (!g.length) {
+                    h += '<div class="n-msg">' + esc(t('navi.nah_keine', 'Keine Empfehlung: Für die Säulen bis 10 km ist kein Preis bekannt.')) + '</div>';
+                } else {
+                    h += '<ul class="n-stops">';
+                    g.forEach(function (x, i) {
+                        ziele.push(x.s);
+                        var z = t('navi.nah_zeile', '~{p} €/kWh · {km} km', { p: fmt(x.e.preis, 2), km: fmt(x.km, 1) });
+                        if (x.e.quelle === 'eigen') z += ' · ' + t('navi.nah_eigen', 'dein Preis laut Säule');
+                        if (x.istNaechste) z += ' · ' + t('navi.nah_ist_naechste', 'nächste mit Preis');
+                        else if (x.ersparnis >= 0.05) z += ' · ' + t('navi.nah_ersparnis', 'Ersparnis ~{e} € gegenüber nächster', { e: fmt(x.ersparnis, 2) });
+                        h += '<li data-i="' + i + '"><span class="no">' + (i + 1) + '</span><span>' + esc(x.s.name) + ' · ' + esc(x.s.kw || '?') + ' kW'
+                            + '<small>' + esc(z) + belegtHtml(x.belegung, x.s) + '</small></span></li>';
+                    });
+                    h += '</ul>';
+                    var v = this.status && this.status.verbrauchKwh100;
+                    h += '<div class="basis">' + esc(t('navi.nah_basis', 'Für {kwh} kWh, mit Hin- und Rückweg ({v} kWh/100 km)',
+                        { kwh: fmt(n.kwh), v: fmt(v >= 5 && v <= 60 ? v : PB.VERBRAUCH_RUECKFALL, 1) })) + '</div>';
+                }
+            }
+            box.innerHTML = h;
+            box.hidden = false;
+            Array.prototype.forEach.call(box.querySelectorAll('[data-nah]'), function (b) {
+                b.onclick = function () { self.nahTab = b.getAttribute('data-nah'); self.nahZeigen(); };
+            });
+            Array.prototype.forEach.call(box.querySelectorAll('li[data-i]'), function (li) {
+                li.onclick = function () {
+                    var s = ziele[+li.getAttribute('data-i')];
+                    if (s) self.choose({ name: s.name, full: s.adresse || s.name, lat: s.lat, lng: s.lon });
+                };
+            });
         },
 
         init: function () {
@@ -669,12 +798,16 @@
                 var q = this.value.trim();
                 $('nClear').hidden = !q;
                 clearTimeout(self.searchTimer);
+                // Geteilter Karten-Link (Google Maps, Waze, geo:): im Auto lesen, nie als Suchtext an den Planer
+                if (self.istLink(q)) { self.searchGen++; self.linkZiel(q, false); return; }
                 self.searchTimer = setTimeout(function () { self.search(q); }, 350);
             });
             $('nClear').onclick = function () { self.clear(); };
             $('nArrive').onchange = function () { if (self.dest) self.route(); };
             // „Ankommen mit mind.“ aus laden.ankunftSocMin vorbelegen (vom Auto; null = Standard des Planers)
             if (window.PanoptesEinstellungen) PanoptesEinstellungen.laden().then(function (st) {
+                var k = st && st.feld('laden.standardKwh') ? st.wert('laden.standardKwh').wert : null;
+                if (typeof k === 'number' && k > 0) self.standardKwh = k;
                 var w = st && st.feld('laden.ankunftSocMin') ? st.wert('laden.ankunftSocMin').wert : null;
                 if (typeof w !== 'number') return;
                 var sel = $('nArrive'), da = false;
@@ -709,6 +842,7 @@
         $('nQuery').placeholder = t('navi.where', 'Wohin?');
         UW.start();
         PR.start();
+        setInterval(function () { PB.auffrischen(document, t); }, 30000);   // „Stand vor x min“ mitlaufen lassen
     });
 })();
 </script>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+    <title data-i18n="dateien.titel">Dateien</title>
+    <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
+    <script src="../shared/theme.js?v=13"></script>
+    <script src="../shared/app-shell.js?v=pn30"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn11">
+    <style>
+        .df-liste { list-style:none; margin:0; padding:0; }
+        .df-zeile { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 12px; padding:12px 0; border-top:1px solid var(--border-default); align-items:center; }
+        .df-name { font-weight:600; overflow-wrap:anywhere; }
+        .df-meta { grid-column:1; color:var(--text-muted); font-size:13px; }
+        .df-knoepfe { grid-column:2; grid-row:1 / 3; display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+        .df-knoepfe .btn { min-height:44px; }
+        .df-status { min-height:22px; margin-top:12px; color:var(--text-muted); line-height:1.45; }
+        .df-status.error { color:var(--status-error); }
+        .df-status.success { color:var(--status-success); }
+        .df-balken { height:8px; border-radius:4px; background:var(--bg-elevated); overflow:hidden; margin-top:10px; }
+        .df-balken i { display:block; height:100%; width:0; background:var(--status-success); transition:width .2s; }
+        @media (max-width:520px) { .df-zeile { grid-template-columns:1fr; } .df-knoepfe { grid-column:1; grid-row:auto; justify-content:flex-start; } }
+    </style>
+</head>
+<body>
+<div class="app-layout">
+    <div id="app-shell-mount"></div>
+    <main class="main-content">
+        <div class="mobile-header"><span style="font-weight:600" data-i18n="dateien.titel">Dateien</span></div>
+        <header class="page-header"><h1 class="page-title" data-i18n="dateien.titel">Dateien</h1></header>
+        <div class="page-body">
+            <div class="card">
+                <div class="card-header"><div class="card-title" data-i18n="dateien.hochladen_titel">Datei ins Auto legen</div></div>
+                <div class="card-body">
+                    <p class="setting-desc" data-i18n="dateien.lead">Dateien liegen im eigenen Panoptes-Ordner im Auto. Höchstens 200 MB je Datei. Apps (APK) werden nicht angenommen, nichts wird ausgeführt.</p>
+                    <input type="file" id="dfWahl">
+                    <div class="sys-actions" style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+                        <button class="btn" id="dfAbbrechen" type="button" hidden data-i18n="dateien.abbrechen">Abbrechen</button>
+                        <button class="btn btn-primary" id="dfHoch" type="button" disabled data-i18n="dateien.hochladen">Hochladen</button>
+                    </div>
+                    <div class="df-balken" id="dfBalken" hidden><i id="dfFortschritt"></i></div>
+                    <div class="df-status" id="dfStatus" role="status" aria-live="polite"></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><div class="card-title" data-i18n="dateien.liste_titel">Im Auto</div></div>
+                <div class="card-body">
+                    <ul class="df-liste" id="dfListe"></ul>
+                    <p class="setting-desc" id="dfLeer" hidden data-i18n="dateien.leer">Noch keine Dateien.</p>
+                    <p class="setting-desc" id="dfFrei"></p>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<script src="../shared/core.js?v=pn6"></script>
+<script>
+(function () {
+    'use strict';
+    var wahl = document.getElementById('dfWahl'), hoch = document.getElementById('dfHoch'), abbr = document.getElementById('dfAbbrechen');
+    var status = document.getElementById('dfStatus'), balken = document.getElementById('dfBalken'), fort = document.getElementById('dfFortschritt');
+    var liste = document.getElementById('dfListe'), leer = document.getElementById('dfLeer'), freiText = document.getElementById('dfFrei');
+    var max = 200 * 1024 * 1024, teilBytes = 2 * 1024 * 1024, laufend = null;
+
+    function t(key, fallback, vars) {
+        var v = null;
+        try { v = BYD.i18n.t(key); } catch (e) {}
+        var s = v && v !== key ? v : fallback;
+        return String(s).replace(/\{(\w+)\}/g, function (m, n) { return vars && vars[n] != null ? vars[n] : m; });
+    }
+    function zeige(text, art) { status.textContent = text; status.className = 'df-status' + (art ? ' ' + art : ''); }
+    function mb(b) { return (b / 1048576).toLocaleString(undefined, { maximumFractionDigits: b < 10485760 ? 1 : 0 }) + ' MB'; }
+    function post(url, body) {
+        return fetch(url, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+            .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { d.status = r.status; return d; }); });
+    }
+    function grundText(d) {
+        var g = d && d.grund;
+        if (d && d.status === 403) return (d.text) || t('dateien.recht_fehlt', 'Dafür braucht dieses Gerät das Recht „Dateien“. Einschalten am Autobildschirm unter System → Gekoppelte Geräte.');
+        var texte = {
+            zu_gross: t('dateien.zu_gross', 'Die Datei ist größer als 200 MB.'),
+            apk_gesperrt: t('dateien.apk', 'Apps (APK) werden nicht angenommen.'),
+            name_ungueltig: t('dateien.name', 'Der Dateiname geht nicht. Bitte ohne Schrägstriche und Sonderzeichen.'),
+            kein_platz: t('dateien.platz', 'Im Auto ist nicht genug Platz frei.'),
+            voll: t('dateien.voll', 'Im Ordner liegen schon zu viele Dateien.'),
+            zu_viele: t('dateien.zu_viele', 'Es laufen schon zu viele Uploads. Bitte kurz warten.'),
+            nicht_gefunden: t('dateien.weg', 'Die Datei ist nicht mehr da.')
+        };
+        return texte[g] || t('dateien.fehler', 'Das hat nicht geklappt. Bitte nochmal versuchen.');
+    }
+    function lesen(stueck) {
+        return new Promise(function (ok, nein) {
+            var r = new FileReader();
+            r.onload = function () { var s = String(r.result); ok(s.substring(s.indexOf(',') + 1)); };
+            r.onerror = function () { nein(new Error('lesen')); };
+            r.readAsDataURL(stueck);
+        });
+    }
+    function laden() {
+        fetch('/api/dateien', { credentials: 'same-origin', cache: 'no-store' })
+            .then(function (r) { return r.json().then(function (d) { d.status = r.status; return d; }); })
+            .then(function (d) {
+                liste.innerHTML = '';
+                if (!d.ok) { zeige(grundText(d), 'error'); return; }
+                if (d.maxBytes) max = d.maxBytes;
+                if (d.teilBytes) teilBytes = d.teilBytes;
+                leer.hidden = (d.dateien || []).length > 0;
+                freiText.textContent = d.frei ? t('dateien.frei', 'Frei im Auto: {n}', { n: mb(d.frei) }) : '';
+                (d.dateien || []).forEach(function (f) {
+                    var li = document.createElement('li'); li.className = 'df-zeile';
+                    var n = document.createElement('div'); n.className = 'df-name'; n.textContent = f.name;
+                    var m = document.createElement('div'); m.className = 'df-meta';
+                    m.textContent = mb(f.groesse) + ' · ' + new Date(f.zeit).toLocaleString();
+                    var k = document.createElement('div'); k.className = 'df-knoepfe';
+                    var h = document.createElement('button'); h.className = 'btn'; h.type = 'button'; h.textContent = t('dateien.holen', 'Herunterladen');
+                    h.onclick = function () { holen(f.name, h); };
+                    var l = document.createElement('button'); l.className = 'btn'; l.type = 'button'; l.textContent = t('dateien.loeschen', 'Löschen');
+                    l.onclick = function () { loeschen(f.name, l); };
+                    k.appendChild(h); k.appendChild(l);
+                    li.appendChild(n); li.appendChild(k); li.appendChild(m);
+                    liste.appendChild(li);
+                });
+            })
+            .catch(function () { zeige(t('dateien.fehler', 'Das hat nicht geklappt. Bitte nochmal versuchen.'), 'error'); });
+    }
+    function holen(name, knopf) {
+        knopf.disabled = true;
+        fetch('/api/dateien/holen', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name }) })
+            .then(function (r) {
+                if (!r.ok) return r.json().catch(function () { return {}; }).then(function (d) { d.status = r.status; throw d; });
+                return r.blob();
+            })
+            .then(function (b) {
+                var url = URL.createObjectURL(b), a = document.createElement('a');
+                a.href = url; a.download = name; a.rel = 'noopener';
+                document.body.appendChild(a); a.click(); a.remove();
+                setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+            })
+            .catch(function (d) { zeige(grundText(d), 'error'); })
+            .then(function () { knopf.disabled = false; });
+    }
+    function loeschen(name, knopf) {
+        if (!window.confirm(t('dateien.loeschen_frage', '„{name}“ im Auto löschen?', { name: name }))) return;
+        knopf.disabled = true;
+        post('/api/dateien/loeschen', { name: name }).then(function (d) {
+            zeige(d.ok ? t('dateien.geloescht', 'Gelöscht.') : grundText(d), d.ok ? 'success' : 'error');
+            laden();
+        });
+    }
+    function hochladen() {
+        var f = wahl.files && wahl.files[0];
+        if (!f || laufend) return;
+        if (f.size > max) { zeige(grundText({ grund: 'zu_gross' }), 'error'); return; }
+        if (/\.(apk|apks|xapk|apkm|aab)$/i.test(f.name)) { zeige(grundText({ grund: 'apk_gesperrt' }), 'error'); return; }
+        laufend = { id: null, stopp: false };
+        hoch.disabled = true; abbr.hidden = false; balken.hidden = false; fort.style.width = '0';
+        zeige(t('dateien.laeuft', 'Wird hochgeladen …'), '');
+        post('/api/dateien/start', { name: f.name, groesse: f.size }).then(function (d) {
+            if (!d.ok) throw d;
+            laufend.id = d.id;
+            var teil = d.teilBytes || teilBytes, nr = 0, off = 0;
+            function weiter() {
+                if (laufend.stopp) throw { grund: 'abgebrochen' };
+                if (off >= f.size) return post('/api/dateien/fertig', { id: laufend.id });
+                var stueck = f.slice(off, Math.min(f.size, off + teil));
+                return lesen(stueck).then(function (b64) {
+                    return post('/api/dateien/teil', { id: laufend.id, nr: nr, daten: b64 });
+                }).then(function (r) {
+                    if (!r.ok) throw r;
+                    off += stueck.size; nr++;
+                    fort.style.width = Math.round(off * 100 / f.size) + '%';
+                    return weiter();
+                });
+            }
+            return weiter();
+        }).then(function (d) {
+            if (!d.ok) throw d;
+            zeige(t('dateien.fertig', 'Liegt im Auto: {name}', { name: d.name }), 'success');
+            wahl.value = '';
+            laden();
+        }).catch(function (d) {
+            if (laufend && laufend.id) post('/api/dateien/abbrechen', { id: laufend.id });
+            zeige(d && d.grund === 'abgebrochen' ? t('dateien.abgebrochen', 'Abgebrochen.') : grundText(d), 'error');
+        }).then(function () {
+            laufend = null; abbr.hidden = true; balken.hidden = true; hoch.disabled = !(wahl.files && wahl.files[0]);
+        });
+    }
+    wahl.onchange = function () { hoch.disabled = !(wahl.files && wahl.files[0]) || !!laufend; zeige('', ''); };
+    hoch.onclick = hochladen;
+    abbr.onclick = function () { if (laufend) laufend.stopp = true; };
+    BYD.i18n.init().then(laden, laden);
+}());
+</script>
+</body>
+</html>

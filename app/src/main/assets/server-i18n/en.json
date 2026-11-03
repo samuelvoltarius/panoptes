@@ -176,6 +176,26 @@
     "camping_aus_hoechstdauer": "Camping off (maximum time reached)",
     "camping_plan_fehler": "Camping: planned start not possible – reason in Panoptes",
     "camping_tuer_offen": "Camping: {0} opened",
+    "tiermodus_an": "Pet mode on – climate is running",
+    "tiermodus_aus": "Pet mode off",
+    "tiermodus_aus_losgefahren": "Pet mode off: car drove off",
+    "tiermodus_ohne_fuehler": "This car does not report a cabin temperature. Panoptes monitors whether the climate is running.",
+    "tiermodus_wieder_ok": "Pet mode: climate is running again",
+    "tiermodus_akku_bald": "Pet mode: battery close to the lower limit ({0} %)",
+    "tiermodus_alarm_klima_aus": "Climate OFF – check your pet!",
+    "tiermodus_alarm_zu_warm": "Too warm in the car – check your pet!",
+    "tiermodus_alarm_unklar": "Climate unclear – check your pet!",
+    "tiermodus_alarm_innen_veraltet": "Cabin temperature not measurable – check your pet!",
+    "tiermodus_grund_klima_aus": "The climate is off.",
+    "tiermodus_grund_auto_aus": "The car is switched off.",
+    "tiermodus_grund_klima_unbekannt": "Panoptes cannot check whether the climate is running.",
+    "tiermodus_grund_zu_warm": "Inside {0} °C.",
+    "tiermodus_grund_innen_veraltet": "The cabin temperature is out of date – heat protection is blind right now.",
+    "tiermodus_grund_akku_grenze": "Battery at the lower limit ({0} %) – climate switched off.",
+    "tiermodus_grund_v12_niedrig": "Starter battery weak – climate switched off.",
+    "tiermodus_gesehen_hinweis": "Seen? Tap “Seen” in the app or send /tier ok.",
+    "tiermodus_hinweis_text": "Pet mode is an aid, not a guarantee. The climate, battery or software can fail. Messages can arrive late or not at all. Never leave your pet unattended in the car if you cannot be back within a few minutes. You remain responsible yourself; Panoptes accepts no liability.",
+    "tiermodus_hinweis_knopf": "Understood, I am responsible myself",
     "guard_stop_reason_soc": "traction battery low",
     "guard_stop_reason_v12": "12 V battery weak",
     "guard_stop_reason_park": "parked for a long time",
@@ -288,6 +308,14 @@
       "camping_warnung": {
         "label": "Camping: warnings",
         "note": "Camping: battery close to or at the lower limit, weak 12 V battery, maximum time reached."
+      },
+      "tiermodus_alarm": {
+        "label": "Pet mode: alarm",
+        "note": "Climate off, car off, too warm, battery or 12 V at the limit. Repeats until someone taps “Seen”."
+      },
+      "tiermodus_hinweis": {
+        "label": "Pet mode: notices",
+        "note": "Pet mode on or off, climate running again."
       },
       "surveillance_guard_stop": {
         "label": "Guardian paused / back on",
@@ -425,6 +453,24 @@
       "btn_fine": "✓ fine",
       "btn_warm": "☀ too warm"
     },
+    "tier": {
+      "status_off": "🐾 Pet mode is off. It can only be switched on at the car screen or in the Panoptes app.",
+      "status_ok": "🐾 *Pet mode on* – climate is running.",
+      "status_check": "🚨 *Pet mode on – please check your pet!*",
+      "failed": "⚠️ I could not read pet mode right now.",
+      "seen": "✅ Seen – the message only comes back if something new happens.",
+      "inside": "Inside: {0} °C",
+      "only_app": "Switch on and off only at the car or in the app.",
+      "btn_seen": "✅ Seen",
+      "btn_refresh": "🔄 Refresh",
+      "problem_klima_aus": "Climate is off",
+      "problem_auto_aus": "Car is switched off",
+      "problem_klima_unbekannt": "Climate state unknown",
+      "problem_zu_warm": "Too warm in the car",
+      "problem_innen_veraltet": "Cabin temperature out of date – not measurable",
+      "problem_akku_grenze": "Battery at the lower limit – climate off",
+      "problem_v12_niedrig": "Starter battery weak – climate off"
+    },
     "greeting": {
       "online": "👋 *Panoptes is here.*\nYour car is listening again. Tap /help for all commands."
     },
@@ -456,6 +502,7 @@
       "guard_view": "/guardian – Is the Guardian awake?",
       "camping": "/camping on · /camping off – camping (guardian occupied, battery watched)",
       "camping_view": "/camping – Is camping on?",
+      "tier": "/tier – How is the pet in the car? (`/tier ok` = Seen)",
       "camera": "/camera – A picture from every camera, right now",
       "clips": "/clips – Latest clips (e.g. `/clips 12`)",
       "where": "/where – Where the car is parked",
@@ -862,11 +909,26 @@
       "aufsperren_unbestaetigt": "🔓 Unlock command sent via phone “{0}” – confirmation from the car is missing.",
       "aufsperren_abgelehnt": "🔒 Unlock via phone “{0}” refused ({1}).",
       "wallbox": "🔌 Wallbox controlled from phone “{0}”: {1}",
+      "tiermodus_an": "🐾 Pet mode switched on from phone “{0}”.",
+      "tiermodus_aus": "🐾 Pet mode switched off from phone “{0}”.",
       "update_gestartet": "⬆️ Update to {0} started by “{1}”. Panoptes will be away for about 3–8 minutes."
     },
     "zurueck": {
       "text": "🚗 Welcome back to the car. It was parked for {0}.",
       "mit_ereignissen": "🚗 Welcome back to the car. It was parked for {0} with {1} events. See /wo or Panoptes."
+    },
+    "abschalt": {
+      "titel": "🅿️ *Parked*",
+      "fahrt": "Drive: {0} km · {1} · {2} kWh/100 km",
+      "fahrt_ohne_verbrauch": "Drive: {0} km · {1}",
+      "akku": "Battery: {0} % → {1} %",
+      "akku_jetzt": "Battery: {0} %",
+      "reichweite": "Range (from car): {0} km",
+      "spannung": "12 V battery: {0} V",
+      "sicherheit": "Guardian awake: {0} · Locked: {1}",
+      "ja": "yes",
+      "nein": "no",
+      "unbekannt": "unknown"
     },
     "anmeldung": {
       "anfrage": "🔑 A browser wants to sign in to Panoptes.\nCheck number: {0}\nOnly allow it if the same number is on your screen. This sign-in cannot unlock and cannot change security settings.",
@@ -1755,6 +1817,7 @@
       "system": "System",
       "update": "App updates",
       "camping": "Camping",
+      "tiermodus": "Pet mode",
       "energie": "Energy",
       "datenschutz": "Privacy",
       "laden": "Charging"
@@ -2035,6 +2098,28 @@
         "help": "Without a touch the screen turns into the dark night screen after this many seconds."
       }
     },
+    "tiermodus": {
+      "wunsch": {
+        "title": "Target temperature",
+        "help": "Panoptes sets the climate to this; the car regulates itself. On cars with a level display (e.g. Dolphin Surf) the value is a level: 21 = cooling level 4, 25 = neutral."
+      },
+      "alarmC": {
+        "title": "Alarm from cabin temperature",
+        "help": "If it gets this warm inside, a message comes at once. Only for cars that really measure the cabin temperature."
+      },
+      "socGrenze": {
+        "title": "Battery lower limit",
+        "help": "Here pet mode switches the climate off and warns loudly “Climate OFF – check your pet!”. Never below 15 %."
+      },
+      "wiederholenMinuten": {
+        "title": "Repeat message every",
+        "help": "The message comes back this often until someone taps “Seen”."
+      },
+      "cloud": {
+        "title": "Car off: climate via BYD cloud",
+        "help": "If the car switches off, Panoptes tries remote climate via the BYD cloud (at most 30 minutes at a time, then a break). The “Climate OFF” message still comes. Off by default."
+      }
+    },
     "energie": {
       "profil": {
         "title": "Energy while parked",
@@ -2054,6 +2139,16 @@
       "parkLeseSekunden": {
         "title": "Read while parked every … seconds",
         "help": "How often Panoptes reads the values while the car is off. 90 = as before. Guard and doors still report at once."
+      }
+    },
+    "logs": {
+      "tage": {
+        "title": "Keep logs for … days",
+        "help": "How long Panoptes keeps old logs so you can check later what happened. Also across updates and restarts. The oldest are deleted first. Default 7."
+      },
+      "mb": {
+        "title": "Logs at most … MB per kind",
+        "help": "The most space old logs of one kind may take. If storage is almost full, Panoptes automatically keeps less. Default 50."
       }
     },
     "wetter": {
@@ -2079,6 +2174,18 @@
       "zurueckAmAuto": {
         "title": "“Back at the car” message",
         "help": "When the ignition is switched on after at least 10 minutes parked, sends a short Telegram message with parking time and number of events. Default: off."
+      },
+      "abschaltBericht": {
+        "title": "Parked report in Telegram",
+        "help": "When you switch the car off, sends a short Telegram message: distance, time and consumption of the drive, battery before and after, range, 12 V battery, whether the Guardian is awake and the car is locked. No location. Nothing after short manoeuvring. Default: on, only works with Telegram set up."
+      },
+      "abschaltBerichtMinMeter": {
+        "title": "Parked report only from distance",
+        "help": "Shorter drives, for example manoeuvring, send no report. Default: 300 m."
+      },
+      "abschaltBerichtMinMinuten": {
+        "title": "Parked report only from driving time",
+        "help": "Shorter drives send no report. Default: 2 min."
       }
     },
     "hinweise": {
@@ -2233,6 +2340,20 @@
       "verlustHinweis": {
         "title": "Show charging-loss notice",
         "help": "Explains once that costs include the charging loss. Turns off after “Got it”."
+      },
+      "saeuleNachschlagen": {
+        "title": "Look up the charger in the route planner",
+        "help": "After charging, Panoptes asks the route planner once which charger it was (e.g. “Lidl …”). Only a rough position (about 1 km) is sent, without an account. Never at home or at private places."
+      },
+      "standardKwh": {
+        "title": "Charge amount for “Cheapest nearby”",
+        "help": "The navigation compares nearby chargers for this amount, including the trip there and back."
+      }
+    },
+    "sprache": {
+      "weckwortMessung": {
+        "title": "Allow wake-word measurement",
+        "help": "For measuring only: allows starting a measurement under Test features on the car screen to see whether a voice wake word works next to the BYD voice assistant. Records numbers only (CPU load, memory, false triggers). No audio is stored or sent. While it runs, “Microphone on (measurement)” is shown at the top. Off by default."
       }
     },
     "zaehlen": {
@@ -2357,6 +2478,8 @@
     },
     "automation_run_accepted": "The rule is running.",
     "automation_created_manual": "Created and saved to run by hand only. Check it before you let it run automatically.",
+    "ki_sperre_start": "The assistant may not run this: it may only run rules with climate, seat heating, sunshade or on-screen notices. This rule does more (for example lights, horn, windows, tailgate, locks, sound or MQTT), also through an action group. Run it yourself from Rules or with a button.",
+    "ki_sperre_entwurf": "The assistant only creates rules with climate, seat heating, sunshade or on-screen notices. Create other rules yourself in the rule editor.",
     "insight_title": {
       "vehicle_state": "Car status",
       "latest_trip": "Latest trip",
@@ -2513,5 +2636,19 @@
     "grund_akku": "Stopped to protect the battery.",
     "grund_v12": "Stopped to protect the small 12 V battery.",
     "grund_lange_geparkt": "Stopped after a long time parked, to save power."
+  },
+  "rechte_heilung": {
+    "titel": "Panoptes has lost permissions",
+    "text": "The car took these permissions away from Panoptes and Panoptes could not restore them: {0}. Please open Panoptes once on the car screen. If that does not help: Android settings, Apps, Panoptes, Permissions, and allow the ones listed.",
+    "wort_kamera": "Camera",
+    "wort_mikrofon": "Microphone",
+    "wort_standort": "Location",
+    "wort_speicher": "Storage",
+    "wort_ueberlagern": "Display over other apps",
+    "wort_hintergrund": "Run in background",
+    "wort_einstellungen": "Modify system settings"
+  },
+  "dateien": {
+    "recht_fehlt": "File permission missing – switch it on in Panoptes under Paired devices."
   }
 }

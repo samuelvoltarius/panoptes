@@ -552,6 +552,23 @@ public class SurveillanceIpcServer implements Runnable {
                     break;
                 }
 
+                case "TIERMODUS": {
+                    // Tiermodus aus Telegram (/tier): nur Stand und „Gesehen“ – Einschalten geht nur am Display
+                    // oder in der Handy-App (Recht klima), nie über Telegram.
+                    String aktion = request.optString("aktion", "status");
+                    if ("quittieren".equals(aktion)) {
+                        JSONObject r = at.greenchili.surfmate.camping.Tiermodus.quittieren("telegram");
+                        if (!r.optBoolean("ok", false)) {
+                            response.put("success", false);
+                            response.put("fehler", r.optString("fehler", ""));
+                            break;
+                        }
+                    }
+                    response.put("success", true);
+                    response.put("data", at.greenchili.surfmate.camping.Tiermodus.status());
+                    break;
+                }
+
                 case "STATUS": {
                     // Get surveillance status (from Telegram /status command)
                     // Read from persisted config (not in-memory flag which can get stale)

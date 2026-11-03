@@ -1113,8 +1113,8 @@ public final class KeymapApiHandler {
             return response;
         }
 
-        ManualClipService.RequestResult result =
-                ManualClipService.getInstance().requestClip(before, after);
+        ManualClipService.RequestResult result = ManualClipService.getInstance().requestClip(
+                before, after, at.greenchili.surfmate.recording.AusloeserInfo.QUELLE_TASTE);
         response.put("success", result.isAccepted());
         response.put("status", result.status.name());
         response.put("availableBeforeSeconds", result.availableBeforeSeconds);

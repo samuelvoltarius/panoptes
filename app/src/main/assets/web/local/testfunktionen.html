@@ -11,7 +11,7 @@
     <meta name="theme-color" content="#0A2238">
     <meta name="robots" content="noindex">
     <script src="../shared/theme.js?v=13"></script>
-    <script src="../shared/app-shell.js?v=pn28"></script>
+    <script src="../shared/app-shell.js?v=pn30"></script>
     <link rel="stylesheet" href="../shared/styles.css?v=pn11">
     <style>
         .tf { padding: 0 28px 60px; max-width: 720px; box-sizing: border-box; }
@@ -76,6 +76,16 @@
                 <button class="tbtn lime" type="button" id="tnOn" data-i18n="testf.navi_on">Einschalten</button>
                 <button class="tbtn" type="button" id="tnOff" data-i18n="testf.off">Aus</button>
             </article>
+            <article class="tc" id="wm" hidden>
+                <h2 data-i18n="testf.weck_title">Weckwort-Messung (nur Zahlen)</h2>
+                <p data-i18n="testf.weck_lead">Misst, ob ein Sprach-Weckwort neben dem BYD-Sprachassistenten möglich ist.</p>
+                <div class="big" id="wmState">…</div>
+                <select id="wmMin" class="tbtn"><option value="15">15 min</option><option value="30" selected>30 min</option><option value="60">60 min</option><option value="120">120 min</option></select>
+                <button class="tbtn lime" type="button" id="wmStart" data-i18n="testf.weck_start">Messung starten</button>
+                <button class="tbtn" type="button" id="wmStopp" data-i18n="testf.weck_stopp">Messung beenden</button>
+                <p id="wmNurAuto" hidden data-i18n="testf.weck_nur_auto">Nur am Autobildschirm startbar.</p>
+                <pre id="wmErg" hidden style="max-height:260px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px"></pre>
+            </article>
         </div>
     </main>
 </div>
@@ -125,6 +135,54 @@
             .then(function (d) { if (!d) toast(t('testf.fail', 'Das hat nicht geklappt.'), false); },
                   function () { toast(t('testf.fail', 'Das hat nicht geklappt.'), false); })
             .then(function () { $('bzOn').disabled = false; laden(); });   // echten Stand zurücklesen
+    }
+
+    // ---- Weckwort-Messung Stufe 1: Start/Stopp nur über die App-Brücke am Autobildschirm, nur Zahlen.
+    // Ohne Schalter sprache.weckwortMessung bleibt die Karte verborgen. Nichts davon löst etwas am Auto aus.
+    var wmUhr = null, wmWarteBis = 0;
+    function wmBruecke() { return window.AndroidBridge && typeof window.AndroidBridge.weckwortMessung === 'function'; }
+    function wmZeige(s) {
+        var erg = s && (s.ergebnis || null);
+        var laeuft = !!(s && s.laeuft);
+        $('wmState').textContent = laeuft ? t('testf.weck_an', 'Mikrofon an (Messung)') : t('testf.weck_aus', 'Aus');
+        $('wmState').className = 'big' + (laeuft ? ' on' : '');
+        $('wmStart').disabled = laeuft || !wmBruecke();
+        $('wmStopp').disabled = !laeuft || !wmBruecke();
+        $('wmErg').hidden = !erg;
+        if (erg) $('wmErg').textContent = JSON.stringify(erg, null, 2);
+        clearTimeout(wmUhr);
+        // Nach dem Tipp braucht der Messprozess ein paar Sekunden; so lange weiter nachsehen.
+        if (laeuft || Date.now() < wmWarteBis) wmUhr = setTimeout(wmLaden, laeuft ? 5000 : 1500);
+    }
+    function wmLaden() {
+        if (wmBruecke()) {
+            try { wmZeige(JSON.parse(window.AndroidBridge.weckwortMessung('status', 0))); } catch (e) {}
+            return;
+        }
+        fetch('/api/weckwort-messung', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (d) { wmZeige(d && d.vorhanden ? { laeuft: d.ergebnis.status === 'laeuft', ergebnis: d.ergebnis } : null); },
+                  function () {});
+    }
+    function wmPruefen() {
+        fetch('/api/einstellungen', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+            var w = d && d.werte && d.werte['sprache.weckwortMessung'];
+            if (!w || w.wert !== true) return;
+            $('wm').hidden = false;
+            $('wmNurAuto').hidden = wmBruecke();
+            $('wmStart').onclick = function () {
+                var r = {};
+                try { r = JSON.parse(window.AndroidBridge.weckwortMessung('start', parseInt($('wmMin').value, 10) || 30)); } catch (e) {}
+                if (!r.ok) toast(t('testf.weck_nein', 'Startet nicht: {grund}', { grund: r.grund || '?' }), false);
+                else wmWarteBis = Date.now() + 15000;
+                wmLaden();
+            };
+            $('wmStopp').onclick = function () {
+                try { window.AndroidBridge.weckwortMessung('stopp', 0); } catch (e) {}
+                wmWarteBis = Date.now() + 8000;
+                wmLaden();
+            };
+            wmLaden();
+        }, function () {});
     }
 
     // ---- Tacho-Test (nur lesend) + Navi-App am Tacho (Kern Tacho 0.1.30)
@@ -269,6 +327,7 @@
         $('tnOff').onclick = function () { tnSende('/api/tacho/navi', 'PUT', { an: false }); };
         $('tnPaket').onchange = function () { if (tnDaten) tnZeige(tnDaten); };
         laden();
+        wmPruefen();
     });
 })();
 </script>

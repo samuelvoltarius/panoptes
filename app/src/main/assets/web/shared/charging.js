@@ -1886,7 +1886,7 @@ var CHARGING = {
         this._detailLat = (s.lat != null) ? s.lat : null;
         this._detailLng = (s.lng != null) ? s.lng : null;
         var locRow = document.getElementById('detailLocRow');
-        var locStr = this._locationLabel(s);
+        var locStr = this._locationLabel(s, true);
         if (locRow) {
             if (locStr) {
                 locRow.style.display = '';
@@ -1896,6 +1896,12 @@ var CHARGING = {
             } else {
                 locRow.style.display = 'none';
             }
+        }
+        if (window.PanoptesLadesaeule) {
+            var selfSt = this;
+            PanoptesLadesaeule.detail(document.getElementById('detailStation'), s, function (neu) {
+                selfSt._stationNeu(neu, sessionId);
+            });
         }
         this._fillDetailSampleSummary(this.samplesCache || []);
     },
@@ -2247,6 +2253,28 @@ var CHARGING = {
         }).catch(function () {
             self._toast(self._t('charge.saeule_fehler', 'Konnte nicht speichern'), 'error');
         });
+    },
+
+    // 03.11.2026: nach Änderung der Ladesäule bzw. übernommenem Preis-Vorschlag neu zeichnen
+    _stationNeu: function (neu, sessionId) {
+        var self = this;
+        if (!neu) {
+            this.loadSessions(0);
+            this.loadSummary();
+            if (sessionId != null) this.showDetail(sessionId);
+            return;
+        }
+        for (var i = 0; i < self.sessions.length; i++) {
+            if (self.sessions[i] && String(self.sessions[i].id) === String(sessionId)) {
+                self.sessions[i] = neu;
+                break;
+            }
+        }
+        self._currentDetailSession = neu;
+        self._renderSessionCards();
+        if (self.currentSessionId != null && String(self.currentSessionId) === String(sessionId)) {
+            self._fillDetailHeader(neu, sessionId);
+        }
     },
 
     deleteCurrent: function () {
@@ -4011,7 +4039,12 @@ var CHARGING = {
 
     // Human location label for a session: place name if the geocoder resolved
     // one, else rounded coordinates, else '' (chip hidden).
-    _locationLabel: function (s) {
+    _locationLabel: function (s, nurOrt) {
+        // 03.11.2026: erkannte Ladesäule zuerst („Lidl …“ bzw. „Lidl? · prüfen“), im Detail-Feld „Ort“ nur der Ort
+        if (!nurOrt && window.PanoptesLadesaeule) {
+            var saeule = PanoptesLadesaeule.label(s);
+            if (saeule) return saeule;
+        }
         if (s.placeLabel) return s.placeLabel;
         if (s.lat != null && s.lng != null) {
             return s.lat.toFixed(3) + ', ' + s.lng.toFixed(3);

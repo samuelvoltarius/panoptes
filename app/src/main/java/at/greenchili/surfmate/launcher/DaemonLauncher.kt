@@ -40,10 +40,12 @@ class DaemonLauncher(
         // run under UID 2000 and can't read the app's SharedPreferences, so a
         // config-driven shell limit would be split-brain across launch sources.
         const val LOG_MAX_BYTES = 5_242_880L  // 5 MB
-        // Housekeeping cadence. The poller checks once on daemon start (to catch
-        // a log left oversized by a previous run) then every interval while the
-        // daemon is alive. 4h keeps wakeups negligible on a parked car.
-        const val LOG_POLL_INTERVAL_SEC = 14_400  // 4 hours
+        // Housekeeping cadence while the daemon is alive. The poller already
+        // ticks every 60 s (see logRotateCoprocessLines); this only decides how
+        // often it stats the file. 0.1.36: 30 min instead of 4 h, because an
+        // oversized log is now COPIED into the archive (LogArchiv) instead of
+        // being thrown away, and a 4 h window let it grow far past the limit.
+        const val LOG_POLL_INTERVAL_SEC = 1_800  // 30 minutes
 
         // Process names for daemon identification
         private const val CAMERA_DAEMON_PROCESS = "byd_cam_daemon"
@@ -246,8 +248,9 @@ class DaemonLauncher(
             "        if [ -f \"\$LOG_FILE\" ]; then",
             "          LOG_SZ=\$(stat -c%s \"\$LOG_FILE\" 2>/dev/null || echo 0)",
             "          if [ \"\$LOG_SZ\" -gt $LOG_MAX_BYTES ]; then",
-            "            : > \"\$LOG_FILE\"",
-            "            echo \"[\$(date)] Log truncated in place (was \${LOG_SZ} bytes)\" >> \"\$LOG_FILE\"",
+            // 0.1.36: copy into the archive, then truncate in place (the
+            // daemon keeps its O_APPEND fd, see above). Never just drop it.
+            "            log_kopieren_kuerzen \"\$LOG_FILE\"",
             "          fi",
             "        fi",
             "      fi",
@@ -257,21 +260,38 @@ class DaemonLauncher(
         )
 
         /**
-         * One-shot size guard for the TOP of a watchdog loop: truncates
-         * `$LOG_FILE` in place if it is already over [LOG_MAX_BYTES] before the
-         * daemon (re)starts. Complements [logRotateCoprocessLines] by catching a
-         * log left oversized by a prior run / SIGKILL before the next launch.
-         * Uses in-place truncate for the same O_APPEND-fd safety reason.
+         * 0.1.36 (logs must survive restarts and updates): shell
+         * functions of [at.greenchili.surfmate.logging.LogArchiv] plus the
+         * archive folder next to [logFile]. Emitted near the top of every
+         * watchdog; definitions only, nothing is touched yet.
          */
-        fun logRotateGuardLines(): List<String> = listOf(
-            "  if [ -f \"\$LOG_FILE\" ]; then",
-            "    LOG_SZ=\$(stat -c%s \"\$LOG_FILE\" 2>/dev/null || echo 0)",
-            "    if [ \"\$LOG_SZ\" -gt $LOG_MAX_BYTES ]; then",
-            "      : > \"\$LOG_FILE\"",
-            "      echo \"[\$(date)] Log truncated in place (was \${LOG_SZ} bytes)\" >> \"\$LOG_FILE\"",
-            "    fi",
+        fun logArchivDefinitionLines(logFile: String): List<String> =
+            listOf("LOGARCHIV=\"${at.greenchili.surfmate.logging.LogArchiv.ordnerFuer(logFile)}\"") +
+                at.greenchili.surfmate.logging.LogArchiv.shellFunktionen()
+
+        /**
+         * Top of a watchdog loop: once a daemon has run in THIS watchdog
+         * (`LA_GELAUFEN=1`, set after `wait`), move its log into the archive
+         * before the next start, so every run keeps its own file. Replaces the
+         * old size guard that truncated an oversized log to zero (one reason
+         * cam_daemon.log "started over" after a restart). Moving is safe here:
+         * the daemon is dead, nobody holds the file open.
+         */
+        fun logArchivLoopLines(): List<String> = listOf(
+            "  if [ \"\$LA_GELAUFEN\" = \"1\" ]; then",
+            "    log_archivieren \"\$LOG_FILE\"",
             "  fi"
         )
+
+        /**
+         * Start path without a watchdog script: archive the previous log, then
+         * append (`>>`). Before 0.1.36 these paths used `>` and wiped the log
+         * of the run that just ended.
+         */
+        @JvmStatic
+        fun nohupMitArchiv(innerCmd: String, logFile: String): String =
+            at.greenchili.surfmate.logging.LogArchiv.archivBefehl(logFile) +
+                "nohup sh -c '$innerCmd' >> $logFile 2>&1 &"
 
         /**
          * Build the command used by the UI path to deploy a watchdog script.
@@ -289,16 +309,24 @@ class DaemonLauncher(
         ): String = buildString {
             append("rm -f $scriptPath 2>/dev/null; ")
             scriptLines.forEachIndexed { index, line ->
-                val escapedLine = line
-                    .replace("\\", "\\\\")
-                    .replace("\"", "\\\"")
-                    .replace("\$", "\\$")
-                    .replace("`", "\\`")
-                append("printf '%s\\n' \"$escapedLine\" ")
-                append(if (index == 0) "> " else ">> ")
-                append("$scriptPath; ")
+                append(buildScriptLineWriteCommand(line, index == 0, scriptPath))
+                append("; ")
             }
             append("chmod 755 $scriptPath")
+        }
+
+        /**
+         * Eine Skriptzeile byte-gleich schreiben (`printf '%s\n'`, nie `echo`).
+         * Auch AccSentryDaemon schreibt start_telegram.sh so, Zeile für Zeile (0.1.36).
+         */
+        @JvmStatic
+        fun buildScriptLineWriteCommand(line: String, first: Boolean, scriptPath: String): String {
+            val escapedLine = line
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\$", "\\$")
+                .replace("`", "\\`")
+            return "printf '%s\\n' \"$escapedLine\" " + (if (first) "> " else ">> ") + scriptPath
         }
 
         /**
@@ -431,6 +459,8 @@ class DaemonLauncher(
                 "PARKED=\"/data/user_de/0/com.android.shell/surfmate/surfmate_parked_shutdown\"",
                 "PARKED_RESPAWNS=0",
                 "PROXY_ARGS=\"$proxyArgs\"",
+                *logArchivDefinitionLines(ACC_SENTRY_DAEMON_LOG).toTypedArray(),
+                "LA_GELAUFEN=0",
                 *watchdogOwnershipLines(
                     ACC_SENTRY_WATCHDOG_SCRIPT,
                     ACC_SENTRY_WATCHDOG_PID_FILE,
@@ -439,7 +469,9 @@ class DaemonLauncher(
                 "",
                 "/system/bin/device_config put activity_manager max_phantom_processes 2147483647 > /dev/null 2>&1",
                 "",
-                "echo \"=== WATCHDOG STARTED ===\" > \$LOG_FILE",
+                // 0.1.36: keep the previous run (was `>` = overwrite).
+                "log_archivieren \"\$LOG_FILE\"",
+                "echo \"=== WATCHDOG STARTED ===\" >> \$LOG_FILE",
                 "",
                 "echo \"[\$(date)] Waiting for system boot to complete...\" >> \$LOG_FILE",
                 "BOOT_WAIT=0",
@@ -456,12 +488,10 @@ class DaemonLauncher(
                 "sleep 5",
                 "",
                 "while true; do",
-                // Catch a log left oversized by a previous run before relaunch.
-                // Real-time bounding during the daemon's life is done by the
-                // poller co-process below (the app_process call blocks until
-                // the daemon dies, so a loop-top check alone fires only once
-                // per respawn). Both truncate in place — see helper docs.
-                *logRotateGuardLines().toTypedArray(),
+                // Archive the previous run's log before relaunch. Real-time
+                // bounding during the daemon's life is done by the poller
+                // co-process below (copy into the archive, then truncate).
+                *logArchivLoopLines().toTypedArray(),
                 "",
                 "  if [ -f \"\$SENTINEL\" ]; then",
                 "    echo \"[\$(date)] Daemon disabled by user (sentinel file exists). Exiting watchdog.\" >> \"\$LOG_FILE\"",
@@ -477,6 +507,7 @@ class DaemonLauncher(
                 *logRotateCoprocessLines("DAEMON_PID", "ROTATE_PID").toTypedArray(),
                 "  wait \$DAEMON_PID",
                 "  EXIT_CODE=\$?",
+                "  LA_GELAUFEN=1",
                 "  kill \$ROTATE_PID 2>/dev/null; wait \$ROTATE_PID 2>/dev/null",
                 "  if [ -f \"\$SENTINEL\" ]; then",
                 "    echo \"[\$(date)] Daemon disabled by user (sentinel written during shutdown). Exiting watchdog.\" >> \"\$LOG_FILE\"",
@@ -550,16 +581,21 @@ class DaemonLauncher(
                 "PARKED=\"/data/user_de/0/com.android.shell/surfmate/surfmate_parked_shutdown\"",
                 "RETRY_COUNT=0",
                 "HEALTHY_UPTIME_SEC=300",
+                *logArchivDefinitionLines(TELEGRAM_DAEMON_LOG).toTypedArray(),
+                "LA_GELAUFEN=0",
                 *watchdogOwnershipLines(
                     TELEGRAM_WATCHDOG_SCRIPT,
                     TELEGRAM_WATCHDOG_PID_FILE,
                     TELEGRAM_WATCHDOG_LOCK_PATH
                 ).toTypedArray(),
                 "",
+                // 0.1.36: the previous watchdog's log (restart, reboot, update)
+                // goes into the archive (LogArchiv), never overwritten.
+                "log_archivieren \"\$LOG_FILE\"",
                 "while true; do",
-                // Catch a log left oversized by a previous run before relaunch;
+                // Archive the previous run's log before relaunch;
                 // real-time bounding is the poller co-process below.
-                *logRotateGuardLines().toTypedArray(),
+                *logArchivLoopLines().toTypedArray(),
                 "  if [ -f \"\$SENTINEL\" ] || [ -f \"\$PARKED\" ]; then",
                 "    echo \"[\$(date)] Daemon disabled by user (sentinel file exists). Exiting watchdog.\" >> \"\$LOG_FILE\"",
                 "    exit 0",
@@ -572,6 +608,7 @@ class DaemonLauncher(
                 *logRotateCoprocessLines("DAEMON_PID", "ROTATE_PID").toTypedArray(),
                 "  wait \$DAEMON_PID",
                 "  EXIT_CODE=\$?",
+                "  LA_GELAUFEN=1",
                 "  kill \$ROTATE_PID 2>/dev/null; wait \$ROTATE_PID 2>/dev/null",
                 "  END_EPOCH=\$(awk '{print int(\$1)}' /proc/uptime 2>/dev/null || date +%s)",
                 "  UPTIME_SEC=\$((END_EPOCH - START_EPOCH))",
@@ -636,16 +673,21 @@ class DaemonLauncher(
                 "PARKED=\"/data/user_de/0/com.android.shell/surfmate/surfmate_parked_shutdown\"",
                 "RETRY_COUNT=0",
                 "HEALTHY_UPTIME_SEC=300",
+                *logArchivDefinitionLines(CAMERA_DAEMON_LOG).toTypedArray(),
+                "LA_GELAUFEN=0",
                 *watchdogOwnershipLines(
                     CAMERA_WATCHDOG_SCRIPT,
                     CAMERA_WATCHDOG_PID_FILE,
                     CAMERA_WATCHDOG_LOCK_PATH
                 ).toTypedArray(),
                 "",
+                // 0.1.36: the previous watchdog's log (restart, reboot, update)
+                // goes into the archive (LogArchiv), never overwritten.
+                "log_archivieren \"\$LOG_FILE\"",
                 "while true; do",
-                // Catch a log left oversized by a previous run before relaunch;
+                // Archive the previous run's log before relaunch;
                 // real-time bounding is the poller co-process below.
-                *logRotateGuardLines().toTypedArray(),
+                *logArchivLoopLines().toTypedArray(),
                 "  if [ -f \"\$SENTINEL\" ] || [ -f \"\$PARKED\" ]; then",
                 "    echo \"[\$(date)] Daemon disabled by user (sentinel file exists). Exiting watchdog.\" >> \"\$LOG_FILE\"",
                 "    exit 0",
@@ -668,6 +710,7 @@ class DaemonLauncher(
                 *logRotateCoprocessLines("DAEMON_PID", "ROTATE_PID").toTypedArray(),
                 "  wait \$DAEMON_PID",
                 "  EXIT_CODE=\$?",
+                "  LA_GELAUFEN=1",
                 "  kill \$ROTATE_PID 2>/dev/null; wait \$ROTATE_PID 2>/dev/null",
                 "  END_EPOCH=\$(awk '{print int(\$1)}' /proc/uptime 2>/dev/null || date +%s)",
                 "  UPTIME_SEC=\$((END_EPOCH - START_EPOCH))",
@@ -916,7 +959,7 @@ class DaemonLauncher(
             append("$nativeLibDir")
         }
         
-        val cmd = "nohup sh -c '$innerCmd' > $CAMERA_DAEMON_LOG 2>&1 &"
+        val cmd = nohupMitArchiv(innerCmd, CAMERA_DAEMON_LOG)
         
         adbShellExecutor.execute(
             command = cmd,
@@ -1003,12 +1046,12 @@ class DaemonLauncher(
                             } else if (output.contains("uid=")) {
                                 logManager.warn(TAG, "Shell available but not UID 1000: $output")
                                 callback.onLog("Shell not UID 1000, using ADB shell...")
-                                val adbCmd = "nohup sh -c '$innerCmd' > $SENTRY_DAEMON_LOG 2>&1 &"
+                                val adbCmd = nohupMitArchiv(innerCmd, SENTRY_DAEMON_LOG)
                                 launchSentryDaemonViaAdb(adbCmd, callback)
                             } else {
                                 logManager.info(TAG, "Privileged shell not available, using ADB shell")
                                 callback.onLog("Privileged shell not available, using ADB shell...")
-                                val adbCmd = "nohup sh -c '$innerCmd' > $SENTRY_DAEMON_LOG 2>&1 &"
+                                val adbCmd = nohupMitArchiv(innerCmd, SENTRY_DAEMON_LOG)
                                 launchSentryDaemonViaAdb(adbCmd, callback)
                             }
                         }
@@ -1016,13 +1059,13 @@ class DaemonLauncher(
                         override fun onError(error: String) {
                             logManager.info(TAG, "Privileged shell check failed: $error, using ADB shell")
                             callback.onLog("Using ADB shell...")
-                            val adbCmd = "nohup sh -c '$innerCmd' > $SENTRY_DAEMON_LOG 2>&1 &"
+                            val adbCmd = nohupMitArchiv(innerCmd, SENTRY_DAEMON_LOG)
                             launchSentryDaemonViaAdb(adbCmd, callback)
                         }
                     }
                 )
             } else {
-                val adbCmd = "nohup sh -c '$innerCmd' > $SENTRY_DAEMON_LOG 2>&1 &"
+                val adbCmd = nohupMitArchiv(innerCmd, SENTRY_DAEMON_LOG)
                 launchSentryDaemonViaAdb(adbCmd, callback)
             }
         }
@@ -1056,7 +1099,7 @@ class DaemonLauncher(
                 override fun onError(error: String) {
                     logManager.error(TAG, "Privileged shell launch failed: $error, falling back to ADB")
                     callback.onLog("Privileged shell failed, using ADB shell...")
-                    val adbCmd = "nohup sh -c '$innerCmd' > $SENTRY_DAEMON_LOG 2>&1 &"
+                    val adbCmd = nohupMitArchiv(innerCmd, SENTRY_DAEMON_LOG)
                     launchSentryDaemonViaAdb(adbCmd, callback)
                 }
             }
@@ -1345,7 +1388,7 @@ class DaemonLauncher(
             append("at.greenchili.surfmate.daemon.AccSentryDaemon")
         }
         
-        val cmd = "nohup sh -c '$innerCmd' > $ACC_SENTRY_DAEMON_LOG 2>&1 &"
+        val cmd = nohupMitArchiv(innerCmd, ACC_SENTRY_DAEMON_LOG)
         
         logManager.debug(TAG, "AccSentryDaemon fallback command: $cmd")
         callback.onLog("Launching via simple nohup (fallback)...")

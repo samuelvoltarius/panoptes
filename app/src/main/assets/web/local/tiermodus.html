@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title data-i18n="tiermodus.title">Tiermodus</title>
+    <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="../shared/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-title" content="Panoptes">
+    <meta name="theme-color" content="#0A2238">
+    <script src="../shared/theme.js?v=13"></script>
+    <script src="../shared/app-shell.js?v=pn30"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn11">
+    <style>
+        /* Tiermodus (03.11.2026). Chromium 74: kein flex-gap, kein Optional-Chaining, kein Nullish-Operator.
+           Die große Karte ist für Leute draußen am Fenster: sehr groß, hoher Kontrast, fünf Sprachen. */
+        .tm-kopf { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+        .tm-kopf > * { margin: 4px 6px; }
+        .tm-kopf h2 { font: 700 22px var(--family-display, sans-serif); margin: 0; color: var(--text-primary); }
+        .tm-sub { font-size: 15px; color: var(--text-muted); margin-top: 4px; line-height: 1.5; }
+        .tm-knopf { min-width: 160px; min-height: 56px; font-size: 18px; font-weight: 700; border-radius: 28px; }
+        .tm-hinweis { font-size: 14px; color: var(--text-muted); line-height: 1.5; margin-top: 12px; }
+        .tm-fehler { font-size: 16px; font-weight: 700; color: var(--status-warning, #FFC266); margin-top: 10px; }
+        .tm-garantie { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
+        #tmHinweis { display: none; position: fixed; left: 0; top: 0; right: 0; bottom: 0; z-index: 10000;
+            background: rgba(0,0,0,.72); }
+        #tmHinweis.an { display: block; }
+        #tmHinweis .h-box { max-width: 640px; margin: 8vh auto 0; background: var(--bg-elevated, #10293a); color: var(--text-primary, #fff);
+            border-radius: 12px; padding: 22px; font-size: 18px; line-height: 1.5; }
+        #tmHinweis .h-box button { display: block; width: 100%; min-height: 56px; margin-top: 16px; font-size: 18px; font-weight: 700; }
+        #tmGross { display: none; position: fixed; left: 0; top: 0; right: 0; bottom: 0; z-index: 9999;
+            background: #06251a; color: #ffffff; text-align: center; overflow: hidden; }
+        #tmGross.an { display: block; }
+        #tmGross.pruefen { background: #4a0c0c; }
+        #tmGross .g-pfote { font-size: 9vh; line-height: 1; margin-top: 4vh; }
+        #tmGross .g-haupt { font-size: 8.5vh; font-weight: 800; line-height: 1.15; margin: 2vh 4vw 0; }
+        #tmGross .g-klima { font-size: 6vh; font-weight: 700; line-height: 1.2; margin: 2vh 4vw 0; color: #b9f5d4; }
+        #tmGross.pruefen .g-klima { color: #ffd0d0; }
+        #tmGross .g-zurueck { font-size: 5vh; font-weight: 600; margin: 1.5vh 4vw 0; }
+        #tmGross .g-innen { font-size: 4.5vh; font-weight: 600; margin-top: 2vh; color: #d8e6e0; }
+        #tmGross .g-andere { position: absolute; left: 3vw; right: 3vw; bottom: 11vh; font-size: 2.6vh; line-height: 1.45; color: #cfe1d9; }
+        #tmGross.pruefen .g-andere { color: #f3d6d6; }
+        #tmGross .g-andere div { margin: 0.4vh 0; }
+        #tmGross .g-tipps { position: absolute; bottom: 2.5vh; left: 0; right: 0; }
+        #tmGross .g-tipps button { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.35); color: #ffffff;
+            border-radius: 999px; font-size: 2.6vh; min-height: 48px; padding: 1vh 4vw; margin: 0 1vw; }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <div id="app-shell-mount"></div>
+        <main class="main-content">
+            <div class="mobile-header">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+                    </svg>
+                </button>
+                <span style="font-weight:600;" data-i18n="tiermodus.title">Tiermodus</span>
+                <div style="width:40px;"></div>
+            </div>
+            <div class="page-body">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="tm-kopf">
+                            <div style="flex:1;min-width:0;">
+                                <h2 id="tmTitel" data-i18n="tiermodus.aus">Tiermodus ist aus</h2>
+                                <div class="tm-sub" data-i18n="tiermodus.lead">Das Klima läuft weiter. Panoptes passt auf und meldet sich am Handy und bei Telegram, wenn etwas nicht stimmt.</div>
+                            </div>
+                            <button class="btn btn-primary tm-knopf" id="tmSchalter" type="button" data-i18n="tiermodus.start">Tiermodus starten</button>
+                        </div>
+                        <div class="tm-fehler" id="tmFehler"></div>
+                        <div id="tmProbleme" class="tm-sub"></div>
+                        <div style="margin-top:10px;">
+                            <button class="btn tm-knopf" id="tmGesehen" type="button" style="display:none;" data-i18n="tiermodus.gesehen">Gesehen</button>
+                            <button class="btn tm-knopf" id="tmGrossKnopf" type="button" style="display:none;" data-i18n="tiermodus.gross">Große Anzeige</button>
+                        </div>
+                        <div class="tm-garantie" data-i18n="tiermodus.garantie">Hilfe, keine Garantie – du bleibst verantwortlich.</div>
+                        <div class="tm-hinweis" data-i18n="tiermodus.hinweis">Nur kurz und in der Nähe. Ersetzt keine Aufsicht. Auto eingeschaltet in P lassen.</div>
+                    </div>
+                </div>
+                <div class="card" style="margin-top:14px;">
+                    <div class="card-body">
+                        <h3 style="margin:0 0 6px;" data-i18n="tiermodus.settings">Einstellungen</h3>
+                        <div id="tmFelder"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <div id="tmHinweis" role="dialog" aria-modal="true">
+        <div class="h-box">
+            <div id="hText" data-i18n="tiermodus.hinweis_text">Der Tiermodus ist eine Hilfe, keine Garantie. Klima, Akku oder Software können ausfallen. Meldungen können verspätet oder gar nicht ankommen. Lass dein Tier nie unbeaufsichtigt im Auto, wenn du nicht in wenigen Minuten zurück sein kannst. Du bleibst selbst verantwortlich, Panoptes übernimmt keine Haftung.</div>
+            <button class="btn btn-primary" type="button" id="hJa" data-i18n="tiermodus.hinweis_knopf">Verstanden, ich bin selbst verantwortlich</button>
+            <button class="btn" type="button" id="hNein" data-i18n="common.cancel">Abbrechen</button>
+        </div>
+    </div>
+    <div id="tmGross" role="dialog" aria-modal="true">
+        <div class="g-pfote" aria-hidden="true">🐾</div>
+        <div class="g-haupt" id="gHaupt"></div>
+        <div class="g-klima" id="gKlima"></div>
+        <div class="g-zurueck" id="gZurueck"></div>
+        <div class="g-innen" id="gInnen"></div>
+        <div class="g-andere" id="gAndere"></div>
+        <div class="g-tipps">
+            <button type="button" id="gGesehen" style="display:none;" data-i18n="tiermodus.gesehen">Gesehen</button>
+            <button type="button" id="gKlein" data-i18n="tiermodus.klein">Bedienen</button>
+        </div>
+    </div>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+    <div id="toastContainer" class="toast-container"></div>
+    <script src="../shared/auth.js"></script>
+    <script src="../shared/core.js?v=pn6"></script>
+    <script src="../shared/klima-stufe.js?v=2"></script>
+    <script src="../shared/einstellungen.js?v=pn8"></script>
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+        // Tiermodus. Wahrheitsregel: „okay“ nur, wenn Panoptes das laufende Klima bestätigt (anzeige === 'ok');
+        // eine Innentemperatur nur, wenn das Auto sie wirklich misst (innenC), nie der Klima-Sollwert.
+        var Tier = {
+            s: null,
+            // Die große Karte spricht Leute am Fenster an: alle fünf Sprachen, die gewählte groß oben.
+            KARTE: {
+                de: { okay: 'Mein Tier ist okay.', klima: 'Klima läuft: {t}', klimaOhne: 'Klima läuft.', zurueck: 'Ich bin gleich zurück.',
+                      innen: 'Innen: {t}', pruefen: 'Klima aus.', informiert: 'Der Besitzer wurde benachrichtigt.' },
+                en: { okay: 'My pet is okay.', klima: 'Climate is on: {t}', klimaOhne: 'Climate is on.', zurueck: "I'll be right back.",
+                      innen: 'Inside: {t}', pruefen: 'Climate off.', informiert: 'The owner has been notified.' },
+                fr: { okay: 'Mon animal va bien.', klima: 'Climatisation en marche : {t}', klimaOhne: 'Climatisation en marche.',
+                      zurueck: 'Je reviens tout de suite.', innen: 'Intérieur : {t}', pruefen: 'Climatisation coupée.',
+                      informiert: 'Le propriétaire a été prévenu.' },
+                it: { okay: 'Il mio animale sta bene.', klima: 'Clima acceso: {t}', klimaOhne: 'Clima acceso.', zurueck: 'Torno subito.',
+                      innen: 'Interno: {t}', pruefen: 'Clima spento.', informiert: 'Il proprietario è stato avvisato.' },
+                nl: { okay: 'Mijn dier is in orde.', klima: 'Airco staat aan: {t}', klimaOhne: 'Airco staat aan.', zurueck: 'Ik ben zo terug.',
+                      innen: 'Binnen: {t}', pruefen: 'Airco uit.', informiert: 'De eigenaar is gewaarschuwd.' }
+            },
+            t: function (k, f, v) { return window.PanoptesShell ? PanoptesShell.tr(k, f, v) : f; },
+            lang: function () { try { var l = BYD.i18n.getLang(); return this.KARTE[l] ? l : 'de'; } catch (e) { return 'de'; } },
+            toast: function (m, ok) { if (window.BYD && BYD.utils && BYD.utils.toast) BYD.utils.toast(m, ok ? 'success' : 'error'); },
+            esc: function (x) { var d = document.createElement('div'); d.textContent = x == null ? '' : String(x); return d.innerHTML; },
+            ersetze: function (s, t) { return s.split('{t}').join(t); },
+            sollText: function (s) {
+                // Modelle mit Stufen-Anzeige: Stufe wie im Display; sonst °C (PanoptesKlimaStufe entscheidet)
+                if (window.PanoptesKlimaStufe) return PanoptesKlimaStufe.text(s.wunsch);
+                return s.wunsch + ' °C';
+            },
+            innenText: function (s) {
+                return s.innenC === null || s.innenC === undefined ? null : Math.round(Number(s.innenC)) + ' °C';
+            },
+            gross: function (an) {
+                var g = document.getElementById('tmGross');
+                if (!an) { g.className = ''; return; }
+                this.grossZeichnen();
+            },
+            grossZeichnen: function () {
+                var s = this.s, g = document.getElementById('tmGross');
+                if (!s || !s.aktiv) { g.className = ''; return; }
+                var ok = s.anzeige === 'ok', l = this.lang(), k = this.KARTE[l];
+                g.className = 'an' + (ok ? '' : ' pruefen');
+                var innen = this.innenText(s);
+                document.getElementById('gHaupt').textContent = ok ? k.okay : k.pruefen;
+                document.getElementById('gKlima').textContent = ok ? this.ersetze(k.klima, this.sollText(s)) : k.informiert;
+                document.getElementById('gZurueck').textContent = k.zurueck;
+                // Modell ohne belegte Innenmessung: „nicht verfügbar“; mit Messung, aber veraltet: „nicht messbar“
+                document.getElementById('gInnen').textContent = s.innenMessung === false
+                    ? this.t('tiermodus.innen_nicht_verfuegbar', 'Innentemperatur: nicht verfügbar')
+                    : this.ersetze(k.innen, innen === null ? this.t('tiermodus.innen_na', 'nicht messbar') : innen);
+                var h = '', self = this;
+                ['de', 'en', 'fr', 'it', 'nl'].forEach(function (x) {
+                    if (x === l) return;
+                    var a = self.KARTE[x];
+                    // Stufen-Text gibt es nur in der gewählten Sprache; °C ist überall gleich
+                    var klima = ok ? (s.stufenModell ? a.klimaOhne : self.ersetze(a.klima, s.wunsch + ' °C')) : a.informiert;
+                    h += '<div>' + self.esc((ok ? a.okay : a.pruefen) + ' ' + klima + ' ' + a.zurueck
+                        + (innen === null ? '' : ' ' + self.ersetze(a.innen, innen))) + '</div>';
+                });
+                document.getElementById('gAndere').innerHTML = h;
+                var offen = this.offen(s);
+                document.getElementById('gGesehen').style.display = offen ? '' : 'none';
+            },
+            offen: function (s) {
+                var p = s.probleme || [], q = s.quittiert || [];
+                for (var i = 0; i < p.length; i++) if (q.indexOf(p[i]) < 0) return true;
+                return false;
+            },
+            zeichne: function (s) {
+                this.s = s;
+                var an = !!s.aktiv;
+                document.getElementById('tmTitel').textContent = an ? this.t('tiermodus.an', 'Tiermodus läuft') : this.t('tiermodus.aus', 'Tiermodus ist aus');
+                var k = document.getElementById('tmSchalter');
+                k.textContent = an ? this.t('tiermodus.stop', 'Tiermodus beenden') : this.t('tiermodus.start', 'Tiermodus starten');
+                var f = !an && s.startFehler ? this.t('tiermodus.err_' + s.startFehler, this.t('tiermodus.err', 'Hat nicht geklappt.')) : '';
+                document.getElementById('tmFehler').textContent = f;
+                var p = an ? (s.probleme || []) : [], h = '', self = this;
+                p.forEach(function (c) { h += '<div>• ' + self.esc(self.t('tiermodus.problem_' + c, c)) + '</div>'; });
+                if (an && s.innenMessung === false) {
+                    h += '<div>' + self.esc(self.t('tiermodus.ohne_messung', 'Dieses Auto meldet keine Innentemperatur. Panoptes überwacht, ob das Klima läuft.')) + '</div>';
+                }
+                document.getElementById('tmProbleme').innerHTML = h;
+                document.getElementById('tmGesehen').style.display = an && this.offen(s) ? '' : 'none';
+                document.getElementById('tmGrossKnopf').style.display = an ? '' : 'none';
+                if (document.getElementById('tmGross').className) this.grossZeichnen();
+            },
+            laden: function () {
+                var self = this;
+                return fetch('/api/tiermodus', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; })
+                    .then(function (s) { if (s) self.zeichne(s); return s; }, function () { return null; });
+            },
+            senden: function (url, body) {
+                var self = this;
+                return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) })
+                    .then(function (r) { return r.json().catch(function () { return {}; }); })
+                    .then(function (r) {
+                        if (r && r.ok === false) {
+                            self.toast(self.t('tiermodus.err_' + (r.fehler || ''), self.t('tiermodus.err', 'Hat nicht geklappt.')), false);
+                        }
+                        return self.laden().then(function () { return r; });
+                    });
+            },
+            init: function () {
+                var self = this;
+                var starten = function () {
+                    self.senden('/api/tiermodus', { an: true }).then(function (r) {
+                        // Nach dem Start gleich die große Anzeige fürs Fenster
+                        if (r && r.ok) self.gross(true);
+                        else if (r && r.fehler === 'hinweis_fehlt') document.getElementById('tmHinweis').className = 'an';
+                    });
+                };
+                document.getElementById('tmSchalter').onclick = function () {
+                    if (self.s && self.s.aktiv) { self.senden('/api/tiermodus', { an: false }); return; }
+                    // Haftungshinweis vor dem ersten Start (und nach jeder Textänderung)
+                    if (self.s && self.s.hinweisBestaetigt === false) { document.getElementById('tmHinweis').className = 'an'; return; }
+                    starten();
+                };
+                document.getElementById('hNein').onclick = function () { document.getElementById('tmHinweis').className = ''; };
+                document.getElementById('hJa').onclick = function () {
+                    document.getElementById('tmHinweis').className = '';
+                    self.senden('/api/tiermodus/hinweis', { version: self.s ? self.s.hinweisVersion : '' }).then(function (r) {
+                        if (r && r.ok) starten();
+                    });
+                };
+                document.getElementById('tmGesehen').onclick = function () { self.senden('/api/tiermodus/gesehen'); };
+                document.getElementById('gGesehen').onclick = function (ev) { ev.stopPropagation(); self.senden('/api/tiermodus/gesehen'); };
+                document.getElementById('tmGrossKnopf').onclick = function () { self.gross(true); };
+                // Beenden aus der großen Anzeige: erst klein, dort ist der Knopf (kein versehentliches Beenden)
+                document.getElementById('gKlein').onclick = function (ev) { ev.stopPropagation(); self.gross(false); };
+                if (window.PanoptesEinstellungen) PanoptesEinstellungen.laden().then(function (store) {
+                    store.zeichne(document.getElementById('tmFelder'), { gruppe: 'tiermodus' });
+                });
+                document.addEventListener('panoptes:klima-anzeige', function () { if (self.s) self.zeichne(self.s); });
+                this.laden().then(function (s) { if (s && s.aktiv) self.gross(true); });
+                setInterval(function () { self.laden(); }, 10000);
+            }
+        };
+        BYD.i18n.init().then(function () {
+            BYD.core.init();
+            Tier.init();
+        });
+    </script>
+</body>
+</html>

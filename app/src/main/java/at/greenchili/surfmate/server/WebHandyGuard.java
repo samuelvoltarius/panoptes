@@ -36,6 +36,7 @@ public final class WebHandyGuard {
             "/api/bruecke", "/api/dev-view/",
             "/api/appupdate", "/api/update/",
             "/api/handy/",
+            "/api/dateien",   // Dateien Handy ↔ Auto: nur mit Recht „dateien“ der Kopplung dahinter (dateienErlaubt)
     };
 
     /** Seiten, die nur Sicherheits-Funktionen tragen. */
@@ -115,6 +116,19 @@ public final class WebHandyGuard {
         if (q >= 0) p = p.substring(0, q);
         if ("GET".equals(method)) return "/api/appupdate/status".equals(p);
         return "POST".equals(method) && ("/api/appupdate/installieren".equals(p) || "/api/appupdate/suchen".equals(p));
+    }
+
+    /**
+     * Dateien Handy ↔ Auto: die Web-Sitzung darf {@code /api/dateien} nur, wenn die Kopplung dahinter das Recht
+     * {@code dateien} hat (Standard aus, nie automatisch). Pfad-Tricks bleiben zu.
+     */
+    public static boolean dateienErlaubt(String pathOnly, boolean rechtDateien) {
+        if (!rechtDateien || pathOnly == null) return false;
+        String p = pathOnly;
+        int q = p.indexOf('?');
+        if (q >= 0) p = p.substring(0, q);
+        if (p.contains("..") || p.contains("//")) return false;
+        return p.equals(DateienApiHandler.PFAD) || p.startsWith(DateienApiHandler.PFAD + "/");
     }
 
     /** true, wenn die Web-Sitzung des Handys diesen Pfad nicht nutzen darf. */

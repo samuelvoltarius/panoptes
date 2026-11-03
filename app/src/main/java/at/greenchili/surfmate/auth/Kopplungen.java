@@ -249,10 +249,14 @@ public final class Kopplungen {
             // 0.1.34 Befehls-Log (Koordination + Projektinhaber 03.11.): ganzes Protokoll lesen, also auch was ANDERE Geräte am
             // Auto gemacht haben. Standard AUS, nie automatisch (auch nicht für Bestand), nur der Besitzer schaltet es ein.
             // Ohne das Recht sieht ein Handy nur seine eigenen Einträge.
-            RECHT_PROTOKOLL = "protokoll";
+            RECHT_PROTOKOLL = "protokoll",
+            // Dateien zwischen Handy und Auto (/api/dateien): Standard AUS, nie automatisch (auch nicht für Bestand),
+            // nur der Besitzer schaltet es ein (am Auto oder im Web mit Login).
+            RECHT_DATEIEN = "dateien";
     public static final java.util.List<String> RECHTE = java.util.Collections.unmodifiableList(
             java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_AUFSPERREN, RECHT_PUSH, RECHT_WEB, RECHT_KAMERA,
-                    RECHT_WALLBOX, RECHT_ROUTE, RECHT_UPDATE, RECHT_EREIGNISCLIP, RECHT_STANDBILD, RECHT_PROTOKOLL));
+                    RECHT_WALLBOX, RECHT_ROUTE, RECHT_UPDATE, RECHT_EREIGNISCLIP, RECHT_STANDBILD, RECHT_PROTOKOLL,
+                    RECHT_DATEIEN));
     /**
      * 0.1.30 Kern Sicherheit: Rechte, die auch Kopplungen ohne Handy-Rechte (cockpit, homeassistant, dienst) tragen
      * können. Standard AUS, nie automatisch gesetzt (auch nicht bei der Umstellung); nur der Besitzer schaltet sie ein.

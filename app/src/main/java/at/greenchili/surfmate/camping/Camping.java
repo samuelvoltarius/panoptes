@@ -261,6 +261,8 @@ public final class Camping {
 
     synchronized JSONObject einschalten(String quelle) {
         if (aktiv) return ok();
+        // Tiermodus hält das Klima selbst; zwei Funktionen am selben Klima gibt es nicht
+        if (Tiermodus.aktiv()) return fehler("tiermodus_laeuft");
         CampingRegler.Lage l = lage();
         if (l.fahrt != CampingRegler.Fahrt.STEHT) {
             return fehler(l.fahrt == CampingRegler.Fahrt.FAEHRT ? "nicht_geparkt" : "fahrzustand_unbekannt");

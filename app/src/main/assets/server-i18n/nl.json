@@ -182,6 +182,26 @@
     "camping_aus_hoechstdauer": "Kamperen uit (maximale duur bereikt)",
     "camping_plan_fehler": "Kamperen: geplande start niet mogelijk – reden in Panoptes",
     "camping_tuer_offen": "Kamperen: {0} geopend",
+    "tiermodus_an": "Huisdiermodus aan – airco draait",
+    "tiermodus_aus": "Huisdiermodus uit",
+    "tiermodus_aus_losgefahren": "Huisdiermodus uit: auto rijdt weg",
+    "tiermodus_ohne_fuehler": "Deze auto meldt geen binnentemperatuur. Panoptes bewaakt of de airco draait.",
+    "tiermodus_wieder_ok": "Huisdiermodus: airco draait weer",
+    "tiermodus_akku_bald": "Huisdiermodus: accu bijna op de ondergrens ({0} %)",
+    "tiermodus_alarm_klima_aus": "Airco UIT – controleer je dier!",
+    "tiermodus_alarm_zu_warm": "Te warm in de auto – controleer je dier!",
+    "tiermodus_alarm_unklar": "Airco onzeker – controleer je dier!",
+    "tiermodus_alarm_innen_veraltet": "Binnentemperatuur niet meetbaar – controleer je dier!",
+    "tiermodus_grund_klima_aus": "De airco is uit.",
+    "tiermodus_grund_auto_aus": "De auto is uitgeschakeld.",
+    "tiermodus_grund_klima_unbekannt": "Panoptes kan niet controleren of de airco draait.",
+    "tiermodus_grund_zu_warm": "Binnen {0} °C.",
+    "tiermodus_grund_innen_veraltet": "De binnentemperatuur is verouderd – de hittebeveiliging ziet nu niets.",
+    "tiermodus_grund_akku_grenze": "Accu op de ondergrens ({0} %) – airco uitgeschakeld.",
+    "tiermodus_grund_v12_niedrig": "Startaccu zwak – airco uitgeschakeld.",
+    "tiermodus_gesehen_hinweis": "Gezien? Tik in de app op „Gezien” of stuur /tier ok.",
+    "tiermodus_hinweis_text": "De huisdiermodus is een hulp, geen garantie. Airco, accu of software kunnen uitvallen. Meldingen kunnen te laat of helemaal niet aankomen. Laat je dier nooit alleen in de auto als je niet binnen een paar minuten terug kunt zijn. Je blijft zelf verantwoordelijk; Panoptes aanvaardt geen aansprakelijkheid.",
+    "tiermodus_hinweis_knopf": "Begrepen, ik ben zelf verantwoordelijk",
     "guard_stop_reason_soc": "hoofdaccu te leeg",
     "guard_stop_reason_v12": "12 V-accu te zwak",
     "guard_stop_reason_park": "lang geparkeerd",
@@ -294,6 +314,14 @@
       "camping_warnung": {
         "label": "Kamperen: waarschuwingen",
         "note": "Kamperen: accu dicht bij of op de ondergrens, zwakke 12V-accu, maximale duur bereikt."
+      },
+      "tiermodus_alarm": {
+        "label": "Huisdiermodus: alarm",
+        "note": "Airco uit, auto uit, te warm, accu of 12 V op de grens. Komt terug tot iemand op „Gezien” tikt."
+      },
+      "tiermodus_hinweis": {
+        "label": "Huisdiermodus: meldingen",
+        "note": "Huisdiermodus aan of uit, airco draait weer."
       },
       "surveillance_guard_stop": {
         "label": "Bewaker gepauzeerd / weer aan",
@@ -431,6 +459,24 @@
       "btn_fine": "✓ prima",
       "btn_warm": "☀ te warm"
     },
+    "tier": {
+      "status_off": "🐾 Huisdiermodus is uit. Inschakelen kan alleen op het autoscherm of in de Panoptes-app.",
+      "status_ok": "🐾 *Huisdiermodus aan* – airco draait.",
+      "status_check": "🚨 *Huisdiermodus aan – controleer je dier!*",
+      "failed": "⚠️ Ik kon de huisdiermodus nu niet uitlezen.",
+      "seen": "✅ Gezien – de melding komt pas terug als er iets nieuws gebeurt.",
+      "inside": "Binnen: {0} °C",
+      "only_app": "In- en uitschakelen alleen in de auto of in de app.",
+      "btn_seen": "✅ Gezien",
+      "btn_refresh": "🔄 Vernieuwen",
+      "problem_klima_aus": "Airco is uit",
+      "problem_auto_aus": "Auto is uitgeschakeld",
+      "problem_klima_unbekannt": "Status airco onbekend",
+      "problem_zu_warm": "Te warm in de auto",
+      "problem_innen_veraltet": "Binnentemperatuur verouderd – niet meetbaar",
+      "problem_akku_grenze": "Accu op de ondergrens – airco uit",
+      "problem_v12_niedrig": "Startaccu zwak – airco uit"
+    },
     "greeting": {
       "online": "👋 *Panoptes is er.*\nJe auto luistert weer. Tik op /help voor alle commando's."
     },
@@ -462,6 +508,7 @@
       "guard_view": "/guardian – Waakt de Bewaker?",
       "camping": "/camping aan · /camping uit – kamperen (bewaker bewoond, accu in de gaten)",
       "camping_view": "/camping – Staat kamperen aan?",
+      "tier": "/tier – Hoe gaat het met het dier in de auto? (`/tier ok` = Gezien)",
       "camera": "/camera – Nu een foto van elke camera",
       "clips": "/clips – Nieuwste opnames (bijv. `/clips 12`)",
       "where": "/where – Waar de auto geparkeerd staat",
@@ -868,11 +915,26 @@
       "aufsperren_unbestaetigt": "🔓 Ontgrendelopdracht via telefoon ‘{0}’ verzonden – bevestiging van de auto ontbreekt.",
       "aufsperren_abgelehnt": "🔒 Ontgrendelen via telefoon ‘{0}’ geweigerd ({1}).",
       "wallbox": "🔌 Laadpaal bediend vanaf telefoon „{0}”: {1}",
+      "tiermodus_an": "🐾 Huisdiermodus ingeschakeld via telefoon „{0}”.",
+      "tiermodus_aus": "🐾 Huisdiermodus uitgeschakeld via telefoon „{0}”.",
       "update_gestartet": "⬆️ Update naar {0} gestart door „{1}”. Panoptes is ongeveer 3–8 minuten weg."
     },
     "zurueck": {
       "text": "🚗 Welkom terug bij de auto. Hij stond {0} geparkeerd.",
       "mit_ereignissen": "🚗 Welkom terug bij de auto. Hij stond {0} geparkeerd, met {1} gebeurtenissen. Zie /wo of Panoptes."
+    },
+    "abschalt": {
+      "titel": "🅿️ *Geparkeerd*",
+      "fahrt": "Rit: {0} km · {1} · {2} kWh/100 km",
+      "fahrt_ohne_verbrauch": "Rit: {0} km · {1}",
+      "akku": "Accu: {0} % → {1} %",
+      "akku_jetzt": "Accu: {0} %",
+      "reichweite": "Bereik (volgens auto): {0} km",
+      "spannung": "12 V-accu: {0} V",
+      "sicherheit": "Bewaker actief: {0} · Vergrendeld: {1}",
+      "ja": "ja",
+      "nein": "nee",
+      "unbekannt": "onbekend"
     },
     "anmeldung": {
       "anfrage": "🔑 Een browser wil zich aanmelden bij Panoptes.\nControlegetal: {0}\nSta het alleen toe als hetzelfde getal op je scherm staat. Deze aanmelding kan niet ontgrendelen en geen beveiligingsinstellingen wijzigen.",
@@ -1761,6 +1823,7 @@
       "system": "Systeem",
       "update": "App-updates",
       "camping": "Kamperen",
+      "tiermodus": "Huisdiermodus",
       "energie": "Energie",
       "datenschutz": "Privacy",
       "laden": "Laden"
@@ -2041,6 +2104,28 @@
         "help": "Zonder aanraking wordt het scherm na zoveel seconden het donkere nachtscherm."
       }
     },
+    "tiermodus": {
+      "wunsch": {
+        "title": "Gewenste temperatuur",
+        "help": "Panoptes zet de airco hierop; de auto regelt zelf. Bij auto’s met standen (bijv. Dolphin Surf) is de waarde een stand: 21 = koelen stand 4, 25 = neutraal."
+      },
+      "alarmC": {
+        "title": "Alarm vanaf binnentemperatuur",
+        "help": "Wordt het binnen zo warm, dan komt er meteen een melding. Alleen bij auto’s die de binnentemperatuur echt meten."
+      },
+      "socGrenze": {
+        "title": "Ondergrens accu",
+        "help": "Hier schakelt de huisdiermodus de airco uit en waarschuwt luid „Airco UIT – controleer je dier!”. Nooit onder 15 %."
+      },
+      "wiederholenMinuten": {
+        "title": "Melding herhalen elke",
+        "help": "Zo vaak komt de melding terug tot iemand op „Gezien” tikt."
+      },
+      "cloud": {
+        "title": "Auto uit: airco via de BYD-cloud",
+        "help": "Gaat de auto uit, dan probeert Panoptes airco op afstand via de BYD-cloud (hooguit 30 minuten achter elkaar, dan een pauze). De melding „Airco UIT” komt toch. Standaard uit."
+      }
+    },
     "energie": {
       "profil": {
         "title": "Energie bij stilstand",
@@ -2060,6 +2145,16 @@
       "parkLeseSekunden": {
         "title": "Lezen bij parkeren elke … seconden",
         "help": "Hoe vaak Panoptes de waarden leest als de auto uit staat. 90 = zoals eerder. Bewaking en deuren melden nog steeds meteen."
+      }
+    },
+    "logs": {
+      "tage": {
+        "title": "Logs bewaren … dagen",
+        "help": "Hoe lang Panoptes oude logs bewaart, zodat je later kunt nagaan wat er gebeurd is. Ook na updates en herstarts. De oudste worden eerst verwijderd. Standaard 7."
+      },
+      "mb": {
+        "title": "Logs maximaal … MB per soort",
+        "help": "Hoeveel ruimte oude logs van één soort maximaal mogen innemen. Is het geheugen bijna vol, dan bewaart Panoptes automatisch minder. Standaard 50."
       }
     },
     "wetter": {
@@ -2085,6 +2180,18 @@
       "zurueckAmAuto": {
         "title": "Melding „terug bij de auto”",
         "help": "Stuurt bij het aanzetten van het contact na minstens 10 minuten parkeren een kort Telegram-bericht met parkeerduur en aantal gebeurtenissen. Standaard: uit."
+      },
+      "abschaltBericht": {
+        "title": "Parkeerverslag in Telegram",
+        "help": "Stuurt bij het uitzetten een kort Telegram-bericht: afstand, duur en verbruik van de rit, accu voor en na, bereik, 12 V-accu, of de Bewaker actief is en de auto vergrendeld. Zonder locatie. Niets na kort manoeuvreren. Standaard: aan, werkt alleen met ingestelde Telegram."
+      },
+      "abschaltBerichtMinMeter": {
+        "title": "Parkeerverslag pas vanaf afstand",
+        "help": "Kortere ritten, bijvoorbeeld manoeuvreren, sturen geen verslag. Standaard: 300 m."
+      },
+      "abschaltBerichtMinMinuten": {
+        "title": "Parkeerverslag pas vanaf rijtijd",
+        "help": "Kortere ritten sturen geen verslag. Standaard: 2 min."
       }
     },
     "hinweise": {
@@ -2239,6 +2346,20 @@
       "verlustHinweis": {
         "title": "Melding over laadverlies tonen",
         "help": "Legt één keer uit dat de kosten het laadverlies bevatten. Uit na „Begrepen”."
+      },
+      "saeuleNachschlagen": {
+        "title": "Laadpaal opzoeken in de routeplanner",
+        "help": "Na het laden vraagt Panoptes één keer aan de routeplanner welke laadpaal het was (bijv. „Lidl …”). Alleen een ruwe positie (ongeveer 1 km) gaat naar buiten, zonder account. Nooit thuis en op privéplekken."
+      },
+      "standardKwh": {
+        "title": "Laadhoeveelheid voor „Goedkoopste in de buurt”",
+        "help": "De navigatie vergelijkt laadpalen in de buurt voor deze hoeveelheid, inclusief heen en terug."
+      }
+    },
+    "sprache": {
+      "weckwortMessung": {
+        "title": "Wekwoordmeting toestaan",
+        "help": "Alleen om te meten: staat toe om op het autoscherm onder Testfuncties een meting te starten of een spraakwekwoord naast de BYD-spraakassistent werkt. Legt alleen getallen vast (CPU-belasting, geheugen, valse activeringen). Er wordt geen geluid opgeslagen of verzonden. Tijdens de meting staat bovenaan „Microfoon aan (meting)”. Standaard uit."
       }
     },
     "zaehlen": {
@@ -2363,6 +2484,8 @@
     },
     "automation_run_accepted": "De regel wordt uitgevoerd.",
     "automation_created_manual": "Aangemaakt en alleen voor handmatig starten opgeslagen. Controleer de regel voordat je hem automatisch laat lopen.",
+    "ki_sperre_start": "Dit mag de assistent niet starten: hij start alleen regels met klimaat, stoelverwarming, zonnescherm of meldingen op het scherm. Deze regel doet meer (bijvoorbeeld lichten, claxon, ramen, achterklep, sloten, geluid of MQTT), ook via een actiegroep. Start hem zelf via Regels of met een knop.",
+    "ki_sperre_entwurf": "De assistent maakt alleen regels met klimaat, stoelverwarming, zonnescherm of meldingen op het scherm. Andere regels maak je zelf in de regel-editor.",
     "insight_title": {
       "vehicle_state": "Toestand van de auto",
       "latest_trip": "Laatste rit",
@@ -2519,5 +2642,19 @@
     "grund_akku": "Gestopt om de accu te sparen.",
     "grund_v12": "Gestopt om de kleine 12V-accu te sparen.",
     "grund_lange_geparkt": "Gestopt na lang parkeren, om stroom te sparen."
+  },
+  "rechte_heilung": {
+    "titel": "Panoptes heeft rechten verloren",
+    "text": "De auto heeft deze rechten van Panoptes afgenomen en Panoptes kon ze niet zelf herstellen: {0}. Open Panoptes één keer op het scherm van de auto. Helpt dat niet: Android-instellingen, Apps, Panoptes, Rechten, en sta de genoemde toe.",
+    "wort_kamera": "Camera",
+    "wort_mikrofon": "Microfoon",
+    "wort_standort": "Locatie",
+    "wort_speicher": "Opslag",
+    "wort_ueberlagern": "Weergeven over andere apps",
+    "wort_hintergrund": "Op de achtergrond draaien",
+    "wort_einstellungen": "Systeeminstellingen wijzigen"
+  },
+  "dateien": {
+    "recht_fehlt": "Recht Bestanden ontbreekt – zet het aan in Panoptes onder Gekoppelde apparaten."
   }
 }

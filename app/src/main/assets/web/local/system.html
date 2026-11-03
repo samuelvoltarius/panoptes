@@ -7,7 +7,7 @@
     <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
     <script src="../shared/theme.js?v=13"></script>
     <script src="../shared/kartenquelle.js?v=5"></script>
-    <script src="../shared/app-shell.js?v=pn28"></script>
+    <script src="../shared/app-shell.js?v=pn30"></script>
     <link rel="stylesheet" href="../shared/styles.css?v=pn11">
     <style>
         .sys-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -364,6 +364,10 @@
                         <div id="startAnsichtWahl"></div>
                         <!-- 0.1.9.1: Blitzer-Band am Bildschirm im Auto (anzeige.bandGroesse/bandPosition, Kern-Schema) -->
                         <div id="anzeigeBand"></div>
+                        <!-- Bildschirm reinigen: 30 s alle Berührungen sperren, nur in P, lang drücken beendet (reinigung.js) -->
+                        <h3 data-i18n="reinigung.titel">Bildschirm reinigen</h3>
+                        <div class="sys-note" data-i18n="reinigung.hilfe">Sperrt 30 Sekunden lang jede Berührung, damit du den Bildschirm abwischen kannst. Nur in P. Lange drücken beendet sofort.</div>
+                        <button class="btn" type="button" data-reinigung data-nur-display data-i18n="reinigung.knopf">Bildschirm reinigen</button>
                     </div>
                 </div>
 
@@ -548,7 +552,8 @@
     <script src="../shared/einrichtung-web.js?v=8"></script>
     <script src="../shared/overdrive-verlauf.js?v=2"></script>
     <script src="../shared/notzugang.js?v=1"></script>
-    <script src="../shared/befehlslog.js?v=2"></script>
+    <script src="../shared/befehlslog.js?v=3"></script>
+    <script src="../shared/reinigung.js?v=1"></script>
     <script>
         (function () {
             if (window.PanoptesDarstellung) {
@@ -896,7 +901,8 @@
                     wallbox: self.t('system.handy_wort_wallbox', 'Wallbox'), route: self.t('system.handy_wort_route', 'Route'),
                     update: self.t('system.handy_wort_update', 'Update'),
                     ereignisclip: self.t('system.handy_wort_ereignisclip', 'Unfall-Clips'),
-                    protokoll: self.t('system.handy_wort_protokoll', 'Protokoll') };
+                    protokoll: self.t('system.handy_wort_protokoll', 'Protokoll'),
+                    dateien: self.t('dateien.recht_wort', 'Dateien') };
                 var namen = { klima: self.t('system.handy_recht_klima', 'Klima'), zusperren: self.t('system.handy_recht_zusperren', 'Zusperren'),
                     aufsperren: self.t('system.handy_recht_aufsperren', 'Aufsperren (mit Fingerabdruck/Face ID)'), push: self.t('system.handy_recht_push', 'Benachrichtigungen'),
                     web: self.t('system.handy_recht_web', 'Weboberfläche in der App (ohne PIN, Kopplungen, Netz, Updates)'),
@@ -905,14 +911,15 @@
                     route: self.t('system.handy_recht_route', 'Route ins Auto schicken (startet nichts von selbst)'),
                     update: self.t('system.handy_recht_update', 'Panoptes aktualisieren (nur geparkt)'),
                     ereignisclip: self.t('system.handy_recht_ereignisclip', 'Unfall-Clips aufs Handy erlauben (nur auf Knopfdruck am Handy)'),
-                    protokoll: self.t('system.handy_recht_protokoll', 'Sieht, was andere Geräte am Auto gemacht haben') };
+                    protokoll: self.t('system.handy_recht_protokoll', 'Sieht, was andere Geräte am Auto gemacht haben'),
+                    dateien: self.t('dateien.recht_info', 'Dateien zwischen Handy und Auto austauschen (höchstens 200 MB, keine Apps)') };
                 function schalter(k, an) {
                     var info = namen[k] !== wort[k] ? '<span class="pn-recht-info">' + self.esc(namen[k]) + '</span>' : '';
                     return '<label class="pn-recht"><span class="pn-recht-text"><span class="pn-recht-wort">' + self.esc(wort[k]) + '</span>' + info + '</span>'
                         + '<span class="toggle-switch"><input type="checkbox" data-handy-recht="' + k + '" data-id="' + self.esc(g.id) + '"'
                         + (an ? ' checked' : '') + ' aria-label="' + self.esc(wort[k]) + '"><span class="toggle-slider"></span></span></label>';
                 }
-                var alle = ['klima', 'zusperren', 'aufsperren', 'push', 'web', 'kamera', 'wallbox', 'route', 'update', 'ereignisclip', 'protokoll'];
+                var alle = ['klima', 'zusperren', 'aufsperren', 'push', 'web', 'kamera', 'wallbox', 'route', 'update', 'ereignisclip', 'protokoll', 'dateien'];
                 var hat = alle.filter(function (k) { return r.indexOf(k) >= 0; });
                 var fehlt = alle.filter(function (k) { return r.indexOf(k) < 0; });
                 var html = '<div class="pn-rechte">';
@@ -1051,6 +1058,12 @@
                 // 0.1.26.1 Panoptes aktualisieren vom Handy: eigene Rückfrage, Standard aus
                 if (cb.getAttribute('data-handy-recht') === 'update' && cb.checked
                     && !window.confirm(self.t('system.handy_update_confirm', 'Dieses Gerät darf dann Panoptes aktualisieren – nur auf eine freigegebene Version und nur, wenn das Auto in P steht und aus ist. Du bekommst bei jedem Start eine Telegram-Nachricht. Einschalten?'))) {
+                    cb.checked = false;
+                    return;
+                }
+                // Dateien Handy ↔ Auto: eigene Rückfrage, Standard aus
+                if (cb.getAttribute('data-handy-recht') === 'dateien' && cb.checked
+                    && !window.confirm(self.t('dateien.recht_confirm', 'Dieses Handy darf dann Dateien ins Auto laden, herunterladen und einzeln löschen – nur im Panoptes-Ordner, höchstens 200 MB je Datei, keine Apps. Nichts wird ausgeführt. Jede Aktion steht im Protokoll. Einschalten?'))) {
                     cb.checked = false;
                     return;
                 }

@@ -93,6 +93,16 @@ public class TripApiHandler {
                 return handleGetRange();
             }
 
+            // 03.11.2026: GET /api/trips/verbrauch-temperatur?tage=365 – Kurve Verbrauch gegen Außentemperatur
+            if (path.equals("/api/trips/verbrauch-temperatur") && "GET".equals(method)) {
+                return handleVerbrauchTemperatur(params);
+            }
+
+            // 03.11.2026: GET /api/trips/standverlust?tage=90 – Verlust im Stand, Wächter an/aus getrennt
+            if (path.equals("/api/trips/standverlust") && "GET".equals(method)) {
+                return handleStandverlust(params);
+            }
+
             // Route: GET/POST /api/trips/config
             if (path.equals("/api/trips/config")) {
                 if ("GET".equals(method)) return handleGetConfig();
@@ -178,6 +188,37 @@ public class TripApiHandler {
     }
 
     // ==================== ENDPOINT HANDLERS ====================
+
+    static int tage(Map<String, String> params, int standard, int max) {
+        try {
+            String s = params == null ? null : params.get("tage");
+            int v = s == null ? standard : Integer.parseInt(s.trim());
+            return Math.max(1, Math.min(max, v));
+        } catch (Exception e) {
+            return standard;
+        }
+    }
+
+    /** Kurve Verbrauch gegen Außentemperatur aus den gespeicherten Fahrten (ohne Orte). */
+    private JSONObject handleVerbrauchTemperatur(Map<String, String> params) throws Exception {
+        int tage = tage(params, 365, 3650);
+        TripDatabase db = manager != null ? manager.getDatabase() : null;
+        if (db == null) return errorResponse("Trip analytics not initialized", 503);
+        JSONObject out = VerbrauchTemperatur.berechne(db.getTrips(tage, 5000));
+        out.put("success", true);
+        out.put("tage", tage);
+        return out;
+    }
+
+    /** Verlust im Stand aus den Zündungs-Ereignissen der Akku-Datenbank (ohne Orte). */
+    private JSONObject handleStandverlust(Map<String, String> params) throws Exception {
+        int tage = tage(params, 90, 730);
+        JSONObject out = at.greenchili.surfmate.monitor.SocHistoryDatabase.getInstance()
+                .getStandverlust(System.currentTimeMillis() - tage * 86_400_000L);
+        out.put("success", true);
+        out.put("tage", tage);
+        return out;
+    }
 
     /**
      * GET /api/trips/bootstrap — composite first-paint payload for trips.html.

@@ -1763,6 +1763,10 @@ public class RecordingsApiHandler {
         File srtFile = new File(sidecarDir, stem + ".srt");
         if (srtFile.exists()) srtFile.delete();
 
+        // 0.1.36 Auslöser-Datei (<stem>.ausloeser.json) geht mit dem Clip.
+        File ausloeserFile = new File(sidecarDir, stem + at.greenchili.surfmate.recording.AusloeserInfo.ENDUNG);
+        if (ausloeserFile.exists()) ausloeserFile.delete();
+
         // Cached thumbnail
         File thumbFile = new File(getThumbnailCacheDir(), stem + ".jpg");
         if (thumbFile.exists()) thumbFile.delete();

@@ -182,6 +182,26 @@
     "camping_aus_hoechstdauer": "Campeggio spento (durata massima raggiunta)",
     "camping_plan_fehler": "Campeggio: avvio pianificato non possibile – motivo in Panoptes",
     "camping_tuer_offen": "Campeggio: {0} aperta",
+    "tiermodus_an": "Modalità animale attiva – il clima è acceso",
+    "tiermodus_aus": "Modalità animale disattivata",
+    "tiermodus_aus_losgefahren": "Modalità animale disattivata: l’auto è partita",
+    "tiermodus_ohne_fuehler": "Quest’auto non comunica la temperatura interna. Panoptes controlla se il clima è acceso.",
+    "tiermodus_wieder_ok": "Modalità animale: il clima è di nuovo acceso",
+    "tiermodus_akku_bald": "Modalità animale: batteria quasi al limite minimo ({0} %)",
+    "tiermodus_alarm_klima_aus": "Clima SPENTO – controlla l’animale!",
+    "tiermodus_alarm_zu_warm": "Troppo caldo in auto – controlla l’animale!",
+    "tiermodus_alarm_unklar": "Clima incerto – controlla l’animale!",
+    "tiermodus_alarm_innen_veraltet": "Temperatura interna non misurabile – controlla l’animale!",
+    "tiermodus_grund_klima_aus": "Il clima è spento.",
+    "tiermodus_grund_auto_aus": "L’auto è spenta.",
+    "tiermodus_grund_klima_unbekannt": "Panoptes non può verificare se il clima è acceso.",
+    "tiermodus_grund_zu_warm": "Interno {0} °C.",
+    "tiermodus_grund_innen_veraltet": "La temperatura interna non è aggiornata – la protezione dal caldo al momento è cieca.",
+    "tiermodus_grund_akku_grenze": "Batteria al limite minimo ({0} %) – clima spento.",
+    "tiermodus_grund_v12_niedrig": "Batteria di avviamento debole – clima spento.",
+    "tiermodus_gesehen_hinweis": "Visto? Tocca «Visto» nell’app o invia /tier ok.",
+    "tiermodus_hinweis_text": "La modalità animale è un aiuto, non una garanzia. Clima, batteria o software possono guastarsi. I messaggi possono arrivare in ritardo o non arrivare affatto. Non lasciare mai l’animale da solo in auto se non puoi tornare entro pochi minuti. La responsabilità resta tua, Panoptes non si assume alcuna responsabilità.",
+    "tiermodus_hinweis_knopf": "Ho capito, la responsabilità è mia",
     "guard_stop_reason_soc": "batteria di trazione scarica",
     "guard_stop_reason_v12": "batteria da 12 V debole",
     "guard_stop_reason_park": "parcheggiata da molto tempo",
@@ -294,6 +314,14 @@
       "camping_warnung": {
         "label": "Campeggio: avvertenze",
         "note": "Campeggio: batteria vicina o al limite minimo, batteria 12 V debole, durata massima raggiunta."
+      },
+      "tiermodus_alarm": {
+        "label": "Modalità animale: allarme",
+        "note": "Clima spento, auto spenta, troppo caldo, batteria o 12 V al limite. Si ripete finché qualcuno tocca «Visto»."
+      },
+      "tiermodus_hinweis": {
+        "label": "Modalità animale: avvisi",
+        "note": "Modalità animale attivata o disattivata, clima di nuovo acceso."
       },
       "surveillance_guard_stop": {
         "label": "Guardiano in pausa / di nuovo attivo",
@@ -431,6 +459,24 @@
       "btn_fine": "✓ va bene",
       "btn_warm": "☀ troppo caldo"
     },
+    "tier": {
+      "status_off": "🐾 La modalità animale è disattivata. Si attiva solo dallo schermo dell’auto o nell’app Panoptes.",
+      "status_ok": "🐾 *Modalità animale attiva* – il clima è acceso.",
+      "status_check": "🚨 *Modalità animale attiva – controlla l’animale!*",
+      "failed": "⚠️ Non riesco a leggere la modalità animale in questo momento.",
+      "seen": "✅ Visto – il messaggio torna solo se succede qualcosa di nuovo.",
+      "inside": "Interno: {0} °C",
+      "only_app": "Attivare e disattivare solo in auto o nell’app.",
+      "btn_seen": "✅ Visto",
+      "btn_refresh": "🔄 Aggiorna",
+      "problem_klima_aus": "Il clima è spento",
+      "problem_auto_aus": "L’auto è spenta",
+      "problem_klima_unbekannt": "Stato del clima sconosciuto",
+      "problem_zu_warm": "Troppo caldo in auto",
+      "problem_innen_veraltet": "Temperatura interna non aggiornata – non misurabile",
+      "problem_akku_grenze": "Batteria al limite minimo – clima spento",
+      "problem_v12_niedrig": "Batteria di avviamento debole – clima spento"
+    },
     "greeting": {
       "online": "👋 *Panoptes è qui.*\nLa tua auto è di nuovo in ascolto. Tocca /help per vedere tutti i comandi."
     },
@@ -462,6 +508,7 @@
       "guard_view": "/guardian – Il Guardiano è sveglio?",
       "camping": "/camping on · /camping off – campeggio (Guardiano abitato, batteria sorvegliata)",
       "camping_view": "/camping – Il campeggio è attivo?",
+      "tier": "/tier – Come sta l’animale in auto? (`/tier ok` = Visto)",
       "camera": "/camera – Un'immagine da ogni telecamera, adesso",
       "clips": "/clips – Ultime registrazioni (ad es. `/clips 12`)",
       "where": "/where – Dove è parcheggiata l'auto",
@@ -868,11 +915,26 @@
       "aufsperren_unbestaetigt": "🔓 Comando di apertura inviato tramite il telefono «{0}» – manca la conferma dall'auto.",
       "aufsperren_abgelehnt": "🔒 Apertura tramite il telefono «{0}» rifiutata ({1}).",
       "wallbox": "🔌 Wallbox comandata dal telefono «{0}»: {1}",
+      "tiermodus_an": "🐾 Modalità animale attivata dal telefono «{0}».",
+      "tiermodus_aus": "🐾 Modalità animale disattivata dal telefono «{0}».",
       "update_gestartet": "⬆️ Aggiornamento a {0} avviato da «{1}». Panoptes non sarà disponibile per circa 3–8 minuti."
     },
     "zurueck": {
       "text": "🚗 Bentornato all’auto. Era parcheggiata da {0}.",
       "mit_ereignissen": "🚗 Bentornato all’auto. Era parcheggiata da {0}, con {1} eventi. Vedi /wo o Panoptes."
+    },
+    "abschalt": {
+      "titel": "🅿️ *Parcheggiata*",
+      "fahrt": "Viaggio: {0} km · {1} · {2} kWh/100 km",
+      "fahrt_ohne_verbrauch": "Viaggio: {0} km · {1}",
+      "akku": "Batteria: {0} % → {1} %",
+      "akku_jetzt": "Batteria: {0} %",
+      "reichweite": "Autonomia (secondo l’auto): {0} km",
+      "spannung": "Batteria da 12 V: {0} V",
+      "sicherheit": "Guardiano attivo: {0} · Chiusa: {1}",
+      "ja": "sì",
+      "nein": "no",
+      "unbekannt": "sconosciuto"
     },
     "anmeldung": {
       "anfrage": "🔑 Un browser vuole accedere a Panoptes.\nNumero di controllo: {0}\nConsenti solo se sul tuo schermo c’è lo stesso numero. Questo accesso non può sbloccare né modificare le impostazioni di sicurezza.",
@@ -1761,6 +1823,7 @@
       "system": "Sistema",
       "update": "Aggiornamenti dell'app",
       "camping": "Campeggio",
+      "tiermodus": "Modalità animale",
       "energie": "Energia",
       "datenschutz": "Privacy",
       "laden": "Ricarica"
@@ -2041,6 +2104,28 @@
         "help": "Senza tocchi lo schermo diventa lo schermo notturno scuro dopo questi secondi."
       }
     },
+    "tiermodus": {
+      "wunsch": {
+        "title": "Temperatura desiderata",
+        "help": "Panoptes imposta il clima su questo valore; l’auto regola da sola. Nelle auto con livelli (es. Dolphin Surf) il valore è un livello: 21 = raffreddare livello 4, 25 = neutro."
+      },
+      "alarmC": {
+        "title": "Allarme da temperatura interna",
+        "help": "Se dentro fa così caldo, arriva subito un messaggio. Solo per auto che misurano davvero la temperatura interna."
+      },
+      "socGrenze": {
+        "title": "Limite minimo batteria",
+        "help": "Qui la modalità animale spegne il clima e avvisa forte «Clima SPENTO – controlla l’animale!». Mai sotto il 15 %."
+      },
+      "wiederholenMinuten": {
+        "title": "Ripeti il messaggio ogni",
+        "help": "Il messaggio torna con questa frequenza finché qualcuno tocca «Visto»."
+      },
+      "cloud": {
+        "title": "Auto spenta: clima tramite cloud BYD",
+        "help": "Se l’auto si spegne, Panoptes prova il clima a distanza tramite il cloud BYD (al massimo 30 minuti di fila, poi una pausa). Il messaggio «Clima SPENTO» arriva comunque. Disattivato di default."
+      }
+    },
     "energie": {
       "profil": {
         "title": "Energia da fermo",
@@ -2060,6 +2145,16 @@
       "parkLeseSekunden": {
         "title": "Lettura da parcheggiata ogni … secondi",
         "help": "Quanto spesso Panoptes legge i valori ad auto spenta. 90 = come prima. Guardia e porte avvisano comunque subito."
+      }
+    },
+    "logs": {
+      "tage": {
+        "title": "Conserva i log per … giorni",
+        "help": "Per quanto tempo Panoptes conserva i vecchi log, per controllare in seguito cosa è successo. Anche dopo aggiornamenti e riavvii. I più vecchi vengono eliminati per primi. Predefinito 7."
+      },
+      "mb": {
+        "title": "Log al massimo … MB per tipo",
+        "help": "Spazio massimo per i vecchi log di uno stesso tipo. Se la memoria è quasi piena, Panoptes ne tiene automaticamente meno. Predefinito 50."
       }
     },
     "wetter": {
@@ -2085,6 +2180,18 @@
       "zurueckAmAuto": {
         "title": "Messaggio “di nuovo all’auto”",
         "help": "All’accensione dopo almeno 10 minuti di sosta, invia un breve messaggio Telegram con durata e numero di eventi. Predefinito: disattivato."
+      },
+      "abschaltBericht": {
+        "title": "Resoconto di parcheggio su Telegram",
+        "help": "Allo spegnimento invia un breve messaggio Telegram: distanza, durata e consumo del viaggio, batteria prima e dopo, autonomia, batteria da 12 V, se il Guardiano è attivo e l’auto è chiusa. Senza luogo. Nulla dopo una breve manovra. Predefinito: attivo, funziona solo con Telegram configurato."
+      },
+      "abschaltBerichtMinMeter": {
+        "title": "Resoconto solo da questa distanza",
+        "help": "I viaggi più brevi, ad esempio le manovre, non inviano un resoconto. Predefinito: 300 m."
+      },
+      "abschaltBerichtMinMinuten": {
+        "title": "Resoconto solo da questa durata",
+        "help": "I viaggi più brevi non inviano un resoconto. Predefinito: 2 min."
       }
     },
     "hinweise": {
@@ -2239,6 +2346,20 @@
       "verlustHinweis": {
         "title": "Mostra avviso sulla perdita di ricarica",
         "help": "Spiega una volta che i costi includono la perdita di ricarica. Si spegne dopo «Capito»."
+      },
+      "saeuleNachschlagen": {
+        "title": "Cerca la colonnina nel pianificatore di percorso",
+        "help": "Dopo la ricarica Panoptes chiede una volta al pianificatore di percorso quale colonnina era (ad es. «Lidl …»). Viene inviata solo una posizione approssimativa (circa 1 km), senza account. Mai a casa né nei luoghi privati."
+      },
+      "standardKwh": {
+        "title": "Quantità di ricarica per “Più economica vicino”",
+        "help": "La navigazione confronta le colonnine vicine per questa quantità, compreso il tragitto di andata e ritorno."
+      }
+    },
+    "sprache": {
+      "weckwortMessung": {
+        "title": "Consenti misura della parola di attivazione",
+        "help": "Solo per misurare: consente di avviare sullo schermo dell’auto, in Funzioni di prova, una misura per capire se una parola di attivazione vocale funziona accanto all’assistente vocale BYD. Registra solo numeri (carico CPU, memoria, attivazioni errate). Nessun audio viene salvato o inviato. Durante la misura in alto compare «Microfono attivo (misura)». Disattivato per impostazione predefinita."
       }
     },
     "zaehlen": {
@@ -2363,6 +2484,8 @@
     },
     "automation_run_accepted": "La regola è in esecuzione.",
     "automation_created_manual": "Creata e salvata solo per l'avvio manuale. Controllala prima di farla eseguire automaticamente.",
+    "ki_sperre_start": "L’assistente non può avviarla: avvia solo regole con clima, riscaldamento sedili, tendina parasole o avvisi sullo schermo. Questa regola fa di più (per esempio luci, clacson, finestrini, portellone, serrature, audio o MQTT), anche tramite un gruppo di azioni. Avviala tu da Regole o con un pulsante.",
+    "ki_sperre_entwurf": "L’assistente crea solo regole con clima, riscaldamento sedili, tendina parasole o avvisi sullo schermo. Crea tu le altre regole nell’editor delle regole.",
     "insight_title": {
       "vehicle_state": "Stato dell'auto",
       "latest_trip": "Ultimo viaggio",
@@ -2519,5 +2642,19 @@
     "grund_akku": "Fermato per proteggere la batteria.",
     "grund_v12": "Fermato per proteggere la piccola batteria 12 V.",
     "grund_lange_geparkt": "Fermato dopo una lunga sosta, per risparmiare energia."
+  },
+  "rechte_heilung": {
+    "titel": "Panoptes ha perso delle autorizzazioni",
+    "text": "L’auto ha tolto queste autorizzazioni a Panoptes e Panoptes non è riuscito a ripristinarle: {0}. Apri Panoptes una volta sullo schermo dell’auto. Se non basta: Impostazioni Android, App, Panoptes, Autorizzazioni, e consenti quelle indicate.",
+    "wort_kamera": "Fotocamera",
+    "wort_mikrofon": "Microfono",
+    "wort_standort": "Posizione",
+    "wort_speicher": "Memoria",
+    "wort_ueberlagern": "Mostra sopra altre app",
+    "wort_hintergrund": "Esecuzione in background",
+    "wort_einstellungen": "Modifica impostazioni di sistema"
+  },
+  "dateien": {
+    "recht_fehlt": "Manca l’autorizzazione File – attivala in Panoptes in Dispositivi associati."
   }
 }

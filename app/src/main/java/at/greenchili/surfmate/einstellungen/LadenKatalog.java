@@ -118,6 +118,17 @@ public final class LadenKatalog {
         gruppe(hw, r += 10);
         hw.zugriff = Feld.standardZugriff("laden.verlustHinweis");
         l.add(hw);
+        // Ladesäule erkennen (03.11.2026): nach jedem Laden einmal den eigenen Planer fragen (Position grob, ohne
+        // Schlüssel), nie an privaten Orten. Ab Werk an (Projektinhaber). Ohne laden.stand.
+        Feld sn = new Feld("laden.saeuleNachschlagen", Feld.Typ.BOOL);
+        sn.standard = true;
+        gruppe(sn, r += 10);
+        sn.zugriff = Feld.standardZugriff("laden.saeuleNachschlagen");
+        l.add(sn);
+        // „Günstigste in der Nähe“ (03.11.2026): angenommene Lademenge für den Preisvergleich in der Navi. Ohne laden.stand.
+        Feld sk = gruppe(zahl("laden.standardKwh", 30, 5, 100, "kWh", false), r += 10);
+        sk.zugriff = Feld.standardZugriff("laden.standardKwh");
+        l.add(sk);
         return l;
     }
 

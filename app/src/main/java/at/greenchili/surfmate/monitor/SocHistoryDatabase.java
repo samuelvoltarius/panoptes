@@ -756,6 +756,7 @@ public class SocHistoryDatabase {
                     stmt.execute("ALTER TABLE " + TABLE_CHARGING + " ADD COLUMN IF NOT EXISTS " + col + ";");
                 } catch (Exception ignored) {}
             }
+            stationSpaltenSichern(connection);
             repairDuplicateChargingStartTimes();
             stmt.execute(
                     "CREATE UNIQUE INDEX IF NOT EXISTS uq_charging_start"
@@ -864,6 +865,12 @@ public class SocHistoryDatabase {
             stmt.execute(
                 "CREATE INDEX IF NOT EXISTS idx_acc_events_ts ON " + TABLE_ACC_EVENTS + "(timestamp DESC);"
             );
+            // 03.11.2026 Verlust im Stand: Wächter scharf beim Abstellen (nachgetragen) bzw. vor dem Einschalten.
+            // NULL = nicht belegt (alte Zeilen, Daemon nicht wach) – zählt dann als „unbekannt“, nie geraten.
+            try {
+                stmt.execute("ALTER TABLE " + TABLE_ACC_EVENTS
+                        + " ADD COLUMN IF NOT EXISTS waechter_scharf INTEGER DEFAULT NULL;");
+            } catch (Exception ignored) {}
 
             logger.info("acc_events table ready (migration idempotent)");
         }
@@ -2508,6 +2515,11 @@ public class SocHistoryDatabase {
                     String.format("%.1f", chargingPeakPower) + " kW, " +
                     (isDc == 1 ? "DC" : isDc == 0 ? "AC" : "?") + ", " +
                     String.format("%.0f", packTemp) + "°C)");
+                // 03.11.2026: Ladesäule erkennen – genau eine Anfrage je Ladeende, asynchron, nur im Daemon aktiv.
+                try {
+                    at.greenchili.surfmate.charging.LadesaeuleDienst.nachLadeende(this, chargingStartTime);
+                } catch (Throwable ignored) {
+                }
 
                 // Publish the committed close to memory only after both the row and daily rollup are
                 // durable. Retain the final counter solely as the next session's stale-value fence.
@@ -10096,9 +10108,192 @@ public class SocHistoryDatabase {
             preisQuelleDa = spalteDa(conn, "PREIS_QUELLE") && spalteDa(conn, "NACHFRAGE");
             saeuleSpaltenConn = conn;
         }
+        if (conn != stationSpaltenConn) {
+            stationSpaltenDa = spalteDa(conn, "ZUORDNUNG") && spalteDa(conn, "STATION_NAME")
+                    && spalteDa(conn, "BETREIBER") && spalteDa(conn, "STATION_ID") && spalteDa(conn, "STATION_ART");
+            stationSpaltenConn = conn;
+        }
         return CHARGING_V2_COLS
                 + (preisQuelleDa ? ", preis_quelle, nachfrage" : "")
-                + (saeuleSpaltenDa ? ", saeule_kwh, saeule_betrag" : "");
+                + (saeuleSpaltenDa ? ", saeule_kwh, saeule_betrag" : "")
+                + (stationSpaltenDa ? ", station_id, station_name, betreiber, station_art, zuordnung" : "");
+    }
+
+    private Connection stationSpaltenConn;
+    private boolean stationSpaltenDa;
+
+    // ==================== LADESÄULE (03.11.2026, LadesaeuleZuordnung) ====================
+
+    /**
+     * Spalten der erkannten Ladesäule, idempotent. Läuft in {@code createTables} und vor jedem Schreiben, damit eine
+     * alte Tabelle ohne diese Spalten (Migration fehlgeschlagen, Test, Altstand) nie zum Fehler wird. Altdaten und
+     * {@code place_label} bleiben unverändert; neue Spalten starten leer.
+     */
+    static void stationSpaltenSichern(Connection conn) {
+        if (conn == null) return;
+        String[] cols = {
+                "station_id VARCHAR(64) DEFAULT NULL",
+                "station_name VARCHAR(128) DEFAULT NULL",
+                "betreiber VARCHAR(96) DEFAULT NULL",
+                "station_art VARCHAR(4) DEFAULT NULL",
+                // auto | unsicher | nutzer | gemerkt; intern auch keine | privat | fehler; '' = noch nicht gefragt
+                "zuordnung VARCHAR(12) DEFAULT ''",
+                // bis zu 3 passende Säulen als JSON (Name, Betreiber, Art, kW, Abstand in m, Tarife) – nie Koordinaten
+                "station_kandidaten VARCHAR(8000) DEFAULT NULL"
+        };
+        try (Statement st = conn.createStatement()) {
+            for (String c : cols) {
+                try {
+                    st.execute("ALTER TABLE " + TABLE_CHARGING + " ADD COLUMN IF NOT EXISTS " + c + ";");
+                } catch (Exception ignored) {}
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    /** Lese-Zeile für die Erkennung (intern, mit Position – nie loggen, nie über die API). */
+    public static final class StationZeile {
+        public final long id, startTime;
+        public final double lat, lng, peakKw;
+        public final int isDc;
+        public final String tariffId, zuordnung;
+
+        public StationZeile(long id, long startTime, double lat, double lng, double peakKw, int isDc, String tariffId,
+                     String zuordnung) {
+            this.id = id;
+            this.startTime = startTime;
+            this.lat = lat;
+            this.lng = lng;
+            this.peakKw = peakKw;
+            this.isDc = isDc;
+            this.tariffId = tariffId == null ? "" : tariffId;
+            this.zuordnung = zuordnung == null ? "" : zuordnung;
+        }
+    }
+
+    private static final String STATION_ZEILE_SQL = "SELECT id, start_time, start_lat, start_lng, peak_power_kw, is_dc,"
+            + " tariff_id, zuordnung FROM " + TABLE_CHARGING;
+
+    private static StationZeile stationZeile(ResultSet rs) throws java.sql.SQLException {
+        double peak = rs.getDouble("peak_power_kw");
+        if (rs.wasNull()) peak = -1;
+        int dc = rs.getInt("is_dc");
+        if (rs.wasNull()) dc = -1;
+        return new StationZeile(rs.getLong("id"), rs.getLong("start_time"), rs.getDouble("start_lat"),
+                rs.getDouble("start_lng"), peak, dc, rs.getString("tariff_id"), rs.getString("zuordnung"));
+    }
+
+    /** Abgeschlossene Ladung mit diesem Start, oder null. */
+    public synchronized StationZeile getStationZeileByStart(long startTime) {
+        final Connection conn = connection;
+        if (!isInitialized || conn == null) return null;
+        stationSpaltenSichern(conn);
+        try (PreparedStatement ps = conn.prepareStatement(STATION_ZEILE_SQL
+                + " WHERE start_time = ? AND end_time IS NOT NULL AND end_time > start_time;")) {
+            ps.setLong(1, startTime);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? stationZeile(rs) : null;
+            }
+        } catch (Exception e) {
+            logger.debug("getStationZeileByStart: " + e.getClass().getSimpleName());
+            return null;
+        }
+    }
+
+    public synchronized StationZeile getStationZeile(long id) {
+        final Connection conn = connection;
+        if (!isInitialized || conn == null) return null;
+        stationSpaltenSichern(conn);
+        try (PreparedStatement ps = conn.prepareStatement(STATION_ZEILE_SQL
+                + " WHERE id = ? AND end_time IS NOT NULL AND end_time > start_time;")) {
+            ps.setLong(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? stationZeile(rs) : null;
+            }
+        } catch (Exception e) {
+            logger.debug("getStationZeile: " + e.getClass().getSimpleName());
+            return null;
+        }
+    }
+
+    /**
+     * Abgeschlossene Ladungen ohne Ergebnis (zuordnung leer oder „fehler“) mit Position, die neuesten zuerst. Nur für
+     * den Knopf „Ladestationen nachtragen“.
+     */
+    public synchronized java.util.List<StationZeile> getStationOffen(int limit) {
+        java.util.List<StationZeile> l = new java.util.ArrayList<>();
+        final Connection conn = connection;
+        if (!isInitialized || conn == null) return l;
+        stationSpaltenSichern(conn);
+        try (PreparedStatement ps = conn.prepareStatement(STATION_ZEILE_SQL
+                + " WHERE end_time IS NOT NULL AND end_time > start_time"
+                + " AND (zuordnung IS NULL OR zuordnung = '' OR zuordnung = 'fehler')"
+                + " AND NOT (start_lat = 0 AND start_lng = 0)"
+                + " ORDER BY start_time DESC LIMIT ?;")) {
+            ps.setInt(1, Math.max(1, Math.min(5000, limit)));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) l.add(stationZeile(rs));
+            }
+        } catch (Exception e) {
+            logger.debug("getStationOffen: " + e.getClass().getSimpleName());
+        }
+        return l;
+    }
+
+    /**
+     * Ergebnis der Erkennung bzw. Wahl des Nutzers speichern. Ändert nur die Säulen-Spalten. {@code kandidatenJson}
+     * null = Kandidaten unverändert lassen. Nur abgeschlossene Ladungen.
+     */
+    public synchronized boolean setChargingStation(long id, String zuordnung, String stationId, String name,
+                                                   String betreiber, String art, String kandidatenJson) {
+        final Connection conn = connection;
+        if (!isInitialized || conn == null || zuordnung == null) return false;
+        stationSpaltenSichern(conn);
+        stationSpaltenConn = null;   // Lesespalten neu prüfen
+        String sql = "UPDATE " + TABLE_CHARGING + " SET zuordnung = ?, station_id = ?, station_name = ?, betreiber = ?,"
+                + " station_art = ?" + (kandidatenJson != null ? ", station_kandidaten = ?" : "")
+                + " WHERE id = ? AND end_time IS NOT NULL AND end_time > start_time;";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            int i = 1;
+            ps.setString(i++, kurz(zuordnung, 12));
+            setOderNull(ps, i++, kurz(stationId, 64));
+            setOderNull(ps, i++, kurz(name, 128));
+            setOderNull(ps, i++, kurz(betreiber, 96));
+            setOderNull(ps, i++, kurz(art, 4));
+            if (kandidatenJson != null) setOderNull(ps, i++, kandidatenJson.length() > 8000 ? null : kandidatenJson);
+            ps.setLong(i, id);
+            return ps.executeUpdate() == 1;
+        } catch (Exception e) {
+            logger.error("setChargingStation failed for " + id + ": " + e.getClass().getSimpleName());
+            return false;
+        }
+    }
+
+    /** Gespeicherte Kandidaten (JSON-Text) oder null. */
+    public synchronized String getChargingStationKandidaten(long id) {
+        final Connection conn = connection;
+        if (!isInitialized || conn == null) return null;
+        stationSpaltenSichern(conn);
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT station_kandidaten FROM " + TABLE_CHARGING + " WHERE id = ?;")) {
+            ps.setLong(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getString(1) : null;
+            }
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static String kurz(String s, int max) {
+        if (s == null) return null;
+        String t = s.trim();
+        if (t.isEmpty()) return null;
+        return t.length() > max ? t.substring(0, max) : t;
+    }
+
+    private static void setOderNull(PreparedStatement ps, int i, String v) throws java.sql.SQLException {
+        if (v == null) ps.setNull(i, java.sql.Types.VARCHAR); else ps.setString(i, v);
     }
 
     private boolean preisQuelleDa;
@@ -10415,6 +10610,21 @@ public class SocHistoryDatabase {
         } catch (Throwable ignored) {
         }
         at.greenchili.surfmate.charging.LadeAbrechnung.anreichern(o, saeuleKwh, saeuleBetrag, abrCfg);
+        // 03.11.2026: erkannte Ladesäule (LadesaeuleZuordnung) – additiv; alte Tabellen ohne Spalten liefern null.
+        String sId = null, sName = null, sBetr = null, sArt = null, zu = null;
+        try {
+            sId = rs.getString("station_id");
+            sName = rs.getString("station_name");
+            sBetr = rs.getString("betreiber");
+            sArt = rs.getString("station_art");
+            zu = rs.getString("zuordnung");
+        } catch (Exception ignored) {
+        }
+        o.put("stationId", sId == null || sId.isEmpty() ? JSONObject.NULL : sId);
+        o.put("stationName", sName == null || sName.isEmpty() ? JSONObject.NULL : sName);
+        o.put("betreiber", sBetr == null || sBetr.isEmpty() ? JSONObject.NULL : sBetr);
+        o.put("stationArt", sArt == null || sArt.isEmpty() ? JSONObject.NULL : sArt);
+        o.put("zuordnung", zu == null || zu.isEmpty() ? JSONObject.NULL : zu);
         return o;
     }
 
@@ -12681,6 +12891,15 @@ public class SocHistoryDatabase {
     // synchronized for the same reason as finalizeStaleOpenSessions: an external
     // caller (CameraDaemon's ACC edge) that INSERTs on the shared Connection.
     public synchronized void recordAccEvent(String eventType, at.greenchili.surfmate.byd.BydVehicleData data) {
+        recordAccEvent(eventType, data, null);
+    }
+
+    /**
+     * Wie {@link #recordAccEvent(String, at.greenchili.surfmate.byd.BydVehicleData)}, dazu der Wächter-Zustand
+     * (null = nicht belegt). Beim „Zündung an“ ist das der Zustand direkt vor dem Einschalten.
+     */
+    public synchronized void recordAccEvent(String eventType, at.greenchili.surfmate.byd.BydVehicleData data,
+                                            Boolean waechterScharf) {
         try {
             if (eventType == null) return;
             String type = eventType.trim().toUpperCase();
@@ -12721,11 +12940,24 @@ public class SocHistoryDatabase {
                 }
             }
 
+            String sqlMitMerker = "INSERT INTO " + TABLE_ACC_EVENTS +
+                " (timestamp, event_type, soc_percent, remaining_kwh, voltage_v, range_km, waechter_scharf) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?);";
             String sql = "INSERT INTO " + TABLE_ACC_EVENTS +
                 " (timestamp, event_type, soc_percent, remaining_kwh, voltage_v, range_km) " +
                 "VALUES (?, ?, ?, ?, ?, ?);";
+            // 03.11.2026: Fehlt die Spalte waechter_scharf (Migration nicht gelaufen), die Zeile trotzdem schreiben –
+            // die Zündungs-Zeile ist wichtiger als der Merker.
+            boolean mitMerker = true;
+            PreparedStatement vorbereitet;
+            try {
+                vorbereitet = connection.prepareStatement(sqlMitMerker);
+            } catch (Exception spalteFehlt) {
+                mitMerker = false;
+                vorbereitet = connection.prepareStatement(sql);
+            }
 
-            try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            try (PreparedStatement pstmt = vorbereitet) {
                 pstmt.setLong(1, now);
                 pstmt.setString(2, type);
                 if (socPercent != null) pstmt.setDouble(3, socPercent);
@@ -12736,6 +12968,10 @@ public class SocHistoryDatabase {
                 else pstmt.setNull(5, java.sql.Types.REAL);
                 if (rangeKm != null) pstmt.setInt(6, rangeKm);
                 else pstmt.setNull(6, java.sql.Types.INTEGER);
+                if (mitMerker) {
+                    if (waechterScharf != null) pstmt.setInt(7, waechterScharf ? 1 : 0);
+                    else pstmt.setNull(7, java.sql.Types.INTEGER);
+                }
                 pstmt.executeUpdate();
             }
 
@@ -12746,6 +12982,97 @@ public class SocHistoryDatabase {
             // Never propagate — must not break the daemon's ACC state machine.
             logger.error("recordAccEvent failed: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * 03.11.2026 Verlust im Stand: Wächter-Zustand am jüngsten „Zündung aus“ nachtragen (der Wächter wird erst
+     * nach dem Abstellen scharf). Nur, wenn dieses Ereignis nicht älter als {@code nichtVorMs} ist.
+     *
+     * @return true, wenn eine Zeile gesetzt wurde
+     */
+    public synchronized boolean markiereLetztesAusWaechter(boolean scharf, long nichtVorMs) {
+        if (!isAvailable()) return false;
+        try {
+            long id = -1;
+            try (PreparedStatement ps = connection.prepareStatement("SELECT id, timestamp FROM " + TABLE_ACC_EVENTS
+                    + " WHERE event_type = 'OFF' ORDER BY timestamp DESC LIMIT 1")) {
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next() && rs.getLong(2) >= nichtVorMs) id = rs.getLong(1);
+                }
+            }
+            if (id < 0) return false;
+            try (PreparedStatement ps = connection.prepareStatement("UPDATE " + TABLE_ACC_EVENTS
+                    + " SET waechter_scharf = ? WHERE id = ?")) {
+                ps.setInt(1, scharf ? 1 : 0);
+                ps.setLong(2, id);
+                return ps.executeUpdate() == 1;
+            }
+        } catch (Exception e) {
+            logger.debug("markiereLetztesAusWaechter: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /** Zeitpunkt des jüngsten „Zündung an“ vor {@code vorMs}, sonst -1. */
+    public synchronized long letztesAccAnVor(long vorMs) {
+        if (!isAvailable()) return -1;
+        try (PreparedStatement ps = connection.prepareStatement("SELECT timestamp FROM " + TABLE_ACC_EVENTS
+                + " WHERE event_type = 'ON' AND timestamp < ? ORDER BY timestamp DESC LIMIT 1")) {
+            ps.setLong(1, vorMs);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getLong(1) : -1;
+            }
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
+    /**
+     * 03.11.2026 Verlust im Stand: Zündungs-Ereignisse und Ladezeiträume seit {@code vonMs}, ausgewertet von
+     * {@link Standverlust}. Ohne Orte.
+     */
+    public synchronized JSONObject getStandverlust(long vonMs) {
+        java.util.List<Standverlust.Ereignis> ereignisse = new java.util.ArrayList<>();
+        java.util.List<long[]> ladungen = new java.util.ArrayList<>();
+        if (isAvailable()) {
+            try (PreparedStatement ps = connection.prepareStatement("SELECT timestamp, event_type, soc_percent,"
+                    + " remaining_kwh, waechter_scharf FROM " + TABLE_ACC_EVENTS
+                    + " WHERE timestamp >= ? ORDER BY timestamp ASC, id ASC")) {
+                ps.setLong(1, vonMs);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        long ts = rs.getLong(1);
+                        boolean aus = "OFF".equals(rs.getString(2));
+                        double s = rs.getDouble(3);
+                        Double soc = rs.wasNull() ? null : s;
+                        double k = rs.getDouble(4);
+                        Double kwh = rs.wasNull() ? null : k;
+                        int w = rs.getInt(5);
+                        Boolean scharf = rs.wasNull() ? null : (w == 1);
+                        ereignisse.add(new Standverlust.Ereignis(ts, aus, soc, kwh, scharf));
+                    }
+                }
+            } catch (Exception e) {
+                logger.debug("getStandverlust acc: " + e.getMessage());
+            }
+            try (PreparedStatement ps = connection.prepareStatement("SELECT start_time, end_time FROM "
+                    + TABLE_CHARGING + " WHERE end_time IS NULL OR end_time = 0 OR end_time >= ?")) {
+                ps.setLong(1, vonMs);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        long start = rs.getLong(1);
+                        long ende = rs.getLong(2);
+                        if (rs.wasNull()) ende = 0;
+                        ladungen.add(new long[] {start, ende});
+                    }
+                }
+            } catch (Exception e) {
+                logger.debug("getStandverlust charging: " + e.getMessage());
+            }
+        }
+        JSONObject out = Standverlust.berechne(ereignisse, ladungen);
+        try { out.put("datenbank", isAvailable()); } catch (Exception ignored) {}
+        return out;
     }
 
     /**

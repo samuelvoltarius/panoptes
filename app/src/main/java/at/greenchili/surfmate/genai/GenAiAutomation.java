@@ -57,9 +57,12 @@ public final class GenAiAutomation {
                 if (options != null) {
                     for (int j = 0; j < options.length(); j++) {
                         JSONObject option = options.optJSONObject(j);
-                        if (option == null || isForbiddenType(
-                                option.optString("id",
-                                        option.optString("type", "")))) {
+                        String optionId = option == null ? ""
+                                : option.optString("id",
+                                        option.optString("type", ""));
+                        // REGEL A+: gesperrte Aktionen sieht der Assistent gar nicht erst
+                        if (option == null || isForbiddenType(optionId)
+                                || (!eventCatalog && !KiSperre.erlaubterTyp(optionId))) {
                             continue;
                         }
                         compact.put(compactCatalogOption(
@@ -70,7 +73,7 @@ public final class GenAiAutomation {
             }
             context.put("catalog", catalog);
             context.put("safety",
-                    "The events catalog is shared by triggers and conditions; use an event id as the output type and omit comparator/value for triggers. Use an action id as the output type. Only listed ids/options are valid. Shell and action-group actions are forbidden. The app re-validates and saves only as manual-only.");
+                    "The events catalog is shared by triggers and conditions; use an event id as the output type and omit comparator/value for triggers. Use an action id as the output type. Only listed ids/options are valid. Shell and action-group actions are forbidden; only climate, seat heating, sunshade, on-screen notices and flow-control actions are allowed. The app re-validates and saves only as manual-only.");
         } catch (Exception ignored) {
         }
         return context;
@@ -146,6 +149,7 @@ public final class GenAiAutomation {
             throw new ValidationException(
                     "The validated draft contains a forbidden action.");
         }
+        kiSperre(canonical);
         return new Draft(summary, questions, canonical);
     }
 
@@ -160,9 +164,18 @@ public final class GenAiAutomation {
             throw new ValidationException(
                     "Automation does not match Panoptes's schema.");
         }
+        kiSperre(proposed);
         parsed.setName(clamp(parsed.getName(), MAX_NAME_CHARS));
         parsed.setMode(Automation.MODE_MANUAL);
         return parsed;
+    }
+
+    /** REGEL A+: Der Assistent legt keine Regel mit Hupe, Blinker, Licht, „Auto finden“, Alarm an. */
+    private static void kiSperre(JSONObject rules) throws ValidationException {
+        if (KiSperre.regelGesperrt(rules) != null) {
+            KiSperre.protokolliere("entwurf");
+            throw new ValidationException(KiSperre.ablehnungEntwurf());
+        }
     }
 
     static JSONObject extractObject(String raw) {

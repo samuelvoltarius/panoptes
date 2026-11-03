@@ -302,6 +302,7 @@ public class TripDetector {
         // direct read stays as a fallback ONLY when the snapshot has no
         // reading, so pre-DI5 behavior is unchanged. Default stays 0.
         activeTrip.extTempC = 0;
+        activeTrip.extTempBekannt = 0;
         boolean extTempFromSnapshot = false;
         try {
             at.greenchili.surfmate.byd.BydDataCollector collector =
@@ -312,6 +313,7 @@ public class TripDetector {
                     int rawTemp = (int) Math.round(data.outsideTempC);
                     if (rawTemp >= -50 && rawTemp <= 60) {
                         activeTrip.extTempC = rawTemp;
+                        activeTrip.extTempBekannt = 1;
                         extTempFromSnapshot = true;
                     }
                 }
@@ -329,6 +331,7 @@ public class TripDetector {
                     int rawTemp = (Integer) getTemp.invoke(instrumentDevice);
                     if (rawTemp >= -50 && rawTemp <= 60) {
                         activeTrip.extTempC = rawTemp;
+                        activeTrip.extTempBekannt = 1;
                     }
                 }
             } catch (Throwable t) {

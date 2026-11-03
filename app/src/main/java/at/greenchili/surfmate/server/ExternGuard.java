@@ -138,6 +138,16 @@ public final class ExternGuard {
             "/api/handy/v1/protokoll"   // 0.1.34 Befehls-Log: eigene Einträge, alle nur mit Recht „protokoll“
     )));
 
+    /**
+     * Dateien Handy ↔ Auto: nur Kopplungen der Art {@code handy}, und nur mit Recht {@code dateien}
+     * ({@link #noetigesRecht}). Lesen ist nur die Liste; Holen und Löschen gehen per POST (landen im Befehls-Log).
+     */
+    static final Set<String> DATEIEN_LESEN = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "/api/dateien")));
+    static final Set<String> DATEIEN_SCHREIBEN = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "/api/dateien/start", "/api/dateien/teil", "/api/dateien/fertig", "/api/dateien/abbrechen",
+            "/api/dateien/holen", "/api/dateien/loeschen")));
+
     /** true, wenn die Anfrage eines gekoppelten Geräts abgelehnt werden muss. */
     public static boolean blocks(String method, String pathOnly) {
         return !erlaubt(method, pathOnly);
@@ -190,6 +200,9 @@ public final class ExternGuard {
         String p = normal(pathOnly);
         if (p == null) return null;
         if (istStandbild(p)) return at.greenchili.surfmate.auth.Kopplungen.RECHT_STANDBILD;
+        if (p.equals("/api/dateien") || p.startsWith("/api/dateien/")) {
+            return at.greenchili.surfmate.auth.Kopplungen.RECHT_DATEIEN;
+        }
         for (String k : KAMERA_LESEN) {
             if (p.equals(k) || p.startsWith(k.endsWith("/") ? k : k + "/")) {
                 return at.greenchili.surfmate.auth.Kopplungen.RECHT_KAMERA;
@@ -216,8 +229,12 @@ public final class ExternGuard {
         org.json.JSONObject o = new org.json.JSONObject();
         try {
             boolean standbild = at.greenchili.surfmate.auth.Kopplungen.RECHT_STANDBILD.equals(recht);
-            String key = standbild ? "errors.standbild_recht_fehlt" : "errors.kamera_recht_fehlt";
-            String fallback = standbild
+            boolean dateien = at.greenchili.surfmate.auth.Kopplungen.RECHT_DATEIEN.equals(recht);
+            String key = dateien ? "dateien.recht_fehlt"
+                    : standbild ? "errors.standbild_recht_fehlt" : "errors.kamera_recht_fehlt";
+            String fallback = dateien
+                    ? "File permission missing – switch it on in Panoptes under Paired devices."
+                    : standbild
                     ? "Standbild-Recht fehlt – in Panoptes unter Gekoppelte Geräte einschalten."
                     : "Kamera-Recht fehlt – in Panoptes unter Gekoppelte Geräte einschalten.";
             String text = Messages.text(key, fallback);
@@ -248,8 +265,8 @@ public final class ExternGuard {
         if (p.length() > 1 && p.endsWith("/")) p = p.substring(0, p.length() - 1);
         if (p.contains("..") || p.contains("//")) return false;
         // 0.1.26.1: Update-Stand lesen (HANDY_API_VERTRAG §8); 0.1.28: Clip-Liste (CLIP_VERTRAG_0128)
-        if ("GET".equals(method)) return HANDY_LESEN.contains(p);
-        return "POST".equals(method) && HANDY_SCHREIBEN.contains(p);
+        if ("GET".equals(method)) return HANDY_LESEN.contains(p) || DATEIEN_LESEN.contains(p);
+        return "POST".equals(method) && (HANDY_SCHREIBEN.contains(p) || DATEIEN_SCHREIBEN.contains(p));
     }
 
     public static boolean erlaubt(String method, String pathOnly) {

@@ -407,9 +407,11 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
             // until the grandchild app_process exits (i.e. forever) and
             // freeze the polling thread.
             String fullClass = "at.greenchili.surfmate.daemon." + className;
-            String cmd = String.format(
-                "CLASSPATH=%s app_process /system/bin --nice-name=%s %s >> /data/user_de/0/com.android.shell/surfmate/%s.log 2>&1",
-                apkPath, processName, fullClass, processName);
+            // 0.1.36: bisheriges Log erst ins Archiv (LogArchiv), sonst wächst es ohne Grenze weiter.
+            String logPfad = "/data/user_de/0/com.android.shell/surfmate/" + processName + ".log";
+            String cmd = at.greenchili.surfmate.logging.LogArchiv.archivBefehl(logPfad) + String.format(
+                "CLASSPATH=%s app_process /system/bin --nice-name=%s %s >> %s 2>&1",
+                apkPath, processName, fullClass, logPfad);
             ctx.spawnDetached(cmd);
             try { Thread.sleep(1500); } catch (InterruptedException ignored) {}
             return isDaemonRunning(processName, ctx);

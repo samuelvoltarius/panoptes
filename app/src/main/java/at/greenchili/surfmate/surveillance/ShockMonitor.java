@@ -84,7 +84,9 @@ public final class ShockMonitor {
                 && !at.greenchili.surfmate.monitor.AccMonitor.isAccOn()
                 && at.greenchili.surfmate.daemon.CameraDaemon.isSentryArmed()
                 && !GuardStopMonitor.blocksArming()
-                && !at.greenchili.surfmate.camping.Camping.ohneAbschreckung();
+                && !at.greenchili.surfmate.camping.Camping.ohneAbschreckung()
+                // Tiermodus: das Tier bewegt das Auto – Erschütterung ist dann kein Einbruch
+                && !at.greenchili.surfmate.camping.Tiermodus.aktiv();
         synchronized (lock) {
             if (soll && (!aktiv || e != stufe)) {
                 detector = new ShockDetector(e);

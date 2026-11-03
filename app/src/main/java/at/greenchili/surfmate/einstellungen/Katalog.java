@@ -42,6 +42,7 @@ public final class Katalog {
             new Gruppe("waechter", "waechter", 30),
             new Gruppe("auto", "auto", 40),
             new Gruppe("camping", "auto", 45),
+            new Gruppe("tiermodus", "auto", 46),
             new Gruppe(LadenKatalog.ABSCHNITT, "fahren", 50),
             new Gruppe("system", "system", 90),
             new Gruppe("update", "system", 95),
@@ -238,9 +239,32 @@ public final class Katalog {
         Feld zurueck = new Feld("telegram.zurueckAmAuto", Feld.Typ.BOOL);
         zurueck.gruppe = "system"; zurueck.reihenfolge = 71; zurueck.standard = false; zurueck.nurLesendExtern = true;
         l.add(zurueck);
+        // 03.11.2026 Abschaltbericht (Projektinhaber freigegeben): beim Abstellen Fahrt, Akku, Reichweite, 12 V, Wächter,
+        // Schloss – ohne Ort. Standard an; wirkt nur mit eingerichtetem Telegram. Rangierfahrten zählen nicht.
+        Feld abschalt = new Feld("telegram.abschaltBericht", Feld.Typ.BOOL);
+        abschalt.gruppe = "system"; abschalt.reihenfolge = 72; abschalt.standard = true; abschalt.nurLesendExtern = true;
+        l.add(abschalt);
+        Feld abschaltM = new Feld("telegram.abschaltBerichtMinMeter", Feld.Typ.INT);
+        abschaltM.gruppe = "system"; abschaltM.reihenfolge = 73; abschaltM.erweitert = true; abschaltM.nurLesendExtern = true;
+        abschaltM.standard = 300; abschaltM.min = 0.0; abschaltM.max = 5000.0; abschaltM.schritt = 50.0; abschaltM.einheit = "m";
+        abschaltM.nurWenn = obj("key", "telegram.abschaltBericht", "gleich", true);
+        l.add(abschaltM);
+        Feld abschaltMin = new Feld("telegram.abschaltBerichtMinMinuten", Feld.Typ.INT);
+        abschaltMin.gruppe = "system"; abschaltMin.reihenfolge = 74; abschaltMin.erweitert = true;
+        abschaltMin.nurLesendExtern = true;
+        abschaltMin.standard = 2; abschaltMin.min = 0.0; abschaltMin.max = 30.0; abschaltMin.schritt = 1.0;
+        abschaltMin.einheit = "min";
+        abschaltMin.nurWenn = obj("key", "telegram.abschaltBericht", "gleich", true);
+        l.add(abschaltMin);
         // 0.1.22 Gewohnheiten (GEWOHNHEITEN_KONZEPT §2): merkt sich NUR im Auto, was der Nutzer oft gleich macht. Regel 2:
         // Standard aus bis zur Antwort im Einrichten (Schritt extra_gewohnheiten, dort „Ja“ vorgewählt); Bestand erst nach
         // der Frage. Nie an einen Server. „Alles vergessen“ löscht Log und abgelehnte Gewohnheiten.
+        // Weckwort-Messung Stufe 1 (nur Messbaustein): erlaubt, die Messung am Autobildschirm zu starten. Standard AUS,
+        // aus der Ferne nur lesbar; einschalten startet nichts. Kein Audio wird gespeichert oder gesendet, nur Zahlen.
+        Feld weckMess = new Feld(at.greenchili.surfmate.weckwort.WeckwortMessRegeln.SCHALTER, Feld.Typ.BOOL);
+        weckMess.gruppe = "system"; weckMess.reihenfolge = 78; weckMess.standard = false;
+        weckMess.erweitert = true; weckMess.nurLesendExtern = true;
+        l.add(weckMess);
         Feld gew = new Feld("gewohnheiten.an", Feld.Typ.BOOL);
         gew.gruppe = "system"; gew.reihenfolge = 75; gew.standard = false; gew.nurLesendExtern = true;
         l.add(gew);
@@ -395,6 +419,20 @@ public final class Katalog {
         parkLesen.gruppe = "energie"; parkLesen.reihenfolge = 40; parkLesen.standard = 90; parkLesen.min = 90.0; parkLesen.max = 180.0;
         parkLesen.schritt = 10.0; parkLesen.einheit = "s"; parkLesen.erweitert = true;
         l.add(parkLesen);
+        // 0.1.36 Log-Archiv (03.11.: Logs dürfen auch bei Updates nicht überschrieben werden): je Art höchstens
+        // so viele Tage und MB, älteste zuerst; bei wenig freiem Platz enger (logging.LogArchiv).
+        Feld logTage = new Feld("logs.tage", Feld.Typ.INT);
+        logTage.gruppe = "system"; logTage.reihenfolge = 80; logTage.standard = at.greenchili.surfmate.logging.LogArchiv.STANDARD_TAGE;
+        logTage.min = (double) at.greenchili.surfmate.logging.LogArchiv.MIN_TAGE;
+        logTage.max = (double) at.greenchili.surfmate.logging.LogArchiv.MAX_TAGE;
+        logTage.schritt = 1.0; logTage.erweitert = true;
+        l.add(logTage);
+        Feld logMb = new Feld("logs.mb", Feld.Typ.INT);
+        logMb.gruppe = "system"; logMb.reihenfolge = 81; logMb.standard = at.greenchili.surfmate.logging.LogArchiv.STANDARD_MB;
+        logMb.min = (double) at.greenchili.surfmate.logging.LogArchiv.MIN_MB;
+        logMb.max = (double) at.greenchili.surfmate.logging.LogArchiv.MAX_MB;
+        logMb.schritt = 5.0; logMb.einheit = "MB"; logMb.erweitert = true;
+        l.add(logMb);
         // In-App-Updater (NEUBAU2 §1): Kanal stabil/test, Modus melden/automatisch (Standard melden)
         Feld kanal = new Feld("update.kanal", Feld.Typ.AUSWAHL);
         kanal.gruppe = "update"; kanal.reihenfolge = 10; kanal.standard = "stabil";
@@ -407,6 +445,7 @@ public final class Katalog {
         modus.optionen.add(new Feld.Option("automatisch", "settings.update.modus.automatisch"));
         l.add(modus);
         campingFelder(l, k);
+        tiermodusFelder(l);
         // Prüfen alle 6 h bei GitHub: nicht gesetzt = Bestand = an; die Ersteinrichtung fragt ohne Vorauswahl
         Feld pruefen = new Feld("update.pruefen", Feld.Typ.BOOL);
         pruefen.gruppe = "update"; pruefen.reihenfolge = 5; pruefen.standard = true;
@@ -535,6 +574,35 @@ public final class Katalog {
         aussen.optionen.add(new Feld.Option("notiz", "settings.camping.aussenBewegung.notiz"));
         l.add(camping(aussen, r += 10));
         l.add(camping(zahlOhneStopp("camping.nachtNachSekunden", Feld.Typ.INT, 30, 10.0, 600.0, 10.0, "s"), r += 10));
+    }
+
+    /**
+     * Tiermodus (03.11.2026), ausgewertet in {@code camping.Tiermodus}. Grenzen aus {@code TiermodusRegel}: die
+     * Akku-Grenze nie unter 15 % (über dem SoC-Abschalt-Schutz), der 12-V-Schutz ist nicht abschaltbar.
+     */
+    private static void tiermodusFelder(List<Feld> l) {
+        int r = 0;
+        l.add(tier(zahlOhneStopp("tiermodus.wunsch", Feld.Typ.INT, at.greenchili.surfmate.camping.TiermodusRegel.WUNSCH_STANDARD,
+                (double) at.greenchili.surfmate.camping.TiermodusRegel.WUNSCH_MIN,
+                (double) at.greenchili.surfmate.camping.TiermodusRegel.WUNSCH_MAX, 1.0, "°C"), r += 10));
+        l.add(tier(zahlOhneStopp("tiermodus.alarmC", Feld.Typ.INT, at.greenchili.surfmate.camping.TiermodusRegel.ALARM_STANDARD,
+                (double) at.greenchili.surfmate.camping.TiermodusRegel.ALARM_MIN,
+                (double) at.greenchili.surfmate.camping.TiermodusRegel.ALARM_MAX, 1.0, "°C"), r += 10));
+        l.add(tier(zahlOhneStopp("tiermodus.socGrenze", Feld.Typ.INT, at.greenchili.surfmate.camping.TiermodusRegel.SOC_GRENZE_STANDARD,
+                (double) at.greenchili.surfmate.camping.TiermodusRegel.SOC_GRENZE_MIN,
+                (double) at.greenchili.surfmate.camping.TiermodusRegel.SOC_GRENZE_MAX, 1.0, "%"), r += 10));
+        l.add(tier(zahlOhneStopp("tiermodus.wiederholenMinuten", Feld.Typ.INT,
+                at.greenchili.surfmate.camping.TiermodusRegel.WIEDERHOLEN_STANDARD,
+                (double) at.greenchili.surfmate.camping.TiermodusRegel.WIEDERHOLEN_MIN,
+                (double) at.greenchili.surfmate.camping.TiermodusRegel.WIEDERHOLEN_MAX, 1.0, "min"), r += 10));
+        l.add(tier(zahlOhneStopp("tiermodus.cloud", Feld.Typ.BOOL, false, null, null, null, null), r += 10));
+    }
+
+    private static Feld tier(Feld f, int reihenfolge) {
+        f.gruppe = "tiermodus";
+        f.abschnitt = null;
+        f.reihenfolge = reihenfolge;
+        return f;
     }
 
     private static Feld camping(Feld f, int reihenfolge) {

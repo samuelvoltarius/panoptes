@@ -51,6 +51,7 @@ public final class EreignisAblage {
                 File f = (File) d.bezug;
                 if (f.delete()) {
                     geloescht++;
+                    AusloeserInfo.loesche(f);
                     try { RecordingsIndex.getInstance().removeByPath(f.getAbsolutePath()); } catch (Throwable ignored) {}
                     EreignisClip.frageErledigt(EreignisClip.stamm(f.getName()));
                 }

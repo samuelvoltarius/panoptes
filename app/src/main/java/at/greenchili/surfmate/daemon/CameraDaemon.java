@@ -752,6 +752,8 @@ public class CameraDaemon {
         // 0.1.34 Befehls-Log: dauerhaft neben den übrigen Daemon-Dateien (übersteht Neustart und App-Update)
         at.greenchili.surfmate.server.BefehlsLog.starten(
                 new java.io.File(at.greenchili.surfmate.util.DaemonStorage.path("befehlslog")));
+        // 0.1.36 Log-Archiv: Grenzen für die Wächter-Skripte schreiben und alte Logs aufräumen (7 Tage / 50 MB je Art)
+        at.greenchili.surfmate.logging.LogArchiv.pflege();
         httpServer = new HttpServer(HTTP_PORT);
         ipcServer = new SurveillanceIpcServer(19977);
         aacIngestServer = new at.greenchili.surfmate.server.AacIngestServer();
@@ -1171,6 +1173,8 @@ public class CameraDaemon {
         at.greenchili.surfmate.planer.AutoZustand.laufzeit();
         at.greenchili.surfmate.blitzer.BlitzerDienst.start();
         at.greenchili.surfmate.gesundheit.GesundheitsDienst.start();
+        // Rechte-Selbstheilung: 5 min nach dem Start und täglich prüfen, mit pm grant/appops wiederherstellen, sonst melden
+        at.greenchili.surfmate.gesundheit.RechteHeilungsDienst.start(APP_PACKAGE_NAME());
         at.greenchili.surfmate.appupdate.AppUpdateDienst.start();
         // 0.1.21: nach jedem bestätigten Update einmal die BYD-Autostart-Freigabe wiederherstellen
         at.greenchili.surfmate.appupdate.AutostartNachUpdate.starteWaechter();
@@ -8234,8 +8238,11 @@ public class CameraDaemon {
                     // null snapshot, the row will still be recorded with the
                     // event type so future correlation is possible.
                 }
+                // 03.11.2026 Verlust im Stand: beim Einschalten den Wächter-Zustand der Parkzeit mitschreiben
+                // (vor dem Verlassen des Wächters gelesen); beim Abstellen trägt AbschaltBericht ihn nach.
                 at.greenchili.surfmate.monitor.SocHistoryDatabase.getInstance()
-                    .recordAccEvent(accIsOff ? "OFF" : "ON", accSnapshot);
+                    .recordAccEvent(accIsOff ? "OFF" : "ON", accSnapshot,
+                        accIsOff ? null : waechterZustandBelegt());
                 commitAccEffect(persistedEventClaim);
             } catch (Throwable t) {
                 log("recordAccEvent failed (non-fatal): " + t.getMessage());
@@ -8265,7 +8272,10 @@ public class CameraDaemon {
             at.greenchili.surfmate.parking.ParkingHooks.onAccOff(transitionGeneration);
             // 0.1.21 Telegram „zurück am Auto“: Parkbeginn merken (Meldung nur mit Schalter, Standard aus)
             at.greenchili.surfmate.telegram.ZurueckAmAuto.beiAccAus(System.currentTimeMillis());
+            // 03.11.2026 Abschaltbericht (ohne Ort) + Wächter-Merker für „Verlust im Stand“, eigener Thread
+            at.greenchili.surfmate.telegram.AbschaltBericht.beiAccAus(System.currentTimeMillis());
         } else {
+            at.greenchili.surfmate.telegram.AbschaltBericht.beiAccAn(System.currentTimeMillis());
             at.greenchili.surfmate.telegram.ZurueckAmAuto.beiAccAn(System.currentTimeMillis());
             at.greenchili.surfmate.parking.ParkingHooks.onAccOn(transitionGeneration);
             // 0.1.20 P7: „Panoptes bei Zündung an öffnen“ (Standard aus, nicht vor CarPlay/Android Auto, nur Activity)
@@ -9389,6 +9399,15 @@ public class CameraDaemon {
         return surveillanceEnabled && p != null && p.isSurveillanceMode();
     }
 
+    /**
+     * 03.11.2026 Verlust im Stand / Abschaltbericht: Wächter scharf, aber nur wenn belegbar. Ohne Pipeline (Daemon
+     * frisch gestartet) weiß dieser Prozess nichts über die Parkzeit davor: null statt „aus“.
+     */
+    public static Boolean waechterZustandBelegt() {
+        if (gpuPipeline == null) return null;
+        return isSentryArmed();
+    }
+
     /** Anbindung des Camping-Modus (0.1.16) an diesen Daemon – gleicher Wächter-Eingriff wie der Wächter-Stopp. */
     private static void startCamping() {
         try {
@@ -9406,6 +9425,12 @@ public class CameraDaemon {
             });
         } catch (Throwable t) {
             log("Camping start failed: " + t.getMessage());
+        }
+        // Tiermodus (03.11.2026): eigener Takt, nutzt den Camping-Heizweg; Wächter bleibt unberührt
+        try {
+            at.greenchili.surfmate.camping.Tiermodus.start();
+        } catch (Throwable t) {
+            log("Tiermodus start failed: " + t.getMessage());
         }
     }
 

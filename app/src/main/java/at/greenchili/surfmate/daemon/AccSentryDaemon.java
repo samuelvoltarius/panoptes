@@ -8876,17 +8876,14 @@ public class AccSentryDaemon {
                         transitionGeneration, true, "watchdog write")) {
                     return true;
                 }
-                String escaped = line
-                    .replace("\\", "\\\\")
-                    .replace("\"", "\\\"")
-                    .replace("$", "\\$")
-                    .replace("`", "\\`");
-                String redirect = first ? " > " : " >> ";
+                // 0.1.36: printf '%s\n' statt echo. mksh wertet in echo Folgen
+                // wie \000 aus (tr der Besitzer-Pruefung) und schrieb so ein
+                // anderes Skript als den Java-Text.
                 shellResult = runTelegramShell(
                         transitionGeneration,
                         true,
-                        "echo \"" + escaped + "\""
-                                + redirect + scriptPath);
+                        at.greenchili.surfmate.launcher.DaemonLauncher
+                                .buildScriptLineWriteCommand(line, first, scriptPath));
                 if (!shellResult.success) {
                     return shellResult.canceled;
                 }

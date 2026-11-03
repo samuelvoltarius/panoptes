@@ -97,6 +97,23 @@ public final class UpdateLifecycle {
     }
 
     /**
+     * 0.1.36: Daemon-Logs beim Update ins Archiv verschieben statt löschen (gleiche Dateien wie vorher:
+     * {@code *.log} und {@code *.log.N} im Daemon-Ordner, außer {@code surfmate_install.log}).
+     */
+    static final String LOG_ARCHIV_SKRIPT = logArchivSkript("/data/user_de/0/com.android.shell/surfmate");
+
+    static String logArchivSkript(String ordner) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("LOGARCHIV=\"").append(ordner).append('/')
+                .append(at.greenchili.surfmate.logging.LogArchiv.ORDNER).append("\"\n");
+        for (String zeile : at.greenchili.surfmate.logging.LogArchiv.shellFunktionen()) sb.append(zeile).append('\n');
+        sb.append("for lf in ").append(ordner).append("/*.log ").append(ordner).append("/*.log.[0-9]*; do\n")
+                .append("  case \"$lf\" in *surfmate_install.log) ;; *) [ -f \"$lf\" ] && log_archivieren \"$lf\";; esac\n")
+                .append("done\n");
+        return sb.toString();
+    }
+
+    /**
      * Hard-kill every known daemon + watchdog, wipe lock/sentinel files, then
      * invoke onComplete on the same thread that the underlying launcher uses.
      * Safe to call when no update is in progress — it's just a sweep.
@@ -216,19 +233,14 @@ public final class UpdateLifecycle {
                 "'disabled by stopAllDaemons sweep'*|'disabled by killDaemon'*) " +
                 "rm -f \"$S\" 2>/dev/null;; esac\n" +
                 "done\n" +
-                // Stale daemon-log cleanup: only when the NEWLY-INSTALLED build
-                // does NOT capture logs (BuildConfig.LOG_CAPTURE is false — i.e.
-                // a braveheart→alpha/stable downgrade). braveheart keeps file
-                // logging on for every tag, and NOTHING ages those *.log files
-                // out (DaemonLogger.cleanupOldLogs has no callers; the Kotlin
-                // LogCleaner only touches the app cache dir), so after a
-                // downgrade they'd linger forever. We must NOT run this on a
-                // braveheart→braveheart update or we'd wipe the very logs the
-                // user wants to send. Excludes the install log + sentinels.
-                (at.greenchili.surfmate.BuildConfig.LOG_CAPTURE ? "" :
-                    "for lf in /data/user_de/0/com.android.shell/surfmate/*.log /data/user_de/0/com.android.shell/surfmate/*.log.[0-9]*; do " +
-                    "case \"$lf\" in *surfmate_install.log) ;; *) rm -f \"$lf\" 2>/dev/null;; esac; " +
-                    "done\n") +
+                // 0.1.36 (03.11.: „logs dürfen bitte auch bei updates nicht
+                // überschrieben werden“): bisher löschte dieser Schritt nach JEDEM
+                // Update alle Daemon-Logs, denn die Auto-Builds haben LOG_CAPTURE=false.
+                // Deshalb fehlte z. B. der Auslöser der Ereignis-Clips vom 31.10./01.11.
+                // Jetzt wandern dieselben Dateien ins Log-Archiv (LogArchiv): je Art
+                // höchstens 7 Tage / 50 MB (einstellbar), bei wenig Platz enger.
+                // Die Daemons sind oben bereits beendet, niemand hält die Dateien offen.
+                LOG_ARCHIV_SKRIPT +
                 "rm -f " + UPDATE_IN_PROGRESS_FILE + " " + POST_UPDATE_FILE + " 2>/dev/null\n" +
                 "echo done\n";
 

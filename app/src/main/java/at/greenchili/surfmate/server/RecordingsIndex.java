@@ -2469,8 +2469,14 @@ public final class RecordingsIndex {
             // Index queries must never fail because the storage classifier
             // (or the StorageManager singleton) is unavailable in this process.
         }
-        rec.put("type", rs.getString("type"));
+        String typ = rs.getString("type");
+        rec.put("type", typ);
         rec.put("cameraId", rs.getInt("camera_id"));
+        // 0.1.36: Auslöser (nur Ereignis- und manuelle Clips; neues, optionales Feld, ohne Ort)
+        if (("ereignis".equals(typ) || "replay".equals(typ)) && absPath != null) {
+            JSONObject ausloeser = at.greenchili.surfmate.recording.AusloeserInfo.lies(new File(absPath));
+            if (ausloeser != null) rec.put("ausloeser", ausloeser);
+        }
         rec.put("timestamp", ts);
         long size = rs.getLong("size_bytes");
         rec.put("size", size);

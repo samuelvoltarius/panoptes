@@ -1484,6 +1484,40 @@ class WebViewFragment : Fragment() {
         }
 
         /**
+         * Weckwort-Messung Stufe 1 (Schalter sprache.weckwortMessung, Standard AUS). Nur hier startbar: diese
+         * Brücke gibt es nur in der App-WebView am Autobildschirm, und nur für eine lokale Seite (127.0.0.1/localhost).
+         * Kein Netzweg, keine Kopplung, kein Telegram, keine Automation kann das Mikrofon einschalten.
+         * befehl: "start" | "stopp" | "status". Antwort: JSON mit Zahlen, nie Audio.
+         */
+        @android.webkit.JavascriptInterface
+        fun weckwortMessung(befehl: String?, minuten: Int): String {
+            val ctx = context?.applicationContext ?: return "{\"ok\":false,\"grund\":\"kein_kontext\"}"
+            return try {
+                when (befehl) {
+                    "start" -> at.greenchili.surfmate.weckwort.WeckwortSteuerung
+                        .starten(ctx, seiteIstLokal(), minuten).toString()
+                    "stopp" -> at.greenchili.surfmate.weckwort.WeckwortSteuerung.stoppen(ctx, "nutzer").toString()
+                    else -> at.greenchili.surfmate.weckwort.WeckwortSteuerung.status(ctx).toString()
+                }
+            } catch (e: Exception) {
+                "{\"ok\":false,\"grund\":\"fehler\"}"
+            }
+        }
+
+        /** Liest die URL der WebView auf dem Hauptthread (JS-Brücken laufen auf einem eigenen Thread). */
+        private fun seiteIstLokal(): Boolean {
+            val latch = java.util.concurrent.CountDownLatch(1)
+            var url: String? = null
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                url = webView?.url
+                latch.countDown()
+            }
+            if (!latch.await(1, java.util.concurrent.TimeUnit.SECONDS)) return false
+            val host = try { Uri.parse(url ?: return false).host } catch (e: Exception) { null }
+            return host == "127.0.0.1" || host == "localhost"
+        }
+
+        /**
          * Return the APK-bundled web catalog. The JS runtime uses this before
          * HTTP so app updates cannot be masked by a stale daemon extraction.
          */

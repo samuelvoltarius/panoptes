@@ -74,6 +74,25 @@
       "note": "Camping: battery close to or at the lower limit, weak 12 V battery, maximum time reached."
     },
     {
+      "id": "tiermodus.alarm",
+      "label": "Pet mode: alarm",
+      "group": "Tiermodus",
+      "defaultEnabled": true,
+      "severity": "critical",
+      "defaultClickUrl": "/local/tiermodus.html",
+      "note": "Climate off, car off, too warm, battery or 12 V at the limit. Repeats until someone taps Seen.",
+      "bypassQuietHours": true
+    },
+    {
+      "id": "tiermodus.hinweis",
+      "label": "Pet mode: notices",
+      "group": "Tiermodus",
+      "defaultEnabled": true,
+      "severity": "info",
+      "defaultClickUrl": "/local/tiermodus.html",
+      "note": "Pet mode on or off, climate running again."
+    },
+    {
       "id": "gewohnheit.probe",
       "label": "Habits: trial run",
       "group": "Gewohnheiten",

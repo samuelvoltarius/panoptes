@@ -151,8 +151,10 @@ public class GenAiAutomationTest {
                     String id = option == null
                             ? "" : option.optString("id", "")
                                     .toLowerCase();
+                    // REGEL A+: nur KiSperre-erlaubte Aktionen stehen im Katalog
                     if (!id.contains("shell")
-                            && !"actiongroup".equals(id)) {
+                            && !"actiongroup".equals(id)
+                            && KiSperre.erlaubterTyp(id)) {
                         expectedActions++;
                     }
                 }

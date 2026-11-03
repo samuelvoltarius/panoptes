@@ -66,6 +66,23 @@ public final class HandyApiHandler {
             return at.greenchili.surfmate.planer.HandyRoute.get().starten(kid, req, jetzt);
         }
 
+        /** Tiermodus schalten: {@code was} = an | aus | gesehen. Antwort wie {@code Tiermodus} ({ok} bzw. {ok:false, fehler}). */
+        default JSONObject tiermodus(String was, String quelle) {
+            if ("an".equals(was)) return at.greenchili.surfmate.camping.Tiermodus.ein(quelle);
+            if ("aus".equals(was)) return at.greenchili.surfmate.camping.Tiermodus.aus(quelle);
+            return at.greenchili.surfmate.camping.Tiermodus.quittieren(quelle);
+        }
+
+        /** Haftungshinweis bestätigen (nur aktuelle Textversion). */
+        default JSONObject tiermodusHinweis(String version) {
+            return at.greenchili.surfmate.camping.Tiermodus.hinweisBestaetigen(version);
+        }
+
+        /** Stand des Tiermodus (wie {@code GET /api/tiermodus}). */
+        default JSONObject tiermodusStand() {
+            return at.greenchili.surfmate.camping.Tiermodus.status();
+        }
+
         /** 0.1.25 Stand der letzten Handy-Route dieser Kopplung. */
         default JSONObject routeStand(String kid) throws Exception {
             return at.greenchili.surfmate.planer.HandyRoute.get().stand(kid);
@@ -411,6 +428,8 @@ public final class HandyApiHandler {
             case "sitzheizung":   // 0.1.21: gleiches Recht wie das Klima
             case "akku_heizen":   // 0.1.26: Akku vorheizen, gleiches Recht wie das Klima
             case "heizen_stoppen":   // 0.1.26: Klima UND Akku aus, ohne Rückfrage (Stoppen ist sicher)
+            case "tiermodus":        // 03.11.2026: Tiermodus an/aus/gesehen, gleiches Recht wie das Klima
+            case "tiermodus_stand":
                 recht = Kopplungen.RECHT_KLIMA;
                 break;
             case "zusperren":
@@ -438,6 +457,12 @@ public final class HandyApiHandler {
         }
         // 0.1.25: Stand der Handy-Route nur lesen – zählt nicht zum Ratenlimit (die App fragt nach)
         if ("route_stand".equals(aktion)) return u.routeStand(kid);
+        // Tiermodus: Stand lesen und „Gesehen“ zählen nicht zum Ratenlimit (Meldungen wiederholen sich)
+        if ("tiermodus_stand".equals(aktion)) return u.tiermodusStand();
+        if ("tiermodus".equals(aktion) && !"an".equals(req.optString("was", ""))
+                && !"aus".equals(req.optString("was", ""))) {
+            return tiermodus(req, kid, u);
+        }
         if (!LIMIT.erlauben(kid, aufsperren, jetzt)) {
             if (aufsperren) u.telegram("handy.aufsperren_abgelehnt", k().anzeigeName(kid), "ratenlimit");
             return fehler("ratenlimit");
@@ -465,6 +490,8 @@ public final class HandyApiHandler {
             case "update_starten":
                 return update().starten(req.optString("version", null), req.optBoolean("bestaetigt", false),
                         req.optBoolean("mobil", false), k().anzeigeName(kid), EinstellungenApiHandler.sprache("sprache=" + req.optString("sprache", "")));
+            case "tiermodus":
+                return tiermodus(req, kid, u);
             case "route":
                 // Weg A (Koordination 28.10.): planen ab Auto-Position, ins Planer-Postfach; Karte am Display bleibt der
                 // einzige Weg ins Navi – nichts startet von selbst
@@ -478,6 +505,40 @@ public final class HandyApiHandler {
             default:
                 return aufsperren(req, kid, u, jetzt);
         }
+    }
+
+    /**
+     * Tiermodus (03.11.2026) {@code {aktion:"tiermodus", was:"an"|"aus"|"gesehen"|"hinweis", version?}} mit Recht „klima“ – der einzige Weg
+     * aus der Ferne, den Tiermodus zu starten (Display ist der andere). Die Startbedingungen (P, 0 km/h, Auto an, kein
+     * Camping, kein Schutz) prüft {@code Tiermodus} selbst. Jede Änderung von außen meldet Telegram.
+     */
+    static JSONObject tiermodus(JSONObject req, String kid, Umgebung u) throws Exception {
+        String was = req.optString("was", "");
+        String quelle = "handy:" + k().anzeigeName(kid);
+        JSONObject r;
+        switch (was) {
+            case "an":
+                r = u.tiermodus("an", quelle);
+                break;
+            case "aus":
+                r = u.tiermodus("aus", quelle);
+                break;
+            case "gesehen":
+                r = u.tiermodus("gesehen", quelle);
+                break;
+            case "hinweis":   // Haftungshinweis bestätigen ({version}); Pflicht vor dem ersten Start
+                r = u.tiermodusHinweis(req.optString("version", ""));
+                break;
+            default:
+                return fehler("werte");
+        }
+        if (r == null) return fehler("fehlgeschlagen");
+        if (r.optBoolean("ok", false) && ("an".equals(was) || "aus".equals(was))) {
+            u.telegram("handy.tiermodus_" + was, k().anzeigeName(kid));
+        }
+        JSONObject o = r.optBoolean("ok", false) ? new JSONObject().put("ok", true)
+                : fehler(r.optString("fehler", "fehlgeschlagen"));
+        return o.put("was", was).put("stand", u.tiermodusStand());
     }
 
     /**

@@ -42,6 +42,7 @@ public class CommandRouter {
         alias("/dienst", "/service", "/daemon");
         alias("/sicherung", "/backup");
         alias("/camping", "/camp", "/zelt");
+        alias("/tier", "/haustier", "/hund", "/pet", "/dog");
 
         PERMISSION.put("/kamera", UnifiedTelegramConfig.REMOTE_CAMERA);
         PERMISSION.put("/aufnahmen", UnifiedTelegramConfig.REMOTE_CAMERA);
@@ -74,6 +75,7 @@ public class CommandRouter {
         handlers.add(new DaemonCommandHandler());
         handlers.add(new BackupCommandHandler());
         handlers.add(new CampingCommandHandler());
+        handlers.add(new TierCommandHandler());
     }
 
     /**

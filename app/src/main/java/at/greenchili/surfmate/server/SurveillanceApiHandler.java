@@ -45,7 +45,11 @@ public class SurveillanceApiHandler {
         }
         // Gesundheitswächter (Dauerbetrieb): Befunde, Eingriffe, Stand – nur lesen.
         if (cleanPath.equals("/api/surveillance/gesundheit")) {
-            HttpResponse.sendJson(out, at.greenchili.surfmate.gesundheit.GesundheitsDienst.status().toString());
+            // Zusatzfeld „rechte“ (Rechte-Selbstheilung): zustand, offen, repariert als Kennwörter; bestehende Felder bleiben
+            org.json.JSONObject g = new org.json.JSONObject(
+                    at.greenchili.surfmate.gesundheit.GesundheitsDienst.status().toString());
+            g.put("rechte", at.greenchili.surfmate.gesundheit.RechteHeilungsDienst.status());
+            HttpResponse.sendJson(out, g.toString());
             return true;
         }
         if (cleanPath.equals("/api/surveillance/enable")) {

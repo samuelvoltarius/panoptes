@@ -385,3 +385,9 @@
 -dontwarn sun.misc.Unsafe
 -dontwarn java.nio.file.**
 -dontwarn java.util.spi.ToolProvider
+
+# Weckwort-Messung: Vosk ruft libvosk ueber JNA auf (Reflexion), Klassen und Felder muessen bleiben.
+-keep class com.sun.jna.** { *; }
+-keepclassmembers class * extends com.sun.jna.** { public *; }
+-keep class org.vosk.** { *; }
+-dontwarn java.awt.**

@@ -1,6 +1,6 @@
 # Codekarte Panoptes
 
-**Stand: Version 0.1.35, Commit 2b46de21**
+**Stand: Version 0.1.36, Commit 806a9d66**
 
 Wegweiser durch den Code. Zuerst hier suchen, dann gezielt die genannte Datei öffnen.
 Die Karte nennt Dateien und Klassen, keine Zeilennummern. Kurze Pfade gelten ab
@@ -128,6 +128,7 @@ Jedes Paket steht hier, auch Unterpakete. Pfade ab dem Wurzelpaket. Lose Dateien
 | `util/` | Hilfen, `DaemonStorage` |
 | `wallbox/` | Wallbox-Anbindung |
 | `weather/` | Außentemperatur |
+| `weckwort/` | Weckwort-Messung Stufe 1 (nur Zahlen, Standard aus, keine Befehle) |
 | `wireguard/` | WireGuard-Konfiguration |
 
 ## 3. Thema → Datei → Einstieg
@@ -141,9 +142,12 @@ Jedes Paket steht hier, auch Unterpakete. Pfade ab dem Wurzelpaket. Lose Dateien
 | 12 V, Wächter-Stopp | `GuardStopPolicy` (rein), `GuardStopMonitor` (Laufzeit), `GuardStopNotice`, `Battery12vEvaluator` (Sägezahn: Stopp über den Nachladezyklus, siehe `Battery12vSaegezahnTest`), `Starterbatterie12v`, `AkkuChemie`, `BatteryVoltageMonitorV2`, `SocCutoffMonitor` | `GuardStopPolicy` |
 | Standby, Weg 2 | `Weg2Regel`, `Weg2Waechter`, `StandWeckRegel`, `Di5ParkedPowerHold` | `Weg2Regel` |
 | Gesundheitswächter | `GesundheitsDienst`, `Gesundheit`, `AusfuehrerWaechter`, `deploy/sm-watchdog.sh` | `GesundheitsDienst` |
+| Rechte-Selbstheilung | `RechteHeilung` (rein: `dumpsys`/`appops get` lesen, nur `pm grant`/`appops set … allow`), `RechteHeilungsDienst` (5 min nach Start, dann täglich; Rest an Display und Telegram, Katalog `rechte_heilung`), Feld `rechte` in `/api/surveillance/gesundheit` | `RechteHeilung` |
 | Kopplungen und Rechte | `Kopplungen` (Arten, Rechte `RECHT_*`), `KopplungsAnfragen`, `KopplungsMelder`, `PairingCodes`, `WeiteresGeraet` | `Kopplungen` |
 | Sparsam | `KurzSpeicher` (geteilte Antwort für `/api/vehicle/state` und SSE), `ZugriffsLog` (`/api/system/zugriffe`), Takt `energie.parkLeseSekunden` | `ZugriffsLog` |
 | Befehls-Log (wer, was, wann) | `BefehlsLog` (dauerhaft, Ordner `befehlslog`, zwei Ringdateien `pflicht`/`andere`, 30 Tage, `/api/system/befehle`), `SchreibProtokoll` (Zeile im Daemon-Log mit Kopplung und Aktion), Haken in `VehicleCommandRouter` und `Kopplungen`; Anzeige Karte „Protokoll“ in `system.html` (`web/shared/befehlslog.js`, Gruppe Verbindungen) | `BefehlsLog` |
+| Abschaltbericht (Telegram) | `AbschaltBericht` (rein plus Nachlauf 90 s nach Zündung aus, ohne Ort; Schalter `telegram.abschaltBericht` Standard an, Schwellen `telegram.abschaltBerichtMinMeter`/`telegram.abschaltBerichtMinMinuten`; trägt auch den Wächter-Merker nach), Haken in `CameraDaemon` neben `ZurueckAmAuto` | `AbschaltBericht` |
+| Fahrt-Statistik | `VerbrauchTemperatur` (Kurve je 5 °C, Spalte `ext_temp_bekannt`, alte 0 °C = unbekannt), `Standverlust` (aus `acc_events`, Spalte `waechter_scharf`), Anzeige `web/shared/fahrt-statistik.js` im Reiter Statistik von `trips.html`; MQTT nach Grafana: `docs/GRAFANA.md`, `docs/grafana/` | `Standverlust` |
 | ExternGuard | `ExternGuard` (Erlaubnisliste Kopplungen), `WebHandyGuard` (Web-Sitzung Handy), `AuthMiddleware` (Login, Loopback) | Abschnitt 5 |
 | Login, PIN, JWT | `AuthManager`, `PinManager`, `WebSitzung`, `TelegramAnmeldung`, `AuthApiHandler` | `AuthManager` |
 | Push (Handy, iPhone) | `PushSink`, `VapidSigner` (fester Projekt-Kontakt), `capabilities.push` in `SystemApiHandler` | `VapidSigner` |
@@ -153,14 +157,20 @@ Jedes Paket steht hier, auch Unterpakete. Pfade ab dem Wurzelpaket. Lose Dateien
 | Update-Hinweis am Display | `UpdateHinweis` (reine Regeln, auch Einwilligung Mobilfunk je Download), Karte in `MessageOverlayService`, Schalter `update.hinweis`, `update.mobilfunkEinmal` | `UpdateHinweis` |
 | Updater | `AppUpdateDienst`, `UpdateQuelle`, `Freigabe`, `UpdateRegel`, `ApkZertifikat`, `FernUpdate`, `AutostartNachUpdate`, `UpdateLifecycle`, `AppUpdater` (Erbe; Versionsanzeige, Daemons stoppen, Installation abgekoppelt starten) | `AppUpdateDienst` |
 | Fahrerdisplay-Appwahl | `TachoFaehigkeit`, `TachoNaviApp` (gemeinsame Freigabepolicy für Web/nativ/Automation), `TachoApiHandler`, Web unter Auto in `vehicle-control.html` + `web/shared/tacho-appwahl.js`, `ProjectionFragment`, `ClusterProjectionController`, `ClusterCast`, `DiLink5ClusterCast`; geprüfte Totwinkel-Layer-Platzierung und der standardmäßig abgeschaltete stationäre ADB-Testhook in `BsNativeLayer` und `BsOverlayFailureTestHook`; Vertrag und physische Abnahme in `TACHO_APPWAHL_ABNAHME.md` (freie Apps auf DiLink 5 bis zum belegten Totwinkel-Restore fail-closed) | `TachoNaviApp` |
+| Ladebelegung in der Navi | `navi.html` Umkreissuche, Stoppliste und Ladestopp über `web/shared/belegung.js` (Position nur auf 2 Nachkommastellen, Radius +1 km, enger nachfragen bei Ausdünnung, Feinsortierung im Gerät, „Stand vor x min“, ohne Daten keine Anzeige; Reiter „Günstigste in der Nähe“ rechnet Ladung + Hin- und Rückweg im Gerät, Lademenge `laden.standardKwh`, Verbrauch `verbrauchKwh100` aus `/status`; erster Preis ist der eigene „Laut Säule“-Preis je Betreiber und Stromart, `preis_eigen` setzt `NaviApiHandler.mitEigenenPreisen` über `LadePreisVorschlag.eigenePreiseEintragen`, nur im Auto); `NaviApiHandler` rundet `umkreis` zusätzlich; Ladestopp unterwegs `StoppBelegung` (`standVorS`) | `NaviApiHandler` |
 | OEM-Navigationspfeile | `OemNavigationClient` → `TcpCommandServer` → `OemNavigationBridge`, `OemNavigationTransport`, `NaviInfoPayload`, `OemTurnIcon`; Opt-in `navMap.oemTurnGuidance`, Grenzen in `OEM_NAVIGATIONSPFEILE.md` | `OemNavigationBridge` |
 | Fähigkeiten je Auto | `VehicleCapabilities` (belegte Werte bleiben über Neustarts gemerkt), `/api/system/capabilities` | `VehicleCapabilities` |
 | Fahrzeugbefehle | `VehicleControlApiHandler`, `byd/routing/`, `VehicleActuatorBridge`, `VehicleActuatorService` | `VehicleControlApiHandler` |
-| Ereignis-Clips | `EreignisClip`, `EreignisErkenner` (rein), `EreignisMonitor`, `EreignisAblage`, `EreignisMeldung`, `EreignisReceiver` | `EreignisErkenner` |
+| Ereignis-Clips | `EreignisClip`, `EreignisErkenner` (rein), `EreignisMonitor`, `EreignisAblage`, `EreignisMeldung`, `EreignisReceiver`; Auslöser je Clip in `AusloeserInfo` (Datei `<clip>.ausloeser.json` ohne Ort, auch für manuelle Clips, Feld `ausloeser` in `/api/recordings` und `/api/handy/v1/clips`, geht mit dem Clip) | `EreignisErkenner` |
+| Daemon-Logs | `LogArchiv` (Ordner `logarchiv`: altes Log wird vor jedem Start umbenannt, je Art 7 Tage und 50 MB, `logs.tage`/`logs.mb`, bei wenig Platz enger), Shell-Seite in den Wächter-Skripten von `DaemonLauncher` und in `UpdateLifecycle` | `LogArchiv` |
 | Aufnahmen, Index | `RecordingsApiHandler`, `RecordingsIndex`, `RecordingModeManager`, `ClipExport`, `HandyClipsApiHandler`, `WaechterStandbild` | `RecordingsIndex` |
 | Aufbewahrung, Speicher | `Aufbewahrung`, `StorageManager`, `ExternalStorageCleaner` | `Aufbewahrung` |
+| Ziel aus Karten-Link | `ZielLink` (Google, Waze inkl. Geohash, `geo:`, OSM, Apple; Kurzlink nur auf Wunsch per HEAD, nur der Location-Kopf), `POST /api/navi/link` in `NaviApiHandler`, Suchfeld in `navi.html` | `ZielLink` |
 | Kartensuche im Internet | `ForwardGeocoder`, `OverpassPoiClient`, `KartenSuchePrivat` (Schalter `karte.sucheInternet`, Position nur grob) | `KartenSuchePrivat` |
+| Dateien Handy ↔ Auto | `Dateiablage` (eigener Ordner, max. 200 MB, Teile zu 2 MB, keine APKs, `NOFOLLOW_LINKS`, Löschen einzeln), `DateienApiHandler`, Seite `dateien.html`, Recht `dateien` | `Dateiablage` |
+| Bildschirm reinigen | `web/shared/reinigung.js` (30 s alle Berührungen schlucken, nur in P, lang drücken beendet, liest nur `/status`), Knopf in `system.html` | `reinigung.js` |
 | Mitzählen | `Mitzaehlen` (Schalter `zaehlen.an`, Standard aus), `AutoAngaben`, `web/shared/zaehlen-frage.js` | `Mitzaehlen` |
+| Weckwort-Messung | `WeckwortMessRegeln` (Schalter `sprache.weckwortMessung`, Standard aus), `WeckwortMessung` (Mikrofon, nur Zahlen) im eigenen Prozess `:weckwort` über `WeckwortMessDienst`, `WeckwortMessAnzeige`, `VoskErkenner`; Start nur über `WeckwortSteuerung` aus der JS-Brücke in `WebViewFragment`, Karte in `testfunktionen.html`, `WeckwortMessApiHandler` | `WeckwortMessung` |
 | Fehler melden | `FehlerMelden`, `RueckmeldungApiHandler`, Seite `fehler-melden.html` | `FehlerMelden` |
 | Einstellungs-Katalog | `Katalog`, `LadenKatalog`, `Feld`, `Einstellungen`, `Energie`, `EinstellungenApiHandler` | `Katalog` |
 | Gesamt-Konfiguration | `UnifiedConfigManager`, `Geheimnisse`, `QualitySettingsApiHandler` | `UnifiedConfigManager` |
@@ -172,10 +182,13 @@ Jedes Paket steht hier, auch Unterpakete. Pfade ab dem Wurzelpaket. Lose Dateien
 | Routenplaner | `PlanerVerbindung`, `PlanerRoute`, `AutoZustand`, `PlanerBackoff`, `Einstellungen`; Fahrerdisplay-Karte über `ClusterMapProjector` nur nach zentralem, positivem `TachoFaehigkeit.karte`-Plattformurteil (Single-OS/Dienst/Shell/DiLink 5), bewusst nicht nach einer vor Aktivierung oft noch fehlenden VirtualDisplay-ID | `PlanerVerbindung` |
 | Laden, Ladeplan | `LadenApiHandler`, `LadenVorlieben`, `LadeplanDienst`, `ChargingSessionManager`, `TariffManager` | `LadenApiHandler` |
 | Ladekosten laut Säule | `LadeAbrechnung` (abgerechnete kWh: Eintrag laut Säule, sonst Akku-kWh plus Ladeverlust-Zuschlag `laden.verlustAc`/`laden.verlustDc`, nur beim Lesen), `LadeKosten`, Spalten `saeule_kwh`/`saeule_betrag` in `SocHistoryDatabase`; Eintrag per `POST /api/charging/{id}/saeule`; „Kosten ändern“ zählt als Betrag laut Säule; Fahrtpreis über `rateAbgerechnet` in `TripAnalyticsManager.satz`; einmaliger Hinweis `web/shared/ladeverlust-hinweis.js` (`laden.verlustHinweis`) | `LadeAbrechnung` |
+| Ladesäule erkennen | `LadesaeuleZuordnung` (rein: gerundete Planer-Anfrage, Zuordnung ≤ 150 m, Stromart, kW × 1,15, „auto“ nur bei genau einer Säule < 60 m, Datenschutz, gemerkte Säule), `LadesaeuleDienst` (eine Anfrage je Ladeende, Knopf „nachtragen“, Schalter `laden.saeuleNachschlagen`), `LadePreisVorschlag` (Vorschlag „~“ je Betreiber und Stromart), Spalten `station_id`/`station_name`/`betreiber`/`station_art`/`zuordnung`/`station_kandidaten` in `SocHistoryDatabase`; `GET`/`POST /api/charging/{id}/station`, `POST /api/charging/stationen/nachtragen`; Oberfläche `web/shared/ladesaeule.js` | `LadesaeuleZuordnung` |
 | Camping | `Camping`, `CampingRegler`, `CampingPlan`, `RouterHeizweg` | `Camping` |
+| Tiermodus | `Tiermodus` (Laufzeit, Klima über `RouterHeizweg`, kein eigener Regler), `TiermodusRegel` (rein), `TiermodusApiHandler`, Seite `tiermodus.html`, Telegram `/tier` (`TierCommandHandler`: nur Stand und Gesehen), Handy `aktion: tiermodus` (Recht `klima`); ruht Erschütterung und Abschreckung | `TiermodusRegel` |
 | Wallbox | `WallboxDienst`, `WallboxKonfig`, `WallboxSuche`, Adapter in `wallbox/` | `WallboxDienst` |
 | Home Assistant | `HaApiHandler`, `HaDienst`, `HaEreignisse`, `HaZustand`, `HaMdns` | `HaApiHandler` |
 | Regeln (Automation) | `Automations`, `AutomationQueue`, `Actions`, `Conditions`, `AutomationApiHandler` | `Automations` |
+| KI-Sperre (REGEL A+) | `KiSperre` ist eine Erlaubnisliste, zentral vor jedem KI-Vorschlag, beim Ausführen und bei KI-Entwürfen: die KI darf über Regeln nur Klima, Sitzheizung, Sonnenrollo, Anzeigen und reinen Ablauf auslösen, rekursiv über Aktionsgruppe, Wenn/Schleife und „Regel einschalten“; neue Aktionen in `Actions` sind für die KI automatisch gesperrt (`KiSperreTest`); nur `GenAiAction`/`GenAiAutomation` rufen sie, Nutzerwege nie | `KiSperre` |
 | Fernzugang | `TailscaleLauncher`, `TailscaledProzesse`, `WireGuardLauncher`, `Notzugang`, `assets/notzugang/notzugang.sh` | `TailscaleLauncher` |
 | Native Bibliotheken | `app/src/main/cpp/CMakeLists.txt` (`surveillance`, `dilink5_camera`, `fast_cam_release_guard`, `od`) | `CMakeLists.txt` |
 | Lizenzen | `LICENSE`, `THIRD_PARTY_NOTICES.md`, `LICENSES/` | |
@@ -231,6 +244,7 @@ Extern, ist die Route für Kopplungen gesperrt.
 | `/api/kopplung/passkey/` | `EinstellungenApiHandler` | nur direkt am Autobildschirm, Login aus der Ferne reicht nicht |
 | `/api/planer/`, `/api/test/blitzer` | `EinstellungenApiHandler` | Login; Extern `/api/planer/identitaet` lesen |
 | `/api/einrichtung` | `EinrichtungApiHandler` | Login |
+| `/api/dateien` | `DateienApiHandler` | Login; Extern nur Art `handy` mit Recht `dateien`; Handy-Web nur mit Recht `dateien` |
 | `/api/settings/` | `QualitySettingsApiHandler` | Login; Handy-Web ohne geheime Abschnitte |
 | `/api/backup/` | `ConfigBackupApiHandler` | Login; für Handy-Web gesperrt |
 | `/api/telegram/` | `TelegramApiHandler` | Login |
@@ -243,11 +257,12 @@ Extern, ist die Route für Kopplungen gesperrt.
 
 | Route | Handler | Rechte |
 |---|---|---|
-| `/api/trips` | `TripApiHandler` | Login; Extern `/api/trips`, `summary`, `range`, `datei` lesen |
+| `/api/trips` | `TripApiHandler` | Login; Extern `/api/trips`, `summary`, `range`, `datei` lesen; `verbrauch-temperatur`, `standverlust` nur Login |
 | `/api/charging` | `ChargingApiHandler` | Login |
 | `/api/laden` | `LadenApiHandler` | Login; Extern lesen, Vorlieben und Nachfrage schreiben |
 | `/api/ladeplan` | `LadeplanApiHandler` | Login; Extern lesen und schreiben, Freigabe nur am Auto |
 | `/api/camping` | `CampingApiHandler` | Login; Extern lesen und schreiben |
+| `/api/tiermodus` | `TiermodusApiHandler` | Login; Einschalten nur direkt am Auto; für Kopplungen und Automationen gesperrt |
 | `/api/wallbox/` | `WallboxApiHandler` | Login; Extern `status` lesen |
 | `/api/abrp/` | `AbrpApiHandler` | Login |
 | `/api/performance` | `PerformanceApiHandler` | Login |
@@ -278,6 +293,7 @@ Extern, ist die Route für Kopplungen gesperrt.
 | Route | Handler | Rechte |
 |---|---|---|
 | `/api/system/` | `SystemApiHandler` | Login; Extern `capabilities`, `daemon` lesen; `zugriffe` nie für Kopplungen und Handy-Web; `befehle` nie für Kopplungen, Handy-Web nur eigene (alle mit `protokoll`) |
+| `/api/weckwort-messung` | `WeckwortMessApiHandler` | nur direkt am Autobildschirm, nur lesen |
 | `/api/appupdate/` | `AppUpdateApiHandler` | Login; Extern `status` lesen; Handy-Web nur mit Recht `update`; `/api/appupdate/hinweis` nur am Auto oder voller Login |
 | `/api/update/` | `HttpServer` selbst | stillgelegt, antwortet 410 |
 | `/api/rueckmeldung/` | `RueckmeldungApiHandler` | Login; für Kopplungen doppelt gesperrt |
@@ -321,10 +337,10 @@ Weitere Handler ohne eigene Route in `HttpServer`: `AudioTestApiHandler`.
 Unter `assets/web/local/`, ausgeliefert durch `HttpServer`; gemeinsames Menü in `web/shared/app-shell.js`.
 
 `about.html`, `abrp.html`, `apps.html`, `assistant.html`, `automations.html`, `bericht.html`, `byd-cloud.html`, `camping.html`,
-`charging.html`, `communicate.html`, `events.html`, `fehler-melden.html`, `index.html`, `key-mapping.html`, `ladeplan.html`,
+`charging.html`, `communicate.html`, `dateien.html`, `events.html`, `fehler-melden.html`, `index.html`, `key-mapping.html`, `ladeplan.html`,
 `live-view.html`, `login.html`, `meldungen.html`, `mqtt.html`, `navi.html`, `network.html`, `notifications.html`,
 `orte.html`, `parking.html`, `performance.html`, `recording.html`, `remote-dev-view.html`, `road-sense.html`,
-`seat-positions.html`, `surveillance.html`, `system.html`, `telegram.html`, `testfunktionen.html`, `trips.html`,
+`seat-positions.html`, `surveillance.html`, `system.html`, `telegram.html`, `testfunktionen.html`, `tiermodus.html`, `trips.html`,
 `vehicle-control-3d-test.html`, `vehicle-control.html`, `waechter.html`, `wallbox.html`, `wireguard.html`
 
 `waechter.html` ist die Übersicht, `surveillance.html` sind die Wächter-Einstellungen.
@@ -344,7 +360,7 @@ auch Ablehnungen mitkommen; die Zeile schreibt `BefehlsLog.abschliessen` im `fin
 - `WebHandyGuard` ist eine Sperrliste: Zugang, Netz, Sicherung, Updates. Neue geheime Bereiche dort eintragen,
   neue geheime Konfig-Abschnitte in `GEHEIME_ABSCHNITTE`.
 - `Geheimnisse` maskiert Tokens und Schlüssel beim Lesen der Gesamt-Konfiguration.
-- `Kopplungen` setzt `kamera` und `standbild` nie automatisch, neue Kopplungen auch nie `aufsperren`, `wallbox`, `update`, `protokoll` (auch Bestand nie `protokoll`).
+- `Kopplungen` setzt `kamera` und `standbild` nie automatisch, neue Kopplungen auch nie `aufsperren`, `wallbox`, `update`, `protokoll`, `dateien` (auch Bestand nie `protokoll`, `dateien`).
   Beim Erlauben gibt es sie nur per Häkchen plus Rückfrage in `system.html`, Display und Telegram senden keine.
 - Am Auto gilt: Fahrzeugbefehle laufen nie über `/api/einstellungen`. Aufsperren braucht die Bestätigung im
   Moment, keine Automation.
@@ -363,7 +379,7 @@ auch Ablehnungen mitkommen; die Zeile schreibt `BefehlsLog.abschliessen` im `fin
 | Java-Quelltext allgemein | Auto = Android 10, minSdk 28. Instanzmethoden wie `InputStream.readAllBytes()` fehlen dort. | `MinSdkApiTest` verbietet sie. |
 | `surveillance/` | Fehlalarme vermeiden hat Vorrang, Änderungen brauchen die Invarianten. | `DETECTION-INVARIANTS.md` |
 | `Einstellungen` | Texte im Schema kommen aus den Katalogen. | `SchemaTexteAlleSprachenTest` |
-| `DaemonLauncher.kt` | Watchdog-Skripte stecken als Zeichenketten im Code; Pfade sind am Auto heikel. | Nicht nebenbei umbauen. |
+| `DaemonLauncher.kt` | Watchdog-Skripte stecken als Zeichenketten im Code; Pfade sind am Auto heikel. Ein Log nie mit `>` öffnen oder auf null kürzen. | Nicht nebenbei umbauen. Logs über `LogArchiv` (`LogArchivWatchdogTest`). |
 | `BefehlsLog.java` | Liest aus dem Rumpf nur Felder der Erlaubnisliste. Ein neues Feld kann Werte, Schlüssel oder Orte ins Log bringen. | Nur Kennwörter und Namen, nie Werte; `BefehlsLogTest` prüft Geheimnisse und Koordinaten. |
 | Interne Namen | Paket, Config-Schlüssel, API-Pfade, Ports nie umbenennen. | Sonst Update- und Aussperr-Gefahr. |
 

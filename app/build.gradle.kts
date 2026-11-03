@@ -317,8 +317,8 @@ android {
         // value (e.g. `-PsurfmateVersionName=27.4 -PsurfmateVersionCode=12`)
         // without a source edit per release; the defaults track the current
         // rolling head so a plain local build is still accurate.
-        versionCode = (project.findProperty("surfmateVersionCode") as? String)?.toIntOrNull() ?: 59
-        versionName = (project.findProperty("surfmateVersionName") as? String) ?: "0.1.35"
+        versionCode = (project.findProperty("surfmateVersionCode") as? String)?.toIntOrNull() ?: 61
+        versionName = (project.findProperty("surfmateVersionName") as? String) ?: "0.1.36"
         // The public release identity is separate from Android's versionName:
         // versionName intentionally stays semver-only for compatibility, while
         // users must still be able to distinguish stable and test artifacts.
@@ -651,6 +651,13 @@ dependencies {
     // coexist cleanly.
     implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
     implementation("org.eclipse.paho:org.eclipse.paho.mqttv5.client:1.2.5")
+
+    // Weckwort-Messung Stufe 1 (Schalter sprache.weckwortMessung, Standard AUS): lokale Spracherkennung Vosk
+    // (Apache-2.0, Maven Central). Nur arm64 landet im APK (packaging.jniLibs.excludes). Das Sprachmodell ist NICHT
+    // im APK, es liegt nur zum Messen im App-Ordner (weckwort/modell). JNA wird unter Apache-2.0 genutzt
+    // (doppelt lizenziert LGPL-2.1-or-later / Apache-2.0). Kein Audio verlässt das Gerät, nichts wird gespeichert.
+    implementation("com.alphacephei:vosk-android:0.3.47")
+    implementation("net.java.dev.jna:jna:5.13.0@aar")
 
     testImplementation(libs.junit)
     // Android's mockable org.json stubs throw in local JVM tests.

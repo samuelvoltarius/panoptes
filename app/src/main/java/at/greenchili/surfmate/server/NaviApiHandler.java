@@ -81,6 +81,23 @@ public class NaviApiHandler {
             HttpResponse.sendJson(out, res.toString());
             return true;
         }
+        // Ziel aus Google-Maps-, Waze- oder geo:-Link: im Auto gelesen, nie an den Planer. Kurzlinks nur mit
+        // „aufloesen“: HEAD vom Auto, nur der Location-Kopf (ZielLink). Link und Koordinaten werden nicht geloggt.
+        if (path.equals("/api/navi/link")) {
+            if (!"POST".equals(method)) {
+                HttpResponse.sendError(out, 405, "Method Not Allowed");
+                return true;
+            }
+            JSONObject req;
+            try {
+                req = new JSONObject(body == null || body.isEmpty() || body.length() > MAX_BODY ? "{}" : body);
+            } catch (Exception e) {
+                req = new JSONObject();
+            }
+            HttpResponse.sendJson(out, linkAntwort(req.optString("link", ""), req.optBoolean("aufloesen", false),
+                    at.greenchili.surfmate.navmap.nav.ZielLink::headLocation).toString());
+            return true;
+        }
         String op;
         if (path.equals("/api/navi/orte")) op = "orte";
         else if (path.equals("/api/navi/plan")) op = "plan";
@@ -120,7 +137,8 @@ public class NaviApiHandler {
             // filter.bevorzugt schicken (sonst überstimmt es die Konto-Vorlieben), und den Schlüssel mitgeben,
             // damit der Planer die Vorlieben selbst aus dem Konto nimmt. Lehnt er den Schlüssel ab (401, z. B.
             // Geräte-Typ ohne plan-Recht), einmal ohne Schlüssel planen – wie bisher, nur ohne Vorlieben.
-            String sendBody = "plan".equals(op) ? at.greenchili.surfmate.planer.FahrzeugWahl.einsetzen(planBody(body)) : body;   // Kern 5: fahrzeug immer
+            String sendBody = "plan".equals(op) ? at.greenchili.surfmate.planer.FahrzeugWahl.einsetzen(planBody(body))
+                    : umkreis ? umkreisBody(body) : body;   // Kern 5: fahrzeug immer; umkreis nur gerundet
             String[] kopf = "plan".equals(op) ? at.greenchili.surfmate.planer.PlanerSchluessel.kopf() : null;
             c = verbinde(op, sendBody, kopf);
             int code = c.getResponseCode();
@@ -144,6 +162,9 @@ public class NaviApiHandler {
             if (umkreis && at.greenchili.surfmate.planer.PlanerBackoff.UMKREIS.erfolg()) {
                 logger.info("Planer wieder erreichbar (umkreis)");
             }
+            if (umkreis && code == 200 && guenstigsteWunsch(body) && !AuthMiddleware.isExternRequest()) {
+                text = mitEigenenPreisen(text);
+            }
             HttpResponse.sendJson(out, code == 200 ? 200 : (code == 429 ? 429 : 502), text);
         } catch (Exception e) {
             if (umkreis && at.greenchili.surfmate.planer.PlanerBackoff.istNetzfehler(e)) {
@@ -164,6 +185,11 @@ public class NaviApiHandler {
             if (c != null) c.disconnect();
         }
         return true;
+    }
+
+    /** Basisadresse des Planers (Config planner.baseUrl, sonst der öffentliche Planer). */
+    public static String planerBasis() {
+        return baseUrl();
     }
 
     private static String baseUrl() {
@@ -226,6 +252,96 @@ public class NaviApiHandler {
         }
     }
 
+    /** Zusätzlicher Radius, wenn die Position hier erst gerundet werden musste (Rundung ≤ ~0,7 km). */
+    static final double UMKREIS_RUNDUNG_KM = 1.0;
+    /** Größter Radius, den die Weiterleitung nach dem Aufschlag schickt. */
+    static final double UMKREIS_MAX_RADIUS_KM = 50.0;
+
+    /**
+     * Datenschutz 03.11.2026: {@code lat}/{@code lon} gehen höchstens auf 2 Nachkommastellen (~1 km) an den Planer.
+     * Kam die Position genauer (alter Client), wird hier gerundet und der Radius um {@link #UMKREIS_RUNDUNG_KM}
+     * vergrößert, damit keine nahe Säule wegfällt; die Feinsortierung macht das Gerät. Schon grob gerundete Anfragen
+     * (Karte 0,05°, Navi 0,01°, StoppBelegung) bleiben unverändert.
+     */
+    static String umkreisBody(String body) {
+        try {
+            JSONObject b = new JSONObject(body);
+            if (!b.has("lat") || !b.has("lon")) return body;
+            double lat = b.getDouble("lat"), lon = b.getDouble("lon");
+            if (Double.isNaN(lat) || Double.isNaN(lon) || Double.isInfinite(lat) || Double.isInfinite(lon)) return body;
+            double rLat = Math.round(lat * 100) / 100.0, rLon = Math.round(lon * 100) / 100.0;
+            boolean geaendert = Math.abs(rLat - lat) > 1e-9 || Math.abs(rLon - lon) > 1e-9;
+            b.put("lat", rLat);
+            b.put("lon", rLon);
+            if (geaendert) {
+                double r = b.optDouble("radius", 10);
+                if (Double.isNaN(r) || r <= 0) r = 10;
+                b.put("radius", Math.min(UMKREIS_MAX_RADIUS_KM, r + UMKREIS_RUNDUNG_KM));
+            }
+            // „Günstigste in der Nähe“: Preise mit den eigenen Ladekarten (nur Tarif-IDs aus „Meine Ladekarten“, wie
+            // beim Planen) – nur auf Wunsch der Navi-Seite, der Merker selbst geht nicht hinaus.
+            if (b.has("meine_karten")) {
+                boolean wunsch = b.optBoolean("meine_karten", false);
+                b.remove("meine_karten");
+                if (wunsch && !b.has("karten")) {
+                    org.json.JSONArray k = meineKarten();
+                    if (k != null && k.length() > 0) b.put("karten", k);
+                }
+            }
+            return b.toString();
+        } catch (Exception e) {
+            return body;   // ungültige Werte reicht der Planer selbst mit 400 zurück
+        }
+    }
+
+    /** Tarif-IDs aus „Meine Ladekarten“ (nur wenn das Auto die Vorlieben-Quelle ist), sonst null. Tests ersetzen das. */
+    static java.util.function.Supplier<org.json.JSONArray> meineKartenQuelle = () -> {
+        JSONObject s = at.greenchili.surfmate.laden.LadenVorlieben.planerStueck(UnifiedConfigManager.loadConfig());
+        return s == null ? null : s.optJSONArray("karten");
+    };
+
+    /** Wunsch der Navi-Seite „Günstigste in der Nähe“ (Merker {@code meine_karten}). */
+    static boolean guenstigsteWunsch(String body) {
+        try {
+            return new JSONObject(body).optBoolean("meine_karten", false);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * 0.1.36: eigener „Laut Säule“-Preis je Betreiber und Stromart als erster Preis für „Günstigste in der Nähe“.
+     * Wird nur im Auto in die Antwort geschrieben ({@code preis_eigen}); an den Planer geht davon nichts.
+     * Ohne Lade-DB (z. B. Analytics nicht bereit) bleibt die Antwort unverändert.
+     */
+    static String mitEigenenPreisen(String text) {
+        try {
+            org.json.JSONArray sitz = eigeneLadungenQuelle.get();
+            if (sitz == null || sitz.length() == 0) return text;
+            JSONObject o = new JSONObject(text);
+            int n = at.greenchili.surfmate.charging.LadePreisVorschlag.eigenePreiseEintragen(o, sitz);
+            return n > 0 ? o.toString() : text;
+        } catch (Throwable t) {
+            return text;
+        }
+    }
+
+    /** Eigene Ladungen wie {@code /api/charging} (Betreiber, Stromart, „Laut Säule“). Tests ersetzen das. */
+    static java.util.function.Supplier<org.json.JSONArray> eigeneLadungenQuelle = () -> {
+        at.greenchili.surfmate.charging.ChargingSessionManager csm =
+                at.greenchili.surfmate.daemon.CameraDaemon.getChargingSessionManager();
+        if (csm == null) return null;
+        return csm.getSocDb().getChargingSessionsV2Range(0, System.currentTimeMillis() + 86_400_000L, 5000, 0);
+    };
+
+    private static org.json.JSONArray meineKarten() {
+        try {
+            return meineKartenQuelle.get();
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
     /** Ehrliche Antwort während des Backoffs: Grund „netz“ und wann wieder gefragt wird. */
     public static JSONObject offline(long warteMs) {
         long s = Math.max(1, (warteMs + 999) / 1000);
@@ -235,6 +351,23 @@ public class NaviApiHandler {
             o.put("grund", "netz");
             o.put("wiederInS", s);
         } catch (Exception ignored) { }
+        return o;
+    }
+
+    /**
+     * Antwort für {@code POST /api/navi/link}: {@code {ok,lat,lng,name?,quelle}} oder {@code {ok:false,grund,quelle?}}
+     * mit grund kurzlink | kein_ort | unbekannter_link | leer | nicht_aufloesbar.
+     */
+    public static JSONObject linkAntwort(String link, boolean aufloesen, at.greenchili.surfmate.navmap.nav.ZielLink.Kopf kopf)
+            throws Exception {
+        at.greenchili.surfmate.navmap.nav.ZielLink.Ziel z = aufloesen
+                ? at.greenchili.surfmate.navmap.nav.ZielLink.aufloesen(link, kopf)
+                : at.greenchili.surfmate.navmap.nav.ZielLink.lesen(link);
+        JSONObject o = new JSONObject().put("ok", z.ok());
+        if (z.quelle != null) o.put("quelle", z.quelle);
+        if (!z.ok()) return o.put("grund", z.grund);
+        o.put("lat", Math.round(z.lat * 1e6) / 1e6).put("lng", Math.round(z.lng * 1e6) / 1e6);
+        if (z.name != null) o.put("name", z.name);
         return o;
     }
 

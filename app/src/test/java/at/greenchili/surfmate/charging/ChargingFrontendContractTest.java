@@ -301,7 +301,7 @@ public class ChargingFrontendContractTest {
                 "'Energie ist geschätzt'"));
         assertTrue(charging.contains(
                 "this._t('charge.not_measured', 'Nicht gemessen')"));
-        assertTrue(html.contains("charging.js?v=51"));
+        assertTrue(html.contains("charging.js?v=52"));
     }
 
     @Test

@@ -13,7 +13,7 @@
     <meta name="theme-color" content="#0A2238">
     <script src="../shared/theme.js?v=13"></script>
     <script src="../shared/kartenquelle.js?v=5"></script>
-    <script src="../shared/app-shell.js?v=pn28"></script>
+    <script src="../shared/app-shell.js?v=pn30"></script>
     <!--
       Bottom-tab manifest for Trips. Tabs apply to the LIST VIEW only;
       the DETAIL VIEW (#tripDetailView) is a sequential drill-in and
@@ -1455,6 +1455,26 @@
                         </div>
                     </div>
 
+                    <!-- 03.11.2026: Verbrauch gegen Außentemperatur + Verlust im Stand (web/shared/fahrt-statistik.js) -->
+                    <div class="top-row" data-tab="stats">
+                        <div class="radar-card" id="tempKurveKarte" style="align-items:stretch;">
+                            <div class="card-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;color:var(--brand-primary)"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+                                <span data-i18n="trip.statistik.temp_titel">Verbrauch und Außentemperatur</span>
+                            </div>
+                            <div id="tempKurveInhalt" style="width:100%;"></div>
+                        </div>
+                    </div>
+                    <div class="top-row" data-tab="stats">
+                        <div class="radar-card" id="standverlustKarte" style="align-items:stretch;">
+                            <div class="card-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;color:var(--brand-primary)"><rect x="2" y="7" width="18" height="10" rx="2"/><line x1="22" y1="11" x2="22" y2="13"/></svg>
+                                <span data-i18n="trip.statistik.stand_titel">Verlust im Stand</span>
+                            </div>
+                            <div id="standverlustInhalt" style="width:100%;display:flex;flex-direction:column;"></div>
+                        </div>
+                    </div>
+
                     <!-- Top Bar: Quick Filters + Custom range -->
                     <div class="trips-top-bar" data-tab="trips" id="tripFilters">
                         <div class="filter-tabs">
@@ -2081,6 +2101,7 @@
     <script src="../shared/settings-hydration.js?v=1"></script>
     <script src="../shared/storage-budget.js?v=8"></script>
     <script src="../shared/trips.js?v=panoptes8"></script>
+    <script src="../shared/fahrt-statistik.js?v=1"></script>
     <script>
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('open');

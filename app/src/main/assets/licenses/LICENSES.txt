@@ -102,12 +102,15 @@ contained three files derived from [FAST_CAM_CAPTURE](https://github.com/frances
 | OpenCV | https://github.com/opencv/opencv | Apache-2.0 |
 | OpenH264 | https://github.com/cisco/openh264 | BSD-2-Clause |
 | TensorFlow Lite | https://github.com/tensorflow/tensorflow | Apache-2.0 |
+| Vosk (`libvosk.so`, from `com.alphacephei:vosk-android`) | https://github.com/alphacep/vosk-api | Apache-2.0; bundles Kaldi (Apache-2.0), OpenFst (Apache-2.0), OpenBLAS (BSD-3-Clause) |
+| JNA (`libjnidispatch.so`, from `net.java.dev.jna:jna`) | https://github.com/java-native-access/jna | dual-licensed LGPL-2.1-or-later / Apache-2.0 – **used under Apache-2.0** |
 
 ## Java/Kotlin libraries (Gradle dependencies)
 
 Including AndroidX and Material Components (Apache-2.0), MapLibre Native Android (BSD-2-Clause),
 dadb (Apache-2.0), OkHttp (Apache-2.0), ZXing (Apache-2.0), TensorFlow Lite Java (Apache-2.0),
-Eclipse Paho MQTT (EPL-2.0 / EDL-1.0), H2 Database (MPL-2.0 / EPL-1.0) and Java-WebSocket (MIT).
+Eclipse Paho MQTT (EPL-2.0 / EDL-1.0), H2 Database (MPL-2.0 / EPL-1.0), Java-WebSocket (MIT), Vosk (Apache-2.0)
+and JNA (used under Apache-2.0).
 The exact list and versions are in `app/build.gradle.kts` and `gradle/libs.versions.toml`.
 
 ### H2 Database Engine (details)
@@ -118,6 +121,18 @@ The exact list and versions are in `app/build.gradle.kts` and `gradle/libs.versi
 
 H2 is used unmodified for the app's local databases and, read-only, to take over a previous Overdrive installation's
 history on the device. Source code of H2 is available from the upstream repository above (MPL 2.0 §3.2).
+
+### Vosk speech recognition (details, wake-word measurement)
+
+| Component | Upstream | Version | License | Modified? |
+|-----------|----------|---------|---------|-----------|
+| Vosk Android (`com.alphacephei:vosk-android`, Maven Central) | https://github.com/alphacep/vosk-api | 0.3.47 | Apache-2.0 | No |
+| JNA (`net.java.dev.jna:jna`, Maven Central) | https://github.com/java-native-access/jna | 5.13.0 | LGPL-2.1-or-later / Apache-2.0 – **used under Apache-2.0** | No |
+
+Used only by the switched-off wake-word measurement (setting `sprache.weckwortMessung`, default off). Only the arm64-v8a
+native libraries are packaged. **No speech model is bundled in the APK.** For a measurement, the model
+`vosk-model-small-de-0.15` (Apache-2.0, https://alphacephei.com/vosk/models) is placed on the device separately.
+Audio never leaves the device and is not stored; only numbers are kept.
 
 ## Web libraries (`app/src/main/assets/web/shared/vendor/`, fonts in `.../fonts/`)
 

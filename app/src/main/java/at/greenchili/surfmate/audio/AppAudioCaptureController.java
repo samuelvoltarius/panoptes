@@ -188,6 +188,7 @@ public class AppAudioCaptureController {
      * cannot leak into video-only recordings.
      */
     public static boolean setRecordingDemand(boolean wanted) {
+        if (wanted) tonBedarfMelden();
         synchronized (OWNER_LOCK) {
             recordingDemand = wanted;
             return reconcileOwnerLocked();
@@ -200,6 +201,7 @@ public class AppAudioCaptureController {
 
     public static boolean setListenerDemand(
             boolean wanted, boolean diPlusCompatibility) {
+        if (wanted) tonBedarfMelden();
         synchronized (OWNER_LOCK) {
             listenerDemand = wanted;
             listenerDiPlusCompatibility =
@@ -214,6 +216,33 @@ public class AppAudioCaptureController {
                     && owner != null
                     && owner.recordForMuxing
                     && owner.isRunning();
+        }
+    }
+
+    /**
+     * Weckwort-Messung: true, solange Panoptes selbst Ton aufnimmt (Dashcam-Ton oder Mithören) oder es will.
+     * Die Messung startet dann nicht bzw. hört auf, damit sie dem Mitschnitt nie das Mikrofon streitig macht.
+     */
+    private static volatile Runnable tonBedarfHorcher;
+
+    /** Weckwort-Messung: wird gerufen, sobald Panoptes Ton will; die Messung gibt das Mikrofon dann sofort frei. */
+    public static void setTonBedarfHorcher(Runnable r) {
+        tonBedarfHorcher = r;
+    }
+
+    private static void tonBedarfMelden() {
+        Runnable r = tonBedarfHorcher;
+        if (r == null) return;
+        try {
+            r.run();
+        } catch (Throwable ignored) {
+        }
+    }
+
+    public static boolean isAnyCaptureRunning() {
+        synchronized (OWNER_LOCK) {
+            return recordingDemand || listenerDemand
+                    || (owner != null && owner.isRunning());
         }
     }
 

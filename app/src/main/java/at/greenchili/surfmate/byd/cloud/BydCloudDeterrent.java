@@ -69,6 +69,8 @@ public final class BydCloudDeterrent {
     public void onMotionDetected() {
         // Camping „bewohnt“: nie Licht oder Hupe
         if (at.greenchili.surfmate.camping.Camping.ohneAbschreckung()) return;
+        // Tiermodus: nie Licht oder Hupe (REGEL A+), auch nicht bei Bewegung draußen
+        if (at.greenchili.surfmate.camping.Tiermodus.aktiv()) return;
         // Quick checks on the calling thread (no I/O)
         String action = getDeterrentAction();
         if ("silent".equals(action)) {

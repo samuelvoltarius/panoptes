@@ -31,7 +31,9 @@
         wallbox: ['protokoll.a_wallbox', 'Wallbox'],
         route: ['protokoll.a_route', 'Ziel gesendet'],
         route_stand: ['protokoll.a_route', 'Ziel gesendet'],
-        update_starten: ['protokoll.a_update', 'Update']
+        update_starten: ['protokoll.a_update', 'Update'],
+        tiermodus: ['protokoll.a_tiermodus', 'Tiermodus'],
+        tiermodus_stand: ['protokoll.a_tiermodus', 'Tiermodus']
     };
 
     /** Lesbare Aktion: erst die Aktion, dann das erste Ereignis, dann der Bereich des Pfads. */
@@ -47,12 +49,16 @@
         if (ev.indexOf('kopplung.rechte') === 0) return T('protokoll.a_rechte', 'Rechte geändert');
         if (ev.indexOf('kopplung.anfrage') === 0) return T('protokoll.a_anfrage', 'Kopplungsanfrage entschieden');
         if (ev.indexOf('update.') === 0) return T('protokoll.a_update', 'Update');
+        if (ev.indexOf('dateien.') === 0) return T('protokoll.a_dateien', 'Dateien');
         var p = e.pfad || '';
         if (p.indexOf('/api/kopplung/rechte') === 0) return T('protokoll.a_rechte', 'Rechte geändert');
         if (p.indexOf('/api/kopplung') === 0) return T('protokoll.a_kopplung', 'Kopplung');
         if (p.indexOf('/api/einstellungen') === 0) return T('protokoll.a_einstellungen', 'Einstellungen geändert');
         if (p.indexOf('/api/appupdate') === 0) return T('protokoll.a_update', 'Update');
         if (p.indexOf('/api/vehicle') === 0) return T('protokoll.a_fahrzeug', 'Fahrzeugbefehl');
+        if (p.indexOf('/api/tiermodus') === 0) return T('protokoll.a_tiermodus', 'Tiermodus');
+        if (p.indexOf('/api/dateien') === 0) return T('protokoll.a_dateien', 'Dateien');
+        if (p.indexOf('/api/charging/') === 0 && /\/(station|stationen)(\/|$)/.test(p)) return T('protokoll.a_saeule', 'Ladesäule');
         return T('protokoll.a_sonstiges', 'Änderung') + (p ? ' (' + p.replace(/^\/api\//, '') + ')' : '');
     }
 

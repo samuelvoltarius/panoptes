@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#007A62">
     <script src="../shared/theme.js?v=13"></script>
-    <script src="../shared/app-shell.js?v=pn28"></script>
+    <script src="../shared/app-shell.js?v=pn30"></script>
     <!--
       Bottom-tab manifest for Charging. Tabs apply to the LIST VIEW only;
       the DETAIL VIEW (#chargingDetail) is a sequential drill-in and ignores
@@ -1084,6 +1084,7 @@
                             <div style="font-size:13px;margin-top:6px;" data-i18n="charge.no_sessions_hint">Ladungen kommen von selbst dazu, sobald du ansteckst</div>
                         </div>
                         <button class="load-more-btn" id="loadMoreBtn" style="display:none;" onclick="CHARGING.loadMore()" data-i18n="charge.load_more">Mehr zeigen</button>
+                        <button type="button" class="load-more-btn" id="stationNachtragen" data-i18n="laden.saeule.nachtragen">Ladestationen nachtragen</button>
                     </div>
 
                     <!-- Settings tab -->
@@ -1315,6 +1316,7 @@
                         </div>
                     </section>
 
+                    <section class="ch-detail-panel app-surface-card" id="detailStation" style="display:none;"></section>
                     <section class="ch-detail-panel ch-detail-metrics app-surface-card">
                         <div class="ch-detail-metric-column">
                             <div class="ch-detail-metric-head"><span data-i18n="charge.detail_metric">Messwert</span><span data-i18n="charge.detail_value">Wert</span></div>
@@ -1380,7 +1382,8 @@
     <div id="toastContainer" class="toast-container"></div>
 
     <script src="../shared/core.js?v=pn6"></script>
-    <script src="../shared/charging.js?v=51"></script>
+    <script src="../shared/ladesaeule.js?v=1"></script>
+    <script src="../shared/charging.js?v=52"></script>
 <script src="../shared/ladeverlust-hinweis.js?v=1"></script>
     <script src="../shared/einstellungen.js?v=pn8"></script>
     <script src="../shared/laden-vorlieben.js?v=2"></script>
@@ -1398,6 +1401,7 @@
             CHARGING.init();
             if (window.PanoptesLaden) PanoptesLaden.init(document.getElementById('ladenVorlieben'), document.getElementById('ladenVorliebenInhalt'));
             if (window.PanoptesNachfrage) PanoptesNachfrage.init(document.getElementById('nachfrage'), { nurJetzt: false });
+            if (window.PanoptesLadesaeule) PanoptesLadesaeule.nachtragen(document.getElementById('stationNachtragen'), function () { CHARGING.loadSessions(0); });
             (function wallboxKachel() {
                 var k = document.getElementById('wallboxKachel');
                 var tr = function (key, fb, v) { return window.PanoptesShell ? PanoptesShell.tr(key, fb, v) : fb; };

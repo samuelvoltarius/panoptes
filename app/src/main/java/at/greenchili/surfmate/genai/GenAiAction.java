@@ -18,6 +18,10 @@ public final class GenAiAction {
     private static final String SUNSHADE = "sunshade";
     private static final String AUTOMATION = "run_automation";
     private static final int MAX_REPLY_CHARS = 800;
+    /** REGEL A+: Hinweis an das Modell; durchgesetzt wird die Sperre trotzdem lokal in {@link KiSperre}. */
+    static final String BLOCKED_HINT = "Only climate, seat heating, sunshade and on-screen notices are allowed. "
+            + "Never propose horn, indicators, lights, find-my-car, alarm, locks, windows, sunroof, tailgate, "
+            + "mirrors, sound or MQTT, and never an automation marked assistantBlocked; Panoptes rejects them.";
 
     private GenAiAction() {
     }
@@ -32,6 +36,10 @@ public final class GenAiAction {
                     item.optString("id", ""));
             try {
                 item.put("mode", automationMode(automation));
+                // REGEL A+: der Assistent sieht, welche Regeln er nie starten darf
+                if (KiSperre.automationGesperrt(item.optString("id", "")) != null) {
+                    item.put("assistantBlocked", true);
+                }
             } catch (Exception ignored) {
             }
         }
@@ -47,7 +55,8 @@ public final class GenAiAction {
                     .put("automationCatalog", catalog)
                     .put("safety",
                             "Return one proposal only. Never claim execution. "
-                            + "Missing or ambiguous details require a clarification.");
+                            + "Missing or ambiguous details require a clarification. "
+                            + BLOCKED_HINT);
             // 0.1.27: Nutzer sagen „Heizen Stufe 3“ wie im Display; temperatureC bleibt die SDK-Skala 17–33
             if (at.greenchili.surfmate.byd.KlimaStufe.stufenModell()) {
                 out.put("climateLevels",
@@ -118,7 +127,7 @@ public final class GenAiAction {
                 + "Ask a question instead of calling the tool when any detail is "
                 + "missing or ambiguous. For an automation, pass the exact name "
                 + "spoken by the user; Panoptes resolves it locally and rejects "
-                + "missing or ambiguous matches.";
+                + "missing or ambiguous matches. " + BLOCKED_HINT;
     }
 
     public static Proposal parseProviderProposal(String raw)
@@ -224,6 +233,11 @@ public final class GenAiAction {
                     throw new ValidationException(
                             "Choose one automation that is currently saved.");
                 }
+                // REGEL A+: zentrale Sperre, auch beim Ausführen nach dem Tipp (Stand der Regel jetzt)
+                if (KiSperre.automationGesperrt(id) != null) {
+                    KiSperre.protokolliere("automation");
+                    throw new ValidationException(KiSperre.ablehnungStarten());
+                }
                 JSONObject saved = Automations.toJson()
                         .optJSONObject(id);
                 if (Automation.MODE_DISABLED.equals(
@@ -298,7 +312,8 @@ public final class GenAiAction {
         return "Prepare exactly one user-confirmed Panoptes action. Use "
                 + "climate_temperature, sunshade, or run_automation only. "
                 + "For unused fields send -1, none, or an empty string. "
-                + "Never call this for questions or when details are ambiguous.";
+                + "Never call this for questions or when details are ambiguous. "
+                + BLOCKED_HINT;
     }
 
     private static String confirmationText(JSONObject action) {

@@ -24,6 +24,14 @@ class SurfMateApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
+        // Weckwort-Messung: eigener Prozess nur für die Messung (Dienst im Paket weckwort). Dort nur die Sprache für die
+        // Anzeige setzen, sonst nichts starten (keine Dienste, keine Listener, keine Daemons).
+        if (android.app.Application.getProcessName() == "$packageName:weckwort") {
+            LocaleManager.attach(this)
+            applyPersistedLocale()
+            return
+        }
+
         try {
             startService(Intent(this, at.greenchili.surfmate.remote.RemoteDevViewBridgeService::class.java))
         } catch (error: Throwable) {

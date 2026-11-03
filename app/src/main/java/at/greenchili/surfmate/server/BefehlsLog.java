@@ -52,14 +52,15 @@ public final class BefehlsLog {
     /** Aktionen von {@code /api/handy/v1/aktion} (HandyApiHandler §3); alles andere wird {@code unbekannt}. */
     static final Set<String> AKTIONEN = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             "aufsperren", "zusperren", "klima_an", "klima_aus", "sitzheizung", "akku_heizen", "heizen_stoppen",
-            "wallbox", "route", "route_stand", "update_starten")));
+            "wallbox", "route", "route_stand", "update_starten", "tiermodus", "tiermodus_stand")));
 
     /** Pfade, deren Schreibzugriffe immer zu {@link #PFLICHT} gehören. */
     static final String[] PFLICHT_PFADE = {
             "/api/handy/v1/aktion", "/api/vehicle", "/api/bydcloud", "/api/quick-controls", "/api/keymap",
             "/api/kopplung", "/api/einstellungen", "/api/appupdate/", "/api/update/", "/api/ha/",
             "/api/telegram-anmeldung/", "/api/cloud-uebergabe", "/api/notzugang", "/api/sitzung/", "/api/bruecke",
-            "/api/wireguard", "/api/tailscale", "/api/backup/"};
+            "/api/wireguard", "/api/tailscale", "/api/backup/",
+            "/api/tiermodus"};   // 0.1.36: Tiermodus schaltet das Klima
 
     /** Gründe, die ein technischer Fehler sind (sonst gilt ok:false als Ablehnung). */
     static final Set<String> FEHLER_GRUENDE = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(

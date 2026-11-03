@@ -207,13 +207,16 @@ public final class EreignisMonitor {
         }
         sichertGerade = true;
         final long ereignisMs = System.currentTimeMillis();
+        // 0.1.36: Auslöser jetzt festhalten (Werte, Schwellen, Gang, Tempo), geschrieben wird er neben den Clip.
+        final org.json.JSONObject ausloeser = ausloeserInfo(g, erkenner.letzteDetails(), ereignisMs,
+                erkenner.letzteKmh());
         logger.info(String.format(java.util.Locale.ROOT, "Ereignis erkannt: %s – sichere Clip (Tempo %.0f km/h%s)",
                 g, erkenner.letzteKmh(),
                 g == EreignisErkenner.Grund.STOSS
                         ? String.format(java.util.Locale.ROOT, ", Stoß %.1f m/s²", erkenner.letzteSpitze()) : ""));
         Thread t = new Thread(() -> {
             try {
-                sichern(g, ereignisMs);
+                sichern(g, ereignisMs, ausloeser);
             } finally {
                 sichertGerade = false;
             }
@@ -233,7 +236,33 @@ public final class EreignisMonitor {
         };
     }
 
-    private void sichern(EreignisErkenner.Grund g, long ereignisMs) {
+    /** Auslöser-Eintrag ohne Ort (Gang aus dem Aufnahme-Modus, Tempo aus dem Erkenner). */
+    static org.json.JSONObject ausloeserInfo(EreignisErkenner.Grund g, EreignisErkenner.Details d, long ereignisMs,
+                                             double kmh) {
+        String gang = null;
+        try {
+            RecordingModeManager rmm = at.greenchili.surfmate.daemon.CameraDaemon.getRecordingModeManager();
+            if (rmm != null) gang = RecordingModeManager.gearToString(rmm.getCurrentGear());
+        } catch (Throwable ignored) {
+        }
+        return ausloeserInfo(g, d, ereignisMs, kmh, gang);
+    }
+
+    static org.json.JSONObject ausloeserInfo(EreignisErkenner.Grund g, EreignisErkenner.Details d, long ereignisMs,
+                                             double kmh, String gang) {
+        String art = g == EreignisErkenner.Grund.STOSS ? AusloeserInfo.STOSS : AusloeserInfo.BREMSEN;
+        org.json.JSONObject o = AusloeserInfo.neu(ereignisMs, art,
+                d != null ? d.quelle : AusloeserInfo.QUELLE_UNBEKANNT, d != null ? d.regel : null);
+        if (d != null) {
+            for (java.util.Map.Entry<String, Double> e : d.werte.entrySet()) AusloeserInfo.wert(o, e.getKey(), e.getValue());
+            for (java.util.Map.Entry<String, Double> e : d.schwellen.entrySet()) {
+                AusloeserInfo.schwelle(o, e.getKey(), e.getValue());
+            }
+        }
+        return AusloeserInfo.fahrt(o, gang, kmh);
+    }
+
+    private void sichern(EreignisErkenner.Grund g, long ereignisMs, org.json.JSONObject ausloeser) {
         ManualClipService mcs = ManualClipService.getInstance();
         final Object warten = new Object();
         final File[] ergebnis = new File[1];
@@ -289,11 +318,13 @@ public final class EreignisMonitor {
             datei = ergebnis[0];
         }
         if (datei == null) return;
-        gesichert(g, datei, ereignisMs);
+        gesichert(g, datei, ereignisMs, ausloeser);
     }
 
-    private void gesichert(EreignisErkenner.Grund g, File datei, long ereignisMs) {
+    private void gesichert(EreignisErkenner.Grund g, File datei, long ereignisMs, org.json.JSONObject ausloeser) {
         logger.info("Ereignis gesichert (" + g + "): " + datei.getName());
+        if (!AusloeserInfo.schreibe(datei, ausloeser)) logger.warn("Auslöser-Datei nicht geschrieben: " + datei.getName());
+        else logger.info("Auslöser: " + AusloeserInfo.lies(datei));
         EreignisClip.frageMerken(EreignisClip.stamm(datei.getName()), ereignisMs);
         EreignisAblage.pflege();
         meldungAmDisplay(ereignisMs);

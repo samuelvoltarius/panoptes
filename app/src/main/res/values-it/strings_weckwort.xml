@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Weckwort-Messung Stufe 1: sichtbare Anzeige, solange das Mikrofon zum Messen offen ist. -->
+<resources>
+    <string name="weckwort_messung_anzeige">Microfono attivo (misura)</string>
+</resources>

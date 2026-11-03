@@ -87,6 +87,29 @@ public class StoppBelegungTest {
         assertEquals("A ist vorbei: „voll“ gilt nicht für B", RangeWatch.Stufe.PASST, l2.stufe);
     }
 
+    /** 03.11.: „Stand vor x min“ am Ladestopp – nur mit Live-Alter vom Planer, Alter läuft seit dem Abruf weiter. */
+    @Test
+    public void standVorSNurMitLiveAlter() throws Exception {
+        JSONObject mit = new JSONObject("{\"stationen\":[" + station("A", SLAT, SLON, 150, 2, 4, true, 2) + "]}");
+        StoppBelegung b = StoppBelegung.auswerten(mit, SLAT, SLON, 0);
+        assertTrue(b.standBekannt);
+        assertEquals(30 + 120, b.alsJson(120_000).getLong("standVorS"));
+        assertFalse("ohne Abrufzeit kein Stand", b.alsJson().has("standVorS"));
+
+        JSONObject ohne = new JSONObject("{\"stationen\":[{\"name\":\"B\",\"lat\":" + SLAT + ",\"lon\":" + SLON
+                + ",\"kw\":150,\"frei\":1,\"ladepunkte\":2,\"status_bekannt\":true}]}");
+        StoppBelegung c = StoppBelegung.auswerten(ohne, SLAT, SLON, 0);
+        assertFalse(c.standBekannt);
+        assertFalse("ohne live_alter_s kein Zeitstempel", c.alsJson(5_000).has("standVorS"));
+
+        JSONObject unbekannt = new JSONObject("{\"stationen\":[" + station("C", SLAT, SLON, 150, 0, 4, false, 0) + "]}");
+        assertFalse("ohne Status nichts", StoppBelegung.auswerten(unbekannt, SLAT, SLON, 0).alsJson(5_000).has("standVorS"));
+
+        String d = new String(Files.readAllBytes(Paths.get(
+                "src/main/java/at/greenchili/surfmate/reichweite/RangeWatchDienst.java")), StandardCharsets.UTF_8);
+        assertTrue(d.contains("belegung.alsJson(Math.max(0, now - belegungStand))"));
+    }
+
     @Test
     public void wiringNeverSendsCarPosition() throws Exception {
         String d = new String(Files.readAllBytes(Paths.get(

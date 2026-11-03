@@ -23,6 +23,35 @@ public final class EreignisErkenner {
 
     public enum Grund { VERZOEGERUNG, STOSS }
 
+    /**
+     * 0.1.36: Was genau ausgelöst hat (für {@code <clip>.ausloeser.json}): Regel, Quelle, auslösende Werte und die
+     * Schwellen, gegen die sie geprüft wurden. Nur Zahlen und Kennwörter, kein Ort.
+     */
+    public static final class Details {
+        public final Grund grund;
+        /** {@code tempo}, {@code tempo+sensor} oder {@code sensor}. */
+        public final String quelle;
+        public final String regel;
+        public final java.util.Map<String, Double> werte = new java.util.LinkedHashMap<>();
+        public final java.util.Map<String, Double> schwellen = new java.util.LinkedHashMap<>();
+
+        Details(Grund grund, String quelle, String regel) {
+            this.grund = grund;
+            this.quelle = quelle;
+            this.regel = regel;
+        }
+
+        Details wert(String name, double v) {
+            if (!Double.isNaN(v) && !Double.isInfinite(v)) werte.put(name, v);
+            return this;
+        }
+
+        Details schwelle(String name, double v) {
+            schwellen.put(name, v);
+            return this;
+        }
+    }
+
     // ---------------------------------------------------------------- Tempo
     static final double SCHWELLE_MS2 = 5.0;
     static final long FENSTER_MS = 500L;
@@ -88,10 +117,14 @@ public final class EreignisErkenner {
     // Unplausibel starker Abfall: Auslösung erst nach einer Probe ohne Rückprall.
     private boolean pruefeRueckprall;
     private double rueckprallBasis;
+    private Details rueckprallDetails;
     // Tempo-Auslösung, die noch auf die Sensor-Proben ihres Zeitraums wartet.
     private boolean wartet;
     private long warteVon, warteBis;
-    private double warteA, warteV;
+    private double warteA, warteV, warteAltV;
+    /** Was die nächste Auslösung begründet; wird bei Erfolg zu {@link #letzteDetails}. */
+    private Details kandidat;
+    private Details letzteDetails;
 
     // Sensor.
     private double gx, gy, gz;
@@ -151,13 +184,15 @@ public final class EreignisErkenner {
             } else if (kmh <= STEHT_KMH) {
                 stossKandidat = false;
                 letzteSpitze = stossKandidatSpitze;
+                kandidat = stossDetails("stoss_langsam_steht", stossKandidatSpitze, STOSS_EINZELN_MS2)
+                        .wert("kmhDanach", kmh).schwelle("stehtKmh", STEHT_KMH);
                 g = ausloesen(tMs, Grund.STOSS);
             }
         }
         if (wartet && tMs - warteBis > IMU_WARTE_MS) {
             // Sensor liefert nicht nach: nach dem Tempo allein entscheiden.
             wartet = false;
-            g = entscheide(warteBis, warteA, warteV, Double.NaN);
+            g = entscheide(warteBis, warteA, warteAltV, warteV, Double.NaN);
         }
         if (hatWartend) {
             boolean ausreisser = vAnzahl > 0
@@ -183,6 +218,8 @@ public final class EreignisErkenner {
         if (pruefeRueckprall) {
             pruefeRueckprall = false;
             if (jetztV <= rueckprallBasis + RUECKPRALL_KMH) {
+                kandidat = rueckprallDetails == null ? null
+                        : rueckprallDetails.wert("kmhDanach", jetztV).schwelle("rueckprallKmh", RUECKPRALL_KMH);
                 return ausloesen(jetztT, Grund.VERZOEGERUNG);
             }
             treffer = 0;
@@ -214,15 +251,25 @@ public final class EreignisErkenner {
                 warteBis = jetztT;
                 warteA = a;
                 warteV = jetztV;
+                warteAltV = altV;
                 return null;
             }
-            return entscheide(jetztT, a, jetztV, imuSpitze(zeit(alt), jetztT));
+            return entscheide(jetztT, a, altV, jetztV, imuSpitze(zeit(alt), jetztT));
         }
-        return entscheide(jetztT, a, jetztV, Double.NaN);
+        return entscheide(jetztT, a, altV, jetztV, Double.NaN);
     }
 
     /** {@code spitze} NaN = kein Sensor; sonst größter waagrechter Anteil im Zeitraum. */
-    private Grund entscheide(long tMs, double a, double jetztV, double spitze) {
+    private Grund entscheide(long tMs, double a, double altV, double jetztV, double spitze) {
+        Details d = new Details(Grund.VERZOEGERUNG, Double.isNaN(spitze) ? "tempo" : "tempo+sensor", "verzoegerung")
+                .wert("verzoegerungMs2", a).wert("kmhVorher", altV).wert("kmhNachher", jetztV)
+                .wert("sensorSpitzeMs2", spitze)
+                .schwelle("verzoegerungMs2", SCHWELLE_MS2).schwelle("minStartKmh", MIN_START_KMH)
+                .schwelle("fensterMs", FENSTER_MS).schwelle("fensterNoetig", FENSTER_NOETIG)
+                .schwelle("plausibelMs2", PLAUSIBEL_MS2);
+        if (!Double.isNaN(spitze)) {
+            d.schwelle("sensorEinspruchMs2", IMU_EINSPRUCH_MS2).schwelle("sensorBestaetigungMs2", IMU_BESTAETIGUNG_MS2);
+        }
         if (!Double.isNaN(spitze)) {
             if (spitze < IMU_EINSPRUCH_MS2) { treffer = 0; return null; }   // Sensor ruhig: Tempo-Fehler
             if (spitze < IMU_BESTAETIGUNG_MS2 && a > PLAUSIBEL_MS2) { treffer = 0; return null; }
@@ -230,8 +277,12 @@ public final class EreignisErkenner {
         if (a > PLAUSIBEL_MS2) {
             pruefeRueckprall = true;
             rueckprallBasis = jetztV;
+            rueckprallDetails = new Details(d.grund, d.quelle, "verzoegerung_ohne_rueckprall");
+            rueckprallDetails.werte.putAll(d.werte);
+            rueckprallDetails.schwellen.putAll(d.schwellen);
             return null;
         }
+        kandidat = d;
         return ausloesen(tMs, Grund.VERZOEGERUNG);
     }
 
@@ -274,7 +325,7 @@ public final class EreignisErkenner {
         if (!fahrbereit) return null;
         if (wartet && tMs >= warteBis) {
             wartet = false;
-            Grund g = entscheide(tMs, warteA, warteV, imuSpitze(warteVon, warteBis));
+            Grund g = entscheide(tMs, warteA, warteAltV, warteV, imuSpitze(warteVon, warteBis));
             if (g != null) return g;
         }
         boolean langsam = Double.isNaN(letzteKmh) || letzteKmh < LANGSAM_KMH;
@@ -285,6 +336,8 @@ public final class EreignisErkenner {
                 stossHartErsterMs = Long.MIN_VALUE;
                 if (!Double.isNaN(letzteKmh) && letzteKmh <= STEHT_KMH) {
                     letzteSpitze = waagrecht;
+                    kandidat = stossDetails("stoss_im_stand", waagrecht, STOSS_EINZELN_MS2)
+                            .schwelle("stehtKmh", STEHT_KMH);
                     return ausloesen(tMs, Grund.STOSS);       // stand schon: Auffahrunfall
                 }
                 // rollt noch: erst auslösen, wenn das Auto binnen STEHT_BINNEN_MS steht
@@ -298,12 +351,14 @@ public final class EreignisErkenner {
         }
         if (waagrecht >= STOSS_EINZELN_MS2) {
             letzteSpitze = waagrecht;
+            kandidat = stossDetails("stoss_einzeln", waagrecht, STOSS_EINZELN_MS2);
             return ausloesen(tMs, Grund.STOSS);
         }
         if (waagrecht >= STOSS_MS2) {
             if (stossErsterMs != Long.MIN_VALUE && tMs - stossErsterMs <= STOSS_FENSTER_MS) {
                 stossErsterMs = Long.MIN_VALUE;
                 letzteSpitze = waagrecht;
+                kandidat = stossDetails("stoss_doppelt", waagrecht, STOSS_MS2);
                 return ausloesen(tMs, Grund.STOSS);
             }
             stossErsterMs = tMs;
@@ -321,7 +376,21 @@ public final class EreignisErkenner {
         return letzteKmh;
     }
 
+    /** 0.1.36: Was zuletzt ausgelöst hat (null = noch nichts). */
+    public synchronized Details letzteDetails() {
+        return letzteDetails;
+    }
+
+    private Details stossDetails(String regel, double spitze, double schwelle) {
+        return new Details(Grund.STOSS, "sensor", regel)
+                .wert("stossMs2", spitze).wert("kmh", letzteKmh)
+                .schwelle("stossMs2", schwelle).schwelle("fensterMs", STOSS_FENSTER_MS)
+                .schwelle("langsamKmh", LANGSAM_KMH);
+    }
+
     private Grund ausloesen(long tMs, Grund g) {
+        Details d = kandidat;
+        kandidat = null;
         treffer = 0;
         pruefeRueckprall = false;
         if (tMs - letzteAusloesung < RUHE_MS) return null;
@@ -329,6 +398,7 @@ public final class EreignisErkenner {
             long aeltester = stunde[stundeIdx];
             if (tMs - aeltester < 3_600_000L) return null;
         }
+        letzteDetails = d != null && d.grund == g ? d : new Details(g, "unbekannt", "unbekannt");
         letzteAusloesung = tMs;
         stunde[stundeIdx] = tMs;
         stundeIdx = (stundeIdx + 1) % MAX_PRO_STUNDE;

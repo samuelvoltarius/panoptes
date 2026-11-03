@@ -347,6 +347,8 @@ public final class ScreenDeterrent {
         if (!hotCacheEnabled) return;
         // Camping „bewohnt“: nie Abschreckung (volatile Lesen, keine I/O)
         if (at.greenchili.surfmate.camping.Camping.ohneAbschreckung()) return;
+        // Tiermodus: das Display zeigt die Tier-Karte, keine Abschreckung darüber
+        if (at.greenchili.surfmate.camping.Tiermodus.aktiv()) return;
 
         // SAFETY (deterrent-while-driving): the deterrent renders a full-screen
         // SurfaceControl layer at z=Integer.MAX_VALUE that occludes the ENTIRE

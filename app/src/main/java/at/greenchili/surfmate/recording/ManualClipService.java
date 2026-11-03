@@ -326,8 +326,34 @@ public final class ManualClipService {
     }
 
     public RequestResult requestClip(int beforeSeconds, int afterSeconds) {
-        return requestClip(beforeSeconds, afterSeconds, null);
+        return requestClip(beforeSeconds, afterSeconds, AusloeserInfo.QUELLE_UNBEKANNT);
     }
+
+    /**
+     * 0.1.36: Manueller Clip mit Quelle ({@link AusloeserInfo#QUELLE_TASTE}, {@link AusloeserInfo#QUELLE_REGEL});
+     * neben dem Clip entsteht {@code <clip>.ausloeser.json} mit Art „manuell“.
+     */
+    public RequestResult requestClip(int beforeSeconds, int afterSeconds, String quelle) {
+        // Gang im Moment des Auslösens, nicht erst beim Speichern nach dem Nachlauf.
+        String gang = null;
+        try {
+            RecordingModeManager rmm = CameraDaemon.getRecordingModeManager();
+            if (rmm != null) gang = RecordingModeManager.gearToString(rmm.getCurrentGear());
+        } catch (Throwable ignored) {
+        }
+        JSONObject o = AusloeserInfo.neu(System.currentTimeMillis(), AusloeserInfo.MANUELL, quelle, "manueller_clip");
+        AusloeserInfo.wert(o, "sekundenVorher", beforeSeconds);
+        AusloeserInfo.wert(o, "sekundenNachher", afterSeconds);
+        // Läuft schon ein Clip, wird diese Anfrage ohnehin abgelehnt: dessen Auslöser nicht überschreiben.
+        if (!requestInFlight.get()) manuellerAusloeser.set(AusloeserInfo.fahrt(o, gang, Double.NaN));
+        return requestClip(beforeSeconds, afterSeconds, (EreignisFertig) null);
+    }
+
+    /**
+     * Auslöser des laufenden manuellen Clips (höchstens einer gleichzeitig, siehe {@code requestInFlight}). Eine
+     * abgelehnte Anfrage hinterlässt ihn; die nächste Anfrage überschreibt ihn vor dem Start.
+     */
+    private final AtomicReference<JSONObject> manuellerAusloeser = new AtomicReference<>();
 
     /** Ergebnis eines Ereignis-Clips (null = gescheitert). Läuft auf dem Export-Thread. */
     public interface EreignisFertig {
@@ -539,6 +565,12 @@ public final class ManualClipService {
                 logger.warn("Instant replay index update failed: " + t.getMessage());
             }
             logger.info("Instant replay saved: " + output.getAbsolutePath());
+            if (ereignis == null) {
+                JSONObject a = manuellerAusloeser.getAndSet(null);
+                if (a != null && !AusloeserInfo.schreibe(output, a)) {
+                    logger.warn("Auslöser-Datei nicht geschrieben: " + output.getName());
+                }
+            }
             if (ereignis == null) publishState(STATE_SAVED, output.getName());
             gesichert = output;
         } catch (Throwable t) {

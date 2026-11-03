@@ -145,10 +145,14 @@ public class BefehlsLogTest {
         assertEquals(id, angelegt.getString("ziel"));
         assertTrue(angelegt.getJSONArray("ereignisse").getString(0).startsWith("kopplung.angelegt.handy:ok"));
 
+        // Der Eintrag oben trägt die echte Uhrzeit (Ereignis ohne Anfrage). Die Anfrage muss danach liegen, sonst
+        // sortiert „angelegt“ nach oben, sobald zwischen Testbeginn und anlegen() mehr als ein paar ms vergehen
+        // (im vollen Suite-Lauf: Klassenladen, GC) – das war die Ursache der zeitabhängigen Fehlschläge.
+        long nachher = Math.max(jetzt, angelegt.getLong("t")) + 5;
         BefehlsLog.Mitschnitt m = antwort();
         BefehlsLog.beginne("POST", "/api/kopplung/rechte",
                 "{\"id\":\"" + id + "\",\"rechte\":[\"klima\",\"aufsperren\",\"erfunden\"]}", null, null, null,
-                true, false, m, jetzt + 5);
+                true, false, m, nachher);
         assertTrue(k.rechteSetzen(id, Arrays.asList("klima", "aufsperren")));
         sende(m, 200, "{\"ok\":true}");
         BefehlsLog.abschliessen();
@@ -400,6 +404,38 @@ public class BefehlsLogTest {
         for (String l : new String[]{"de", "en", "fr", "it", "nl"}) {
             JSONObject k = new JSONObject(Quelltext.lies(Paths.get("src/main/assets/web/i18n/" + l + ".json")));
             assertTrue(l, k.getJSONObject("protokoll").has("titel") && k.getJSONObject("protokoll").has("a_aufsperren"));
+        }
+    }
+
+    /** 0.1.36 Zusammenspiel: Tiermodus, Dateien und Säulen-Zuordnung landen im Befehls-Log, Tiermodus als Pflicht. */
+    @Test
+    public void neueWege0136WerdenErfasst() throws Exception {
+        assertEquals("/api/tiermodus", SchreibProtokoll.pfadOhneWerte("POST", "/api/tiermodus"));
+        assertEquals("/api/tiermodus/hinweis", SchreibProtokoll.pfadOhneWerte("POST", "/api/tiermodus/hinweis"));
+        assertEquals("/api/dateien/start", SchreibProtokoll.pfadOhneWerte("POST", "/api/dateien/start"));
+        assertEquals("/api/charging/{x}/station", SchreibProtokoll.pfadOhneWerte("POST", "/api/charging/17/station"));
+        assertEquals("/api/charging/stationen/nachtragen",
+                SchreibProtokoll.pfadOhneWerte("POST", "/api/charging/stationen/nachtragen"));
+
+        BefehlsLog.Anfrage display = new BefehlsLog.Anfrage(1, "POST", "/api/tiermodus", "display", null, "display", "lokal");
+        assertTrue("Tiermodus schaltet das Klima → Pflicht", BefehlsLog.istPflicht(display, 200));
+        BefehlsLog.Anfrage handy = new BefehlsLog.Anfrage(1, "POST", "/api/handy/v1/aktion", "k1", "H", "handy", "bruecke");
+        BefehlsLog.ausRumpf(handy, "/api/handy/v1/aktion", "{\"aktion\":\"tiermodus\",\"was\":\"an\"}");
+        assertEquals("nicht mehr „unbekannt“", "tiermodus", handy.aktion);
+        BefehlsLog.Anfrage stand = new BefehlsLog.Anfrage(1, "POST", "/api/handy/v1/aktion", "k1", "H", "handy", "bruecke");
+        BefehlsLog.ausRumpf(stand, "/api/handy/v1/aktion", "{\"aktion\":\"tiermodus_stand\"}");
+        assertEquals("tiermodus_stand", stand.aktion);
+
+        String js = Quelltext.lies(Paths.get("src/main/assets/web/shared/befehlslog.js"));
+        assertTrue(js.contains("tiermodus: ['protokoll.a_tiermodus'"));
+        assertTrue(js.contains("ev.indexOf('dateien.') === 0"));
+        assertTrue(js.contains("T('protokoll.a_saeule'"));
+        String d = Quelltext.lies(Paths.get("src/main/java/at/greenchili/surfmate/server/DateienApiHandler.java"));
+        assertTrue("Dateien schreiben eigene Ereignisse (ohne Dateinamen)", d.contains("BefehlsLog.ereignis(\"dateien.hochladen\""));
+        for (String l : new String[]{"de", "en", "fr", "it", "nl"}) {
+            JSONObject p = new JSONObject(Quelltext.lies(Paths.get("src/main/assets/web/i18n/" + l + ".json")))
+                    .getJSONObject("protokoll");
+            assertTrue(l, p.has("a_tiermodus") && p.has("a_dateien") && p.has("a_saeule"));
         }
     }
 

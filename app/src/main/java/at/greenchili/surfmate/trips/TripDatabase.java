@@ -421,6 +421,12 @@ public class TripDatabase {
             } catch (Exception e) {
                 logger.debug("trips klima column migration: " + e.getMessage());
             }
+            // 03.11.2026: Außentemperatur gelesen ja/nein (alte Fahrten: -1, siehe TripRecord.extTempBekannt)
+            try {
+                stmt.execute("ALTER TABLE trips ADD COLUMN IF NOT EXISTS ext_temp_bekannt INTEGER DEFAULT -1");
+            } catch (Exception e) {
+                logger.debug("trips ext_temp_bekannt migration: " + e.getMessage());
+            }
 
             // Migration: cumulative HAL fuel-accumulator snapshots. Old rows
             // read these as -1 (sentinel "no accumulator"), so the fuel math
@@ -619,8 +625,8 @@ public class TripDatabase {
                 "is_phev, fuel_pct_start, fuel_pct_end, litres_used, fuel_price_per_l, fuel_cost, " +
                 "electric_cost, ice_seconds, fuel_con_start, fuel_con_end, size_bytes, sidecar_size_bytes, " +
                 "odometer_start_km, odometer_end_km, rate_source, rate_label, " +
-                "elec_con_start, elec_con_end, klima_sekunden, klima_bekannt_sekunden) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "elec_con_start, elec_con_end, klima_sekunden, klima_bekannt_sekunden, ext_temp_bekannt) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             setTripParams(pstmt, trip);
@@ -636,6 +642,7 @@ public class TripDatabase {
             pstmt.setDouble(51, trip.elecConEnd);
             pstmt.setInt(52, trip.klimaSekundenAtomic.get());
             pstmt.setInt(53, trip.klimaBekanntSekundenAtomic.get());
+            pstmt.setInt(54, trip.extTempBekannt);
             pstmt.executeUpdate();
 
             try (ResultSet keys = pstmt.getGeneratedKeys()) {
@@ -677,7 +684,7 @@ public class TripDatabase {
                 "fuel_cost=?, electric_cost=?, ice_seconds=?, fuel_con_start=?, fuel_con_end=?, " +
                 "size_bytes=?, sidecar_size_bytes=?, odometer_start_km=?, odometer_end_km=?, " +
                 "rate_source=?, rate_label=?, elec_con_start=?, elec_con_end=?, " +
-                "klima_sekunden=?, klima_bekannt_sekunden=? " +
+                "klima_sekunden=?, klima_bekannt_sekunden=?, ext_temp_bekannt=? " +
                 "WHERE id=?";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -694,7 +701,8 @@ public class TripDatabase {
             pstmt.setDouble(51, trip.elecConEnd);
             pstmt.setInt(52, trip.klimaSekundenAtomic.get());
             pstmt.setInt(53, trip.klimaBekanntSekundenAtomic.get());
-            pstmt.setLong(54, trip.id);
+            pstmt.setInt(54, trip.extTempBekannt);
+            pstmt.setLong(55, trip.id);
             int rows = pstmt.executeUpdate();
             logger.debug("Updated trip id=" + trip.id + " (rows=" + rows + ")");
             return rows > 0;
@@ -2806,6 +2814,7 @@ public class TripDatabase {
             o.put("endLat", t.endLat);
             o.put("endLon", t.endLon);
             o.put("extTempC", t.extTempC);
+            o.put("extTempBekannt", t.extTempBekannt);
             o.put("anticipationScore", t.anticipationScore);
             o.put("smoothnessScore", t.smoothnessScore);
             o.put("speedDisciplineScore", t.speedDisciplineScore);
@@ -2864,6 +2873,7 @@ public class TripDatabase {
         t.endLat = o.optDouble("endLat", 0);
         t.endLon = o.optDouble("endLon", 0);
         t.extTempC = o.optInt("extTempC", 0);
+        t.extTempBekannt = o.optInt("extTempBekannt", -1);
         t.anticipationScore = o.optInt("anticipationScore", 0);
         t.smoothnessScore = o.optInt("smoothnessScore", 0);
         t.speedDisciplineScore = o.optInt("speedDisciplineScore", 0);
@@ -3075,6 +3085,8 @@ public class TripDatabase {
         trip.endLat = rs.getDouble("end_lat");
         trip.endLon = rs.getDouble("end_lon");
         trip.extTempC = rs.getInt("ext_temp_c");
+        try { trip.extTempBekannt = rs.getInt("ext_temp_bekannt"); if (rs.wasNull()) trip.extTempBekannt = -1; }
+        catch (Exception e) { trip.extTempBekannt = -1; }
         trip.anticipationScore = rs.getInt("anticipation_score");
         trip.smoothnessScore = rs.getInt("smoothness_score");
         trip.speedDisciplineScore = rs.getInt("speed_discipline_score");

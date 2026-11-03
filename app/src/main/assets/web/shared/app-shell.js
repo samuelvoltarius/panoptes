@@ -430,6 +430,7 @@
             { href: 'vehicle-control.html', label: 'Steuerung',          i18n: 'shell.page_control' },
             { href: 'apps.html',            label: 'Apps nebeneinander', i18n: 'shell.page_apps' },
             { href: 'camping.html',         label: 'Camping',            i18n: 'shell.page_camping' },
+            { href: 'tiermodus.html',       label: 'Tiermodus',          i18n: 'shell.page_tiermodus' },
             { href: 'seat-positions.html',  label: 'Sitze',              i18n: 'shell.page_seats' },
             { href: 'automations.html',     label: 'Regeln',             i18n: 'shell.page_rules' },
             { href: 'key-mapping.html',     label: 'Tasten',             i18n: 'shell.page_keys' },
@@ -438,6 +439,7 @@
         { id: 'system', label: 'System', i18n: 'shell.sec_system', icon: 'gear', pages: [
             { href: 'system.html',          label: 'System',             i18n: 'nav.system' },
             { href: 'orte.html',            label: 'Orte',               i18n: 'shell.page_orte' },
+            { href: 'dateien.html',         label: 'Dateien',            i18n: 'dateien.titel' },
             { href: 'network.html',         label: 'Netz',               i18n: 'shell.page_network' },
             { href: 'wireguard.html',       label: 'WireGuard',          i18n: 'shell.page_wireguard', hidden: true },
             // 0.1.28 (Koordination): alle Benachrichtigungen auf einer Seite (Handy + Telegram je Thema)

@@ -126,6 +126,12 @@ public final class HandyClipsApiHandler {
         c.put("zeit", r.optLong("timestamp", 0));
         c.put("groesse", r.optLong("size", 0));
         c.put("behalten", behalten);
+        // 0.1.36: Auslöser als neues, optionales Feld; nur die Erlaubnisliste (kein Ort, kein Pfad, kein Dateiname)
+        JSONObject ausloeser = at.greenchili.surfmate.recording.AusloeserInfo.bereinigt(r.optJSONObject("ausloeser"));
+        if (ausloeser != null) {
+            ausloeser.remove("clip");
+            c.put("ausloeser", ausloeser);
+        }
         if (ereignis) {
             c.put("frageOffen", offeneFragen.contains(Aufbewahrung.stamm(datei)));
             c.put("weg", "bruecke_medien");

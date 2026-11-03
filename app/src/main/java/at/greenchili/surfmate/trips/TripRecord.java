@@ -94,6 +94,19 @@ public class TripRecord {
     public double startLat, startLon;
     public double endLat, endLon;
     public int extTempC;
+    /**
+     * 03.11.2026 (Kurve Verbrauch/Außentemperatur): 1 = Außentemperatur beim Fahrtbeginn gelesen, 0 = nicht lesbar,
+     * -1 = Fahrt aus der Zeit vor diesem Merker. Bei -1 gilt nur extTempC != 0 als bekannt, weil 0 früher auch
+     * „unbekannt“ hieß; alte Fahrten mit 0 bekommen keinen erfundenen Wert.
+     */
+    public int extTempBekannt = -1;
+
+    /** Außentemperatur dieser Fahrt sicher bekannt (siehe {@link #extTempBekannt}). */
+    public boolean hatAussenTemperatur() {
+        if (extTempBekannt == 1) return true;
+        if (extTempBekannt == 0) return false;
+        return extTempC != 0;
+    }
 
     // Driving DNA scores (0-100)
     public int anticipationScore;
@@ -310,6 +323,7 @@ public class TripRecord {
             json.put("endLat", endLat);
             json.put("endLon", endLon);
             json.put("extTempC", extTempC);
+            json.put("extTempBekannt", hatAussenTemperatur());
             json.put("anticipationScore", anticipationScore);
             json.put("smoothnessScore", smoothnessScore);
             json.put("speedDisciplineScore", speedDisciplineScore);
@@ -386,6 +400,7 @@ public class TripRecord {
             json.put("endLat", endLat);
             json.put("endLon", endLon);
             json.put("extTempC", extTempC);
+            json.put("extTempBekannt", hatAussenTemperatur());
             json.put("anticipationScore", anticipationScore);
             json.put("smoothnessScore", smoothnessScore);
             json.put("speedDisciplineScore", speedDisciplineScore);

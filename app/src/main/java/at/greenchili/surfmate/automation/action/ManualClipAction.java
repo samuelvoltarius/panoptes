@@ -94,8 +94,8 @@ public class ManualClipAction extends BaseAction {
     public void trigger(AutomationAction automationAction) {
         int before = intVar(automationAction, "beforeSeconds");
         int after = intVar(automationAction, "afterSeconds");
-        ManualClipService.RequestResult result =
-                ManualClipService.getInstance().requestClip(before, after);
+        ManualClipService.RequestResult result = ManualClipService.getInstance().requestClip(
+                before, after, at.greenchili.surfmate.recording.AusloeserInfo.QUELLE_REGEL);
         if (result.isAccepted()) {
             logger.info("Automation manualClip before=" + before + "s after=" + after
                     + "s -> " + result.status);

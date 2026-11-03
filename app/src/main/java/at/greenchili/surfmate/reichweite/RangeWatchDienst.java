@@ -241,7 +241,7 @@ public final class RangeWatchDienst {
         JSONObject a = antwort(l);
         if (l.aktiv && !l.naechsterIstZiel && belegung != null && l.naechsterName.equals(belegungFuer)) {
             try {
-                a.getJSONObject("naechsterStopp").put("belegung", belegung.alsJson());
+                a.getJSONObject("naechsterStopp").put("belegung", belegung.alsJson(Math.max(0, now - belegungStand)));
             } catch (Exception ignored) {
             }
         }
