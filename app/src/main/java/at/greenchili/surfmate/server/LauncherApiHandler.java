@@ -44,6 +44,8 @@ import java.io.OutputStream;
  *   <li>{@code POST /api/launcher/v1/klima} — nur Klima, nur Launcher-APK ({@link LauncherKlimaBefehl})</li>
  *   <li>{@code GET  /api/launcher/v1/update}, {@code POST …/update/installieren} — Update-Karte (Stufe 4)</li>
  *   <li>{@code GET  /api/launcher/v1/appearance}  — theme + locale + material + launcherMode (§2.5)</li>
+ *   <li>{@code GET|PUT /api/launcher/v1/layout}, {@code POST …/layout/standard}, {@code GET …/layout/apps} —
+ *       Launcher-Layout im Kern (0.1.38, {@link LauncherLayoutSpeicher})</li>
  * </ul>
  *
  * <p>The WebSocket push channel (spec §2.7) is intentionally NOT implemented in
@@ -117,6 +119,42 @@ public final class LauncherApiHandler {
                 HttpResponse.sendJson(out, at.greenchili.surfmate.tacho.TachoNaviApp.tachoNormal().toString());
                 return true;
             }
+            // 0.1.38 Launcher-Layout im Kern (LAUNCHER_LAYOUT_API.md): eine Quelle für Launcher, Web, Handy, Cockpit.
+            // Kopplungen nur mit Recht „launcher“ (ExternGuard/WebHandyGuard), Automationen und damit KI nie.
+            if (cleanPath.startsWith(LAYOUT_PFAD)) {
+                if (HttpServer.isAutomationRequest()) {
+                    BefehlsLog.grund("automation");
+                    HttpResponse.sendJson(out, 403, "{\"ok\":false,\"grund\":\"automation\"}");
+                    return true;
+                }
+                if (cleanPath.equals(LAYOUT_PFAD) && "GET".equals(method)) {
+                    HttpResponse.sendJson(out, LauncherLayoutSpeicher.lesen(layoutDatei(), startAnsicht()).toString());
+                    return true;
+                }
+                if (cleanPath.equals(LAYOUT_PFAD + "/apps") && "GET".equals(method)) {
+                    HttpResponse.sendJson(out, new JSONObject().put("ok", true).put("apps", layoutApps()).toString());
+                    return true;
+                }
+                if (cleanPath.equals(LAYOUT_PFAD) && "PUT".equals(method)) {
+                    String q = layoutQuelle();
+                    LauncherLayoutSpeicher.Antwort a = LauncherLayoutSpeicher.schreiben(layoutDatei(), body,
+                            installiertePakete(), q, System.currentTimeMillis());
+                    layoutLog(q, a.status == 200 ? "gespeichert" : a.status == 409 ? "veraltet" : "abgelehnt");
+                    if (a.status != 200) BefehlsLog.grund(a.koerper.optString("grund", null));
+                    HttpResponse.sendJson(out, a.status, a.koerper.toString());
+                    return true;
+                }
+                if (cleanPath.equals(LAYOUT_PFAD + "/standard") && "POST".equals(method)) {
+                    String q = layoutQuelle();
+                    LauncherLayoutSpeicher.Antwort a = LauncherLayoutSpeicher.standard(layoutDatei(), startAnsicht(), q,
+                            System.currentTimeMillis());
+                    layoutLog(q, a.status == 200 ? "standard" : "abgelehnt");
+                    HttpResponse.sendJson(out, a.status, a.koerper.toString());
+                    return true;
+                }
+                HttpResponse.sendJson(out, 404, "{\"ok\":false,\"error\":\"unknown launcher endpoint\"}");
+                return true;
+            }
             // Update-Karte im Launcher (Stufe 4): Stand von Panoptes und Launcher lesen, installieren nur vom Launcher.
             if (cleanPath.equals(UPDATE_PFAD) && "GET".equals(method)) {
                 sendUpdate(out);
@@ -172,6 +210,74 @@ public final class LauncherApiHandler {
     static final String UPDATE_PFAD = "/api/launcher/v1/update";
     static final String TACHO_NORMAL_PFAD = "/api/launcher/v1/tacho/normal";
     static final String LAUNCHER_PAKET = at.greenchili.surfmate.appupdate.LauncherPaket.PAKET;
+    static final String LAYOUT_PFAD = "/api/launcher/v1/layout";
+
+    // ==================== 0.1.38 LAUNCHER-LAYOUT ====================
+
+    private static File layoutDatei() {
+        return new File(at.greenchili.surfmate.util.DaemonStorage.path(LauncherLayoutSpeicher.DATEI));
+    }
+
+    /** Wer schreibt: Kopplung (handy/cockpit), Web-Sitzung der Handy-App, Launcher-APK am Auto, sonst Web-Login. */
+    static String layoutQuelle() {
+        if (AuthMiddleware.isExternRequest()) {
+            String art = at.greenchili.surfmate.auth.Kopplungen.get().art(AuthMiddleware.requestKopplungsId());
+            return "cockpit".equals(art) ? LauncherLayoutSpeicher.QUELLE_COCKPIT : LauncherLayoutSpeicher.QUELLE_HANDY;
+        }
+        if (AuthMiddleware.isHandyWebRequest()) return LauncherLayoutSpeicher.QUELLE_HANDY;
+        if (AuthMiddleware.isDirektAmAuto() && LauncherAufrufer.pruefe() == null) return LauncherLayoutSpeicher.QUELLE_AUTO;
+        return LauncherLayoutSpeicher.QUELLE_WEB;
+    }
+
+    /** Befehls-Log ohne Inhalt: nur Quelle und Ergebnis, keine Paket- oder Ordnernamen. */
+    private static void layoutLog(String quelle, String ergebnis) {
+        BefehlsLog.ereignis("launcher.layout." + quelle, ergebnis, null, null);
+    }
+
+    /** Installierte, startbare Apps ohne den Launcher selbst: {paket, name, video}. */
+    static JSONArray layoutApps() {
+        JSONArray roh;
+        try {
+            roh = at.greenchili.surfmate.launcher.AppLauncher.listLaunchableApps();
+        } catch (Throwable t) {
+            roh = new JSONArray();
+        }
+        return layoutApps(roh);
+    }
+
+    static JSONArray layoutApps(JSONArray roh) {
+        JSONArray out = new JSONArray();
+        for (int i = 0; roh != null && i < roh.length(); i++) {
+            JSONObject a = roh.optJSONObject(i);
+            if (a == null) continue;
+            String p = a.optString("package", "");
+            if (LAUNCHER_PAKET.equals(p) || !LauncherLayoutPruefung.gueltigesPaket(p)) continue;
+            try {
+                out.put(new JSONObject().put("paket", p).put("name", a.optString("label", p))
+                        .put("video", a.optBoolean("video", false)
+                                || at.greenchili.surfmate.tacho.TachoNaviApp.istVideo(p)));
+            } catch (Exception ignored) { }
+        }
+        return out;
+    }
+
+    private static java.util.Set<String> installiertePakete() {
+        java.util.Set<String> s = new java.util.HashSet<>();
+        JSONArray a = layoutApps();
+        for (int i = 0; i < a.length(); i++) s.add(a.optJSONObject(i).optString("paket"));
+        return s;
+    }
+
+    /** {@code summary.launcherLayout}: nur der Zeitstempel, der Launcher holt bei Änderung neu. */
+    static JSONObject buildLauncherLayout() {
+        JSONObject o = new JSONObject();
+        try {
+            o.put("geaendert", LauncherLayoutSpeicher.geaendert(layoutDatei()));
+        } catch (Throwable t) {
+            try { o.put("geaendert", JSONObject.NULL); } catch (Exception ignored) { }
+        }
+        return o;
+    }
 
     /** Schreibende Launcher-Wege: nur die Launcher-APK mit Panoptes-Signatur, sonst 403 mit Grund im Befehls-Log. */
     private static boolean launcherDarf(OutputStream out) throws Exception {
@@ -261,6 +367,7 @@ public final class LauncherApiHandler {
         root.put("waechter",  buildWaechter());
         root.put("klima",     buildKlima());
         root.put("tacho",     buildTacho());
+        root.put("launcherLayout", buildLauncherLayout());
         HttpResponse.sendJson(out, root.toString());
     }
 

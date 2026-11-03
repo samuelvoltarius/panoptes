@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#007A62">
     <script src="../shared/theme.js?v=13"></script>
-    <script src="../shared/app-shell.js?v=pn30"></script>
+    <script src="../shared/app-shell.js?v=pn33"></script>
     <!--
       Bottom-tab manifest for Charging. Tabs apply to the LIST VIEW only;
       the DETAIL VIEW (#chargingDetail) is a sequential drill-in and ignores
@@ -29,7 +29,7 @@
         ];
     </script>
     <script src="../shared/app-tabs.js"></script>
-    <link rel="stylesheet" href="../shared/styles.css?v=pn11">
+    <link rel="stylesheet" href="../shared/styles.css?v=pn12">
     <style>
         /* ===== OLD WEBVIEW COMPAT (Chrome <88, Android 7.x) ===== */
         /* Flexbox gap is Grid-only on old Chrome — fall back to margin via > * + *. */
@@ -1001,6 +1001,12 @@
                         </div>
                     </div>
 
+                    <!-- 0.1.38: eigene Ladekurve (GET /api/laden/kurve, nur lesen, zusatzknoepfe.js) -->
+                    <div class="ch-card" data-tab="stats" id="ladekurve" style="display:none;margin-bottom:12px;">
+                        <div class="card-title" data-i18n="charge.kurve_titel">So schnell lädt dein Auto</div>
+                        <div data-inhalt></div>
+                    </div>
+
                     <!-- Empty-state for the Stats tab when no charging sessions
                          have been recorded yet (only the SoC chart + hero show). -->
                     <div class="ch-card empty-state" data-tab="stats" id="statsEmptyState" style="display:none;">
@@ -1389,6 +1395,7 @@
     <script src="../shared/laden-vorlieben.js?v=2"></script>
     <script src="../shared/laden-nachfrage.js?v=1"></script>
     <script src="../shared/nachbepreisung.js?v=1"></script>
+    <script src="../shared/zusatzknoepfe.js?v=1"></script>
     <script>
         function toggleSidebar() {
             var sb = document.getElementById('sidebar');

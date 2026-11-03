@@ -163,6 +163,29 @@ public final class ExternGuard {
         return TACHO_NORMAL.equals(p) && "POST".equals(method);
     }
 
+    /**
+     * 0.1.38 Launcher-Layout (LAUNCHER_LAYOUT_API.md): nur Kopplungen der Art {@code handy} oder {@code cockpit}, und
+     * nur mit Recht {@code launcher} ({@link #noetigesRecht}, Standard aus). Home Assistant und Dienste nie.
+     */
+    public static final String LAUNCHER_LAYOUT_PFAD = "/api/launcher/v1/layout";
+    static final Set<String> LAUNCHER_LESEN = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            LAUNCHER_LAYOUT_PFAD, LAUNCHER_LAYOUT_PFAD + "/apps")));
+    /**
+     * 0.1.38 (Koordination): Launcher-Stand lesen und „Öffnen“ aus der Ferne mit demselben Recht. Der Handler lässt
+     * für Kopplungen und die Web-Sitzung nur {@code aktion: oeffnen} durch; installieren/entfernen bleiben am Auto
+     * bzw. beim vollen Login.
+     */
+    public static final String LAUNCHER_STAND_PFAD = "/api/appupdate/launcher";
+
+    static boolean launcherErlaubt(String method, String pathOnly, String kopplungsArt) {
+        if (!"handy".equals(kopplungsArt) && !"cockpit".equals(kopplungsArt)) return false;
+        String p = normal(pathOnly);
+        if (p == null || method == null) return false;
+        if ("GET".equals(method)) return LAUNCHER_LESEN.contains(p) || LAUNCHER_STAND_PFAD.equals(p);
+        if ("PUT".equals(method)) return LAUNCHER_LAYOUT_PFAD.equals(p);
+        return "POST".equals(method) && ((LAUNCHER_LAYOUT_PFAD + "/standard").equals(p) || LAUNCHER_STAND_PFAD.equals(p));
+    }
+
     /** true, wenn die Anfrage eines gekoppelten Geräts abgelehnt werden muss. */
     public static boolean blocks(String method, String pathOnly) {
         return !erlaubt(method, pathOnly);
@@ -176,6 +199,7 @@ public final class ExternGuard {
         if (erlaubt(method, pathOnly)) return false;
         if (cockpitErlaubt(method, pathOnly, kopplungsArt)) return false;
         if (tachoErlaubt(method, pathOnly, kopplungsArt)) return false;
+        if (launcherErlaubt(method, pathOnly, kopplungsArt)) return false;
         return !handyErlaubt(method, pathOnly, kopplungsArt);
     }
 
@@ -220,6 +244,9 @@ public final class ExternGuard {
             return at.greenchili.surfmate.auth.Kopplungen.RECHT_DATEIEN;
         }
         if (p.equals(TACHO_AUSWAHL) || p.equals(TACHO_NORMAL)) return at.greenchili.surfmate.auth.Kopplungen.RECHT_TACHO;
+        if (p.equals(LAUNCHER_LAYOUT_PFAD) || p.startsWith(LAUNCHER_LAYOUT_PFAD + "/") || p.equals(LAUNCHER_STAND_PFAD)) {
+            return at.greenchili.surfmate.auth.Kopplungen.RECHT_LAUNCHER;
+        }
         for (String k : KAMERA_LESEN) {
             if (p.equals(k) || p.startsWith(k.endsWith("/") ? k : k + "/")) {
                 return at.greenchili.surfmate.auth.Kopplungen.RECHT_KAMERA;
@@ -247,9 +274,12 @@ public final class ExternGuard {
         try {
             boolean standbild = at.greenchili.surfmate.auth.Kopplungen.RECHT_STANDBILD.equals(recht);
             boolean dateien = at.greenchili.surfmate.auth.Kopplungen.RECHT_DATEIEN.equals(recht);
-            String key = dateien ? "dateien.recht_fehlt"
+            boolean launcher = at.greenchili.surfmate.auth.Kopplungen.RECHT_LAUNCHER.equals(recht);
+            String key = launcher ? "errors.launcher_recht_fehlt" : dateien ? "dateien.recht_fehlt"
                     : standbild ? "errors.standbild_recht_fehlt" : "errors.kamera_recht_fehlt";
-            String fallback = dateien
+            String fallback = launcher
+                    ? "Launcher-Recht fehlt – in Panoptes unter Gekoppelte Geräte einschalten."
+                    : dateien
                     ? "File permission missing – switch it on in Panoptes under Paired devices."
                     : standbild
                     ? "Standbild-Recht fehlt – in Panoptes unter Gekoppelte Geräte einschalten."

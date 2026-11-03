@@ -58,7 +58,8 @@ public final class AppUpdateApiHandler {
                 return true;
             }
             if (!method.equals("POST")) return false;
-            if (AuthMiddleware.isExternRequest() || AuthMiddleware.isHandyWebRequest()) {
+            // 0.1.38: Kopplungen und Web-Sitzung (Recht „launcher“ prüfen ExternGuard/WebHandyGuard) nur „Öffnen“
+            if ((AuthMiddleware.isExternRequest() || AuthMiddleware.isHandyWebRequest()) && !nurOeffnen(body)) {
                 HttpResponse.sendJson(out, 403, "{\"ok\":false,\"grund\":\"nur_am_auto\"}");
                 return true;
             }
@@ -132,6 +133,15 @@ public final class AppUpdateApiHandler {
         HttpResponse.sendJson(out, grund == null ? "{\"ok\":true}"
                 : new JSONObject().put("ok", false).put("grund", grund).toString());
         return true;
+    }
+
+    /** Aus der Ferne erlaubt: genau {@code aktion: oeffnen} (startet den Launcher am Bildschirm im Auto). */
+    static boolean nurOeffnen(String body) {
+        try {
+            return "oeffnen".equals(new JSONObject(body == null || body.isEmpty() ? "{}" : body).optString("aktion", ""));
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**

@@ -505,10 +505,44 @@ const TRIPS = {
         }
     },
 
+    /** 0.1.38: großer Schalter oben im Reiter Fahrten, spiegelt #tripsEnabled. */
+    schalterZeigen() {
+        const b = document.getElementById('tripSchalter');
+        if (!b || this.tripsEnabled == null) return;
+        const an = !!this.tripsEnabled;
+        b.disabled = false;
+        b.setAttribute('aria-pressed', an ? 'true' : 'false');
+        const t = (k, f) => { const v = BYD.i18n.t(k); return v && v !== k ? v : f; };
+        b.textContent = an ? t('trip.schalter_aus', 'Fahrten aufzeichnen: an – zum Ausschalten tippen')
+            : t('trip.schalter_an', 'Fahrten aufzeichnen einschalten');
+    },
+
+    async schalterTippen() {
+        const el = document.getElementById('tripsEnabled');
+        const b = document.getElementById('tripSchalter');
+        if (!el || !b) return;
+        el.checked = !this.tripsEnabled;
+        b.disabled = true;
+        this._schalterLaeuft = true;
+        const ok = await this.toggleEnabled();
+        this._schalterLaeuft = false;
+        this.schalterZeigen();
+        if (ok && this.tripsEnabled) this.enableFromEmptyStateRefresh();
+    },
+
+    /** Liste nach dem Einschalten neu laden (wie enableFromEmptyState). */
+    enableFromEmptyStateRefresh() {
+        try {
+            if (this.rangeFromMs != null) this.loadTripsBetween(this.rangeFromMs, this.rangeToMs, 0);
+            else this.loadTrips(this.currentDays, 0);
+        } catch (e) { /* best-effort */ }
+    },
+
     /** Show the "turn it on" affordance inside the Trips-tab empty state only
      *  while the feature is actually disabled. Purely additive: when enabled
      *  (the new default) this hides the button and nothing else changes. */
     _applyEnabledHint() {
+        if (!this._schalterLaeuft) this.schalterZeigen();
         const btn = document.getElementById('tripEnableFromEmpty');
         if (!btn) return;
         btn.style.display = (this.tripsEnabled === false) ? '' : 'none';
@@ -1615,6 +1649,18 @@ const TRIPS = {
         document.querySelectorAll('#tripFilters .filter-tab').forEach(b => b.classList.remove('active'));
         if (btn) btn.classList.add('active');
         this.filterByDays(days);
+    },
+
+    // 0.1.38 Reiter „Heute“: Zeitraum von 0:00 bis jetzt, über denselben Weg wie „Eigener Zeitraum“.
+    heute(btn) {
+        const row = document.getElementById('tripRangeRow');
+        if (row) row.classList.remove('open');
+        document.querySelectorAll('#tripFilters .filter-tab').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        this._calFromKey = this._dateKey(new Date());
+        this._calToKey = this._calFromKey;
+        this._updateRangeButtons();
+        this.applyCustomRange();
     },
 
     // Reveal/hide the custom From → To range row (height+fade via .open).

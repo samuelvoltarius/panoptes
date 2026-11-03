@@ -98,6 +98,16 @@ class TachoAnsichtActivity : Activity() {
         super.onDestroy()
     }
 
+    companion object {
+        /**
+         * 0.1.38: Takt fuer Tempo, Leistung und Navi (vorher 1 s). Laeuft nur zwischen onResume und onPause,
+         * also nur solange die Ansicht sichtbar ist; der naechste Takt startet erst nach der Antwort.
+         */
+        const val TAKT_MS = 250L
+        /** Ohne Daemon-Antwort nach so vielen Takten beenden (= 3 s wie bisher, fail-closed). */
+        const val FEHLER_GRENZE = (3000L / TAKT_MS).toInt()
+    }
+
     private fun aufDisplayNull(): Boolean = try {
         @Suppress("DEPRECATION")
         (windowManager.defaultDisplay.displayId == 0)
@@ -123,7 +133,7 @@ class TachoAnsichtActivity : Activity() {
     private fun zeige(a: org.json.JSONObject?) {
         if (!laeuft) return
         if (a == null || a.optString("status") != "ok") {
-            if (++fehlversuche >= 3) { beenden(); return }
+            if (++fehlversuche >= FEHLER_GRENZE) { beenden(); return }
         } else {
             fehlversuche = 0
             if (!a.optBoolean("aktiv", false)) { beenden(); return }
@@ -135,6 +145,6 @@ class TachoAnsichtActivity : Activity() {
             TachoAnsichtManoever.json(TachoAnsichtManoever.aktuell())?.let { d.put("navi", it) }
             seite.evaluateJavascript("window.tachoSetze && window.tachoSetze($d)", null)
         }
-        haupt.postDelayed({ takt() }, 1000L)
+        haupt.postDelayed({ takt() }, TAKT_MS)
     }
 }

@@ -98,7 +98,7 @@
       "group": "Display",
       "defaultEnabled": true,
       "severity": "warn",
-      "defaultClickUrl": "/local/system.html#anzeige",
+      "defaultClickUrl": "/local/display.html#sperre",
       "note": "Someone entered a wrong PIN several times at the locked display."
     },
     {

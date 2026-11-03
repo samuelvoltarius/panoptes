@@ -30,7 +30,7 @@ function automationMissingLabel(value) {
 // rarely-changing list, and an out-of-sync key just sorts to the end (never hides an
 // item). 'other' is always forced last regardless of this list.
 BYD.AUTOMATION_CATEGORY_ORDER = [
-    'vehicle', 'climate', 'windows_body', 'lighting', 'adas_safety', 'drive',
+    'vehicle', 'climate', 'charging', 'windows_body', 'lighting', 'adas_safety', 'drive',
     'media', 'displays', 'sensors', 'surveillance', 'advanced', 'system', 'flow', 'other',
 ];
 
@@ -589,7 +589,7 @@ BYD.automations = {
 
         const automationInfo = document.createElement('div');
         automationInfo.classList.add(token + '-info', 'info');
-        automationInfo.innerHTML = this.buildAutomationText(automation);
+        automationInfo.innerHTML = this.buildWennDann(automation);
         automationHeader.append(automationInfo);
 
         const automationActions = document.createElement('div');
@@ -656,32 +656,65 @@ BYD.automations = {
         }
         modeSelect.value = runMode;
         modeSelect.addEventListener('change', () => this.setAutomationMode(key, modeSelect.value));
+        // 0.1.38 (REGEL 50+): ein großer Schalter je Regel statt Auswahlliste. „Nur per Tipp“ bleibt im
+        // Bearbeiten-Formular (createModeField); hier schaltet ein Tipp zwischen „Von selbst“ und „Aus“.
+        modeSelect.hidden = true;
         automationBody.append(modeSelect);
+        const schalter = document.createElement('button');
+        schalter.type = 'button';
+        schalter.classList.add('automation-schalter');
+        schalter.setAttribute('aria-pressed', runMode === 'automatic' ? 'true' : 'false');
+        schalter.textContent = runMode === 'automatic' ? BYD.i18n.t('automation.schalter_an')
+            : (runMode === 'manual' ? BYD.i18n.t('automation.mode_manual') : BYD.i18n.t('automation.schalter_aus'));
+        schalter.title = BYD.i18n.t('automation.schalter_hilfe');
+        schalter.addEventListener('click', () => {
+            schalter.disabled = true;
+            this.setAutomationMode(key, runMode === 'automatic' ? 'disabled' : 'automatic');
+        });
+        automationBody.append(schalter);
 
         return automationDiv;
     },
 
-    buildAutomationText(automation) {
+    // 0.1.38 Regel-Liste in Klartext: Name, darunter „Wenn …“ (Auslöser und Bedingungen) und „Dann …“
+    // (Aktionen, Sonst-Aktionen). Nutzt dieselbe Beschreibung wie bisher, nur nach Abschnitten getrennt.
+    buildWennDann(automation) {
+        const sections = this.schemaSections();
+        if (!sections.length) return this.buildAutomationText(automation);
+        const ids = sections.map(s => s.id);
+        const wenn = ids.filter(id => id === 'triggers' || id === 'conditions');
+        const dann = ids.filter(id => wenn.indexOf(id) < 0);
+        const kopf = this.buildAutomationText(automation, []);
+        const teil = (nur) => nur.length ? this.buildAutomationText(automation, nur).replace(/(<br>)+$/, '') : '';
+        const zeile = (wort, html) => html
+            ? '<div class="wd-zeile"><b class="wd-wort">' + escapeHtml(wort) + '</b><span class="wd-text">' + html + '</span></div>'
+            : '';
+        return kopf + zeile(BYD.i18n.t('automation.wd_wenn'), teil(wenn)) + zeile(BYD.i18n.t('automation.wd_dann'), teil(dann));
+    },
+
+    buildAutomationText(automation, nur) {
         const sections = this.schemaSections();
         if (!sections.length) return BYD.i18n.t('automation.failed_to_load_schema');
 
         let result = '';
+        // 0.1.38: nur = Liste der Abschnitte (buildWennDann); Kopf (Name, Kennzeichnung, Läufe) nur ohne Abschnitte
+        const mitKopf = !Array.isArray(nur) || nur.length === 0;
         try {
             // Friendly name (when set) as a bold heading above the trigger/condition
             // summary, plus an unobtrusive run-count / last-fired line. Both are
             // optional metadata — absent on older automations, so the card reads
             // exactly as before for them.
-            if (automation.name) {
+            if (mitKopf && automation.name) {
                 result += '<strong class="automation-name">' + escapeHtml(automation.name) + '</strong><br>';
             }
             // 0.1.37: Kennzeichnung für Regeln, die ein Assistenzsystem ausschalten
-            if (window.PanoptesAssistenz && PanoptesAssistenz.schaltetAb(automation, this._assistenzGruppen())) {
+            if (mitKopf && window.PanoptesAssistenz && PanoptesAssistenz.schaltetAb(automation, this._assistenzGruppen())) {
                 result += '<span class="automation-assistenz" style="display:inline-block;margin:2px 0 4px;padding:1px 8px;'
                     + 'border-radius:10px;font-size:12px;font-weight:600;background:var(--status-warning-bg,rgba(255,194,102,.18));'
                     + 'color:var(--status-warning,#FFC266);">' + escapeHtml(BYD.i18n.t('assistenz.kennzeichnung'))
                     + '</span><br>';
             }
-            const runs = automation.triggerCount || 0;
+            const runs = mitKopf ? (automation.triggerCount || 0) : 0;
             if (runs > 0) {
                 let stats = BYD.i18n.t('automation.stats_runs').replace('{n}', runs);
                 if (automation.lastTriggered) {
@@ -691,6 +724,7 @@ BYD.automations = {
                 result += '<span class="automation-stats">' + stats + '</span><br>';
             }
             for (const section of sections) {
+                if (Array.isArray(nur) && nur.indexOf(section.id) < 0) continue;
                 if (section.options && section.options.length) {
                     const sectionData = (automation[section.id] != null) ? automation[section.id] : [];
                     // Skip an empty else section entirely so automations without an

@@ -39,6 +39,7 @@
     <string name="history_empty">Nog geen recente rit of laadsessie.</string>
     <string name="history_format">Laatste rit: %1$s km · laatste lading: %2$s kWh</string>
     <string name="import_fehler">Dit bestand is geen Panoptes Launcher-indeling.</string>
+    <string name="layout_neuer_stand">Nieuwe indeling van het web of de telefoon overgenomen.</string>
     <string name="import_ok">Indeling geïmporteerd.</string>
     <string name="importieren">Indeling importeren</string>
     <string name="in_ordner">In map „%1$s”</string>

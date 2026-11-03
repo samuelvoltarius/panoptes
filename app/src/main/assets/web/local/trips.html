@@ -13,7 +13,7 @@
     <meta name="theme-color" content="#0A2238">
     <script src="../shared/theme.js?v=13"></script>
     <script src="../shared/kartenquelle.js?v=5"></script>
-    <script src="../shared/app-shell.js?v=pn30"></script>
+    <script src="../shared/app-shell.js?v=pn33"></script>
     <!--
       Bottom-tab manifest for Trips. Tabs apply to the LIST VIEW only;
       the DETAIL VIEW (#tripDetailView) is a sequential drill-in and
@@ -30,7 +30,7 @@
         ];
     </script>
     <script src="../shared/app-tabs.js"></script>
-    <link rel="stylesheet" href="../shared/styles.css?v=pn11">
+    <link rel="stylesheet" href="../shared/styles.css?v=pn12">
     <style>
         /* ===== OLD WEBVIEW COMPAT (Chrome <88, Android 7.x) ===== */
         /* backdrop-filter needs -webkit- prefix on old Chrome */
@@ -897,6 +897,11 @@
         .trip-detail { display: none; }
         .trip-detail.active { display: block; }
         .trip-list-view.hidden { display: none; }
+        /* 0.1.38 Schalter oben */
+        .trips-schalter { margin-bottom: 12px; }
+        .trips-schalter-knopf { width: 100%; min-height: 56px; border-radius: 14px; border: 2px solid var(--border-default);
+            background: var(--bg-elevated); color: var(--text-primary); font-size: 18px; font-weight: 700; cursor: pointer; }
+        .trips-schalter-knopf[aria-pressed="false"] { background: var(--brand-primary); color: var(--bg-base); border-color: transparent; }
 
         .detail-header {
             display: flex;
@@ -1475,11 +1480,16 @@
                         </div>
                     </div>
 
-                    <!-- Top Bar: Quick Filters + Custom range -->
+                    <!-- 0.1.38 Schalter oben: Fahrten aufzeichnen an/aus (gleicher Weg wie #tripsEnabled, /api/trips/config) -->
+                    <div class="trips-schalter" data-tab="trips">
+                        <button type="button" class="trips-schalter-knopf" id="tripSchalter" aria-pressed="false" disabled onclick="TRIPS.schalterTippen()">…</button>
+                    </div>
+
+                    <!-- Top Bar: Quick Filters + Custom range (0.1.38: Heute / 7 Tage / 30 Tage, REGEL 50+) -->
                     <div class="trips-top-bar" data-tab="trips" id="tripFilters">
                         <div class="filter-tabs">
+                            <button class="filter-tab" id="tripHeuteTab" onclick="TRIPS.heute(this)" data-i18n="trip.filter.heute">Heute</button>
                             <button class="filter-tab active" data-days="7" onclick="TRIPS.quickFilter(7, this)" data-i18n="trip.filter.days_7">7 Tage</button>
-                            <button class="filter-tab" data-days="14" onclick="TRIPS.quickFilter(14, this)" data-i18n="trip.filter.days_14">14 Tage</button>
                             <button class="filter-tab" data-days="30" onclick="TRIPS.quickFilter(30, this)" data-i18n="trip.filter.days_30">30 Tage</button>
                             <button class="filter-tab" id="tripCustomTab" onclick="TRIPS.toggleCustomRange(this)" data-i18n="trip.filter.custom">Eigener Zeitraum</button>
                         </div>
@@ -2100,7 +2110,7 @@
     <script src="../shared/core.js?v=pn6"></script>
     <script src="../shared/settings-hydration.js?v=1"></script>
     <script src="../shared/storage-budget.js?v=8"></script>
-    <script src="../shared/trips.js?v=panoptes8"></script>
+    <script src="../shared/trips.js?v=panoptes9"></script>
     <script src="../shared/fahrt-statistik.js?v=1"></script>
     <script>
         function toggleSidebar() {

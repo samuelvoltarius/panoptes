@@ -64,7 +64,8 @@ public final class BefehlsLog {
             "/api/display/", "/api/apps/verwaltung/", "/api/dateien/wechsel/",   // 0.1.37 Display-Werkzeuge
             "/api/tacho/navi/fahrt", "/api/tacho/normal",   // 0.1.37 Tacho: auch beim Fahren, wieder normal
             "/api/launcher/v1/klima", "/api/launcher/v1/update", "/api/launcher/v1/tacho/",   // 0.1.37: Launcher-Klima und -Updates
-            "/api/tacho/auswahl"};   // 0.1.37 „Was zeigt der Tacho?“
+            "/api/tacho/auswahl",   // 0.1.37 „Was zeigt der Tacho?“
+            "/api/launcher/v1/layout"};   // 0.1.38: Launcher-Layout (ohne Inhalt)
 
     /** Gründe, die ein technischer Fehler sind (sonst gilt ok:false als Ablehnung). */
     static final Set<String> FEHLER_GRUENDE = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(

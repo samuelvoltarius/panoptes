@@ -10,11 +10,11 @@
  * (data-android-embed) bringt die App ihre eigene Leiste und Kopfzeile mit.
  */
 
-html[data-pn-shell] { --sidebar-width: 92px; --pn-rail-h: 0px; }
+html[data-pn-shell] { --sidebar-width: 100px; --pn-rail-h: 0px; }   /* 0.1.37: „Einstellungen“ passt in eine Zeile */
 
 /* === LEISTE ===================================================== */
 html[data-pn-shell] .sidebar.pn-rail {
-    width: 92px;
+    width: 100px;
     transform: none;
     display: flex;
     flex-direction: column;
@@ -35,7 +35,7 @@ html[data-pn-shell][data-theme="light"] .sidebar.pn-rail { background: rgba(255,
 .pn-rail-nav > * + * { margin-top: 6px; }
 .pn-rail-spacer { flex: 1; }
 .pn-rail-link {
-    width: 76px; padding: 10px 0 8px; border-radius: 16px;
+    width: 86px; padding: 10px 0 8px; border-radius: 16px;
     display: flex; flex-direction: column; align-items: center;
     color: var(--on-surface-variant); opacity: .78; text-decoration: none;
     font: 600 11.5px/1.2 var(--family-body, 'Manrope', system-ui, sans-serif); letter-spacing: .01em;
@@ -50,6 +50,9 @@ html[data-pn-shell][data-theme="light"] .sidebar.pn-rail { background: rgba(255,
 }
 .pn-rail-link.on svg { color: var(--sm-aqua); }
 .pn-rail-link:focus-visible { outline: 2px solid var(--sm-aqua); outline-offset: 2px; }
+/* 0.1.37: sieben Bereiche. Lange Namen dürfen umbrechen, unten am Handy steht das kurze Wort. */
+.pn-rail-link .pn-lang { text-align: center; padding: 0 3px; font-size: 11px; }
+.pn-rail-link .pn-kurz { display: none; }
 
 /* Die alten Kopfzeilen der Seiten (Burger-Menü) braucht es im Browser nicht mehr. */
 html[data-pn-shell] .main-content > .mobile-header,
@@ -99,6 +102,41 @@ html[data-pn-shell] .sidebar-overlay { display: none !important; }
 .pn-tab:hover { background: var(--sm-card); color: var(--on-surface); }
 .pn-tab.on { background: var(--sm-card); border-color: var(--sm-line); color: var(--on-surface); box-shadow: inset 0 -2px 0 var(--sm-aqua); }
 
+/* Umschalter innerhalb eines Reiters (Teil), z. B. Laden: Unterwegs · Wallbox · Zu Hause laden */
+.pn-teilwahl {
+    display: inline-flex; max-width: 100%; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    margin: 0 0 12px; padding: 4px; border-radius: 14px; background: var(--sm-card); border: 1px solid var(--sm-line);
+}
+.pn-teilwahl::-webkit-scrollbar { display: none; }
+.pn-teil {
+    flex: none; padding: 7px 14px; border-radius: 10px; white-space: nowrap; text-decoration: none;
+    font-size: 13px; font-weight: 600; color: var(--on-surface-variant);
+}
+.pn-teil + .pn-teil { margin-left: 4px; }
+.pn-teil:hover { color: var(--on-surface); }
+.pn-teil.on { background: rgba(95, 214, 230, .16); color: var(--on-surface); }
+.pn-teil:focus-visible { outline: 2px solid var(--sm-aqua); outline-offset: 1px; }
+
+/* Einstellungs-Suche (system-overview.js) */
+.pn-suche { margin: 0 0 16px; }
+.pn-suche-label { display: block; margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--on-surface-variant); }
+.pn-suche input[type="search"] {
+    width: 100%; box-sizing: border-box; min-height: 48px; padding: 0 16px; border-radius: 14px;
+    font: inherit; font-size: 16px; color: var(--on-surface); background: var(--sm-card); border: 1px solid var(--sm-line);
+}
+.pn-suche input[type="search"]:focus { outline: 2px solid var(--sm-aqua); outline-offset: 1px; }
+.pn-suche-liste { margin-top: 8px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.pn-suche-liste[hidden] { display: none; }
+.pn-suche-treffer {
+    display: block; padding: 12px 14px; border-radius: 14px; text-decoration: none; color: var(--on-surface);
+    background: var(--sm-card); border: 1px solid var(--sm-line);
+}
+.pn-suche-treffer:hover, .pn-suche-treffer:focus-visible { border-color: var(--sm-aqua); outline: none; }
+.pn-suche-treffer b { display: block; font-size: 15px; line-height: 1.3; }
+.pn-suche-treffer span { display: block; margin-top: 3px; font-size: 12.5px; color: var(--on-surface-variant); }
+.pn-suche-leer { grid-column: 1 / -1; margin: 4px 2px; color: var(--on-surface-variant); font-size: 14px; }
+.pn-suche-ziel { box-shadow: 0 0 0 3px var(--sm-aqua) !important; transition: box-shadow .4s ease; }
+
 /* === FÄHIGKEITEN: Tacho-/Head-up-Anzeige nur, wenn das Auto es kann ======= */
 html[data-cap-cluster="0"] [data-needs~="cluster"],
 html[data-cap-hud="0"] [data-needs~="hud"] { display: none !important; }
@@ -130,7 +168,9 @@ html[data-cap-hud="0"] [data-needs~="hud"] { display: none !important; }
     .pn-brand, .pn-rail-spacer { display: none; }
     .pn-rail-nav { flex-direction: row; justify-content: space-around; }
     .pn-rail-nav > * + * { margin-top: 0; }
-    .pn-rail-link { width: auto; flex: 1; font-size: 12px; padding: 6px 0 4px; }   /* 0.1.20 Hochformat: war 10,5 px */
+    .pn-rail-link { width: auto; flex: 1; min-width: 0; font-size: 11.5px; padding: 6px 0 4px; }   /* 0.1.37: sieben Bereiche */
+    .pn-rail-link .pn-lang { display: none; }
+    .pn-rail-link .pn-kurz { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     html[data-pn-shell] .main-content { margin-left: 0; margin-right: 0; padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
     html[data-pn-shell] #bydThemePicker { display: none !important; }
     html[data-pn-shell] .bottom-tabs { bottom: calc(64px + env(safe-area-inset-bottom)) !important; }

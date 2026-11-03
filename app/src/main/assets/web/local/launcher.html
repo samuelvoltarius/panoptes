@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+    <title data-i18n="launcherlayout.titel">Launcher einrichten</title>
+    <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
+    <script src="../shared/theme.js?v=13"></script>
+    <script src="../shared/app-shell.js?v=pn33"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn12">
+    <style>
+        .ll-status { min-height:24px; margin:4px 0 12px; color:var(--text-muted); line-height:1.45; font-size:15px; }
+        .ll-status.error { color:var(--status-error); }
+        .ll-status.success { color:var(--status-success); }
+        .ll-seiten { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+        .ll-seiten .btn { min-height:48px; min-width:48px; font-size:16px; }
+        .ll-seiten .btn.aktiv { background:var(--accent-primary, #2a9d8f); color:#fff; border-color:transparent; }
+        .ll-schirm { position:relative; width:100%; max-width:960px; aspect-ratio:16 / 9; border-radius:16px; overflow:hidden;
+            background:linear-gradient(160deg,#0f1c24,#102a33); padding:2.2% 2.2% 0; box-sizing:border-box; display:flex; flex-direction:column; }
+        @supports not (aspect-ratio: 1) { .ll-schirm { height:0; padding-bottom:56.25%; } .ll-schirm > * { position:absolute; } }
+        .ll-schirm.cockpit { background:#05080a; }
+        .ll-raster { position:relative; flex:1; display:grid; grid-template-columns:repeat(6,1fr); grid-template-rows:repeat(3,1fr); gap:1.4%; }
+        .ll-zelle { border:1px dashed rgba(255,255,255,.12); border-radius:10px; }
+        .ll-zelle.ziel { border-color:#7fd1c7; background:rgba(127,209,199,.12); cursor:pointer; }
+        .ll-kachel { position:relative; z-index:1; border-radius:12px; background:rgba(255,255,255,.10); color:#eaf4f4; display:flex;
+            align-items:center; justify-content:center; text-align:center; padding:4px; font-size:15px; font-weight:600; cursor:grab;
+            touch-action:none; user-select:none; -webkit-user-select:none; overflow:hidden; overflow-wrap:anywhere; }
+        .ll-kachel.app { background:rgba(255,255,255,.18); font-weight:500; font-size:13px; }
+        .ll-kachel.ordner { background:rgba(127,209,199,.22); }
+        .ll-kachel.gewaehlt { outline:3px solid #7fd1c7; outline-offset:-3px; }
+        .ll-kachel.zieht { opacity:.6; }
+        .ll-dock { display:flex; align-items:center; gap:1.4%; height:17%; padding:1% 0; }
+        .ll-dock span { flex:0 0 auto; min-width:9%; height:100%; border-radius:10px; background:rgba(255,255,255,.14); color:#eaf4f4;
+            display:flex; align-items:center; justify-content:center; font-size:11px; padding:0 4px; box-sizing:border-box; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+        .ll-dock span.haus { min-width:7%; background:rgba(127,209,199,.3); font-size:18px; }
+        .ll-wahl { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+        .ll-wahl .btn { min-height:52px; font-size:16px; }
+        .ll-liste { list-style:none; margin:0; padding:0; }
+        .ll-liste li { display:flex; align-items:center; gap:8px; min-height:56px; border-top:1px solid var(--border-default); }
+        .ll-liste li span { flex:1; min-width:0; overflow-wrap:anywhere; font-size:16px; }
+        .ll-liste .btn { min-height:48px; min-width:48px; }
+        .ll-feld select { width:100%; min-height:52px; padding:10px 12px; border:1px solid var(--border-default); border-radius:10px;
+            background:var(--bg-elevated); color:var(--text-primary); font-size:16px; }
+        .ll-schalter { display:flex; align-items:center; gap:12px; min-height:56px; cursor:pointer; }
+        .ll-schalter-text { flex:1; min-width:0; }
+        .ll-schalter-text b { display:block; font-size:16px; }
+        .ll-schalter-text small { display:block; color:var(--text-muted); font-size:13px; line-height:1.35; }
+        .ll-hg { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px; }
+        .ll-hg .btn { min-height:56px; font-size:16px; }
+        .ll-hg .btn.aktiv { background:var(--accent-primary, #2a9d8f); color:#fff; border-color:transparent; }
+        @media (max-width:520px) { .ll-kachel { font-size:11px; } .ll-kachel.app { font-size:10px; } }
+    </style>
+</head>
+<body>
+<div class="app-layout">
+    <div id="app-shell-mount"></div>
+    <main class="main-content">
+        <div class="mobile-header"><span style="font-weight:600" data-i18n="launcherlayout.titel">Launcher einrichten</span></div>
+        <header class="page-header"><h1 class="page-title" data-i18n="launcherlayout.titel">Launcher einrichten</h1></header>
+        <div class="page-body">
+            <div class="card">
+                <div class="card-body">
+                    <p class="setting-desc" data-i18n="launcherlayout.lead">So sieht der Startbildschirm im Auto aus. Kachel antippen, dann auf ein freies Feld tippen oder ziehen. Jede Änderung wird sofort gespeichert und ist am Auto nach wenigen Sekunden zu sehen.</p>
+                    <div class="ll-status" id="llStatus" role="status" aria-live="polite"></div>
+                    <div class="ll-seiten" id="llSeiten"></div>
+                    <div class="ll-schirm" id="llSchirm">
+                        <div class="ll-raster" id="llRaster"></div>
+                        <div class="ll-dock" id="llDockVorschau"></div>
+                    </div>
+                    <div class="ll-wahl" id="llWahl"></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><div class="card-title" data-i18n="launcherlayout.leiste_titel">Leiste unten</div></div>
+                <div class="card-body">
+                    <p class="setting-desc" data-i18n="launcherlayout.leiste_lead">Die Apps unten am Bildschirm. Das Haus (zurück zum BYD-Startbildschirm) ist immer da.</p>
+                    <ul class="ll-liste" id="llDock"></ul>
+                    <div class="ll-feld" style="margin-top:12px"><select id="llDockNeu" aria-label="App in die Leiste"></select></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><div class="card-title" data-i18n="launcherlayout.hintergrund_titel">Hintergrund</div></div>
+                <div class="card-body">
+                    <div class="ll-hg" id="llHintergrund"></div>
+                    <p class="setting-desc" style="margin-top:10px" data-i18n="launcherlayout.hg_hinweis">Eigenes Bild und Video kommen aus „Dateien“. Ein Video läuft nur in P.</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><div class="card-title" data-i18n="launcherlayout.anzeige_titel">Anzeige</div></div>
+                <div class="card-body" id="llSchalter"></div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <button class="btn" id="llStandard" type="button" style="min-height:56px;font-size:16px" data-i18n="launcherlayout.standard_knopf">Auf Standard zurücksetzen</button>
+                    <p class="setting-desc" id="llStandardAktiv" hidden data-i18n="launcherlayout.standard_aktiv">Zurzeit gilt der fertige Standard-Aufbau.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<script src="../shared/core.js?v=pn6"></script>
+<script>
+(function () {
+    'use strict';
+    // Gleiche Regeln wie Raster in der Launcher-APK und LauncherLayoutPruefung im Kern (LAUNCHER_LAYOUT_API.md).
+    var SPALTEN = 6, ZEILEN = 3, MAX_SEITEN = 5, MAX_DOCK = 8;
+    var GROESSEN = [[1, 1], [2, 1], [2, 2], [2, 3], [3, 2], [3, 3], [4, 2], [4, 3], [6, 3]];
+    var KACHELN = ['fahrzeug', 'akku', 'navi', 'musik', 'waechter', 'uhr'];
+    var PROJEKTION = ['com.byd.androidauto', 'com.byd.carplay.ui'];
+    var API = '/api/launcher/v1/layout';
+
+    var stand = null, basis = 0, apps = [], namen = {}, seite = 0, gewaehlt = null, timer = null, laeuft = false, wieder = false, stufe = 0;
+    var el = function (id) { return document.getElementById(id); };
+
+    function t(key, fallback, werte) {
+        var s = fallback;
+        try { var v = BYD.i18n.t('launcherlayout.' + key); if (v && v !== 'launcherlayout.' + key) s = v; } catch (e) {}
+        if (werte) Object.keys(werte).forEach(function (k) { s = s.split('{' + k + '}').join(String(werte[k])); });
+        return s;
+    }
+    function zeige(text, art) {
+        el('llStatus').textContent = text || '';
+        el('llStatus').className = 'll-status' + (art ? ' ' + art : '');
+    }
+    function anfrage(url, opt) {
+        return fetch(url, opt || { cache: 'no-store' }).then(function (r) {
+            return r.json().catch(function () { return {}; }).then(function (b) { return { status: r.status, body: b || {} }; });
+        });
+    }
+    function kachelName(k) {
+        var f = { fahrzeug: 'Fahrzeug', akku: 'Akku', navi: 'Navigation', musik: 'Musik', waechter: 'Wächter', uhr: 'Uhr' };
+        return t('k_' + k, f[k] || k);
+    }
+    function appName(p) {
+        if (p === 'at.greenchili.surfmate') return 'Panoptes';
+        if (p === 'com.byd.androidauto') return 'Android Auto';
+        if (p === 'com.byd.carplay.ui') return 'CarPlay';
+        return namen[p] || p;
+    }
+
+    // ---------- Regeln (wie Raster) ----------
+    function passt(liste, x, y, b, h, ohne) {
+        if (b < 1 || h < 1 || x < 0 || y < 0 || x + b > SPALTEN || y + h > ZEILEN) return false;
+        return !liste.some(function (e) {
+            return e.id !== ohne && x < e.x + e.b && e.x < x + b && y < e.y + e.h && e.y < y + h;
+        });
+    }
+    function freierPlatz(liste, b, h) {
+        for (var y = 0; y <= ZEILEN - h; y++) for (var x = 0; x <= SPALTEN - b; x++) if (passt(liste, x, y, b, h)) return [x, y];
+        return null;
+    }
+    function finde(id) {
+        for (var i = 0; i < stand.seiten.length; i++) {
+            for (var k = 0; k < stand.seiten[i].length; k++) if (stand.seiten[i][k].id === id) return { s: i, e: stand.seiten[i][k] };
+        }
+        return null;
+    }
+    function neueId(vor) { stand.zaehler = (stand.zaehler || 0) + 1; return vor + stand.zaehler; }
+    function hatWidget(k) { return stand.seiten.some(function (s) { return s.some(function (e) { return e.typ === 'widget' && e.kachel === k; }); }); }
+
+    function verschieben(id, x, y) {
+        var f = finde(id);
+        if (!f || !passt(stand.seiten[seite], x, y, f.e.b, f.e.h, id)) return false;
+        stand.seiten[f.s] = stand.seiten[f.s].filter(function (e) { return e.id !== id; });
+        f.e.x = x; f.e.y = y;
+        stand.seiten[seite].push(f.e);
+        return true;
+    }
+    function groesseWechseln(id) {
+        var f = finde(id);
+        if (!f || f.e.typ !== 'widget') return false;
+        var start = 0;
+        GROESSEN.forEach(function (g, i) { if (g[0] === f.e.b && g[1] === f.e.h) start = i; });
+        for (var k = 1; k <= GROESSEN.length; k++) {
+            var g = GROESSEN[(start + k) % GROESSEN.length];
+            if (passt(stand.seiten[f.s], f.e.x, f.e.y, g[0], g[1], id)) { f.e.b = g[0]; f.e.h = g[1]; return true; }
+        }
+        return false;
+    }
+    function entfernen(id) {
+        var f = finde(id);
+        if (!f) return;
+        stand.seiten[f.s] = stand.seiten[f.s].filter(function (e) { return e.id !== id; });
+    }
+    function widgetDazu(k) {
+        if (hatWidget(k)) return false;
+        var groessen = [[2, 1], [1, 1]];
+        for (var i = 0; i < groessen.length; i++) {
+            var p = freierPlatz(stand.seiten[seite], groessen[i][0], groessen[i][1]);
+            if (p) { stand.seiten[seite].push({ id: neueId('w'), typ: 'widget', x: p[0], y: p[1], b: groessen[i][0], h: groessen[i][1], kachel: k }); return true; }
+        }
+        return false;
+    }
+    function appDazu(paket) {
+        var p = freierPlatz(stand.seiten[seite], 1, 1);
+        if (!p) return false;
+        stand.seiten[seite].push({ id: neueId('a'), typ: 'app', x: p[0], y: p[1], b: 1, h: 1, paket: paket });
+        return true;
+    }
+
+    // ---------- Speichern (sofort, kurz gesammelt) ----------
+    function geaendert() {
+        stufe++;
+        gewaehlt = gewaehlt && finde(gewaehlt) ? gewaehlt : null;
+        zeichne();
+        zeige(t('speichert', 'Wird gespeichert …'));
+        clearTimeout(timer);
+        timer = setTimeout(speichern, 600);
+    }
+    function speichern() {
+        if (laeuft) { wieder = true; return; }
+        laeuft = true;
+        var gesendet = stufe;
+        anfrage(API, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ layout: stand, basis: basis }) })
+            .then(function (r) {
+                if (r.status === 200) {
+                    basis = r.body.geaendert || basis;
+                    // bereinigten Stand nur übernehmen, wenn inzwischen nichts weiter geändert wurde
+                    if (r.body.layout && gesendet === stufe) stand = r.body.layout;
+                    el('llStandardAktiv').hidden = true;
+                    zeige(r.body.bereinigt ? t('bereinigt', '{n} Einträge passten nicht und wurden weggelassen.', { n: r.body.bereinigt })
+                        : t('gespeichert', 'Gespeichert. Am Auto in wenigen Sekunden zu sehen.'), r.body.bereinigt ? '' : 'success');
+                } else if (r.status === 409) {
+                    clearTimeout(timer); wieder = false;
+                    // Neueste Änderung gewinnt: am Auto wurde inzwischen gespeichert, dieser Stand gilt jetzt.
+                    uebernehmen(r.body);
+                    zeige(t('neuer', 'Am Auto wurde gerade etwas geändert. Sie sehen jetzt den neuesten Stand.'), 'error');
+                } else {
+                    fehler(r);
+                }
+                zeichne();
+            }, function () { zeige(t('fehler', 'Konnte nicht gespeichert werden. Bitte noch einmal versuchen.'), 'error'); })
+            .then(function () { laeuft = false; if (wieder) { wieder = false; speichern(); } });
+    }
+    function fehler(r) {
+        if (r.status === 403) zeige(r.body.text || t('recht_fehlt', 'Dieses Gerät darf den Launcher nicht einrichten. Einschalten in Panoptes unter Gekoppelte Geräte.'), 'error');
+        else zeige(t('fehler', 'Konnte nicht gespeichert werden. Bitte noch einmal versuchen.'), 'error');
+    }
+    function uebernehmen(b) {
+        stand = b.layout; basis = b.geaendert || 0;
+        if (seite >= stand.seiten.length) seite = 0;
+        gewaehlt = null;
+        el('llStandardAktiv').hidden = !b.standard;
+    }
+
+    // ---------- Zeichnen ----------
+    function knopf(text, f, klasse) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'btn' + (klasse ? ' ' + klasse : ''); b.textContent = text; b.onclick = f;
+        return b;
+    }
+    function zeichne() {
+        if (!stand) return;
+        var leiste = el('llSeiten'); leiste.innerHTML = '';
+        stand.seiten.forEach(function (_, i) {
+            leiste.appendChild(knopf(t('seite', 'Seite {n}', { n: i + 1 }), function () { seite = i; gewaehlt = null; zeichne(); }, i === seite ? 'aktiv' : ''));
+        });
+        if (stand.seiten.length < MAX_SEITEN) leiste.appendChild(knopf(t('seite_neu', '+ Seite'), function () {
+            stand.seiten.push([]); seite = stand.seiten.length - 1; geaendert();
+        }));
+        if (stand.seiten.length > 1) leiste.appendChild(knopf(t('seite_weg', 'Seite entfernen'), function () {
+            if (!window.confirm(t('seite_weg_frage', 'Diese Seite mit allen Kacheln entfernen?'))) return;
+            stand.seiten.splice(seite, 1); seite = Math.max(0, seite - 1); geaendert();
+        }));
+        el('llSchirm').className = 'll-schirm' + (stand.hintergrund === 'cockpit' ? ' cockpit' : '');
+        zeichneRaster(); zeichneWahl(); zeichneDock(); zeichneHintergrund(); zeichneSchalter();
+    }
+    function zeichneRaster() {
+        var r = el('llRaster'); r.innerHTML = '';
+        var liste = stand.seiten[seite];
+        var g = gewaehlt ? finde(gewaehlt) : null;
+        for (var y = 0; y < ZEILEN; y++) for (var x = 0; x < SPALTEN; x++) {
+            var z = document.createElement('div');
+            z.className = 'll-zelle';
+            z.style.gridColumn = (x + 1) + ' / span 1'; z.style.gridRow = (y + 1) + ' / span 1';
+            z.setAttribute('data-x', x); z.setAttribute('data-y', y);
+            if (g && passt(liste, x, y, g.e.b, g.e.h, g.e.id)) {
+                z.className += ' ziel';
+                z.onclick = (function (xx, yy) { return function () { if (verschieben(gewaehlt, xx, yy)) geaendert(); }; })(x, y);
+            }
+            r.appendChild(z);
+        }
+        liste.forEach(function (e) {
+            var k = document.createElement('div');
+            k.className = 'll-kachel ' + e.typ + (e.id === gewaehlt ? ' gewaehlt' : '');
+            k.style.gridColumn = (e.x + 1) + ' / span ' + e.b; k.style.gridRow = (e.y + 1) + ' / span ' + e.h;
+            k.textContent = e.typ === 'widget' ? kachelName(e.kachel) : e.typ === 'app' ? appName(e.paket)
+                : (e.name || t('ordner', 'Ordner')) + ' (' + (e.apps || []).length + ')';
+            k.setAttribute('role', 'button'); k.tabIndex = 0;
+            ziehbar(k, e);
+            r.appendChild(k);
+        });
+    }
+    // Ziehen mit Finger oder Maus; ein kurzer Tipp wählt die Kachel nur aus.
+    function ziehbar(k, e) {
+        var start = null;
+        k.addEventListener('pointerdown', function (ev) { start = { x: ev.clientX, y: ev.clientY, zieht: false }; try { k.setPointerCapture(ev.pointerId); } catch (x) {} });
+        k.addEventListener('pointermove', function (ev) {
+            if (!start) return;
+            if (!start.zieht && Math.abs(ev.clientX - start.x) + Math.abs(ev.clientY - start.y) > 12) { start.zieht = true; k.className += ' zieht'; }
+            if (start.zieht) k.style.transform = 'translate(' + (ev.clientX - start.x) + 'px,' + (ev.clientY - start.y) + 'px)';
+        });
+        k.addEventListener('pointerup', function (ev) {
+            if (!start) return;
+            var war = start; start = null;
+            if (!war.zieht) { gewaehlt = gewaehlt === e.id ? null : e.id; zeichne(); return; }
+            var rect = el('llRaster').getBoundingClientRect();
+            var w = rect.width / SPALTEN, h = rect.height / ZEILEN;
+            var kr = k.getBoundingClientRect();
+            var x = Math.round((kr.left - rect.left) / w), y = Math.round((kr.top - rect.top) / h);
+            x = Math.max(0, Math.min(SPALTEN - e.b, x)); y = Math.max(0, Math.min(ZEILEN - e.h, y));
+            gewaehlt = e.id;
+            if (verschieben(e.id, x, y)) geaendert(); else zeichne();
+        });
+        k.addEventListener('pointercancel', function () { start = null; zeichne(); });
+        k.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { gewaehlt = e.id; zeichne(); ev.preventDefault(); } });
+    }
+    function zeichneWahl() {
+        var w = el('llWahl'); w.innerHTML = '';
+        var g = gewaehlt ? finde(gewaehlt) : null;
+        if (g) {
+            var info = document.createElement('p');
+            info.className = 'setting-desc'; info.style.width = '100%'; info.style.margin = '0';
+            info.textContent = t('verschieben_hinweis', 'Auf ein helles Feld tippen, um die Kachel dorthin zu legen.');
+            w.appendChild(info);
+            if (g.e.typ === 'widget') w.appendChild(knopf(t('groesse', 'Größe ändern'), function () { if (groesseWechseln(gewaehlt)) geaendert(); }));
+            w.appendChild(knopf(t('entfernen', 'Entfernen'), function () { entfernen(gewaehlt); gewaehlt = null; geaendert(); }));
+            w.appendChild(knopf(t('fertig', 'Fertig'), function () { gewaehlt = null; zeichne(); }, 'btn-primary'));
+            return;
+        }
+        KACHELN.filter(function (k) { return !hatWidget(k); }).forEach(function (k) {
+            w.appendChild(knopf('+ ' + kachelName(k), function () {
+                if (widgetDazu(k)) geaendert(); else zeige(t('kein_platz', 'Auf dieser Seite ist kein Platz mehr.'), 'error');
+            }));
+        });
+        var s = document.createElement('select');
+        s.setAttribute('aria-label', t('app_neu', '+ App'));
+        s.style.minHeight = '52px'; s.style.fontSize = '16px'; s.style.borderRadius = '10px';
+        s.appendChild(new Option(t('app_neu', '+ App'), ''));
+        apps.forEach(function (a) { s.appendChild(new Option(a.name, a.paket)); });
+        s.onchange = function () {
+            if (!s.value) return;
+            if (appDazu(s.value)) geaendert(); else zeige(t('kein_platz', 'Auf dieser Seite ist kein Platz mehr.'), 'error');
+        };
+        if (apps.length) w.appendChild(s);
+    }
+    function zeichneDock() {
+        var v = el('llDockVorschau'); v.innerHTML = '';
+        var haus = document.createElement('span'); haus.className = 'haus'; haus.textContent = '⌂'; v.appendChild(haus);
+        stand.dock.forEach(function (p) { var s = document.createElement('span'); s.textContent = appName(p); v.appendChild(s); });
+        var l = el('llDock'); l.innerHTML = '';
+        stand.dock.forEach(function (p, i) {
+            var li = document.createElement('li');
+            var n = document.createElement('span'); n.textContent = appName(p); li.appendChild(n);
+            var links = knopf('←', function () { stand.dock.splice(i, 1); stand.dock.splice(i - 1, 0, p); geaendert(); });
+            links.disabled = i === 0; links.setAttribute('aria-label', t('links', 'Nach links'));
+            var rechts = knopf('→', function () { stand.dock.splice(i, 1); stand.dock.splice(i + 1, 0, p); geaendert(); });
+            rechts.disabled = i === stand.dock.length - 1; rechts.setAttribute('aria-label', t('rechts', 'Nach rechts'));
+            var weg = knopf('×', function () { stand.dock.splice(i, 1); geaendert(); });
+            weg.setAttribute('aria-label', t('entfernen', 'Entfernen'));
+            li.appendChild(links); li.appendChild(rechts); li.appendChild(weg);
+            l.appendChild(li);
+        });
+        var s = el('llDockNeu'); s.innerHTML = '';
+        var voll = stand.dock.length >= MAX_DOCK;
+        s.appendChild(new Option(voll ? t('leiste_voll', 'Die Leiste ist voll (höchstens 8 Apps).') : t('leiste_neu', '+ App in die Leiste'), ''));
+        apps.filter(function (a) { return stand.dock.indexOf(a.paket) < 0; }).forEach(function (a) { s.appendChild(new Option(a.name, a.paket)); });
+        s.disabled = voll;
+        s.onchange = function () { if (s.value && stand.dock.length < MAX_DOCK) { stand.dock.push(s.value); geaendert(); } };
+    }
+    function zeichneHintergrund() {
+        var h = el('llHintergrund'); h.innerHTML = '';
+        [['panoptes', 'Panoptes'], ['cockpit', 'Dunkel'], ['bild', 'Eigenes Bild'], ['video', 'Eigenes Video']].forEach(function (x) {
+            h.appendChild(knopf(t('hg_' + x[0], x[1]), function () { stand.hintergrund = x[0]; geaendert(); }, stand.hintergrund === x[0] ? 'aktiv' : ''));
+        });
+    }
+    function zeichneSchalter() {
+        var box = el('llSchalter'); box.innerHTML = '';
+        [['nebeneinander', false, 'neben', 'Apps neben dem Launcher öffnen', 'neben_info', 'Die App öffnet rechts, der Launcher bleibt links sichtbar.'],
+         ['zeigeKlima', true, 'klima', 'Klima unten anzeigen', null, null],
+         ['zeigeStatus', true, 'status', 'Obere Zeile mit Uhrzeit anzeigen', null, null],
+         ['zeigeReiter', true, 'reiter', 'Reiterzeile anzeigen', null, null],
+         ['zeige3d', true, 'fahrzeug3d', 'Fahrzeug in 3D zeigen', null, null]].forEach(function (s) {
+            var an = stand[s[0]] === undefined ? s[1] : !!stand[s[0]];
+            var label = document.createElement('label'); label.className = 'll-schalter';
+            var text = document.createElement('span'); text.className = 'll-schalter-text';
+            var b = document.createElement('b'); b.textContent = t(s[2], s[3]); text.appendChild(b);
+            if (s[4]) { var sm = document.createElement('small'); sm.textContent = t(s[4], s[5]); text.appendChild(sm); }
+            var sw = document.createElement('span'); sw.className = 'toggle-switch';
+            var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = an; cb.setAttribute('aria-label', t(s[2], s[3]));
+            cb.onchange = function () { stand[s[0]] = cb.checked; geaendert(); };
+            var sl = document.createElement('span'); sl.className = 'toggle-slider';
+            sw.appendChild(cb); sw.appendChild(sl); label.appendChild(text); label.appendChild(sw);
+            box.appendChild(label);
+        });
+    }
+
+    el('llStandard').onclick = function () {
+        if (!window.confirm(t('standard_frage', 'Alles auf den fertigen Standard-Aufbau zurücksetzen?'))) return;
+        clearTimeout(timer);
+        anfrage(API + '/standard', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).then(function (r) {
+            if (r.status === 200) { uebernehmen(r.body); seite = 0; zeichne(); zeige(t('gespeichert', 'Gespeichert. Am Auto in wenigen Sekunden zu sehen.'), 'success'); }
+            else fehler(r);
+        }, function () { zeige(t('fehler', 'Konnte nicht gespeichert werden. Bitte noch einmal versuchen.'), 'error'); });
+    };
+
+    function laden() {
+        Promise.all([anfrage(API), anfrage(API + '/apps')]).then(function (r) {
+            if (r[0].status !== 200) { fehler(r[0]); if (r[0].status !== 403) zeige(t('laden_fehler', 'Der Aufbau konnte nicht geladen werden.'), 'error'); return; }
+            apps = (r[1].body.apps || []).slice();
+            apps.forEach(function (a) { namen[a.paket] = a.name; });
+            PROJEKTION.forEach(function (p) { if (!namen[p]) namen[p] = appName(p); });
+            uebernehmen(r[0].body);
+            zeichne();
+        }, function () { zeige(t('laden_fehler', 'Der Aufbau konnte nicht geladen werden.'), 'error'); });
+    }
+    BYD.i18n.init().then(laden, laden);
+}());
+</script>
+</body>
+</html>

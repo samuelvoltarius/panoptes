@@ -11,6 +11,7 @@ html[data-anzeige="auto"] .btn,
 html[data-anzeige="auto"] button,
 html[data-anzeige="auto"] .pn-pill,
 html[data-anzeige="auto"] .pn-subnav a,
+html[data-anzeige="auto"] .pn-teilwahl a,
 html[data-anzeige="auto"] .sidebar a,
 html[data-anzeige="auto"] .pn-rail a,
 html[data-anzeige="auto"] select,
@@ -23,7 +24,8 @@ html[data-anzeige="auto"] input[type="time"] {
 html[data-anzeige="auto"] .btn,
 html[data-anzeige="auto"] button { min-width: 48px; padding-left: 18px; padding-right: 18px; font-size: 16px; }
 html[data-anzeige="auto"] .pn-pill { display: inline-flex; align-items: center; padding: 0 16px; }
-html[data-anzeige="auto"] .pn-subnav a { display: inline-flex; align-items: center; padding: 0 18px; }
+html[data-anzeige="auto"] .pn-subnav a,
+html[data-anzeige="auto"] .pn-teilwahl a { display: inline-flex; align-items: center; padding: 0 18px; }
 html[data-anzeige="auto"] input[type="checkbox"],
 html[data-anzeige="auto"] input[type="radio"] { width: 28px; height: 28px; }
 html[data-anzeige="auto"] label.sw { transform: scale(1.25); transform-origin: right center; }

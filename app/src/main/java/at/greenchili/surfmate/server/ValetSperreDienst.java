@@ -167,7 +167,7 @@ public final class ValetSperreDienst {
                             Messages.text("display.valet_fehlversuche_titel", "Display lock: wrong PIN"),
                             Messages.text("display.valet_fehlversuche_text",
                                     "Someone entered a wrong PIN {0} times at the display.", fehlversuche),
-                            "display-valet", "/local/system.html#anzeige", d));
+                            "display-valet", "/local/display.html#sperre", d));
         } catch (Throwable t) {
             logger.warn("Meldung Fehlversuche: " + t.getMessage());
         }

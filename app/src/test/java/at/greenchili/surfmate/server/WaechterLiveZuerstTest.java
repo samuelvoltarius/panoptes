@@ -11,8 +11,9 @@ public class WaechterLiveZuerstTest {
     public void liveIstDieErsteSeiteDesWaechters() throws Exception {
         String js = LiveQualitaetNurSitzungTest.lies("src/main/assets/web/shared/app-shell.js");
         int g = js.indexOf("{ id: 'guard'");
-        String[] reihe = {"live-view.html", "waechter.html", "events.html", "parking.html", "communicate.html",
-                "surveillance.html", "recording.html", "notifications.html"};
+        // 0.1.37 Aufbau „Kameras & Wächter“: die Meldungen sind nach „Automationen“ umgezogen
+        String[] reihe = {"live-view.html", "events.html", "waechter.html", "surveillance.html", "recording.html",
+                "parking.html", "communicate.html"};
         int vorher = g;
         for (String s : reihe) {
             int i = js.indexOf("href: '" + s + "'", g);

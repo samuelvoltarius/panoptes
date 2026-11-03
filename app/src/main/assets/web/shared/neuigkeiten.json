@@ -174,6 +174,40 @@
         "„Waar ik laad”: laadpassen, voorkeursnetwerken en stekkers worden in de auto opgeslagen en gelden voor elke planning.",
         "Instellingen uit Overdrive overnemen als die er is – met voorbeeld, niets zonder jouw toestemming."
       ]
+    },
+    {
+      "version": "0.1.38",
+      "versionCode": 64,
+      "de": [
+        "Neue, aufgeräumte Leiste mit sieben Bereichen: Start, Steuerung, Kameras & Wächter, Fahrten & Laden, Regeln, Apps & Display, Einstellungen.",
+        "Neu unter „Apps & Display → Display“: was der Tacho zeigt, Hintergrundbild, Display-Sperre und der Panoptes Launcher.",
+        "Wächter und Fahrten haben oben einen großen Schalter. Regeln stehen als „Wenn … / Dann …“ da.",
+        "Was du noch einrichten kannst, steht unter Einstellungen → Einrichtung → „Noch einrichten“. Alles ist freiwillig."
+      ],
+      "en": [
+        "A new, tidy bar with seven areas: Home, Controls, Cameras & guard, Trips & charging, Rules, Apps & display, Settings.",
+        "New under “Apps & display → Display”: what the instrument cluster shows, background picture, display lock and the Panoptes launcher.",
+        "Guard and trips have a big switch at the top. Rules read as “When … / Then …”.",
+        "What you can still set up is listed under Settings → Setup → “Still to set up”. Everything is optional."
+      ],
+      "fr": [
+        "Une nouvelle barre bien rangée avec sept espaces : Accueil, Commandes, Caméras & surveillance, Trajets & recharge, Règles, Apps & écran, Réglages.",
+        "Nouveau sous « Apps & écran → Écran » : ce qu’affiche le compteur, l’image de fond, le verrouillage de l’écran et le launcher Panoptes.",
+        "La surveillance et les trajets ont un grand interrupteur en haut. Les règles se lisent « Quand … / Alors … ».",
+        "Ce que tu peux encore configurer se trouve sous Réglages → Installation → « Encore à configurer ». Tout est facultatif."
+      ],
+      "it": [
+        "Una nuova barra ordinata con sette aree: Home, Comandi, Telecamere & guardia, Viaggi & ricarica, Regole, App & display, Impostazioni.",
+        "Novità in «App & display → Display»: cosa mostra il quadro strumenti, immagine di sfondo, blocco del display e il launcher Panoptes.",
+        "Guardia e viaggi hanno in alto un grande interruttore. Le regole si leggono «Quando … / Allora …».",
+        "Ciò che puoi ancora configurare è in Impostazioni → Configurazione → «Ancora da configurare». Tutto è facoltativo."
+      ],
+      "nl": [
+        "Een nieuwe, overzichtelijke balk met zeven onderdelen: Start, Bediening, Camera's & bewaking, Ritten & laden, Regels, Apps & scherm, Instellingen.",
+        "Nieuw onder „Apps & scherm → Scherm”: wat het dashboard toont, achtergrondafbeelding, schermvergrendeling en de Panoptes-launcher.",
+        "Bewaking en ritten hebben bovenaan een grote schakelaar. Regels staan er als „Als … / Dan …”.",
+        "Wat je nog kunt instellen, staat onder Instellingen → Installatie → „Nog instellen”. Alles is vrijwillig."
+      ]
     }
   ]
 }

@@ -563,7 +563,7 @@ window.KM = (function () {
     // Same display order as the Automations page (BYD.AUTOMATION_CATEGORY_ORDER); kept
     // inline so key-mapping.js works even if automations.js isn't loaded on this page.
     var KM_CATEGORY_ORDER = [
-        'vehicle', 'climate', 'windows_body', 'lighting', 'adas_safety', 'drive',
+        'vehicle', 'climate', 'charging', 'windows_body', 'lighting', 'adas_safety', 'drive',
         'media', 'displays', 'sensors', 'surveillance', 'advanced', 'system', 'flow', 'other'
     ];
     // Aktionen für Kombiinstrument (Tacho-Anzeige) bzw. Head-up-Anzeige: nur anbieten,

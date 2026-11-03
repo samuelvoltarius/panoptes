@@ -10,8 +10,8 @@
     <meta name="apple-mobile-web-app-title" content="Panoptes">
     <meta name="theme-color" content="#0A2238">
     <script src="../shared/theme.js?v=13"></script>
-    <script src="../shared/app-shell.js?v=pn30"></script>
-    <link rel="stylesheet" href="../shared/styles.css?v=pn11">
+    <script src="../shared/app-shell.js?v=pn33"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn12">
     <link rel="stylesheet" href="../shared/communicate.css?v=5">
 </head>
 <body class="communicate-page">
@@ -204,6 +204,11 @@
                         </form>
                     </section>
                 </div>
+                <!-- 0.1.38: Not-Aus fürs Sprechen (POST /api/communicate/emergency-stop, zusatzknoepfe.js) -->
+                <section class="card" style="margin-top:16px;">
+                    <div class="card-header"><div class="card-title" data-i18n="communicate.notaus_titel">Not-Aus</div></div>
+                    <div class="card-body"><div id="sprechenNotaus"></div></div>
+                </section>
             </div>
         </main>
     </div>
@@ -215,6 +220,7 @@
     <script src="../shared/core.js?v=pn6"></script>
     <script src="../shared/cabin-audio.js?v=2"></script>
     <script src="../shared/communicate.js?v=12"></script>
+    <script src="../shared/zusatzknoepfe.js?v=1"></script>
     <script>
         function toggleSidebar() {
             var sidebar = document.getElementById('sidebar');

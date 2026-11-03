@@ -1754,6 +1754,24 @@ BYD.performance = {
         }
     },
 
+    /** 0.1.38: Datenverbrauchs-Verlauf löschen, nach Rückfrage. */
+    async resetDataUsage() {
+        var t = function (k, f) { var v = BYD.i18n.t(k); return v && v !== k ? v : f; };
+        var frage = t('performance.data_usage_reset_confirm', 'Den gemessenen Datenverbrauch löschen? Die Messung läuft danach weiter.');
+        var ok = BYD.utils && BYD.utils.confirmDialog
+            ? await BYD.utils.confirmDialog({ title: t('performance.data_usage_reset', 'Verlauf löschen'), body: frage,
+                confirmLabel: t('performance.data_usage_reset', 'Verlauf löschen'), cancelLabel: t('common.cancel', 'Abbrechen'), danger: true })
+            : window.confirm(frage);
+        if (!ok) return;
+        try {
+            await fetch('/api/performance/data-usage/reset', { method: 'POST' });
+        } catch (e) {
+            console.error('[Performance] data-usage reset error:', e);
+        } finally {
+            this.fetchDataUsage();
+        }
+    },
+
     /** Toggle handler wired to the checkbox onchange. */
     async toggleDataUsage(enabled) {
         try {

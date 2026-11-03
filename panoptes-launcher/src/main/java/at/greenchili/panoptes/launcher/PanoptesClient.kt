@@ -39,6 +39,22 @@ class PanoptesClient(private val baseUrl: String = "http://127.0.0.1:8180") {
 
     fun update(): UpdateStand = LauncherContract.parseUpdate(get("/api/launcher/v1/update"))
 
+    /** 0.1.38: Layout aus dem Kern; null = Kern nicht erreichbar oder Antwort unbrauchbar (dann gilt die lokale Kopie). */
+    fun layoutHolen(): KernLayout? = try {
+        LayoutAbgleich.parseKern(get("/api/launcher/v1/layout"))
+    } catch (_: Exception) {
+        null
+    }
+
+    /** 0.1.38: Layout in den Kern schreiben, mit der zuletzt gekannten Basis; 409 = Kern ist neuer. */
+    fun layoutSpeichern(l: StartLayout, basis: Long): SpeicherAntwort = try {
+        LayoutAbgleich.parseSpeichern(200, request("PUT", "/api/launcher/v1/layout", LayoutAbgleich.speichernBody(l, basis), 5000))
+    } catch (e: HttpFehler) {
+        LayoutAbgleich.parseSpeichern(e.status, e.koerper)
+    } catch (_: Exception) {
+        SpeicherAntwort.Fehler(0)
+    }
+
     /** Installieren auf Tipp; {"ok", "grund"?, "vorgemerkt"?, "text"?} als Rohtext. */
     fun installieren(paket: String, p: UpdatePaket, mobil: Boolean): String =
         requestMitFehler("POST", "/api/launcher/v1/update/installieren", LauncherContract.installierenBody(paket, p, mobil), 10_000)

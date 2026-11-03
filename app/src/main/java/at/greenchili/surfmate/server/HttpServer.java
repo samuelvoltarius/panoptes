@@ -747,7 +747,9 @@ public class HttpServer {
                     && !WebHandyGuard.dateienErlaubt(pathOnly, at.greenchili.surfmate.auth.Kopplungen.get()
                             .hatRecht(AuthMiddleware.requestWebKopplungsId(), at.greenchili.surfmate.auth.Kopplungen.RECHT_DATEIEN))
                     && !WebHandyGuard.tachoErlaubt(pathOnly, at.greenchili.surfmate.auth.Kopplungen.get()
-                            .hatRecht(AuthMiddleware.requestWebKopplungsId(), at.greenchili.surfmate.auth.Kopplungen.RECHT_TACHO))) {
+                            .hatRecht(AuthMiddleware.requestWebKopplungsId(), at.greenchili.surfmate.auth.Kopplungen.RECHT_TACHO))
+                    && !WebHandyGuard.launcherErlaubt(method, pathOnly, at.greenchili.surfmate.auth.Kopplungen.get()
+                            .hatRecht(AuthMiddleware.requestWebKopplungsId(), at.greenchili.surfmate.auth.Kopplungen.RECHT_LAUNCHER))) {
                 BefehlsLog.grund("web_gesperrt");
                 WebHandyGuard.sendeGesperrt(out, pathOnly);
                 client.close();
@@ -855,6 +857,10 @@ public class HttpServer {
             } else if (path.equals("/dateien.html")) {
                 // Dateien Handy ↔ Auto: Seite nur Anzeige/Formular; /api/dateien prüft Login bzw. Recht „dateien“.
                 if (!serveStaticFile(out, "local/dateien.html")) HttpResponse.sendError(out, 404, "dateien.html not found");
+            } else if (path.equals("/display.html")) {
+                // 0.1.38 Display (Tacho, Hintergrund, Display-Sperre, Launcher): Seite nur Anzeige;
+                // /api/tacho, /api/display und /api/appupdate/launcher prüfen Login und Fahrt-Sperre selbst.
+                if (!serveStaticFile(out, "local/display.html")) HttpResponse.sendError(out, 404, "display.html not found");
             } else if (path.equals("/camping.html")) {
                 // 0.1.16 Camping (Kern 9): Seite nur Anzeige/Formular; /api/camping prüft Login und Fahrt-Sperre.
                 // Fehlte im Merge (Emulator-Abnahme 23.10.: „Not Found“).
@@ -886,6 +892,11 @@ public class HttpServer {
             } else if (path.equals("/apps.html") || path.equals("/apps")) {
                 if (!serveStaticFile(out, "local/apps.html")) {
                     HttpResponse.sendError(out, 404, "apps.html not found");
+                }
+            } else if (path.equals("/launcher.html") || path.equals("/launcher")) {
+                // 0.1.38 „Launcher einrichten“ (Layout im Kern)
+                if (!serveStaticFile(out, "local/launcher.html")) {
+                    HttpResponse.sendError(out, 404, "launcher.html not found");
                 }
             } else if (path.equals("/vehicle-control.html") || path.equals("/vehicle-control")) {
                 if (!serveStaticFile(out, "local/vehicle-control.html")) {

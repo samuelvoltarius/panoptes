@@ -1,0 +1,61 @@
+/* Panoptes — 0.1.37 Befehle als Kategorie-Kacheln mit Favoriten (befehle-kacheln.js) === */
+.pn-bk { display: none; }
+.pn-bk-umschalter {
+    position: absolute; top: calc(66px + env(safe-area-inset-top, 0px)); right: 10px; z-index: 12; pointer-events: auto;
+    display: -webkit-inline-flex; display: inline-flex; -webkit-align-items: center; align-items: center;
+    min-height: 44px; padding: 0 14px; border-radius: 14px; cursor: pointer;
+    font: 600 13px/1 var(--family-body, 'Manrope', system-ui, sans-serif);
+    color: var(--on-surface, #e6f1f4); background: var(--vc-bar-bg, rgba(4, 16, 27, .85));
+    border: 1px solid var(--vc-border-subtle, rgba(160, 230, 240, .12));
+}
+.pn-bk-umschalter svg { width: 18px; height: 18px; margin-right: 8px; }
+.pn-bk-umschalter[aria-pressed="true"] { border-color: var(--sm-aqua, #5FD6E6); }
+html[data-befehle="kacheln"] .pn-bk {
+    display: block; position: absolute; left: 0; right: 0; bottom: 0; z-index: 11;
+    top: calc(64px + env(safe-area-inset-top, 0px));
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding: 58px 16px 150px; box-sizing: border-box;
+    background: var(--bg-base, #071826);
+}
+html[data-befehle="kacheln"] #vehicleCanvas,
+html[data-befehle="kacheln"] .vc-lite-hero,
+html[data-befehle="kacheln"] .vc-tyre-strip { visibility: hidden; }
+.pn-bk-titel {
+    margin: 4px 2px 10px; font: 600 12.5px/1.2 var(--family-display, sans-serif);
+    letter-spacing: .08em; text-transform: uppercase; color: var(--outline, #8aa6b0);
+}
+.pn-bk-raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 22px; }
+.pn-bk-kachel { position: relative; }
+.pn-bk-oeffnen {
+    display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column;
+    -webkit-align-items: flex-start; align-items: flex-start;
+    width: 100%; min-height: 96px; padding: 14px; box-sizing: border-box; cursor: pointer; text-align: left;
+    border-radius: 16px; border: 1px solid var(--sm-line, rgba(160, 230, 240, .12));
+    background: var(--sm-card, rgba(255, 255, 255, .045)); color: var(--on-surface, #e6f1f4);
+    font: 600 15px/1.25 var(--family-body, 'Manrope', system-ui, sans-serif);
+}
+.pn-bk-oeffnen:hover, .pn-bk-oeffnen:focus-visible { border-color: var(--sm-aqua, #5FD6E6); outline: none; }
+.pn-bk-symbol {
+    -webkit-flex: none; flex: none; width: 38px; height: 38px; margin-bottom: 12px; border-radius: 11px;
+    display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;
+    background: rgba(95, 214, 230, .12); color: var(--sm-aqua, #5FD6E6);
+}
+.pn-bk-symbol svg { width: 20px; height: 20px; }
+.pn-bk-name { max-width: 100%; overflow-wrap: break-word; }
+.pn-bk-punkt { display: none; position: absolute; left: 44px; top: 14px; width: 8px; height: 8px; border-radius: 50%; background: var(--sm-lime, #C6F432); }
+.pn-bk-kachel.aktiv .pn-bk-punkt { display: inline-block; }
+.pn-bk-stern {
+    position: absolute; top: 8px; right: 8px;
+    width: 40px; height: 40px; padding: 0; border: 0; border-radius: 10px; cursor: pointer; background: transparent;
+    color: var(--on-surface-variant, #8aa6b0);
+}
+.pn-bk-stern svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.pn-bk-stern.an { color: var(--sm-lime, #C6F432); }
+.pn-bk-stern.an svg { fill: currentColor; }
+.pn-bk-stern:focus-visible { outline: 2px solid var(--sm-aqua, #5FD6E6); }
+.pn-bk-leer {
+    grid-column: 1 / -1; margin: 0; padding: 14px 16px; border-radius: 16px; font-size: 14px; line-height: 1.4;
+    color: var(--on-surface-variant, #8aa6b0); border: 1px dashed var(--sm-line, rgba(160, 230, 240, .2));
+}
+html[data-anzeige="auto"] .pn-bk-oeffnen { min-height: 108px; font-size: 17px; }
+html[data-anzeige="auto"] .pn-bk-stern { width: 48px; height: 48px; }

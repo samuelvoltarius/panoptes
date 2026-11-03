@@ -9,7 +9,7 @@
 
     var GROUPS = {
         connections: ['tailscaleKarte', 'wireguardSetupCard', 'kopplung', 'protokoll', 'homeassistant', 'planerKarte'],
-        vehicle: ['manualVehicleCard', 'nativeVehicleTools', 'anzeige', 'kartenquelle', 'blitzer'],
+        vehicle: ['manualVehicleCard', 'nativeVehicleTools', 'anzeige', 'displayLink', 'kartenquelle', 'blitzer'],
         privacy: ['datenschutz', 'energie', 'updates'],
         advanced: ['einrichtung', 'notzugang', 'eingriffe', 'umzug', 'tunnelKarte', 'coreServicesCard']
     };
@@ -75,7 +75,212 @@
         }
     }
 
+    // ------------------------------------------------------------ Suche (0.1.37)
+    // Durchsucht drei Quellen, alles nur im Browser: die Karten dieser Seite, die Seiten des Menüs
+    // (PanoptesShell.sections, die eine Seitenliste) und die Schalter aus dem Einstellungs-Schema.
+    // Schalter, die bei ihrer Funktion stehen (Wächter, Laden, Camping), führen zu ihrer Seite.
+    var SCHEMA_SEITE = {
+        waechter: 'waechter.html', auto: 'waechter.html', camping: 'camping.html', tiermodus: 'tiermodus.html',
+        laden: 'charging.html', update: 'system.html#updates', energie: 'system.html#energie',
+        datenschutz: 'system.html#datenschutz', system: 'system.html'
+    };
+    // Technikwörter, nach denen Leute trotzdem suchen, auf die einfachen Namen abbilden
+    var SYNONYME = {
+        tailscale: 'fernzugang', tailnet: 'fernzugang', vpn: 'fernzugang heimnetz', wireguard: 'heimnetz',
+        mqtt: 'smart home', 'home assistant': 'smart home', abrp: 'routenplaner', wifi: 'wlan'
+    };
+    var schemaTreffer = null;
+
+    function norm(s) {
+        s = String(s || '').toLowerCase();
+        try { s = s.normalize('NFD').replace(/[̀-ͯ]/g, ''); } catch (e) {}
+        return s.replace(/ß/g, 'ss').replace(/\s+/g, ' ');
+    }
+
+    function sprache() {
+        try { return (global.BYD && BYD.i18n && BYD.i18n.getLang && BYD.i18n.getLang()) || ''; } catch (e) { return ''; }
+    }
+
+    function ladeSchema() {
+        if (schemaTreffer) return;
+        schemaTreffer = [];
+        var q = sprache() ? '?sprache=' + encodeURIComponent(sprache()) : '';
+        fetch('/api/einstellungen/schema' + q, { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (s) {
+                var gs = (s && s.gruppen) || [];
+                for (var i = 0; i < gs.length; i++) {
+                    var fs = gs[i].felder || [];
+                    for (var j = 0; j < fs.length; j++) {
+                        var f = fs[j];
+                        if (f.sichtbar === false || !f.titel) continue;
+                        var ziel = SCHEMA_SEITE[gs[i].id] || 'system.html';
+                        schemaTreffer.push({ titel: f.titel, text: norm(f.titel + ' ' + (f.hilfe || '')),
+                            ziel: ziel, ort: ziel.indexOf('system.html') === 0 ? '' : seitenOrt(ziel.split('#')[0]) });
+                    }
+                }
+                suchen();
+            }).catch(function () {});
+    }
+
+    // „Bereich · Reiter“ einer Seite aus der Menüliste, damit man sieht, wo ein Schalter wohnt
+    function seitenOrt(href) {
+        var shell = global.PanoptesShell;
+        if (!shell || !shell.sections) return '';
+        for (var i = 0; i < shell.sections.length; i++) {
+            var s = shell.sections[i];
+            for (var j = 0; j < s.pages.length; j++) {
+                var p = s.pages[j];
+                if (p.href !== href) continue;
+                var reiter = p.teil && shell.teile[p.teil] ? shell.tr(shell.teile[p.teil].i18n, shell.teile[p.teil].label)
+                    : shell.tr(p.i18n, p.label);
+                return shell.tr(s.i18n, s.label) + ' · ' + reiter;
+            }
+        }
+        return '';
+    }
+
+    function seitenListe() {
+        var shell = global.PanoptesShell, out = [];
+        if (!shell || !shell.sections) return out;
+        for (var i = 0; i < shell.sections.length; i++) {
+            var s = shell.sections[i];
+            var bereich = shell.tr(s.i18n, s.label);
+            for (var j = 0; j < s.pages.length; j++) {
+                var p = s.pages[j];
+                if (p.hidden) continue;
+                var name = shell.tr(p.i18n, p.label);
+                var teil = p.teil && shell.teile[p.teil] ? shell.tr(shell.teile[p.teil].i18n, shell.teile[p.teil].label) : '';
+                out.push({ titel: (teil && teil !== name ? teil + ' · ' : '') + name, ort: bereich,
+                    text: norm(bereich + ' ' + teil + ' ' + name + ' ' + p.label + ' ' + p.href.replace('.html', '')), ziel: p.href });
+            }
+        }
+        return out;
+    }
+
+    function kartenListe() {
+        var out = [], group, ids, i, card, titel;
+        for (group in GROUPS) {
+            if (!Object.prototype.hasOwnProperty.call(GROUPS, group)) continue;
+            ids = GROUPS[group];
+            for (i = 0; i < ids.length; i++) {
+                card = document.getElementById(ids[i]);
+                // Karten, die das Auto nicht kann, bleiben auch in der Suche weg
+                if (!card || card.style.display === 'none') continue;
+                titel = card.querySelector('.card-title');
+                out.push({ titel: titel ? titel.textContent.replace(/\s+/g, ' ').trim() : ids[i],
+                    ort: t('system.group_' + group, group), text: norm(card.textContent), karte: ids[i], gruppe: group });
+            }
+        }
+        return out;
+    }
+
+    function passt(eintrag, woerter) {
+        for (var i = 0; i < woerter.length; i++) if (eintrag.text.indexOf(woerter[i]) < 0) return false;
+        return true;
+    }
+
+    function suchen() {
+        var feld = document.getElementById('pnEinstSuche');
+        var liste = document.getElementById('pnEinstTreffer');
+        if (!feld || !liste) return;
+        var q = norm(feld.value).trim();
+        liste.innerHTML = '';
+        if (q.length < 2) { liste.hidden = true; return; }
+        ladeSchema();
+        var roh = q, k;
+        for (k in SYNONYME) if (roh.indexOf(k) >= 0) q = q.split(k).join(SYNONYME[k].split(' ')[0]);
+        var woerter = q.split(' ');
+        var treffer = [], gesehen = {};
+        function nimm(arr, art) {
+            for (var i = 0; i < arr.length && treffer.length < 12; i++) {
+                var e = arr[i], schluessel = art + (e.karte || e.ziel) + e.titel;
+                if (gesehen[schluessel] || !(passt(e, woerter) || (q !== roh && passt(e, roh.split(' '))))) continue;
+                gesehen[schluessel] = 1;
+                e.art = art;
+                treffer.push(e);
+            }
+        }
+        nimm(seitenListe(), 'seite');
+        nimm(kartenListe(), 'karte');
+        nimm(schemaTreffer || [], 'feld');
+        liste.hidden = false;
+        if (!treffer.length) {
+            liste.innerHTML = '<p class="pn-suche-leer">' + esc(t('shell.suche_leer', 'Nichts gefunden. Probier ein anderes Wort.')) + '</p>';
+            return;
+        }
+        for (var i = 0; i < treffer.length; i++) liste.appendChild(trefferKnopf(treffer[i]));
+    }
+
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+            return c === '&' ? '&amp;' : c === '<' ? '&lt;' : c === '>' ? '&gt;' : '&quot;';
+        });
+    }
+
+    function trefferKnopf(e) {
+        var a = document.createElement('a');
+        a.className = 'pn-suche-treffer';
+        var hier = e.art === 'karte' || (e.ziel && e.ziel.indexOf('system.html#') === 0);
+        a.href = e.karte ? '#' + e.karte : e.ziel;
+        a.innerHTML = '<b>' + esc(e.titel) + '</b><span>'
+            + esc(e.ort || (hier ? t('shell.suche_hier', 'Auf dieser Seite') : t('shell.suche_seite', 'Eigene Seite'))) + '</span>';
+        a.onclick = function (ev) {
+            var id = e.karte || (e.ziel.indexOf('system.html#') === 0 ? e.ziel.split('#')[1] : '');
+            if (!id) return;   // andere Seite: normaler Link
+            ev.preventDefault();
+            var gruppe = e.gruppe || groupForId(id);
+            if (gruppe) setGroup(gruppe, false);
+            var card = document.getElementById(id);
+            if (card) {
+                card.scrollIntoView();
+                card.classList.add('pn-suche-ziel');
+                setTimeout(function () { card.classList.remove('pn-suche-ziel'); }, 2200);
+            }
+        };
+        return a;
+    }
+
+    function groupForId(id) {
+        for (var group in GROUPS) {
+            if (Object.prototype.hasOwnProperty.call(GROUPS, group) && GROUPS[group].indexOf(id) >= 0) return group;
+        }
+        return '';
+    }
+
+    function sucheEinbauen() {
+        var overview = document.querySelector('.system-overview');
+        if (!overview || document.getElementById('pnEinstSuche')) return;
+        var box = document.createElement('div');
+        box.className = 'pn-suche';
+        box.setAttribute('role', 'search');
+        box.innerHTML = '<label class="pn-suche-label" for="pnEinstSuche">' + esc(t('shell.suche_label', 'Einstellungen durchsuchen')) + '</label>'
+            + '<input type="search" id="pnEinstSuche" autocomplete="off" spellcheck="false" placeholder="'
+            + esc(t('shell.suche_platzhalter', 'Suchen, z. B. Wallbox, Hotspot, Updates …')) + '">'
+            + '<div class="pn-suche-liste" id="pnEinstTreffer" hidden aria-live="polite"></div>';
+        var lead = overview.querySelector('.system-overview-lead');
+        overview.insertBefore(box, lead ? lead.nextSibling : overview.firstChild);
+        var feld = document.getElementById('pnEinstSuche');
+        var timer = null;
+        feld.addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(suchen, 120); });
+        feld.addEventListener('keydown', function (ev) {
+            if (ev.key === 'Enter') {
+                var erster = document.querySelector('#pnEinstTreffer .pn-suche-treffer');
+                if (erster) erster.click();
+            }
+        });
+    }
+
+    function sucheTexte() {
+        var l = document.querySelector('.pn-suche-label');
+        if (l) l.textContent = t('shell.suche_label', 'Einstellungen durchsuchen');
+        var f = document.getElementById('pnEinstSuche');
+        if (f) f.setAttribute('placeholder', t('shell.suche_platzhalter', 'Suchen, z. B. Wallbox, Hotspot, Updates …'));
+        schemaTreffer = null;
+        suchen();
+    }
+
     function init() {
+        sucheEinbauen();
         var buttons = document.querySelectorAll('[data-system-group]');
         for (var i = 0; i < buttons.length; i++) {
             buttons[i].onclick = function () { setGroup(this.getAttribute('data-system-group'), true); };
@@ -86,9 +291,9 @@
             if (group) setGroup(group, false);
         });
         if (global.BYD && BYD.i18n && BYD.i18n.onChange) {
-            BYD.i18n.onChange(function () { setGroup(storedGroup() || 'connections', false); });
+            BYD.i18n.onChange(function () { setGroup(storedGroup() || 'connections', false); sucheTexte(); });
         }
     }
 
-    global.PanoptesSystemOverview = { init: init, setGroup: setGroup, groups: GROUPS };
+    global.PanoptesSystemOverview = { init: init, setGroup: setGroup, groups: GROUPS, suchen: suchen };
 })(window);

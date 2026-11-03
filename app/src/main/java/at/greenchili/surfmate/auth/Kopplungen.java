@@ -255,17 +255,29 @@ public final class Kopplungen {
             RECHT_DATEIEN = "dateien",
             // 0.1.37 „Was zeigt der Tacho?“ (/api/tacho/auswahl, /api/tacho/normal): Standard AUS, nie automatisch
             // (auch nicht für Bestand), nur der Besitzer schaltet es ein. Auch für das Cockpit setzbar.
-            RECHT_TACHO = "tacho";
+            RECHT_TACHO = "tacho",
+            // 0.1.38 Launcher-Layout lesen und ändern (/api/launcher/v1/layout): Standard AUS, auch für Handy, nie
+            // automatisch (auch nicht für Bestand); nur der Besitzer schaltet es unter Gekoppelte Geräte ein.
+            RECHT_LAUNCHER = "launcher";
     public static final java.util.List<String> RECHTE = java.util.Collections.unmodifiableList(
             java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_AUFSPERREN, RECHT_PUSH, RECHT_WEB, RECHT_KAMERA,
                     RECHT_WALLBOX, RECHT_ROUTE, RECHT_UPDATE, RECHT_EREIGNISCLIP, RECHT_STANDBILD, RECHT_PROTOKOLL,
-                    RECHT_DATEIEN, RECHT_TACHO));
+                    RECHT_DATEIEN, RECHT_TACHO, RECHT_LAUNCHER));
     /**
      * 0.1.30 Kern Sicherheit: Rechte, die auch Kopplungen ohne Handy-Rechte (cockpit, homeassistant, dienst) tragen
      * können. Standard AUS, nie automatisch gesetzt (auch nicht bei der Umstellung); nur der Besitzer schaltet sie ein.
      */
     public static final java.util.List<String> FREMD_RECHTE = java.util.Collections.unmodifiableList(
             java.util.Arrays.asList(RECHT_KAMERA, RECHT_STANDBILD, RECHT_TACHO));
+
+    /** 0.1.38: das Cockpit trägt zusätzlich {@code launcher} (Home Assistant und Dienste nie), {@code tacho} wie 0.1.37. Standard AUS. */
+    public static final java.util.List<String> COCKPIT_RECHTE = java.util.Collections.unmodifiableList(
+            java.util.Arrays.asList(RECHT_KAMERA, RECHT_STANDBILD, RECHT_TACHO, RECHT_LAUNCHER));
+
+    /** Rechte, die eine Nicht-Handy-Art tragen kann. */
+    static java.util.List<String> fremdRechte(String art) {
+        return "cockpit".equals(art) ? COCKPIT_RECHTE : FREMD_RECHTE;
+    }
 
     /** Arten, die {@link #FREMD_RECHTE} tragen können (web und Alt-Kopplungen ohne Art nie). */
     static boolean traegtFremdRechte(String art) {
@@ -303,7 +315,7 @@ public final class Kopplungen {
             JSONArray out = new JSONArray();
             JSONArray r = traegtFremdRechte(g.optString("art")) ? g.optJSONArray("rechte") : null;
             for (int i = 0; r != null && i < r.length(); i++) {
-                if (FREMD_RECHTE.contains(r.optString(i))) out.put(r.optString(i));
+                if (fremdRechte(g.optString("art")).contains(r.optString(i))) out.put(r.optString(i));
             }
             return out;
         }
@@ -380,7 +392,7 @@ public final class Kopplungen {
         boolean handy = ART_HANDY.equals(g.optString("art"));
         if (!handy && !traegtFremdRechte(g.optString("art"))) return false;
         JSONArray r = new JSONArray();
-        for (String x : handy ? RECHTE : FREMD_RECHTE) if (rechte != null && rechte.contains(x)) r.put(x);
+        for (String x : handy ? RECHTE : fremdRechte(g.optString("art"))) if (rechte != null && rechte.contains(x)) r.put(x);
         try { g.put("rechte", r).put("rechteStand", RECHTE_STAND); } catch (Exception e) { return false; }
         boolean ok = speichernSofort();
         // 0.1.34 Befehls-Log: welche Rechte jetzt gelten (Namen aus RECHTE, keine Werte)

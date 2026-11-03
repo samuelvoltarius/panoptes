@@ -39,6 +39,7 @@
     <string name="history_empty">Noch keine Fahrt oder Ladung vorhanden.</string>
     <string name="history_format">Letzte Fahrt: %1$s km · letzte Ladung: %2$s kWh</string>
     <string name="import_fehler">Diese Datei ist kein Panoptes-Launcher-Layout.</string>
+    <string name="layout_neuer_stand">Neuer Aufbau aus dem Web oder vom Handy übernommen.</string>
     <string name="import_ok">Layout übernommen.</string>
     <string name="importieren">Layout aus Datei importieren</string>
     <string name="in_ordner">In Ordner „%1$s“</string>

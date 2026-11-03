@@ -51,6 +51,9 @@ public final class EinrichtungApiHandler {
             "extra_planer", "extra_cockpit", "extra_overdrive",
             // 0.1.22: Gewohnheiten merken (Regel 2: Frage mit Erklärung; Bestand → „Noch offen“, nie still an)
             "extra_gewohnheiten",
+            // 0.1.38: neue Funktionen aus 0.1.37, alle freiwillig („Noch einrichten“, nie Pflicht, nie Schnellstart)
+            "extra_display", "extra_launcher", "extra_tacho", "extra_abschaltbericht", "extra_ladesaeule",
+            "extra_tiermodus", "extra_assistenz",
             // 0.1.24: „Für Fortgeschrittene“ ans Ende (Tailscale-Fernzugang; 0.1.14 Notzugang, Standard aus, Regel 1)
             "extra_fernzugang", "extra_notzugang",
             "fertig");
@@ -423,6 +426,12 @@ public final class EinrichtungApiHandler {
             g.put("kameras", "einr.grund.keine_kameras");
         }
         if (OFFEN.equals(s.optString("usb_freigabe"))) s.put("usb_freigabe", ERLEDIGT);   // Dienst antwortet
+        // 0.1.38: „Tacho“ nur bei Autos, deren Tacho fremde Bilder zeigen kann (Single-OS kann es nie, TachoFaehigkeit)
+        if (faehigkeiten != null && faehigkeiten.optBoolean("singleOs", false)
+                && (OFFEN.equals(s.optString("extra_tacho")) || SPAETER.equals(s.optString("extra_tacho")))) {
+            s.put("extra_tacho", ENTFAELLT);
+            g.put("extra_tacho", "einr.grund.kein_tacho");
+        }
         // 0.1.26: auch ein gemerktes „später“ entfällt, wenn keine Overdrive-Daten da sind
         String od = s.optString("extra_overdrive");
         if ((OFFEN.equals(od) || SPAETER.equals(od)) && !overdriveVorhanden()) {

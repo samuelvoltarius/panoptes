@@ -799,7 +799,13 @@ public final class AppLauncher {
                         if (l != null) label = l.toString();
                     } catch (Throwable ignored) { }
                     if (label == null || label.isEmpty()) label = pkg;
-                    apps.add(makeApp(pkg, label));
+                    JSONObject app = makeApp(pkg, label);
+                    // 0.1.38: Video-App laut eigener Android-Kategorie (wie der Launcher), für layout/apps
+                    if (ri.activityInfo.applicationInfo != null
+                            && ri.activityInfo.applicationInfo.category == android.content.pm.ApplicationInfo.CATEGORY_VIDEO) {
+                        try { app.put("video", true); } catch (JSONException ignored) { }
+                    }
+                    apps.add(app);
                 }
             } catch (Throwable t) {
                 logger.warn("listLaunchableApps: PackageManager query failed (" + t.getMessage() + ")");

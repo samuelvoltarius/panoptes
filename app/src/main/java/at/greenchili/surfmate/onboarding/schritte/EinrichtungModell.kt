@@ -21,6 +21,9 @@ object Einrichtung {
         "sprache", "haftung", "autostart", "ueberlagerung", "rechte", "usb_freigabe", "auto", "kameras",
         "waechter", "betrieb", "karte", "daten", "blitzer", "updates", "strompreis",
         "extra_telegram", "extra_handy", "extra_planer", "extra_cockpit", "extra_overdrive", "extra_gewohnheiten",
+        // 0.1.38: neue Funktionen aus 0.1.37, alle freiwillig
+        "extra_display", "extra_launcher", "extra_tacho", "extra_abschaltbericht", "extra_ladesaeule",
+        "extra_tiermodus", "extra_assistenz",
         // 0.1.24: „Für Fortgeschrittene“ (Tailscale) ans Ende
         "extra_fernzugang", "extra_notzugang", "fertig",
     )

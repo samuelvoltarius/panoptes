@@ -6,7 +6,7 @@
     <title data-i18n="app.performance_title">Leistung – Panoptes</title>
     <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
     <script src="../shared/theme.js?v=13"></script>
-    <script src="../shared/app-shell.js?v=pn30"></script>
+    <script src="../shared/app-shell.js?v=pn33"></script>
     <!--
       Bottom-tab manifest — performance dashboard splits into 4 tabs
       so the long single-scroll page stops being a wall of charts:
@@ -27,7 +27,7 @@
         ];
     </script>
     <script src="../shared/app-tabs.js"></script>
-    <link rel="stylesheet" href="../shared/styles.css?v=pn11">
+    <link rel="stylesheet" href="../shared/styles.css?v=pn12">
     <style>
         /* Performance Dashboard Specific Styles */
         .metrics-grid {
@@ -1258,6 +1258,8 @@
                             <div class="legend-item"><span class="legend-dot" style="background:var(--chart-warning);"></span><span data-i18n="performance.data_usage_mobile">Mobilfunk</span></div>
                         </div>
                         <p class="du-note" id="dataUsageNote" style="display:none;"></p>
+                        <!-- 0.1.38: Verlauf löschen (POST /api/performance/data-usage/reset) -->
+                        <button class="btn" type="button" id="dataUsageReset" style="min-height:48px;margin-top:12px;" onclick="BYD.performance.resetDataUsage()" data-i18n="performance.data_usage_reset">Verlauf löschen</button>
                     </div>
                 </div>
 
@@ -1415,7 +1417,7 @@
 
     <script src="../shared/auth.js"></script>
     <script src="../shared/core.js?v=pn6"></script>
-    <script src="../shared/performance.js?v=13"></script>
+    <script src="../shared/performance.js?v=14"></script>
     <script>
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('open');

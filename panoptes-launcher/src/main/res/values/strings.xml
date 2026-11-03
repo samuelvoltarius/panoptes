@@ -39,6 +39,7 @@
     <string name="history_empty">No recent trip or charge yet.</string>
     <string name="history_format">Last trip: %1$s km · last charge: %2$s kWh</string>
     <string name="import_fehler">This file is not a Panoptes Launcher layout.</string>
+    <string name="layout_neuer_stand">New layout from the web or phone applied.</string>
     <string name="import_ok">Layout imported.</string>
     <string name="importieren">Import layout from file</string>
     <string name="in_ordner">Move to folder “%1$s”</string>

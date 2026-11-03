@@ -39,6 +39,7 @@
     <string name="history_empty">Nessun viaggio o ricarica recente.</string>
     <string name="history_format">Ultimo viaggio: %1$s km · ultima ricarica: %2$s kWh</string>
     <string name="import_fehler">Questo file non è un layout Panoptes Launcher.</string>
+    <string name="layout_neuer_stand">Nuova disposizione presa dal web o dal telefono.</string>
     <string name="import_ok">Layout importato.</string>
     <string name="importieren">Importa layout</string>
     <string name="in_ordner">Nella cartella «%1$s»</string>

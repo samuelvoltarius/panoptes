@@ -348,7 +348,14 @@
     "mic_not_available": "No microphone available",
     "cabin_audio_connection_failed": "Cabin audio connection failed",
     "cabin_audio_start_failed": "Could not start cabin audio",
-    "cabin_audio_playback_failed": "Cabin audio playback failed"
+    "cabin_audio_playback_failed": "Cabin audio playback failed",
+    "notaus_titel": "Emergency off",
+    "notaus_hilfe": "Turns off talking, listening and texts at the car right away. You can only switch it back on at the screen in the car.",
+    "notaus_knopf": "Switch everything off now",
+    "notaus_frage": "Switch off talking, listening and texts at the car now?",
+    "notaus_ja": "Switch off",
+    "notaus_ok": "Switched off.",
+    "notaus_fehler": "That did not work. Please try again."
   },
   "remote_dev": {
     "page_title": "Remote screen",
@@ -1191,7 +1198,10 @@
     "saeule_ungueltig": "Please enter a number above 0",
     "saeule_gespeichert": "Saved",
     "saeule_fehler": "Could not save",
-    "laut_saeule_kurz": "Charger {kwh} kWh"
+    "laut_saeule_kurz": "Charger {kwh} kWh",
+    "kurve_titel": "How fast your car charges",
+    "kurve_leer": "Not enough charging sessions yet. After a few fast charges you will see here how fast your car charges at each battery level.",
+    "kurve_anzahl": "From {n} charging sessions."
   },
   "trip": {
     "tab_trips": "Drives",
@@ -1297,7 +1307,8 @@
       "days_14": "2 weeks",
       "days_30": "1 month",
       "custom": "Pick dates",
-      "select_date": "Choose a day"
+      "select_date": "Choose a day",
+      "heute": "Today"
     },
     "daterange": {
       "from": "From",
@@ -1574,7 +1585,9 @@
       "kurz": "Track missing",
       "fehlt": "The track file of this trip has been missing since {datum}, e.g. because the storage is missing or was replaced. Map and curves are missing; the trip’s values remain.",
       "speicher": "The track of this trip was removed on {datum} to free up storage. Map and curves are missing; the trip’s values remain."
-    }
+    },
+    "schalter_an": "Turn on trip recording",
+    "schalter_aus": "Trip recording: on – tap to turn off"
   },
   "automation": {
     "mode_label": "How it runs",
@@ -1791,7 +1804,15 @@
     "position_missing": "not there",
     "positions_mine": "My saved spots",
     "positions_from_car": "Stored in the car",
-    "value_missing": "{value} (missing)"
+    "value_missing": "{value} (missing)",
+    "audio_stop": "Stop",
+    "audio_stop_failed": "Stopping did not work",
+    "category_charging": "Charging",
+    "wd_wenn": "When",
+    "wd_dann": "Then",
+    "schalter_an": "On",
+    "schalter_aus": "Off",
+    "schalter_hilfe": "Tap to switch the rule on or off."
   },
   "community": {
     "tab_community": "Community",
@@ -2935,7 +2956,14 @@
     "cluster_app_park": "Only possible in P.", "cluster_app_not_approved": "This app has not been approved yet.",
     "cluster_app_uninstalled": "The app is no longer installed or launchable.", "cluster_app_invalid": "This app cannot be selected.",
     "cluster_app_probe_needed": "Test this app in P first.", "cluster_app_unavailable": "Safe projection has not been confirmed on this car.", "cluster_app_dilink5_blocked": "DiLink 5 remains blocked until left and right camera priority, package and geometry restore, and safe error fallback are proven in the car.",
-    "cluster_app_failed": "The app could not be started on the driver display.", "cluster_app_watch": "Check speed, warning lights and the return to the gauges now."
+    "cluster_app_failed": "The app could not be started on the driver display.", "cluster_app_watch": "Check speed, warning lights and the return to the gauges now.",
+    "kacheln_favoriten": "Favourites",
+    "kacheln_kategorien": "Categories",
+    "kacheln_fav_leer": "Tap the star on a tile and it will appear up here.",
+    "kacheln_stern_an": "Add to favourites",
+    "kacheln_stern_aus": "Remove from favourites",
+    "ansicht_kacheln": "Tiles",
+    "ansicht_auto": "Show car"
   },
   "performance": {
     "tab_battery": "Battery",
@@ -3122,7 +3150,9 @@
     "soc_history_will_build": "The history fills in over time",
     "page_header_short": "Performance",
     "unit_device": "device",
-    "unit_threads": "threads"
+    "unit_threads": "threads",
+    "data_usage_reset": "Clear history",
+    "data_usage_reset_confirm": "Delete the measured data usage? Measuring continues afterwards."
   },
   "update": {
     "check_for_updates": "Look for updates",
@@ -4917,9 +4947,9 @@
     "pill_guard_off": "Guard off",
     "net_mobile": "Mobile data",
     "net_none": "No network",
-    "pill_tail_on": "Tailnet · connected",
-    "pill_tail_wait": "Tailnet · disconnected",
-    "pill_tail_off": "Tailnet off",
+    "pill_tail_on": "Remote access · connected",
+    "pill_tail_wait": "Remote access · disconnected",
+    "pill_tail_off": "Remote access off",
     "sec_start": "Home",
     "page_overview": "Overview",
     "sec_drive": "Drive",
@@ -4935,6 +4965,7 @@
     "sec_car": "Car",
     "page_control": "Controls",
     "page_apps": "Apps side by side",
+    "page_launcher": "Set up launcher",
     "page_seats": "Seats",
     "page_rules": "Rules",
     "page_keys": "Buttons",
@@ -4957,7 +4988,49 @@
     "page_orte": "Places",
     "page_ladeplan": "Charge at home",
     "sec_hilfe": "Help",
-    "page_fehler": "Report a problem"
+    "page_fehler": "Report a problem",
+    "sec_steuerung": "Controls",
+    "sec_kameras": "Cameras & guard",
+    "sec_fahrten": "Trips & charging",
+    "sec_automationen": "Rules",
+    "sec_apps": "Apps & display",
+    "sec_einstellungen": "Settings",
+    "kurz_start": "Home",
+    "kurz_steuerung": "Control",
+    "kurz_kameras": "Guard",
+    "kurz_fahrten": "Trips",
+    "kurz_automationen": "Rules",
+    "kurz_apps": "Apps",
+    "kurz_einstellungen": "Settings",
+    "page_ask": "Ask Panoptes",
+    "page_befehle": "Commands",
+    "page_durchsage": "Announcement",
+    "page_recording_quality": "Recording quality",
+    "page_laden_unterwegs": "On the road",
+    "page_wenn_dann": "If-then rules",
+    "page_meldungen_start": "Overview",
+    "page_meldungen_verlauf": "History",
+    "page_dateien": "Files",
+    "page_bildschirm": "Screen from your phone",
+    "page_einstellungen_alle": "All settings",
+    "page_hotspot": "Hotspot & Wi-Fi",
+    "page_byd_konto": "BYD account",
+    "page_routenplaner_fremd": "Route planner (third party)",
+    "page_smarthome": "Smart home",
+    "page_heimnetz": "Home network",
+    "page_geraet": "Device health",
+    "tab_waechter": "Guard",
+    "tab_meldungen": "Alerts",
+    "tab_verbindungen": "Connections",
+    "tab_hilfe": "Help & info",
+    "pill_fern": "Remote access",
+    "suche_label": "Search settings",
+    "suche_platzhalter": "Search, e.g. wallbox, hotspot, updates …",
+    "suche_leer": "Nothing found. Try another word.",
+    "suche_treffer": "{n} results",
+    "suche_hier": "On this page",
+    "suche_seite": "Own page",
+    "page_display": "Display"
   },
   "navi": {
     "rate": "Too many requests – please wait 2 minutes.",
@@ -5120,7 +5193,19 @@
     "fps_throttle": "Panoptes slows it down itself because the camera does not let the rate be set.",
     "trigger_unset": "Not chosen yet when it should record – until then only on impact.",
     "fahrt_title": "While driving",
-    "fahrt_lead": "After hard braking or a bump, Panoptes saves a short clip. Nothing else is stored."
+    "fahrt_lead": "After hard braking or a bump, Panoptes saves a short clip. Nothing else is stored.",
+    "zahl_heute": "Recordings today",
+    "zahl_gesamt": "Guard recordings saved",
+    "zahl_frei": "Storage free",
+    "letzte_titel": "Latest events",
+    "letzte_leer": "No guard recordings yet.",
+    "wann_titel": "When should the guard record?",
+    "erweitert": "More settings",
+    "schalter_an": "Turn guard on",
+    "schalter_aus": "Turn guard off",
+    "schalter_fehler": "That did not work. Please try again.",
+    "schalter_ist_an": "Guard is on.",
+    "schalter_ist_aus": "Guard is off."
   },
   "apps": {
     "title": "Apps side by side",
@@ -5393,6 +5478,8 @@
     "fremd_recht_kamera": "View guard recordings and preview images",
     "fremd_wort_standbild": "Still image on event",
     "fremd_recht_standbild": "One photo when the guard notices something. No video.",
+    "recht_wort_launcher": "Launcher",
+    "recht_info_launcher": "Set up the home screen in the car (layout only, no commands to the car)",
     "fremd_kamera_confirm": "Recordings can show passers-by. This device may then view guard recordings and preview images. Switch on?",
     "fremd_standbild_confirm": "Photos can show passers-by. This device may then fetch one photo for each guard event – no video, nothing older than 15 minutes. Switch on?",
     "handy_wort_wallbox": "Wallbox",
@@ -5448,7 +5535,18 @@
     "handy_ereignisclip_confirm": "Accident clips can show other people and passers-by. This phone may then load a clip when you tap “Save to phone” there – never by itself, never to a server. Every download is noted in the car. Turn on?",
     "req_update": "May update Panoptes (only when parked; can be changed later)",
     "handy_wallbox_confirm": "This phone can then start and stop charging and change the charging current from anywhere – only at the approved wallbox, never while driving. You get a Telegram message for every change. Switch on?",
-    "req_wallbox": "Also control the wallbox (start/stop charging, current; can be changed later)"
+    "req_wallbox": "Also control the wallbox (start/stop charging, current; can be changed later)",
+    "zugriffe_knopf": "Who accessed the car in the last hour?",
+    "zugriffe_fehler": "Only at the screen in the car or when signed in.",
+    "zugriffe_leer": "No access in the last hour.",
+    "zugriffe_lokal": "This screen and signed-in browsers",
+    "zugriffe_web": "Phone app in the browser ({id})",
+    "zugriffe_geraet": "Paired device ({id})",
+    "zugriffe_zeile": "{wer}: {n} requests",
+    "lnc_open_hint": "“Open” opens the launcher on the car screen.",
+    "lnc_opened": "The launcher is now open on the car screen.",
+    "lnc_open_fail": "The launcher could not be opened on the car screen. Please tap it there yourself once.",
+    "lnc_ohne_recht": "Your phone needs the “Launcher” permission for this. Switch it on at the car screen under Paired devices."
   },
   "guardLegal": {
     "trigger": {
@@ -5669,7 +5767,7 @@
         "fahren": "Drive", "fahren_help": "Navigation, range, trips and charging first.",
         "fahrzeug": "Car", "fahrzeug_help": "Car condition and shortcuts take centre stage.",
         "kompakt": "Compact", "kompakt_help": "Only the most important values and shortcuts at a glance.",
-        "cockpit": "Cockpit", "cockpit_help": "A dense tiled cockpit with the car, range and safe shortcuts."
+        "cockpit": "Tiles", "cockpit_help": "A dense tile view with the car, range and safe shortcuts."
       },
       "launcherVideo": {
         "title": "Launcher: video background",
@@ -5925,7 +6023,14 @@
       "extra_gewohnheiten": "Remember habits",
       "extra_overdrive": "Import from Overdrive",
       "strompreis": "Electricity price at home",
-      "extra_handy": "Connect your phone"
+      "extra_handy": "Connect your phone",
+      "extra_display": "Background picture and display lock",
+      "extra_launcher": "Panoptes launcher",
+      "extra_tacho": "What does the instrument cluster show?",
+      "extra_abschaltbericht": "Report when you park",
+      "extra_ladesaeule": "Recognise the charging station",
+      "extra_tiermodus": "Pet mode",
+      "extra_assistenz": "Driver assistance systems"
     },
     "hinweis": {
       "projektion_unbekannt": {
@@ -5985,7 +6090,18 @@
       "kein_platz": "not enough space",
       "abgebrochen": "cancelled"
     },
-    "fortgeschritten": "For advanced users"
+    "fortgeschritten": "For advanced users",
+    "neu": {
+      "ja": "Yes",
+      "nein": "No",
+      "extra_display_text": "You can set your own picture as the background of the car screen. You can also lock the screen with a PIN, for example for the garage.",
+      "extra_launcher_text": "The Panoptes launcher is a home screen of its own with climate, apps and updates. It runs next to the BYD home screen. You can remove it at any time.",
+      "extra_tacho_text": "Your car can show more in the instrument cluster: a Panoptes design, the navigation or an app you allow. Speed and warning lights always stay visible. “Cluster back to normal” works at any time.",
+      "extra_abschaltbericht_text": "When you park the car, Panoptes sends you a short Telegram message: trip, battery, range, guard and whether the car is locked. No location. Only works if Telegram is set up.",
+      "extra_ladesaeule_text": "After charging, Panoptes asks the Panoptes server once which charging station you used. For this your rough position goes to the server, never at private places. That way the price and the station name are right.",
+      "extra_tiermodus_text": "Pet mode keeps the car pleasantly warm or cool for your pet and shows in large letters on the screen that everything is fine. You switch it on yourself when you need it.",
+      "extra_assistenz_text": "With Panoptes you can switch your car’s driver assistance systems on and off, also in rules. The first time you switch one off, Panoptes asks once. You decide and you are responsible. Switching on never needs a question."
+    }
   },
   "laden": {
     "saeule": {
@@ -6822,6 +6938,56 @@
     "hinweis_ok": "Got it",
     "hinweis_spaeter": "Later"
   },
+  "launcherlayout": {
+    "titel": "Set up launcher",
+    "lead": "This is how the home screen in the car looks. Tap a tile, then tap a free spot or drag it. Every change is saved right away and shows in the car within a few seconds.",
+    "seite": "Page {n}",
+    "seite_neu": "+ Page",
+    "seite_weg": "Remove page",
+    "seite_weg_frage": "Remove this page with all its tiles?",
+    "app_neu": "+ App",
+    "groesse": "Change size",
+    "entfernen": "Remove",
+    "fertig": "Done",
+    "verschieben_hinweis": "Tap a highlighted spot to put the tile there.",
+    "kein_platz": "There is no room left on this page.",
+    "leiste_titel": "Bottom bar",
+    "leiste_lead": "The apps at the bottom of the screen. The house (back to the BYD home screen) is always there.",
+    "leiste_neu": "+ App to the bar",
+    "leiste_voll": "The bar is full (at most 8 apps).",
+    "links": "Move left",
+    "rechts": "Move right",
+    "hintergrund_titel": "Background",
+    "hg_panoptes": "Panoptes",
+    "hg_cockpit": "Dark",
+    "hg_bild": "Own picture",
+    "hg_video": "Own video",
+    "hg_hinweis": "Your own picture and video come from “Files”. A video only plays in P.",
+    "anzeige_titel": "Display",
+    "neben": "Open apps next to the launcher",
+    "neben_info": "The app opens on the right, the launcher stays visible on the left.",
+    "klima": "Show climate at the bottom",
+    "status": "Show top line with the time",
+    "reiter": "Show tab row",
+    "fahrzeug3d": "Show vehicle in 3D",
+    "standard_knopf": "Reset to standard",
+    "standard_frage": "Reset everything to the ready-made standard layout?",
+    "standard_aktiv": "The ready-made standard layout is in use.",
+    "gespeichert": "Saved. Visible in the car within a few seconds.",
+    "speichert": "Saving …",
+    "neuer": "Something was just changed in the car. You now see the latest state.",
+    "fehler": "Could not be saved. Please try again.",
+    "laden_fehler": "The layout could not be loaded.",
+    "recht_fehlt": "This device may not set up the launcher. Switch it on in Panoptes under Paired devices.",
+    "bereinigt": "{n} entries did not fit and were left out.",
+    "ordner": "Folder",
+    "k_fahrzeug": "Vehicle",
+    "k_akku": "Battery",
+    "k_navi": "Navigation",
+    "k_musik": "Music",
+    "k_waechter": "Guardian",
+    "k_uhr": "Clock"
+  },
   "dateien": {
     "titel": "Files",
     "hochladen_titel": "Put a file in the car",
@@ -6924,6 +7090,14 @@
     "ws_loeschen_frage": "Delete “{name}” on {wo}? This cannot be undone.",
     "ws_oeffnen": "Open",
     "ws_sd": "SD card",
-    "ws_usb": "USB stick"
+    "ws_usb": "USB stick",
+    "sprung_tacho": "Instrument cluster",
+    "sprung_hintergrund": "Background and lock",
+    "sprung_launcher": "Launcher",
+    "launcher_einrichten": "Set up launcher",
+    "launcher_einrichten_hilfe": "Arrange tiles and apps on the launcher home screen.",
+    "link_titel": "Display: cluster, background, lock, launcher",
+    "link_hilfe": "What the instrument cluster shows, the background picture, the PIN display lock and the Panoptes launcher have their own page.",
+    "link_knopf": "Open display"
   }
 }

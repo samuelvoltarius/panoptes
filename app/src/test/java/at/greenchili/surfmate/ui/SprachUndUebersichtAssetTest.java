@@ -86,8 +86,9 @@ public class SprachUndUebersichtAssetTest {
     @Test
     public void menueBenenntSystemUndMeldungswegeEindeutig() throws Exception {
         String shell = lies("app/src/main/assets/web/shared/app-shell.js");
-        assertTrue(shell.contains("href: 'system.html',          label: 'System'"));
-        assertTrue(shell.contains("i18n: 'nav.system'"));
+        // 0.1.37 Aufbau: einfache Wörter statt „System“ (REGEL DAU)
+        assertTrue(shell.contains("href: 'system.html',          label: 'Alle Einstellungen'"));
+        assertTrue(shell.contains("i18n: 'shell.page_einstellungen_alle'"));
 
         for (String lang : new String[] {"de", "en", "fr", "it", "nl"}) {
             JSONObject labels = new JSONObject(lies(

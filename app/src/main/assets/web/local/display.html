@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+    <title data-i18n="shell.page_display">Display</title>
+    <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
+    <script src="../shared/theme.js?v=13"></script>
+    <script src="../shared/app-shell.js?v=pn33"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn12">
+    <style>
+        /* 0.1.38 „Apps & Display → Display“: alles, was das Display im Auto betrifft, auf einer Seite (REGEL 50+). */
+        .dp-sprung { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-bottom:16px; }
+        .dp-sprung a { display:flex; align-items:center; justify-content:center; min-height:56px; padding:10px; border-radius:14px;
+            border:1px solid var(--border-default); background:var(--bg-elevated); color:var(--text-primary); font-size:17px;
+            font-weight:700; text-decoration:none; text-align:center; }
+        .dp-note { font-size:15px; color:var(--text-muted); line-height:1.5; margin:0 0 10px; }
+        .dp-knoepfe { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+        .dp-knoepfe .btn { min-height:48px; font-size:16px; }
+        .dp-titel { font-size:17px; font-weight:700; margin:18px 0 6px; }
+        .dp-warn { margin-top:10px; padding:12px; border-radius:12px; background:var(--bg-elevated); line-height:1.5; }
+        .dp-normal { width:100%; margin-top:12px; min-height:56px; font-size:17px; font-weight:700; color:var(--status-error);
+            border:2px solid var(--status-error); border-radius:12px; background:transparent; }
+        .sys-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:8px; }
+        .sys-stat { background:var(--bg-elevated); border-radius:8px; padding:10px 12px; min-width:0; }
+        .sys-stat .label { font-size:13px; color:var(--text-muted); }
+        .sys-stat .value { font-size:16px; font-weight:600; margin-top:2px; overflow-wrap:anywhere; }
+        .sys-note { font-size:14px; color:var(--text-muted); margin-top:10px; line-height:1.5; }
+        .sys-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+        .sys-actions .btn { min-height:48px; }
+        #dpPaket { width:100%; margin:10px 0; padding:12px; font-size:16px; border-radius:10px; background:var(--bg-elevated);
+            color:var(--text-primary); border:1px solid var(--border-default); }
+        @media (max-width:520px) { .sys-grid { grid-template-columns:1fr; } }
+    </style>
+</head>
+<body>
+<div class="app-layout">
+    <div id="app-shell-mount"></div>
+    <main class="main-content">
+        <div class="mobile-header"><span style="font-weight:600" data-i18n="shell.page_display">Display</span></div>
+        <header class="page-header"><h1 class="page-title" data-i18n="shell.page_display">Display</h1></header>
+        <div class="page-body">
+            <nav class="dp-sprung" aria-label="Display">
+                <a href="#tacho" data-i18n="display.sprung_tacho">Tacho</a>
+                <a href="#hintergrund" data-i18n="display.sprung_hintergrund">Hintergrund und Sperre</a>
+                <a href="#launcher" data-i18n="display.sprung_launcher">Launcher</a>
+            </nav>
+
+            <!-- ===== Tacho (0.1.37): „Was zeigt der Tacho?“ (tacho-auswahl.js) und Freigabe eigener Apps (tacho-appwahl.js) ===== -->
+            <div class="card" id="tacho">
+                <div class="card-header"><div class="card-title" data-i18n="vehicle_control.tacho_auswahl_titel">Was zeigt der Tacho?</div></div>
+                <div class="card-body">
+                    <section id="tachoAuswahl">
+                        <p class="dp-note" data-i18n="vehicle_control.tacho_auswahl_lead">Tippe auf ein Bild. Navi-Apps und Apps, die du unten freigibst, erscheinen hier auch.</p>
+                        <div id="tachoAuswahlKacheln" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;"></div>
+                        <div id="tachoAuswahlMeldung" class="dp-note" aria-live="polite" style="margin-top:8px;font-size:16px;"></div>
+                    </section>
+                    <section id="clusterAppApproval">
+                        <div class="dp-titel"><span data-i18n="vehicle_control.cluster_app_title">App am Fahrerdisplay</span>
+                            · <span id="clusterAppState">—</span></div>
+                        <p class="dp-note" data-i18n="vehicle_control.cluster_app_lead">Wähle eine installierte App und tippe auf „Freigeben“. Das geht nur, wenn dein Auto Apps am Fahrerdisplay kann; DiLink 5 bleibt derzeit gesperrt. Beim Fahren laufen nur Navi-Apps, außer du erlaubst eine App ausdrücklich „auch beim Fahren“.</p>
+                        <select id="clusterAppPackage" style="width:100%;margin:6px 0;padding:12px;font-size:16px;border-radius:10px;background:var(--bg-elevated);color:var(--text-primary);border:1px solid var(--border-default);"></select>
+                        <div class="dp-knoepfe">
+                            <button class="btn btn-primary" id="clusterAppApprove" type="button" data-i18n="vehicle_control.cluster_app_approve">Freigeben</button>
+                            <button class="btn" id="clusterAppEnable" type="button" data-i18n="vehicle_control.cluster_app_enable">Starten</button>
+                            <button class="btn" id="clusterAppRevoke" type="button" data-i18n="vehicle_control.cluster_app_revoke">Widerrufen</button>
+                            <button class="btn" id="clusterAppStop" type="button" data-i18n="vehicle_control.cluster_app_stop">Stopp</button>
+                        </div>
+                        <div class="dp-knoepfe">
+                            <button class="btn" id="clusterAppFahrt" type="button">Auch beim Fahren: aus</button>
+                        </div>
+                        <button class="dp-normal" id="clusterTachoNormal" type="button" data-i18n="vehicle_control.cluster_tacho_normal">Tacho wieder normal</button>
+                        <div id="clusterAppHinweis" class="dp-warn" style="display:none;" role="alert">
+                            <b data-i18n="vehicle_control.cluster_hinweis_titel">Neu: Apps am Fahrerdisplay</b><br>
+                            <span data-i18n="vehicle_control.cluster_hinweis_text">Das ist neu und nicht an jedem Auto geprüft. Achte beim ersten Start darauf, dass Tempo und Warnleuchten sichtbar bleiben. Wenn nicht, schalte die App am Tacho wieder aus: Knopf „Tacho wieder normal“. Videos laufen nur in P, außer du erlaubst es selbst. Du nutzt das auf eigenes Risiko.</span>
+                            <div class="dp-knoepfe"><button class="btn btn-primary" id="clusterAppHinweisOk" type="button" data-i18n="vehicle_control.cluster_hinweis_ok">Verstanden</button></div>
+                        </div>
+                        <div id="clusterFahrtHinweis" class="dp-warn" style="display:none;" role="alert">
+                            <b id="clusterFahrtVideo" style="display:none;color:var(--status-error);font-size:1.15em;" data-i18n="vehicle_control.cluster_fahrt_video">Video-App</b>
+                            <b data-i18n="vehicle_control.cluster_fahrt_titel">Auch beim Fahren erlauben?</b><br>
+                            <span data-i18n="vehicle_control.cluster_fahrt_text">Inhalte am Fahrerdisplay lenken während der Fahrt ab. Videos während der Fahrt sind in vielen Ländern verboten und können Strafen und Probleme mit der Versicherung bringen. Du entscheidest und bist selbst verantwortlich. Panoptes übernimmt keine Haftung.</span>
+                            <div class="dp-knoepfe">
+                                <button class="btn" id="clusterFahrtOk" type="button" data-i18n="vehicle_control.cluster_fahrt_ok">Verstanden, ich entscheide selbst</button>
+                                <button class="btn btn-primary" id="clusterFahrtAbbrechen" type="button" data-i18n="vehicle_control.cluster_fahrt_abbrechen">Abbrechen</button>
+                            </div>
+                        </div>
+                        <div id="clusterAnsicht" class="dp-note" style="display:none;margin-top:10px;">
+                            <span data-i18n="vehicle_control.cluster_ansicht_info">„Panoptes-Tacho“ zeigt Tempo, Akku, Reichweite und beim Navigieren den nächsten Abbiegepfeil, in der Mitte des Fahrerdisplays. Das Aussehen wählst du oben unter „Was zeigt der Tacho?“.</span>
+                        </div>
+                        <div id="clusterAppMessage" class="dp-note" aria-live="polite"></div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- ===== Hintergrundbild + Display-Sperre (0.1.37, display-werkzeuge.js, /api/display) ===== -->
+            <div class="card" id="hintergrund"><a id="sperre"></a>
+                <div class="card-header"><div class="card-title" data-i18n="display.sprung_hintergrund">Hintergrund und Sperre</div></div>
+                <div class="card-body"><div id="displayWerkzeuge"></div></div>
+            </div>
+
+            <!-- ===== Panoptes Launcher (0.1.37 Stufe 4: /api/appupdate/launcher, launcher-karte.js) ===== -->
+            <a id="launcher"></a>
+            <!-- „Launcher einrichten“ (launcher.html, eigene Sitzung): Knopf erscheint erst, wenn die Seite im Auto da ist -->
+            <div class="card" id="dpLauncherEinrichten" style="display:none;">
+                <div class="card-header"><div class="card-title" data-i18n="display.launcher_einrichten">Launcher einrichten</div></div>
+                <div class="card-body">
+                    <p class="dp-note" data-i18n="display.launcher_einrichten_hilfe">Kacheln und Apps auf dem Launcher-Startbildschirm anordnen.</p>
+                    <div class="dp-knoepfe"><a class="btn btn-primary" href="launcher.html" data-i18n="display.launcher_einrichten">Launcher einrichten</a></div>
+                </div>
+            </div>
+            <div class="card" id="launcherKarte" style="display:none;">
+                <div class="card-header">
+                    <div class="card-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+                        <span data-i18n="system.lnc_title">Panoptes Launcher</span>
+                    </div>
+                    <span class="card-badge" id="lncBadge">--</span>
+                </div>
+                <div class="card-body">
+                    <div class="sys-note" style="margin-top:0;" data-i18n="system.lnc_lead">Eigener Startbildschirm im Panoptes-Stil mit Klima, Apps und Updates. Er läuft als App neben dem BYD-Startbildschirm.</div>
+                    <div class="sys-grid" style="margin-top:10px;">
+                        <div class="sys-stat"><div class="label" data-i18n="system.upd_installed">Installiert</div><div class="value" id="lncNow">--</div></div>
+                        <div class="sys-stat"><div class="label" data-i18n="system.upd_available">Verfügbar</div><div class="value" id="lncNew">--</div></div>
+                    </div>
+                    <div class="sys-note" id="lncState"></div>
+                    <div class="sys-note" data-i18n="system.lnc_home_hint">Panoptes macht den Launcher nie selbst zum Standard-Startbildschirm. Rückweg jederzeit: Haus-Knopf ganz links im Launcher-Dock, oder den Launcher hier entfernen.</div>
+                    <div class="sys-actions">
+                        <button class="btn btn-primary" id="lncInstall" type="button" style="display:none;" data-i18n="system.lnc_install">Installieren und aktivieren</button>
+                        <button class="btn btn-primary" id="lncUpdate" type="button" style="display:none;" data-i18n="system.lnc_update">Aktualisieren</button>
+                        <button class="btn" id="lncOpen" type="button" style="display:none;" data-i18n="system.lnc_open">Öffnen</button>
+                        <button class="btn" id="lncRemove" type="button" style="display:none;" data-i18n="system.lnc_remove">Entfernen</button>
+                    </div>
+                    <div class="sys-note" id="lncOpenHint" style="display:none;" data-i18n="system.lnc_open_hint">„Öffnen“ öffnet den Launcher am Bildschirm im Auto.</div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<div id="toastContainer" class="toast-container"></div>
+<script src="../shared/auth.js"></script>
+<script src="../shared/core.js?v=pn6"></script>
+<script src="../shared/tacho-designs.js?v=1"></script>
+<script src="../shared/tacho-appwahl.js?v=5"></script>
+<script src="../shared/tacho-auswahl.js?v=1"></script>
+<script src="../shared/display-werkzeuge.js?v=1"></script>
+<script src="../shared/launcher-karte.js?v=3"></script>
+<script>
+(function () {
+    'use strict';
+    function start() {
+        if (window.PanoptesLauncherKarte) PanoptesLauncherKarte.init();
+        // „Launcher einrichten“ nur zeigen, wenn die Seite im Auto vorhanden ist
+        fetch('launcher.html', { cache: 'no-store' }).then(function (r) {
+            if (r.ok) document.getElementById('dpLauncherEinrichten').style.display = '';
+        }, function () {});
+        var ziel = (location.hash || '').replace(/^#/, '');
+        if (ziel) { var el = document.getElementById(ziel); if (el) el.scrollIntoView(); }
+    }
+    if (window.BYD && BYD.i18n && BYD.i18n.init) BYD.i18n.init().then(start, start); else start();
+}());
+</script>
+</body>
+</html>

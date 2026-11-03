@@ -6,8 +6,8 @@
 <title>Panoptes-Tacho</title>
 <!--
   Panoptes-Tacho-Ansicht (0.1.37). Läuft in der TachoAnsichtActivity auf dem Fahrerdisplay,
-  geladen aus den App-Assets, ohne Netz. Die Activity schiebt 1× pro Sekunde
-  PanoptesTacho.setze({...}) herein. Im Browser zeigt ?demo=1&design=sport Beispieldaten.
+  geladen aus den App-Assets, ohne Netz. Die Activity schiebt (0.1.38)
+  alle 250 ms tachoSetze({...}) herein. Im Browser zeigt ?demo=1&design=sport Beispieldaten.
 -->
 <style>
   html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
@@ -33,7 +33,7 @@
             t.setze(d);
         };
         tick();
-        if (q.standbild) t.jetztZeichnen(); else setInterval(tick, 1000);
+        if (q.standbild) t.jetztZeichnen(); else setInterval(tick, 250);
     }
 })();
 </script>

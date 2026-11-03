@@ -41,6 +41,7 @@ public final class WebHandyGuard {
             "/api/apps/verwaltung",   // 0.1.37 Apps deaktivieren/aktivieren: nur am Auto oder mit vollem Login
             "/api/tacho/navi/fahrt",   // 0.1.37 „auch beim Fahren“: nur am Auto oder mit vollem Login
             "/api/tacho/auswahl",   // 0.1.37 „Was zeigt der Tacho?“: nur mit Recht „tacho“ der Kopplung (tachoErlaubt)
+            "/api/launcher/v1/layout",   // 0.1.38 Launcher-Layout: nur mit Recht „launcher“ (launcherErlaubt)
     };
 
     /** Seiten, die nur Sicherheits-Funktionen tragen. */
@@ -142,6 +143,14 @@ public final class WebHandyGuard {
         if (q >= 0) p = p.substring(0, q);
         if (p.contains("..") || p.contains("//")) return false;
         return p.equals(DateienApiHandler.PFAD) || p.startsWith(DateienApiHandler.PFAD + "/");
+    }
+
+    /**
+     * 0.1.38 Launcher-Layout: die Web-Sitzung darf die Layout-Pfade nur, wenn die Kopplung dahinter das Recht
+     * {@code launcher} hat (Standard aus, nie automatisch). Genau die Pfade und Methoden des ExternGuard.
+     */
+    public static boolean launcherErlaubt(String method, String pathOnly, boolean rechtLauncher) {
+        return rechtLauncher && ExternGuard.launcherErlaubt(method, pathOnly, "handy");
     }
 
     /** true, wenn die Web-Sitzung des Handys diesen Pfad nicht nutzen darf. */

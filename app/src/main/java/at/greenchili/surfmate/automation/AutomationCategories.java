@@ -30,6 +30,7 @@ public final class AutomationCategories {
     // Category keys (stable; the web maps these to localized headings). Ordered by the
     // sequence we want the <optgroup>s to appear in the picker.
     public static final String CLIMATE       = "climate";
+    public static final String CHARGING      = "charging";     // 0.1.38: Laden, Wallbox, Ladeplan
     public static final String WINDOWS_BODY  = "windows_body";
     public static final String LIGHTING      = "lighting";
     public static final String ADAS_SAFETY   = "adas_safety";
@@ -49,7 +50,7 @@ public final class AutomationCategories {
      * anything not listed sorts last (before OTHER, which is always last).
      */
     public static final String[] ORDER = {
-        VEHICLE, CLIMATE, WINDOWS_BODY, LIGHTING, ADAS_SAFETY, DRIVE, MEDIA,
+        VEHICLE, CLIMATE, CHARGING, WINDOWS_BODY, LIGHTING, ADAS_SAFETY, DRIVE, MEDIA,
         DISPLAYS, SENSORS, SURVEILLANCE, ADVANCED, SYSTEM, FLOW, OTHER,
     };
 
@@ -65,9 +66,14 @@ public final class AutomationCategories {
                 "seat", "seatClimate", "seat_heat_driver", "seat_heat_passenger",
                 "seat_vent_driver", "seat_vent_passenger",
                 "acAuto", "acSync", "acAutoOff", "fanOnly", "steeringHeat", "recirculation",
-                "frontDefrost", "rearDefrost");
+                "frontDefrost", "rearDefrost",
+                // 0.1.38: lagen bisher unter „Sonstiges“ (UNGENUTZTE_FUNKTIONEN_0137 §3)
+                "remoteClimateSchedule", "remoteClimateScheduleUpdate", "remoteClimateScheduleDelete", "camping");
+        // ── Charging (0.1.38: vorher „Sonstiges“) ──
+        put(CHARGING, "smartCharging", "chargingSchedule", "startChargingNow", "wallboxModus", "wallboxStrom",
+                "ladeplan");
         // ── Windows / body / openings ──
-        put(WINDOWS_BODY, "windows", "windowsAll", "windowsPreset", "windowState",
+        put(WINDOWS_BODY, "windows", "windowsAll", "windowsPreset", "windowsVent", "windowState",
                 "windowOpenPercent", "sunroof", "sunshade", "tailgate", "mirror_fold",
                 "mirror_auto_follow_up", "child_lock", "doorState", "wireless_charging",
                 "wireless_charging_state", "wireless_charging_left", "wireless_charging_right",

@@ -348,7 +348,14 @@
     "mic_not_available": "Le microphone n'est pas disponible",
     "cabin_audio_connection_failed": "La connexion au son de l'habitacle a échoué",
     "cabin_audio_start_failed": "Impossible de démarrer le son de l'habitacle",
-    "cabin_audio_playback_failed": "La lecture du son de l'habitacle a échoué"
+    "cabin_audio_playback_failed": "La lecture du son de l'habitacle a échoué",
+    "notaus_titel": "Arrêt d’urgence",
+    "notaus_hilfe": "Coupe tout de suite la parole, l’écoute et les textes dans la voiture. Pour réactiver, uniquement sur l’écran de la voiture.",
+    "notaus_knopf": "Tout couper maintenant",
+    "notaus_frage": "Couper maintenant la parole, l’écoute et les textes dans la voiture ?",
+    "notaus_ja": "Couper",
+    "notaus_ok": "Coupé.",
+    "notaus_fehler": "Cela n’a pas marché. Veuillez réessayer."
   },
   "remote_dev": {
     "page_title": "Écran à distance",
@@ -1191,7 +1198,10 @@
     "saeule_ungueltig": "Saisis un nombre supérieur à 0",
     "saeule_gespeichert": "Enregistré",
     "saeule_fehler": "Enregistrement impossible",
-    "laut_saeule_kurz": "Borne {kwh} kWh"
+    "laut_saeule_kurz": "Borne {kwh} kWh",
+    "kurve_titel": "À quelle vitesse ta voiture se recharge",
+    "kurve_leer": "Pas encore assez de recharges. Après quelques recharges rapides, tu verras ici la vitesse de recharge selon le niveau de batterie.",
+    "kurve_anzahl": "Sur {n} recharges."
   },
   "trip": {
     "tab_trips": "Trajets",
@@ -1297,7 +1307,8 @@
       "days_14": "2 semaines",
       "days_30": "1 mois",
       "custom": "Choisir les dates",
-      "select_date": "Choisir un jour"
+      "select_date": "Choisir un jour",
+      "heute": "Aujourd’hui"
     },
     "daterange": {
       "from": "Du",
@@ -1574,7 +1585,9 @@
       "kurz": "Tracé manquant",
       "fehlt": "Le fichier de tracé de ce trajet manque depuis le {datum}, p. ex. parce que le support manque ou a été remplacé. Carte et courbes manquent ; les valeurs du trajet restent.",
       "speicher": "Le tracé de ce trajet a été supprimé le {datum} pour libérer de l’espace. Carte et courbes manquent ; les valeurs du trajet restent."
-    }
+    },
+    "schalter_an": "Activer l’enregistrement des trajets",
+    "schalter_aus": "Enregistrement des trajets : activé – touche pour couper"
   },
   "automation": {
     "mode_label": "Mode d'exécution",
@@ -1791,7 +1804,15 @@
     "position_missing": "absente",
     "positions_mine": "Mes positions enregistrées",
     "positions_from_car": "Enregistrées dans la voiture",
-    "value_missing": "{value} (absent)"
+    "value_missing": "{value} (absent)",
+    "audio_stop": "Arrêter",
+    "audio_stop_failed": "L’arrêt n’a pas marché",
+    "category_charging": "Recharge",
+    "wd_wenn": "Quand",
+    "wd_dann": "Alors",
+    "schalter_an": "Activée",
+    "schalter_aus": "Désactivée",
+    "schalter_hilfe": "Touche pour activer ou désactiver la règle."
   },
   "community": {
     "tab_community": "Communauté",
@@ -2935,7 +2956,14 @@
     "cluster_app_park": "Possible uniquement en P.", "cluster_app_not_approved": "Cette appli n’est pas encore autorisée.",
     "cluster_app_uninstalled": "L’appli n’est plus installée ou ne peut pas démarrer.", "cluster_app_invalid": "Cette appli ne peut pas être sélectionnée.",
     "cluster_app_probe_needed": "Testez d’abord cette appli en P.", "cluster_app_unavailable": "La projection sûre n’est pas confirmée sur cette voiture.", "cluster_app_dilink5_blocked": "DiLink 5 reste bloqué jusqu’à validation dans le véhicule de la priorité des caméras gauche et droite, du rétablissement du paquet et de la géométrie, ainsi que du repli sûr en cas d’erreur.",
-    "cluster_app_failed": "L’appli n’a pas pu démarrer sur le combiné.", "cluster_app_watch": "Vérifiez maintenant la vitesse, les voyants et le retour au combiné."
+    "cluster_app_failed": "L’appli n’a pas pu démarrer sur le combiné.", "cluster_app_watch": "Vérifiez maintenant la vitesse, les voyants et le retour au combiné.",
+    "kacheln_favoriten": "Favoris",
+    "kacheln_kategorien": "Catégories",
+    "kacheln_fav_leer": "Touche l’étoile d’une tuile pour la retrouver ici.",
+    "kacheln_stern_an": "Ajouter aux favoris",
+    "kacheln_stern_aus": "Retirer des favoris",
+    "ansicht_kacheln": "Tuiles",
+    "ansicht_auto": "Voir la voiture"
   },
   "performance": {
     "tab_battery": "Batterie",
@@ -3122,7 +3150,9 @@
     "soc_history_will_build": "L'historique se remplit avec le temps",
     "page_header_short": "Performances",
     "unit_device": "appareil",
-    "unit_threads": "threads"
+    "unit_threads": "threads",
+    "data_usage_reset": "Effacer l’historique",
+    "data_usage_reset_confirm": "Effacer la consommation de données mesurée ? La mesure continue ensuite."
   },
   "update": {
     "check_for_updates": "Rechercher des mises à jour",
@@ -4917,9 +4947,9 @@
     "pill_guard_off": "Gardien désactivé",
     "net_mobile": "Données mobiles",
     "net_none": "Pas de réseau",
-    "pill_tail_on": "Tailnet · connecté",
-    "pill_tail_wait": "Tailnet · déconnecté",
-    "pill_tail_off": "Tailnet désactivé",
+    "pill_tail_on": "Accès à distance · connecté",
+    "pill_tail_wait": "Accès à distance · déconnecté",
+    "pill_tail_off": "Accès à distance désactivé",
     "sec_start": "Accueil",
     "page_overview": "Aperçu général",
     "sec_drive": "Conduite",
@@ -4935,6 +4965,7 @@
     "sec_car": "Voiture",
     "page_control": "Commandes",
     "page_apps": "Apps côte à côte",
+    "page_launcher": "Configurer le lanceur",
     "page_seats": "Sièges",
     "page_rules": "Règles",
     "page_keys": "Boutons",
@@ -4957,7 +4988,49 @@
     "page_orte": "Lieux",
     "page_ladeplan": "Recharger à la maison",
     "sec_hilfe": "Aide",
-    "page_fehler": "Signaler un problème"
+    "page_fehler": "Signaler un problème",
+    "sec_steuerung": "Commandes",
+    "sec_kameras": "Caméras & surveillance",
+    "sec_fahrten": "Trajets & recharge",
+    "sec_automationen": "Règles",
+    "sec_apps": "Apps & écran",
+    "sec_einstellungen": "Réglages",
+    "kurz_start": "Accueil",
+    "kurz_steuerung": "Piloter",
+    "kurz_kameras": "Caméras",
+    "kurz_fahrten": "Trajets",
+    "kurz_automationen": "Règles",
+    "kurz_apps": "Apps",
+    "kurz_einstellungen": "Réglages",
+    "page_ask": "Demander à Panoptes",
+    "page_befehle": "Commandes",
+    "page_durchsage": "Annonce",
+    "page_recording_quality": "Qualité d'enregistrement",
+    "page_laden_unterwegs": "En route",
+    "page_wenn_dann": "Règles si-alors",
+    "page_meldungen_start": "Aperçu",
+    "page_meldungen_verlauf": "Historique",
+    "page_dateien": "Fichiers",
+    "page_bildschirm": "L'écran depuis le téléphone",
+    "page_einstellungen_alle": "Tous les réglages",
+    "page_hotspot": "Point d'accès & Wi-Fi",
+    "page_byd_konto": "Compte BYD",
+    "page_routenplaner_fremd": "Planificateur (tiers)",
+    "page_smarthome": "Maison connectée",
+    "page_heimnetz": "Réseau domestique",
+    "page_geraet": "État de l'appareil",
+    "tab_waechter": "Surveillance",
+    "tab_meldungen": "Alertes",
+    "tab_verbindungen": "Connexions",
+    "tab_hilfe": "Aide & infos",
+    "pill_fern": "Accès à distance",
+    "suche_label": "Rechercher dans les réglages",
+    "suche_platzhalter": "Rechercher, p. ex. wallbox, point d’accès, mises à jour …",
+    "suche_leer": "Rien trouvé. Essaie un autre mot.",
+    "suche_treffer": "{n} résultats",
+    "suche_hier": "Sur cette page",
+    "suche_seite": "Page dédiée",
+    "page_display": "Écran"
   },
   "navi": {
     "rate": "Trop de requêtes – veuillez patienter 2 minutes.",
@@ -5120,7 +5193,19 @@
     "fps_throttle": "Panoptes ralentit lui-même, car la caméra ne permet pas de régler la cadence.",
     "trigger_unset": "Pas encore choisi quand il doit enregistrer – d’ici là, uniquement en cas de choc.",
     "fahrt_title": "En roulant",
-    "fahrt_lead": "En cas de freinage d’urgence ou de choc, Panoptes sauvegarde un court clip. Rien d’autre n’est enregistré."
+    "fahrt_lead": "En cas de freinage d’urgence ou de choc, Panoptes sauvegarde un court clip. Rien d’autre n’est enregistré.",
+    "zahl_heute": "Enregistrements aujourd’hui",
+    "zahl_gesamt": "Enregistrements de surveillance gardés",
+    "zahl_frei": "Espace libre",
+    "letzte_titel": "Derniers événements",
+    "letzte_leer": "Pas encore d’enregistrements de surveillance.",
+    "wann_titel": "Quand la surveillance doit-elle enregistrer ?",
+    "erweitert": "Plus de réglages",
+    "schalter_an": "Activer la surveillance",
+    "schalter_aus": "Couper la surveillance",
+    "schalter_fehler": "Cela n’a pas marché. Veuillez réessayer.",
+    "schalter_ist_an": "La surveillance est activée.",
+    "schalter_ist_aus": "La surveillance est coupée."
   },
   "apps": {
     "title": "Apps côte à côte",
@@ -5393,6 +5478,8 @@
     "fremd_recht_kamera": "Voir les enregistrements du gardien et les aperçus",
     "fremd_wort_standbild": "Image fixe en cas d'événement",
     "fremd_recht_standbild": "Une photo quand le gardien remarque quelque chose. Pas de vidéo.",
+    "recht_wort_launcher": "Lanceur",
+    "recht_info_launcher": "Configurer l’écran d’accueil de la voiture (disposition seulement, aucune commande à la voiture)",
     "fremd_kamera_confirm": "Les enregistrements peuvent montrer des passants. Cet appareil pourra alors voir les enregistrements du gardien et les aperçus. Activer ?",
     "fremd_standbild_confirm": "Les photos peuvent montrer des passants. Cet appareil pourra alors récupérer une photo par événement du gardien – pas de vidéo, rien de plus de 15 minutes. Activer ?",
     "handy_wort_wallbox": "Wallbox",
@@ -5448,7 +5535,18 @@
     "handy_ereignisclip_confirm": "Les clips d’accident peuvent montrer d’autres personnes et des passants. Ce téléphone peut alors charger un clip quand vous y touchez « Enregistrer sur le téléphone » – jamais tout seul, jamais vers un serveur. Chaque chargement est noté dans la voiture. Activer ?",
     "req_update": "Peut mettre à jour Panoptes (seulement à l’arrêt ; modifiable plus tard)",
     "handy_wallbox_confirm": "Ce téléphone pourra alors démarrer et arrêter la charge et changer le courant de charge de partout – seulement sur la borne autorisée, jamais en roulant. Tu reçois un message Telegram à chaque changement. Activer ?",
-    "req_wallbox": "Piloter aussi la borne (démarrer/arrêter la charge, courant ; modifiable plus tard)"
+    "req_wallbox": "Piloter aussi la borne (démarrer/arrêter la charge, courant ; modifiable plus tard)",
+    "zugriffe_knopf": "Qui a accédé à la voiture dans la dernière heure ?",
+    "zugriffe_fehler": "Uniquement sur l’écran de la voiture ou avec connexion.",
+    "zugriffe_leer": "Aucun accès dans la dernière heure.",
+    "zugriffe_lokal": "Cet écran et les navigateurs connectés",
+    "zugriffe_web": "App mobile dans le navigateur ({id})",
+    "zugriffe_geraet": "Appareil couplé ({id})",
+    "zugriffe_zeile": "{wer} : {n} requêtes",
+    "lnc_open_hint": "« Ouvrir » ouvre le launcher sur l’écran de la voiture.",
+    "lnc_opened": "Le launcher est maintenant ouvert sur l’écran de la voiture.",
+    "lnc_open_fail": "Impossible d’ouvrir le launcher sur l’écran de la voiture. Touche-le une fois toi-même là-bas.",
+    "lnc_ohne_recht": "Pour cela, ton téléphone a besoin du droit « Launcher ». Active-le sur l’écran de la voiture sous Appareils couplés."
   },
   "guardLegal": {
     "trigger": {
@@ -5669,7 +5767,7 @@
         "fahren": "Conduite", "fahren_help": "Navigation, autonomie, trajets et recharge en premier.",
         "fahrzeug": "Voiture", "fahrzeug_help": "L’état de la voiture et les raccourcis sont prioritaires.",
         "kompakt": "Compacte", "kompakt_help": "Les valeurs et raccourcis essentiels en un coup d’œil.",
-        "cockpit": "Cockpit", "cockpit_help": "Un cockpit dense en tuiles avec la voiture, l’autonomie et des raccourcis sûrs."
+        "cockpit": "Tuiles", "cockpit_help": "Une vue dense en tuiles avec la voiture, l’autonomie et des raccourcis sûrs."
       },
       "launcherVideo": {
         "title": "Launcher : fond vidéo",
@@ -5925,7 +6023,14 @@
       "extra_gewohnheiten": "Retenir les habitudes",
       "extra_overdrive": "Reprendre depuis Overdrive",
       "strompreis": "Prix de l’électricité à domicile",
-      "extra_handy": "Connecter le téléphone"
+      "extra_handy": "Connecter le téléphone",
+      "extra_display": "Image de fond et verrouillage de l’écran",
+      "extra_launcher": "Launcher Panoptes",
+      "extra_tacho": "Qu’affiche le compteur ?",
+      "extra_abschaltbericht": "Rapport à l’arrêt",
+      "extra_ladesaeule": "Reconnaître la borne de recharge",
+      "extra_tiermodus": "Mode animal",
+      "extra_assistenz": "Aides à la conduite"
     },
     "hinweis": {
       "projektion_unbekannt": {
@@ -5985,7 +6090,18 @@
       "kein_platz": "place insuffisante",
       "abgebrochen": "annulé"
     },
-    "fortgeschritten": "Pour utilisateurs avancés"
+    "fortgeschritten": "Pour utilisateurs avancés",
+    "neu": {
+      "ja": "Oui",
+      "nein": "Non",
+      "extra_display_text": "Tu peux mettre ta propre image en fond de l’écran de la voiture. Tu peux aussi verrouiller l’écran avec un code, par exemple pour le garage.",
+      "extra_launcher_text": "Le launcher Panoptes est un écran d’accueil à part avec climatisation, apps et mises à jour. Il fonctionne à côté de l’écran d’accueil BYD. Tu peux le retirer à tout moment.",
+      "extra_tacho_text": "Ta voiture peut afficher plus dans le compteur : un design Panoptes, la navigation ou une app que tu autorises. La vitesse et les témoins restent toujours visibles. « Compteur normal » marche à tout moment.",
+      "extra_abschaltbericht_text": "Quand tu gares la voiture, Panoptes t’envoie un court message Telegram : trajet, batterie, autonomie, surveillance et si la voiture est verrouillée. Sans lieu. Fonctionne seulement si Telegram est configuré.",
+      "extra_ladesaeule_text": "Après la recharge, Panoptes demande une fois au serveur Panoptes à quelle borne tu étais. Pour cela ta position approximative part au serveur, jamais aux lieux privés. Ainsi le prix et le nom de la borne sont justes.",
+      "extra_tiermodus_text": "Le mode animal garde la voiture agréablement chaude ou fraîche pour ton animal et affiche en grand sur l’écran que tout va bien. Tu l’actives toi-même quand tu en as besoin.",
+      "extra_assistenz_text": "Avec Panoptes tu peux activer et couper les aides à la conduite de ta voiture, aussi dans les règles. La première fois que tu en coupes une, Panoptes demande une fois. Tu décides et tu es responsable. Activer ne demande jamais rien."
+    }
   },
   "laden": {
     "saeule": {
@@ -6822,6 +6938,56 @@
     "hinweis_ok": "Compris",
     "hinweis_spaeter": "Plus tard"
   },
+  "launcherlayout": {
+    "titel": "Configurer le lanceur",
+    "lead": "Voici l’écran d’accueil dans la voiture. Touchez une tuile, puis une case libre, ou faites-la glisser. Chaque modification est enregistrée aussitôt et apparaît dans la voiture en quelques secondes.",
+    "seite": "Page {n}",
+    "seite_neu": "+ Page",
+    "seite_weg": "Supprimer la page",
+    "seite_weg_frage": "Supprimer cette page avec toutes ses tuiles ?",
+    "app_neu": "+ App",
+    "groesse": "Changer la taille",
+    "entfernen": "Supprimer",
+    "fertig": "Terminé",
+    "verschieben_hinweis": "Touchez une case claire pour y poser la tuile.",
+    "kein_platz": "Il n’y a plus de place sur cette page.",
+    "leiste_titel": "Barre du bas",
+    "leiste_lead": "Les apps en bas de l’écran. La maison (retour à l’écran d’accueil BYD) est toujours là.",
+    "leiste_neu": "+ App dans la barre",
+    "leiste_voll": "La barre est pleine (8 apps au plus).",
+    "links": "Vers la gauche",
+    "rechts": "Vers la droite",
+    "hintergrund_titel": "Fond",
+    "hg_panoptes": "Panoptes",
+    "hg_cockpit": "Sombre",
+    "hg_bild": "Image personnelle",
+    "hg_video": "Vidéo personnelle",
+    "hg_hinweis": "L’image et la vidéo viennent de « Fichiers ». Une vidéo ne joue qu’en P.",
+    "anzeige_titel": "Affichage",
+    "neben": "Ouvrir les apps à côté du lanceur",
+    "neben_info": "L’app s’ouvre à droite, le lanceur reste visible à gauche.",
+    "klima": "Afficher la climatisation en bas",
+    "status": "Afficher la ligne du haut avec l’heure",
+    "reiter": "Afficher la ligne d’onglets",
+    "fahrzeug3d": "Afficher le véhicule en 3D",
+    "standard_knopf": "Revenir au standard",
+    "standard_frage": "Tout remettre sur la disposition standard ?",
+    "standard_aktiv": "La disposition standard est utilisée.",
+    "gespeichert": "Enregistré. Visible dans la voiture en quelques secondes.",
+    "speichert": "Enregistrement …",
+    "neuer": "Quelque chose vient d’être modifié dans la voiture. Vous voyez maintenant l’état le plus récent.",
+    "fehler": "Impossible d’enregistrer. Veuillez réessayer.",
+    "laden_fehler": "La disposition n’a pas pu être chargée.",
+    "recht_fehlt": "Cet appareil ne peut pas configurer le lanceur. À activer dans Panoptes sous Appareils associés.",
+    "bereinigt": "{n} éléments ne convenaient pas et ont été omis.",
+    "ordner": "Dossier",
+    "k_fahrzeug": "Véhicule",
+    "k_akku": "Batterie",
+    "k_navi": "Navigation",
+    "k_musik": "Musique",
+    "k_waechter": "Gardien",
+    "k_uhr": "Horloge"
+  },
   "dateien": {
     "titel": "Fichiers",
     "hochladen_titel": "Déposer un fichier dans la voiture",
@@ -6924,6 +7090,14 @@
     "ws_loeschen_frage": "Supprimer « {name} » sur {wo} ? Impossible d’annuler.",
     "ws_oeffnen": "Ouvrir",
     "ws_sd": "carte SD",
-    "ws_usb": "clé USB"
+    "ws_usb": "clé USB",
+    "sprung_tacho": "Compteur",
+    "sprung_hintergrund": "Fond d’écran et verrou",
+    "sprung_launcher": "Launcher",
+    "launcher_einrichten": "Configurer le launcher",
+    "launcher_einrichten_hilfe": "Disposer les tuiles et les apps sur l’écran d’accueil du launcher.",
+    "link_titel": "Écran : compteur, fond, verrou, launcher",
+    "link_hilfe": "Ce qu’affiche le compteur, l’image de fond, le verrou de l’écran par code et le launcher Panoptes ont leur propre page.",
+    "link_knopf": "Ouvrir l’écran"
   }
 }

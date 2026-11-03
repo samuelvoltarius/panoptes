@@ -8,7 +8,10 @@ object SchrittKatalog {
         "sprache", "haftung", "autostart", "ueberlagerung", "rechte", "usb_freigabe",
         "auto", "kameras", "waechter", "betrieb", "karte", "daten", "blitzer", "updates",
         "strompreis", "extra_telegram", "extra_handy", "extra_planer", "extra_cockpit",
-        "extra_overdrive", "extra_gewohnheiten", "extra_fernzugang", "extra_notzugang", "fertig",
+        "extra_overdrive", "extra_gewohnheiten",
+        "extra_display", "extra_launcher", "extra_tacho", "extra_abschaltbericht", "extra_ladesaeule",
+        "extra_tiermodus", "extra_assistenz",
+        "extra_fernzugang", "extra_notzugang", "fertig",
     )
 
     @JvmStatic
@@ -32,6 +35,8 @@ object SchrittKatalog {
         "extra_telegram", "extra_planer", "extra_cockpit", "extra_fernzugang", "extra_notzugang" -> ExtraSchritt(id, a, a.host)
         "extra_overdrive" -> OverdriveSchritt(a)
         "extra_gewohnheiten" -> GewohnheitenSchritt(a)
+        "extra_display", "extra_launcher", "extra_tacho", "extra_tiermodus", "extra_assistenz" -> NeuHinweisSchritt(id, a, a.host)
+        "extra_abschaltbericht", "extra_ladesaeule" -> NeuJaNeinSchritt(id, a)
         "fertig" -> FertigSchritt(a, a.host)
         else -> null
     }

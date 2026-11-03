@@ -118,7 +118,13 @@ public class TachoAnsichtSicherheitTest {
         String act = TachoFaehigkeitTest.lies("app/src/main/java/at/greenchili/surfmate/tacho/TachoAnsichtActivity.kt");
         assertTrue("beendet sich auf Display 0", act.contains("aufDisplayNull()) { beenden()"));
         assertTrue("beendet sich ohne aktive Projektion", act.contains("!a.optBoolean(\"aktiv\", false)) { beenden()"));
-        assertTrue("beendet sich ohne Daemon", act.contains("++fehlversuche >= 3) { beenden()"));
+        assertTrue("beendet sich ohne Daemon", act.contains("++fehlversuche >= FEHLER_GRENZE) { beenden()"));
+        // 0.1.38: 250-ms-Takt, Fehlergrenze bleibt 3 s
+        assertTrue(act.contains("const val TAKT_MS = 250L"));
+        assertTrue(act.contains("const val FEHLER_GRENZE = (3000L / TAKT_MS).toInt()"));
+        assertTrue(act.contains("haupt.postDelayed({ takt() }, TAKT_MS)"));
+        assertTrue("nur sichtbar: onPause stoppt den Takt",
+                act.replaceAll("\\s+", " ").contains("override fun onPause() { laeuft = false haupt.removeCallbacksAndMessages(null)"));
     }
 
     // ------------------------------------------------------------ Video nur in P
@@ -247,7 +253,8 @@ public class TachoAnsichtSicherheitTest {
         assertEquals(List.of("klar", "sport", "nacht", "horizont", "route"), TachoAnsicht.DESIGNS);
         String js = TachoFaehigkeitTest.lies(JS);
         assertTrue(js.contains("var DESIGNS = ['klar', 'sport', 'nacht', 'horizont', 'route'];"));
-        String vc = TachoFaehigkeitTest.lies("app/src/main/assets/web/local/vehicle-control.html");
+        // 0.1.38: Die Web-Auswahl „Was zeigt der Tacho?“ liegt unter Apps & Display → Display (display.html).
+        String vc = TachoFaehigkeitTest.lies("app/src/main/assets/web/local/display.html");
         // 0.1.37: Die Web-Auswahl ist „Was zeigt der Tacho?“ (tacho-auswahl.js), Designs kommen aus der Kern-API.
         assertTrue(vc.contains("../shared/tacho-auswahl.js") && vc.contains("id=\"tachoAuswahlKacheln\""));
         assertTrue("Vorschau nutzt denselben Renderer", vc.contains("../shared/tacho-designs.js"));

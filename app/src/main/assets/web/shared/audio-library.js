@@ -70,6 +70,13 @@ window.AudioLibrary = (function () {
                 play.onclick = function () { preview(s.name); };
                 ctl.appendChild(play);
 
+                // 0.1.38: Abspielen wieder anhalten (POST /api/audio/library/stop)
+                var stop = document.createElement('button');
+                stop.className = 'btn btn-secondary';
+                stop.textContent = tr('automation.audio_stop', 'Stopp');
+                stop.onclick = function () { stopPreview(); };
+                ctl.appendChild(stop);
+
                 var del = document.createElement('button');
                 del.className = 'btn btn-danger-ghost';
                 del.textContent = tr('automation.audio_delete', 'Löschen');
@@ -183,6 +190,15 @@ window.AudioLibrary = (function () {
           .catch(function () { toast(tr('automation.audio_preview_failed', 'Abspielen hat nicht geklappt'), 'error'); });
     }
 
+    function stopPreview() {
+        fetch('/api/audio/library/stop', { method: 'POST' })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!(data && data.success)) toast(tr('automation.audio_stop_failed', 'Anhalten hat nicht geklappt'), 'error');
+            })
+            .catch(function () { toast(tr('automation.audio_stop_failed', 'Anhalten hat nicht geklappt'), 'error'); });
+    }
+
     // Auto-refresh the list on load once the DOM is ready.
     function init() { refresh(); }
     if (document.readyState === 'loading') {
@@ -191,5 +207,5 @@ window.AudioLibrary = (function () {
         init();
     }
 
-    return { refresh: refresh, upload: upload, remove: remove, preview: preview };
+    return { refresh: refresh, upload: upload, remove: remove, preview: preview, stop: stopPreview };
 }());

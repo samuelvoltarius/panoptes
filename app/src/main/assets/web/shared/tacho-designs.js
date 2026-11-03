@@ -10,8 +10,8 @@
  *   PanoptesTacho.demo(sekunden) → Beispieldaten (Vorschau, Browser-Test)
  *   PanoptesTacho.DESIGNS → ['klar','sport','nacht','horizont','route']
  *
- * Werte gleiten pro Bild zum Ziel (Daten kommen 1× pro Sekunde). Es wird nur
- * gezeichnet, solange sich etwas bewegt; sonst einmal pro Sekunde für die Uhr.
+ * Werte gleiten pro Bild zum Ziel (Daten kommen alle 250 ms, 0.1.38). Es wird nur
+ * gezeichnet, solange sich etwas bewegt (höchstens ~30 Bilder/s); sonst einmal pro Minute für die Uhr.
  * Kein Blinken, kein Pulsieren: das Fahrerdisplay soll ruhig bleiben.
  * Skizze = Route voraus in Metern {x rechts, y voraus}, relativ zum Auto.
  * ES5 (WebView 74 am Auto).
@@ -642,6 +642,8 @@
     // ------------------------------------------------------------ Laufzeit
 
     var GLEITEND = ['kmh', 'kw', 'soc'];
+    var GLEITEN = 9;   // 1/s
+    var MIN_BILD_MS = 32;   // Obergrenze ~30 Bilder/s, schont schwache Head-Units
 
     function create(canvas, opt) {
         opt = opt || {};
@@ -649,7 +651,7 @@
         var ziel = { design: design(opt.design) };
         var anz = { design: ziel.design };
         var st = { kwMax: 150 };
-        var lauf = true, letzt = 0, letzteUhr = '', dpr = 1, w = 0, h = 0, neu = true;
+        var lauf = true, letzt = 0, letztesBild = 0, letzteUhr = '', dpr = 1, w = 0, h = 0, neu = true;
 
         function groesse() {
             dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -667,7 +669,8 @@
             letzt = t;
             var bewegt = neu;
             neu = false;
-            var k = 1 - Math.exp(-dt * 5);
+            // 0.1.38: Daten kommen alle 250 ms; Zeitkonstante ~110 ms, damit der Wert vor dem nächsten Takt ankommt.
+            var k = 1 - Math.exp(-dt * GLEITEN);
             for (var i = 0; i < GLEITEND.length; i++) {
                 var n = GLEITEND[i], zv = ziel[n];
                 if (!zahl(zv)) { if (anz[n] !== zv) { anz[n] = zv; bewegt = true; } continue; }
@@ -678,7 +681,10 @@
             var jetzt = opt.uhr ? opt.uhr() : new Date();
             var u = uhr(jetzt);
             if (u !== letzteUhr) { letzteUhr = u; bewegt = true; }
-            if (bewegt) {
+            if (bewegt && t - letztesBild < MIN_BILD_MS) {
+                neu = true;   // höchstens ~30 Bilder pro Sekunde; der Rest kommt im nächsten Bild
+            } else if (bewegt) {
+                letztesBild = t;
                 groesse();
                 c.setTransform(dpr, 0, 0, dpr, 0, 0);
                 zeichne(c, w, h, anz, st, jetzt);

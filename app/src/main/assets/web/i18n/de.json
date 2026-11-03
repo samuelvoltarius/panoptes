@@ -348,7 +348,14 @@
     "mic_not_available": "Es ist kein Mikrofon verfügbar",
     "cabin_audio_connection_failed": "Die Verbindung zum Ton im Innenraum ist fehlgeschlagen",
     "cabin_audio_start_failed": "Der Ton im Innenraum ließ sich nicht starten",
-    "cabin_audio_playback_failed": "Der Ton aus dem Innenraum lässt sich nicht abspielen"
+    "cabin_audio_playback_failed": "Der Ton aus dem Innenraum lässt sich nicht abspielen",
+    "notaus_titel": "Not-Aus",
+    "notaus_hilfe": "Schaltet Sprechen, Mithören und Texte am Auto sofort ab. Wieder einschalten geht nur am Bildschirm im Auto.",
+    "notaus_knopf": "Alles sofort abschalten",
+    "notaus_frage": "Sprechen, Mithören und Texte am Auto jetzt abschalten?",
+    "notaus_ja": "Abschalten",
+    "notaus_ok": "Abgeschaltet.",
+    "notaus_fehler": "Das hat nicht geklappt. Bitte nochmal versuchen."
   },
   "remote_dev": {
     "page_title": "Fernansicht",
@@ -1191,7 +1198,10 @@
     "saeule_ungueltig": "Bitte eine Zahl größer als 0 eingeben",
     "saeule_gespeichert": "Gespeichert",
     "saeule_fehler": "Konnte nicht speichern",
-    "laut_saeule_kurz": "Säule {kwh} kWh"
+    "laut_saeule_kurz": "Säule {kwh} kWh",
+    "kurve_titel": "So schnell lädt dein Auto",
+    "kurve_leer": "Noch zu wenig Ladungen. Nach ein paar Schnellladungen steht hier, wie schnell dein Auto bei welchem Akkustand lädt.",
+    "kurve_anzahl": "Aus {n} Ladungen."
   },
   "trip": {
     "tab_trips": "Fahrten",
@@ -1297,7 +1307,8 @@
       "days_14": "14 Tage",
       "days_30": "30 Tage",
       "custom": "Eigener Zeitraum",
-      "select_date": "Tag wählen"
+      "select_date": "Tag wählen",
+      "heute": "Heute"
     },
     "daterange": {
       "from": "Von",
@@ -1574,7 +1585,9 @@
       "kurz": "Verlauf fehlt",
       "fehlt": "Die Verlaufsdatei dieser Fahrt fehlt seit {datum}, z. B. weil der Datenträger fehlt oder getauscht wurde. Karte und Kurven fehlen, die Werte der Fahrt bleiben.",
       "speicher": "Der Verlauf dieser Fahrt wurde am {datum} beim Freiräumen von Speicher entfernt. Karte und Kurven fehlen, die Werte der Fahrt bleiben."
-    }
+    },
+    "schalter_an": "Fahrten aufzeichnen einschalten",
+    "schalter_aus": "Fahrten aufzeichnen: an – zum Ausschalten tippen"
   },
   "automation": {
     "mode_label": "Wie es läuft",
@@ -1791,7 +1804,15 @@
     "position_missing": "fehlt",
     "positions_mine": "Meine Positionen",
     "positions_from_car": "Im Auto gespeichert",
-    "value_missing": "{value} (fehlt)"
+    "value_missing": "{value} (fehlt)",
+    "audio_stop": "Stopp",
+    "audio_stop_failed": "Anhalten hat nicht geklappt",
+    "category_charging": "Laden",
+    "wd_wenn": "Wenn",
+    "wd_dann": "Dann",
+    "schalter_an": "An",
+    "schalter_aus": "Aus",
+    "schalter_hilfe": "Tippen schaltet die Regel an oder aus."
   },
   "community": {
     "tab_community": "Community",
@@ -2935,7 +2956,14 @@
     "cluster_app_park": "Nur in P möglich.", "cluster_app_not_approved": "Diese App ist noch nicht freigegeben.",
     "cluster_app_uninstalled": "Die App ist nicht mehr installiert oder nicht startbar.", "cluster_app_invalid": "Diese App kann nicht gewählt werden.",
     "cluster_app_probe_needed": "Prüfe diese App zuerst in P.", "cluster_app_unavailable": "Auf diesem Auto ist die sichere Projektion nicht bestätigt.", "cluster_app_dilink5_blocked": "DiLink 5 bleibt gesperrt, bis linker und rechter Kameravorrang, Paket- und Geometrie-Restore sowie der sichere Fehler-Rückfall am Fahrzeug belegt sind.",
-    "cluster_app_failed": "Die App konnte nicht auf dem Fahrerdisplay gestartet werden.", "cluster_app_watch": "Prüfe jetzt Tempo, Warnleuchten und den Rückweg zur Tacho-Anzeige."
+    "cluster_app_failed": "Die App konnte nicht auf dem Fahrerdisplay gestartet werden.", "cluster_app_watch": "Prüfe jetzt Tempo, Warnleuchten und den Rückweg zur Tacho-Anzeige.",
+    "kacheln_favoriten": "Favoriten",
+    "kacheln_kategorien": "Kategorien",
+    "kacheln_fav_leer": "Tippe auf den Stern einer Kachel, dann steht sie hier oben.",
+    "kacheln_stern_an": "Zu Favoriten",
+    "kacheln_stern_aus": "Aus Favoriten entfernen",
+    "ansicht_kacheln": "Kacheln",
+    "ansicht_auto": "Auto zeigen"
   },
   "performance": {
     "tab_battery": "Akku",
@@ -3122,7 +3150,9 @@
     "soc_history_will_build": "Der Verlauf wächst mit der Zeit",
     "page_header_short": "Leistung",
     "unit_device": "Gerät",
-    "unit_threads": "Threads"
+    "unit_threads": "Threads",
+    "data_usage_reset": "Verlauf löschen",
+    "data_usage_reset_confirm": "Den gemessenen Datenverbrauch löschen? Die Messung läuft danach weiter."
   },
   "update": {
     "check_for_updates": "Nach Updates suchen",
@@ -4917,9 +4947,9 @@
     "pill_guard_off": "Wächter aus",
     "net_mobile": "Mobilfunk",
     "net_none": "Kein Netz",
-    "pill_tail_on": "Tailnet · verbunden",
-    "pill_tail_wait": "Tailnet · getrennt",
-    "pill_tail_off": "Tailnet aus",
+    "pill_tail_on": "Fernzugang · verbunden",
+    "pill_tail_wait": "Fernzugang · getrennt",
+    "pill_tail_off": "Fernzugang aus",
     "sec_start": "Start",
     "page_overview": "Übersicht",
     "sec_drive": "Fahren",
@@ -4935,6 +4965,7 @@
     "sec_car": "Auto",
     "page_control": "Steuerung",
     "page_apps": "Apps nebeneinander",
+    "page_launcher": "Launcher einrichten",
     "page_seats": "Sitze",
     "page_rules": "Regeln",
     "page_keys": "Tasten",
@@ -4957,7 +4988,49 @@
     "page_orte": "Orte",
     "page_ladeplan": "Zu Hause laden",
     "sec_hilfe": "Hilfe",
-    "page_fehler": "Fehler melden"
+    "page_fehler": "Fehler melden",
+    "sec_steuerung": "Steuerung",
+    "sec_kameras": "Kameras & Wächter",
+    "sec_fahrten": "Fahrten & Laden",
+    "sec_automationen": "Regeln",
+    "sec_apps": "Apps & Display",
+    "sec_einstellungen": "Einstellungen",
+    "kurz_start": "Start",
+    "kurz_steuerung": "Steuern",
+    "kurz_kameras": "Wächter",
+    "kurz_fahrten": "Fahrten",
+    "kurz_automationen": "Regeln",
+    "kurz_apps": "Apps",
+    "kurz_einstellungen": "Optionen",
+    "page_ask": "Frag Panoptes",
+    "page_befehle": "Befehle",
+    "page_durchsage": "Durchsage",
+    "page_recording_quality": "Aufnahmequalität",
+    "page_laden_unterwegs": "Unterwegs",
+    "page_wenn_dann": "Wenn-dann-Regeln",
+    "page_meldungen_start": "Übersicht",
+    "page_meldungen_verlauf": "Verlauf",
+    "page_dateien": "Dateien",
+    "page_bildschirm": "Bildschirm vom Handy",
+    "page_einstellungen_alle": "Alle Einstellungen",
+    "page_hotspot": "Hotspot & WLAN",
+    "page_byd_konto": "BYD-Konto",
+    "page_routenplaner_fremd": "Routenplaner (fremd)",
+    "page_smarthome": "Smart Home",
+    "page_heimnetz": "Heimnetz",
+    "page_geraet": "Gerätezustand",
+    "tab_waechter": "Wächter",
+    "tab_meldungen": "Meldungen",
+    "tab_verbindungen": "Verbindungen",
+    "tab_hilfe": "Hilfe & Info",
+    "pill_fern": "Fernzugang",
+    "suche_label": "Einstellungen durchsuchen",
+    "suche_platzhalter": "Suchen, z. B. Wallbox, Hotspot, Updates …",
+    "suche_leer": "Nichts gefunden. Probier ein anderes Wort.",
+    "suche_treffer": "{n} Treffer",
+    "suche_hier": "Auf dieser Seite",
+    "suche_seite": "Eigene Seite",
+    "page_display": "Display"
   },
   "navi": {
     "rate": "Zu viele Anfragen – bitte 2 Minuten warten.",
@@ -5120,7 +5193,19 @@
     "fps_throttle": "Panoptes bremst selbst, weil die Kamera die Rate nicht einstellen lässt.",
     "trigger_unset": "Noch nicht gewählt, wann er aufnehmen soll – bis dahin nur bei Erschütterung.",
     "fahrt_title": "Beim Fahren",
-    "fahrt_lead": "Bei einer Vollbremsung oder einem Stoß sichert Panoptes einen kurzen Clip. Sonst wird nichts gespeichert."
+    "fahrt_lead": "Bei einer Vollbremsung oder einem Stoß sichert Panoptes einen kurzen Clip. Sonst wird nichts gespeichert.",
+    "zahl_heute": "Aufnahmen heute",
+    "zahl_gesamt": "Wächter-Aufnahmen gespeichert",
+    "zahl_frei": "Speicher frei",
+    "letzte_titel": "Letzte Ereignisse",
+    "letzte_leer": "Noch keine Wächter-Aufnahmen.",
+    "wann_titel": "Wann soll der Wächter aufnehmen?",
+    "erweitert": "Erweitert",
+    "schalter_an": "Wächter einschalten",
+    "schalter_aus": "Wächter ausschalten",
+    "schalter_fehler": "Das hat nicht geklappt. Bitte nochmal versuchen.",
+    "schalter_ist_an": "Wächter ist eingeschaltet.",
+    "schalter_ist_aus": "Wächter ist ausgeschaltet."
   },
   "apps": {
     "title": "Apps nebeneinander",
@@ -5393,6 +5478,8 @@
     "fremd_recht_kamera": "Wächter-Aufnahmen und Vorschaubilder ansehen",
     "fremd_wort_standbild": "Standbild bei Ereignis",
     "fremd_recht_standbild": "Ein Foto, wenn der Wächter etwas bemerkt. Kein Video.",
+    "recht_wort_launcher": "Launcher",
+    "recht_info_launcher": "Startbildschirm im Auto einrichten (nur der Aufbau, keine Befehle ans Auto)",
     "fremd_kamera_confirm": "Aufnahmen zeigen auch Passanten. Dieses Gerät darf dann Wächter-Aufnahmen und Vorschaubilder ansehen. Einschalten?",
     "fremd_standbild_confirm": "Fotos können Passanten zeigen. Dieses Gerät darf dann bei jedem Wächter-Ereignis ein Foto holen – kein Video, nichts Älteres als 15 Minuten. Einschalten?",
     "handy_wort_wallbox": "Wallbox",
@@ -5448,7 +5535,18 @@
     "handy_ereignisclip_confirm": "Unfall-Clips können Beteiligte und Passanten zeigen. Dieses Handy darf dann einen Clip laden, wenn du dort auf „Aufs Handy laden“ tippst – nie von selbst, nie auf einen Server. Jedes Laden wird im Auto vermerkt. Einschalten?",
     "req_update": "Darf Panoptes aktualisieren (nur geparkt; später änderbar)",
     "handy_wallbox_confirm": "Dieses Handy darf dann von überall das Laden starten und stoppen und den Ladestrom ändern – nur an der freigegebenen Wallbox, nie während der Fahrt. Du bekommst bei jeder Änderung eine Telegram-Nachricht. Einschalten?",
-    "req_wallbox": "Auch die Wallbox steuern (Laden starten/stoppen, Ladestrom; später änderbar)"
+    "req_wallbox": "Auch die Wallbox steuern (Laden starten/stoppen, Ladestrom; später änderbar)",
+    "zugriffe_knopf": "Wer hat in der letzten Stunde zugegriffen?",
+    "zugriffe_fehler": "Nur am Bildschirm im Auto oder mit Anmeldung.",
+    "zugriffe_leer": "Keine Zugriffe in der letzten Stunde.",
+    "zugriffe_lokal": "Dieser Bildschirm und angemeldete Browser",
+    "zugriffe_web": "Handy-App im Browser ({id})",
+    "zugriffe_geraet": "Gekoppeltes Gerät ({id})",
+    "zugriffe_zeile": "{wer}: {n} Abrufe",
+    "lnc_open_hint": "„Öffnen“ öffnet den Launcher am Bildschirm im Auto.",
+    "lnc_opened": "Der Launcher ist jetzt am Bildschirm im Auto offen.",
+    "lnc_open_fail": "Der Launcher ließ sich am Bildschirm im Auto nicht öffnen. Bitte dort einmal selbst antippen.",
+    "lnc_ohne_recht": "Für diese Funktion braucht dein Handy das Recht „Launcher“. Einschalten am Bildschirm im Auto unter Gekoppelte Geräte."
   },
   "guardLegal": {
     "trigger": {
@@ -5669,7 +5767,7 @@
         "fahren": "Fahren", "fahren_help": "Navigation, Reichweite, Fahrten und Laden zuerst.",
         "fahrzeug": "Fahrzeug", "fahrzeug_help": "Zustand und Schnellzugriffe stehen im Mittelpunkt.",
         "kompakt": "Kompakt", "kompakt_help": "Nur die wichtigsten Werte und Zugriffe auf einen Blick.",
-        "cockpit": "Cockpit", "cockpit_help": "Dichtes Kachel-Cockpit mit Fahrzeug, Reichweite und sicheren Schnellzugriffen."
+        "cockpit": "Kacheln", "cockpit_help": "Dichte Kachelansicht mit Fahrzeug, Reichweite und sicheren Schnellzugriffen."
       },
       "launcherVideo": {
         "title": "Launcher: Video-Hintergrund",
@@ -5924,7 +6022,14 @@
       "extra_gewohnheiten": "Gewohnheiten merken",
       "extra_overdrive": "Von Overdrive übernehmen",
       "strompreis": "Strompreis zu Hause",
-      "extra_handy": "Handy verbinden"
+      "extra_handy": "Handy verbinden",
+      "extra_display": "Hintergrundbild und Display-Sperre",
+      "extra_launcher": "Panoptes Launcher",
+      "extra_tacho": "Was zeigt der Tacho?",
+      "extra_abschaltbericht": "Bericht beim Abstellen",
+      "extra_ladesaeule": "Ladesäule erkennen",
+      "extra_tiermodus": "Tiermodus",
+      "extra_assistenz": "Assistenzsysteme"
     },
     "titel": "Einrichtung",
     "hinweis": {
@@ -5985,7 +6090,18 @@
       "kein_platz": "zu wenig Platz",
       "abgebrochen": "abgebrochen"
     },
-    "fortgeschritten": "Für Fortgeschrittene"
+    "fortgeschritten": "Für Fortgeschrittene",
+    "neu": {
+      "ja": "Ja",
+      "nein": "Nein",
+      "extra_display_text": "Du kannst ein eigenes Bild als Hintergrund für den Bildschirm im Auto setzen. Und du kannst den Bildschirm mit einer PIN sperren, zum Beispiel für die Werkstatt.",
+      "extra_launcher_text": "Der Panoptes Launcher ist ein eigener Startbildschirm mit Klima, Apps und Updates. Er läuft neben dem BYD-Startbildschirm. Du kannst ihn jederzeit wieder entfernen.",
+      "extra_tacho_text": "Dein Auto kann im Tacho mehr zeigen: ein Panoptes-Design, die Navi oder eine App, die du freigibst. Tempo und Warnleuchten bleiben immer sichtbar. „Tacho wieder normal“ geht jederzeit.",
+      "extra_abschaltbericht_text": "Wenn du das Auto abstellst, schickt Panoptes dir eine kurze Nachricht per Telegram: Fahrt, Akku, Reichweite, Wächter und ob das Auto zu ist. Ohne Ort. Geht nur, wenn Telegram eingerichtet ist.",
+      "extra_ladesaeule_text": "Nach dem Laden fragt Panoptes einmal den Panoptes-Server, an welcher Ladesäule du warst. Dafür geht deine ungefähre Position an den Server, nie an privaten Orten. So stimmen Preis und Name der Säule.",
+      "extra_tiermodus_text": "Der Tiermodus hält das Auto für dein Tier angenehm warm oder kühl und zeigt am Bildschirm groß, dass alles in Ordnung ist. Du schaltest ihn selbst ein, wenn du ihn brauchst.",
+      "extra_assistenz_text": "Mit Panoptes kannst du Assistenzsysteme deines Autos ein- und ausschalten, auch in Regeln. Beim ersten Ausschalten fragt Panoptes einmal nach. Du entscheidest und bist selbst verantwortlich. Einschalten geht immer ohne Frage."
+    }
   },
   "laden": {
     "saeule": {
@@ -6822,6 +6938,56 @@
     "hinweis_ok": "Verstanden",
     "hinweis_spaeter": "Später"
   },
+  "launcherlayout": {
+    "titel": "Launcher einrichten",
+    "lead": "So sieht der Startbildschirm im Auto aus. Kachel antippen, dann auf ein freies Feld tippen oder ziehen. Jede Änderung wird sofort gespeichert und ist am Auto nach wenigen Sekunden zu sehen.",
+    "seite": "Seite {n}",
+    "seite_neu": "+ Seite",
+    "seite_weg": "Seite entfernen",
+    "seite_weg_frage": "Diese Seite mit allen Kacheln entfernen?",
+    "app_neu": "+ App",
+    "groesse": "Größe ändern",
+    "entfernen": "Entfernen",
+    "fertig": "Fertig",
+    "verschieben_hinweis": "Auf ein helles Feld tippen, um die Kachel dorthin zu legen.",
+    "kein_platz": "Auf dieser Seite ist kein Platz mehr.",
+    "leiste_titel": "Leiste unten",
+    "leiste_lead": "Die Apps unten am Bildschirm. Das Haus (zurück zum BYD-Startbildschirm) ist immer da.",
+    "leiste_neu": "+ App in die Leiste",
+    "leiste_voll": "Die Leiste ist voll (höchstens 8 Apps).",
+    "links": "Nach links",
+    "rechts": "Nach rechts",
+    "hintergrund_titel": "Hintergrund",
+    "hg_panoptes": "Panoptes",
+    "hg_cockpit": "Dunkel",
+    "hg_bild": "Eigenes Bild",
+    "hg_video": "Eigenes Video",
+    "hg_hinweis": "Eigenes Bild und Video kommen aus „Dateien“. Ein Video läuft nur in P.",
+    "anzeige_titel": "Anzeige",
+    "neben": "Apps neben dem Launcher öffnen",
+    "neben_info": "Die App öffnet rechts, der Launcher bleibt links sichtbar.",
+    "klima": "Klima unten anzeigen",
+    "status": "Obere Zeile mit Uhrzeit anzeigen",
+    "reiter": "Reiterzeile anzeigen",
+    "fahrzeug3d": "Fahrzeug in 3D zeigen",
+    "standard_knopf": "Auf Standard zurücksetzen",
+    "standard_frage": "Alles auf den fertigen Standard-Aufbau zurücksetzen?",
+    "standard_aktiv": "Zurzeit gilt der fertige Standard-Aufbau.",
+    "gespeichert": "Gespeichert. Am Auto in wenigen Sekunden zu sehen.",
+    "speichert": "Wird gespeichert …",
+    "neuer": "Am Auto wurde gerade etwas geändert. Sie sehen jetzt den neuesten Stand.",
+    "fehler": "Konnte nicht gespeichert werden. Bitte noch einmal versuchen.",
+    "laden_fehler": "Der Aufbau konnte nicht geladen werden.",
+    "recht_fehlt": "Dieses Gerät darf den Launcher nicht einrichten. Einschalten in Panoptes unter Gekoppelte Geräte.",
+    "bereinigt": "{n} Einträge passten nicht und wurden weggelassen.",
+    "ordner": "Ordner",
+    "k_fahrzeug": "Fahrzeug",
+    "k_akku": "Akku",
+    "k_navi": "Navigation",
+    "k_musik": "Musik",
+    "k_waechter": "Wächter",
+    "k_uhr": "Uhr"
+  },
   "dateien": {
     "titel": "Dateien",
     "hochladen_titel": "Datei ins Auto legen",
@@ -6924,6 +7090,14 @@
     "ws_loeschen_frage": "„{name}“ auf {wo} löschen? Das geht nicht rückgängig.",
     "ws_oeffnen": "Öffnen",
     "ws_sd": "SD-Karte",
-    "ws_usb": "USB-Stick"
+    "ws_usb": "USB-Stick",
+    "sprung_tacho": "Tacho",
+    "sprung_hintergrund": "Hintergrund und Sperre",
+    "sprung_launcher": "Launcher",
+    "launcher_einrichten": "Launcher einrichten",
+    "launcher_einrichten_hilfe": "Kacheln und Apps auf dem Launcher-Startbildschirm anordnen.",
+    "link_titel": "Display: Tacho, Hintergrund, Sperre, Launcher",
+    "link_hilfe": "Was der Tacho zeigt, das Hintergrundbild, die Display-Sperre mit PIN und der Panoptes Launcher haben eine eigene Seite.",
+    "link_knopf": "Display öffnen"
   }
 }

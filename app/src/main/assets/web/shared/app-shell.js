@@ -1,5 +1,5 @@
 /**
- * Panoptes — Web-Shell (Leiste mit 5 Bereichen, Kopfzeile, Bereichs-Reiter).
+ * Panoptes — Web-Shell (Leiste mit 7 Bereichen, Kopfzeile, Bereichs-Reiter).
  *
  * Each in-app web page used to copy-paste the same ~250-line <aside class="sidebar">
  * block. This script mounts it once at runtime so every page shares one source
@@ -107,7 +107,7 @@
         var ac = document.createElement('link');
         ac.id = 'pnAnzeigeCss';
         ac.rel = 'stylesheet';
-        ac.href = '../shared/anzeige.css?v=4';
+        ac.href = '../shared/anzeige.css?v=5';
         document.head.appendChild(ac);
     }
     var anzeigeJs = false;
@@ -396,67 +396,88 @@
     }
 
     /*
-     * Panoptes-Shell (Entwurf design/mockup/start.html): eine schmale Leiste mit
-     * fünf Bereichen statt der langen Seitenliste. Jeder Bereich bündelt seine
-     * Seiten; die Seiten des aktiven Bereichs stehen als Reiter unter der
-     * Kopfzeile. Am Handy wird die Leiste zur Leiste unten.
+     * Panoptes-Shell, Aufbau 0.1.37 (UI_AUFBAU_VORSCHLAG): sieben Hauptbereiche in einfacher Sprache.
+     * DIE EINE SEITENLISTE: Leiste, Reiter, Seitentitel und Einstellungs-Suche lesen nur SECTIONS (MenueEineQuelleTest).
+     * Jede Seite unter web/local/ steht genau einmal hier oder in VERSTECKT. Dateinamen bleiben, nur die Ordnung ändert sich.
+     * teil: Seiten mit gleichem Teil teilen sich einen Reiter (TEILE) und bekommen oben einen Umschalter.
+     * kurz: Wort für die schmale Leiste unten am Handy.
      */
     var SECTIONS = [
-        { id: 'start', label: 'Start', i18n: 'shell.sec_start', icon: 'home', pages: [
+        { id: 'start', label: 'Start', i18n: 'shell.sec_start', kurz: 'shell.kurz_start', icon: 'home', pages: [
             { href: 'index.html',           label: 'Übersicht',          i18n: 'shell.page_overview' },
-            { href: 'assistant.html',       label: 'Assistent',          i18n: 'nav.assistant' }
+            { href: 'assistant.html',       label: 'Frag Panoptes',      i18n: 'shell.page_ask' }
         ] },
-        { id: 'drive', label: 'Fahren', i18n: 'shell.sec_drive', icon: 'route', pages: [
-            { href: 'navi.html',            label: 'Navigation',         i18n: 'shell.page_navi' },
+        { id: 'car', label: 'Steuerung', i18n: 'shell.sec_steuerung', kurz: 'shell.kurz_steuerung', icon: 'car', pages: [
+            { href: 'vehicle-control.html', label: 'Befehle',            i18n: 'shell.page_befehle' },
+            { href: 'seat-positions.html',  label: 'Sitze',              i18n: 'shell.page_seats' },
+            { href: 'key-mapping.html',     label: 'Tasten',             i18n: 'shell.page_keys' },
+            { href: 'camping.html',         label: 'Camping',            i18n: 'shell.page_camping' },
+            { href: 'tiermodus.html',       label: 'Tiermodus',          i18n: 'shell.page_tiermodus' }
+        ] },
+        { id: 'guard', label: 'Kameras & Wächter', i18n: 'shell.sec_kameras', kurz: 'shell.kurz_kameras', icon: 'eye', pages: [
+            // 0.1.26.1: Live zuerst – ein Tipp auf den Bereich öffnet das Live-Bild (Wunsch Alfred)
+            { href: 'live-view.html',       label: 'Live',               i18n: 'shell.page_live' },
+            { href: 'events.html',          label: 'Aufnahmen',          i18n: 'nav.recordings' },
+            // Eine Wächter-Seite wie bei der Vorlage: Übersicht, dahinter Einstellungen und Aufnahmequalität
+            { href: 'waechter.html',        label: 'Übersicht',          i18n: 'shell.page_guard_home', teil: 'waechter' },
+            { href: 'surveillance.html',    label: 'Wächter-Einstellungen', i18n: 'shell.page_guard_settings', teil: 'waechter' },
+            { href: 'recording.html',       label: 'Aufnahmequalität',   i18n: 'shell.page_recording_quality', teil: 'waechter' },
+            { href: 'parking.html',         label: 'Parken',             i18n: 'nav.parking' },
+            { href: 'communicate.html',     label: 'Durchsage',          i18n: 'shell.page_durchsage' }
+        ] },
+        { id: 'drive', label: 'Fahrten & Laden', i18n: 'shell.sec_fahrten', kurz: 'shell.kurz_fahrten', icon: 'route', pages: [
             { href: 'trips.html',           label: 'Fahrten',            i18n: 'nav.trips' },
+            { href: 'navi.html',            label: 'Navigation',         i18n: 'shell.page_navi' },
+            { href: 'charging.html',        label: 'Unterwegs',          i18n: 'shell.page_laden_unterwegs', teil: 'laden' },
+            { href: 'wallbox.html',         label: 'Wallbox',            i18n: 'shell.page_wallbox', teil: 'laden' },
+            { href: 'ladeplan.html',        label: 'Zu Hause laden',     i18n: 'shell.page_ladeplan', teil: 'laden' },
             { href: 'bericht.html',         label: 'Monatsbericht',      i18n: 'shell.page_report' },
-            { href: 'charging.html',        label: 'Laden',              i18n: 'shell.page_charging' },
-            { href: 'wallbox.html',         label: 'Wallbox',            i18n: 'shell.page_wallbox' },
-            { href: 'ladeplan.html',        label: 'Zu Hause laden',     i18n: 'shell.page_ladeplan' },
             { href: 'road-sense.html',      label: 'Straßenzustand',     i18n: 'shell.page_road' }
         ] },
-        { id: 'guard', label: 'Wächter', i18n: 'shell.sec_guard', icon: 'eye', pages: [
-            // 0.1.26.1: Live zuerst – ein Tipp auf „Wächter“ öffnet das Live-Bild (Wunsch Alfred)
-            { href: 'live-view.html',       label: 'Live',               i18n: 'shell.page_live' },
-            { href: 'waechter.html',        label: 'Übersicht',          i18n: 'shell.page_guard_home' },
-            { href: 'events.html',          label: 'Aufnahmen',          i18n: 'nav.recordings' },
-            { href: 'parking.html',         label: 'Parken',             i18n: 'nav.parking' },
-            { href: 'communicate.html',     label: 'Sprechen',           i18n: 'shell.page_talk' },
-            { href: 'surveillance.html',    label: 'Wächter-Einstellungen', i18n: 'shell.page_guard_settings' },
-            { href: 'recording.html',       label: 'Aufnahme',           i18n: 'shell.page_recording' },
-            { href: 'notifications.html',   label: 'Meldungen',          i18n: 'shell.page_notifications' }
-        ] },
-        { id: 'car', label: 'Auto', i18n: 'shell.sec_car', icon: 'car', pages: [
-            { href: 'vehicle-control.html', label: 'Steuerung',          i18n: 'shell.page_control' },
-            { href: 'apps.html',            label: 'Apps nebeneinander', i18n: 'shell.page_apps' },
-            { href: 'camping.html',         label: 'Camping',            i18n: 'shell.page_camping' },
-            { href: 'tiermodus.html',       label: 'Tiermodus',          i18n: 'shell.page_tiermodus' },
-            { href: 'seat-positions.html',  label: 'Sitze',              i18n: 'shell.page_seats' },
-            { href: 'automations.html',     label: 'Regeln',             i18n: 'shell.page_rules' },
-            { href: 'key-mapping.html',     label: 'Tasten',             i18n: 'shell.page_keys' },
-            { href: 'byd-cloud.html',       label: 'BYD Cloud',          i18n: 'nav.byd_cloud' }
-        ] },
-        { id: 'system', label: 'System', i18n: 'shell.sec_system', icon: 'gear', pages: [
-            { href: 'system.html',          label: 'System',             i18n: 'nav.system' },
+        { id: 'auto', label: 'Regeln', i18n: 'shell.sec_automationen', kurz: 'shell.kurz_automationen', icon: 'bolt', pages: [
+            { href: 'automations.html',     label: 'Wenn-dann-Regeln',   i18n: 'shell.page_wenn_dann' },
             { href: 'orte.html',            label: 'Orte',               i18n: 'shell.page_orte' },
-            { href: 'dateien.html',         label: 'Dateien',            i18n: 'dateien.titel' },
-            { href: 'network.html',         label: 'Netz',               i18n: 'shell.page_network' },
-            { href: 'wireguard.html',       label: 'WireGuard',          i18n: 'shell.page_wireguard', hidden: true },
-            // 0.1.28 (Koordination): alle Benachrichtigungen auf einer Seite (Handy + Telegram je Thema)
-            { href: 'meldungen.html',       label: 'Benachrichtigungen', i18n: 'shell.page_benachrichtigungen' },
-            { href: 'telegram.html',        label: 'Telegram',           i18n: 'nav.telegram' },
-            { href: 'mqtt.html',            label: 'MQTT',               i18n: 'nav.mqtt' },
-            // Fremde Anbindung (Koordination 0.1.8): nicht mehr unter Fahren, der eigene Routenplaner ersetzt sie.
-            { href: 'abrp.html',            label: 'ABRP (fremder Dienst)', i18n: 'shell.page_abrp_ext' },
-            { href: 'performance.html',     label: 'Leistung',           i18n: 'nav.performance' },
-            { href: 'remote-dev-view.html', label: 'Fernansicht',        i18n: 'shell.page_devview' },
-            { href: 'about.html',           label: 'Über',               i18n: 'shell.page_about' }
+            // 0.1.28: alle Benachrichtigungen auf einer Seite (Handy + Telegram je Thema), Verlauf und Telegram dahinter
+            { href: 'meldungen.html',       label: 'Übersicht',          i18n: 'shell.page_meldungen_start', teil: 'meldungen' },
+            { href: 'notifications.html',   label: 'Verlauf',            i18n: 'shell.page_meldungen_verlauf', teil: 'meldungen' },
+            { href: 'telegram.html',        label: 'Telegram',           i18n: 'nav.telegram', teil: 'meldungen' }
         ] },
-        // 0.1.31 „Fehler melden“: eigener Punkt, damit ihn jeder findet (REGEL DAU)
-        { id: 'hilfe', label: 'Hilfe', i18n: 'shell.sec_hilfe', icon: 'hilfe', pages: [
-            { href: 'fehler-melden.html',   label: 'Fehler melden',      i18n: 'shell.page_fehler' }
+        { id: 'apps', label: 'Apps & Display', i18n: 'shell.sec_apps', kurz: 'shell.kurz_apps', icon: 'grid', pages: [
+            { href: 'apps.html',            label: 'Apps nebeneinander', i18n: 'shell.page_apps' },
+            { href: 'dateien.html',         label: 'Dateien',            i18n: 'shell.page_dateien' },
+            { href: 'remote-dev-view.html', label: 'Bildschirm vom Handy', i18n: 'shell.page_bildschirm' },
+            // 0.1.38: alles fürs Display im Auto auf einer Seite (Tacho, Hintergrund, Display-Sperre, Launcher)
+            { href: 'display.html',         label: 'Display',            i18n: 'shell.page_display' },
+            // 0.1.38: Startbildschirm-App (Panoptes Launcher) einrichten, Recht „launcher“
+            { href: 'launcher.html',        label: 'Launcher einrichten', i18n: 'shell.page_launcher' }
+        ] },
+        { id: 'system', label: 'Einstellungen', i18n: 'shell.sec_einstellungen', kurz: 'shell.kurz_einstellungen', icon: 'gear', pages: [
+            { href: 'system.html',          label: 'Alle Einstellungen', i18n: 'shell.page_einstellungen_alle' },
+            { href: 'network.html',         label: 'Hotspot & WLAN',     i18n: 'shell.page_hotspot', teil: 'verbindungen' },
+            { href: 'byd-cloud.html',       label: 'BYD-Konto',          i18n: 'shell.page_byd_konto', teil: 'verbindungen' },
+            { href: 'abrp.html',            label: 'Routenplaner (fremd)', i18n: 'shell.page_routenplaner_fremd', teil: 'verbindungen' },
+            { href: 'mqtt.html',            label: 'Smart Home',         i18n: 'shell.page_smarthome', teil: 'verbindungen' },
+            { href: 'wireguard.html',       label: 'Heimnetz',           i18n: 'shell.page_heimnetz', teil: 'verbindungen', hidden: true },
+            // 0.1.31 „Fehler melden“: zuerst unter „Hilfe & Info“, damit ihn jeder findet (REGEL DAU)
+            { href: 'fehler-melden.html',   label: 'Fehler melden',      i18n: 'shell.page_fehler', teil: 'hilfe' },
+            { href: 'performance.html',     label: 'Gerätezustand',      i18n: 'shell.page_geraet', teil: 'hilfe' },
+            { href: 'about.html',           label: 'Über',               i18n: 'shell.page_about', teil: 'hilfe' }
         ] }
     ];
+
+    // Reiter, die mehrere Seiten zusammenfassen. Der Reiter öffnet die erste Seite des Teils.
+    var TEILE = {
+        waechter:     { label: 'Wächter',      i18n: 'shell.tab_waechter' },
+        laden:        { label: 'Laden',        i18n: 'shell.page_charging' },
+        meldungen:    { label: 'Meldungen',    i18n: 'shell.tab_meldungen' },
+        verbindungen: { label: 'Verbindungen', i18n: 'shell.tab_verbindungen' },
+        hilfe:        { label: 'Hilfe & Info', i18n: 'shell.tab_hilfe' }
+    };
+
+    // Seiten ohne Menüeintrag: Login kommt vor der Anmeldung, die beiden Testseiten sind absichtlich verborgen,
+    // launcher-fahrzeug und tacho-ansicht zeigen nur die nativen Ansichten (Launcher, Tacho-Activity).
+    var VERSTECKT = ['login.html', 'testfunktionen.html', 'vehicle-control-3d-test.html',
+        'launcher-fahrzeug.html', 'tacho-ansicht.html'];
 
     var ICONS = {
         hilfe: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.7 2.2c-.8.5-1.2 1-1.2 1.8"/><path d="M12 17h.01" stroke-linecap="round"/>',
@@ -464,6 +485,9 @@
         route: '<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h6.5" stroke-linecap="round"/>',
         eye:   '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
         car:   '<path d="M4 16v-3l2-5a2 2 0 0 1 1.9-1.4h8.2A2 2 0 0 1 18 8l2 5v3M3 16h18v3h-3v-1.5H6V19H3z" stroke-linejoin="round"/><circle cx="7.5" cy="13.5" r="1" fill="currentColor"/><circle cx="16.5" cy="13.5" r="1" fill="currentColor"/>',
+        // 0.1.37: Automationen (Blitz) und Apps & Display (Raster), gleiche Strichstärke wie die übrigen
+        bolt:  '<path d="M13 2.5 4.5 13.5H11l-1 8 8.5-11H12z" stroke-linejoin="round"/>',
+        grid:  '<rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/>',
         gear:  '<circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M21.2 12h-2.4M5.2 12H2.8M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7M18.5 18.5l-1.7-1.7M7.2 7.2 5.5 5.5" stroke-linecap="round"/>'
     };
 
@@ -535,7 +559,8 @@
             html += '<a href="' + s.pages[0].href + '" class="pn-rail-link' + (on ? ' on' : '') + '"'
                 + (on ? ' aria-current="page"' : '') + ' data-section="' + s.id + '">'
                 + svgIcon(s.icon)
-                + '<span data-i18n="' + s.i18n + '">' + esc(s.label) + '</span></a>';
+                + '<span class="pn-lang" data-i18n="' + s.i18n + '">' + esc(s.label) + '</span>'
+                + '<span class="pn-kurz" data-i18n="' + s.kurz + '">' + esc(s.label) + '</span></a>';
         }
         html += '</nav>' + buildLegacyStatus();
         return html;
@@ -571,30 +596,71 @@
             ? '<span id="pnGreet">' + esc(greeting()) + '</span><span id="pnName"></span>'
             : '<span' + (found.page ? ' data-i18n="' + found.page.i18n + '"' : '') + '>'
                 + esc(found.page ? found.page.label : (document.title || '').split(' - ')[0]) + '</span>';
+        // Seite eines Teils: der Teil steht vorn („Laden · Wallbox“), seine erste Seite heißt nur wie der Teil („Wächter“)
+        if (!isHome && found.page && found.page.teil) {
+            var t = TEILE[found.page.teil];
+            var erste = teilSeiten(found.section, found.page.teil, base)[0] === found.page;
+            title = '<span data-i18n="' + t.i18n + '">' + esc(t.label) + '</span>'
+                + (erste ? '' : '<span class="pn-top-teil"> · </span>' + title);
+        }
         return '<header class="pn-top">'
             + '<div class="pn-top-text"><h1>' + title + '</h1>'
             + '<div class="pn-top-sub"><span id="pnVehicle">&nbsp;</span><span id="pnState"></span></div></div>'
             + '<div class="pn-top-grow"></div>'
             + '<div class="pn-pills">'
             +   '<a class="pn-pill" id="pnPillGuard" href="surveillance.html"><i class="pn-dot"></i><span>' + esc(tr('shell.pill_guard', 'Wächter')) + '</span></a>'
-            +   '<a class="pn-pill" id="pnPillTail" href="system.html"><i class="pn-dot"></i><span>Tailnet</span></a>'
+            +   '<a class="pn-pill" id="pnPillTail" href="system.html#tailscaleKarte"><i class="pn-dot"></i><span>' + esc(tr('shell.pill_fern', 'Fernzugang')) + '</span></a>'
             +   '<a class="pn-pill" id="pnPillNet" href="network.html"><span>' + esc(tr('shell.pill_net', 'Netz')) + '</span></a>'
             +   '<a class="pn-pill" id="pnPillReq" href="system.html#kopplung" hidden><i class="pn-dot warn"></i><span>' + esc(tr('system.req_pill', 'Gerät will sich verbinden')) + '</span></a>'
             + '</div></header>';
     }
 
+    // Seiten eines Teils (sichtbar oder gerade offen), in Menü-Reihenfolge.
+    function teilSeiten(section, teil, base) {
+        var r = [];
+        for (var i = 0; i < section.pages.length; i++) {
+            var p = section.pages[i];
+            if (p.teil === teil && (!p.hidden || p.href === base)) r.push(p);
+        }
+        return r;
+    }
+
     function buildSubnav(found, base) {
         if (!found.section) return '';
-        var pages = found.section.pages, html = '', n = 0;
+        var pages = found.section.pages, html = '', n = 0, gesehen = {};
         for (var i = 0; i < pages.length; i++) {
             var p = pages[i];
             if (p.hidden && p.href !== base) continue;
+            var label = p.label, key = p.i18n, on = p.href === base;
+            if (p.teil) {
+                // Ein Reiter je Teil: führt zur ersten Seite, leuchtet auf jeder Seite des Teils
+                if (gesehen[p.teil]) continue;
+                gesehen[p.teil] = 1;
+                var t = TEILE[p.teil];
+                label = t.label; key = t.i18n;
+                on = !!(found.page && found.page.teil === p.teil);
+            }
             n++;
-            var on = p.href === base;
             html += '<a href="' + p.href + '" class="pn-tab' + (on ? ' on' : '') + '"'
+                + (on ? ' aria-current="page"' : '') + ' data-i18n="' + key + '">' + esc(label) + '</a>';
+        }
+        var nav = n > 1 ? '<nav class="pn-subnav" aria-label="' + esc(found.section.label) + '">' + html + '</nav>' : '';
+        return nav + buildTeilwahl(found, base);
+    }
+
+    // Umschalter innerhalb eines Teils (z. B. Laden: Unterwegs · Wallbox · Zu Hause laden). Die Seiten bleiben eigene
+    // Dateien mit eigener Adresse, die Handy-App und alte Lesezeichen finden sie weiter.
+    function buildTeilwahl(found, base) {
+        if (!found.page || !found.page.teil) return '';
+        var seiten = teilSeiten(found.section, found.page.teil, base);
+        if (seiten.length < 2) return '';
+        var html = '';
+        for (var i = 0; i < seiten.length; i++) {
+            var p = seiten[i], on = p.href === base;
+            html += '<a href="' + p.href + '" class="pn-teil' + (on ? ' on' : '') + '"'
                 + (on ? ' aria-current="page"' : '') + ' data-i18n="' + p.i18n + '">' + esc(p.label) + '</a>';
         }
-        return n > 1 ? '<nav class="pn-subnav" aria-label="' + esc(found.section.label) + '">' + html + '</nav>' : '';
+        return '<nav class="pn-teilwahl" aria-label="' + esc(TEILE[found.page.teil].label) + '">' + html + '</nav>';
     }
 
     function findMount() {
@@ -678,6 +744,8 @@
     window.PanoptesShell = {
         profile: function () { return profileState; },
         sections: SECTIONS,
+        teile: TEILE,
+        versteckt: VERSTECKT,
         modelName: function (id) { return MODEL_NAMES[id] || ''; },
         tr: tr
     };
@@ -814,10 +882,10 @@
             if (document.hidden || window.pnPausiert) return;
             fetch('/api/system/tailscale', { cache: 'no-store' }).then(function (r) { return r.json(); })
                 .then(function (t) {
-                    if (t && t.success && t.online) setPill('pnPillTail', tr('shell.pill_tail_on', 'Tailnet · verbunden'), 'aq');
-                    else if (t && t.success) setPill('pnPillTail', tr('shell.pill_tail_wait', 'Tailnet · getrennt'), 'warn');
-                    else setPill('pnPillTail', tr('shell.pill_tail_off', 'Tailnet aus'), '');
-                }).catch(function () { setPill('pnPillTail', tr('shell.pill_tail_off', 'Tailnet aus'), ''); });
+                    if (t && t.success && t.online) setPill('pnPillTail', tr('shell.pill_tail_on', 'Fernzugang · verbunden'), 'aq');
+                    else if (t && t.success) setPill('pnPillTail', tr('shell.pill_tail_wait', 'Fernzugang · getrennt'), 'warn');
+                    else setPill('pnPillTail', tr('shell.pill_tail_off', 'Fernzugang aus'), '');
+                }).catch(function () { setPill('pnPillTail', tr('shell.pill_tail_off', 'Fernzugang aus'), ''); });
         }
         run();
         setInterval(run, 60000);

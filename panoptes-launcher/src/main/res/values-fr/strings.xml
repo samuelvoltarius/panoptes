@@ -39,6 +39,7 @@
     <string name="history_empty">Aucun trajet ou recharge récent.</string>
     <string name="history_format">Dernier trajet : %1$s km · dernière charge : %2$s kWh</string>
     <string name="import_fehler">Ce fichier n’est pas une disposition Panoptes Launcher.</string>
+    <string name="layout_neuer_stand">Nouvelle disposition reprise du web ou du téléphone.</string>
     <string name="import_ok">Disposition importée.</string>
     <string name="importieren">Importer une disposition</string>
     <string name="in_ordner">Dans le dossier « %1$s »</string>

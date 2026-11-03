@@ -10,8 +10,8 @@
     <meta name="apple-mobile-web-app-title" content="Panoptes">
     <meta name="theme-color" content="#0A2238">
     <script src="../shared/theme.js?v=13"></script>
-    <script src="../shared/app-shell.js?v=pn30"></script>
-    <link rel="stylesheet" href="../shared/styles.css?v=pn11">
+    <script src="../shared/app-shell.js?v=pn33"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn12">
     <style>
         .guard-page .main-content { padding: 0; }
         .gw { padding: 0 28px 60px; max-width: 1100px; box-sizing: border-box; }
@@ -34,6 +34,21 @@
         .actions > * { margin: 0 10px 8px 0; }
         .note { font-size: 12.5px; color: var(--on-surface-variant); }
         .note.warn { color: var(--status-warning); }
+        .gschalter { display: block; width: 100%; margin: 16px 0 6px; min-height: 64px; border-radius: 16px; border: 2px solid var(--sm-line);
+                     background: rgba(255, 255, 255, .075); color: var(--on-surface); font: 700 20px var(--family-body, sans-serif); cursor: pointer; }
+        .gschalter[aria-pressed="false"] { background: var(--sm-lime); color: #1d2a00; border-color: transparent; }
+        .gzahlen { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-gap: 12px; text-align: center; }
+        .gzahl b { display: block; font-family: var(--family-display); font-size: 30px; color: var(--on-surface); }
+        .gzahl span { font-size: 14px; color: var(--on-surface-variant); }
+        .gkacheln { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); grid-gap: 10px; }
+        .gkachel { display: block; border-radius: 14px; overflow: hidden; border: 1px solid var(--sm-line); background: #000; color: var(--on-surface);
+                   text-decoration: none; }
+        .gkachel .bild { position: relative; padding-top: 56%; background: #0b1a2a center / cover no-repeat; }
+        .gkachel .zeit { display: block; padding: 8px 10px; font-size: 16px; font-weight: 600; background: var(--sm-card); }
+        .gerweitert summary { cursor: pointer; font-size: 17px; font-weight: 700; min-height: 44px; display: flex; align-items: center; }
+        .gerweitert h2 { margin-top: 18px; }
+        .gc h2 { font-size: 14px; }
+        @media (max-width: 520px) { .gzahl b { font-size: 24px; } }
         @media (max-width: 860px) { .gw-grid { grid-template-columns: minmax(0, 1fr); } .gc.wide { grid-column: span 1; } }
         @media (max-width: 720px) { .gw { padding: 0 16px 24px; } }
     </style>
@@ -54,25 +69,48 @@
                 </div>
             </article>
 
-            <!-- Zustand -->
-            <article class="gc">
-                <h2 data-i18n="guard.now">Gerade</h2>
+            <!-- 0.1.38 Reihenfolge wie die Vorlage (REGEL 50+): 1. großer Schalter -->
+            <article class="gc wide" id="gSchalterKarte">
                 <div class="state"><i class="pn-dot" id="gDot"></i><span class="big" id="gState">…</span></div>
-                <div class="sub" id="gSub">&nbsp;</div>
                 <div class="sub warn" id="gStop" hidden></div>
                 <div class="sub warn" id="gHealth" hidden></div>
+                <button class="gschalter" type="button" id="gSchalter" aria-pressed="false" disabled>…</button>
+                <div class="sub" id="gSub">&nbsp;</div>
+            </article>
+
+            <!-- 2. Status mit drei Zahlen (/api/surveillance/status, /api/recordings/stats; nur lesen) -->
+            <article class="gc wide">
+                <div class="gzahlen">
+                    <div class="gzahl"><b id="zHeute">–</b><span data-i18n="guard.zahl_heute">Aufnahmen heute</span></div>
+                    <div class="gzahl"><b id="zGesamt">–</b><span data-i18n="guard.zahl_gesamt">Wächter-Aufnahmen gespeichert</span></div>
+                    <div class="gzahl"><b id="zFrei">–</b><span data-i18n="guard.zahl_frei">Speicher frei</span></div>
+                </div>
+            </article>
+
+            <!-- 3. Letzte Ereignisse als Kacheln; ein Tipp spielt den Clip ab (events.html?id=) -->
+            <article class="gc wide">
+                <h2 data-i18n="guard.letzte_titel">Letzte Ereignisse</h2>
+                <div class="gkacheln" id="gLetzte"></div>
+                <p class="sub" id="gLetzteLeer" hidden data-i18n="guard.letzte_leer">Noch keine Wächter-Aufnahmen.</p>
                 <div class="actions">
-                    <a class="gbtn" href="events.html" data-i18n="guard.to_clips">Aufnahmen ansehen</a>
+                    <a class="gbtn" href="events.html?filter=sentry" data-i18n="guard.to_clips">Aufnahmen ansehen</a>
                     <a class="gbtn" href="live-view.html" data-i18n="guard.to_live">Kameras live</a>
                 </div>
             </article>
 
-            <!-- Aufnahme: Pflichtwahl (Text C) + private Orte -->
-            <article class="gc">
-                <h2 data-i18n="guard.rec_title">Aufnahme</h2>
+            <!-- 4. Wann wachen: Pflichtwahl (Text C) als große Kacheln + private Orte -->
+            <article class="gc wide">
+                <h2 data-i18n="guard.wann_titel">Wann soll der Wächter aufnehmen?</h2>
                 <div class="sub" id="tNow"></div>
                 <div id="tBox"></div>
                 <div id="tZones" hidden></div>
+            </article>
+
+            <!-- 5. Erweitert: alles Weitere, zugeklappt -->
+            <details class="gc wide gerweitert">
+                <summary data-i18n="guard.erweitert">Erweitert</summary>
+
+                <h2 data-i18n="guard.rec_title">Aufnahme</h2>
                 <div class="sub warn" id="tRet" hidden>
                     <span data-i18n="guard.ret_unlimited">Aufbewahrung: unbegrenzt (nur Speicherplatz). Empfohlen: 72 h.</span>
                     <div class="actions"><button class="gbtn lime" type="button" id="tRetBtn" data-i18n="guard.ret_set72">Auf 72 h stellen</button></div>
@@ -80,31 +118,23 @@
                 <div id="tKeep"></div>
                 <p class="note" id="tFps" hidden></p>
                 <p class="note" id="tNa" hidden data-i18n="guard.stop_unavailable">Diese Einstellung kommt mit dem nächsten App-Update.</p>
-            </article>
 
-            <!-- 0.1.27 Beim Fahren: Ereignisse automatisch sichern -->
-            <article class="gc">
+                <!-- 0.1.27 Beim Fahren: Ereignisse automatisch sichern -->
                 <h2 data-i18n="guard.fahrt_title">Beim Fahren</h2>
                 <p class="lead" data-i18n="guard.fahrt_lead">Bei einer Vollbremsung oder einem Stoß sichert Panoptes einen kurzen Clip. Sonst wird nichts gespeichert.</p>
                 <div id="fBox"></div>
-            </article>
 
-            <!-- Abschreckung -->
-            <article class="gc">
                 <h2 data-i18n="guard.deter_title">Abschreckung</h2>
                 <p class="lead" data-i18n="guard.deter_lead">Was passiert, wenn jemand dem geparkten Auto zu nah kommt.</p>
                 <div id="dBox"></div>
                 <p class="note"><a href="surveillance.html" style="color:var(--sm-aqua)" data-i18n="guard.advanced">Erweitert: Text, Bild, Dauer, Empfindlichkeit</a></p>
-            </article>
 
-            <!-- Wächter stoppt, wenn … -->
-            <article class="gc wide">
                 <h2 data-i18n="guard.stop_title">Wächter stoppt, wenn …</h2>
                 <p class="lead" data-i18n="guard.stop_lead">Damit die Batterien geschont werden. Jede Bedingung lässt sich einzeln ein- und ausschalten.</p>
                 <div id="sBox"></div>
                 <div id="sAuto"></div>
                 <p class="note"><a href="surveillance.html#safe-zones" style="color:var(--sm-aqua)" data-i18n="guard.stop_quiet_link">Ruhezonen festlegen</a></p>
-            </article>
+            </details>
         </section>
         </div>
     </main>
@@ -138,6 +168,8 @@
             else { txt = t('guard.st_off', 'Wächter ist aus'); }
             $('gState').textContent = txt;
             $('gDot').className = 'pn-dot' + (dot ? ' ' + dot : '');
+            schalterZeigen(!!s.enabled);
+            if (s.totalEventsToday != null) $('zHeute').textContent = s.totalEventsToday;
             $('gSub').textContent = s.totalEventsToday != null ? t('guard.today', 'Heute {n} Aufnahmen', { n: s.totalEventsToday }) : '';
             // 0.1.9.1: ohne gespeicherte Wahl nimmt der Wächter nur bei Erschütterung auf (Kern status.waechterAusloeser)
             if (s.waechterAusloeser === 'nicht_gewaehlt') $('gSub').textContent += ($('gSub').textContent ? ' · ' : '')
@@ -148,6 +180,62 @@
                 st.hidden = false;
             } else st.hidden = true;
             kameraFps(s.kameraFps);
+        }).catch(function () {});
+    }
+
+    // ---------------- 0.1.38 großer Schalter (POST /api/surveillance/enable|disable, wie surveillance.js)
+    var istAn = null, schaltet = false;
+    function schalterZeigen(an) {
+        if (schaltet) return;
+        istAn = an;
+        var b = $('gSchalter');
+        b.disabled = false;
+        b.setAttribute('aria-pressed', an ? 'true' : 'false');
+        b.textContent = an ? t('guard.schalter_aus', 'Wächter ausschalten') : t('guard.schalter_an', 'Wächter einschalten');
+    }
+    function schalten() {
+        if (istAn === null || schaltet) return;
+        var an = !istAn;
+        schaltet = true;
+        $('gSchalter').disabled = true;
+        fetch(an ? '/api/surveillance/enable' : '/api/surveillance/disable', { method: 'POST' })
+            .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { ok: r.ok && d.success === true, d: d }; }); })
+            .then(function (x) {
+                schaltet = false;
+                if (!x.ok) { toast((x.d && x.d.error) || t('guard.schalter_fehler', 'Das hat nicht geklappt. Bitte nochmal versuchen.'), false); schalterZeigen(istAn); return; }
+                toast(an ? t('guard.schalter_ist_an', 'Wächter ist eingeschaltet.') : t('guard.schalter_ist_aus', 'Wächter ist ausgeschaltet.'), true);
+                schalterZeigen(an);
+                loadState();
+            }, function () { schaltet = false; toast(t('guard.schalter_fehler', 'Das hat nicht geklappt. Bitte nochmal versuchen.'), false); schalterZeigen(istAn); });
+    }
+
+    // ---------------- 0.1.38 Zahlen und letzte Ereignisse (nur lesen)
+    function loadZahlen() {
+        fetch('/api/recordings/stats', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+            if (!d) return;
+            if (d.sentryCount != null) $('zGesamt').textContent = d.sentryCount;
+            if (d.availableSpaceFormatted) $('zFrei').textContent = d.availableSpaceFormatted;
+        }).catch(function () {});
+    }
+    function loadLetzte() {
+        fetch('/api/recordings?type=sentry&page=1&pageSize=6', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+            var box = $('gLetzte'), liste = (d && d.recordings) || [];
+            box.textContent = '';
+            $('gLetzteLeer').hidden = liste.length > 0;
+            liste.forEach(function (rec) {
+                var a = document.createElement('a');
+                a.className = 'gkachel';
+                a.href = 'events.html?filter=sentry&id=' + encodeURIComponent(rec.id || '');
+                var bild = document.createElement('span');
+                bild.className = 'bild';
+                var url = rec.heroThumbnailUrl || rec.thumbnailUrl || '';
+                if (url) bild.style.backgroundImage = 'url("' + String(url).replace(/["()]/g, '') + '")';
+                var zeit = document.createElement('span');
+                zeit.className = 'zeit';
+                zeit.textContent = [rec.dateFormatted, rec.timeFormatted].filter(Boolean).join(' · ');
+                a.appendChild(bild); a.appendChild(zeit);
+                box.appendChild(a);
+            });
         }).catch(function () {});
     }
 
@@ -315,11 +403,12 @@
 
     BYD.i18n.init().then(function () {
         BYD.core.init();
-        loadState(); loadHealth(); ladeEinstellungen(); ereignisFrage();
+        loadState(); loadHealth(); ladeEinstellungen(); ereignisFrage(); loadZahlen(); loadLetzte();
+        $('gSchalter').onclick = schalten;
         $('eBehalten').onclick = function () { ereignisAntwort(true); };
         $('eNein').onclick = function () { ereignisAntwort(false); };
         $('tRetBtn').onclick = setze72;
-        setInterval(function () { if (!document.hidden) { loadState(); loadHealth(); } }, 30000);
+        setInterval(function () { if (!document.hidden) { loadState(); loadHealth(); loadZahlen(); loadLetzte(); } }, 30000);
     });
 })();
 </script>

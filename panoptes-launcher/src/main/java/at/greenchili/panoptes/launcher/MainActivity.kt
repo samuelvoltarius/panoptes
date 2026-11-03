@@ -124,6 +124,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         layout = ladeLayout()
         baueAlles()
+        kernAbgleich()
     }
 
     override fun onStart() {
@@ -145,6 +146,7 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         io.shutdownNow()
         klimaIo.shutdownNow()
+        layoutIo.shutdown()
         webAuto?.destroy()
         super.onDestroy()
     }
@@ -159,7 +161,7 @@ class MainActivity : AppCompatActivity() {
     override fun onBackPressed() {
         when {
             overlay != null -> schliesseOverlay()
-            bearbeiten -> { bearbeiten = false; baueAlles() }
+            bearbeiten -> { bearbeiten = false; baueAlles(); kernSpeichern() }
             else -> @Suppress("DEPRECATION") super.onBackPressed()
         }
     }
@@ -289,7 +291,7 @@ class MainActivity : AppCompatActivity() {
         k(R.drawable.ic_pn_close, R.string.seite_weg) { seiteEntfernenFragen() }
         k(R.drawable.ic_pn_edit, R.string.hintergrund) { hintergrundWaehlen() }
         z.addView(HorizontalScrollView(this).apply { isHorizontalScrollBarEnabled = false; addView(knoepfe) }, ui.lp(0, -2, 1f))
-        z.addView(ui.act(null, getString(R.string.fertig), primary = true) { bearbeiten = false; baueAlles() }, ui.lp(ui.dp(130), ui.dp(60)))
+        z.addView(ui.act(null, getString(R.string.fertig), primary = true) { bearbeiten = false; baueAlles(); kernSpeichern() }, ui.lp(ui.dp(130), ui.dp(60)))
         return z
     }
 
@@ -1167,7 +1169,73 @@ class MainActivity : AppCompatActivity() {
     private fun aendern(neu: StartLayout) {
         if (neu === layout) return
         layout = neu
-        getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString(KEY_LAYOUT, Raster.toJson(neu)).apply()
+        getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString(KEY_LAYOUT, Raster.toJson(neu))
+            .putBoolean(KEY_OFFEN, true).putLong(KEY_LOKAL_ZEIT, System.currentTimeMillis()).apply()
+        // Während Bearbeiten erst bei „Fertig“; Änderungen außerhalb (Leiste, Import, Einstellungen) gleich.
+        if (!bearbeiten) kernSpeichern()
+    }
+
+    // ==================== 0.1.38 Layout im Panoptes-Kern ====================
+
+    private val layoutIo = Executors.newSingleThreadExecutor()
+    private val kernPrefs get() = getSharedPreferences(PREFS, MODE_PRIVATE)
+
+    /** Kern-Stand holen und nach [LayoutAbgleich.beimHolen] übernehmen oder die lokale Änderung hochladen. */
+    private fun kernAbgleich() {
+        layoutIo.execute {
+            val kern = client.layoutHolen() ?: return@execute
+            main.post {
+                val p = kernPrefs
+                when (LayoutAbgleich.beimHolen(kern, p.getLong(KEY_BASIS, 0L), p.getBoolean(KEY_OFFEN, false),
+                    p.contains(KEY_LAYOUT), p.getBoolean(KEY_KENNT_KERN, false))) {
+                    LayoutAbgleich.Schritt.HOCHLADEN -> kernSpeichern()
+                    LayoutAbgleich.Schritt.UEBERNEHMEN -> uebernimmKern(kern, false)
+                    LayoutAbgleich.Schritt.NICHTS -> Unit
+                }
+            }
+        }
+    }
+
+    /** Kern-Stand als neues Layout; neu gezeichnet nur, wenn nicht gerade bearbeitet oder ein Fenster offen ist. */
+    private fun uebernimmKern(kern: KernLayout, hinweis: Boolean) {
+        val anders = Raster.toJson(kern.layout) != Raster.toJson(layout)
+        val e = kernPrefs.edit().putLong(KEY_BASIS, kern.geaendert).putBoolean(KEY_OFFEN, false).putBoolean(KEY_KENNT_KERN, true)
+        if (anders) e.putString(KEY_LAYOUT, Raster.toJson(kern.layout))
+        e.apply()
+        if (!anders) return
+        layout = kern.layout
+        if (!bearbeiten && overlay == null) { seite = seite.coerceIn(0, layout.seiten.size - 1); baueAlles() }
+        if (hinweis) zeigeHinweis(getString(R.string.layout_neuer_stand))
+    }
+
+    /** Lokales Layout in den Kern schreiben. 409: neueste Änderung gewinnt ([LayoutAbgleich.nochmalSenden]). */
+    private fun kernSpeichern(versuch: Int = 0) {
+        val l = layout
+        val basis = kernPrefs.getLong(KEY_BASIS, 0L)
+        layoutIo.execute {
+            val a = client.layoutSpeichern(l, basis)
+            main.post {
+                when (a) {
+                    is SpeicherAntwort.Ok -> {
+                        val e = kernPrefs.edit().putLong(KEY_BASIS, a.geaendert).putBoolean(KEY_KENNT_KERN, true)
+                        if (layout === l) e.putBoolean(KEY_OFFEN, false)
+                        e.apply()
+                        if (a.layout != null && layout === l && Raster.toJson(a.layout) != Raster.toJson(l)) uebernimmKern(KernLayout(a.layout, a.geaendert, false), false)
+                    }
+                    is SpeicherAntwort.Neuer -> {
+                        val lokal = kernPrefs.getLong(KEY_LOKAL_ZEIT, 0L)
+                        if (versuch == 0 && LayoutAbgleich.nochmalSenden(lokal, a.kern.geaendert)) {
+                            kernPrefs.edit().putLong(KEY_BASIS, a.kern.geaendert).apply()
+                            kernSpeichern(1)
+                        } else uebernimmKern(a.kern, true)
+                    }
+                    is SpeicherAntwort.Fehler -> {
+                        // 400/413: diese Form nimmt der Kern nie an, nicht immer wieder senden; sonst später erneut.
+                        if (a.status == 400 || a.status == 413) kernPrefs.edit().putBoolean(KEY_OFFEN, false).apply()
+                    }
+                }
+            }
+        }
     }
 
     private fun exportieren() {
@@ -1243,6 +1311,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun neueDaten(s: LauncherSummary?, t: LauncherTraffic, a: LauncherAppearance?, ok: Boolean) {
         val warOnline = online
+        if (ok && !warOnline && kernPrefs.getBoolean(KEY_OFFEN, false)) kernSpeichern()
+        if (LayoutAbgleich.neuHolen(s?.layoutGeaendert, kernPrefs.getLong(KEY_BASIS, 0L), kernPrefs.getBoolean(KEY_OFFEN, false),
+                bearbeiten || overlay != null)) kernAbgleich()
         summary = s; traffic = t; online = ok
         if (!ok && warOnline) zeigeHinweis(getString(R.string.offline))
         val alt = appearance; appearance = a
@@ -1391,6 +1462,11 @@ class MainActivity : AppCompatActivity() {
     private companion object {
         const val PREFS = "launcher"
         const val KEY_LAYOUT = "layout"
+        /** 0.1.38 Kern-Abgleich: zuletzt gekanntes `geaendert`, lokale Änderung offen, Zeit der lokalen Änderung. */
+        const val KEY_BASIS = "layout_basis"
+        const val KEY_OFFEN = "layout_offen"
+        const val KEY_LOKAL_ZEIT = "layout_lokal_zeit"
+        const val KEY_KENNT_KERN = "layout_kennt_kern"
         const val REQ_EXPORT = 41
         const val REQ_IMPORT = 42
         const val KEY_SPAETER = "update_spaeter"

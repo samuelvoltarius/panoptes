@@ -7,8 +7,8 @@
     <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
     <script src="../shared/theme.js?v=13"></script>
     <script src="../shared/kartenquelle.js?v=5"></script>
-    <script src="../shared/app-shell.js?v=pn30"></script>
-    <link rel="stylesheet" href="../shared/styles.css?v=pn11">
+    <script src="../shared/app-shell.js?v=pn33"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn12">
     <style>
         .sys-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .sys-stat { background: var(--bg-elevated); border-radius: 8px; padding: 10px 12px; min-width: 0; }
@@ -101,7 +101,7 @@
         html[data-einbettung="handy"] .nur-handy-hinweis { display: block; }
         html[data-einbettung="handy"] #tailscaleKarte, html[data-einbettung="handy"] #kopplung,
         html[data-einbettung="handy"] #homeassistant, html[data-einbettung="handy"] #einrichtung,
-        html[data-einbettung="handy"] #notzugang, html[data-einbettung="handy"] #updates, html[data-einbettung="handy"] #launcherKarte,
+        html[data-einbettung="handy"] #notzugang, html[data-einbettung="handy"] #updates,
         html[data-einbettung="handy"] #tunnelKarte { display: none !important; }
     </style>
 </head>
@@ -288,6 +288,8 @@
                             <div id="pairRows"></div>
                             <div class="sys-note" id="pairDays"></div>
                         </div>
+                        <!-- 0.1.38: Zugriffe je Gerät der letzten Stunde (GET /api/system/zugriffe, zusatzknoepfe.js) -->
+                        <div id="zugriffeBox" style="margin-top:12px;"></div>
                     </div>
                 </div>
 
@@ -368,8 +370,18 @@
                         <h3 data-i18n="reinigung.titel">Bildschirm reinigen</h3>
                         <div class="sys-note" data-i18n="reinigung.hilfe">Sperrt 30 Sekunden lang jede Berührung, damit du den Bildschirm abwischen kannst. Nur in P. Lange drücken beendet sofort.</div>
                         <button class="btn" type="button" data-reinigung data-nur-display data-i18n="reinigung.knopf">Bildschirm reinigen</button>
-                        <!-- 0.1.37 Hintergrundbild + Display-Sperre (display-werkzeuge.js, /api/display) -->
-                        <div id="displayWerkzeuge"></div>
+                    </div>
+                </div>
+
+                <!-- 0.1.38: Tacho, Hintergrund, Display-Sperre und Launcher liegen unter Apps & Display → Display (display.html) -->
+                <div class="card" id="displayLink">
+                    <div class="card-header"><div class="card-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                        <span data-i18n="display.link_titel">Display: Tacho, Hintergrund, Sperre, Launcher</span>
+                    </div></div>
+                    <div class="card-body">
+                        <div class="sys-note" style="margin-top:0;" data-i18n="display.link_hilfe">Was der Tacho zeigt, das Hintergrundbild, die Display-Sperre mit PIN und der Panoptes Launcher haben eine eigene Seite.</div>
+                        <div class="sys-actions"><a class="btn btn-primary" href="display.html" data-i18n="display.link_knopf">Display öffnen</a></div>
                     </div>
                 </div>
 
@@ -497,32 +509,6 @@
                     </div>
                 </div>
 
-                <!-- ===== Panoptes Launcher (0.1.37 Stufe 4: /api/appupdate/launcher, launcher-karte.js) ===== -->
-                <div class="card" id="launcherKarte" style="display:none;">
-                    <div class="card-header">
-                        <div class="card-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-                            <span data-i18n="system.lnc_title">Panoptes Launcher</span>
-                        </div>
-                        <span class="card-badge" id="lncBadge">--</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="sys-note" style="margin-top:0;" data-i18n="system.lnc_lead">Eigener Startbildschirm im Panoptes-Stil mit Klima, Apps und Updates. Er läuft als App neben dem BYD-Startbildschirm.</div>
-                        <div class="sys-grid" style="margin-top:10px;">
-                            <div class="sys-stat"><div class="label" data-i18n="system.upd_installed">Installiert</div><div class="value" id="lncNow">--</div></div>
-                            <div class="sys-stat"><div class="label" data-i18n="system.upd_available">Verfügbar</div><div class="value" id="lncNew">--</div></div>
-                        </div>
-                        <div class="sys-note" id="lncState"></div>
-                        <div class="sys-note" data-i18n="system.lnc_home_hint">Panoptes macht den Launcher nie selbst zum Standard-Startbildschirm. Rückweg jederzeit: Haus-Knopf ganz links im Launcher-Dock, oder den Launcher hier entfernen.</div>
-                        <div class="sys-actions">
-                            <button class="btn btn-primary" id="lncInstall" type="button" style="display:none;" data-i18n="system.lnc_install">Installieren und aktivieren</button>
-                            <button class="btn btn-primary" id="lncUpdate" type="button" style="display:none;" data-i18n="system.lnc_update">Aktualisieren</button>
-                            <button class="btn" id="lncOpen" type="button" style="display:none;" data-i18n="system.lnc_open">Öffnen</button>
-                            <button class="btn" id="lncRemove" type="button" style="display:none;" data-i18n="system.lnc_remove">Entfernen</button>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- ===== Tunnels & services ===== -->
                 <div class="card" id="tunnelKarte">
                     <div class="card-header">
@@ -571,19 +557,18 @@
     <script src="../shared/core.js?v=pn6"></script>
     <script src="../shared/pip.js?v=2"></script>
     <script src="../shared/system.js?v=4"></script>
-    <script src="../shared/system-overview.js?v=2"></script>
+    <script src="../shared/system-overview.js?v=4"></script>
     <script src="../shared/vendor/qrcode-generator-1.4.4.js"></script>
     <script src="../shared/einstellungen.js?v=pn8"></script>
     <script src="../shared/home-layout.js?v=2"></script>
     <script src="../shared/app-updates.js?v=4"></script>
-    <script src="../shared/launcher-karte.js?v=1"></script>
     <script src="../shared/blitzer.js?v=5"></script>
-    <script src="../shared/einrichtung-web.js?v=8"></script>
+    <script src="../shared/einrichtung-web.js?v=9"></script>
     <script src="../shared/overdrive-verlauf.js?v=2"></script>
     <script src="../shared/notzugang.js?v=1"></script>
     <script src="../shared/befehlslog.js?v=4"></script>
     <script src="../shared/reinigung.js?v=1"></script>
-    <script src="../shared/display-werkzeuge.js?v=1"></script>
+    <script src="../shared/zusatzknoepfe.js?v=1"></script>
     <script>
         (function () {
             if (window.PanoptesDarstellung) {
@@ -648,7 +633,6 @@
             if (window.PanoptesEingriffe) PanoptesEingriffe.init(document.getElementById('eingriffe'), document.getElementById('eingriffeInhalt'));
             if (window.PanoptesBefehlslog) PanoptesBefehlslog.init(document.getElementById('protokoll'), document.getElementById('protokollInhalt'));
             if (window.PanoptesUpdates) PanoptesUpdates.init();
-            if (window.PanoptesLauncherKarte) PanoptesLauncherKarte.init();
             // Energie: nur zeigen, wenn das Schema die Gruppe kennt (ab Kern ed96f8e)
             if (window.PanoptesEinstellungen) PanoptesEinstellungen.laden().then(function (store) {
                 var dsFelder = store ? store.felder('datenschutz').filter(function (f) { return f.key !== 'karte.quelle'; }) : [];
@@ -934,7 +918,8 @@
                     ereignisclip: self.t('system.handy_wort_ereignisclip', 'Unfall-Clips'),
                     protokoll: self.t('system.handy_wort_protokoll', 'Protokoll'),
                     dateien: self.t('dateien.recht_wort', 'Dateien'),
-                    tacho: self.t('system.handy_wort_tacho', 'Tacho') };
+                    tacho: self.t('system.handy_wort_tacho', 'Tacho'),
+                    launcher: self.t('system.recht_wort_launcher', 'Launcher') };
                 var namen = { klima: self.t('system.handy_recht_klima', 'Klima'), zusperren: self.t('system.handy_recht_zusperren', 'Zusperren'),
                     aufsperren: self.t('system.handy_recht_aufsperren', 'Aufsperren (mit Fingerabdruck/Face ID)'), push: self.t('system.handy_recht_push', 'Benachrichtigungen'),
                     web: self.t('system.handy_recht_web', 'Weboberfläche in der App (ohne PIN, Kopplungen, Netz, Updates)'),
@@ -945,14 +930,15 @@
                     ereignisclip: self.t('system.handy_recht_ereignisclip', 'Unfall-Clips aufs Handy erlauben (nur auf Knopfdruck am Handy)'),
                     protokoll: self.t('system.handy_recht_protokoll', 'Sieht, was andere Geräte am Auto gemacht haben'),
                     dateien: self.t('dateien.recht_info', 'Dateien zwischen Handy und Auto austauschen (höchstens 200 MB, keine Apps)'),
-                    tacho: self.t('system.handy_recht_tacho', 'Wählen, was der Tacho zeigt, und „Tacho wieder normal“') };
+                    tacho: self.t('system.handy_recht_tacho', 'Wählen, was der Tacho zeigt, und „Tacho wieder normal“'),
+                    launcher: self.t('system.recht_info_launcher', 'Startbildschirm im Auto einrichten (nur der Aufbau, keine Befehle ans Auto)') };
                 function schalter(k, an) {
                     var info = namen[k] !== wort[k] ? '<span class="pn-recht-info">' + self.esc(namen[k]) + '</span>' : '';
                     return '<label class="pn-recht"><span class="pn-recht-text"><span class="pn-recht-wort">' + self.esc(wort[k]) + '</span>' + info + '</span>'
                         + '<span class="toggle-switch"><input type="checkbox" data-handy-recht="' + k + '" data-id="' + self.esc(g.id) + '"'
                         + (an ? ' checked' : '') + ' aria-label="' + self.esc(wort[k]) + '"><span class="toggle-slider"></span></span></label>';
                 }
-                var alle = ['klima', 'zusperren', 'aufsperren', 'push', 'web', 'kamera', 'wallbox', 'route', 'update', 'ereignisclip', 'protokoll', 'dateien', 'tacho'];
+                var alle = ['klima', 'zusperren', 'aufsperren', 'push', 'web', 'kamera', 'wallbox', 'route', 'update', 'ereignisclip', 'launcher', 'protokoll', 'dateien', 'tacho'];
                 var hat = alle.filter(function (k) { return r.indexOf(k) >= 0; });
                 var fehlt = alle.filter(function (k) { return r.indexOf(k) < 0; });
                 var html = '<div class="pn-rechte">';
@@ -1019,11 +1005,13 @@
                     standbild: [self.t('system.fremd_wort_standbild', 'Standbild bei Ereignis'),
                         self.t('system.fremd_recht_standbild', 'Ein Foto, wenn der Wächter etwas bemerkt. Kein Video.')],
                     tacho: [self.t('system.handy_wort_tacho', 'Tacho'),
-                        self.t('system.handy_recht_tacho', 'Wählen, was der Tacho zeigt, und „Tacho wieder normal“')]
+                        self.t('system.handy_recht_tacho', 'Wählen, was der Tacho zeigt, und „Tacho wieder normal“')],
+                    launcher: [self.t('system.recht_wort_launcher', 'Launcher'),
+                        self.t('system.recht_info_launcher', 'Startbildschirm im Auto einrichten (nur der Aufbau, keine Befehle ans Auto)')]
                 };
                 var html = '<div class="pn-rechte">';
-                // 0.1.37: „tacho“ nur für das Cockpit (Home Assistant und Dienste erreichen die Tacho-Auswahl nicht)
-                (g.art === 'cockpit' ? ['kamera', 'standbild', 'tacho'] : ['kamera', 'standbild']).forEach(function (k) {
+                // 0.1.37: „tacho“ und „launcher“ (0.1.38) nur für das Cockpit (Home Assistant und Dienste erreichen die Tacho-Auswahl nicht)
+                (g.art === 'cockpit' ? ['kamera', 'standbild', 'tacho', 'launcher'] : ['kamera', 'standbild']).forEach(function (k) {
                     html += '<label class="pn-recht"><span class="pn-recht-text"><span class="pn-recht-wort">' + self.esc(texte[k][0])
                         + '</span><span class="pn-recht-info">' + self.esc(texte[k][1]) + '</span></span>'
                         + '<span class="toggle-switch"><input type="checkbox" data-fremd-recht="' + k + '" data-id="' + self.esc(g.id) + '"'

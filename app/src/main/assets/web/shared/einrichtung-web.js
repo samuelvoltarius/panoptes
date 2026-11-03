@@ -49,6 +49,13 @@
         'schritt.extra_handy': 'Handy verbinden',
         'schritt.extra_fernzugang': 'Fernzugang',
         'schritt.extra_notzugang': 'Notzugang',
+        'schritt.extra_display': 'Hintergrundbild und Display-Sperre',
+        'schritt.extra_launcher': 'Panoptes Launcher',
+        'schritt.extra_tacho': 'Was zeigt der Tacho?',
+        'schritt.extra_abschaltbericht': 'Bericht beim Abstellen',
+        'schritt.extra_ladesaeule': 'Ladesäule erkennen',
+        'schritt.extra_tiermodus': 'Tiermodus',
+        'schritt.extra_assistenz': 'Assistenzsysteme',
         'fortgeschritten': 'Für Fortgeschrittene',
         'schritt.fertig': 'Abschluss',
         'hinweis.carplay': 'Du nutzt CarPlay. Ob Panoptes-Hinweise darüber sichtbar sind, ist für dein Auto nicht bekannt. Bitte angeben oder Hinweiston einschalten.',
@@ -95,7 +102,11 @@
         blitzer: 'system.html#blitzer', updates: 'system.html#updates', strompreis: 'charging.html#settings',
         extra_telegram: 'telegram.html', extra_handy: 'system.html#kopplung', extra_planer: 'system.html#planerKarte',
         extra_cockpit: 'system.html#kopplung', extra_overdrive: 'system.html#umzug',
-        extra_fernzugang: 'system.html#tailscaleKarte', extra_notzugang: 'system.html#notzugang'
+        extra_fernzugang: 'system.html#tailscaleKarte', extra_notzugang: 'system.html#notzugang',
+        // 0.1.38 (wie NeuHinweisSchritt.ZIEL). Abschaltbericht hat keinen Web-Schalter: nur im Assistenten am Display.
+        extra_display: 'display.html#hintergrund', extra_launcher: 'display.html#launcher', extra_tacho: 'display.html#tacho',
+        extra_tiermodus: 'tiermodus.html', extra_ladesaeule: 'charging.html#settings',
+        extra_assistenz: 'vehicle-control.html'
     };
 
     function t(k) {

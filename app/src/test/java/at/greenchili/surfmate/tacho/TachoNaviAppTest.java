@@ -212,8 +212,9 @@ public class TachoNaviAppTest {
 
     @Test
     public void webUnterAutoNutztPaketbezogeneFreigabeUndWiderruf() throws IOException {
+        // 0.1.38: Freigabe und „Tacho wieder normal“ liegen unter Apps & Display → Display
         String html = TachoFaehigkeitTest.lies(
-                "app/src/main/assets/web/local/vehicle-control.html");
+                "app/src/main/assets/web/local/display.html");
         String js = TachoFaehigkeitTest.lies(
                 "app/src/main/assets/web/shared/tacho-appwahl.js");
         String api = TachoFaehigkeitTest.lies(

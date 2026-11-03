@@ -348,7 +348,14 @@
     "mic_not_available": "De microfoon is niet beschikbaar",
     "cabin_audio_connection_failed": "Verbinding met het geluid in de cabine is mislukt",
     "cabin_audio_start_failed": "Het geluid in de cabine kon niet worden gestart",
-    "cabin_audio_playback_failed": "Afspelen van het geluid in de cabine is mislukt"
+    "cabin_audio_playback_failed": "Afspelen van het geluid in de cabine is mislukt",
+    "notaus_titel": "Noodstop",
+    "notaus_hilfe": "Zet spreken, meeluisteren en teksten in de auto meteen uit. Weer aanzetten kan alleen op het scherm in de auto.",
+    "notaus_knopf": "Alles nu uitzetten",
+    "notaus_frage": "Spreken, meeluisteren en teksten in de auto nu uitzetten?",
+    "notaus_ja": "Uitzetten",
+    "notaus_ok": "Uitgezet.",
+    "notaus_fehler": "Dat is niet gelukt. Probeer het nog eens."
   },
   "remote_dev": {
     "page_title": "Scherm op afstand",
@@ -1191,7 +1198,10 @@
     "saeule_ungueltig": "Vul een getal groter dan 0 in",
     "saeule_gespeichert": "Opgeslagen",
     "saeule_fehler": "Opslaan mislukt",
-    "laut_saeule_kurz": "Paal {kwh} kWh"
+    "laut_saeule_kurz": "Paal {kwh} kWh",
+    "kurve_titel": "Zo snel laadt je auto",
+    "kurve_leer": "Nog te weinig laadbeurten. Na een paar snellaadbeurten zie je hier hoe snel je auto laadt bij elk accuniveau.",
+    "kurve_anzahl": "Uit {n} laadbeurten."
   },
   "trip": {
     "tab_trips": "Ritten",
@@ -1297,7 +1307,8 @@
       "days_14": "14 dagen",
       "days_30": "30 dagen",
       "custom": "Eigen periode",
-      "select_date": "Kies een dag"
+      "select_date": "Kies een dag",
+      "heute": "Vandaag"
     },
     "daterange": {
       "from": "Van",
@@ -1574,7 +1585,9 @@
       "kurz": "Route ontbreekt",
       "fehlt": "Het routebestand van deze rit ontbreekt sinds {datum}, bijv. omdat de opslag ontbreekt of is vervangen. Kaart en curves ontbreken; de waarden van de rit blijven.",
       "speicher": "De route van deze rit is op {datum} verwijderd om opslag vrij te maken. Kaart en curves ontbreken; de waarden van de rit blijven."
-    }
+    },
+    "schalter_an": "Ritten opnemen aanzetten",
+    "schalter_aus": "Ritten opnemen: aan – tik om uit te zetten"
   },
   "automation": {
     "mode_label": "Hoe het draait",
@@ -1791,7 +1804,15 @@
     "position_missing": "ontbreekt",
     "positions_mine": "Mijn opgeslagen posities",
     "positions_from_car": "In de auto opgeslagen",
-    "value_missing": "{value} (ontbreekt)"
+    "value_missing": "{value} (ontbreekt)",
+    "audio_stop": "Stop",
+    "audio_stop_failed": "Stoppen is niet gelukt",
+    "category_charging": "Laden",
+    "wd_wenn": "Als",
+    "wd_dann": "Dan",
+    "schalter_an": "Aan",
+    "schalter_aus": "Uit",
+    "schalter_hilfe": "Tik om de regel aan of uit te zetten."
   },
   "community": {
     "tab_community": "Community",
@@ -2935,7 +2956,14 @@
     "cluster_app_park": "Alleen mogelijk in P.", "cluster_app_not_approved": "Deze app is nog niet vrijgegeven.",
     "cluster_app_uninstalled": "De app is niet meer geïnstalleerd of startbaar.", "cluster_app_invalid": "Deze app kan niet worden gekozen.",
     "cluster_app_probe_needed": "Test deze app eerst in P.", "cluster_app_unavailable": "Veilige projectie is op deze auto niet bevestigd.", "cluster_app_dilink5_blocked": "DiLink 5 blijft geblokkeerd totdat in de auto de voorrang van de linker- en rechtercamera, het herstel van pakket en geometrie en een veilige foutterugval zijn aangetoond.",
-    "cluster_app_failed": "De app kon niet op het bestuurdersdisplay worden gestart.", "cluster_app_watch": "Controleer nu snelheid, waarschuwingslampjes en terugkeer naar de tellers."
+    "cluster_app_failed": "De app kon niet op het bestuurdersdisplay worden gestart.", "cluster_app_watch": "Controleer nu snelheid, waarschuwingslampjes en terugkeer naar de tellers.",
+    "kacheln_favoriten": "Favorieten",
+    "kacheln_kategorien": "Categorieën",
+    "kacheln_fav_leer": "Tik op de ster van een tegel, dan staat hij hier bovenaan.",
+    "kacheln_stern_an": "Aan favorieten toevoegen",
+    "kacheln_stern_aus": "Uit favorieten verwijderen",
+    "ansicht_kacheln": "Tegels",
+    "ansicht_auto": "Auto tonen"
   },
   "performance": {
     "tab_battery": "Accu",
@@ -3122,7 +3150,9 @@
     "soc_history_will_build": "De geschiedenis groeit na verloop van tijd",
     "page_header_short": "Prestaties",
     "unit_device": "apparaat",
-    "unit_threads": "threads"
+    "unit_threads": "threads",
+    "data_usage_reset": "Geschiedenis wissen",
+    "data_usage_reset_confirm": "Het gemeten dataverbruik wissen? Het meten gaat daarna door."
   },
   "update": {
     "check_for_updates": "Zoeken naar updates",
@@ -4917,9 +4947,9 @@
     "pill_guard_off": "Bewaker uit",
     "net_mobile": "Mobiele data",
     "net_none": "Geen netwerk",
-    "pill_tail_on": "Tailnet · verbonden",
-    "pill_tail_wait": "Tailnet · verbroken",
-    "pill_tail_off": "Tailnet uit",
+    "pill_tail_on": "Toegang op afstand · verbonden",
+    "pill_tail_wait": "Toegang op afstand · verbroken",
+    "pill_tail_off": "Toegang op afstand uit",
     "sec_start": "Start",
     "page_overview": "Overzicht",
     "sec_drive": "Rijden",
@@ -4935,6 +4965,7 @@
     "sec_car": "Auto",
     "page_control": "Bediening",
     "page_apps": "Apps naast elkaar",
+    "page_launcher": "Launcher instellen",
     "page_seats": "Stoelen",
     "page_rules": "Regels",
     "page_keys": "Knoppen",
@@ -4957,7 +4988,49 @@
     "page_orte": "Plaatsen",
     "page_ladeplan": "Thuis laden",
     "sec_hilfe": "Hulp",
-    "page_fehler": "Probleem melden"
+    "page_fehler": "Probleem melden",
+    "sec_steuerung": "Bediening",
+    "sec_kameras": "Camera's & bewaking",
+    "sec_fahrten": "Ritten & laden",
+    "sec_automationen": "Regels",
+    "sec_apps": "Apps & scherm",
+    "sec_einstellungen": "Instellingen",
+    "kurz_start": "Start",
+    "kurz_steuerung": "Bedienen",
+    "kurz_kameras": "Bewaking",
+    "kurz_fahrten": "Ritten",
+    "kurz_automationen": "Regels",
+    "kurz_apps": "Apps",
+    "kurz_einstellungen": "Opties",
+    "page_ask": "Vraag Panoptes",
+    "page_befehle": "Opdrachten",
+    "page_durchsage": "Omroepen",
+    "page_recording_quality": "Opnamekwaliteit",
+    "page_laden_unterwegs": "Onderweg",
+    "page_wenn_dann": "Als-dan-regels",
+    "page_meldungen_start": "Overzicht",
+    "page_meldungen_verlauf": "Geschiedenis",
+    "page_dateien": "Bestanden",
+    "page_bildschirm": "Scherm vanaf je telefoon",
+    "page_einstellungen_alle": "Alle instellingen",
+    "page_hotspot": "Hotspot & wifi",
+    "page_byd_konto": "BYD-account",
+    "page_routenplaner_fremd": "Routeplanner (extern)",
+    "page_smarthome": "Slim huis",
+    "page_heimnetz": "Thuisnetwerk",
+    "page_geraet": "Toestand van het apparaat",
+    "tab_waechter": "Bewaking",
+    "tab_meldungen": "Meldingen",
+    "tab_verbindungen": "Verbindingen",
+    "tab_hilfe": "Hulp & info",
+    "pill_fern": "Toegang op afstand",
+    "suche_label": "Instellingen doorzoeken",
+    "suche_platzhalter": "Zoeken, bijv. wallbox, hotspot, updates …",
+    "suche_leer": "Niets gevonden. Probeer een ander woord.",
+    "suche_treffer": "{n} resultaten",
+    "suche_hier": "Op deze pagina",
+    "suche_seite": "Eigen pagina",
+    "page_display": "Scherm"
   },
   "navi": {
     "rate": "Te veel verzoeken – wacht even 2 minuten.",
@@ -5120,7 +5193,19 @@
     "fps_throttle": "Panoptes remt zelf af, omdat de camera de snelheid niet laat instellen.",
     "trigger_unset": "Nog niet gekozen wanneer hij moet opnemen – tot dan alleen bij een schok.",
     "fahrt_title": "Tijdens het rijden",
-    "fahrt_lead": "Na hard remmen of een stoot slaat Panoptes een korte clip op. Verder wordt niets opgeslagen."
+    "fahrt_lead": "Na hard remmen of een stoot slaat Panoptes een korte clip op. Verder wordt niets opgeslagen.",
+    "zahl_heute": "Opnames vandaag",
+    "zahl_gesamt": "Bewakingsopnames bewaard",
+    "zahl_frei": "Opslag vrij",
+    "letzte_titel": "Laatste gebeurtenissen",
+    "letzte_leer": "Nog geen bewakingsopnames.",
+    "wann_titel": "Wanneer moet de bewaking opnemen?",
+    "erweitert": "Meer instellingen",
+    "schalter_an": "Bewaking aanzetten",
+    "schalter_aus": "Bewaking uitzetten",
+    "schalter_fehler": "Dat is niet gelukt. Probeer het nog eens.",
+    "schalter_ist_an": "Bewaking staat aan.",
+    "schalter_ist_aus": "Bewaking staat uit."
   },
   "apps": {
     "title": "Apps naast elkaar",
@@ -5393,6 +5478,8 @@
     "fremd_recht_kamera": "Bewakingsopnames en voorbeeldbeelden bekijken",
     "fremd_wort_standbild": "Stilstaand beeld bij gebeurtenis",
     "fremd_recht_standbild": "Eén foto als de bewaking iets opmerkt. Geen video.",
+    "recht_wort_launcher": "Launcher",
+    "recht_info_launcher": "Startscherm in de auto instellen (alleen de indeling, geen opdrachten aan de auto)",
     "fremd_kamera_confirm": "Opnames kunnen voorbijgangers tonen. Dit apparaat mag dan bewakingsopnames en voorbeeldbeelden bekijken. Aanzetten?",
     "fremd_standbild_confirm": "Foto's kunnen voorbijgangers tonen. Dit apparaat mag dan bij elke bewakingsgebeurtenis één foto ophalen – geen video, niets ouder dan 15 minuten. Aanzetten?",
     "handy_wort_wallbox": "Wallbox",
@@ -5448,7 +5535,18 @@
     "handy_ereignisclip_confirm": "Ongelukclips kunnen betrokkenen en voorbijgangers tonen. Deze telefoon mag dan een clip laden als je daar op „Op telefoon opslaan” tikt – nooit vanzelf, nooit naar een server. Elke download wordt in de auto vastgelegd. Inschakelen?",
     "req_update": "Mag Panoptes bijwerken (alleen geparkeerd; later te wijzigen)",
     "handy_wallbox_confirm": "Deze telefoon mag dan overal het laden starten en stoppen en de laadstroom wijzigen – alleen bij de vrijgegeven laadpaal, nooit tijdens het rijden. Je krijgt bij elke wijziging een Telegram-bericht. Inschakelen?",
-    "req_wallbox": "Ook de laadpaal bedienen (laden starten/stoppen, laadstroom; later te wijzigen)"
+    "req_wallbox": "Ook de laadpaal bedienen (laden starten/stoppen, laadstroom; later te wijzigen)",
+    "zugriffe_knopf": "Wie heeft het afgelopen uur toegang gehad?",
+    "zugriffe_fehler": "Alleen op het scherm in de auto of na aanmelden.",
+    "zugriffe_leer": "Geen toegang in het afgelopen uur.",
+    "zugriffe_lokal": "Dit scherm en aangemelde browsers",
+    "zugriffe_web": "Telefoon-app in de browser ({id})",
+    "zugriffe_geraet": "Gekoppeld apparaat ({id})",
+    "zugriffe_zeile": "{wer}: {n} verzoeken",
+    "lnc_open_hint": "„Openen” opent de launcher op het scherm in de auto.",
+    "lnc_opened": "De launcher is nu open op het scherm in de auto.",
+    "lnc_open_fail": "De launcher kon niet worden geopend op het scherm in de auto. Tik hem daar zelf één keer aan.",
+    "lnc_ohne_recht": "Hiervoor heeft je telefoon het recht „Launcher” nodig. Zet het aan op het scherm in de auto onder Gekoppelde apparaten."
   },
   "guardLegal": {
     "trigger": {
@@ -5669,7 +5767,7 @@
         "fahren": "Rijden", "fahren_help": "Navigatie, bereik, ritten en laden eerst.",
         "fahrzeug": "Auto", "fahrzeug_help": "Autostatus en snelkoppelingen staan centraal.",
         "kompakt": "Compact", "kompakt_help": "Alleen de belangrijkste waarden en snelkoppelingen in één oogopslag.",
-        "cockpit": "Cockpit", "cockpit_help": "Een dicht tegelcockpit met auto, bereik en veilige snelkoppelingen."
+        "cockpit": "Tegels", "cockpit_help": "Een compacte tegelweergave met auto, bereik en veilige snelkoppelingen."
       },
       "launcherVideo": {
         "title": "Launcher: video-achtergrond",
@@ -5925,7 +6023,14 @@
       "extra_gewohnheiten": "Gewoonten onthouden",
       "extra_overdrive": "Overnemen uit Overdrive",
       "strompreis": "Stroomprijs thuis",
-      "extra_handy": "Telefoon verbinden"
+      "extra_handy": "Telefoon verbinden",
+      "extra_display": "Achtergrondafbeelding en schermvergrendeling",
+      "extra_launcher": "Panoptes-launcher",
+      "extra_tacho": "Wat toont het dashboard?",
+      "extra_abschaltbericht": "Bericht bij het parkeren",
+      "extra_ladesaeule": "Laadpaal herkennen",
+      "extra_tiermodus": "Huisdiermodus",
+      "extra_assistenz": "Rijhulpsystemen"
     },
     "hinweis": {
       "projektion_unbekannt": {
@@ -5985,7 +6090,18 @@
       "kein_platz": "te weinig ruimte",
       "abgebrochen": "geannuleerd"
     },
-    "fortgeschritten": "Voor gevorderden"
+    "fortgeschritten": "Voor gevorderden",
+    "neu": {
+      "ja": "Ja",
+      "nein": "Nee",
+      "extra_display_text": "Je kunt een eigen afbeelding als achtergrond van het scherm in de auto zetten. Je kunt het scherm ook met een pincode vergrendelen, bijvoorbeeld voor de garage.",
+      "extra_launcher_text": "De Panoptes-launcher is een eigen startscherm met klimaat, apps en updates. Hij draait naast het BYD-startscherm. Je kunt hem altijd weer verwijderen.",
+      "extra_tacho_text": "Je auto kan meer tonen in het dashboard: een Panoptes-ontwerp, de navigatie of een app die je toestaat. Snelheid en waarschuwingslampjes blijven altijd zichtbaar. „Dashboard weer normaal” kan altijd.",
+      "extra_abschaltbericht_text": "Als je de auto parkeert, stuurt Panoptes je een kort Telegram-bericht: rit, accu, actieradius, bewaking en of de auto op slot is. Zonder locatie. Werkt alleen als Telegram is ingesteld.",
+      "extra_ladesaeule_text": "Na het laden vraagt Panoptes één keer aan de Panoptes-server bij welke laadpaal je was. Daarvoor gaat je ruwe positie naar de server, nooit op privéplekken. Zo kloppen prijs en naam van de paal.",
+      "extra_tiermodus_text": "De huisdiermodus houdt de auto aangenaam warm of koel voor je dier en laat groot op het scherm zien dat alles in orde is. Je zet hem zelf aan als je hem nodig hebt.",
+      "extra_assistenz_text": "Met Panoptes kun je de rijhulpsystemen van je auto aan- en uitzetten, ook in regels. De eerste keer dat je er een uitzet, vraagt Panoptes het één keer. Jij beslist en bent zelf verantwoordelijk. Aanzetten gaat altijd zonder vraag."
+    }
   },
   "laden": {
     "saeule": {
@@ -6822,6 +6938,56 @@
     "hinweis_ok": "Begrepen",
     "hinweis_spaeter": "Later"
   },
+  "launcherlayout": {
+    "titel": "Launcher instellen",
+    "lead": "Zo ziet het startscherm in de auto eruit. Tik op een tegel en dan op een vrij vak, of sleep hem. Elke wijziging wordt meteen opgeslagen en is na een paar seconden in de auto te zien.",
+    "seite": "Pagina {n}",
+    "seite_neu": "+ Pagina",
+    "seite_weg": "Pagina verwijderen",
+    "seite_weg_frage": "Deze pagina met alle tegels verwijderen?",
+    "app_neu": "+ App",
+    "groesse": "Grootte wijzigen",
+    "entfernen": "Verwijderen",
+    "fertig": "Klaar",
+    "verschieben_hinweis": "Tik op een licht vak om de tegel daar te leggen.",
+    "kein_platz": "Op deze pagina is geen plaats meer.",
+    "leiste_titel": "Balk onderaan",
+    "leiste_lead": "De apps onderaan het scherm. Het huisje (terug naar het BYD-startscherm) is er altijd.",
+    "leiste_neu": "+ App in de balk",
+    "leiste_voll": "De balk is vol (hoogstens 8 apps).",
+    "links": "Naar links",
+    "rechts": "Naar rechts",
+    "hintergrund_titel": "Achtergrond",
+    "hg_panoptes": "Panoptes",
+    "hg_cockpit": "Donker",
+    "hg_bild": "Eigen foto",
+    "hg_video": "Eigen video",
+    "hg_hinweis": "Eigen foto en video komen uit „Bestanden”. Een video speelt alleen in P.",
+    "anzeige_titel": "Weergave",
+    "neben": "Apps naast de launcher openen",
+    "neben_info": "De app opent rechts, de launcher blijft links zichtbaar.",
+    "klima": "Klimaat onderaan tonen",
+    "status": "Bovenste regel met de tijd tonen",
+    "reiter": "Tabbladregel tonen",
+    "fahrzeug3d": "Voertuig in 3D tonen",
+    "standard_knopf": "Terug naar standaard",
+    "standard_frage": "Alles terugzetten naar de kant-en-klare standaardindeling?",
+    "standard_aktiv": "De standaardindeling is in gebruik.",
+    "gespeichert": "Opgeslagen. Na een paar seconden in de auto te zien.",
+    "speichert": "Wordt opgeslagen …",
+    "neuer": "In de auto is net iets gewijzigd. U ziet nu de nieuwste stand.",
+    "fehler": "Kon niet worden opgeslagen. Probeer het opnieuw.",
+    "laden_fehler": "De indeling kon niet worden geladen.",
+    "recht_fehlt": "Dit apparaat mag de launcher niet instellen. Zet het aan in Panoptes onder Gekoppelde apparaten.",
+    "bereinigt": "{n} items pasten niet en zijn weggelaten.",
+    "ordner": "Map",
+    "k_fahrzeug": "Voertuig",
+    "k_akku": "Accu",
+    "k_navi": "Navigatie",
+    "k_musik": "Muziek",
+    "k_waechter": "Bewaker",
+    "k_uhr": "Klok"
+  },
   "dateien": {
     "titel": "Bestanden",
     "hochladen_titel": "Bestand in de auto zetten",
@@ -6924,6 +7090,14 @@
     "ws_loeschen_frage": "“{name}” op {wo} verwijderen? Dit kan niet ongedaan worden gemaakt.",
     "ws_oeffnen": "Openen",
     "ws_sd": "SD-kaart",
-    "ws_usb": "USB-stick"
+    "ws_usb": "USB-stick",
+    "sprung_tacho": "Dashboard",
+    "sprung_hintergrund": "Achtergrond en vergrendeling",
+    "sprung_launcher": "Launcher",
+    "launcher_einrichten": "Launcher instellen",
+    "launcher_einrichten_hilfe": "Tegels en apps op het startscherm van de launcher schikken.",
+    "link_titel": "Scherm: dashboard, achtergrond, vergrendeling, launcher",
+    "link_hilfe": "Wat het dashboard toont, de achtergrondafbeelding, de schermvergrendeling met pincode en de Panoptes-launcher hebben een eigen pagina.",
+    "link_knopf": "Scherm openen"
   }
 }

@@ -510,6 +510,28 @@
 .automation-form-mode-select {
     min-width: 180px;
 }
+/* 0.1.38 (REGEL 50+): Regel als „Wenn … / Dann …“ und ein großer Schalter statt Auswahlliste */
+#automationList .wd-zeile { display: flex; align-items: baseline; margin-top: 6px; line-height: 1.45; }
+#automationList .wd-wort { flex: 0 0 auto; min-width: 54px; margin-right: 8px; font-size: 15px; color: var(--brand-secondary, var(--text-primary)); }
+#automationList .wd-text { min-width: 0; overflow-wrap: anywhere; }
+#automationList .status-text { display: none; }
+.automation-schalter {
+    min-height: 48px;
+    min-width: 132px;
+    padding: 0 18px;
+    border-radius: 12px;
+    border: 2px solid var(--border-default);
+    background: var(--bg-elevated);
+    color: var(--text-secondary);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.automation-schalter[aria-pressed="true"] {
+    background: var(--status-success);
+    border-color: transparent;
+    color: #0b1a00;
+}
 @media (max-width: 420px) {
     #automationList .body {
         align-items: flex-start;
