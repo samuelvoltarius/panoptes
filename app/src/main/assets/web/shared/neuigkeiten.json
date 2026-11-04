@@ -242,6 +242,35 @@
         "Na een eenmalige melding mogen apps op het dashboard ook tijdens het rijden draaien. Muziek-apps zijn al toegestaan.",
         "De Panoptes-launcher toont je auto nu van voren."
       ]
+    },
+    {
+      "version": "0.1.38.2",
+      "versionCode": 66,
+      "de": [
+        "Telegram ist einfacher: Schreib dem Bot irgendetwas, dann kommt ein Menü mit großen Knöpfen. Befehle musst du nicht mehr abtippen.",
+        "Ein neues Update meldet Telegram mit dem Knopf „Jetzt installieren“, es fragt aber vorher noch einmal nach. Das gilt für Panoptes und den Panoptes Launcher.",
+        "Auch vom Handy oder Cockpit aus kannst du aktualisieren, aber nur wenn du es bei der Kopplung erlaubst und das Auto steht."
+      ],
+      "en": [
+        "Telegram is simpler: write anything to the bot and you get a menu with big buttons. You no longer need to type commands.",
+        "Telegram announces a new update with an “Install now” button and asks once more first. This works for Panoptes and the Panoptes launcher.",
+        "You can also update from your phone or cockpit, but only if you allow it when pairing and the car is parked."
+      ],
+      "fr": [
+        "Telegram est plus simple : écris n’importe quoi au bot et un menu avec de grands boutons apparaît. Plus besoin de taper des commandes.",
+        "Telegram annonce une nouvelle mise à jour avec le bouton « Installer maintenant » et redemande avant. Cela vaut pour Panoptes et le launcher Panoptes.",
+        "Tu peux aussi mettre à jour depuis le téléphone ou le cockpit, seulement si tu l’autorises lors du jumelage et si la voiture est garée."
+      ],
+      "it": [
+        "Telegram è più semplice: scrivi qualsiasi cosa al bot e compare un menu con grandi pulsanti. Non devi più digitare comandi.",
+        "Telegram annuncia un nuovo aggiornamento con il pulsante «Installa ora» e chiede ancora una volta prima. Vale per Panoptes e il launcher Panoptes.",
+        "Puoi aggiornare anche dal telefono o dal cockpit, solo se lo permetti nell’abbinamento e l’auto è parcheggiata."
+      ],
+      "nl": [
+        "Telegram is eenvoudiger: stuur de bot iets en je krijgt een menu met grote knoppen. Je hoeft geen commando’s meer te typen.",
+        "Telegram meldt een nieuwe update met de knop „Nu installeren” en vraagt het eerst nog een keer. Dat geldt voor Panoptes en de Panoptes-launcher.",
+        "Je kunt ook bijwerken vanaf je telefoon of cockpit, alleen als je dat bij het koppelen toestaat en de auto geparkeerd staat."
+      ]
     }
   ]
 }

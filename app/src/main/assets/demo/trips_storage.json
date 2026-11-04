@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "storage": {
+    "storageType": "INTERNAL",
+    "storageTypeActive": "INTERNAL",
+    "limitMb": 2048,
+    "maxLimitMb": 20480,
+    "maxLimitMbInternal": 20480,
+    "maxLimitMbSdCard": 20480,
+    "maxLimitMbUsb": 20480,
+    "effectiveLimitMb": 2048,
+    "usedMb": 38.4,
+    "usedUnit": "MB",
+    "sdCardAvailable": false,
+    "usbAvailable": false,
+    "tripsCount": 8,
+    "storagePath": "/storage/emulated/0/Panoptes/Trips",
+    "storagePathAnzeige": "Panoptes/Trips"
+  }
+}

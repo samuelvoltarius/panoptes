@@ -61,7 +61,8 @@ public final class ExternGuard {
             // Wächter-Aufnahmen fürs Cockpit (0.1.9): Liste + Tage + Zahlen, NUR lesen
             "/api/recordings",
             "/api/recordings/dates",
-            "/api/recordings/stats"
+            "/api/recordings/stats",
+            "/api/demo"   // 0.1.38.2 Demo-Profil: nur ob das Band „Musterdaten“ gezeigt wird
     )));
 
     /** 0.1.30 Kern Sicherheit: ein Standbild je Wächter-Ereignis (nur JPEG, nie Clip). */
@@ -177,6 +178,18 @@ public final class ExternGuard {
      */
     public static final String LAUNCHER_STAND_PFAD = "/api/appupdate/launcher";
 
+    /**
+     * 0.1.38.2 Updates von außen (UPDATE_API_CLIENTS.md): Stand lesen und Panoptes bzw. Launcher aktualisieren, nur
+     * Kopplungen der Art {@code handy} oder {@code cockpit}. Lesen auch ohne Recht ({@code darf:false}); Starten prüft
+     * {@link AppUpdateApiHandler} (Recht {@code update}, Bestätigung, Regeln des Updaters). Home Assistant, Dienste nie.
+     */
+    static boolean updateErlaubt(String method, String pathOnly, String kopplungsArt) {
+        if (!"handy".equals(kopplungsArt) && !"cockpit".equals(kopplungsArt)) return false;
+        String p = normal(pathOnly);
+        if (p == null || method == null || !AppUpdateApiHandler.FERN_PFAD.equals(p)) return false;
+        return "GET".equals(method) || "POST".equals(method);
+    }
+
     static boolean launcherErlaubt(String method, String pathOnly, String kopplungsArt) {
         if (!"handy".equals(kopplungsArt) && !"cockpit".equals(kopplungsArt)) return false;
         String p = normal(pathOnly);
@@ -200,6 +213,7 @@ public final class ExternGuard {
         if (cockpitErlaubt(method, pathOnly, kopplungsArt)) return false;
         if (tachoErlaubt(method, pathOnly, kopplungsArt)) return false;
         if (launcherErlaubt(method, pathOnly, kopplungsArt)) return false;
+        if (updateErlaubt(method, pathOnly, kopplungsArt)) return false;
         return !handyErlaubt(method, pathOnly, kopplungsArt);
     }
 

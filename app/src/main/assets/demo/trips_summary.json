@@ -1,0 +1,21 @@
+{
+  "success": true,
+  "summary": [
+    {
+      "year": 2026,
+      "weekNumber": 42,
+      "tripCount": 8,
+      "totalDistanceKm": 343.2,
+      "totalDurationSeconds": 17650,
+      "avgEfficiency": 0.3478,
+      "totalEnergyKwh": 53.32,
+      "totalCost": 15.4,
+      "avgEnergyPerKm": 0.1554,
+      "avgAnticipation": 78,
+      "avgSmoothness": 76,
+      "avgSpeedDiscipline": 79,
+      "avgEfficiencyScore": 76,
+      "avgConsistency": 76
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "success": true,
+  "apps": [
+    {
+      "package": "com.beispiel.fotos",
+      "label": "Fotos",
+      "deaktiviert": false
+    },
+    {
+      "package": "com.beispiel.hoerbuecher",
+      "label": "Hörbücher",
+      "deaktiviert": false
+    },
+    {
+      "package": "com.beispiel.kalender",
+      "label": "Kalender",
+      "deaktiviert": false
+    },
+    {
+      "package": "com.beispiel.musik",
+      "label": "Musik",
+      "deaktiviert": false
+    },
+    {
+      "package": "com.beispiel.notizen",
+      "label": "Notizen",
+      "deaktiviert": true
+    },
+    {
+      "package": "com.beispiel.podcasts",
+      "label": "Podcasts",
+      "deaktiviert": false
+    },
+    {
+      "package": "com.beispiel.rechner",
+      "label": "Rechner",
+      "deaktiviert": false
+    },
+    {
+      "package": "com.beispiel.wetter",
+      "label": "Wetter",
+      "deaktiviert": false
+    }
+  ]
+}

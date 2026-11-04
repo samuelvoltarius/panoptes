@@ -43,6 +43,10 @@ public class CommandRouter {
         alias("/sicherung", "/backup");
         alias("/camping", "/camp", "/zelt");
         alias("/tier", "/haustier", "/hund", "/pet", "/dog");
+        // 0.1.38.2 Hauptmenü und Updates (Knöpfe statt Abtippen)
+        alias("/menue", "/menü", "/menu", "/m");
+        alias("/mehr", "/more");
+        alias("/updates", "/aktualisieren");
 
         PERMISSION.put("/kamera", UnifiedTelegramConfig.REMOTE_CAMERA);
         PERMISSION.put("/aufnahmen", UnifiedTelegramConfig.REMOTE_CAMERA);
@@ -76,6 +80,7 @@ public class CommandRouter {
         handlers.add(new BackupCommandHandler());
         handlers.add(new CampingCommandHandler());
         handlers.add(new TierCommandHandler());
+        handlers.add(new UpdateCommandHandler());
     }
 
     /**
@@ -102,6 +107,11 @@ public class CommandRouter {
     /** Ist der Befehl laut Einstellungen erlaubt? Package-sichtbar für Tests. */
     static String requiredPermission(String canonical) {
         return PERMISSION.get(canonical);
+    }
+
+    /** 0.1.38.2: Tipp auf einen Update-Knopf ({@code up:…}); der Aufrufer hat Absender und Chat schon geprüft. */
+    public void updateKnopf(long chatId, String data) {
+        UpdateCommandHandler.knopf(chatId, data, context);
     }
 
     /**

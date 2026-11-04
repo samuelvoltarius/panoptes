@@ -1,0 +1,28 @@
+{
+  "tarife": [
+    {
+      "tarif_id": 1042,
+      "anbieter": "Stadtwerk Muster",
+      "tarif": "Ladekarte Standard",
+      "land": "AT"
+    },
+    {
+      "tarif_id": 1043,
+      "anbieter": "Stadtwerk Muster",
+      "tarif": "Ladekarte Vielfahrer",
+      "land": "AT"
+    },
+    {
+      "tarif_id": 2210,
+      "anbieter": "Energie Beispiel",
+      "tarif": "Fahrstrom Flex",
+      "land": "AT"
+    },
+    {
+      "tarif_id": 2215,
+      "anbieter": "Energie Beispiel",
+      "tarif": "Fahrstrom Reise",
+      "land": "EU"
+    }
+  ]
+}

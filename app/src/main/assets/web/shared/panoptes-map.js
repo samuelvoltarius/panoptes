@@ -149,6 +149,40 @@
         };
     }
 
+    // 0.1.38.2 Demo-Profil (DemoProfil.java): vereinfachte Musterkarte Wien aus dem APK, ohne Netz.
+    function demoStyle() {
+        var daten = new URL(VENDOR + '../demo-karte-wien.json', location.href).href;
+        var breite = function (a, b) { return ['interpolate', ['exponential', 1.6], ['zoom'], 10, a, 16, b]; };
+        return {
+            version: 8,
+            sources: { demo: { type: 'geojson', data: daten, attribution: 'Musterkarte (vereinfacht)' } },
+            layers: [
+                { id: 'background', type: 'background', paint: { 'background-color': '#0b2236' } },
+                { id: 'demo-kern', type: 'fill', source: 'demo', filter: ['==', ['get', 'art'], 'kern'],
+                  paint: { 'fill-color': '#12324a', 'fill-opacity': 0.9 } },
+                { id: 'demo-park', type: 'fill', source: 'demo', filter: ['==', ['get', 'art'], 'park'],
+                  paint: { 'fill-color': '#173f35', 'fill-opacity': 0.85 } },
+                { id: 'demo-strom', type: 'line', source: 'demo', filter: ['==', ['get', 'art'], 'strom'],
+                  layout: { 'line-cap': 'round', 'line-join': 'round' },
+                  paint: { 'line-color': '#1d5a86', 'line-width': breite(4, 90) } },
+                { id: 'demo-kanal', type: 'line', source: 'demo', filter: ['==', ['get', 'art'], 'kanal'],
+                  layout: { 'line-cap': 'round', 'line-join': 'round' },
+                  paint: { 'line-color': '#1d5a86', 'line-width': breite(1.5, 22) } },
+                { id: 'demo-neben', type: 'line', source: 'demo', filter: ['==', ['get', 'art'], 'neben'],
+                  layout: { 'line-cap': 'round', 'line-join': 'round' },
+                  paint: { 'line-color': '#2b4d66', 'line-width': breite(0.6, 7) } },
+                { id: 'demo-haupt', type: 'line', source: 'demo', filter: ['==', ['get', 'art'], 'haupt'],
+                  layout: { 'line-cap': 'round', 'line-join': 'round' },
+                  paint: { 'line-color': '#3f6a87', 'line-width': breite(1.2, 14) } }
+            ]
+        };
+    }
+
+    function demoAktiv() {
+        var D = window.PanoptesDemo;
+        return D && D.stand ? D.stand().then(function (d) { return !!(d && d.aktiv); }) : Promise.resolve(false);
+    }
+
     function quelle() {
         var KQ = window.PanoptesKartenquelle;
         return KQ ? KQ.get() : 'keine';
@@ -526,7 +560,7 @@
         }
 
         var q = 'keine';
-        quelleBereit().then(function (wert) {
+        demoAktiv().then(function (demo) { return demo ? 'demo' : quelleBereit(); }).then(function (wert) {
             q = wert;
             if (q === 'keine') {
                 // Nichts laden, nichts senden – nur der Hinweis mit Knopf zum Wählen.
@@ -540,7 +574,9 @@
             return q === 'community' ? checkOwnTiles() : { ok: true, style: null };
         }).then(function (own) {
             if (own === 'keine') return;
-            if (q === 'osm') {
+            if (q === 'demo') {
+                build(demoStyle(), 'demo');
+            } else if (q === 'osm') {
                 build(osmStyle(), 'osm');
             } else if (own.ok) {
                 var style = own.style;

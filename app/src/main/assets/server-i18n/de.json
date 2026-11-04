@@ -524,7 +524,7 @@
       "generic": "Mehr dazu steht im Protokoll am Auto."
     },
     "router": {
-      "unknown_command": "🤔 Den Befehl kenne ich nicht. /hilfe zeigt alle.",
+      "unknown_command": "🤔 Den Befehl kenne ich nicht. Tipp unten auf *☰ Menü*, dann siehst du alles.",
       "not_allowed": "🔒 Dieser Befehl ist ausgeschaltet. Du kannst ihn in Panoptes unter *System → Telegram-Meldungen → Fernbefehle* erlauben."
     },
     "daemon_names": {
@@ -551,7 +551,7 @@
       "title": "⚙️ *Dienste*\n\n"
     },
     "url": {
-      "none_running": "🌐 Der Fernzugang ist aus.\nEinschalten kannst du ihn in Panoptes unter *System → Fernzugang* oder hier mit `/dienst tailscale start`.",
+      "none_running": "🌐 Der Fernzugang ist aus.\nEinschalten kannst du ihn in Panoptes unter *System → Fernzugang* oder hier unter *☰ Menü → Mehr → Dienste*.",
       "title": "🌐 *So erreichst du Panoptes*\n\n",
       "resolved_line": "• *{0}:* {1}\n",
       "pending_line": "• *{0}:* _startet gerade, Link kommt gleich_\n",
@@ -576,7 +576,9 @@
       "backup": "/sicherung – Einstellungen als Datei schicken (`/sicherung fahrten` mit Fahrtenbuch)",
       "help": "/hilfe – Diese Liste",
       "some_locked": "🔒 Manche Befehle sind ausgeschaltet. Erlauben kannst du sie in Panoptes unter *System → Telegram-Meldungen*.",
-      "footer": "_Panoptes {0}_"
+      "footer": "_Panoptes {0}_",
+      "menu": "/menue – Alle Knöpfe auf einen Blick",
+      "updates": "/updates – Panoptes und Launcher aktualisieren"
     },
     "parking": {
       "where": {
@@ -642,11 +644,13 @@
       "installed_tunnel_online": "⬆️ *Panoptes ist jetzt auf {0}*\nDer Fernzugang ist wieder da:\n{1}",
       "rolled_back": "↩️ *Update zurückgenommen*\nDie neue Version lief nicht sauber, deshalb ist Panoptes wieder auf {0}. Am Auto ist nichts verloren.",
       "rolled_back_reason": "↩️ *Update zurückgenommen*\nDie neue Version lief nicht sauber, deshalb ist Panoptes wieder auf {0}. Am Auto ist nichts verloren.\nGrund: {1}",
-      "available": "🆕 *Panoptes {0} ist verfügbar*\nInstallieren geht nur bei geparktem Auto, unter *System → App-Updates*.",
-      "available_size": "🆕 *Panoptes {0} ist verfügbar* ({1})\nInstallieren geht nur bei geparktem Auto, unter *System → App-Updates*.",
+      "available": "🆕 *Panoptes {0} ist da*\nZum Installieren auf den Knopf tippen. Ich frage vorher noch einmal nach.",
+      "available_size": "🆕 *Panoptes {0} ist da* ({1})\nZum Installieren auf den Knopf tippen. Ich frage vorher noch einmal nach.",
       "installiert_laeuft": "✅ *Panoptes {0} ist installiert und läuft.*",
       "launcher_verfuegbar": "🆕 *Neue Launcher-Version {0}*\nAktualisieren geht per Knopf in Panoptes, unter *Apps & Display → Display → Launcher*.",
-      "launcher_installiert": "✅ *Launcher {0} ist installiert.*"
+      "launcher_installiert": "✅ *Launcher {0} ist installiert.*",
+      "launcher_available": "🆕 *Neuer Launcher {0} ist da*\nZum Installieren auf den Knopf tippen. Ich frage vorher noch einmal nach.",
+      "launcher_available_size": "🆕 *Neuer Launcher {0} ist da* ({1})\nZum Installieren auf den Knopf tippen. Ich frage vorher noch einmal nach."
     },
     "backup": {
       "restore_unavailable": "ℹ️ *Zurückspielen geht nicht über Telegram.*\nÖffne Panoptes am Auto, dann *System → Sicherung* und wähle die Datei. Das klappt nur am selben Auto.",
@@ -772,7 +776,7 @@
       }
     },
     "welcome": {
-      "paired": "👋 *Hallo, hier ist Panoptes.*\nIch melde mich, wenn am Auto etwas los ist. Was ich kann, steht unter /hilfe."
+      "paired": "👋 *Hallo, hier ist Panoptes.*\nIch melde mich, wenn am Auto etwas los ist. Unten ist jetzt immer der Knopf *☰ Menü*."
     },
     "test": {
       "message": "✅ *Test von Panoptes*\nWenn du das liest, kommen die Meldungen deines Autos hier an."
@@ -926,7 +930,8 @@
       "wallbox": "🔌 Wallbox vom Handy „{0}“ gesteuert: {1}",
       "tiermodus_an": "🐾 Tiermodus eingeschaltet über Handy „{0}“.",
       "tiermodus_aus": "🐾 Tiermodus ausgeschaltet über Handy „{0}“.",
-      "update_gestartet": "⬆️ Update auf {0} gestartet von „{1}“. Panoptes ist ca. 3–8 Minuten weg."
+      "update_gestartet": "⬆️ Update auf {0} gestartet von „{1}“. Panoptes ist ca. 3–8 Minuten weg.",
+      "launcher_update_gestartet": "⬆️ Launcher-Update auf {0} gestartet von „{1}“. Das dauert etwa eine Minute."
     },
     "zurueck": {
       "text": "🚗 Willkommen zurück am Auto. Es stand {0}.",
@@ -965,6 +970,56 @@
     },
     "ereignis": {
       "gesichert": "Panoptes: Ereignis um {0} gesichert (nur im Auto gespeichert)."
+    },
+    "menu": {
+      "title": "🧭 *Was möchtest du tun?*\nTipp einfach auf einen Knopf.",
+      "locked": "🔒 Weitere Knöpfe kannst du in Panoptes unter *System → Telegram-Meldungen → Fernbefehle* einschalten.",
+      "more_title": "⋯ *Mehr*\nTipp einfach auf einen Knopf.",
+      "btn_menu": "☰ Menü",
+      "btn_status": "🚗 Wie geht’s dem Auto?",
+      "btn_guard": "🛡 Wächter",
+      "btn_where": "📍 Wo steht es?",
+      "btn_camera": "📷 Kamerabild",
+      "btn_clips": "🎞 Aufnahmen",
+      "btn_charge": "🔋 Akku",
+      "btn_updates": "⬆️ Updates",
+      "btn_more": "⋯ Mehr",
+      "btn_camping": "⛺ Camping",
+      "btn_tier": "🐾 Tier im Auto",
+      "btn_remote": "🌐 Link zu Panoptes",
+      "btn_services": "⚙️ Dienste",
+      "btn_backup": "💾 Einstellungen sichern",
+      "btn_backup_trips": "💾 Mit Fahrtenbuch",
+      "btn_back": "⬅️ Zurück"
+    },
+    "commands": {
+      "menue": "Menü mit allen Knöpfen",
+      "status": "Wie es dem Auto geht",
+      "updates": "Panoptes und Launcher aktualisieren",
+      "hilfe": "Hilfe"
+    },
+    "updates": {
+      "title": "⬆️ *Updates*",
+      "panoptes_laeuft": "⏳ Panoptes wird gerade aktualisiert.",
+      "panoptes_neu": "🆕 Panoptes: {0} → *{1}* ist da",
+      "panoptes_aktuell": "✅ Panoptes {0} ist aktuell",
+      "launcher_laeuft": "⏳ Der Launcher wird gerade aktualisiert.",
+      "launcher_keiner": "➖ Launcher: auf diesem Auto nicht eingerichtet",
+      "launcher_neu": "🆕 Launcher *{0}* ist da",
+      "launcher_aktuell": "✅ Der Launcher ist aktuell",
+      "btn_panoptes": "⬆️ Panoptes {0} installieren",
+      "btn_launcher": "⬆️ Launcher {0} installieren",
+      "btn_suchen": "🔄 Nach Updates suchen",
+      "btn_jetzt": "⬆️ Jetzt installieren",
+      "btn_ja": "✅ Ja, installieren",
+      "btn_nein": "✖️ Nein",
+      "frage_panoptes": "❓ *Panoptes {0} jetzt installieren?*\nDas dauert etwa 3–8 Minuten. In der Zeit ist der Wächter aus.\nIst das Auto gerade an, installiert Panoptes nach dem Abstellen.",
+      "frage_launcher": "❓ *Launcher {0} jetzt installieren?*\nDas dauert etwa eine Minute. Während der Fahrt geht es nicht.",
+      "frage_mobil": "📶 Das Auto hat gerade kein WLAN. Das Update braucht etwa {0} mobile Daten.",
+      "abgebrochen": "Gut, kein Update.",
+      "nicht_bereit": "⚠️ Panoptes antwortet gerade nicht. Bitte in einer Minute noch einmal versuchen.",
+      "ratenlimit": "Gerade erst nachgesehen. Hier der Stand:",
+      "gestartet": "Das Update läuft."
     }
   },
   "vehicle_control": {
@@ -2589,7 +2644,7 @@
     "laeuft_schon": "Panoptes wird gerade schon aktualisiert.",
     "fertig": "Fertig. Panoptes läuft jetzt mit {1}.",
     "fehler": "Das Update hat nicht geklappt. Panoptes läuft weiter mit der bisherigen Version.",
-    "nicht_erlaubt": "Dieses Gerät darf Panoptes nicht aktualisieren. Einschalten am Auto unter „Gekoppelte Geräte“.",
+    "nicht_erlaubt": "Dieses Gerät darf keine Updates starten. Einschalten am Auto unter „Gekoppelte Geräte“.",
     "faehrt": "Während der Fahrt geht kein Update. Bitte parken und das Auto ausschalten.",
     "nicht_in_p": "Update geht nur, wenn das Auto in P steht und aus ist.",
     "zuendung_an": "Update geht nur, wenn das Auto aus ist. Bitte ausschalten und noch einmal versuchen.",
@@ -2600,7 +2655,15 @@
     "andere_version": "Diese Version ist nicht freigegeben. Freigegeben ist {0}.",
     "bestaetigung_fehlt": "Bitte das Update zuerst bestätigen.",
     "nicht_bereit": "Panoptes startet gerade. Bitte in einer Minute noch einmal versuchen.",
-    "nicht_moeglich": "Das Update geht gerade nicht. Bitte später noch einmal versuchen."
+    "nicht_moeglich": "Das Update geht gerade nicht. Bitte später noch einmal versuchen.",
+    "launcher_bereit": "Neuer Launcher {0} ist da. Das Update dauert etwa eine Minute.",
+    "launcher_kein_update": "Der Launcher ist auf dem neuesten Stand.",
+    "launcher_laeuft": "Der Launcher wird aktualisiert. Das dauert etwa eine Minute.",
+    "launcher_laeuft_schon": "Der Launcher wird gerade schon aktualisiert.",
+    "launcher_fehler": "Das Launcher-Update hat nicht geklappt. Der bisherige Launcher bleibt. Bitte später noch einmal versuchen.",
+    "launcher_mobil_frage": "Das Auto hat gerade kein WLAN. Der Launcher braucht etwa {0} mobile Daten. Nur für diese Version laden?",
+    "launcher_faehrt": "Während der Fahrt geht das nicht. Bitte in P stellen und noch einmal tippen.",
+    "nicht_installiert": "Der Launcher ist auf diesem Auto nicht eingerichtet. Das geht nur am Auto."
   },
   "telegram_login": {
     "geraet_name": "Browser (Telegram)"

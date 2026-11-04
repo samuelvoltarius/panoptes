@@ -33,6 +33,12 @@ public final class FernUpdate {
         void telegram(String version, String geraet);
         File basis();
         long jetzt();
+        /** 0.1.38.2: Stand wie {@code GET /api/appupdate/launcher} oder null (Updater nicht bereit). */
+        default JSONObject launcherStatus() { return null; }
+        /** 0.1.38.2: {@link AppUpdateDienst#launcherInstallieren}: null = gestartet, sonst Grund. */
+        default String launcherInstallieren(int versionCode, boolean mobil) { return "nicht_bereit"; }
+        /** 0.1.38.2: Launcher-Update gestartet (Telegram mit Gerätenamen). */
+        default void telegramLauncher(String version, String geraet) { }
     }
 
     /** Ohne Phase und ohne neue Version so lange noch „läuft“ (Start des Hintergrund-Ablaufs). */
@@ -89,6 +95,8 @@ public final class FernUpdate {
         String grund = laeuft ? null : hindernis(s, darf);   // nach „fehler“ darf man es noch einmal versuchen
         r.put("moeglich", !laeuft && grund == null);
         r.put("grund", grund == null ? JSONObject.NULL : grund);
+        // 0.1.38.2: ohne WLAN geht es nach einer Rückfrage mit Größe ({@code mobil:true} beim Starten)
+        r.put("mobilFrage", UpdateRegel.WARTET_WLAN.equals(grund) && s.optBoolean("mobilFrage", false));
         String ziel = zielVersion();
         String fuerText = zustand != null ? zustand : grund != null ? grund : "bereit";
         r.put("text", text(sprache, fuerText, v != null ? v.optString("version") : null,
@@ -141,6 +149,103 @@ public final class FernUpdate {
         } catch (Throwable ignored) { }
         return new JSONObject().put("ok", true).put("zustand", "laeuft").put("version", version)
                 .put("text", text(sprache, "laeuft", version, null));
+    }
+
+    // ------------------------------------------------------------------ 0.1.38.2 Launcher von außen
+
+    /**
+     * Stand des Panoptes Launchers in einfachen Worten, gleiche Felder wie {@link #stand}. Nur Updates: ist der Launcher
+     * nicht installiert, gibt es von außen nichts zu tun (Einrichten nur am Auto). Kein Vormerken: der Launcher braucht
+     * nicht „Auto aus“, nur „nicht während der Fahrt“ ({@link LauncherRegel}).
+     */
+    public JSONObject launcherStand(String sprache, boolean darf) throws Exception {
+        JSONObject r = new JSONObject().put("ok", true).put("darf", darf);
+        JSONObject s = env.launcherStatus();
+        if (s == null) {
+            return r.put("installiert", JSONObject.NULL).put("neueste", JSONObject.NULL).put("moeglich", false)
+                    .put("grund", "nicht_bereit").put("zustand", JSONObject.NULL).put("mobilFrage", false)
+                    .put("text", text(sprache, "nicht_bereit", null, null));
+        }
+        boolean installiert = !s.isNull("installiert") && s.has("installiert");
+        r.put("installiertVc", installiert ? s.optInt("installiert") : JSONObject.NULL);
+        JSONObject v = s.optJSONObject("verfuegbar");
+        boolean neuer = installiert && v != null && s.optBoolean("neuer", false);
+        r.put("neueste", neuer ? new JSONObject().put("version", v.optString("version"))
+                .put("versionCode", v.optInt("versionCode"))
+                .put("groesseBytes", v.opt("groesseBytes") == null ? JSONObject.NULL : v.opt("groesseBytes"))
+                : JSONObject.NULL);
+        String zustand = !s.isNull("phase") && s.has("phase") ? "laeuft"
+                : !s.isNull("fehler") && s.has("fehler") && neuer ? "fehler" : null;
+        r.put("zustand", zustand == null ? JSONObject.NULL : zustand);
+        String grund = "laeuft".equals(zustand) ? null : launcherHindernis(s, installiert, neuer, darf);
+        boolean frage = LauncherRegel.WARTET_WLAN.equals(grund);
+        r.put("moeglich", !"laeuft".equals(zustand) && (grund == null || frage));
+        r.put("grund", grund == null ? JSONObject.NULL : grund);
+        r.put("mobilFrage", frage);
+        String fall = zustand != null ? "launcher_" + zustand : grund == null || frage ? "launcher_bereit"
+                : launcherFall(grund);
+        r.put("text", text(sprache, fall, neuer ? v.optString("version") : null, null));
+        return r;
+    }
+
+    /**
+     * Launcher-Update starten: nur genau die freigegebene Version, nur nach Bestätigung, nicht während der Fahrt; ohne
+     * WLAN erst nach der Rückfrage mit Größe ({@code mobil:true}). Antwort wie {@link #starten}.
+     */
+    public JSONObject launcherStarten(String version, boolean bestaetigt, boolean mobil, String geraet, String sprache)
+            throws Exception {
+        if (!bestaetigt) return fehler("bestaetigung_fehlt", sprache, null);
+        JSONObject s = env.launcherStatus();
+        if (s == null) return fehler("nicht_bereit", sprache, null);
+        boolean installiert = !s.isNull("installiert") && s.has("installiert");
+        JSONObject v = s.optJSONObject("verfuegbar");
+        boolean neuer = installiert && v != null && s.optBoolean("neuer", false);
+        if (!s.isNull("phase") && s.has("phase")) return fehler("launcher_laeuft_schon", sprache, null);
+        String grund = launcherHindernis(s, installiert, neuer, true);
+        if (grund != null && !LauncherRegel.WARTET_WLAN.equals(grund)) {
+            return fehlerText(grund, launcherFall(grund), sprache, null);
+        }
+        if (version == null || !version.equals(v.optString("version"))) {
+            return fehler("andere_version", sprache, v.optString("version"));
+        }
+        if (LauncherRegel.WARTET_WLAN.equals(grund) && !mobil) {
+            long g = v.optLong("groesseBytes", 0);
+            return new JSONObject().put("ok", false).put("grund", grund).put("mobilFrage", true)
+                    .put("groesseBytes", g > 0 ? g : JSONObject.NULL)
+                    .put("text", text(sprache, "launcher_mobil_frage", UpdateRegel.groesseText(
+                            g > 0 ? g : LAUNCHER_GROESSE_RUECKFALL), null));
+        }
+        String g = env.launcherInstallieren(v.optInt("versionCode"), mobil);
+        if (g != null) {
+            String gr = LauncherRegel.LAEUFT_SCHON.equals(g) ? "launcher_laeuft_schon" : g;
+            return fehlerText(gr, launcherFall(gr), sprache, version);
+        }
+        try {
+            env.telegramLauncher(version, geraet == null || geraet.isEmpty() ? "?" : geraet);
+        } catch (Throwable ignored) { }
+        return new JSONObject().put("ok", true).put("zustand", "laeuft").put("version", version)
+                .put("text", text(sprache, "launcher_laeuft", version, null));
+    }
+
+    /** Text-Fall zu einem Launcher-Grund: Fahrt und Gang klingen anders als beim Panoptes-Update (kein „aus“ nötig). */
+    static String launcherFall(String grund) {
+        if (LauncherRegel.FAEHRT.equals(grund) || LauncherRegel.NICHT_IN_P.equals(grund)) return "launcher_faehrt";
+        if ("kein_update".equals(grund)) return "launcher_kein_update";
+        return grund;
+    }
+
+    /** Ohne bekannte Größe nennt die Rückfrage diese Größe (der Launcher ist klein, aufgerundet). */
+    static final long LAUNCHER_GROESSE_RUECKFALL = 20L * 1024 * 1024;
+
+    /** Warum der Launcher gerade nicht (oder null); {@code wartet_wlan} heißt: nach Rückfrage möglich. */
+    static String launcherHindernis(JSONObject s, boolean installiert, boolean neuer, boolean darf) {
+        if (!installiert) return "nicht_installiert";
+        if (!neuer) return "kein_update";
+        if (!darf) return "nicht_erlaubt";
+        String n = s.isNull("nichtWeil") ? "" : s.optString("nichtWeil", "");
+        if (LauncherRegel.LAEUFT_SCHON.equals(n)) return "launcher_laeuft_schon";
+        if (LauncherRegel.KEIN_LAUNCHER.equals(n)) return "kein_update";
+        return n.isEmpty() ? null : n;
     }
 
     /** Warum gerade nicht (oder null): Recht, Fahrsperre, dann die Regeln des Updaters. */
@@ -216,11 +321,15 @@ public final class FernUpdate {
     }
 
     private JSONObject fehler(String grund, String sprache, String version) throws Exception {
-        return new JSONObject().put("ok", false).put("grund", grund).put("text", text(sprache, grund, version, null));
+        return fehlerText(grund, grund, sprache, version);
+    }
+
+    private static JSONObject fehlerText(String grund, String fall, String sprache, String version) throws Exception {
+        return new JSONObject().put("ok", false).put("grund", grund).put("text", text(sprache, fall, version, null));
     }
 
     /** Ein einfacher Satz je Lage (server-i18n {@code update_fern.*}), Fallback Deutsch. */
-    static String text(String sprache, String fall, String neu, String installiert) {
+    public static String text(String sprache, String fall, String neu, String installiert) {
         String key = "update_fern." + fall;
         String fb = DEUTSCH.get(fall);
         if (fb == null) {
@@ -245,7 +354,7 @@ public final class FernUpdate {
         DEUTSCH.put("laeuft_schon", "Panoptes wird gerade schon aktualisiert.");
         DEUTSCH.put("fertig", "Fertig. Panoptes läuft jetzt mit {1}.");
         DEUTSCH.put("fehler", "Das Update hat nicht geklappt. Panoptes läuft weiter mit der bisherigen Version.");
-        DEUTSCH.put("nicht_erlaubt", "Dieses Gerät darf Panoptes nicht aktualisieren. Einschalten am Auto unter „Gekoppelte Geräte“.");
+        DEUTSCH.put("nicht_erlaubt", "Dieses Gerät darf keine Updates starten. Einschalten am Auto unter „Gekoppelte Geräte“.");
         DEUTSCH.put("faehrt", "Während der Fahrt geht kein Update. Bitte parken und das Auto ausschalten.");
         DEUTSCH.put("nicht_in_p", "Update geht nur, wenn das Auto in P steht und aus ist.");
         DEUTSCH.put("zuendung_an", "Update geht nur, wenn das Auto aus ist. Bitte ausschalten und noch einmal versuchen.");
@@ -257,6 +366,15 @@ public final class FernUpdate {
         DEUTSCH.put("bestaetigung_fehlt", "Bitte das Update zuerst bestätigen.");
         DEUTSCH.put("nicht_bereit", "Panoptes startet gerade. Bitte in einer Minute noch einmal versuchen.");
         DEUTSCH.put("nicht_moeglich", "Das Update geht gerade nicht. Bitte später noch einmal versuchen.");
+        // 0.1.38.2 Launcher
+        DEUTSCH.put("launcher_bereit", "Neuer Launcher {0} ist da. Das Update dauert etwa eine Minute.");
+        DEUTSCH.put("launcher_kein_update", "Der Launcher ist auf dem neuesten Stand.");
+        DEUTSCH.put("launcher_laeuft", "Der Launcher wird aktualisiert. Das dauert etwa eine Minute.");
+        DEUTSCH.put("launcher_laeuft_schon", "Der Launcher wird gerade schon aktualisiert.");
+        DEUTSCH.put("launcher_fehler", "Das Launcher-Update hat nicht geklappt. Der bisherige Launcher bleibt. Bitte später noch einmal versuchen.");
+        DEUTSCH.put("launcher_mobil_frage", "Das Auto hat gerade kein WLAN. Der Launcher braucht etwa {0} mobile Daten. Nur für diese Version laden?");
+        DEUTSCH.put("launcher_faehrt", "Während der Fahrt geht das nicht. Bitte in P stellen und noch einmal tippen.");
+        DEUTSCH.put("nicht_installiert", "Der Launcher ist auf diesem Auto nicht eingerichtet. Das geht nur am Auto.");
     }
 
     // ------------------------------------------------------------------ echte Umgebung
@@ -285,6 +403,24 @@ public final class FernUpdate {
             try {
                 at.greenchili.surfmate.telegram.TelegramNotifier.sendMessage(
                         at.greenchili.surfmate.telegram.TelegramMessages.get("handy.update_gestartet", version, geraet),
+                        "CRITICAL");
+            } catch (Throwable ignored) { }
+        }
+
+        public JSONObject launcherStatus() {
+            AppUpdateDienst d = AppUpdateDienst.get();
+            return d == null ? null : d.launcherStatus();
+        }
+
+        public String launcherInstallieren(int versionCode, boolean mobil) {
+            AppUpdateDienst d = AppUpdateDienst.get();
+            return d == null ? "nicht_bereit" : d.launcherInstallieren(versionCode, mobil);
+        }
+
+        public void telegramLauncher(String version, String geraet) {
+            try {
+                at.greenchili.surfmate.telegram.TelegramNotifier.sendMessage(
+                        at.greenchili.surfmate.telegram.TelegramMessages.get("handy.launcher_update_gestartet", version, geraet),
                         "CRITICAL");
             } catch (Throwable ignored) { }
         }

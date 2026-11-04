@@ -1,0 +1,16 @@
+{
+  "eingerichtet": true,
+  "erreichbar": true,
+  "ladepunkte": [
+    {
+      "id": "demo-wb-1",
+      "art": "wallbox",
+      "titel": "Wallbox Garage (11 kW)",
+      "adapter": "evcc",
+      "verbunden": true,
+      "laedt": false,
+      "leistungW": 0,
+      "modus": "aus"
+    }
+  ]
+}

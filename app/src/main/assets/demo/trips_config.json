@@ -1,0 +1,22 @@
+{
+  "success": true,
+  "config": {
+    "enabled": true,
+    "electricityRate": 0.289,
+    "currency": "€",
+    "distanceUnit": "km",
+    "tankCapacityL": 0.0,
+    "fuelPricePerL": 0.0,
+    "fuelUnit": "L",
+    "nominalKwh": 43.2,
+    "nominalSource": "catalog",
+    "kapazitaetQuelle": "katalog",
+    "nennwertQuelle": "katalog",
+    "bmsKwh": 42.9,
+    "isPhev": false,
+    "lastChargeRate": 0.289,
+    "lastChargeCurrency": "€",
+    "lastChargeTariffLabel": "Zuhause",
+    "lastChargeAt": 1792447800000
+  }
+}

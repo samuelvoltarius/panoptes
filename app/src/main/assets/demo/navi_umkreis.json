@@ -1,0 +1,161 @@
+{
+  "stationen": [
+    {
+      "id": "demo-001",
+      "name": "Stadtwerk Muster Ring",
+      "adresse": "Musterring 4, 1010 Wien",
+      "lat": 48.2101,
+      "lon": 16.3708,
+      "land": "AT",
+      "kw": 22,
+      "ladepunkte": 4,
+      "entfernung_km": 0.31,
+      "status_bekannt": true,
+      "frei": 2,
+      "belegt_n": 2,
+      "live_alter_s": 120,
+      "preis_adhoc": {
+        "preis_kwh": 0.49,
+        "kosten": 14.7
+      }
+    },
+    {
+      "id": "demo-002",
+      "name": "Ladepunkt Wien Muster Mitte",
+      "adresse": "Beispielgasse 12, 1010 Wien",
+      "lat": 48.2065,
+      "lon": 16.3779,
+      "land": "AT",
+      "kw": 11,
+      "ladepunkte": 2,
+      "entfernung_km": 0.36,
+      "status_bekannt": true,
+      "frei": 0,
+      "belegt_n": 2,
+      "live_alter_s": 340,
+      "preis_adhoc": {
+        "preis_kwh": 0.45,
+        "kosten": 13.5
+      }
+    },
+    {
+      "id": "demo-003",
+      "name": "Stadtwerk Muster Park",
+      "adresse": "Parkweg 2, 1030 Wien",
+      "lat": 48.1998,
+      "lon": 16.3842,
+      "land": "AT",
+      "kw": 50,
+      "ladepunkte": 4,
+      "entfernung_km": 1.21,
+      "status_bekannt": true,
+      "frei": 3,
+      "belegt_n": 1,
+      "live_alter_s": 60,
+      "preis_adhoc": {
+        "preis_kwh": 0.59,
+        "kosten": 17.7
+      }
+    },
+    {
+      "id": "demo-004",
+      "name": "Ladepunkt Wien Muster Nord",
+      "adresse": "Nordstraße 7, 1020 Wien",
+      "lat": 48.2186,
+      "lon": 16.3801,
+      "land": "AT",
+      "kw": 150,
+      "ladepunkte": 6,
+      "entfernung_km": 1.25,
+      "status_bekannt": true,
+      "frei": 4,
+      "belegt_n": 2,
+      "live_alter_s": 200,
+      "preis_adhoc": {
+        "preis_kwh": 0.69,
+        "kosten": 20.7
+      }
+    },
+    {
+      "id": "demo-005",
+      "name": "Ladepunkt Wien Muster West",
+      "adresse": "Westplatz 1, 1090 Wien",
+      "lat": 48.2207,
+      "lon": 16.3569,
+      "land": "AT",
+      "kw": 22,
+      "ladepunkte": 2,
+      "entfernung_km": 1.87,
+      "status_bekannt": true,
+      "frei": 1,
+      "belegt_n": 1,
+      "live_alter_s": 900,
+      "preis_adhoc": {
+        "preis_kwh": 0.52,
+        "kosten": 15.6
+      }
+    },
+    {
+      "id": "demo-006",
+      "name": "Stadtwerk Muster Süd",
+      "adresse": "Südtorstraße 9, 1040 Wien",
+      "lat": 48.1892,
+      "lon": 16.3705,
+      "land": "AT",
+      "kw": 150,
+      "ladepunkte": 4,
+      "entfernung_km": 2.13,
+      "status_bekannt": true,
+      "frei": 0,
+      "belegt_n": 4,
+      "live_alter_s": 480,
+      "preis_adhoc": {
+        "preis_kwh": 0.66,
+        "kosten": 19.8
+      }
+    },
+    {
+      "id": "demo-007",
+      "name": "Ladepunkt Wien Muster Garage",
+      "adresse": "Garagenhof 3, 1060 Wien",
+      "lat": 48.1957,
+      "lon": 16.3528,
+      "land": "AT",
+      "kw": 11,
+      "ladepunkte": 4,
+      "entfernung_km": 2.09,
+      "status_bekannt": true,
+      "frei": 2,
+      "belegt_n": 2,
+      "live_alter_s": 1500,
+      "preis_adhoc": {
+        "preis_kwh": 0.42,
+        "kosten": 12.6
+      }
+    },
+    {
+      "id": "demo-008",
+      "name": "Stadtwerk Muster Ost",
+      "adresse": "Ostbahnweg 5, 1030 Wien",
+      "lat": 48.2149,
+      "lon": 16.4089,
+      "land": "AT",
+      "kw": 50,
+      "ladepunkte": 2,
+      "entfernung_km": 2.71,
+      "status_bekannt": false,
+      "preis_adhoc": {
+        "preis_kwh": 0.55,
+        "kosten": 16.5
+      }
+    }
+  ],
+  "standorte_im_umkreis": 8,
+  "live_quellen": [
+    {
+      "land": "AT",
+      "quelle": "Beispiel-Datenquelle Muster",
+      "lizenz": "CC BY 4.0"
+    }
+  ]
+}

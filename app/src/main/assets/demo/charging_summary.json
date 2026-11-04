@@ -1,0 +1,153 @@
+{
+  "success": true,
+  "summary": {
+    "daily": [
+      {
+        "day": 1790121600000,
+        "sessions": 1,
+        "energy": 22.5,
+        "cost": 4.28,
+        "incomplete": 0,
+        "estimated": 0,
+        "energyAbgerechnet": 25.2,
+        "costAbgerechnet": 4.79
+      },
+      {
+        "day": 1790726400000,
+        "sessions": 1,
+        "energy": 29.4,
+        "cost": 19.11,
+        "incomplete": 0,
+        "estimated": 0,
+        "energyAbgerechnet": 31.8,
+        "costAbgerechnet": 20.67
+      },
+      {
+        "day": 1791244800000,
+        "sessions": 1,
+        "energy": 16.0,
+        "cost": 6.24,
+        "incomplete": 0,
+        "estimated": 0,
+        "energyAbgerechnet": 17.92,
+        "costAbgerechnet": 6.99
+      },
+      {
+        "day": 1791676800000,
+        "sessions": 1,
+        "energy": 26.8,
+        "cost": 5.09,
+        "incomplete": 0,
+        "estimated": 0,
+        "energyAbgerechnet": 30.02,
+        "costAbgerechnet": 5.7
+      },
+      {
+        "day": 1792022400000,
+        "sessions": 1,
+        "energy": 27.6,
+        "cost": 16.28,
+        "incomplete": 0,
+        "estimated": 0,
+        "energyAbgerechnet": 29.81,
+        "costAbgerechnet": 17.58
+      },
+      {
+        "day": 1792281600000,
+        "sessions": 1,
+        "energy": 26.8,
+        "cost": 5.09,
+        "incomplete": 0,
+        "estimated": 0,
+        "energyAbgerechnet": 30.02,
+        "costAbgerechnet": 5.7
+      }
+    ],
+    "periodSessions": 6,
+    "periodEnergyKwh": 149.1,
+    "periodCost": 56.09,
+    "periodDcCount": 2,
+    "periodAcCount": 4,
+    "periodRangeGained": 1028,
+    "periodIncompleteSessions": 0,
+    "periodEstimatedSessions": 0,
+    "avgCostPerKwh": 0.3762,
+    "periodEnergyAbgerechnetKwh": 164.77,
+    "periodCostAbgerechnet": 61.43,
+    "periodAbgerechnetGeschaetzt": 5,
+    "avgCostPerKwhAbgerechnet": 0.3728,
+    "lifetimeSessions": 41,
+    "lifetimeEnergyKwh": 1051.4,
+    "lifetimeCost": 297.26,
+    "lifetimeIncompleteSessions": 0,
+    "lifetimeEstimatedSessions": 0,
+    "lifetimeEnergyAbgerechnetKwh": 1156.54,
+    "lifetimeCostAbgerechnet": 326.99,
+    "sohTrend": [
+      {
+        "day": 1768435200000,
+        "soh": 99.6
+      },
+      {
+        "day": 1771113600000,
+        "soh": 99.5
+      },
+      {
+        "day": 1773532800000,
+        "soh": 99.3
+      },
+      {
+        "day": 1776211200000,
+        "soh": 99.2
+      },
+      {
+        "day": 1778803200000,
+        "soh": 99.0
+      },
+      {
+        "day": 1781481600000,
+        "soh": 98.9
+      },
+      {
+        "day": 1784073600000,
+        "soh": 98.8
+      },
+      {
+        "day": 1785801600000,
+        "soh": 98.6
+      },
+      {
+        "day": 1788480000000,
+        "soh": 98.5
+      },
+      {
+        "day": 1791072000000,
+        "soh": 98.3
+      },
+      {
+        "day": 1792368000000,
+        "soh": 98.2
+      }
+    ],
+    "live": {
+      "charging": false,
+      "plugged": false,
+      "full": false,
+      "fault": false,
+      "powerKw": 0,
+      "isEstimated": false,
+      "powerSource": "none",
+      "powerObservedAtMs": 0,
+      "powerQuality": "UNKNOWN",
+      "powerConfidence": 0,
+      "socPercent": 68,
+      "sessionKwh": null,
+      "sessionEnergyIncomplete": false,
+      "sessionEnergyEstimated": false,
+      "sessionEnergySource": null,
+      "timeToFullMin": null,
+      "rangeKm": 211,
+      "sohPercent": 98.2
+    }
+  }
+}

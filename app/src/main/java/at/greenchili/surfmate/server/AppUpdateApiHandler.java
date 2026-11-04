@@ -51,6 +51,10 @@ public final class AppUpdateApiHandler {
             HttpResponse.sendJson(out, s.toString());
             return true;
         }
+        // 0.1.38.2 Updates von außen (UPDATE_API_CLIENTS.md): Panoptes UND Launcher, Telegram/Handy/Cockpit/Handy-Web
+        if (pathOnly.equals(FERN_PFAD)) {
+            return fern(method, body, sprache, out);
+        }
         // 0.1.37 Stufe 4: Panoptes Launcher installieren / öffnen / entfernen (Knopf unter System → Updates)
         if (pathOnly.equals("/api/appupdate/launcher")) {
             if (method.equals("GET")) {
@@ -133,6 +137,79 @@ public final class AppUpdateApiHandler {
         HttpResponse.sendJson(out, grund == null ? "{\"ok\":true}"
                 : new JSONObject().put("ok", false).put("grund", grund).toString());
         return true;
+    }
+
+    /** 0.1.38.2: ein Pfad für alle, die Updates von außen auslösen dürfen. */
+    public static final String FERN_PFAD = "/api/appupdate/fern";
+
+    /**
+     * {@code GET} → {@code {ok, darf, panoptes:{…}, launcher:{…}}} (Felder wie {@code /api/handy/v1/update});
+     * {@code POST {was: panoptes|launcher, version, bestaetigt:true, mobil}} → {@code {ok, zustand, vorgemerkt, text}}
+     * oder {@code {ok:false, grund, text}} bzw. {@code {ok:false, grund:"wartet_wlan", mobilFrage:true, groesseBytes,
+     * text}}. Wer es darf: voller Login (Telegram-Daemon, Anmeldung mit PIN, am Auto), Kopplung der Art
+     * {@code handy}/{@code cockpit} bzw. Handy-Web mit Recht {@code update}. Lesen geht für sie auch ohne Recht
+     * ({@code darf:false}). Home Assistant, Dienste und Automationen nie (ExternGuard).
+     */
+    static boolean fern(String method, String body, String sprache, OutputStream out) throws Exception {
+        String kid = AuthMiddleware.isExternRequest() ? AuthMiddleware.requestKopplungsId()
+                : AuthMiddleware.isHandyWebRequest() ? AuthMiddleware.requestWebKopplungsId() : null;
+        boolean fremd = AuthMiddleware.isExternRequest() || AuthMiddleware.isHandyWebRequest();
+        at.greenchili.surfmate.auth.Kopplungen k = at.greenchili.surfmate.auth.Kopplungen.get();
+        if (fremd && (kid == null || !darfArt(k.art(kid)))) {
+            HttpResponse.sendJson(out, 403, "{\"ok\":false,\"grund\":\"nicht_erlaubt\"}");
+            return true;
+        }
+        boolean darf = !fremd || k.hatRecht(kid, at.greenchili.surfmate.auth.Kopplungen.RECHT_UPDATE);
+        at.greenchili.surfmate.appupdate.FernUpdate f = at.greenchili.surfmate.appupdate.FernUpdate.get();
+        if (method.equals("GET")) {
+            HttpResponse.sendJson(out, new JSONObject().put("ok", true).put("darf", darf)
+                    .put("panoptes", f.stand(sprache, darf)).put("launcher", f.launcherStand(sprache, darf)).toString());
+            return true;
+        }
+        if (!method.equals("POST")) return false;
+        JSONObject b;
+        try {
+            b = new JSONObject(body == null || body.isEmpty() ? "{}" : body);
+        } catch (Exception e) {
+            b = new JSONObject();
+        }
+        String was = b.optString("was", "panoptes");
+        if (!darf) {
+            HttpResponse.sendJson(out, 403, new JSONObject().put("ok", false).put("grund", "nicht_erlaubt")
+                    .put("text", at.greenchili.surfmate.appupdate.FernUpdate.text(sprache, "nicht_erlaubt", null, null))
+                    .toString());
+            return true;
+        }
+        if (!b.optBoolean("bestaetigt", false)) {
+            HttpResponse.sendJson(out, new JSONObject().put("ok", false).put("grund", "bestaetigung_fehlt")
+                    .put("text", at.greenchili.surfmate.appupdate.FernUpdate.text(sprache, "bestaetigung_fehlt", null, null))
+                    .toString());
+            return true;
+        }
+        String geraet = fremd ? k.anzeigeName(kid) : b.optString("geraet", "");
+        if (!fremd && !"telegram".equals(geraet)) geraet = "";
+        if ("telegram".equals(geraet)) geraet = "Telegram";
+        if (geraet.isEmpty()) geraet = at.greenchili.surfmate.appupdate.UpdateHinweis.geraetName();
+        String version = b.optString("version", null);
+        boolean mobil = b.optBoolean("mobil", false);
+        JSONObject r;
+        if ("launcher".equals(was)) {
+            r = f.launcherStarten(version, true, mobil, geraet, sprache);
+        } else if ("panoptes".equals(was)) {
+            AppUpdateDienst d = AppUpdateDienst.get();
+            r = d.installierenOderVormerken(f, version, mobil, geraet, sprache);
+        } else {
+            HttpResponse.sendJson(out, 400, "{\"ok\":false,\"grund\":\"was\"}");
+            return true;
+        }
+        BefehlsLog.ereignis("update.fern." + was, r.optBoolean("ok", false) ? "ok" : "abgelehnt", null, null);
+        HttpResponse.sendJson(out, r.toString());
+        return true;
+    }
+
+    /** Nur Handy und Cockpit (Handy-Web gehört zu einer Handy-Kopplung); Home Assistant und Dienste nie. */
+    static boolean darfArt(String art) {
+        return at.greenchili.surfmate.auth.Kopplungen.ART_HANDY.equals(art) || "cockpit".equals(art);
     }
 
     /** Aus der Ferne erlaubt: genau {@code aktion: oeffnen} (startet den Launcher am Bildschirm im Auto). */

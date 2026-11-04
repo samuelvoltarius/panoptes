@@ -104,6 +104,9 @@ public class ExternGuardErlaubnislisteTest {
     public void wallboxStatusUndReichweiteNurLesend() {
         assertTrue(ExternGuard.erlaubt("GET", "/api/wallbox/status"));
         assertTrue(ExternGuard.erlaubt("GET", "/api/trips/range"));
+        // 0.1.38.2 Demo-Profil: nur der Stand (Band „Musterdaten“), nie schreiben
+        assertTrue(ExternGuard.erlaubt("GET", "/api/demo"));
+        assertFalse(ExternGuard.erlaubt("POST", "/api/demo"));
         for (String p : new String[] {"/api/wallbox/steuern", "/api/wallbox/freigabe", "/api/wallbox/einstellungen",
                 "/api/wallbox/test", "/api/wallbox/suche", "/api/wallbox/ha/anmelden"}) {
             for (String m : new String[] {"GET", "POST", "PUT"}) assertFalse(m + " " + p, ExternGuard.erlaubt(m, p));

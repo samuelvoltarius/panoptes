@@ -1,0 +1,49 @@
+{
+  "monat": "2026-10",
+  "monate": [
+    "2026-05",
+    "2026-06",
+    "2026-07",
+    "2026-08",
+    "2026-09",
+    "2026-10",
+    "2026-11"
+  ],
+  "bisHeute": false,
+  "fahren": {
+    "km": 1010.4,
+    "fahrten": 52,
+    "kwh": 147.8,
+    "kwhPro100km": 14.6,
+    "stunden": 28.9
+  },
+  "laden": {
+    "anzahl": 6,
+    "kwh": 149.1,
+    "zuhause": {
+      "kwh": 76.1,
+      "kosten": 14.46
+    },
+    "unterwegs": {
+      "kwh": 73.0,
+      "kosten": 41.63
+    },
+    "waehrung": "EUR"
+  },
+  "standverlust": {
+    "prozent": 2.8,
+    "kwh": 1.2
+  },
+  "waechter": {
+    "ereignisse": 14,
+    "aufnahmen": 9
+  },
+  "akku": {
+    "sohProzent": 98,
+    "v12Min": 12.4
+  },
+  "vormonat": {
+    "km": 1052.3,
+    "kwhPro100km": 15.4
+  }
+}

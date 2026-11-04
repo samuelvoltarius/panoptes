@@ -1,0 +1,84 @@
+{
+  "success": true,
+  "version": 1,
+  "max": 50,
+  "liste": [
+    {
+      "id": "o_a1b2c3d4",
+      "name": "Zuhause",
+      "lat": 48.2125,
+      "lon": 16.369,
+      "r": 120,
+      "eigenschaften": {
+        "privat": false,
+        "ruhezone": true,
+        "tarif": null,
+        "zuhause": true,
+        "favorit": true
+      },
+      "verweise": {},
+      "herkunft": [],
+      "angelegt": 1790000000000,
+      "geaendert": 1790000000000
+    },
+    {
+      "id": "o_e5f6a7b8",
+      "name": "Büro Muster",
+      "lat": 48.201,
+      "lon": 16.3665,
+      "r": 80,
+      "eigenschaften": {
+        "privat": false,
+        "ruhezone": false,
+        "tarif": null,
+        "zuhause": false,
+        "favorit": true
+      },
+      "verweise": {},
+      "herkunft": [],
+      "angelegt": 1790000000000,
+      "geaendert": 1790000000000
+    },
+    {
+      "id": "o_c9d0e1f2",
+      "name": "Garage Beispiel",
+      "lat": 48.2058,
+      "lon": 16.3811,
+      "r": 60,
+      "eigenschaften": {
+        "privat": true,
+        "ruhezone": false,
+        "tarif": null,
+        "zuhause": false,
+        "favorit": false
+      },
+      "verweise": {},
+      "herkunft": [],
+      "angelegt": 1790000000000,
+      "geaendert": 1790000000000
+    }
+  ],
+  "grenzen": {
+    "r": {
+      "min": 15,
+      "max": 2000
+    },
+    "privat": {
+      "min": 20,
+      "max": 500
+    },
+    "ruhezone": {
+      "min": 15,
+      "max": 500,
+      "anzahlMax": 10
+    },
+    "zuhause": {
+      "min": 15,
+      "max": 500
+    },
+    "tarif": {
+      "min": 25,
+      "max": 2000
+    }
+  }
+}

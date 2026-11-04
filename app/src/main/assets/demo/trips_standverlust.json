@@ -1,0 +1,73 @@
+{
+  "success": true,
+  "tage": 90,
+  "gruppen": {
+    "gesamt": {
+      "parkzeiten": 14,
+      "stunden": 612.5,
+      "prozentProTag": 0.62,
+      "kwhProTag": 0.268
+    },
+    "an": {
+      "parkzeiten": 4,
+      "stunden": 150.2,
+      "prozentProTag": 1.04,
+      "kwhProTag": 0.449
+    },
+    "aus": {
+      "parkzeiten": 9,
+      "stunden": 426.3,
+      "prozentProTag": 0.41,
+      "kwhProTag": 0.177
+    },
+    "unbekannt": {
+      "parkzeiten": 1,
+      "stunden": 36.0,
+      "prozentProTag": null,
+      "kwhProTag": null
+    }
+  },
+  "parkzeiten": [
+    {
+      "von": 1792306800000,
+      "bis": 1792341000000,
+      "stunden": 33.5,
+      "verlustProzent": 0.9,
+      "verlustKwh": 0.39,
+      "waechter": "an"
+    },
+    {
+      "von": 1792342800000,
+      "bis": 1792398600000,
+      "stunden": 87.5,
+      "verlustProzent": 1.1,
+      "verlustKwh": 0.48,
+      "waechter": "aus"
+    },
+    {
+      "von": 1792310400000,
+      "bis": 1792339200000,
+      "stunden": 80.0,
+      "verlustProzent": 1.0,
+      "verlustKwh": 0.43,
+      "waechter": "aus"
+    },
+    {
+      "von": 1792253700000,
+      "bis": 1792306800000,
+      "stunden": 38.7,
+      "verlustProzent": 0.5,
+      "verlustKwh": 0.22,
+      "waechter": "aus"
+    },
+    {
+      "von": 1792135200000,
+      "bis": 1792250100000,
+      "stunden": 55.9,
+      "verlustProzent": 1.4,
+      "verlustKwh": 0.6,
+      "waechter": "an"
+    }
+  ],
+  "minStunden": 3
+}

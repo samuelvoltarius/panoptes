@@ -1,0 +1,31 @@
+{
+  "success": true,
+  "zuordnung": "auto",
+  "station": {
+    "id": "demo-st-city",
+    "name": "Stadtwerk Muster Favoriten Schnelllader",
+    "betreiber": "Stadtwerk Muster",
+    "art": "DC"
+  },
+  "kandidaten": [
+    {
+      "id": "demo-st-city",
+      "name": "Stadtwerk Muster Favoriten Schnelllader",
+      "betreiber": "Stadtwerk Muster",
+      "art": "DC",
+      "kw": 150,
+      "abstandM": 15,
+      "tarife": [
+        {
+          "name": "Ad hoc",
+          "preisKwh": 0.65,
+          "adhoc": true,
+          "meine": false,
+          "stand": "2026-10-20"
+        }
+      ]
+    }
+  ],
+  "vorschlaege": [],
+  "schalter": true
+}

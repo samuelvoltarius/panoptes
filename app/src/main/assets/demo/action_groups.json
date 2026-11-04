@@ -1,0 +1,24 @@
+{
+  "5e8b0c44-91aa-4d27-8c3b-6f2d1a9e7b10": {
+    "name": "Morgenroutine",
+    "actions": [
+      {
+        "type": "setAc",
+        "variables": {
+          "action": "on",
+          "temp": 22,
+          "remoteDurationMinutes": "15",
+          "autoOffMinutes": "30"
+        }
+      },
+      {
+        "type": "seat",
+        "variables": {
+          "type": "heat",
+          "area": "driver",
+          "payload": "low"
+        }
+      }
+    ]
+  }
+}

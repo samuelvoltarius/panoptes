@@ -1,0 +1,101 @@
+{
+  "success": true,
+  "tariffs": [
+    {
+      "id": "demo-tarif-zuhause",
+      "label": "Zuhause",
+      "lat": 48.2342,
+      "lng": 16.4318,
+      "radiusM": 60,
+      "acRate": 0.19,
+      "dcRate": 0.0,
+      "currency": "€",
+      "enabled": true,
+      "createdAt": 1768060800000,
+      "lastUsedAt": 1792352460000,
+      "useCount": 31
+    },
+    {
+      "id": "demo-tarif-schnell",
+      "label": "Stadtwerk Muster Schnellladen",
+      "lat": 48.1741,
+      "lng": 16.3829,
+      "radiusM": 80,
+      "acRate": 0.45,
+      "dcRate": 0.59,
+      "currency": "€",
+      "enabled": true,
+      "createdAt": 1772445600000,
+      "lastUsedAt": 1792064880000,
+      "useCount": 5
+    },
+    {
+      "id": "demo-tarif-parkhaus",
+      "label": "Parkhaus Mitte",
+      "lat": 48.2089,
+      "lng": 16.3724,
+      "radiusM": 70,
+      "acRate": 0.39,
+      "dcRate": 0.0,
+      "currency": "€",
+      "enabled": true,
+      "createdAt": 1779264000000,
+      "lastUsedAt": 1791280080000,
+      "useCount": 3
+    }
+  ],
+  "meta": {
+    "tariffs": [
+      {
+        "id": "demo-tarif-zuhause",
+        "label": "Zuhause",
+        "lat": 48.2342,
+        "lng": 16.4318,
+        "radiusM": 60,
+        "acRate": 0.19,
+        "dcRate": 0.0,
+        "currency": "€",
+        "enabled": true,
+        "createdAt": 1768060800000,
+        "lastUsedAt": 1792352460000,
+        "useCount": 31
+      },
+      {
+        "id": "demo-tarif-schnell",
+        "label": "Stadtwerk Muster Schnellladen",
+        "lat": 48.1741,
+        "lng": 16.3829,
+        "radiusM": 80,
+        "acRate": 0.45,
+        "dcRate": 0.59,
+        "currency": "€",
+        "enabled": true,
+        "createdAt": 1772445600000,
+        "lastUsedAt": 1792064880000,
+        "useCount": 5
+      },
+      {
+        "id": "demo-tarif-parkhaus",
+        "label": "Parkhaus Mitte",
+        "lat": 48.2089,
+        "lng": 16.3724,
+        "radiusM": 70,
+        "acRate": 0.39,
+        "dcRate": 0.0,
+        "currency": "€",
+        "enabled": true,
+        "createdAt": 1779264000000,
+        "lastUsedAt": 1791280080000,
+        "useCount": 3
+      }
+    ],
+    "defaultTariffId": "demo-tarif-zuhause",
+    "maxTariffs": 40,
+    "lat": 48.2342,
+    "lng": 16.4318,
+    "matchedTariffId": "demo-tarif-zuhause",
+    "globalRate": 0.19,
+    "globalDcRate": 0.59,
+    "currency": "€"
+  }
+}

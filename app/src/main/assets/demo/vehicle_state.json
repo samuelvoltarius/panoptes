@@ -1,0 +1,130 @@
+{
+  "success": true,
+  "dilink5": false,
+  "iviRebootAvailable": true,
+  "doors": {
+    "rf": 1,
+    "lf": 1,
+    "rr": 1,
+    "lr": 1,
+    "trunk": 1,
+    "hood": 1,
+    "overall": 1,
+    "source": "sdk",
+    "scope": "vehicle"
+  },
+  "doorOpen": {
+    "lf": false,
+    "rf": false,
+    "lr": false,
+    "rr": false,
+    "trunk": false,
+    "hood": false
+  },
+  "windows": {
+    "lf": 0,
+    "rf": 0,
+    "lr": 0,
+    "rr": 0
+  },
+  "windowOpen": {
+    "lf": false,
+    "rf": false,
+    "lr": false,
+    "rr": false
+  },
+  "trunk": {
+    "open": false
+  },
+  "sunroof": {},
+  "battery": {
+    "soc": 86.0,
+    "rangeKm": 262,
+    "bodyworkRangeKm": 262
+  },
+  "odometer": {
+    "totalKm": 6647.0,
+    "evKm": 6647.0
+  },
+  "lights": {
+    "ambientEnabled": false,
+    "ambientOptions": []
+  },
+  "adas": {
+    "speedLimitWarning": 1
+  },
+  "setting": {
+    "childPresenceDetection": false
+  },
+  "seats": {
+    "heat": [
+      0,
+      0
+    ],
+    "cool": [
+      0,
+      0
+    ],
+    "ventilatedSupported": false
+  },
+  "batteryHeat": false,
+  "climate": {
+    "acOn": false,
+    "insideTempC": 13.0,
+    "outsideTempC": 12.0,
+    "klimaSollwertC": 21.0,
+    "windMode": 1,
+    "fanLevel": 0,
+    "tempUnit": 0,
+    "setpointDriver": 21,
+    "setpointPassenger": 21,
+    "remoteClimateActive": false
+  },
+  "tyres": {
+    "fl": {
+      "kPa": 251,
+      "psi": 36.4,
+      "temperatureC": 13,
+      "pressureState": 0,
+      "airLeakState": 0,
+      "signalState": 0,
+      "available": true
+    },
+    "fr": {
+      "kPa": 250,
+      "psi": 36.3,
+      "temperatureC": 13,
+      "pressureState": 0,
+      "airLeakState": 0,
+      "signalState": 0,
+      "available": true
+    },
+    "rl": {
+      "kPa": 247,
+      "psi": 35.8,
+      "temperatureC": 12,
+      "pressureState": 0,
+      "airLeakState": 0,
+      "signalState": 0,
+      "available": true
+    },
+    "rr": {
+      "kPa": 248,
+      "psi": 36.0,
+      "temperatureC": 12,
+      "pressureState": 0,
+      "airLeakState": 0,
+      "signalState": 0,
+      "available": true
+    },
+    "available": true,
+    "limits": {
+      "frontLow": 234,
+      "frontHigh": 310,
+      "rearLow": 234,
+      "rearHigh": 310,
+      "criticalLow": 152
+    }
+  },
+  "timestamp": 1792478400000
+}

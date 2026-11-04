@@ -1846,9 +1846,42 @@
     }
     ensureCollapseScript();
 
+    // 0.1.38.2 Demo-Profil (DemoProfil.java): nur wenn der Kern „aktiv“ meldet, deutliches Band „Musterdaten“.
+    // Am Auto ab Werk nie aktiv. PanoptesDemo.stand() nutzt auch die Karte (Musterkarte ohne Netz).
+    var demoStand = null;
+    function demoLesen() {
+        if (demoStand) return demoStand;
+        demoStand = (window.fetch && window.Promise)
+            ? fetch('/api/demo', { credentials: 'same-origin' })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .catch(function () { return null; })
+            : { then: function (f) { f(null); } };
+        return demoStand;
+    }
+    window.PanoptesDemo = { stand: demoLesen };
+    function demoBand() {
+        demoLesen().then(function (d) {
+            if (!d || !d.aktiv || !document.body || document.getElementById('pnDemoBand')) return;
+            var b = document.createElement('div');
+            b.id = 'pnDemoBand';
+            b.setAttribute('role', 'status');
+            b.textContent = dstT('shell.demo_band', 'Musterdaten – keine echten Fahrten, Orte oder Befehle');
+            b.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:2147483000;padding:5px 12px;'
+                + 'text-align:center;font:700 15px/1.3 system-ui,sans-serif;letter-spacing:.03em;color:#111;'
+                + 'background:repeating-linear-gradient(135deg,#FFC93C 0 18px,#FFB703 18px 36px);pointer-events:none;'
+                + 'box-shadow:0 2px 6px rgba(0,0,0,.35)';
+            document.body.appendChild(b);
+            // Höhe je nach Zeilenumbruch (Handy zwei Zeilen), damit nichts darunter verschwindet
+            document.body.style.paddingTop = (b.offsetHeight || 30) + 'px';
+            document.documentElement.setAttribute('data-pn-demo', '1');
+        });
+    }
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', mount);
+        document.addEventListener('DOMContentLoaded', demoBand);
     } else {
         mount();
+        demoBand();
     }
 }());

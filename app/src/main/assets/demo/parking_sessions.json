@@ -1,0 +1,99 @@
+{
+  "success": true,
+  "sessions": [
+    {
+      "sessionId": "p-0007",
+      "startedMs": 1792477022000,
+      "endedMs": 1792488542000,
+      "open": false,
+      "gps": {
+        "lat": 48.2,
+        "lng": 16.37,
+        "quality": "good",
+        "fromCache": false
+      },
+      "place": {
+        "short": "Flughafen Wien",
+        "displayName": "Flughafen Wien-Schwechat, Schwechat",
+        "source": "nominatim"
+      },
+      "sentryState": "armed",
+      "signageState": "ok",
+      "eventCount": 0,
+      "neighbourCount": 0,
+      "createdMs": 1792477022000,
+      "signage": {
+        "found": true,
+        "label": "P3"
+      }
+    },
+    {
+      "sessionId": "p-0006",
+      "startedMs": 1792403288000,
+      "endedMs": 1792236248000,
+      "open": false,
+      "gps": {
+        "lat": 48.2,
+        "lng": 16.37,
+        "quality": "good",
+        "fromCache": false
+      },
+      "place": {
+        "short": "Wiener Neustadt",
+        "displayName": "Fischapark, Wiener Neustadt",
+        "source": "nominatim"
+      },
+      "sentryState": "armed",
+      "signageState": "none",
+      "eventCount": 1,
+      "neighbourCount": 0,
+      "createdMs": 1792403288000
+    },
+    {
+      "sessionId": "p-0005",
+      "startedMs": 1792341390000,
+      "endedMs": 1791962670000,
+      "open": false,
+      "gps": {
+        "lat": 48.2,
+        "lng": 16.37,
+        "quality": "good",
+        "fromCache": false
+      },
+      "place": {
+        "short": "Neubau",
+        "displayName": "Neubau, Wien",
+        "source": "nominatim"
+      },
+      "sentryState": "armed",
+      "signageState": "none",
+      "eventCount": 0,
+      "neighbourCount": 0,
+      "createdMs": 1792341390000
+    },
+    {
+      "sessionId": "p-0004",
+      "startedMs": 1792310471000,
+      "endedMs": 1791627911000,
+      "open": false,
+      "gps": {
+        "lat": 48.2,
+        "lng": 16.37,
+        "quality": "good",
+        "fromCache": false
+      },
+      "place": {
+        "short": "Tulln an der Donau",
+        "displayName": "Tulln an der Donau",
+        "source": "nominatim"
+      },
+      "sentryState": "armed",
+      "signageState": "none",
+      "eventCount": 0,
+      "neighbourCount": 0,
+      "createdMs": 1792310471000
+    }
+  ],
+  "total": 4,
+  "enabled": true
+}

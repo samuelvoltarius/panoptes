@@ -1,0 +1,204 @@
+{
+  "7c1d2a90-3b4e-4f60-9a11-0d3e5b7a1c01": {
+    "triggers": [
+      {
+        "type": "time",
+        "variables": {}
+      }
+    ],
+    "conditions": [
+      {
+        "type": "time",
+        "variables": {},
+        "comparator": "eq",
+        "value": 435
+      }
+    ],
+    "conditionLogic": "AND",
+    "conditionGroups": [
+      {
+        "logic": "OR",
+        "conditions": [
+          {
+            "type": "day",
+            "variables": {},
+            "comparator": "eq",
+            "value": "monday"
+          },
+          {
+            "type": "day",
+            "variables": {},
+            "comparator": "eq",
+            "value": "tuesday"
+          },
+          {
+            "type": "day",
+            "variables": {},
+            "comparator": "eq",
+            "value": "wednesday"
+          },
+          {
+            "type": "day",
+            "variables": {},
+            "comparator": "eq",
+            "value": "thursday"
+          },
+          {
+            "type": "day",
+            "variables": {},
+            "comparator": "eq",
+            "value": "friday"
+          }
+        ],
+        "groups": []
+      }
+    ],
+    "delay": 0,
+    "actions": [
+      {
+        "type": "setAc",
+        "variables": {
+          "action": "on",
+          "temp": 22,
+          "remoteDurationMinutes": "15",
+          "autoOffMinutes": "30"
+        }
+      }
+    ],
+    "elseActions": [],
+    "disabled": false,
+    "name": "Klima vor Abfahrt werktags 7:15",
+    "triggerCount": 21,
+    "lastTriggered": 1792390500000
+  },
+  "7c1d2a90-3b4e-4f60-9a11-0d3e5b7a1c02": {
+    "triggers": [
+      {
+        "type": "power",
+        "variables": {}
+      }
+    ],
+    "conditions": [
+      {
+        "type": "power",
+        "variables": {},
+        "comparator": "eq",
+        "value": "on"
+      },
+      {
+        "type": "outsideTemp",
+        "variables": {},
+        "comparator": "lt",
+        "value": 5
+      }
+    ],
+    "conditionLogic": "AND",
+    "delay": 0,
+    "actions": [
+      {
+        "type": "seat",
+        "variables": {
+          "type": "heat",
+          "area": "driver",
+          "payload": "low"
+        }
+      }
+    ],
+    "elseActions": [],
+    "disabled": false,
+    "name": "Sitzheizung unter 5 °C",
+    "triggerCount": 9,
+    "lastTriggered": 1792305660000
+  },
+  "7c1d2a90-3b4e-4f60-9a11-0d3e5b7a1c03": {
+    "triggers": [
+      {
+        "type": "chargingState",
+        "variables": {}
+      }
+    ],
+    "conditions": [
+      {
+        "type": "chargingState",
+        "variables": {},
+        "comparator": "eq",
+        "value": "off"
+      }
+    ],
+    "conditionLogic": "AND",
+    "delay": 0,
+    "actions": [
+      {
+        "type": "notification",
+        "variables": {
+          "message": "Der Ladevorgang ist beendet. Du kannst den Stecker ziehen."
+        }
+      }
+    ],
+    "elseActions": [],
+    "disabled": false,
+    "name": "Meldung bei Ladeende",
+    "triggerCount": 6,
+    "lastTriggered": 1792352460000
+  },
+  "7c1d2a90-3b4e-4f60-9a11-0d3e5b7a1c04": {
+    "triggers": [
+      {
+        "type": "lock",
+        "variables": {}
+      }
+    ],
+    "conditions": [
+      {
+        "type": "lock",
+        "variables": {},
+        "comparator": "eq",
+        "value": "locked"
+      }
+    ],
+    "conditionLogic": "AND",
+    "delay": 0,
+    "actions": [
+      {
+        "type": "surveillance",
+        "variables": {
+          "action": "enable"
+        }
+      }
+    ],
+    "elseActions": [],
+    "disabled": false,
+    "name": "Wächter scharf beim Absperren",
+    "triggerCount": 38,
+    "lastTriggered": 1792495860000
+  },
+  "7c1d2a90-3b4e-4f60-9a11-0d3e5b7a1c05": {
+    "triggers": [
+      {
+        "type": "aux12vBattery",
+        "variables": {}
+      }
+    ],
+    "conditions": [
+      {
+        "type": "aux12vBattery",
+        "variables": {},
+        "comparator": "eq",
+        "value": "low"
+      }
+    ],
+    "conditionLogic": "AND",
+    "delay": 0,
+    "actions": [
+      {
+        "type": "notification",
+        "variables": {
+          "message": "Die Starterbatterie (12 V) ist schwach. Bitte bald eine längere Fahrt machen."
+        }
+      }
+    ],
+    "elseActions": [],
+    "disabled": false,
+    "name": "Warnung bei schwacher Starterbatterie"
+  }
+}

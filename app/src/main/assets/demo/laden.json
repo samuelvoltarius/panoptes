@@ -1,0 +1,60 @@
+{
+  "ok": true,
+  "version": 1,
+  "quelle": "auto",
+  "stand": "2026-10-02T09:14:00",
+  "laden": {
+    "karten": [
+      {
+        "id": 1042,
+        "anzeige": "Stadtwerk Muster · Ladekarte Standard"
+      }
+    ],
+    "nurMeineKarten": false,
+    "netze": [
+      {
+        "cpo": "stadtwerk-muster",
+        "anzeige": "Stadtwerk Muster"
+      }
+    ],
+    "netzeModus": "bevorzugen",
+    "umwegMaxMin": 10,
+    "nurOffen": false,
+    "meiden": [],
+    "minKw": null,
+    "stecker": null,
+    "ankunftSocMin": 15,
+    "ladenBis": 80,
+    "modus": "kompromiss",
+    "fahrzeug": null,
+    "nachfragen": true,
+    "acStandard": null,
+    "verlustAc": 12,
+    "verlustDc": 8,
+    "verlustHinweis": false,
+    "saeuleNachschlagen": true,
+    "standardKwh": 30
+  },
+  "planer": {
+    "karten": [
+      {
+        "tarif_id": 1042
+      }
+    ],
+    "nur_meine_karten": 0,
+    "soc_ziel_min": 15,
+    "soc_max": 80,
+    "modus": "kompromiss",
+    "filter": {
+      "bevorzugt": [
+        "stadtwerk-muster"
+      ],
+      "netze_modus": "bevorzugen",
+      "umweg_max_min": 10,
+      "nur_offen": false,
+      "ausschluss": []
+    },
+    "vorlieben_quelle": "auto"
+  },
+  "etag": "l-3f9a1c72d0be4a55"
+}

@@ -1,0 +1,34 @@
+{
+  "success": true,
+  "tage": 365,
+  "punkte": [
+    {
+      "von": 5,
+      "bis": 10,
+      "fahrten": 2,
+      "km": 79.0,
+      "kwh": 12.44,
+      "kwhPro100km": 15.7
+    },
+    {
+      "von": 10,
+      "bis": 15,
+      "fahrten": 4,
+      "km": 196.7,
+      "kwh": 30.42,
+      "kwhPro100km": 15.5
+    },
+    {
+      "von": 15,
+      "bis": 20,
+      "fahrten": 2,
+      "km": 67.5,
+      "kwh": 10.46,
+      "kwhPro100km": 15.5
+    }
+  ],
+  "fahrtenMitTemperatur": 8,
+  "fahrtenOhneTemperatur": 0,
+  "fahrtenZuKurz": 0,
+  "topfGrad": 5
+}

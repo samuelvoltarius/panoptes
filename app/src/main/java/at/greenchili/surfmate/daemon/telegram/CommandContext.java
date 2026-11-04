@@ -106,6 +106,21 @@ public interface CommandContext {
     }
 
     /**
+     * 0.1.38.2: Anfrage an den Kamera-Daemon (HTTP, voller Login), z. B. {@code /api/appupdate/fern}. Antwort als
+     * JSON, auch bei 4xx; null = nicht erreichbar.
+     */
+    default JSONObject daemonHttp(String method, String path, JSONObject body) {
+        return null;
+    }
+
+    /**
+     * 0.1.38.2: Text mit festem Knopf unten am Eingabefeld (Reply-Keyboard, ein Knopf). Ohne Umsetzung nur der Text.
+     */
+    default boolean sendMessageWithMenuKey(long chatId, String text, String keyLabel) {
+        return sendMessage(chatId, text);
+    }
+
+    /**
      * Log a message.
      */
     void log(String message);

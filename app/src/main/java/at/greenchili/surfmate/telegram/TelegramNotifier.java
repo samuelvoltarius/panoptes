@@ -617,6 +617,26 @@ public class TelegramNotifier {
         });
     }
 
+    /**
+     * 0.1.38.2 „Neue Version ist da“ mit Knopf „Jetzt installieren“ (Kategorie UPDATE). {@code art} = panoptes |
+     * launcher, {@code groesse} schon als Text („12 MB“) oder leer. Der Knopf fragt zuerst nach, nie direkt.
+     */
+    public static void notifyUpdateNeu(String art, String version, String groesse) {
+        executor.execute(() -> {
+            try {
+                if (!isEnabled(Category.UPDATE)) return;
+                JSONObject cmd = new JSONObject();
+                cmd.put("cmd", "notifyUpdateNeu");
+                cmd.put("art", "launcher".equals(art) ? "launcher" : "panoptes");
+                cmd.put("version", version == null ? "" : version);
+                cmd.put("groesse", groesse == null ? "" : groesse);
+                sendIpc(cmd, /*spoolOnDaemonDown=*/false);
+            } catch (Exception e) {
+                Log.e(TAG, "notifyUpdateNeu IPC error", e);
+            }
+        });
+    }
+
     /** Gesundheitswächter: art = repariert | hilfe, minuten = wie lange der Wächter aus war. */
     public static void notifyGesundheit(String art, long minuten) {
         criticalExecutor.execute(() -> {

@@ -1,0 +1,44 @@
+{
+  "success": true,
+  "normalCount": 0,
+  "sentryCount": 3,
+  "proximityCount": 1,
+  "replayCount": 0,
+  "ereignisCount": 0,
+  "sentryTodayCount": 0,
+  "proximityTodayCount": 0,
+  "totalCount": 4,
+  "totalTodayCount": 0,
+  "byType": {
+    "normal": {
+      "count": 0,
+      "bytes": 0,
+      "bytesFormatted": "0 B",
+      "todayCount": 0
+    },
+    "sentry": {
+      "count": 3,
+      "bytes": 184549376,
+      "bytesFormatted": "176 MB",
+      "todayCount": 0
+    },
+    "proximity": {
+      "count": 1,
+      "bytes": 36700160,
+      "bytesFormatted": "35 MB",
+      "todayCount": 0
+    },
+    "replay": {
+      "count": 0,
+      "bytes": 0,
+      "bytesFormatted": "0 B",
+      "todayCount": 0
+    },
+    "ereignis": {
+      "count": 0,
+      "bytes": 0,
+      "bytesFormatted": "0 B",
+      "todayCount": 0
+    }
+  }
+}

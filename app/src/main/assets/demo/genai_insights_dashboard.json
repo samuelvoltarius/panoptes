@@ -1,0 +1,10 @@
+{
+  "success": true,
+  "enabled": true,
+  "item": {
+    "title": "Dein Auto kurz gefasst",
+    "text": "Du bist in den letzten drei Wochen 343 km gefahren und hast im Schnitt 15,4 kWh/100 km gebraucht. Die Fahrten nach St. Pölten waren am durstigsten, die Stadtfahrten am sparsamsten. Geladen hast du fast nur zu Hause.",
+    "createdAt": 1792476000000,
+    "model": "demo"
+  }
+}

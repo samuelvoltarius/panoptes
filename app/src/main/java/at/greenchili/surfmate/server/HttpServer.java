@@ -766,8 +766,13 @@ public class HttpServer {
                     AuthMiddleware.isExternRequest() ? at.greenchili.surfmate.auth.Kopplungen.get().art(AuthMiddleware.requestKopplungsId()) : null,
                     AuthMiddleware.isHandyWebRequest(), pathOnly));
 
+            // 0.1.38.2 Demo-Profil (nur Emulator/Screenshot-Build + debug.panoptes.demo=1): Musterdaten, alles
+            // Schreibende und alle Fahrzeug-/Kamerawege 403. /api/demo antwortet immer (Band „Musterdaten“).
+            if (DemoProfil.beantworte(method, pathOnly, out)) {
+                // Musterdaten, Stand oder Sperre
+            }
             // Route to modular handlers first
-            if (routeToHandlers(method, path, body, rangeHeader, ifNoneMatchHeader, out)) {
+            else if (routeToHandlers(method, path, body, rangeHeader, ifNoneMatchHeader, out)) {
                 // Handled by a modular handler
             }
             // Static pages

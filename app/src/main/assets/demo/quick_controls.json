@@ -1,0 +1,23 @@
+{
+  "success": true,
+  "buttons": [
+    {
+      "id": "klima",
+      "label": "Klima an",
+      "icon": "star",
+      "action": {
+        "type": "vehicle",
+        "command": "climate_on"
+      }
+    },
+    {
+      "id": "sitzheizung",
+      "label": "Sitzheizung Fahrer",
+      "icon": "star",
+      "action": {
+        "type": "vehicle",
+        "command": "seat_heat"
+      }
+    }
+  ]
+}

@@ -82,8 +82,10 @@ public class TelegramCommandLocalizationTest {
         assertTrue(new CommandRouter(context).route(CHAT_ID, "/start"));
 
         assertEquals(0, context.ipcCalls);
+        // 0.1.38.2: Begrüßung (mit festem Knopf „☰ Menü“), dann gleich das Hauptmenü mit Knöpfen
+        assertEquals("tr:welcome.paired", context.textMessages.get(0).text);
         assertEquals(1, context.buttonMessages.size());
-        assertEquals("tr:welcome.paired", context.buttonMessages.get(0).text);
+        assertTrue(context.buttonMessages.get(0).text.startsWith("tr:menu.title"));
     }
 
     @Test

@@ -1,0 +1,13 @@
+{
+  "success": true,
+  "config": {
+    "enabled": true,
+    "electricityRate": 0.19,
+    "currency": "€",
+    "dcRate": 0.59,
+    "fastSampleSec": 12,
+    "nominalKwh": 43.2,
+    "kapazitaetQuelle": "katalog",
+    "isPhev": false
+  }
+}

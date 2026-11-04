@@ -1,0 +1,17 @@
+{
+  "success": true,
+  "range": {
+    "predictedRangeKm": 236.0,
+    "lowerBoundKm": 219.0,
+    "upperBoundKm": 253.0,
+    "bucketKey": "suburban_mild_low",
+    "sampleCount": 8,
+    "builtInRangeKm": 262.0,
+    "tempC": 12,
+    "tempBekannt": true,
+    "tempQuelle": "auto",
+    "lerntNoch": false,
+    "bandAusRueckpruefung": true,
+    "rueckpruefFenster": 14
+  }
+}

@@ -342,15 +342,26 @@ public final class AppUpdateDienst {
      * Antwort {@code {ok, vorgemerkt, text}}.
      */
     public JSONObject hinweisInstallieren(FernUpdate fern, String version, String sprache) throws Exception {
+        // 0.1.32: Der Tipp ist die Einwilligung für genau diesen einen Download (die Karte nannte die Größe)
+        return installierenOderVormerken(fern, version, true, UpdateHinweis.geraetName(), sprache);
+    }
+
+    /**
+     * 0.1.38.2 derselbe Weg für Telegram und Geräte mit Recht „update“ ({@code POST /api/appupdate/fern}): sicher →
+     * sofort, fehlt nur noch „Auto aus“ (oder WLAN) → vorgemerkt. {@code mobil} = Einwilligung für genau diesen
+     * Download (das Gerät hat vorher die Größe genannt); ohne sie und ohne WLAN kommt {@code mobilFrage} zurück.
+     */
+    public JSONObject installierenOderVormerken(FernUpdate fern, String version, boolean mobil, String geraet,
+                                                String sprache) throws Exception {
         synchronized (lock) {
-            // 0.1.32: Der Tipp ist die Einwilligung für genau diesen einen Download (die Karte nannte die Größe)
-            if (mobilMerker() && verfuegbar != null && verfuegbar.versionName.equals(version)) {
+            if (mobil && mobilMerker() && verfuegbar != null && verfuegbar.versionName.equals(version)) {
                 UpdateHinweis.mobilErlauben(hinweis, verfuegbar.versionCode, env.jetzt());
                 speichern();
             }
         }
-        JSONObject r = fern.starten(version, true, UpdateHinweis.geraetName(), sprache);
+        JSONObject r = fern.starten(version, true, mobil, geraet, sprache);
         if (r.optBoolean("ok", false)) return r.put("vorgemerkt", false);
+        if (r.optBoolean("mobilFrage", false)) return r.put("vorgemerkt", false);   // erst fragen, nie still vormerken
         String grund = r.optString("grund", "");
         if (!UpdateHinweis.vormerkbar(grund)) {
             synchronized (lock) {
@@ -1534,11 +1545,9 @@ public final class AppUpdateDienst {
 
         @Override
         public void melde(Freigabe f, long groesseBytes) {
-            String g = UpdateRegel.groesseText(groesseBytes);
-            String text = g.isEmpty()
-                    ? at.greenchili.surfmate.telegram.TelegramMessages.get("update.available", f.versionName)
-                    : at.greenchili.surfmate.telegram.TelegramMessages.get("update.available_size", f.versionName, g);
-            at.greenchili.surfmate.telegram.TelegramNotifier.sendMessage(text, "UPDATE");
+            // 0.1.38.2: mit Knopf „Jetzt installieren“ (Rückfrage im Bot, dann derselbe Weg wie die Karte)
+            at.greenchili.surfmate.telegram.TelegramNotifier.notifyUpdateNeu("panoptes", f.versionName,
+                    UpdateRegel.groesseText(groesseBytes));
         }
 
         @Override
@@ -1553,9 +1562,14 @@ public final class AppUpdateDienst {
          */
         @Override
         public void meldeUpdate(UpdateMeldung.Meldung m) {
-            at.greenchili.surfmate.telegram.TelegramNotifier.sendMessage(
-                    at.greenchili.surfmate.telegram.TelegramMessages.get(UpdateMeldung.telegramSchluessel(m.art), m.version),
-                    "UPDATE");
+            if (UpdateMeldung.LAUNCHER_VERFUEGBAR.equals(m.art)) {
+                // 0.1.38.2: neuer Launcher mit Knopf „Jetzt installieren“ (Rückfrage im Bot, Kategorie UPDATE)
+                at.greenchili.surfmate.telegram.TelegramNotifier.notifyUpdateNeu("launcher", m.version, "");
+            } else {
+                at.greenchili.surfmate.telegram.TelegramNotifier.sendMessage(
+                        at.greenchili.surfmate.telegram.TelegramMessages.get(UpdateMeldung.telegramSchluessel(m.art), m.version),
+                        "UPDATE");
+            }
             try {
                 JSONObject data = new JSONObject().put("art", m.art).put("versionCode", m.versionCode)
                         .put("version", m.version);

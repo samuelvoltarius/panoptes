@@ -115,10 +115,13 @@ public final class WebHandyGuard {
      * {@link AppUpdateApiHandler} über {@code FernUpdate}. Einstellungen des Updaters bleiben gesperrt.
      */
     public static boolean updateErlaubt(String method, String pathOnly, boolean rechtUpdate) {
-        if (!rechtUpdate || pathOnly == null) return false;
+        if (pathOnly == null) return false;
         String p = pathOnly;
         int q = p.indexOf('?');
         if (q >= 0) p = p.substring(0, q);
+        // 0.1.38.2 Panoptes und Launcher (UPDATE_API_CLIENTS.md): Stand lesen immer, Starten nur mit Recht „update“
+        if (AppUpdateApiHandler.FERN_PFAD.equals(p)) return "GET".equals(method) || ("POST".equals(method) && rechtUpdate);
+        if (!rechtUpdate) return false;
         if ("GET".equals(method)) return "/api/appupdate/status".equals(p);
         return "POST".equals(method) && ("/api/appupdate/installieren".equals(p) || "/api/appupdate/suchen".equals(p));
     }

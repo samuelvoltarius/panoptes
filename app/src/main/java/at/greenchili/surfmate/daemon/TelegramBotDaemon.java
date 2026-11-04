@@ -987,6 +987,16 @@ public class TelegramBotDaemon {
             }
 
             @Override
+            public JSONObject daemonHttp(String method, String path, JSONObject body) {
+                return TelegramBotDaemon.daemonHttp(method, path, body);
+            }
+
+            @Override
+            public boolean sendMessageWithMenuKey(long chatId, String text, String keyLabel) {
+                return TelegramBotDaemon.sendMessageWithMenuKey(chatId, text, keyLabel);
+            }
+
+            @Override
             public void log(String message) {
                 TelegramBotDaemon.log(message);
             }
@@ -1791,6 +1801,32 @@ public class TelegramBotDaemon {
                     break;
                 }
 
+                case "notifyUpdateNeu": {
+                    // 0.1.38.2 „neue Version“ mit Knopf „Jetzt installieren“ (führt zur Rückfrage, nie direkt):
+                    // {art: panoptes|launcher, version, groesse}
+                    if (!at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.isUpdateAlerts()) {
+                        response.put("status", "skipped");
+                        response.put("message", "update alerts disabled");
+                        break;
+                    }
+                    if (ownerChatId <= 0) {
+                        response.put("status", "error");
+                        response.put("message", "Owner not set");
+                        break;
+                    }
+                    boolean nLauncher = "launcher".equals(cmd.optString("art", ""));
+                    String nVersion = mdEscape(cmd.optString("version", ""));
+                    String nGroesse = cmd.optString("groesse", "");
+                    String nText = nLauncher
+                            ? tr(nGroesse.isEmpty() ? "update.launcher_available" : "update.launcher_available_size", nVersion, nGroesse)
+                            : tr(nGroesse.isEmpty() ? "update.available" : "update.available_size", nVersion, nGroesse);
+                    boolean nOk = sendMessageWithButtons(ownerChatId, nText, new String[][][]{{
+                            {tr("updates.btn_jetzt"), at.greenchili.surfmate.daemon.telegram.UpdateCommandHandler.PREFIX
+                                    + (nLauncher ? "l" : "p")}}});
+                    response.put("status", nOk ? "ok" : "error");
+                    break;
+                }
+
                 case "notifyUpdate": {
                     // Update-Ergebnis vom Update-Skript am Auto (Totmannschalter):
                     // {result: installed|rolled_back|failed, version, reason}
@@ -1942,6 +1978,10 @@ public class TelegramBotDaemon {
                     TelegramBotDaemon::drainSpooledNotifications, "TelegramSpoolDrain");
             drainThread.setDaemon(true);
             drainThread.start();
+            // 0.1.38.2: Befehlsliste (Menü-Knopf von Telegram) – eigener Thread, blockiert den Bot nie
+            Thread befehle = new Thread(TelegramBotDaemon::registriereBefehle, "TelegramBefehle");
+            befehle.setDaemon(true);
+            befehle.start();
 
             // Send greeting to owner if paired
             sendStartupGreeting();
@@ -2595,6 +2635,9 @@ public class TelegramBotDaemon {
             // Route commands via modular handlers
             if (text.startsWith("/")) {
                 commandRouter.route(chatId, text);
+            } else if (!text.trim().isEmpty()) {
+                // 0.1.38.2: Text ohne „/“ (z. B. „Hallo“ oder der feste Knopf „☰ Menü“) zeigt das Hauptmenü
+                commandRouter.route(chatId, "/menue");
             }
             
         } catch (Exception e) {
@@ -2630,6 +2673,10 @@ public class TelegramBotDaemon {
 
             if (data.startsWith(at.greenchili.surfmate.telegram.AnmeldungsKnopf.PREFIX)) {
                 handleAnmeldungsKnopf(callbackQuery, callbackId, data, userId);
+                return;
+            }
+            if (data.startsWith(at.greenchili.surfmate.daemon.telegram.UpdateCommandHandler.PREFIX)) {
+                handleUpdateKnopf(callbackQuery, callbackId, data, userId);
                 return;
             }
 
@@ -2687,6 +2734,94 @@ public class TelegramBotDaemon {
         }
     }
     
+    /**
+     * 0.1.38.2 Update-Knöpfe ({@code up:…}): nur Absender UND Chat des gekoppelten Besitzers. Ja/Nein verlieren danach
+     * ihre Knöpfe, damit ein zweiter Tipp nichts doppelt startet. Das Installieren selbst prüft der Kern.
+     */
+    private static void handleUpdateKnopf(JSONObject callbackQuery, String callbackId, String data, long userId) {
+        JSONObject msg = callbackQuery.optJSONObject("message");
+        JSONObject chat = msg == null ? null : msg.optJSONObject("chat");
+        long chatId = chat == null ? 0 : chat.optLong("id", 0);
+        if (!at.greenchili.surfmate.telegram.KopplungsKnopf.berechtigt(userId, chatId, ownerChatId)) {
+            log("Update-Knopf abgewiesen (fremder Absender/Chat)");
+            answerCallbackQuery(callbackId, tr("callback.not_authorized"));
+            return;
+        }
+        answerCallbackQuery(callbackId, null);
+        log("Update-Knopf: " + data);
+        String rest = data.substring(at.greenchili.surfmate.daemon.telegram.UpdateCommandHandler.PREFIX.length());
+        if (msg != null && (rest.equals("n") || rest.startsWith("pj:") || rest.startsWith("lj:"))) {
+            editMessageRemoveButtons(chatId, msg.optLong("message_id", 0), msg.optString("text", ""));
+        }
+        commandRouter.updateKnopf(ownerChatId, data);
+    }
+
+    /** 0.1.38.2: Anfrage an den Kamera-Daemon (voller Login); Antwort als JSON, auch bei 4xx; null = nicht erreichbar. */
+    static JSONObject daemonHttp(String method, String path, JSONObject body) {
+        java.net.HttpURLConnection c = null;
+        try {
+            // Suchen fragt die Update-Quelle im Internet; das darf länger dauern
+            int lesen = path.endsWith("/suchen") ? 30000 : 10000;
+            c = at.greenchili.surfmate.util.DaemonHttpClient.open(path, method, 3000, lesen);
+            if (body != null) {
+                c.setDoOutput(true);
+                c.setRequestProperty("Content-Type", "application/json");
+                try (java.io.OutputStream o = c.getOutputStream()) {
+                    o.write(body.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                }
+            }
+            int code = c.getResponseCode();
+            java.io.InputStream in = code >= 400 ? c.getErrorStream() : c.getInputStream();
+            if (in == null) return null;
+            java.io.ByteArrayOutputStream b = new java.io.ByteArrayOutputStream();
+            try (java.io.InputStream i = in) {
+                byte[] buf = new byte[4096];
+                int n;
+                while ((n = i.read(buf)) > 0 && b.size() < 256 * 1024) b.write(buf, 0, n);
+            }
+            return new JSONObject(new String(b.toByteArray(), java.nio.charset.StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            log("daemonHttp " + path + ": " + e.getMessage());
+            return null;
+        } finally {
+            if (c != null) c.disconnect();
+        }
+    }
+
+    /** 0.1.38.2: fester Knopf unten am Eingabefeld (ein Knopf, bleibt sichtbar). */
+    static boolean sendMessageWithMenuKey(long chatId, String text, String keyLabel) {
+        try {
+            JSONObject markup = new JSONObject()
+                    .put("keyboard", new JSONArray().put(new JSONArray().put(new JSONObject().put("text", keyLabel))))
+                    .put("resize_keyboard", true)
+                    .put("is_persistent", true);
+            return sendMessageWithUrlButtons(chatId, text, markup.toString());
+        } catch (Exception e) {
+            return sendMessage(chatId, text);
+        }
+    }
+
+    /**
+     * 0.1.38.2: Befehlsliste für den Menü-Knopf von Telegram, in der Sprache von Panoptes. Einmal je Start, Fehler
+     * egal (der Bot geht auch ohne).
+     */
+    private static void registriereBefehle() {
+        try {
+            JSONArray cmds = new JSONArray();
+            String[][] liste = {{"menue", "commands.menue"}, {"status", "commands.status"},
+                    {"updates", "commands.updates"}, {"hilfe", "commands.hilfe"}};
+            for (String[] c : liste) cmds.put(new JSONObject().put("command", c[0]).put("description", tr(c[1])));
+            JSONObject body = new JSONObject().put("commands", cmds);
+            Request request = new Request.Builder()
+                    .url(TELEGRAM_API_BASE() + botToken + "/setMyCommands")
+                    .post(RequestBody.create(body.toString(), MediaType.parse("application/json")))
+                    .build();
+            httpClient.newCall(request).execute().close();
+        } catch (Exception e) {
+            log("setMyCommands: " + e.getMessage());
+        }
+    }
+
     /** 0.1.21: Erlauben/Ablehnen einer BYD-Cloud-Übergabe aus Telegram (über den Kamera-Daemon, voller Login). */
     private static void handleCloudUebergabeKnopf(JSONObject callbackQuery, String callbackId, String data, long userId) {
         JSONObject msg = callbackQuery.optJSONObject("message");

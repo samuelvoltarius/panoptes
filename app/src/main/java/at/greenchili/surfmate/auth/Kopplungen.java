@@ -239,7 +239,8 @@ public final class Kopplungen {
             RECHT_WALLBOX = "wallbox",   // 0.1.25 Wallbox starten/stoppen/Ladestrom vom Handy; Standard AUS
             RECHT_ROUTE = "route",       // 0.1.25 Route ins Auto schicken (nur Anzeige, nichts startet von selbst); Standard AN
             // 0.1.26.1 Panoptes aktualisieren (nur freigegebene Version des Updaters, nur geparkt). Standard AUS
-            // (0.1.32.1), nur der Besitzer schaltet es ein; Bestand behält, was er hat
+            // (0.1.32.1), nur der Besitzer schaltet es ein; Bestand behält, was er hat. 0.1.38.2: auch den Launcher,
+            // und auch für das Cockpit setzbar (COCKPIT_RECHTE)
             RECHT_UPDATE = "update",
             // 0.1.28 P5 (Koordination 29.10.): Unfall-/Ereignis-Clips aufs Handy laden; Standard AUS, nur der Besitzer
             // schaltet es ein (Login/Display); zusätzlich zu „kamera“
@@ -270,9 +271,12 @@ public final class Kopplungen {
     public static final java.util.List<String> FREMD_RECHTE = java.util.Collections.unmodifiableList(
             java.util.Arrays.asList(RECHT_KAMERA, RECHT_STANDBILD, RECHT_TACHO));
 
-    /** 0.1.38: das Cockpit trägt zusätzlich {@code launcher} (Home Assistant und Dienste nie), {@code tacho} wie 0.1.37. Standard AUS. */
+    /**
+     * 0.1.38: das Cockpit trägt zusätzlich {@code launcher} (Home Assistant und Dienste nie), {@code tacho} wie 0.1.37.
+     * 0.1.38.2: auch {@code update} (Panoptes und Launcher aktualisieren, {@code /api/appupdate/fern}). Standard AUS.
+     */
     public static final java.util.List<String> COCKPIT_RECHTE = java.util.Collections.unmodifiableList(
-            java.util.Arrays.asList(RECHT_KAMERA, RECHT_STANDBILD, RECHT_TACHO, RECHT_LAUNCHER));
+            java.util.Arrays.asList(RECHT_KAMERA, RECHT_STANDBILD, RECHT_TACHO, RECHT_LAUNCHER, RECHT_UPDATE));
 
     /** Rechte, die eine Nicht-Handy-Art tragen kann. */
     static java.util.List<String> fremdRechte(String art) {

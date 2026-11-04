@@ -1,0 +1,109 @@
+{
+  "ladungen": 2,
+  "startkurveGeladen": false,
+  "kurve": [
+    {
+      "soc_von": 10,
+      "soc_bis": 15,
+      "kw": 76.8,
+      "n": 2,
+      "qualitaet": "gemessen"
+    },
+    {
+      "soc_von": 15,
+      "soc_bis": 20,
+      "kw": 78.4,
+      "n": 2,
+      "qualitaet": "gemessen"
+    },
+    {
+      "soc_von": 20,
+      "soc_bis": 25,
+      "kw": 78.9,
+      "n": 2,
+      "qualitaet": "gemessen"
+    },
+    {
+      "soc_von": 25,
+      "soc_bis": 30,
+      "kw": 78.2,
+      "n": 2,
+      "qualitaet": "gemessen"
+    },
+    {
+      "soc_von": 30,
+      "soc_bis": 35,
+      "kw": 77.1,
+      "n": 2,
+      "qualitaet": "gemessen"
+    },
+    {
+      "soc_von": 35,
+      "soc_bis": 40,
+      "kw": 75.6,
+      "n": 2,
+      "qualitaet": "gemessen"
+    },
+    {
+      "soc_von": 40,
+      "soc_bis": 45,
+      "kw": 73.0,
+      "n": 2,
+      "qualitaet": "gemessen"
+    },
+    {
+      "soc_von": 45,
+      "soc_bis": 50,
+      "kw": 69.8,
+      "n": 2,
+      "qualitaet": "gemessen"
+    },
+    {
+      "soc_von": 50,
+      "soc_bis": 55,
+      "kw": 64.9,
+      "n": 2,
+      "qualitaet": "gemessen"
+    },
+    {
+      "soc_von": 55,
+      "soc_bis": 60,
+      "kw": 60.2,
+      "n": 2,
+      "qualitaet": "gemessen"
+    },
+    {
+      "soc_von": 60,
+      "soc_bis": 65,
+      "kw": 55.3,
+      "n": 2,
+      "qualitaet": "gemessen"
+    },
+    {
+      "soc_von": 65,
+      "soc_bis": 70,
+      "kw": 50.1,
+      "n": 2,
+      "qualitaet": "gemessen"
+    },
+    {
+      "soc_von": 70,
+      "soc_bis": 75,
+      "kw": 44.0,
+      "n": 2,
+      "qualitaet": "gemessen"
+    },
+    {
+      "soc_von": 75,
+      "soc_bis": 80,
+      "kw": 36.7,
+      "n": 2,
+      "qualitaet": "gemessen"
+    }
+  ],
+  "band": 5,
+  "teilen": false,
+  "zuletztGeteilt": null,
+  "laeuft": false,
+  "punkteJetzt": 0
+}

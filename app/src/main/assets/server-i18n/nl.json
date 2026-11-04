@@ -493,7 +493,7 @@
       "online": "👋 *Panoptes is er.*\nJe auto luistert weer. Tik op /help voor alle commando's."
     },
     "welcome": {
-      "paired": "👋 *Hoi, dit is Panoptes.*\nIk laat het je weten als er iets gebeurt bij je auto. /help laat zien wat ik kan."
+      "paired": "👋 *Hallo, hier is Panoptes.*\nIk meld me als er iets bij de auto gebeurt. Onderaan staat nu altijd de knop *☰ Menu*."
     },
     "pair": {
       "no_owner": "🔐 *Deze bot heeft nog geen eigenaar.*\nOpen in Panoptes *Systeem → Telegram-meldingen* en tik op “Koppelen”. Open dan de link, of stuur hier `/pair 123456` met je pincode.",
@@ -510,7 +510,7 @@
       "message": "✅ *Test van Panoptes*\nAls je dit leest, komen de meldingen van je auto hier aan."
     },
     "router": {
-      "unknown_command": "🤔 Die ken ik niet. /help toont ze allemaal.",
+      "unknown_command": "🤔 Die opdracht ken ik niet. Tik onderaan op *☰ Menu*, dan zie je alles.",
       "not_allowed": "🔒 Dit commando staat uit. Je kunt het toestaan in Panoptes onder *Systeem → Telegram-meldingen → Commando's op afstand*."
     },
     "help": {
@@ -530,7 +530,9 @@
       "backup": "/backup – Stuur je instellingen als bestand (`/backup trips` voegt het ritboek toe)",
       "help": "/help – Deze lijst",
       "some_locked": "🔒 Sommige commando's staan uit. Je kunt ze toestaan in Panoptes onder *Systeem → Telegram-meldingen*.",
-      "footer": "_Panoptes {0}_"
+      "footer": "_Panoptes {0}_",
+      "menu": "/menue – Alle knoppen in één oogopslag",
+      "updates": "/updates – Panoptes en launcher bijwerken"
     },
     "buttons": {
       "status": "📊 Status",
@@ -748,7 +750,7 @@
       "tunnel_url": "🌐 *Toegang op afstand*\n{0}"
     },
     "url": {
-      "none_running": "🌐 Toegang op afstand staat uit.\nZet haar aan in Panoptes onder *Systeem → Toegang op afstand*, of hier met `/service tailscale start`.",
+      "none_running": "🌐 Toegang op afstand staat uit.\nJe zet hem aan in Panoptes onder *Systeem → Toegang op afstand* of hier onder *☰ Menu → Meer → Diensten*.",
       "title": "🌐 *Zo bereik je Panoptes*\n\n",
       "resolved_line": "• *{0}:* {1}\n",
       "pending_line": "• *{0}:* _start, link komt zo_\n",
@@ -781,11 +783,13 @@
       "rolled_back": "↩️ *Update teruggezet*\nDe nieuwe versie draaide niet goed, dus Panoptes is terug op {0}. Er gaat niets verloren op de auto.",
       "rolled_back_reason": "↩️ *Update teruggezet*\nDe nieuwe versie draaide niet goed, dus Panoptes is terug op {0}. Er gaat niets verloren op de auto.\nReden: {1}",
       "unknown_reason": "onbekend – details staan in het logboek op de auto",
-      "available": "🆕 *Panoptes {0} is beschikbaar*\nInstalleren kan als de auto geparkeerd staat, onder *Systeem → App-updates*.",
-      "available_size": "🆕 *Panoptes {0} is beschikbaar* ({1})\nInstalleren kan als de auto geparkeerd staat, onder *Systeem → App-updates*.",
+      "available": "🆕 *Panoptes {0} is er*\nTik op de knop om te installeren. Ik vraag het eerst nog een keer.",
+      "available_size": "🆕 *Panoptes {0} is er* ({1})\nTik op de knop om te installeren. Ik vraag het eerst nog een keer.",
       "installiert_laeuft": "✅ *Panoptes {0} is geïnstalleerd en draait.*",
       "launcher_verfuegbar": "🆕 *Nieuwe launcher-versie {0}*\nBijwerken gaat met de knop in Panoptes, onder *Apps & scherm → Scherm → Launcher*.",
-      "launcher_installiert": "✅ *Launcher {0} is geïnstalleerd.*"
+      "launcher_installiert": "✅ *Launcher {0} is geïnstalleerd.*",
+      "launcher_available": "🆕 *Nieuwe launcher {0} is er*\nTik op de knop om te installeren. Ik vraag het eerst nog een keer.",
+      "launcher_available_size": "🆕 *Nieuwe launcher {0} is er* ({1})\nTik op de knop om te installeren. Ik vraag het eerst nog een keer."
     },
     "critical": {
       "message": "🚨 *{0}*",
@@ -932,7 +936,8 @@
       "wallbox": "🔌 Laadpaal bediend vanaf telefoon „{0}”: {1}",
       "tiermodus_an": "🐾 Huisdiermodus ingeschakeld via telefoon „{0}”.",
       "tiermodus_aus": "🐾 Huisdiermodus uitgeschakeld via telefoon „{0}”.",
-      "update_gestartet": "⬆️ Update naar {0} gestart door „{1}”. Panoptes is ongeveer 3–8 minuten weg."
+      "update_gestartet": "⬆️ Update naar {0} gestart door „{1}”. Panoptes is ongeveer 3–8 minuten weg.",
+      "launcher_update_gestartet": "⬆️ Launcher-update naar {0} gestart door „{1}”. Dat duurt ongeveer een minuut."
     },
     "zurueck": {
       "text": "🚗 Welkom terug bij de auto. Hij stond {0} geparkeerd.",
@@ -971,6 +976,56 @@
     },
     "ereignis": {
       "gesichert": "Panoptes: gebeurtenis om {0} opgeslagen (alleen in de auto)."
+    },
+    "menu": {
+      "title": "🧭 *Wat wil je doen?*\nTik gewoon op een knop.",
+      "locked": "🔒 Meer knoppen zet je aan in Panoptes onder *Systeem → Telegram-meldingen → Opdrachten op afstand*.",
+      "more_title": "⋯ *Meer*\nTik gewoon op een knop.",
+      "btn_menu": "☰ Menu",
+      "btn_status": "🚗 Hoe gaat het met de auto?",
+      "btn_guard": "🛡 Bewaker",
+      "btn_where": "📍 Waar staat hij?",
+      "btn_camera": "📷 Camerabeeld",
+      "btn_clips": "🎞 Opnames",
+      "btn_charge": "🔋 Accu",
+      "btn_updates": "⬆️ Updates",
+      "btn_more": "⋯ Meer",
+      "btn_camping": "⛺ Kamperen",
+      "btn_tier": "🐾 Dier in de auto",
+      "btn_remote": "🌐 Link naar Panoptes",
+      "btn_services": "⚙️ Diensten",
+      "btn_backup": "💾 Instellingen bewaren",
+      "btn_backup_trips": "💾 Met rittenlogboek",
+      "btn_back": "⬅️ Terug"
+    },
+    "commands": {
+      "menue": "Menu met alle knoppen",
+      "status": "Hoe het met de auto gaat",
+      "updates": "Panoptes en launcher bijwerken",
+      "hilfe": "Hulp"
+    },
+    "updates": {
+      "title": "⬆️ *Updates*",
+      "panoptes_laeuft": "⏳ Panoptes wordt nu bijgewerkt.",
+      "panoptes_neu": "🆕 Panoptes: {0} → *{1}* is er",
+      "panoptes_aktuell": "✅ Panoptes {0} is actueel",
+      "launcher_laeuft": "⏳ De launcher wordt nu bijgewerkt.",
+      "launcher_keiner": "➖ Launcher: niet ingesteld in deze auto",
+      "launcher_neu": "🆕 Launcher *{0}* is er",
+      "launcher_aktuell": "✅ De launcher is actueel",
+      "btn_panoptes": "⬆️ Panoptes {0} installeren",
+      "btn_launcher": "⬆️ Launcher {0} installeren",
+      "btn_suchen": "🔄 Naar updates zoeken",
+      "btn_jetzt": "⬆️ Nu installeren",
+      "btn_ja": "✅ Ja, installeren",
+      "btn_nein": "✖️ Nee",
+      "frage_panoptes": "❓ *Panoptes {0} nu installeren?*\nDat duurt ongeveer 3–8 minuten. In die tijd staat de bewaker uit.\nStaat de auto nu aan, dan installeert Panoptes na het parkeren.",
+      "frage_launcher": "❓ *Launcher {0} nu installeren?*\nDat duurt ongeveer een minuut. Niet tijdens het rijden.",
+      "frage_mobil": "📶 De auto heeft nu geen wifi. De update heeft ongeveer {0} mobiele data nodig.",
+      "abgebrochen": "Goed, geen update.",
+      "nicht_bereit": "⚠️ Panoptes antwoordt nu niet. Probeer het over een minuut nog eens.",
+      "ratenlimit": "Net nog gekeken. Dit is de stand:",
+      "gestartet": "De update loopt."
     }
   },
   "vehicle_control": {
@@ -2595,7 +2650,7 @@
     "laeuft_schon": "Panoptes wordt al bijgewerkt.",
     "fertig": "Klaar. Panoptes draait nu met {1}.",
     "fehler": "De update is niet gelukt. Panoptes draait verder met de vorige versie.",
-    "nicht_erlaubt": "Dit apparaat mag Panoptes niet bijwerken. Inschakelen in de auto onder „Gekoppelde apparaten”.",
+    "nicht_erlaubt": "Dit apparaat mag geen updates starten. Inschakelen in de auto onder „Gekoppelde apparaten”.",
     "faehrt": "Geen update tijdens het rijden. Parkeer en zet de auto uit.",
     "nicht_in_p": "Bijwerken kan alleen als de auto in P staat en uit is.",
     "zuendung_an": "Bijwerken kan alleen als de auto uit is. Zet hem uit en probeer het opnieuw.",
@@ -2606,7 +2661,15 @@
     "andere_version": "Deze versie is niet vrijgegeven. Vrijgegeven is {0}.",
     "bestaetigung_fehlt": "Bevestig de update eerst.",
     "nicht_bereit": "Panoptes start op. Probeer het over een minuut opnieuw.",
-    "nicht_moeglich": "De update kan nu niet. Probeer het later opnieuw."
+    "nicht_moeglich": "De update kan nu niet. Probeer het later opnieuw.",
+    "launcher_bereit": "Nieuwe launcher {0} is er. De update duurt ongeveer een minuut.",
+    "launcher_kein_update": "De launcher is actueel.",
+    "launcher_laeuft": "De launcher wordt bijgewerkt. Dat duurt ongeveer een minuut.",
+    "launcher_laeuft_schon": "De launcher wordt al bijgewerkt.",
+    "launcher_fehler": "De launcher-update is niet gelukt. De vorige launcher blijft. Probeer het later nog eens.",
+    "launcher_mobil_frage": "De auto heeft nu geen wifi. De launcher heeft ongeveer {0} mobiele data nodig. Alleen deze versie downloaden?",
+    "launcher_faehrt": "Dat kan niet tijdens het rijden. Zet de auto in P en tik nog eens.",
+    "nicht_installiert": "De launcher is niet ingesteld in deze auto. Dat kan alleen in de auto."
   },
   "telegram_login": {
     "geraet_name": "Browser (Telegram)"

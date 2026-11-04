@@ -1,0 +1,115 @@
+{
+  "status": "ok",
+  "deviceId": "demo",
+  "screenshotPrivacyMode": false,
+  "genAiDashboardEnabled": true,
+  "vehicleDataReady": true,
+  "appVersion": "0.1.38.2",
+  "recording": [],
+  "viewing": [],
+  "active": [],
+  "streaming": [],
+  "available": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "battery": {
+    "voltage": 12.9,
+    "available": true,
+    "isStale": false,
+    "ageMs": 4200,
+    "level": "NORMAL",
+    "soc": 88,
+    "lastUpdate": 1792478400000
+  },
+  "acc": false,
+  "safeZoneSuppressed": false,
+  "inSafeZone": false,
+  "charging": {
+    "stateName": "Not charging",
+    "status": "NOT_CHARGING",
+    "isDischarging": false,
+    "isError": false,
+    "chargingPowerKW": 0,
+    "powerKw": 0,
+    "isEstimated": false,
+    "powerSource": "none",
+    "powerObservedAtMs": 0,
+    "powerQuality": "UNKNOWN",
+    "powerConfidence": 0,
+    "charging": false,
+    "plugged": false,
+    "full": false,
+    "fault": false,
+    "socPercent": 86.0,
+    "sessionKwh": null,
+    "sessionEnergyIncomplete": false,
+    "sessionEnergyEstimated": false,
+    "sessionEnergySource": null
+  },
+  "soc": {
+    "percent": 86.0,
+    "isLow": false,
+    "isCritical": false,
+    "status": "normal",
+    "source": "vehicle"
+  },
+  "verbrauchKwh100": 15.4,
+  "range": {
+    "elecRangeKm": 262.0,
+    "fuelRangeKm": 0.0,
+    "totalRangeKm": 262.0,
+    "isLow": false,
+    "isCritical": false,
+    "status": "normal",
+    "isPhev": false
+  },
+  "distanceUnit": "km",
+  "pressureUnit": "bar",
+  "locale": "de",
+  "soh": {
+    "percent": 97.4,
+    "estimatedCapacityKwh": 42.1,
+    "nominalCapacityKwh": 43.2
+  },
+  "gpuSurveillance": false,
+  "recordingStatus": {
+    "configuredMode": "NORMAL",
+    "isRecording": false,
+    "pipelineRunning": false,
+    "gear": "P",
+    "accOn": false,
+    "modeActive": false,
+    "wedged": false
+  },
+  "tripStatus": {
+    "enabled": true,
+    "tripActive": false
+  },
+  "gps": {
+    "lat": 48.2012,
+    "lng": 16.3669,
+    "speed": 0.0,
+    "heading": 215.0,
+    "accuracy": 4.5,
+    "altitude": 176.0,
+    "lastUpdate": 1792500000000,
+    "provider": "sidecar",
+    "isMoving": false,
+    "hasLocation": true,
+    "ageMs": 3000,
+    "isStale": false,
+    "isCached": false,
+    "loadedFromCache": false,
+    "fixAgeMs": 3000,
+    "isFixStale": false
+  },
+  "network": {
+    "type": "wifi",
+    "ssid": "Muster-WLAN",
+    "ip": "",
+    "signal": 82
+  }
+}

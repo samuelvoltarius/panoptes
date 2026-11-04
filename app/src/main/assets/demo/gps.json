@@ -1,0 +1,25 @@
+{
+  "success": true,
+  "location": {
+    "lat": 48.2082,
+    "lng": 16.3738,
+    "speed": 0.0,
+    "heading": 118.0,
+    "accuracy": 6.0,
+    "altitude": 171.0,
+    "lastUpdate": 1792500000000,
+    "provider": "sidecar",
+    "isMoving": false,
+    "hasLocation": true,
+    "ageMs": 2000,
+    "isStale": false,
+    "isCached": false,
+    "loadedFromCache": false,
+    "fixAgeMs": 2000,
+    "isFixStale": false,
+    "canSpeedKmh": 0.0,
+    "accelPercent": 0,
+    "brakePercent": 100
+  },
+  "googleMapsUrl": "https://www.google.com/maps/dir/?api=1&destination=48.2082,16.3738&travelmode=driving"
+}

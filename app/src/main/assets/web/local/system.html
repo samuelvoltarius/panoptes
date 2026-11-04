@@ -926,7 +926,7 @@
                     kamera: self.t('system.handy_recht_kamera', 'Kamerabilder und Aufnahmen unterwegs'),
                     wallbox: self.t('system.handy_recht_wallbox', 'Wallbox starten, stoppen, Ladestrom'),
                     route: self.t('system.handy_recht_route', 'Route ins Auto schicken (startet nichts von selbst)'),
-                    update: self.t('system.handy_recht_update', 'Panoptes aktualisieren (nur geparkt)'),
+                    update: self.t('system.handy_recht_update', 'Panoptes und Launcher aktualisieren (nur geparkt)'),
                     ereignisclip: self.t('system.handy_recht_ereignisclip', 'Unfall-Clips aufs Handy erlauben (nur auf Knopfdruck am Handy)'),
                     protokoll: self.t('system.handy_recht_protokoll', 'Sieht, was andere Geräte am Auto gemacht haben'),
                     dateien: self.t('dateien.recht_info', 'Dateien zwischen Handy und Auto austauschen (höchstens 200 MB, keine Apps)'),
@@ -1007,11 +1007,13 @@
                     tacho: [self.t('system.handy_wort_tacho', 'Tacho'),
                         self.t('system.handy_recht_tacho', 'Wählen, was der Tacho zeigt, und „Tacho wieder normal“')],
                     launcher: [self.t('system.recht_wort_launcher', 'Launcher'),
-                        self.t('system.recht_info_launcher', 'Startbildschirm im Auto einrichten (nur der Aufbau, keine Befehle ans Auto)')]
+                        self.t('system.recht_info_launcher', 'Startbildschirm im Auto einrichten (nur der Aufbau, keine Befehle ans Auto)')],
+                    update: [self.t('system.handy_wort_update', 'Update'),
+                        self.t('system.handy_recht_update', 'Panoptes und Launcher aktualisieren (nur geparkt)')]
                 };
                 var html = '<div class="pn-rechte">';
-                // 0.1.37: „tacho“ und „launcher“ (0.1.38) nur für das Cockpit (Home Assistant und Dienste erreichen die Tacho-Auswahl nicht)
-                (g.art === 'cockpit' ? ['kamera', 'standbild', 'tacho', 'launcher'] : ['kamera', 'standbild']).forEach(function (k) {
+                // 0.1.37: „tacho“, „launcher“ (0.1.38) und „update“ (0.1.38.2) nur für das Cockpit (Home Assistant und Dienste nie)
+                (g.art === 'cockpit' ? ['kamera', 'standbild', 'tacho', 'launcher', 'update'] : ['kamera', 'standbild']).forEach(function (k) {
                     html += '<label class="pn-recht"><span class="pn-recht-text"><span class="pn-recht-wort">' + self.esc(texte[k][0])
                         + '</span><span class="pn-recht-info">' + self.esc(texte[k][1]) + '</span></span>'
                         + '<span class="toggle-switch"><input type="checkbox" data-fremd-recht="' + k + '" data-id="' + self.esc(g.id) + '"'
@@ -1023,6 +1025,11 @@
                 var self = this, id = cb.getAttribute('data-id'), k = cb.getAttribute('data-fremd-recht');
                 if (cb.checked && k === 'kamera'
                     && !window.confirm(self.t('system.fremd_kamera_confirm', 'Aufnahmen zeigen auch Passanten. Dieses Gerät darf dann Wächter-Aufnahmen und Vorschaubilder ansehen. Einschalten?'))) {
+                    cb.checked = false;
+                    return;
+                }
+                if (cb.checked && k === 'update'
+                    && !window.confirm(self.t('system.handy_update_confirm', 'Dieses Gerät darf dann Panoptes und den Launcher aktualisieren. Vor jedem Update fragt es nach. Einschalten?'))) {
                     cb.checked = false;
                     return;
                 }

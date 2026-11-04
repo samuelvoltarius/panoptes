@@ -37,7 +37,8 @@ public class KopplungenFremdRechteTest {
         Kopplungen k = neu();
         String id = k.anlegen("Cockpit", "cockpit", 1L);
         assertTrue(k.rechteSetzen(id, Arrays.asList("kamera", "klima", "aufsperren", "web", "update")));
-        assertEquals(Arrays.asList("kamera"), k.rechte(id));
+        // 0.1.38.2 (Koordination 04.11.): das Cockpit kann „update“ tragen (Panoptes und Launcher), Standard aus
+        assertEquals(Arrays.asList("kamera", "update"), k.rechte(id));
         assertTrue(k.hatRecht(id, Kopplungen.RECHT_KAMERA));
         assertFalse(k.hatRecht(id, Kopplungen.RECHT_AUFSPERREN));
         assertFalse(k.hatRecht(id, Kopplungen.RECHT_WEB));
