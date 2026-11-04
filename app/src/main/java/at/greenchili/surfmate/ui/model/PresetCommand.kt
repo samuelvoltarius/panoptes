@@ -46,16 +46,10 @@ object PresetCommands {
             // so the user-visible behavior was "watchdog dies, daemon
             // survives, lock leaks" — exactly the broken half of the
             // intended kill cascade.
-            "MY_PID=\$\$; " +
-                "ps -A -o PID,ARGS | grep -F start_cam_daemon | grep -v grep " +
-                "| awk '{print \$1}' | while read pid; do " +
-                "if [ \"\$pid\" != \"\$MY_PID\" ]; then kill -9 \$pid 2>/dev/null; fi; done; " +
+            at.greenchili.surfmate.launcher.EigeneProzesse.beenden("start_cam_daemon") + "; " +
                 "rm -f /data/user_de/0/com.android.shell/surfmate/start_cam_daemon.sh; " +
                 "sleep 1; " +
-                "ps -A -o PID,ARGS | grep -F byd_cam_daemon | grep -v grep " +
-                "| awk '{print \$1}' | while read pid; do " +
-                "if [ \"\$pid\" != \"\$MY_PID\" ]; then kill -9 \$pid 2>/dev/null; fi; done; " +
-                "killall -9 byd_cam_daemon 2>/dev/null; " +
+                at.greenchili.surfmate.launcher.EigeneProzesse.beenden("byd_cam_daemon") + "; " +
                 "rm -f /data/user_de/0/com.android.shell/surfmate/camera_daemon.lock; " +
                 "rm -rf /data/user_de/0/com.android.shell/surfmate/cam_watchdog.lock",
             "Control"

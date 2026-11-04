@@ -30,6 +30,11 @@ public final class UpdateLifecycle {
      * '<pattern>'} site — pkill -f matches the calling shell's argv on the
      * literal pattern and SIGKILLs it before subsequent commands run.
      */
+    /** Eigene Prozesse des Panoptes-Stapels (Skripte, Daemons), ein ps für alle; fremde mit gleichem Namen bleiben. */
+    static final String EIGENE_PROZESSE_KILL = at.greenchili.surfmate.launcher.EigeneProzesse.beendenMehrere(
+            java.util.Arrays.asList("start_cam_daemon", "start_acc_sentry", "start_telegram", "byd_cam_daemon",
+                    "cam_daemon", "sentry_daemon", "acc_sentry_daemon", "telegram_bot_daemon", "sentry_proxy"));
+
     private static String psAwkKillLine(String pattern) {
         return "MY_PID=$$; ps -A -o PID,ARGS | grep -F '" + pattern + "' | grep -v grep "
             + "| awk '{print $1}' | while read pid; do "
@@ -188,19 +193,13 @@ public final class UpdateLifecycle {
                 // ps+awk+kill cascade — single-source-of-truth process
                 // names below. Each pattern walks /proc and SIGKILLs the
                 // matching PIDs except the calling shell's own PID.
-                psAwkKillLine("start_cam_daemon") +
-                psAwkKillLine("start_acc_sentry") +
-                psAwkKillLine("start_telegram") +
-                psAwkKillLine("byd_cam_daemon") +
+                // 0.1.38.9 Schnellstart 2: EINE ps-Abfrage für alle eigenen Prozesse statt 13 nacheinander (auf dem Auto
+                // je ~1 s, der Hard-Reset dauerte 15-30 s) und nur noch EIGENE Prozesse (Klassenpfad/Ordner), nie die
+                // einer anderen Werkzeug-App mit gleichen Prozessnamen. Zweiter Durchgang nach dem Settle unten.
+                EIGENE_PROZESSE_KILL + "\n" +
                 diLink5CaptureCleanup +
-                psAwkKillLine("cam_daemon") +
-                psAwkKillLine("sentry_daemon") +
-                psAwkKillLine("acc_sentry_daemon") +
-                psAwkKillLine("telegram_bot_daemon") +
-                psAwkKillLine("sentry_proxy") +
-                psAwkKillLine("cloudflared") +
-                psAwkKillLine("zrok") +
-                psAwkKillLine("sing-box") +
+                at.greenchili.surfmate.launcher.DaemonLauncher.Companion.psAwkKillMehrereLine(
+                        java.util.Arrays.asList("cloudflared", "zrok", "sing-box")) +
                 // 0.1.14: nur den Panoptes-tailscaled (eigener --statedir), nie einen zweiten (Notzugang, Regel 1)
                 at.greenchili.surfmate.launcher.TailscaledProzesse.beendenSkript(
                         at.greenchili.surfmate.launcher.TailscaledProzesse.PANOPTES_STATEDIR, "-9") + "\n" +
@@ -214,6 +213,7 @@ public final class UpdateLifecycle {
                 // mid-shutdown could still rewrite the lock between our
                 // pkill and our rm.
                 "sleep 1\n" +
+                EIGENE_PROZESSE_KILL + "\n" +
                 // Watchdog ownership locks intentionally do not match
                 // *_daemon.lock. SIGKILL bypasses the watchdog EXIT trap, so
                 // these must be removed explicitly after the old wrappers are

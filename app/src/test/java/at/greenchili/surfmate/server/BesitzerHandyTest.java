@@ -51,6 +51,8 @@ public class BesitzerHandyTest {
         @Override public boolean dienst(String name) { aufrufe.add("dienst:" + name); return true; }
         @Override public boolean waechter(boolean an) { aufrufe.add("waechter:" + an); return true; }
         @Override public void melde(String text) { meldungen.add(text); }
+        /** 0.1.39: „Am PC anmelden“ am Auto an (sonst pc_aus, PcBrueckeTest) */
+        @Override public boolean pcErlaubt() { return true; }
     }
 
     private Kopplungen k;
@@ -90,7 +92,8 @@ public class BesitzerHandyTest {
             if (Einstellungen.sperre(f, Einstellungen.Stufe.BESITZER) != null && !f.nurLesend) nie.add(f.key);
         }
         // Neue Zugangs-/Update-/Datenfelder bewusst einordnen: diese Liste ist die harte Sperre für das Besitzer-Handy.
-        assertEquals(new TreeSet<>(Arrays.asList("fahrzeugAktionen.annaeherung", "fahrzeugAktionen.aufsperren",
+        // 0.1.39: „Am PC anmelden“ + PC-Tagesgrenze sind Zugang (PLAN_BRUECKE_PC_0139)
+        assertEquals(new TreeSet<>(Arrays.asList("bruecke.pcAnmeldung", "bruecke.pcTagesMB", "fahrzeugAktionen.annaeherung", "fahrzeugAktionen.aufsperren",
                 "fahrzeugAktionen.autoFinden", "fahrzeugAktionen.licht", "fahrzeugAktionen.warnblinker",
                 "ladekurve.url", "planner.memberToken", "update.kanal", "update.quelle",
                 "update.repo", "update.token", "zaehlen.url")), nie);

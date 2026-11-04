@@ -190,12 +190,35 @@ class DaemonLauncher(
          *         it can concatenate cleanly into a one-line payload.
          */
         fun psAwkKill(pattern: String): String =
-            "MY_PID=\$\$; ps -A -o PID,ARGS | grep -F '$pattern' | grep -v grep " +
-            "| awk '{print \$1}' | while read pid; do " +
-            "if [ \"\$pid\" != \"\$MY_PID\" ]; then kill -9 \$pid 2>/dev/null; fi; done"
+            // 0.1.38.9: die Muster des eigenen Daemon-Stapels beenden NUR eigene Prozesse (EigeneProzesse); fremde
+            // Werkzeug-Apps mit gleichen Prozessnamen (Overdrive-artig) bleiben unberührt.
+            if (pattern in EIGENE_MUSTER) EigeneProzesse.beenden(pattern) else
+            psAwkKill("$pattern")
+
+        /** Prozessnamen/-muster des Panoptes-Stapels (siehe psAwkKill). */
+        private val EIGENE_MUSTER = setOf(
+            "cam_daemon", "byd_cam_daemon", "start_cam_daemon", "sentry_daemon", "acc_sentry", "acc_sentry_daemon",
+            "start_acc_sentry", "start_telegram", "start_telegram.sh", "telegram_bot_daemon", "sentry_proxy"
+        )
 
         /** Newline-terminated form for use inside `buildString` script bodies. */
         fun psAwkKillLine(pattern: String): String = psAwkKill(pattern) + "\n"
+
+        /** Mehrere (fremde/alte) Muster mit EINER ps-Abfrage, Zeilenumbruch am Ende. Kein Eigen-Test, nur für Altlasten. */
+        @JvmStatic
+        fun psAwkKillMehrereLine(patterns: List<String>): String {
+            val e = patterns.joinToString(" ") { "-e '" + it.replace("'", "") + "'" }
+            return "MY_PID=\$\$; ps -A -o PID,ARGS | grep -F $e | grep -v grep " +
+                "| awk '{print \$1}' | while read pid; do " +
+                "if [ \"\$pid\" != \"\$MY_PID\" ]; then kill -9 \$pid 2>/dev/null; fi; done\n"
+        }
+
+        /** 0.1.38.9: wie [psAwkKill], aber nur EIGENE Prozesse (siehe [EigeneProzesse]). */
+        @JvmStatic
+        fun psAwkKillEigene(pattern: String): String = EigeneProzesse.beenden(pattern)
+
+        @JvmStatic
+        fun psAwkKillEigeneLine(pattern: String): String = EigeneProzesse.beendenZeile(pattern)
 
         const val CLOUDFLARED_STOPPED = "CLOUDFLARED_STOPPED"
         const val CLOUDFLARED_STILL_RUNNING = "CLOUDFLARED_STILL_RUNNING"
@@ -1133,7 +1156,6 @@ class DaemonLauncher(
         val cleanupScript = buildString {
             append("rm -f /data/user_de/0/com.android.shell/surfmate/camera_daemon.disabled 2>/dev/null\n")
             append(psAwkKillLine("cam_daemon"))
-            append("killall -9 $CAMERA_DAEMON_PROCESS 2>/dev/null\n")
             append("sleep 1\n")
             append("rm -f /data/user_de/0/com.android.shell/surfmate/camera_daemon.lock $CAMERA_WATCHDOG_PID_FILE 2>/dev/null\n")
             append("rm -rf $CAMERA_WATCHDOG_LOCK_PATH 2>/dev/null\n")
@@ -2136,16 +2158,12 @@ class DaemonLauncher(
             // operates on a PID list, so $$ filtering correctly
             // excludes the priv-shell's PID.
             "rm -f /data/user_de/0/com.android.shell/surfmate/start_cam_daemon.sh 2>/dev/null; " +
-            "MY_PID=\$\$; ps -A -o PID,ARGS | grep -F cam_daemon | grep -v grep " +
-            "| awk '{print \$1}' | while read pid; do " +
-            "if [ \"\$pid\" != \"\$MY_PID\" ]; then kill -9 \$pid 2>/dev/null; fi; done; " +
+            psAwkKill("cam_daemon") + "; " +
             "sleep 1; rm -f /data/user_de/0/com.android.shell/surfmate/camera_daemon.lock " +
             "$CAMERA_WATCHDOG_PID_FILE 2>/dev/null; " +
             "rm -rf $CAMERA_WATCHDOG_LOCK_PATH 2>/dev/null"
         } else {
-            "MY_PID=\$\$; ps -A -o PID,ARGS | grep -F '$processName' | grep -v grep " +
-            "| awk '{print \$1}' | while read pid; do " +
-            "if [ \"\$pid\" != \"\$MY_PID\" ]; then kill -9 \$pid 2>/dev/null; fi; done"
+            psAwkKill(processName)
         }
         val escapedCmd = killCmd.replace("'", "'\\''")
         val ncCmd = "echo '$escapedCmd' | nc localhost 1234"
@@ -2206,11 +2224,8 @@ class DaemonLauncher(
             // braces in case the daemon was launched without --nice-name
             // and only matches `killall` by comm.
             val script = buildString {
-                append("MY_PID=\$\$\n")
-                append("ps -A -o PID,ARGS | grep -F '$processName' | grep -v grep ")
-                append("| awk '{print \$1}' | while read pid; do ")
-                append("if [ \"\$pid\" != \"\$MY_PID\" ]; then kill -9 \$pid 2>/dev/null; fi; done\n")
-                append("killall -9 $processName 2>/dev/null\n")
+                append(psAwkKillLine(processName))
+                if (processName !in EIGENE_MUSTER) append("killall -9 $processName 2>/dev/null\n")
                 append("echo done\n")
             }
             adbShellExecutor.executeScript(
@@ -2247,7 +2262,6 @@ class DaemonLauncher(
                 // CameraDaemonController which DOES plant the sentinel.
                 "rm -f /data/user_de/0/com.android.shell/surfmate/start_cam_daemon.sh 2>/dev/null\n" +
                 psAwkKillLine("cam_daemon") +
-                "killall -9 $processName 2>/dev/null\n" +
                 "sleep 1\n" +
                 "rm -f /data/user_de/0/com.android.shell/surfmate/camera_daemon.lock " +
                 "$CAMERA_WATCHDOG_PID_FILE 2>/dev/null\n" +
@@ -2289,16 +2303,12 @@ class DaemonLauncher(
         // exclusion via $$) so the trailing lock-rm runs.
         val privKillCmd = if (processName == CAMERA_DAEMON_PROCESS) {
             "rm -f /data/user_de/0/com.android.shell/surfmate/start_cam_daemon.sh 2>/dev/null; " +
-            "MY_PID=\$\$; ps -A -o PID,ARGS | grep -F cam_daemon | grep -v grep " +
-            "| awk '{print \$1}' | while read pid; do " +
-            "if [ \"\$pid\" != \"\$MY_PID\" ]; then kill -9 \$pid 2>/dev/null; fi; done; " +
+            psAwkKill("cam_daemon") + "; " +
             "sleep 1; rm -f /data/user_de/0/com.android.shell/surfmate/camera_daemon.lock " +
             "$CAMERA_WATCHDOG_PID_FILE 2>/dev/null; " +
             "rm -rf $CAMERA_WATCHDOG_LOCK_PATH 2>/dev/null"
         } else {
-            "MY_PID=\$\$; ps -A -o PID,ARGS | grep -F '$processName' | grep -v grep " +
-            "| awk '{print \$1}' | while read pid; do " +
-            "if [ \"\$pid\" != \"\$MY_PID\" ]; then kill -9 \$pid 2>/dev/null; fi; done"
+            psAwkKill(processName)
         }
         val escapedCmd = privKillCmd.replace("'", "'\\''")
         val ncCmd = "echo '$escapedCmd' | nc localhost 1234 2>/dev/null"
@@ -2313,19 +2323,14 @@ class DaemonLauncher(
             "echo \"disabled by killDaemon at \$(date)\" > /data/user_de/0/com.android.shell/surfmate/acc_sentry_daemon.disabled; " +
             "chmod 666 /data/user_de/0/com.android.shell/surfmate/acc_sentry_daemon.disabled 2>/dev/null; " +
             "rm -f /data/user_de/0/com.android.shell/surfmate/start_acc_sentry.sh 2>/dev/null; " +
-            "MY_PID=\$\$; ps -A -o PID,ARGS | grep -F acc_sentry | grep -v grep " +
-            "| awk '{print \$1}' | while read pid; do " +
-            "if [ \"\$pid\" != \"\$MY_PID\" ]; then kill -9 \$pid 2>/dev/null; fi; done; " +
+            psAwkKill("acc_sentry") + "; " +
             "sleep 1; " +
             "rm -f /data/user_de/0/com.android.shell/surfmate/acc_sentry_daemon.lock " +
             "$ACC_SENTRY_WATCHDOG_PID_FILE 2>/dev/null; " +
             "rm -rf $ACC_SENTRY_WATCHDOG_LOCK_PATH 2>/dev/null"
         } else if (processName == CAMERA_DAEMON_PROCESS) {
             "rm -f /data/user_de/0/com.android.shell/surfmate/start_cam_daemon.sh 2>/dev/null; " +
-            "MY_PID=\$\$; ps -A -o PID,ARGS | grep -F cam_daemon | grep -v grep " +
-            "| awk '{print \$1}' | while read pid; do " +
-            "if [ \"\$pid\" != \"\$MY_PID\" ]; then kill -9 \$pid 2>/dev/null; fi; done; " +
-            "killall -9 $processName 2>/dev/null; " +
+            psAwkKill("cam_daemon") + "; " +
             "sleep 1; " +
             "rm -f /data/user_de/0/com.android.shell/surfmate/camera_daemon.lock " +
             "$CAMERA_WATCHDOG_PID_FILE 2>/dev/null; " +
@@ -2340,10 +2345,8 @@ class DaemonLauncher(
             "if [ \"\$pid\" != \"\$MY_PID\" ]; then kill -9 \$pid 2>/dev/null; fi; done; " +
             "killall -9 $processName 2>/dev/null"
         } else {
-            "MY_PID=\$\$; ps -A -o PID,ARGS | grep -F '$processName' | grep -v grep " +
-            "| awk '{print \$1}' | while read pid; do " +
-            "if [ \"\$pid\" != \"\$MY_PID\" ]; then kill -9 \$pid 2>/dev/null; fi; done; " +
-            "killall -9 $processName 2>/dev/null"
+            psAwkKill(processName) +
+            (if (processName in EIGENE_MUSTER) "" else "; killall -9 $processName 2>/dev/null")
         }
         
         // Both the nc command (which contains the priv kill payload) and

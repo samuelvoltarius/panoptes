@@ -269,7 +269,7 @@
     "kopplung_erlauben": "Allow",
     "kopplung_ablehnen": "Decline",
     "neue_kopplung_titel": "New device connected: {0}",
-    "neue_kopplung_text": "Wasn’t you? Remove it in Panoptes under System → Paired devices.",
+    "neue_kopplung_text": "Wasn’t you? Remove it in Panoptes under Settings → All settings → Paired devices.",
     "neue_kopplung_band_titel": "New device: {0}",
     "neue_kopplung_band_text": "Not you? Remove under System",
     "blitzer_titel": "Speed camera in {0} m",
@@ -423,7 +423,8 @@
     "launcher_verfuegbar": "New launcher version {0}",
     "launcher_installiert": "Launcher {0} is installed.",
     "update_verfuegbar": "Panoptes {0} is available",
-    "update_zurueck": "The update did not work, Panoptes is back on {0}."
+    "update_zurueck": "The update did not work, Panoptes is back on {0}.",
+    "neuer_pc_band_titel": "New PC: {0}"
   },
   "parking": {
     "notify": {
@@ -773,7 +774,7 @@
       "tunnel_url": "🌐 *Remote access*\n{0}"
     },
     "url": {
-      "none_running": "🌐 Remote access is off.\nYou can switch it on in Panoptes under *System → Remote access* or here under *☰ Menu → More → Services*.",
+      "none_running": "🌐 Remote access is off.\nYou can switch it on in Panoptes under *Settings → All settings → Remote access* or here under *☰ Menu → More → Services*.",
       "title": "🌐 *How to reach Panoptes*\n\n",
       "resolved_line": "• *{0}:* {1}\n",
       "pending_line": "• *{0}:* _starting, link coming shortly_\n",
@@ -786,17 +787,17 @@
       "notification_url_changed": "🔄 *New remote access link*\n{0}"
     },
     "backup": {
-      "restore_unavailable": "ℹ️ *Restoring doesn't work over Telegram.*\nOpen Panoptes on the car, go to *System → Backup* and pick the file. It only works on the same car.",
+      "restore_unavailable": "ℹ️ *Restoring doesn't work over Telegram.*\nOpen Panoptes on the car, go to *Settings → About → Save & restore* and pick the file. It only works on the same car.",
       "building_with_trips": "💾 Packing your settings and logbook …",
       "building_settings": "💾 Packing your settings …",
       "service_unreachable": "⚠️ The camera service isn't answering, and the backup needs it. You can start it under /services.",
       "failed": "⚠️ The backup didn't work: {0}",
       "no_data": "⚠️ The backup came back empty.",
       "write_failed": "⚠️ Couldn't create the backup file: {0}",
-      "document_settings": "💾 Panoptes backup (settings)\n\n🔐 It holds your logins and the device key – don't share it. Restore it in Panoptes on the same car under System → Backup.",
-      "document_settings_version": "💾 Panoptes backup (settings) · {0}\n\n🔐 It holds your logins and the device key – don't share it. Restore it in Panoptes on the same car under System → Backup.",
-      "document_with_trips": "💾 Panoptes backup (settings + logbook: {0})\n\n🔐 It holds your logins, the device key and where you've been – don't share it. Restore it in Panoptes on the same car under System → Backup.",
-      "document_with_trips_version": "💾 Panoptes backup (settings + logbook: {0}) · {1}\n\n🔐 It holds your logins, the device key and where you've been – don't share it. Restore it in Panoptes on the same car under System → Backup.",
+      "document_settings": "💾 Panoptes backup (settings)\n\n🔐 It holds your logins and the device key – don't share it. Restore it in Panoptes on the same car under Settings → About → Save & restore.",
+      "document_settings_version": "💾 Panoptes backup (settings) · {0}\n\n🔐 It holds your logins and the device key – don't share it. Restore it in Panoptes on the same car under Settings → About → Save & restore.",
+      "document_with_trips": "💾 Panoptes backup (settings + logbook: {0})\n\n🔐 It holds your logins, the device key and where you've been – don't share it. Restore it in Panoptes on the same car under Settings → About → Save & restore.",
+      "document_with_trips_version": "💾 Panoptes backup (settings + logbook: {0}) · {1}\n\n🔐 It holds your logins, the device key and where you've been – don't share it. Restore it in Panoptes on the same car under Settings → About → Save & restore.",
       "upload_failed": "⚠️ The backup file didn't make it to Telegram."
     },
     "update": {
@@ -887,7 +888,9 @@
       "neu": "📱 *New device connected: {0}*\nWasn’t you? Then tap Remove.",
       "knopf_entfernen": "🗑 Remove",
       "entfernt": "🗑 Removed – the device is no longer connected.",
-      "entfernen_abgelaufen": "⌛ This button has expired. Please remove it in Panoptes under System → Paired devices."
+      "entfernen_abgelaufen": "⌛ This button has expired. Please remove it in Panoptes under Settings → All settings → Paired devices.",
+      "neu_pc": "💻 *New PC signed in: {0}*\nWasn’t you? Tap Sign out.",
+      "knopf_abmelden": "🚪 Sign out"
     },
     "health": {
       "repariert": "🩺 *Guardian was off for {0} min – repaired.* Panoptes re-armed itself.",
@@ -995,7 +998,7 @@
       "erlaubt": "✅ Allowed – the cockpit is now handing over the login.",
       "abgelehnt": "❌ Declined.",
       "uebernommen_ok": "☁️ BYD cloud taken over from “{0}” and checked – Panoptes now also works with the car switched off.",
-      "uebernommen_nicht_geprueft": "☁️ BYD cloud taken over from “{0}”, but the check failed. Please look in Panoptes under System → BYD account."
+      "uebernommen_nicht_geprueft": "☁️ BYD cloud taken over from “{0}”, but the check failed. Please look in Panoptes under Settings → BYD account."
     },
     "weiteres_geraet": {
       "anfrage": "📱 *EV-Cockpit “{0}” wants to connect a phone*\nCheck number: *{1}*\n\nDoes the number match the one in the Cockpit? If you allow it, the Cockpit shows a code to scan. The request is valid for 5 minutes.",
@@ -1132,8 +1135,8 @@
     "find_car_label": "Where's my car?",
     "battery_heat_label": "Warm the battery",
     "close_all_windows_label": "Close every window",
-    "car_off_climate_needs_cloud": "The car is off – pre-heating can’t work directly then. Set up the BYD cloud (System → BYD account), then it also works with the car switched off.",
-    "car_off_needs_cloud": "The car is off – this can’t work directly then. Set up the BYD cloud (System → BYD account), then it also works with the car switched off.",
+    "car_off_climate_needs_cloud": "The car is off – pre-heating can’t work directly then. Set up the BYD cloud (Settings → BYD account), then it also works with the car switched off.",
+    "car_off_needs_cloud": "The car is off – this can’t work directly then. Set up the BYD cloud (Settings → BYD account), then it also works with the car switched off.",
     "aktion_aus": "This action is switched off. Switch it on under Settings → Car → Vehicle actions.",
     "aktion_nur_nutzer": "Horn, lights and unlocking can only be triggered by a person: on the display, signed in, or from the paired phone – never by rules, buttons or other services.",
     "aktion_bestaetigen": "Please confirm the question first.",
@@ -2653,6 +2656,16 @@
         "title": "Unlock when approaching",
         "help": "Unlocks when your paired phone is very close, and locks again after 60 s without a door opening. Needs the Panoptes app with a proximity key. Default: off."
       }
+    },
+    "bruecke": {
+      "pcAnmeldung": {
+        "title": "Sign in on a PC (via the owner phone)",
+        "help": "Lets you open Panoptes in a browser on your PC without Tailscale. You pair the PC with the owner phone (scan the QR code shown on the PC). The server only sees encrypted data. A PC can never change access, pairings, updates or vehicle actions. Turning this off signs out all PCs at once."
+      },
+      "pcTagesMB": {
+        "title": "PC: data per day",
+        "help": "Signed-in PCs may load at most this much per day over the car’s mobile network. An open home page needs about 4 MB per hour."
+      }
     }
   },
   "kartenquelle": {
@@ -2865,7 +2878,8 @@
     "vorgemerkt": "Panoptes installs the update about 10 minutes after you park the car. The guard is off for a few minutes while it does.",
     "vorgemerkt_wlan": "Panoptes installs the update about 10 minutes after you park the car, as soon as it has Wi-Fi. The guard is off for a few minutes while it does.",
     "zuruecknehmen": "Undo",
-    "geraet": "car display"
+    "geraet": "car display",
+    "launcher_mit": "The Panoptes launcher {0} comes along."
   },
   "update_art": {
     "fix": "Bug fix",
@@ -2987,7 +3001,10 @@
     "dienst": "Service {0} released by owner phone {1}.",
     "waechter_an": "Guard switched on by phone {0}.",
     "waechter_aus": "Guard switched off by phone {0}.",
-    "rechte_selbst": "Owner phone {0} changed its rights: {1}."
+    "rechte_selbst": "Owner phone {0} changed its rights: {1}.",
+    "frage_telegram": "Which device is your phone? Please choose it in the car under System → Paired devices – only then is there an owner phone.",
+    "frage_telegram_bestaetigen": "An owner phone was chosen automatically during the update. Please check in the car under System → Paired devices that it really is your phone.",
+    "telegram_gewaehlt": "{0} is now your owner phone."
   },
   "update_klein": {
     "titel": "Updates",
@@ -2995,5 +3012,10 @@
     "autostart_titel": "Autostart",
     "autostart_fehlt": "After the update Panoptes needs the autostart permission once more. Please tap “Turn autostart back on” on the Panoptes start page on the car display.",
     "launcher_home": "After the update the Panoptes launcher is no longer your home screen. Open the launcher once and choose it again as home screen."
+  },
+  "pc": {
+    "push_neu": "New PC signed in: {0}",
+    "push_neu_text": "Wasn’t you? Sign it out under Paired devices.",
+    "handshakes": "{0} unknown connection attempts via the bridge were rejected in the last hour. If this was not your PC: check Paired devices and, if needed, turn off “Sign in on a PC” in the car."
   }
 }

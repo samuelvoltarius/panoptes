@@ -83,7 +83,7 @@
     }
     function grundText(d) {
         var g = d && d.grund;
-        if (d && d.status === 403) return (d.text) || t('dateien.recht_fehlt', 'Dafür braucht dieses Gerät das Recht „Dateien“. Einschalten am Autobildschirm unter System → Gekoppelte Geräte.');
+        if (d && d.status === 403) return (d.text) || t('dateien.recht_fehlt', 'Dafür braucht dieses Gerät das Recht „Dateien“. Einschalten am Autobildschirm unter Einstellungen → Alle Einstellungen → Gekoppelte Geräte.');
         var texte = {
             zu_gross: t('dateien.zu_gross', 'Die Datei ist größer als 200 MB.'),
             apk_gesperrt: t('dateien.apk', 'Apps (APK) werden nicht angenommen.'),

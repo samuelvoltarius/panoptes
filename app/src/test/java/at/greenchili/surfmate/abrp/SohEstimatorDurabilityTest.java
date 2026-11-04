@@ -142,6 +142,8 @@ public class SohEstimatorDurabilityTest {
     @Test
     public void atomicWriterRetainsPermissionsAndCleansTempFile()
             throws Exception {
+        // POSIX-Dateirechte gibt es nur auf Linux/Android, nicht unter Windows
+        org.junit.Assume.assumeTrue(java.nio.file.FileSystems.getDefault().supportedFileAttributeViews().contains("posix"));
         File directory = temporaryFolder.newFolder("permissions");
         File destination = new File(directory, "soh.properties");
         Files.write(destination.toPath(),

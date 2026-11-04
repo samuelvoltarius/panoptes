@@ -56,7 +56,14 @@ public final class BesitzerApiHandler {
     /** Wirkung nach außen (im Test ersetzbar). */
     interface Wirkung {
         default String code(long now, String art, List<String> rechte) {
-            return at.greenchili.surfmate.auth.PairingCodes.createGebunden(now, art, rechte);
+            return code(now, art, rechte, 0L);
+        }
+        default String code(long now, String art, List<String> rechte, long dauerMs) {
+            return at.greenchili.surfmate.auth.PairingCodes.createGebunden(now, art, rechte, dauerMs);
+        }
+        /** 0.1.39: „Am PC anmelden“ am Auto eingeschaltet? */
+        default boolean pcErlaubt() {
+            return at.greenchili.surfmate.auth.PcZugang.erlaubt();
         }
         default JSONObject brueckeEinmal(long bis) {
             JSONObject o = new JSONObject();
@@ -135,9 +142,16 @@ public final class BesitzerApiHandler {
             case CODE: {
                 String art = req.optString("art", "");
                 if (!CODE_ARTEN.contains(art)) return fehler(400, "art");
+                // 0.1.39 PC über die Brücke: nur wenn „Am PC anmelden“ am Auto an ist (Display/Login, nie über Kopplung)
+                boolean pc = Kopplungen.ART_PC.equals(art);
+                if (pc && !wirkung.pcErlaubt()) return fehler(409, "pc_aus");
+                if (pc && k.pcIds().size() >= at.greenchili.surfmate.auth.PcZugang.MAX_PC) return fehler(409, "pc_voll");
+                String dauer = req.optString("dauer", at.greenchili.surfmate.auth.PcZugang.DAUER_30_TAGE);
+                if (pc && !at.greenchili.surfmate.auth.PcZugang.DAUER_HEUTE.equals(dauer)
+                        && !at.greenchili.surfmate.auth.PcZugang.DAUER_30_TAGE.equals(dauer)) return fehler(400, "dauer");
                 List<String> rechte = new ArrayList<>();
                 JSONArray a = req.optJSONArray("rechte");
-                List<String> erlaubt = Kopplungen.ART_HANDY.equals(art) ? Kopplungen.RECHTE : rechteDerArt(art);
+                List<String> erlaubt = Kopplungen.rechteDerArt(art);   // 0.1.39: eine Quelle (Kopplungen)
                 for (int i = 0; a != null && i < a.length(); i++) {
                     String x = a.optString(i);
                     // 0.1.38.8 Nachzug: Fahrzeug-Aktionen und geraete_steuern vergibt nur das Display
@@ -145,10 +159,13 @@ public final class BesitzerApiHandler {
                     if (Kopplungen.RECHT_BESITZER.equals(x) || !erlaubt.contains(x)) return fehler(400, "recht");
                     if (!rechte.contains(x)) rechte.add(x);
                 }
-                String code = wirkung.code(now, art, rechte);
+                long dauerMs = pc && at.greenchili.surfmate.auth.PcZugang.DAUER_HEUTE.equals(dauer)
+                        ? at.greenchili.surfmate.auth.PcZugang.NUR_HEUTE_MS : 0L;
+                String code = dauerMs > 0 ? wirkung.code(now, art, rechte, dauerMs) : wirkung.code(now, art, rechte);
                 long bis = now + at.greenchili.surfmate.auth.PairingCodes.TTL_MS;
                 JSONObject o = wirkung.brueckeEinmal(bis).put("ok", true).put("code", code).put("gueltigBis", bis)
                         .put("art", art).put("rechte", new JSONArray(rechte));
+                if (pc) o.put("dauer", dauer);
                 BefehlsLog.ereignis("besitzer.kopplungscode." + art, "angelegt", kid, ich);
                 wirkung.melde(Messages.text("besitzer.code_angelegt",
                         "Kopplungs-Code ({0}) erstellt vom Besitzer-Handy {1}, 10 min gültig.", art, ich));
@@ -166,7 +183,8 @@ public final class BesitzerApiHandler {
             case ENTFERNEN: {
                 String ziel = req.optString("id", "");
                 String name = k.anzeigeName(ziel);
-                int e = k.jungEntfernen(kid, ziel, now);
+                // 0.1.39: PCs darf der Besitzer jederzeit abmelden (Koordination 04.11.), sonst nur junge Kopplungen
+                int e = k.istPc(ziel) ? k.pcEntfernen(kid, ziel) : k.jungEntfernen(kid, ziel, now);
                 if (e != Kopplungen.BESITZER_OK) {
                     return fehler(e == Kopplungen.BESITZER_UNBEKANNT ? 404 : 403,
                             e == Kopplungen.BESITZER_UNBEKANNT ? "unbekannt" : "nur_neue");
@@ -222,14 +240,6 @@ public final class BesitzerApiHandler {
             default:
                 return fehler(404, "unbekannt");
         }
-    }
-
-    /** Rechte, die eine Nicht-Handy-Art tragen kann (Kopplungen.fremdRechte ist paketlokal). */
-    static List<String> rechteDerArt(String art) {
-        if (Kopplungen.ART_PC.equals(art)) return Kopplungen.PC_RECHTE;
-        if ("cockpit".equals(art)) return Kopplungen.COCKPIT_RECHTE;
-        if ("homeassistant".equals(art)) return Kopplungen.HA_RECHTE;   // 0.1.38.8: mit geraete (geraete_steuern nur Display)
-        return Kopplungen.FREMD_RECHTE;
     }
 
     private static synchronized boolean zuOft(long now) {

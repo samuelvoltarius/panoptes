@@ -6789,7 +6789,7 @@ var VC = {
         else if (result.outcome === 'auth_required') type = 'info';
         else if (result.outcome === 'rate_limited') type = 'info';
         else type = 'error';
-        // 0.1.20 P5: Auto aus + keine BYD-Cloud → Knopf zur Einrichtung (Rückfrage, dann System → BYD-Cloud)
+        // 0.1.20 P5: Auto aus + keine BYD-Cloud → Knopf zur Einrichtung (Rückfrage, dann Einstellungen → BYD-Cloud)
         if (!result.success && result.einrichten) {
             if (window.confirm(msg + '\n\n' + BYD.i18n.t('home.setup_cloud_q', 'Jetzt die BYD-Cloud einrichten?'))) {
                 location.href = result.einrichten;

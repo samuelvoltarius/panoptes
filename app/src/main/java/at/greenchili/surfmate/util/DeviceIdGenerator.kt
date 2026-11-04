@@ -194,7 +194,15 @@ object DeviceIdGenerator {
      * 
      * @return true if write succeeded, false otherwise
      */
-    fun syncDeviceIdToFileSync(context: Context): Boolean {
+    /**
+     * 0.1.38.9 Schnellstart 2 (V4): Beim Start wartete die App bis zu 60 s auf diesen ADB-Aufruf, bevor sie die Daemons
+     * startete. Jetzt: schon erfolgreich geschrieben (gleiche ID, Merker in den Einstellungen) → gar kein ADB-Aufruf;
+     * sonst nur noch [SYNC_FRIST_MS]. Der Daemon liest die ID-Datei beim Start (er braucht dieselbe ID wie die App,
+     * sonst stimmt der Schlüssel der gespeicherten Zugangsdaten nicht), deshalb bleibt der Schreibversuch VOR dem
+     * Daemon-Start, nur kurz begrenzt; [erzwingen] schreibt trotz Merker (Nachlauf im Hintergrund heilt eine
+     * gelöschte Datei).
+     */
+    fun syncDeviceIdToFileSync(context: Context, erzwingen: Boolean = false): Boolean {
         val executor = adbShellExecutor
         if (executor == null) {
             Log.w(TAG, "ADB shell executor not initialized")
@@ -202,10 +210,15 @@ object DeviceIdGenerator {
         }
         
         val id = generateDeviceId(context)
+        if (!erzwingen && istSchonGeschrieben(context, id)) {
+            Log.i(TAG, "Device ID bereits in der Datei (Merker), kein ADB-Aufruf: $id")
+            return true
+        }
         return try {
-            val result = executor.executeSync("echo '$id' > $ID_FILE")
+            val result = executor.executeSync("echo '$id' > $ID_FILE", SYNC_FRIST_MS)
             if (result.exitCode == 0) {
                 Log.i(TAG, "Device ID synced to file (sync): $id")
+                merkeGeschrieben(context, id)
                 true
             } else {
                 Log.w(TAG, "Failed to sync device ID: ${result.output}")
@@ -217,6 +230,22 @@ object DeviceIdGenerator {
         }
     }
     
+    /** Höchstens so lange wartet der App-Start auf das Schreiben der ID-Datei (vorher bis 60 s). */
+    const val SYNC_FRIST_MS = 8_000L
+    private const val PREFS_KEY_GESCHRIEBEN = "device_id_file_written"
+
+    private fun istSchonGeschrieben(context: Context, id: String): Boolean = try {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(PREFS_KEY_GESCHRIEBEN, null) == id
+    } catch (e: Exception) { false }
+
+    private fun merkeGeschrieben(context: Context, id: String) {
+        try {
+            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putString(PREFS_KEY_GESCHRIEBEN, id).apply()
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not remember device-id file write: ${e.message}")
+        }
+    }
+
     private fun saveToPrefs(context: Context, id: String) {
         try {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)

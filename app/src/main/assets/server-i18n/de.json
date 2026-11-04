@@ -269,7 +269,7 @@
     "kopplung_erlauben": "Erlauben",
     "kopplung_ablehnen": "Ablehnen",
     "neue_kopplung_titel": "Neues Gerät verbunden: {0}",
-    "neue_kopplung_text": "Warst du das nicht? In Panoptes unter System → Gekoppelte Geräte entfernen.",
+    "neue_kopplung_text": "Warst du das nicht? In Panoptes unter Einstellungen → Alle Einstellungen → Gekoppelte Geräte entfernen.",
     "neue_kopplung_band_titel": "Neues Gerät: {0}",
     "neue_kopplung_band_text": "Nicht du? Unter System entfernen",
     "blitzer_titel": "Blitzer in {0} m",
@@ -423,7 +423,8 @@
     "launcher_verfuegbar": "Neue Launcher-Version {0}",
     "launcher_installiert": "Launcher {0} ist installiert.",
     "update_verfuegbar": "Panoptes {0} ist da",
-    "update_zurueck": "Update hat nicht geklappt, Panoptes läuft wieder auf {0}."
+    "update_zurueck": "Update hat nicht geklappt, Panoptes läuft wieder auf {0}.",
+    "neuer_pc_band_titel": "Neuer PC: {0}"
   },
   "parking": {
     "notify": {
@@ -563,7 +564,7 @@
       "title": "⚙️ *Dienste*\n\n"
     },
     "url": {
-      "none_running": "🌐 Der Fernzugang ist aus.\nEinschalten kannst du ihn in Panoptes unter *System → Fernzugang* oder hier unter *☰ Menü → Mehr → Dienste*.",
+      "none_running": "🌐 Der Fernzugang ist aus.\nEinschalten kannst du ihn in Panoptes unter *Einstellungen → Alle Einstellungen → Fernzugang* oder hier unter *☰ Menü → Mehr → Dienste*.",
       "title": "🌐 *So erreichst du Panoptes*\n\n",
       "resolved_line": "• *{0}:* {1}\n",
       "pending_line": "• *{0}:* _startet gerade, Link kommt gleich_\n",
@@ -666,17 +667,17 @@
       "launcher_available_size": "🆕 *Neuer Launcher {0} ist da* ({1})\nZum Installieren auf den Knopf tippen. Ich frage vorher noch einmal nach."
     },
     "backup": {
-      "restore_unavailable": "ℹ️ *Zurückspielen geht nicht über Telegram.*\nÖffne Panoptes am Auto, dann *System → Sicherung* und wähle die Datei. Das klappt nur am selben Auto.",
+      "restore_unavailable": "ℹ️ *Zurückspielen geht nicht über Telegram.*\nÖffne Panoptes am Auto, dann *Einstellungen → Über → Sichern & Zurückholen* und wähle die Datei. Das klappt nur am selben Auto.",
       "building_with_trips": "💾 Packe deine Einstellungen und das Fahrtenbuch zusammen …",
       "building_settings": "💾 Packe deine Einstellungen zusammen …",
       "service_unreachable": "⚠️ Der Kamera-Dienst antwortet nicht, ohne ihn gibt es keine Sicherung. Unter /dienste kannst du ihn starten.",
       "failed": "⚠️ Die Sicherung hat nicht geklappt: {0}",
       "no_data": "⚠️ Die Sicherung ist leer zurückgekommen.",
       "write_failed": "⚠️ Die Sicherungsdatei ließ sich nicht anlegen: {0}",
-      "document_settings": "💾 Panoptes-Sicherung (Einstellungen)\n\n🔐 Darin stecken deine Zugänge und der Geräteschlüssel – nicht weitergeben. Zurückspielen in Panoptes am selben Auto unter System → Sicherung.",
-      "document_settings_version": "💾 Panoptes-Sicherung (Einstellungen) · {0}\n\n🔐 Darin stecken deine Zugänge und der Geräteschlüssel – nicht weitergeben. Zurückspielen in Panoptes am selben Auto unter System → Sicherung.",
-      "document_with_trips": "💾 Panoptes-Sicherung (Einstellungen + Fahrtenbuch: {0})\n\n🔐 Darin stecken deine Zugänge, der Geräteschlüssel und wo du warst – nicht weitergeben. Zurückspielen in Panoptes am selben Auto unter System → Sicherung.",
-      "document_with_trips_version": "💾 Panoptes-Sicherung (Einstellungen + Fahrtenbuch: {0}) · {1}\n\n🔐 Darin stecken deine Zugänge, der Geräteschlüssel und wo du warst – nicht weitergeben. Zurückspielen in Panoptes am selben Auto unter System → Sicherung.",
+      "document_settings": "💾 Panoptes-Sicherung (Einstellungen)\n\n🔐 Darin stecken deine Zugänge und der Geräteschlüssel – nicht weitergeben. Zurückspielen in Panoptes am selben Auto unter Einstellungen → Über → Sichern & Zurückholen.",
+      "document_settings_version": "💾 Panoptes-Sicherung (Einstellungen) · {0}\n\n🔐 Darin stecken deine Zugänge und der Geräteschlüssel – nicht weitergeben. Zurückspielen in Panoptes am selben Auto unter Einstellungen → Über → Sichern & Zurückholen.",
+      "document_with_trips": "💾 Panoptes-Sicherung (Einstellungen + Fahrtenbuch: {0})\n\n🔐 Darin stecken deine Zugänge, der Geräteschlüssel und wo du warst – nicht weitergeben. Zurückspielen in Panoptes am selben Auto unter Einstellungen → Über → Sichern & Zurückholen.",
+      "document_with_trips_version": "💾 Panoptes-Sicherung (Einstellungen + Fahrtenbuch: {0}) · {1}\n\n🔐 Darin stecken deine Zugänge, der Geräteschlüssel und wo du warst – nicht weitergeben. Zurückspielen in Panoptes am selben Auto unter Einstellungen → Über → Sichern & Zurückholen.",
       "upload_failed": "⚠️ Die Sicherungsdatei kam nicht zu Telegram durch."
     },
     "greeting": {
@@ -887,7 +888,9 @@
       "neu": "📱 *Neues Gerät verbunden: {0}*\nWarst du das nicht? Dann tippe auf Entfernen.",
       "knopf_entfernen": "🗑 Entfernen",
       "entfernt": "🗑 Entfernt – das Gerät ist nicht mehr verbunden.",
-      "entfernen_abgelaufen": "⌛ Der Knopf ist abgelaufen. Bitte in Panoptes unter System → Gekoppelte Geräte entfernen."
+      "entfernen_abgelaufen": "⌛ Der Knopf ist abgelaufen. Bitte in Panoptes unter Einstellungen → Alle Einstellungen → Gekoppelte Geräte entfernen.",
+      "neu_pc": "💻 *Neuer PC angemeldet: {0}*\nWarst du das nicht? Dann tippe auf Abmelden.",
+      "knopf_abmelden": "🚪 Abmelden"
     },
     "health": {
       "repariert": "🩺 *Wächter war {0} min aus – repariert.* Panoptes hat sich selbst wieder scharf geschaltet.",
@@ -995,7 +998,7 @@
       "erlaubt": "✅ Erlaubt – das Cockpit übergibt jetzt die Anmeldung.",
       "abgelehnt": "❌ Abgelehnt.",
       "uebernommen_ok": "☁️ BYD-Cloud von „{0}“ übernommen und geprüft – Panoptes kann jetzt auch bei ausgeschaltetem Auto.",
-      "uebernommen_nicht_geprueft": "☁️ BYD-Cloud von „{0}“ übernommen, die Prüfung ist aber fehlgeschlagen. Bitte in Panoptes unter System → BYD-Konto nachsehen."
+      "uebernommen_nicht_geprueft": "☁️ BYD-Cloud von „{0}“ übernommen, die Prüfung ist aber fehlgeschlagen. Bitte in Panoptes unter Einstellungen → BYD-Konto nachsehen."
     },
     "weiteres_geraet": {
       "anfrage": "📱 *EV-Cockpit „{0}“ möchte ein Handy verbinden*\nPrüfzahl: *{1}*\n\nStimmt die Zahl mit der im Cockpit überein? Erlaubst du, zeigt das Cockpit einen Code zum Scannen. Die Anfrage gilt 5 Minuten.",
@@ -1132,8 +1135,8 @@
     "find_car_label": "Wo ist mein Auto?",
     "battery_heat_label": "Akku vorwärmen",
     "close_all_windows_label": "Alle Fenster schließen",
-    "car_off_climate_needs_cloud": "Das Auto ist aus – direkt geht Vorheizen dann nicht. Richte die BYD-Cloud ein (System → BYD-Konto), dann geht es auch bei ausgeschaltetem Auto.",
-    "car_off_needs_cloud": "Das Auto ist aus – direkt geht das dann nicht. Richte die BYD-Cloud ein (System → BYD-Konto), dann geht es auch bei ausgeschaltetem Auto.",
+    "car_off_climate_needs_cloud": "Das Auto ist aus – direkt geht Vorheizen dann nicht. Richte die BYD-Cloud ein (Einstellungen → BYD-Konto), dann geht es auch bei ausgeschaltetem Auto.",
+    "car_off_needs_cloud": "Das Auto ist aus – direkt geht das dann nicht. Richte die BYD-Cloud ein (Einstellungen → BYD-Konto), dann geht es auch bei ausgeschaltetem Auto.",
     "aktion_aus": "Diese Aktion ist ausgeschaltet. Einschalten unter Einstellungen → Auto → Fahrzeug-Aktionen.",
     "aktion_nur_nutzer": "Hupe, Licht und Aufsperren lösen nur Menschen aus: am Display, mit Anmeldung oder vom gekoppelten Handy – nie Regeln, Tasten oder andere Dienste.",
     "aktion_bestaetigen": "Bitte erst die Rückfrage bestätigen.",
@@ -2653,6 +2656,16 @@
         "title": "Aufsperren beim Annähern",
         "help": "Sperrt auf, wenn dein gekoppeltes Handy ganz nah ist, und nach 60 s ohne Türöffnen wieder zu. Braucht die Panoptes-App mit Nähe-Schlüssel. Standard: aus."
       }
+    },
+    "bruecke": {
+      "pcAnmeldung": {
+        "title": "Am PC anmelden (über das Besitzer-Handy)",
+        "help": "Erlaubt, dass du Panoptes am PC im Browser öffnest, ohne Tailscale. Den PC koppelst du mit dem Besitzer-Handy (QR-Code am PC scannen). Der Server sieht nur verschlüsselte Daten. Der PC darf nie Zugang, Kopplungen, Updates oder Fahrzeug-Aktionen ändern. Ausschalten meldet alle PCs sofort ab."
+      },
+      "pcTagesMB": {
+        "title": "PC: Datenmenge pro Tag",
+        "help": "Höchstens so viel dürfen angemeldete PCs pro Tag über das Mobilnetz des Autos laden. Eine offene Startseite braucht etwa 4 MB pro Stunde."
+      }
     }
   },
   "kartenquelle": {
@@ -2865,7 +2878,8 @@
     "vorgemerkt": "Panoptes installiert das Update etwa 10 Minuten, nachdem du das Auto abgestellt hast. Der Wächter ist dabei ein paar Minuten aus.",
     "vorgemerkt_wlan": "Panoptes installiert das Update etwa 10 Minuten, nachdem du das Auto abgestellt hast, sobald es WLAN hat. Der Wächter ist dabei ein paar Minuten aus.",
     "zuruecknehmen": "Zurücknehmen",
-    "geraet": "Auto-Display"
+    "geraet": "Auto-Display",
+    "launcher_mit": "Der Panoptes Launcher {0} kommt mit."
   },
   "update_art": {
     "fix": "Korrektur",
@@ -2987,7 +3001,10 @@
     "dienst": "Dienst {0} freigegeben vom Besitzer-Handy {1}.",
     "waechter_an": "Wächter eingeschaltet vom Handy {0}.",
     "waechter_aus": "Wächter ausgeschaltet vom Handy {0}.",
-    "rechte_selbst": "Besitzer-Handy {0} hat seine Rechte geändert: {1}."
+    "rechte_selbst": "Besitzer-Handy {0} hat seine Rechte geändert: {1}.",
+    "frage_telegram": "Welches Gerät ist dein Handy? Bitte am Auto unter System → Gekoppelte Geräte auswählen – erst dann gibt es ein Besitzer-Handy.",
+    "frage_telegram_bestaetigen": "Beim Update wurde automatisch ein Besitzer-Handy gewählt. Bitte am Auto unter System → Gekoppelte Geräte prüfen, ob es wirklich dein Handy ist.",
+    "telegram_gewaehlt": "{0} ist jetzt dein Besitzer-Handy."
   },
   "update_klein": {
     "titel": "Updates",
@@ -2995,5 +3012,10 @@
     "autostart_titel": "Autostart",
     "autostart_fehlt": "Nach dem Update braucht Panoptes einmal die Autostart-Freigabe. Bitte am Auto-Display auf der Startseite von Panoptes „Autostart wieder einschalten“ antippen.",
     "launcher_home": "Nach dem Update ist der Panoptes Launcher nicht mehr dein Startbildschirm. Öffne den Launcher einmal und wähle ihn wieder als Startbildschirm."
+  },
+  "pc": {
+    "push_neu": "Neuer PC angemeldet: {0}",
+    "push_neu_text": "Warst du das nicht? Unter Gekoppelte Geräte abmelden.",
+    "handshakes": "{0} fremde Verbindungsversuche über die Brücke in der letzten Stunde abgelehnt. Wenn das nicht dein PC war: Unter Gekoppelte Geräte nachsehen, „Am PC anmelden“ notfalls am Auto ausschalten."
   }
 }

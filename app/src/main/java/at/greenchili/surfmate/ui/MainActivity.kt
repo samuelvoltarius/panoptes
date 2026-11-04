@@ -645,6 +645,15 @@ open class MainActivity : AppCompatActivity() {
                         android.util.Log.e("MainActivity", "Device ID sync error: ${e.message}")
                     }
 
+                    // 0.1.38.9: Nachlauf im Hintergrund (idempotent, ohne Warten): schreibt die Geräte-ID-Datei erneut, falls
+                    // sie fehlt, obwohl der Merker "geschrieben" sagt. Läuft erst, wenn der Start längst durch ist.
+                    Thread({
+                        try {
+                            Thread.sleep(30_000)
+                            at.greenchili.surfmate.util.DeviceIdGenerator.syncDeviceIdToFileSync(this, erzwingen = true)
+                        } catch (_: Exception) {}
+                    }, "DeviceIdNachlauf").apply { isDaemon = true; start() }
+
                     val startDaemons = Runnable {
                         runOnUiThread {
                             daemonStartupManager.initializeOnAppLaunch()

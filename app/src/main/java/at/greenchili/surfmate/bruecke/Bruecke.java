@@ -435,7 +435,9 @@ public final class Bruecke {
         if (b == null) {
             synchronized (Bruecke.class) {
                 if (instanz == null) instanz = new Bruecke(new DateiPlatte(), new BrueckeServerApi(),
-                        (kid, jetzt) -> at.greenchili.surfmate.auth.Kopplungen.get().istHandy(kid)
+                        // 0.1.39: auch PC-Kopplungen (pruefe sagt nein, solange „Am PC anmelden“ aus ist)
+                        (kid, jetzt) -> (at.greenchili.surfmate.auth.Kopplungen.get().istHandy(kid)
+                                || at.greenchili.surfmate.auth.Kopplungen.get().istPc(kid))
                                 && at.greenchili.surfmate.auth.Kopplungen.get().pruefe(kid, jetzt));
                 b = instanz;
             }

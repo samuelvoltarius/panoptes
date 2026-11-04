@@ -162,13 +162,18 @@ final class BrueckeWeiterleitung {
         boolean web;
         /** 0.1.26.1: Handy versteht gzip (accept-encoding) – nur im Kanal „web“. */
         boolean gzip;
+        /** 0.1.39: Anfrage eines PCs (Takt-Hinweis, Tagesverbrauch). */
+        boolean pc;
         byte[] fehler;
     }
 
     /** Bearbeitet eine Innen-Anfrage (JSON) für die Kopplung {@code kid}; liefert immer eine Antwort (JSON). */
     byte[] bearbeiten(byte[] anfrage, String kid) {
         Vorbereitet v = vorbereiten(anfrage, kid, MAX_BEREICH);
-        return v.fehler != null ? v.fehler : weiterreichen(v.id, v.m, v.p, v.kopf, v.body, v.web, v.gzip);
+        byte[] r = v.fehler != null ? v.fehler : weiterreichen(v.id, v.m, v.p, v.kopf, v.body, v.web, v.gzip, v.pc);
+        if (v.pc) at.greenchili.surfmate.auth.PcZugang.verbrauchen(kid, (long) anfrage.length + r.length,
+                System.currentTimeMillis());
+        return r;
     }
 
     /** Alle Prüfungen (JWT der eigenen Kopplung, Recht „kamera“, Kanal „web“, Range höchstens {@code maxBereich}). */
@@ -216,6 +221,13 @@ final class BrueckeWeiterleitung {
         // Kanal gehört genau einer Kopplung: nur deren Kopplungs-JWT gilt
         String jwtKid = jwt == null ? null : pruefer.kopplungsId(jwt);
         if (jwtKid == null || !jwtKid.equals(kid)) { v.fehler = fehler(id, 401, "kopplung"); return v; }
+        // 0.1.39 PC über die Brücke: höchstens 20 Anfragen je Sekunde, Tagesgrenze (PcZugang)
+        if (istPc.test(kid)) {
+            long jetzt = System.currentTimeMillis();
+            if (at.greenchili.surfmate.auth.PcZugang.tagVoll(kid, jetzt)) { v.fehler = fehler(id, 429, "pc_tageslimit"); return v; }
+            if (!at.greenchili.surfmate.auth.PcZugang.anfrageErlaubt(kid, jetzt)) { v.fehler = fehler(id, 429, "zu_schnell"); return v; }
+            v.pc = true;
+        }
         if (istKameraPfad(p) && !recht.hat(kid, at.greenchili.surfmate.auth.Kopplungen.RECHT_KAMERA)) {
             v.fehler = fehler(id, 403, "kamera");
             return v;
@@ -266,12 +278,19 @@ final class BrueckeWeiterleitung {
 
     private byte[] weiterreichen(long id, String m, String p, java.util.Map<String, String> kopf, byte[] body, boolean web,
                                  boolean gzip) {
+        return weiterreichen(id, m, p, kopf, body, web, gzip, false);
+    }
+
+    private byte[] weiterreichen(long id, String m, String p, java.util.Map<String, String> kopf, byte[] body, boolean web,
+                                 boolean gzip, boolean pc) {
         try {
             Antwort a = aufruf.senden(m, p, kopf, body);
             JSONObject r = new JSONObject();
             r.put("id", id);
             r.put("s", a.status);
             JSONObject rk = kopfRaus(a.kopf, web);
+            // 0.1.39: der PC-Hülle sagen, wie oft sie fragen soll (Messung 04.11.: sonst alle 5–6 s)
+            if (pc) rk.put("x-panoptes-takt", String.valueOf(at.greenchili.surfmate.auth.PcZugang.TAKT_S));
             String ct = a.kopf.containsKey("content-type") ? a.kopf.get("content-type") : "";
             if (gzip && komprimierbar(a.status, a.kopf) && a.body.length >= GZIP_AB) {
                 rk.put("content-encoding", "gzip");
@@ -471,6 +490,14 @@ final class BrueckeWeiterleitung {
     private MedienKonto konto = n -> true;
 
     MedienKonto konto() { return konto; }
+
+    /** 0.1.39 PC über die Brücke: Kopplung der Art {@code pc}? (Grenzen aus {@code PcZugang}) */
+    private volatile java.util.function.Predicate<String> istPc = kid -> false;
+
+    BrueckeWeiterleitung mitPc(java.util.function.Predicate<String> p) {
+        this.istPc = p == null ? kid -> false : p;
+        return this;
+    }
 
     BrueckeWeiterleitung mitStrom(StromAufruf s, MedienKonto k) {
         this.stromAufruf = s;
@@ -704,12 +731,13 @@ final class BrueckeWeiterleitung {
             at.greenchili.surfmate.auth.AuthManager.JwtValidation v = at.greenchili.surfmate.auth.AuthManager.validateJwt(jwt);
             return v != null && v.valid && at.greenchili.surfmate.auth.PairingCodes.SCOPE.equals(v.scope) ? v.kid : null;
         }, BrueckeWeiterleitung::loopback, kid -> {
-            // wie GET /auth/web: nur Handy mit Recht „web“ (Stufe B), kurz gültig – je Anfrage neu
+            // wie GET /auth/web: nur Handy (0.1.39: oder PC) mit Recht „web“ (Stufe B), kurz gültig – je Anfrage neu
             at.greenchili.surfmate.auth.Kopplungen kk = at.greenchili.surfmate.auth.Kopplungen.get();
-            return kk.istHandy(kid) && kk.hatRecht(kid, at.greenchili.surfmate.auth.Kopplungen.RECHT_WEB)
+            return (kk.istHandy(kid) || kk.istPc(kid)) && kk.hatRecht(kid, at.greenchili.surfmate.auth.Kopplungen.RECHT_WEB)
                     ? at.greenchili.surfmate.auth.AuthManager.generateJwt(at.greenchili.surfmate.auth.WebSitzung.SCOPE, kid, 120)
                     : null;
         }, (kid, r) -> at.greenchili.surfmate.auth.Kopplungen.get().hatRecht(kid, r))
+                .mitPc(kid -> at.greenchili.surfmate.auth.Kopplungen.get().istPc(kid))
                 .mitStrom(BrueckeWeiterleitung::loopbackStrom, n -> Bruecke.get().medienVerbrauchen(n, System.currentTimeMillis()))
                 .mitClipWeg(BrueckeClipWeg.imDaemon()::oeffnen);
     }

@@ -180,7 +180,9 @@ public final class HandyApiHandler {
             HttpResponse.sendJson(out, 405, fehler("nur_post").toString());
             return true;
         }
-        if (kopplungId == null || !k().istHandy(kopplungId)) {
+        // 0.1.39 PC über die Brücke: nur Brücken-Schlüssel, Abmelden und Web-Sitzung (ExternGuard.PC_SCHREIBEN)
+        boolean pcErlaubt = kopplungId != null && k().istPc(kopplungId) && ExternGuard.PC_SCHREIBEN.contains(p);
+        if (kopplungId == null || (!k().istHandy(kopplungId) && !pcErlaubt)) {
             HttpResponse.sendJson(out, 403, fehler("nur_handy").toString());
             return true;
         }

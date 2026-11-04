@@ -34,7 +34,8 @@ public class NeueKopplungMeldungTest {
     public void codeKopplungMeldetUndTexteInAllenSprachen() throws Exception {
         String k = lies("src/main/java/at/greenchili/surfmate/server/AuthApiHandler.java");
         int erfolg = k.indexOf("log(\"Kopplung erfolgreich\");");
-        int melden = k.indexOf("NeueKopplungMeldung.melden(name, kid);");
+        // 0.1.39: mit Kennzeichen PC (eigener Text, Knopf [Abmelden], Push)
+        int melden = k.indexOf("NeueKopplungMeldung.melden(name, kid,");
         assertTrue("nach dem Erfolg, vor der Antwort", erfolg > 0 && melden > erfolg
                 && melden < k.indexOf("HttpResponse.sendJson(out, response.toString());", erfolg));
         for (String l : new String[] {"de", "en", "fr", "it", "nl"}) {
@@ -42,6 +43,7 @@ public class NeueKopplungMeldungTest {
             assertTrue(l, n.getString("neue_kopplung_titel").contains("{0}"));
             // Band: höchstens ~35 Zeichen je Zeile, sonst schneidet das Display ab (Befund Kern 12)
             assertTrue(l, n.getString("neue_kopplung_band_titel").replace("{0}", "x".repeat(25)).length() <= 45);
+            assertTrue(l, n.getString("neuer_pc_band_titel").replace("{0}", "x".repeat(25)).length() <= 45);
             assertTrue(l, n.getString("neue_kopplung_band_text").length() <= 35);
             String t = n.getString("neue_kopplung_text");
             assertFalse(l + ": kein ASCII-Apostroph (MessageFormat)", t.contains("'"));

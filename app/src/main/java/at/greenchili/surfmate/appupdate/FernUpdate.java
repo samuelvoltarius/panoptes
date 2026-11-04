@@ -88,7 +88,7 @@ public final class FernUpdate {
             if (v.has("notizen")) n.put("notizen", v.get("notizen"));
             // 0.1.38.5: Art ("fix" | "funktion" | "beides"), ihr Text und die Kurzfassung (≤ 3 Stichpunkte)
             // 0.1.38.8: dazu klein (kommt von selbst) und die Sammelliste seit der letzten großen Version
-            for (String k : new String[]{"art", "artText", "kurz", "klein", "zusammenfassung"}) if (v.has(k)) n.put(k, v.get(k));
+            for (String k : new String[]{"art", "artText", "kurz", "klein", "zusammenfassung", "launcherSatz"}) if (v.has(k)) n.put(k, v.get(k));
             r.put("neueste", n);
         } else {
             r.put("neueste", JSONObject.NULL);
@@ -117,6 +117,8 @@ public final class FernUpdate {
         StringBuilder b = new StringBuilder(satz);
         if (!a.isEmpty()) b.append("\n").append(a);
         if (!k.isEmpty()) b.append("\n").append(k);
+        String l = v.optString("launcherSatz", "").trim();   // 0.1.38.9: Launcher kommt mit
+        if (!l.isEmpty()) b.append("\n").append(l);
         return b.toString();
     }
 

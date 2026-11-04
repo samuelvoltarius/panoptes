@@ -110,7 +110,7 @@ public class RecordingFileFingerprintTest {
         File mp4 = new File("/recordings/event_a.mp4_2.mp4");
 
         assertTrue(RecordingFileFingerprint.sidecarFor(mp4).getPath()
-                .endsWith("/recordings/event_a.mp4_2.json"));
+                .endsWith(new File("/recordings/event_a.mp4_2.json").getPath()));
     }
 
     private static File write(Path path, String content) throws Exception {

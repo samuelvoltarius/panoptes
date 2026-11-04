@@ -45,6 +45,8 @@ public class RecordingIdentityTest {
                 "/storage/ABCD-1234/SurfMate/surveillance/event_20260810_120100.mp4");
 
         assertEquals(first.rootId, second.rootId);
+        // rootIdFor liest den absoluten Pfad der Datei; nur dort, wo „/storage/…“ absolut ist (Linux/Android), gleich
+        org.junit.Assume.assumeTrue(new File("/storage").getAbsolutePath().equals("/storage"));
         assertEquals(first.rootId,
                 RecordingIdentity.rootIdFor(new File(
                         "/storage/ABCD-1234/SurfMate/surveillance")));

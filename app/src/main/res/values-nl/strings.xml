@@ -340,6 +340,7 @@
     <string name="webview_camera_daemon_not_running">Cameradienst staat uit</string>
     <string name="panoptes_startet">Panoptes wordt gestart …</string>
     <string name="panoptes_startet_hinweis">De pagina laadt vanzelf zodra Panoptes klaar is.</string>
+    <string name="panoptes_fremd_app">Er lijkt een andere BYD-gereedschapsapp te draaien (%1$s). Twee van zulke apps hinderen elkaar, vooral bij de camera. Sluit of deactiveer die app, dan start Panoptes.</string>
     <string name="panoptes_startet_zu_lange">Panoptes reageert nog niet.</string>
     <string name="webview_start_camera_daemon">Start de cameradienst in het scherm Diensten om deze pagina te openen.</string>
     <string name="reset_title">Gegevens verwijderen</string>

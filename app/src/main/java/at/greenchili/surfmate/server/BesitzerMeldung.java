@@ -26,6 +26,8 @@ public final class BesitzerMeldung {
         // Browser, den der Telegram-Besitzer angemeldet hat (Art web), steht dem Besitzer gleich
         if (k.istBesitzer(id) || Kopplungen.ART_WEB.equals(k.art(id))) return Einstellungen.Stufe.BESITZER;
         if (!k.einstellungenSchreiben(id)) return Einstellungen.Stufe.KEIN_RECHT;
+        // 0.1.39 PC über die Brücke: nie Besitzer-Stufe, auch nicht in der Web-Sitzung (nurLesendExtern bleibt zu)
+        if (Kopplungen.ART_PC.equals(k.art(id))) return Einstellungen.Stufe.KOPPLUNG;
         // Web-Sitzung behält wie bisher mehr als der reine Kopplungs-Token (Geheimes filtert WebHandyGuard)
         return webSitzung ? Einstellungen.Stufe.BESITZER : Einstellungen.Stufe.KOPPLUNG;
     }

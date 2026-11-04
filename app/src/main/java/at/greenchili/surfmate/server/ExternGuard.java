@@ -62,8 +62,19 @@ public final class ExternGuard {
             "/api/recordings",
             "/api/recordings/dates",
             "/api/recordings/stats",
-            "/api/demo"   // 0.1.38.2 Demo-Profil: nur ob das Band „Musterdaten“ gezeigt wird
+            "/api/demo",   // 0.1.38.2 Demo-Profil: nur ob das Band „Musterdaten“ gezeigt wird
+            "/api/web/manifest"   // 0.1.39 PC über die Brücke: Prüfsummen der Web-Dateien dieses Panoptes (öffentlich)
     )));
+
+    /**
+     * 0.1.39 PC über die Brücke (PLAN_BRUECKE_PC_0139 P1): genau diese Schreibpfade unter {@code /api/handy/v1} auch für
+     * Kopplungen der Art {@code pc} – eigener Brücken-Schlüssel, Abmelden von der Brücke, Web-Sitzung. Alles andere aus
+     * {@link #HANDY_SCHREIBEN} (Aktionen, Passkey, Push, Dateien, Besitzer-Pfade) bleibt für den PC zu.
+     */
+    static final Set<String> PC_SCHREIBEN = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "/api/handy/v1/bruecke",
+            "/api/handy/v1/bruecke/aus",
+            "/api/handy/v1/websitzung")));
 
     /** 0.1.30 Kern Sicherheit: ein Standbild je Wächter-Ereignis (nur JPEG, nie Clip). */
     public static final String STANDBILD_PFAD = "/api/waechter/standbild/";
@@ -232,6 +243,13 @@ public final class ExternGuard {
         if (at.greenchili.surfmate.auth.Kopplungen.ART_DIENST.equals(kopplungsArt)) {
             return !dienstErlaubt(method, pathOnly);
         }
+        // 0.1.39 Art pc: eigene Brücken-/Web-Pfade, sonst schreibend nur, was auch die PC-Web-Sitzung darf
+        // (eine Liste: WebHandyGuard.PC_WEB_SCHREIBEN) – nie Camping, HA-Aktion, Ladeplan o. ä. aus SCHREIBEN
+        if (at.greenchili.surfmate.auth.Kopplungen.ART_PC.equals(kopplungsArt)) {
+            if (pcErlaubt(method, pathOnly, kopplungsArt)) return false;
+            if (WebHandyGuard.pcBlocks(method, pathOnly)) return true;
+            return !erlaubt(method, pathOnly);
+        }
         if (erlaubt(method, pathOnly)) return false;
         if (cockpitErlaubt(method, pathOnly, kopplungsArt)) return false;
         if (tachoErlaubt(method, pathOnly, kopplungsArt)) return false;
@@ -376,6 +394,13 @@ public final class ExternGuard {
         }
         return "POST".equals(method) && (HANDY_SCHREIBEN.contains(p) || DATEIEN_SCHREIBEN.contains(p)
                 || BesitzerApiHandler.SCHREIBEN.contains(p));
+    }
+
+    /** 0.1.39: Art {@code pc} – nur {@link #PC_SCHREIBEN} (POST) zusätzlich zur allgemeinen Liste. */
+    static boolean pcErlaubt(String method, String pathOnly, String kopplungsArt) {
+        if (!at.greenchili.surfmate.auth.Kopplungen.ART_PC.equals(kopplungsArt)) return false;
+        String p = normal(pathOnly);
+        return p != null && "POST".equals(method) && PC_SCHREIBEN.contains(p);
     }
 
     public static boolean erlaubt(String method, String pathOnly) {

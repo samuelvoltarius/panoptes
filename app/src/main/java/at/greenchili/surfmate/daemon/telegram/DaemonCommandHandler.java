@@ -288,11 +288,7 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
             // ps+awk+kill filters by PID list and excludes the calling
             // shell's own PID — same pattern used by
             // TelegramBotDaemon.killOldInstances.
-            ctx.execShell(
-                "MY_PID=$$; ps -A -o PID,ARGS | grep -F start_cam_daemon "
-                + "| grep -v grep | awk '{print $1}' | while read pid; do "
-                + "if [ \"$pid\" != \"$MY_PID\" ]; then kill -9 $pid 2>/dev/null; fi; done"
-            );
+            ctx.execShell(at.greenchili.surfmate.launcher.EigeneProzesse.beenden("start_cam_daemon"));
             // Also kill via PID file
             ctx.execShell("if [ -f /data/user_de/0/com.android.shell/surfmate/cam_watchdog.pid ]; then kill -9 $(cat /data/user_de/0/com.android.shell/surfmate/cam_watchdog.pid) 2>/dev/null; fi");
             ctx.execShell("rm -f /data/user_de/0/com.android.shell/surfmate/start_cam_daemon.sh 2>/dev/null");
@@ -308,11 +304,7 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
         if ("acc_sentry_daemon".equals(processName)) {
             // ps+awk+kill — see cam case above for why pkill -f / variable
             // hop is not self-match safe.
-            ctx.execShell(
-                "MY_PID=$$; ps -A -o PID,ARGS | grep -F start_acc_sentry "
-                + "| grep -v grep | awk '{print $1}' | while read pid; do "
-                + "if [ \"$pid\" != \"$MY_PID\" ]; then kill -9 $pid 2>/dev/null; fi; done"
-            );
+            ctx.execShell(at.greenchili.surfmate.launcher.EigeneProzesse.beenden("start_acc_sentry"));
             ctx.execShell("rm -f /data/user_de/0/com.android.shell/surfmate/start_acc_sentry.sh 2>/dev/null");
             ctx.execShell("rm -rf /data/user_de/0/com.android.shell/surfmate/acc_sentry_watchdog.lock 2>/dev/null");
             ctx.execShell("rm -f /data/user_de/0/com.android.shell/surfmate/acc_sentry_daemon.lock 2>/dev/null");
@@ -372,7 +364,7 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
         
         if (!stopped) {
             // Retry with killall as fallback
-            ctx.execShell("killall -9 " + processName + " 2>/dev/null");
+            ctx.execShell(at.greenchili.surfmate.launcher.EigeneProzesse.beenden(processName));
             try { Thread.sleep(500); } catch (InterruptedException ignored) {}
             stopped = !isDaemonRunning(processName, ctx);
         }
@@ -489,19 +481,14 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
             "# Telegram-side cam_daemon stop sequence\n" +
             "rm -f /data/user_de/0/com.android.shell/surfmate/camera_daemon.disabled 2>/dev/null\n" +
             "if [ -f /data/user_de/0/com.android.shell/surfmate/cam_watchdog.pid ]; then kill -9 $(cat /data/user_de/0/com.android.shell/surfmate/cam_watchdog.pid) 2>/dev/null; fi\n" +
-            "MY_PID=$$; ps -A -o PID,ARGS | grep -F 'cam_daemon' | grep -v grep "
-                + "| awk '{print $1}' | while read pid; do "
-                + "if [ \"$pid\" != \"$MY_PID\" ]; then kill -9 $pid 2>/dev/null; fi; done\n" +
-            "killall -9 " + processName + " 2>/dev/null\n" +
+            at.greenchili.surfmate.launcher.EigeneProzesse.beenden("cam_daemon") + "\n" +
             // Wait-for-death: poll up to 5s for the daemon to actually
             // exit. Without this, lock-rm runs before SIGKILL is fully
             // processed and the daemon can rewrite the lockfile post-rm.
             "for i in 1 2 3 4 5; do\n" +
             "  if ! ps -A | grep -F '" + processName + "' | grep -v grep > /dev/null; then break; fi\n" +
             "  sleep 1\n" +
-            "  MY_PID=$$; ps -A -o PID,ARGS | grep -F '" + processName + "' | grep -v grep "
-                + "| awk '{print $1}' | while read pid; do "
-                + "if [ \"$pid\" != \"$MY_PID\" ]; then kill -9 $pid 2>/dev/null; fi; done\n" +
+            "  " + at.greenchili.surfmate.launcher.EigeneProzesse.beenden(processName) + "\n" +
             "done\n" +
             // Now safe to rm the lock — daemon is gone.
             "rm -f /data/user_de/0/com.android.shell/surfmate/camera_daemon.lock " +
@@ -599,15 +586,11 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
             "#!/system/bin/sh\n" +
             "# Telegram-side acc_sentry_daemon stop sequence\n" +
             "rm -f /data/user_de/0/com.android.shell/surfmate/acc_sentry_daemon.disabled 2>/dev/null\n" +
-            "MY_PID=$$; ps -A -o PID,ARGS | grep -F 'acc_sentry' | grep -v grep "
-                + "| awk '{print $1}' | while read pid; do "
-                + "if [ \"$pid\" != \"$MY_PID\" ]; then kill -9 $pid 2>/dev/null; fi; done\n" +
+            at.greenchili.surfmate.launcher.EigeneProzesse.beenden("acc_sentry") + "\n" +
             "for i in 1 2 3 4 5; do\n" +
             "  if ! ps -A | grep -F '" + processName + "' | grep -v grep > /dev/null; then break; fi\n" +
             "  sleep 1\n" +
-            "  MY_PID=$$; ps -A -o PID,ARGS | grep -F '" + processName + "' | grep -v grep "
-                + "| awk '{print $1}' | while read pid; do "
-                + "if [ \"$pid\" != \"$MY_PID\" ]; then kill -9 $pid 2>/dev/null; fi; done\n" +
+            "  " + at.greenchili.surfmate.launcher.EigeneProzesse.beenden(processName) + "\n" +
             "done\n" +
             "rm -f /data/user_de/0/com.android.shell/surfmate/acc_sentry_daemon.lock " +
                 "/data/user_de/0/com.android.shell/surfmate/acc_sentry_watchdog.pid 2>/dev/null\n" +

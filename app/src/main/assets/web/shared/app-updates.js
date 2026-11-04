@@ -106,6 +106,21 @@
                 (v.notizen || []).forEach(function (z) { var li = document.createElement('li'); li.textContent = z; ul.appendChild(li); });
             } else notes.style.display = 'none';
 
+            // 0.1.38.9 (04.11.): der Launcher steht dort, wo man Panoptes updatet
+            var L = d.launcher || {}, li = L.installiert, lv = L.verfuegbar;
+            $('updLauncherStat').style.display = li || lv ? '' : 'none';
+            $('updLauncher').textContent = li
+                ? (li.version || t('system.upd_build_tag', 'Build {n}', { n: li.versionCode })) + (L.neuer && lv ? ' → ' + lv.version : '')
+                : t('system.upd_launcher_none', 'nicht installiert');
+            $('updLauncherHinweis').style.display = !li && lv ? '' : 'none';
+            $('updLauncherHinweisText').textContent = t('system.upd_launcher_hinweis',
+                'Der Panoptes Launcher ist nicht installiert. Das ist kein Fehler. Einrichten kannst du ihn unter Apps & Display → Launcher einrichten.');
+            if (L.mitPanoptes && lv && notes.style.display !== 'none') {
+                var lm = document.createElement('li');
+                lm.textContent = t('system.upd_launcher_mit', 'Der Panoptes Launcher {v} kommt mit.', { v: lv.version });
+                $('updNotesList').appendChild(lm);
+            }
+
             var st = $('updState'), txt = '';
             if (d.phase) {
                 txt = d.phase === 'pausiert' ? t('system.upd_ph_paused', 'Download unterbrochen. Er geht beim nächsten Parken weiter.')
@@ -121,7 +136,7 @@
             } else if (v && d.vorgemerkt) {
                 txt = t('system.upd_vorgemerkt', 'Vorgemerkt: Panoptes installiert das Update etwa 10 Minuten, nachdem du das Auto abgestellt hast. Der Wächter ist dabei ein paar Minuten aus.');
             } else if (v && d.automatischGeplant) {
-                txt = t('system.upd_auto_planned', 'Wird automatisch installiert, sobald das Auto geparkt und die Zündung aus ist.');
+                txt = t('system.upd_auto_planned', 'Kommt von selbst, sobald das Auto mindestens 10 Minuten abgestellt ist.');
             } else if (v && d.mobilFrage) {
                 txt = t('system.upd_mobil_hinweis', 'Kein WLAN. Du kannst über mobile Daten laden, Panoptes fragt vorher.');
             } else if (v && !d.installierbar) {
@@ -136,6 +151,7 @@
             } else if (aktuellKanal === 'test' && d.kanal === 'stabil') {
                 txt = t('system.upd_stable_wait', 'Kanal Stabil ist gewählt. Diese Testversion bleibt installiert, bis eine stabile Version mit einer höheren Buildnummer verfügbar ist.');
             }
+            if (!txt && !v && li && L.neuer && lv) txt = t('system.upd_launcher_neu', 'Neuer Launcher {v}. Panoptes selbst ist aktuell.', { v: lv.version });
             st.textContent = txt;
 
             var prog = $('updProgress');
@@ -149,6 +165,8 @@
             inst.style.display = v && (d.installierbar || d.mobilFrage) && !laeuft && d.phase !== 'pausiert' ? '' : 'none';
             $('updSearch').disabled = laeuft;
             $('updCancel').style.display = v && d.vorgemerkt && !laeuft ? '' : 'none';
+            // nur der Launcher ist neuer: eigener Knopf; kommt er mit Panoptes mit, reicht „Installieren“
+            $('updLauncherInstall').style.display = li && L.neuer && !L.mitPanoptes && !laeuft ? '' : 'none';
 
             var self = this;
             clearTimeout(this.timer);
@@ -193,7 +211,9 @@
             var self = this, d = this.stand, v = d && d.verfuegbar;
             if (!v) return;
             // 0.1.26.1: gleiche Rückfrage wie in der Handy-App (HANDY_API_VERTRAG §8)
-            if (!window.confirm(t('system.upd_confirm_fern', 'Panoptes wird jetzt auf {v} aktualisiert. Wächter und Verbindung sind ca. 3–8 Minuten weg. Läuft die neue Version nicht sauber, kehrt Panoptes von selbst zur jetzigen zurück.', { v: v.version }))) return;
+            var mitL = d.launcher && d.launcher.mitPanoptes && d.launcher.verfuegbar
+                ? ' ' + t('system.upd_launcher_mit', 'Der Panoptes Launcher {v} kommt mit.', { v: d.launcher.verfuegbar.version }) : '';
+            if (!window.confirm(t('system.upd_confirm_fern', 'Panoptes wird jetzt auf {v} aktualisiert. Wächter und Verbindung sind ca. 3–8 Minuten weg. Läuft die neue Version nicht sauber, kehrt Panoptes von selbst zur jetzigen zurück.', { v: v.version }) + mitL)) return;
             // 0.1.32.1: ohne WLAN wie die Karte: Größe nennen, gilt nur für diesen Download
             var mobil = !!d.mobilFrage;
             if (mobil && !window.confirm(t('system.upd_mobil_frage', 'Das Auto hat gerade kein WLAN. Das Update braucht etwa {g} mobile Daten. Nur für diese Version laden?',
@@ -218,6 +238,26 @@
                     self.laden();
                 }, function () { toast(t('system.req_fail', 'Das hat nicht geklappt.'), 'error'); })
                 .then(function () { b.disabled = false; });
+        },
+
+        /** 0.1.38.9: nur den Launcher aktualisieren (Panoptes ist aktuell); ohne WLAN erst fragen. */
+        launcherInstallieren: function (mobil) {
+            var self = this, b = $('updLauncherInstall');
+            b.disabled = true;
+            fetch('/api/appupdate/launcher', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ aktion: 'installieren', mobil: !!mobil }) })
+                .then(function (r) { return r.json().then(function (x) { return x || {}; }, function () { return {}; }); })
+                .then(function (r) {
+                    if (r.ok) { toast(t('system.upd_started', 'Update gestartet.'), 'success'); return; }
+                    if (r.grund === 'wartet_wlan' && !mobil) {
+                        var g = r.verfuegbar && r.verfuegbar.groesseBytes;
+                        if (window.confirm(t('system.upd_mobil_frage', 'Das Auto hat gerade kein WLAN. Das Update braucht etwa {g} mobile Daten. Nur für diese Version laden?',
+                            { g: g > 0 ? Math.round(g / 1000000) + ' MB' : '10 MB' }))) { self.launcherInstallieren(true); }
+                        return;
+                    }
+                    toast(self.grundText(r.grund), 'warning');
+                }, function () { toast(t('system.req_fail', 'Das hat nicht geklappt.'), 'error'); })
+                .then(function () { b.disabled = false; setTimeout(function () { self.laden(); }, 5000); });
         },
 
         zuruecknehmen: function () {
@@ -245,6 +285,7 @@
             $('updSearch').onclick = function () { self.suchen(); };
             $('updInstall').onclick = function () { self.installieren(); };
             $('updCancel').onclick = function () { self.zuruecknehmen(); };
+            $('updLauncherInstall').onclick = function () { self.launcherInstallieren(false); };
             this.laden().then(function (d) {
                 if (!d) return;
                 self.einstellungen();

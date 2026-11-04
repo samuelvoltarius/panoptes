@@ -196,6 +196,34 @@ public final class WebHandyGuard {
         return p.equals("/api/vehicle/flash") || p.equals("/api/vehicle/find-car") || p.equals("/api/vehicle/warnblinker");
     }
 
+    /**
+     * 0.1.39 PC über die Brücke (E2E 04.11.): Die Web-Sitzung eines PCs darf schreibend NUR diese Pfade – eine
+     * Erlaubnisliste wie {@code ExternGuard}. Keine Fahrzeug-Aktion (Zusperren, Kofferraum, Klima, Fenster, Ton …), kein
+     * Auslöser, kein Wächter-Schalten, keine Roh-Konfiguration ({@code /api/settings/unified}); Einstellungen nur über den
+     * Katalog ({@code /api/einstellungen}, dort höchstens Stufe KOPPLUNG). Lesen (GET/HEAD) bleibt wie in Stufe B.
+     */
+    public static final Set<String> PC_WEB_SCHREIBEN = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "/api/einstellungen",
+            "/api/sitzung/erneuern",
+            "/api/sitzung/abmelden",
+            "/api/laden",
+            "/api/laden/nachfrage",
+            "/api/laden/nachfrage/spaeter",
+            "/api/laden/nachfrage/kein-preis",
+            "/api/gewohnheiten/antwort")));
+
+    /** 0.1.39: Anfrage eines PCs (Web-Sitzung oder Kopplungs-JWT) außerhalb von {@link #PC_WEB_SCHREIBEN}? */
+    public static boolean pcBlocks(String method, String pathOnly) {
+        if (method == null || pathOnly == null) return true;
+        if ("GET".equals(method) || "HEAD".equals(method)) return false;
+        String p = pathOnly;
+        int q = p.indexOf('?');
+        if (q >= 0) p = p.substring(0, q);
+        if (p.length() > 1 && p.endsWith("/")) p = p.substring(0, p.length() - 1);
+        if (p.contains("..") || p.contains("//")) return true;
+        return !PC_WEB_SCHREIBEN.contains(p);
+    }
+
     static boolean aussenAusloeser(String p) {
         if (p == null) return true;
         for (String a : AUSSEN_AUSLOESER) if (p.equals(a)) return true;

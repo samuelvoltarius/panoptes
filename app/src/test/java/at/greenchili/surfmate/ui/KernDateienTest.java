@@ -24,9 +24,9 @@ public class KernDateienTest {
 
     @Test
     public void backoffBegrenzt() {
-        assertEquals(2_000L, KernDateien.warteMs(0));
-        assertEquals(4_000L, KernDateien.warteMs(1));
-        assertEquals(30_000L, KernDateien.warteMs(4));
+        assertEquals(1_000L, KernDateien.warteMs(0));
+        assertEquals(2_000L, KernDateien.warteMs(1));
+        assertEquals(15_000L, KernDateien.warteMs(4));
         assertEquals(-1L, KernDateien.warteMs(KernDateien.MAX_VERSUCHE));
         assertEquals(-1L, KernDateien.warteMs(-1));
     }

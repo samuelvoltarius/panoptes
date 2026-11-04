@@ -195,6 +195,27 @@ public final class EinstellungenApiHandler {
             return true;
         }
         // 0.1.38.8 Telegram /kopplungen (verlorenes Handy): Liste mit Einmal-Griffen statt Kopplungs-ids, nur Login/lokal
+        // 0.1.38.9 einmalige Frage „Welches Gerät ist dein Handy?“ – nur am Display bzw. mit Login, nie Kopplungen
+        if (pathOnly.equals("/api/kopplung/besitzer-frage")) {
+            if (AuthMiddleware.isExternRequest() || AuthMiddleware.isHandyWebRequest()) return verboten(out);
+            if (method.equals("GET")) {
+                HttpResponse.sendJson(out, Kopplungen.get().besitzerFrage().toString());
+                return true;
+            }
+            if (method.equals("POST")) {
+                JSONObject req;
+                try {
+                    req = new JSONObject(body == null || body.isEmpty() ? "{}" : body);
+                } catch (Exception e) {
+                    req = new JSONObject();
+                }
+                String id = req.isNull("id") ? null : req.optString("id", null);
+                int r = Kopplungen.get().besitzerFrageBeantworten(id, req.optBoolean("keins", false));
+                HttpResponse.sendJson(out, r == Kopplungen.FRAGE_OK ? 200 : r == Kopplungen.FRAGE_UNBEKANNT ? 404 : 500,
+                        new JSONObject().put("ok", r == Kopplungen.FRAGE_OK).toString());
+                return true;
+            }
+        }
         if (pathOnly.equals("/api/kopplung/telegram-liste") && method.equals("GET")) {
             if (AuthMiddleware.isExternRequest() || AuthMiddleware.isHandyWebRequest()) return verboten(out);
             long jetzt = System.currentTimeMillis();
@@ -519,6 +540,18 @@ public final class EinstellungenApiHandler {
                 SurveillanceApiHandler.waechterSetzen(e.gespeichert.optBoolean("surveillance.surveillanceEnabled", false),
                         new java.io.ByteArrayOutputStream());
             } catch (Throwable ignored) {
+            }
+        }
+        // 0.1.39 „Am PC anmelden“: sofort neu lesen; aus = alle PC-Kopplungen widerrufen (Zugang über die Brücke zu)
+        if (e.gespeichert.has(at.greenchili.surfmate.auth.PcZugang.SCHALTER)
+                || e.gespeichert.has(at.greenchili.surfmate.auth.PcZugang.TAGES_MB_SCHLUESSEL)) {
+            at.greenchili.surfmate.auth.PcZugang.vergessen();
+            if (e.gespeichert.has(at.greenchili.surfmate.auth.PcZugang.SCHALTER)
+                    && !e.gespeichert.optBoolean(at.greenchili.surfmate.auth.PcZugang.SCHALTER, false)) {
+                try {
+                    at.greenchili.surfmate.auth.Kopplungen.get().pcAlleWiderrufen();
+                } catch (Throwable ignored) {
+                }
             }
         }
         if (e.gespeichert.has("deterrent.light") || e.gespeichert.has("deterrent.horn")) {

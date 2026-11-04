@@ -138,6 +138,17 @@
             android:textColor="#FFC9D1D9"
             android:textSize="18sp" />
 
+        <!-- 0.1.38.9: Hinweis „andere Werkzeug-App gefunden“ (FremdApps), nur sichtbar, wenn sie läuft -->
+        <TextView
+            android:id="@+id/startFremd"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:gravity="center"
+            android:textColor="#FFFFC857"
+            android:textSize="20sp"
+            android:visibility="gone" />
+
         <ProgressBar
             android:id="@+id/startSpinner"
             android:layout_width="48dp"

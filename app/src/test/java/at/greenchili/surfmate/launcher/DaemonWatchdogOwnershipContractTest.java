@@ -173,7 +173,7 @@ public class DaemonWatchdogOwnershipContractTest {
                 "private boolean startCameraDaemonWithWatchdog(",
                 "private boolean startAccSentryDaemonWithWatchdog(");
         assertOrdered(cameraTelegram,
-                "grep -F 'cam_daemon'",
+                "EigeneProzesse.beenden(\"cam_daemon\")",
                 "sleep 1",
                 "/data/user_de/0/com.android.shell/surfmate/cam_watchdog.lock");
         assertTrue(cameraTelegram.contains(
@@ -184,7 +184,7 @@ public class DaemonWatchdogOwnershipContractTest {
                 "private boolean startAccSentryDaemonWithWatchdog(",
                 "private boolean startTailscaleDashboardGuard(");
         assertOrdered(accTelegram,
-                "grep -F 'acc_sentry'",
+                "EigeneProzesse.beenden(\"acc_sentry\")",
                 "sleep 1",
                 "/data/user_de/0/com.android.shell/surfmate/acc_sentry_watchdog.lock");
         assertTrue(accTelegram.contains(

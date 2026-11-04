@@ -503,6 +503,23 @@ public final class Katalog {
         logTage.max = (double) at.greenchili.surfmate.logging.LogArchiv.MAX_TAGE;
         logTage.schritt = 1.0; logTage.erweitert = true;
         l.add(logTage);
+        // 0.1.39 PC über die Brücke (PLAN_BRUECKE_PC_0139): Zugang, also Standard AUS und nie über eine Kopplung
+        // (Regel Nr. 2, harte Grenze). Aus = alle PC-Kopplungen widerrufen (EinstellungenApiHandler.nachwirkungen).
+        Feld pcAn = new Feld(at.greenchili.surfmate.auth.PcZugang.SCHALTER, Feld.Typ.BOOL);
+        pcAn.gruppe = "system"; pcAn.reihenfolge = 90; pcAn.standard = false;
+        pcAn.nieExtern = true; pcAn.nurLesendExtern = true;
+        // 0.1.38.9 schlafend: nicht in der Oberfläche, bis Server und Handy-Teil live sind (Freischaltung 0.1.39)
+        pcAn.verborgen = true;
+        l.add(pcAn);
+        Feld pcMb = new Feld(at.greenchili.surfmate.auth.PcZugang.TAGES_MB_SCHLUESSEL, Feld.Typ.INT);
+        pcMb.gruppe = "system"; pcMb.reihenfolge = 91; pcMb.standard = at.greenchili.surfmate.auth.PcZugang.TAGES_MB;
+        pcMb.min = (double) at.greenchili.surfmate.auth.PcZugang.TAGES_MB_MIN;
+        pcMb.max = (double) at.greenchili.surfmate.auth.PcZugang.TAGES_MB_MAX;
+        pcMb.schritt = 10.0; pcMb.einheit = "MB"; pcMb.erweitert = true;
+        pcMb.nieExtern = true; pcMb.nurLesendExtern = true;
+        pcMb.verborgen = true;
+        pcMb.nurWenn = obj("key", at.greenchili.surfmate.auth.PcZugang.SCHALTER, "gleich", true);
+        l.add(pcMb);
         Feld logMb = new Feld("logs.mb", Feld.Typ.INT);
         logMb.gruppe = "system"; logMb.reihenfolge = 81; logMb.standard = at.greenchili.surfmate.logging.LogArchiv.STANDARD_MB;
         logMb.min = (double) at.greenchili.surfmate.logging.LogArchiv.MIN_MB;

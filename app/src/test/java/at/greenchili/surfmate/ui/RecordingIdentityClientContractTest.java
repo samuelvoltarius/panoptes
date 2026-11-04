@@ -54,9 +54,10 @@ public class RecordingIdentityClientContractTest {
         Path current = Paths.get(System.getProperty("user.dir"))
                 .toAbsolutePath().normalize();
         while (current != null) {
-            Path candidate = current.resolve(relativePath);
+            Path candidate = at.greenchili.surfmate.testutil.Quelltext.aufloesen(current.resolve(relativePath));
             if (Files.isRegularFile(candidate)) return Files.readAllBytes(candidate);
-            Path fromModule = current.resolve(relativePath.replaceFirst("^app/", ""));
+            Path fromModule = at.greenchili.surfmate.testutil.Quelltext.aufloesen(
+                    current.resolve(relativePath.replaceFirst("^app/", "")));
             if (Files.isRegularFile(fromModule)) return Files.readAllBytes(fromModule);
             current = current.getParent();
         }

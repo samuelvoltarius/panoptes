@@ -18,16 +18,16 @@ public class RecordingDirectoryRegistryTest {
         assertEquals(List.of(
                 active.getAbsolutePath(),
                 internal.getAbsolutePath(),
-                RecordingDirectoryRegistry.LEGACY_RECORDINGS,
-                RecordingDirectoryRegistry.LEGACY_BASE
+                abs(RecordingDirectoryRegistry.LEGACY_RECORDINGS),
+                abs(RecordingDirectoryRegistry.LEGACY_BASE)
         ), paths(RecordingDirectoryRegistry.recordings(active, internal, null, null)));
     }
 
     @Test
     public void categoryRegistriesIncludeTheirLegacyRoots() {
-        assertEquals(List.of(RecordingDirectoryRegistry.LEGACY_SENTRY),
+        assertEquals(List.of(abs(RecordingDirectoryRegistry.LEGACY_SENTRY)),
                 paths(RecordingDirectoryRegistry.surveillance(null, null, null, null)));
-        assertEquals(List.of(RecordingDirectoryRegistry.LEGACY_PROXIMITY),
+        assertEquals(List.of(abs(RecordingDirectoryRegistry.LEGACY_PROXIMITY)),
                 paths(RecordingDirectoryRegistry.proximity(null, null, null, null)));
     }
 
@@ -40,6 +40,11 @@ public class RecordingDirectoryRegistryTest {
 
         assertEquals(3, directories.size());
         assertEquals(same.getAbsolutePath(), directories.get(0).getAbsolutePath());
+    }
+
+    /** Die Konstanten sind Android-Pfade mit „/“; unter Windows macht {@code getAbsolutePath} daraus „F:\\…“. */
+    private static String abs(String legacyPfad) {
+        return new File(legacyPfad).getAbsolutePath();
     }
 
     private static List<String> paths(List<File> directories) {

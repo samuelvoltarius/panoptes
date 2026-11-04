@@ -131,7 +131,8 @@ public class BrueckeWebKanalTest {
                 "src/main/java/at/greenchili/surfmate/bruecke/BrueckeWeiterleitung.java")), StandardCharsets.UTF_8);
         int i = q.indexOf("static BrueckeWeiterleitung imDaemon()");
         String d = q.substring(i, q.indexOf("static Antwort loopback", i));
-        assertTrue(d.contains("kk.istHandy(kid) && kk.hatRecht(kid, at.greenchili.surfmate.auth.Kopplungen.RECHT_WEB)"));
+        // 0.1.39: Handy oder PC (PLAN_BRUECKE_PC_0139), beide nur mit Recht „web“
+        assertTrue(d.contains("(kk.istHandy(kid) || kk.istPc(kid)) && kk.hatRecht(kid, at.greenchili.surfmate.auth.Kopplungen.RECHT_WEB)"));
         assertTrue(d.contains("WebSitzung.SCOPE, kid, 120)"));
         assertTrue("Tunnel-Kennzeichen bleibt", q.contains("c.setRequestProperty(\"Forwarded\", \"for=panoptes-bruecke\")"));
     }

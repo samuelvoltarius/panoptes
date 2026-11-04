@@ -4048,6 +4048,8 @@ public class SocHistoryDatabase {
         if (directory == null || !directory.isDirectory()) {
             throw new java.io.IOException("directory metadata target unavailable");
         }
+        // Unter Windows lässt sich ein Verzeichnis nicht öffnen (Entwicklungsrechner/Tests); auf Android und Linux bleibt es streng
+        if (System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT).startsWith("windows")) return;
         try (java.nio.channels.FileChannel channel = java.nio.channels.FileChannel.open(
                 directory.toPath(), java.nio.file.StandardOpenOption.READ)) {
             channel.force(true);

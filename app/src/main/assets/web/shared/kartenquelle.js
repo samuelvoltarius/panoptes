@@ -30,7 +30,7 @@
     var DE = {
         titel: 'Kartenquelle wählen',
         text: 'Für die Karte lädt Panoptes Kartenbilder aus dem Netz. Die gewählte Quelle sieht deine IP-Adresse und den Kartenausschnitt, also ungefähr, wo dein Auto steht. Solange du nichts wählst, bleibt die Karte leer und es geht nichts raus.',
-        dauer: 'Wie lange die Quelle Zugriffe speichert, bestimmt ihr Betreiber. Du kannst die Wahl jederzeit unter System → Kartenquelle ändern.',
+        dauer: 'Wie lange die Quelle Zugriffe speichert, bestimmt ihr Betreiber. Du kannst die Wahl jederzeit unter Einstellungen → Alle Einstellungen → Kartenquelle ändern.',
         waehlen: 'Kartenquelle wählen',
         nicht_erreichbar_titel: 'Karte nicht erreichbar',
         nicht_erreichbar_text: 'Die gewählte Kartenquelle antwortet gerade nicht. Panoptes wechselt nicht von selbst auf eine andere Quelle.',

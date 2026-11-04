@@ -493,6 +493,7 @@
     <string name="webview_camera_daemon_not_running">Camera service is off</string>
     <string name="panoptes_startet">Panoptes is starting …</string>
     <string name="panoptes_startet_hinweis">This page loads by itself as soon as Panoptes is ready.</string>
+    <string name="panoptes_fremd_app">Another BYD tool app seems to be running (%1$s). Two such apps get in each other’s way, above all at the camera. Close or disable it, then Panoptes starts.</string>
     <string name="panoptes_startet_zu_lange">Panoptes is not responding yet.</string>
     <string name="webview_start_camera_daemon">Start the camera service on the Services screen to open this page.</string>
 

@@ -147,6 +147,9 @@ public class UpdateCommandHandler implements TelegramCommandHandler {
         boolean mobil = teil.optBoolean("mobilFrage", false);
         StringBuilder sb = new StringBuilder(ctx.tr(launcher ? "updates.frage_launcher" : "updates.frage_panoptes",
                 md(version)));
+        // 0.1.38.9: kommt der Launcher mit dem Panoptes-Update mit, steht es in der Rückfrage
+        String mitL = launcher ? "" : n.optString("launcherSatz", "").trim();
+        if (!mitL.isEmpty()) sb.append("\n").append(md(mitL));
         if (mobil) {
             long g = n.optLong("groesseBytes", 0);
             sb.append("\n\n").append(ctx.tr("updates.frage_mobil", at.greenchili.surfmate.appupdate.UpdateRegel

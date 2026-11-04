@@ -3557,6 +3557,8 @@ public class SohEstimator {
     }
 
     private static void forceDirectorySync(File directory) throws IOException {
+        // Unter Windows lässt sich ein Verzeichnis nicht öffnen (Entwicklungsrechner/Tests); auf Android und Linux bleibt es streng
+        if (System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT).startsWith("windows")) return;
         try (FileChannel channel = FileChannel.open(
                 directory.toPath(), StandardOpenOption.READ)) {
             channel.force(true);

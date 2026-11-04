@@ -324,6 +324,15 @@ public final class UpdateHinweis {
         return k.isEmpty() ? a : a + "\n" + k;
     }
 
+    /**
+     * 0.1.38.9: „Der Panoptes Launcher {0} kommt mit.“, wenn er beim getippten Panoptes-Update mitkommt
+     * ({@link AppUpdateDienst#launcherKommtMit}), sonst leer.
+     */
+    public static String launcherSatz(Freigabe f, int installiertVc, LauncherPaket.Stand st) {
+        if (!AppUpdateDienst.launcherKommtMit(f, installiertVc, st)) return "";
+        return Messages.text("update_hinweis.launcher_mit", "The Panoptes launcher {0} comes along.", f.launcher.versionName);
+    }
+
     /** 0.1.38.8: für die Karte am Display nur Art plus 3 Punkte; die ganze Liste steht hinter „Was ist neu?“. */
     public static String wasNeuKurz(Freigabe f, String installiert, String sprache) {
         String k = kurz(zusammenfassung(f, installiert, sprache));

@@ -158,15 +158,18 @@ public final class BrueckeVerbindung {
                 return;
             }
             byte[] m = java.util.Arrays.copyOfRange(rahmen, 1, rahmen.length);
+            boolean imHandshake = false;
             try {
                 synchronized (c) {
                     if (!c.noise.fertig()) {
+                        imHandshake = true;
                         c.noise.leseNachricht1(m);
                         String kid = bruecke.kidFuerSchluessel(c.noise.gegenseite(), uhr.getAsLong());
                         if (kid == null) {
                             // 0.1.24 Erstkopplung: nur solange der Einmal-Zugang des Kopplungs-QR läuft, nur ein Kanal
                             if (!bruecke.einmalOffen(uhr.getAsLong()) || einmalBelegt(k)) {
                                 log("Handshake von unbekanntem Handy-Schlüssel abgelehnt");
+                                handshakeAbgelehnt();
                                 schliessen(k, true);
                                 return;
                             }
@@ -186,10 +189,24 @@ public final class BrueckeVerbindung {
                 }
             } catch (Exception e) {
                 log("Kanal " + k + " geschlossen: " + e.getClass().getSimpleName());
+                if (imHandshake) handshakeAbgelehnt();
                 schliessen(k, true);
             } catch (Throwable t) {
                 schliessen(k, true);
             }
+        }
+
+        /** 0.1.39: ab 5 abgelehnten Handshakes je Stunde den Besitzer warnen (nur bei „Am PC anmelden“ an). */
+        private void handshakeAbgelehnt() {
+            try {
+                if (at.greenchili.surfmate.auth.PcZugang.handshakeAbgelehnt(uhr.getAsLong())) {
+                    log("Warnung an den Besitzer: " + at.greenchili.surfmate.auth.PcZugang.handshakesLetzteStunde()
+                            + " abgelehnte Handshakes in der letzten Stunde");
+                    at.greenchili.surfmate.server.BesitzerMeldung.melde(at.greenchili.surfmate.server.Messages.text(
+                            "pc.handshakes", "{0} fremde Verbindungsversuche über die Brücke in der letzten Stunde abgelehnt.",
+                            at.greenchili.surfmate.auth.PcZugang.handshakesLetzteStunde()));
+                }
+            } catch (Throwable ignored) { }
         }
 
         private boolean einmalBelegt(int ausser) {

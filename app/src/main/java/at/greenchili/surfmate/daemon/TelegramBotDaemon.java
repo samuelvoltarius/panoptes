@@ -1753,10 +1753,14 @@ public class TelegramBotDaemon {
                         response.put("message", "Owner not set");
                         break;
                     }
-                    String nText = tr("kopplung.neu", at.greenchili.surfmate.telegram.KopplungsKnopf.md(cmd.optString("geraet", "")));
+                    // 0.1.39 PC über die Brücke: eigener Text + [Abmelden] (derselbe Entfernen-Weg)
+                    boolean nPc = "pc".equals(cmd.optString("art", ""));
+                    String nText = tr(nPc ? "kopplung.neu_pc" : "kopplung.neu",
+                            at.greenchili.surfmate.telegram.KopplungsKnopf.md(cmd.optString("geraet", "")));
                     boolean nOk = nRef.matches("^[0-9a-f]{16}$")
                             ? sendMessageWithButtons(ownerChatId, nText, new String[][][]{{
-                                    {tr("kopplung.knopf_entfernen"), at.greenchili.surfmate.telegram.EntfernenKnopf.daten(nRef)}}})
+                                    {tr(nPc ? "kopplung.knopf_abmelden" : "kopplung.knopf_entfernen"),
+                                            at.greenchili.surfmate.telegram.EntfernenKnopf.daten(nRef)}}})
                             : sendMessage(ownerChatId, nText);
                     response.put("status", nOk ? "ok" : "error");
                     break;

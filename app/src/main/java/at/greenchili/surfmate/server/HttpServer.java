@@ -769,6 +769,14 @@ public class HttpServer {
                 client.close();
                 return;
             }
+            // 0.1.39 PC über die Brücke: schreibend nur die Erlaubnisliste (WebHandyGuard.PC_WEB_SCHREIBEN), nie Fahrzeug
+            if (AuthMiddleware.isHandyWebRequest() && at.greenchili.surfmate.auth.Kopplungen.get().istPc(
+                    AuthMiddleware.requestWebKopplungsId()) && WebHandyGuard.pcBlocks(method, pathOnly)) {
+                BefehlsLog.grund("pc_nur_lesen");
+                WebHandyGuard.sendeGesperrt(out, pathOnly);
+                client.close();
+                return;
+            }
             SchreibProtokoll.melde(method, path, AuthMiddleware.isExternRequest(), client.getInetAddress() != null && client.getInetAddress().isLoopbackAddress(),
                     AuthMiddleware.isExternRequest() ? AuthMiddleware.requestKopplungsId() : AuthMiddleware.requestWebKopplungsId(),
                     BefehlsLog.aktion());
@@ -784,6 +792,10 @@ public class HttpServer {
             // Schreibende und alle Fahrzeug-/Kamerawege 403. /api/demo antwortet immer (Band „Musterdaten“).
             if (DemoProfil.beantworte(method, path, pathOnly, rangeHeader, out)) {
                 // Musterdaten, Stand oder Sperre
+            }
+            // 0.1.39 PC über die Brücke: Prüfsummen der Web-Dateien (öffentlich, für den UI-Spiegel)
+            else if (WebManifest.handle(method, pathOnly, out)) {
+                // Manifest
             }
             // Route to modular handlers first
             else if (routeToHandlers(method, path, body, rangeHeader, ifNoneMatchHeader, out)) {

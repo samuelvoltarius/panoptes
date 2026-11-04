@@ -37,6 +37,8 @@ public final class PairingCodes {
     /** 0.1.38.8: Art + Rechte des offenen Handy-Codes (null = kein Handy-Code). */
     private static String openArt;
     private static java.util.List<String> openRechte;
+    /** 0.1.39 PC „Nur heute“: Dauer der neuen Kopplung in ms (0 = 30 Tage gleitend). */
+    private static long openDauer;
     /** Art + Rechte des zuletzt eingelösten Handy-Codes, nur für den Thread, der ihn eingelöst hat. */
     private static final ThreadLocal<Object[]> BINDUNG = new ThreadLocal<>();
 
@@ -45,7 +47,13 @@ public final class PairingCodes {
      * offenen Code). Die neue Kopplung bekommt genau diese Art und Rechte, nicht was das einlösende Gerät angibt.
      */
     public static synchronized String createGebunden(long nowMs, String art, java.util.List<String> rechte) {
+        return createGebunden(nowMs, art, rechte, 0L);
+    }
+
+    /** Wie {@link #createGebunden(long, String, java.util.List)}; {@code dauerMs} &gt; 0 = Kopplung gilt nur so lange. */
+    public static synchronized String createGebunden(long nowMs, String art, java.util.List<String> rechte, long dauerMs) {
         String code = create(nowMs, false);
+        openDauer = Math.max(0L, dauerMs);
         openArt = art;
         openRechte = rechte == null ? java.util.Collections.<String>emptyList()
                 : java.util.Collections.unmodifiableList(new java.util.ArrayList<>(rechte));
@@ -74,6 +82,7 @@ public final class PairingCodes {
         openWeiteres = weiteres;
         openArt = null;
         openRechte = null;
+        openDauer = 0L;
         return code;
     }
 
@@ -97,9 +106,10 @@ public final class PairingCodes {
         if (!ok) return UNGUELTIG;
         openHash = null;   // einmal verwendbar
         if (openArt != null) {
-            BINDUNG.set(new Object[]{openArt, openRechte});
+            BINDUNG.set(new Object[]{openArt, openRechte, openDauer});
             openArt = null;
             openRechte = null;
+            openDauer = 0L;
             return HANDY;
         }
         return openWeiteres ? WEITERES : BESITZER;
@@ -111,6 +121,7 @@ public final class PairingCodes {
         openUntil = 0L;
         openArt = null;
         openRechte = null;
+        openDauer = 0L;
     }
 
     private static byte[] hash(String s) {

@@ -275,7 +275,7 @@
     "kopplung_erlauben": "Autoriser",
     "kopplung_ablehnen": "Refuser",
     "neue_kopplung_titel": "Nouvel appareil connecté : {0}",
-    "neue_kopplung_text": "Ce n’était pas vous ? Supprimez-le dans Panoptes sous Système → Appareils associés.",
+    "neue_kopplung_text": "Ce n’était pas vous ? Supprimez-le dans Panoptes sous Réglages → Tous les réglages → Appareils associés.",
     "neue_kopplung_band_titel": "Nouvel appareil : {0}",
     "neue_kopplung_band_text": "Pas vous ? Supprimer sous Système",
     "blitzer_titel": "Radar dans {0} m",
@@ -429,7 +429,8 @@
     "launcher_verfuegbar": "Nouvelle version du launcher {0}",
     "launcher_installiert": "Le launcher {0} est installé.",
     "update_verfuegbar": "Panoptes {0} est disponible",
-    "update_zurueck": "La mise à jour n’a pas marché, Panoptes tourne de nouveau en {0}."
+    "update_zurueck": "La mise à jour n’a pas marché, Panoptes tourne de nouveau en {0}.",
+    "neuer_pc_band_titel": "Nouveau PC : {0}"
   },
   "parking": {
     "notify": {
@@ -779,7 +780,7 @@
       "tunnel_url": "🌐 *Accès distant*\n{0}"
     },
     "url": {
-      "none_running": "🌐 L’accès à distance est désactivé.\nTu peux l’activer dans Panoptes sous *Système → Accès à distance* ou ici sous *☰ Menu → Plus → Services*.",
+      "none_running": "🌐 L’accès à distance est désactivé.\nTu peux l’activer dans Panoptes sous *Réglages → Tous les réglages → Accès à distance* ou ici sous *☰ Menu → Plus → Services*.",
       "title": "🌐 *Comment joindre Panoptes*\n\n",
       "resolved_line": "• *{0} :* {1}\n",
       "pending_line": "• *{0} :* _démarre, le lien arrive dans un instant_\n",
@@ -792,17 +793,17 @@
       "notification_url_changed": "🔄 *Nouveau lien d’accès distant*\n{0}"
     },
     "backup": {
-      "restore_unavailable": "ℹ️ *La restauration ne fonctionne pas via Telegram.*\nOuvrez Panoptes sur la voiture, allez dans *Système → Sauvegarde* et choisissez le fichier. Cela ne marche que sur la même voiture.",
+      "restore_unavailable": "ℹ️ *La restauration ne fonctionne pas via Telegram.*\nOuvrez Panoptes sur la voiture, allez dans *Réglages → À propos → Sauvegarde et restauration* et choisissez le fichier. Cela ne marche que sur la même voiture.",
       "building_with_trips": "💾 Préparation de vos réglages et du carnet de trajets …",
       "building_settings": "💾 Préparation de vos réglages …",
       "service_unreachable": "⚠️ Le service caméra ne répond pas, et la sauvegarde en a besoin. Vous pouvez le démarrer sous /services.",
       "failed": "⚠️ La sauvegarde a échoué : {0}",
       "no_data": "⚠️ La sauvegarde est revenue vide.",
       "write_failed": "⚠️ Impossible de créer le fichier de sauvegarde : {0}",
-      "document_settings": "💾 Sauvegarde Panoptes (réglages)\n\n🔐 Elle contient vos accès et la clé de l'appareil – ne la partagez pas. Restaurez-la dans Panoptes sur la même voiture sous Système → Sauvegarde.",
-      "document_settings_version": "💾 Sauvegarde Panoptes (réglages) · {0}\n\n🔐 Elle contient vos accès et la clé de l’appareil – ne la partagez pas. Restaurez-la dans Panoptes sur la même voiture sous Système → Sauvegarde.",
-      "document_with_trips": "💾 Sauvegarde Panoptes (réglages + carnet de trajets : {0})\n\n🔐 Elle contient vos accès, la clé de l’appareil et vos déplacements – ne la partagez pas. Restaurez-la dans Panoptes sur la même voiture sous Système → Sauvegarde.",
-      "document_with_trips_version": "💾 Sauvegarde Panoptes (réglages + carnet de trajets : {0}) · {1}\n\n🔐 Elle contient vos accès, la clé de l’appareil et vos déplacements – ne la partagez pas. Restaurez-la dans Panoptes sur la même voiture sous Système → Sauvegarde.",
+      "document_settings": "💾 Sauvegarde Panoptes (réglages)\n\n🔐 Elle contient vos accès et la clé de l'appareil – ne la partagez pas. Restaurez-la dans Panoptes sur la même voiture sous Réglages → À propos → Sauvegarde et restauration.",
+      "document_settings_version": "💾 Sauvegarde Panoptes (réglages) · {0}\n\n🔐 Elle contient vos accès et la clé de l’appareil – ne la partagez pas. Restaurez-la dans Panoptes sur la même voiture sous Réglages → À propos → Sauvegarde et restauration.",
+      "document_with_trips": "💾 Sauvegarde Panoptes (réglages + carnet de trajets : {0})\n\n🔐 Elle contient vos accès, la clé de l’appareil et vos déplacements – ne la partagez pas. Restaurez-la dans Panoptes sur la même voiture sous Réglages → À propos → Sauvegarde et restauration.",
+      "document_with_trips_version": "💾 Sauvegarde Panoptes (réglages + carnet de trajets : {0}) · {1}\n\n🔐 Elle contient vos accès, la clé de l’appareil et vos déplacements – ne la partagez pas. Restaurez-la dans Panoptes sur la même voiture sous Réglages → À propos → Sauvegarde et restauration.",
       "upload_failed": "⚠️ Le fichier de sauvegarde n'est pas parvenu à Telegram."
     },
     "update": {
@@ -893,7 +894,9 @@
       "neu": "📱 *Nouvel appareil connecté : {0}*\nCe n’était pas vous ? Appuyez sur Supprimer.",
       "knopf_entfernen": "🗑 Supprimer",
       "entfernt": "🗑 Supprimé – l’appareil n’est plus connecté.",
-      "entfernen_abgelaufen": "⌛ Ce bouton a expiré. Supprimez l’appareil dans Panoptes sous Système → Appareils associés."
+      "entfernen_abgelaufen": "⌛ Ce bouton a expiré. Supprimez l’appareil dans Panoptes sous Réglages → Tous les réglages → Appareils associés.",
+      "neu_pc": "💻 *Nouveau PC connecté : {0}*\nCe n’était pas toi ? Appuie sur Déconnecter.",
+      "knopf_abmelden": "🚪 Déconnecter"
     },
     "health": {
       "repariert": "🩺 *Le Gardien était arrêté depuis {0} min – réparé.* Panoptes s’est réarmé tout seul.",
@@ -1001,7 +1004,7 @@
       "erlaubt": "✅ Autorisé – le cockpit transmet maintenant la connexion.",
       "abgelehnt": "❌ Refusé.",
       "uebernommen_ok": "☁️ Cloud BYD repris de « {0} » et vérifié – Panoptes fonctionne maintenant aussi voiture éteinte.",
-      "uebernommen_nicht_geprueft": "☁️ Cloud BYD repris de « {0} », mais la vérification a échoué. Regarde dans Panoptes sous Système → Compte BYD."
+      "uebernommen_nicht_geprueft": "☁️ Cloud BYD repris de « {0} », mais la vérification a échoué. Regarde dans Panoptes sous Réglages → Compte BYD."
     },
     "weiteres_geraet": {
       "anfrage": "📱 *EV-Cockpit « {0} » veut connecter un téléphone*\nNuméro de contrôle : *{1}*\n\nLe numéro correspond-il à celui du Cockpit ? Si tu autorises, le Cockpit affiche un code à scanner. La demande est valable 5 minutes.",
@@ -1138,8 +1141,8 @@
     "find_car_label": "Où est ma voiture ?",
     "battery_heat_label": "Préchauffer la batterie",
     "close_all_windows_label": "Fermer toutes les vitres",
-    "car_off_climate_needs_cloud": "La voiture est éteinte – le préchauffage ne peut alors pas se faire directement. Configure le cloud BYD (Système → Compte BYD), et ça marchera aussi voiture éteinte.",
-    "car_off_needs_cloud": "La voiture est éteinte – cela ne peut alors pas se faire directement. Configure le cloud BYD (Système → Compte BYD), et ça marchera aussi voiture éteinte.",
+    "car_off_climate_needs_cloud": "La voiture est éteinte – le préchauffage ne peut alors pas se faire directement. Configure le cloud BYD (Réglages → Compte BYD), et ça marchera aussi voiture éteinte.",
+    "car_off_needs_cloud": "La voiture est éteinte – cela ne peut alors pas se faire directement. Configure le cloud BYD (Réglages → Compte BYD), et ça marchera aussi voiture éteinte.",
     "aktion_aus": "Cette action est désactivée. Active-la sous Réglages → Voiture → Actions du véhicule.",
     "aktion_nur_nutzer": "Klaxon, feux et déverrouillage ne se déclenchent que par une personne : à l’écran, connecté ou depuis le téléphone couplé – jamais par des règles, des touches ou d’autres services.",
     "aktion_bestaetigen": "Confirme d’abord la question.",
@@ -2659,6 +2662,16 @@
         "title": "Déverrouiller à l’approche",
         "help": "Déverrouille quand ton téléphone couplé est tout près et reverrouille après 60 s sans ouverture de porte. Nécessite l’app Panoptes avec une clé de proximité. Par défaut : désactivé."
       }
+    },
+    "bruecke": {
+      "pcAnmeldung": {
+        "title": "Se connecter sur un PC (via le téléphone propriétaire)",
+        "help": "Permet d’ouvrir Panoptes dans le navigateur de ton PC sans Tailscale. Tu associes le PC avec le téléphone propriétaire (scanner le code QR affiché sur le PC). Le serveur ne voit que des données chiffrées. Un PC ne peut jamais modifier l’accès, les appairages, les mises à jour ni les actions du véhicule. Désactiver déconnecte immédiatement tous les PC."
+      },
+      "pcTagesMB": {
+        "title": "PC : données par jour",
+        "help": "Les PC connectés peuvent charger au maximum cette quantité par jour via le réseau mobile de la voiture. Une page d’accueil ouverte utilise environ 4 Mo par heure."
+      }
     }
   },
   "kartenquelle": {
@@ -2871,7 +2884,8 @@
     "vorgemerkt": "Panoptes installe la mise à jour environ 10 minutes après que vous avez garé la voiture. Le gardien est alors coupé quelques minutes.",
     "vorgemerkt_wlan": "Panoptes installe la mise à jour environ 10 minutes après que vous avez garé la voiture, dès qu’elle a le Wi-Fi. Le gardien est alors coupé quelques minutes.",
     "zuruecknehmen": "Annuler",
-    "geraet": "écran de la voiture"
+    "geraet": "écran de la voiture",
+    "launcher_mit": "Le lanceur Panoptes {0} est inclus."
   },
   "update_art": {
     "fix": "Correction",
@@ -2993,7 +3007,10 @@
     "dienst": "Service {0} libéré par le téléphone propriétaire {1}.",
     "waechter_an": "Gardien activé par le téléphone {0}.",
     "waechter_aus": "Gardien désactivé par le téléphone {0}.",
-    "rechte_selbst": "Le téléphone propriétaire {0} a modifié ses droits : {1}."
+    "rechte_selbst": "Le téléphone propriétaire {0} a modifié ses droits : {1}.",
+    "frage_telegram": "Quel appareil est ton téléphone ? Choisis-le dans la voiture sous Système → Appareils appairés – c’est seulement alors qu’il y a un téléphone propriétaire.",
+    "frage_telegram_bestaetigen": "Un téléphone propriétaire a été choisi automatiquement lors de la mise à jour. Vérifie dans la voiture sous Système → Appareils appairés que c’est bien ton téléphone.",
+    "telegram_gewaehlt": "{0} est maintenant ton téléphone propriétaire."
   },
   "update_klein": {
     "titel": "Mises à jour",
@@ -3001,5 +3018,10 @@
     "autostart_titel": "Démarrage auto",
     "autostart_fehlt": "Après la mise à jour, Panoptes a besoin une fois de l’autorisation de démarrage automatique. Touche « Réactiver le démarrage auto » sur la page d’accueil de Panoptes à l’écran de la voiture.",
     "launcher_home": "Après la mise à jour, le launcher Panoptes n’est plus ton écran d’accueil. Ouvre le launcher une fois et choisis-le de nouveau comme écran d’accueil."
+  },
+  "pc": {
+    "push_neu": "Nouveau PC connecté : {0}",
+    "push_neu_text": "Ce n’était pas toi ? Déconnecte-le sous Appareils associés.",
+    "handshakes": "{0} tentatives de connexion inconnues via le pont ont été refusées au cours de la dernière heure. Si ce n’était pas ton PC : vérifie Appareils associés et, si besoin, désactive « Se connecter sur un PC » dans la voiture."
   }
 }

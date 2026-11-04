@@ -272,7 +272,7 @@ public class SystemApiHandler {
             }
             sentinel.setReadable(true, false);
             sentinel.setWritable(true, false);
-            run("pkill -x '" + type.getProcessName() + "'", 5);
+            run(at.greenchili.surfmate.launcher.EigeneProzesse.beenden(type.getProcessName()), 5);
         }
         logger.info(TAG + ": " + type.name() + " -> " + (enabled ? "on" : "off") + " (saved=" + saved + ")");
 

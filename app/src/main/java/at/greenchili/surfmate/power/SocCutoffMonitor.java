@@ -255,7 +255,7 @@ public final class SocCutoffMonitor {
         //    pkill the cam daemon explicitly. acc_sentry will Runtime.exit
         //    itself below.
         try {
-            execShell("pkill -9 byd_cam_daemon 2>/dev/null");
+            execShell(at.greenchili.surfmate.launcher.EigeneProzesse.beenden("byd_cam_daemon"));
         } catch (Throwable ignored) {}
 
         // 5. Final stop. exit() not halt() — gives finalizers a chance.

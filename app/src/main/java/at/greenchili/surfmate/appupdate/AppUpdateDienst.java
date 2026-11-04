@@ -204,7 +204,14 @@ public final class AppUpdateDienst {
                 speichern();
             }
         }
+        // 0.1.38.9: kommt der Launcher mit einem gemeldeten Panoptes-Update mit, sagt das schon dessen Meldung
+        boolean mit;
+        synchronized (lock) { mit = launcherKommtMit(verfuegbar, env.installierterVc(), st) && !lautlos(verfuegbar); }
         for (UpdateMeldung.Meldung me : raus) {
+            if (mit && UpdateMeldung.LAUNCHER_VERFUEGBAR.equals(me.art)) {
+                logger.info("Update-Meldung: " + me + " steht schon in der Panoptes-Meldung");
+                continue;
+            }
             logger.info("Update-Meldung: " + me);
             try {
                 env.meldeUpdate(me);
@@ -384,8 +391,54 @@ public final class AppUpdateDienst {
 
     // ------------------------------------------------------------------ API
 
+    /** 0.1.38.9: Launcher-Stand höchstens alle 30 s neu lesen (Shell-Aufruf), die Karte fragt jede Minute. */
+    static final long LAUNCHER_STAND_MS = 30_000L;
+    private LauncherPaket.Stand launcherStandCache;
+    private long launcherStandZeit = -1;
+
+    LauncherPaket.Stand launcherStandGemerkt() {
+        long now = env.jetzt();
+        synchronized (lock) {
+            if (launcherStandCache != null && now >= launcherStandZeit && now - launcherStandZeit < LAUNCHER_STAND_MS) {
+                return launcherStandCache;
+            }
+        }
+        LauncherPaket.Stand st = env.launcherStand();
+        synchronized (lock) {
+            launcherStandCache = st;
+            launcherStandZeit = now;
+        }
+        return st;
+    }
+
+    /**
+     * 0.1.38.9 (04.11.: der Launcher soll dort stehen, wo man Panoptes updatet): Kommt der Launcher mit dem
+     * nächsten getippten Panoptes-Update mit? Nur wenn er installiert ist, die Freigabe neuer ist und Panoptes selbst
+     * ein neueres Update hat. Von selbst (automatisch, still) kommt er nie mit (LauncherRegel: nur auf Tipp).
+     */
+    static boolean launcherKommtMit(Freigabe f, int installiertVc, LauncherPaket.Stand st) {
+        return f != null && f.versionCode > installiertVc && f.launcher != null && f.launcher.apkUrl() != null
+                && st != null && st.installiert() && LauncherRegel.neuer(f.launcher, st.versionCode);
+    }
+
+    /** {@code launcher}-Teil des Status: installiert, verfügbar, neuer, kommt mit. */
+    static JSONObject launcherTeil(Freigabe f, int installiertVc, LauncherPaket.Stand st) throws Exception {
+        Freigabe.Launcher l = f == null ? null : f.launcher;
+        boolean inst = st != null && st.installiert();
+        JSONObject o = new JSONObject();
+        o.put("installiert", inst ? new JSONObject().put("versionCode", st.versionCode)
+                .put("version", l != null && l.versionCode == st.versionCode ? l.versionName : JSONObject.NULL)
+                : JSONObject.NULL);
+        o.put("verfuegbar", l != null && l.apkUrl() != null
+                ? new JSONObject().put("version", l.versionName).put("versionCode", l.versionCode) : JSONObject.NULL);
+        o.put("neuer", inst && l != null && l.apkUrl() != null && LauncherRegel.neuer(l, st.versionCode));
+        o.put("mitPanoptes", launcherKommtMit(f, installiertVc, st));
+        return o;
+    }
+
     /** GET /api/appupdate/status. */
     public JSONObject status(String sprache) {
+        LauncherPaket.Stand lst = launcherStandGemerkt();
         synchronized (lock) {
             UpdateRegel.Lage l = lage();
             JSONObject o = new JSONObject();
@@ -425,6 +478,9 @@ public final class AppUpdateDienst {
                     org.json.JSONArray zus = UpdateHinweis.zusammenfassung(vf, inst, sprache);
                     v.put("zusammenfassung", zus);
                     v.put("kurz", UpdateHinweis.kurz(zus));
+                    // 0.1.38.9: kommt der Launcher mit, steht es in einem Satz dabei (Handy, Cockpit, System-Seite)
+                    v.put("launcherSatz", at.greenchili.surfmate.server.Messages.withLocale(sprache,
+                            () -> UpdateHinweis.launcherSatz(vf, env.installierterVc(), lst)));
                     v.put("zurueckgerollt", verfuegbar.versionCode == l.rueckfallVc);
                     o.put("verfuegbar", v);
                 } else {
@@ -443,6 +499,7 @@ public final class AppUpdateDienst {
                 long ab = UpdateRegel.automatischAb(l, automatischFuer(verfuegbar), pruefenAn(), ausSeit);
                 o.put("automatischGeplant", ab > 0 ? ab : JSONObject.NULL);
                 o.put("vorgemerkt", vorgemerkt());
+                o.put("launcher", launcherTeil(verfuegbar, env.installierterVc(), lst));
             } catch (Exception ignored) { }
             return o;
         }
@@ -482,6 +539,7 @@ public final class AppUpdateDienst {
             laufGetippt = true;
         }
         final Freigabe f = verfuegbar;
+        laufMitLauncher = launcherKommtMit(f, env.installierterVc(), launcherStandGemerkt());
         Thread t = new Thread(() -> {
             try {
                 ausfuehren(f);
@@ -489,6 +547,7 @@ public final class AppUpdateDienst {
                 synchronized (lock) {
                     installiertGerade = false;
                     laufGetippt = false;
+                    laufMitLauncher = false;
                 }
             }
         }, "AppUpdate-Install");
@@ -664,6 +723,8 @@ public final class AppUpdateDienst {
             laufGetippt = false;
             laufGescheitert = false;
             f = verfuegbar;
+            // 0.1.38.9: eine Vormerkung kommt aus einem Tipp, dann kommt der Launcher mit; von selbst nie
+            laufMitLauncher = alsVorgemerkt && launcherKommtMit(f, env.installierterVc(), launcherStandGemerkt());
             // 0.1.38.8: kleines Update von selbst: danach keine Meldung (Marke übersteht den Neustart des Daemons)
             still = !alsVorgemerkt && lautlos(f);
             if (still) {
@@ -688,6 +749,36 @@ public final class AppUpdateDienst {
                     speichern();
                 }
                 laufVorgemerkt = false;
+                laufMitLauncher = false;
+            }
+        }
+    }
+
+    /** 0.1.38.9: Dieser Lauf bringt den Launcher mit (vor dem Start des Update-Skripts, eigener Fehler stört Panoptes nicht). */
+    private volatile boolean laufMitLauncher;
+
+    /** Launcher vor dem Panoptes-Skript: gleiche Prüfungen wie der Launcher-Knopf; scheitert er, läuft Panoptes weiter. */
+    private void launcherMitnehmen(Freigabe f) {
+        if (!laufMitLauncher || f.launcher == null) return;
+        boolean mobil;
+        synchronized (lock) {
+            UpdateRegel.Lage l = lage();
+            mobil = !l.nurWlan || l.mobilEinmal;   // Panoptes darf über dieses Netz laden, dann auch der Launcher
+            if (launcherLaeuft) return;
+            launcherLaeuft = true;
+            launcherFehler = null;
+        }
+        try {
+            logger.info("Launcher " + f.launcher.versionName + " kommt mit dem Panoptes-Update mit");
+            launcherAusfuehren(f.launcher, mobil);
+        } catch (Throwable t) {
+            logger.warn("Launcher mit Panoptes: " + t.getMessage());
+        } finally {
+            synchronized (lock) {
+                launcherLaeuft = false;
+                launcherPhase = null;
+                launcherProzent = null;
+                launcherStandZeit = -1;   // gleich frisch lesen
             }
         }
     }
@@ -1003,6 +1094,7 @@ public final class AppUpdateDienst {
                 scheitern("nicht_erreichbar", "Umbenennen fehlgeschlagen", teil);
                 return;
             }
+            launcherMitnehmen(f);
             // Letzte Prüfung direkt vor dem Start: noch immer aus (nach einem Tipp: noch immer sicher in P), keine Sperre
             synchronized (lock) {
                 String nicht = laufNichtWeil(lage());
@@ -1825,6 +1917,8 @@ public final class AppUpdateDienst {
             String sprache = at.greenchili.surfmate.server.LocaleManager.get();
             String neu = at.greenchili.surfmate.server.Messages.withLocale(sprache,
                     () -> UpdateHinweis.wasNeu(f, installierteVersion(), sprache));
+            String mit = UpdateHinweis.launcherSatz(f, installierterVc(), launcherStand());
+            if (!mit.isEmpty()) neu = neu + "\n" + mit;   // 0.1.38.9: Launcher kommt mit
             at.greenchili.surfmate.telegram.TelegramNotifier.notifyUpdateNeu("panoptes", f.versionName,
                     UpdateRegel.groesseText(groesseBytes), neu);
             // 0.1.38.8: dieselbe Meldung mit Zusammenfassung aufs Handy (Kategorie system.updates; TelegramSink lässt sie aus)
@@ -1939,6 +2033,8 @@ public final class AppUpdateDienst {
         public boolean zeigeHinweis(String griff, Freigabe f, String notizen, String zusatz) {
             // 0.1.38.5: Art und Kurzfassung über der Frage, der volle Text bleibt hinter „Was ist neu?“
             String neu = UpdateHinweis.wasNeuKurz(f, installierteVersion(), at.greenchili.surfmate.server.LocaleManager.get());
+            String mit = UpdateHinweis.launcherSatz(f, installierterVc(), launcherStand());
+            if (!mit.isEmpty()) neu = neu + "\n" + mit;   // 0.1.38.9: Launcher kommt mit
             String text = neu + "\n\n" + UpdateHinweis.frage() + (zusatz.isEmpty() ? "" : "\n\n" + zusatz);
             return at.greenchili.surfmate.byd.MessageOverlayController.showUpdateHinweis(griff, f.versionName,
                     UpdateHinweis.titel(f.versionName), text, notizen,

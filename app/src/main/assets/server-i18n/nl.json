@@ -275,7 +275,7 @@
     "kopplung_erlauben": "Toestaan",
     "kopplung_ablehnen": "Weigeren",
     "neue_kopplung_titel": "Nieuw apparaat verbonden: {0}",
-    "neue_kopplung_text": "Was jij dit niet? Verwijder het in Panoptes onder Systeem → Gekoppelde apparaten.",
+    "neue_kopplung_text": "Was jij dit niet? Verwijder het in Panoptes onder Instellingen → Alle instellingen → Gekoppelde apparaten.",
     "neue_kopplung_band_titel": "Nieuw apparaat: {0}",
     "neue_kopplung_band_text": "Niet jij? Verwijder onder Systeem",
     "blitzer_titel": "Flitspaal over {0} m",
@@ -429,7 +429,8 @@
     "launcher_verfuegbar": "Nieuwe launcher-versie {0}",
     "launcher_installiert": "Launcher {0} is geïnstalleerd.",
     "update_verfuegbar": "Panoptes {0} is beschikbaar",
-    "update_zurueck": "De update is niet gelukt, Panoptes draait weer op {0}."
+    "update_zurueck": "De update is niet gelukt, Panoptes draait weer op {0}.",
+    "neuer_pc_band_titel": "Nieuwe pc: {0}"
   },
   "parking": {
     "notify": {
@@ -779,7 +780,7 @@
       "tunnel_url": "🌐 *Toegang op afstand*\n{0}"
     },
     "url": {
-      "none_running": "🌐 Toegang op afstand staat uit.\nJe zet hem aan in Panoptes onder *Systeem → Toegang op afstand* of hier onder *☰ Menu → Meer → Diensten*.",
+      "none_running": "🌐 Toegang op afstand staat uit.\nJe zet hem aan in Panoptes onder *Instellingen → Alle instellingen → Toegang op afstand* of hier onder *☰ Menu → Meer → Diensten*.",
       "title": "🌐 *Zo bereik je Panoptes*\n\n",
       "resolved_line": "• *{0}:* {1}\n",
       "pending_line": "• *{0}:* _start, link komt zo_\n",
@@ -792,17 +793,17 @@
       "notification_url_changed": "🔄 *Nieuwe link voor toegang op afstand*\n{0}"
     },
     "backup": {
-      "restore_unavailable": "ℹ️ *Terugzetten werkt niet via Telegram.*\nOpen Panoptes in de auto, ga naar *Systeem → Back-up* en kies het bestand. Dit werkt alleen op dezelfde auto.",
+      "restore_unavailable": "ℹ️ *Terugzetten werkt niet via Telegram.*\nOpen Panoptes in de auto, ga naar *Instellingen → Over → Back-up maken & terugzetten* en kies het bestand. Dit werkt alleen op dezelfde auto.",
       "building_with_trips": "💾 Je instellingen en ritboek worden ingepakt …",
       "building_settings": "💾 Je instellingen worden ingepakt …",
       "service_unreachable": "⚠️ De cameradienst antwoordt niet, en de back-up heeft hem nodig. Je kunt hem starten onder /services.",
       "failed": "⚠️ De back-up is mislukt: {0}",
       "no_data": "⚠️ De back-up was leeg.",
       "write_failed": "⚠️ Het back-upbestand kon niet worden gemaakt: {0}",
-      "document_settings": "💾 Panoptes-back-up (instellingen)\n\n🔐 Bevat je inloggegevens en de apparaatsleutel – deel hem niet. Zet hem terug in Panoptes op dezelfde auto onder Systeem → Back-up.",
-      "document_settings_version": "💾 Panoptes-back-up (instellingen) · {0}\n\n🔐 Bevat je inloggegevens en de apparaatsleutel – deel hem niet. Zet hem terug in Panoptes op dezelfde auto onder Systeem → Back-up.",
-      "document_with_trips": "💾 Panoptes-back-up (instellingen + ritboek: {0})\n\n🔐 Bevat je inloggegevens, de apparaatsleutel en waar je geweest bent – deel hem niet. Zet hem terug in Panoptes op dezelfde auto onder Systeem → Back-up.",
-      "document_with_trips_version": "💾 Panoptes-back-up (instellingen + ritboek: {0}) · {1}\n\n🔐 Bevat je inloggegevens, de apparaatsleutel en waar je geweest bent – deel hem niet. Zet hem terug in Panoptes op dezelfde auto onder Systeem → Back-up.",
+      "document_settings": "💾 Panoptes-back-up (instellingen)\n\n🔐 Bevat je inloggegevens en de apparaatsleutel – deel hem niet. Zet hem terug in Panoptes op dezelfde auto onder Instellingen → Over → Back-up maken & terugzetten.",
+      "document_settings_version": "💾 Panoptes-back-up (instellingen) · {0}\n\n🔐 Bevat je inloggegevens en de apparaatsleutel – deel hem niet. Zet hem terug in Panoptes op dezelfde auto onder Instellingen → Over → Back-up maken & terugzetten.",
+      "document_with_trips": "💾 Panoptes-back-up (instellingen + ritboek: {0})\n\n🔐 Bevat je inloggegevens, de apparaatsleutel en waar je geweest bent – deel hem niet. Zet hem terug in Panoptes op dezelfde auto onder Instellingen → Over → Back-up maken & terugzetten.",
+      "document_with_trips_version": "💾 Panoptes-back-up (instellingen + ritboek: {0}) · {1}\n\n🔐 Bevat je inloggegevens, de apparaatsleutel en waar je geweest bent – deel hem niet. Zet hem terug in Panoptes op dezelfde auto onder Instellingen → Over → Back-up maken & terugzetten.",
       "upload_failed": "⚠️ Het back-upbestand is niet bij Telegram aangekomen."
     },
     "update": {
@@ -893,7 +894,9 @@
       "neu": "📱 *Nieuw apparaat verbonden: {0}*\nWas jij dit niet? Tik dan op Verwijderen.",
       "knopf_entfernen": "🗑 Verwijderen",
       "entfernt": "🗑 Verwijderd – het apparaat is niet meer verbonden.",
-      "entfernen_abgelaufen": "⌛ Deze knop is verlopen. Verwijder het in Panoptes onder Systeem → Gekoppelde apparaten."
+      "entfernen_abgelaufen": "⌛ Deze knop is verlopen. Verwijder het in Panoptes onder Instellingen → Alle instellingen → Gekoppelde apparaten.",
+      "neu_pc": "💻 *Nieuwe pc aangemeld: {0}*\nWas jij dit niet? Tik op Afmelden.",
+      "knopf_abmelden": "🚪 Afmelden"
     },
     "health": {
       "repariert": "🩺 *Bewaker was {0} min uit – hersteld.* Panoptes heeft zichzelf weer ingeschakeld.",
@@ -1001,7 +1004,7 @@
       "erlaubt": "✅ Toegestaan – de cockpit draagt de aanmelding nu over.",
       "abgelehnt": "❌ Geweigerd.",
       "uebernommen_ok": "☁️ BYD-cloud overgenomen van ‘{0}’ en gecontroleerd – Panoptes werkt nu ook als de auto uit staat.",
-      "uebernommen_nicht_geprueft": "☁️ BYD-cloud overgenomen van ‘{0}’, maar de controle is mislukt. Kijk in Panoptes onder Systeem → BYD-account."
+      "uebernommen_nicht_geprueft": "☁️ BYD-cloud overgenomen van ‘{0}’, maar de controle is mislukt. Kijk in Panoptes onder Instellingen → BYD-account."
     },
     "weiteres_geraet": {
       "anfrage": "📱 *EV-Cockpit „{0}” wil een telefoon verbinden*\nControlegetal: *{1}*\n\nKomt het getal overeen met dat in de Cockpit? Als je het toestaat, toont de Cockpit een code om te scannen. Het verzoek is 5 minuten geldig.",
@@ -1138,8 +1141,8 @@
     "find_car_label": "Waar is mijn auto?",
     "battery_heat_label": "Accu voorverwarmen",
     "close_all_windows_label": "Alle ramen sluiten",
-    "car_off_climate_needs_cloud": "De auto staat uit – voorverwarmen gaat dan niet direct. Stel de BYD-cloud in (Systeem → BYD-account), dan werkt het ook als de auto uit staat.",
-    "car_off_needs_cloud": "De auto staat uit – dit gaat dan niet direct. Stel de BYD-cloud in (Systeem → BYD-account), dan werkt het ook als de auto uit staat.",
+    "car_off_climate_needs_cloud": "De auto staat uit – voorverwarmen gaat dan niet direct. Stel de BYD-cloud in (Instellingen → BYD-account), dan werkt het ook als de auto uit staat.",
+    "car_off_needs_cloud": "De auto staat uit – dit gaat dan niet direct. Stel de BYD-cloud in (Instellingen → BYD-account), dan werkt het ook als de auto uit staat.",
     "aktion_aus": "Deze actie staat uit. Inschakelen onder Instellingen → Auto → Voertuigacties.",
     "aktion_nur_nutzer": "Claxon, licht en ontgrendelen worden alleen door een mens geactiveerd: op het scherm, aangemeld of vanaf de gekoppelde telefoon – nooit door regels, knoppen of andere diensten.",
     "aktion_bestaetigen": "Bevestig eerst de vraag.",
@@ -2659,6 +2662,16 @@
         "title": "Ontgrendelen bij naderen",
         "help": "Ontgrendelt als je gekoppelde telefoon heel dichtbij is en vergrendelt weer na 60 s zonder dat een deur opengaat. Vereist de Panoptes-app met een nabijheidssleutel. Standaard: uit."
       }
+    },
+    "bruecke": {
+      "pcAnmeldung": {
+        "title": "Aanmelden op een pc (via de eigenaar-telefoon)",
+        "help": "Hiermee open je Panoptes in de browser op je pc, zonder Tailscale. Je koppelt de pc met de eigenaar-telefoon (scan de QR-code op de pc). De server ziet alleen versleutelde gegevens. Een pc kan nooit toegang, koppelingen, updates of voertuigacties wijzigen. Uitzetten meldt alle pc’s meteen af."
+      },
+      "pcTagesMB": {
+        "title": "Pc: data per dag",
+        "help": "Aangemelde pc’s mogen per dag hoogstens zoveel laden via het mobiele netwerk van de auto. Een open startpagina gebruikt ongeveer 4 MB per uur."
+      }
     }
   },
   "kartenquelle": {
@@ -2871,7 +2884,8 @@
     "vorgemerkt": "Panoptes installeert de update ongeveer 10 minuten nadat je de auto hebt geparkeerd. De bewaker staat dan een paar minuten uit.",
     "vorgemerkt_wlan": "Panoptes installeert de update ongeveer 10 minuten nadat je de auto hebt geparkeerd, zodra die wifi heeft. De bewaker staat dan een paar minuten uit.",
     "zuruecknehmen": "Ongedaan maken",
-    "geraet": "autoscherm"
+    "geraet": "autoscherm",
+    "launcher_mit": "De Panoptes-launcher {0} komt mee."
   },
   "update_art": {
     "fix": "Correctie",
@@ -2993,7 +3007,10 @@
     "dienst": "Dienst {0} vrijgegeven door eigenaar-telefoon {1}.",
     "waechter_an": "Bewaker ingeschakeld door telefoon {0}.",
     "waechter_aus": "Bewaker uitgeschakeld door telefoon {0}.",
-    "rechte_selbst": "Eigenaar-telefoon {0} heeft zijn rechten gewijzigd: {1}."
+    "rechte_selbst": "Eigenaar-telefoon {0} heeft zijn rechten gewijzigd: {1}.",
+    "frage_telegram": "Welk apparaat is je telefoon? Kies het in de auto onder Systeem → Gekoppelde apparaten – pas dan is er een eigenaar-telefoon.",
+    "frage_telegram_bestaetigen": "Bij de update is automatisch een eigenaar-telefoon gekozen. Controleer in de auto onder Systeem → Gekoppelde apparaten of het echt je telefoon is.",
+    "telegram_gewaehlt": "{0} is nu je eigenaar-telefoon."
   },
   "update_klein": {
     "titel": "Updates",
@@ -3001,5 +3018,10 @@
     "autostart_titel": "Autostart",
     "autostart_fehlt": "Na de update heeft Panoptes nog één keer de autostart-toestemming nodig. Tik op het display van de auto op de startpagina van Panoptes op „Automatisch starten weer aanzetten”.",
     "launcher_home": "Na de update is de Panoptes-launcher niet meer je startscherm. Open de launcher één keer en kies hem opnieuw als startscherm."
+  },
+  "pc": {
+    "push_neu": "Nieuwe pc aangemeld: {0}",
+    "push_neu_text": "Was jij dit niet? Meld hem af onder Gekoppelde apparaten.",
+    "handshakes": "{0} onbekende verbindingspogingen via de brug zijn het afgelopen uur geweigerd. Was dit niet jouw pc: controleer Gekoppelde apparaten en zet zo nodig „Aanmelden op een pc” in de auto uit."
   }
 }

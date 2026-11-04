@@ -81,19 +81,14 @@ public class DaemonManager implements IDaemonManager {
                 return false;
             }
             boolean stopped = execShell(
-                "MY_PID=$$; ps -A -o PID,ARGS | grep -F start_cam_daemon | grep -v grep "
-                + "| awk '{print $1}' | while read pid; do "
-                + "if [ \"$pid\" != \"$MY_PID\" ]; then kill -9 $pid 2>/dev/null; fi; done"
+                at.greenchili.surfmate.launcher.EigeneProzesse.beenden("start_cam_daemon")
             ) != null;
             stopped &= execShell(
                     "rm -f /data/user_de/0/com.android.shell/surfmate/start_cam_daemon.sh 2>/dev/null") != null;
             try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
             stopped &= execShell(
-                "MY_PID=$$; ps -A -o PID,ARGS | grep -F byd_cam_daemon | grep -v grep "
-                + "| awk '{print $1}' | while read pid; do "
-                + "if [ \"$pid\" != \"$MY_PID\" ]; then kill -9 $pid 2>/dev/null; fi; done"
+                at.greenchili.surfmate.launcher.EigeneProzesse.beenden("byd_cam_daemon")
             ) != null;
-            stopped &= execShell("killall -9 byd_cam_daemon 2>/dev/null") != null;
             stopped &= execShell(
                     "rm -f /data/user_de/0/com.android.shell/surfmate/camera_daemon.lock 2>/dev/null") != null;
             stopped &= execShell(

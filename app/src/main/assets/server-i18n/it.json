@@ -275,7 +275,7 @@
     "kopplung_erlauben": "Consenti",
     "kopplung_ablehnen": "Rifiuta",
     "neue_kopplung_titel": "Nuovo dispositivo collegato: {0}",
-    "neue_kopplung_text": "Non eri tu? Rimuovilo in Panoptes in Sistema → Dispositivi collegati.",
+    "neue_kopplung_text": "Non eri tu? Rimuovilo in Panoptes in Impostazioni → Tutte le impostazioni → Dispositivi collegati.",
     "neue_kopplung_band_titel": "Nuovo dispositivo: {0}",
     "neue_kopplung_band_text": "Non eri tu? Rimuovi in Sistema",
     "blitzer_titel": "Autovelox tra {0} m",
@@ -429,7 +429,8 @@
     "launcher_verfuegbar": "Nuova versione del launcher {0}",
     "launcher_installiert": "Il launcher {0} è installato.",
     "update_verfuegbar": "Panoptes {0} è disponibile",
-    "update_zurueck": "L’aggiornamento non è riuscito, Panoptes è di nuovo su {0}."
+    "update_zurueck": "L’aggiornamento non è riuscito, Panoptes è di nuovo su {0}.",
+    "neuer_pc_band_titel": "Nuovo PC: {0}"
   },
   "parking": {
     "notify": {
@@ -779,7 +780,7 @@
       "tunnel_url": "🌐 *Accesso remoto*\n{0}"
     },
     "url": {
-      "none_running": "🌐 L’accesso remoto è spento.\nPuoi attivarlo in Panoptes in *Sistema → Accesso remoto* o qui in *☰ Menu → Altro → Servizi*.",
+      "none_running": "🌐 L’accesso remoto è spento.\nPuoi attivarlo in Panoptes in *Impostazioni → Tutte le impostazioni → Accesso remoto* o qui in *☰ Menu → Altro → Servizi*.",
       "title": "🌐 *Come raggiungere Panoptes*\n\n",
       "resolved_line": "• *{0}:* {1}\n",
       "pending_line": "• *{0}:* _si sta avviando, il link arriva a breve_\n",
@@ -792,17 +793,17 @@
       "notification_url_changed": "🔄 *Nuovo link di accesso remoto*\n{0}"
     },
     "backup": {
-      "restore_unavailable": "ℹ️ *Il ripristino non è possibile tramite Telegram.*\nApri Panoptes sull'auto, vai in *Sistema → Backup* e scegli il file. Funziona solo sulla stessa auto.",
+      "restore_unavailable": "ℹ️ *Il ripristino non è possibile tramite Telegram.*\nApri Panoptes sull'auto, vai in *Impostazioni → Info → Salva e ripristina* e scegli il file. Funziona solo sulla stessa auto.",
       "building_with_trips": "💾 Preparo le tue impostazioni e il diario di viaggio …",
       "building_settings": "💾 Preparo le tue impostazioni …",
       "service_unreachable": "⚠️ Il servizio telecamere non risponde e il backup ne ha bisogno. Puoi avviarlo in /services.",
       "failed": "⚠️ Il backup non è riuscito: {0}",
       "no_data": "⚠️ Il backup è risultato vuoto.",
       "write_failed": "⚠️ Impossibile creare il file di backup: {0}",
-      "document_settings": "💾 Backup di Panoptes (impostazioni)\n\n🔐 Contiene i tuoi accessi e la chiave del dispositivo: non condividerlo. Ripristinalo in Panoptes sulla stessa auto in Sistema → Backup.",
-      "document_settings_version": "💾 Backup di Panoptes (impostazioni) · {0}\n\n🔐 Contiene i tuoi accessi e la chiave del dispositivo: non condividerlo. Ripristinalo in Panoptes sulla stessa auto in Sistema → Backup.",
-      "document_with_trips": "💾 Backup di Panoptes (impostazioni + diario di viaggio: {0})\n\n🔐 Contiene i tuoi accessi, la chiave del dispositivo e i tuoi spostamenti: non condividerlo. Ripristinalo in Panoptes sulla stessa auto in Sistema → Backup.",
-      "document_with_trips_version": "💾 Backup di Panoptes (impostazioni + diario di viaggio: {0}) · {1}\n\n🔐 Contiene i tuoi accessi, la chiave del dispositivo e i tuoi spostamenti: non condividerlo. Ripristinalo in Panoptes sulla stessa auto in Sistema → Backup.",
+      "document_settings": "💾 Backup di Panoptes (impostazioni)\n\n🔐 Contiene i tuoi accessi e la chiave del dispositivo: non condividerlo. Ripristinalo in Panoptes sulla stessa auto in Impostazioni → Info → Salva e ripristina.",
+      "document_settings_version": "💾 Backup di Panoptes (impostazioni) · {0}\n\n🔐 Contiene i tuoi accessi e la chiave del dispositivo: non condividerlo. Ripristinalo in Panoptes sulla stessa auto in Impostazioni → Info → Salva e ripristina.",
+      "document_with_trips": "💾 Backup di Panoptes (impostazioni + diario di viaggio: {0})\n\n🔐 Contiene i tuoi accessi, la chiave del dispositivo e i tuoi spostamenti: non condividerlo. Ripristinalo in Panoptes sulla stessa auto in Impostazioni → Info → Salva e ripristina.",
+      "document_with_trips_version": "💾 Backup di Panoptes (impostazioni + diario di viaggio: {0}) · {1}\n\n🔐 Contiene i tuoi accessi, la chiave del dispositivo e i tuoi spostamenti: non condividerlo. Ripristinalo in Panoptes sulla stessa auto in Impostazioni → Info → Salva e ripristina.",
       "upload_failed": "⚠️ Il file di backup non è arrivato a Telegram."
     },
     "update": {
@@ -893,7 +894,9 @@
       "neu": "📱 *Nuovo dispositivo collegato: {0}*\nNon eri tu? Tocca Rimuovi.",
       "knopf_entfernen": "🗑 Rimuovi",
       "entfernt": "🗑 Rimosso – il dispositivo non è più collegato.",
-      "entfernen_abgelaufen": "⌛ Il pulsante è scaduto. Rimuovilo in Panoptes in Sistema → Dispositivi collegati."
+      "entfernen_abgelaufen": "⌛ Il pulsante è scaduto. Rimuovilo in Panoptes in Impostazioni → Tutte le impostazioni → Dispositivi collegati.",
+      "neu_pc": "💻 *Nuovo PC collegato: {0}*\nNon sei stato tu? Tocca Disconnetti.",
+      "knopf_abmelden": "🚪 Disconnetti"
     },
     "health": {
       "repariert": "🩺 *Il Guardiano è rimasto spento per {0} min – riparato.* Panoptes si è riattivato da solo.",
@@ -1001,7 +1004,7 @@
       "erlaubt": "✅ Consentito – il cockpit ora passa l’accesso.",
       "abgelehnt": "❌ Rifiutato.",
       "uebernommen_ok": "☁️ Cloud BYD ripreso da “{0}” e verificato – ora Panoptes funziona anche ad auto spenta.",
-      "uebernommen_nicht_geprueft": "☁️ Cloud BYD ripreso da “{0}”, ma la verifica non è riuscita. Controlla in Panoptes sotto Sistema → Account BYD."
+      "uebernommen_nicht_geprueft": "☁️ Cloud BYD ripreso da “{0}”, ma la verifica non è riuscita. Controlla in Panoptes sotto Impostazioni → Account BYD."
     },
     "weiteres_geraet": {
       "anfrage": "📱 *EV-Cockpit «{0}» vuole collegare un telefono*\nNumero di controllo: *{1}*\n\nIl numero corrisponde a quello nel Cockpit? Se lo consenti, il Cockpit mostra un codice da scansionare. La richiesta vale 5 minuti.",
@@ -1138,8 +1141,8 @@
     "find_car_label": "Dov'è la mia auto?",
     "battery_heat_label": "Riscalda la batteria",
     "close_all_windows_label": "Alza tutti i finestrini",
-    "car_off_climate_needs_cloud": "L’auto è spenta – il preriscaldamento diretto allora non funziona. Configura il cloud BYD (Sistema → Account BYD), così funziona anche ad auto spenta.",
-    "car_off_needs_cloud": "L’auto è spenta – così non funziona direttamente. Configura il cloud BYD (Sistema → Account BYD), così funziona anche ad auto spenta.",
+    "car_off_climate_needs_cloud": "L’auto è spenta – il preriscaldamento diretto allora non funziona. Configura il cloud BYD (Impostazioni → Account BYD), così funziona anche ad auto spenta.",
+    "car_off_needs_cloud": "L’auto è spenta – così non funziona direttamente. Configura il cloud BYD (Impostazioni → Account BYD), così funziona anche ad auto spenta.",
     "aktion_aus": "Questa azione è disattivata. Attivala in Impostazioni → Auto → Azioni del veicolo.",
     "aktion_nur_nutzer": "Clacson, luci e apertura li attiva solo una persona: sul display, con accesso o dal telefono associato – mai regole, tasti o altri servizi.",
     "aktion_bestaetigen": "Conferma prima la domanda.",
@@ -2659,6 +2662,16 @@
         "title": "Apri all’avvicinamento",
         "help": "Apre quando il tuo telefono associato è vicinissimo e richiude dopo 60 s senza apertura di porte. Serve l’app Panoptes con una chiave di prossimità. Predefinito: off."
       }
+    },
+    "bruecke": {
+      "pcAnmeldung": {
+        "title": "Accedere da PC (tramite il telefono proprietario)",
+        "help": "Ti permette di aprire Panoptes nel browser del PC senza Tailscale. Associ il PC con il telefono proprietario (scansiona il codice QR mostrato sul PC). Il server vede solo dati cifrati. Un PC non può mai modificare accesso, associazioni, aggiornamenti o azioni del veicolo. Disattivando, tutti i PC vengono disconnessi subito."
+      },
+      "pcTagesMB": {
+        "title": "PC: dati al giorno",
+        "help": "I PC collegati possono scaricare al massimo questa quantità al giorno tramite la rete mobile dell’auto. Una pagina iniziale aperta usa circa 4 MB all’ora."
+      }
     }
   },
   "kartenquelle": {
@@ -2871,7 +2884,8 @@
     "vorgemerkt": "Panoptes installa l’aggiornamento circa 10 minuti dopo che hai parcheggiato l’auto. Il guardiano resta spento per qualche minuto.",
     "vorgemerkt_wlan": "Panoptes installa l’aggiornamento circa 10 minuti dopo che hai parcheggiato l’auto, appena ha il Wi-Fi. Il guardiano resta spento per qualche minuto.",
     "zuruecknehmen": "Annulla",
-    "geraet": "display dell’auto"
+    "geraet": "display dell’auto",
+    "launcher_mit": "Arriva anche il launcher Panoptes {0}."
   },
   "update_art": {
     "fix": "Correzione",
@@ -2993,7 +3007,10 @@
     "dienst": "Servizio {0} riattivato dal telefono proprietario {1}.",
     "waechter_an": "Guardiano attivato dal telefono {0}.",
     "waechter_aus": "Guardiano disattivato dal telefono {0}.",
-    "rechte_selbst": "Il telefono proprietario {0} ha modificato i suoi diritti: {1}."
+    "rechte_selbst": "Il telefono proprietario {0} ha modificato i suoi diritti: {1}.",
+    "frage_telegram": "Quale dispositivo è il tuo telefono? Sceglilo in auto in Sistema → Dispositivi associati – solo allora c’è un telefono proprietario.",
+    "frage_telegram_bestaetigen": "Durante l’aggiornamento è stato scelto automaticamente un telefono proprietario. Controlla in auto in Sistema → Dispositivi associati che sia davvero il tuo telefono.",
+    "telegram_gewaehlt": "{0} ora è il tuo telefono proprietario."
   },
   "update_klein": {
     "titel": "Aggiornamenti",
@@ -3001,5 +3018,10 @@
     "autostart_titel": "Avvio automatico",
     "autostart_fehlt": "Dopo l’aggiornamento Panoptes ha bisogno ancora una volta del permesso di avvio automatico. Tocca «Riattiva l’avvio automatico» nella pagina iniziale di Panoptes sul display dell’auto.",
     "launcher_home": "Dopo l’aggiornamento il launcher Panoptes non è più la tua schermata iniziale. Apri il launcher una volta e sceglilo di nuovo come schermata iniziale."
+  },
+  "pc": {
+    "push_neu": "Nuovo PC collegato: {0}",
+    "push_neu_text": "Non sei stato tu? Disconnettilo in Dispositivi associati.",
+    "handshakes": "{0} tentativi di connessione sconosciuti tramite il ponte sono stati rifiutati nell’ultima ora. Se non era il tuo PC: controlla Dispositivi associati e, se serve, disattiva «Accedere da PC» nell’auto."
   }
 }

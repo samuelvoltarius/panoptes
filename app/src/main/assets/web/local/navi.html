@@ -256,7 +256,7 @@
                 if (this.grund === 'aus') return;
                 this.grund = 'aus';
                 box.innerHTML = '<div class="hd"><span>' + esc(t('navi.uw_title', 'Unterwegs')) + '</span></div>'
-                    + '<div class="ln">' + esc(t('navi.uw_aus', '„Reicht es noch?“ ist ausgeschaltet. Einschalten kannst du die Unterwegs-Hilfe unter System → Datenfreigaben; dort steht, was dafür an den Routenplaner geht.')) + '</div>'
+                    + '<div class="ln">' + esc(t('navi.uw_aus', '„Reicht es noch?“ ist ausgeschaltet. Einschalten kannst du die Unterwegs-Hilfe unter Einstellungen → Alle Einstellungen → Datenfreigaben; dort steht, was dafür an den Routenplaner geht.')) + '</div>'
                     + '<div class="ln"><a href="system.html#datenschutz" style="color:var(--sm-aqua);font-weight:600">' + esc(t('datenfreigaben.titel', 'Datenfreigaben')) + '</a></div>';
                 return;
             }
@@ -375,7 +375,7 @@
             (this.store ? Promise.resolve(this.store) : PanoptesEinstellungen.laden()).then(function (s) {
                 if (!s) return;
                 self.store = s;
-                // 0.1.9.1 (F3): kein Mitglieds-Schlüssel-Feld mehr; verbunden wird über System → Routenplaner
+                // 0.1.9.1 (F3): kein Mitglieds-Schlüssel-Feld mehr; verbunden wird über Einstellungen → Alle Einstellungen → Routenplaner-Konto
                 // 0.1.10 (Kern 5): Reserve = laden.ankunftSocMin (Gruppe „laden“, planner.reserve ist entfallen)
                 if (s.feld('laden.ankunftSocMin')) s.zeichne(ziel, { gruppe: 'laden', nur: ['laden.ankunftSocMin'] });
                 // alter Mitglieds-Schlüssel noch gesetzt: kein Feld mehr, nur der Hinweis auf den neuen Weg

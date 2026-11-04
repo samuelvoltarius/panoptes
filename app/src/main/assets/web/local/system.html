@@ -509,12 +509,17 @@
                             <div class="sys-stat"><div class="label" data-i18n="system.upd_installed">Installiert</div><div class="value" id="updNow">--</div></div>
                             <div class="sys-stat"><div class="label" data-i18n="system.upd_available">Verfügbar</div><div class="value" id="updNew">--</div></div>
                             <div class="sys-stat"><div class="label" data-i18n="system.upd_checked">Zuletzt gesucht</div><div class="value" id="updLast">--</div></div>
+                            <!-- 0.1.38.9: der Launcher steht dort, wo man Panoptes updatet (04.11.) -->
+                            <div class="sys-stat" id="updLauncherStat" style="display:none;"><div class="label" data-i18n="system.upd_launcher">Launcher</div><div class="value" id="updLauncher">--</div></div>
                         </div>
+                        <div class="sys-note" id="updLauncherHinweis" style="display:none;"><span id="updLauncherHinweisText"></span> <a href="launcher.html" data-i18n="shell.page_launcher">Launcher einrichten</a></div>
                         <div id="updNotes" style="display:none;margin-top:12px;">
                             <div class="sys-name" id="updNotesTitle"></div>
                             <ul id="updNotesList" style="margin:6px 0 0;padding-left:20px;font-size:13px;line-height:1.5;"></ul>
                         </div>
                         <div class="sys-note" id="updState"></div>
+                        <!-- 0.1.38.9: die Regeln in einem Satz (Doku an das echte Verhalten, PLAN_ENTFLECHTEN_0139) -->
+                        <div class="sys-note" id="updRegeln" data-i18n="system.upd_regeln" style="opacity:.8;">So kommen Updates: Nie während der Fahrt. Selbst gestartet (hier, am Display, in Telegram oder am Handy) geht es sofort, wenn das Auto in P steht und der Wächter nicht gerade aufnimmt, auch mit Zündung an; sonst etwa 10 Minuten nach dem Abstellen. Von selbst nur, wenn das Auto mindestens 10 Minuten aus ist. Der Wächter ist dabei ein paar Minuten aus. Läuft die neue Version nicht sauber, kehrt Panoptes nach spätestens 30 Minuten zur vorigen zurück. Den Autostart gibt Panoptes danach selbst wieder frei.</div>
                         <div id="updProgress" style="display:none;margin-top:10px;">
                             <div style="height:8px;border-radius:4px;background:var(--bg-elevated);overflow:hidden;"><div id="updBar" style="height:100%;width:0;background:var(--brand-primary);transition:width .4s;"></div></div>
                         </div>
@@ -522,6 +527,7 @@
                         <div class="sys-actions">
                             <button class="btn" id="updSearch" type="button" data-i18n="system.upd_search">Jetzt suchen</button>
                             <button class="btn btn-primary" id="updInstall" type="button" style="display:none;" data-i18n="system.upd_install">Installieren</button>
+                            <button class="btn btn-primary" id="updLauncherInstall" type="button" style="display:none;" data-i18n="system.upd_launcher_btn">Launcher aktualisieren</button>
                             <button class="btn" id="updCancel" type="button" style="display:none;" data-i18n="system.upd_cancel">Zurücknehmen</button>
                         </div>
                     </div>
@@ -578,7 +584,7 @@
     <script src="../shared/vendor/qrcode-generator-1.4.4.js"></script>
     <script src="../shared/einstellungen.js?v=pn8"></script>
     <script src="../shared/home-layout.js?v=2"></script>
-    <script src="../shared/app-updates.js?v=5"></script>
+    <script src="../shared/app-updates.js?v=7"></script>
     <script src="../shared/blitzer.js?v=5"></script>
     <script src="../shared/einrichtung-web.js?v=12"></script>
     <script src="../shared/overdrive-verlauf.js?v=2"></script>
@@ -892,6 +898,50 @@
             },
             offenesGeraet: null,
             // Gekoppelte Geräte (Kern GET /api/kopplungen, nur mit Login). Widerrufen nur nach Rückfrage.
+            // 0.1.38.9 (Befund: Migration machte ein Relay zum Besitzer): einmalige Frage am Display bzw. im Login.
+            // Auswahl nur Handy-Kopplungen mit Name und Anlagedatum; „Keins davon“ und „Später“ ändern sonst nichts.
+            besitzerFrage: function (rows) {
+                var self = this, el = document.getElementById('besitzerFrage');
+                if (!el) {
+                    el = document.createElement('div');
+                    el.id = 'besitzerFrage';
+                    el.className = 'pn-rechte';
+                    rows.parentNode.insertBefore(el, rows);
+                }
+                fetch('/api/kopplung/besitzer-frage', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; })
+                    .catch(function () { return null; }).then(function (d) {
+                        if (!d || !d.offen || !Array.isArray(d.geraete) || !d.geraete.length) { el.innerHTML = ''; el.style.display = 'none'; return; }
+                        el.style.display = '';
+                        var html = '<div class="pn-recht-wort">' + self.esc(self.t('system.besitzer_frage_titel', 'Welches Gerät ist dein Handy?')) + '</div>'
+                            + '<div class="pn-recht-info">' + self.esc(d.bestaetigen
+                                ? self.t('system.besitzer_frage_bestaetigen', 'Panoptes hat beim Update ein Gerät als Besitzer-Handy gewählt. Stimmt das? Das Besitzer-Handy darf Panoptes ganz einstellen und neue Geräte koppeln.')
+                                : self.t('system.besitzer_frage_text', 'Das Besitzer-Handy darf Panoptes ganz einstellen und neue Geräte koppeln. Wähle dein eigenes Handy, keine Brille, kein Relay, keinen Bot.')) + '</div>';
+                        d.geraete.forEach(function (g) {
+                            var wann = g.angelegt ? new Date(g.angelegt).toLocaleDateString() : '';
+                            html += '<button class="btn" type="button" data-besitzer-wahl="' + self.esc(g.id) + '">' + self.esc(g.name || g.id)
+                                + (wann ? ' · ' + self.esc(self.t('system.besitzer_frage_seit', 'gekoppelt {d}', { d: wann })) : '')
+                                + (g.besitzer ? ' ✓' : '') + '</button> ';
+                        });
+                        html += '<div class="sys-meta"><button class="btn" type="button" data-besitzer-wahl="" data-keins="1">'
+                            + self.esc(self.t('system.besitzer_frage_keins', 'Keins davon')) + '</button> <button class="btn" type="button" data-besitzer-wahl="">'
+                            + self.esc(self.t('system.besitzer_frage_spaeter', 'Später')) + '</button></div>';
+                        el.innerHTML = html;
+                        Array.prototype.forEach.call(el.querySelectorAll('button[data-besitzer-wahl]'), function (b) {
+                            b.onclick = function () {
+                                var id = b.getAttribute('data-besitzer-wahl'), keins = b.getAttribute('data-keins') === '1';
+                                if (id && !window.confirm(self.t('system.besitzer_frage_confirm', 'Dieses Gerät wird Besitzer-Handy. Einverstanden?'))) return;
+                                fetch('/api/kopplung/besitzer-frage', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ id: id || null, keins: keins }) })
+                                    .then(function (r) { return r.ok; }).catch(function () { return false; }).then(function (ok) {
+                                        if (window.BYD && BYD.utils && BYD.utils.toast) {
+                                            BYD.utils.toast(ok ? self.t('system.handy_gespeichert', 'Gespeichert') : self.t('system.handy_fehler', 'Konnte nicht speichern.'), ok ? 'success' : 'error');
+                                        }
+                                        self.liste();   // echten Stand zurücklesen
+                                    });
+                            };
+                        });
+                    });
+            },
             liste: function () {
                 var self = this;
                 fetch('/api/kopplungen', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
@@ -899,6 +949,7 @@
                     if (!d || !Array.isArray(d.geraete)) { box.style.display = 'none'; return; }
                     box.style.display = '';
                     var rows = document.getElementById('pairRows');
+                    self.besitzerFrage(rows);   // 0.1.38.9: einmal „Welches Gerät ist dein Handy?“
                     if (!d.geraete.length) {
                         rows.innerHTML = '<div class="sys-meta">' + self.esc(self.t('system.paired_none', 'Noch kein Gerät gekoppelt.')) + '</div>';
                     } else {
@@ -1304,7 +1355,7 @@
                 }
                 // 0.1.26.1 Panoptes aktualisieren vom Handy: eigene Rückfrage, Standard aus
                 if (cb.getAttribute('data-handy-recht') === 'update' && cb.checked
-                    && !window.confirm(self.t('system.handy_update_confirm', 'Dieses Gerät darf dann Panoptes aktualisieren – nur auf eine freigegebene Version und nur, wenn das Auto in P steht und aus ist. Du bekommst bei jedem Start eine Telegram-Nachricht. Einschalten?'))) {
+                    && !window.confirm(self.t('system.handy_update_confirm', 'Dieses Gerät darf dann Panoptes aktualisieren – nur auf eine freigegebene Version und nur, wenn das Auto steht und in P ist, auch mit Zündung an (sonst merkt Panoptes es vor). Du bekommst bei jedem Start eine Telegram-Nachricht. Einschalten?'))) {
                     cb.checked = false;
                     return;
                 }
@@ -1424,7 +1475,7 @@
                 var body = was !== 'erlauben' ? '{}' : JSON.stringify({
                     aufsperren: bestaetigt(auf, self.t('system.handy_aufsperren_confirm', 'Dieses Handy darf das Auto dann aufsperren – nur nach Fingerabdruck bzw. Face ID am Handy, und du bekommst bei jedem Aufsperren eine Telegram-Meldung. Einschalten?')),
                     wallbox: bestaetigt(wb, self.t('system.handy_wallbox_confirm', 'Dieses Handy darf dann von überall das Laden starten und stoppen und den Ladestrom ändern – nur an der freigegebenen Wallbox, nie während der Fahrt. Du bekommst bei jeder Änderung eine Telegram-Nachricht. Einschalten?')),
-                    update: bestaetigt(upd, self.t('system.handy_update_confirm', 'Dieses Gerät darf dann Panoptes aktualisieren – nur auf eine freigegebene Version und nur, wenn das Auto in P steht und aus ist. Du bekommst bei jedem Start eine Telegram-Nachricht. Einschalten?')) });
+                    update: bestaetigt(upd, self.t('system.handy_update_confirm', 'Dieses Gerät darf dann Panoptes aktualisieren – nur auf eine freigegebene Version und nur, wenn das Auto steht und in P ist, auch mit Zündung an (sonst merkt Panoptes es vor). Du bekommst bei jedem Start eine Telegram-Nachricht. Einschalten?')) });
                 var url = art === 'weiteres' && /^r-[0-9a-f]{16}$/.test(ref) ? '/api/kopplung/weiteres-geraet/' + ref + '/' + was   // 0.1.25
                     : /^r-[0-9a-f]{16}$/.test(ref) ? '/api/cloud-uebergabe/' + ref + '/' + was   // 0.1.21 BYD-Cloud-Übergabe
                     : '/api/kopplung/anfrage/' + encodeURIComponent(ref) + '/' + was;

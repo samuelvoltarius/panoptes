@@ -112,6 +112,9 @@ public class TailscaleDashboardServeContractTest {
 
     @Test
     public void sharedGuardHasValidPosixShellSyntax() throws Exception {
+        // POSIX-Shell: /bin/sh (Linux) oder die Git-Shell unter Windows; ohne beide wird übersprungen
+        String shell = at.greenchili.surfmate.logging.LogArchivShellTest.shell();
+        org.junit.Assume.assumeTrue("keine POSIX-Shell auf diesem System", shell != null);
         Path script = Files.createTempFile("tailscale-dashboard-guard", ".sh");
         try {
             Files.write(
@@ -119,7 +122,7 @@ public class TailscaleDashboardServeContractTest {
                     TailscaleLauncher.buildDashboardServeGuardScript(),
                     StandardCharsets.UTF_8);
             Process check = new ProcessBuilder(
-                    "/bin/sh", "-n", script.toString())
+                    shell, "-n", at.greenchili.surfmate.logging.LogArchivShellTest.pfad(script.toFile()))
                     .redirectErrorStream(true)
                     .start();
             byte[] output = check.getInputStream().readAllBytes();

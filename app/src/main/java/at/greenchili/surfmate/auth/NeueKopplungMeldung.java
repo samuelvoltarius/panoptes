@@ -55,16 +55,37 @@ public final class NeueKopplungMeldung {
     }
 
     public static void melden(String name, String kid) {
+        melden(name, kid, false);
+    }
+
+    /**
+     * 0.1.39 PC über die Brücke ({@code pc}): eigener Text „Neuer PC angemeldet“, Knopf [Abmelden] (derselbe
+     * Einmal-Griff wie [Entfernen]) und zusätzlich Push an die Besitzer-Handys.
+     */
+    public static void melden(String name, String kid, boolean pc) {
         String n = anzeigeName(name);
         try {
             String ref = kid == null ? null : griff(kid, System.currentTimeMillis());
-            at.greenchili.surfmate.telegram.TelegramNotifier.notifyNeueKopplung(ref, n);
+            at.greenchili.surfmate.telegram.TelegramNotifier.notifyNeueKopplung(ref, n, pc);
         } catch (Throwable ignored) {
+        }
+        if (pc) {
+            try {
+                at.greenchili.surfmate.notifications.NotificationBus.get().publish(
+                        new at.greenchili.surfmate.notifications.NotificationEvent("system.verbindung",
+                                at.greenchili.surfmate.notifications.NotificationEvent.Severity.INFO,
+                                at.greenchili.surfmate.server.Messages.text("pc.push_neu", "Neuer PC angemeldet: {0}", n),
+                                at.greenchili.surfmate.server.Messages.text("pc.push_neu_text",
+                                        "Warst du das nicht? Unter Gekoppelte Geräte abmelden."),
+                                "pc-" + System.currentTimeMillis(), "/local/system.html", new org.json.JSONObject()));
+            } catch (Throwable ignored) {
+            }
         }
         try {
             // Band kurz (Kern 12, Freeze 0.1.24: lange Zeilen wurden abgeschnitten); Telegram behält den Langtext
             at.greenchili.surfmate.byd.MessageOverlayController.showBand(
-                    at.greenchili.surfmate.server.Messages.get("notifications.neue_kopplung_band_titel", n),
+                    at.greenchili.surfmate.server.Messages.get(pc ? "notifications.neuer_pc_band_titel"
+                            : "notifications.neue_kopplung_band_titel", n),
                     at.greenchili.surfmate.server.Messages.get("notifications.neue_kopplung_band_text"), "knapp", BAND_MS);
         } catch (Throwable ignored) {
         }

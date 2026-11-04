@@ -11,7 +11,9 @@ public final class KernDateien {
 
     public static final int OK = 0, FEHLT = 1, EGAL = 2;
     public static final int MAX_VERSUCHE = 5;
-    private static final long[] WARTE_MS = {2_000L, 4_000L, 8_000L, 15_000L, 30_000L};
+    // 0.1.38.9 Schnellstart 2 (V6): früher 2/4/8/15/30 s (zusammen 59 s), jetzt 1/2/4/8/15 s (30 s). Der erste Neuversuch
+    // greift schnell, wenn die Dateien nur beim Hochlauf des Daemons fehlten.
+    private static final long[] WARTE_MS = {1_000L, 2_000L, 4_000L, 8_000L, 15_000L};
 
     /**
      * Nur Seiten, die styles.css bzw. core.js überhaupt einbinden: styles.css hat gewirkt, wenn --primary (aus

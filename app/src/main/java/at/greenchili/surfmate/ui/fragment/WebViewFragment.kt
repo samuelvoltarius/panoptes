@@ -86,14 +86,32 @@ class WebViewFragment : Fragment() {
         var fullUrl = url.startsWith('/') ? 'http://127.0.0.1:8180' + url : url;
 
         return new Promise(function(resolve) {
-            try {
-                var raw = AndroidBridge.httpRequest(fullUrl, method, body, JSON.stringify(headers));
+            // 0.1.38.9: Die alte Brücke (httpRequest) blockiert den JS-Thread der Seite, bis der Daemon antwortet
+            // (bis 10 s, bydcloud 60 s, genai 130 s). Eine beschäftigte Seite fror so ein. Jetzt läuft der Aufruf
+            // im Hintergrund und die Antwort kommt per Rückruf; ältere Apps ohne httpRequestAsyncWeb bleiben synchron.
+            function fertig(raw) {
                 var status = 200;
                 try {
                     var parsed = JSON.parse(raw);
                     if (parsed._status) { status = parsed._status; delete parsed._status; raw = JSON.stringify(parsed); }
                 } catch(e) {}
                 resolve(new Response(raw, { status: status, headers: { 'Content-Type': 'application/json' } }));
+            }
+            try {
+                if (typeof AndroidBridge.httpRequestAsyncWeb === 'function') {
+                    var pn = window.__pnHttp = window.__pnHttp || { n: 0, cb: {} };
+                    if (!window.__pnHttpDone) {
+                        window.__pnHttpDone = function(id, r) {
+                            var f = window.__pnHttp.cb[id];
+                            if (f) { delete window.__pnHttp.cb[id]; f(r); }
+                        };
+                    }
+                    var id = 'h' + (++pn.n) + '_' + Date.now();
+                    pn.cb[id] = fertig;
+                    AndroidBridge.httpRequestAsyncWeb(fullUrl, method, body, JSON.stringify(headers), id);
+                } else {
+                    fertig(AndroidBridge.httpRequest(fullUrl, method, body, JSON.stringify(headers)));
+                }
             } catch(e) {
                 console.error('AndroidBridge error:', e);
                 resolve(new Response('{"error":"bridge_error"}', { status: 500 }));
@@ -432,6 +450,9 @@ class WebViewFragment : Fragment() {
     private var startOverlay: View? = null
     private var startTitel: android.widget.TextView? = null
     private var startHinweis: android.widget.TextView? = null
+    private var startFremd: android.widget.TextView? = null
+    /** 0.1.38.9: Erkennung "andere Werkzeug-App" einmal je Wartephase (und einmal nach 20 s). */
+    @Volatile private var fremdProbeRunde = -1
     private var startSpinner: View? = null
     private var btnStartRetry: MaterialButton? = null
     private val startHandler = android.os.Handler(android.os.Looper.getMainLooper())
@@ -560,6 +581,7 @@ class WebViewFragment : Fragment() {
         startOverlay = view.findViewById(R.id.startOverlay)
         startTitel = view.findViewById(R.id.startTitel)
         startHinweis = view.findViewById(R.id.startHinweis)
+        startFremd = view.findViewById(R.id.startFremd)
         startSpinner = view.findViewById(R.id.startSpinner)
         btnStartRetry = view.findViewById(R.id.btnStartRetry)
         btnStartRetry?.setOnClickListener { retryLoad() }
@@ -1919,6 +1941,54 @@ class WebViewFragment : Fragment() {
             }
         }
 
+        /**
+         * 0.1.38.9 (Hänger der Startseite in WebView 74): Schreibaufrufe der Seite (POST/PUT/DELETE auf /api/ und
+         * /auth/ des lokalen Daemons) laufen im Hintergrund statt den JS-Thread zu blockieren; die Antwort kommt als
+         * ein Rückruf window.__pnHttpDone(id, text). Reihenfolge wie vorher: normale Aufrufe laufen nacheinander in
+         * EINER Warteschlange, nur die langen genai/bydcloud-Aufrufe bekommen je einen eigenen Thread.
+         */
+        @android.webkit.JavascriptInterface
+        fun httpRequestAsyncWeb(
+            urlStr: String,
+            method: String,
+            body: String,
+            headers: String,
+            callbackId: String
+        ) {
+            if (!callbackId.matches(Regex("[A-Za-z0-9_-]{1,64}"))) return
+            val pfad = try {
+                val url = java.net.URL(urlStr)
+                if ((url.host == "127.0.0.1" || url.host == "localhost") &&
+                    (url.port == -1 || url.port == CameraDaemon.HTTP_PORT) &&
+                    (url.path.startsWith("/api/") || url.path.startsWith("/auth/"))) url.path else null
+            } catch (_: Exception) {
+                null
+            }
+            if (pfad == null) {
+                deliverAsyncWebResponse(callbackId, "{\"_status\":403,\"error\":\"Request not allowed\"}")
+                return
+            }
+            val arbeit = Runnable { deliverAsyncWebResponse(callbackId, httpRequest(urlStr, method, body, headers)) }
+            if (pfad.startsWith("/api/genai/") || pfad.startsWith("/api/bydcloud")) {
+                Thread(arbeit, "WebHttpLang").apply { isDaemon = true; start() }
+            } else {
+                webHttpQueue.execute(arbeit)
+            }
+        }
+
+        private fun deliverAsyncWebResponse(callbackId: String, raw: String) {
+            val script = "window.__pnHttpDone&&window.__pnHttpDone(" +
+                org.json.JSONObject.quote(callbackId) + "," +
+                org.json.JSONObject.quote(raw) + ");"
+            webView?.post {
+                try {
+                    webView?.evaluateJavascript(script, null)
+                } catch (_: Throwable) {
+                    // Seite wurde geschlossen, bevor die Antwort kam.
+                }
+            }
+        }
+
         private fun deliverAsyncHttpResponse(callbackId: String, raw: String) {
             val script = "window.GenAI&&GenAI.onNativeResponse(" +
                 org.json.JSONObject.quote(callbackId) + "," +
@@ -1934,6 +2004,10 @@ class WebViewFragment : Fragment() {
     }
 
     // ==================== AUTH ====================
+
+    /** Eine Warteschlange für die Schreibaufrufe der Seite (Reihenfolge bleibt, der JS-Thread wartet nicht mehr). */
+    private val webHttpQueue: java.util.concurrent.ExecutorService =
+        java.util.concurrent.Executors.newSingleThreadExecutor { r -> Thread(r, "WebHttpQueue").apply { isDaemon = true } }
 
     private var cachedJwt: String? = null
     private var jwtExpiry: Long = 0
@@ -2009,18 +2083,18 @@ class WebViewFragment : Fragment() {
                     authReloadFired = true
                     webView?.reload()
                 }
-            } else if (attempt < 40) {
+            } else if (attempt < 80) {
                 // Auth not ready yet — daemon may still be writing the
                 // unified config. Each retry re-mints the JWT, so we pick up
                 // the daemon's secret as soon as it lands in the unified config.
                 // 0.1.25: since the app process no longer mints its own secret
                 // (AuthManager.istAppProzess), wait longer on a fresh install:
-                // 10 × 1 s, then 30 × 3 s (~100 s in total).
+                // 0.1.38.9 (V7): 40 × 0,5 s, then 40 × 2 s (~100 s in total).
                 android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                     injectAuthCookie(attempt + 1)
-                }, if (attempt < 10) 1000L else 3000L)
+                }, if (attempt < 40) 500L else 2000L)
             } else {
-                android.util.Log.e("WebView", "Auth cookie retry exhausted after 40 attempts")
+                android.util.Log.e("WebView", "Auth cookie retry exhausted after 80 attempts")
             }
         } catch (e: Exception) {
             android.util.Log.e("WebView", "Cookie inject failed: ${e.message}")
@@ -2079,9 +2153,51 @@ class WebViewFragment : Fragment() {
         btnStartRetry?.visibility = View.GONE
         startWarten = at.greenchili.surfmate.ui.StartWarten(android.os.SystemClock.elapsedRealtime())
         val runde = ++startRunde
+        startFremd?.visibility = View.GONE
+        fremdPruefen(runde)
+        startHandler.postDelayed({ fremdPruefen(runde, nochmal = true) }, 20_000L)
         startHandler.postDelayed({ startAbfrage(runde) },
             startWarten?.naechstesIntervallMs(android.os.SystemClock.elapsedRealtime())
                 ?: at.greenchili.surfmate.ui.StartWarten.INTERVALL_MS)
+    }
+
+    /**
+     * 0.1.38.9: Läuft eine andere BYD-Werkzeug-App (Overdrive-artig, "Electron")? Nur lesend über die ADB-Verbindung
+     * der App (FremdApps); das Ergebnis erscheint im Ladebildschirm und im Start-Protokoll (daemon_launcher.log). Statt
+     * eine Minute zu warten, nennt Panoptes den Grund. Ohne ADB-Verbindung bleibt der Hinweis weg.
+     */
+    private fun fremdPruefen(runde: Int, nochmal: Boolean = false) {
+        if (runde != startRunde || startWarten == null || view == null) return
+        if (!nochmal && fremdProbeRunde == runde) return
+        fremdProbeRunde = runde
+        val ctx = context?.applicationContext ?: return
+        Thread({
+            try {
+                val latch = java.util.concurrent.CountDownLatch(1)
+                var roh: String? = null
+                at.greenchili.surfmate.launcher.AdbShellExecutor(ctx).executeScript(
+                    at.greenchili.surfmate.launcher.FremdApps.abfrageSkript(),
+                    object : at.greenchili.surfmate.launcher.AdbShellExecutor.ShellCallback {
+                        override fun onSuccess(output: String) { roh = output; latch.countDown() }
+                        override fun onError(error: String) { latch.countDown() }
+                    }, 8_000L)
+                latch.await(10, java.util.concurrent.TimeUnit.SECONDS)
+                val befund = at.greenchili.surfmate.launcher.FremdApps.auswerten(roh)
+                if (befund.gefunden) {
+                    at.greenchili.surfmate.logging.LauncherEreignisse.merken("FREMDE_WERKZEUG_APP", befund.protokollZeile())
+                }
+                if (befund.laeuft) {
+                    startHandler.post {
+                        if (runde != startRunde || startWarten == null || view == null) return@post
+                        val name = befund.anzeigeName().ifEmpty { "?" }
+                        startFremd?.text = getString(R.string.panoptes_fremd_app, name)
+                        startFremd?.visibility = View.VISIBLE
+                    }
+                }
+            } catch (_: Throwable) {
+                // keine ADB-Verbindung o. ä.: kein Hinweis, der Start läuft normal weiter
+            }
+        }, "FremdAppsProbe").apply { isDaemon = true; start() }
     }
 
     private fun startAbfrage(runde: Int) {
@@ -2128,6 +2244,7 @@ class WebViewFragment : Fragment() {
     /** Wartephase beenden (neu laden, Knopf, Ansicht weg). */
     private fun beendeStart() {
         startRunde++
+        startFremd?.visibility = View.GONE
         startWarten = null
         startHandler.removeCallbacksAndMessages(null)
         startOverlay?.visibility = View.GONE
@@ -2418,6 +2535,7 @@ class WebViewFragment : Fragment() {
         startOverlay = null
         startTitel = null
         startHinweis = null
+        startFremd = null
         startSpinner = null
         btnStartRetry = null
         // Drop the capture-bridge ref if it points at this (now-destroyed) view.

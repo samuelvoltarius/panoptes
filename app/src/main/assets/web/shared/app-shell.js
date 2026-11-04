@@ -75,6 +75,43 @@
         }
     })();
 
+    // 0.1.39 PC über die Brücke (/auth/web setzt pn_einbettung=pc): volle Leiste, aber Fahrzeug nur ansehen. Der Kern
+    // lehnt jede Fahrzeug-Aktion des PCs ab (WebHandyGuard.PC_WEB_SCHREIBEN); hier fallen die Knöpfe dafür weg, damit
+    // niemand etwas antippt, das nicht geht.
+    (function () {
+        var pc = false;
+        try { pc = /(?:^|;\s*)pn_einbettung=pc(?:;|$)/.test(document.cookie); } catch (e) { /* ohne Cookie: normal */ }
+        if (!pc) return;
+        var de = document.documentElement;
+        de.setAttribute('data-einbettung', 'pc');
+        de.setAttribute('data-nur-lesen', '1');
+        var st = document.createElement('style');
+        st.textContent = '[data-nur-lesen] [data-home-widget="quick"],[data-nur-lesen] .pn-nur-auto{display:none!important}';
+        (document.head || de).appendChild(st);
+        // Knöpfe, die Fahrzeug-Befehle senden (Home.command, Klima, eigene Knöpfe), auch auf anderen Seiten
+        var MUSTER = /Home\.(command|climate)\(|\/api\/vehicle\/(?!state|status)|quick-controls\/fire|sendCommand\(|vehicleCommand\(/;
+        function ausblenden(wurzel) {
+            var b = (wurzel || document).querySelectorAll ? (wurzel || document).querySelectorAll('[onclick]') : [];
+            for (var i = 0; i < b.length; i++) {
+                if (MUSTER.test(b[i].getAttribute('onclick') || '')) b[i].style.display = 'none';
+            }
+        }
+        function los() {
+            ausblenden(document);
+            if (window.MutationObserver) {
+                new MutationObserver(function (m) {
+                    for (var i = 0; i < m.length; i++) {
+                        for (var j = 0; j < m[i].addedNodes.length; j++) {
+                            if (m[i].addedNodes[j].nodeType === 1) ausblenden(m[i].addedNodes[j].parentNode || m[i].addedNodes[j]);
+                        }
+                    }
+                }).observe(document.documentElement, { childList: true, subtree: true });
+            }
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', los);
+        else los();
+    })();
+
     // The Android app supplies its own navigation rail and injects
     // AndroidBridge before the page starts loading. Its post-load CSS hides
     // this web sidebar, so rendering the sidebar's 3D vehicle there wastes a

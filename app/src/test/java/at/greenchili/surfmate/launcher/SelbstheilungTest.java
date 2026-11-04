@@ -251,7 +251,7 @@ public class SelbstheilungTest {
     private static Object[] ersatzDaemon(File dir, String name) throws Exception {
         File f = new File(dir, "ersatz_" + name + ".sh");
         Files.write(f.toPath(), ("echo $$\nexec -a " + name + " sleep 120\n").getBytes(StandardCharsets.UTF_8));
-        Process p = new ProcessBuilder(LogArchivShellTest.shell(), LogArchivShellTest.pfad(f)).start();
+        Process p = new ProcessBuilder(bash(), LogArchivShellTest.pfad(f)).start();
         String pid = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8)).readLine();
         Thread.sleep(300);
         return new Object[] {pid == null ? "" : pid.trim(), p};
@@ -267,9 +267,36 @@ public class SelbstheilungTest {
         return Integer.parseInt(out.trim());
     }
 
+    /**
+     * Shell für die Ersatz-Daemons: sie brauchen {@code exec -a} (argv[0] setzen), das {@code dash} (Ubuntu-{@code /bin/sh}, CI)
+     * nicht kennt. Darum bash, wo es sie gibt; unter Windows die Git-Shell (ist bash). Das Skript unter Test läuft weiter
+     * mit {@link LogArchivShellTest#shell()}.
+     */
+    private static String bash() {
+        for (String p : new String[] {"/bin/bash", "/usr/bin/bash"}) {
+            if (new File(p).canExecute() && !System.getProperty("os.name", "").toLowerCase().contains("win")) return p;
+        }
+        return LogArchivShellTest.shell();
+    }
+
     private static void prozessCheck() throws Exception {
-        Assume.assumeTrue(LogArchivShellTest.shell() != null);
-        String probe = sh("(exec -a pn_probe_argv0 sleep 3) & P=$!; sleep 1; tr '\\000' '\\n' < /proc/$P/cmdline | head -n 1; kill $P");
+        Assume.assumeTrue(LogArchivShellTest.shell() != null && bash() != null);
+        // Die Probe darf nie selbst rot werden: ohne exec -a (oder /proc) wird nur übersprungen, der Exit-Code zählt nicht
+        String probe;
+        try {
+            File f = File.createTempFile("probe", ".sh");
+            try {
+                Files.write(f.toPath(), ("(exec -a pn_probe_argv0 sleep 3) & P=$!\nsleep 1\n"
+                        + "tr '\\000' '\\n' < /proc/$P/cmdline | head -n 1\nkill $P 2>/dev/null\nexit 0\n").getBytes(StandardCharsets.UTF_8));
+                Process p = new ProcessBuilder(bash(), LogArchivShellTest.pfad(f)).redirectErrorStream(true).start();
+                probe = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+                p.waitFor();
+            } finally {
+                f.delete();
+            }
+        } catch (Exception e) {
+            probe = "";
+        }
         Assume.assumeTrue("Shell ohne exec -a bzw. /proc", probe.trim().equals("pn_probe_argv0"));
     }
 

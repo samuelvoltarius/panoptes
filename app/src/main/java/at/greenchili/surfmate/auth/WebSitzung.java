@@ -21,6 +21,8 @@ public final class WebSitzung {
     public static final int GUELTIG_JWT_S = 30 * 60;
     /** Cookie für app-shell.js: eigene Leiste und Kopfzeile ausblenden (wie {@code ?einbettung=handy}). */
     public static final String EINBETTUNG_COOKIE = "pn_einbettung=handy";
+    /** 0.1.39 PC über die Brücke: volle Leiste und Kopfzeile wie im Browser (app-shell.js kennt nur „handy“). */
+    public static final String EINBETTUNG_COOKIE_PC = "pn_einbettung=pc";
     static final int MAX_OFFEN = 32;
     /** Höchstens so viele Codes je Kopplung und Minute. */
     static final int MAX_JE_MINUTE = 6;

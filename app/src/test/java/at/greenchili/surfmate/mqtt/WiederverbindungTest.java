@@ -168,6 +168,7 @@ public class WiederverbindungTest {
         /** Gespeicherte (retained) Werte, die nach jedem SUBSCRIBE ausgeliefert werden (Wallbox-Brücke). */
         final java.util.Map<String, String> gespeichert = new java.util.concurrent.ConcurrentHashMap<>();
         volatile boolean laeuft = true;
+        Thread annehmer;
 
         private TestBroker(ServerSocket s) { server = s; }
 
@@ -178,6 +179,7 @@ public class WiederverbindungTest {
             TestBroker b = new TestBroker(s);
             Thread t = new Thread(b::annehmen, "TestBroker");
             t.setDaemon(true);
+            b.annehmer = t;
             t.start();
             return b;
         }
@@ -256,9 +258,16 @@ public class WiederverbindungTest {
         }
 
         void stop() throws IOException {
+            // Erst den Server schließen, dann trennen: sonst nimmt der Annehmer zwischen „trenneAlle“ und „close“ noch den
+            // Wiederaufbau des Clients an, und der „ganz weg“-Broker bleibt für ihn erreichbar (Zeit-Flake auf der CI).
             laeuft = false;
-            trenneAlle();
             server.close();
+            try {
+                if (annehmer != null) annehmer.join(2_000L);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            trenneAlle();
         }
     }
 }

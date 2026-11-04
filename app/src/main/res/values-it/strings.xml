@@ -340,6 +340,7 @@
     <string name="webview_camera_daemon_not_running">Il servizio della telecamera è spento</string>
     <string name="panoptes_startet">Panoptes si sta avviando …</string>
     <string name="panoptes_startet_hinweis">La pagina si carica da sola appena Panoptes è pronto.</string>
+    <string name="panoptes_fremd_app">Sembra attiva un’altra app di strumenti BYD (%1$s). Due app di questo tipo si ostacolano a vicenda, soprattutto con la telecamera. Chiudila o disattivala, poi Panoptes si avvia.</string>
     <string name="panoptes_startet_zu_lange">Panoptes non risponde ancora.</string>
     <string name="webview_start_camera_daemon">Avvia il servizio della telecamera nella schermata Servizi per aprire questa pagina.</string>
     <string name="reset_title">Elimina i dati</string>

@@ -109,6 +109,11 @@
     var ownCheck = null;
     function checkOwnTiles() {
         if (ownCheck) return ownCheck;
+        // 0.1.38.9 (V8): ohne Netz gleich zur Rückfallkarte, statt 5 s auf den Zeitablauf zu warten
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            ownCheck = Promise.resolve({ ok: false });
+            return ownCheck;
+        }
         function timeout(ms) {
             return new Promise(function (_, reject) { setTimeout(function () { reject(new Error('timeout')); }, ms); });
         }
@@ -198,7 +203,7 @@
         var KQ = window.PanoptesKartenquelle;
         if (KQ) { KQ.hinweis(el, art); return; }
         el.classList.add('pn-map-unavailable');
-        el.textContent = art === 'nicht_erreichbar' ? 'Karte nicht erreichbar' : 'Keine Kartenquelle gewählt (System → Kartenquelle)';
+        el.textContent = art === 'nicht_erreichbar' ? 'Karte nicht erreichbar' : 'Keine Kartenquelle gewählt (Einstellungen → Alle Einstellungen → Kartenquelle)';
     }
 
     function hexColor(v, fallback) {

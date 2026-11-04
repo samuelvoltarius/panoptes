@@ -337,7 +337,10 @@ public class AuthApiHandler {
                 art = b == null ? null : (String) b[0];
                 @SuppressWarnings("unchecked")
                 java.util.List<String> r = b == null ? null : (java.util.List<String>) b[1];
-                kid = art == null ? null : at.greenchili.surfmate.auth.Kopplungen.get().anlegenGebunden(name, art, r, now);
+                // 0.1.39 PC „Nur heute“: Dauer steht im Code
+                long dauer = b != null && b.length > 2 && b[2] instanceof Long ? (Long) b[2] : 0L;
+                kid = art == null ? null : at.greenchili.surfmate.auth.Kopplungen.get().anlegenGebunden(name, art, r, now,
+                        dauer > 0 ? now + dauer : 0L);
             } else {
                 kid = at.greenchili.surfmate.auth.Kopplungen.get().anlegen(name, art, now,
                         herkunft == at.greenchili.surfmate.auth.PairingCodes.BESITZER);
@@ -359,7 +362,8 @@ public class AuthApiHandler {
                 log("Kopplung erfolgreich");
                 // 0.1.24: Besitzer erfährt jede neue Kopplung (Telegram + Band), „Warst du das nicht? … entfernen“
                 try {
-                    at.greenchili.surfmate.auth.NeueKopplungMeldung.melden(name, kid);
+                    at.greenchili.surfmate.auth.NeueKopplungMeldung.melden(name, kid,
+                            at.greenchili.surfmate.auth.Kopplungen.ART_PC.equals(art));
                 } catch (Throwable ignored) { }
                 HttpResponse.sendJson(out, response.toString());
                 return true;
@@ -388,7 +392,9 @@ public class AuthApiHandler {
         long jetzt = System.currentTimeMillis();
         String kid = at.greenchili.surfmate.auth.WebSitzung.get().einloesen(code, jetzt);
         at.greenchili.surfmate.auth.Kopplungen kk = at.greenchili.surfmate.auth.Kopplungen.get();
-        String jwt = kid == null || !kk.istHandy(kid) || !kk.hatRecht(kid, at.greenchili.surfmate.auth.Kopplungen.RECHT_WEB)
+        // 0.1.39: auch die PC-Kopplung (Browser über die Brücke) – gleiche Web-Sitzung, gleicher WebHandyGuard
+        boolean pc = kid != null && kk.istPc(kid);
+        String jwt = kid == null || (!kk.istHandy(kid) && !pc) || !kk.hatRecht(kid, at.greenchili.surfmate.auth.Kopplungen.RECHT_WEB)
                 ? null
                 : AuthManager.generateJwt(at.greenchili.surfmate.auth.WebSitzung.SCOPE, kid,
                         at.greenchili.surfmate.auth.WebSitzung.GUELTIG_JWT_S);
@@ -407,7 +413,8 @@ public class AuthApiHandler {
                 + "; SameSite=Strict";
         out.write(("HTTP/1.1 302 Found\r\nLocation: " + at.greenchili.surfmate.auth.WebSitzung.ziel(ziel) + "\r\n"
                 + "Set-Cookie: " + cookie + "\r\n"
-                + "Set-Cookie: " + at.greenchili.surfmate.auth.WebSitzung.EINBETTUNG_COOKIE + "; Path=/; Max-Age="
+                + "Set-Cookie: " + (pc ? at.greenchili.surfmate.auth.WebSitzung.EINBETTUNG_COOKIE_PC
+                        : at.greenchili.surfmate.auth.WebSitzung.EINBETTUNG_COOKIE) + "; Path=/; Max-Age="
                 + at.greenchili.surfmate.auth.WebSitzung.GUELTIG_JWT_S + "; SameSite=Strict\r\nCache-Control: no-store\r\nReferrer-Policy: no-referrer\r\n"
                 + "Content-Length: 0\r\nConnection: close\r\n\r\n").getBytes("UTF-8"));
         out.flush();

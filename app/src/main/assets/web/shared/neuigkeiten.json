@@ -457,7 +457,7 @@
       "versionCode": 72,
       "de": [
         "Kleine Updates (nur die letzte Zahl ändert sich) kommen jetzt von selbst, wenn das Auto 10 Minuten steht. „Nur melden“ wird dafür einmal umgestellt, mit Nachricht. Ändern: Einstellungen → Updates.",
-        "Hupe, Licht, Warnblinker und Aufsperren haben eigene Schalter (Standard aus), einschalten nur am Auto. /aktionen in Telegram schaltet alles sofort ab.",
+        "Hupe, Licht, Warnblinker und Aufsperren haben eigene Schalter (Standard aus), einschalten nur am Auto. „/aktionen aus“ in Telegram (oder der Knopf dort) schaltet diese Freigaben sofort ab.",
         "Das erste gekoppelte Handy kann alles einstellen und weitere Geräte koppeln, aber nichts am Auto auslösen. Rechte fürs Auto vergibst du nur am Display.",
         "Home Assistant kann freigegebene Tore und Haustüren schalten, auf Wunsch das Tor beim Heimkommen. Alles bleibt aus, bis du es einzeln erlaubst.",
         "Der Wächter ist bei neuer Einrichtung an; wer ihn nie eingerichtet hat, wird einmal gefragt. Weniger Fehlalarme durch vorbeifahrende Autos.",
@@ -467,7 +467,7 @@
       ],
       "en": [
         "Small updates (only the last number changes) now install on their own once the car has been parked for 10 minutes. “Only notify” is switched over once, with a message. Change: Settings → Updates.",
-        "Horn, lights, hazard lights and unlocking have their own switches (off by default), switched on only in the car. /aktionen in Telegram turns everything off at once.",
+        "Horn, lights, hazard lights and unlocking have their own switches (off by default), switched on only in the car. /aktionen aus in Telegram (or its button) turns these permissions off at once.",
         "The first paired phone can change all settings and pair more devices, but never trigger anything on the car. Car permissions are granted only on the car display.",
         "Home Assistant can operate gates and front doors you release, optionally the gate when you come home. Everything stays off until you allow each one.",
         "The guard is on for new setups; if you never set it up, you are asked once. Fewer false alarms from passing cars.",
@@ -477,8 +477,8 @@
       ],
       "fr": [
         "Les petites mises à jour (seul le dernier chiffre change) s’installent seules, voiture garée depuis 10 min. « Seulement signaler » change une fois, avec message. Réglages → Mises à jour.",
-        "Klaxon, feux, warnings et déverrouillage ont leurs propres interrupteurs (désactivés par défaut), activables seulement dans la voiture. /aktionen dans Telegram coupe tout.",
-        "Le premier téléphone couplé peut tout régler et coupler d’autres appareils, mais rien déclencher sur la voiture. Les droits sur la voiture se donnent à l’écran.",
+        "Klaxon, feux, warnings et déverrouillage ont leurs propres interrupteurs (désactivés par défaut), activables seulement en voiture. /aktionen aus dans Telegram (ou son bouton) les coupe aussitôt.",
+        "Le premier téléphone couplé peut tout régler et coupler d’autres appareils, mais ne peut rien déclencher sur la voiture. Les droits sur la voiture se donnent à l’écran.",
         "Home Assistant peut actionner les portails et portes d’entrée autorisés, au besoin le portail en rentrant. Tout reste désactivé jusqu’à ton accord, un par un.",
         "Le gardien est activé pour les nouvelles installations ; sinon, une seule question. Moins de fausses alertes dues aux voitures qui passent.",
         "Panoptes démarre plus vite. Le bot Telegram dit quand Panoptes démarre encore et reste joignable, si tu veux, voiture garée.",
@@ -487,7 +487,7 @@
       ],
       "it": [
         "I piccoli aggiornamenti (cambia solo l’ultimo numero) si installano da soli con l’auto ferma da 10 minuti. «Solo avvisare» cambia una volta, con messaggio. Impostazioni → Aggiornamenti.",
-        "Clacson, luci, frecce d’emergenza e sblocco hanno interruttori propri (spenti di serie), accendibili solo in auto. /aktionen in Telegram spegne tutto subito.",
+        "Clacson, luci, frecce d’emergenza e sblocco hanno interruttori propri (spenti di serie), accendibili solo in auto. /aktionen aus in Telegram (o il suo pulsante) spegne subito questi permessi.",
         "Il primo telefono abbinato può impostare tutto e abbinare altri dispositivi, ma non attivare nulla sull’auto. I permessi per l’auto si danno solo sul display.",
         "Home Assistant può azionare cancelli e porte di casa autorizzati, a scelta il cancello quando torni. Tutto resta spento finché non lo permetti uno per uno.",
         "Il guardiano è acceso nelle nuove configurazioni; se non l’hai mai configurato, ti chiede una volta. Meno falsi allarmi dalle auto che passano.",
@@ -497,13 +497,52 @@
       ],
       "nl": [
         "Kleine updates (alleen het laatste getal verandert) komen vanzelf als de auto 10 minuten stilstaat. „Alleen melden” wordt één keer omgezet, met bericht. Wijzigen: Instellingen → Updates.",
-        "Claxon, licht, alarmlichten en ontgrendelen hebben eigen schakelaars (standaard uit), alleen in de auto in te schakelen. /aktionen in Telegram zet alles meteen uit.",
+        "Claxon, licht, alarmlichten en ontgrendelen hebben eigen schakelaars (standaard uit), alleen in de auto in te schakelen. /aktionen aus in Telegram (of de knop daar) zet deze rechten meteen uit.",
         "De eerste gekoppelde telefoon kan alles instellen en andere apparaten koppelen, maar niets op de auto activeren. Rechten voor de auto geef je alleen op het scherm.",
         "Home Assistant kan vrijgegeven poorten en voordeuren bedienen, desgewenst de poort bij thuiskomst. Alles blijft uit tot je het per stuk toestaat.",
         "De bewaker staat aan bij een nieuwe installatie; heb je hem nooit ingesteld, dan krijg je één vraag. Minder valse alarmen door voorbijrijdende auto’s.",
         "Panoptes start sneller. De Telegram-bot zegt wanneer Panoptes in de auto nog opstart en is desgewenst ook bereikbaar als de auto geparkeerd staat.",
         "De stopknop voor de airco verschijnt alleen als er echt iets draait. „Nog in te stellen” herkent meer vanzelf, en de hulp leidt naar de communitygroep.",
         "Opgeslagen inloggegevens zijn extra versleuteld. Back-ups bevatten de apparaatsleutel alleen als je dat uitdrukkelijk kiest."
+      ]
+    },
+    {
+      "version": "0.1.38.9",
+      "versionCode": 73,
+      "de": [
+        "Panoptes macht kein Handy mehr von selbst zum Besitzer. Es fragt einmal: „Welches Gerät ist dein Handy?“ Antworten geht nur am Display oder mit Login.",
+        "Die Update-Hinweise stimmen jetzt: Selbst gestartet geht ein Update in P auch mit Zündung an, von selbst erst nach 10 Minuten Stand. Der Launcher kommt mit.",
+        "Panoptes startet schneller und beendet beim Neustart nur noch seine eigenen Teile. Andere Werkzeug-Apps im Auto bleiben in Ruhe, Panoptes weist auf sie hin.",
+        "Die Bedienung am Bildschirm hängt nicht mehr, wenn du etwas speicherst. Die Karte zeigt ohne Netz sofort die Ersatzansicht.",
+        "Menüwege in App und Telegram stimmen wieder (Einstellungen statt „System“). Der Hinweis zur Fahrtkamera bei DiLink 5 ist richtiggestellt."
+      ],
+      "en": [
+        "Panoptes no longer makes a phone the owner by itself. It asks once: “Which device is your phone?” You can answer only on the display or with login.",
+        "The update notes are now correct: started by you, an update runs in P even with the ignition on; on its own only after 10 minutes parked. The launcher comes along.",
+        "Panoptes starts faster and, when restarting, only stops its own parts. Other tool apps in the car are left alone, and Panoptes points them out.",
+        "The screen no longer freezes when you save something. Without network the map shows the fallback view right away.",
+        "Menu paths in the app and Telegram are right again (Settings instead of “System”). The dash camera note for DiLink 5 has been corrected."
+      ],
+      "fr": [
+        "Panoptes ne fait plus d’un téléphone le propriétaire tout seul. Il demande une fois : « Quel appareil est ton téléphone ? » Réponse seulement à l’écran ou avec connexion.",
+        "Les infos de mise à jour sont justes : lancée par toi, la mise à jour se fait sur P même contact mis ; toute seule après 10 min garée. Le launcher suit.",
+        "Panoptes démarre plus vite et, au redémarrage, n’arrête que ses propres parties. Les autres applis outils de la voiture restent tranquilles, Panoptes les signale.",
+        "L’écran ne se fige plus quand tu enregistres quelque chose. Sans réseau, la carte affiche tout de suite la vue de secours.",
+        "Les chemins de menu dans l’appli et Telegram sont de nouveau justes (Réglages au lieu de « Système »). La note sur la caméra de route pour DiLink 5 est corrigée."
+      ],
+      "it": [
+        "Panoptes non rende più proprietario un telefono da solo. Chiede una volta: «Quale dispositivo è il tuo telefono?» Si risponde solo sul display o con login.",
+        "Le note sugli aggiornamenti ora sono giuste: avviato da te, l’aggiornamento va in P anche a quadro acceso; da solo dopo 10 minuti di sosta. Il launcher segue.",
+        "Panoptes si avvia più in fretta e, al riavvio, ferma solo le proprie parti. Le altre app strumento nell’auto restano tranquille, Panoptes le segnala.",
+        "Lo schermo non si blocca più quando salvi qualcosa. Senza rete la mappa mostra subito la vista di riserva.",
+        "I percorsi dei menu nell’app e in Telegram sono di nuovo giusti (Impostazioni invece di «Sistema»). La nota sulla telecamera di guida per DiLink 5 è corretta."
+      ],
+      "nl": [
+        "Panoptes maakt een telefoon niet meer vanzelf eigenaar. Het vraagt één keer: „Welk apparaat is je telefoon?” Antwoorden kan alleen op het scherm of met inloggen.",
+        "De update-teksten kloppen nu: zelf gestart gaat een update in P ook met contact aan; vanzelf pas na 10 minuten stilstand. De launcher komt mee.",
+        "Panoptes start sneller en stopt bij een herstart alleen nog zijn eigen onderdelen. Andere hulp-apps in de auto blijven met rust, Panoptes wijst erop.",
+        "Het scherm loopt niet meer vast als je iets opslaat. Zonder netwerk toont de kaart meteen de reserveweergave.",
+        "Menupaden in de app en Telegram kloppen weer (Instellingen in plaats van „Systeem”). De opmerking over de rijcamera bij DiLink 5 is rechtgezet."
       ]
     }
   ]

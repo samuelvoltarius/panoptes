@@ -49,32 +49,136 @@ public final class Kopplungen {
     }
 
     /**
-     * 0.1.38.8 Besitzer-Handy (Koordination 04.11., Projektinhaber: „das erste Handy soll alles können“), einmal beim Laden:
-     * jede vorhandene Kopplung behält ihr Schreibrecht auf die Einstellungen ({@code einstellungenBestand},
-     * Bestandsschutz – Cockpit/HA brechen nicht); gibt es noch keinen Besitzer, wird die älteste Handy-Kopplung
-     * Besitzer (Meldung über {@link #besitzerMelder}). Neue Kopplungen tragen die Marke ohne Bestandsschutz.
+     * 0.1.38.8 Besitzer-Handy, einmal beim Laden: jede vorhandene Kopplung behält ihr Schreibrecht auf die Einstellungen
+     * ({@code einstellungenBestand}, Bestandsschutz – Cockpit/HA brechen nicht). Neue Kopplungen tragen die Marke ohne
+     * Bestandsschutz.
+     *
+     * <p>0.1.38.9 (Befund am Auto: die älteste „handy“-Kopplung war ein Brillen-Relay, nicht das iPhone): Die Migration
+     * macht KEINEN Besitzer mehr. Stattdessen fragt Panoptes einmal am Display bzw. im Login „Welches Gerät ist dein
+     * Handy?“ ({@link #besitzerFrage}); bis dahin gibt es keinen Besitzer, die Rechte bleiben wie vorher. Wer unter
+     * 0.1.38.8 automatisch Besitzer wurde ({@code besitzerAusMigration}), bekommt dieselbe Frage einmal zur Bestätigung.
      */
     private void besitzerStandHeben() {
         boolean geaendert = false;
+        boolean vor01388 = false;
         for (int i = 0; i < geraete.length(); i++) {
             JSONObject g = geraete.optJSONObject(i);
             if (g == null || g.has(MARKE_01388)) continue;
             try {
                 g.put("einstellungenBestand", true).put(MARKE_01388, 1);
                 geaendert = true;
+                vor01388 = true;
+            } catch (Exception ignored) { }
+        }
+        boolean frage = false;
+        // 0.1.38.8 hat genau die älteste Handy-Kopplung des Bestands automatisch zum Besitzer gemacht. Ein Besitzer, den
+        // jemand danach am Display/mit Login gesetzt hat (anderes Gerät), gilt als bestätigt: keine Frage.
+        String aelteste = aeltesteHandyId(null);
+        for (int i = 0; i < geraete.length(); i++) {
+            JSONObject g = geraete.optJSONObject(i);
+            if (g == null || g.has(MARKE_01389)) continue;
+            try {
+                g.put(MARKE_01389, 1);
+                geaendert = true;
+                if (!vor01388 && ART_HANDY.equals(g.optString("art")) && g.optString("id").equals(aelteste)
+                        && g.optBoolean("einstellungenBestand", false)
+                        && g.optJSONArray("rechte") != null && enthaelt(g.optJSONArray("rechte"), RECHT_BESITZER)) {
+                    g.put("besitzerAusMigration", true);
+                    frage = true;
+                }
             } catch (Exception ignored) { }
         }
         if (!geaendert) return;
-        String neu = null;
-        if (besitzerIds().isEmpty()) {
-            neu = aeltesteHandyId(null);
-            if (neu != null) besitzerDazu(finde(neu));
+        // Frage nur, wenn es Handy-Kopplungen gibt: ohne Besitzer (Bestand) oder mit Besitzer aus der Migration
+        if (frage || (vor01388 && besitzerIds().isEmpty() && aeltesteHandyId(null) != null)) {
+            for (int i = 0; i < geraete.length(); i++) {
+                JSONObject g = geraete.optJSONObject(i);
+                if (g != null && ART_HANDY.equals(g.optString("art"))) {
+                    try { g.put(FRAGE, true); } catch (Exception ignored) { }
+                }
+            }
         }
         try { speicher.speichere(geraete); } catch (Throwable ignored) { }
-        if (neu != null) besitzerGemeldet(neu, "bestand");
+        if (besitzerFrageOffen()) {
+            java.util.function.Consumer<Boolean> m = besitzerFrageMelder;
+            if (m != null) {
+                try { m.accept(frage); } catch (Throwable ignored) { }
+            }
+        }
     }
 
-    static final String MARKE_01388 = "stand01388";
+    static final String MARKE_01388 = "stand01388", MARKE_01389 = "stand01389", FRAGE = "besitzerFrage";
+
+    /** 0.1.38.9: Hinweis „Welches Gerät ist dein Handy?“ (true = Bestätigung eines automatisch gesetzten Besitzers). */
+    public static volatile java.util.function.Consumer<Boolean> besitzerFrageMelder;
+
+    /** 0.1.38.9: Ist die einmalige Frage „Welches Gerät ist dein Handy?“ offen? */
+    public synchronized boolean besitzerFrageOffen() {
+        JSONArray l = liste();
+        for (int i = 0; i < l.length(); i++) {
+            JSONObject g = l.optJSONObject(i);
+            if (g != null && g.optBoolean(FRAGE, false)) return true;
+        }
+        return false;
+    }
+
+    /** Auswahl für die Frage: Handy-Kopplungen mit Name, Anlagedatum, ob Besitzer und ob automatisch gesetzt. */
+    public synchronized JSONObject besitzerFrage() {
+        JSONObject o = new JSONObject();
+        JSONArray a = new JSONArray();
+        try {
+            JSONArray l = liste();
+            boolean bestaetigen = false;
+            for (int i = 0; i < l.length(); i++) {
+                JSONObject g = l.optJSONObject(i);
+                if (g == null || !ART_HANDY.equals(g.optString("art"))) continue;
+                boolean auto = g.optBoolean("besitzerAusMigration", false);
+                bestaetigen |= auto;
+                a.put(new JSONObject().put("id", g.optString("id")).put("name", anzeigeName(g.optString("id")))
+                        .put("angelegt", g.optLong("angelegt")).put("besitzer", istBesitzer(g.optString("id")))
+                        .put("automatisch", auto));
+            }
+            o.put("offen", besitzerFrageOffen()).put("bestaetigen", bestaetigen).put("geraete", a);
+        } catch (Exception ignored) { }
+        return o;
+    }
+
+    public static final int FRAGE_OK = 1, FRAGE_UNBEKANNT = 2, FRAGE_FEHLER = 0;
+
+    /**
+     * 0.1.38.9 Antwort auf die Frage (nur Display/Login): {@code id} = dieses Handy ist der Besitzer (ein automatisch
+     * gesetzter Besitzer verliert das Recht, wenn er es nicht ist); {@code keins} = keines davon (automatisch gesetzter
+     * Besitzer weg, die nächste Display-Kopplung wird Besitzer); beides leer = Später (nichts ändern). Danach ist die
+     * Frage zu.
+     */
+    public synchronized int besitzerFrageBeantworten(String id, boolean keins) {
+        JSONArray l = liste();
+        JSONObject wahl = id == null || id.isEmpty() ? null : finde(id);
+        if (id != null && !id.isEmpty() && (wahl == null || !ART_HANDY.equals(wahl.optString("art")))) return FRAGE_UNBEKANNT;
+        for (int i = 0; i < l.length(); i++) {
+            JSONObject g = l.optJSONObject(i);
+            if (g == null) continue;
+            boolean auto = g.optBoolean("besitzerAusMigration", false);
+            if (auto && (keins || (wahl != null && wahl != g))) besitzerWeg(g);
+            g.remove(FRAGE);
+            g.remove("besitzerAusMigration");
+        }
+        if (wahl != null) besitzerDazu(wahl);
+        boolean ok = speichernSofort();
+        String was = wahl != null ? "gewaehlt" : keins ? "keins" : "spaeter";
+        at.greenchili.surfmate.server.BefehlsLog.ereignis("kopplung.besitzer.frage." + was, ok ? "gesetzt" : "fehler",
+                wahl == null ? null : id, wahl == null ? null : anzeigeName(id));
+        if (ok && wahl != null) besitzerGemeldet(id, "gewaehlt");
+        return ok ? FRAGE_OK : FRAGE_FEHLER;
+    }
+
+    private static void besitzerWeg(JSONObject g) {
+        JSONArray r = g.optJSONArray("rechte");
+        if (r == null) return;
+        JSONArray neu = new JSONArray();
+        for (int i = 0; i < r.length(); i++) if (!RECHT_BESITZER.equals(r.optString(i))) neu.put(r.optString(i));
+        try { g.put("rechte", neu); } catch (Exception ignored) { }
+    }
 
     /**
      * 0.1.26.1: Rechte des Bestands einmal beim Laden auf {@link #RECHTE_STAND} heben und festschreiben, damit „update“
@@ -131,10 +235,17 @@ public final class Kopplungen {
                 // 0.1.32.1: auch die erste Handy-Kopplung ohne „update“: nur der Besitzer schaltet es ein
                 g.put("rechte", new JSONArray(HANDY_STANDARD)).put("rechteStand", RECHTE_STAND);
             }
-            g.put(MARKE_01388, 1);   // 0.1.38.8: neue Kopplungen ohne Bestandsschutz für Einstellungen
+            g.put(MARKE_01388, 1).put(MARKE_01389, 1);   // 0.1.38.8: neue Kopplungen ohne Bestandsschutz für Einstellungen
         } catch (Exception ignored) { }
         boolean besitzer = darfBesitzerWerden && ART_HANDY.equals(art) && besitzerIds().isEmpty();
-        if (besitzer) besitzerDazu(g);
+        if (besitzer) {
+            besitzerDazu(g);
+            // 0.1.38.9: die erste Display-Kopplung nach dem Update beantwortet die offene Frage
+            for (int i = 0; i < l.length(); i++) {
+                JSONObject x = l.optJSONObject(i);
+                if (x != null) x.remove(FRAGE);
+            }
+        }
         JSONArray neu = kopie(l);
         neu.put(g);
         if (!speicher.speichere(neu)) return null;
@@ -152,12 +263,26 @@ public final class Kopplungen {
      * diese Art tragen kann; {@code besitzer} nie). Kein Bestandsschutz, nie automatisch Besitzer.
      */
     public synchronized String anlegenGebunden(String name, String art, java.util.Collection<String> rechte, long nowMs) {
+        return anlegenGebunden(name, art, rechte, nowMs, 0L);
+    }
+
+    /**
+     * Wie {@link #anlegenGebunden(String, String, java.util.Collection, long)}; {@code ablaufFest} &gt; 0 = gilt nur bis
+     * dahin (0.1.39 PC „Nur heute“). Art {@code pc} nur bei eingeschaltetem {@link PcZugang#SCHALTER} und höchstens
+     * {@link PcZugang#MAX_PC} je Auto (sonst null).
+     */
+    public synchronized String anlegenGebunden(String name, String art, java.util.Collection<String> rechte, long nowMs,
+                                               long ablaufFest) {
         if (art == null || !ARTEN.contains(art) || ART_WEB.equals(art)) return null;
+        if (ART_PC.equals(art) && (!PcZugang.erlaubt(nowMs) || pcIds().size() >= PcZugang.MAX_PC)) return null;
         String id = anlegen(name, art, nowMs, false);
         JSONObject g = id == null ? null : finde(id);
         if (g == null) return id;
+        if (ablaufFest > 0) {
+            try { g.put("ablaufFest", ablaufFest); } catch (Exception ignored) { }
+        }
         JSONArray r = new JSONArray();
-        java.util.List<String> erlaubt = ART_HANDY.equals(art) ? RECHTE : fremdRechte(art);
+        java.util.List<String> erlaubt = rechteDerArt(art);
         for (String x : erlaubt) {
             // 0.1.38.8 Nachzug: nie besitzer, nie Fahrzeug-Aktionen/geraete_steuern per Code (zweite Sperre zum Handler)
             if (rechte != null && rechte.contains(x) && !RECHT_BESITZER.equals(x) && !NUR_DISPLAY_RECHTE.contains(x)) r.put(x);
@@ -292,6 +417,9 @@ public final class Kopplungen {
             if (g == null || !id.equals(g.optString("id"))) continue;
             long zuletzt = g.optLong("zuletzt", g.optLong("angelegt", 0));
             if (nowMs - zuletzt > GUELTIG_OHNE_NUTZUNG_MS) return false;
+            // 0.1.39 PC über die Brücke: nur solange „Am PC anmelden“ an ist und „Nur heute“ nicht vorbei
+            if (ART_PC.equals(g.optString("art")) && (!PcZugang.erlaubt(nowMs)
+                    || (g.optLong("ablaufFest", 0) > 0 && nowMs >= g.optLong("ablaufFest", 0)))) return false;
             try { g.put("zuletzt", nowMs); } catch (Exception ignored) { }
             if (nowMs - zuletztGespeichert >= SPEICHER_TAKT_MS) {
                 if (speicher.speichere(kopie(l))) zuletztGespeichert = nowMs;
@@ -373,6 +501,10 @@ public final class Kopplungen {
                 o.put("zuletzt", g.optLong("zuletzt"));
                 o.put("abgelaufen", nowMs - g.optLong("zuletzt", 0) > GUELTIG_OHNE_NUTZUNG_MS);
                 if (g.has("art")) o.put("art", g.optString("art"));
+                if (g.optLong("ablaufFest", 0) > 0) {   // 0.1.39 PC „Nur heute“
+                    o.put("ablaufFest", g.optLong("ablaufFest"));
+                    if (nowMs >= g.optLong("ablaufFest")) o.put("abgelaufen", true);
+                }
                 if (g.optBoolean("einstellungenBestand", false)) o.put("einstellungenBestand", true);   // 0.1.38.8
                 if (traegtFremdRechte(g.optString("art"))) o.put("rechte", rechteVon(g));   // 0.1.30
                 if (ART_HANDY.equals(g.optString("art"))) {
@@ -537,6 +669,14 @@ public final class Kopplungen {
             java.util.Arrays.asList(RECHT_KAMERA, RECHT_STANDBILD, RECHT_TACHO, RECHT_EINSTELLUNGEN, RECHT_GERAETE,
                     RECHT_GERAETE_STEUERN));
 
+    /**
+     * 0.1.39 (PLAN_ENTFLECHTEN_0139, Fernzugang): die EINE Quelle „Art → Rechte, die sie tragen kann“ – für Kopplungen,
+     * Besitzer-Codes, HA und PC. Was davon nur am Display vergeben werden darf, sagt {@link #NUR_DISPLAY_RECHTE}.
+     */
+    public static java.util.List<String> rechteDerArt(String art) {
+        return ART_HANDY.equals(art) ? RECHTE : fremdRechte(art);
+    }
+
     /** Rechte, die eine Nicht-Handy-Art tragen kann. */
     static java.util.List<String> fremdRechte(String art) {
         if ("homeassistant".equals(art)) return HA_RECHTE;
@@ -641,6 +781,40 @@ public final class Kopplungen {
         return ART_HANDY.equals(art(id));
     }
 
+    /** 0.1.39: Kopplung der Art {@code pc} (Browser über die Brücke). */
+    public synchronized boolean istPc(String id) {
+        return ART_PC.equals(art(id));
+    }
+
+    /** 0.1.39: alle PC-Kopplungen. */
+    public synchronized java.util.List<String> pcIds() {
+        java.util.List<String> out = new java.util.ArrayList<>();
+        JSONArray l = liste();
+        for (int i = 0; i < l.length(); i++) {
+            JSONObject g = l.optJSONObject(i);
+            if (g != null && ART_PC.equals(g.optString("art"))) out.add(g.optString("id"));
+        }
+        return out;
+    }
+
+    /** 0.1.39: „Am PC anmelden“ ausgeschaltet → alle PC-Kopplungen widerrufen. Anzahl der widerrufenen. */
+    public int pcAlleWiderrufen() {
+        int n = 0;
+        for (String id : pcIds()) if (widerrufen(id) != UNBEKANNT) n++;
+        return n;
+    }
+
+    /**
+     * 0.1.39 (Koordination 04.11.): Das Besitzer-Handy darf jede PC-Kopplung abmelden, egal wie alt (Widerrufen ist die
+     * sichere Richtung, das Besitzer-Handy bleibt). Andere Kopplungen nur über {@link #jungEntfernen}.
+     */
+    public synchronized int pcEntfernen(String von, String ziel) {
+        if (!istBesitzer(von) || ziel == null) return BESITZER_NICHT_ERLAUBT;
+        if (finde(ziel) == null) return BESITZER_UNBEKANNT;
+        if (!istPc(ziel)) return BESITZER_NICHT_ERLAUBT;
+        return widerrufen(ziel) == UNBEKANNT ? BESITZER_UNBEKANNT : BESITZER_OK;
+    }
+
     /** Recht einer Kopplung. Nicht-Handy-Arten haben höchstens {@link #FREMD_RECHTE}, nie Handy-Rechte. */
     public synchronized boolean hatRecht(String id, String recht) {
         JSONObject g = finde(id);
@@ -672,6 +846,16 @@ public final class Kopplungen {
         JSONArray r = new JSONArray();
         for (String x : handy ? RECHTE : fremdRechte(g.optString("art"))) if (rechte != null && rechte.contains(x)) r.put(x);
         try { g.put("rechte", r).put("rechteStand", RECHTE_STAND); } catch (Exception e) { return false; }
+        // 0.1.38.9: Besitzer am Display/mit Login gesetzt = bestätigt, die einmalige Frage ist damit beantwortet
+        if (handy && enthaelt(r, RECHT_BESITZER)) {
+            JSONArray l = liste();
+            for (int i = 0; i < l.length(); i++) {
+                JSONObject x = l.optJSONObject(i);
+                if (x == null) continue;
+                x.remove(FRAGE);
+                x.remove("besitzerAusMigration");
+            }
+        }
         boolean ok = speichernSofort();
         // 0.1.39: Recht „geraete“ weg → gemeldete HA-Geräte (Namen, Räume) dieser Kopplung sofort löschen
         if ("homeassistant".equals(g.optString("art")) && (rechte == null || !rechte.contains(RECHT_GERAETE))) {
@@ -939,6 +1123,13 @@ public final class Kopplungen {
         at.greenchili.surfmate.telegram.TelegramNotifier.sendMessage("📱 " + text, "CRITICAL");
     }
 
+    static void besitzerFrageTelegram(boolean bestaetigen) {
+        String text = at.greenchili.surfmate.server.Messages.text(
+                bestaetigen ? "besitzer.frage_telegram_bestaetigen" : "besitzer.frage_telegram",
+                "Welches Gerät ist dein Handy? Bitte am Auto unter System → Gekoppelte Geräte auswählen.");
+        at.greenchili.surfmate.telegram.TelegramNotifier.sendMessage("📱 " + text, "CRITICAL");
+    }
+
     public static Kopplungen get() {
         Kopplungen k = instanz;
         if (k == null) {
@@ -946,6 +1137,8 @@ public final class Kopplungen {
                 if (instanz == null) {
                     // 0.1.38.8: Hinweis an den Telegram-Besitzer, wenn ein Handy Besitzer wird (Name, nie Rechte-Werte)
                     if (besitzerMelder == null) besitzerMelder = Kopplungen::besitzerTelegram;
+                    // 0.1.38.9: einmal „Welches Gerät ist dein Handy?“ (am Display/Login beantworten)
+                    if (besitzerFrageMelder == null) besitzerFrageMelder = Kopplungen::besitzerFrageTelegram;
                     instanz = new Kopplungen(new UcmSpeicher());
                 }
                 k = instanz;

@@ -557,12 +557,18 @@ public class TelegramNotifier {
      * Kopplungs-id). Ohne ref nur der Text. Nicht gespoolt.
      */
     public static void notifyNeueKopplung(String ref, String geraet) {
+        notifyNeueKopplung(ref, geraet, false);
+    }
+
+    /** 0.1.39: {@code pc} = „Neuer PC angemeldet“ mit Knopf [Abmelden] (gleicher Einmal-Griff). */
+    public static void notifyNeueKopplung(String ref, String geraet, boolean pc) {
         criticalExecutor.execute(() -> {
             try {
                 JSONObject cmd = new JSONObject();
                 cmd.put("cmd", "notifyNeueKopplung");
                 if (ref != null) cmd.put("ref", ref);
                 cmd.put("geraet", geraet);
+                if (pc) cmd.put("art", "pc");
                 sendIpc(cmd, /*spoolOnDaemonDown=*/false);
             } catch (Exception e) {
                 Log.e(TAG, "notifyNeueKopplung IPC error", e);
