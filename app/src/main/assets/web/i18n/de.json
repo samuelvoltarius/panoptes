@@ -5564,7 +5564,15 @@
     "lnc_open_hint": "„Öffnen“ öffnet den Launcher am Bildschirm im Auto.",
     "lnc_opened": "Der Launcher ist jetzt am Bildschirm im Auto offen.",
     "lnc_open_fail": "Der Launcher ließ sich am Bildschirm im Auto nicht öffnen. Bitte dort einmal selbst antippen.",
-    "lnc_ohne_recht": "Für diese Funktion braucht dein Handy das Recht „Launcher“. Einschalten am Bildschirm im Auto unter Gekoppelte Geräte."
+    "lnc_ohne_recht": "Für diese Funktion braucht dein Handy das Recht „Launcher“. Einschalten am Bildschirm im Auto unter Gekoppelte Geräte.",
+    "paired_back": "Zurück zu allen Geräten",
+    "paired_art_handy": "Handy",
+    "paired_art_iphone": "iPhone",
+    "paired_art_browser": "Handy im Browser",
+    "paired_art_cockpit": "Cockpit / PC",
+    "paired_art_brille": "Brille",
+    "paired_art_dienst": "Dienst",
+    "paired_art_web": "Weboberfläche"
   },
   "guardLegal": {
     "trigger": {
@@ -7122,6 +7130,13 @@
     "launcher_einrichten_hilfe": "Kacheln und Apps auf dem Launcher-Startbildschirm anordnen.",
     "link_titel": "Display: Tacho, Hintergrund, Sperre, Launcher",
     "link_hilfe": "Was der Tacho zeigt, das Hintergrundbild, die Display-Sperre mit PIN und der Panoptes Launcher haben eine eigene Seite.",
-    "link_knopf": "Display öffnen"
+    "link_knopf": "Display öffnen",
+    "aussehen_titel": "Aussehen",
+    "aussehen_sprung_hilfe": "Hell oder dunkel, Darstellung im Auto und Startansicht stellst du jetzt unter Apps & Display → Display ein.",
+    "aussehen_oeffnen": "Aussehen öffnen",
+    "thema_titel": "Hell oder dunkel",
+    "thema_dunkel": "Dunkel",
+    "thema_hell": "Hell",
+    "thema_auto": "Automatisch"
   }
 }

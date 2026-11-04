@@ -34,7 +34,8 @@ public class DarstellungLeichtTest {
 
     @Test
     public void schalterAufSystem() throws Exception {
-        String sys = read(WEB + "local/system.html");
+        // 0.1.38.4: Darstellung liegt unter Apps & Display → Display (Abschnitt „Aussehen“)
+        String sys = read(WEB + "local/display.html");
         assertTrue(sys.contains("id=\"anzeigeWahl\""));
         assertTrue(sys.contains("PanoptesDarstellung.waehler(ab)"));
     }

@@ -285,7 +285,7 @@
             box.appendChild(el('div', null, tx || DE['hinweis.' + (h.art || '')] || key));
             (h.einstellungen || []).forEach(function (k) {
                 var a = el('a', null, t('link.' + k.replace(/\./g, '_')));
-                a.href = /^speedcam\./.test(k) ? 'system.html#blitzer' : (/^laden\./.test(k) ? 'charging.html#settings' : 'system.html#anzeige');
+                a.href = /^speedcam\./.test(k) ? 'system.html#blitzer' : (/^laden\./.test(k) ? 'charging.html#settings' : 'display.html#anzeige');
                 a.style.cssText = 'color:var(--sm-aqua);font-weight:600;margin-right:14px;display:inline-block;margin-top:4px';
                 box.appendChild(a);
             });

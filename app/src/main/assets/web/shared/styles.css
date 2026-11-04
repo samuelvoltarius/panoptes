@@ -10,7 +10,7 @@
 @import url("design-tokens.css?v=pn2");
 @import url("app-shell.css?v=pn11");
 @import url("app-tabs.css?v=4");
-@import url("app-collapse.css?v=pn2");
+@import url("app-collapse.css?v=pn3");
 
 :root {
     --brand-gradient: linear-gradient(135deg, var(--primary) 0%, var(--tertiary) 100%);

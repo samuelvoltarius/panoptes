@@ -310,6 +310,35 @@
         "Het adres van de web-app staat groot bij het koppelen, met een eigen QR-code en de download van de Android-app.",
         "Regels zijn nu in alle talen vertaald, ook de voorwaarden."
       ]
+    },
+    {
+      "version": "0.1.38.4",
+      "versionCode": 68,
+      "de": [
+        "Alle Abschnitte sind jetzt zugeklappt. Ein Tipp auf die Überschrift öffnet ihn, der vorige geht dabei zu.",
+        "Gekoppelte Geräte siehst du als große Kacheln mit Symbol. Ein Tipp zeigt nur dieses Gerät, „Zurück zu allen Geräten“ bringt dich zurück.",
+        "Hell oder dunkel, Darstellung im Auto und Startansicht findest du jetzt unter Apps & Display → Display → Aussehen."
+      ],
+      "en": [
+        "All sections are now folded. Tap a heading to open it; the previous one closes.",
+        "Paired devices are shown as large tiles with a symbol. A tap shows only that device, “Back to all devices” takes you back.",
+        "Light or dark, display in the car and start view are now under Apps & display → Display → Appearance."
+      ],
+      "fr": [
+        "Toutes les sections sont maintenant repliées. Touche un titre pour l’ouvrir, la précédente se referme.",
+        "Les appareils associés s’affichent en grandes tuiles avec un symbole. Un appui montre seulement cet appareil, « Retour à tous les appareils » te ramène.",
+        "Clair ou sombre, l’affichage dans la voiture et la vue de départ se trouvent maintenant sous Apps & écran → Écran → Apparence."
+      ],
+      "it": [
+        "Ora tutte le sezioni sono chiuse. Tocca un titolo per aprirla, la precedente si chiude.",
+        "I dispositivi collegati appaiono come grandi riquadri con un simbolo. Un tocco mostra solo quel dispositivo, «Torna a tutti i dispositivi» ti riporta indietro.",
+        "Chiaro o scuro, visualizzazione in auto e vista iniziale ora sono in App & display → Display → Aspetto."
+      ],
+      "nl": [
+        "Alle onderdelen zijn nu ingeklapt. Tik op een kop om het te openen, het vorige gaat dicht.",
+        "Gekoppelde apparaten zie je als grote tegels met een symbool. Een tik toont alleen dat apparaat, „Terug naar alle apparaten” brengt je terug.",
+        "Licht of donker, weergave in de auto en startweergave vind je nu onder Apps & scherm → Scherm → Weergave."
+      ]
     }
   ]
 }

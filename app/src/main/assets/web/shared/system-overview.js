@@ -232,6 +232,8 @@
             if (gruppe) setGroup(gruppe, false);
             var card = document.getElementById(id);
             if (card) {
+                // 0.1.38.4: eingeklappten Abschnitt öffnen (app-collapse.js, nur einer offen)
+                if (global.PanoptesEinklappen) PanoptesEinklappen.oeffne(card, { scrollen: false });
                 card.scrollIntoView();
                 card.classList.add('pn-suche-ziel');
                 setTimeout(function () { card.classList.remove('pn-suche-ziel'); }, 2200);

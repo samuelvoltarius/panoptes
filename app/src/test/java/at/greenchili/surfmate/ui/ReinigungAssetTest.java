@@ -47,7 +47,8 @@ public class ReinigungAssetTest {
 
     @Test
     public void knopfAmAutoUndTexteInFuenfSprachen() throws Exception {
-        String s = lies("local/system.html");
+        // 0.1.38.4: „Bildschirm reinigen“ liegt unter Apps & Display → Display (Abschnitt „Aussehen“)
+        String s = lies("local/display.html");
         assertTrue(s.contains("data-reinigung data-nur-display"));
         assertTrue(s.contains("../shared/reinigung.js"));
         for (String l : new String[] {"de", "en", "fr", "it", "nl"}) {

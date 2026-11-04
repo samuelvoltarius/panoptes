@@ -7,8 +7,8 @@
     <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
     <script src="../shared/theme.js?v=13"></script>
     <script src="../shared/kartenquelle.js?v=5"></script>
-    <script src="../shared/app-shell.js?v=pn33"></script>
-    <link rel="stylesheet" href="../shared/styles.css?v=pn12">
+    <script src="../shared/app-shell.js?v=pn34"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn13">
     <style>
         .sys-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .sys-stat { background: var(--bg-elevated); border-radius: 8px; padding: 10px 12px; min-width: 0; }
@@ -47,6 +47,16 @@
         .pn-rechte-mehr > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-size: 15px; color: var(--text-primary); }
         .pn-alt { margin-top: 8px; font-size: 14px; color: var(--text-primary); white-space: normal; }
         #pairRows .sys-row { flex-wrap: wrap; align-items: flex-start; }
+        /* 0.1.38.4 gekoppelte Geräte als große Kacheln; ein Tipp zeigt nur dieses Gerät */
+        .pn-geraete { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); grid-gap: 12px; margin-top: 8px; }
+        .pn-geraet { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 140px; padding: 14px 10px;
+            border-radius: 16px; border: 1px solid var(--border-default); background: var(--bg-elevated); color: var(--text-primary);
+            cursor: pointer; text-align: center; font: inherit; }
+        .pn-geraet.is-alt { opacity: .6; }
+        .pn-geraet-symbol svg { width: 48px; height: 48px; color: var(--sm-aqua, var(--text-primary)); }
+        .pn-geraet-name { margin-top: 10px; font-size: 17px; font-weight: 700; overflow-wrap: anywhere; }
+        .pn-geraet-art { margin-top: 4px; font-size: 14px; color: var(--text-muted); }
+        .pn-geraet-zurueck { width: 100%; min-height: 56px; font-size: 18px; font-weight: 700; margin: 4px 0 12px; }
         #pairRows .sys-meta { white-space: normal; overflow-wrap: anywhere; }
         .pn-rechte-mehr > summary { list-style: none; }
         .pn-rechte-mehr > summary::-webkit-details-marker { display: none; }
@@ -365,26 +375,18 @@
                 </div>
 
                 <!-- ===== App-Updates (Kern: /api/appupdate/*, Kanal + Modus aus dem Einstellungs-Schema, Gruppe „update“) ===== -->
-                <!-- ===== Anzeige (0.1.8.1): Darstellung im Auto leicht/voll, sofort wirksam (app-shell.js PanoptesDarstellung) ===== -->
+                <!-- 0.1.38.4 (Alfred): „Aussehen“ (Darstellung, Startansicht, hell/dunkel, Band, Reinigen) liegt unter
+                     Apps & Display → Display. Hier nur der Sprung; id „anzeige“ bleibt für Suche und alte Links. -->
                 <div class="card" id="anzeige"><a id="faehigkeiten"></a>
                     <div class="card-header">
                         <div class="card-title">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-                            <span data-i18n="settings.anzeige.darstellung.title">Darstellung im Auto</span>
+                            <span data-i18n="display.aussehen_titel">Aussehen</span>
                         </div>
                     </div>
                     <div class="card-body">
-                        <div class="sys-note" style="margin-top:0;" data-i18n="settings.anzeige.darstellung.help">Leicht schont den Bildschirm im Auto: Karten in 2D, ohne Unschärfe-Effekte und Dauer-Animationen. Voll zeigt alles, kostet am Display aber spürbar Leistung.</div>
-                        <div id="anzeigeWahl"></div>
-                        <h3 data-i18n="settings.anzeige.startAnsicht.title">Startansicht</h3>
-                        <div class="sys-note" data-i18n="settings.anzeige.startAnsicht.help">Wähle, welche vorhandenen Bereiche auf der Startseite zuerst stehen. Alle Funktionen bleiben über die Leiste erreichbar.</div>
-                        <div id="startAnsichtWahl"></div>
-                        <!-- 0.1.9.1: Blitzer-Band am Bildschirm im Auto (anzeige.bandGroesse/bandPosition, Kern-Schema) -->
-                        <div id="anzeigeBand"></div>
-                        <!-- Bildschirm reinigen: 30 s alle Berührungen sperren, nur in P, lang drücken beendet (reinigung.js) -->
-                        <h3 data-i18n="reinigung.titel">Bildschirm reinigen</h3>
-                        <div class="sys-note" data-i18n="reinigung.hilfe">Sperrt 30 Sekunden lang jede Berührung, damit du den Bildschirm abwischen kannst. Nur in P. Lange drücken beendet sofort.</div>
-                        <button class="btn" type="button" data-reinigung data-nur-display data-i18n="reinigung.knopf">Bildschirm reinigen</button>
+                        <div class="sys-note" style="margin-top:0;" data-i18n="display.aussehen_sprung_hilfe">Hell oder dunkel, Darstellung im Auto und Startansicht stellst du jetzt unter Apps &amp; Display → Display ein.</div>
+                        <div class="sys-actions"><a class="btn btn-primary" href="display.html#anzeige" data-i18n="display.aussehen_oeffnen">Aussehen öffnen</a></div>
                     </div>
                 </div>
 
@@ -572,13 +574,13 @@
     <script src="../shared/core.js?v=pn6"></script>
     <script src="../shared/pip.js?v=2"></script>
     <script src="../shared/system.js?v=4"></script>
-    <script src="../shared/system-overview.js?v=4"></script>
+    <script src="../shared/system-overview.js?v=5"></script>
     <script src="../shared/vendor/qrcode-generator-1.4.4.js"></script>
     <script src="../shared/einstellungen.js?v=pn8"></script>
     <script src="../shared/home-layout.js?v=2"></script>
     <script src="../shared/app-updates.js?v=4"></script>
     <script src="../shared/blitzer.js?v=5"></script>
-    <script src="../shared/einrichtung-web.js?v=11"></script>
+    <script src="../shared/einrichtung-web.js?v=12"></script>
     <script src="../shared/overdrive-verlauf.js?v=2"></script>
     <script src="../shared/notzugang.js?v=1"></script>
     <script src="../shared/befehlslog.js?v=4"></script>
@@ -586,21 +588,7 @@
     <script src="../shared/zusatzknoepfe.js?v=1"></script>
     <script>
         (function () {
-            if (window.PanoptesDarstellung) {
-                var ab = document.getElementById('anzeigeWahl');
-                PanoptesDarstellung.waehler(ab);
-                // nach dem Kern-Abgleich und nach dem Laden der Texte neu zeichnen
-                PanoptesDarstellung.abgleichen().then(function () { PanoptesDarstellung.waehler(ab); });
-                if (window.BYD && BYD.i18n && BYD.i18n.onChange) BYD.i18n.onChange(function () { PanoptesDarstellung.waehler(ab); });
-                setTimeout(function () { PanoptesDarstellung.waehler(ab); }, 1500);
-                if (location.hash === '#anzeige') { var an = document.getElementById('anzeige'); if (an) an.scrollIntoView(); }
-            }
-            if (window.PanoptesHomeLayout) {
-                var hw = document.getElementById('startAnsichtWahl');
-                PanoptesHomeLayout.waehler(hw);
-                PanoptesHomeLayout.abgleichen().then(function () { PanoptesHomeLayout.waehler(hw); });
-                if (window.BYD && BYD.i18n && BYD.i18n.onChange) BYD.i18n.onChange(function () { PanoptesHomeLayout.waehler(hw); });
-            }
+            // 0.1.38.4: Darstellung und Startansicht werden auf display.html gezeichnet (Abschnitt „Aussehen“)
             var box = document.getElementById('kartenquelleWahl');
             if (box && window.PanoptesKartenquelle) PanoptesKartenquelle.waehler(box);
             if (location.hash === '#kartenquelle') { var k = document.getElementById('kartenquelle'); if (k) k.scrollIntoView(); }
@@ -665,8 +653,7 @@
                     });
                     if (location.hash === '#datenschutz') document.getElementById('datenschutz').scrollIntoView();
                 }
-                var bandKeys = store ? ['anzeige.bandGroesse', 'anzeige.bandPosition', 'faehigkeiten.ueberCarPlay', 'faehigkeiten.ueberAndroidAuto'].filter(function (k) { return store.feld(k); }) : [];
-                if (bandKeys.length) store.zeichne(document.getElementById('anzeigeBand'), { gruppe: store.feld(bandKeys[0]).gruppe, nur: bandKeys });
+                // 0.1.38.4: das Blitzer-Band zeichnet display.html (Abschnitt „Aussehen“)
                 if (store && store.feld('speedcam.enabled') && window.PanoptesBlitzer) {
                     document.getElementById('blitzer').style.display = '';
                     PanoptesBlitzer.zeichne(document.getElementById('blitzerInhalt'), store);
@@ -867,6 +854,43 @@
                 try { return new Date(ms).toLocaleString(BYD.i18n.getLang(), { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
                 catch (e) { return new Date(ms).toLocaleString(); }
             },
+            // 0.1.38.4: Art eines gekoppelten Geräts für Symbol und Kurzname (Handy Android/iPhone/Browser, Cockpit/PC,
+            // Home Assistant, Brille, Dienst; Kopplungen vor 0.1.25 ohne Art waren EV-Cockpits).
+            geraeteArt: function (g) {
+                if (g.art === 'handy') return g.plattform === 'ios' ? 'iphone' : (g.plattform === 'web' ? 'browser' : 'handy');
+                if (g.art === 'homeassistant' || g.art === 'dienst' || g.art === 'web' || g.art === 'brille') return g.art;
+                return 'cockpit';
+            },
+            geraeteSymbol: function (art) {
+                var p = {
+                    handy: '<rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18.5h2"/>',
+                    iphone: '<rect x="6.5" y="2.5" width="11" height="19" rx="3"/><path d="M10 5h4"/>',
+                    browser: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 8.5h18M6 6.3h.01M8.5 6.3h.01"/>',
+                    cockpit: '<rect x="2.5" y="4" width="19" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>',
+                    homeassistant: '<path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><circle cx="12" cy="14" r="2"/>',
+                    brille: '<circle cx="6.5" cy="14" r="3.5"/><circle cx="17.5" cy="14" r="3.5"/><path d="M10 14h4M3 13l1.5-5M21 13l-1.5-5"/>',
+                    dienst: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M21.5 12h-3M5.5 12h-3M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1M18.7 18.7l-2.1-2.1M7.4 7.4 5.3 5.3"/>',
+                    web: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/>'
+                };
+                return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+                    + (p[art] || p.cockpit) + '</svg>';
+            },
+            kacheln: function (geraete) {
+                var self = this;
+                var name = { handy: self.t('system.paired_art_handy', 'Handy'), iphone: self.t('system.paired_art_iphone', 'iPhone'),
+                    browser: self.t('system.paired_art_browser', 'Handy im Browser'), cockpit: self.t('system.paired_art_cockpit', 'Cockpit / PC'),
+                    homeassistant: 'Home Assistant', brille: self.t('system.paired_art_brille', 'Brille'),
+                    dienst: self.t('system.paired_art_dienst', 'Dienst'), web: self.t('system.paired_art_web', 'Weboberfläche') };
+                return '<div class="pn-geraete">' + geraete.map(function (g) {
+                    var art = self.geraeteArt(g);
+                    return '<button class="pn-geraet' + (g.abgelaufen ? ' is-alt' : '') + '" type="button" data-geraet="' + self.esc(g.id) + '">'
+                        + '<span class="pn-geraet-symbol">' + self.geraeteSymbol(art) + '</span>'
+                        + '<span class="pn-geraet-name">' + self.esc(g.name || self.t('system.paired_noname', 'Gerät ohne Namen')) + '</span>'
+                        + '<span class="pn-geraet-art">' + self.esc(name[art] || '') + (g.abgelaufen ? ' · ' + self.esc(self.t('system.paired_expired', 'abgelaufen')) : '') + '</span>'
+                        + '</button>';
+                }).join('') + '</div>';
+            },
+            offenesGeraet: null,
             // Gekoppelte Geräte (Kern GET /api/kopplungen, nur mit Login). Widerrufen nur nach Rückfrage.
             liste: function () {
                 var self = this;
@@ -878,7 +902,22 @@
                     if (!d.geraete.length) {
                         rows.innerHTML = '<div class="sys-meta">' + self.esc(self.t('system.paired_none', 'Noch kein Gerät gekoppelt.')) + '</div>';
                     } else {
-                        rows.innerHTML = d.geraete.map(function (g) {
+                        // 0.1.38.4 („gekoppelte Geräte als Icons, drücken öffnet nur das Gerät“): erst ein Raster
+                        // großer Kacheln; ein Tipp zeigt NUR dieses Gerät (Rechte, zuletzt, Entfernen) mit großem Zurück-Knopf.
+                        var offen = self.offenesGeraet && d.geraete.filter(function (g) { return g.id === self.offenesGeraet; })[0];
+                        if (!offen) {
+                            self.offenesGeraet = null;
+                            rows.innerHTML = self.kacheln(d.geraete);
+                            Array.prototype.forEach.call(rows.querySelectorAll('button[data-geraet]'), function (b) {
+                                b.onclick = function () { self.offenesGeraet = b.getAttribute('data-geraet'); self.liste(); };
+                            });
+                            document.getElementById('pairDays').textContent = d.gueltigOhneNutzungTage
+                                ? self.t('system.paired_days', 'Ein gekoppeltes Gerät verliert den Zugang, wenn es {n} Tage nicht benutzt wurde.', { n: d.gueltigOhneNutzungTage }) : '';
+                            return;
+                        }
+                        rows.innerHTML = '<button class="btn pn-geraet-zurueck" type="button" data-geraete-zurueck="1">‹ '
+                            + self.esc(self.t('system.paired_back', 'Zurück zu allen Geräten')) + '</button>'
+                            + [offen].map(function (g) {
                             return '<div class="sys-row"><span class="sys-dot ' + (g.abgelaufen ? '' : 'on') + '"></span>'
                                 + '<div class="sys-info"><div class="sys-name">' + (g.art === 'homeassistant' ? HomeAssistant.symbol() : '')
                                 + self.esc(g.name || self.t('system.paired_noname', 'Gerät ohne Namen'))
@@ -889,6 +928,7 @@
                                 + '<button class="btn" type="button" data-id="' + self.esc(g.id) + '" data-name="' + self.esc(g.name || '') + '">'
                                 + self.esc(self.t('system.paired_remove', 'Entfernen')) + '</button></div>';
                         }).join('');
+                        rows.querySelector('[data-geraete-zurueck]').onclick = function () { self.offenesGeraet = null; self.liste(); };
                         Array.prototype.forEach.call(rows.querySelectorAll('button[data-id]'), function (b) {
                             b.onclick = function () { self.widerrufen(b.getAttribute('data-id'), b.getAttribute('data-name'), b); };
                         });
@@ -1178,6 +1218,8 @@
                 if (ids === this._ids) return;   // nicht unter dem Finger neu zeichnen
                 this._ids = ids;
                 box.style.display = liste.length ? '' : 'none';
+                // 0.1.38.4: eine wartende Anfrage nie hinter einem eingeklappten Abschnitt verstecken
+                if (liste.length && window.PanoptesEinklappen) PanoptesEinklappen.oeffne('kopplung');
                 box.innerHTML = liste.map(function (a) {
                     return '<div class="sys-warn" style="display:block;padding:14px;">'
                         + '<div style="font-weight:700;font-size:15px;">' + (a.art === 'cloud' ? self.esc(self.t('system.cu_title', '„{n}“ will deine BYD-Cloud-Anmeldung an Panoptes übergeben', { n: a.geraet || '?' }))

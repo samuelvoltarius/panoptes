@@ -6,8 +6,8 @@
     <title data-i18n="shell.page_display">Display</title>
     <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
     <script src="../shared/theme.js?v=13"></script>
-    <script src="../shared/app-shell.js?v=pn33"></script>
-    <link rel="stylesheet" href="../shared/styles.css?v=pn12">
+    <script src="../shared/app-shell.js?v=pn34"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn13">
     <style>
         /* 0.1.38 „Apps & Display → Display“: alles, was das Display im Auto betrifft, auf einer Seite (REGEL 50+). */
         .dp-sprung { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-bottom:16px; }
@@ -28,6 +28,16 @@
         .sys-note { font-size:14px; color:var(--text-muted); margin-top:10px; line-height:1.5; }
         .sys-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
         .sys-actions .btn { min-height:48px; }
+        /* 0.1.38.4 Aussehen: große Vorschau-Kacheln, ein Tipp wählt */
+        .dp-themen { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px; }
+        .dp-thema { display:flex; flex-direction:column; align-items:center; gap:8px; padding:10px; min-height:120px; border-radius:14px;
+            border:3px solid var(--border-default); background:var(--bg-elevated); color:var(--text-primary); font-size:16px; font-weight:700; cursor:pointer; }
+        .dp-thema[aria-pressed="true"] { border-color:#B5F23D; }
+        .dp-vorschau { display:flex; flex-direction:column; gap:5px; width:100%; height:64px; padding:8px; border-radius:10px; box-sizing:border-box; }
+        .dp-vorschau i { display:block; height:10px; border-radius:5px; }
+        .dp-v-dunkel { background:#0A2238; } .dp-v-dunkel i { background:#1E4A6A; }
+        .dp-v-hell { background:#F4F7FA; } .dp-v-hell i { background:#C9D6E2; }
+        .dp-v-auto { background:linear-gradient(90deg, #0A2238 50%, #F4F7FA 50%); } .dp-v-auto i { background:#7F98AE; }
         #dpPaket { width:100%; margin:10px 0; padding:12px; font-size:16px; border-radius:10px; background:var(--bg-elevated);
             color:var(--text-primary); border:1px solid var(--border-default); }
         @media (max-width:520px) { .sys-grid { grid-template-columns:1fr; } }
@@ -44,7 +54,35 @@
                 <a href="#tacho" data-i18n="display.sprung_tacho">Tacho</a>
                 <a href="#hintergrund" data-i18n="display.sprung_hintergrund">Hintergrund und Sperre</a>
                 <a href="#launcher" data-i18n="display.sprung_launcher">Launcher</a>
+                <a href="#anzeige" data-i18n="display.aussehen_titel">Aussehen</a>
             </nav>
+
+            <!-- ===== 0.1.38.4 Aussehen („Design-Auswahl für das Hauptdisplay hierher“): hell/dunkel/automatisch,
+                 Darstellung leicht/voll (PanoptesDarstellung), Startansicht (PanoptesHomeLayout), Blitzer-Band, Reinigen.
+                 Dieselben Bausteine wie bisher in Einstellungen, dort bleibt nur ein Sprung (id „anzeige“). ===== -->
+            <div class="card" id="anzeige"><a id="faehigkeiten"></a>
+                <div class="card-header"><div class="card-title" data-i18n="display.aussehen_titel">Aussehen</div></div>
+                <div class="card-body">
+                    <div class="dp-titel" data-i18n="display.thema_titel">Hell oder dunkel</div>
+                    <div class="dp-themen" id="themaWahl">
+                        <button type="button" class="dp-thema" data-thema="dark"><span class="dp-vorschau dp-v-dunkel"><i></i><i></i><i></i></span><span data-i18n="display.thema_dunkel">Dunkel</span></button>
+                        <button type="button" class="dp-thema" data-thema="light"><span class="dp-vorschau dp-v-hell"><i></i><i></i><i></i></span><span data-i18n="display.thema_hell">Hell</span></button>
+                        <button type="button" class="dp-thema" data-thema="auto"><span class="dp-vorschau dp-v-auto"><i></i><i></i><i></i></span><span data-i18n="display.thema_auto">Automatisch</span></button>
+                    </div>
+                    <div class="dp-titel" data-i18n="settings.anzeige.darstellung.title">Darstellung im Auto</div>
+                    <p class="dp-note" data-i18n="settings.anzeige.darstellung.help">Leicht schont den Bildschirm im Auto: Karten in 2D, ohne Unschärfe-Effekte und Dauer-Animationen. Voll zeigt alles, kostet am Display aber spürbar Leistung.</p>
+                    <div id="anzeigeWahl"></div>
+                    <div class="dp-titel" data-i18n="settings.anzeige.startAnsicht.title">Startansicht</div>
+                    <p class="dp-note" data-i18n="settings.anzeige.startAnsicht.help">Wähle, welche vorhandenen Bereiche auf der Startseite zuerst stehen. Alle Funktionen bleiben über die Leiste erreichbar.</p>
+                    <div id="startAnsichtWahl"></div>
+                    <!-- 0.1.9.1: Blitzer-Band am Bildschirm im Auto (anzeige.bandGroesse/bandPosition, Kern-Schema) -->
+                    <div id="anzeigeBand"></div>
+                    <!-- Bildschirm reinigen: 30 s alle Berührungen sperren, nur in P, lang drücken beendet (reinigung.js) -->
+                    <div class="dp-titel" data-i18n="reinigung.titel">Bildschirm reinigen</div>
+                    <p class="dp-note" data-i18n="reinigung.hilfe">Sperrt 30 Sekunden lang jede Berührung, damit du den Bildschirm abwischen kannst. Nur in P. Lange drücken beendet sofort.</p>
+                    <button class="btn" type="button" data-reinigung data-nur-display data-i18n="reinigung.knopf">Bildschirm reinigen</button>
+                </div>
+            </div>
 
             <!-- ===== Tacho (0.1.37): „Was zeigt der Tacho?“ (tacho-auswahl.js) und Freigabe eigener Apps (tacho-appwahl.js) ===== -->
             <div class="card" id="tacho">
@@ -147,10 +185,43 @@
 <script src="../shared/tacho-faehigkeit.js?v=1"></script>
 <script src="../shared/display-werkzeuge.js?v=1"></script>
 <script src="../shared/launcher-karte.js?v=3"></script>
+<script src="../shared/einstellungen.js?v=pn8"></script>
+<script src="../shared/home-layout.js?v=2"></script>
+<script src="../shared/reinigung.js?v=1"></script>
 <script>
 (function () {
     'use strict';
+    // 0.1.38.4 Aussehen: dieselben Bausteine wie früher in Einstellungen (keine zweite Logik)
+    function aussehen() {
+        var themen = document.querySelectorAll('[data-thema]');
+        function markiere() {
+            var jetzt = window.BYD && BYD.theme && BYD.theme.get ? BYD.theme.get() : 'dark';
+            Array.prototype.forEach.call(themen, function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-thema') === jetzt ? 'true' : 'false'); });
+        }
+        Array.prototype.forEach.call(themen, function (b) {
+            b.onclick = function () { if (window.BYD && BYD.theme && BYD.theme.set) BYD.theme.set(b.getAttribute('data-thema')); markiere(); };
+        });
+        markiere();
+        if (window.PanoptesDarstellung) {
+            var ab = document.getElementById('anzeigeWahl');
+            PanoptesDarstellung.waehler(ab);
+            PanoptesDarstellung.abgleichen().then(function () { PanoptesDarstellung.waehler(ab); });
+            if (window.BYD && BYD.i18n && BYD.i18n.onChange) BYD.i18n.onChange(function () { PanoptesDarstellung.waehler(ab); });
+        }
+        if (window.PanoptesHomeLayout) {
+            var hw = document.getElementById('startAnsichtWahl');
+            PanoptesHomeLayout.waehler(hw);
+            PanoptesHomeLayout.abgleichen().then(function () { PanoptesHomeLayout.waehler(hw); });
+            if (window.BYD && BYD.i18n && BYD.i18n.onChange) BYD.i18n.onChange(function () { PanoptesHomeLayout.waehler(hw); });
+        }
+        if (window.PanoptesEinstellungen) PanoptesEinstellungen.laden().then(function (store) {
+            var bandKeys = store ? ['anzeige.bandGroesse', 'anzeige.bandPosition', 'faehigkeiten.ueberCarPlay', 'faehigkeiten.ueberAndroidAuto'].filter(function (k) { return store.feld(k); }) : [];
+            if (bandKeys.length) store.zeichne(document.getElementById('anzeigeBand'), { gruppe: store.feld(bandKeys[0]).gruppe, nur: bandKeys });
+        });
+    }
+
     function start() {
+        aussehen();
         if (window.PanoptesLauncherKarte) PanoptesLauncherKarte.init();
         // „Launcher einrichten“ nur zeigen, wenn die Seite im Auto vorhanden ist
         fetch('launcher.html', { cache: 'no-store' }).then(function (r) {

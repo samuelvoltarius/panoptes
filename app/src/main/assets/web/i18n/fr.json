@@ -5564,7 +5564,15 @@
     "lnc_open_hint": "« Ouvrir » ouvre le launcher sur l’écran de la voiture.",
     "lnc_opened": "Le launcher est maintenant ouvert sur l’écran de la voiture.",
     "lnc_open_fail": "Impossible d’ouvrir le launcher sur l’écran de la voiture. Touche-le une fois toi-même là-bas.",
-    "lnc_ohne_recht": "Pour cela, ton téléphone a besoin du droit « Launcher ». Active-le sur l’écran de la voiture sous Appareils couplés."
+    "lnc_ohne_recht": "Pour cela, ton téléphone a besoin du droit « Launcher ». Active-le sur l’écran de la voiture sous Appareils couplés.",
+    "paired_back": "Retour à tous les appareils",
+    "paired_art_handy": "Téléphone",
+    "paired_art_iphone": "iPhone",
+    "paired_art_browser": "Téléphone dans le navigateur",
+    "paired_art_cockpit": "Cockpit / PC",
+    "paired_art_brille": "Lunettes",
+    "paired_art_dienst": "Service",
+    "paired_art_web": "Interface web"
   },
   "guardLegal": {
     "trigger": {
@@ -7122,6 +7130,13 @@
     "launcher_einrichten_hilfe": "Disposer les tuiles et les apps sur l’écran d’accueil du launcher.",
     "link_titel": "Écran : compteur, fond, verrou, launcher",
     "link_hilfe": "Ce qu’affiche le compteur, l’image de fond, le verrou de l’écran par code et le launcher Panoptes ont leur propre page.",
-    "link_knopf": "Ouvrir l’écran"
+    "link_knopf": "Ouvrir l’écran",
+    "aussehen_titel": "Apparence",
+    "aussehen_sprung_hilfe": "Clair ou sombre, l’affichage dans la voiture et la vue de départ se règlent maintenant sous Apps & écran → Écran.",
+    "aussehen_oeffnen": "Ouvrir l’apparence",
+    "thema_titel": "Clair ou sombre",
+    "thema_dunkel": "Sombre",
+    "thema_hell": "Clair",
+    "thema_auto": "Automatique"
   }
 }

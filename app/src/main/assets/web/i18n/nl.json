@@ -5564,7 +5564,15 @@
     "lnc_open_hint": "„Openen” opent de launcher op het scherm in de auto.",
     "lnc_opened": "De launcher is nu open op het scherm in de auto.",
     "lnc_open_fail": "De launcher kon niet worden geopend op het scherm in de auto. Tik hem daar zelf één keer aan.",
-    "lnc_ohne_recht": "Hiervoor heeft je telefoon het recht „Launcher” nodig. Zet het aan op het scherm in de auto onder Gekoppelde apparaten."
+    "lnc_ohne_recht": "Hiervoor heeft je telefoon het recht „Launcher” nodig. Zet het aan op het scherm in de auto onder Gekoppelde apparaten.",
+    "paired_back": "Terug naar alle apparaten",
+    "paired_art_handy": "Telefoon",
+    "paired_art_iphone": "iPhone",
+    "paired_art_browser": "Telefoon in de browser",
+    "paired_art_cockpit": "Cockpit / pc",
+    "paired_art_brille": "Bril",
+    "paired_art_dienst": "Dienst",
+    "paired_art_web": "Webinterface"
   },
   "guardLegal": {
     "trigger": {
@@ -7122,6 +7130,13 @@
     "launcher_einrichten_hilfe": "Tegels en apps op het startscherm van de launcher schikken.",
     "link_titel": "Scherm: dashboard, achtergrond, vergrendeling, launcher",
     "link_hilfe": "Wat het dashboard toont, de achtergrondafbeelding, de schermvergrendeling met pincode en de Panoptes-launcher hebben een eigen pagina.",
-    "link_knopf": "Scherm openen"
+    "link_knopf": "Scherm openen",
+    "aussehen_titel": "Weergave",
+    "aussehen_sprung_hilfe": "Licht of donker, weergave in de auto en startweergave stel je nu in onder Apps & scherm → Scherm.",
+    "aussehen_oeffnen": "Weergave openen",
+    "thema_titel": "Licht of donker",
+    "thema_dunkel": "Donker",
+    "thema_hell": "Licht",
+    "thema_auto": "Automatisch"
   }
 }

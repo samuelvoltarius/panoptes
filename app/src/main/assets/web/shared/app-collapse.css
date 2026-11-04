@@ -28,6 +28,9 @@
    the visual outcome matches modern browsers. */
 .card-header-collapsible > * + * { margin-left: 12px; }
 
+/* 0.1.38.4 (REGEL 50+): eingeklappte Abschnitte sind große Tippflächen */
+.card-header-collapsible { min-height: 56px; cursor: pointer; }
+
 .card-header-collapsible:hover {
     background: var(--surface-container-high, var(--bg-elevated));
 }

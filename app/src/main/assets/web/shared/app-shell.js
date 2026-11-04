@@ -1835,7 +1835,7 @@
     function ensureCollapseScript() {
         if (document.querySelector('script[data-surfmate-collapse]')) return;
         var s = document.createElement('script');
-        s.src = '../shared/app-collapse.js';
+        s.src = '../shared/app-collapse.js?v=2';   // 0.1.38.4: standardmäßig eingeklappt, nur einer offen
         s.setAttribute('data-surfmate-collapse', '1');
         s.async = false;
         // Place it next to app-shell.js so the relative path resolves the

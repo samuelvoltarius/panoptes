@@ -43,7 +43,8 @@ public class HomeLayoutAssetTest {
 
     @Test
     public void settingsReuseModeCardsAndTouchTargetsStayLarge() throws Exception {
-        String system = read("app/src/main/assets/web/local/system.html");
+        // 0.1.38.4: Startansicht liegt unter Apps & Display → Display (Abschnitt „Aussehen“)
+        String system = read("app/src/main/assets/web/local/display.html");
         String layout = read("app/src/main/assets/web/shared/home-layout.js");
         String page = read("app/src/main/assets/web/local/index.html");
         String styles = read("app/src/main/assets/web/shared/styles.css");

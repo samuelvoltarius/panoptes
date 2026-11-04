@@ -5564,7 +5564,15 @@
     "lnc_open_hint": "“Open” opens the launcher on the car screen.",
     "lnc_opened": "The launcher is now open on the car screen.",
     "lnc_open_fail": "The launcher could not be opened on the car screen. Please tap it there yourself once.",
-    "lnc_ohne_recht": "Your phone needs the “Launcher” permission for this. Switch it on at the car screen under Paired devices."
+    "lnc_ohne_recht": "Your phone needs the “Launcher” permission for this. Switch it on at the car screen under Paired devices.",
+    "paired_back": "Back to all devices",
+    "paired_art_handy": "Phone",
+    "paired_art_iphone": "iPhone",
+    "paired_art_browser": "Phone in the browser",
+    "paired_art_cockpit": "Cockpit / PC",
+    "paired_art_brille": "Glasses",
+    "paired_art_dienst": "Service",
+    "paired_art_web": "Web interface"
   },
   "guardLegal": {
     "trigger": {
@@ -7122,6 +7130,13 @@
     "launcher_einrichten_hilfe": "Arrange tiles and apps on the launcher home screen.",
     "link_titel": "Display: cluster, background, lock, launcher",
     "link_hilfe": "What the instrument cluster shows, the background picture, the PIN display lock and the Panoptes launcher have their own page.",
-    "link_knopf": "Open display"
+    "link_knopf": "Open display",
+    "aussehen_titel": "Appearance",
+    "aussehen_sprung_hilfe": "Light or dark, display in the car and start view are now under Apps & display → Display.",
+    "aussehen_oeffnen": "Open appearance",
+    "thema_titel": "Light or dark",
+    "thema_dunkel": "Dark",
+    "thema_hell": "Light",
+    "thema_auto": "Automatic"
   }
 }

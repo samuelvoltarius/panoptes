@@ -5564,7 +5564,15 @@
     "lnc_open_hint": "«Apri» apre il launcher sullo schermo dell’auto.",
     "lnc_opened": "Il launcher ora è aperto sullo schermo dell’auto.",
     "lnc_open_fail": "Non è stato possibile aprire il launcher sullo schermo dell’auto. Toccalo tu una volta lì.",
-    "lnc_ohne_recht": "Per questo il telefono ha bisogno del permesso «Launcher». Attivalo sullo schermo dell’auto in Dispositivi associati."
+    "lnc_ohne_recht": "Per questo il telefono ha bisogno del permesso «Launcher». Attivalo sullo schermo dell’auto in Dispositivi associati.",
+    "paired_back": "Torna a tutti i dispositivi",
+    "paired_art_handy": "Telefono",
+    "paired_art_iphone": "iPhone",
+    "paired_art_browser": "Telefono nel browser",
+    "paired_art_cockpit": "Cockpit / PC",
+    "paired_art_brille": "Occhiali",
+    "paired_art_dienst": "Servizio",
+    "paired_art_web": "Interfaccia web"
   },
   "guardLegal": {
     "trigger": {
@@ -7122,6 +7130,13 @@
     "launcher_einrichten_hilfe": "Disponi riquadri e app nella schermata iniziale del launcher.",
     "link_titel": "Display: quadro, sfondo, blocco, launcher",
     "link_hilfe": "Cosa mostra il quadro strumenti, l’immagine di sfondo, il blocco del display con PIN e il launcher Panoptes hanno una pagina propria.",
-    "link_knopf": "Apri display"
+    "link_knopf": "Apri display",
+    "aussehen_titel": "Aspetto",
+    "aussehen_sprung_hilfe": "Chiaro o scuro, visualizzazione in auto e vista iniziale si impostano ora in App & display → Display.",
+    "aussehen_oeffnen": "Apri aspetto",
+    "thema_titel": "Chiaro o scuro",
+    "thema_dunkel": "Scuro",
+    "thema_hell": "Chiaro",
+    "thema_auto": "Automatico"
   }
 }
