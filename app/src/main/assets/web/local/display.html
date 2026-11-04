@@ -55,6 +55,8 @@
                         <div id="tachoAuswahlKacheln" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;"></div>
                         <div id="tachoAuswahlMeldung" class="dp-note" aria-live="polite" style="margin-top:8px;font-size:16px;"></div>
                     </section>
+                    <!-- 0.1.38.1 „Was kann mein Tacho?“: lesender Fähigkeitstest, Rückmeldung nur mit Vorschau + Einwilligung -->
+                    <section id="tachoFaehigkeit" style="margin-top:14px;"></section>
                     <section id="clusterAppApproval">
                         <div class="dp-titel"><span data-i18n="vehicle_control.cluster_app_title">App am Fahrerdisplay</span>
                             · <span id="clusterAppState">—</span></div>
@@ -78,7 +80,7 @@
                         <div id="clusterFahrtHinweis" class="dp-warn" style="display:none;" role="alert">
                             <b id="clusterFahrtVideo" style="display:none;color:var(--status-error);font-size:1.15em;" data-i18n="vehicle_control.cluster_fahrt_video">Video-App</b>
                             <b data-i18n="vehicle_control.cluster_fahrt_titel">Auch beim Fahren erlauben?</b><br>
-                            <span data-i18n="vehicle_control.cluster_fahrt_text">Inhalte am Fahrerdisplay lenken während der Fahrt ab. Videos während der Fahrt sind in vielen Ländern verboten und können Strafen und Probleme mit der Versicherung bringen. Du entscheidest und bist selbst verantwortlich. Panoptes übernimmt keine Haftung.</span>
+                            <span data-i18n="vehicle_control.cluster_fahrt_text">Inhalte am Fahrerdisplay lenken während der Fahrt ab. Videos während der Fahrt sind in vielen Ländern verboten und können Strafen und Probleme mit der Versicherung bringen. Du entscheidest und bist selbst verantwortlich. Panoptes übernimmt keine Haftung. Mit deinem „Verstanden“ dürfen danach alle Apps, die du freigibst, auch beim Fahren laufen. Je App kannst du es wieder ausschalten.</span>
                             <div class="dp-knoepfe">
                                 <button class="btn" id="clusterFahrtOk" type="button" data-i18n="vehicle_control.cluster_fahrt_ok">Verstanden, ich entscheide selbst</button>
                                 <button class="btn btn-primary" id="clusterFahrtAbbrechen" type="button" data-i18n="vehicle_control.cluster_fahrt_abbrechen">Abbrechen</button>
@@ -142,6 +144,7 @@
 <script src="../shared/tacho-designs.js?v=1"></script>
 <script src="../shared/tacho-appwahl.js?v=5"></script>
 <script src="../shared/tacho-auswahl.js?v=1"></script>
+<script src="../shared/tacho-faehigkeit.js?v=1"></script>
 <script src="../shared/display-werkzeuge.js?v=1"></script>
 <script src="../shared/launcher-karte.js?v=3"></script>
 <script>

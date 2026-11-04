@@ -51,6 +51,10 @@ public final class TelegramSink implements NotificationBus.Sink {
             if (event.category != null && event.category.startsWith("surveillance.")) {
                 return;
             }
+            // 0.1.38.1: Update-Meldungen (UpdateMeldung) gehen direkt an Telegram (Kategorie UPDATE).
+            if ("system.updates".equals(event.category)) {
+                return;
+            }
             // 0.1.28: Ereignis-Clip (Kategorie EREIGNIS) und 12-V-Warnung (notifyBattery12v) gehen direkt an
             // Telegram, jede mit eigenem Schalter – hier nicht noch einmal über criticalAlerts.
             if (event.category != null && (event.category.startsWith("ereignis.")

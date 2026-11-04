@@ -945,6 +945,10 @@
       "vehicle_health_battery12v": {
         "label": "La batterie 12 V faiblit",
         "note": "Prévient avant que la batterie 12 V soit trop faible pour démarrer. Au plus une fois par jour."
+      },
+      "system_updates": {
+        "label": "Mises à jour",
+        "note": "Nouvelle version de Panoptes ou du launcher, et quand une mise à jour est terminée."
       }
     },
     "group": {
@@ -2855,7 +2859,7 @@
     "cluster_tacho_normal_ok": "L’écran conducteur affiche de nouveau les compteurs normaux.",
     "cluster_fahrt_video": "App vidéo",
     "cluster_fahrt_titel": "Autoriser aussi en roulant ?",
-    "cluster_fahrt_text": "Le contenu sur l’écran conducteur distrait pendant la conduite. Les vidéos en roulant sont interdites dans beaucoup de pays et peuvent entraîner des amendes et des problèmes avec l’assurance. Vous décidez et vous êtes responsable. Panoptes décline toute responsabilité.",
+    "cluster_fahrt_text": "Le contenu sur l’écran conducteur distrait pendant la conduite. Les vidéos en roulant sont interdites dans beaucoup de pays et peuvent entraîner des amendes et des problèmes avec l’assurance. Vous décidez et vous êtes responsable. Panoptes décline toute responsabilité. Après votre « Compris », toutes les applis que vous autorisez peuvent aussi tourner en roulant. Vous pouvez le désactiver par appli.",
     "cluster_fahrt_ok": "Compris, je décide moi-même",
     "cluster_fahrt_abbrechen": "Annuler",
     "cluster_app_fahrt_hinweis_noetig": "Lisez d’abord la note sur la conduite et touchez « Compris, je décide moi-même ».",
@@ -2950,13 +2954,12 @@
     "tip_vent_unavailable": "Siège ventilé non disponible sur cette finition",
     "cluster_app_title": "Appli sur le combiné",
     "cluster_app_lead": "Choisissez une app installée et touchez « Autoriser ». Cela ne fonctionne que si votre voiture prend en charge les apps sur l’écran conducteur ; DiLink 5 reste bloqué pour l’instant. En roulant, seules les apps de navigation tournent, sauf si vous autorisez une app « aussi en roulant ».",
-    "cluster_app_probe": "Tester en P", "cluster_app_enable": "Démarrer", "cluster_app_revoke": "Révoquer", "cluster_app_stop": "Arrêter",
-    "cluster_app_question": "La vitesse et tous les voyants sont-ils visibles ? Le combiné revient après votre réponse.",
-    "cluster_app_yes": "Oui, autoriser", "cluster_app_no": "Non, bloquer", "cluster_app_approved": "Autorisée", "cluster_app_blocked": "Bloquée",
+    "cluster_app_enable": "Démarrer", "cluster_app_revoke": "Révoquer", "cluster_app_stop": "Arrêter",
+    "cluster_app_approved": "Autorisée", "cluster_app_blocked": "Bloquée",
     "cluster_app_park": "Possible uniquement en P.", "cluster_app_not_approved": "Cette appli n’est pas encore autorisée.",
     "cluster_app_uninstalled": "L’appli n’est plus installée ou ne peut pas démarrer.", "cluster_app_invalid": "Cette appli ne peut pas être sélectionnée.",
-    "cluster_app_probe_needed": "Testez d’abord cette appli en P.", "cluster_app_unavailable": "La projection sûre n’est pas confirmée sur cette voiture.", "cluster_app_dilink5_blocked": "DiLink 5 reste bloqué jusqu’à validation dans le véhicule de la priorité des caméras gauche et droite, du rétablissement du paquet et de la géométrie, ainsi que du repli sûr en cas d’erreur.",
-    "cluster_app_failed": "L’appli n’a pas pu démarrer sur le combiné.", "cluster_app_watch": "Vérifiez maintenant la vitesse, les voyants et le retour au combiné.",
+    "cluster_app_unavailable": "La projection sûre n’est pas confirmée sur cette voiture.", "cluster_app_dilink5_blocked": "DiLink 5 reste bloqué jusqu’à validation dans le véhicule de la priorité des caméras gauche et droite, du rétablissement du paquet et de la géométrie, ainsi que du repli sûr en cas d’erreur.",
+    "cluster_app_failed": "L’appli n’a pas pu démarrer sur le combiné.",
     "kacheln_favoriten": "Favoris",
     "kacheln_kategorien": "Catégories",
     "kacheln_fav_leer": "Touche l’étoile d’une tuile pour la retrouver ici.",
@@ -5823,7 +5826,7 @@
     "ja": "oui",
     "nein": "non",
     "unbekannt": "encore ouvert",
-    "tacho_title": "Test du combiné (bêta)",
+    "tacho_title": "Que peut faire mon combiné ?",
     "tacho_lead": "Vérifie seulement ce que votre combiné sait faire. Rien n'est envoyé au combiné. Uniquement à l'arrêt.",
     "tacho_start": "Lancer le test",
     "tacho_copy": "Copier le résultat",
@@ -5837,17 +5840,13 @@
     "tacho_preview": "Voici exactement ce qui nous parvient :",
     "tacho_send_ja": "Envoyer maintenant",
     "tacho_send_nein": "Annuler",
-    "navi_title": "Appli sur le combiné (bêta)",
+    "navi_title": "Appli sur le combiné",
     "navi_lead": "Chaque app installée et démarrable peut être autorisée séparément : choisir l’app, confirmer la note une fois, c’est tout. « Compteur normal » ramène tout de suite les compteurs.",
-    "navi_probe": "Essai à l'arrêt (20 s)",
-    "navi_frage": "Regardez le combiné : voyez-vous encore tous les témoins et la vitesse ?",
-    "navi_ja": "Oui, tout est visible",
-    "navi_nein": "Non, quelque chose est masqué",
     "navi_on": "Activer",
     "navi_an": "Activé",
     "navi_aus": "Désactivé",
     "navi_keine": "Aucune appli démarrable installée",
-    "navi_na": "Non proposé sur cette voiture. Faites d'abord le test du combiné et l'essai.",
+    "navi_na": "Impossible sur cette voiture. « Que peut faire mon combiné ? » vous montre pourquoi.",
     "navi_nicht_erlaubt": "Cette appli n’est pas encore autorisée en roulant."
   },
   "whatsnew": {

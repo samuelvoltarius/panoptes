@@ -85,7 +85,7 @@
     <string name="traffic_format">In de buurt: %1$d · nadert: %2$d</string>
     <string name="umbenennen">Hernoemen</string>
     <string name="unknown">—</string>
-    <string name="video_nur_p">Video-apps starten alleen in P.</string>
+    <string name="video_nur_p">Video-apps starten alleen in P – of nadat je in Panoptes één keer de rijmelding hebt bevestigd (Display → Paneel).</string>
     <string name="waechter_an">Aan</string>
     <string name="waechter_aufnahme">Neemt op</string>
     <string name="waechter_aus">Uit</string>

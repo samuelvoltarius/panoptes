@@ -99,7 +99,8 @@ public class MeldungsThemenTest {
         // Thema ohne Telegram / ohne Push
         assertFalse(zeile(a, "tueren").getBoolean("telegramMoeglich"));
         assertTrue(zeile(a, "tueren").isNull("telegram"));
-        assertFalse(zeile(a, "updates").getBoolean("handyMoeglich"));
+        // 0.1.38.1: „Updates“ hat jetzt auch Handy-Push (Kategorie system.updates, UpdateMeldung)
+        assertTrue(zeile(a, "updates").getBoolean("handyMoeglich"));
     }
 
     @Test

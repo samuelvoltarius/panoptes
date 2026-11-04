@@ -688,6 +688,7 @@ open class MainActivity : AppCompatActivity() {
                                 android.util.Log.w("MainActivity",
                                     "runDaemonStartup: hardResetDaemons callback never fired " +
                                     "within 30s — proceeding with daemon startup anyway")
+                                at.greenchili.surfmate.logging.LauncherEreignisse.merken("HARDRESET_ZEITABLAUF", "s=30")
                                 try { showPostUpdateToasts() } catch (_: Exception) {}
                                 startDaemons.run()
                                 synchronized (daemonStartupCoordinator) {

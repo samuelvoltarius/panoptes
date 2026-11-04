@@ -1122,6 +1122,14 @@ class DaemonStartupManager(
         // Semantics are unchanged: same candidates, same gates, same order, same
         // relaunch decisions (processAliveIn reproduces the old grep matching,
         // including sentry's acc_ exclusion).
+        // 0.1.38.1 (A6): Ereignisse der App, die noch mit keinem adb-Skript mitgingen, jetzt nachtragen
+        // (AdbShellExecutor.executeScript hängt sie vorn an). Nur wenn etwas wartet: sonst kein adb-Aufruf mehr.
+        if (at.greenchili.surfmate.logging.LauncherEreignisse.ausstehend() > 0) {
+            adbLauncher.adbShellExecutor.executeScript(":", object : AdbShellExecutor.ShellCallback {
+                override fun onSuccess(output: String) {}
+                override fun onError(error: String) {}
+            })
+        }
         val candidates = ArrayList<DaemonType>(CORE_DAEMONS.size + OPTIONAL_DAEMONS.size)
 
         // Core daemons: always restart unless user explicitly stopped

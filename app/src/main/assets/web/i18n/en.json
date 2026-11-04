@@ -945,6 +945,10 @@
       "vehicle_health_battery12v": {
         "label": "12 V battery getting weak",
         "note": "Warns before the 12 V battery is too weak to start the car. At most once a day."
+      },
+      "system_updates": {
+        "label": "Updates",
+        "note": "New version of Panoptes or the launcher, and when an update is finished."
       }
     },
     "group": {
@@ -2855,7 +2859,7 @@
     "cluster_tacho_normal_ok": "The driver display shows the normal gauges again.",
     "cluster_fahrt_video": "Video app",
     "cluster_fahrt_titel": "Allow also while driving?",
-    "cluster_fahrt_text": "Content on the driver display distracts while driving. Videos while driving are illegal in many countries and can bring fines and trouble with your insurance. You decide and you are responsible yourself. Panoptes accepts no liability.",
+    "cluster_fahrt_text": "Content on the driver display distracts while driving. Videos while driving are illegal in many countries and can bring fines and trouble with your insurance. You decide and you are responsible yourself. Panoptes accepts no liability. Once you tap “Understood”, every app you approve may also run while driving. You can switch it off again per app.",
     "cluster_fahrt_ok": "Understood, I decide myself",
     "cluster_fahrt_abbrechen": "Cancel",
     "cluster_app_fahrt_hinweis_noetig": "First read the note about driving and tap “Understood, I decide myself”.",
@@ -2950,13 +2954,12 @@
     "tip_vent_unavailable": "Ventilated seat not available on this trim",
     "cluster_app_title": "App on driver display",
     "cluster_app_lead": "Choose an installed app and tap “Approve”. This only works if your car supports apps on the driver display; DiLink 5 stays blocked for now. While driving only navigation apps run, unless you allow an app “also while driving”.",
-    "cluster_app_probe": "Test in P", "cluster_app_enable": "Start", "cluster_app_revoke": "Revoke", "cluster_app_stop": "Stop",
-    "cluster_app_question": "Are speed and all warning lights visible? The gauges return after your answer.",
-    "cluster_app_yes": "Yes, approve", "cluster_app_no": "No, block", "cluster_app_approved": "Approved", "cluster_app_blocked": "Blocked",
+    "cluster_app_enable": "Start", "cluster_app_revoke": "Revoke", "cluster_app_stop": "Stop",
+    "cluster_app_approved": "Approved", "cluster_app_blocked": "Blocked",
     "cluster_app_park": "Only possible in P.", "cluster_app_not_approved": "This app has not been approved yet.",
     "cluster_app_uninstalled": "The app is no longer installed or launchable.", "cluster_app_invalid": "This app cannot be selected.",
-    "cluster_app_probe_needed": "Test this app in P first.", "cluster_app_unavailable": "Safe projection has not been confirmed on this car.", "cluster_app_dilink5_blocked": "DiLink 5 remains blocked until left and right camera priority, package and geometry restore, and safe error fallback are proven in the car.",
-    "cluster_app_failed": "The app could not be started on the driver display.", "cluster_app_watch": "Check speed, warning lights and the return to the gauges now.",
+    "cluster_app_unavailable": "Safe projection has not been confirmed on this car.", "cluster_app_dilink5_blocked": "DiLink 5 remains blocked until left and right camera priority, package and geometry restore, and safe error fallback are proven in the car.",
+    "cluster_app_failed": "The app could not be started on the driver display.",
     "kacheln_favoriten": "Favourites",
     "kacheln_kategorien": "Categories",
     "kacheln_fav_leer": "Tap the star on a tile and it will appear up here.",
@@ -5823,7 +5826,7 @@
     "ja": "yes",
     "nein": "no",
     "unbekannt": "still open",
-    "tacho_title": "Instrument cluster test (beta)",
+    "tacho_title": "What can my cluster do?",
     "tacho_lead": "Only checks what your instrument cluster can do. Nothing is sent to the cluster. Works only while parked.",
     "tacho_start": "Start test",
     "tacho_copy": "Copy result",
@@ -5837,17 +5840,13 @@
     "tacho_preview": "Exactly this goes to us:",
     "tacho_send_ja": "Send now",
     "tacho_send_nein": "Cancel",
-    "navi_title": "App on the cluster (beta)",
+    "navi_title": "App on the cluster",
     "navi_lead": "Every installed app that can be started can be approved on its own: choose the app, confirm the note once, done. “Cluster back to normal” brings the gauges back right away.",
-    "navi_probe": "Trial while parked (20 s)",
-    "navi_frage": "Look at the cluster: can you still see all warning lights and the speed?",
-    "navi_ja": "Yes, everything is visible",
-    "navi_nein": "No, something is covered",
     "navi_on": "Switch on",
     "navi_an": "On",
     "navi_aus": "Off",
     "navi_keine": "No launchable app installed",
-    "navi_na": "Not offered on this car. Do the cluster test and the trial first.",
+    "navi_na": "Not possible on this car. “What can my cluster do?” shows why.",
     "navi_nicht_erlaubt": "This app has not been approved for driving yet."
   },
   "whatsnew": {

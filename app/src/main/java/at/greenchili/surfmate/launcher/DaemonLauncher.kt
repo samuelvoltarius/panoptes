@@ -3,6 +3,7 @@ package at.greenchili.surfmate.launcher
 import android.content.Context
 import android.provider.Settings
 import at.greenchili.surfmate.logging.LogManager
+import at.greenchili.surfmate.logging.LauncherEreignisse
 
 /**
  * Launches daemon processes via ADB shell using app_process.
@@ -312,6 +313,9 @@ class DaemonLauncher(
             // Shell ($$), dann sh -n + Zeilenzahl, dann mv. So kann ein zweiter Schreiber
             // (AccSentry zeilenweise, UI in einem Zug) keine Zeilen mehr anhängen.
             val tmp = skriptTempPfad(scriptPath, "\$\$")
+            // 0.1.38.1: liegengebliebene Temp-Dateien eines getöteten Schreibers aufräumen, nur
+            // ältere als 5 min (nie die Temp eines gleichzeitigen Schreibers).
+            append(tempAufraeumenCommand(scriptPath))
             append("rm -f $tmp 2>/dev/null; ")
             scriptLines.forEachIndexed { index, line ->
                 append(buildScriptLineWriteCommand(line, index == 0, tmp))
@@ -325,7 +329,30 @@ class DaemonLauncher(
          * [tag] muss je Schreiber eindeutig sein (Shell-PID `$$` oder Java-Nonce).
          */
         @JvmStatic
-        fun skriptTempPfad(scriptPath: String, tag: String): String = "$scriptPath.neu.$tag"
+        fun skriptTempPfad(scriptPath: String, tag: String): String {
+            // 0.1.38.1: kein Daemon-Muster mehr im Namen (bis 0.1.38 "<ziel>.neu.<tag>"). Die
+            // Kill-Muster (start_cam_daemon, cam_daemon, acc_sentry, telegram …) treffen per
+            // Teilstring jede argv; am Auto (0.1.38, 04.11.) starb so ein Schreiber mitten im Skript.
+            val schnitt = scriptPath.lastIndexOf('/')
+            val ordner = scriptPath.substring(0, schnitt + 1)
+            val name = scriptPath.substring(schnitt + 1)
+            return ordner + TEMP_PRAEFIX + Integer.toHexString(name.hashCode()) + "." + tag
+        }
+
+        /** Anfang jeder Temp-Datei eines Skript-Schreibers ([skriptTempPfad]). */
+        const val TEMP_PRAEFIX = ".pn_neu_"
+
+        /**
+         * 0.1.38.1: Temp-Dateien abgebrochener Schreiber im Ordner von [scriptPath] löschen, nur
+         * ältere als 5 min, auch die alten Namen `start_*.sh.neu.*`. toybox find kann -mmin/-exec.
+         */
+        @JvmStatic
+        fun tempAufraeumenCommand(scriptPath: String): String {
+            val schnitt = scriptPath.lastIndexOf('/')
+            val ordner = if (schnitt > 0) scriptPath.substring(0, schnitt) else "."
+            return "find $ordner -maxdepth 1 \\( -name '$TEMP_PRAEFIX*' -o -name 'start_*.sh.neu.*' \\) " +
+                "-mmin +5 -exec rm -f {} \\; 2>/dev/null; "
+        }
 
         /**
          * 0.1.36.1: Fertige Temp-Datei prüfen und atomar einsetzen. Erst wenn `sh -n` ok ist
@@ -358,7 +385,11 @@ class DaemonLauncher(
                 .replace("\"", "\\\"")
                 .replace("\$", "\\$")
                 .replace("`", "\\`")
-            return "printf '%s\\n' \"$escapedLine\" " + (if (first) "> " else ">> ") + scriptPath
+            // 0.1.38.1: die erste Zeile legt die Datei mit umask 077 an (nie mehr 666 wie am Auto
+            // 04.11.). In einer Unter-Shell, damit die umask nicht an später gestartete Watchdogs
+            // und Daemons vererbt wird (deren Logs und Aufnahmen muss die App lesen können).
+            return if (first) "(umask 077; printf '%s\\n' \"$escapedLine\" > $scriptPath)"
+            else "printf '%s\\n' \"$escapedLine\" >> $scriptPath"
         }
 
         /**
@@ -382,7 +413,8 @@ class DaemonLauncher(
         private fun watchdogOwnershipLines(
             scriptPath: String,
             pidFile: String,
-            lockPath: String
+            lockPath: String,
+            processName: String
         ): List<String> = listOf(
             "WATCHDOG_SCRIPT=\"$scriptPath\"",
             "WATCHDOG_PID_FILE=\"$pidFile\"",
@@ -459,8 +491,137 @@ class DaemonLauncher(
             "trap 'exit 0' HUP INT TERM",
             "if ! acquire_watchdog_lock; then",
             "  exit 0",
+            "fi",
+            *anhaengenLines(processName).toTypedArray()
+        )
+
+        /** Erkennungszeichen eines Skripts mit Anhänge-Modus (Selbstheilung prüft darauf, siehe [buildSelbstheilSkript]). */
+        const val ANHAENGEN_MARKE = "# pn-anhaengen-v1"
+
+        /**
+         * 0.1.38.1 Anhänge-Modus (`sh <skript> anhaengen <pid>`): Läuft der Daemon schon, aber sein Watchdog
+         * fehlt (z. B. weil das Skript beim Update-Start nicht geschrieben werden konnte), übernimmt ein neuer
+         * Watchdog den laufenden Prozess, statt einen zweiten zu starten. Er wartet, bis `<pid>` endet, und geht
+         * erst dann in seine normale Schleife (Sentinel und Park-Marker wie dort). Gehört `<pid>` nicht (mehr)
+         * zum Daemon und läuft ein anderer Daemon gleichen Namens, endet er ohne Start: nie ein zweiter Daemon.
+         * Erkannt wird der Daemon am argv[0] (`--nice-name`), exakt, nie per Teilstring.
+         */
+        private fun anhaengenLines(processName: String): List<String> = listOf(
+            ANHAENGEN_MARKE,
+            "pn_argv0() { tr '\\000' '\\n' 2>/dev/null < \"/proc/\$1/cmdline\" | head -n 1; }",
+            "pn_daemon_laeuft() {",
+            "  for PN_D in /proc/[0-9]*; do",
+            "    [ \"\$(pn_argv0 \"\${PN_D#/proc/}\")\" = \"$processName\" ] && return 0",
+            "  done",
+            "  return 1",
+            "}",
+            "if [ \"\$1\" = \"anhaengen\" ]; then",
+            "  PN_PID=\"\$2\"",
+            "  case \"\$PN_PID\" in ''|*[!0-9]*) PN_PID=0 ;; esac",
+            "  if [ \"\$PN_PID\" != \"0\" ] && [ \"\$(pn_argv0 \"\$PN_PID\")\" = \"$processName\" ]; then",
+            "    echo \"[\$(date)] Watchdog angehaengt an laufenden Daemon (pid \$PN_PID)\" >> \"\$LOG_FILE\"",
+            "    while kill -0 \"\$PN_PID\" 2>/dev/null; do sleep 5; done",
+            "    echo \"[\$(date)] Angehaengter Daemon (pid \$PN_PID) beendet\" >> \"\$LOG_FILE\"",
+            "  fi",
+            "  if pn_daemon_laeuft; then",
+            "    echo \"[\$(date)] Anhaengen: ein anderer Daemon laeuft schon, kein zweiter Start\" >> \"\$LOG_FILE\"",
+            "    exit 0",
+            "  fi",
             "fi"
         )
+
+        /** Ein Watchdog, den Panoptes selbst prüft und heilt (0.1.38.1, PFLICHT Projektinhaber 04.11.). */
+        private class WatchdogArt(
+            val skript: String, val pidDatei: String, val sperre: String, val prozess: String,
+            val sentinel: String, val parkSperrt: Boolean
+        )
+
+        private fun watchdogArt(art: String): WatchdogArt {
+            val dir = "/data/user_de/0/com.android.shell/surfmate/"
+            fun r(p: String) = at.greenchili.surfmate.util.DaemonStorage.rebase(p)
+            return when (art) {
+                ART_KAMERA -> WatchdogArt(CAMERA_WATCHDOG_SCRIPT, CAMERA_WATCHDOG_PID_FILE, CAMERA_WATCHDOG_LOCK_PATH,
+                    CAMERA_DAEMON_PROCESS, r(dir + "camera_daemon.disabled"), true)
+                // Der Wächter läuft auch geparkt (ACC-Richter), der Park-Marker sperrt ihn nicht.
+                ART_WAECHTER -> WatchdogArt(ACC_SENTRY_WATCHDOG_SCRIPT, ACC_SENTRY_WATCHDOG_PID_FILE,
+                    ACC_SENTRY_WATCHDOG_LOCK_PATH, ACC_SENTRY_DAEMON_PROCESS, r(dir + "acc_sentry_daemon.disabled"), false)
+                ART_TELEGRAM -> WatchdogArt(TELEGRAM_WATCHDOG_SCRIPT, TELEGRAM_WATCHDOG_PID_FILE,
+                    TELEGRAM_WATCHDOG_LOCK_PATH, TELEGRAM_DAEMON_PROCESS, r(dir + "telegram_bot_daemon.disabled"), true)
+                else -> throw IllegalArgumentException("unbekannte Watchdog-Art: $art")
+            }
+        }
+
+        const val ART_KAMERA = "kamera"
+        const val ART_WAECHTER = "waechter"
+        const val ART_TELEGRAM = "telegram"
+
+        @JvmStatic fun watchdogSkriptPfad(art: String): String = watchdogArt(art).skript
+        @JvmStatic fun watchdogPidDatei(art: String): String = watchdogArt(art).pidDatei
+        @JvmStatic fun watchdogSperrPfad(art: String): String = watchdogArt(art).sperre
+        @JvmStatic fun watchdogDaemonProzess(art: String): String = watchdogArt(art).prozess
+        @JvmStatic fun watchdogSentinel(art: String): String = watchdogArt(art).sentinel
+        @JvmStatic fun watchdogParkSperrt(art: String): Boolean = watchdogArt(art).parkSperrt
+
+        /**
+         * 0.1.38.1 Selbstprüfung und Selbstheilung eines Watchdogs (Shell-Skript, über eine Skriptdatei
+         * ausführen, nie als `sh -c`: es enthält Daemon-Muster). Gibt genau eine Zeile `PNH <befund>` aus:
+         * - `gruen`: genau ein Daemon, Skript da, `sh -n` ok, mit Anhänge-Modus, Watchdog lebt.
+         * - `gesperrt` (Sentinel bzw. Park-Marker), `kein_daemon`, `mehrere <n>`, `fremd <pid>`: nichts getan.
+         * - `skript_neu`: Watchdog lebt, Skript fehlte bzw. war kaputt und ist neu geschrieben.
+         * - `angehaengt <pid>`: Skript (falls nötig) neu, Watchdog im Anhänge-Modus an den laufenden Daemon.
+         * Schlägt das Schreiben fehl: `SKRIPT_FEHLER …`, Exit 3, alter Stand bleibt. Nie ein zweiter Daemon:
+         * gestartet wird nur `sh <skript> anhaengen <pid>`, und die Watchdog-Sperre lässt höchstens einen zu.
+         * [nurPid] > 0: nur heilen, wenn genau dieser Prozess der Daemon ist (ein Daemon heilt sich selbst).
+         */
+        /** Befund aus der Ausgabe von [buildSelbstheilSkript] (`gruen`, `angehaengt`, …), `skript_fehler` oder null. */
+        @JvmStatic
+        fun selbstheilBefund(ausgabe: String?): String? {
+            if (ausgabe == null) return null
+            if (ausgabe.contains("SKRIPT_FEHLER")) return "skript_fehler"
+            val z = ausgabe.lineSequence().map { it.trim() }.lastOrNull { it.startsWith("PNH ") } ?: return null
+            return z.removePrefix("PNH ").substringBefore(' ')
+        }
+
+        /** Befund, nach dem nichts weiter zu tun ist: alles gut, geheilt oder bewusst gestoppt. */
+        @JvmStatic
+        fun selbstheilungOk(befund: String?): Boolean =
+            befund == "gruen" || befund == "skript_neu" || befund == "angehaengt" || befund == "gesperrt"
+
+        @JvmStatic
+        @JvmOverloads
+        fun buildSelbstheilSkript(art: String, scriptLines: List<String>, nurPid: Int = 0): String {
+            val a = watchdogArt(art)
+            val park = at.greenchili.surfmate.util.DaemonStorage.rebase(
+                "/data/user_de/0/com.android.shell/surfmate/surfmate_parked_shutdown")
+            return buildString {
+                append("PN_S=\"${a.skript}\"\n")
+                append("pn_argv0() { tr '\\000' '\\n' 2>/dev/null < \"/proc/\$1/cmdline\" | head -n 1; }\n")
+                append("pn_wd() { case \"\$1\" in ''|*[!0-9]*) return 1 ;; esac; ")
+                append("tr '\\000' ' ' 2>/dev/null < \"/proc/\$1/cmdline\" | grep -qF \"\$PN_S\"; }\n")
+                append("if [ -f \"${a.sentinel}\" ]; then echo \"PNH gesperrt\"; exit 0; fi\n")
+                if (a.parkSperrt) append("if [ -f \"$park\" ]; then echo \"PNH gesperrt\"; exit 0; fi\n")
+                // toybox pidof erkennt den --nice-name; ohne pidof (Test-Shell) argv[0] exakt über /proc.
+                append("if command -v pidof >/dev/null 2>&1; then PN_DPS=\$(pidof ${a.prozess}); else PN_DPS=\"\"; ")
+                append("for PN_D in /proc/[0-9]*; do PN_I=\${PN_D#/proc/}; ")
+                append("[ \"\$(pn_argv0 \$PN_I)\" = \"${a.prozess}\" ] && PN_DPS=\"\$PN_DPS \$PN_I\"; done; fi\n")
+                append("set -- \$PN_DPS\n")
+                append("if [ \$# -eq 0 ]; then echo \"PNH kein_daemon\"; exit 0; fi\n")
+                append("if [ \$# -gt 1 ]; then echo \"PNH mehrere \$#\"; exit 0; fi\n")
+                append("PN_DP=\$1\n")
+                if (nurPid > 0) append("if [ \"\$PN_DP\" != \"$nurPid\" ]; then echo \"PNH fremd \$PN_DP\"; exit 0; fi\n")
+                append("PN_SK=neu\n")
+                append("if [ -f \"\$PN_S\" ] && sh -n \"\$PN_S\" 2>/dev/null && grep -qF '$ANHAENGEN_MARKE' \"\$PN_S\"; then PN_SK=ok; fi\n")
+                append("PN_WD=0\n")
+                append("if pn_wd \"\$(cat \"${a.pidDatei}\" 2>/dev/null)\" || pn_wd \"\$(cat \"${a.sperre}/pid\" 2>/dev/null)\"; then PN_WD=1; fi\n")
+                append("if [ \$PN_SK = ok ] && [ \$PN_WD = 1 ]; then echo \"PNH gruen\"; exit 0; fi\n")
+                append("if [ \$PN_SK = neu ]; then ")
+                append(buildWatchdogScriptWriteCommand(a.skript, scriptLines))
+                append("; fi\n")
+                append("if [ \$PN_WD = 1 ]; then echo \"PNH skript_neu\"; exit 0; fi\n")
+                append("nohup sh \"\$PN_S\" anhaengen \"\$PN_DP\" > /dev/null 2>&1 &\n")
+                append("echo \"PNH angehaengt \$PN_DP\"\n")
+            }
+        }
 
         /**
          * Build the start_acc_sentry.sh watchdog script body. Static so the
@@ -496,7 +657,8 @@ class DaemonLauncher(
                 *watchdogOwnershipLines(
                     ACC_SENTRY_WATCHDOG_SCRIPT,
                     ACC_SENTRY_WATCHDOG_PID_FILE,
-                    ACC_SENTRY_WATCHDOG_LOCK_PATH
+                    ACC_SENTRY_WATCHDOG_LOCK_PATH,
+                    ACC_SENTRY_DAEMON_PROCESS
                 ).toTypedArray(),
                 "",
                 "/system/bin/device_config put activity_manager max_phantom_processes 2147483647 > /dev/null 2>&1",
@@ -618,7 +780,8 @@ class DaemonLauncher(
                 *watchdogOwnershipLines(
                     TELEGRAM_WATCHDOG_SCRIPT,
                     TELEGRAM_WATCHDOG_PID_FILE,
-                    TELEGRAM_WATCHDOG_LOCK_PATH
+                    TELEGRAM_WATCHDOG_LOCK_PATH,
+                    TELEGRAM_DAEMON_PROCESS
                 ).toTypedArray(),
                 "",
                 // 0.1.36: the previous watchdog's log (restart, reboot, update)
@@ -710,7 +873,8 @@ class DaemonLauncher(
                 *watchdogOwnershipLines(
                     CAMERA_WATCHDOG_SCRIPT,
                     CAMERA_WATCHDOG_PID_FILE,
-                    CAMERA_WATCHDOG_LOCK_PATH
+                    CAMERA_WATCHDOG_LOCK_PATH,
+                    CAMERA_DAEMON_PROCESS
                 ).toTypedArray(),
                 "",
                 // 0.1.36: the previous watchdog's log (restart, reboot, update)
@@ -847,8 +1011,9 @@ class DaemonLauncher(
                     command = "rm -f /data/user_de/0/com.android.shell/surfmate/camera_daemon.disabled 2>/dev/null; echo done",
                     callback = object : AdbShellExecutor.ShellCallback {
                         override fun onSuccess(o: String) {
-                            callback.onLaunched()
-                            cameraLaunchStartedAt = 0L
+                            // 0.1.38.1: läuft der Daemon, fehlt aber Skript oder Watchdog, hier heilen
+                            // (anhängen, kein zweiter Daemon). Bis 0.1.38 nahm dieser Kurzweg das nie wahr.
+                            kameraWatchdogPruefen(outputDir, nativeLibDir, callback)
                         }
                         override fun onError(e: String) {
                             // rm failure is non-fatal but log it — better to
@@ -875,6 +1040,43 @@ class DaemonLauncher(
         }
     }
     
+    /**
+     * 0.1.38.1 Kurzweg „Daemon läuft schon“: Selbstprüfung ([buildSelbstheilSkript]). Grün, Skript neu
+     * geschrieben oder Watchdog angehängt → fertig. Bleibt es rot (z. B. zwei Daemons, Schreiben scheitert),
+     * startet die Kamera einmal ganz neu: Das ist der Weg, den die Meldung an den Nutzer verspricht
+     * („Panoptes einmal öffnen“), kurzer Ausfall der Kamera inklusive.
+     */
+    private fun kameraWatchdogPruefen(outputDir: String, nativeLibDir: String, callback: LaunchCallback) {
+        val zeilen = buildCamDaemonWatchdogScript(context.applicationInfo.sourceDir, nativeLibDir, outputDir, getProxyArgs())
+        adbShellExecutor.executeScript(
+            scriptBody = buildSelbstheilSkript(ART_KAMERA, zeilen),
+            callback = object : AdbShellExecutor.ShellCallback {
+                override fun onSuccess(output: String) = weiter(selbstheilBefund(output))
+                override fun onError(error: String) = weiter(selbstheilBefund(error) ?: "fehler")
+                private fun weiter(befund: String?) {
+                    if (befund != "gruen") LauncherEreignisse.merken("SELBSTHEILUNG", "art=$ART_KAMERA weg=app befund=$befund")
+                    if (selbstheilungOk(befund)) {
+                        callback.onLaunched()
+                        cameraLaunchStartedAt = 0L
+                        return
+                    }
+                    logManager.warn(TAG, "CameraDaemon läuft, Watchdog nicht heilbar ($befund) — Neustart der Kamera")
+                    launchCameraDaemonInternal(outputDir, nativeLibDir, object : LaunchCallback {
+                        override fun onLog(message: String) = callback.onLog(message)
+                        override fun onLaunched() {
+                            cameraLaunchStartedAt = 0L
+                            callback.onLaunched()
+                        }
+                        override fun onError(error: String) {
+                            cameraLaunchStartedAt = 0L
+                            callback.onError(error)
+                        }
+                    })
+                }
+            }
+        )
+    }
+
     private fun launchCameraDaemonInternal(outputDir: String, nativeLibDir: String, callback: LaunchCallback) {
         val apkPath = context.applicationInfo.sourceDir
         val proxyArgs = getProxyArgs()
@@ -926,17 +1128,23 @@ class DaemonLauncher(
         val scriptLines = buildCamDaemonWatchdogScript(apkPath, nativeLibDir, outputDir, proxyArgs)
 
         val writeCmd = buildWatchdogScriptWriteCommand(scriptPath, scriptLines)
-        
-        adbShellExecutor.execute(
-            command = writeCmd,
+        // 0.1.38.1: über eine Skriptdatei (argv `sh …/.adb_script_<id>.sh`), nicht `sh -c "<Befehl>"`.
+        // So trifft kein Kill-Muster den Schreiber; stirbt er doch, bleibt das alte Skript stehen.
+        LauncherEreignisse.merken("SKRIPT_SCHREIBEN", "art=$ART_KAMERA")
+        adbShellExecutor.executeScript(
+            scriptBody = writeCmd,
             callback = object : AdbShellExecutor.ShellCallback {
                 override fun onSuccess(output: String) {
+                    LauncherEreignisse.merken("SKRIPT_OK", "art=$ART_KAMERA")
                     logManager.info(TAG, "CameraDaemon script written successfully")
                     callback.onLog("Script ready, launching...")
                     launchCamDaemonScript(scriptPath, callback)
                 }
-                
+
                 override fun onError(error: String) {
+                    // Rückfall startet den Daemon ohne Watchdog; der Daemon heilt das selbst
+                    // (WatchdogSelbstpruefung) und hängt einen Watchdog an.
+                    LauncherEreignisse.merken("SKRIPT_FEHLER", "art=$ART_KAMERA ${error.take(120)}")
                     logManager.error(TAG, "Failed to write daemon script: $error")
                     callback.onLog("Script write failed, using fallback...")
                     launchCamDaemonFallback(callback)
@@ -1354,17 +1562,20 @@ class DaemonLauncher(
         val scriptLines = buildAccSentryWatchdogScript(apkPath, proxyArgs)
         
         val writeCmd = buildWatchdogScriptWriteCommand(scriptPath, scriptLines)
-        
-        adbShellExecutor.execute(
-            command = writeCmd,
+        // 0.1.38.1: über eine Skriptdatei wie bei der Kamera (writeCamDaemonScript).
+        LauncherEreignisse.merken("SKRIPT_SCHREIBEN", "art=$ART_WAECHTER")
+        adbShellExecutor.executeScript(
+            scriptBody = writeCmd,
             callback = object : AdbShellExecutor.ShellCallback {
                 override fun onSuccess(output: String) {
+                    LauncherEreignisse.merken("SKRIPT_OK", "art=$ART_WAECHTER")
                     logManager.info(TAG, "Watchdog script written successfully")
                     callback.onLog("Watchdog script ready, launching...")
                     launchWatchdogScript(scriptPath, callback)
                 }
-                
+
                 override fun onError(error: String) {
+                    LauncherEreignisse.merken("SKRIPT_FEHLER", "art=$ART_WAECHTER ${error.take(120)}")
                     logManager.error(TAG, "Failed to write watchdog script: $error")
                     callback.onLog("Watchdog script failed, using fallback...")
                     launchAccSentryDaemonFallback(callback)
@@ -1672,16 +1883,19 @@ class DaemonLauncher(
         // gleichzeitig, hängte es seine restlichen Zeilen hinter dieses Skript (Auto 0.1.36:
         // 334 statt 220 Zeilen, sh -n "unexpected 'fi'" in Zeile 221).
         val writeCmd = buildWatchdogScriptWriteCommand(scriptPath, scriptLines)
-
-        adbShellExecutor.execute(
-            command = writeCmd,
+        // 0.1.38.1: über eine Skriptdatei wie bei der Kamera (writeCamDaemonScript).
+        LauncherEreignisse.merken("SKRIPT_SCHREIBEN", "art=$ART_TELEGRAM")
+        adbShellExecutor.executeScript(
+            scriptBody = writeCmd,
             callback = object : AdbShellExecutor.ShellCallback {
                 override fun onSuccess(output: String) {
+                    LauncherEreignisse.merken("SKRIPT_OK", "art=$ART_TELEGRAM")
                     logManager.info(TAG, "Telegram watchdog script written")
                     callback.onLog("Watchdog script ready, launching...")
                     launchTelegramWatchdogScript(scriptPath, callback)
                 }
                 override fun onError(error: String) {
+                    LauncherEreignisse.merken("SKRIPT_FEHLER", "art=$ART_TELEGRAM ${error.take(120)}")
                     logManager.error(TAG, "Failed to write Telegram watchdog: $error")
                     callback.onError("Watchdog script write failed: $error")
                 }

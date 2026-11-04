@@ -393,6 +393,10 @@
       "display_valet": {
         "label": "Display-Sperre",
         "note": "Jemand hat am gesperrten Display mehrmals eine falsche PIN eingegeben."
+      },
+      "system_updates": {
+        "label": "Updates",
+        "note": "Neue Version für Panoptes oder den Launcher, und wenn ein Update fertig ist."
       }
     },
     "cloud_uebergabe_titel": "„{0}“ will die BYD-Cloud übergeben",
@@ -405,7 +409,10 @@
     "battery12v_vor_title": "Starterbatterie wird schwächer: {0} V",
     "battery12v_vor_body": "Wenn sie weiter fällt, startet das Auto vielleicht nicht. Fahr bald eine Runde oder lade es.",
     "battery12v_niedrig_title": "Starterbatterie sehr schwach: {0} V",
-    "battery12v_niedrig_body": "Sie erholt sich nicht mehr von selbst. Das Auto startet vielleicht bald nicht mehr. Fahr heute noch eine Runde oder lade es."
+    "battery12v_niedrig_body": "Sie erholt sich nicht mehr von selbst. Das Auto startet vielleicht bald nicht mehr. Fahr heute noch eine Runde oder lade es.",
+    "update_installiert": "Panoptes {0} ist installiert und läuft.",
+    "launcher_verfuegbar": "Neue Launcher-Version {0}",
+    "launcher_installiert": "Launcher {0} ist installiert."
   },
   "parking": {
     "notify": {
@@ -636,7 +643,10 @@
       "rolled_back": "↩️ *Update zurückgenommen*\nDie neue Version lief nicht sauber, deshalb ist Panoptes wieder auf {0}. Am Auto ist nichts verloren.",
       "rolled_back_reason": "↩️ *Update zurückgenommen*\nDie neue Version lief nicht sauber, deshalb ist Panoptes wieder auf {0}. Am Auto ist nichts verloren.\nGrund: {1}",
       "available": "🆕 *Panoptes {0} ist verfügbar*\nInstallieren geht nur bei geparktem Auto, unter *System → App-Updates*.",
-      "available_size": "🆕 *Panoptes {0} ist verfügbar* ({1})\nInstallieren geht nur bei geparktem Auto, unter *System → App-Updates*."
+      "available_size": "🆕 *Panoptes {0} ist verfügbar* ({1})\nInstallieren geht nur bei geparktem Auto, unter *System → App-Updates*.",
+      "installiert_laeuft": "✅ *Panoptes {0} ist installiert und läuft.*",
+      "launcher_verfuegbar": "🆕 *Neue Launcher-Version {0}*\nAktualisieren geht per Knopf in Panoptes, unter *Apps & Display → Display → Launcher*.",
+      "launcher_installiert": "✅ *Launcher {0} ist installiert.*"
     },
     "backup": {
       "restore_unavailable": "ℹ️ *Zurückspielen geht nicht über Telegram.*\nÖffne Panoptes am Auto, dann *System → Sicherung* und wähle die Datei. Das klappt nur am selben Auto.",
@@ -2645,6 +2655,13 @@
     "grund_akku": "Gestoppt, um den Akku zu schützen.",
     "grund_v12": "Gestoppt, um die kleine 12-V-Batterie zu schützen.",
     "grund_lange_geparkt": "Nach langer Parkzeit gestoppt, um Strom zu sparen."
+  },
+  "selbstheilung": {
+    "titel": "Panoptes braucht kurz deine Hilfe",
+    "text": "Ein Teil von Panoptes ({0}) konnte sich nicht von selbst wieder einrichten. Er läuft gerade, würde aber nicht mehr von selbst neu starten, falls er stehen bleibt. Bitte Panoptes einmal am Bildschirm im Auto öffnen, dann richtet es sich neu ein. Sonst klappt es spätestens beim nächsten Neustart des Autos.",
+    "wort_kamera": "Kamera und Aufnahme",
+    "wort_waechter": "Wächter",
+    "wort_telegram": "Telegram-Nachrichten"
   },
   "rechte_heilung": {
     "titel": "Panoptes hat Rechte verloren",

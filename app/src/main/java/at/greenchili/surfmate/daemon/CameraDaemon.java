@@ -576,6 +576,18 @@ public class CameraDaemon {
             return;
         }
 
+        // 0.1.38.1: eigenen Watchdog prüfen und selbst heilen (Skript fehlt / Watchdog tot), nie ein zweiter
+        // Daemon. Gleich nach der Einzel-Sperre: ein späterer Fehler im Start (am Emulator z. B. eine fehlende
+        // Native-Bibliothek) darf die Selbstheilung nicht verhindern. Die Startwerte werden erst beim Heilen gelesen.
+        at.greenchili.surfmate.gesundheit.WatchdogSelbstpruefung.start(
+                at.greenchili.surfmate.launcher.DaemonLauncher.ART_KAMERA,
+                () -> at.greenchili.surfmate.launcher.DaemonLauncher.Companion.buildCamDaemonWatchdogScript(
+                        at.greenchili.surfmate.gesundheit.WatchdogSelbstpruefung.apkAusKlassenpfad(),
+                        nativeLibDir != null ? nativeLibDir : args.length > 1 ? args[1] : "",
+                        outputDir != null ? outputDir : args.length > 0 ? args[0] : "",
+                        at.greenchili.surfmate.gesundheit.WatchdogSelbstpruefung.proxyArgsAusSystem()),
+                at.greenchili.surfmate.gesundheit.WatchdogSelbstpruefung::telegramMelden);
+
         // Resolve the durable selector before committing a cross-platform mode change. If the
         // config cannot be initialized, startup fails without replacing the last active marker.
         at.greenchili.surfmate.config.UnifiedConfigManager.init();
@@ -3504,22 +3516,33 @@ public class CameraDaemon {
 
     /**
      * Kill the shell watchdog wrapper process (start_cam_daemon.sh).
-     * Uses the PID file if available, falls back to pkill.
+     *
+     * <p>0.1.38.1: nur noch über die PID-Datei und, als Rückfall, über {@code /proc/*}{@code /cmdline} mit argv genau
+     * {@code [sh|/system/bin/sh, <skript>, …]}. Kein {@code pkill -f start_cam_daemon} mehr (traf per Teilstring auch
+     * einen gleichzeitigen Skript-Schreiber, Auto 04.11.) und kein Löschen des Skripts mehr: Sentinel bzw.
+     * Park-Marker verhindern den Neustart schon, und ohne Skript konnte sich nichts mehr selbst heilen.
      */
     private static void killWatchdogWrapper() {
         try {
-            // Try PID file first
+            String skript = at.greenchili.surfmate.util.DaemonStorage.rebase("/data/user_de/0/com.android.shell/surfmate/start_cam_daemon.sh");
+            java.util.LinkedHashSet<Integer> ziele = new java.util.LinkedHashSet<>();
             java.io.File pidFile = new java.io.File(at.greenchili.surfmate.util.DaemonStorage.rebase("/data/user_de/0/com.android.shell/surfmate/cam_watchdog.pid"));
             if (pidFile.exists()) {
-                String pid = new java.util.Scanner(pidFile).useDelimiter("\\A").next().trim();
-                Runtime.getRuntime().exec(new String[]{"kill", "-9", pid});
-                log("Killed watchdog wrapper via PID file (pid=" + pid + ")");
+                try {
+                    int pid = Integer.parseInt(new java.util.Scanner(pidFile).useDelimiter("\\A").next().trim());
+                    // Nur, wenn die PID wirklich noch der Watchdog ist (PID-Wiederverwendung).
+                    if (at.greenchili.surfmate.gesundheit.WatchdogSelbstpruefung.istWatchdog(pid, skript)) ziele.add(pid);
+                } catch (Exception ignored) {
+                }
                 pidFile.delete();
             }
-            // Also pkill as fallback
-            Runtime.getRuntime().exec(new String[]{"pkill", "-9", "-f", "start_cam_daemon"});
-            // Delete the script so it can't be accidentally re-run
-            new java.io.File(at.greenchili.surfmate.util.DaemonStorage.rebase("/data/user_de/0/com.android.shell/surfmate/start_cam_daemon.sh")).delete();
+            ziele.addAll(at.greenchili.surfmate.gesundheit.WatchdogSelbstpruefung.watchdogPids(skript));
+            for (int pid : ziele) {
+                android.os.Process.sendSignal(pid, 9);
+                log("Killed watchdog wrapper (pid=" + pid + ")");
+            }
+            at.greenchili.surfmate.logging.LauncherEreignisse.direktAnhaengen("kamera", "WRAPPER_BEENDET",
+                    "pids=" + ziele.size() + " weg=pid_datei+proc");
             // SIGKILL bypasses the watchdog EXIT trap. Remove the exact
             // directory-lock contents so a later start is not blocked by
             // stale ownership.

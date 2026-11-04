@@ -29,8 +29,9 @@ public class TelegramSkriptSchreibwegTest {
     @Test
     public void befehlNutztPrintfNieEcho() {
         String b = DaemonLauncher.buildScriptLineWriteCommand("tr '\\000' ' ' < /proc/$p/cmdline", true, "/x/s.sh");
-        assertTrue(b, b.startsWith("printf '%s\\n' \""));
-        assertTrue(b, b.endsWith("\" > /x/s.sh"));
+        // 0.1.38.1: die erste Zeile legt die Datei in einer Unter-Shell mit umask 077 an (nie 666)
+        assertTrue(b, b.startsWith("(umask 077; printf '%s\\n' \""));
+        assertTrue(b, b.endsWith("\" > /x/s.sh)"));
         assertFalse(b, b.contains("echo"));
         assertTrue(DaemonLauncher.buildScriptLineWriteCommand("a", false, "/x/s.sh").endsWith("\" >> /x/s.sh"));
     }

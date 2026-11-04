@@ -1139,7 +1139,7 @@ public final class GenAiContext {
         try {
             for (String component : new String[]{
                     "camera", "sentry", "accsentry",
-                    "tailscale", "wireguard"}) {
+                    "tailscale", "wireguard", "launcher"}) {
                 String path = DaemonLogPaths.pathFor(component);
                 if (path == null) continue;
                 java.io.File file = new java.io.File(path);
@@ -1212,7 +1212,13 @@ public final class GenAiContext {
                 || lower.contains("denied")
                 || lower.contains("unavailable")
                 || lower.contains("retry")
-                || lower.contains("stale");
+                || lower.contains("stale")
+                // 0.1.38.1: Ereignisse aus daemon_launcher.log (LauncherEreignisse)
+                || lower.contains("skript_fehler")
+                || lower.contains("selbstheilung")
+                || lower.contains("adb_abbruch")
+                || lower.contains("hardreset_")
+                || lower.contains("wrapper_beendet");
     }
 
     private static String redactDiagnosticLine(String line) {

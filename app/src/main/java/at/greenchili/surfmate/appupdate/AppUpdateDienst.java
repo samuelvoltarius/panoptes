@@ -128,6 +128,38 @@ public final class AppUpdateDienst {
         default LauncherPaket.Stand launcherStand() { return LauncherPaket.ausListe(""); }
         /** {@code pm install -r} der geprüften Launcher-APK; null = ok. */
         default String launcherInstallieren(File apk) { return "nicht_verfuegbar"; }
+
+        /** 0.1.38.1: Selbstprüfung der Startskripte ({@link UpdateMeldung#SELBST_GRUEN} …). */
+        default String selbstpruefung() { return UpdateMeldung.SELBST_GRUEN; }
+        /** 0.1.38.1: Update-Meldung senden (Telegram Kategorie UPDATE + Handy-Push {@code system.updates}). */
+        default void meldeUpdate(UpdateMeldung.Meldung m) { }
+    }
+
+    /** 0.1.38.1: Update-Meldungen höchstens alle 5 min prüfen (der Launcher-Stand kostet einen Shell-Aufruf). */
+    static final long MELDUNG_TAKT_MS = 5 * 60_000L;
+    private long meldungZuletzt = -1;
+
+    /** Ein Durchgang der Update-Meldungen ({@link UpdateMeldung}); im Takt und im Test aufrufbar. */
+    void updateMeldungTakt(long now) {
+        if (meldungZuletzt >= 0 && now - meldungZuletzt < MELDUNG_TAKT_MS) return;
+        meldungZuletzt = now;
+        LauncherPaket.Stand st = env.launcherStand();
+        java.util.List<UpdateMeldung.Meldung> raus;
+        synchronized (lock) {
+            UpdateMeldung m = UpdateMeldung.lade(env.basis());
+            boolean beobachtet = "beobachtet".equals(aktuellePhase(lage()));
+            raus = m.pruefe(env.installierterVc(), env.installierteVersion(), gemeldetVc, env.selbstpruefung(),
+                    beobachtet, st.versionCode, verfuegbar == null ? null : verfuegbar.launcher);
+            m.speichern(env.basis());
+        }
+        for (UpdateMeldung.Meldung me : raus) {
+            logger.info("Update-Meldung: " + me);
+            try {
+                env.meldeUpdate(me);
+            } catch (Throwable t) {
+                logger.warn("Update-Meldung: " + t.getMessage());
+            }
+        }
     }
 
     private static volatile AppUpdateDienst instance;
@@ -428,6 +460,11 @@ public final class AppUpdateDienst {
 
     void takt() {
         long now = env.jetzt();
+        try {
+            updateMeldungTakt(now);
+        } catch (Throwable t) {
+            logger.warn("Update-Meldung: " + t.getMessage());
+        }
         // update.pruefen aus (Ersteinrichtung „Nein“): kein Abruf bei GitHub im Hintergrund, nichts von selbst
         if (pruefenAn() && UpdateRegel.pruefenFaellig(now, letztePruefung, fehler != null)) pruefen(false);
         Freigabe f;
@@ -1502,6 +1539,34 @@ public final class AppUpdateDienst {
                     ? at.greenchili.surfmate.telegram.TelegramMessages.get("update.available", f.versionName)
                     : at.greenchili.surfmate.telegram.TelegramMessages.get("update.available_size", f.versionName, g);
             at.greenchili.surfmate.telegram.TelegramNotifier.sendMessage(text, "UPDATE");
+        }
+
+        @Override
+        public String selbstpruefung() {
+            return at.greenchili.surfmate.gesundheit.WatchdogSelbstpruefung.befund(
+                    at.greenchili.surfmate.launcher.DaemonLauncher.ART_KAMERA);
+        }
+
+        /**
+         * 0.1.38.1: Telegram (Kategorie UPDATE, Schalter wie „neue Version“) und Handy-Push über die Kategorie
+         * {@code system.updates}. Der TelegramSink lässt {@code system.updates} aus, sonst käme Telegram doppelt.
+         */
+        @Override
+        public void meldeUpdate(UpdateMeldung.Meldung m) {
+            at.greenchili.surfmate.telegram.TelegramNotifier.sendMessage(
+                    at.greenchili.surfmate.telegram.TelegramMessages.get(UpdateMeldung.telegramSchluessel(m.art), m.version),
+                    "UPDATE");
+            try {
+                JSONObject data = new JSONObject().put("art", m.art).put("versionCode", m.versionCode)
+                        .put("version", m.version);
+                at.greenchili.surfmate.notifications.NotificationBus.get().publish(
+                        new at.greenchili.surfmate.notifications.NotificationEvent("system.updates",
+                                at.greenchili.surfmate.notifications.NotificationEvent.Severity.INFO,
+                                at.greenchili.surfmate.server.Messages.get(UpdateMeldung.pushSchluessel(m.art), m.version),
+                                "", "update-" + m.art + "-" + m.versionCode, "/local/system.html", data));
+            } catch (Throwable t) {
+                logger.warn("Update-Push: " + t.getMessage());
+            }
         }
 
         @Override

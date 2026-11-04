@@ -1463,6 +1463,14 @@ public class AccSentryDaemon {
         } catch (Exception e) {
             log("UnifiedConfigManager.init() failed: " + e.getMessage());
         }
+        // 0.1.38.1: eigenen Watchdog prüfen und selbst heilen (Skript fehlt / Watchdog tot). Läuft auch
+        // geparkt, der Wächter ist der ACC-Richter.
+        at.greenchili.surfmate.gesundheit.WatchdogSelbstpruefung.start(
+                at.greenchili.surfmate.launcher.DaemonLauncher.ART_WAECHTER,
+                () -> at.greenchili.surfmate.launcher.DaemonLauncher.Companion.buildAccSentryWatchdogScript(
+                        at.greenchili.surfmate.gesundheit.WatchdogSelbstpruefung.apkAusKlassenpfad(),
+                        at.greenchili.surfmate.gesundheit.WatchdogSelbstpruefung.proxyArgsAusSystem()),
+                at.greenchili.surfmate.gesundheit.WatchdogSelbstpruefung::telegramMelden);
 
         // SIGKILL recovery: clear cross-process screen-deterrent flags. Both
         // are normally cleared on the next ACC OFF (enterSentryMode lines

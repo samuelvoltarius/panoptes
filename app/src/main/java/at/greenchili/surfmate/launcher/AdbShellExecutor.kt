@@ -395,6 +395,11 @@ class AdbShellExecutor(private val context: Context) {
             val nonce = "${System.nanoTime()}_${scriptSeq.incrementAndGet()}"
             val scriptPath = at.greenchili.surfmate.util.DaemonStorage.rebase("/data/user_de/0/com.android.shell/surfmate/.adb_script_${nonce}.sh")
             val eofMarker = "__ADB_SCRIPT_EOF_${nonce}__"
+            // 0.1.38.1: gemerkte Ereignisse der App (LauncherEreignisse) gehen vorn mit in dieses Skript.
+            // Scheitert es, kommen sie zurück in den Puffer und werden beim nächsten Erfolg nachgetragen.
+            val ereignisse = at.greenchili.surfmate.logging.LauncherEreignisse.entnehmen()
+            val body = at.greenchili.surfmate.logging.LauncherEreignisse.shellAnhaengen(ereignisse) + scriptBody
+            var ereignisseGeschrieben = false
             try {
                 logger.debug(TAG, "Executing script via $scriptPath (${scriptBody.length} bytes)")
                 val conn = acquireConnection()
@@ -406,10 +411,12 @@ class AdbShellExecutor(private val context: Context) {
                 // script regardless of x-bit, so the previous `chmod 755`
                 // was dead code.
                 val writeCmd = "cat > $scriptPath <<'$eofMarker'\n" +
-                        scriptBody +
+                        body +
                         "\n$eofMarker"
                 val writeResult = shellGuarded(conn, writeCmd, DEFAULT_DEADLINE_MS, seq)
                 if (writeResult.exitCode != 0) {
+                    at.greenchili.surfmate.logging.LauncherEreignisse.zuruecklegen(ereignisse)
+                    ereignisseGeschrieben = true
                     // Best-effort cleanup of any partial write
                     tryCleanupScript(scriptPath)
                     callback.onError("script-write failed: ${writeResult.allOutput}")
@@ -433,6 +440,7 @@ class AdbShellExecutor(private val context: Context) {
                     runDeadlineMs,
                     seq
                 )
+                ereignisseGeschrieben = true
 
                 if (runResult.exitCode == 0) {
                     callback.onSuccess(runResult.allOutput)
@@ -441,6 +449,7 @@ class AdbShellExecutor(private val context: Context) {
                 }
             } catch (e: Exception) {
                 logger.error(TAG, "Script execution failed", e)
+                if (!ereignisseGeschrieben) at.greenchili.surfmate.logging.LauncherEreignisse.zuruecklegen(ereignisse)
                 callback.onError("Execution failed: ${e.message}")
                 // Best-effort cleanup if a connection is still obtainable.
                 tryCleanupScript(scriptPath)
@@ -784,6 +793,9 @@ class AdbShellExecutor(private val context: Context) {
             // loop, and correlate with adbd tombstones / external ADB clients.
             logger.warn(TAG, "Invalidating shared ADB connection gen=${conn.generation} " +
                 "(age=${ageMs}ms): $reason")
+            // 0.1.38.1 (A6): ein adb-Abbruch kann einen laufenden Skript-Schreiber beenden (SIGHUP).
+            at.greenchili.surfmate.logging.LauncherEreignisse.merken("ADB_ABBRUCH",
+                "gen=${conn.generation} alter=${ageMs}ms ${reason.take(80)}")
             closeAndWake(conn)
         } else {
             // Already replaced: still wake anything parked on the dead instance.

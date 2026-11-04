@@ -399,6 +399,10 @@
       "display_valet": {
         "label": "Verrouillage de l’écran",
         "note": "Quelqu’un a saisi plusieurs fois un PIN erroné sur l’écran verrouillé."
+      },
+      "system_updates": {
+        "label": "Mises à jour",
+        "note": "Nouvelle version de Panoptes ou du launcher, et quand une mise à jour est terminée."
       }
     },
     "cloud_uebergabe_titel": "« {0} » veut transmettre le cloud BYD",
@@ -411,7 +415,10 @@
     "battery12v_vor_title": "La batterie 12 V faiblit : {0} V",
     "battery12v_vor_body": "Si elle baisse encore, la voiture risque de ne pas démarrer. Faites bientôt un tour ou branchez-la.",
     "battery12v_niedrig_title": "Batterie 12 V très faible : {0} V",
-    "battery12v_niedrig_body": "Elle ne se rétablit plus d’elle-même. La voiture risque bientôt de ne plus démarrer. Faites un tour aujourd’hui ou branchez-la."
+    "battery12v_niedrig_body": "Elle ne se rétablit plus d’elle-même. La voiture risque bientôt de ne plus démarrer. Faites un tour aujourd’hui ou branchez-la.",
+    "update_installiert": "Panoptes {0} est installé et fonctionne.",
+    "launcher_verfuegbar": "Nouvelle version du launcher {0}",
+    "launcher_installiert": "Le launcher {0} est installé."
   },
   "parking": {
     "notify": {
@@ -775,7 +782,10 @@
       "rolled_back_reason": "↩️ *Mise à jour annulée*\nLa nouvelle version ne fonctionnait pas correctement, Panoptes est donc revenu à la version {0}. Rien n’est perdu sur la voiture.\nRaison : {1}",
       "unknown_reason": "inconnue – les détails sont dans le journal de la voiture",
       "available": "🆕 *Panoptes {0} est disponible*\nL’installation se fait voiture garée, sous *Système → Mises à jour*.",
-      "available_size": "🆕 *Panoptes {0} est disponible* ({1})\nL’installation se fait voiture garée, sous *Système → Mises à jour*."
+      "available_size": "🆕 *Panoptes {0} est disponible* ({1})\nL’installation se fait voiture garée, sous *Système → Mises à jour*.",
+      "installiert_laeuft": "✅ *Panoptes {0} est installé et fonctionne.*",
+      "launcher_verfuegbar": "🆕 *Nouvelle version du launcher {0}*\nMise à jour avec le bouton dans Panoptes, sous *Apps & écran → Écran → Launcher*.",
+      "launcher_installiert": "✅ *Le launcher {0} est installé.*"
     },
     "critical": {
       "message": "🚨 *{0}*",
@@ -2651,6 +2661,13 @@
     "grund_akku": "Arrêté pour protéger la batterie.",
     "grund_v12": "Arrêté pour protéger la petite batterie 12 V.",
     "grund_lange_geparkt": "Arrêté après un long stationnement, pour économiser l’énergie."
+  },
+  "selbstheilung": {
+    "titel": "Panoptes a besoin de votre aide",
+    "text": "Une partie de Panoptes ({0}) n’a pas pu se remettre en place toute seule. Elle fonctionne en ce moment, mais ne redémarrerait pas d’elle-même si elle s’arrêtait. Ouvrez Panoptes une fois sur l’écran de la voiture, il se remet alors en place. Sinon, cela se fera au plus tard au prochain redémarrage de la voiture.",
+    "wort_kamera": "Caméra et enregistrement",
+    "wort_waechter": "Gardien",
+    "wort_telegram": "Messages Telegram"
   },
   "rechte_heilung": {
     "titel": "Panoptes a perdu des autorisations",

@@ -22,7 +22,9 @@ data class LauncherSummary(
     /** Läuft gerade etwas am Fahrerdisplay (dann zeigt der Launcher „Tacho wieder normal“)? */
     val tachoAktiv: Boolean = false,
     /** 0.1.38: Zeitstempel des Layouts im Kern; ändert er sich, holt der Launcher das Layout neu. */
-    val layoutGeaendert: Long? = null
+    val layoutGeaendert: Long? = null,
+    /** 0.1.38.1: Haftungshinweis „Verstanden, ich entscheide selbst“ in Panoptes bestätigt (fehlt = nein). */
+    val fahrtHinweis: Boolean = false
 )
 
 data class LauncherReifen(val vl: Double?, val vr: Double?, val hl: Double?, val hr: Double?, val unten: Double?, val oben: Double?)
@@ -118,7 +120,8 @@ object LauncherContract {
                 ?.takeIf { it.innen != null || it.aussen != null },
             root.optJSONObject("klima")?.let { klima(it) },
             root.optJSONObject("tacho")?.optBoolean("aktiv", false) == true,
-            root.optJSONObject("launcherLayout")?.takeIf { it.has("geaendert") && !it.isNull("geaendert") }?.optLong("geaendert")
+            root.optJSONObject("launcherLayout")?.takeIf { it.has("geaendert") && !it.isNull("geaendert") }?.optLong("geaendert"),
+            root.optJSONObject("tacho")?.optBoolean("fahrtHinweis", false) == true
         )
     }
 

@@ -85,7 +85,7 @@
     <string name="traffic_format">Nelle vicinanze: %1$d · in avvicinamento: %2$d</string>
     <string name="umbenennen">Rinomina</string>
     <string name="unknown">—</string>
-    <string name="video_nur_p">Le app video partono solo in P.</string>
+    <string name="video_nur_p">Le app video partono solo in P – oppure dopo aver confermato una volta l’avviso di guida in Panoptes (Display → Quadro).</string>
     <string name="waechter_an">Attiva</string>
     <string name="waechter_aufnahme">Registra</string>
     <string name="waechter_aus">Spenta</string>

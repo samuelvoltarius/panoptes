@@ -60,8 +60,16 @@ class PanoptesClient(private val baseUrl: String = "http://127.0.0.1:8180") {
         requestMitFehler("POST", "/api/launcher/v1/update/installieren", LauncherContract.installierenBody(paket, p, mobil), 10_000)
 
     /** Eigenes Hintergrundbild aus der Dateiablage; null, wenn keines da ist. Höchstens 15 MB. */
-    fun hintergrundBild(): ByteArray? {
-        val connection = (URL(baseUrl + "/api/launcher/v1/hintergrund/bild").openConnection() as HttpURLConnection).apply {
+    fun hintergrundBild(): ByteArray? = bild("/api/launcher/v1/hintergrund/bild")
+
+    /**
+     * Ruhiges Standbild des Fahrzeugs aus Panoptes (dasselbe Renderbild wie im Panoptes-Dashboard,
+     * `/api/models/art`, aus den Katalog-Modellen gerendert); null, wenn nicht erreichbar.
+     */
+    fun fahrzeugBild(modelId: String): ByteArray? = bild("/api/models/art?id=" + java.net.URLEncoder.encode(modelId, "UTF-8"))
+
+    private fun bild(pfad: String): ByteArray? {
+        val connection = (URL(baseUrl + pfad).openConnection() as HttpURLConnection).apply {
             connectTimeout = 1800
             readTimeout = 5000
             useCaches = false

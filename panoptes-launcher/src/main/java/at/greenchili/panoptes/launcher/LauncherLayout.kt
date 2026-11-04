@@ -18,8 +18,10 @@ object Fahrsicherheit {
     }
 
     /**
-     * Video-Apps (Android-Kategorie CATEGORY_VIDEO, von der App selbst erklärt) starten wie in Panoptes
-     * (TachoNaviApp: „Kein Video während der Fahrt“) nur in P. Unbekannter Gang sperrt.
+     * Video-Apps (Android-Kategorie CATEGORY_VIDEO, von der App selbst erklärt) starten nur in P – außer der Nutzer
+     * hat in Panoptes den EINEN Haftungshinweis „Verstanden, ich entscheide selbst“ bestätigt (0.1.38.1, derselbe wie
+     * am Tacho; kommt aus dem Summary, fehlt er, gilt nein). Unbekannter Gang ohne Hinweis sperrt.
      */
-    fun appStartErlaubt(istVideo: Boolean, gear: String?): Boolean = !istVideo || gear == "P"
+    fun appStartErlaubt(istVideo: Boolean, gear: String?, fahrtHinweis: Boolean = false): Boolean =
+        !istVideo || gear == "P" || fahrtHinweis
 }

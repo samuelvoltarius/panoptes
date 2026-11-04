@@ -85,7 +85,7 @@
     <string name="traffic_format">À proximité : %1$d · en approche : %2$d</string>
     <string name="umbenennen">Renommer</string>
     <string name="unknown">—</string>
-    <string name="video_nur_p">Les applis vidéo ne démarrent qu’en P.</string>
+    <string name="video_nur_p">Les applis vidéo ne démarrent qu’en P – ou après avoir confirmé une fois l’avertissement de conduite dans Panoptes (Écran → Combiné).</string>
     <string name="waechter_an">Activée</string>
     <string name="waechter_aufnahme">Enregistre</string>
     <string name="waechter_aus">Désactivée</string>

@@ -283,7 +283,8 @@
 
     /**
      * @param {HTMLCanvasElement} canvasEl
-     * @param {{ view?: 'side'|'top'|'three-quarter' }} [opts]
+     * @param {{ view?: 'side'|'top'|'three-quarter', front?: boolean }} [opts]
+     *   front=true (nur mit three-quarter) — dieselbe Schräge, aber die Front zum Betrachter (Launcher).
      *   view='side' (default) — camera looks down the +Z axis at the GLB
      *     rotated π/2 around Y, so the car fills the canvas in side
      *     profile with the front pointing left. Used by the sidebar
@@ -300,6 +301,9 @@
         this.view = 'side';
         if (opts && opts.view === 'top') this.view = 'top';
         else if (opts && opts.view === 'three-quarter') this.view = 'three-quarter';
+        // 0.1.38.1: nur auf Wunsch (Launcher, launcher-fahrzeug.html?ansicht=front) die Front statt des Hecks;
+        // ohne die Option bleibt three-quarter unverändert (Panoptes-Dashboard).
+        this.front = !!(opts && opts.front === true && this.view === 'three-quarter');
         this.scene = null;
         this.camera = null;
         this.renderer = null;
@@ -735,7 +739,7 @@
             if (self.view === 'top') {
                 self.carModel.rotation.y = Math.PI;
             } else if (self.view === 'three-quarter') {
-                self.carModel.rotation.y = 0.95;
+                self.carModel.rotation.y = self.front ? 0.95 + Math.PI : 0.95;
             } else {
                 self.carModel.rotation.y = Math.PI / 2;
             }

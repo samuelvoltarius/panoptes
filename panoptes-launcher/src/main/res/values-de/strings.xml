@@ -85,7 +85,7 @@
     <string name="traffic_format">In der Nähe: %1$d · nähert sich: %2$d</string>
     <string name="umbenennen">Umbenennen</string>
     <string name="unknown">—</string>
-    <string name="video_nur_p">Video-Apps starten nur in P.</string>
+    <string name="video_nur_p">Video-Apps starten nur in P – oder nachdem du einmal in Panoptes den Fahrt-Hinweis bestätigt hast (Display → Tacho).</string>
     <string name="waechter_an">An</string>
     <string name="waechter_aufnahme">Nimmt auf</string>
     <string name="waechter_aus">Aus</string>

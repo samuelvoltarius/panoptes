@@ -945,6 +945,10 @@
       "vehicle_health_battery12v": {
         "label": "Starterbatterie (12 V) wird schwach",
         "note": "Warnt, bevor die 12-V-Batterie zu schwach zum Starten ist. Höchstens einmal am Tag."
+      },
+      "system_updates": {
+        "label": "Updates",
+        "note": "Neue Version für Panoptes oder den Launcher, und wenn ein Update fertig ist."
       }
     },
     "group": {
@@ -2855,7 +2859,7 @@
     "cluster_tacho_normal_ok": "Der Tacho zeigt wieder die normale Anzeige.",
     "cluster_fahrt_video": "Video-App",
     "cluster_fahrt_titel": "Auch beim Fahren erlauben?",
-    "cluster_fahrt_text": "Inhalte am Fahrerdisplay lenken während der Fahrt ab. Videos während der Fahrt sind in vielen Ländern verboten und können Strafen und Probleme mit der Versicherung bringen. Du entscheidest und bist selbst verantwortlich. Panoptes übernimmt keine Haftung.",
+    "cluster_fahrt_text": "Inhalte am Fahrerdisplay lenken während der Fahrt ab. Videos während der Fahrt sind in vielen Ländern verboten und können Strafen und Probleme mit der Versicherung bringen. Du entscheidest und bist selbst verantwortlich. Panoptes übernimmt keine Haftung. Mit deinem „Verstanden“ dürfen danach alle Apps, die du freigibst, auch beim Fahren laufen. Je App kannst du es wieder ausschalten.",
     "cluster_fahrt_ok": "Verstanden, ich entscheide selbst",
     "cluster_fahrt_abbrechen": "Abbrechen",
     "cluster_app_fahrt_hinweis_noetig": "Lies zuerst den Hinweis zur Fahrt und tippe auf „Verstanden, ich entscheide selbst“.",
@@ -2950,13 +2954,12 @@
     "tip_vent_unavailable": "Sitzbelüftung gibt es in dieser Ausstattung nicht",
     "cluster_app_title": "App am Fahrerdisplay",
     "cluster_app_lead": "Wähle eine installierte App und tippe auf „Freigeben“. Das geht nur, wenn dein Auto Apps am Fahrerdisplay kann; DiLink 5 bleibt derzeit gesperrt. Beim Fahren laufen nur Navi-Apps, außer du erlaubst eine App ausdrücklich „auch beim Fahren“.",
-    "cluster_app_probe": "In P prüfen", "cluster_app_enable": "Starten", "cluster_app_revoke": "Widerrufen", "cluster_app_stop": "Stopp",
-    "cluster_app_question": "Sind Tempo und alle Warnleuchten sichtbar? Nach deiner Antwort kommt die Tacho-Anzeige zurück.",
-    "cluster_app_yes": "Ja, freigeben", "cluster_app_no": "Nein, sperren", "cluster_app_approved": "Freigegeben", "cluster_app_blocked": "Gesperrt",
+    "cluster_app_enable": "Starten", "cluster_app_revoke": "Widerrufen", "cluster_app_stop": "Stopp",
+    "cluster_app_approved": "Freigegeben", "cluster_app_blocked": "Gesperrt",
     "cluster_app_park": "Nur in P möglich.", "cluster_app_not_approved": "Diese App ist noch nicht freigegeben.",
     "cluster_app_uninstalled": "Die App ist nicht mehr installiert oder nicht startbar.", "cluster_app_invalid": "Diese App kann nicht gewählt werden.",
-    "cluster_app_probe_needed": "Prüfe diese App zuerst in P.", "cluster_app_unavailable": "Auf diesem Auto ist die sichere Projektion nicht bestätigt.", "cluster_app_dilink5_blocked": "DiLink 5 bleibt gesperrt, bis linker und rechter Kameravorrang, Paket- und Geometrie-Restore sowie der sichere Fehler-Rückfall am Fahrzeug belegt sind.",
-    "cluster_app_failed": "Die App konnte nicht auf dem Fahrerdisplay gestartet werden.", "cluster_app_watch": "Prüfe jetzt Tempo, Warnleuchten und den Rückweg zur Tacho-Anzeige.",
+    "cluster_app_unavailable": "Auf diesem Auto ist die sichere Projektion nicht bestätigt.", "cluster_app_dilink5_blocked": "DiLink 5 bleibt gesperrt, bis linker und rechter Kameravorrang, Paket- und Geometrie-Restore sowie der sichere Fehler-Rückfall am Fahrzeug belegt sind.",
+    "cluster_app_failed": "Die App konnte nicht auf dem Fahrerdisplay gestartet werden.",
     "kacheln_favoriten": "Favoriten",
     "kacheln_kategorien": "Kategorien",
     "kacheln_fav_leer": "Tippe auf den Stern einer Kachel, dann steht sie hier oben.",
@@ -5823,7 +5826,7 @@
     "ja": "ja",
     "nein": "nein",
     "unbekannt": "noch offen",
-    "tacho_title": "Tacho-Test (Beta)",
+    "tacho_title": "Was kann mein Tacho?",
     "tacho_lead": "Prüft nur, was dein Tacho kann. Es wird nichts an den Tacho geschickt. Geht nur im Stand.",
     "tacho_start": "Test starten",
     "tacho_copy": "Ergebnis kopieren",
@@ -5837,17 +5840,13 @@
     "tacho_preview": "Genau das geht an uns:",
     "tacho_send_ja": "Jetzt senden",
     "tacho_send_nein": "Abbrechen",
-    "navi_title": "App am Tacho (Beta)",
+    "navi_title": "App am Tacho",
     "navi_lead": "Jede installierte startbare App kann einzeln freigegeben werden: App wählen, einmal den Hinweis bestätigen, fertig. „Tacho wieder normal“ holt die Tacho-Anzeige sofort zurück.",
-    "navi_probe": "Probe im Stand (20 s)",
-    "navi_frage": "Schau auf den Tacho: Sind alle Warnleuchten und das Tempo noch zu sehen?",
-    "navi_ja": "Ja, alles zu sehen",
-    "navi_nein": "Nein, etwas ist verdeckt",
     "navi_on": "Einschalten",
     "navi_an": "An",
     "navi_aus": "Aus",
     "navi_keine": "Keine startbare App installiert",
-    "navi_na": "Auf diesem Auto nicht angeboten. Mach zuerst den Tacho-Test und die Probe.",
+    "navi_na": "Auf diesem Auto nicht möglich. Unter „Was kann mein Tacho?“ siehst du, warum.",
     "navi_nicht_erlaubt": "Diese App ist noch nicht für die Fahrt freigegeben."
   },
   "whatsnew": {

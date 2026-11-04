@@ -263,6 +263,15 @@
       "severity": "auto",
       "defaultClickUrl": "/local/waechter.html",
       "note": "0.1.28: warns before the 12 V starter battery is too weak to start the car (resting voltage close to the limit or falling over several days). At most once a day."
+    },
+    {
+      "id": "system.updates",
+      "label": "Updates",
+      "group": "System",
+      "defaultEnabled": true,
+      "severity": "info",
+      "defaultClickUrl": "/local/system.html",
+      "note": "0.1.38.1: new Panoptes or launcher version, and when an update is installed and running. Telegram goes directly (category UPDATE), TelegramSink skips this category."
     }
   ],
   "telegramHinweis": "Telegram-Kategorien (0.1.11, Koordination): NUR Ein/Aus je Kategorie; stufe dient nur der Sortierung/Anzeige. Eine Quelle für Web, Cockpit und Kern. key = Schlüssel im Abschnitt telegram.",
@@ -506,7 +515,9 @@
     {
       "id": "updates",
       "label": "Updates",
-      "push": [],
+      "push": [
+        "system.updates"
+      ],
       "telegram": [
         "updateAlerts"
       ]

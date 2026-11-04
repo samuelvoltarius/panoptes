@@ -80,7 +80,7 @@ class LauncherStufe23Test {
         val src = quelle("MainActivity.kt")
         assertTrue(src.contains("Fahrsicherheit.videoErlaubt(a?.hintergrundVideo == true, summary?.gear)) videoStart() else videoStopp()"))
         assertTrue("Video ohne Ton", src.contains("mp.setVolume(0f, 0f)"))
-        assertTrue(src.contains("Fahrsicherheit.appStartErlaubt(a.video, summary?.gear)"))
+        assertTrue(src.contains("Fahrsicherheit.appStartErlaubt(a.video, summary?.gear, summary?.fahrtHinweis == true)"))
         assertFalse("keine Fahrzeugbefehle im Launcher", src.contains("/api/launcher/v1/vehicle"))
         assertFalse("keine Fahrzeugbefehle im Launcher", src.contains("/api/vehicle/"))
         // Der BYD-Rückweg ist fest das erste Dock-Icon und nie Teil der veränderbaren Dock-Liste.

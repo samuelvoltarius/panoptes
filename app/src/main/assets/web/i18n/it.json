@@ -945,6 +945,10 @@
       "vehicle_health_battery12v": {
         "label": "Batteria da 12 V debole",
         "note": "Avvisa prima che la batteria da 12 V sia troppo debole per partire. Al massimo una volta al giorno."
+      },
+      "system_updates": {
+        "label": "Aggiornamenti",
+        "note": "Nuova versione di Panoptes o del launcher, e quando un aggiornamento è finito."
       }
     },
     "group": {
@@ -2855,7 +2859,7 @@
     "cluster_tacho_normal_ok": "Il display del conducente mostra di nuovo gli strumenti normali.",
     "cluster_fahrt_video": "App video",
     "cluster_fahrt_titel": "Consentire anche in marcia?",
-    "cluster_fahrt_text": "I contenuti sul display del conducente distraggono durante la guida. I video in marcia sono vietati in molti paesi e possono portare multe e problemi con l’assicurazione. Decidi tu e ne sei responsabile. Panoptes non si assume alcuna responsabilità.",
+    "cluster_fahrt_text": "I contenuti sul display del conducente distraggono durante la guida. I video in marcia sono vietati in molti paesi e possono portare multe e problemi con l’assicurazione. Decidi tu e ne sei responsabile. Panoptes non si assume alcuna responsabilità. Dopo il tuo «Ho capito», tutte le app che autorizzi possono funzionare anche durante la guida. Puoi disattivarlo per ogni app.",
     "cluster_fahrt_ok": "Ho capito, decido io",
     "cluster_fahrt_abbrechen": "Annulla",
     "cluster_app_fahrt_hinweis_noetig": "Leggi prima l’avviso sulla guida e tocca “Ho capito, decido io”.",
@@ -2950,13 +2954,12 @@
     "tip_vent_unavailable": "Sedile ventilato non disponibile su questo allestimento",
     "cluster_app_title": "App sul quadro strumenti",
     "cluster_app_lead": "Scegli un’app installata e tocca “Abilita”. Funziona solo se la tua auto supporta le app sul display del conducente; DiLink 5 resta bloccato per ora. In marcia funzionano solo le app di navigazione, a meno che tu non consenta un’app “anche in marcia”.",
-    "cluster_app_probe": "Prova in P", "cluster_app_enable": "Avvia", "cluster_app_revoke": "Revoca", "cluster_app_stop": "Arresta",
-    "cluster_app_question": "Velocità e tutte le spie sono visibili? Il quadro torna dopo la risposta.",
-    "cluster_app_yes": "Sì, abilita", "cluster_app_no": "No, blocca", "cluster_app_approved": "Abilitata", "cluster_app_blocked": "Bloccata",
+    "cluster_app_enable": "Avvia", "cluster_app_revoke": "Revoca", "cluster_app_stop": "Arresta",
+    "cluster_app_approved": "Abilitata", "cluster_app_blocked": "Bloccata",
     "cluster_app_park": "Possibile solo in P.", "cluster_app_not_approved": "Questa app non è ancora abilitata.",
     "cluster_app_uninstalled": "L’app non è più installata o avviabile.", "cluster_app_invalid": "Questa app non può essere selezionata.",
-    "cluster_app_probe_needed": "Prima prova questa app in P.", "cluster_app_unavailable": "La proiezione sicura non è confermata su questa auto.", "cluster_app_dilink5_blocked": "DiLink 5 resta bloccato finché non sono verificati in auto la priorità delle telecamere sinistra e destra, il ripristino del pacchetto e della geometria e il fallback sicuro in caso di errore.",
-    "cluster_app_failed": "Impossibile avviare l’app sul quadro strumenti.", "cluster_app_watch": "Controlla ora velocità, spie e ritorno al quadro strumenti.",
+    "cluster_app_unavailable": "La proiezione sicura non è confermata su questa auto.", "cluster_app_dilink5_blocked": "DiLink 5 resta bloccato finché non sono verificati in auto la priorità delle telecamere sinistra e destra, il ripristino del pacchetto e della geometria e il fallback sicuro in caso di errore.",
+    "cluster_app_failed": "Impossibile avviare l’app sul quadro strumenti.",
     "kacheln_favoriten": "Preferiti",
     "kacheln_kategorien": "Categorie",
     "kacheln_fav_leer": "Tocca la stella di un riquadro e comparirà qui in alto.",
@@ -5823,7 +5826,7 @@
     "ja": "sì",
     "nein": "no",
     "unbekannt": "ancora aperto",
-    "tacho_title": "Test del quadro strumenti (beta)",
+    "tacho_title": "Cosa sa fare il mio quadro?",
     "tacho_lead": "Controlla solo che cosa sa fare il tuo quadro strumenti. Al quadro non viene inviato nulla. Solo con l'auto ferma.",
     "tacho_start": "Avvia il test",
     "tacho_copy": "Copia il risultato",
@@ -5837,17 +5840,13 @@
     "tacho_preview": "Ci arriverà esattamente questo:",
     "tacho_send_ja": "Invia ora",
     "tacho_send_nein": "Annulla",
-    "navi_title": "App sul quadro (beta)",
+    "navi_title": "App sul quadro",
     "navi_lead": "Ogni app installata e avviabile può essere abilitata da sola: scegli l’app, conferma una volta l’avviso, fatto. “Quadro di nuovo normale” riporta subito gli strumenti.",
-    "navi_probe": "Prova da fermo (20 s)",
-    "navi_frage": "Guarda il quadro: vedi ancora tutte le spie e la velocità?",
-    "navi_ja": "Sì, si vede tutto",
-    "navi_nein": "No, qualcosa è coperto",
     "navi_on": "Attiva",
     "navi_an": "Attivo",
     "navi_aus": "Spento",
     "navi_keine": "Nessuna app avviabile installata",
-    "navi_na": "Non disponibile su questa auto. Fai prima il test del quadro e la prova.",
+    "navi_na": "Non possibile su questa auto. «Cosa sa fare il mio quadro?» ti mostra perché.",
     "navi_nicht_erlaubt": "Questa app non è ancora abilitata durante la guida."
   },
   "whatsnew": {

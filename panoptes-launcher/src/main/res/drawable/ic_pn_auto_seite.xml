@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ruhiges Standardbild für das Fahrzeug-Feld (0.1.38.1), solange kein 3D-Modell aus Panoptes gezeichnet ist:
+     gefüllte Seitenansicht eines kompakten Elektroautos, eigene Zeichnung. Farbe per Tint, gedämpft. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="240dp" android:height="96dp" android:viewportWidth="240" android:viewportHeight="96">
+    <!-- Karosserie -->
+    <path android:fillColor="#FFFFFFFF" android:fillAlpha="0.55"
+        android:pathData="M18,70 C14,70 12,67 12,63 L13,55 C14,50 18,47 24,46 L58,41 C70,31 86,22 104,19 C126,16 150,17 166,22 C180,26 192,34 202,42 L216,45 C223,47 228,52 229,58 L230,64 C230,68 227,70 223,70 L200,70 C199,58 189,50 178,50 C167,50 157,58 156,70 L84,70 C83,58 73,50 62,50 C51,50 41,58 40,70 Z" />
+    <!-- Fenster -->
+    <path android:fillColor="#FFFFFFFF" android:fillAlpha="0.28"
+        android:pathData="M70,42 C80,33 92,27 106,25 L128,24 L130,42 Z M136,24 L152,25 C166,27 178,33 188,42 L138,42 Z" />
+    <!-- Räder -->
+    <path android:fillColor="#FFFFFFFF" android:fillAlpha="0.75"
+        android:pathData="M62,54 A16,16 0 1,1 61.99,54 Z M178,54 A16,16 0 1,1 177.99,54 Z" />
+    <path android:fillColor="#FFFFFFFF" android:fillAlpha="0.30"
+        android:pathData="M62,63 A7,7 0 1,1 61.99,63 Z M178,63 A7,7 0 1,1 177.99,63 Z" />
+</vector>

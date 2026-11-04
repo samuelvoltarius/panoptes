@@ -945,6 +945,10 @@
       "vehicle_health_battery12v": {
         "label": "12 V-accu wordt zwak",
         "note": "Waarschuwt voordat de 12 V-accu te zwak is om te starten. Hooguit één keer per dag."
+      },
+      "system_updates": {
+        "label": "Updates",
+        "note": "Nieuwe versie van Panoptes of de launcher, en wanneer een update klaar is."
       }
     },
     "group": {
@@ -2855,7 +2859,7 @@
     "cluster_tacho_normal_ok": "Het bestuurdersscherm toont weer de normale meters.",
     "cluster_fahrt_video": "Video-app",
     "cluster_fahrt_titel": "Ook tijdens het rijden toestaan?",
-    "cluster_fahrt_text": "Inhoud op het bestuurdersscherm leidt af tijdens het rijden. Video’s tijdens het rijden zijn in veel landen verboden en kunnen boetes en problemen met de verzekering opleveren. Jij beslist en bent zelf verantwoordelijk. Panoptes aanvaardt geen aansprakelijkheid.",
+    "cluster_fahrt_text": "Inhoud op het bestuurdersscherm leidt af tijdens het rijden. Video’s tijdens het rijden zijn in veel landen verboden en kunnen boetes en problemen met de verzekering opleveren. Jij beslist en bent zelf verantwoordelijk. Panoptes aanvaardt geen aansprakelijkheid. Na je „Begrepen” mogen alle apps die je vrijgeeft ook tijdens het rijden draaien. Per app kun je het weer uitzetten.",
     "cluster_fahrt_ok": "Begrepen, ik beslis zelf",
     "cluster_fahrt_abbrechen": "Annuleren",
     "cluster_app_fahrt_hinweis_noetig": "Lees eerst de melding over rijden en tik op „Begrepen, ik beslis zelf”.",
@@ -2950,13 +2954,12 @@
     "tip_vent_unavailable": "Geventileerde stoel niet beschikbaar op deze uitvoering",
     "cluster_app_title": "App op bestuurdersdisplay",
     "cluster_app_lead": "Kies een geïnstalleerde app en tik op „Toestaan”. Dit werkt alleen als je auto apps op het bestuurdersscherm ondersteunt; DiLink 5 blijft voorlopig geblokkeerd. Tijdens het rijden draaien alleen navigatie-apps, tenzij je een app „ook tijdens het rijden” toestaat.",
-    "cluster_app_probe": "Test in P", "cluster_app_enable": "Start", "cluster_app_revoke": "Intrekken", "cluster_app_stop": "Stop",
-    "cluster_app_question": "Zijn snelheid en alle waarschuwingslampjes zichtbaar? Na je antwoord keren de tellers terug.",
-    "cluster_app_yes": "Ja, vrijgeven", "cluster_app_no": "Nee, blokkeren", "cluster_app_approved": "Vrijgegeven", "cluster_app_blocked": "Geblokkeerd",
+    "cluster_app_enable": "Start", "cluster_app_revoke": "Intrekken", "cluster_app_stop": "Stop",
+    "cluster_app_approved": "Vrijgegeven", "cluster_app_blocked": "Geblokkeerd",
     "cluster_app_park": "Alleen mogelijk in P.", "cluster_app_not_approved": "Deze app is nog niet vrijgegeven.",
     "cluster_app_uninstalled": "De app is niet meer geïnstalleerd of startbaar.", "cluster_app_invalid": "Deze app kan niet worden gekozen.",
-    "cluster_app_probe_needed": "Test deze app eerst in P.", "cluster_app_unavailable": "Veilige projectie is op deze auto niet bevestigd.", "cluster_app_dilink5_blocked": "DiLink 5 blijft geblokkeerd totdat in de auto de voorrang van de linker- en rechtercamera, het herstel van pakket en geometrie en een veilige foutterugval zijn aangetoond.",
-    "cluster_app_failed": "De app kon niet op het bestuurdersdisplay worden gestart.", "cluster_app_watch": "Controleer nu snelheid, waarschuwingslampjes en terugkeer naar de tellers.",
+    "cluster_app_unavailable": "Veilige projectie is op deze auto niet bevestigd.", "cluster_app_dilink5_blocked": "DiLink 5 blijft geblokkeerd totdat in de auto de voorrang van de linker- en rechtercamera, het herstel van pakket en geometrie en een veilige foutterugval zijn aangetoond.",
+    "cluster_app_failed": "De app kon niet op het bestuurdersdisplay worden gestart.",
     "kacheln_favoriten": "Favorieten",
     "kacheln_kategorien": "Categorieën",
     "kacheln_fav_leer": "Tik op de ster van een tegel, dan staat hij hier bovenaan.",
@@ -5823,7 +5826,7 @@
     "ja": "ja",
     "nein": "nee",
     "unbekannt": "nog open",
-    "tacho_title": "Instrumentenpaneel-test (bèta)",
+    "tacho_title": "Wat kan mijn paneel?",
     "tacho_lead": "Controleert alleen wat je instrumentenpaneel kan. Er wordt niets naar het paneel gestuurd. Werkt alleen als de auto stilstaat.",
     "tacho_start": "Test starten",
     "tacho_copy": "Resultaat kopiëren",
@@ -5837,17 +5840,13 @@
     "tacho_preview": "Precies dit gaat naar ons:",
     "tacho_send_ja": "Nu versturen",
     "tacho_send_nein": "Annuleren",
-    "navi_title": "App op het paneel (bèta)",
+    "navi_title": "App op het paneel",
     "navi_lead": "Elke geïnstalleerde app die kan starten kan apart worden toegestaan: kies de app, bevestig de melding één keer, klaar. „Teller weer normaal” brengt de meters meteen terug.",
-    "navi_probe": "Proef bij stilstand (20 s)",
-    "navi_frage": "Kijk op het paneel: zie je nog alle waarschuwingslampjes en de snelheid?",
-    "navi_ja": "Ja, alles is zichtbaar",
-    "navi_nein": "Nee, er is iets bedekt",
     "navi_on": "Inschakelen",
     "navi_an": "Aan",
     "navi_aus": "Uit",
     "navi_keine": "Geen startbare app geïnstalleerd",
-    "navi_na": "Niet aangeboden op deze auto. Doe eerst de paneeltest en de proef.",
+    "navi_na": "Niet mogelijk op deze auto. „Wat kan mijn paneel?” laat zien waarom.",
     "navi_nicht_erlaubt": "Deze app is nog niet vrijgegeven tijdens het rijden."
   },
   "whatsnew": {

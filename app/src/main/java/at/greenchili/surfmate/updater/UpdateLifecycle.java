@@ -120,6 +120,7 @@ public final class UpdateLifecycle {
      */
     public static void hardResetDaemons(Context ctx, Runnable onComplete) {
         Log.i(TAG, "post-update detected — hard-resetting daemons");
+        at.greenchili.surfmate.logging.LauncherEreignisse.merken("HARDRESET_BEGINN", "");
         long start = System.currentTimeMillis();
         String diLink5CaptureCleanup = diLink5CaptureKillScript();
         // We allocate a fresh AdbDaemonLauncher here because hardResetDaemons
@@ -141,7 +142,7 @@ public final class UpdateLifecycle {
         //   1. Plant per-daemon disable sentinels (defense for any watchdog
         //      we might miss with the pkill — gate-1/gate-2 in the watchdog
         //      loop catches them on the next iteration).
-        //   2. Remove watchdog scripts so the kernel can't re-exec them.
+        //   2. (bis 0.1.38: Watchdog-Skripte löschen; seit 0.1.38.1 bleiben sie stehen, siehe unten.)
         //   3. pkill / killall cascade — daemon binaries first, then
         //      ancillary binaries (cloudflared/zrok/sing-box/tailscaled/wgproxy).
         //      No self-match risk now.
@@ -178,7 +179,12 @@ public final class UpdateLifecycle {
                 "echo \"disabled by post-update reset at $(date)\" > /data/user_de/0/com.android.shell/surfmate/acc_sentry_daemon.disabled\n" +
                 "chmod 666 /data/user_de/0/com.android.shell/surfmate/acc_sentry_daemon.disabled 2>/dev/null\n" +
                 "rm -f /data/user_de/0/com.android.shell/surfmate/cam_watchdog.pid 2>/dev/null\n" +
-                "rm -f /data/user_de/0/com.android.shell/surfmate/start_cam_daemon.sh /data/user_de/0/com.android.shell/surfmate/start_acc_sentry.sh /data/user_de/0/com.android.shell/surfmate/start_zrok.sh /data/user_de/0/com.android.shell/surfmate/start_telegram.sh 2>/dev/null\n" +
+                // 0.1.38.1: start_cam_daemon.sh, start_acc_sentry.sh und start_telegram.sh bleiben stehen.
+                // Bis 0.1.38 löschte dieser Schritt sie; scheiterte danach das Neuschreiben (Auto 04.11.,
+                // 01:04: Schreiber getötet), fehlte das Skript, bis jemand von Hand eingriff. Die Sentinels
+                // oben und die Kill-Kaskade halten alte Watchdogs auf, das Neuschreiben ersetzt die Skripte
+                // atomar per mv. start_zrok.sh ist eine Altlast und darf weiter weg.
+                "rm -f /data/user_de/0/com.android.shell/surfmate/start_zrok.sh 2>/dev/null\n" +
                 // ps+awk+kill cascade — single-source-of-truth process
                 // names below. Each pattern walks /proc and SIGKILLs the
                 // matching PIDs except the calling shell's own PID.
@@ -267,6 +273,8 @@ public final class UpdateLifecycle {
     private static void finishHardReset(Runnable onComplete, long start, boolean withError) {
         long ms = System.currentTimeMillis() - start;
         Log.i(TAG, "hard reset complete in " + ms + "ms" + (withError ? " (with warning)" : ""));
+        at.greenchili.surfmate.logging.LauncherEreignisse.merken(withError ? "HARDRESET_FEHLER" : "HARDRESET_ENDE",
+                "ms=" + ms);
         try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
         if (onComplete != null) onComplete.run();
     }

@@ -85,7 +85,7 @@
     <string name="traffic_format">Nearby: %1$d · approaching: %2$d</string>
     <string name="umbenennen">Rename</string>
     <string name="unknown">—</string>
-    <string name="video_nur_p">Video apps start only in P.</string>
+    <string name="video_nur_p">Video apps start only in P – or after you confirm the driving notice once in Panoptes (Display → Cluster).</string>
     <string name="waechter_an">On</string>
     <string name="waechter_aufnahme">Recording</string>
     <string name="waechter_aus">Off</string>

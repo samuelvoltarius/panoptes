@@ -7,7 +7,8 @@
     <!--
         0.1.37 Panoptes Launcher: nur das Fahrzeug aus dem Modellkatalog (manifest.json), für die
         Fahrzeug-Kachel der Launcher-APK. Gleicher Renderer wie die Seitenleiste (ev-card-3d.js),
-        zeichnet nur bei Bedarf (keine Dauerschleife), durchsichtiger Hintergrund, kein Text,
+        zeichnet nur bei Bedarf (keine Dauerschleife, also weit unter 30 Bildern/s; pausiert, wenn nicht sichtbar),
+        durchsichtiger Hintergrund, kein Text,
         keine Daten außer Modell und Farbe aus der Adresse.
     -->
     <style>
@@ -27,8 +28,23 @@
         });
         var modell = /^[a-z0-9_-]{1,40}$/.test(q.modell || '') ? q.modell : null;
         var farbe = /^#[0-9A-Fa-f]{6}$/.test(q.farbe || '') ? q.farbe : '#E8E8EC';
-        if (!modell || typeof window.SurfMateEvCard3D !== 'function') return;
-        var karte = new window.SurfMateEvCard3D(document.getElementById('auto'), { view: 'three-quarter' });
+        // 0.1.38.1: Rückmeldung an den Launcher über den Seitentitel (kein JS-Bridge): „bereit“ erst, wenn das
+        // Modell wirklich gezeichnet ist, sonst „fehler“ – dann bleibt dort das ruhige Standbild stehen.
+        if (!modell || typeof window.SurfMateEvCard3D !== 'function') { document.title = 'fehler'; return; }
+        // ansicht=front: Front-Dreiviertel nur für den Launcher; der gemeinsame Renderer bleibt sonst unverändert
+        var karte = new window.SurfMateEvCard3D(document.getElementById('auto'),
+            { view: 'three-quarter', front: q.ansicht === 'front' });
+        // „bereit“ nur, wenn alle Shader laufen: manche GPUs (auch der Emulator) melden ungültige Programme,
+        // dann zeichnet three.js nichts, obwohl render() ohne Ausnahme durchläuft (r147: info.programs[].diagnostics).
+        karte.onceAfterRender(function () {
+            var gut = true;
+            try {
+                var p = (karte.renderer && karte.renderer.info && karte.renderer.info.programs) || [];
+                for (var i = 0; i < p.length; i++) if (p[i].diagnostics && p[i].diagnostics.runnable === false) gut = false;
+            } catch (e) { gut = false; }
+            document.title = gut ? 'bereit' : 'fehler';
+        });
+        setTimeout(function () { if (document.title !== 'bereit') document.title = 'fehler'; }, 20000);
         karte.setColor(farbe);
         karte.setModel(modell);
         window.addEventListener('pagehide', function () { try { karte.dispose(); } catch (e) {} });

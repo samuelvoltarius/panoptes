@@ -208,6 +208,40 @@
         "Bewaking en ritten hebben bovenaan een grote schakelaar. Regels staan er als „Als … / Dan …”.",
         "Wat je nog kunt instellen, staat onder Instellingen → Installatie → „Nog instellen”. Alles is vrijwillig."
       ]
+    },
+    {
+      "version": "0.1.38.1",
+      "versionCode": 65,
+      "de": [
+        "Panoptes richtet sich nach einem Update und im laufenden Betrieb selbst wieder ein, wenn ein Teil nicht mehr richtig läuft. Ist alles fertig, bekommst du eine kurze Nachricht. Klappt es einmal nicht, steht in der Nachricht, was zu tun ist.",
+        "„Was kann mein Tacho?“ findest du jetzt direkt unter Apps & Display → Display, ohne Probe.",
+        "Apps am Tacho dürfen nach einem einmaligen Hinweis auch beim Fahren laufen. Musik-Apps sind schon freigegeben.",
+        "Der Panoptes Launcher zeigt dein Auto jetzt von vorn."
+      ],
+      "en": [
+        "After an update and while running, Panoptes now sets itself up again on its own if a part stops working properly. When everything is ready, you get a short message. If it ever fails, the message tells you what to do.",
+        "“What can my instrument cluster do?” is now right under Apps & display → Display, without a trial run.",
+        "After a one-time notice, apps on the instrument cluster may also run while driving. Music apps are already allowed.",
+        "The Panoptes launcher now shows your car from the front."
+      ],
+      "fr": [
+        "Après une mise à jour et en fonctionnement, Panoptes se remet en place tout seul si une partie ne fonctionne plus correctement. Quand tout est prêt, tu reçois un court message. Si cela échoue, le message explique quoi faire.",
+        "« Que peut faire mon compteur ? » se trouve maintenant directement sous Apps & écran → Écran, sans essai.",
+        "Après un avertissement unique, les apps du compteur peuvent aussi fonctionner en roulant. Les apps de musique sont déjà autorisées.",
+        "Le launcher Panoptes montre maintenant ta voiture de face."
+      ],
+      "it": [
+        "Dopo un aggiornamento e durante il funzionamento, Panoptes si rimette in funzione da solo se una parte non funziona più bene. Quando tutto è pronto, ricevi un breve messaggio. Se qualche volta non ci riesce, il messaggio dice cosa fare.",
+        "«Cosa sa fare il mio quadro strumenti?» ora è direttamente in App & display → Display, senza prova.",
+        "Dopo un avviso unico, le app sul quadro strumenti possono funzionare anche durante la guida. Le app musicali sono già consentite.",
+        "Il launcher Panoptes ora mostra la tua auto di fronte."
+      ],
+      "nl": [
+        "Na een update en tijdens gebruik stelt Panoptes zichzelf weer in als een onderdeel niet meer goed werkt. Is alles klaar, dan krijg je een kort bericht. Lukt het een keer niet, dan staat in het bericht wat je moet doen.",
+        "„Wat kan mijn dashboard?” staat nu direct onder Apps & scherm → Scherm, zonder proef.",
+        "Na een eenmalige melding mogen apps op het dashboard ook tijdens het rijden draaien. Muziek-apps zijn al toegestaan.",
+        "De Panoptes-launcher toont je auto nu van voren."
+      ]
     }
   ]
 }

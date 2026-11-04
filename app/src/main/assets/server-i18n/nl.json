@@ -399,6 +399,10 @@
       "display_valet": {
         "label": "Schermvergrendeling",
         "note": "Iemand heeft op het vergrendelde scherm meerdere keren een verkeerde pincode ingevoerd."
+      },
+      "system_updates": {
+        "label": "Updates",
+        "note": "Nieuwe versie van Panoptes of de launcher, en wanneer een update klaar is."
       }
     },
     "cloud_uebergabe_titel": "‘{0}’ wil de BYD-cloud overdragen",
@@ -411,7 +415,10 @@
     "battery12v_vor_title": "12 V-accu wordt zwakker: {0} V",
     "battery12v_vor_body": "Als hij verder zakt, start de auto misschien niet. Ga snel een stuk rijden of sluit hem aan.",
     "battery12v_niedrig_title": "12 V-accu zeer zwak: {0} V",
-    "battery12v_niedrig_body": "Hij herstelt niet meer vanzelf. De auto start straks misschien niet meer. Rijd vandaag een stuk of sluit hem aan."
+    "battery12v_niedrig_body": "Hij herstelt niet meer vanzelf. De auto start straks misschien niet meer. Rijd vandaag een stuk of sluit hem aan.",
+    "update_installiert": "Panoptes {0} is geïnstalleerd en draait.",
+    "launcher_verfuegbar": "Nieuwe launcher-versie {0}",
+    "launcher_installiert": "Launcher {0} is geïnstalleerd."
   },
   "parking": {
     "notify": {
@@ -775,7 +782,10 @@
       "rolled_back_reason": "↩️ *Update teruggezet*\nDe nieuwe versie draaide niet goed, dus Panoptes is terug op {0}. Er gaat niets verloren op de auto.\nReden: {1}",
       "unknown_reason": "onbekend – details staan in het logboek op de auto",
       "available": "🆕 *Panoptes {0} is beschikbaar*\nInstalleren kan als de auto geparkeerd staat, onder *Systeem → App-updates*.",
-      "available_size": "🆕 *Panoptes {0} is beschikbaar* ({1})\nInstalleren kan als de auto geparkeerd staat, onder *Systeem → App-updates*."
+      "available_size": "🆕 *Panoptes {0} is beschikbaar* ({1})\nInstalleren kan als de auto geparkeerd staat, onder *Systeem → App-updates*.",
+      "installiert_laeuft": "✅ *Panoptes {0} is geïnstalleerd en draait.*",
+      "launcher_verfuegbar": "🆕 *Nieuwe launcher-versie {0}*\nBijwerken gaat met de knop in Panoptes, onder *Apps & scherm → Scherm → Launcher*.",
+      "launcher_installiert": "✅ *Launcher {0} is geïnstalleerd.*"
     },
     "critical": {
       "message": "🚨 *{0}*",
@@ -2651,6 +2661,13 @@
     "grund_akku": "Gestopt om de accu te sparen.",
     "grund_v12": "Gestopt om de kleine 12V-accu te sparen.",
     "grund_lange_geparkt": "Gestopt na lang parkeren, om stroom te sparen."
+  },
+  "selbstheilung": {
+    "titel": "Panoptes heeft even je hulp nodig",
+    "text": "Een deel van Panoptes ({0}) kon zichzelf niet opnieuw instellen. Het draait nu, maar zou niet vanzelf opnieuw starten als het stopt. Open Panoptes één keer op het scherm van de auto, dan stelt het zich opnieuw in. Anders gebeurt dat uiterlijk bij de volgende herstart van de auto.",
+    "wort_kamera": "Camera en opname",
+    "wort_waechter": "Bewaker",
+    "wort_telegram": "Telegram-berichten"
   },
   "rechte_heilung": {
     "titel": "Panoptes heeft rechten verloren",

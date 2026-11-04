@@ -66,7 +66,8 @@ public class SkriptAtomarSchreibenTest {
 
     private static void keineTempReste(File dir) {
         File[] l = dir.listFiles();
-        for (File f : l) assertFalse("Temp-Datei liegt noch: " + f.getName(), f.getName().contains(".neu."));
+        for (File f : l) assertFalse("Temp-Datei liegt noch: " + f.getName(),
+                f.getName().contains(".neu.") || f.getName().startsWith(DaemonLauncher.TEMP_PRAEFIX));
     }
 
     @Test
@@ -80,7 +81,7 @@ public class SkriptAtomarSchreibenTest {
             List<String> alt = new ArrayList<>(zeilen);
             alt.addAll(zeilen.subList(106, zeilen.size()));
             Files.write(ziel.toPath(), (String.join("\n", alt) + "\n").getBytes(StandardCharsets.UTF_8));
-            assertEquals(334, alt.size());
+            assertEquals(zeilen.size() + zeilen.size() - 106, alt.size());   // am Auto: 334
             assertNotEquals("Vorbedingung: altes Skript ist syntaktisch kaputt", 0, shN(ziel));
 
             LogArchivShellTest.fuehreAus(DaemonLauncher.Companion.buildWatchdogScriptWriteCommand(
@@ -102,7 +103,9 @@ public class SkriptAtomarSchreibenTest {
             File ziel = new File(dir, "start_telegram.sh");
             String z = LogArchivShellTest.pfad(ziel);
             List<String> zeilen = telegram();
-            assertEquals(220, zeilen.size());
+            // Am Auto 220 Zeilen; seit 0.1.38.1 21 Zeilen mehr (Anhänge-Modus), Befund-Logik unverändert.
+            int n = zeilen.size();
+            assertEquals(241, n);
             StringBuilder sk = new StringBuilder();
             // AccSentry (alt): rm, Zeilen 1..106 einzeln ins Ziel
             sk.append("rm -f ").append(z).append('\n');
@@ -120,9 +123,9 @@ public class SkriptAtomarSchreibenTest {
             }
             LogArchivShellTest.fuehreAus(sk.toString());
             List<String> ergebnis = Arrays.asList(lies(ziel).split("\n", -1));
-            assertEquals("334 Zeilen + leeres Ende", 335, ergebnis.size());
-            assertEquals("Zeile 221 = '  fi' aus acquire_watchdog_lock", "  fi", ergebnis.get(220));
-            assertTrue(ergebnis.get(222).contains("watchdog_pid_matches"));
+            assertEquals("am Auto 334 Zeilen + leeres Ende", n + (n - 106) + 1, ergebnis.size());
+            assertEquals("Zeile n+1 (am Auto 221) = '  fi' aus acquire_watchdog_lock", "  fi", ergebnis.get(n));
+            assertTrue(ergebnis.get(n + 2).contains("watchdog_pid_matches"));
             assertNotEquals(0, shN(ziel));
         } finally {
             weg(dir);

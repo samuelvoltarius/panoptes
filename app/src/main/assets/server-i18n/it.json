@@ -399,6 +399,10 @@
       "display_valet": {
         "label": "Blocco display",
         "note": "Qualcuno ha inserito più volte un PIN errato sul display bloccato."
+      },
+      "system_updates": {
+        "label": "Aggiornamenti",
+        "note": "Nuova versione di Panoptes o del launcher, e quando un aggiornamento è finito."
       }
     },
     "cloud_uebergabe_titel": "“{0}” vuole passare il cloud BYD",
@@ -411,7 +415,10 @@
     "battery12v_vor_title": "La batteria da 12 V si indebolisce: {0} V",
     "battery12v_vor_body": "Se scende ancora, l’auto potrebbe non partire. Fai presto un giro o collegala alla corrente.",
     "battery12v_niedrig_title": "Batteria da 12 V molto debole: {0} V",
-    "battery12v_niedrig_body": "Non si riprende più da sola. Presto l’auto potrebbe non partire. Fai un giro oggi o collegala alla corrente."
+    "battery12v_niedrig_body": "Non si riprende più da sola. Presto l’auto potrebbe non partire. Fai un giro oggi o collegala alla corrente.",
+    "update_installiert": "Panoptes {0} è installato e funziona.",
+    "launcher_verfuegbar": "Nuova versione del launcher {0}",
+    "launcher_installiert": "Il launcher {0} è installato."
   },
   "parking": {
     "notify": {
@@ -775,7 +782,10 @@
       "rolled_back_reason": "↩️ *Aggiornamento ripristinato*\nLa nuova versione non funzionava correttamente, quindi Panoptes è tornato alla {0}. Sull’auto non si è perso nulla.\nMotivo: {1}",
       "unknown_reason": "sconosciuto – i dettagli sono nel registro sull'auto",
       "available": "🆕 *Panoptes {0} è disponibile*\nPuoi installarlo ad auto parcheggiata, in *Sistema → Aggiornamenti app*.",
-      "available_size": "🆕 *Panoptes {0} è disponibile* ({1})\nPuoi installarlo ad auto parcheggiata, in *Sistema → Aggiornamenti app*."
+      "available_size": "🆕 *Panoptes {0} è disponibile* ({1})\nPuoi installarlo ad auto parcheggiata, in *Sistema → Aggiornamenti app*.",
+      "installiert_laeuft": "✅ *Panoptes {0} è installato e funziona.*",
+      "launcher_verfuegbar": "🆕 *Nuova versione del launcher {0}*\nSi aggiorna con il pulsante in Panoptes, in *App & display → Display → Launcher*.",
+      "launcher_installiert": "✅ *Il launcher {0} è installato.*"
     },
     "critical": {
       "message": "🚨 *{0}*",
@@ -2651,6 +2661,13 @@
     "grund_akku": "Fermato per proteggere la batteria.",
     "grund_v12": "Fermato per proteggere la piccola batteria 12 V.",
     "grund_lange_geparkt": "Fermato dopo una lunga sosta, per risparmiare energia."
+  },
+  "selbstheilung": {
+    "titel": "Panoptes ha bisogno del tuo aiuto",
+    "text": "Una parte di Panoptes ({0}) non è riuscita a rimettersi in funzione da sola. Ora funziona, ma non ripartirebbe da sola se si fermasse. Apri Panoptes una volta sullo schermo dell’auto, così si rimette in funzione. Altrimenti succede al più tardi al prossimo riavvio dell’auto.",
+    "wort_kamera": "Fotocamera e registrazione",
+    "wort_waechter": "Guardiano",
+    "wort_telegram": "Messaggi Telegram"
   },
   "rechte_heilung": {
     "titel": "Panoptes ha perso delle autorizzazioni",

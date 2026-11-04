@@ -45,7 +45,7 @@
                 <p id="bzNa" hidden data-i18n="testf.na">Diese Testfunktion kommt mit dem nächsten Update.</p>
             </article>
             <article class="tc" id="tt">
-                <h2 data-i18n="testf.tacho_title">Tacho-Test (Beta)</h2>
+                <h2 data-i18n="testf.tacho_title">Was kann mein Tacho?</h2>
                 <p data-i18n="testf.tacho_lead">Prüft nur, was dein Tacho kann. Es wird nichts an den Tacho geschickt. Geht nur im Stand.</p>
                 <div id="ttErg"></div>
                 <button class="tbtn lime" type="button" id="ttStart" data-i18n="testf.tacho_start">Test starten</button>
@@ -61,7 +61,7 @@
                 <p id="ttGesendet" hidden></p>
             </article>
             <article class="tc" id="tn" hidden>
-                <h2 data-i18n="testf.navi_title">App am Tacho (Beta)</h2>
+                <h2 data-i18n="testf.navi_title">App am Tacho</h2>
                 <p data-i18n="testf.navi_lead">Jede installierte startbare App kann einzeln freigegeben werden: App wählen, einmal den Hinweis bestätigen, fertig. „Tacho wieder normal“ holt die Tacho-Anzeige sofort zurück.</p>
                 <div id="tnHinweis" hidden role="alert">
                     <p><b data-i18n="vehicle_control.cluster_hinweis_titel">Neu: Apps am Fahrerdisplay</b><br>
@@ -198,11 +198,10 @@
         var m = {
             nur_im_stand: t('testf.tacho_stand', 'Geht nur im Stand (Gang P).'),
             nur_in_p: t('testf.tacho_stand', 'Geht nur im Stand (Gang P).'),
-            auf_diesem_auto_nicht_angeboten: t('testf.navi_na', 'Auf diesem Auto nicht angeboten. Mach zuerst den Tacho-Test und die Probe.'),
+            auf_diesem_auto_nicht_angeboten: t('testf.navi_na', 'Auf diesem Auto nicht möglich. Unter „Was kann mein Tacho?“ siehst du, warum.'),
             nicht_freigegeben: t('testf.navi_nicht_erlaubt', 'Diese App ist noch nicht für die Fahrt freigegeben.'),
             nicht_installiert: t('testf.navi_keine', 'Die App ist nicht mehr installiert oder nicht startbar.'),
             ungueltiges_paket: t('testf.navi_nicht_erlaubt', 'Diese App kann nicht auf das Fahrerdisplay.'),
-            probe_noetig: t('testf.navi_na', 'Prüfe diese App zuerst in P.'),
             hinweis_noetig: t('vehicle_control.cluster_app_hinweis_noetig', 'Lies zuerst den Hinweis und tippe auf „Verstanden“.'),
             start_fehlgeschlagen: t('testf.fail', 'Das hat nicht geklappt.')
         };

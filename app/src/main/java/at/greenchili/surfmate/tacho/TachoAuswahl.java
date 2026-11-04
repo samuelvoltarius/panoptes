@@ -83,6 +83,7 @@ public final class TachoAuswahl {
                         .put("id", APP + p).put("art", "app").put("paket", p)
                         .put("name", a.optString("name", p))
                         .put("navi", navi).put("video", a.optBoolean("video", false))
+                        .put("audio", a.optBoolean("audio", false))
                         .put("fahrt", a.optBoolean("fahrt", false))
                         .put("gewaehlt", p.equals(aktiv))
                         .put("waehlbar", frei)

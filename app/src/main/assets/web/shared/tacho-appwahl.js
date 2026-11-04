@@ -74,7 +74,10 @@
     var nachFahrt = null;
     function mitFahrtHinweis(app, weiter) {
         $('clusterFahrtVideo').style.display = app && app.video ? 'block' : 'none';
-        if (data && data.fahrtHinweis && data.fahrtHinweis.bestaetigt && !(app && app.video)) { weiter(); return; }
+        // 0.1.38.1: EIN Haftungshinweis für alle Apps; danach keine Nachfrage mehr (auch nicht bei Video).
+        // Navi- und Musik-Apps sind ab Werk fahrtauglich und brauchen ihn nicht.
+        if (app && (app.audio || app.navi) && !app.video) { weiter(); return; }
+        if (data && data.fahrtHinweis && data.fahrtHinweis.bestaetigt) { weiter(); return; }
         nachFahrt = weiter;
         $('clusterFahrtHinweis').style.display = '';
     }

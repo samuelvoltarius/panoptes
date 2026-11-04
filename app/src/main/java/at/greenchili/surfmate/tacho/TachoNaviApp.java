@@ -20,7 +20,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * weiter ueber {@code ClusterCast}; {@link #fahrtSperre} ist ihre gemeinsame Policy.
  *
  * <p>0.1.36.1 (Vorgabe „Kein Video waehrend der Fahrt“): Ausserhalb von P laufen nur bekannte
- * Navigations-Apps ({@link #NAVI_PAKETE}). Jede andere App (Video, Spiele, unbekannt) startet nur in P
+ * Navigations-Apps ({@link #NAVI_PAKETE}), ab 0.1.38.1 auch Musik-/Radio-/Podcast-Apps ({@link #istAudio}).
+ * Jede andere App (Video, Spiele, unbekannt) startet nur in P
  * und wird beim Verlassen von P sofort gestoppt ({@link #beiGangwechsel} → {@code ClusterCast.stop()},
  * zurueck zur Instrumentenanzeige). Gilt fuer alle Startwege (Display, Web, Tastenbelegung,
  * Automation, ACC-Autostart), weil alle durch {@link #fahrtSperre} laufen.
@@ -38,6 +39,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * ({@link #FAHRT}). Ohne Eintrag gilt: Navi-Apps der festen Liste ja, alles andere nein (wie 0.1.36.1).
  * Einschalten nur mit Login (nie Kopplung, KI oder Automation) und nach dem eigenen Haftungshinweis
  * ({@link #FAHRT_HINWEIS_VERSION}); jede Aenderung steht im Befehls-Log.
+ *
+ * <p>0.1.38.1 („am Tacho alle Apps, es ist die eigene Entscheidung des Users“): Nach dem EINMALIGEN
+ * Haftungshinweis (Version + Zeit, {@link #fahrtHinweisBestaetigt()}) darf jede freigegebene App auch beim Fahren
+ * laufen, ohne Navi-Liste und ohne Audio/Video-Unterscheidung als Sperre; keine Nachfrage je App mehr. Vor dem
+ * Hinweis gilt ab Werk: Navi und Musik/Radio/Podcast ({@link #fahrtStandard}). Ein ausdrueckliches „aus“ je App
+ * bleibt die Entscheidung des Nutzers. KI und Automationen koennen den Hinweis nie bestaetigen.
  */
 public final class TachoNaviApp {
     @FunctionalInterface
@@ -51,7 +58,8 @@ public final class TachoNaviApp {
     static final String FAHRT = "fahrt";
     static final String FAHRT_HINWEIS = "fahrtHinweis";
     /** Neue Textversion = neu bestaetigen (Muster Tiermodus/AssistenzHinweis). */
-    public static final String FAHRT_HINWEIS_VERSION = "2026-11-03";
+    // 0.1.38.1: neue Fassung (gilt jetzt fuer alle freigegebenen Apps) → einmal neu bestaetigen
+    public static final String FAHRT_HINWEIS_VERSION = "2026-11-04";
 
     private static volatile long probeBis;
     private static volatile String probePaket;
@@ -90,23 +98,77 @@ public final class TachoNaviApp {
             "de.zdf.android.mediathek", "de.swr.avp.ard", "de.prosiebensat1digital.seventv", "com.dazn",
             "com.vimeo.android.videoapp", "com.dailymotion.dailymotion")));
 
+    /**
+     * 0.1.38.1 („warum laeuft Spotify nur in P?“): bekannte Musik-, Radio-, Podcast- und Hoerbuch-Apps.
+     * Sie zeigen kein Video und duerfen ab Werk auch beim Fahren laufen, wie Navi-Apps und ohne eigenen
+     * „auch beim Fahren“-Hinweis. Paketnamen aus dem Gedaechtnis, nicht gegen den Play Store geprueft; dazu kommt
+     * die Erkennung ueber {@link #audioErkennung}. Eine Video-App ({@link #istVideo}) ist nie Audio.
+     */
+    static final Set<String> AUDIO_PAKETE = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "com.spotify.music", "com.spotify.lite", "deezer.android.app", "com.aspiro.tidal", "com.amazon.mp3",
+            "com.google.android.apps.youtube.music", "com.apple.android.music", "com.audible.application",
+            "au.com.shiftyjelly.pocketcasts", "com.google.android.apps.podcasts", "fm.castbox.audiobook.radio.podcast",
+            "tunein.player", "de.radio.android", "com.soundcloud.android", "com.qobuz.music", "com.bambuna.podcastaddict",
+            "com.storytel", "de.bookbeat.android")));
+
+    /**
+     * Erkennung installierter Audio-Apps: Android-Kategorie {@code CATEGORY_AUDIO} oder ein
+     * {@code MediaBrowserService} (Medien-Apps fuer Android Auto), nie bei Kategorie Video. Austauschbar fuer Tests.
+     */
+    static volatile java.util.function.Predicate<String> audioErkennung = p -> {
+        try { return at.greenchili.surfmate.launcher.AppLauncher.istAudioApp(p); } catch (Throwable t) { return false; }
+    };
+
     private TachoNaviApp() {}
+
+    /** Musik/Radio/Podcast/Hoerbuch (feste Liste oder erkannt), aber nie eine bekannte Video-App. */
+    public static boolean istAudio(String paket) {
+        if (paket == null) return false;
+        String p = paket.trim();
+        if (p.isEmpty() || istVideo(p)) return false;
+        if (AUDIO_PAKETE.contains(p)) return true;
+        java.util.function.Predicate<String> e = audioErkennung;
+        if (e == null) return false;
+        // Erkennung kostet je App einen PackageManager-Aufruf; 10 min merken (Status listet alle Apps).
+        long jetzt = System.currentTimeMillis();
+        Object[] m = audioMerker.get(p);
+        if (m != null && jetzt - (Long) m[1] < AUDIO_MERKEN_MS && m[2] == e) return (Boolean) m[0];
+        boolean a = e.test(p);
+        audioMerker.put(p, new Object[] {a, jetzt, e});
+        return a;
+    }
+
+    static final long AUDIO_MERKEN_MS = 10 * 60_000L;
+    private static final Map<String, Object[]> audioMerker = new ConcurrentHashMap<>();
+
+    /** Ab Werk auch beim Fahren: Navi oder Audio. Video und alles Unbekannte nur in P bzw. nach eigenem Hinweis. */
+    static boolean fahrtStandard(String paket) {
+        return istNavi(paket) || istAudio(paket);
+    }
 
     /** Bekannte Video-/Streaming-App (nur fuer den Hinweis, keine harte Sperre)? */
     public static boolean istVideo(String paket) {
         return paket != null && VIDEO_PAKETE.contains(paket.trim());
     }
 
-    /** Darf diese App auch ausserhalb von P laufen? Ausdruecklicher Eintrag, sonst nur Navi der festen Liste. */
+    /** Darf diese App auch ausserhalb von P laufen? Ausdruecklicher Eintrag, sonst Navi oder Audio ({@link #fahrtStandard}). */
     static boolean fahrtErlaubt(String paket, JSONObject fahrt) {
+        return fahrtErlaubt(paket, fahrt, false);
+    }
+
+    /**
+     * Wie oben, mit dem einmaligen Haftungshinweis: bestaetigt → jede App (ausser ausdruecklich „aus“).
+     * Ob die App freigegeben ist, prueft {@link #fahrtSperre} getrennt.
+     */
+    static boolean fahrtErlaubt(String paket, JSONObject fahrt, boolean hinweisBestaetigt) {
         if (paket == null) return false;
         String p = paket.trim();
         if (fahrt != null && fahrt.has(p)) return fahrt.optBoolean(p, false);
-        return istNavi(p);
+        return hinweisBestaetigt || fahrtStandard(p);
     }
 
     public static boolean fahrtErlaubt(String paket) {
-        return fahrtErlaubt(paket, fahrtListe());
+        return fahrtErlaubt(paket, fahrtListe(), fahrtHinweisBestaetigt());
     }
 
     private static JSONObject fahrtListe() {
@@ -151,7 +213,8 @@ public final class TachoNaviApp {
      */
     public static synchronized JSONObject setzeFahrt(String paket, boolean an) throws Exception {
         String p = paket == null ? "" : paket.trim();
-        String sperre = fahrtSperreSetzen(p, an, istFreigegeben(p), fahrtHinweisBestaetigt());
+        // Navi und Audio sind ab Werk fahrtauglich: Wieder-Einschalten braucht keinen Haftungshinweis.
+        String sperre = fahrtSperreSetzen(p, an, istFreigegeben(p), fahrtHinweisBestaetigt() || fahrtStandard(p));
         if (sperre != null) {
             logFahrt(an ? "an" : "aus", sperre, p);
             return new JSONObject().put("ok", false).put("grund", sperre);
@@ -211,7 +274,7 @@ public final class TachoNaviApp {
 
     /** Muss die aktive App beim Gangwechsel weg? Ausserhalb von P: jede nicht freigegebene und jede ohne „auch beim Fahren“. */
     static boolean mussBeiGangStoppen(int gang, String aktivPaket, boolean freigegeben) {
-        return mussBeiGangStoppen(gang, aktivPaket, freigegeben, istNavi(aktivPaket));
+        return mussBeiGangStoppen(gang, aktivPaket, freigegeben, fahrtStandard(aktivPaket));
     }
 
     static boolean mussBeiGangStoppen(int gang, String aktivPaket, boolean freigegeben, boolean fahrt) {
@@ -445,6 +508,7 @@ public final class TachoNaviApp {
         r.put("fahrtHinweis", new JSONObject().put("version", FAHRT_HINWEIS_VERSION)
                 .put("bestaetigt", fahrtHinweisBestaetigt()));
         JSONObject fahrt = fahrtListe();
+        boolean fahrtHinweis = fahrtHinweisBestaetigt();
         r.put("ansicht", new JSONObject().put("paket", TachoAnsicht.PAKET)
                 .put("design", TachoAnsicht.design()).put("designs", new JSONArray(TachoAnsicht.DESIGNS)));
         JSONArray liste = new JSONArray();
@@ -456,7 +520,7 @@ public final class TachoNaviApp {
                 .put("freigegeben", ansichtFrei && startPlattform)
                 .put("gespeichertFreigegeben", ansichtFrei)
                 .put("navi", true).put("video", false)
-                .put("fahrt", fahrtErlaubt(TachoAnsicht.PAKET, fahrt)));
+                .put("fahrt", fahrtErlaubt(TachoAnsicht.PAKET, fahrt, fahrtHinweis)));
         JSONArray apps = at.greenchili.surfmate.launcher.AppLauncher.listLaunchableApps();
         for (int i = 0; i < apps.length(); i++) {
             JSONObject app = apps.optJSONObject(i);
@@ -468,8 +532,8 @@ public final class TachoNaviApp {
                     .put("installiert", true)
                     .put("freigegeben", gespeichertFrei && startPlattform)
                     .put("gespeichertFreigegeben", gespeichertFrei)
-                    .put("navi", istNavi(p)).put("video", istVideo(p))
-                    .put("fahrt", fahrtErlaubt(p, fahrt)));
+                    .put("navi", istNavi(p)).put("video", istVideo(p)).put("audio", istAudio(p))
+                    .put("fahrt", fahrtErlaubt(p, fahrt, fahrtHinweis)));
         }
         r.put("erlaubt", liste); // Altes Feld bleibt fuer bereits ausgelieferte Web-Dateien.
         r.put("apps", liste);

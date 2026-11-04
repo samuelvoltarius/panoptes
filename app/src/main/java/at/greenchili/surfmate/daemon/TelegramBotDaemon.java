@@ -241,6 +241,13 @@ public class TelegramBotDaemon {
             initCommandRouter();
             startIpcServer();  // Start IPC server for app notifications
             startPolling();
+            // 0.1.38.1: eigenen Watchdog prüfen und selbst heilen (Skript fehlt / Watchdog tot)
+            at.greenchili.surfmate.gesundheit.WatchdogSelbstpruefung.start(
+                    at.greenchili.surfmate.launcher.DaemonLauncher.ART_TELEGRAM,
+                    () -> at.greenchili.surfmate.launcher.DaemonLauncher.Companion.buildTelegramWatchdogScript(
+                            at.greenchili.surfmate.gesundheit.WatchdogSelbstpruefung.apkAusKlassenpfad(),
+                            at.greenchili.surfmate.gesundheit.WatchdogSelbstpruefung.proxyArgsAusSystem()),
+                    at.greenchili.surfmate.gesundheit.WatchdogSelbstpruefung::telegramMelden);
 
             log("Daemon running, polling for updates...");
             Looper.loop();
@@ -1488,11 +1495,10 @@ public class TelegramBotDaemon {
                                 log("notifyTunnel install-failed message sent: " + failOk);
                             }
 
+                            // 0.1.38.1: nach einem Update nur die Adresse; „installiert und läuft“ meldet
+                            // UpdateMeldung (sonst käme die Erfolgsmeldung doppelt).
                             String msg;
-                            if (postUpdateVersion != null) {
-                                msg = tr("update.installed_tunnel_online",
-                                        mdEscape(postUpdateVersion), url);
-                            } else if (isNew) {
+                            if (isNew) {
                                 msg = tr("tunnel.notification_url", url);
                             } else {
                                 msg = tr("tunnel.notification_url_changed", url);
@@ -2042,14 +2048,10 @@ public class TelegramBotDaemon {
                 }
                 String postUpdateVersion = consumePostUpdateHint();
                 if (postUpdateVersion != null) {
-                    if (criticalAlertsEnabled) {
-                        String msg = tr("update.installed",
-                                mdEscape(postUpdateVersion));
-                        boolean ok = sendMessage(ownerChatId, msg);
-                        log("Startup update-success message sent: " + ok);
-                    } else {
-                        log("Startup update-success hint consumed but criticalAlerts off");
-                    }
+                    // 0.1.38.1: Die Erfolgsmeldung kommt jetzt von UpdateMeldung („installiert und läuft“),
+                    // erst wenn die Selbstprüfung grün ist und je Version einmal. Hier nur den Hinweis verbrauchen.
+                    log("Startup update-success hint consumed (" + postUpdateVersion
+                            + "), message comes from UpdateMeldung");
                 }
             }
         } catch (Exception e) {

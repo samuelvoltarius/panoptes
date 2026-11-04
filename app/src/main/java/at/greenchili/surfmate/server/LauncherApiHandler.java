@@ -346,6 +346,13 @@ public final class LauncherApiHandler {
         } catch (Throwable e) {
             try { t.put("aktiv", false); } catch (Exception ignored) { }
         }
+        // 0.1.38.1: der EINE Haftungshinweis „Verstanden, ich entscheide selbst“ (derselbe wie am Tacho). Nur lesend;
+        // setzen geht nur in Panoptes mit Login (/api/tacho/navi/fahrt/hinweis), nie vom Launcher, KI oder Automation.
+        try {
+            t.put("fahrtHinweis", at.greenchili.surfmate.tacho.TachoNaviApp.fahrtHinweisBestaetigt());
+        } catch (Throwable e) {
+            try { t.put("fahrtHinweis", false); } catch (Exception ignored) { }
+        }
         return t;
     }
 

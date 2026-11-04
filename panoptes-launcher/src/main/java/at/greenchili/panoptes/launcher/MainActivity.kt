@@ -132,6 +132,7 @@ class MainActivity : AppCompatActivity() {
         stopped = false
         main.post(poll)
         main.post(takt)
+        webAuto?.onResume()
         ladeApps()
     }
 
@@ -140,6 +141,8 @@ class MainActivity : AppCompatActivity() {
         main.removeCallbacks(poll)
         main.removeCallbacks(takt)
         videoStopp()
+        // 3D nur, wenn sichtbar: WebView anhalten (Renderer pausiert zusätzlich bei verdeckter Seite)
+        webAuto?.onPause()
         super.onStop()
     }
 
@@ -733,11 +736,14 @@ class MainActivity : AppCompatActivity() {
     /** Großes Fahrzeug-Feld: 3D-Modell aus dem Katalog, Datum/Uhr, Reifen, Gang, Tempo, Akku. */
     private fun fahrzeugFeld(): View {
         val f = FrameLayout(this)
-        // 3D-Fahrzeug (WebView mit dem Panoptes-Renderer), sonst das Fahrzeug-Symbol
+        // 3D-Fahrzeug aus Panoptes (WebView, gleicher Katalog und Renderer), bis es gezeichnet ist ein ruhiges Standardbild
         val mitte = FrameLayout(this)
         f.addView(mitte, FrameLayout.LayoutParams(-1, -1).apply { setMargins(ui.dp(120), ui.dp(40), ui.dp(170), ui.dp(96)) })
-        val ersatz = ui.icon(R.drawable.ic_pn_car, ui.p.outline, 120)
-        mitte.addView(ersatz, FrameLayout.LayoutParams(ui.dp(140), ui.dp(140), Gravity.CENTER))
+        val ersatz = ImageView(this).apply {
+            setImageDrawable(ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_pn_auto_seite)?.mutate()?.also { it.setTint(ui.p.outline) })
+            scaleType = ImageView.ScaleType.FIT_CENTER; alpha = 0.8f
+        }
+        mitte.addView(ersatz, FrameLayout.LayoutParams(ui.dp(360), ui.dp(144), Gravity.CENTER))
         // oben links: Datum, Uhr, Luft (nur mit echtem Wert)
         val links = spalte(18)
         val datum = ui.text("", 17f, 600, ui.p.onSurfaceVariant); val uhr = ui.zahl("", 34f)
@@ -795,12 +801,14 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     private fun fahrzeug3d(mitte: FrameLayout, ersatz: View, s: LauncherSummary?) {
         val modell = s?.modelId
+        standbildLaden(ersatz as? ImageView, modell)
         if (!layout.zeige3d || modell == null || !online) {
             ersatz.visibility = View.VISIBLE
             webAuto?.let { (it.parent as? ViewGroup)?.removeView(it) }
             return
         }
-        val url = PanoptesClient.FAHRZEUG_SEITE + "?modell=" + Uri.encode(modell) + "&farbe=" + Uri.encode(s.farbe ?: "#E8E8EC")
+        val url = PanoptesClient.FAHRZEUG_SEITE + "?modell=" + Uri.encode(modell) + "&farbe=" + Uri.encode(s.farbe ?: "#E8E8EC") + "&ansicht=front"
+        val neu = webAuto == null
         val w = webAuto ?: object : WebView(this) {
             // Berührungen gehen an die Kachel (Tipp öffnet Panoptes), nicht an die Seite.
             override fun dispatchTouchEvent(event: MotionEvent?) = false
@@ -811,10 +819,37 @@ class MainActivity : AppCompatActivity() {
             isVerticalScrollBarEnabled = false; isHorizontalScrollBarEnabled = false
             isClickable = false; isFocusable = false
         }.also { webAuto = it }
+        if (neu) {
+            // Die Seite meldet über ihren Titel, ob das Modell wirklich gezeichnet ist („bereit“) oder nicht („fehler“).
+            w.webChromeClient = object : android.webkit.WebChromeClient() {
+                override fun onReceivedTitle(view: WebView?, title: String?) {
+                    autoGezeichnet = title == "bereit"
+                    autoErsatz?.visibility = if (autoGezeichnet) View.GONE else View.VISIBLE
+                    view?.visibility = if (autoGezeichnet) View.VISIBLE else View.INVISIBLE
+                }
+            }
+        }
+        autoErsatz = ersatz
         if (w.parent !== mitte) { (w.parent as? ViewGroup)?.removeView(w); mitte.addView(w, FrameLayout.LayoutParams(-1, -1)) }
-        if (url != webAutoUrl) { webAutoUrl = url; w.loadUrl(url) }
-        ersatz.visibility = View.GONE
+        if (url != webAutoUrl) { webAutoUrl = url; autoGezeichnet = false; w.visibility = View.INVISIBLE; w.loadUrl(url) }
+        ersatz.visibility = if (autoGezeichnet) View.GONE else View.VISIBLE
     }
+
+    private var autoGezeichnet = false
+    private var standbildFuer: String? = null
+
+    /** Standbild aus Panoptes (`/api/models/art`) einmal je Modell holen; ohne Antwort bleibt die Silhouette. */
+    private fun standbildLaden(bildView: ImageView?, modell: String?) {
+        if (bildView == null || modell == null || !online || modell == standbildFuer) return
+        standbildFuer = modell
+        io.execute {
+            val bmp = runCatching { client.fahrzeugBild(modell) }.getOrNull()?.let { dekodieren(it) }
+            main.post {
+                if (bmp != null) { bildView.setImageBitmap(bmp); bildView.alpha = 1f } else standbildFuer = null
+            }
+        }
+    }
+    private var autoErsatz: View? = null
 
     private fun fahrzeugKlein(gross: Boolean): View {
         val c = spalte()
@@ -1383,7 +1418,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun starteApp(p: String) {
         val a = appsNachPaket[p]
-        if (a != null && !Fahrsicherheit.appStartErlaubt(a.video, summary?.gear)) { zeigeHinweis(getString(R.string.video_nur_p)); return }
+        if (a != null && !Fahrsicherheit.appStartErlaubt(a.video, summary?.gear, summary?.fahrtHinweis == true)) { zeigeHinweis(getString(R.string.video_nur_p)); return }
         if (Raster.oeffnetNeben(layout, p) && p != Raster.PANOPTES) {
             // Neben dem Launcher, wenn Auto und App es können; sonst normal im Vollbild mit kurzem Hinweis
             io.execute {

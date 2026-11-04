@@ -1006,6 +1006,28 @@ public final class AppLauncher {
         return resolveLauncherComponent(pkg.trim()) != null;
     }
 
+    /**
+     * 0.1.38.1: Audio-App laut Android? {@code ApplicationInfo.CATEGORY_AUDIO} oder ein exportierter
+     * {@code android.media.browse.MediaBrowserService} (Medien-Apps fuer Android Auto). Kategorie Video ist nie Audio.
+     * Ohne Context oder bei Fehler: false (dann gilt nur die feste Liste in {@code TachoNaviApp}).
+     */
+    public static boolean istAudioApp(String pkg) {
+        if (pkg == null || !isValidPackageName(pkg.trim())) return false;
+        Context ctx = CameraDaemon.getAppContext();
+        if (ctx == null) return false;
+        try {
+            PackageManager pm = ctx.getPackageManager();
+            android.content.pm.ApplicationInfo ai = pm.getApplicationInfo(pkg.trim(), 0);
+            if (ai.category == android.content.pm.ApplicationInfo.CATEGORY_VIDEO) return false;
+            if (ai.category == android.content.pm.ApplicationInfo.CATEGORY_AUDIO) return true;
+            Intent media = new Intent("android.media.browse.MediaBrowserService").setPackage(pkg.trim());
+            List<ResolveInfo> dienste = pm.queryIntentServices(media, 0);
+            return dienste != null && !dienste.isEmpty();
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
     /** Minimal shell quoting for a package name (defensive; pkg names are [A-Za-z0-9._]). */
     private static String shellQuote(String s) {
         return "'" + s.replace("'", "'\\''") + "'";

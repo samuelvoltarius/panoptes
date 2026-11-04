@@ -393,6 +393,10 @@
       "display_valet": {
         "label": "Display lock",
         "note": "Someone entered a wrong PIN several times at the locked display."
+      },
+      "system_updates": {
+        "label": "Updates",
+        "note": "New version of Panoptes or the launcher, and when an update is finished."
       }
     },
     "cloud_uebergabe_titel": "“{0}” wants to hand over the BYD cloud",
@@ -405,7 +409,10 @@
     "battery12v_vor_title": "12 V battery getting weaker: {0} V",
     "battery12v_vor_body": "If it drops further, the car may not start. Go for a drive or plug it in soon.",
     "battery12v_niedrig_title": "12 V battery very weak: {0} V",
-    "battery12v_niedrig_body": "It no longer recovers by itself. The car may soon not start. Go for a drive today or plug it in."
+    "battery12v_niedrig_body": "It no longer recovers by itself. The car may soon not start. Go for a drive today or plug it in.",
+    "update_installiert": "Panoptes {0} is installed and running.",
+    "launcher_verfuegbar": "New launcher version {0}",
+    "launcher_installiert": "Launcher {0} is installed."
   },
   "parking": {
     "notify": {
@@ -769,7 +776,10 @@
       "rolled_back_reason": "↩️ *Update rolled back*\nThe new version didn't run cleanly, so Panoptes is back on {0}. Nothing on the car is lost.\nReason: {1}",
       "unknown_reason": "unknown – details are in the log on the car",
       "available": "🆕 *Panoptes {0} is available*\nYou can install it while the car is parked, under *System → App updates*.",
-      "available_size": "🆕 *Panoptes {0} is available* ({1})\nYou can install it while the car is parked, under *System → App updates*."
+      "available_size": "🆕 *Panoptes {0} is available* ({1})\nYou can install it while the car is parked, under *System → App updates*.",
+      "installiert_laeuft": "✅ *Panoptes {0} is installed and running.*",
+      "launcher_verfuegbar": "🆕 *New launcher version {0}*\nUpdate it with the button in Panoptes, under *Apps & display → Display → Launcher*.",
+      "launcher_installiert": "✅ *Launcher {0} is installed.*"
     },
     "critical": {
       "message": "🚨 *{0}*",
@@ -2645,6 +2655,13 @@
     "grund_akku": "Stopped to protect the battery.",
     "grund_v12": "Stopped to protect the small 12 V battery.",
     "grund_lange_geparkt": "Stopped after a long time parked, to save power."
+  },
+  "selbstheilung": {
+    "titel": "Panoptes needs a moment of your help",
+    "text": "A part of Panoptes ({0}) could not set itself up again on its own. It is running right now, but would not restart by itself if it stopped. Please open Panoptes once on the car screen, then it sets itself up again. Otherwise this happens at the latest on the next restart of the car.",
+    "wort_kamera": "Camera and recording",
+    "wort_waechter": "Guard",
+    "wort_telegram": "Telegram messages"
   },
   "rechte_heilung": {
     "titel": "Panoptes has lost permissions",

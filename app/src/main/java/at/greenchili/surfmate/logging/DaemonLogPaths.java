@@ -25,6 +25,8 @@ public final class DaemonLogPaths {
         PATHS.put("telegram",   at.greenchili.surfmate.util.DaemonStorage.rebase("/data/user_de/0/com.android.shell/surfmate/telegrambotdaemon.log"));
         PATHS.put("tailscale",  at.greenchili.surfmate.util.DaemonStorage.rebase("/data/user_de/0/com.android.shell/surfmate/.tailscale/tailscale.log"));
         PATHS.put("wireguard",  at.greenchili.surfmate.wireguard.WireGuardPaths.LOG);
+        // 0.1.38.1: Ereignisse rund um Start-Skripte, Watchdogs, Post-Update-Reset und adb-Abbrüche
+        PATHS.put("launcher",   LauncherEreignisse.DATEI);
     }
 
     /** @return the log path for a daemon key, or null if unknown. */

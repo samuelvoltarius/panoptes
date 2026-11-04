@@ -21,7 +21,8 @@
 #   LOCK_KEY=<schlüssel> AUTO_OK=1 EXPECT_VC=<versionCode> [DD=<arbeitsordner>]
 # AUTO_OK=1 bestätigt selbst, wenn 3 Prüfungen hintereinander (alle 2 min) gesund sind:
 # installierter versionCode = EXPECT_VC, mindestens so viele Daemons wie vorher (≥ 1) und
-# Web 200, falls es vorher 200 war. Sonst greift der Totmannschalter wie immer. Rückfall bzw.
+# Web 200, falls es vorher 200 war, und (0.1.38.1) die Startskripte grün (skripte_befund). Sonst greift der
+# Totmannschalter wie immer. Rückfall bzw.
 # gescheiterte Installation hinterlassen $NEW/.appupdate-rueckfall („<versionCode> <grund>“),
 # damit der Updater dieselbe Version nicht automatisch erneut versucht.
 # Ohne AUTO_OK (Deploy-Sitzung) ist der Ablauf unverändert.
@@ -118,6 +119,29 @@ daemon_zahl() { for n in byd_cam_daemon sentry_daemon acc_sentry_daemon; do pido
 web_code() { curl -s -m 4 -o /dev/null -w '%{http_code}' http://127.0.0.1:8180/ 2>/dev/null; }
 installierter_vc() { dumpsys package "$PKG" 2>/dev/null | sed -n 's/.*versionCode=\([0-9]*\).*/\1/p' | head -1; }
 rueckfall_merken() { [ -n "$EXPECT_VC" ] && echo "$EXPECT_VC $1" > "$RUECKFALL_MARKE"; }
+# 0.1.38.1 (04.11.: „so was muss bei jedem automatisch gehen, sobald das Update durch ist“): je laufendem
+# Daemon mit Watchdog genau EIN Prozess, sein start_*.sh da und sh -n ok, ein Watchdog lebt (PID-Datei oder
+# Sperre). Ausgabe "ok" oder die Befunde, z. B. "kamera:skript". Ein Update gilt erst damit als gesund; die
+# Daemons heilen fehlende Skripte bzw. Watchdogs selbst (Selbstprüfung alle 30 s).
+skripte_befund() {
+    B=""
+    for e in "kamera byd_cam_daemon start_cam_daemon.sh cam_watchdog" \
+             "waechter acc_sentry_daemon start_acc_sentry.sh acc_sentry_watchdog" \
+             "telegram telegram_bot_daemon start_telegram.sh telegram_watchdog"; do
+        set -- $e
+        N=$(pidof "$2" 2>/dev/null | wc -w)
+        [ "$N" -eq 0 ] && continue
+        if [ "$N" -gt 1 ]; then B="$B $1:mehrere"; continue; fi
+        if [ ! -f "$NEW/$3" ] || ! sh -n "$NEW/$3" 2>/dev/null; then B="$B $1:skript"; continue; fi
+        W=0
+        for P in "$(cat "$NEW/$4.pid" 2>/dev/null)" "$(cat "$NEW/$4.lock/pid" 2>/dev/null)"; do
+            case "$P" in ''|*[!0-9]*) continue ;; esac
+            tr '\000' ' ' 2>/dev/null < "/proc/$P/cmdline" | grep -qF "$NEW/$3" && W=1
+        done
+        [ "$W" = "1" ] || B="$B $1:watchdog"
+    done
+    [ -z "$B" ] && echo ok || echo "${B# }"
+}
 
 log "=== Update $STAMP startet ($WHO, $COMMIT, $APK) ==="
 BKAPK="$DD/vorher-$STAMP.apk"
@@ -150,17 +174,18 @@ while [ $i -lt $((DEADLINE_MIN * 2)) ]; do
         TS=$(ps -A -o ARGS | grep -c "[s]tatedir $NEW/.tailscale")
         WEB=$(web_code)
         DM=$(daemon_zahl)
-        log "Stand nach $((i / 2)) min: tailscaled=$TS web=$WEB daemons=$DM/3"
+        SK=$(skripte_befund)
+        log "Stand nach $((i / 2)) min: tailscaled=$TS web=$WEB daemons=$DM/3 skripte=$SK"
         if [ "$AUTO_OK" = "1" ]; then
             VC=$(installierter_vc)
             if [ "$VC" = "$EXPECT_VC" ] && [ "$DM" -ge 1 ] && [ "$DM" -ge "$DM_VORHER" ] \
-               && { [ "$WEB_VORHER" != "200" ] || [ "$WEB" = "200" ]; }; then
+               && { [ "$WEB_VORHER" != "200" ] || [ "$WEB" = "200" ]; } && [ "$SK" = "ok" ]; then
                 GESUND=$((GESUND + 1))
             else
                 GESUND=0
             fi
             if [ "$GESUND" -ge 3 ]; then
-                log "SELBST BESTÄTIGT (versionCode $VC, daemons=$DM/3, web=$WEB, 3 Prüfungen gesund)"
+                log "SELBST BESTÄTIGT (versionCode $VC, daemons=$DM/3, web=$WEB, skripte=$SK, 3 Prüfungen gesund)"
                 rm -f "$RUECKFALL_MARKE"
                 touch "$NEW/.update-ok"
                 continue
