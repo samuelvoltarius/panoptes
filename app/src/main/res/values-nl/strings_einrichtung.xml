@@ -162,4 +162,9 @@
     <string name="einr_noch_knopf">Instellen</string>
     <string name="einr_updates_ja_knopf">Ja, zoek naar updates</string>
     <string name="einr_updates_github">Panoptes vraagt regelmatig aan GitHub of er een nieuwe versie is. GitHub ziet alleen het internetadres van de auto, geen autogegevens.</string>
+    <!-- 0.1.38.3: Handy-App unterwegs nutzen? (Standard aus, ausdrücklich gefragt) -->
+    <string name="einr_handy_unterwegs_frage">Telefoon-app onderweg gebruiken?</string>
+    <string name="einr_handy_unterwegs_text">Dan werkt de telefoon-app overal, ook via mobiele data. Anders alleen als je telefoon op dezelfde wifi zit als de auto.</string>
+    <string name="einr_handy_unterwegs_ja">Ja, onderweg gebruiken</string>
+    <string name="einr_handy_nur_wlan">Alleen op dezelfde wifi</string>
 </resources>

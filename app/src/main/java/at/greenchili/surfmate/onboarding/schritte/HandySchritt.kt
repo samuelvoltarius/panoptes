@@ -36,9 +36,11 @@ class HandySchritt(a: Assistent) : SchrittAnsicht("extra_handy", a) {
 
     private fun frage() {
         bereich.removeAllViews()
-        bereich.dazu(a.text(t.res(R.string.einr_handy_kurz), 19f), 0f)
+        // 0.1.38.3: ausdrücklich fragen „unterwegs nutzen?“ (Standard bleibt aus), mit Klartext, was das bedeutet
+        bereich.dazu(a.text(t.res(R.string.einr_handy_unterwegs_frage), 22f, fett = true), 0f)
+        bereich.dazu(a.text(t.res(R.string.einr_handy_unterwegs_text), 19f), 8f)
         val meldung = a.text("", 16f).apply { setTextColor(a.farbeWarnung); visibility = View.GONE }
-        val knopf = a.knopf(t.res(R.string.einr_handy_qr_knopf), primaer = true) {
+        val knopf = a.knopf(t.res(R.string.einr_handy_unterwegs_ja), primaer = true) {
             a.imHintergrund({
                 EinrichtungApi.transport("POST", "/api/bruecke",
                     JSONObject().put("ein", true).put("zustimmung", true).put("quelle", "einrichtung"))
@@ -59,10 +61,13 @@ class HandySchritt(a: Assistent) : SchrittAnsicht("extra_handy", a) {
         bereich.dazu(haken, 14f)
         bereich.dazu(a.text(t.res(R.string.einr_handy_datenschutz), 16f, leise = true), 4f)
         bereich.dazu(knopf, 14f)
+        // Ohne Brücke: QR-Code nur fürs gleiche WLAN (nichts geht über unseren Server)
+        bereich.dazu(a.knopf(t.res(R.string.einr_handy_nur_wlan)) { qrHolen() }, 10f)
         bereich.dazu(meldung, 8f)
     }
 
-    private class Qr(val inhalt: String, val gueltigBis: Long, val handys: Set<String>)
+    /** grund: null = Kern sagt nichts (älter), "" = geht unterwegs, "aus"/"kein_internet" = nur im gleichen WLAN. */
+    private class Qr(val inhalt: String, val gueltigBis: Long, val handys: Set<String>, val grund: String?)
 
     /** Neuer Code samt Brücken-Stand; läuft er ab, holt der Schritt von selbst den nächsten. */
     private fun qrHolen() {
@@ -71,22 +76,27 @@ class HandySchritt(a: Assistent) : SchrittAnsicht("extra_handy", a) {
             if (!code.ok || code.json.optString("code").isEmpty()) null else {
                 val ts = EinrichtungApi.get("/api/system/tailscale").json
                 val dns = (ts.optJSONObject("tailscale") ?: ts).optString("dnsName", "").trimEnd('.')
+                val grund = when {
+                    !code.json.has("brueckeEinmalGrund") -> null
+                    code.json.isNull("brueckeEinmalGrund") -> ""
+                    else -> code.json.optString("brueckeEinmalGrund")
+                }
                 Qr(HandyQr.inhalt(code.json.getString("code"), if (dns.isEmpty()) null else "https://$dns",
-                    EinrichtungApi.get("/api/bruecke").json, code.json.optString("brueckeEinmal", "").ifEmpty { null }),
+                    EinrichtungApi.get("/api/bruecke").json, code.json.optString("brueckeEinmal", "").ifEmpty { null }, grund),
                     code.json.optLong("gueltigBis", System.currentTimeMillis() + 600_000L),
-                    HandyQr.handyIds(EinrichtungApi.get("/api/kopplungen").json))
+                    HandyQr.handyIds(EinrichtungApi.get("/api/kopplungen").json), grund)
             }
         }) { q: Qr? ->
             if (q == null) { frage(); a.zeigeMeldung(t.res(R.string.einr_handy_fehler)); return@imHintergrund }
             vorher = q.handys
-            zeigeQr(q.inhalt)
+            zeigeQr(q.inhalt, q.grund)
             verlassen()
             nachher(maxOf(30_000L, q.gueltigBis - System.currentTimeMillis() - 5_000L)) { qrHolen() }
             nachher(3000) { pruefeKopplung() }
         }
     }
 
-    private fun zeigeQr(inhalt: String) {
+    private fun zeigeQr(inhalt: String, grund: String?) {
         bereich.removeAllViews()
         val zeile = LinearLayout(a.activity).apply { orientation = LinearLayout.HORIZONTAL; gravity = android.view.Gravity.CENTER_VERTICAL }
         val groesse = a.px(330f)
@@ -99,6 +109,16 @@ class HandySchritt(a: Assistent) : SchrittAnsicht("extra_handy", a) {
         schritte.dazu(a.text(t.res(R.string.einr_handy_keine_app), 16f, leise = true), 20f)
         zeile.addView(schritte, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { leftMargin = a.px(32f) })
         bereich.dazu(zeile, 0f)
+        // 0.1.38.3: ehrlich sagen, ob der Code auch unterwegs geht (gleiche Texte wie die Web-Karte, system.pair_*)
+        val satz = when (grund) {
+            "" -> "✓ " + t.web("system.pair_unterwegs", "Dieser Code geht auch unterwegs.")
+            "aus" -> t.web("system.pair_nur_wlan", "Dieser Code geht nur, wenn dein Handy im gleichen WLAN wie das Auto ist.")
+            "kein_internet" -> t.web("system.pair_kein_internet", "Das Auto hat gerade kein Internet. Der Code geht nur im gleichen WLAN.")
+            else -> null
+        }
+        satz?.let { s ->
+            bereich.dazu(a.text(s, 19f, fett = true).apply { if (grund != "") setTextColor(a.farbeWarnung) }, 18f)
+        }
     }
 
     private fun pruefeKopplung() {

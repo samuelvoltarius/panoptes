@@ -17,7 +17,7 @@ public class NotificationAction extends BaseAction {
     private final Label label;
     private final String description;
     // Create a message variable with the max length required for push notifications
-    private final List<Type> variables = List.of(new StringType(new Label("message", "Message"), 150));
+    private final List<Type> variables = List.of(new StringType(new Label("message", "automation.message_label"), 150));
 
     /**
      * An action to send a notification to the user

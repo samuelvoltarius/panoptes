@@ -1543,4 +1543,6 @@
         <item quantity="one">%1$d alerte</item>
         <item quantity="other">%1$d alertes</item>
     </plurals>
+    <!-- 0.1.38.3: Kamera-Einstellungen nicht erreichbar (statt „Speichern hat nicht geklappt“) -->
+    <string name="camera_mapping_unreachable">Panoptes n\'atteint pas les caméras pour le moment. Attends un peu et touche à nouveau. Si cela ne marche toujours pas : Aide &amp; infos → Signaler un problème.</string>
 </resources>

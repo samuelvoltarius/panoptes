@@ -191,6 +191,13 @@ public final class EinrichtungApiHandler {
             case "/api/einrichtung/neu":
                 a = neu(root);
                 break;
+            case "/api/einrichtung/durchgehen":
+                // 0.1.38.3 („Wizard und Kamera muss jederzeit auch danach wieder einstellbar sein“)
+                a = wiederholen(root, null);
+                break;
+            case "/api/einrichtung/oeffnen":
+                a = wiederholen(root, req.optString("id", ""));
+                break;
             case "/api/einrichtung/rueckfall_verschieben": {
                 // 0.1.11: Rückfall-Aufnahmen auf den gewählten Datenträger verschieben (nur auf Wunsch, im Hintergrund)
                 String fehler = at.greenchili.surfmate.storage.StorageManager.getInstance()
@@ -286,7 +293,9 @@ public final class EinrichtungApiHandler {
             if (!s.has(id)) s.put(id, warFertig && !PFLICHT.contains(id) && !"fertig".equals(id) ? SPAETER : OFFEN);
         }
         if (!z.has("gruende")) z.put("gruende", new JSONObject());
-        if ("bestand".equals(z.optString("art"))) bestandNachpruefen(root, s);
+        // 0.1.38.3: während „Noch einmal durchgehen“ bleiben die wieder geöffneten Schritte offen
+        if (z.optBoolean("wiederholung", false) && z.optJSONObject("vorher") != null) { /* nichts nachziehen */ }
+        else if ("bestand".equals(z.optString("art"))) bestandNachpruefen(root, s);
         else schnellstartNachziehen(s);
         if (!z.has("werte")) z.put("werte", new JSONObject());
         z.put("version", VERSION);
@@ -426,6 +435,13 @@ public final class EinrichtungApiHandler {
             g.put("kameras", "einr.grund.keine_kameras");
         }
         if (OFFEN.equals(s.optString("usb_freigabe"))) s.put("usb_freigabe", ERLEDIGT);   // Dienst antwortet
+        // 0.1.38.3 (Community, Seal U DM-i: „Kameras übersprungen, danach nicht möglich“): Kameras sind immer
+        // nachholbar. Ein Bestand (BESTAND_019) bekommt den Schritt nicht mehr als „entfällt“, sondern unter
+        // „Noch einrichten“; erledigt ist er erst mit einer eigenen Zuordnung (echtEingerichtet: manualOverride).
+        if (ENTFAELLT.equals(s.optString("kameras")) && "einr.grund.bestand".equals(g.optString("kameras"))) {
+            s.put("kameras", SPAETER);
+            g.remove("kameras");
+        }
         // 0.1.38: „Tacho“ nur bei Autos, deren Tacho fremde Bilder zeigen kann (Single-OS kann es nie, TachoFaehigkeit)
         if (faehigkeiten != null && faehigkeiten.optBoolean("singleOs", false)
                 && (OFFEN.equals(s.optString("extra_tacho")) || SPAETER.equals(s.optString("extra_tacho")))) {
@@ -441,7 +457,8 @@ public final class EinrichtungApiHandler {
         // 0.1.26 (Alfreds Auto): „später“ bzw. „offen“ überdeckt nie, was am Auto wirklich eingerichtet ist
         for (String id : echtEingerichtet(root, felderOhneIo(root), planerSchluesselDa(root))) {
             String st = s.optString(id, OFFEN);
-            if (!PFLICHT.contains(id) && (OFFEN.equals(st) || SPAETER.equals(st))) s.put(id, ERLEDIGT);
+            // 0.1.38.3: wieder geöffnete Schritte bleiben offen, auch wenn sie am Auto schon eingerichtet sind
+            if (!PFLICHT.contains(id) && !imWiederholen(z, id) && (OFFEN.equals(st) || SPAETER.equals(st))) s.put(id, ERLEDIGT);
         }
         JSONArray liste = new JSONArray();
         String aktuell = null;
@@ -449,13 +466,16 @@ public final class EinrichtungApiHandler {
         JSONArray spaeter = new JSONArray();
         for (String id : SCHRITTE) {
             String st = s.optString(id, OFFEN);
-            JSONObject e = new JSONObject().put("id", id).put("pflicht", PFLICHT.contains(id)).put("status", st);
+            // 0.1.38.3: beim Wiederholen ist nichts Pflicht und jeder wieder geöffnete Schritt kommt im Ablauf dran
+            boolean wdh = imWiederholen(z, id);
+            boolean frei = wdh && ERLEDIGT.equals(z.getJSONObject("vorher").optString(id, ""));   // schon beantwortet
+            JSONObject e = new JSONObject().put("id", id).put("pflicht", PFLICHT.contains(id) && !frei).put("status", st);
             if (FORTGESCHRITTEN.contains(id)) e.put("gruppe", "fortgeschritten");
-            e.put("schnellstart", SCHNELLSTART.contains(id));
+            e.put("schnellstart", SCHNELLSTART.contains(id) || wdh && OFFEN.equals(st));
             if (g.has(id)) e.put("grund", g.getString(id));
             liste.put(e);
             if (aktuell == null && OFFEN.equals(st)) aktuell = id;
-            if (OFFEN.equals(st) && PFLICHT.contains(id)) pflichtOffen = true;
+            if (OFFEN.equals(st) && PFLICHT.contains(id) && !frei) pflichtOffen = true;
             if (SPAETER.equals(st)) spaeter.put(id);
         }
         JSONObject r = new JSONObject();
@@ -468,6 +488,7 @@ public final class EinrichtungApiHandler {
         r.put("selbsttest", selbsttest == null ? JSONObject.NULL : selbsttest);
         r.put("werte", z.optJSONObject("werte") == null ? new JSONObject() : z.getJSONObject("werte"));
         r.put("neuZaehler", z.optInt("neuZaehler", 0));
+        r.put("wiederholung", z.optBoolean("wiederholung", false));
         r.put("hinweise", hinweise(root, s));
         // H3: einmalige Einträge „Noch offen“ (Projektion aktiv, Sichtbarkeit unbelegt, Ton aus)
         JSONArray offen = at.greenchili.surfmate.einrichtung.ProjektionsHinweis.offen(root, tonVon(root));
@@ -503,6 +524,13 @@ public final class EinrichtungApiHandler {
             if ("cockpit".equals(art) || art.isEmpty()) e.add("extra_cockpit");
         }
         if (planerSchluessel) e.add("extra_planer");
+        // 0.1.38.3: Kameras gelten erst als eingerichtet, wenn der Nutzer selbst zugeordnet hat. Die automatische
+        // Rundumsicht-Probe (probedAndValidated) zählt nicht, sie hat niemand angesehen. DiLink 5 speichert die
+        // Zuordnung als dilink5CameraMapping (dort gibt es keine manuelle Kamera-ID).
+        JSONObject cam = root.optJSONObject("camera");
+        if (cam != null && (cam.optBoolean("manualOverride", false) || !cam.optString("dilink5CameraMapping", "").isEmpty())) {
+            e.add("kameras");
+        }
         if (at.greenchili.surfmate.notzugang.Notzugang.an(root)) e.add("extra_notzugang");
         JSONObject sc = root.optJSONObject("speedcam");
         if (sc != null && sc.optBoolean("enabled", false)) e.add("blitzer");
@@ -778,6 +806,7 @@ public final class EinrichtungApiHandler {
         String neuerStatus = nichtOk ? z.getJSONObject("schritte").optString(id, OFFEN) : ERLEDIGT;
         if ("usb_freigabe".equals(id)) neuerStatus = ERLEDIGT;   // der Dienst antwortet = Freigabe da
         z.getJSONObject("schritte").put(id, neuerStatus);
+        if ("fertig".equals(id) && z.optBoolean("wiederholung", false)) wiederholungBeenden(z);
         z.getJSONObject("werte").put(id, an);
         // Zeitpunkt jeder Antwort (Haftung: ggf. nachgereicht; Autostart: Selbsttest vergleicht mit der Installation)
         z.getJSONObject("werte").getJSONObject(id).put("zeit", jetztMs);
@@ -798,13 +827,74 @@ public final class EinrichtungApiHandler {
 
     public static Antwort spaeter(JSONObject root, String id) throws Exception {
         if (!SCHRITTE.contains(id)) return Antwort.fehler(404, "unbekannt");
-        if (PFLICHT.contains(id)) return Antwort.fehler(422, "pflicht");
         JSONObject z = zustand(root);
-        z.getJSONObject("schritte").put(id, SPAETER);
+        // 0.1.38.3: Beim Wiederholen ist jeder Schritt überspringbar; der Stand von vorher bleibt (nichts geht verloren)
+        String vorher = imWiederholen(z, id) ? z.getJSONObject("vorher").optString(id, "") : "";
+        // Pflicht bleibt Pflicht, solange sie nie beantwortet war
+        if (PFLICHT.contains(id) && !ERLEDIGT.equals(vorher)) return Antwort.fehler(422, "pflicht");
+        String neu = vorher.isEmpty() || OFFEN.equals(vorher) ? SPAETER : vorher;
+        z.getJSONObject("schritte").put(id, neu);
         Antwort a = new Antwort();
         a.schreiben.put(ABSCHNITT, zustandWerte(z));
-        a.body.put("success", true).put("id", id).put("status", SPAETER);
+        a.body.put("success", true).put("id", id).put("status", neu);
         return a;
+    }
+
+    /** 0.1.38.3: Schritte, die beim „Noch einmal durchgehen“ nicht wieder aufgehen (USB-Freigabe: kein Popup ohne Grund). */
+    static final Set<String> NICHT_WIEDERHOLEN = new HashSet<>(Arrays.asList("usb_freigabe", "fertig"));
+
+    /** Gehört der Schritt zur laufenden Wiederholung? */
+    static boolean imWiederholen(JSONObject z, String id) {
+        if (!z.optBoolean("wiederholung", false) || z.optJSONObject("vorher") == null) return false;
+        JSONArray ids = z.optJSONArray("wiederholIds");
+        if (ids == null) return true;
+        for (int i = 0; i < ids.length(); i++) if (id.equals(ids.optString(i))) return true;
+        return false;
+    }
+
+    /**
+     * 0.1.38.3: Einrichtung noch einmal durchgehen ({@code nurId == null}) bzw. einen einzelnen Schritt wieder öffnen.
+     * Einstellungen und Antworten bleiben; der alte Status wird gemerkt („Später“ stellt ihn wieder her, „fertig“
+     * räumt auf). Zähler +1, damit die App den Assistenten am Bildschirm im Auto öffnet. Entfallene Schritte bleiben weg.
+     */
+    public static Antwort wiederholen(JSONObject root, String nurId) throws Exception {
+        if (nurId != null && (!SCHRITTE.contains(nurId) || NICHT_WIEDERHOLEN.contains(nurId))) {
+            return Antwort.fehler(404, "unbekannt");
+        }
+        JSONObject z = zustand(root);
+        JSONObject s = z.getJSONObject("schritte");
+        JSONObject vorher = z.optBoolean("wiederholung", false) && z.optJSONObject("vorher") != null
+                ? z.getJSONObject("vorher") : new JSONObject(s.toString());
+        JSONArray ids = new JSONArray();
+        for (String id : SCHRITTE) {
+            if (NICHT_WIEDERHOLEN.contains(id) || ENTFAELLT.equals(s.optString(id))) continue;
+            if (nurId != null && !nurId.equals(id)) continue;
+            s.put(id, OFFEN);
+            ids.put(id);
+        }
+        z.put("wiederholung", true).put("vorher", vorher);
+        if (nurId == null) z.remove("wiederholIds"); else z.put("wiederholIds", ids);
+        z.put("neuZaehler", z.optInt("neuZaehler", 0) + 1);
+        Antwort a = new Antwort();
+        a.schreiben.put(ABSCHNITT, zustandWerte(z));
+        a.body.put("success", true).put("neuZaehler", z.getInt("neuZaehler")).put("schritte", ids);
+        return a;
+    }
+
+    /** Am Ende einer Wiederholung: nicht beantwortete Schritte bekommen ihren alten Status zurück. */
+    static void wiederholungBeenden(JSONObject z) throws Exception {
+        JSONObject vorher = z.optJSONObject("vorher");
+        JSONObject s = z.getJSONObject("schritte");
+        if (vorher != null) {
+            for (String id : SCHRITTE) {
+                if ("fertig".equals(id) || !OFFEN.equals(s.optString(id))) continue;
+                String v = vorher.optString(id, "");
+                if (!v.isEmpty() && !OFFEN.equals(v)) s.put(id, v);
+            }
+        }
+        z.remove("wiederholung");
+        z.remove("vorher");
+        z.remove("wiederholIds");
     }
 
     /**
@@ -824,6 +914,9 @@ public final class EinrichtungApiHandler {
         z.put("schritte", s);
         z.put("gruende", new JSONObject());
         z.put("art", "neu");
+        z.remove("wiederholung");
+        z.remove("vorher");
+        z.remove("wiederholIds");
         z.put("neuZaehler", z.optInt("neuZaehler", 0) + 1);
         Antwort a = new Antwort();
         a.schreiben.put(ABSCHNITT, zustandWerte(z));
@@ -835,6 +928,10 @@ public final class EinrichtungApiHandler {
         Map<String, Object> w = new LinkedHashMap<>();
         for (String k : new String[] {"version", "art", "neuZaehler", "schritte", "gruende", "werte"}) {
             if (z.has(k)) w.put(k, z.get(k));
+        }
+        // 0.1.38.3: Wiederholung; null löscht den Schlüssel beim Schreiben (nach „fertig“ bzw. „neu“)
+        for (String k : new String[] {"wiederholung", "vorher", "wiederholIds"}) {
+            w.put(k, z.has(k) ? z.get(k) : JSONObject.NULL);
         }
         return w;
     }

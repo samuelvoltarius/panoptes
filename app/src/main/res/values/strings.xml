@@ -1940,4 +1940,6 @@
     <string name="remote_setup_done">Done</string>
     <string name="remote_setup_skip">Later</string>
     <string name="remote_setup_start">Set up</string>
+    <!-- 0.1.38.3: Kamera-Einstellungen nicht erreichbar (statt „Speichern hat nicht geklappt“) -->
+    <string name="camera_mapping_unreachable">Panoptes cannot reach the cameras right now. Wait a moment and tap again. If it still does not work: Help &amp; info → Report a problem.</string>
 </resources>

@@ -162,4 +162,9 @@
     <string name="einr_noch_knopf">Einrichten</string>
     <string name="einr_updates_ja_knopf">Ja, nach Updates suchen</string>
     <string name="einr_updates_github">Panoptes fragt dazu regelmäßig bei GitHub nach. GitHub sieht dabei nur die Internet-Adresse des Autos, keine Fahrzeugdaten.</string>
+    <!-- 0.1.38.3: Handy-App unterwegs nutzen? (Standard aus, ausdrücklich gefragt) -->
+    <string name="einr_handy_unterwegs_frage">Handy-App unterwegs nutzen?</string>
+    <string name="einr_handy_unterwegs_text">Dann geht die Handy-App überall, auch im Mobilfunk. Sonst geht sie nur, wenn dein Handy im gleichen WLAN wie das Auto ist.</string>
+    <string name="einr_handy_unterwegs_ja">Ja, unterwegs nutzen</string>
+    <string name="einr_handy_nur_wlan">Nur im gleichen WLAN</string>
 </resources>

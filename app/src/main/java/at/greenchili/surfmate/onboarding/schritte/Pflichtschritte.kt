@@ -39,7 +39,8 @@ class Wahl(private val a: Assistent, private val nebeneinander: Boolean = false,
 
 // ---------------------------------------------------------------- 0 Sprache (Vorauswahl erlaubt)
 class SpracheSchritt(a: Assistent) : SchrittAnsicht("sprache", a) {
-    override val spaeterZeigen = false
+    // 0.1.38.3: beim „Noch einmal durchgehen“ überspringbar
+    override val spaeterZeigen: Boolean get() = a.stand().wiederholung
     private val wahl = Wahl(a) { a.geaendert() }
     private val namen = linkedMapOf("de" to "Deutsch", "en" to "English", "fr" to "Français", "it" to "Italiano", "nl" to "Nederlands")
 
@@ -69,7 +70,8 @@ class SpracheSchritt(a: Assistent) : SchrittAnsicht("sprache", a) {
 
 // ---------------------------------------------------------------- 1 Haftung (Häkchen ohne Vorauswahl)
 class HaftungSchritt(a: Assistent) : SchrittAnsicht("haftung", a) {
-    override val spaeterZeigen = false
+    // 0.1.38.3: beim „Noch einmal durchgehen“ überspringbar (bestätigt war sie schon)
+    override val spaeterZeigen: Boolean get() = a.stand().wiederholung
     private var box: CheckBox? = null
     private var mehr: View? = null
 
@@ -100,7 +102,8 @@ class HaftungSchritt(a: Assistent) : SchrittAnsicht("haftung", a) {
 
 // ---------------------------------------------------------------- 8 Wächter (a/b/c/aus ohne Vorauswahl, danach Ton)
 class WaechterSchritt(a: Assistent) : SchrittAnsicht("waechter", a) {
-    override val spaeterZeigen = false
+    // 0.1.38.3: beim „Noch einmal durchgehen“ überspringbar (der Kern lässt „Später“ nur dann zu)
+    override val spaeterZeigen: Boolean get() = a.stand().wiederholung
 
     private val ton = Wahl(a) { a.geaendert() }
     private var bHinweis: View? = null
@@ -138,6 +141,12 @@ class WaechterSchritt(a: Assistent) : SchrittAnsicht("waechter", a) {
         ereignis.option("ja", t.web("einrichtung_p10.ereignis_ja", "Ja, Ereignisse sichern"), null)
         ereignis.option("nein", t.web("einrichtung_p10.ereignis_nein", "Nein"), null)
         dazu(ereignis.ansicht)
+        // 0.1.38.3: beim Wiederholen mit der bisherigen Antwort vorbelegt
+        a.stand().vorbelegung(this@WaechterSchritt.id)?.let { v ->
+            v.optString("modus").takeIf { it.isNotEmpty() }?.let { wahlAktuell?.waehle(it) }
+            if (v.has("ton")) ton.waehle(if (v.optBoolean("ton")) "an" else "aus")
+            if (v.has("ereignisClip")) ereignis.waehle(if (v.optBoolean("ereignisClip")) "ja" else "nein")
+        }
     }
 
     private val ereignis = Wahl(a, nebeneinander = true) { a.geaendert() }
@@ -230,6 +239,11 @@ class BetriebSchritt(a: Assistent) : SchrittAnsicht("betrieb", a) {
         stoppBlock = sb
         dazu(sb)
         dazu(a.text(t.res(R.string.einr_betrieb_anpassen), 16f, leise = true))
+        // 0.1.38.3: beim Wiederholen mit der bisherigen Antwort vorbelegt
+        a.stand().vorbelegung(this@BetriebSchritt.id)?.let { v ->
+            v.optString("modus").takeIf { it.isNotEmpty() }?.let { wahl.waehle(it) }
+            v.optString("stopp").takeIf { it.isNotEmpty() }?.let { stoppWahl.waehle(it) }
+        }
     }
 
     private fun onWahl(w: String) {
@@ -278,6 +292,8 @@ class KarteSchritt(a: Assistent) : SchrittAnsicht("karte", a) {
         wahl.option("keine", t.web("kartenquelle.q_keine", "Keine Karte"), t.web("kartenquelle.q_keine_sub"))
         dazu(wahl.ansicht, 16f)
         dazu(a.text(t.res(R.string.einr_karte_internet), 16f, leise = true))
+        // 0.1.38.3: beim Wiederholen mit der bisherigen Antwort vorbelegt
+        a.stand().vorbelegung(this@KarteSchritt.id)?.optString("quelle")?.takeIf { it.isNotEmpty() }?.let { wahl.waehle(it) }
     }
 
     override fun antwort(): JSONObject? = wahl.wert?.let { JSONObject().put("quelle", it) } ?: JSONObject()
@@ -285,7 +301,8 @@ class KarteSchritt(a: Assistent) : SchrittAnsicht("karte", a) {
 
 // ---------------------------------------------------------------- 13 Updates (0.1.32: ein Satz, zwei Knöpfe, ohne Vorauswahl)
 class UpdatesSchritt(a: Assistent) : SchrittAnsicht("updates", a) {
-    override val spaeterZeigen = false
+    // 0.1.38.3: beim „Noch einmal durchgehen“ überspringbar
+    override val spaeterZeigen: Boolean get() = a.stand().wiederholung
     override val weiterZeigen = false
 
     override fun ansicht(): View = spalte().apply {

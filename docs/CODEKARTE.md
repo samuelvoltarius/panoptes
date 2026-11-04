@@ -1,6 +1,6 @@
 # Codekarte Panoptes
 
-**Stand: Version 0.1.38.2, Commit 513830f2**
+**Stand: Version 0.1.38.3, Commit 251f9869**
 
 Wegweiser durch den Code. Zuerst hier suchen, dann gezielt die genannte Datei öffnen.
 Die Karte nennt Dateien und Klassen, keine Zeilennummern. Kurze Pfade gelten ab
@@ -175,7 +175,7 @@ Jedes Paket steht hier, auch Unterpakete. Pfade ab dem Wurzelpaket. Lose Dateien
 | Fehler melden | `FehlerMelden`, `RueckmeldungApiHandler`, Seite `fehler-melden.html` | `FehlerMelden` |
 | Einstellungs-Katalog | `Katalog`, `LadenKatalog`, `Feld`, `Einstellungen`, `Energie`, `EinstellungenApiHandler` | `Katalog` |
 | Gesamt-Konfiguration | `UnifiedConfigManager`, `Geheimnisse`, `QualitySettingsApiHandler` | `UnifiedConfigManager` |
-| Einrichtung (Schnellstart, Liste „Noch einrichten“) | `EinrichtungApiHandler` (`SCHNELLSTART`, `PFLICHT`), `onboarding/schritte/` (0.1.38 freiwillige Schritte in `NeueSchritte.kt`), `HandySchritt`, `Selbsttest`, `SetupGuideDialog` | `EinrichtungApiHandler` |
+| Einrichtung (Schnellstart, Liste „Noch einrichten“, 0.1.38.3 „noch einmal durchgehen“/Schritt öffnen: `wiederholen`, `POST /api/einrichtung/durchgehen|oeffnen`) | `EinrichtungApiHandler` (`SCHNELLSTART`, `PFLICHT`), `onboarding/schritte/` (0.1.38 freiwillige Schritte in `NeueSchritte.kt`), `HandySchritt`, `Selbsttest`, `SetupGuideDialog` | `EinrichtungApiHandler` |
 | i18n | `assets/web/i18n/`, `assets/server-i18n/`, `Messages`, `LocaleManager`, `web/shared/lang-picker.js`, `res/values*/strings.xml`, `tools/sprache/` | Abschnitt 6 |
 | Web-Seiten | `assets/web/local/`, Menü in `web/shared/app-shell.js`, Startprofile in `web/shared/home-layout.js` und `OBERFLAECHEN_MVP.md`, Auslieferung in `HttpServer`; Abschlussregeln der Startseite in `HomeDashboard0133Test`, Release-Nachträge in `ABSCHLUSS_0.1.33.md` und `RELEASE_0.1.34.md` | Abschnitt 4 |
 | Telegram | `TelegramBotDaemon`, `daemon/telegram/` (Befehle, `CommandRouter`; 0.1.38.2 Hauptmenü `/menue` in `SystemCommandHandler`, Text ohne „/“ zeigt es, fester Knopf „☰ Menü“, `setMyCommands`; Updates `UpdateCommandHandler` mit Knöpfen `up:…`, Rückfrage vor jedem Start, nur über `/api/appupdate/fern`), `TelegramNotifier` (`notifyUpdateNeu`: „neue Version“ mit Knopf), `TelegramSpool`, `UnifiedTelegramConfig`, `TelegramApiHandler` | `CommandRouter` |
@@ -243,7 +243,7 @@ Extern, ist die Route für Kopplungen gesperrt.
 | Route | Handler | Rechte |
 |---|---|---|
 | `/api/einstellungen` | `EinstellungenApiHandler` | Login; Extern lesen und schreiben, Felder `nurLesendExtern` nur lesen |
-| `/api/kopplung/`, `/api/kopplungen`, `/api/sitzung/` | `EinstellungenApiHandler` | Login; Extern nur `/api/sitzung/erneuern`, `/api/sitzung/abmelden` |
+| `/api/kopplung/`, `/api/kopplungen`, `/api/sitzung/` | `EinstellungenApiHandler` | Login; Extern nur `/api/sitzung/erneuern`, `/api/sitzung/abmelden`; `kopplung/code` liefert ab 0.1.38.3 `brueckeEin` und `brueckeEinmalGrund` (`aus`/`kein_internet`/null), `system.html` sagt neben dem QR-Code, ob er unterwegs geht (QR-Feld `bruecke`) |
 | `/api/kopplung/weiteres-geraet` | `WeiteresGeraetApiHandler` | Login |
 | `/api/kopplung/passkey/` | `EinstellungenApiHandler` | nur direkt am Autobildschirm, Login aus der Ferne reicht nicht |
 | `/api/planer/`, `/api/test/blitzer` | `EinstellungenApiHandler` | Login; Extern `/api/planer/identitaet` lesen |

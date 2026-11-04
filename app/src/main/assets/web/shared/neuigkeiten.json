@@ -271,6 +271,45 @@
         "Telegram meldt een nieuwe update met de knop „Nu installeren” en vraagt het eerst nog een keer. Dat geldt voor Panoptes en de Panoptes-launcher.",
         "Je kunt ook bijwerken vanaf je telefoon of cockpit, alleen als je dat bij het koppelen toestaat en de auto geparkeerd staat."
       ]
+    },
+    {
+      "version": "0.1.38.3",
+      "versionCode": 67,
+      "de": [
+        "Wurde der Kamera-Schritt übersprungen, kannst du ihn jetzt nachholen: Kameras & Wächter → Kameras einrichten.",
+        "Den Assistenten kannst du jederzeit noch einmal durchgehen oder einen einzelnen Schritt wieder öffnen. Deine Einstellungen bleiben.",
+        "Beim Koppeln steht jetzt klar, ob der QR-Code nur im WLAN oder auch unterwegs geht. Der Assistent fragt, ob du die Handy-App unterwegs nutzen willst.",
+        "Die Adresse der Web-App steht groß beim Koppeln, mit eigenem QR-Code und dem Download der Android-App.",
+        "Die Regeln sind jetzt in allen Sprachen übersetzt, auch die Bedingungen."
+      ],
+      "en": [
+        "If the camera step was skipped, you can now do it later: Cameras & guard → Set up cameras.",
+        "You can go through the assistant again at any time or reopen a single step. Your settings stay.",
+        "When pairing, it now says clearly whether the QR code only works on Wi-Fi or also on the road. The assistant asks whether you want to use the phone app on the go.",
+        "The web app address is shown large when pairing, with its own QR code and the Android app download.",
+        "Rules are now translated into all languages, including the conditions."
+      ],
+      "fr": [
+        "Si l’étape des caméras a été sautée, tu peux maintenant la faire plus tard : Caméras & surveillance → Configurer les caméras.",
+        "Tu peux refaire l’assistant à tout moment ou rouvrir une seule étape. Tes réglages restent.",
+        "Lors du jumelage, il est indiqué clairement si le code QR fonctionne seulement en Wi-Fi ou aussi en route. L’assistant demande si tu veux utiliser l’appli mobile en déplacement.",
+        "L’adresse de l’appli web s’affiche en grand lors du jumelage, avec son propre code QR et le téléchargement de l’appli Android.",
+        "Les règles sont maintenant traduites dans toutes les langues, conditions comprises."
+      ],
+      "it": [
+        "Se il passo delle telecamere è stato saltato, ora puoi farlo dopo: Telecamere & guardia → Configura le telecamere.",
+        "Puoi ripercorrere l’assistente in qualsiasi momento o riaprire un singolo passo. Le tue impostazioni restano.",
+        "Durante l’abbinamento ora è scritto chiaramente se il codice QR funziona solo nel Wi-Fi o anche in viaggio. L’assistente chiede se vuoi usare l’app per telefono in viaggio.",
+        "L’indirizzo della web app è mostrato in grande durante l’abbinamento, con un proprio codice QR e il download dell’app Android.",
+        "Le regole ora sono tradotte in tutte le lingue, comprese le condizioni."
+      ],
+      "nl": [
+        "Is de camerastap overgeslagen, dan kun je hem nu alsnog doen: Camera’s & bewaking → Camera’s instellen.",
+        "Je kunt de assistent op elk moment opnieuw doorlopen of één stap weer openen. Je instellingen blijven.",
+        "Bij het koppelen staat nu duidelijk of de QR-code alleen op wifi of ook onderweg werkt. De assistent vraagt of je de telefoon-app onderweg wilt gebruiken.",
+        "Het adres van de web-app staat groot bij het koppelen, met een eigen QR-code en de download van de Android-app.",
+        "Regels zijn nu in alle talen vertaald, ook de voorwaarden."
+      ]
     }
   ]
 }

@@ -5209,7 +5209,13 @@
     "schalter_aus": "Turn guard off",
     "schalter_fehler": "That did not work. Please try again.",
     "schalter_ist_an": "Guard is on.",
-    "schalter_ist_aus": "Guard is off."
+    "schalter_ist_aus": "Guard is off.",
+    "kameras_titel": "Set up cameras",
+    "kameras_lead": "Panoptes shows you the camera pictures. You tap which picture is front, rear, left and right.",
+    "kameras_knopf": "Set up cameras",
+    "kameras_nur_auto": "This only works on the car screen: open Panoptes there, then Cameras & guard → Set up cameras.",
+    "kameras_oeffnet": "The camera assignment opens in a moment. This can take a few seconds.",
+    "kameras_fehler": "The camera assignment could not be opened. Please close Panoptes and open it again. If it still does not work: Help & info → Report a problem."
   },
   "apps": {
     "title": "Apps side by side",
@@ -5311,7 +5317,15 @@
     "hostname_invalid": "Use only a–z, 0–9 and hyphens",
     "hostname_saved": "Device name: {name}",
     "pair_title": "Pair a device",
-    "pair_lead": "So that e.g. EV Cockpit can show and change Panoptes settings. Remote access, password and ports stay locked for paired devices.",
+    "pair_lead": "Pair the Panoptes phone app or, for example, the EV Cockpit here. Remote access, password and connections stay locked for paired devices.",
+    "app_holen_titel": "Get the phone app",
+    "app_holen_web": "For iPhone and everyone without the Android app: open this address in the phone’s browser.",
+    "app_holen_android": "Android app to download:",
+    "app_holen_qr": "Only opens the web app. Use the code below to pair.",
+    "pair_nur_wlan": "This QR code only works on the same Wi-Fi. For use on the go, switch on “Use the phone app on the go” and then create a new code.",
+    "pair_zur_bruecke": "Switch on use on the go ›",
+    "pair_kein_internet": "The car has no internet right now. This QR code only works on Wi-Fi. Create a new code later, then it also works on the go.",
+    "pair_unterwegs": "✓ This QR code also works on the go, over the internet.",
     "pair_btn": "Pair a new device",
     "pair_fail": "Could not create a code.",
     "pair_expired": "Expired. Create a new code if needed.",
@@ -5997,7 +6011,9 @@
     "ja": "Restart",
     "status": {
       "offen": "open",
-      "spaeter": "later"
+      "spaeter": "later",
+      "erledigt": "done",
+      "entfaellt": "not needed"
     },
     "schritt": {
       "sprache": "Language",
@@ -6101,7 +6117,15 @@
       "extra_ladesaeule_text": "After charging, Panoptes asks the Panoptes server once which charging station you used. For this your rough position goes to the server, never at private places. That way the price and the station name are right.",
       "extra_tiermodus_text": "Pet mode keeps the car pleasantly warm or cool for your pet and shows in large letters on the screen that everything is fine. You switch it on yourself when you need it.",
       "extra_assistenz_text": "With Panoptes you can switch your car’s driver assistance systems on and off, also in rules. The first time you switch one off, Panoptes asks once. You decide and you are responsible. Switching on never needs a question."
-    }
+    },
+    "durchgehen_knopf": "Go through setup again",
+    "durchgehen_frage": "The assistant goes through all steps with you again on the car screen. Your settings stay. You can skip any step with “Later”; it then stays as it is.",
+    "durchgehen_ja": "Yes, go through",
+    "durchgehen_ok": "Done. The assistant appears as soon as you open Panoptes on the car screen.",
+    "alle_titel": "All steps",
+    "alle_hinweis": "You can open any step again here. Your settings stay.",
+    "oeffnen": "Open",
+    "oeffnen_ok": "Opens as soon as you open Panoptes on the car screen."
   },
   "laden": {
     "saeule": {

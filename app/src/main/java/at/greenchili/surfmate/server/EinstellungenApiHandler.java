@@ -104,10 +104,22 @@ public final class EinstellungenApiHandler {
             res.put("code", code);
             res.put("gueltigBis", now + PairingCodes.TTL_MS);
             // 0.1.24 Erstkopplung über die Brücke: Einmal-Zugang zum Code (nur im QR hinter „#“, BRUECKE_VERTRAG §2.3)
+            // 0.1.38.3: ehrlich sagen, ob der QR-Code unterwegs geht (brueckeEin, brueckeEinmalGrund aus|kein_internet)
+            boolean brueckeEin = false;
+            String grund = "aus";
             try {
-                String einmal = at.greenchili.surfmate.bruecke.Bruecke.get().einmalAnlegen(now + PairingCodes.TTL_MS);
-                if (einmal != null) res.put("brueckeEinmal", einmal);
-            } catch (Throwable ignored) { }
+                at.greenchili.surfmate.bruecke.Bruecke b = at.greenchili.surfmate.bruecke.Bruecke.get();
+                brueckeEin = b.ein();
+                if (brueckeEin) {
+                    String einmal = b.einmalAnlegen(now + PairingCodes.TTL_MS);
+                    if (einmal != null) res.put("brueckeEinmal", einmal);
+                    grund = einmalGrund(true, einmal != null);
+                }
+            } catch (Throwable t) {
+                grund = brueckeEin ? "kein_internet" : "aus";
+            }
+            res.put("brueckeEin", brueckeEin);
+            res.put("brueckeEinmalGrund", grund == null ? JSONObject.NULL : grund);
             HttpResponse.sendJson(out, res.toString());
             return true;
         }
@@ -493,6 +505,15 @@ public final class EinstellungenApiHandler {
         } catch (Throwable ignored) {
         }
         return k;
+    }
+
+    /**
+     * 0.1.38.3: Warum der QR-Code nicht unterwegs geht: {@code aus} (Brücke aus, nur gleiches WLAN), {@code kein_internet}
+     * (Brücke an, aber der Einmal-Zugang ließ sich gerade nicht anlegen) oder null (geht auch unterwegs).
+     */
+    static String einmalGrund(boolean brueckeEin, boolean einmalDa) {
+        if (!brueckeEin) return "aus";
+        return einmalDa ? null : "kein_internet";
     }
 
     static String sprache(String query) {

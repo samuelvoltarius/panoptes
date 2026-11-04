@@ -5209,7 +5209,13 @@
     "schalter_aus": "Couper la surveillance",
     "schalter_fehler": "Cela n’a pas marché. Veuillez réessayer.",
     "schalter_ist_an": "La surveillance est activée.",
-    "schalter_ist_aus": "La surveillance est coupée."
+    "schalter_ist_aus": "La surveillance est coupée.",
+    "kameras_titel": "Configurer les caméras",
+    "kameras_lead": "Panoptes te montre les images des caméras. Tu touches l’image avant, arrière, gauche et droite.",
+    "kameras_knopf": "Configurer les caméras",
+    "kameras_nur_auto": "Cela ne marche que sur l’écran de la voiture : ouvre Panoptes, puis Caméras & surveillance → Configurer les caméras.",
+    "kameras_oeffnet": "L’attribution des caméras s’ouvre dans un instant. Cela peut prendre quelques secondes.",
+    "kameras_fehler": "Impossible d’ouvrir l’attribution des caméras. Ferme Panoptes et rouvre-le. Si cela ne marche toujours pas : Aide & infos → Signaler un problème."
   },
   "apps": {
     "title": "Apps côte à côte",
@@ -5311,7 +5317,15 @@
     "hostname_invalid": "Utilisez uniquement a–z, 0–9 et le tiret",
     "hostname_saved": "Nom de l’appareil : {name}",
     "pair_title": "Associer un appareil",
-    "pair_lead": "Pour que, par exemple, EV Cockpit puisse afficher et modifier les paramètres de Panoptes. L'accès distant, le mot de passe et les ports restent verrouillés pour les appareils associés.",
+    "pair_lead": "Couple ici l’application mobile Panoptes ou, par exemple, le EV-Cockpit. L’accès à distance, le mot de passe et les connexions restent bloqués pour les appareils couplés.",
+    "app_holen_titel": "Obtenir l’appli mobile",
+    "app_holen_web": "Pour l’iPhone et tous ceux sans appli Android : ouvre cette adresse dans le navigateur du téléphone.",
+    "app_holen_android": "Appli Android à télécharger :",
+    "app_holen_qr": "Ouvre seulement l’appli web. Pour coupler, utilise le code ci-dessous.",
+    "pair_nur_wlan": "Ce code QR ne fonctionne que sur le même Wi-Fi. Pour l’utiliser en déplacement, active « Utiliser l'appli mobile en déplacement », puis crée un nouveau code.",
+    "pair_zur_bruecke": "Activer l’usage en déplacement ›",
+    "pair_kein_internet": "La voiture n’a pas d’internet en ce moment. Ce code QR ne vaut que sur le Wi-Fi. Crée un nouveau code plus tard, il marchera aussi en déplacement.",
+    "pair_unterwegs": "✓ Ce code QR fonctionne aussi en déplacement, via internet.",
     "pair_btn": "Associer un nouvel appareil",
     "pair_fail": "Impossible de créer un code.",
     "pair_expired": "Expiré. Créez un nouveau code si nécessaire.",
@@ -5997,7 +6011,9 @@
     "ja": "Relancer",
     "status": {
       "offen": "à faire",
-      "spaeter": "plus tard"
+      "spaeter": "plus tard",
+      "erledigt": "fait",
+      "entfaellt": "pas nécessaire"
     },
     "schritt": {
       "sprache": "Langue",
@@ -6101,7 +6117,15 @@
       "extra_ladesaeule_text": "Après la recharge, Panoptes demande une fois au serveur Panoptes à quelle borne tu étais. Pour cela ta position approximative part au serveur, jamais aux lieux privés. Ainsi le prix et le nom de la borne sont justes.",
       "extra_tiermodus_text": "Le mode animal garde la voiture agréablement chaude ou fraîche pour ton animal et affiche en grand sur l’écran que tout va bien. Tu l’actives toi-même quand tu en as besoin.",
       "extra_assistenz_text": "Avec Panoptes tu peux activer et couper les aides à la conduite de ta voiture, aussi dans les règles. La première fois que tu en coupes une, Panoptes demande une fois. Tu décides et tu es responsable. Activer ne demande jamais rien."
-    }
+    },
+    "durchgehen_knopf": "Refaire la configuration",
+    "durchgehen_frage": "L’assistant reprend toutes les étapes avec toi sur l’écran de la voiture. Tes réglages restent. Tu peux passer chaque étape avec « Plus tard », elle reste alors telle quelle.",
+    "durchgehen_ja": "Oui, reprendre",
+    "durchgehen_ok": "C’est fait. L’assistant apparaît dès que tu ouvres Panoptes sur l’écran de la voiture.",
+    "alle_titel": "Toutes les étapes",
+    "alle_hinweis": "Tu peux rouvrir chaque étape ici. Tes réglages restent.",
+    "oeffnen": "Ouvrir",
+    "oeffnen_ok": "S’ouvre dès que tu ouvres Panoptes sur l’écran de la voiture."
   },
   "laden": {
     "saeule": {

@@ -63,7 +63,14 @@ data class EinrichtungStand(
     val selbsttest: JSONObject?,
     /** true = aus §0 gelesen, false = Vorlauf ohne Daemon. */
     val vomKern: Boolean,
+    /** 0.1.38.3: „Einrichtung noch einmal durchgehen“ läuft; jeder schon beantwortete Schritt ist überspringbar. */
+    val wiederholung: Boolean = false,
+    /** 0.1.38.3: gespeicherte Antworten je Schritt (Kern „werte“), zum Vorbelegen beim Wiederholen. */
+    val werte: JSONObject? = null,
 ) {
+    /** Gespeicherte Antwort eines Schritts, nur beim Wiederholen (eine Neueinrichtung bleibt ohne Vorauswahl). */
+    fun vorbelegung(id: String): JSONObject? = if (wiederholung) werte?.optJSONObject(id) else null
+
     fun schritt(id: String): Schritt? = schritte.firstOrNull { it.id == id }
 
     /** Schritte des Ablaufs in Anzeige-Reihenfolge (entfallene und freiwillige ausgelassen). */
@@ -142,6 +149,8 @@ data class EinrichtungStand(
                 faehigkeiten = o.optJSONObject("faehigkeiten"),
                 selbsttest = o.optJSONObject("selbsttest"),
                 vomKern = true,
+                wiederholung = o.optBoolean("wiederholung", false),
+                werte = o.optJSONObject("werte"),
             )
         }
 
@@ -161,8 +170,10 @@ object HandyQr {
     private const val STANDARD_BASIS = "https://byd.serveone.at/p/"
 
     /** @param basis Direktadresse (Tailscale) oder null; @param bruecke Antwort von GET /api/bruecke oder null */
-    fun inhalt(code: String, basis: String?, bruecke: JSONObject?, einmal: String?): String {
+    fun inhalt(code: String, basis: String?, bruecke: JSONObject?, einmal: String?, grund: String? = null): String {
         val j = JSONObject().put("v", 2).put("c", code)
+        // 0.1.38.3 (QR_BRUECKE_FELD.md): „aus“/„kein_internet“ = der Code geht nur im gleichen WLAN
+        if (grund == "aus" || grund == "kein_internet") j.put("bruecke", grund)
         if (!basis.isNullOrEmpty()) j.put("u", JSONArray().put(basis))
         val p = bruecke?.optString("p", "").orEmpty()
         val adr = bruecke?.optString("a", "").orEmpty()

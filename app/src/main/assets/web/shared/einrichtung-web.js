@@ -21,6 +21,15 @@
         'offen_keins': 'Nichts offen – die Einrichtung ist vollständig.',
         'offen_hinweis': 'Alles freiwillig. Tippe auf einen Punkt.',
         'neu_knopf': 'Einrichtung erneut starten',
+        'durchgehen_knopf': 'Einrichtung noch einmal durchgehen',
+        'durchgehen_frage': 'Der Assistent geht am Bildschirm im Auto alle Schritte noch einmal mit dir durch. Deine Einstellungen bleiben. Jeden Schritt kannst du mit „Später“ überspringen, dann bleibt er, wie er ist.',
+        'durchgehen_ja': 'Ja, durchgehen',
+        'durchgehen_ok': 'Erledigt. Der Assistent erscheint, sobald du Panoptes am Bildschirm im Auto öffnest.',
+        'alle_titel': 'Alle Schritte',
+        'alle_hinweis': 'Jeden Schritt kannst du hier wieder öffnen. Deine Einstellungen bleiben.',
+        'oeffnen': 'Öffnen',
+        'oeffnen_ok': 'Öffnet sich, sobald du Panoptes am Bildschirm im Auto öffnest.',
+        'status.erledigt': 'erledigt', 'status.spaeter': 'noch offen', 'status.offen': 'noch offen', 'status.entfaellt': 'nicht nötig',
         'neu_frage': 'Einrichtung wirklich neu starten? Der Assistent fragt dann am Bildschirm im Auto alles noch einmal ab. Deine Einstellungen bleiben, bis du sie dort änderst; Freigaben musst du neu bestätigen.',
         'neu_ok': 'Zurückgesetzt. Der Assistent erscheint beim nächsten Start der App am Bildschirm im Auto.',
         'neu_fehler': 'Das hat nicht geklappt. Bitte später nochmal versuchen.',
@@ -96,12 +105,14 @@
         'hinweis.keine_karte': 'Bis du eine Kartenquelle wählst, bleibt die Karte leer und es geht nichts raus.'
     };
 
-    // 0.1.32 „Noch einrichten“: wo jeder Punkt im Web liegt. Ohne Eintrag (Auto, Kameras, Rechte) geht es nur im Assistenten am Display.
+    // 0.1.32 „Noch einrichten“: wo jeder Punkt im Web liegt. Ohne Eintrag (Auto, Rechte) geht es nur im Assistenten am Display.
     var ZIEL = {
         betrieb: 'surveillance.html', karte: 'system.html#kartenquelle', daten: 'system.html#datenschutz',
         blitzer: 'system.html#blitzer', updates: 'system.html#updates', strompreis: 'charging.html#settings',
         extra_telegram: 'telegram.html', extra_handy: 'system.html#kopplung', extra_planer: 'system.html#planerKarte',
         extra_cockpit: 'system.html#kopplung', extra_overdrive: 'system.html#umzug',
+        // 0.1.38.3: Kameras immer nachholbar (Knopf unter Kameras & Wächter, mit Klartext außerhalb des Autos)
+        kameras: 'waechter.html#kamerasEinrichten',
         extra_fernzugang: 'system.html#tailscaleKarte', extra_notzugang: 'system.html#notzugang',
         // 0.1.38 (wie NeuHinweisSchritt.ZIEL). Abschaltbericht hat keinen Web-Schalter: nur im Assistenten am Display.
         extra_display: 'display.html#hintergrund', extra_launcher: 'display.html#launcher', extra_tacho: 'display.html#tacho',
@@ -312,18 +323,21 @@
             });
             inhalt.appendChild(el('div', 'sys-note', t('offen_hinweis')));
         }
-        var knopf = el('button', 'btn', t('neu_knopf'));
+        alleSchritte(inhalt, d);
+        // 0.1.38.3 („Wizard … muss jederzeit auch danach wieder einstellbar sein“): großer Knopf, nichts geht
+        // verloren, jeder Schritt überspringbar (POST /api/einrichtung/durchgehen)
+        var knopf = el('button', 'btn btn-primary', t('durchgehen_knopf'));
         knopf.type = 'button';
-        knopf.style.marginTop = '12px';
-        knopf.setAttribute('data-einr', 'neu');
+        knopf.style.cssText = 'margin-top:14px;min-height:56px;font-size:17px;font-weight:700;width:100%';
+        knopf.setAttribute('data-einr', 'durchgehen');
         inhalt.appendChild(knopf);
         var meldung = el('div', 'sys-note');
         inhalt.appendChild(meldung);
         knopf.onclick = function () {
             // eigene Rückfrage statt window.confirm (am Display und im Browser gleich lesbar)
             knopf.style.display = 'none';
-            var frage = el('div', 'sys-note', t('neu_frage'));
-            var ja = el('button', 'btn btn-primary', t('ja'));
+            var frage = el('div', 'sys-note', t('durchgehen_frage'));
+            var ja = el('button', 'btn btn-primary', t('durchgehen_ja'));
             ja.type = 'button';
             ja.setAttribute('data-einr', 'ja');
             var nein = el('button', 'btn', t('abbrechen'));
@@ -336,13 +350,13 @@
             nein.onclick = function () { box.parentNode.removeChild(box); knopf.style.display = ''; };
             ja.onclick = function () {
                 ja.disabled = true; nein.disabled = true;
-                fetch('/api/einrichtung/neu', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+                fetch('/api/einrichtung/durchgehen', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
                     .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return laden(); })
                     .then(function (neu) {
-                        toast(t('neu_ok'), true);
+                        toast(t('durchgehen_ok'), true);
                         if (neu) zeichne(inhalt, neu);
                         var m = inhalt.querySelector('.sys-note:last-child');
-                        if (m) m.textContent = t('neu_ok');
+                        if (m) m.textContent = t('durchgehen_ok');
                     })
                     .catch(function () {
                         toast(t('neu_fehler'), false);
@@ -350,6 +364,51 @@
                     });
             };
         };
+    }
+
+    // 0.1.38.3: Liste „Alle Schritte“ (nicht nur „Noch einrichten“). „Öffnen“ führt zur Seite, wo es eine gibt;
+    // sonst öffnet der Kern den Schritt im Assistenten am Bildschirm im Auto (POST /api/einrichtung/oeffnen).
+    function alleSchritte(inhalt, d) {
+        var det = el('details');
+        det.style.cssText = 'margin-top:14px';
+        det.setAttribute('data-einr', 'alle');
+        var sum = el('summary', null, t('alle_titel'));
+        sum.style.cssText = 'cursor:pointer;font-weight:700;font-size:16px;min-height:44px;display:flex;align-items:center';
+        det.appendChild(sum);
+        det.appendChild(el('div', 'sys-note', t('alle_hinweis')));
+        var meld = el('div', 'sys-note');
+        meld.setAttribute('role', 'status');
+        (d.schritte || []).forEach(function (s) {
+            if (s.id === 'fertig' || s.id === 'usb_freigabe' || s.status === 'entfaellt') return;
+            var z = el('div');
+            z.setAttribute('data-alle', s.id);
+            z.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--border-default)';
+            var links = el('div');
+            links.appendChild(el('div', null, t('schritt.' + s.id)));
+            var st = el('div', 'sys-note', t('status.' + s.status));
+            st.style.marginTop = '0';
+            links.appendChild(st);
+            z.appendChild(links);
+            var b;
+            if (ZIEL[s.id]) {
+                b = el('a', 'btn', t('oeffnen'));
+                b.href = ZIEL[s.id];
+            } else {
+                b = el('button', 'btn', t('oeffnen'));
+                b.type = 'button';
+                b.onclick = function () {
+                    b.disabled = true;
+                    fetch('/api/einrichtung/oeffnen', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: s.id }) })
+                        .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); meld.textContent = t('oeffnen_ok'); toast(t('oeffnen_ok'), true); })
+                        .catch(function () { b.disabled = false; meld.textContent = t('neu_fehler'); });
+                };
+            }
+            b.style.minHeight = '48px';
+            z.appendChild(b);
+            det.appendChild(z);
+        });
+        det.appendChild(meld);
+        inhalt.appendChild(det);
     }
 
     function init(karte, inhalt) {

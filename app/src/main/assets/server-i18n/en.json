@@ -1845,7 +1845,19 @@
     "charge_plan_description": "Charge now, stop charging now, or resume the plan.",
     "charge_plan_now": "Charge now",
     "charge_plan_now_off": "Stop charging now",
-    "charge_plan_resume": "Resume plan"
+    "charge_plan_resume": "Resume plan",
+    "section_triggers": "As soon as this changes:",
+    "section_conditions": "and if",
+    "section_actions": "then",
+    "section_else": "otherwise",
+    "message_label": "Message",
+    "cmp_label": "Comparison",
+    "cmp_eq": "is equal to",
+    "cmp_neq": "is not",
+    "cmp_gt": "is greater than",
+    "cmp_lt": "is less than",
+    "cmp_gte": "is at least",
+    "cmp_lte": "is at most"
   },
   "messages": {
     "seat_position_captured": "“{0}” is now saved in Panoptes",

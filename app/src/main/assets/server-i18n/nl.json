@@ -1851,7 +1851,19 @@
     "charge_plan_description": "Nu laden, direct laden stoppen of het plan hervatten.",
     "charge_plan_now": "Nu laden",
     "charge_plan_now_off": "Direct laden stoppen",
-    "charge_plan_resume": "Plan hervatten"
+    "charge_plan_resume": "Plan hervatten",
+    "section_triggers": "Zodra dit verandert:",
+    "section_conditions": "en als",
+    "section_actions": "dan",
+    "section_else": "anders",
+    "message_label": "Bericht",
+    "cmp_label": "Vergelijking",
+    "cmp_eq": "is gelijk aan",
+    "cmp_neq": "is niet",
+    "cmp_gt": "is groter dan",
+    "cmp_lt": "is kleiner dan",
+    "cmp_gte": "is minstens",
+    "cmp_lte": "is hoogstens"
   },
   "messages": {
     "seat_position_captured": "“{0}” is nu opgeslagen in Panoptes",

@@ -5209,7 +5209,13 @@
     "schalter_aus": "Wächter ausschalten",
     "schalter_fehler": "Das hat nicht geklappt. Bitte nochmal versuchen.",
     "schalter_ist_an": "Wächter ist eingeschaltet.",
-    "schalter_ist_aus": "Wächter ist ausgeschaltet."
+    "schalter_ist_aus": "Wächter ist ausgeschaltet.",
+    "kameras_titel": "Kameras einrichten",
+    "kameras_lead": "Panoptes zeigt dir die Bilder der Kameras. Du tippst an, welches Bild vorne, hinten, links und rechts ist.",
+    "kameras_knopf": "Kameras einrichten",
+    "kameras_nur_auto": "Das geht nur am Bildschirm im Auto: dort Panoptes öffnen, dann Kameras & Wächter → Kameras einrichten.",
+    "kameras_oeffnet": "Die Kamera-Zuordnung öffnet sich gleich. Das kann ein paar Sekunden dauern.",
+    "kameras_fehler": "Die Kamera-Zuordnung ließ sich nicht öffnen. Bitte Panoptes einmal schließen und neu öffnen. Klappt es dann nicht: Hilfe & Info → Fehler melden."
   },
   "apps": {
     "title": "Apps nebeneinander",
@@ -5311,7 +5317,15 @@
     "hostname_invalid": "Nur a–z, 0–9 und Bindestrich",
     "hostname_saved": "Gerätename: {name}",
     "pair_title": "Gerät koppeln",
-    "pair_lead": "Damit z. B. das EV-Cockpit Panoptes-Einstellungen anzeigen und ändern kann. Fernzugang, Passwort und Anschlüsse bleiben für gekoppelte Geräte gesperrt.",
+    "pair_lead": "Hier koppelst du die Panoptes-Handy-App oder z. B. das EV-Cockpit. Fernzugang, Passwort und Anschlüsse bleiben für gekoppelte Geräte gesperrt.",
+    "app_holen_titel": "Handy-App holen",
+    "app_holen_web": "Für iPhone und alle ohne Android-App: diese Adresse im Handy-Browser öffnen.",
+    "app_holen_android": "Android-App zum Herunterladen:",
+    "app_holen_qr": "Öffnet nur die Web-App. Zum Koppeln den Code unten nehmen.",
+    "pair_nur_wlan": "Dieser QR-Code geht nur im gleichen WLAN. Für unterwegs „Handy-App unterwegs nutzen“ einschalten und danach einen neuen Code erzeugen.",
+    "pair_zur_bruecke": "Unterwegs nutzen einschalten ›",
+    "pair_kein_internet": "Das Auto hat gerade kein Internet. Dieser QR-Code gilt nur im WLAN. Später einen neuen Code erzeugen, dann geht er auch unterwegs.",
+    "pair_unterwegs": "✓ Dieser QR-Code geht auch unterwegs, über das Internet.",
     "pair_btn": "Neues Gerät koppeln",
     "pair_fail": "Konnte keinen Code erzeugen.",
     "pair_expired": "Abgelaufen. Bei Bedarf einen neuen Code erzeugen.",
@@ -5996,7 +6010,9 @@
     "ja": "Neu starten",
     "status": {
       "offen": "offen",
-      "spaeter": "später"
+      "spaeter": "später",
+      "erledigt": "erledigt",
+      "entfaellt": "nicht nötig"
     },
     "schritt": {
       "sprache": "Sprache",
@@ -6101,7 +6117,15 @@
       "extra_ladesaeule_text": "Nach dem Laden fragt Panoptes einmal den Panoptes-Server, an welcher Ladesäule du warst. Dafür geht deine ungefähre Position an den Server, nie an privaten Orten. So stimmen Preis und Name der Säule.",
       "extra_tiermodus_text": "Der Tiermodus hält das Auto für dein Tier angenehm warm oder kühl und zeigt am Bildschirm groß, dass alles in Ordnung ist. Du schaltest ihn selbst ein, wenn du ihn brauchst.",
       "extra_assistenz_text": "Mit Panoptes kannst du Assistenzsysteme deines Autos ein- und ausschalten, auch in Regeln. Beim ersten Ausschalten fragt Panoptes einmal nach. Du entscheidest und bist selbst verantwortlich. Einschalten geht immer ohne Frage."
-    }
+    },
+    "durchgehen_knopf": "Einrichtung noch einmal durchgehen",
+    "durchgehen_frage": "Der Assistent geht am Bildschirm im Auto alle Schritte noch einmal mit dir durch. Deine Einstellungen bleiben. Jeden Schritt kannst du mit „Später“ überspringen, dann bleibt er, wie er ist.",
+    "durchgehen_ja": "Ja, durchgehen",
+    "durchgehen_ok": "Erledigt. Der Assistent erscheint, sobald du Panoptes am Bildschirm im Auto öffnest.",
+    "alle_titel": "Alle Schritte",
+    "alle_hinweis": "Jeden Schritt kannst du hier wieder öffnen. Deine Einstellungen bleiben.",
+    "oeffnen": "Öffnen",
+    "oeffnen_ok": "Öffnet sich, sobald du Panoptes am Bildschirm im Auto öffnest."
   },
   "laden": {
     "saeule": {

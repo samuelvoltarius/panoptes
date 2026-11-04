@@ -1532,7 +1532,7 @@ public class Actions {
      * @return A JSON representation of the Actions schema
      */
     public JSONObject toJson() {
-        return sectionJson("actions", "Then", "automation.actions_description", 1);
+        return sectionJson("actions", "automation.section_actions", "automation.actions_description", 1);
     }
 
     /**
@@ -1545,7 +1545,7 @@ public class Actions {
      * @return A JSON representation of the else-actions schema
      */
     public JSONObject elseToJson() {
-        return sectionJson("elseActions", "Else", "automation.else_actions_description", 0);
+        return sectionJson("elseActions", "automation.section_else", "automation.else_actions_description", 0);
     }
 
     /**

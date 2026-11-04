@@ -5209,7 +5209,13 @@
     "schalter_aus": "Spegni la guardia",
     "schalter_fehler": "Non ha funzionato. Riprova.",
     "schalter_ist_an": "La guardia è attiva.",
-    "schalter_ist_aus": "La guardia è spenta."
+    "schalter_ist_aus": "La guardia è spenta.",
+    "kameras_titel": "Configura le telecamere",
+    "kameras_lead": "Panoptes ti mostra le immagini delle telecamere. Tocchi quale immagine è davanti, dietro, sinistra e destra.",
+    "kameras_knopf": "Configura le telecamere",
+    "kameras_nur_auto": "Funziona solo sullo schermo dell’auto: apri Panoptes, poi Telecamere & guardia → Configura le telecamere.",
+    "kameras_oeffnet": "L’assegnazione delle telecamere si apre tra poco. Può richiedere qualche secondo.",
+    "kameras_fehler": "Non è stato possibile aprire l’assegnazione delle telecamere. Chiudi Panoptes e riaprilo. Se ancora non funziona: Aiuto & info → Segnala un problema."
   },
   "apps": {
     "title": "App affiancate",
@@ -5311,7 +5317,15 @@
     "hostname_invalid": "Usa solo a–z, 0–9 e trattini",
     "hostname_saved": "Nome dispositivo: {name}",
     "pair_title": "Collega un dispositivo",
-    "pair_lead": "Così, ad esempio, EV Cockpit può mostrare e modificare le impostazioni di Panoptes. Accesso remoto, password e porte restano bloccati per i dispositivi collegati.",
+    "pair_lead": "Qui associ l’app Panoptes per smartphone o, per esempio, l’EV-Cockpit. Accesso remoto, password e collegamenti restano bloccati per i dispositivi associati.",
+    "app_holen_titel": "Scarica l’app per il telefono",
+    "app_holen_web": "Per iPhone e per chi non ha l’app Android: apri questo indirizzo nel browser del telefono.",
+    "app_holen_android": "App Android da scaricare:",
+    "app_holen_qr": "Apre solo l’app web. Per associare usa il codice qui sotto.",
+    "pair_nur_wlan": "Questo codice QR funziona solo nella stessa rete Wi-Fi. Per usarlo in viaggio attiva «Usare l'app del telefono in viaggio» e poi crea un nuovo codice.",
+    "pair_zur_bruecke": "Attiva l’uso in viaggio ›",
+    "pair_kein_internet": "L’auto non ha internet in questo momento. Questo codice QR vale solo nel Wi-Fi. Crea più tardi un nuovo codice, così funziona anche in viaggio.",
+    "pair_unterwegs": "✓ Questo codice QR funziona anche in viaggio, tramite internet.",
     "pair_btn": "Collega un nuovo dispositivo",
     "pair_fail": "Impossibile creare un codice.",
     "pair_expired": "Scaduto. Se serve, crea un nuovo codice.",
@@ -5997,7 +6011,9 @@
     "ja": "Riavvia",
     "status": {
       "offen": "da fare",
-      "spaeter": "più tardi"
+      "spaeter": "più tardi",
+      "erledigt": "fatto",
+      "entfaellt": "non necessario"
     },
     "schritt": {
       "sprache": "Lingua",
@@ -6101,7 +6117,15 @@
       "extra_ladesaeule_text": "Dopo la ricarica, Panoptes chiede una volta al server Panoptes a quale colonnina eri. Per questo la tua posizione approssimativa va al server, mai nei luoghi privati. Così prezzo e nome della colonnina sono giusti.",
       "extra_tiermodus_text": "La modalità animali tiene l’auto piacevolmente calda o fresca per il tuo animale e mostra in grande sullo schermo che è tutto a posto. La accendi tu quando ti serve.",
       "extra_assistenz_text": "Con Panoptes puoi accendere e spegnere i sistemi di assistenza della tua auto, anche nelle regole. La prima volta che ne spegni uno, Panoptes chiede una volta. Decidi tu e sei responsabile. Accendere non chiede mai nulla."
-    }
+    },
+    "durchgehen_knopf": "Ripeti la configurazione",
+    "durchgehen_frage": "L’assistente ripercorre con te tutti i passaggi sullo schermo dell’auto. Le tue impostazioni restano. Puoi saltare ogni passaggio con «Più tardi», resta così com’è.",
+    "durchgehen_ja": "Sì, ripeti",
+    "durchgehen_ok": "Fatto. L’assistente compare appena apri Panoptes sullo schermo dell’auto.",
+    "alle_titel": "Tutti i passaggi",
+    "alle_hinweis": "Puoi riaprire qui ogni passaggio. Le tue impostazioni restano.",
+    "oeffnen": "Apri",
+    "oeffnen_ok": "Si apre appena apri Panoptes sullo schermo dell’auto."
   },
   "laden": {
     "saeule": {

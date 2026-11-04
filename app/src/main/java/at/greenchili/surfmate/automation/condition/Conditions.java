@@ -624,8 +624,8 @@ public class Conditions {
      */
     public JSONArray toJson() {
         JSONArray json = new JSONArray();
-        JSONObject triggers = new Label("triggers", "On Change").toJson();
-        JSONObject conditions = new Label("conditions", "If").toJson();
+        JSONObject triggers = new Label("triggers", "automation.section_triggers").toJson();
+        JSONObject conditions = new Label("conditions", "automation.section_conditions").toJson();
 
         try {
             triggers.put("description", Messages.get("automation.triggers_description"));

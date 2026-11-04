@@ -1825,4 +1825,6 @@
         <item quantity="one">Ein Auto entdeckt</item>
         <item quantity="other">%1$d Autos entdeckt</item>
     </plurals>
+    <!-- 0.1.38.3: Kamera-Einstellungen nicht erreichbar (statt „Speichern hat nicht geklappt“) -->
+    <string name="camera_mapping_unreachable">Panoptes erreicht die Kameras gerade nicht. Kurz warten und noch einmal tippen. Klappt es dann nicht: Hilfe &amp; Info → Fehler melden.</string>
 </resources>

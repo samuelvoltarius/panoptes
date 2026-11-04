@@ -5209,7 +5209,13 @@
     "schalter_aus": "Bewaking uitzetten",
     "schalter_fehler": "Dat is niet gelukt. Probeer het nog eens.",
     "schalter_ist_an": "Bewaking staat aan.",
-    "schalter_ist_aus": "Bewaking staat uit."
+    "schalter_ist_aus": "Bewaking staat uit.",
+    "kameras_titel": "Camera’s instellen",
+    "kameras_lead": "Panoptes laat je de camerabeelden zien. Je tikt aan welk beeld voor, achter, links en rechts is.",
+    "kameras_knopf": "Camera’s instellen",
+    "kameras_nur_auto": "Dit kan alleen op het scherm in de auto: open daar Panoptes, dan Camera’s & bewaking → Camera’s instellen.",
+    "kameras_oeffnet": "De cameratoewijzing gaat zo open. Dat kan een paar seconden duren.",
+    "kameras_fehler": "De cameratoewijzing kon niet worden geopend. Sluit Panoptes en open het opnieuw. Lukt het dan nog niet: Hulp & info → Probleem melden."
   },
   "apps": {
     "title": "Apps naast elkaar",
@@ -5311,7 +5317,15 @@
     "hostname_invalid": "Gebruik alleen a–z, 0–9 en koppeltekens",
     "hostname_saved": "Apparaatnaam: {name}",
     "pair_title": "Apparaat koppelen",
-    "pair_lead": "Zodat bijv. EV Cockpit Panoptes-instellingen kan tonen en wijzigen. Toegang op afstand, wachtwoord en poorten blijven voor gekoppelde apparaten geblokkeerd.",
+    "pair_lead": "Hier koppel je de Panoptes-app voor je telefoon of bijvoorbeeld de EV-Cockpit. Toegang op afstand, wachtwoord en aansluitingen blijven geblokkeerd voor gekoppelde apparaten.",
+    "app_holen_titel": "Telefoon-app downloaden",
+    "app_holen_web": "Voor iPhone en iedereen zonder Android-app: open dit adres in de browser van je telefoon.",
+    "app_holen_android": "Android-app om te downloaden:",
+    "app_holen_qr": "Opent alleen de web-app. Gebruik de code hieronder om te koppelen.",
+    "pair_nur_wlan": "Deze QR-code werkt alleen op hetzelfde wifi. Voor onderweg „Telefoon-app onderweg gebruiken” inschakelen en daarna een nieuwe code maken.",
+    "pair_zur_bruecke": "Onderweg gebruiken inschakelen ›",
+    "pair_kein_internet": "De auto heeft nu geen internet. Deze QR-code werkt alleen op wifi. Maak later een nieuwe code, dan werkt hij ook onderweg.",
+    "pair_unterwegs": "✓ Deze QR-code werkt ook onderweg, via internet.",
     "pair_btn": "Nieuw apparaat koppelen",
     "pair_fail": "Er kon geen code worden gemaakt.",
     "pair_expired": "Verlopen. Maak zo nodig een nieuwe code.",
@@ -5997,7 +6011,9 @@
     "ja": "Opnieuw starten",
     "status": {
       "offen": "open",
-      "spaeter": "later"
+      "spaeter": "later",
+      "erledigt": "klaar",
+      "entfaellt": "niet nodig"
     },
     "schritt": {
       "sprache": "Taal",
@@ -6101,7 +6117,15 @@
       "extra_ladesaeule_text": "Na het laden vraagt Panoptes één keer aan de Panoptes-server bij welke laadpaal je was. Daarvoor gaat je ruwe positie naar de server, nooit op privéplekken. Zo kloppen prijs en naam van de paal.",
       "extra_tiermodus_text": "De huisdiermodus houdt de auto aangenaam warm of koel voor je dier en laat groot op het scherm zien dat alles in orde is. Je zet hem zelf aan als je hem nodig hebt.",
       "extra_assistenz_text": "Met Panoptes kun je de rijhulpsystemen van je auto aan- en uitzetten, ook in regels. De eerste keer dat je er een uitzet, vraagt Panoptes het één keer. Jij beslist en bent zelf verantwoordelijk. Aanzetten gaat altijd zonder vraag."
-    }
+    },
+    "durchgehen_knopf": "Instellen nog eens doorlopen",
+    "durchgehen_frage": "De assistent loopt op het scherm in de auto alle stappen nog eens met je door. Je instellingen blijven. Elke stap kun je met „Later” overslaan, dan blijft hij zoals hij is.",
+    "durchgehen_ja": "Ja, doorlopen",
+    "durchgehen_ok": "Klaar. De assistent verschijnt zodra je Panoptes op het scherm in de auto opent.",
+    "alle_titel": "Alle stappen",
+    "alle_hinweis": "Elke stap kun je hier weer openen. Je instellingen blijven.",
+    "oeffnen": "Openen",
+    "oeffnen_ok": "Opent zodra je Panoptes op het scherm in de auto opent."
   },
   "laden": {
     "saeule": {

@@ -204,7 +204,9 @@ public class BrueckeErstkopplungTest {
         java.io.File f = new java.io.File("src/main/java/at/greenchili/surfmate/server/EinstellungenApiHandler.java");
         if (!f.isFile()) f = new java.io.File("app/" + f.getPath());
         String k = new String(java.nio.file.Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
-        assertTrue(k.contains("Bruecke.get().einmalAnlegen(now + PairingCodes.TTL_MS)"));
+        // 0.1.38.3: Brücke einmal holen, Einmal-Zugang nur bei eingeschalteter Brücke (Grund für die Anzeige)
+        assertTrue(k.contains("at.greenchili.surfmate.bruecke.Bruecke.get();"));
+        assertTrue(k.contains("b.einmalAnlegen(now + PairingCodes.TTL_MS)"));
         java.io.File s = new java.io.File("src/main/assets/web/local/system.html");
         if (!s.isFile()) s = new java.io.File("app/" + s.getPath());
         String html = new String(java.nio.file.Files.readAllBytes(s.toPath()), StandardCharsets.UTF_8);

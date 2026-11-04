@@ -2147,10 +2147,12 @@ open class MainActivity : AppCompatActivity() {
                     return@runOnUiThread
                 }
                 if (state == null) {
+                    // 0.1.38.3: nichts wurde gespeichert, die Kamera-Einstellungen waren nicht erreichbar → Klartext mit
+                    // Lösung statt „Speichern hat nicht geklappt“ (Community, Seal U DM-i)
                     Toast.makeText(
                         this,
-                        getString(R.string.toast_failed_to_save_short),
-                        Toast.LENGTH_SHORT
+                        getString(R.string.camera_mapping_unreachable),
+                        Toast.LENGTH_LONG
                     ).show()
                     // Fetch failed → the dialog won't open → the coach's attachToDialog
                     // never fires. Clear it so it can't attach to a later manual open;

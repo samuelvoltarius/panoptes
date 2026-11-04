@@ -1845,7 +1845,19 @@
     "charge_plan_description": "Sofort laden, sofort laden beenden oder den Plan fortsetzen.",
     "charge_plan_now": "Sofort laden",
     "charge_plan_now_off": "Sofort laden beenden",
-    "charge_plan_resume": "Plan fortsetzen"
+    "charge_plan_resume": "Plan fortsetzen",
+    "section_triggers": "Sobald sich ändert:",
+    "section_conditions": "und wenn",
+    "section_actions": "dann",
+    "section_else": "sonst",
+    "message_label": "Nachricht",
+    "cmp_label": "Vergleich",
+    "cmp_eq": "ist gleich",
+    "cmp_neq": "ist nicht",
+    "cmp_gt": "ist größer als",
+    "cmp_lt": "ist kleiner als",
+    "cmp_gte": "ist mindestens",
+    "cmp_lte": "ist höchstens"
   },
   "messages": {
     "seat_position_captured": "„{0}“ ist jetzt in Panoptes gespeichert",

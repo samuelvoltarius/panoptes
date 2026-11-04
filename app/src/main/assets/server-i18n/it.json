@@ -1851,7 +1851,19 @@
     "charge_plan_description": "Ricarica subito, termina la ricarica immediata o riprendi il piano.",
     "charge_plan_now": "Ricarica subito",
     "charge_plan_now_off": "Termina ricarica immediata",
-    "charge_plan_resume": "Riprendi il piano"
+    "charge_plan_resume": "Riprendi il piano",
+    "section_triggers": "Appena cambia:",
+    "section_conditions": "e se",
+    "section_actions": "allora",
+    "section_else": "altrimenti",
+    "message_label": "Messaggio",
+    "cmp_label": "Confronto",
+    "cmp_eq": "è uguale a",
+    "cmp_neq": "non è",
+    "cmp_gt": "è maggiore di",
+    "cmp_lt": "è minore di",
+    "cmp_gte": "è almeno",
+    "cmp_lte": "è al massimo"
   },
   "messages": {
     "seat_position_captured": "“{0}” è stata salvata in Panoptes",

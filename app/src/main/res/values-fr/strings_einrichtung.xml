@@ -162,4 +162,9 @@
     <string name="einr_noch_knopf">Configurer</string>
     <string name="einr_updates_ja_knopf">Oui, chercher des mises à jour</string>
     <string name="einr_updates_github">Panoptes demande régulièrement à GitHub s’il existe une nouvelle version. GitHub voit seulement l’adresse Internet de la voiture, aucune donnée du véhicule.</string>
+    <!-- 0.1.38.3: Handy-App unterwegs nutzen? (Standard aus, ausdrücklich gefragt) -->
+    <string name="einr_handy_unterwegs_frage">Utiliser l\'app mobile en déplacement ?</string>
+    <string name="einr_handy_unterwegs_text">L\'app mobile fonctionne alors partout, aussi en données mobiles. Sinon, seulement quand ton téléphone est sur le même Wi-Fi que la voiture.</string>
+    <string name="einr_handy_unterwegs_ja">Oui, en déplacement</string>
+    <string name="einr_handy_nur_wlan">Seulement sur le même Wi-Fi</string>
 </resources>

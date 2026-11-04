@@ -106,6 +106,15 @@
                 <div id="tZones" hidden></div>
             </article>
 
+            <!-- 0.1.38.3: Kameras einrichten ist immer nachholbar (Community, Seal U DM-i). Öffnet die Zuordnung am
+                 Bildschirm im Auto (AndroidBridge.openCameraMapping); sonst Klartext, wo und wie es geht. -->
+            <article class="gc wide" id="kamerasEinrichten">
+                <h2 data-i18n="guard.kameras_titel">Kameras einrichten</h2>
+                <p class="lead" data-i18n="guard.kameras_lead">Panoptes zeigt dir die Bilder der Kameras. Du tippst an, welches Bild vorne, hinten, links und rechts ist.</p>
+                <button class="gschalter" type="button" id="kamerasKnopf" aria-pressed="false" data-i18n="guard.kameras_knopf">Kameras einrichten</button>
+                <p class="sub" id="kamerasHinweis" role="status" aria-live="polite"></p>
+            </article>
+
             <!-- 5. Erweitert: alles Weitere, zugeklappt -->
             <details class="gc wide gerweitert">
                 <summary data-i18n="guard.erweitert">Erweitert</summary>
@@ -207,6 +216,22 @@
                 schalterZeigen(an);
                 loadState();
             }, function () { schaltet = false; toast(t('guard.schalter_fehler', 'Das hat nicht geklappt. Bitte nochmal versuchen.'), false); schalterZeigen(istAn); });
+    }
+
+    // ---------------- 0.1.38.3 Kameras einrichten (immer nachholbar)
+    function kamerasEinrichten() {
+        var h = $('kamerasHinweis');
+        var bruecke = window.AndroidBridge && typeof window.AndroidBridge.openCameraMapping === 'function';
+        if (!bruecke) {
+            // Browser oder Handy: die Zuordnung braucht die Kamerabilder am Bildschirm im Auto
+            h.textContent = t('guard.kameras_nur_auto', 'Das geht nur am Bildschirm im Auto: dort Panoptes öffnen, dann Kameras & Wächter → Kameras einrichten.');
+            return;
+        }
+        var r = '';
+        try { r = window.AndroidBridge.openCameraMapping(); } catch (e) { r = 'error'; }
+        h.textContent = r === 'ok'
+            ? t('guard.kameras_oeffnet', 'Die Kamera-Zuordnung öffnet sich gleich. Das kann ein paar Sekunden dauern.')
+            : t('guard.kameras_fehler', 'Die Kamera-Zuordnung ließ sich nicht öffnen. Bitte Panoptes einmal schließen und neu öffnen. Klappt es dann nicht: Hilfe & Info → Fehler melden.');
     }
 
     // ---------------- 0.1.38 Zahlen und letzte Ereignisse (nur lesen)
@@ -405,6 +430,7 @@
         BYD.core.init();
         loadState(); loadHealth(); ladeEinstellungen(); ereignisFrage(); loadZahlen(); loadLetzte();
         $('gSchalter').onclick = schalten;
+        $('kamerasKnopf').onclick = kamerasEinrichten;
         $('eBehalten').onclick = function () { ereignisAntwort(true); };
         $('eNein').onclick = function () { ereignisAntwort(false); };
         $('tRetBtn').onclick = setze72;

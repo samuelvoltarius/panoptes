@@ -258,7 +258,20 @@
                     </div>
                     <div class="card-body">
                         <div id="pairReq" style="display:none;margin-bottom:16px;"></div>
-                        <div class="sys-note" data-i18n="system.pair_lead">Damit z. B. das EV-Cockpit Panoptes-Einstellungen anzeigen und ändern kann. Fernzugang, Passwort und Anschlüsse bleiben für gekoppelte Geräte gesperrt.</div>
+                        <div class="sys-note" data-i18n="system.pair_lead">Hier koppelst du die Panoptes-Handy-App oder z. B. das EV-Cockpit. Fernzugang, Passwort und Anschlüsse bleiben für gekoppelte Geräte gesperrt.</div>
+                        <!-- 0.1.38.3 (Alfred): Wo gibt es die Handy-App? Web-App groß, Android-Download, eigener QR nur zur Web-App -->
+                        <div id="appHolen" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:12px 0;padding:12px 14px;border-radius:12px;background:var(--surface-container, rgba(127,127,127,.08));">
+                            <div style="flex:1;min-width:220px;">
+                                <div class="sys-name" data-i18n="system.app_holen_titel">Handy-App holen</div>
+                                <div style="font:700 26px/1.2 var(--family-display, sans-serif);margin:6px 0;word-break:break-all;">panoptes.serveone.at</div>
+                                <div class="sys-note" data-i18n="system.app_holen_web">Für iPhone und alle ohne Android-App: diese Adresse im Handy-Browser öffnen.</div>
+                                <div class="sys-note" style="margin-top:6px;"><span data-i18n="system.app_holen_android">Android-App zum Herunterladen:</span> <b>byd.serveone.at/app/</b></div>
+                            </div>
+                            <div style="text-align:center;">
+                                <div id="appHolenQr"></div>
+                                <div class="sys-note" style="max-width:160px;" data-i18n="system.app_holen_qr">Öffnet nur die Web-App. Zum Koppeln den Code unten nehmen.</div>
+                            </div>
+                        </div>
                         <!-- 0.1.20 Panoptes-Brücke (BRUECKE_VERTRAG §0a): Opt-in, Standard aus, ein Satz, was der Server sieht -->
                         <div id="brueckeBox" style="margin:10px 0 14px;">
                             <label class="sys-note" style="display:flex;gap:10px;align-items:center;font-weight:700;"><input type="checkbox" id="brueckeEin" style="width:22px;height:22px;"> <span data-i18n="system.bridge_title">Handy-App unterwegs nutzen</span></label>
@@ -278,6 +291,8 @@
                             <div id="pairCode" style="font:700 30px/1.2 var(--family-display, monospace);letter-spacing:.18em;color:var(--on-surface);"></div>
                             <div class="sys-note" id="pairValid"></div>
                             <div id="pairQr" style="margin-top:12px;"></div>
+                            <!-- 0.1.38.3: ehrlich sagen, ob dieser QR-Code auch unterwegs geht (Brücke) oder nur im gleichen WLAN -->
+                            <div id="pairWeg" style="display:none;margin-top:12px;padding:12px 14px;border-radius:12px;font-weight:700;"></div>
                             <div class="sys-note" id="pairLinkBox" style="display:none;word-break:break-all;">
                                 <span data-i18n="system.pair_link">Oder diesen Link im anderen Gerät öffnen:</span>
                                 <a id="pairLink" href="#" rel="noopener"></a>
@@ -563,7 +578,7 @@
     <script src="../shared/home-layout.js?v=2"></script>
     <script src="../shared/app-updates.js?v=4"></script>
     <script src="../shared/blitzer.js?v=5"></script>
-    <script src="../shared/einrichtung-web.js?v=9"></script>
+    <script src="../shared/einrichtung-web.js?v=11"></script>
     <script src="../shared/overdrive-verlauf.js?v=2"></script>
     <script src="../shared/notzugang.js?v=1"></script>
     <script src="../shared/befehlslog.js?v=4"></script>
@@ -1229,15 +1244,61 @@
             // <qrBasis>#k=<base64url(JSON)>, JSON {v:2, c, u?: Direktadressen, b?: {p, a, z?} wenn die Brücke an ist}.
             // 0.1.24 z = Einmal-Zugang zum Code: Erstkopplung durch die Brücke ohne Direktweg (BRUECKE_VERTRAG §2.3).
             // Der Teil nach # geht nie an einen Server. Der Link darunter bleibt der Direktweg (Browser, Cockpit).
-            qrV2: function (code, basis, br, einmal) {
+            qrV2: function (code, basis, br, einmal, grund) {
                 var j = { v: 2, c: code };
                 if (basis) j.u = [basis];
                 if (br && br.ein && br.p && br.a) j.b = { p: br.p, a: br.a };
                 if (j.b && einmal) j.b.z = einmal;
+                // 0.1.38.3 (QR_BRUECKE_FELD): geht der Code nicht unterwegs, sagt der QR warum – die Handy-App erklärt es
+                if (!(j.b && j.b.z)) j.bruecke = grund === 'kein_internet' ? 'kein_internet' : 'aus';
                 var b64 = btoa(unescape(encodeURIComponent(JSON.stringify(j)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
                 return ((br && br.qrBasis) || 'https://byd.serveone.at/p/') + '#k=' + b64;
             },
-            zeigeQr: function (code, einmal) {
+            // 0.1.38.3: kleiner QR-Code nur zur Web-App (kein Kopplungs-Code darin)
+            appHolenQr: function () {
+                var box = document.getElementById('appHolenQr');
+                if (!box || typeof window.qrcode !== 'function') return;
+                try {
+                    var q = window.qrcode(0, 'M');
+                    q.addData('https://panoptes.serveone.at/');
+                    q.make();
+                    box.innerHTML = '<div style="display:inline-block;background:#fff;padding:6px;border-radius:8px;">' + q.createSvgTag(3, 0) + '</div>';
+                } catch (e) {}
+            },
+            // 0.1.38.3: Satz unter dem QR-Code – geht er unterwegs, nur im WLAN, oder hat das Auto gerade kein Internet?
+            zeigeWeg: function (grund) {
+                var self = this, box = document.getElementById('pairWeg');
+                box.innerHTML = '';
+                box.style.display = '';
+                var text = document.createElement('div');
+                if (grund === 'aus') {
+                    box.style.background = 'var(--warning-container, #fff4d6)';
+                    text.textContent = self.t('system.pair_nur_wlan', 'Dieser QR-Code geht nur im gleichen WLAN. Für unterwegs „Handy-App unterwegs nutzen“ einschalten und danach einen neuen Code erzeugen.');
+                    box.appendChild(text);
+                    var b = document.createElement('button');
+                    b.type = 'button'; b.className = 'btn'; b.style.marginTop = '10px';
+                    b.textContent = self.t('system.pair_zur_bruecke', 'Unterwegs nutzen einschalten ›');
+                    b.onclick = function () {
+                        var ziel = document.getElementById('brueckeBox');
+                        if (ziel) ziel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        var cb = document.getElementById('brueckeZustimmung');
+                        if (!cb || cb.offsetParent === null) cb = document.getElementById('brueckeEin');
+                        if (cb) setTimeout(function () { cb.focus(); }, 400);
+                    };
+                    box.appendChild(b);
+                } else if (grund === 'kein_internet') {
+                    box.style.background = 'var(--warning-container, #fff4d6)';
+                    text.textContent = self.t('system.pair_kein_internet', 'Das Auto hat gerade kein Internet. Dieser QR-Code gilt nur im WLAN. Später einen neuen Code erzeugen, dann geht er auch unterwegs.');
+                    box.appendChild(text);
+                } else if (grund === null) {
+                    box.style.background = 'var(--success-container, #e3f6e5)';
+                    text.textContent = self.t('system.pair_unterwegs', '✓ Dieser QR-Code geht auch unterwegs, über das Internet.');
+                    box.appendChild(text);
+                } else {
+                    box.style.display = 'none';   // alter Kern ohne Angabe: nichts behaupten
+                }
+            },
+            zeigeQr: function (code, einmal, grund) {
                 var self = this, qrBox = document.getElementById('pairQr'), lb = document.getElementById('pairLinkBox');
                 qrBox.innerHTML = ''; lb.style.display = 'none';
                 var br = fetch('/api/bruecke', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }, function () { return null; });
@@ -1252,7 +1313,7 @@
                     if (typeof window.qrcode === 'function') {
                         try {
                             var q = window.qrcode(0, 'M');
-                            q.addData(self.qrV2(code, basis, b, einmal));
+                            q.addData(self.qrV2(code, basis, b, einmal, grund));
                             q.make();
                             qrBox.innerHTML = '<div style="display:inline-block;background:#fff;padding:10px;border-radius:12px;">' + q.createSvgTag(4, 0) + '</div>';
                         } catch (e) {}
@@ -1333,6 +1394,7 @@
             init: function () {
                 var self = this, btn = document.getElementById('pairBtn');
                 this.brueckeInit();
+                this.appHolenQr();
                 this.liste();
                 this.anfragen();
                 setInterval(function () { self.anfragen(); }, 3000);
@@ -1345,17 +1407,18 @@
                         return r.json();
                     }).then(function (d) {
                         if (!d || !d.code) throw new Error('leer');
-                        self.zeige(d.code, Number(d.gueltigBis) || (Date.now() + 600000), d.brueckeEinmal);
+                        self.zeige(d.code, Number(d.gueltigBis) || (Date.now() + 600000), d.brueckeEinmal, d.brueckeEinmalGrund);
                     }).catch(function () {
                         if (window.BYD && BYD.utils && BYD.utils.toast) BYD.utils.toast(self.t('system.pair_fail', 'Konnte keinen Code erzeugen.'), 'error');
                     }).then(function () { btn.disabled = false; });
                 };
             },
-            zeige: function (code, bis, einmal) {
+            zeige: function (code, bis, einmal, grund) {
                 var self = this;
                 document.getElementById('pairOut').style.display = '';
                 document.getElementById('pairCode').textContent = code;
-                this.zeigeQr(code, einmal);
+                this.zeigeQr(code, einmal, grund);
+                this.zeigeWeg(grund);
                 clearInterval(this.timer);
                 function tick() {
                     var rest = Math.max(0, Math.round((bis - Date.now()) / 1000));
@@ -1364,6 +1427,7 @@
                         document.getElementById('pairCode').textContent = '';
                         document.getElementById('pairQr').innerHTML = '';
                         document.getElementById('pairLinkBox').style.display = 'none';
+                        document.getElementById('pairWeg').style.display = 'none';
                         self.liste();
                         el.textContent = self.t('system.pair_expired', 'Abgelaufen. Bei Bedarf einen neuen Code erzeugen.');
                         clearInterval(self.timer);

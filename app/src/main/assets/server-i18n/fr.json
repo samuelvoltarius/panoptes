@@ -1851,7 +1851,19 @@
     "charge_plan_description": "Recharger maintenant, arrêter la recharge immédiate ou reprendre le plan.",
     "charge_plan_now": "Recharger maintenant",
     "charge_plan_now_off": "Arrêter la recharge immédiate",
-    "charge_plan_resume": "Reprendre le plan"
+    "charge_plan_resume": "Reprendre le plan",
+    "section_triggers": "Dès que ceci change :",
+    "section_conditions": "et si",
+    "section_actions": "alors",
+    "section_else": "sinon",
+    "message_label": "Message",
+    "cmp_label": "Comparaison",
+    "cmp_eq": "est égal à",
+    "cmp_neq": "n’est pas",
+    "cmp_gt": "est supérieur à",
+    "cmp_lt": "est inférieur à",
+    "cmp_gte": "est au moins",
+    "cmp_lte": "est au plus"
   },
   "messages": {
     "seat_position_captured": "« {0} » est maintenant enregistrée dans Panoptes",

@@ -685,7 +685,11 @@ BYD.automations = {
         const wenn = ids.filter(id => id === 'triggers' || id === 'conditions');
         const dann = ids.filter(id => wenn.indexOf(id) < 0);
         const kopf = this.buildAutomationText(automation, []);
-        const teil = (nur) => nur.length ? this.buildAutomationText(automation, nur).replace(/(<br>)+$/, '') : '';
+        const teil = (nur) => {
+            if (!nur.length) return '';
+            nur.ohneErstenNamen = true;
+            return this.buildAutomationText(automation, nur).replace(/(<br>)+$/, '');
+        };
         const zeile = (wort, html) => html
             ? '<div class="wd-zeile"><b class="wd-wort">' + escapeHtml(wort) + '</b><span class="wd-text">' + html + '</span></div>'
             : '';
@@ -739,7 +743,8 @@ BYD.automations = {
                         // "AND And".
                         const hasLogic = !!(section.logic && section.logic.field);
                         if (i === 0) {
-                            result += section.label;
+                            // 0.1.38.3: in der Wenn/Dann-Zeile steht der erste Abschnitt ohne eigenen Namen („Dann dann …“)
+                            if (!(Array.isArray(nur) && nur[0] === section.id && nur.ohneErstenNamen)) result += section.label;
                         } else if (hasLogic) {
                             const lg = (automation[section.logic.field] || section.logic.default || 'AND');
                             result += BYD.i18n.t('automation.logic_' + lg.toLowerCase());

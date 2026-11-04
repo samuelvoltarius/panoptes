@@ -37,7 +37,7 @@ public class AutomationManualModeAssetTest {
         assertTrue(english.contains("\"mode_manual\": \"Only on tap\""));
         assertTrue(api.contains("/api/automations/mode/"));
         assertTrue(html.contains("automations.css?v=av54"));
-        assertTrue(html.contains("automations.js?v=av74"));
+        assertTrue(html.contains("automations.js?v=av75"));
     }
 
     private static String readRepositoryFile(String relativePath) throws IOException {

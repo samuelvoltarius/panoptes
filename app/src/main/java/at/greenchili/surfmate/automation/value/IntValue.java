@@ -4,13 +4,13 @@ import at.greenchili.surfmate.automation.type.EnumType;
 
 public class IntValue extends BaseValue<Integer> {
     public static final EnumType COMPARATORS = new EnumType(
-            new Label("comparator", "Compare"),
-            new Label("eq", "Equal To"),
-            new Label("neq", "Not Equal To"),
-            new Label("gt", "Greater Than"),
-            new Label("lt", "Less Than"),
-            new Label("gte", "Greater Than Or Equal To"),
-            new Label("lte", "Less Than Or Equal To"));
+            new Label("comparator", "automation.cmp_label"),
+            new Label("eq", "automation.cmp_eq"),
+            new Label("neq", "automation.cmp_neq"),
+            new Label("gt", "automation.cmp_gt"),
+            new Label("lt", "automation.cmp_lt"),
+            new Label("gte", "automation.cmp_gte"),
+            new Label("lte", "automation.cmp_lte"));
     private final Integer value;
 
     /**
