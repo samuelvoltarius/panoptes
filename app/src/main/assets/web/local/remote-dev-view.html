@@ -7,7 +7,7 @@
     <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
     <script src="../shared/theme.js?v=13"></script>
     <script src="../shared/app-shell.js?v=pn34"></script>
-    <link rel="stylesheet" href="../shared/styles.css?v=pn13">
+    <link rel="stylesheet" href="../shared/styles.css?v=pn14">
     <style>
         .dev-view-page { width: 100%; max-width: 1600px; margin: 0 auto; padding: 20px; box-sizing: border-box; }
         .dev-view-header { margin-bottom: 14px; }
@@ -43,6 +43,8 @@
         #message:empty { visibility: hidden; }
         #message.error { color: var(--danger); }
         .fullscreen-toolbar { display: none; position: absolute; z-index: 3; top: 10px; right: 10px; top: max(10px, env(safe-area-inset-top)); right: max(10px, env(safe-area-inset-right)); max-width: calc(100vw - 20px); flex-wrap: wrap; justify-content: flex-end; gap: 7px; padding: 6px; border-radius: 10px; background: rgba(8, 11, 16, .78); backdrop-filter: blur(10px); }
+        /* Chromium 74 (WebView am Auto) ohne backdrop-filter: dichter statt Glas */
+        @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .fullscreen-toolbar { background: rgba(8, 11, 16, .92); } }
         #viewerCard:fullscreen, #viewerCard:-webkit-full-screen, body.dev-view-focus #viewerCard { width: 100vw; height: 100vh; max-width: none; margin: 0; padding: 0; border: 0; border-radius: 0; background: #050608; }
         body.dev-view-focus { overflow: hidden; }
         body.dev-view-focus #viewerCard { position: fixed; top: 0; right: 0; bottom: 0; left: 0; /* Chrome 83: inset erst ab 87 */ inset: 0; z-index: 10000; }

@@ -945,6 +945,8 @@
     <string name="vehicle_dialog_summary_effective">In uso: %1$.1f kWh</string>
     <string name="vehicle_dialog_summary_calibration">Calibrazione più recente: %1$.1f%% del %2$s</string>
     <string name="vehicle_dialog_soh_unavailable">non disponibile</string>
+    <string name="vehicle_dialog_soh_beide">%1$s (auto, BYD) · %2$s (nostra stima)</string>
+    <string name="vehicle_dialog_soh_erklaerung">L\'auto indica il proprio valore. Panoptes ne calcola anche uno dal livello di carica e dall\'energia residua. I due possono differire: l\'auto arrotonda in modo generoso, la nostra stima oscilla un po\'. Fa fede il valore dell\'auto.</string>
     <string name="dashboard_metric_storage_chip">%1$s occupati · %2$s liberi</string>
     <string name="dashboard_metric_storage_chip_pending">Spazio …</string>
     <string name="dashboard_tunnel_offline">Non connesso</string>

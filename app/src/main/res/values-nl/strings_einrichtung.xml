@@ -160,6 +160,7 @@
     <string name="einr_noch_titel">Nog instellen</string>
     <string name="einr_noch_text">Alles is vrijwillig. Kan altijd.</string>
     <string name="einr_noch_knopf">Instellen</string>
+    <string name="einr_noch_erledigt">Klaar / niet nodig</string>
     <string name="einr_updates_ja_knopf">Ja, zoek naar updates</string>
     <string name="einr_updates_github">Panoptes vraagt regelmatig aan GitHub of er een nieuwe versie is. GitHub ziet alleen het internetadres van de auto, geen autogegevens.</string>
     <!-- 0.1.38.3: Handy-App unterwegs nutzen? (Standard aus, ausdrücklich gefragt) -->

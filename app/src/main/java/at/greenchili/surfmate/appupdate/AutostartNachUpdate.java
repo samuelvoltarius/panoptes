@@ -24,6 +24,11 @@ import java.util.regex.Pattern;
  * <p>Nicht über {@code ssc_whitelist} ({@code autostart.weg=settings}): Deploy-Befund 22.10. (AUTOSTART_BEFUND.md,
  * Zustand a) – die Liste bleibt nach der Installation unverändert, der Weg wirkt nicht. Nichts außen Sicht-/Hörbares
  * (der BYD-Dialog erscheint kurz am Innendisplay). Nicht bei jedem Reconnect: gemerkt je {@code .update-ok}-Zeitpunkt.
+ *
+ * <p>0.1.38.8 (04.11.: „kann man das automatisieren?“): Ein Weg ohne den BYD-Dialog gibt es ohne root nicht
+ * (AUTOSTART_BEFUND Zustand a: der Schalter liegt bei com.byd.appstartmanagement, für die Shell weder lesbar noch
+ * setzbar). Bleibt die Freigabe nach allen Versuchen aus, geht genau einmal je Installation eine Meldung hinaus
+ * („bitte einmal am Display erlauben“, Telegram + Handy), statt nur still den Knopf auf der Startseite zu zeigen.
  */
 public final class AutostartNachUpdate {
 
@@ -32,6 +37,10 @@ public final class AutostartNachUpdate {
             + "/.receiver.AutoStartCheckReceiver";
     static final String STATUS = "am broadcast -a " + PKG + ".action.AUTOSTART_STATUS -n " + PKG
             + "/.receiver.AutoStartCheckReceiver";
+    /** 0.1.38.8: Installationszeit und Panoptes-eigene Marke wie {@code deploy/autostart-check.sh}. */
+    static final String INSTALLZEIT = "dumpsys package " + PKG + " | grep -m1 lastUpdateTime=";
+    static final String MARKE_LESEN = "settings get global panoptes_autostart_ok";
+    private static final Pattern INST_ZEIT = Pattern.compile("lastUpdateTime=(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})");
     /** Höchstens so viele automatische Versuche je Installation (nur, wenn die App noch nicht bereit war). */
     static final int MAX_VERSUCHE = 3;
     static final long LIVE_CACHE_MS = 60_000L;
@@ -42,15 +51,26 @@ public final class AutostartNachUpdate {
         String run(String cmd, int timeoutS);
     }
 
+    /** 0.1.38.8: Meldung „Autostart bitte einmal am Display erlauben“ (Tests ersetzen sie). */
+    public interface Melder {
+        void autostartFehlt();
+    }
+
     private final File updateOk;
     private final File merkDatei;
     private final Shell sh;
+    private final Melder melder;
     private long liveStand;
 
     AutostartNachUpdate(File updateOk, File merkDatei, Shell sh) {
+        this(updateOk, merkDatei, sh, () -> { });
+    }
+
+    AutostartNachUpdate(File updateOk, File merkDatei, Shell sh, Melder melder) {
         this.updateOk = updateOk;
         this.merkDatei = merkDatei;
         this.sh = sh;
+        this.melder = melder;
     }
 
     /**
@@ -70,6 +90,21 @@ public final class AutostartNachUpdate {
         boolean frei = "1".equals(m.group(1));
         if (f.find()) frei = "false".equals(f.group(1));
         return o.put("frei", frei).put("ergebnis", ergebnis);
+    }
+
+    /**
+     * 0.1.38.8 (Koordination 04.11.): nach erfolgreicher Freigabe wie {@code autostart-check.sh --freigeben} die Marke
+     * {@code settings global panoptes_autostart_ok} auf die lastUpdateTime dieser Installation setzen (Selbsttest und
+     * Einrichtungsdialog lesen sie) und zurücklesen. Nur ein streng geprüfter Zeitstempel geht in den Befehl.
+     * true = gesetzt und zurückgelesen.
+     */
+    boolean markeSetzen() {
+        Matcher m = INST_ZEIT.matcher(String.valueOf(sh.run(INSTALLZEIT, 10)));
+        if (!m.find()) return false;
+        String inst = m.group(1);
+        sh.run("settings put global panoptes_autostart_ok '" + inst + "'", 10);
+        String zurueck = sh.run(MARKE_LESEN, 10);
+        return zurueck != null && inst.equals(zurueck.trim());
     }
 
     /** Merkzeichen der laufenden Installation = Zeitpunkt der Bestätigung; 0 = (noch) nicht bestätigt. */
@@ -111,8 +146,19 @@ public final class AutostartNachUpdate {
         if (!faellig(marke, alt)) return false;
         int versuche = alt.optLong("installMarke", 0L) == marke ? alt.optInt("versuche", 0) : 0;
         JSONObject r = auswerten(sh.run(ENABLE, 90));
-        speichere(r.put("installMarke", marke).put("zeit", jetzt).put("quelle", "update")
-                .put("versuche", versuche + 1).put("weg", "sichtbar"));
+        r.put("installMarke", marke).put("zeit", jetzt).put("quelle", "update")
+                .put("versuche", versuche + 1).put("weg", "sichtbar");
+        // 0.1.38.8: endgültig nicht frei (kein weiterer Versuch fällig) → genau eine Meldung je Installation
+        boolean melden = !r.optBoolean("frei", false) && !faellig(marke, r)
+                && !(alt.optLong("installMarke", 0L) == marke && alt.optBoolean("gemeldet", false));
+        if (melden) r.put("gemeldet", true);
+        if (r.optBoolean("frei", false)) r.put("marke", markeSetzen());
+        speichere(r);
+        if (melden) {
+            try {
+                melder.autostartFehlt();
+            } catch (Throwable ignored) { }
+        }
         return true;
     }
 
@@ -120,8 +166,12 @@ public final class AutostartNachUpdate {
     public JSONObject freigeben(long jetzt) throws Exception {
         JSONObject r = auswerten(sh.run(ENABLE, 90));
         JSONObject alt = merk();
-        speichere(r.put("installMarke", installMarke()).put("zeit", jetzt).put("quelle", "knopf")
-                .put("versuche", alt.optInt("versuche", 0) + 1).put("weg", "sichtbar"));
+        r.put("installMarke", installMarke()).put("zeit", jetzt).put("quelle", "knopf")
+                .put("versuche", alt.optInt("versuche", 0) + 1).put("weg", "sichtbar");
+        // 0.1.38.8: die Meldung zu dieser Installation ist schon draußen, auch nach einem Tipp
+        if (alt.optLong("installMarke", 0L) == installMarke() && alt.optBoolean("gemeldet", false)) r.put("gemeldet", true);
+        if (r.optBoolean("frei", false)) r.put("marke", markeSetzen());
+        speichere(r);
         liveStand = jetzt;
         return r;
     }
@@ -156,7 +206,8 @@ public final class AutostartNachUpdate {
             synchronized (AutostartNachUpdate.class) {
                 if (instanz == null) {
                     instanz = new AutostartNachUpdate(new File(AppUpdateDienst.NEU, ".update-ok"),
-                            new File(AppUpdateDienst.NEU, "autostart_nach_update.json"), AutostartNachUpdate::shell);
+                            new File(AppUpdateDienst.NEU, "autostart_nach_update.json"), AutostartNachUpdate::shell,
+                            AutostartNachUpdate::meldeFehlt);
                 }
                 a = instanz;
             }
@@ -182,6 +233,22 @@ public final class AutostartNachUpdate {
                 }
             } catch (Throwable ignored) { }
         }, 60, 60, TimeUnit.SECONDS);
+    }
+
+    /** Telegram (Kategorie UPDATE) und Handy-Push {@code system.updates}, Text in der Nutzersprache. */
+    static void meldeFehlt() {
+        String titel = at.greenchili.surfmate.server.Messages.text("update_klein.autostart_titel", "Autostart");
+        String text = at.greenchili.surfmate.server.Messages.text("update_klein.autostart_fehlt",
+                "After the update Panoptes needs the autostart permission once more. Please allow it once on the car "
+                        + "display (Panoptes start page).");
+        at.greenchili.surfmate.telegram.TelegramNotifier.sendMessage(text, "UPDATE");
+        try {
+            at.greenchili.surfmate.notifications.NotificationBus.get().publish(
+                    new at.greenchili.surfmate.notifications.NotificationEvent("system.updates",
+                            at.greenchili.surfmate.notifications.NotificationEvent.Severity.WARN, titel, text,
+                            "update-autostart-fehlt", "/local/system.html",
+                            new org.json.JSONObject().put("art", "autostart_fehlt")));
+        } catch (Throwable ignored) { }
     }
 
     private static String shell(String cmd, int timeoutS) {

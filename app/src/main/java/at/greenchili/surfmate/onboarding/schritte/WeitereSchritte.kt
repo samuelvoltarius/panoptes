@@ -451,6 +451,14 @@ class FertigSchritt(a: Assistent, private val host: AssistentHost) : SchrittAnsi
     private fun eintrag(id: String) {
         val zeile = LinearLayout(a.activity).apply { orientation = LinearLayout.HORIZONTAL; gravity = android.view.Gravity.CENTER_VERTICAL }
         zeile.addView(a.text(t.web("einr.schritt.$id", id), 18f), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        // 0.1.38.8: „Erledigt / nicht nötig“ blendet den Punkt dauerhaft aus (für Nicht-prüfbares am Display)
+        val erl = a.knopf(t.res(R.string.einr_noch_erledigt)) {
+            a.imHintergrund({ EinrichtungApi.erledigt(id) }) { r ->
+                if (r != null && r.ok) a.laden { a.zeige("fertig") } else a.zeigeMeldung(t.res(R.string.einr_fehler_speichern))
+            }
+        }
+        zeile.addView(erl, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            .apply { rightMargin = a.px(8f) })
         zeile.addView(a.knopf(t.res(R.string.einr_noch_knopf)) { a.zeige(id) })
         liste.dazu(zeile, 6f)
     }

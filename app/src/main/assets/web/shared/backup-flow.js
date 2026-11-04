@@ -8,7 +8,8 @@
  *   Restore → file picker → POST /api/backup/import/preview (warnings) →
  *             confirm modal → POST /api/backup/import?confirm=true → reload.
  *
- * The bundle contains the device key + encrypted credentials. Both endpoints
+ * The bundle contains encrypted credentials (0.1.38.8: the device key only with
+ * ?geraeteschluessel=true, never by default). Both endpoints
  * are JWT-gated in every mode (tunnel included) and work over the tunnel by
  * design — the UI warns the user to keep the file private, and restore is
  * same-device only.

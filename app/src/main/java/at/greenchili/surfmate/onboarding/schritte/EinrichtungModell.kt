@@ -225,8 +225,8 @@ object Antworten {
             "waechter" -> {
                 if (a.optString("modus", "") !in WAECHTER) f.add("modus")
                 if (!a.has("ton") || a.isNull("ton")) f.add("ton")
-                // 0.1.28 P10: Ereignis-Clip ja/nein, ohne Vorauswahl
-                if (!a.has("ereignisClip") || a.isNull("ereignisClip")) f.add("ereignisClip")
+                // 0.1.38.8 (Koordination 04.11.): Ereignis-Clip ist keine Pflichtangabe mehr; fehlt er, gilt der Landes-Standard
+                // (der Kern nimmt ihn optional an, EinrichtungApiHandler "waechter")
             }
             "betrieb" -> {
                 if (a.optString("modus", "") !in BETRIEB) f.add("modus")

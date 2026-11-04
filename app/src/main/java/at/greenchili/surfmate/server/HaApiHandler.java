@@ -61,6 +61,13 @@ public final class HaApiHandler {
             HttpResponse.sendJson(out, r.optInt("_status", 200), entferneStatus(r).toString());
             return true;
         }
+        // 0.1.38.8 Stufe 2: Echo der Integration auf einen Befehl (Recht geraete_steuern, ExternGuard + hier)
+        if (pathOnly.equals(ExternGuard.HA_GERAETE_ECHO_PFAD) && method.equals("POST")) {
+            JSONObject r = geraeteEcho(body, AuthMiddleware.isExternRequest() ? AuthMiddleware.requestKopplungsId() : null,
+                    System.currentTimeMillis());
+            HttpResponse.sendJson(out, r.optInt("_status", 200), entferneStatus(r).toString());
+            return true;
+        }
         if (pathOnly.equals("/api/ha/v1/ereignisse") && method.equals("GET")) {
             sse(out);
             return true;
@@ -212,17 +219,119 @@ public final class HaApiHandler {
 
     // ------------------------------------------------------------------ aktion
 
-    /** {@code GET /api/ha/geraete}: Liste fürs Panoptes-Web (System → Home Assistant), Stufe 1 nur lesen. */
-    public static boolean handleAnzeige(String method, String path, OutputStream out) throws Exception {
+    /**
+     * Panoptes-Oberfläche (nur Login bzw. Autobildschirm; Kopplungen sperrt ExternGuard, Handy-Web WebHandyGuard):
+     * <ul>
+     *   <li>{@code GET /api/ha/geraete} – Liste mit Freigaben, Tor-Automatik, Zonen (id + Name), letzter Auftrag</li>
+     *   <li>{@code POST /api/ha/geraete/freigabe {entity, steuern, bestaetigt}} – Steuern je Tor/Schloss (Rückfrage)</li>
+     *   <li>{@code POST /api/ha/geraete/befehl {entity, aktion, bestaetigt}} – Öffnen/Aufsperren nur am Autobildschirm</li>
+     *   <li>{@code GET /api/ha/geraete/befehl?id=b-…} – Stand (offen|ok|fehler|nicht_bestaetigt)</li>
+     *   <li>{@code POST /api/ha/geraete/automatik {tor|null, zone, bestaetigt}} – Tor beim Heimkommen (Standard AUS)</li>
+     * </ul>
+     */
+    public static boolean handleAnzeige(String method, String path, String body, OutputStream out) throws Exception {
         String pathOnly = path.contains("?") ? path.substring(0, path.indexOf('?')) : path;
-        if (!"/api/ha/geraete".equals(pathOnly) || !"GET".equals(method)) return false;
-        if (AuthMiddleware.isExternRequest()) {   // zweite Sperre neben ExternGuard
+        String query = path.contains("?") ? path.substring(path.indexOf('?') + 1) : "";
+        boolean bekannt = "/api/ha/geraete".equals(pathOnly) || pathOnly.equals("/api/ha/geraete/freigabe")
+                || pathOnly.equals("/api/ha/geraete/befehl") || pathOnly.equals("/api/ha/geraete/automatik");
+        if (!bekannt) return false;
+        if (AuthMiddleware.isExternRequest() || AuthMiddleware.isHandyWebRequest()) {   // zweite Sperre
             HttpResponse.sendError(out, 403, "Nicht für gekoppelte Geräte");
             return true;
         }
-        HttpResponse.sendJson(out, at.greenchili.surfmate.ha.HaGeraete
-                .fuerAnzeige(at.greenchili.surfmate.ha.HaGeraeteSpeicher.get().lies()).toString());
+        JSONObject r = anzeige(method, pathOnly, query, body, AuthMiddleware.isDirektAmAuto(),
+                at.greenchili.surfmate.ha.HaGeraeteSpeicher.get(), System.currentTimeMillis());
+        if (r == null) return false;
+        HttpResponse.sendJson(out, r.optInt("_status", 200), entferneStatus(r).toString());
         return true;
+    }
+
+    /** Ohne HTTP (für Tests). {@code amAuto} = Autobildschirm selbst (Loopback, kein Tunnel, kein Fern-Login). */
+    static JSONObject anzeige(String method, String pathOnly, String query, String body, boolean amAuto,
+                              at.greenchili.surfmate.ha.HaGeraeteSpeicher speicher, long jetzt) throws Exception {
+        if ("/api/ha/geraete".equals(pathOnly) && "GET".equals(method)) {
+            JSONObject o = at.greenchili.surfmate.ha.HaGeraete.fuerAnzeige(speicher.lies());
+            JSONArray zonen = new JSONArray();
+            try {
+                for (at.greenchili.surfmate.surveillance.SafeLocation z
+                        : at.greenchili.surfmate.surveillance.SafeLocationManager.getInstance().getZones()) {
+                    if (z.isEnabled()) zonen.put(new JSONObject().put("id", z.getId()).put("name", z.getName()));
+                }
+            } catch (Throwable ignored) { }
+            JSONObject b = speicher.lies();
+            String kid = b == null ? null : b.optString("kid", null);
+            JSONObject letzter = at.greenchili.surfmate.ha.HaSteuerDienst.steuern().letzter(jetzt);
+            return o.put("zonen", zonen).put("amAuto", amAuto)
+                    .put("steuerRecht", at.greenchili.surfmate.ha.HaSteuerDienst.steuerRecht(kid, jetzt))
+                    .put("letzter", letzter == null ? JSONObject.NULL : letzter);
+        }
+        if ("/api/ha/geraete/befehl".equals(pathOnly) && "GET".equals(method)) {
+            String id = query.replaceAll("(^|.*&)id=([^&]*).*", "$2");
+            JSONObject st = at.greenchili.surfmate.ha.HaSteuerDienst.steuern().status(id, jetzt);
+            return st != null ? st : new JSONObject().put("ok", false).put("grund", "unbekannt").put("_status", 404);
+        }
+        if (!"POST".equals(method)) return null;
+        JSONObject req;
+        try {
+            req = new JSONObject(body == null || body.isEmpty() ? "{}" : body);
+        } catch (Exception e) {
+            return new JSONObject().put("ok", false).put("grund", "json").put("_status", 400);
+        }
+        // Jede Änderung und jeder Befehl nur nach der Rückfrage in der Oberfläche
+        if (!req.optBoolean("bestaetigt", false)) {
+            return new JSONObject().put("ok", false).put("grund", "bestaetigung").put("_status", 400);
+        }
+        JSONObject b = speicher.lies();
+        String entity = req.isNull("entity") ? null : req.optString("entity", null);
+        if ("/api/ha/geraete/freigabe".equals(pathOnly)) {
+            boolean an = req.optBoolean("steuern", false);
+            JSONObject neu = at.greenchili.surfmate.ha.HaGeraete.setzeFreigabe(b, entity, an);
+            if (neu == null) return new JSONObject().put("ok", false).put("grund", "nicht_steuerbar").put("_status", 400);
+            if (!speicher.schreibe(neu)) return new JSONObject().put("ok", false).put("grund", "speichern").put("_status", 500);
+            BefehlsLog.ereignis("ha.freigabe", an ? "gesetzt" : "entfernt", at.greenchili.surfmate.ha.HaSteuern.kurzHash(entity), null);
+            return new JSONObject().put("ok", true);
+        }
+        if ("/api/ha/geraete/automatik".equals(pathOnly)) {
+            String tor = req.isNull("tor") ? null : req.optString("tor", null);
+            JSONObject neu = at.greenchili.surfmate.ha.HaGeraete.setzeAutomatik(b, tor,
+                    req.isNull("zone") ? null : req.optString("zone", null));
+            if (neu == null) return new JSONObject().put("ok", false).put("grund", "ungueltig").put("_status", 400);
+            if (!speicher.schreibe(neu)) return new JSONObject().put("ok", false).put("grund", "speichern").put("_status", 500);
+            BefehlsLog.ereignis("ha.automatik", tor == null ? "entfernt" : "gesetzt",
+                    tor == null ? null : at.greenchili.surfmate.ha.HaSteuern.kurzHash(tor), null);
+            return new JSONObject().put("ok", true);
+        }
+        // befehl: Öffnen und Aufsperren machen das Haus auf – nur direkt am Autobildschirm, nie aus der Ferne
+        String aktion = req.optString("aktion", "");
+        if (at.greenchili.surfmate.ha.HaSteuern.oeffnet(aktion) && !amAuto) {
+            return new JSONObject().put("ok", false).put("grund", "nur_am_auto").put("_status", 403);
+        }
+        JSONObject r = at.greenchili.surfmate.ha.HaSteuerDienst.auftrag(entity, aktion, amAuto ? "display" : "login", jetzt);
+        if (!r.optBoolean("ok", false)) r.put("_status", "nicht_verbunden".equals(r.optString("grund")) ? 503 : 409);
+        return r;
+    }
+
+    /** {@code POST /api/ha/v1/geraete/echo}: nur die HA-Kopplung mit beiden Rechten, nur ihr eigener Auftrag. */
+    static JSONObject geraeteEcho(String body, String kid, long jetzt) {
+        JSONObject o = new JSONObject();
+        try {
+            if (!at.greenchili.surfmate.ha.HaSteuerDienst.steuerRecht(kid, jetzt)) {
+                JSONObject f = ExternGuard.rechtFehltAntwort(Kopplungen.RECHT_GERAETE_STEUERN);
+                f.put("_status", 403);
+                return f;
+            }
+            JSONObject e;
+            try {
+                e = new JSONObject(body == null || body.isEmpty() ? "{}" : body);
+            } catch (Exception x) {
+                return o.put("ok", false).put("grund", "json").put("_status", 400);
+            }
+            JSONObject r = at.greenchili.surfmate.ha.HaSteuerDienst.steuern().echo(kid, e, jetzt);
+            if (!r.optBoolean("ok", false)) r.put("_status", 409);
+            return r;
+        } catch (Exception e) {
+            try { return o.put("ok", false).put("grund", "fehler").put("_status", 500); } catch (Exception ignored) { return o; }
+        }
     }
 
     /**
@@ -239,7 +348,10 @@ public final class HaApiHandler {
                 f.put("_status", 403);
                 return f;
             }
-            if ("GET".equals(method)) return at.greenchili.surfmate.ha.HaGeraete.fuerIntegration(speicher.lies());
+            if ("GET".equals(method)) {
+                return at.greenchili.surfmate.ha.HaGeraete.fuerIntegration(speicher.lies(),
+                        Kopplungen.get().hatRecht(kid, Kopplungen.RECHT_GERAETE_STEUERN));
+            }
             at.greenchili.surfmate.ha.HaGeraete.Meldung m;
             try {
                 m = at.greenchili.surfmate.ha.HaGeraete.pruefe(body);

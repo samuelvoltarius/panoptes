@@ -19,7 +19,7 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.nio.file.Paths;
 
-/** HA_VERTRAG v1.1 Teil D, Stufe 1 (nur lesen): Prüfung, Sperrliste, Freigaben, Recht, Pfade. */
+/** HA_VERTRAG v1.1 Teil D, Stufe 1 (lesen) und Prüfung der Stufe 2: Sperrliste, Freigaben, Recht, Pfade. */
 public class HaGeraeteTest {
 
     @Rule
@@ -36,16 +36,21 @@ public class HaGeraeteTest {
     }
 
     @Test
-    public void nieAlarmSireneMelderTorSchlossInStufe1() throws Exception {
+    public void nieAlarmSireneMelderTorNurAlsGaragentor() throws Exception {
         HaGeraete.Meldung m = HaGeraete.pruefe(rumpf(
                 g("alarm_control_panel.haus", "schalter"), g("siren.garten", "schalter"),
                 g("switch.gas", "schalter").put("deviceClass", "gas"), g("switch.rauch", "schalter").put("deviceClass", "smoke"),
                 g("cover.garage", "tor").put("deviceClass", "garage"), g("lock.haustuer", "schloss"),
+                g("cover.rollo", "tor").put("deviceClass", "shutter"), g("cover.markise", "tor"),
+                g("cover.einfahrt", "schalter").put("deviceClass", "gate"), g("switch.tor", "tor"),
+                g("lock.x", "schalter"),
                 g("sensor.wb_leistung", "wallbox"),
                 g("switch.steckdose", "schalter")));
-        assertEquals(1, m.geraete.length());
-        assertEquals("switch.steckdose", m.geraete.getJSONObject(0).getString("entity"));
-        assertEquals(7, m.verworfen);
+        assertEquals(3, m.geraete.length());
+        assertEquals("cover.garage", m.geraete.getJSONObject(0).getString("entity"));
+        assertEquals("lock.haustuer", m.geraete.getJSONObject(1).getString("entity"));
+        assertEquals("switch.steckdose", m.geraete.getJSONObject(2).getString("entity"));
+        assertEquals(10, m.verworfen);
     }
 
     @Test
@@ -109,7 +114,8 @@ public class HaGeraeteTest {
         assertEquals("switch.a", fi.getJSONArray("freigaben").getJSONObject(0).getString("entity"));
         assertFalse("keine Namen an HA zurück", fi.toString().contains("T switch.a"));
         String d = fi.getJSONArray("domaenen").toString();
-        assertFalse(d.contains("lock") || d.contains("cover") || d.contains("alarm") || d.contains("siren"));
+        assertFalse(d.contains("alarm") || d.contains("siren"));
+        assertTrue("Stufe 2: Tor und Schloss", d.contains("\"cover\"") && d.contains("\"lock\""));
         JSONObject anz = HaGeraete.fuerAnzeige(b2);
         assertEquals(2, anz.getJSONArray("geraete").length());
         assertTrue(anz.getJSONArray("geraete").getJSONObject(0).has("steuern"));

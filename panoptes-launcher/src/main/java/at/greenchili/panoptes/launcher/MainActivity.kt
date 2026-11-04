@@ -9,6 +9,7 @@ import android.content.res.Configuration
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.hardware.display.DisplayManager
 import android.location.LocationManager
 import android.media.AudioManager
 import android.net.ConnectivityManager
@@ -21,6 +22,7 @@ import android.os.SystemClock
 import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.Display
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -103,20 +105,42 @@ class MainActivity : AppCompatActivity() {
     private val nf get() = NumberFormat.getNumberInstance().apply { maximumFractionDigits = 0 }
     private val nf1 get() = NumberFormat.getNumberInstance().apply { maximumFractionDigits = 1 }
 
-    private val poll = object : Runnable {
-        override fun run() {
-            refresh()
-            if (!stopped) main.postDelayed(this, 5_000)
+    // 0.1.38.8: Display oder Zündung aus → Launcher ruht, ohne Fokus kein Sekundentakt (Regeln in Ruhe)
+    private var displayAn = true
+    private val bildAn get() = Ruhe.bildAn(displayAn, summary?.acc)
+    private var warBildAn = true
+    private var fokus = true
+    private var taktStand = ""
+    private val displayHoerer = object : DisplayManager.DisplayListener {
+        override fun onDisplayAdded(displayId: Int) = Unit
+        override fun onDisplayRemoved(displayId: Int) = Unit
+        override fun onDisplayChanged(displayId: Int) {
+            if (displayId != Display.DEFAULT_DISPLAY) return
+            val an = Ruhe.displayAn(displayZustand())
+            if (an != displayAn) { displayAn = an; zustandAnwenden() }
         }
     }
 
-    /** Medien und Uhr laufen flüssiger als die Fahrzeugdaten, aber nur im Vordergrund. */
+    private val poll = object : Runnable {
+        override fun run() {
+            refresh()
+            if (Ruhe.abfrageLaeuft(stopped, displayAn)) main.postDelayed(this, Ruhe.abfrageMs(bildAn))
+        }
+    }
+
+    /** Medien und Uhr laufen flüssiger als die Fahrzeugdaten, aber nur im Vordergrund und nur bei Änderung. */
     private val takt = object : Runnable {
         override fun run() {
-            medien = MedienQuelle.aktuell(this@MainActivity)
-            aktualisierer.forEach { it() }
-            statusAktualisierer.forEach { it() }
-            if (!stopped) main.postDelayed(this, 1_000)
+            val m = MedienQuelle.aktuell(this@MainActivity)
+            medien = m
+            val stand = Ruhe.taktSchluessel(m?.paket, m?.titel, m?.kuenstler, m?.spielt, m?.positionMs, m?.dauerMs,
+                m?.cover?.generationId, System.currentTimeMillis())
+            if (stand != taktStand) {
+                taktStand = stand
+                aktualisierer.forEach { it() }
+                statusAktualisierer.forEach { it() }
+            }
+            if (Ruhe.taktLaeuft(stopped, bildAn, fokus)) main.postDelayed(this, 1_000)
         }
     }
 
@@ -125,28 +149,49 @@ class MainActivity : AppCompatActivity() {
         layout = ladeLayout()
         baueAlles()
         kernAbgleich()
+        displayAn = Ruhe.displayAn(displayZustand())
+        runCatching { getSystemService(DisplayManager::class.java)?.registerDisplayListener(displayHoerer, main) }
     }
 
     override fun onStart() {
         super.onStart()
         stopped = false
-        main.post(poll)
-        main.post(takt)
-        webAuto?.onResume()
+        zustandAnwenden()
         ladeApps()
     }
 
     override fun onStop() {
         stopped = true
-        main.removeCallbacks(poll)
-        main.removeCallbacks(takt)
-        videoStopp()
-        // 3D nur, wenn sichtbar: WebView anhalten (Renderer pausiert zusätzlich bei verdeckter Seite)
-        webAuto?.onPause()
+        zustandAnwenden()
         super.onStop()
     }
 
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus != fokus) { fokus = hasFocus; zustandAnwenden() }
+    }
+
+    private fun displayZustand(): Int? =
+        runCatching { getSystemService(DisplayManager::class.java)?.getDisplay(Display.DEFAULT_DISPLAY)?.state }.getOrNull()
+
+    /** Abfrage, Sekundentakt, 3D und Video passend zu Sichtbarkeit, Display und Fokus starten oder anhalten. */
+    private fun zustandAnwenden() {
+        main.removeCallbacks(poll)
+        main.removeCallbacks(takt)
+        warBildAn = bildAn
+        if (Ruhe.abfrageLaeuft(stopped, displayAn)) main.post(poll)
+        if (!stopped && bildAn) {
+            webAuto?.onResume()
+        } else {
+            videoStopp()
+            // 3D nur, wenn sichtbar: WebView anhalten (Renderer pausiert zusätzlich bei verdeckter Seite)
+            webAuto?.onPause()
+        }
+        if (Ruhe.taktLaeuft(stopped, bildAn, fokus)) { taktStand = ""; main.post(takt) }
+    }
+
     override fun onDestroy() {
+        runCatching { getSystemService(DisplayManager::class.java)?.unregisterDisplayListener(displayHoerer) }
         io.shutdownNow()
         klimaIo.shutdownNow()
         layoutIo.shutdown()
@@ -791,6 +836,9 @@ class MainActivity : AppCompatActivity() {
         val akkuBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
         akkuBox.addView(ui.icon(R.drawable.ic_pn_battery, ui.p.aqua, 34))
         val soc = ui.zahl("—", 34f); akkuBox.addView(soc, LinearLayout.LayoutParams(-2, -2))   // WRAP_CONTENT, sonst zeigt die Zahl nur die erste Ziffer
+        // 0.1.38.8: Akku-Gesundheit wie die Web-Akku-Karte, „Auto x · Schätzung y“
+        val gesundStart = ui.text("", 16f, 600, ui.p.onSurfaceVariant).apply { maxLines = 1 }
+        akkuBox.addView(gesundStart, LinearLayout.LayoutParams(-2, -2))
         unten.addView(akkuBox)
         f.addView(unten, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM))
         reg {
@@ -809,6 +857,8 @@ class MainActivity : AppCompatActivity() {
             gang.forEach { (g, tv) -> tv.setTextColor(if (s?.gear == g) ui.p.aqua else ui.p.outline) }
             tempo.text = s?.speedKmh?.let { nf.format(it) } ?: "—"
             soc.text = s?.socPct?.let { "${nf.format(it)}%" } ?: "—"
+            gesundStart.text = gesundheitWerte(s) ?: ""
+            gesundStart.visibility = if (gesundStart.text.isEmpty()) View.GONE else View.VISIBLE
             fahrzeug3d(mitte, ersatz, s)
         }
         return f
@@ -899,7 +949,9 @@ class MainActivity : AppCompatActivity() {
         val soc = ui.zahl("—", 30f); if (!mitPegel) c.addView(soc, ui.lp(oben = 6))
         val reichweite = ui.zahl("—", if (mitPegel) 48f else 22f); c.addView(reichweite, ui.lp(oben = 6))
         val laden = ui.text("", 14f, 600, ui.p.lime); c.addView(laden, ui.lp(oben = 8))
-        val gesund = ui.leise(""); c.addView(gesund, ui.lp(oben = 4))
+        // Akku-Gesundheit: kleine Bezeichnung, große Werte (Regel 50+)
+        val gesundTitel = ui.leise(getString(R.string.akku_gesundheit_titel), 14f); c.addView(gesundTitel, ui.lp(oben = 6))
+        val gesund = ui.zahl("", 20f); c.addView(gesund, ui.lp(oben = 2))
         z.addView(c, ui.lp(0, -2, 1f))
         reg {
             val s = summary
@@ -914,7 +966,9 @@ class MainActivity : AppCompatActivity() {
                 else -> getString(R.string.akku_laedt_nicht)
             }
             laden.setTextColor(if (ch?.active == true) ui.p.lime else ui.p.onSurfaceVariant)
-            gesund.text = s?.healthPct?.let { getString(R.string.akku_gesundheit, nf.format(it)) } ?: ""
+            gesund.text = gesundheitWerte(s) ?: ""
+            gesund.visibility = if (gesund.text.isEmpty()) View.GONE else View.VISIBLE
+            gesundTitel.visibility = gesund.visibility
         }
         return z
     }
@@ -1410,7 +1464,10 @@ class MainActivity : AppCompatActivity() {
         if (alt?.hintergrundBild != a?.hintergrundBild || alt?.hintergrundVideo != a?.hintergrundVideo) bildGeladen = false
         hintergrundAnwenden()
         aktualisierer.forEach { it() }
+        // ohne Sekundentakt (Ruhe, kein Fokus) hält die Abfrage Uhr und Statusleiste aktuell
+        if (!Ruhe.taktLaeuft(stopped, bildAn, fokus)) statusAktualisierer.forEach { it() }
         klimaFeldZeichnen?.invoke()
+        if (bildAn != warBildAn) zustandAnwenden()
     }
 
     // ---------- Hintergrund ----------
@@ -1427,7 +1484,7 @@ class MainActivity : AppCompatActivity() {
             }
         } else if (!willBild) { bild.setImageDrawable(null); bild.visibility = View.GONE; bildGeladen = false }
         // Video nur mit Wahl „Video“, Kern-Schalter UND Gang P (Fahrsicherheit). Sonst sofort aus.
-        if (layout.hintergrund == "video" && Fahrsicherheit.videoErlaubt(a?.hintergrundVideo == true, summary?.gear)) videoStart() else videoStopp()
+        if (bildAn && !stopped && layout.hintergrund == "video" && Fahrsicherheit.videoErlaubt(a?.hintergrundVideo == true, summary?.gear)) videoStart() else videoStopp()
     }
 
     private fun dekodieren(bytes: ByteArray) = try {
@@ -1665,7 +1722,27 @@ class MainActivity : AppCompatActivity() {
                     ch.targetPct?.let { getString(R.string.akku_ziel, nf.format(it)) }, ch.etaMin?.let { getString(R.string.akku_eta, nf.format(it)) }).joinToString(" · ")
                 else -> getString(R.string.akku_laedt_nicht)
             },
-            s?.healthPct?.let { getString(R.string.akku_gesundheit, nf.format(it)) })
+            *gesundheitZeilen(s).toTypedArray())
+    }
+
+    // ---------- 0.1.38.8: Akku-Gesundheit wie die Web-Akku-Karte – BYD-Wert und Panoptes-Schätzung nebeneinander ----------
+
+    private fun sohProzent(v: Double?): String =
+        v?.let { getString(R.string.akku_prozent, nf1.format(it)) } ?: getString(R.string.nicht_verfuegbar)
+
+    /** Kurzform für Kachel und Startseite: „Auto 100 % · Schätzung 95,4 %“ (alter Kern: nur der Einzelwert). */
+    private fun gesundheitWerte(s: LauncherSummary?): String? = when (LauncherContract.gesundheitArt(s)) {
+        LauncherContract.Gesundheit.ZWEI -> getString(R.string.akku_gesundheit_werte, sohProzent(s!!.sohAutoPct), sohProzent(s.sohSchaetzungPct))
+        LauncherContract.Gesundheit.EINZELWERT -> getString(R.string.akku_prozent, nf.format(s!!.healthPct!!))
+        LauncherContract.Gesundheit.KEINE -> null
+    }
+
+    /** Akku-Info: beide Werte je eine Zeile und die Erklärung, welcher gilt. */
+    private fun gesundheitZeilen(s: LauncherSummary?): List<String> = when (LauncherContract.gesundheitArt(s)) {
+        LauncherContract.Gesundheit.ZWEI -> listOf(getString(R.string.akku_gesundheit_auto_zeile, sohProzent(s!!.sohAutoPct)),
+            getString(R.string.akku_gesundheit_schaetzung_zeile, sohProzent(s.sohSchaetzungPct)), getString(R.string.akku_gesundheit_erklaerung))
+        LauncherContract.Gesundheit.EINZELWERT -> listOf(getString(R.string.akku_gesundheit, nf.format(s!!.healthPct!!)))
+        LauncherContract.Gesundheit.KEINE -> emptyList()
     }
 
     private fun waechterInfo() = infoFeld(getString(R.string.widget_waechter), "waechter") {

@@ -931,6 +931,16 @@ public class SurveillanceEngineGpu {
             new java.util.concurrent.atomic.AtomicLong();        // watchdog releases
     private volatile String lastAiSkipReason = "none";
 
+    // 0.1.38.8 (A1, I7): which crop each YOLO run actually got. Field 03./04.11.: 4315 of 4315
+    // runs were on the 320×240 mosaic although the cropper was wired — these make that visible
+    // in the V2 stats line without a rebuild. Diagnostic only, nothing decides on them.
+    private final java.util.concurrent.atomic.AtomicLong fovTrefferCount =
+            new java.util.concurrent.atomic.AtomicLong();        // fresh foveated slot used
+    private final java.util.concurrent.atomic.AtomicLong fovVerpasstCount =
+            new java.util.concurrent.atomic.AtomicLong();        // wanted foveated, slot empty/stale
+    private final java.util.concurrent.atomic.AtomicLong fovMosaikGewolltCount =
+            new java.util.concurrent.atomic.AtomicLong();        // mosaic by design (NEAR/heartbeat/no cropper)
+
     // 4. Scheduler for staggered inference dispatch. Used by the baseline
     //    seeder to space the four per-quadrant YOLO calls ~500 ms apart.
     //    Firing them back-to-back back-pressures the single-thread
@@ -1237,8 +1247,9 @@ public class SurveillanceEngineGpu {
     // detection or recording trigger logic.
     private final ActorTracker actorTracker = new ActorTracker();
 
-    // SHADOW-MODE multi-batch confirmation counter (parked-car single-frame
-    // FP audit). LOG-ONLY — nothing in the trigger chain reads it. Counts
+    // Multi-batch confirmation counter (parked-car single-frame FP audit).
+    // ENFORCED since 0.1.38.8: the confirmation stamp waits for its verdict
+    // (MultiBatchConfirmationShadow.bestaetigt). Originally log-only. Counts
     // DISTINCT AI batches per CrossQuadrantTracker trackId and, at each
     // single-frame confirmation (the lastAiConfirmationElapsedMs stamp site),
     // logs what an N(class)-batches-within-this-sequence gate WOULD have
@@ -1982,6 +1993,48 @@ public class SurveillanceEngineGpu {
      * Non-blocking. Latest centroid wins (overwrite semantics). Safe from any
      * thread.
      */
+    /**
+     * 0.1.38.8 (A1): size-gate threshold for the crop YOLO actually gets, expressed so that it
+     * means the SAME physical distance as on the 320×240 mosaic tile. For a foveated window
+     * with block-grid scale {@code mapAy} (grid px per crop px), one crop height covers
+     * {@code 640·|mapAy|} of the tile's 240 rows, so the crop-relative bar is
+     * {@code m · 240 / (640·|mapAy|)}. Mosaic runs, a missing affine or a degenerate scale keep
+     * {@code m} unchanged (I1: the old, more permissive bar — never drop on missing data).
+     * Capped at 0.95 so a corrupt scale can never make the gate unsatisfiable.
+     */
+    static float groessenSperreImAusschnitt(float m, boolean foveated, boolean mapValid, float mapAy) {
+        if (!foveated || !mapValid) return m;
+        float ay = Math.abs(mapAy);
+        if (!(ay > 1e-4f) || Float.isInfinite(ay)) return m;
+        float abdeckung = (FoveatedCropper.CROP_SIZE * ay) / (THUMBNAIL_HEIGHT / 2f);
+        if (!(abdeckung > 0f) || abdeckung >= 1f) return m;
+        return Math.min(0.95f, m / abdeckung);
+    }
+
+    /**
+     * 0.1.38.8 (A1): Request a foveated crop for the current best-threat quadrant so the
+     * mailbox holds a fresh window when the next AI run polls. Same eligibility as the
+     * foveated branch in runAiOnQuadrant (live motion component, not NEAR — NEAR feeds the
+     * wide mosaic on purpose). Cheap: a flag under a lock; the GL thread throttles the work.
+     * Add-only: never changes which detections pass, only which pixels YOLO sees.
+     */
+    private void foveatedVorwaermen(MotionPipelineV2.QuadrantResult[] results) {
+        try {
+            FoveatedCropper cropper = this.foveatedCropper;
+            if (!useObjectDetection || cropper == null || !cropper.isInitialized()
+                    || cameraTextureId < 0 || pipelineV2 == null || results == null) return;
+            int q = pipelineV2.getHighestThreatQuadrant();
+            if (q < 0 || q >= results.length || q >= FOVEATED_NUM_QUADRANTS) return;
+            MotionPipelineV2.QuadrantResult r = results[q];
+            if (r == null || r.componentSize <= 0) return;
+            DistanceEstimator.ProximityEstimate p = proximityForQuadrant(q, r);
+            if (p != null && p.tier == DistanceEstimator.Tier.NEAR) return;
+            requestFoveatedCrop(q, r.centroidX, r.centroidY);
+        } catch (Throwable ignored) {
+            // Warm-up is an optimisation; the AI run falls back to the mosaic as before.
+        }
+    }
+
     public void requestFoveatedCrop(int quadrant, float centroidX, float centroidY) {
         if (quadrant < 0 || quadrant >= FOVEATED_NUM_QUADRANTS) return;
         synchronized (foveatedRequestLock) {
@@ -3992,6 +4045,15 @@ public class SurveillanceEngineGpu {
                 }
             }
             
+            // 0.1.38.8 (A1): keep the foveated mailbox warm on every motion tick. The
+            // cropper only DRAINS a finished readback when it is handed the NEXT request,
+            // and runAiOnQuadrant requested only once per AI run (>= 500 ms apart) — so the
+            // slot it then polled was always >= 2 AI intervals old and failed the 500 ms
+            // freshness budget (field: 4315/4315 runs fell back to the mosaic). Requesting
+            // here (10 Hz, serviced at most every 150 ms on the GL thread) keeps a slot no
+            // older than ~1-2 service intervals ready when the AI run polls.
+            foveatedVorwaermen(results);
+
             // FIX: Early AI initialization — queue YOLO on active quadrants as soon as
             // motion is detected, not after the loitering timer expires. This lets the
             // EventTimelineCollector build contextual history (person vs car vs bike)
@@ -5165,10 +5227,12 @@ public class SurveillanceEngineGpu {
             // every dropped signal is observable).
             logger.info(String.format(
                     "V2 stats: frames=%d, motions=%d, recording=%b | AI dispatch=%d detect=%d skip=%d "
-                    + "(last=%s) laneBusy=%b repairs=%d | gates: useOD=%b aiEnabled=%b detector=%s",
+                    + "(last=%s) laneBusy=%b repairs=%d | fov=%d/%d/%d (treffer/verpasst/mosaik) "
+                    + "| gates: useOD=%b aiEnabled=%b detector=%s",
                     frameCount, motionDetections, recording,
                     aiDispatchCount.get(), aiDetectCompletedCount.get(), aiSkipCount.get(),
                     lastAiSkipReason, isAiRunning.get(), aiLaneRepairCount.get(),
+                    fovTrefferCount.get(), fovVerpasstCount.get(), fovMosaikGewolltCount.get(),
                     useObjectDetection, aiEnabled,
                     (yoloDetector != null ? "ok" : "NULL")));
             // Log per-quadrant status for debugging
@@ -5537,6 +5601,7 @@ public class SurveillanceEngineGpu {
             FoveatedSlot fovSlot = pollFoveatedSlotFresh(quadrant);
             byte[] foveatedRgb = (fovSlot != null) ? fovSlot.rgb : null;
             if (foveatedRgb != null) {
+                fovTrefferCount.incrementAndGet();
                 qW = FoveatedCropper.CROP_SIZE;
                 qH = FoveatedCropper.CROP_SIZE;
                 // Slot deep-copies on publish; the bytes we got here are
@@ -5553,6 +5618,7 @@ public class SurveillanceEngineGpu {
                 fovCaptureNanos = fovSlot.captureNanos;  // R4 ExtB-8
             } else {
                 // Slot empty or stale — fall back to mosaic for this tick.
+                fovVerpasstCount.incrementAndGet();
                 qW = THUMBNAIL_WIDTH / 2;
                 qH = THUMBNAIL_HEIGHT / 2;
                 byte[] mosaicShared = cropFromMosaic(mosaicRgb, quadrant, qW, qH);
@@ -5565,6 +5631,7 @@ public class SurveillanceEngineGpu {
                 fovCaptureNanos = 0L;
             }
         } else {
+            fovMosaikGewolltCount.incrementAndGet();
             // Mosaic 320×240 path. Reached when: no foveated cropper (legacy),
             // a heartbeat run (stationary subject — mosaic detail suffices), OR
             // preferWideForClose (a NEAR subject whose full body must stay in
@@ -5640,6 +5707,12 @@ public class SurveillanceEngineGpu {
         }
         
         final boolean usedFoveated = (qW == FoveatedCropper.CROP_SIZE);
+        // 0.1.38.8 (A1): the user's distance setting (minObjectSize, e.g. 0.18 = "~5 m") is
+        // defined against the CAMERA TILE height. A foveated window covers only part of the
+        // tile, so the same person is relatively taller in it — without this rescale the
+        // working foveated path would silently admit subjects further away than the user set.
+        final float minRelGroesse = groessenSperreImAusschnitt(
+                minObjectSize, usedFoveated, fovMapValid, fovMapAy);
         final long detectionObservationElapsedMs =
                 android.os.SystemClock.elapsedRealtime()
                         - ((usedFoveated && fovAgeAtDispatchNanos > 0)
@@ -5777,7 +5850,7 @@ public class SurveillanceEngineGpu {
 
                 java.util.List<at.greenchili.surfmate.ai.Detection> detections = detectorSnap.detect(
                         dewarpApplied ? dewarpedInput : cropData,
-                        qW, qH, aiConfidence, detectPerson, detectCar, detectAnimal, detectBike, minObjectSize);
+                        qW, qH, aiConfidence, detectPerson, detectCar, detectAnimal, detectBike, minRelGroesse);
                 // Inference actually ran (an empty result still counts — it proves
                 // the lane is alive, which is exactly what the field log could not
                 // distinguish from "never dispatched").
@@ -6245,9 +6318,11 @@ public class SurveillanceEngineGpu {
                         // YOLO confirmed a real object — update AI confirmation timestamp.
                         // This is used by the deterrent flash guard to allow recording
                         // even during the suppression window if YOLO sees a real threat.
-                        if (triggerEvidenceFound) {
-                            lastAiConfirmationElapsedMs = detectionObservationElapsedMs;
-                        }
+                        // 0.1.38.8 (B1): NOT stamped here any more. The stamp waits for
+                        // the multi-batch verdict below (after CQT identity), so a single
+                        // vehicle frame or a single low-confidence person frame no longer
+                        // confirms the sequence. Straight-line code between here and the
+                        // verdict — no early exit — so a met verdict is never lost.
                         // PERSON-specific timestamp for the track-anchored / immunity
                         // recency gates (a held in-zone track is a person; only a
                         // recent PERSON hit may certify it fresh). GENERATION-GATED:
@@ -6385,8 +6460,18 @@ public class SurveillanceEngineGpu {
                         // the newest one (review fix): a sequence can live for
                         // minutes, and without a recency bound a sporadic false
                         // box would accumulate to N across a long shadow storm.
+                        // 0.1.38.8 (B1/B4): ENFORCED. The stamp is written below only
+                        // when MultiBatchConfirmationShadow.bestaetigt() holds for at
+                        // least one evidence detection (person >= 0.50 one frame / else
+                        // 2 frames, vehicle/bike 3 frames, other 1). At night (auto NIGHT
+                        // mode) vehicle/bike frames under 0.50 do not count (headlights).
+                        // I1: if the counting itself fails, fall back to the old
+                        // single-frame stamp — never drop the signal on an error.
+                        boolean mehrbildBestaetigt = false;
+                        boolean mehrbildFehler = false;
                         try {
                             final long shadowSeqStart = firstMotionElapsedMs;
+                            final boolean nachtStreng = isNightMode();
                             StringBuilder shadowSb = null;
                             boolean shadowWouldConfirm = false;
                             for (int si = 0; si < motionFiltered.size(); si++) {
@@ -6405,32 +6490,44 @@ public class SurveillanceEngineGpu {
                                         || !(usedFoveated && !fovMapValid);
                                 if (!sEvidence) continue;
                                 int sTid = si < tracked.size() ? tracked.get(si).trackId : 0;
-                                int inSeq = aiConfirmShadow.observe(
-                                        sTid, sd.getClassId(),
-                                        detectionObservationElapsedMs, shadowSeqStart);
-                                int sNeed = MultiBatchConfirmationShadow
-                                        .requiredBatches(sd.getClassId());
-                                boolean sMet = inSeq >= sNeed;
-                                shadowWouldConfirm |= sMet;
                                 if (shadowSb == null) shadowSb = new StringBuilder(96);
                                 else shadowSb.append("; ");
                                 shadowSb.append("trk#").append(sTid)
                                         .append(" cls=").append(sd.getClassId())
                                         .append(String.format(java.util.Locale.US,
-                                                " conf=%.2f", sd.getConfidence()))
-                                        .append(" seqBatches=").append(inSeq)
+                                                " conf=%.2f", sd.getConfidence()));
+                                if (!MultiBatchConfirmationShadow.zaehltAlsBild(
+                                        sd.getClassId(), sd.getConfidence(), nachtStreng)) {
+                                    shadowSb.append(" nachtSchwach");
+                                    continue;
+                                }
+                                int inSeq = aiConfirmShadow.observe(
+                                        sTid, sd.getClassId(),
+                                        detectionObservationElapsedMs, shadowSeqStart);
+                                int sNeed = MultiBatchConfirmationShadow
+                                        .requiredBatches(sd.getClassId());
+                                boolean sMet = MultiBatchConfirmationShadow.bestaetigt(
+                                        sd.getClassId(), sd.getConfidence(), inSeq);
+                                shadowWouldConfirm |= sMet;
+                                shadowSb.append(" seqBatches=").append(inSeq)
                                         .append('/').append(sNeed)
                                         .append(sMet ? " (met)" : "");
                             }
+                            mehrbildBestaetigt = shadowWouldConfirm;
                             if (triggerEvidenceFound && shadowSb != null) {
-                                logger.info("AI-confirm shadow Q" + qIdx
-                                        + ": today=stamped, wouldBe="
+                                // I7: every deferred frame is attributable in the field log.
+                                logger.info("AI-confirm Q" + qIdx + ": "
                                         + (shadowWouldConfirm ? "CONFIRM" : "DEFER")
+                                        + (nachtStreng ? " (Nacht)" : "")
                                         + " | " + shadowSb);
                             }
                         } catch (Throwable shadowT) {
-                            // Instrumentation must never break the AI pipeline.
-                            logger.debug("Confirm-shadow logging failed: " + shadowT);
+                            mehrbildFehler = true;
+                            logger.warn("AI-confirm Mehrbild-Zählung fehlgeschlagen, Einzelbild wie bisher: "
+                                    + shadowT);
+                        }
+                        if (triggerEvidenceFound && (mehrbildBestaetigt || mehrbildFehler)) {
+                            lastAiConfirmationElapsedMs = detectionObservationElapsedMs;
                         }
 
                         // ActorTracker + ThumbnailBuffer want bboxes in cropData's

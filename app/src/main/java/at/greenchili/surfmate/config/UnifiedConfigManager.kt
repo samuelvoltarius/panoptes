@@ -2621,7 +2621,20 @@ object UnifiedConfigManager {
     /** Merge keys into the hotspot section. Single-key merges preserve siblings,
      *  so independent switches never overwrite each other. Off the main looper. */
     @JvmStatic
-    fun updateHotspot(values: Map<String, Any>): Boolean = updateValues("hotspot", values)
+    fun updateHotspot(values: Map<String, Any>): Boolean = updateValues("hotspot", hotspotMitSchatten(values))
+
+    /**
+     * 0.1.38.8: neben einem neu gesetzten {@code password} die verschlüsselte Schattenkopie {@code enc_password}
+     * (ZugangsMigration). Der Klartext bleibt eine Version lang maßgeblich (Rückfall auf 0.1.38.6 liest nur ihn).
+     */
+    @JvmStatic
+    fun hotspotMitSchatten(values: Map<String, Any>): Map<String, Any> {
+        val pw = values["password"] as? String ?: return values
+        val out = LinkedHashMap(values)
+        out[at.greenchili.surfmate.byd.cloud.crypto.ZugangsMigration.schattenSchluessel("password")] =
+            at.greenchili.surfmate.byd.cloud.crypto.ZugangsMigration.schattenNeu(pw)
+        return out
+    }
 
     /** Whether the hotspot temporarily suppresses WiFi keep-alive. SoftAP and WiFi-STA
      *  share one radio, so this marker is combined with (but never overwrites) the

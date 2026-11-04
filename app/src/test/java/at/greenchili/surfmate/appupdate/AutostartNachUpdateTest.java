@@ -67,7 +67,7 @@ public class AutostartNachUpdateTest {
 
         bestaetigt(1_800_000_000_000L);
         assertTrue(a.pruefen(2000L));
-        assertEquals(1, befehle.size());
+        assertEquals(1, broadcasts());
         assertTrue(befehle.get(0).startsWith("am broadcast -a at.greenchili.surfmate.action.AUTOSTART_ENABLE -n "
                 + "at.greenchili.surfmate/.receiver.AutoStartCheckReceiver"));
         JSONObject z = a.zustand(3000L);
@@ -75,11 +75,16 @@ public class AutostartNachUpdateTest {
         assertEquals(2000L, z.getLong("zeit"));
         assertTrue(z.getBoolean("aktuell"));
         for (int i = 0; i < 5; i++) assertFalse("nicht bei jedem Durchlauf/Reconnect", a.pruefen(4000L + i));
-        assertEquals(1, befehle.size());
+        assertEquals(1, broadcasts());
 
         bestaetigt(1_800_000_600_000L);   // nächstes Update
         assertTrue(a.pruefen(5000L));
-        assertEquals(2, befehle.size());
+        assertEquals(2, broadcasts());
+    }
+
+    /** 0.1.38.8: nach „frei“ liest der Wächter zusätzlich die Installationszeit (Marke panoptes_autostart_ok). */
+    private long broadcasts() {
+        return befehle.stream().filter(b -> b.startsWith("am broadcast")).count();
     }
 
     @Test

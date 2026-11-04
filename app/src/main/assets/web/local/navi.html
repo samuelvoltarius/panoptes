@@ -12,7 +12,7 @@
     <script src="../shared/theme.js?v=13"></script>
     <script src="../shared/kartenquelle.js?v=5"></script>
     <script src="../shared/app-shell.js?v=pn34"></script>
-    <link rel="stylesheet" href="../shared/styles.css?v=pn13">
+    <link rel="stylesheet" href="../shared/styles.css?v=pn14">
     <style>
         .navi-page .main-content { padding: 0; }
         .navi { position: relative; margin: 0 28px 28px; height: calc(100vh - 190px); min-height: 460px;
@@ -25,6 +25,8 @@
                    /* Das Feld ist immer dunkel (liegt auf der dunklen Karte): Textfarben fest dunkel-Design,
                       sonst sind sie im hellen Design kaum lesbar. */
                    --on-surface: #e6f1f4; --on-surface-variant: #a9c7ce; --outline: #6f8f99; color: var(--on-surface); }
+        /* Chromium 74 (WebView am Auto) ohne backdrop-filter: dichter statt Glas */
+        @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .n-panel { background: rgba(7, 26, 43, .97); } }
         .n-search { display: flex; align-items: center; background: rgba(255, 255, 255, .07); border: 1px solid var(--sm-line);
                     border-radius: 14px; padding: 0 12px; }
         .n-search svg { width: 20px; height: 20px; color: var(--sm-aqua); flex: none; }

@@ -43,15 +43,24 @@ public class HandyApiHandlerTest {
     Kopplungen kopplungen;
     final JSONArray[] gespeichert = {new JSONArray()};
     HandyApiHandler.Umgebung vorher;
+    JSONObject aktionen;
+    List<String> gemeldet;
 
     @Before
-    public void auf() {
+    public void auf() throws Exception {
         vorher = HandyApiHandler.umgebung;
         kopplungen = new Kopplungen(new Kopplungen.Speicher() {
             public JSONArray lade() { return gespeichert[0]; }
             public boolean speichere(JSONArray g) { gespeichert[0] = g; return true; }
         });
         HandyApiHandler.kopplungen = kopplungen;
+        // 0.1.38.8: naeheBake liegt nur verschlüsselt; in der JVM fehlt android.util.Base64 für CredentialCipher
+        Kopplungen.bakeCipherFuerTest(s -> "ENC:" + new StringBuilder(s).reverse(),
+                s -> s.startsWith("ENC:") ? new StringBuilder(s.substring(4)).reverse().toString() : "");
+        // 0.1.38.8: Aufsperren hat einen eigenen Schalter (Standard aus) – hier an, damit die Signaturprüfung greift
+        aktionen = new JSONObject().put("aufsperren", true);
+        gemeldet = at.greenchili.surfmate.byd.routing.FahrzeugAktionen.fuerTest(
+                new JSONObject().put("fahrzeugAktionen", aktionen), () -> jetzt);
         HandyApiHandler.umgebung = new HandyApiHandler.Umgebung() {
             public VehicleCommandRouter.CommandResult ausfuehren(VehicleCommandRouter.VehicleCommand cmd) {
                 befehle.add(cmd);
@@ -72,6 +81,8 @@ public class HandyApiHandlerTest {
     public void ab() {
         HandyApiHandler.umgebung = vorher;
         HandyApiHandler.kopplungen = null;
+        Kopplungen.bakeCipherFuerTest(null, null);
+        at.greenchili.surfmate.byd.routing.FahrzeugAktionen.fuerTest(null);
     }
 
     String handy() { return kopplungen.anlegen("Pixel", Kopplungen.ART_HANDY, jetzt); }
@@ -245,6 +256,134 @@ public class HandyApiHandlerTest {
         assertTrue(r.getBoolean("ok"));
         assertFalse(r.getBoolean("bestaetigt"));
         assertEquals("[handy.aufsperren_unbestaetigt[iPhone]]", telegram.toString());
+    }
+
+    // ------------------------------------------------------------------ 0.1.38.8 Fahrzeug-Aktionen
+
+    JSONObject aktion(String k, JSONObject body) throws Exception {
+        return json(post("/api/handy/v1/aktion", k, body));
+    }
+
+    @Test
+    public void signalNurMitRechtSchalterUndRueckfrage() throws Exception {
+        String k = handy();
+        JSONObject finden = new JSONObject().put("aktion", "auto_finden").put("bestaetigt", true);
+        // Recht „signal“ ist nie Standard, auch nicht bei „alle Standardrechte“
+        assertFalse(kopplungen.hatRecht(k, Kopplungen.RECHT_SIGNAL));
+        assertEquals("nicht_erlaubt", aktion(k, finden).getString("grund"));
+        kopplungen.rechteSetzen(k, Arrays.asList(Kopplungen.RECHT_SIGNAL));
+        // Schalter aus
+        assertEquals("aktion_aus", aktion(k, finden).getString("grund"));
+        aktionen.put("autoFinden", true).put("licht", true).put("warnblinker", true);
+        // ohne Rückfrage
+        assertEquals("aktion_bestaetigen", aktion(k, new JSONObject().put("aktion", "auto_finden")).getString("grund"));
+        assertTrue("bis hier nichts gesendet", befehle.isEmpty());
+        JSONObject r = aktion(k, finden);
+        assertTrue(r.toString(), r.getBoolean("ok"));
+        assertTrue(befehle.get(0) instanceof VehicleCommandRouter.FindCarCommand);
+        assertTrue(aktion(k, new JSONObject().put("aktion", "licht").put("bestaetigt", true)).getBoolean("ok"));
+        assertTrue(befehle.get(1) instanceof VehicleCommandRouter.FlashLightsCommand);
+        assertEquals("[aktionen.ausgeloest, aktionen.ausgeloest]", gemeldet.toString());
+    }
+
+    @Test
+    public void warnblinkerAusOhneRueckfrage() throws Exception {
+        String k = handy();
+        kopplungen.rechteSetzen(k, Arrays.asList(Kopplungen.RECHT_SIGNAL));
+        aktionen.put("warnblinker", true);
+        assertEquals("aktion_bestaetigen", aktion(k, new JSONObject().put("aktion", "warnblinker")).getString("grund"));
+        assertTrue(aktion(k, new JSONObject().put("aktion", "warnblinker").put("an", false)).getBoolean("ok"));
+        assertFalse(((VehicleCommandRouter.HazardCommand) befehle.get(0)).on);
+        assertTrue(aktion(k, new JSONObject().put("aktion", "warnblinker").put("bestaetigt", true)).getBoolean("ok"));
+        assertTrue(((VehicleCommandRouter.HazardCommand) befehle.get(1)).on);
+    }
+
+    @Test
+    public void abschaltenGehtImmerOhneRecht() throws Exception {
+        String k = handy();
+        kopplungen.rechteSetzen(k, new ArrayList<>());
+        aktionen.put("licht", true).put("annaeherung", true);
+        JSONObject r = aktion(k, new JSONObject().put("aktion", "annaeherung_aus"));
+        assertTrue(r.getBoolean("ok"));
+        assertFalse(r.getJSONObject("schalter").getBoolean("annaeherung"));
+        assertTrue(r.getJSONObject("schalter").getBoolean("licht"));
+        r = aktion(k, new JSONObject().put("aktion", "aktionen_aus"));
+        assertTrue(r.getBoolean("ok"));
+        assertFalse(r.getJSONObject("schalter").getBoolean("licht"));
+        assertFalse(r.getJSONObject("schalter").getBoolean("aufsperren"));
+        // Stand lesen
+        r = aktion(k, new JSONObject().put("aktion", "aktionen_stand"));
+        assertTrue(r.getBoolean("ok"));
+        assertFalse(r.getBoolean("signal"));
+        assertTrue(befehle.isEmpty());
+    }
+
+    /** Signatur mit dem Biometrie-Schlüssel über einen beliebigen Zweck (wie die App). */
+    JSONObject signaturFuer(KeyPair p, String zweck, String k, String nonce) throws Exception {
+        Signature s = Signature.getInstance("SHA256withECDSA");
+        s.initSign(p.getPrivate());
+        s.update(HandySignatur.nachricht(zweck, k, jetzt, nonce).getBytes(StandardCharsets.UTF_8));
+        return new JSONObject().put("zeit", jetzt).put("nonce", nonce).put("sig", Base64.getEncoder().encodeToString(s.sign()));
+    }
+
+    @Test
+    public void naeheAnmeldenNurMitBiometrieUndSchalter() throws Exception {
+        String k = handy();
+        KeyPair geraet = paar(), naehe = paar(), anderer = paar();
+        kopplungen.rechteSetzen(k, Kopplungen.RECHTE);
+        kopplungen.schluesselMelden(k, pub(geraet), "android", "Pixel 8");
+        java.security.PublicKey pk = HandySignatur.schluessel(pub(naehe));
+        JSONObject req = new JSONObject().put("aktion", "naehe_anmelden").put("schluessel", pub(naehe)).put("gueltigTage", 30)
+                .put("signatur", signaturFuer(geraet, HandyApiHandler.naeheZweck(pk), k, "nonce-n-0000001"));
+        // Automatik-Schalter aus
+        assertEquals("nicht_erlaubt", aktion(k, req).getString("grund"));
+        aktionen.put("annaeherung", true);
+        // Signatur über einen ANDEREN Schlüssel gilt nicht (Fingerabdruck ist mitsigniert)
+        JSONObject falsch = new JSONObject(req.toString()).put("signatur", signaturFuer(geraet,
+                HandyApiHandler.naeheZweck(HandySignatur.schluessel(pub(anderer))), k, "nonce-n-0000002"));
+        assertEquals("signatur", aktion(k, falsch).getString("grund"));
+        // zu lange gültig
+        assertEquals("schluessel", aktion(k, new JSONObject(req.toString()).put("gueltigTage", 91)).getString("grund"));
+        JSONObject r = aktion(k, req);
+        assertTrue(r.toString(), r.getBoolean("ok"));
+        assertEquals(32, Base64.getDecoder().decode(r.getString("bake")).length);
+        assertEquals(jetzt + 30L * 86_400_000L, r.getLong("gueltigBis"));
+        assertEquals(pub(naehe), kopplungen.naeheSchluessel(k, jetzt));
+        assertTrue(telegram.contains("handy.naehe_schluessel[Pixel 8]"));
+        // Abmelden geht immer, ohne Recht
+        kopplungen.rechteSetzen(k, new ArrayList<>());
+        assertTrue(aktion(k, new JSONObject().put("aktion", "naehe_abmelden")).getBoolean("ok"));
+        assertNull(kopplungen.naeheSchluessel(k, jetzt));
+        assertTrue("nichts ans Auto", befehle.isEmpty());
+    }
+
+    @Test
+    public void annaeherungUeberDieApiFailClosed() throws Exception {
+        String k = handy();
+        kopplungen.rechteSetzen(k, Kopplungen.RECHTE);
+        // Schalter aus
+        assertEquals("aktion_aus", aktion(k, new JSONObject().put("aktion", "annaeherung")).getString("grund"));
+        aktionen.put("annaeherung", true);
+        // ohne Nähe-Schlüssel (Handy-Teil fehlt): nie etwas
+        assertEquals("kein_naehe_schluessel", aktion(k, new JSONObject().put("aktion", "annaeherung")
+                .put("lat", 0.5).put("lon", 0.5).put("genauigkeitM", 5)).getString("grund"));
+        JSONObject st = aktion(k, new JSONObject().put("aktion", "annaeherung_stand"));
+        assertTrue(st.getBoolean("ok"));
+        assertTrue(st.getBoolean("an"));
+        assertTrue(befehle.isEmpty());
+    }
+
+    @Test
+    public void aufsperrenSchalterAusSperrtTrotzSignatur() throws Exception {
+        String k = handy();
+        KeyPair p = paar();
+        kopplungen.rechteSetzen(k, Kopplungen.RECHTE);
+        kopplungen.schluesselMelden(k, pub(p), "android", "Pixel 8");
+        aktionen.put("aufsperren", false);
+        JSONObject r = aktion(k, new JSONObject().put("aktion", "aufsperren").put("signatur", signatur(p, k, jetzt, "nonce-s-0000001")));
+        assertEquals("aktion_aus", r.getString("grund"));
+        assertTrue(befehle.isEmpty());
+        assertEquals("[handy.aufsperren_abgelehnt[Pixel 8, aktion_aus]]", telegram.toString());
     }
 
     // ------------------------------------------------------------------ §4 Push

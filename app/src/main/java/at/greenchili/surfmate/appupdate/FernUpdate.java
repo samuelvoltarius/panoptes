@@ -87,7 +87,8 @@ public final class FernUpdate {
                     .put("groesseBytes", v.opt("groesseBytes") == null ? JSONObject.NULL : v.opt("groesseBytes"));
             if (v.has("notizen")) n.put("notizen", v.get("notizen"));
             // 0.1.38.5: Art ("fix" | "funktion" | "beides"), ihr Text und die Kurzfassung (≤ 3 Stichpunkte)
-            for (String k : new String[]{"art", "artText", "kurz"}) if (v.has(k)) n.put(k, v.get(k));
+            // 0.1.38.8: dazu klein (kommt von selbst) und die Sammelliste seit der letzten großen Version
+            for (String k : new String[]{"art", "artText", "kurz", "klein", "zusammenfassung"}) if (v.has(k)) n.put(k, v.get(k));
             r.put("neueste", n);
         } else {
             r.put("neueste", JSONObject.NULL);

@@ -945,6 +945,8 @@
     <string name="vehicle_dialog_summary_effective">In gebruik: %1$.1f kWh</string>
     <string name="vehicle_dialog_summary_calibration">Laatste kalibratie: %1$.1f%% op %2$s</string>
     <string name="vehicle_dialog_soh_unavailable">niet beschikbaar</string>
+    <string name="vehicle_dialog_soh_beide">%1$s (auto, BYD) · %2$s (onze schatting)</string>
+    <string name="vehicle_dialog_soh_erklaerung">De auto meldt zijn eigen waarde. Panoptes berekent er zelf ook een uit laadniveau en resterende energie. Die twee kunnen verschillen: de auto rondt ruim af, onze schatting schommelt een beetje. De waarde van de auto is bindend.</string>
     <string name="dashboard_metric_storage_chip">%1$s in gebruik · %2$s vrij</string>
     <string name="dashboard_metric_storage_chip_pending">Opslag …</string>
     <string name="dashboard_tunnel_offline">Niet verbonden</string>

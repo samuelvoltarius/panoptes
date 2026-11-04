@@ -872,7 +872,7 @@ public class UpdateHinweisTest {
         String dienst = lies("src/main/java/at/greenchili/surfmate/appupdate/AppUpdateDienst.java");
         assertTrue(dienst.contains("notifyUpdateNeu(\"panoptes\", f.versionName,"));
         assertTrue(dienst.contains("UpdateHinweis.wasNeu(f, installierteVersion(), sprache)"));
-        assertTrue(dienst.contains("String neu = UpdateHinweis.wasNeu(f, installierteVersion(),"));
+        assertTrue(dienst.contains("String neu = UpdateHinweis.wasNeuKurz(f, installierteVersion(),"));
         String bot = lies("src/main/java/at/greenchili/surfmate/daemon/TelegramBotDaemon.java");
         assertTrue(bot.contains("cmd.optString(\"neu\", \"\")"));
         String js = lies("src/main/assets/web/shared/app-updates.js");
@@ -920,9 +920,9 @@ public class UpdateHinweisTest {
     }
 
     @Test
-    public void korrekturMitArtFeldUndZehnMinuten() throws Exception {
+    public void kleinesUpdateErstNachZehnMinuten() throws Exception {
         cfg.put("modus", UpdateRegel.MODUS_KORREKTUREN);
-        freigabe("0.1.8", "stabil", "fix");                         // art schlägt die Schätzung
+        freigabe("0.1.7.1", "stabil", "funktion");                  // 0.1.38.8: klein schlägt die Art
         assertEquals(0, gemeldet.size());
         autoAus = new Object[]{true, null};
         accAus = true;
@@ -933,6 +933,17 @@ public class UpdateHinweisTest {
         jetzt += 2 * 60_000;
         d.takt();
         assertEquals(1, apkAbrufe());
+    }
+
+    @Test
+    public void grossesUpdateMitArtFixMeldetTrotzdem() throws Exception {
+        cfg.put("modus", UpdateRegel.MODUS_KORREKTUREN);
+        freigabe("0.1.8", "stabil", "fix");                         // groß: nie von selbst, egal welche Art
+        assertEquals(java.util.Arrays.asList("0.1.8"), gemeldet);
+        ausUndWarten();
+        jetzt += 3 * UpdateRegel.AUTOMATISCH_NACH_MS;
+        d.takt();
+        assertEquals(0, apkAbrufe());
     }
 
     @Test
@@ -949,12 +960,12 @@ public class UpdateHinweisTest {
     }
 
     @Test
-    public void beidesMeldetWieBisher() throws Exception {
+    public void kleinesUpdateMitArtBeidesKommtAuchStill() throws Exception {
         cfg.put("modus", UpdateRegel.MODUS_KORREKTUREN);
         freigabe("0.1.7.1", "stabil", "beides");
-        assertEquals(1, gemeldet.size());
+        assertEquals("0.1.38.8: klein = ohne Meldung, unabhängig von der Art", 0, gemeldet.size());
         ausUndWarten();
-        assertEquals(0, apkAbrufe());
+        assertEquals(1, apkAbrufe());
     }
 
     @Test

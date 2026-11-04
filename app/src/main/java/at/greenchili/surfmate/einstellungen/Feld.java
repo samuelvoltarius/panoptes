@@ -44,6 +44,11 @@ public final class Feld {
     public String einheit;
     public final List<Option> optionen = new ArrayList<>();
     public boolean nurLesendExtern;
+    /**
+     * 0.1.38.8 harte Ausnahme: über eine Kopplung nie schreibbar, auch nicht für das Besitzer-Handy (Zugang, Update-Quelle,
+     * Schlüssel, Daten nach außen). Nur am Display oder mit Login. Typ GEHEIM gilt immer als nieExtern.
+     */
+    public boolean nieExtern;
     /** Nirgends schreibbar (z. B. planner.autoId). */
     public boolean nurLesend;
     public boolean neustartNoetig;

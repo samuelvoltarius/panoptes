@@ -127,6 +127,23 @@ public final class LauncherHome {
         return aus != null && aus.contains("enabled") ? null : "paket_an:" + LauncherPaket.kurz(aus);
     }
 
+    /**
+     * 0.1.38.8 (04.11.: „das brauchen wir auch für den Launcher?“): nach einem Launcher-Update. Nur wenn der
+     * Nutzer den Launcher als Startbildschirm gewählt UND behalten hat ({@code wunsch}, {@code behalten}) und das Paket
+     * nicht von der Rückfall-Stufe ausgeschaltet ist: Sind wir nicht mehr Standard, aber der Alias ist an, wird der
+     * Standard wie beim „Behalten“ neu gesetzt und zurückgelesen. Den Alias schaltet nur der Launcher selbst; den
+     * BYD-Startbildschirm fasst das nie an. null = nichts zu tun oder wiederhergestellt, sonst Grund (→ eine Meldung).
+     */
+    public static String nachUpdate(LauncherPaket.Geraet g, boolean wunsch, boolean behalten) {
+        if (!wunsch || !behalten || paketDeaktiviert(g)) return null;
+        Stand s = lesen(g);
+        if (s.standard) return null;
+        if (!s.aliasAn) return "alias_aus";
+        String f = alsStandardSetzen(g);
+        if (f != null) return f;
+        return lesen(g).standard ? null : "noch_nicht_standard";
+    }
+
     /** Startet den echten BYD-Startbildschirm (Komponente aus {@link #lesen}), nie uns selbst; null = ok. */
     public static String originalOeffnen(LauncherPaket.Geraet g, Stand s) {
         if (s == null || s.original == null) return "kein_original";

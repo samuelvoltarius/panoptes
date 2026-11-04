@@ -23,7 +23,7 @@
     <style>
         html.is-app-webview .cabin-listen-btn { display: none !important; }
     </style>
-    <link rel="stylesheet" href="../shared/styles.css?v=pn13">
+    <link rel="stylesheet" href="../shared/styles.css?v=pn14">
     <script src="../shared/panoptes-map.js?v=12"></script>
     <script src="../shared/vendor/jmuxer-2.0.4.min.js"></script>
     <script src="../shared/SotaPlayer.js?v=13"></script>
@@ -2228,10 +2228,11 @@
             try {
                 // fetch() (not XHR) — POST bodies are dropped by the BYD WebView's
                 // XHR path; fetch is the reliable transport here.
+                // 0.1.38.8: nach der Rückfrage oben – der Server löst ohne bestaetigt nichts aus
                 const resp = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: '{}'
+                    body: '{"bestaetigt":true}'
                 });
                 result = await resp.json();
             } catch (e) {

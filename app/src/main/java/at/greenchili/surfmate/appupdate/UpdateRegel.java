@@ -174,6 +174,15 @@ public final class UpdateRegel {
         return MODUS_KORREKTUREN.equals(wert);
     }
 
+    /**
+     * 0.1.38.8 einmalige Umstellung (04.11.): ein bestehendes Gerät mit „Nur melden“ (auch ohne Wert) bekommt
+     * „korrekturen“. Nicht bei neuer Einrichtung (sie fragt selbst), offener Update-Frage, {@code update.pruefen} aus
+     * (dann käme ohnehin nichts von selbst) und nicht bei „automatisch“ oder „korrekturen“.
+     */
+    public static boolean umstellenAufKlein(boolean bestand, String modus, String pruefen, boolean unbeantwortet) {
+        return bestand && !unbeantwortet && an(pruefen) && !automatisch(modus) && !nurKorrekturen(modus);
+    }
+
     /** Neuere Freigabe der beiden (Kanal test sieht auch stabile Versionen). */
     public static Freigabe neuere(Freigabe a, Freigabe b) {
         if (a == null) return b;

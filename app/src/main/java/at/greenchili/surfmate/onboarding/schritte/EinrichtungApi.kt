@@ -36,6 +36,9 @@ object EinrichtungApi {
 
     fun spaeter(id: String): Antwort = transport("POST", "/api/einrichtung/spaeter", JSONObject().put("id", id))
 
+    /** 0.1.38.8: optionalen Schritt dauerhaft als erledigt markieren („Erledigt / nicht nötig“). */
+    fun erledigt(id: String): Antwort = transport("POST", "/api/einrichtung/erledigt", JSONObject().put("id", id))
+
     fun neu(): Antwort = transport("POST", "/api/einrichtung/neu", JSONObject())
 
     fun selbsttest(): Antwort = transport("POST", "/api/einrichtung/selbsttest", JSONObject())

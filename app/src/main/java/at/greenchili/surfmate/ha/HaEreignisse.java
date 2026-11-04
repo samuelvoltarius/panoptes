@@ -95,6 +95,25 @@ public final class HaEreignisse {
         }
     }
 
+    /**
+     * 0.1.38.8 HA-Geräte Stufe 2: Ereignis nur an die Streams genau dieser Kopplung (Befehle an die HA-Integration),
+     * nie an andere Streams, Webhook oder MQTT. false, wenn diese Kopplung keinen offenen Stream hat.
+     */
+    public static boolean meldeAn(String kid, String event, JSONObject data) {
+        if (kid == null) return false;
+        String d = data == null ? "{}" : data.toString();
+        boolean gesendet = false;
+        for (Abo a : ABOS) {
+            if (a.zu || !kid.equals(a.kid)) continue;
+            if (!a.q.offer(new String[]{event, d})) {
+                a.q.poll();
+                a.q.offer(new String[]{event, d});
+            }
+            gesendet = true;
+        }
+        return gesendet;
+    }
+
     public static int anzahl() {
         return ABOS.size();
     }

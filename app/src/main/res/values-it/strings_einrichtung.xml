@@ -160,6 +160,7 @@
     <string name="einr_noch_titel">Ancora da configurare</string>
     <string name="einr_noch_text">Tutto facoltativo. Si può fare in qualsiasi momento.</string>
     <string name="einr_noch_knopf">Configura</string>
+    <string name="einr_noch_erledigt">Fatto / non necessario</string>
     <string name="einr_updates_ja_knopf">Sì, cerca aggiornamenti</string>
     <string name="einr_updates_github">Panoptes chiede regolarmente a GitHub se c’è una nuova versione. GitHub vede solo l’indirizzo Internet dell’auto, nessun dato del veicolo.</string>
     <!-- 0.1.38.3: Handy-App unterwegs nutzen? (Standard aus, ausdrücklich gefragt) -->

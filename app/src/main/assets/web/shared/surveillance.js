@@ -5921,6 +5921,8 @@ window.BydCloud = {
 
     async testConnection() {
         const testBtn = document.getElementById('bydTestBtn');
+        // 0.1.38.8: der Test lässt das Licht blinken – Rückfrage, Server braucht bestaetigt und den Schalter
+        if (!window.confirm(BYD.i18n.t('home.confirm_flash', 'Licht jetzt blinken lassen?'))) return;
         testBtn.disabled = true;
         testBtn.textContent = BYD.i18n.t('surveillance.byd_test_testing');
         this.showStatus(BYD.i18n.t('surveillance.byd_test_progress'), 'info');
@@ -5932,7 +5934,7 @@ window.BydCloud = {
             const resp = await fetch('/api/bydcloud/test', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'flash_lights' }),
+                body: JSON.stringify({ action: 'flash_lights', bestaetigt: true }),
                 signal: controller.signal
             });
             clearTimeout(timeoutId);

@@ -57,6 +57,8 @@ public class AuthManager {
     private static final String KEY_DEVICE_ID = "deviceId";
     private static final String KEY_DEVICE_SECRET = "deviceSecret";
     private static final String KEY_LAST_ACCESS = "lastAccess";
+    // 0.1.38.8: verschlüsselte Schattenkopie (ZugangsMigration), Klartext bleibt eine Version lang maßgeblich
+    static final String KEY_SECRET_SCHATTEN = "enc_" + KEY_DEVICE_SECRET;
 
     // Legacy single-purpose auth file. Read-only at this point — kept
     // around purely so existing installs can be migrated forward into
@@ -224,6 +226,14 @@ public class AuthManager {
                 cachedConfigMtime = 0;
                 return null;
             }
+            // 0.1.38.8: Steht nur eine (gerade nicht lesbare) Schattenkopie da, nie einen neuen Schlüssel erzeugen –
+            // das würde alle Anmeldungen und Kopplungen ungültig machen. Lieber warten, bis sie wieder lesbar ist.
+            if (nurSchattenOhneKlartext()) {
+                log("Auth: Schlüssel nur verschlüsselt vorhanden und gerade nicht lesbar – kein neuer Schlüssel");
+                cachedState = null;
+                cachedConfigMtime = 0;
+                return null;
+            }
             if (state == null) state = new AuthState();
             if (state.deviceId == null || state.deviceId.isEmpty()) {
                 state.deviceId = loadDeviceId();
@@ -248,7 +258,32 @@ public class AuthManager {
         cachedConfigMtime = UnifiedConfigManager.getLastModified();
         stateVersion++;
         log("Auth initialized. Device: " + state.deviceId);
+        ipcSelbstpruefung(state.deviceSecret);
         return state;
+    }
+
+    private static volatile boolean ipcGeprueft = false;
+
+    /**
+     * 0.1.38.8: einmal je App-Prozess prüfen, dass der IPC-Weg ({@link at.greenchili.surfmate.server.AuthZugangIpc})
+     * denselben Schlüssel liefert wie der Klartext. Nur ein Logsatz ohne Wert – Beleg für den Deploy, bevor eine
+     * spätere Version den Klartext löscht.
+     */
+    private static void ipcSelbstpruefung(String klar) {
+        if (ipcGeprueft || !istAppProzess() || klar == null || klar.isEmpty()) return;
+        ipcGeprueft = true;
+        Thread t = new Thread(() -> {
+            String ipc = at.greenchili.surfmate.server.AuthZugangIpc.holen(3000);
+            log("Auth-IPC Selbstprüfung: " + ipcBefund(klar, ipc));
+        }, "AuthIpcPruefung");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    /** Rein: Befund der Selbstprüfung (nie ein Wert im Text). */
+    static String ipcBefund(String klar, String ipc) {
+        if (ipc == null) return "nicht_erreichbar";
+        return ipc.equals(klar) ? "gleich" : "abweichend";
     }
 
     /**
@@ -599,8 +634,10 @@ public class AuthManager {
             JSONObject section = all.optJSONObject(CONFIG_SECTION);
             if (section == null) return null;
             String secret = section.optString(KEY_DEVICE_SECRET, "");
+            if (secret.isEmpty()) secret = ausSchatten(section.optString(KEY_SECRET_SCHATTEN, ""));
             if (secret.isEmpty()) return null;
             AuthState state = AuthState.fromJson(section);
+            state.deviceSecret = secret;
             return state;
         } catch (Exception e) {
             log("Failed to load auth from unified config: " + e.getMessage());
@@ -625,7 +662,11 @@ public class AuthManager {
      */
     private static boolean writeToConfig(AuthState state) {
         try {
-            boolean ok = UnifiedConfigManager.updateSection(CONFIG_SECTION, state.toJson());
+            JSONObject delta = state.toJson();
+            // 0.1.38.8: Schattenkopie mitschreiben (geht Verschlüsseln nicht: leeren, nie einen alten stehen lassen)
+            delta.put(KEY_SECRET_SCHATTEN,
+                    at.greenchili.surfmate.byd.cloud.crypto.ZugangsMigration.schattenNeu(state.deviceSecret));
+            boolean ok = UnifiedConfigManager.updateSection(CONFIG_SECTION, delta);
             if (ok && unifiedConfigContainsSecret(state.deviceSecret)) {
                 cachedConfigMtime = UnifiedConfigManager.getLastModified();
                 return true;
@@ -663,6 +704,51 @@ public class AuthManager {
             JSONObject section = all.optJSONObject(CONFIG_SECTION);
             if (section == null) return false;
             return expectedSecret.equals(section.optString(KEY_DEVICE_SECRET, ""));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    // Letzter über die IPC geholter Schlüssel, je Schattenwert (der Schatten ändert sich mit jedem neuen Schlüssel).
+    private static volatile String ipcSchatten = null;
+    private static volatile String ipcSchluessel = null;
+
+    /**
+     * 0.1.38.8: Schlüssel aus der Schattenkopie, wenn kein Klartext dasteht (erst ab der Version, die ihn löscht).
+     * Zuerst selbst entschlüsseln (geht überall, solange die Geräte-Id lesbar ist), sonst – außer im shell-Daemon,
+     * der die Id immer lesen kann – den Daemon über die IPC fragen. "" = nicht lesbar.
+     */
+    static String ausSchatten(String schatten) {
+        if (schatten == null || schatten.isEmpty()) return "";
+        String klar = "";
+        try {
+            klar = at.greenchili.surfmate.byd.cloud.crypto.CredentialCipher.decrypt(schatten);
+        } catch (Throwable ignored) { }
+        if (klar != null && !klar.isEmpty()) return klar;
+        if (!istAppProzess() && !istSystemProzess()) return "";
+        if (schatten.equals(ipcSchatten) && ipcSchluessel != null) return ipcSchluessel;
+        String ipc = at.greenchili.surfmate.server.AuthZugangIpc.holen(1500);
+        if (ipc == null) return "";
+        ipcSchatten = schatten;
+        ipcSchluessel = ipc;
+        return ipc;
+    }
+
+    /** SentryDaemon/AccSentryDaemon (uid 1000). */
+    static boolean istSystemProzess() {
+        try {
+            return android.os.Process.myUid() == 1000;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /** true: Abschnitt auth hat keinen Klartext-Schlüssel, aber einen Schatten (der gerade nicht lesbar war). */
+    private static boolean nurSchattenOhneKlartext() {
+        try {
+            JSONObject section = UnifiedConfigManager.loadConfig().optJSONObject(CONFIG_SECTION);
+            return section != null && section.optString(KEY_DEVICE_SECRET, "").isEmpty()
+                    && !section.optString(KEY_SECRET_SCHATTEN, "").isEmpty();
         } catch (Exception e) {
             return false;
         }

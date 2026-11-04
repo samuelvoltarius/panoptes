@@ -55,7 +55,9 @@ public final class WebHandyGuard {
      */
     public static final String[] GEHEIME_ABSCHNITTE = {
             "auth", "kopplungen", "update", "telegram", "bydCloud", "daemons", "einrichtung", "planner",
-            "notzugang", "wireguard", "tailscale", "bruecke", "abrp", "ha", "genAi", "hotspot", "nativeShell"};
+            "notzugang", "wireguard", "tailscale", "bruecke", "abrp", "ha", "genAi", "hotspot", "nativeShell",
+            // 0.1.38.8 Hupe/Licht/Aufsperren-Schalter: einschalten nur am Auto oder mit Login, aus geht übers Handy
+            "fahrzeugAktionen"};
 
     /** POST/PUT {@code /api/settings/unified} mit einem geheimen Abschnitt. */
     public static boolean blocksEinstellungsAbschnitt(String method, String pathOnly, String body) {
@@ -180,6 +182,20 @@ public final class WebHandyGuard {
      * liegen können (Taste testen, Schnellknopf, Regel testen, Aktionsgruppe, Licht-Diagnose). Display und voller Login
      * bleiben wie bisher; Kopplungen erreichen {@code /api/vehicle/*} ohnehin nicht (ExternGuard-Erlaubnisliste).
      */
+    /**
+     * 0.1.38.8 Paket B: Die Web-Sitzung darf genau die drei direkten Knöpfe (Auto finden, Lichthupe, Warnblinker) per
+     * POST, wenn die Kopplung dahinter das Recht {@code signal} hat. Schalter, Rückfrage, Ratenlimit und Meldung prüft
+     * danach {@code VehicleControlApiHandler.aktionWeb} über {@code FahrzeugAktionen}. Alle anderen Auslöse-Wege
+     * ({@link #AUSSEN_AUSLOESER_PRAEFIX}, Taste, BYD-Cloud-Test, Aufsperren) bleiben für die Web-Sitzung zu.
+     */
+    public static boolean signalErlaubt(String method, String pathOnly, boolean rechtSignal) {
+        if (!rechtSignal || !"POST".equals(method) || pathOnly == null) return false;
+        String p = pathOnly;
+        int q = p.indexOf('?');
+        if (q >= 0) p = p.substring(0, q);
+        return p.equals("/api/vehicle/flash") || p.equals("/api/vehicle/find-car") || p.equals("/api/vehicle/warnblinker");
+    }
+
     static boolean aussenAusloeser(String p) {
         if (p == null) return true;
         for (String a : AUSSEN_AUSLOESER) if (p.equals(a)) return true;
@@ -189,6 +205,7 @@ public final class WebHandyGuard {
 
     static final String[] AUSSEN_AUSLOESER = {
             "/api/vehicle/flash", "/api/vehicle/find-car", "/api/vehicle/unlock", "/api/vehicle/hazard",
+            "/api/vehicle/warnblinker",
             "/api/bydcloud/test", "/api/keymap/fire"};
     static final String[] AUSSEN_AUSLOESER_PRAEFIX = {
             "/api/quick-controls/fire/", "/api/automations/test/", "/api/debug/light/"};

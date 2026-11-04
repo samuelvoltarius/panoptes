@@ -11,7 +11,7 @@
     <meta name="theme-color" content="#0A2238">
     <script src="../shared/theme.js?v=13"></script>
     <script src="../shared/app-shell.js?v=pn34"></script>
-    <link rel="stylesheet" href="../shared/styles.css?v=pn13">
+    <link rel="stylesheet" href="../shared/styles.css?v=pn14">
     <style>
         .tg-page .main-content { padding: 0; }
         .tw { padding: 0 28px 60px; max-width: 1100px; box-sizing: border-box; }
@@ -161,6 +161,12 @@
                     <div class="actions">
                         <button class="gbtn lime" type="button" id="testBtn" data-i18n="tgp.test">Testnachricht schicken</button>
                         <span class="note" id="testMsg"></span>
+                    </div>
+                    <!-- 0.1.38.8: ohne „Auch bei abgestelltem Auto erreichbar“ schläft der Bot nach dem Abstellen -->
+                    <div class="row" id="reachBox" hidden>
+                        <div class="txt"><b data-i18n="tgp.reach_q">Soll dich der Bot auch erreichen, wenn das Auto abgestellt ist?</b>
+                            <small data-i18n="tgp.reach_hint">Sonst antwortet er nur, solange das Auto an ist. Kostet etwas Strom der 12-V-Batterie.</small></div>
+                        <button class="gbtn" type="button" id="reachOn" data-i18n="tgp.reach_on">Ja, einschalten</button>
                     </div>
                 </div>
 
@@ -482,6 +488,7 @@
         $('langName').textContent = LANGS[lang] || LANGS[lang.split('-')[0]] || lang;
         $('autoStart').checked = !!s.autoStartAccOff;
         $('alwaysOn').hidden = !s.daemonAlwaysOn;
+        $('reachBox').hidden = !(step === 3 && !s.autoStartAccOff && !s.daemonAlwaysOn);
         // Ohne Kopplung gibt es noch nichts einzustellen.
         var dim = step !== 3;
         ['alertsCard', 'quietCard', 'remoteCard'].forEach(function (id) { $(id).style.opacity = dim ? '.6' : ''; });
@@ -647,6 +654,12 @@
         $('qOn').onchange = function () { $('qFrom').disabled = $('qTo').disabled = !this.checked; };
         $('qSave').onclick = saveQuiet;
         $('autoStart').onchange = function () { savePref({ autoStartAccOff: this.checked }, this); };
+        // 0.1.38.8 Ein-Tipp-Schalter im Schritt „Fertig“ (derselbe Schalter wie unten)
+        $('reachOn').onclick = function () {
+            $('autoStart').checked = true;
+            $('reachBox').hidden = true;
+            savePref({ autoStartAccOff: true }, $('autoStart'));
+        };
         $('unpairBtn').onclick = function () {
             if (!window.confirm(t('tgp.confirm_unpair', 'Verbindung zu deinem Telegram lösen? Danach koppelst du neu.'))) return;
             pinVerwerfen();

@@ -58,6 +58,8 @@
     scrollbar-width: none;
     -ms-overflow-style: none;
 }
+/* Chromium 74 (WebView am Auto) ohne backdrop-filter: dichter statt Glas */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .bottom-tabs { background: var(--bg-glass-dicht, var(--bg-base, #0A2238)); } }
 .bottom-tabs::-webkit-scrollbar { display: none; }
 
 /* Mobile / portrait — sidebar slides off-screen below 768px (see styles.css

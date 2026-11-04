@@ -160,6 +160,7 @@
     <string name="einr_noch_titel">Still to set up</string>
     <string name="einr_noch_text">All optional. You can do this any time.</string>
     <string name="einr_noch_knopf">Set up</string>
+    <string name="einr_noch_erledigt">Done / not needed</string>
     <string name="einr_updates_ja_knopf">Yes, look for updates</string>
     <string name="einr_updates_github">Panoptes regularly asks GitHub if there is a new version. GitHub only sees the car\'s internet address, no car data.</string>
     <!-- 0.1.38.3: Handy-App unterwegs nutzen? (Standard aus, ausdrücklich gefragt) -->

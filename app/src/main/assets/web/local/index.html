@@ -15,7 +15,7 @@
     <script src="../shared/kartenquelle.js?v=5"></script>
     <script src="../shared/app-shell.js?v=pn34"></script>
     <script src="../shared/home-layout.js?v=2"></script>
-    <link rel="stylesheet" href="../shared/styles.css?v=pn13">
+    <link rel="stylesheet" href="../shared/styles.css?v=pn14">
     <style>
         /* Startseite nach design/mockup/start.html */
         .home-page .main-content { padding: 0; }
@@ -334,8 +334,8 @@
                 <div class="acts">
                     <button class="act primary" type="button" onclick="Home.command(this,'/api/vehicle/lock',null,'home.confirm_lock')"><svg><use href="#i-lock"/></svg><span data-i18n="home.lock">Zusperren</span></button>
                     <button class="act" type="button" id="hClimateBtn" onclick="Home.climate(this)"><svg><use href="#i-snow"/></svg><span id="hClimateLabel" data-i18n="home.climate_on">Vorklimatisieren</span></button>
-                    <button class="act" type="button" onclick="Home.command(this,'/api/vehicle/flash',null,'home.confirm_flash')"><svg><use href="#i-flash"/></svg><span data-i18n="home.flash">Blinken</span></button>
-                    <button class="act" type="button" onclick="Home.command(this,'/api/vehicle/find-car',null,'home.confirm_find')"><svg><use href="#i-pin"/></svg><span data-i18n="home.find">Finden</span></button>
+                    <button class="act" type="button" onclick="Home.command(this,'/api/vehicle/flash',{bestaetigt:true},'home.confirm_flash')"><svg><use href="#i-flash"/></svg><span data-i18n="home.flash">Blinken</span></button>
+                    <button class="act" type="button" onclick="Home.command(this,'/api/vehicle/find-car',{bestaetigt:true},'home.confirm_find')"><svg><use href="#i-pin"/></svg><span data-i18n="home.find">Finden</span></button>
                     <button class="act" type="button" onclick="Home.command(this,'/api/vehicle/trunk',{action:'open'},'home.confirm_trunk')"><svg><use href="#i-trunk"/></svg><span data-i18n="home.trunk">Kofferraum</span></button>
                 </div>
                 <!-- 0.1.37 „Tacho wieder normal“: nur wenn das Auto Apps am Fahrerdisplay kann oder gerade etwas läuft -->
@@ -704,12 +704,23 @@
             var klimaBekannt = echt !== null || fernAktiv;
             var heizt = acOn || d.batteryHeat === true;
             var stopp = $('hStopp');
+            // 0.1.38.8: der Kern entscheidet (climate.stopp): nur zeigen, wenn etwas laufen könnte (Auto, frische Cloud-Rückmeldung,
+            // Akku-Heizung, Fern-Sitzung laut Befehl oder vor < 15 min beendet). „Unbekannt“ ohne Fern-Sitzung: versteckt.
+            // Älterer Kern ohne climate.stopp: wie bisher.
+            this.stoppWeg = cl.stopp && cl.stopp.weg === 'cloud' ? 'cloud' : 'lokal';
             if (stopp) {
-                stopp.hidden = !heizt && klimaBekannt;
-                stopp.classList.toggle('leise', !heizt);
-                setText('hStoppLabel', heizt ? t('home.heat_stop', 'Heizen stoppen') : t('home.heat_stop_unknown', 'Klima und Akku-Heizung stoppen'));
+                if (cl.stopp && typeof cl.stopp.zeigen === 'boolean') {
+                    stopp.hidden = !cl.stopp.zeigen;
+                    stopp.classList.remove('leise');
+                    setText('hStoppLabel', t('home.heat_stop', 'Heizen stoppen'));
+                } else {
+                    stopp.hidden = !heizt && klimaBekannt;
+                    stopp.classList.toggle('leise', !heizt);
+                    setText('hStoppLabel', heizt ? t('home.heat_stop', 'Heizen stoppen') : t('home.heat_stop_unknown', 'Klima und Akku-Heizung stoppen'));
+                }
                 $('hStoppLabel').removeAttribute('data-i18n');
             }
+            this.fernBis = cl.fern && cl.fern.aktiv && typeof cl.fern.bis === 'number' ? cl.fern.bis : null;
             setText('hClimateLabel', acOn ? t('home.climate_off', 'Klima aus') : t('home.climate_on', 'Vorklimatisieren'));
             $('hClimateLabel').removeAttribute('data-i18n');
 
@@ -1079,13 +1090,25 @@
                     .then(function (r) { return r.json(); }).catch(function () { return null; });
             }
             var klima;
-            senden('/api/vehicle/climate', { action: 'power_off' })
+            var self = this;
+            // 0.1.38.8: läuft ein Fern-Start (oder meldet die Cloud „läuft“), geht der Stopp über die Cloud (remote:true), sonst lokal
+            var koerper = this.stoppWeg === 'cloud' ? { action: 'power_off', remote: true } : { action: 'power_off' };
+            senden('/api/vehicle/climate', koerper)
                 .then(function (d) { klima = d; return senden('/api/vehicle/battery-heat', { enabled: false }); })
                 .then(function (akku) {
                     if ((klima && klima.success) || (akku && akku.success)) {
-                        toast(t('home.heat_stopped', 'Heizen gestoppt'), true);
+                        // ehrlich sagen, wohin der Stopp ging
+                        var ueberCloud = klima && klima.success && klima.path && String(klima.path).indexOf('cloud') === 0;
+                        toast(ueberCloud ? t('home.stop_cloud', 'Stopp an die BYD-Cloud gesendet') : t('home.heat_stopped', 'Heizen gestoppt'), true);
                     } else {
                         var meldung = (klima && (klima.message || klima.error)) || t('home.failed', 'Hat nicht geklappt');
+                        if (klima && klima.nichtsZuStoppen) meldung = t('home.stop_nichts', 'Das Auto schläft, nichts zu stoppen');
+                        // Fernklima läuft nach der Uhr noch: sagen, bis wann es von selbst endet, wenn der Stopp nicht ging
+                        if (self.fernBis) {
+                            var d2 = new Date(self.fernBis);
+                            var hm = (d2.getHours() < 10 ? '0' : '') + d2.getHours() + ':' + (d2.getMinutes() < 10 ? '0' : '') + d2.getMinutes();
+                            meldung += ' ' + t('home.stop_endet_selbst', 'Das Fernklima endet von selbst um ca. {bis}.', { bis: hm });
+                        }
                         if (klima && klima.einrichten) {
                             if (window.confirm(meldung + '\n\n' + t('home.setup_cloud_q', 'Jetzt die BYD-Cloud einrichten?'))) location.href = klima.einrichten;
                         } else toast(meldung, false);

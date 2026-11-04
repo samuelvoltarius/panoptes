@@ -126,7 +126,10 @@ public final class BydCloudDeterrent {
 
             // The router owns capability discovery, remote-command
             // serialization, terminal confirmation, and timeout cancellation.
-            CommandResult result = VehicleCommandRouter.getInstance().execute(command);
+            // 0.1.38.8: eigene Auslösungsart (FahrzeugAktionen), sonst sperrt der Router Licht und Hupe
+            CommandResult result = at.greenchili.surfmate.byd.routing.FahrzeugAktionen.ausloesen(command,
+                    at.greenchili.surfmate.byd.routing.FahrzeugAktionen.QUELLE_ABSCHRECKUNG, "Wächter", false,
+                    VehicleCommandRouter.getInstance()::execute);
             lastCommandTimeMs.set(System.currentTimeMillis());
             logger.info("Deterrent " + action + " result=" + result.outcome
                     + " path=" + result.pathString());

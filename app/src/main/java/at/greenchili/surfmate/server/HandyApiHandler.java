@@ -3,6 +3,7 @@ package at.greenchili.surfmate.server;
 import at.greenchili.surfmate.auth.Kopplungen;
 import at.greenchili.surfmate.byd.BydDataCollector;
 import at.greenchili.surfmate.byd.routing.CloudPowerGate;
+import at.greenchili.surfmate.byd.routing.FahrzeugAktionen;
 import at.greenchili.surfmate.byd.routing.VehicleCommandRouter;
 import at.greenchili.surfmate.handy.HandyRatenlimit;
 import at.greenchili.surfmate.handy.HandySignatur;
@@ -93,9 +94,32 @@ public final class HandyApiHandler {
             return at.greenchili.surfmate.planer.HandyPlanVorschau.get().stand(kid);
         }
 
+        /** 0.1.38.8: läuft ein Fern-Start laut Befehl noch? Dann geht „Heizen stoppen“ über die Cloud (CLOSEAIR), nicht lokal. */
+        default boolean fernKlimaAktiv() {
+            org.json.JSONObject f = at.greenchili.surfmate.byd.KlimaZustand.fernJson();
+            return f != null && f.optBoolean("aktiv", false);
+        }
+
+        /** 0.1.38.8: Auto schläft nachweislich (Zündung aus, Wert bekannt)? Dann geht kein lokaler Befehl hin. */
+        default boolean autoSchlaeft() {
+            at.greenchili.surfmate.byd.BydVehicleData d = at.greenchili.surfmate.byd.BydDataCollector.getInstance().getData();
+            return d != null && at.greenchili.surfmate.byd.StoppKnopf.schlaeft(
+                    d.powerLevel != at.greenchili.surfmate.byd.BydVehicleData.UNAVAILABLE, d.powerLevel);
+        }
+
         /** 0.1.25 Stand der letzten Handy-Route dieser Kopplung. */
         default JSONObject routeStand(String kid) throws Exception {
             return at.greenchili.surfmate.planer.HandyRoute.get().stand(kid);
+        }
+
+        /** 0.1.38.8 Schalter einer Fahrzeug-Aktion ({@link FahrzeugAktionen}). */
+        default boolean aktionAn(String funktion) {
+            return FahrzeugAktionen.an(funktion);
+        }
+
+        /** 0.1.38.8 Außen sichtbarer Befehl nur in einer Auslösung (Handy-Tipp + Rückfrage bzw. Biometrie). */
+        default VehicleCommandRouter.CommandResult ausloesen(VehicleCommandRouter.VehicleCommand cmd, String wer) {
+            return FahrzeugAktionen.ausloesen(cmd, FahrzeugAktionen.QUELLE_HANDY, wer, true, this::ausfuehren);
         }
 
         default JSONObject[] wallbox(JSONObject befehl) throws Exception {
@@ -130,6 +154,8 @@ public final class HandyApiHandler {
             throws Exception {
         String p = path.contains("?") ? path.substring(0, path.indexOf('?')) : path;
         if (!p.startsWith("/api/handy/v1/")) return false;
+        // 0.1.38.8 Besitzer-Handy: Kopplungen, Anfragen, Dienste, Wächter (prüft Art handy + Recht besitzer selbst)
+        if (BesitzerApiHandler.handle(method, p, body, kopplungId, out)) return true;
         // 0.1.26.1 Update-Stand lesen (HANDY_API_VERTRAG §8): einziger GET-Pfad, jede Handy-Kopplung; „darf“ = Recht
         if ("/api/handy/v1/update".equals(p) && "GET".equals(method)) {
             if (kopplungId == null || !k().istHandy(kopplungId)) {
@@ -431,6 +457,23 @@ public final class HandyApiHandler {
         Umgebung u = umgebung;
         long jetzt = u.jetzt();
         boolean aufsperren = "aufsperren".equals(aktion);
+        // 0.1.38.8 Fahrzeug-Aktionen: Stand lesen und sofort abschalten geht für jede Handy-Kopplung, ohne Recht und
+        // ohne Ratenlimit (Abschalten muss immer gehen)
+        if ("aktionen_stand".equals(aktion)) {
+            return new JSONObject().put("ok", true).put("schalter", FahrzeugAktionen.stand())
+                    .put("signal", k().hatRecht(kid, Kopplungen.RECHT_SIGNAL));
+        }
+        if ("aktionen_aus".equals(aktion) || "annaeherung_aus".equals(aktion)) {
+            boolean ok = FahrzeugAktionen.allesAus("annaeherung_aus".equals(aktion), FahrzeugAktionen.QUELLE_HANDY);
+            return ok ? new JSONObject().put("ok", true).put("schalter", FahrzeugAktionen.stand()) : fehler("speichern");
+        }
+        // 0.1.38.8 Aufsperren beim Annähern (ANNAEHERUNG_VERTRAG): Abmelden geht immer, der Rest prüft selbst
+        if ("naehe_abmelden".equals(aktion)) {
+            return k().naeheLoeschen(kid) ? new JSONObject().put("ok", true) : fehler("speichern");
+        }
+        if ("annaeherung_stand".equals(aktion)) return at.greenchili.surfmate.handy.Annaeherung.stand(kid);
+        if ("annaeherung".equals(aktion)) return at.greenchili.surfmate.handy.Annaeherung.melden(req, kid, k(), annaeherung());
+        if ("naehe_anmelden".equals(aktion)) return naeheAnmelden(req, kid, u, jetzt);
         String recht;
         switch (aktion) {
             case "klima_an":
@@ -447,6 +490,11 @@ public final class HandyApiHandler {
                 break;
             case "aufsperren":
                 recht = Kopplungen.RECHT_AUFSPERREN;
+                break;
+            case "auto_finden":   // 0.1.38.8: Hupe + Licht, Lichthupe, Warnblinker – Standard AUS (Recht und Schalter)
+            case "licht":
+            case "warnblinker":
+                recht = Kopplungen.RECHT_SIGNAL;
                 break;
             case "wallbox":   // 0.1.25: Start/Stop/Ladestrom, Standard AUS
                 recht = Kopplungen.RECHT_WALLBOX;
@@ -476,6 +524,13 @@ public final class HandyApiHandler {
                 && !"aus".equals(req.optString("was", ""))) {
             return tiermodus(req, kid, u);
         }
+        // 0.1.38.8: Schalter der Funktion zuerst – ist er aus, wird nichts gezählt und nichts geprüft
+        if (aufsperren && !u.aktionAn(FahrzeugAktionen.AUFSPERREN)) {
+            u.telegram("handy.aufsperren_abgelehnt", k().anzeigeName(kid), FahrzeugAktionen.GRUND_AUS);
+            return fehler(FahrzeugAktionen.GRUND_AUS);
+        }
+        String signal = FahrzeugAktionen.ausHandyAktion(aktion);
+        if (signal != null && !u.aktionAn(signal)) return fehler(FahrzeugAktionen.GRUND_AUS);
         if (!LIMIT.erlauben(kid, aufsperren, jetzt)) {
             if (aufsperren) u.telegram("handy.aufsperren_abgelehnt", k().anzeigeName(kid), "ratenlimit");
             return fehler("ratenlimit");
@@ -512,6 +567,10 @@ public final class HandyApiHandler {
                 // Weg A (Koordination 28.10.): planen ab Auto-Position, ins Planer-Postfach; Karte am Display bleibt der
                 // einzige Weg ins Navi – nichts startet von selbst
                 return u.route(kid, req, jetzt);
+            case "auto_finden":
+            case "licht":
+            case "warnblinker":
+                return signal(req, kid, u, aktion);
             case "zusperren": {
                 VehicleCommandRouter.LockCommand cmd = new VehicleCommandRouter.LockCommand();
                 CloudPowerGate.Decision d = u.gate(cmd.name());
@@ -631,13 +690,94 @@ public final class HandyApiHandler {
             u.telegram("handy.aufsperren_abgelehnt", name, d.reasonKey);
             return gateFehler(d);
         }
-        JSONObject r = ergebnis(u, "aufsperren", cmd);
+        VehicleCommandRouter.CommandResult rr = u.ausloesen(cmd, name);
+        JSONObject r = rr != null && rr.grund != null && rr.grund.startsWith("aktion_") ? fehler(rr.grund)
+                : abbilden(rr, () -> u.echo("aufsperren"));
         if (r.optBoolean("ok")) {
             u.telegram(r.optBoolean("bestaetigt") ? "handy.aufsperren_ok" : "handy.aufsperren_unbestaetigt", name);
         } else {
             u.telegram("handy.aufsperren_abgelehnt", name, r.optString("grund"));
         }
         return r;
+    }
+
+    /** Höchste Gültigkeit eines Nähe-Schlüssels. */
+    static final int NAEHE_MAX_TAGE = 90;
+
+    /**
+     * 0.1.38.8 {@code {aktion:"naehe_anmelden", schluessel, gueltigTage, signatur:{zeit, nonce, sig}}}: zweiter Schlüssel
+     * fürs Annähern, gebunden an den Biometrie-Geräteschlüssel (signiert wird {@code naehe_anmelden.<fp>} mit dem
+     * Fingerabdruck des neuen Schlüssels). Nur mit Recht und Schalter, nicht für Passkey-Kopplungen (Web-App kann keine
+     * Bake senden). Antwort einmalig mit dem Bake-Geheimnis.
+     */
+    static JSONObject naeheAnmelden(JSONObject req, String kid, Umgebung u, long jetzt) throws Exception {
+        String name = k().anzeigeName(kid);
+        if (!k().hatRecht(kid, Kopplungen.RECHT_AUFSPERREN) || !u.aktionAn(FahrzeugAktionen.ANNAEHERUNG)) {
+            return fehler("nicht_erlaubt");
+        }
+        String geraet = k().schluessel(kid);
+        if (geraet == null || k().istPasskey(kid) || k().nurPasskey(kid)) return fehler(HandySignatur.GRUND_KEIN_GERAET);
+        String neu = req.optString("schluessel", "");
+        java.security.PublicKey pk = HandySignatur.schluessel(neu);
+        int tage = req.optInt("gueltigTage", 30);
+        if (pk == null || tage < 1 || tage > NAEHE_MAX_TAGE) return fehler("schluessel");
+        if (!LIMIT.erlauben(kid, true, jetzt)) return fehler("ratenlimit");
+        JSONObject s = req.optJSONObject("signatur");
+        String g = s == null ? HandySignatur.GRUND_SIGNATUR : SIGNATUR.pruefe(geraet, naeheZweck(pk), kid,
+                s.optLong("zeit", -1), s.optString("nonce", ""), s.optString("sig", ""), jetzt);
+        if (g != null) {
+            u.telegram("handy.aufsperren_abgelehnt", name, g);
+            return fehler(g);
+        }
+        byte[] bake = new byte[32];
+        new java.security.SecureRandom().nextBytes(bake);
+        long bis = jetzt + tage * 86_400_000L;
+        if (!k().naeheSetzen(kid, neu, bis, Base64.getEncoder().encodeToString(bake))) return fehler("speichern");
+        // damit ein fremder Eintrag auffällt (wie beim Geräteschlüssel)
+        u.telegram("handy.naehe_schluessel", name);
+        return new JSONObject().put("ok", true).put("bake", Base64.getEncoder().encodeToString(bake))
+                .put("gueltigBis", bis);
+    }
+
+    /** Signierter Zweck der Nähe-Anmeldung: {@code naehe_anmelden.} plus 16 Hex von SHA-256(DER). */
+    static String naeheZweck(java.security.PublicKey pk) throws Exception {
+        byte[] h = java.security.MessageDigest.getInstance("SHA-256").digest(pk.getEncoded());
+        StringBuilder sb = new StringBuilder("naehe_anmelden.");
+        for (int i = 0; i < 8; i++) sb.append(String.format("%02x", h[i] & 0xff));
+        return sb.toString();
+    }
+
+    /** 0.1.38.8 Umgebung der Annäherung; im Test ersetzt. */
+    static volatile at.greenchili.surfmate.handy.Annaeherung.Umgebung annaeherungUmgebung;
+
+    private static at.greenchili.surfmate.handy.Annaeherung.Umgebung annaeherung() {
+        at.greenchili.surfmate.handy.Annaeherung.Umgebung x = annaeherungUmgebung;
+        return x != null ? x : new AnnaeherungEcht();
+    }
+
+    /**
+     * 0.1.38.8 {@code {aktion:"auto_finden"|"licht"|"warnblinker", bestaetigt:true, an?}} (Recht „signal“, Schalter der
+     * Funktion): nur nach der Rückfrage in der App ({@code bestaetigt}); Warnblinker {@code an:false} schaltet aus und
+     * braucht keine Rückfrage. Protokoll, Telegram und Push macht {@link FahrzeugAktionen#ausloesen}.
+     */
+    static JSONObject signal(JSONObject req, String kid, Umgebung u, String aktion) throws Exception {
+        VehicleCommandRouter.VehicleCommand cmd;
+        if ("auto_finden".equals(aktion)) cmd = new VehicleCommandRouter.FindCarCommand();
+        else if ("licht".equals(aktion)) cmd = new VehicleCommandRouter.FlashLightsCommand();
+        else {
+            Object an = req.has("an") ? req.opt("an") : Boolean.TRUE;
+            if (!(an instanceof Boolean)) return fehler("werte");
+            cmd = new VehicleCommandRouter.HazardCommand((Boolean) an);
+            if (!(Boolean) an) return ergebnis(u, aktion, cmd).put("an", false);
+        }
+        if (!req.optBoolean("bestaetigt", false)) return fehler(FahrzeugAktionen.GRUND_BESTAETIGUNG);
+        VehicleCommandRouter.CommandResult r = u.ausloesen(cmd, k().anzeigeName(kid));
+        if (r != null && r.grund != null && r.grund.startsWith("aktion_")) return fehler(r.grund);
+        if (r != null && r.outcome == VehicleCommandRouter.Outcome.BLOCKED_DRIVING) {
+            CloudPowerGate.Decision d = u.gate(cmd.name());
+            if (d != null && !d.allowed) return gateFehler(d);
+        }
+        return abbilden(r, () -> BydDataCollector.ECHO_UNBEKANNT);
     }
 
     /**
@@ -679,7 +819,13 @@ public final class HandyApiHandler {
      * Klimas (samt {@code einrichten}).
      */
     static JSONObject heizenStoppen(Umgebung u) throws Exception {
-        JSONObject klima = mitGate(u, "klima_aus", new VehicleCommandRouter.ClimateOffCommand());
+        // 0.1.38.8: bei laufender Fern-Sitzung muss der Stopp über die Cloud gehen (lokal schläft das Auto und nimmt ihn nicht an)
+        String weg = at.greenchili.surfmate.byd.StoppKnopf.stoppWeg(u.autoSchlaeft(), u.fernKlimaAktiv());
+        // schläft das Auto und läuft keine Fern-Sitzung: kein lokaler Befehl (weckt Auto und Display), nichts zu stoppen
+        VehicleCommandRouter.VehicleCommand aus = at.greenchili.surfmate.byd.StoppKnopf.WEG_NICHTS.equals(weg) ? null
+                : u.fernKlimaAktiv() || at.greenchili.surfmate.byd.StoppKnopf.WEG_CLOUD.equals(weg)
+                ? new VehicleCommandRouter.ClimateRemoteOffCommand() : new VehicleCommandRouter.ClimateOffCommand();
+        JSONObject klima = aus == null ? fehler("nichts_zu_stoppen").put("weg", "nichts") : mitGate(u, "klima_aus", aus);
         JSONObject akku = mitGate(u, "akku_heizen", new VehicleCommandRouter.BatteryHeatCommand(false));
         JSONObject o = klima.optBoolean("ok") || akku.optBoolean("ok")
                 ? new JSONObject().put("ok", true)
@@ -784,6 +930,86 @@ public final class HandyApiHandler {
     }
 
     // ------------------------------------------------------------------ echte Umgebung
+
+    /**
+     * 0.1.38.8 Echte Umgebung der Annäherung. Hier (und nur hier) entsteht der Aufsperr-Befehl aus der Freigabe der
+     * Nähe-Signatur; er läuft durch {@link FahrzeugAktionen#ausloesen} (Quelle Annäherung) und das CloudPowerGate.
+     */
+    static final class AnnaeherungEcht implements at.greenchili.surfmate.handy.Annaeherung.Umgebung {
+        public long jetzt() { return System.currentTimeMillis(); }
+
+        public double[] autoPosition() {
+            at.greenchili.surfmate.monitor.GpsMonitor g = at.greenchili.surfmate.monitor.GpsMonitor.getInstance();
+            if (g == null || !g.hasLocation()) return null;
+            return new double[] {g.getLatitude(), g.getLongitude(), g.getAccuracy()};
+        }
+
+        public boolean autoAus() {
+            CloudPowerGate.Decision d = CloudPowerGate.evaluateLive(VehicleCommandRouter.HandyUnlockCommand.NAME);
+            return d != null && d.allowed;
+        }
+
+        public int schloss() {
+            int s = BydDataCollector.getInstance().readDoorLockState();
+            return s == BydDataCollector.DOOR_STATE_LOCK ? 1 : s == BydDataCollector.DOOR_STATE_UNLOCK ? 0 : -1;
+        }
+
+        public boolean waechterEreignis() {
+            return at.greenchili.surfmate.daemon.CameraDaemon.waechterNimmtAuf();
+        }
+
+        public JSONObject bleSuchen(java.util.List<String> baken) {
+            String cmd = at.greenchili.surfmate.ble.BleNaehe.amBefehl(baken);
+            if (cmd == null) return null;
+            try {
+                Process pr = new ProcessBuilder("sh", "-c", cmd).redirectErrorStream(true).start();
+                java.io.ByteArrayOutputStream b = new java.io.ByteArrayOutputStream();
+                Thread wache = new Thread(() -> {
+                    try {
+                        if (!pr.waitFor(25, java.util.concurrent.TimeUnit.SECONDS)) pr.destroyForcibly();
+                    } catch (InterruptedException ignored) { }
+                }, "BleNaehe-Wache");
+                wache.setDaemon(true);
+                wache.start();
+                try (java.io.InputStream in = pr.getInputStream()) {
+                    byte[] buf = new byte[2048];
+                    int n;
+                    while ((n = in.read(buf)) != -1) b.write(buf, 0, n);
+                }
+                return at.greenchili.surfmate.ble.BleNaehe.ausAmAusgabe(new String(b.toByteArray(),
+                        java.nio.charset.StandardCharsets.UTF_8));
+            } catch (Exception e) {
+                return null;
+            }
+        }
+
+        public int tuerOffen() {
+            return BydDataCollector.getInstance().readTuerenOffen();
+        }
+
+        public VehicleCommandRouter.CommandResult aufsperren(HandySignatur.Freigabe f, String wer) {
+            return FahrzeugAktionen.ausloesen(new VehicleCommandRouter.HandyUnlockCommand(f),
+                    FahrzeugAktionen.QUELLE_ANNAEHERUNG, wer, false, VehicleCommandRouter.getInstance()::execute);
+        }
+
+        public VehicleCommandRouter.CommandResult zusperren() {
+            return VehicleCommandRouter.getInstance().execute(new VehicleCommandRouter.LockCommand());
+        }
+
+        public void melden(String telegramKey, String pushKey, Object... args) {
+            FahrzeugAktionen.melden(telegramKey, pushKey, args);
+        }
+
+        public void spaeter(Runnable r) {
+            Thread t = new Thread(r, "Annaeherung");
+            t.setDaemon(true);
+            t.start();
+        }
+
+        public void warte(long ms) throws InterruptedException {
+            Thread.sleep(ms);
+        }
+    }
 
     static final class Echt implements Umgebung {
         public VehicleCommandRouter.CommandResult ausfuehren(VehicleCommandRouter.VehicleCommand cmd) {

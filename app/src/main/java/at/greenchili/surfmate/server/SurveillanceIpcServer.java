@@ -288,6 +288,8 @@ public class SurveillanceIpcServer implements Runnable {
             // → loop ends. This converts ~10 TCP connect/teardown per second
             // (IMU) + ~1/s (GPS) into ZERO once the connection is established.
             String line;
+            // 0.1.38.8: Aufrufer-Prüfung (IpcAufrufer) einmal je Verbindung, erst beim ersten geprüften Befehl
+            Boolean vertraut = null;
             while ((line = in.readLine()) != null) {
                 // Skip blank/whitespace lines instead of feeding them to the
                 // JSON parser. A connect-then-send-empty-line probe (and the
@@ -322,6 +324,20 @@ public class SurveillanceIpcServer implements Runnable {
                         }
                         diLink5Authenticated = true;
                     }
+                    String befehl = request.optString("command", "");
+                    if (!diLink5Authenticated && IpcAufrufer.stufe(befehl) == IpcAufrufer.Stufe.LOKAL) {
+                        if (vertraut == null) vertraut = IpcAufrufer.vertraut(client.getPort(), client.getLocalPort());
+                        if (!vertraut) {
+                            abgelehntMelden(befehl);
+                            out.println("{\"success\":false,\"error\":\"nicht_erlaubt\"}");
+                            continue;
+                        }
+                    }
+                    // 0.1.38.8: Signaturschlüssel nur an App/SentryDaemon (uid des Gegen-Sockets), nie signiert/weitergereicht
+                    if (!diLink5Authenticated && AuthZugangIpc.BEFEHL.equals(befehl)) {
+                        out.println(AuthZugangIpc.antwort(client.getPort(), client.getLocalPort()).toString());
+                        continue;
+                    }
                     if ("DETERRENT_INPUT_CAPTURE".equals(
                             request.optString("command", ""))) {
                         handleDeterrentInputCapture(client, in, out, request);
@@ -352,6 +368,22 @@ public class SurveillanceIpcServer implements Runnable {
             logger.error("Error handling client", e);
             try { client.close(); } catch (Exception ignored) {}
         }
+    }
+
+    /** 0.1.38.8: App-uid für die Aufrufer-Prüfung schon beim Start ermitteln (Hintergrund). */
+    public static void aufruferVorwaermen() {
+        IpcAufrufer.vorwaermen();
+    }
+
+    private static long letzteAblehnungMeldung;
+
+    /** Abgelehnte Befehle höchstens einmal je Minute loggen (nur der Befehlsname, nie Inhalte). */
+    private static synchronized void abgelehntMelden(String befehl) {
+        long jetzt = System.currentTimeMillis();
+        if (jetzt - letzteAblehnungMeldung < 60_000L) return;
+        letzteAblehnungMeldung = jetzt;
+        logger.warn("IPC: Befehl von nicht erlaubtem Aufrufer abgelehnt: "
+                + (befehl.matches("[A-Z0-9_]{1,40}") ? befehl : "?"));
     }
 
     /**
@@ -589,6 +621,34 @@ public class SurveillanceIpcServer implements Runnable {
                     }
                     response.put("success", true);
                     response.put("data", at.greenchili.surfmate.camping.Tiermodus.status());
+                    break;
+                }
+
+                case "FAHRZEUGAKTIONEN": {
+                    // 0.1.38.8 Telegram /aktionen: Stand und sofort abschalten – nie einschalten, nie auslösen
+                    String aktion = request.optString("aktion", "status");
+                    if ("zusperren".equals(aktion)) {
+                        // Zusperren ist immer sicher (z. B. nach „Auto ist offen“ beim Annähern), Herkunft telegram
+                        at.greenchili.surfmate.gewohnheiten.Herkunft.setze(at.greenchili.surfmate.gewohnheiten.Herkunft.TELEGRAM);
+                        try {
+                            at.greenchili.surfmate.byd.routing.VehicleCommandRouter.CommandResult r =
+                                    at.greenchili.surfmate.byd.routing.VehicleCommandRouter.getInstance()
+                                            .execute(new at.greenchili.surfmate.byd.routing.VehicleCommandRouter.LockCommand());
+                            response.put("zugesperrt", r != null && r.outcome
+                                    == at.greenchili.surfmate.byd.routing.VehicleCommandRouter.Outcome.SUCCESS);
+                        } finally {
+                            at.greenchili.surfmate.gewohnheiten.Herkunft.setze(null);
+                        }
+                    }
+                    if ("aus".equals(aktion) || "automatik_aus".equals(aktion)) {
+                        if (!at.greenchili.surfmate.byd.routing.FahrzeugAktionen.allesAus("automatik_aus".equals(aktion),
+                                "telegram")) {
+                            response.put("success", false);
+                            break;
+                        }
+                    }
+                    response.put("success", true);
+                    response.put("schalter", at.greenchili.surfmate.byd.routing.FahrzeugAktionen.stand());
                     break;
                 }
 

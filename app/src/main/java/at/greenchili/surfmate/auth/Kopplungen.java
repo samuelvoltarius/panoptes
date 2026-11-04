@@ -43,9 +43,38 @@ public final class Kopplungen {
             try { l = speicher.lade(); } catch (Throwable ignored) { }
             geraete = l == null ? new JSONArray() : l;
             rechteStandHeben();
+            besitzerStandHeben();
         }
         return geraete;
     }
+
+    /**
+     * 0.1.38.8 Besitzer-Handy (Koordination 04.11., Projektinhaber: „das erste Handy soll alles können“), einmal beim Laden:
+     * jede vorhandene Kopplung behält ihr Schreibrecht auf die Einstellungen ({@code einstellungenBestand},
+     * Bestandsschutz – Cockpit/HA brechen nicht); gibt es noch keinen Besitzer, wird die älteste Handy-Kopplung
+     * Besitzer (Meldung über {@link #besitzerMelder}). Neue Kopplungen tragen die Marke ohne Bestandsschutz.
+     */
+    private void besitzerStandHeben() {
+        boolean geaendert = false;
+        for (int i = 0; i < geraete.length(); i++) {
+            JSONObject g = geraete.optJSONObject(i);
+            if (g == null || g.has(MARKE_01388)) continue;
+            try {
+                g.put("einstellungenBestand", true).put(MARKE_01388, 1);
+                geaendert = true;
+            } catch (Exception ignored) { }
+        }
+        if (!geaendert) return;
+        String neu = null;
+        if (besitzerIds().isEmpty()) {
+            neu = aeltesteHandyId(null);
+            if (neu != null) besitzerDazu(finde(neu));
+        }
+        try { speicher.speichere(geraete); } catch (Throwable ignored) { }
+        if (neu != null) besitzerGemeldet(neu, "bestand");
+    }
+
+    static final String MARKE_01388 = "stand01388";
 
     /**
      * 0.1.26.1: Rechte des Bestands einmal beim Laden auf {@link #RECHTE_STAND} heben und festschreiben, damit „update“
@@ -78,6 +107,15 @@ public final class Kopplungen {
 
     /** Wie oben, mit Geräte-Art ({@code cockpit} | {@code homeassistant}), sonst ohne Feld. */
     public synchronized String anlegen(String name, String art, long nowMs) {
+        return anlegen(name, art, nowMs, false);
+    }
+
+    /**
+     * 0.1.38.8: wie {@link #anlegen(String, String, long)}; {@code darfBesitzerWerden} nur für Kopplungen, die am Display
+     * bzw. mit Login entstehen (Code vom Display, erlaubte Anfrage). Eine Handy-Kopplung wird dann Besitzer, wenn es
+     * gerade keinen Besitzer gibt (nie aussperren, nie zwei automatisch).
+     */
+    public synchronized String anlegen(String name, String art, long nowMs, boolean darfBesitzerWerden) {
         JSONArray l = liste();
         if (l.length() >= MAX_GERAETE) return null;
         String id = neueId();
@@ -93,7 +131,10 @@ public final class Kopplungen {
                 // 0.1.32.1: auch die erste Handy-Kopplung ohne „update“: nur der Besitzer schaltet es ein
                 g.put("rechte", new JSONArray(HANDY_STANDARD)).put("rechteStand", RECHTE_STAND);
             }
+            g.put(MARKE_01388, 1);   // 0.1.38.8: neue Kopplungen ohne Bestandsschutz für Einstellungen
         } catch (Exception ignored) { }
+        boolean besitzer = darfBesitzerWerden && ART_HANDY.equals(art) && besitzerIds().isEmpty();
+        if (besitzer) besitzerDazu(g);
         JSONArray neu = kopie(l);
         neu.put(g);
         if (!speicher.speichere(neu)) return null;
@@ -102,7 +143,141 @@ public final class Kopplungen {
         // 0.1.34 Befehls-Log: neue Kopplung mit Art (an der laufenden Anfrage oder mit Herkunft des Threads)
         at.greenchili.surfmate.server.BefehlsLog.ereignis("kopplung.angelegt" + (art != null && ARTEN.contains(art) ? "." + art : ""),
                 "ok", id, g.optString("name", null));
+        if (besitzer) besitzerGemeldet(id, "erste");
         return id;
+    }
+
+    /**
+     * 0.1.38.8 Koppeln vom Besitzer-Handy: neue Kopplung mit genau der Art und den Rechten aus dem Code (nur Rechte, die
+     * diese Art tragen kann; {@code besitzer} nie). Kein Bestandsschutz, nie automatisch Besitzer.
+     */
+    public synchronized String anlegenGebunden(String name, String art, java.util.Collection<String> rechte, long nowMs) {
+        if (art == null || !ARTEN.contains(art) || ART_WEB.equals(art)) return null;
+        String id = anlegen(name, art, nowMs, false);
+        JSONObject g = id == null ? null : finde(id);
+        if (g == null) return id;
+        JSONArray r = new JSONArray();
+        java.util.List<String> erlaubt = ART_HANDY.equals(art) ? RECHTE : fremdRechte(art);
+        for (String x : erlaubt) {
+            // 0.1.38.8 Nachzug: nie besitzer, nie Fahrzeug-Aktionen/geraete_steuern per Code (zweite Sperre zum Handler)
+            if (rechte != null && rechte.contains(x) && !RECHT_BESITZER.equals(x) && !NUR_DISPLAY_RECHTE.contains(x)) r.put(x);
+        }
+        try { g.put("rechte", r).put("rechteStand", RECHTE_STAND); } catch (Exception ignored) { }
+        speichernSofort();
+        return id;
+    }
+
+    // ---------------------------------------------------------------- 0.1.38.8 Besitzer
+
+    /** Wird gerufen, wenn eine Kopplung Besitzer wird ({@code wie}: erste|bestand|weitergegeben). Produktion: Telegram. */
+    public static volatile java.util.function.BiConsumer<String, String> besitzerMelder;
+
+    private void besitzerGemeldet(String id, String wie) {
+        at.greenchili.surfmate.server.BefehlsLog.ereignis("kopplung.besitzer." + wie, "gesetzt", id, anzeigeName(id));
+        java.util.function.BiConsumer<String, String> m = besitzerMelder;
+        if (m == null) return;
+        try { m.accept(anzeigeName(id), wie); } catch (Throwable ignored) { }
+    }
+
+    private static void besitzerDazu(JSONObject g) {
+        if (g == null) return;
+        JSONArray r = g.optJSONArray("rechte");
+        try {
+            if (r == null) g.put("rechte", r = new JSONArray(HANDY_STANDARD)).put("rechteStand", RECHTE_STAND);
+            if (!enthaelt(r, RECHT_BESITZER)) r.put(RECHT_BESITZER);
+        } catch (Exception ignored) { }
+    }
+
+    /** Alle Kopplungen mit Recht {@code besitzer} (nur Art handy). */
+    public synchronized java.util.List<String> besitzerIds() {
+        java.util.List<String> out = new java.util.ArrayList<>();
+        JSONArray l = liste();
+        for (int i = 0; i < l.length(); i++) {
+            JSONObject g = l.optJSONObject(i);
+            if (g == null || !ART_HANDY.equals(g.optString("art"))) continue;
+            JSONArray r = g.optJSONArray("rechte");
+            if (r != null && enthaelt(r, RECHT_BESITZER)) out.add(g.optString("id"));
+        }
+        return out;
+    }
+
+    public synchronized boolean istBesitzer(String id) {
+        return id != null && besitzerIds().contains(id);
+    }
+
+    /**
+     * Darf diese Kopplung Einstellungen schreiben ({@code /api/einstellungen})? Besitzer, Recht {@code einstellungen}
+     * (Standard AUS) oder Bestand vor 0.1.38.8.
+     */
+    public synchronized boolean einstellungenSchreiben(String id) {
+        JSONObject g = finde(id);
+        if (g == null) return false;
+        return istBesitzer(id) || hatRecht(id, RECHT_EINSTELLUNGEN) || g.optBoolean("einstellungenBestand", false);
+    }
+
+    public static final int BESITZER_OK = 1, BESITZER_NICHT_ERLAUBT = 2, BESITZER_UNBEKANNT = 3, BESITZER_LETZTER = 4,
+            BESITZER_FEHLER = 0;
+
+    /** Besitzer gibt das Recht an eine andere Handy-Kopplung weiter (nur hinzufügen). */
+    public synchronized int besitzerWeitergeben(String von, String zu) {
+        if (!istBesitzer(von)) return BESITZER_NICHT_ERLAUBT;
+        JSONObject g = finde(zu);
+        if (g == null || !ART_HANDY.equals(g.optString("art"))) return BESITZER_UNBEKANNT;
+        if (istBesitzer(zu)) return BESITZER_OK;
+        besitzerDazu(g);
+        if (!speichernSofort()) return BESITZER_FEHLER;
+        besitzerGemeldet(zu, "weitergegeben");
+        return BESITZER_OK;
+    }
+
+    /** Eigenes Besitzer-Recht abgeben – nur, wenn danach noch ein Besitzer bleibt (nie aussperren). */
+    public synchronized int besitzerAbgeben(String id) {
+        if (!istBesitzer(id)) return BESITZER_NICHT_ERLAUBT;
+        if (besitzerIds().size() < 2) return BESITZER_LETZTER;
+        JSONArray r = finde(id).optJSONArray("rechte");
+        JSONArray neu = new JSONArray();
+        for (int i = 0; i < r.length(); i++) if (!RECHT_BESITZER.equals(r.optString(i))) neu.put(r.optString(i));
+        try { finde(id).put("rechte", neu); } catch (Exception e) { return BESITZER_FEHLER; }
+        boolean ok = speichernSofort();
+        at.greenchili.surfmate.server.BefehlsLog.ereignis("kopplung.besitzer.abgegeben", ok ? "gesetzt" : "fehler", id, anzeigeName(id));
+        return ok ? BESITZER_OK : BESITZER_FEHLER;
+    }
+
+    /**
+     * 0.1.38.8: Besitzer schaltet eigene Rechte aus {@link #BESITZER_SELBST} ein oder aus (nur für sich selbst, nie
+     * Fahrzeug-Aktionen, nie andere Kopplungen). Andere Rechte bleiben unverändert.
+     */
+    public synchronized int besitzerSelbstRechte(String id, java.util.Collection<String> an) {
+        if (!istBesitzer(id)) return BESITZER_NICHT_ERLAUBT;
+        if (an != null) for (String x : an) if (!BESITZER_SELBST.contains(x)) return BESITZER_UNBEKANNT;
+        JSONObject g = finde(id);
+        JSONArray alt = g.optJSONArray("rechte");
+        JSONArray neu = new JSONArray();
+        for (int i = 0; alt != null && i < alt.length(); i++) {
+            if (!BESITZER_SELBST.contains(alt.optString(i))) neu.put(alt.optString(i));
+        }
+        for (String x : BESITZER_SELBST) if (an != null && an.contains(x)) neu.put(x);
+        try { g.put("rechte", neu); } catch (Exception e) { return BESITZER_FEHLER; }
+        boolean ok = speichernSofort();
+        StringBuilder s = new StringBuilder();
+        for (int i = 0; i < neu.length(); i++) s.append(i == 0 ? "" : "+").append(neu.optString(i));
+        at.greenchili.surfmate.server.BefehlsLog.ereignis("kopplung.rechte=" + s, ok ? "gesetzt" : "fehler", id, anzeigeName(id));
+        return ok ? BESITZER_OK : BESITZER_FEHLER;
+    }
+
+    /** Wie Telegram „Entfernen“ an „Neues Gerät verbunden“: höchstens so alt darf eine fremde Kopplung sein. */
+    public static final long JUNG_MS = 24L * 3600 * 1000;
+
+    /**
+     * Besitzer-Handy entfernt eine NEUE fremde Kopplung (jünger als {@link #JUNG_MS}, nicht er selbst, kein Besitzer).
+     * Ältere fremde Kopplungen entfernt nur das Display oder der Telegram-Besitzer-Chat.
+     */
+    public synchronized int jungEntfernen(String von, String ziel, long nowMs) {
+        if (!istBesitzer(von) || ziel == null || ziel.equals(von)) return BESITZER_NICHT_ERLAUBT;
+        JSONObject g = finde(ziel);
+        if (g == null) return BESITZER_UNBEKANNT;
+        if (istBesitzer(ziel) || nowMs - g.optLong("angelegt", 0) > JUNG_MS) return BESITZER_NICHT_ERLAUBT;
+        return widerrufen(ziel) == UNBEKANNT ? BESITZER_UNBEKANNT : BESITZER_OK;
     }
 
     /**
@@ -138,10 +313,12 @@ public final class Kopplungen {
         JSONArray neu = new JSONArray();
         boolean gefunden = false;
         String pushId = null, name = null;
+        boolean naehe = false;
         for (int i = 0; i < l.length(); i++) {
             JSONObject g = l.optJSONObject(i);
             if (g != null && id.equals(g.optString("id"))) {
                 gefunden = true;
+                naehe = !g.optString("naeheSchluessel", "").isEmpty();
                 pushId = g.optString("pushId", null);
                 name = g.optString("geraeteName", "").isEmpty() ? g.optString("name", null) : g.optString("geraeteName");
                 at.greenchili.surfmate.handy.PasskeyFenster.get().schliessen(id);   // 0.1.33
@@ -169,6 +346,12 @@ public final class Kopplungen {
             } catch (Throwable ignored) { }
         }
         int r = speicher.speichere(kopie(neu)) ? WIDERRUFEN : NUR_IM_SPEICHER;
+        // 0.1.38.8: Kopplung mit Nähe-Schlüssel weg → Aufsperren beim Annähern schaltet sich selbst ab
+        if (naehe) {
+            try {
+                at.greenchili.surfmate.handy.Annaeherung.selbstAus("kopplung_entfernt");
+            } catch (Throwable ignored) { }
+        }
         // 0.1.34 Befehls-Log
         at.greenchili.surfmate.server.BefehlsLog.ereignis("kopplung.widerrufen", r == WIDERRUFEN ? "widerrufen" : "nur_im_speicher",
                 id, name);
@@ -190,6 +373,7 @@ public final class Kopplungen {
                 o.put("zuletzt", g.optLong("zuletzt"));
                 o.put("abgelaufen", nowMs - g.optLong("zuletzt", 0) > GUELTIG_OHNE_NUTZUNG_MS);
                 if (g.has("art")) o.put("art", g.optString("art"));
+                if (g.optBoolean("einstellungenBestand", false)) o.put("einstellungenBestand", true);   // 0.1.38.8
                 if (traegtFremdRechte(g.optString("art"))) o.put("rechte", rechteVon(g));   // 0.1.30
                 if (ART_HANDY.equals(g.optString("art"))) {
                     o.put("rechte", rechteVon(g));
@@ -201,6 +385,8 @@ public final class Kopplungen {
                     // 0.1.33 Web-Aufsperren: nur Zustand, nie Schlüssel oder credentialId
                     o.put("nurPasskey", g.optBoolean("nurPasskey", false));
                     if (g.optBoolean("synchronisiert", false)) o.put("synchronisiert", true);
+                    // 0.1.38.8 Annäherung: nur ob ein Nähe-Schlüssel gilt, nie Schlüssel oder Bake-Geheimnis
+                    o.put("naehe", g.optLong("naeheBis", 0) > nowMs && !g.optString("naeheSchluessel", "").isEmpty());
                     JSONObject f = at.greenchili.surfmate.handy.PasskeyFenster.get().zustand(g.optString("id"), nowMs);
                     if (f != null) o.put("passkeyFenster", f);
                 }
@@ -211,7 +397,7 @@ public final class Kopplungen {
     }
 
     public static final java.util.Set<String> ARTEN = java.util.Collections.unmodifiableSet(
-            new java.util.HashSet<>(java.util.Arrays.asList("cockpit", "homeassistant", "handy", "web", "dienst")));
+            new java.util.HashSet<>(java.util.Arrays.asList("cockpit", "homeassistant", "handy", "web", "dienst", "pc")));
 
     /**
      * 0.1.30 Kern Sicherheit: fremder Dienst (z. B. Xaventra). Darf nur Wächter-Ereignisse hören und – mit Recht
@@ -263,24 +449,76 @@ public final class Kopplungen {
             RECHT_LAUNCHER = "launcher",
             // 0.1.39 HA-Geräte (HA_VERTRAG v1.1 Teil D, Weg A): Home Assistant darf seine smarten Geräte melden und
             // Freigaben lesen (/api/ha/v1/geraete). Nur Art homeassistant, Standard AUS, nie automatisch.
-            RECHT_GERAETE = "geraete";
+            RECHT_GERAETE = "geraete",
+            // 0.1.38.8 Hupe/Licht/Warnblinker/„Auto finden“ vom Handy (FahrzeugAktionen): Standard AUS, nie automatisch
+            // (auch nicht für Bestand), nur der Besitzer schaltet es ein. Wirkt nur, wenn der Schalter der Funktion an ist.
+            RECHT_SIGNAL = "signal",
+            // 0.1.38.8 HA-Geräte Stufe 2: Home Assistant darf freigegebene Tore und Schlösser schalten (Befehle über den
+            // SSE-Stream, Echo /api/ha/v1/geraete/echo). Getrennt vom Lese-Recht, nur Art homeassistant, Standard AUS.
+            RECHT_GERAETE_STEUERN = "geraete_steuern",
+            // 0.1.38.8 Besitzer-Handy: bündelt alle Lese- und Einstellungsrechte (BESITZER_BUENDEL), nie Fahrzeug-Aktionen.
+            // Automatisch nur für die erste Handy-Kopplung am Display (bzw. wenn kein Besitzer mehr da ist) und für die
+            // älteste beim Update; sonst Display/Login oder Weitergabe vom Besitzer-Handy. Nur Art handy.
+            RECHT_BESITZER = "besitzer",
+            // 0.1.38.8 Einstellungen über die Kopplung schreiben (/api/einstellungen): Standard AUS für neue Kopplungen
+            // (Regel Nr. 2); Kopplungen von vor 0.1.38.8 behalten es (einstellungenBestand).
+            RECHT_EINSTELLUNGEN = "einstellungen";
     public static final java.util.List<String> RECHTE = java.util.Collections.unmodifiableList(
             java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_AUFSPERREN, RECHT_PUSH, RECHT_WEB, RECHT_KAMERA,
                     RECHT_WALLBOX, RECHT_ROUTE, RECHT_UPDATE, RECHT_EREIGNISCLIP, RECHT_STANDBILD, RECHT_PROTOKOLL,
-                    RECHT_DATEIEN, RECHT_TACHO, RECHT_LAUNCHER));
+                    RECHT_DATEIEN, RECHT_TACHO, RECHT_LAUNCHER, RECHT_SIGNAL, RECHT_BESITZER, RECHT_EINSTELLUNGEN));
+    /**
+     * 0.1.38.8: Rechte, die {@code besitzer} mit einschließt. Nie Fahrzeug-Aktionen (klima, zusperren, aufsperren,
+     * wallbox und die Aktionen aus Paket B) und nie die Rechte, die nie automatisch kommen dürfen
+     * ({@link #BESITZER_SELBST}: Passanten-Bilder, Protokoll, Dateien, Tacho, Launcher) – die schaltet der Besitzer für
+     * sich selbst bewusst ein ({@link #besitzerSelbstRechte}).
+     */
+    public static final java.util.List<String> BESITZER_BUENDEL = java.util.Collections.unmodifiableList(
+            java.util.Arrays.asList(RECHT_PUSH, RECHT_WEB, RECHT_ROUTE, RECHT_UPDATE, RECHT_EINSTELLUNGEN));
+
+    /**
+     * 0.1.38.8 Sicherheits-Nachzug (Koordination 04.11. Nacht): Fahrzeug-Aktions-Rechte und {@code geraete_steuern}
+     * vergibt nur das Display (direkt am Auto). Nie per Kopplungs-Code, nie über {@code /besitzer/rechte}, nie über einen
+     * Login aus der Ferne (Brücke, Tailscale); Fehler {@code recht_nur_display}. Entziehen geht überall.
+     */
+    public static final java.util.List<String> NUR_DISPLAY_RECHTE = java.util.Collections.unmodifiableList(
+            java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_AUFSPERREN, RECHT_WALLBOX, RECHT_SIGNAL,
+                    RECHT_GERAETE_STEUERN));
+
+    /** Die Rechte aus {@code neu}, die nur das Display vergibt und die {@code id} noch nicht hat (leer = nichts dergleichen). */
+    public synchronized java.util.List<String> neueDisplayRechte(String id, java.util.Collection<String> neu) {
+        java.util.List<String> hat = rechte(id);
+        java.util.List<String> out = new java.util.ArrayList<>();
+        if (neu != null) for (String x : neu) if (NUR_DISPLAY_RECHTE.contains(x) && !hat.contains(x) && !out.contains(x)) out.add(x);
+        return out;
+    }
+
+    /** 0.1.38.8: darf das Besitzer-Handy für sich selbst ein- und ausschalten (mit Rückfrage), nie automatisch. */
+    public static final java.util.List<String> BESITZER_SELBST = java.util.Collections.unmodifiableList(
+            java.util.Arrays.asList(RECHT_KAMERA, RECHT_STANDBILD, RECHT_EREIGNISCLIP, RECHT_PROTOKOLL, RECHT_DATEIEN,
+                    RECHT_TACHO, RECHT_LAUNCHER));
     /**
      * 0.1.30 Kern Sicherheit: Rechte, die auch Kopplungen ohne Handy-Rechte (cockpit, homeassistant, dienst) tragen
      * können. Standard AUS, nie automatisch gesetzt (auch nicht bei der Umstellung); nur der Besitzer schaltet sie ein.
      */
     public static final java.util.List<String> FREMD_RECHTE = java.util.Collections.unmodifiableList(
-            java.util.Arrays.asList(RECHT_KAMERA, RECHT_STANDBILD, RECHT_TACHO));
+            java.util.Arrays.asList(RECHT_KAMERA, RECHT_STANDBILD, RECHT_TACHO, RECHT_EINSTELLUNGEN));
 
     /**
      * 0.1.38: das Cockpit trägt zusätzlich {@code launcher} (Home Assistant und Dienste nie), {@code tacho} wie 0.1.37.
      * 0.1.38.2: auch {@code update} (Panoptes und Launcher aktualisieren, {@code /api/appupdate/fern}). Standard AUS.
      */
     public static final java.util.List<String> COCKPIT_RECHTE = java.util.Collections.unmodifiableList(
-            java.util.Arrays.asList(RECHT_KAMERA, RECHT_STANDBILD, RECHT_TACHO, RECHT_LAUNCHER, RECHT_UPDATE));
+            java.util.Arrays.asList(RECHT_KAMERA, RECHT_STANDBILD, RECHT_TACHO, RECHT_LAUNCHER, RECHT_UPDATE,
+                    RECHT_EINSTELLUNGEN));
+
+    /**
+     * 0.1.38.8: PC/Browser über die Brücke (Login im Browser entwirft eine eigene Sitzung). Vorerst nur Lesen, Web,
+     * Einstellungen, Aufnahmen und Protokoll – keine Fahrzeugrechte, kein Besitzer. Alles Standard AUS.
+     */
+    public static final String ART_PC = "pc";
+    public static final java.util.List<String> PC_RECHTE = java.util.Collections.unmodifiableList(
+            java.util.Arrays.asList(RECHT_WEB, RECHT_EINSTELLUNGEN, RECHT_KAMERA, RECHT_STANDBILD, RECHT_PROTOKOLL));
 
     /** 0.1.39: Liste der HA-Geräte löschen, wenn sie von dieser Kopplung stammt. Nie eine Ausnahme nach außen. */
     static void geraeteVergessen(String id) {
@@ -291,19 +529,24 @@ public final class Kopplungen {
         } catch (Throwable ignored) { }
     }
 
-    /** Home Assistant: wie {@link #FREMD_RECHTE}, dazu {@code geraete} (Standard AUS). */
+    /**
+     * Home Assistant: wie {@link #FREMD_RECHTE} (0.1.38.8 mit {@code einstellungen}), dazu {@code geraete} und
+     * {@code geraete_steuern} (Standard AUS).
+     */
     public static final java.util.List<String> HA_RECHTE = java.util.Collections.unmodifiableList(
-            java.util.Arrays.asList(RECHT_KAMERA, RECHT_STANDBILD, RECHT_TACHO, RECHT_GERAETE));
+            java.util.Arrays.asList(RECHT_KAMERA, RECHT_STANDBILD, RECHT_TACHO, RECHT_EINSTELLUNGEN, RECHT_GERAETE,
+                    RECHT_GERAETE_STEUERN));
 
     /** Rechte, die eine Nicht-Handy-Art tragen kann. */
     static java.util.List<String> fremdRechte(String art) {
         if ("homeassistant".equals(art)) return HA_RECHTE;
+        if (ART_PC.equals(art)) return PC_RECHTE;
         return "cockpit".equals(art) ? COCKPIT_RECHTE : FREMD_RECHTE;
     }
 
     /** Arten, die {@link #FREMD_RECHTE} tragen können (web und Alt-Kopplungen ohne Art nie). */
     static boolean traegtFremdRechte(String art) {
-        return "cockpit".equals(art) || "homeassistant".equals(art) || ART_DIENST.equals(art);
+        return "cockpit".equals(art) || "homeassistant".equals(art) || ART_DIENST.equals(art) || ART_PC.equals(art);
     }
     /** Standard bei neuer Handy-Kopplung: aufsperren, kamera und wallbox AUS, bis der Besitzer sie mit Login einschaltet. */
     static final java.util.List<String> HANDY_STANDARD = java.util.Collections.unmodifiableList(
@@ -404,6 +647,19 @@ public final class Kopplungen {
         if (g == null) return false;
         JSONArray r = rechteVon(g);
         for (int i = 0; i < r.length(); i++) if (recht.equals(r.optString(i))) return true;
+        // 0.1.38.8: der Besitzer hat alle Lese-/Einstellungsrechte, nie Fahrzeug-Aktionen
+        return ART_HANDY.equals(g.optString("art")) && enthaelt(r, RECHT_BESITZER) && BESITZER_BUENDEL.contains(recht);
+    }
+
+    /** 0.1.38.8 Überführung der Fahrzeug-Aktionen: trägt irgendeine Kopplung dieses Recht? */
+    public synchronized boolean irgendeineMitRecht(String recht) {
+        JSONArray l = liste();
+        for (int i = 0; i < l.length(); i++) {
+            JSONObject g = l.optJSONObject(i);
+            if (g == null) continue;
+            JSONArray r = rechteVon(g);
+            for (int j = 0; j < r.length(); j++) if (recht.equals(r.optString(j))) return true;
+        }
         return false;
     }
 
@@ -474,6 +730,89 @@ public final class Kopplungen {
         g.remove("zaehler");
         g.remove("synchronisiert");
         if (PLATTFORM_WEB.equals(g.optString("plattform"))) g.remove("plattform");
+        // 0.1.38.8: der Nähe-Schlüssel hängt an diesem Biometrie-Schlüssel und geht mit
+        g.remove("naeheSchluessel");
+        g.remove("naeheBis");
+        g.remove("naeheBake");
+        return speichernSofort();
+    }
+
+    // ---------------------------------------------------------------- 0.1.38.8 Aufsperren beim Annähern
+
+    /**
+     * Nähe-Schlüssel (P-256, ohne Biometrie je Nutzung) und Bake-Geheimnis hinterlegen; ersetzt einen alten. Nur
+     * Handy-Kopplung mit Geräteschlüssel, die Anmeldung selbst ist mit dem Biometrie-Schlüssel signiert (HandyApiHandler).
+     */
+    public synchronized boolean naeheSetzen(String id, String schluessel, long bisMs, String bakeBase64) {
+        JSONObject g = finde(id);
+        if (g == null || !ART_HANDY.equals(g.optString("art")) || g.optString("geraeteSchluessel", "").isEmpty()) {
+            return false;
+        }
+        // 0.1.38.8 Integration: das Bake-Geheimnis liegt nur verschlüsselt in der Config (neues Feld, kein Rückfall-Klartext
+        // nötig). Klappt das Verschlüsseln nicht, wird nichts gespeichert – nie Klartext.
+        String bakeEnc = bakeBase64 == null || bakeBase64.isEmpty() ? "" : bakeVer.apply(bakeBase64);
+        if (bakeEnc == null || bakeEnc.isEmpty() || !bakeEnc.startsWith(BAKE_PRAEFIX)) return false;
+        try {
+            g.put("naeheSchluessel", schluessel).put("naeheBis", bisMs).put("naeheBake", bakeEnc);
+        } catch (Exception e) {
+            return false;
+        }
+        boolean ok = speichernSofort();
+        at.greenchili.surfmate.server.BefehlsLog.ereignis("kopplung.naehe", ok ? "gesetzt" : "fehler", id, anzeigeName(id));
+        return ok;
+    }
+
+    /** Gültiger Nähe-Schlüssel oder null (fehlt bzw. abgelaufen). */
+    public synchronized String naeheSchluessel(String id, long jetztMs) {
+        JSONObject g = finde(id);
+        if (g == null || g.optLong("naeheBis", 0) <= jetztMs) return null;
+        String s = g.optString("naeheSchluessel", "");
+        return s.isEmpty() ? null : s;
+    }
+
+    /** Ablauf des Nähe-Schlüssels (0 = keiner). */
+    public synchronized long naeheBis(String id) {
+        JSONObject g = finde(id);
+        return g == null || g.optString("naeheSchluessel", "").isEmpty() ? 0 : g.optLong("naeheBis", 0);
+    }
+
+    /** Präfix von {@link at.greenchili.surfmate.byd.cloud.crypto.CredentialCipher}-Werten. */
+    static final String BAKE_PRAEFIX = "ENC:";
+    /** Ver-/Entschlüsseln des Bake-Geheimnisses; in JVM-Tests ersetzbar (dort fehlt android.util.Base64). */
+    static java.util.function.UnaryOperator<String> bakeVer =
+            at.greenchili.surfmate.byd.cloud.crypto.CredentialCipher::encrypt;
+    static java.util.function.UnaryOperator<String> bakeEnt =
+            at.greenchili.surfmate.byd.cloud.crypto.CredentialCipher::decrypt;
+
+    /** Nur Tests: Ver-/Entschlüsseln des Bake-Geheimnisses ersetzen; {@code null} = wieder CredentialCipher. */
+    public static void bakeCipherFuerTest(java.util.function.UnaryOperator<String> ver,
+                                          java.util.function.UnaryOperator<String> ent) {
+        bakeVer = ver != null ? ver : at.greenchili.surfmate.byd.cloud.crypto.CredentialCipher::encrypt;
+        bakeEnt = ent != null ? ent : at.greenchili.surfmate.byd.cloud.crypto.CredentialCipher::decrypt;
+    }
+
+    /** Bake-Geheimnis (32 Byte) oder null. */
+    public synchronized byte[] naeheBake(String id) {
+        JSONObject g = finde(id);
+        if (g == null) return null;
+        try {
+            String gespeichert = g.optString("naeheBake", "");
+            if (!gespeichert.startsWith(BAKE_PRAEFIX)) return null;   // nur verschlüsselt gültig
+            String klar = bakeEnt.apply(gespeichert);
+            if (klar == null || klar.isEmpty()) return null;
+            byte[] b = java.util.Base64.getDecoder().decode(klar);
+            return b.length >= 16 ? b : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public synchronized boolean naeheLoeschen(String id) {
+        JSONObject g = finde(id);
+        if (g == null) return false;
+        g.remove("naeheSchluessel");
+        g.remove("naeheBis");
+        g.remove("naeheBake");
         return speichernSofort();
     }
 
@@ -594,11 +933,21 @@ public final class Kopplungen {
 
     private static volatile Kopplungen instanz;
 
+    static void besitzerTelegram(String name, String wie) {
+        String text = at.greenchili.surfmate.server.Messages.text("besitzer.telegram_" + wie,
+                "Dein Handy {0} ist jetzt Besitzer-Handy.", NeueKopplungMeldung.anzeigeName(name));
+        at.greenchili.surfmate.telegram.TelegramNotifier.sendMessage("📱 " + text, "CRITICAL");
+    }
+
     public static Kopplungen get() {
         Kopplungen k = instanz;
         if (k == null) {
             synchronized (Kopplungen.class) {
-                if (instanz == null) instanz = new Kopplungen(new UcmSpeicher());
+                if (instanz == null) {
+                    // 0.1.38.8: Hinweis an den Telegram-Besitzer, wenn ein Handy Besitzer wird (Name, nie Rechte-Werte)
+                    if (besitzerMelder == null) besitzerMelder = Kopplungen::besitzerTelegram;
+                    instanz = new Kopplungen(new UcmSpeicher());
+                }
                 k = instanz;
             }
         }

@@ -122,6 +122,8 @@ public final class Einstellungen {
             o.put("optionen", opts);
         }
         o.put("nurLesendExtern", f.nurLesendExtern || f.nurLesend);
+        // 0.1.38.8: was das Besitzer-Handy zusätzlich schreiben darf (generische Darstellung in der App)
+        o.put("besitzerSchreibbar", sperre(f, Stufe.BESITZER) == null);
         if (f.nurLesend) o.put("nurLesend", true);
         o.put("neustartNoetig", f.neustartNoetig);
         if (f.erweitert) o.put("erweitert", true);
@@ -133,6 +135,11 @@ public final class Einstellungen {
             o.put("bestaetigung", f.bestaetigung);
             JSONObject bt = t.unter(f.bestaetigung);
             if (bt != null && bt.length() > 0) o.put("bestaetigungText", bt);
+            // 0.1.38.8 (Befund Handy-App): bestaetigungText ist eine flache Tabelle Unterschlüssel → Text (z. B. „a.label“).
+            // Dazu der Schlüssel selbst und ein fertiger, übersetzter Text für einfache Rückfragen.
+            o.put("bestaetigungKey", f.bestaetigung);
+            String fertig = bestaetigungFertig(t.text(f.bestaetigung), f.bestaetigung, bt);
+            if (fertig != null) o.put("bestaetigungHinweis", fertig);
         }
         if (f.nurWenn != null) o.put("nurWenn", f.nurWenn);
         o.put("sichtbar", sichtbar(f, root, k));
@@ -200,8 +207,46 @@ public final class Einstellungen {
         public boolean ok() { return status == 200 && fehler.length() == 0; }
     }
 
+    /**
+     * 0.1.38.8 Besitzer-Handy: wer schreibt. {@code LOGIN} = Display/Login; {@code BESITZER} = Besitzer-Handy (auch
+     * nurLesendExtern, nie {@link Feld#nieExtern}); {@code KOPPLUNG} = andere Kopplung mit Schreibrecht (wie bisher
+     * „extern“); {@code KEIN_RECHT} = Kopplung ohne Recht {@code einstellungen} (nichts schreibbar).
+     */
+    public enum Stufe { LOGIN, BESITZER, KOPPLUNG, KEIN_RECHT }
+
+    /**
+     * 0.1.38.8: ein lesbarer Rückfragetext. Ist der Schlüssel selbst ein Text, dieser; sonst Titel/Einleitung/Text/
+     * Hinweis aus der Tabelle (in dieser Reihenfolge, mit Leerzeile getrennt); sonst null.
+     */
+    public static String bestaetigungFertig(String direkt, String key, JSONObject tabelle) {
+        if (direkt != null && !direkt.isEmpty() && !direkt.equals(key)) return direkt;
+        if (tabelle == null) return null;
+        StringBuilder b = new StringBuilder();
+        for (String k : new String[] {"title", "titel", "intro", "text", "body", "hinweis", "note"}) {
+            String v = tabelle.optString(k, "");
+            if (!v.isEmpty()) b.append(b.length() == 0 ? "" : "\n\n").append(v);
+        }
+        return b.length() == 0 ? null : b.toString();
+    }
+
+    /** Darf diese Stufe das Feld schreiben? Sonst Fehlergrund. */
+    public static String sperre(Feld f, Stufe s) {
+        if (f.nurLesend) return "nurLesendExtern";
+        if (s == Stufe.LOGIN) return null;
+        if (s == Stufe.KEIN_RECHT) return "rechtFehlt";
+        if (s == Stufe.KOPPLUNG && f.nurLesendExtern) return "nurLesendExtern";   // wie vor 0.1.38.8
+        if (f.nieExtern || f.typ == Feld.Typ.GEHEIM) return "nurAmAuto";
+        return null;
+    }
+
     public static Ergebnis aendern(List<Feld> felder, JSONObject root, Katalog.Kontext k, JSONObject body,
                                    boolean extern, Schreiber schreiber, long jetztMs) throws Exception {
+        return aendern(felder, root, k, body, extern ? Stufe.KOPPLUNG : Stufe.LOGIN, schreiber, jetztMs);
+    }
+
+    public static Ergebnis aendern(List<Feld> felder, JSONObject root, Katalog.Kontext k, JSONObject body,
+                                   Stufe stufe, Schreiber schreiber, long jetztMs) throws Exception {
+        boolean extern = stufe != Stufe.LOGIN;
         Ergebnis e = new Ergebnis();
         String aktuell = werte(felder, root, k).getString("etag");
         String verlangt = body.optString("etag", "");
@@ -228,7 +273,8 @@ public final class Einstellungen {
         for (String key : keys) {
             Feld f = Katalog.finde(felder, key);
             if (f == null) { e.fehler.put(key, "unbekannt"); continue; }
-            if (f.nurLesend || (extern && f.nurLesendExtern)) { e.fehler.put(key, "nurLesendExtern"); continue; }
+            String sperre = sperre(f, stufe);
+            if (sperre != null) { e.fehler.put(key, sperre); continue; }
             Object roh = neu.opt(key);
             Object wert;
             try {

@@ -27,7 +27,7 @@ public class CameraCommandHandler implements TelegramCommandHandler {
             r = null;
         }
         if (r == null) {
-            ctx.sendMessage(chatId, ctx.tr("common.camera_service_down"));
+            ctx.sendMessage(chatId, DienstHinweis.text(ctx));   // 0.1.38.8: startet / aus / Ausfall
             return;
         }
         String path = r.optString("path", "");

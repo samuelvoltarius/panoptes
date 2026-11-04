@@ -27,7 +27,10 @@ data class LauncherSummary(
     val fahrtHinweis: Boolean = false,
     /** 0.1.38.5: am Tacho gewählte Navi-App (oder null) und bekannte Navi-Pakete als Rückfall. */
     val naviGewaehlt: String? = null,
-    val naviBekannt: List<String> = emptyList()
+    val naviBekannt: List<String> = emptyList(),
+    /** 0.1.38.8: Akku-Gesundheit laut Auto (BYD-Index) und Panoptes-Schätzung, je null = nicht vorhanden. */
+    val sohAutoPct: Double? = null,
+    val sohSchaetzungPct: Double? = null
 )
 
 data class LauncherReifen(val vl: Double?, val vr: Double?, val hl: Double?, val hr: Double?, val unten: Double?, val oben: Double?)
@@ -146,8 +149,23 @@ object LauncherContract {
             root.optJSONObject("naviApp")?.nullableString("gewaehlt")?.takeIf { PAKET.matches(it) },
             root.optJSONObject("naviApp")?.optJSONArray("bekannt")?.let { a ->
                 (0 until minOf(a.length(), 32)).mapNotNull { a.optString(it).takeIf { p -> PAKET.matches(p) } }
-            } ?: emptyList()
+            } ?: emptyList(),
+            battery?.nullableDouble("sohAutoPct")?.takeIf { it > 0 && it <= 110 },
+            battery?.nullableDouble("sohSchaetzungPct")?.takeIf { it > 0 && it <= 110 }
         )
+    }
+
+    /**
+     * Wie die Akku-Gesundheit gezeigt wird: ZWEI = BYD-Wert und Schätzung nebeneinander (ein fehlender heißt
+     * „nicht verfügbar“), EINZELWERT = alter `healthPct` nur als Rückfall, wenn der Kern die zwei Werte nicht liefert.
+     */
+    enum class Gesundheit { ZWEI, EINZELWERT, KEINE }
+
+    fun gesundheitArt(s: LauncherSummary?): Gesundheit = when {
+        s == null -> Gesundheit.KEINE
+        s.sohAutoPct != null || s.sohSchaetzungPct != null -> Gesundheit.ZWEI
+        s.healthPct != null -> Gesundheit.EINZELWERT
+        else -> Gesundheit.KEINE
     }
 
     private val PAKET = Regex("^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)+$")

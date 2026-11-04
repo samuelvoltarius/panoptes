@@ -376,7 +376,8 @@ public class BydCloudApiHandler {
 
             // The router owns capability discovery, serialization, terminal
             // confirmation, and timeout cancellation for every cloud action.
-            CommandResult result = VehicleCommandRouter.getInstance().execute(command);
+            // 0.1.38.8: Testknopf wie jede Fahrzeug-Aktion – Schalter, Rückfrage ({bestaetigt:true}), Protokoll, Meldung
+            CommandResult result = VehicleControlApiHandler.aktionWeb(command, body);
             boolean confirmed = result.outcome == VehicleCommandRouter.Outcome.SUCCESS;
             response.put("success", confirmed);
             response.put("confirmed", confirmed);

@@ -88,10 +88,11 @@ class EinrichtungModellTest {
 
     @Test fun antwortenOhneVorauswahlSindUnvollstaendig() {
         assertEquals(listOf("antwort"), Antworten.fehlt("waechter", null))
-        assertEquals(listOf("modus", "ton", "ereignisClip"), Antworten.fehlt("waechter", JSONObject()))
+        assertEquals(listOf("modus", "ton"), Antworten.fehlt("waechter", JSONObject()))
         assertNull(Antworten.fehlt("waechter", JSONObject("""{"modus":"aus","ton":false,"ereignisClip":false}""")))
-        // 0.1.28 P10: Ereignis-Clip ohne Vorauswahl
-        assertEquals(listOf("ereignisClip"), Antworten.fehlt("waechter", JSONObject("""{"modus":"aus","ton":false}""")))
+        // 0.1.38.8: Ereignis-Clip ist optional (fehlt er, gilt der Landes-Standard); Modus und Ton bleiben Pflicht
+        assertNull(Antworten.fehlt("waechter", JSONObject("""{"modus":"shock","ton":false}""")))
+        assertEquals(listOf("ton"), Antworten.fehlt("waechter", JSONObject("""{"modus":"aus"}""")))
         assertEquals(listOf("modus"), Antworten.fehlt("waechter", JSONObject("""{"modus":"alles","ton":true,"ereignisClip":true}""")))
         assertEquals(listOf("gelesen"), Antworten.fehlt("haftung", JSONObject("""{"gelesen":false}""")))
         assertEquals(listOf("quelle"), Antworten.fehlt("karte", JSONObject()))

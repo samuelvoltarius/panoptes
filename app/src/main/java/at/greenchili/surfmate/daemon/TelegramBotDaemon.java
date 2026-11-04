@@ -1801,6 +1801,19 @@ public class TelegramBotDaemon {
                     break;
                 }
 
+                case "notifyWaechterStandard": {
+                    // 0.1.38.8 einmalige Frage „Wächter einschalten?“ (Bestand) mit Rechtshinweis; der Knopf führt zu /waechter standard
+                    if (ownerChatId <= 0) {
+                        response.put("status", "error");
+                        response.put("message", "Owner not set");
+                        break;
+                    }
+                    boolean wOk = sendMessageWithButtons(ownerChatId, tr("guard.standard_frage"),
+                            new String[][][]{{{tr("buttons.guard_standard_an"), "cmd:/waechter standard"}}});
+                    response.put("status", wOk ? "ok" : "error");
+                    break;
+                }
+
                 case "notifyUpdateNeu": {
                     // 0.1.38.2 „neue Version“ mit Knopf „Jetzt installieren“ (führt zur Rückfrage, nie direkt):
                     // {art: panoptes|launcher, version, groesse}
@@ -1985,6 +1998,9 @@ public class TelegramBotDaemon {
             Thread befehle = new Thread(TelegramBotDaemon::registriereBefehle, "TelegramBefehle");
             befehle.setDaemon(true);
             befehle.start();
+
+            // 0.1.38.8: Anlaufzeit für „Panoptes startet noch“ statt Ausfallmeldung (DienstHinweis)
+            at.greenchili.surfmate.daemon.telegram.DienstHinweis.botGestartet(System.currentTimeMillis());
 
             // Send greeting to owner if paired
             sendStartupGreeting();
@@ -3085,10 +3101,19 @@ public class TelegramBotDaemon {
         }
         ownerChatId = chatId;
         clearPairPinFromConfig();
+        at.greenchili.surfmate.daemon.telegram.DienstHinweis.gekoppelt(System.currentTimeMillis());
 
-        sendMessage(chatId, firstName == null || firstName.isEmpty()
+        String erfolg = firstName == null || firstName.isEmpty()
                 ? tr("pair.success_no_name")
-                : tr("pair.success", mdEscape(firstName)));
+                : tr("pair.success", mdEscape(firstName));
+        // 0.1.38.8: Ohne „Auch bei abgestelltem Auto erreichbar“ schläft der Bot nach dem Abstellen. Einmal fragen,
+        // mit einem Tipp einschalten; Standard bleibt aus.
+        if (!at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.shouldStartOnAccOff()) {
+            sendMessageWithButtons(chatId, erfolg + "\n\n" + tr("erreichbar.frage"),
+                    at.greenchili.surfmate.daemon.telegram.ErreichbarCommandHandler.knoepfe(TelegramBotDaemon::tr));
+        } else {
+            sendMessage(chatId, erfolg);
+        }
     }
     
     private static void clearPairPinFromConfig() {

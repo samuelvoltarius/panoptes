@@ -30,7 +30,8 @@ public class CloudCommandConfirmationContractTest {
         String source = readSource("server/BydCloudApiHandler.java");
         assertTrue(source.contains("new VehicleCommandRouter.FindCarCommand()"));
         assertTrue(source.contains("new VehicleCommandRouter.FlashLightsCommand()"));
-        assertTrue(source.contains("VehicleCommandRouter.getInstance().execute(command)"));
+        // 0.1.38.8: über die Fahrzeug-Aktionen (Schalter, Rückfrage), die selbst den Router aufrufen
+        assertTrue(source.contains("VehicleControlApiHandler.aktionWeb(command, body)"));
         assertTrue(source.contains("response.put(\"success\", confirmed);"));
         assertTrue(source.contains("response.put(\"confirmed\", confirmed);"));
         assertFalse(source.contains("client.findCar(config.vin)"));
@@ -40,7 +41,9 @@ public class CloudCommandConfirmationContractTest {
     @Test
     public void deterrentUsesRouterInsteadOfDirectCloudCalls() throws Exception {
         String source = readSource("byd/cloud/BydCloudDeterrent.java");
-        assertTrue(source.contains("VehicleCommandRouter.getInstance().execute(command)"));
+        // 0.1.38.8: Auslösungsart Abschreckung (FahrzeugAktionen), die den Router aufruft
+        assertTrue(source.contains("FahrzeugAktionen.QUELLE_ABSCHRECKUNG"));
+        assertTrue(source.contains("VehicleCommandRouter.getInstance()::execute"));
         assertTrue(source.contains("new VehicleCommandRouter.FindCarCommand()"));
         assertTrue(source.contains("new VehicleCommandRouter.FlashLightsCommand()"));
         assertFalse(source.contains(".findCar("));

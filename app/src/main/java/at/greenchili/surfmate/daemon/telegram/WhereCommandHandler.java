@@ -26,7 +26,11 @@ public class WhereCommandHandler implements TelegramCommandHandler {
         JSONObject req = new JSONObject();
         try { req.put("command", "PARKING_STATUS"); } catch (Exception ignored) {}
         JSONObject resp = ctx.sendIpcCommand(CAMERA_IPC_PORT, req);
-        if (resp == null || !resp.optBoolean("success", false)) {
+        if (resp == null) {
+            ctx.sendMessage(chatId, DienstHinweis.text(ctx));   // 0.1.38.8: startet / aus / Ausfall
+            return;
+        }
+        if (!resp.optBoolean("success", false)) {
             ctx.sendMessage(chatId, ctx.tr("parking.where.unavailable"));
             return;
         }

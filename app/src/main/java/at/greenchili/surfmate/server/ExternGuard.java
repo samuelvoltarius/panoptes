@@ -212,11 +212,14 @@ public final class ExternGuard {
      * Freigaben) und POST (Kandidaten melden), dazu das Recht {@code geraete} ({@link #noetigesRecht}, Standard aus).
      */
     public static final String HA_GERAETE_PFAD = "/api/ha/v1/geraete";
+    /** 0.1.38.8 Stufe 2: Echo der Integration auf einen Befehl, nur mit Recht {@code geraete_steuern}. */
+    public static final String HA_GERAETE_ECHO_PFAD = "/api/ha/v1/geraete/echo";
 
     static boolean haGeraeteErlaubt(String method, String pathOnly, String kopplungsArt) {
         if (!"homeassistant".equals(kopplungsArt)) return false;
         String p = normal(pathOnly);
-        return HA_GERAETE_PFAD.equals(p) && ("GET".equals(method) || "POST".equals(method));
+        return HA_GERAETE_PFAD.equals(p) && ("GET".equals(method) || "POST".equals(method))
+                || HA_GERAETE_ECHO_PFAD.equals(p) && "POST".equals(method);
     }
 
     /** true, wenn die Anfrage eines gekoppelten Geräts abgelehnt werden muss. */
@@ -281,6 +284,7 @@ public final class ExternGuard {
         if (p.equals(TACHO_AUSWAHL) || p.equals(TACHO_NORMAL)) return at.greenchili.surfmate.auth.Kopplungen.RECHT_TACHO;
         if (p.equals(UNTERWEGS_ABLEHNEN)) return at.greenchili.surfmate.auth.Kopplungen.RECHT_ROUTE;
         if (p.equals(HA_GERAETE_PFAD)) return at.greenchili.surfmate.auth.Kopplungen.RECHT_GERAETE;
+        if (p.equals(HA_GERAETE_ECHO_PFAD)) return at.greenchili.surfmate.auth.Kopplungen.RECHT_GERAETE_STEUERN;
         if (p.equals(LAUNCHER_LAYOUT_PFAD) || p.startsWith(LAUNCHER_LAYOUT_PFAD + "/") || p.equals(LAUNCHER_STAND_PFAD)) {
             return at.greenchili.surfmate.auth.Kopplungen.RECHT_LAUNCHER;
         }
@@ -313,7 +317,8 @@ public final class ExternGuard {
             boolean dateien = at.greenchili.surfmate.auth.Kopplungen.RECHT_DATEIEN.equals(recht);
             boolean launcher = at.greenchili.surfmate.auth.Kopplungen.RECHT_LAUNCHER.equals(recht);
             boolean route = at.greenchili.surfmate.auth.Kopplungen.RECHT_ROUTE.equals(recht);
-            boolean geraete = at.greenchili.surfmate.auth.Kopplungen.RECHT_GERAETE.equals(recht);
+            boolean geraete = at.greenchili.surfmate.auth.Kopplungen.RECHT_GERAETE.equals(recht)
+                    || at.greenchili.surfmate.auth.Kopplungen.RECHT_GERAETE_STEUERN.equals(recht);
             if (geraete) {
                 o.put("ok", false).put("grund", "nicht_erlaubt").put("recht", recht).put("text", Messages.text(
                         "errors.geraete_recht_fehlt", "Geräte-Recht fehlt – in Panoptes unter Gekoppelte Geräte einschalten."));
@@ -350,6 +355,12 @@ public final class ExternGuard {
         return p;
     }
 
+    /**
+     * 0.1.38.8 Handy-App „Fahrt als Luftlinie“: GPS-Spur einer Fahrt ({@code /api/trips/<Ziffern>/gps}), nur lesen, nur
+     * Handy-Kopplungen. Kein eigenes Recht: wer die Fahrtenliste mit Start und Ziel sieht, sieht auch die Strecke.
+     */
+    static final java.util.regex.Pattern TRIP_GPS = java.util.regex.Pattern.compile("/api/trips/[0-9]{1,18}/gps");
+
     static boolean handyErlaubt(String method, String pathOnly, String kopplungsArt) {
         if (!"handy".equals(kopplungsArt) || pathOnly == null) return false;
         String p = pathOnly;
@@ -358,8 +369,13 @@ public final class ExternGuard {
         if (p.length() > 1 && p.endsWith("/")) p = p.substring(0, p.length() - 1);
         if (p.contains("..") || p.contains("//")) return false;
         // 0.1.26.1: Update-Stand lesen (HANDY_API_VERTRAG §8); 0.1.28: Clip-Liste (CLIP_VERTRAG_0128)
-        if ("GET".equals(method)) return HANDY_LESEN.contains(p) || DATEIEN_LESEN.contains(p);
-        return "POST".equals(method) && (HANDY_SCHREIBEN.contains(p) || DATEIEN_SCHREIBEN.contains(p));
+        // 0.1.38.8 Besitzer-Handy: eigene Pfade, das Recht „besitzer“ prüft BesitzerApiHandler
+        if ("GET".equals(method)) {
+            return HANDY_LESEN.contains(p) || DATEIEN_LESEN.contains(p) || TRIP_GPS.matcher(p).matches()
+                    || BesitzerApiHandler.LESEN.contains(p);
+        }
+        return "POST".equals(method) && (HANDY_SCHREIBEN.contains(p) || DATEIEN_SCHREIBEN.contains(p)
+                || BesitzerApiHandler.SCHREIBEN.contains(p));
     }
 
     public static boolean erlaubt(String method, String pathOnly) {

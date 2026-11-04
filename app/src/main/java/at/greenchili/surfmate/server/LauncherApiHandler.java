@@ -614,6 +614,9 @@ public final class LauncherApiHandler {
             // usableKwh + healthPct from the SOH estimator: usable = nominal × SOH.
             Object usableKwh = JSONObject.NULL;
             Object healthPct = JSONObject.NULL;
+            // 0.1.38.8: wie die Web-Akku-Karte beide Werte, BYD-Index und eigene Schätzung (null = keiner)
+            Object sohAutoPct = JSONObject.NULL;
+            Object sohSchaetzungPct = JSONObject.NULL;
             try {
                 at.greenchili.surfmate.abrp.SohEstimator soh =
                         at.greenchili.surfmate.monitor.SocHistoryDatabase.getInstance().getSohEstimator();
@@ -626,10 +629,16 @@ public final class LauncherApiHandler {
                         any = true;
                     }
                     if (hasSoh) { healthPct = (int) Math.round(sohPct); any = true; }
+                    double auto = soh.getOemSohPercent();
+                    if (auto > 0) { sohAutoPct = round1(auto); any = true; }
+                    double schaetzung = soh.getSchaetzungNebenSoh();
+                    if (schaetzung > 0) { sohSchaetzungPct = round1(schaetzung); any = true; }
                 }
             } catch (Throwable ignored) {}
             o.put("usableKwh", usableKwh);
             o.put("healthPct", healthPct);
+            o.put("sohAutoPct", sohAutoPct);
+            o.put("sohSchaetzungPct", sohSchaetzungPct);
 
             // tempC: pack thermal (avg / best available cell temp).
             Object tempC = JSONObject.NULL;

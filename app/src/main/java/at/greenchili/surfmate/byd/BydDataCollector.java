@@ -3001,6 +3001,26 @@ public class BydDataCollector {
         }
     }
 
+    /**
+     * 0.1.38.8 Aufsperren beim Annähern: 1 = irgendeine Tür oder die Heckklappe offen, 0 = alle lesbaren zu, −1 = keine
+     * lesbar. Nur lesen (dieselbe Lesung wie die Tür-Ereignisse, geht auch geparkt).
+     */
+    public int readTuerenOffen() {
+        boolean lesbar = false;
+        try {
+            boolean rhd = isRightHandDriveForDoorMapping();
+            for (int area : new int[] {BodyworkConstants.AREA_FRONT_DRIVER, BodyworkConstants.AREA_FRONT_PASSENGER,
+                    BodyworkConstants.AREA_REAR_LEFT, BodyworkConstants.AREA_REAR_RIGHT, BodyworkConstants.AREA_TRUNK}) {
+                int s = normalizeDoorOpen(readDoorOpenState(area, rhd));
+                if (s == 1) return 1;
+                if (s == 0) lesbar = true;
+            }
+        } catch (Throwable t) {
+            return lesbar ? 0 : -1;
+        }
+        return lesbar ? 0 : -1;
+    }
+
     /** 0.1.18: Heckklappe 1 = offen, 0 = zu, −1 = nicht lesbar (dieselbe Lesung wie die Tür-Ereignisse). */
     public int readTrunkOpenState() {
         try {

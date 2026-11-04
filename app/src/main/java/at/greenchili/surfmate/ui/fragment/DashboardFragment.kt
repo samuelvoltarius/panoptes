@@ -1551,6 +1551,9 @@ class DashboardFragment : Fragment() {
             var statusModelId: String? = null
             var calSoh = 0.0
             var calTs = 0L
+            // 0.1.38.8: wie die Web-Akku-Karte BYD-Index und eigene Schätzung nebeneinander
+            var oemSoh = -1.0
+            var estimatedSoh = -1.0
 
             try {
                 val conn = at.greenchili.surfmate.util.DaemonHttpClient.open(
@@ -1572,6 +1575,8 @@ class DashboardFragment : Fragment() {
                     nominalSource = json.optString("nominalSource", "unset")
                     displaySoh = json.optDouble("displaySoh", -1.0)
                     displaySource = json.optString("displaySource", "unavailable")
+                    oemSoh = json.optDouble("oemSoh", -1.0)
+                    if (json.optBoolean("hasEstimate", false)) estimatedSoh = json.optDouble("estimatedSoh", -1.0)
                     val est = json.optDouble("estimatedCapacityKwh", -1.0)
                     if (est > 0) estimatedKwh = est
                     if (!json.isNull("modelId")) {
@@ -1645,6 +1650,8 @@ class DashboardFragment : Fragment() {
             val finalStatusModelId = statusModelId ?: initialModelId
             val finalCalSoh = calSoh
             val finalCalTs = calTs
+            val finalOemSoh = oemSoh
+            val finalEstimatedSoh = estimatedSoh
 
             mainHandler.post {
                 if (!isAdded || view == null) return@post
@@ -1696,6 +1703,15 @@ class DashboardFragment : Fragment() {
                 }
 
                 summarySoh.text = when {
+                    // fehlt einer der zwei Werte: „nicht verfügbar“, darunter die Erklärung wie auf der Web-Akku-Karte
+                    finalOemSoh > 0 || finalEstimatedSoh > 0 -> {
+                        val fehlt = getString(R.string.vehicle_dialog_soh_unavailable)
+                        getString(
+                            R.string.vehicle_dialog_soh_beide,
+                            if (finalOemSoh > 0) String.format("%.1f %%", finalOemSoh) else fehlt,
+                            if (finalEstimatedSoh > 0) String.format("%.1f %%", finalEstimatedSoh) else fehlt) +
+                            "\n" + getString(R.string.vehicle_dialog_soh_erklaerung)
+                    }
                     finalDisplaySoh > 0 && finalDisplaySource == "oem" ->
                         String.format("%.1f%% (vehicle)", finalDisplaySoh)
                     finalDisplaySoh > 0 && finalDisplaySource == "live" ->

@@ -712,7 +712,13 @@ class DaemonLauncher(
                 "done",
                 "echo \"[\$(date)] Boot completed (waited \${BOOT_WAIT}s)\" >> \$LOG_FILE",
                 "",
-                "sleep 5",
+                // 0.1.38.8 Schnellstart: die 5 s Atempause nur kurz nach dem Boot, sonst gleich starten
+                "UP=\$(cut -d. -f1 /proc/uptime 2>/dev/null)",
+                "if [ -n \"\$UP\" ] && [ \"\$UP\" -ge 120 ] 2>/dev/null; then",
+                "  echo \"[\$(date)] Geraet laeuft seit \${UP}s: kein Warten\" >> \$LOG_FILE",
+                "else",
+                "  sleep 5",
+                "fi",
                 "",
                 "while true; do",
                 // Archive the previous run's log before relaunch. Real-time

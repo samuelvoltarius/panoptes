@@ -288,6 +288,16 @@ public final class VehicleCommandRouter {
             return new CommandResult(o, Path.NONE, msg, 0, null, grund);
         }
 
+        /**
+         * 0.1.38.8 Fahrzeug-Aktionen ({@link FahrzeugAktionen}): nichts wurde ans Auto geschickt. {@code aktion_aus} =
+         * Schalter aus, {@code aktion_nur_nutzer} = nicht aus einer bewussten Nutzer-Auslösung, {@code aktion_bestaetigen}
+         * = Rückfrage fehlt, {@code aktion_ratenlimit} = zu oft.
+         */
+        public static CommandResult aktionGesperrt(String grund) {
+            Outcome o = FahrzeugAktionen.GRUND_RATENLIMIT.equals(grund) ? Outcome.RATE_LIMITED : Outcome.AUTH_REQUIRED;
+            return new CommandResult(o, Path.NONE, msg(grund), 0, null, grund);
+        }
+
         public String pathString() {
             switch (path) {
                 case CLOUD: return "cloud";
@@ -2042,6 +2052,15 @@ public final class VehicleCommandRouter {
                 ? "assistenz_nur_einschalten" : "assistenz_hinweis_fehlt"));
     }
 
+    /**
+     * 0.1.38.8 Hupe, Licht, Warnblinker, Auto finden, Aufsperren nur mit Schalter und aus einer bewussten Auslösung
+     * ({@link FahrzeugAktionen#ausloesen}). Steht in beiden Eingängen hinter Fahrsperre und Assistenz-Hinweis.
+     */
+    static CommandResult checkFahrzeugAktion(VehicleCommand cmd) {
+        String grund = FahrzeugAktionen.sperrGrund(cmd);
+        return grund == null ? null : FahrzeugAktionen.gesperrt(cmd, grund);
+    }
+
     private CommandResult executeOhneHaken(VehicleCommand cmd) {
         // Snapshot at ingress before any safety/preflight work can yield. MQTT may provide
         // a still-earlier message-ingress snapshot, so an already-queued open cannot overtake
@@ -2075,6 +2094,8 @@ public final class VehicleCommandRouter {
         if (blocked != null) return blocked;
         CommandResult assistenz = checkAssistenzHinweis(cmd);
         if (assistenz != null) return assistenz;
+        CommandResult aktion = checkFahrzeugAktion(cmd);
+        if (aktion != null) return aktion;
 
         if (cmd instanceof TrunkOpenCommand) {
             // The composite flow safely unlocks and opens when the default
@@ -2314,6 +2335,8 @@ public final class VehicleCommandRouter {
         if (blocked != null) return blocked;
         CommandResult assistenz = checkAssistenzHinweis(cmd);
         if (assistenz != null) return assistenz;
+        CommandResult aktion = checkFahrzeugAktion(cmd);
+        if (aktion != null) return aktion;
         CommandResult result = isSdkOnlyTrunkOpen(cmd)
                 ? runSdkOnlyTrunkOpen(cmd, tailgateOpenStopGeneration) : runSdkOnly(cmd);
         // Same AC-auto-off retirement as execute(). This is a SECOND public entry point —

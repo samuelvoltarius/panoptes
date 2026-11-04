@@ -33,12 +33,14 @@ import java.util.concurrent.atomic.AtomicLong
  * data: see [applyBundle].
  *
  * SECRETS — device-bound encrypted credentials (BYD Cloud, navigation,
- * Telegram, and GenAI API keys) are stored as their `ENC:` blobs and
- * the bundle ALSO snapshots the device-id file (.byd_device_id) that
- * CredentialCipher derives its key from. Restoring the DID first lets the
- * blobs decrypt again even after a factory reset. TRADEOFF: the bundle then
- * contains key material, so the export endpoint MUST stay LOCAL-mode + JWT
- * gated and the UI MUST warn the user to keep the file private.
+ * Telegram, and GenAI API keys) are stored as their `ENC:` blobs. 0.1.38.8
+ * (Zugangsdaten Teil 2): the device-id file (.byd_device_id) that
+ * CredentialCipher derives its key from is NO LONGER bundled by default —
+ * with it the file was as good as plaintext (it also travelled over Telegram
+ * /backup). Same-device restores do not need it (the DID on the car is
+ * unchanged). Only an explicit opt-in (`includeDid`, web export
+ * `?geraeteschluessel=true`) still carries it, for a restore after a factory
+ * reset. Import still accepts bundles with a DID (older exports).
  */
 object ConfigBackupService {
     private const val TAG = "ConfigBackup"
@@ -157,8 +159,9 @@ object ConfigBackupService {
      *    username/identity fields are NOT encrypted. This is acceptable ONLY
      *    because the feature is same-device and the export endpoints are
      *    LOCAL-mode + JWT gated; the UI warns the file holds credentials.
-     *  - The device-id (.byd_device_id) so the `ENC:` blobs stay decryptable
-     *    after a factory reset (CredentialCipher binds its key to the DID).
+     *  - Only with [includeDid] (0.1.38.8: default off): the device-id
+     *    (.byd_device_id) so the `ENC:` blobs stay decryptable after a factory
+     *    reset (CredentialCipher binds its key to the DID).
      * WHAT IT DOES NOT CONTAIN:
      *  - SafeLocation home/work GPS — stored in the separate file
      *    /data/user_de/0/com.android.shell/surfmate/safe_locations.json, deliberately not bundled.
@@ -167,7 +170,8 @@ object ConfigBackupService {
     @JvmStatic
     @JvmOverloads
     fun buildBundle(appVersion: String, deviceModel: String, nowMs: Long,
-                    includeTrips: Boolean = false, includeOrte: Boolean = false): JSONObject {
+                    includeTrips: Boolean = false, includeOrte: Boolean = false,
+                    includeDid: Boolean = false): JSONObject {
         // Config and credential key material are one export snapshot. A restore
         // cannot interleave and pair settings from one revision with another DID.
         val snapshot = UnifiedConfigManager.runUnderConfigLock {
@@ -175,6 +179,7 @@ object ConfigBackupService {
                 UnifiedConfigManager.readDurableConfigStrict().toString())
             for (sec in EXCLUDED_SECTIONS) unified.remove(sec)
             stripEphemeral(unified)
+            ohneNaehe(unified)
             // 0.1.11 ORTE_VERTRAG: die Ortsliste (Standorte) nur mit eigenem Haken (Download: Standard aus;
             // Update-Sicherungen: immer). Der Spiegel-Merker geht nie mit – nach einer Wiederherstellung schreibt
             // der Daemon die Orte dadurch neu in Ruhezonen/private Orte/Tarifkreise.
@@ -200,9 +205,10 @@ object ConfigBackupService {
             .put("settings", JSONObject().put("unified", snapshot.unified))
 
         // Snapshot the DID so the ENC: secrets remain decryptable after a
-        // factory reset. Best-effort: absent DID just means secrets fall back
-        // to re-entry on a reset (they still decrypt on a non-reset restore).
-        didValue(snapshot.did)?.let { bundle.put("did", it) }
+        // factory reset — 0.1.38.8 only on explicit opt-in. Without it the
+        // secrets fall back to re-entry on a reset (they still decrypt on a
+        // non-reset restore).
+        if (includeDid) didValue(snapshot.did)?.let { bundle.put("did", it) }
 
         // Opt-in trips category (stats only — no telemetry files). The trips DB
         // lives in the daemon; pulled via the manager. Best-effort: if the
@@ -696,6 +702,22 @@ object ConfigBackupService {
         "telegram" -> "Telegram bot token"
         "genAi"    -> "GenAI provider API key"
         else        -> section
+    }
+
+    /**
+     * 0.1.38.8 Integration: Das Bake-Geheimnis für „Aufsperren beim Annähern“ (`naeheBake`) geht nie in eine
+     * Sicherung, mit ihm der Nähe-Schlüssel und sein Ablauf (ohne Bake nutzlos, sonst zeigt die Kopplung nach einer
+     * Wiederherstellung „Nähe aktiv“ ohne Wirkung). Das Handy meldet die Nähe danach neu an.
+     */
+    @JvmStatic
+    fun ohneNaehe(root: JSONObject) {
+        val geraete = root.optJSONObject("kopplungen")?.optJSONArray("geraete") ?: return
+        for (i in 0 until geraete.length()) {
+            val g = geraete.optJSONObject(i) ?: continue
+            g.remove("naeheBake")
+            g.remove("naeheSchluessel")
+            g.remove("naeheBis")
+        }
     }
 
     private fun stripEphemeral(root: JSONObject) {

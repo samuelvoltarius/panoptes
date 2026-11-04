@@ -458,6 +458,28 @@ public final class Bruecke {
         t.start();
     }
 
+    /**
+     * 0.1.38.8: Felder von {@code bruecke.json} mit verschlüsselter Schattenkopie {@code enc_a}/{@code enc_g}
+     * (privater Auto-Schlüssel, Postfach-Geheimnis). Der Klartext bleibt eine Version lang maßgeblich (0.1.38.6 liest
+     * nur ihn, unbekannte Schlüssel trägt er beim Speichern mit); die Datei bleibt zusätzlich 0600.
+     */
+    public static final String[] GEHEIME_FELDER = {"a", "g"};
+
+    /** Beim Daemon-Start: Schatten in {@code bruecke.json} nachziehen (z. B. nach einem Rückfall). */
+    public static boolean schattenAbgleich() {
+        DateiPlatte p = new DateiPlatte();
+        if (!p.datei.isFile()) return false;
+        JSONObject z = p.lade();
+        if (!at.greenchili.surfmate.byd.cloud.crypto.ZugangsMigration.schattenImObjekt(z, GEHEIME_FELDER,
+                at.greenchili.surfmate.byd.cloud.crypto.CredentialCipher::encrypt,
+                at.greenchili.surfmate.byd.cloud.crypto.CredentialCipher::decrypt)) return false;
+        Bruecke b = instanz;
+        if (b == null) return p.speichere(z);
+        synchronized (b) {
+            return p.speichere(b.z);   // laufender Zustand ist maßgeblich, speichere zieht die Schatten nach
+        }
+    }
+
     static final class DateiPlatte implements Platte {
         private final File datei = new File(at.greenchili.surfmate.util.DaemonStorage.path("bruecke.json"));
 
@@ -472,8 +494,13 @@ public final class Bruecke {
 
         public boolean speichere(JSONObject zustand) {
             try {
+                // 0.1.38.8: Schatten in eine Kopie, der Zustand im Speicher bleibt wie er ist
+                JSONObject platte = new JSONObject(zustand.toString());
+                at.greenchili.surfmate.byd.cloud.crypto.ZugangsMigration.schattenImObjekt(platte, GEHEIME_FELDER,
+                        at.greenchili.surfmate.byd.cloud.crypto.CredentialCipher::encrypt,
+                        at.greenchili.surfmate.byd.cloud.crypto.CredentialCipher::decrypt);
                 File tmp = new File(datei.getPath() + ".tmp");
-                Files.write(tmp.toPath(), zustand.toString().getBytes(StandardCharsets.UTF_8));
+                Files.write(tmp.toPath(), platte.toString().getBytes(StandardCharsets.UTF_8));
                 //noinspection ResultOfMethodCallIgnored
                 tmp.setReadable(false, false);
                 //noinspection ResultOfMethodCallIgnored

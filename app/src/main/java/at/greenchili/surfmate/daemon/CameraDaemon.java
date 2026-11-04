@@ -768,6 +768,7 @@ public class CameraDaemon {
         at.greenchili.surfmate.logging.LogArchiv.pflege();
         httpServer = new HttpServer(HTTP_PORT);
         ipcServer = new SurveillanceIpcServer(19977);
+        at.greenchili.surfmate.server.SurveillanceIpcServer.aufruferVorwaermen();
         aacIngestServer = new at.greenchili.surfmate.server.AacIngestServer();
         accMonitor = new AccMonitor();
 
@@ -1190,8 +1191,21 @@ public class CameraDaemon {
         try {
             int n = at.greenchili.surfmate.byd.cloud.crypto.ZugangsMigration.bestandVerschluesseln();
             if (n > 0) log("Zugangsdaten: " + n + " Schattenkopie(n) nachgezogen");
+            // 0.1.38.8: auch bruecke.json (privater Auto-Schlüssel, Postfach-Geheimnis)
+            if (at.greenchili.surfmate.bruecke.Bruecke.schattenAbgleich()) log("Brücke: Schattenkopie nachgezogen");
         } catch (Throwable t) {
             log("Zugangsdaten-Schatten übersprungen: " + t.getClass().getSimpleName());
+        }
+        // 0.1.38.8 Fahrzeug-Aktionen: einmal überführen – Handy-Aufsperren bleibt an, wenn eine Kopplung das Recht hat
+        try {
+            at.greenchili.surfmate.byd.routing.FahrzeugAktionen.ueberfuehren(at.greenchili.surfmate.auth.Kopplungen.get()
+                    .irgendeineMitRecht(at.greenchili.surfmate.auth.Kopplungen.RECHT_AUFSPERREN),
+                    // betroffene Regeln einmal nennen (sie lösen Hupe/Licht/Warnblinker nie mehr aus)
+                    at.greenchili.surfmate.byd.routing.FahrzeugAktionen.betroffeneRegeln(
+                            at.greenchili.surfmate.automation.Automations.toJson(),
+                            at.greenchili.surfmate.automation.ActionGroups.toJson()));
+        } catch (Throwable t) {
+            log("Fahrzeug-Aktionen-Überführung übersprungen: " + t.getClass().getSimpleName());
         }
         at.greenchili.surfmate.reichweite.RangeWatchDienst.start();
         // Vertrag 9 (0.1.9): Auto-Zustand an den Planer – sendet nur mit Einwilligung planner.zustandSenden.
@@ -8312,6 +8326,7 @@ public class CameraDaemon {
             at.greenchili.surfmate.telegram.AbschaltBericht.beiAccAus(System.currentTimeMillis());
         } else {
             at.greenchili.surfmate.telegram.AbschaltBericht.beiAccAn(System.currentTimeMillis());
+            at.greenchili.surfmate.handy.Annaeherung.zuendungAn();   // 0.1.38.8: nächste Annäherung darf wieder
             at.greenchili.surfmate.telegram.ZurueckAmAuto.beiAccAn(System.currentTimeMillis());
             at.greenchili.surfmate.parking.ParkingHooks.onAccOn(transitionGeneration);
             // 0.1.20 P7: „Panoptes bei Zündung an öffnen“ (Standard aus, nicht vor CarPlay/Android Auto, nur Activity)
@@ -9427,6 +9442,12 @@ public class CameraDaemon {
     /** Anzahl der Scharf-Wiederholungen seit dem letzten Erfolg (HealthMonitor, Status). */
     public static int scharfVersuche() {
         return SCHARF_WIEDERHOLUNG.versuche();
+    }
+
+    /** 0.1.38.8 Aufsperren beim Annähern: der Wächter nimmt gerade ein Ereignis auf (dann nie aufsperren). */
+    public static boolean waechterNimmtAuf() {
+        at.greenchili.surfmate.surveillance.GpuSurveillancePipeline p = gpuPipeline;
+        return p != null && p.isSurveillanceMode() && p.isRecording();
     }
 
     /** true, solange der Wächter wirklich scharf ist (Pipeline im Überwachungsmodus). */

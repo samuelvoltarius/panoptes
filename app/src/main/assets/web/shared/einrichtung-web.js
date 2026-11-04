@@ -20,6 +20,7 @@
         'offen_titel': 'Noch einrichten',
         'offen_keins': 'Nichts offen – die Einrichtung ist vollständig.',
         'offen_hinweis': 'Alles freiwillig. Tippe auf einen Punkt.',
+        'erledigt_knopf': 'Erledigt / nicht nötig',
         'neu_knopf': 'Einrichtung erneut starten',
         'durchgehen_knopf': 'Einrichtung noch einmal durchgehen',
         'durchgehen_frage': 'Der Assistent geht am Bildschirm im Auto alle Schritte noch einmal mit dir durch. Deine Einstellungen bleiben. Jeden Schritt kannst du mit „Später“ überspringen, dann bleibt er, wie er ist.',
@@ -116,9 +117,10 @@
         // 0.1.38.3: Kameras immer nachholbar (Knopf unter Kameras & Wächter, mit Klartext außerhalb des Autos)
         kameras: 'waechter.html#kamerasEinrichten',
         extra_fernzugang: 'system.html#tailscaleKarte', extra_notzugang: 'system.html#notzugang',
-        // 0.1.38 (wie NeuHinweisSchritt.ZIEL). Abschaltbericht hat keinen Web-Schalter: nur im Assistenten am Display.
+        // 0.1.38 (wie NeuHinweisSchritt.ZIEL). 0.1.38.8: Abschaltbericht hat jetzt einen Web-Schalter auf waechter.html.
         extra_display: 'display.html#hintergrund', extra_launcher: 'display.html#launcher', extra_tacho: 'display.html#tacho',
         extra_tiermodus: 'tiermodus.html', extra_ladesaeule: 'charging.html#settings',
+        extra_abschaltbericht: 'waechter.html#abschaltbericht',
         extra_assistenz: 'vehicle-control.html'
     };
 
@@ -307,18 +309,34 @@
                     inhalt.appendChild(kopf);
                 }
                 var ul = el('ul');
-                ul.style.cssText = 'margin:6px 0 0 18px;padding:0';
+                ul.style.cssText = 'list-style:none;margin:6px 0 0;padding:0';
                 teil.forEach(function (o) {
                     var li = el('li');
                     li.setAttribute('data-schritt', o.id);
+                    li.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0';
+                    var label;
                     if (ZIEL[o.id]) {
-                        var a = el('a', null, t('schritt.' + o.id));
-                        a.href = ZIEL[o.id];
-                        a.style.cssText = 'color:var(--sm-aqua);font-weight:600';
-                        li.appendChild(a);
+                        label = el('a', null, t('schritt.' + o.id));
+                        label.href = ZIEL[o.id];
+                        label.style.cssText = 'color:var(--sm-aqua);font-weight:600';
                     } else {
-                        li.textContent = t('schritt.' + o.id);
+                        label = el('span', null, t('schritt.' + o.id));
                     }
+                    li.appendChild(label);
+                    // 0.1.38.8: „Erledigt / nicht nötig“ blendet einen optionalen Punkt dauerhaft aus
+                    // (POST /api/einrichtung/erledigt); für alles, was sich nicht am Zustand erkennen lässt.
+                    var erl = el('button', 'btn', t('erledigt_knopf'));
+                    erl.type = 'button';
+                    erl.setAttribute('data-erledigt', o.id);
+                    erl.style.cssText = 'font-size:13px;padding:4px 10px;min-height:36px;flex:none';
+                    erl.onclick = function () {
+                        erl.disabled = true;
+                        fetch('/api/einrichtung/erledigt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: o.id }) })
+                            .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return laden(); })
+                            .then(function (neu) { if (neu) zeichne(inhalt, neu); })
+                            .catch(function () { erl.disabled = false; toast(t('neu_fehler'), false); });
+                    };
+                    li.appendChild(erl);
                     ul.appendChild(li);
                 });
                 inhalt.appendChild(ul);

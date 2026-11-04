@@ -39,6 +39,14 @@ public final class NeueKopplungMeldung {
         return ref;
     }
 
+    /**
+     * 0.1.38.8 verlorenes Handy: Telegram {@code /kopplungen} listet alle Kopplungen, jede mit eigenem Einmal-Griff
+     * (gleicher Entfernen-Weg wie [Entfernen], nur der Besitzer-Chat, mit Rückfrage im Bot).
+     */
+    public static String griffFuerListe(String kid, long jetzt) {
+        return griff(kid, jetzt);
+    }
+
     /** Griff einlösen (einmal): Kopplungs-id oder null (unbekannt, abgelaufen, schon benutzt). */
     public static synchronized String einloesen(String ref, long jetzt) {
         Object[] e = ref == null ? null : GRIFFE.remove(ref);

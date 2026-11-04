@@ -405,6 +405,10 @@
       "system_updates": {
         "label": "Updates",
         "note": "Nieuwe versie van Panoptes of de launcher, en wanneer een update klaar is."
+      },
+      "system_waechter": {
+        "label": "Bewaker aanzetten (melding)",
+        "note": "De eenmalige vraag na een update of de Bewaker aan moet. Telegram gaat rechtstreeks."
       }
     },
     "cloud_uebergabe_titel": "‘{0}’ wil de BYD-cloud overdragen",
@@ -419,8 +423,13 @@
     "battery12v_niedrig_title": "12 V-accu zeer zwak: {0} V",
     "battery12v_niedrig_body": "Hij herstelt niet meer vanzelf. De auto start straks misschien niet meer. Rijd vandaag een stuk of sluit hem aan.",
     "update_installiert": "Panoptes {0} is geïnstalleerd en draait.",
+    "waechter_standard_titel": "Moet de Bewaker aan staan?",
+    "waechter_standard_text": "Hij neemt alleen op bij een schok. Hij is bedoeld voor je privéterrein, jij bent verantwoordelijk voor de opnames. Om hem aan te zetten open je de Bewaker-pagina.",
+    "waechter_standard_display": "Nieuw: de Bewaker kan op je auto letten (alleen bij een schok). Aanzetten: Panoptes openen, Bewaker. Daar staan de juridische melding en de knop.",
     "launcher_verfuegbar": "Nieuwe launcher-versie {0}",
-    "launcher_installiert": "Launcher {0} is geïnstalleerd."
+    "launcher_installiert": "Launcher {0} is geïnstalleerd.",
+    "update_verfuegbar": "Panoptes {0} is beschikbaar",
+    "update_zurueck": "De update is niet gelukt, Panoptes draait weer op {0}."
   },
   "parking": {
     "notify": {
@@ -534,7 +543,8 @@
       "some_locked": "🔒 Sommige commando's staan uit. Je kunt ze toestaan in Panoptes onder *Regels → Meldingen → Telegram-meldingen*.",
       "footer": "_Panoptes {0}_",
       "menu": "/menue – Alle knoppen in één oogopslag",
-      "updates": "/updates – Panoptes en launcher bijwerken"
+      "updates": "/updates – Panoptes en launcher bijwerken",
+      "kopplungen": "/kopplungen – Gekoppelde apparaten tonen en verwijderen (telefoon kwijt)"
     },
     "buttons": {
       "status": "📊 Status",
@@ -543,6 +553,7 @@
       "camera": "📷 Camera",
       "location": "📍 Waar staat hij?",
       "guard_on": "🛡 Bewaker wekken",
+      "guard_standard_an": "🛡 Begrepen – Bewaker aanzetten",
       "guard_off": "😴 Bewaker laten slapen",
       "refresh": "🔄 Vernieuwen",
       "start_named": "▶️ {0} starten",
@@ -575,6 +586,9 @@
       "paket_an_fehler": "⚠️ De Panoptes Launcher kon niet worden ingeschakeld. Op het display kan dat onder Display → Panoptes Launcher."
     },
     "guard": {
+      "standard_frage": "🛡 *Moet de Bewaker op je auto letten?*\nNieuw in deze versie: de Bewaker staat nu standaard aan. Je had hem nog niet ingesteld, daarom vragen we het één keer. Hij neemt alleen op bij een schok.\n\n*Juridische melding:* de Bewaker is bedoeld voor je eigen privéterrein. Richt de camera's zo dat straat, trottoir en het terrein van de buren niet in beeld zijn. Jij alleen bent verantwoordelijk voor de opnames en het delen ervan.\n\nBij een zwakke 12 V-accu schakelt hij zichzelf uit. Je kunt hem altijd uitzetten.",
+      "standard_an_ok": "🛡 *De Bewaker staat aan* (alleen bij een schok). Hij wordt wakker zodra je de auto parkeert.",
+      "standard_an_veraltet": "Deze vraag is afgehandeld: de Bewaker is al ingesteld of bewust uitgezet. Er is niets gewijzigd.",
       "title": "🛡 *Bewaker*",
       "usage": "`/guardian on` wekt hem, `/guardian off` laat hem slapen.",
       "on": "🛡 *De Bewaker waakt* en let nu op je auto.",
@@ -630,7 +644,7 @@
     },
     "parking": {
       "where": {
-        "unavailable": "⚠️ De cameradienst antwoordt niet. Je kunt hem starten onder /services.",
+        "unavailable": "🅿️ Ik kan de parkeerplek nu niet lezen. Probeer het later opnieuw.",
         "disabled": "🅿️ Het parkeerlogboek staat uit. Zet het aan in Panoptes onder *Bewaker → Parkeren*.",
         "none": "🅿️ Ik heb nog geen parkeren gelogd.",
         "title_open": "🅿️ *Hier staat je auto*",
@@ -941,6 +955,10 @@
       "system_updates": {
         "label": "Updates",
         "note": "Er is een nieuwe Panoptes-versie beschikbaar of geïnstalleerd."
+      },
+      "system_waechter": {
+        "label": "Bewaker aanzetten (melding)",
+        "note": "De eenmalige vraag na een update of de Bewaker aan moet. Telegram gaat rechtstreeks."
       }
     },
     "handy": {
@@ -952,7 +970,8 @@
       "tiermodus_an": "🐾 Huisdiermodus ingeschakeld via telefoon „{0}”.",
       "tiermodus_aus": "🐾 Huisdiermodus uitgeschakeld via telefoon „{0}”.",
       "update_gestartet": "⬆️ Update naar {0} gestart door „{1}”. Panoptes is ongeveer 3–8 minuten weg.",
-      "launcher_update_gestartet": "⬆️ Launcher-update naar {0} gestart door „{1}”. Dat duurt ongeveer een minuut."
+      "launcher_update_gestartet": "⬆️ Launcher-update naar {0} gestart door „{1}”. Dat duurt ongeveer een minuut.",
+      "naehe_schluessel": "🔑 Telefoon ‘{0}’ heeft een sleutel voor ‘Ontgrendelen bij naderen’ opgeslagen. Was jij het niet? /aktionen automatik aus en ontkoppel het apparaat."
     },
     "zurueck": {
       "text": "🚗 Welkom terug bij de auto. Hij stond {0} geparkeerd.",
@@ -1041,6 +1060,60 @@
       "nicht_bereit": "⚠️ Panoptes antwoordt nu niet. Probeer het over een minuut nog eens.",
       "ratenlimit": "Net nog gekeken. Dit is de stand:",
       "gestartet": "De update loopt."
+    },
+    "aktionen": {
+      "status": "🚗 *Voertuigacties*",
+      "aus_ok": "✅ Alle voertuigacties staan nu uit.",
+      "automatik_aus_ok": "✅ Ontgrendelen bij naderen staat nu uit.",
+      "failed": "⚠️ Ik kon de voertuigacties nu niet opvragen.",
+      "nur_auto": "Inschakelen en activeren kan alleen in de auto of in de Panoptes-app, hier alleen uitschakelen.",
+      "btn_aus": "⛔ Alles uit",
+      "btn_automatik_aus": "⛔ Automatisch uit",
+      "ausgeloest": "📣 *{0}* geactiveerd via ‘{1}’. Was jij het niet? /aktionen aus",
+      "fehlgeschlagen": "⚠️ {0} via ‘{1}’ is niet gelukt ({2}).",
+      "abgelehnt": "🔒 {0} via ‘{1}’ geweigerd ({2}).",
+      "alle_aus": "⛔ Alle voertuigacties uitgeschakeld ({0}).",
+      "automatik_aus": "⛔ Ontgrendelen bij naderen uitgeschakeld ({0}).",
+      "ueberfuehrt": "ℹ️ Nieuw in Panoptes: claxon, licht en ontgrendelen hebben nu eigen schakelaars (Instellingen → Auto). Ontgrendelen met je telefoon blijft aan, al het andere staat uit. Uitschakelen: /aktionen aus",
+      "name_autoFinden": "Auto vinden (claxon + licht)",
+      "name_licht": "Lichtsignaal",
+      "name_warnblinker": "Alarmlichten",
+      "name_aufsperren": "Ontgrendelen",
+      "name_annaeherung": "Ontgrendelen bij naderen",
+      "annaeherung_auf": "🔓 *Ontgrendeld bij naderen* – telefoon ‘{0}’. Gaat er binnen 60 s geen deur open, dan vergrendelt de auto weer. Was jij het niet? /aktionen automatik aus",
+      "annaeherung_wieder_zu": "🔒 Weer vergrendeld: na het ontgrendelen bij naderen is geen deur geopend.",
+      "offen": "🚨 *De auto is open!* Opnieuw vergrendelen na het naderen is niet gelukt. Ontgrendelen bij naderen staat nu uit. Vergrendelen: /aktionen zusperren (of de knop onder /aktionen)",
+      "zusperren_ok": "🔒 Vergrendelopdracht verstuurd.",
+      "zusperren_fehler": "⚠️ Vergrendelen is niet gelukt. Vergrendel in de BYD-app.",
+      "btn_zusperren": "🔒 Vergrendelen",
+      "regeln_gesperrt": "ℹ️ Deze regels bevatten claxon, licht of alarmlichten: {0}. Vanaf nu activeren regels dat nooit meer – alleen jij, met een tik en bevestiging (schakelaars onder Instellingen → Auto → Voertuigacties). De rest van de regels blijft werken.",
+      "regel_lief": "ℹ️ Een regel wilde {0} activeren. Dat kan niet meer: claxon, licht en alarmlichten activeer alleen jij met een tik en bevestiging. De andere stappen van de regel blijven werken."
+    },
+    "dienst": {
+      "startet": "⏳ Panoptes in de auto is nog aan het opstarten. Probeer het over een minuut of twee opnieuw.",
+      "aus": "ℹ️ Panoptes staat uit in de auto. Je kunt het op het autoscherm in Panoptes onder *Diensten* aanzetten.",
+      "antwortet_nicht": "⚠️ Panoptes in de auto reageert nu niet. Tik op /dienste om het opnieuw te starten, of open Panoptes op het autoscherm."
+    },
+    "erreichbar": {
+      "frage": "🅿️ Moet de bot je ook bereiken als de auto geparkeerd en uit is? Anders antwoordt hij alleen zolang de auto aan is. Kost wat stroom van de 12V-accu.",
+      "btn_ja": "✅ Ja, ook geparkeerd",
+      "btn_nein": "Nee, bedankt",
+      "an": "✅ Klaar: vanaf de volgende keer parkeren is de bot bereikbaar als de auto uit is. Uitzetten: /erreichbar aus",
+      "aus": "De bot slaapt nu weer met de auto. Aanzetten: /erreichbar an",
+      "nein": "Prima, de bot antwoordt alleen zolang de auto aan is. Later aanzetten: /erreichbar an",
+      "stand_an": "✅ De bot is bereikbaar als de auto uit is. Uitzetten: /erreichbar aus",
+      "fehler": "⚠️ Ik kon dat niet in de auto opslaan. Probeer het zo opnieuw."
+    },
+    "kopplungen": {
+      "titel": "📱 *Gekoppelde apparaten*",
+      "leer": "Geen apparaten gekoppeld.",
+      "fehler": "Lijst nu niet leesbaar. Probeer het later opnieuw.",
+      "besitzer": "eigenaar",
+      "hinweis": "Telefoon kwijt? Tik op het apparaat om het te verwijderen. Het is meteen buitengesloten.",
+      "btn_entfernen": "🗑 {0} verwijderen",
+      "frage": "Apparaat nr. {0} echt verwijderen? Het kan niets meer met de auto tot het opnieuw gekoppeld is.",
+      "btn_ja": "Ja, verwijderen",
+      "btn_nein": "Annuleren"
     }
   },
   "vehicle_control": {
@@ -1066,7 +1139,11 @@
     "battery_heat_label": "Accu voorverwarmen",
     "close_all_windows_label": "Alle ramen sluiten",
     "car_off_climate_needs_cloud": "De auto staat uit – voorverwarmen gaat dan niet direct. Stel de BYD-cloud in (Systeem → BYD-account), dan werkt het ook als de auto uit staat.",
-    "car_off_needs_cloud": "De auto staat uit – dit gaat dan niet direct. Stel de BYD-cloud in (Systeem → BYD-account), dan werkt het ook als de auto uit staat."
+    "car_off_needs_cloud": "De auto staat uit – dit gaat dan niet direct. Stel de BYD-cloud in (Systeem → BYD-account), dan werkt het ook als de auto uit staat.",
+    "aktion_aus": "Deze actie staat uit. Inschakelen onder Instellingen → Auto → Voertuigacties.",
+    "aktion_nur_nutzer": "Claxon, licht en ontgrendelen worden alleen door een mens geactiveerd: op het scherm, aangemeld of vanaf de gekoppelde telefoon – nooit door regels, knoppen of andere diensten.",
+    "aktion_bestaetigen": "Bevestig eerst de vraag.",
+    "aktion_ratenlimit": "Te vaak achter elkaar. Probeer het over een paar minuten opnieuw."
   },
   "automation": {
     "lock": "Auto vergrendelen",
@@ -1933,7 +2010,8 @@
       "aufnahme": "Opname",
       "abschreckung": "Afschrikking",
       "stopp": "Bewaker stopt als …",
-      "fahrt": "Rit"
+      "fahrt": "Rit",
+      "aktionen": "Voertuigacties"
     },
     "surveillance": {
       "triggerMode": {
@@ -1964,6 +2042,10 @@
         "niedrig": "Laag (alleen stevige stoten)",
         "mittel": "Midden",
         "hoch": "Hoog (ook licht aanleunen)"
+      },
+      "surveillanceEnabled": {
+        "title": "Bewaker ingeschakeld",
+        "help": "Hoofdschakelaar zoals /waechter in Telegram. Met het contact aan wordt de bewaker pas scherp bij het parkeren."
       }
     },
     "deterrent": {
@@ -2098,9 +2180,9 @@
       },
       "modus": {
         "title": "Updates installeren",
-        "help": "„Alleen melden”: Panoptes meldt het, downloaden en installeren gebeurt pas als jij tikt. „Correcties automatisch”: kleine correcties komen vanzelf als de auto minstens 10 minuten uit staat, daarna meldt Panoptes het; nieuwe functies worden gemeld, jij beslist. „Alles automatisch”: ook nieuwe functies komen vanzelf. Nooit tijdens het rijden; gaat er iets mis, dan komt de vorige versie binnen 30 minuten vanzelf terug.",
+        "help": "„Alleen melden”: Panoptes meldt elke update; downloaden en installeren gebeurt pas als je tikt. „Kleine updates vanzelf, grote melden”: kleine updates (alleen het laatste getal verandert, bv. 0.1.38.7 → 0.1.38.8) komen zonder vraag zodra de auto minstens 10 minuten uit staat; je vindt ze daarna onder „Wat is nieuw”. Grote updates (bv. 0.1.38 → 0.1.39) meldt Panoptes eerst met een samenvatting, jij beslist. „Alles automatisch”: ook grote updates komen vanzelf. Nooit tijdens het rijden; gaat er iets mis, dan komt de vorige versie binnen 30 minuten vanzelf terug.",
         "melden": "Alleen melden",
-        "korrekturen": "Correcties automatisch, nieuwe functies melden",
+        "korrekturen": "Kleine updates vanzelf, grote melden",
         "automatisch": "Alles automatisch"
       },
       "pruefen": {
@@ -2555,6 +2637,28 @@
         "title": "Telegram-bericht bij gebeurtenis",
         "help": "Alleen een korte tekst met de tijd. Geen video, geen locatie."
       }
+    },
+    "fahrzeugAktionen": {
+      "autoFinden": {
+        "title": "Auto vinden (claxon + licht)",
+        "help": "Staat ‘Auto vinden’ toe: de auto claxonneert en knippert. Alleen met bevestiging. Standaard: uit."
+      },
+      "licht": {
+        "title": "Lichtsignaal",
+        "help": "Staat kort knipperen met de lichten toe, zonder geluid. Alleen met bevestiging. Standaard: uit."
+      },
+      "warnblinker": {
+        "title": "Alarmlichten (niet getest)",
+        "help": "Staat toe de alarmlichten aan te zetten. Alleen met bevestiging. Standaard: uit."
+      },
+      "aufsperren": {
+        "title": "Ontgrendelen met de telefoon",
+        "help": "Staat ontgrendelen toe vanaf de gekoppelde telefoon met vingerafdruk of Face ID. Standaard: uit."
+      },
+      "annaeherung": {
+        "title": "Ontgrendelen bij naderen",
+        "help": "Ontgrendelt als je gekoppelde telefoon heel dichtbij is en vergrendelt weer na 60 s zonder dat een deur opengaat. Vereist de Panoptes-app met een nabijheidssleutel. Standaard: uit."
+      }
     }
   },
   "kartenquelle": {
@@ -2822,5 +2926,80 @@
     "valet_fehler": "Nu niet mogelijk. Probeer het zo opnieuw.",
     "valet_fehlversuche_titel": "Schermvergrendeling: verkeerde pincode",
     "valet_fehlversuche_text": "Op het scherm is {0} keer een verkeerde pincode ingevoerd."
+  },
+  "aktionen": {
+    "name": {
+      "autoFinden": "Auto vinden (claxon + licht)",
+      "licht": "Lichtsignaal",
+      "warnblinker": "Alarmlichten",
+      "aufsperren": "Ontgrendelen",
+      "annaeherung": "Ontgrendelen bij naderen"
+    },
+    "push_ausgeloest": "{0} geactiveerd via ‘{1}’",
+    "push_fehlgeschlagen": "{0} via ‘{1}’ is niet gelukt",
+    "push_abgelehnt": "{0} via ‘{1}’ geweigerd",
+    "push_alle_aus": "Alle voertuigacties uitgeschakeld",
+    "push_automatik_aus": "Ontgrendelen bij naderen uitgeschakeld",
+    "push_ueberfuehrt": "Claxon, licht en ontgrendelen hebben nu eigen schakelaars",
+    "hinweis": {
+      "autoFinden": {
+        "title": "Auto vinden: claxon en licht",
+        "text": "De auto claxonneert en knippert als je het activeert: op het scherm, in een aangemelde browser of vanaf de gekoppelde telefoon met het recht ‘Claxon & licht’. Altijd met bevestiging, nooit tijdens het rijden, hoogstens 3 keer in 10 minuten. Buiten is het te zien en te horen, ’s nachts kan het buren storen. Je krijgt elke keer een Telegram-bericht."
+      },
+      "licht": {
+        "title": "Lichtsignaal",
+        "text": "De auto knippert kort met de lichten, zonder geluid, als je het activeert: op het scherm, in een aangemelde browser of vanaf de gekoppelde telefoon met het recht ‘Claxon & licht’. Altijd met bevestiging, nooit tijdens het rijden, hoogstens 3 keer in 10 minuten. Buiten is het te zien. Je krijgt elke keer een Telegram-bericht."
+      },
+      "warnblinker": {
+        "title": "Alarmlichten",
+        "text": "Panoptes mag de alarmlichten aanzetten als je het activeert: op het scherm, in een aangemelde browser of vanaf de gekoppelde telefoon met het recht ‘Claxon & licht’. Altijd met bevestiging. Uitzetten kan altijd. Niet bij elk model is bevestigd dat het de opdracht aanneemt. Je krijgt elke keer een Telegram-bericht."
+      },
+      "aufsperren": {
+        "title": "Ontgrendelen",
+        "text": "Een gekoppelde telefoon met het recht ‘Ontgrendelen’ mag de auto openen, alleen na vingerafdruk of Face ID op de telefoon. Wie je telefoon kan ontgrendelen, komt in de auto. Hoogstens 3 keer in 10 minuten, nooit tijdens het rijden, elke keer een Telegram-bericht. Uitschakelen kan altijd, ook met /aktionen aus in Telegram."
+      },
+      "annaeherung": {
+        "title": "Ontgrendelen bij naderen",
+        "text": "De auto ontgrendelt vanzelf als je gekoppelde telefoon heel dichtbij is: de telefoon meldt zich, de auto zoekt hem kort via Bluetooth en vergelijkt de locaties (hoogstens 25 m). Alleen als de auto uit en vergrendeld is en de bewaking niets opneemt, hoogstens één keer per nadering. Opent niemand binnen 60 seconden een deur, dan vergrendelt hij weer. Wie je telefoon heeft, komt in de auto. Een radioversterker kan de telefoon dichterbij laten lijken dan hij is. Je krijgt elke keer meteen een Telegram-bericht en kunt de automaat daar uitzetten met /aktionen automatik aus."
+      }
+    },
+    "push_annaeherung_auf": "Ontgrendeld bij naderen – telefoon ‘{0}’",
+    "push_annaeherung_wieder_zu": "Weer vergrendeld (geen deur geopend)",
+    "push_offen": "De auto is open! Opnieuw vergrendelen is niet gelukt",
+    "push_regeln_gesperrt": "Regels met claxon/licht/alarmlichten activeren dat niet meer: {0}",
+    "push_regel_lief": "Een regel wilde {0} activeren – dat kan niet meer"
+  },
+  "ha_steuern": {
+    "aktion_oeffnen": "Poort openen",
+    "aktion_schliessen": "Poort sluiten",
+    "aktion_aufsperren": "Voordeur ontgrendelen",
+    "aktion_zusperren": "Voordeur vergrendelen",
+    "ergebnis_ok": "klaar",
+    "ergebnis_fehler": "Home Assistant meldt een fout",
+    "ergebnis_nicht_bestaetigt": "niet bevestigd – controleer ter plaatse",
+    "ergebnis_abgelehnt": "niet uitgevoerd",
+    "heimkommen": "(bij thuiskomst)"
+  },
+  "besitzer": {
+    "telegram_erste": "Je telefoon {0} is nu de eigenaar-telefoon: hij kan heel Panoptes instellen en nieuwe apparaten koppelen (nooit toegang op afstand, nooit voertuigacties).",
+    "telegram_bestand": "Update: je oudste gekoppelde telefoon {0} is nu de eigenaar-telefoon. Hij kan heel Panoptes instellen en nieuwe apparaten koppelen. Wijzigen onder Gekoppelde apparaten.",
+    "telegram_weitergegeben": "{0} is nu ook een eigenaar-telefoon.",
+    "einstellung_geaendert": "Instelling {0} gewijzigd door apparaat {1}.",
+    "code_angelegt": "Koppelcode ({0}) gemaakt door eigenaar-telefoon {1}, 10 min geldig.",
+    "anfrage_erlaubt": "Nieuw apparaat toegestaan door eigenaar-telefoon {0}.",
+    "entfernt": "Apparaat {0} verwijderd door eigenaar-telefoon {1}.",
+    "weitergegeben": "{0} is nu ook een eigenaar-telefoon (door {1}).",
+    "abgegeben": "{0} is geen eigenaar-telefoon meer.",
+    "dienst": "Dienst {0} vrijgegeven door eigenaar-telefoon {1}.",
+    "waechter_an": "Bewaker ingeschakeld door telefoon {0}.",
+    "waechter_aus": "Bewaker uitgeschakeld door telefoon {0}.",
+    "rechte_selbst": "Eigenaar-telefoon {0} heeft zijn rechten gewijzigd: {1}."
+  },
+  "update_klein": {
+    "titel": "Updates",
+    "text": "Kleine correctie-updates komen voortaan vanzelf (alleen als de auto stilstaat, nooit tijdens het rijden). Grote updates meldt Panoptes nog steeds vooraf. Wijzigen: Instellingen → Updates.",
+    "autostart_titel": "Autostart",
+    "autostart_fehlt": "Na de update heeft Panoptes nog één keer de autostart-toestemming nodig. Tik op het display van de auto op de startpagina van Panoptes op „Automatisch starten weer aanzetten”.",
+    "launcher_home": "Na de update is de Panoptes-launcher niet meer je startscherm. Open de launcher één keer en kies hem opnieuw als startscherm."
   }
 }

@@ -56,6 +56,11 @@ public class SurveillanceApiHandler {
             handleEnable(out);
             return true;
         }
+        // 0.1.38.8 Wächter Standard an: „Wächter einschalten“ unter der einmaligen Frage (Bestand), mit Rechtshinweis-Version
+        if (cleanPath.equals("/api/surveillance/standard-an") && method.equals("POST")) {
+            handleStandardAn(out, body);
+            return true;
+        }
         if (cleanPath.equals("/api/surveillance/disable")) {
             handleDisable(out);
             return true;
@@ -973,6 +978,11 @@ public class SurveillanceApiHandler {
                     .optJSONObject("surveillance");
             statusJson.put("waechterAusloeser", at.greenchili.surfmate.einstellungen.TriggerModus
                     .status(sv == null ? null : sv.optString("triggerMode", null)));
+            // 0.1.38.8: steht die einmalige Frage „Wächter einschalten?“ noch offen? (Banner auf der Wächter-Seite)
+            boolean frage = at.greenchili.surfmate.surveillance.WaechterStandardHinweis.fragenErlaubt(
+                    at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig());
+            statusJson.put("standardFrage", frage);
+            if (frage) statusJson.put("rechtshinweis", at.greenchili.surfmate.einstellungen.Katalog.GUARD_LEGAL_VERSION);
         } catch (Throwable ignored) {
         }
         response.put("status", statusJson);
@@ -2426,6 +2436,33 @@ public class SurveillanceApiHandler {
         else handleDisable(out);
     }
 
+    /**
+     * 0.1.38.8 Body {@code {rechtshinweis: <Version>}}: schaltet wie der Assistent ein (Erschütterung, Rechtshinweis bestätigt).
+     * Eine veraltete Frage (inzwischen eingerichtet oder bewusst aus) schaltet nie ein: 409 {@code nicht_mehr_noetig}.
+     */
+    private static void handleStandardAn(OutputStream out, String body) throws Exception {
+        JSONObject req;
+        try {
+            req = new JSONObject(body == null || body.isEmpty() ? "{}" : body);
+        } catch (Exception e) {
+            HttpResponse.sendJson(out, 400, "{\"success\":false,\"error\":\"json\"}");
+            return;
+        }
+        String fehler = at.greenchili.surfmate.surveillance.WaechterStandardHinweis.standardAnPruefen(
+                at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig(), req.optString("rechtshinweis", ""));
+        if (fehler != null) {
+            HttpResponse.sendJson(out, "rechtshinweis".equals(fehler) ? 400 : 409,
+                    new JSONObject().put("success", false).put("error", fehler).toString());
+            return;
+        }
+        if (!at.greenchili.surfmate.config.UnifiedConfigManager.updateValues("surveillance",
+                at.greenchili.surfmate.surveillance.WaechterStandardHinweis.standardAnWerte())) {
+            HttpResponse.sendJsonError(out, Messages.get("errors.surveillance_persist_failed"));
+            return;
+        }
+        handleEnable(out);
+    }
+
     private static void handleEnable(OutputStream out) throws Exception {
         // SOTA: Only persist the preference. Surveillance should only activate on ACC OFF.
         // Starting motion detection while driving wastes CPU/GPU and is meaningless.
@@ -2440,6 +2477,11 @@ public class SurveillanceApiHandler {
             HttpResponse.sendJsonError(out, Messages.get("errors.surveillance_persist_failed"));
             return;
         }
+        // 0.1.38.8: ausdrückliches Einschalten hebt den „bewusst aus“-Merker auf.
+        try {
+            at.greenchili.surfmate.config.UnifiedConfigManager.updateValues("surveillance",
+                    java.util.Collections.singletonMap("disabledByUser", false));
+        } catch (Throwable ignored) {}
 
         // Only actually start surveillance if ACC is currently OFF (sentry mode)
         boolean accIsOn = at.greenchili.surfmate.monitor.AccMonitor.isAccOn();
@@ -2476,6 +2518,12 @@ public class SurveillanceApiHandler {
             HttpResponse.sendJsonError(out, Messages.get("errors.surveillance_persist_failed"));
             return;
         }
+        // 0.1.38.8 (Wächter Standard an): ausdrückliches Ausschalten merken – der Standard-an-Automatismus
+        // (waechterStandardFragen) schaltet danach nie wieder von selbst ein.
+        try {
+            at.greenchili.surfmate.config.UnifiedConfigManager.updateValues("surveillance",
+                    java.util.Collections.singletonMap("disabledByUser", true));
+        } catch (Throwable ignored) {}
         // ACC-GATED teardown. While ACC is ON no sentry is armed, so
         // disableSurveillance() has nothing to tear down — its only effects are
         // gpuPipeline.disableSurveillance() and clearing the in-memory

@@ -67,13 +67,16 @@ public class ConfigBackupApiHandler {
         // 0.1.11 ORTE_VERTRAG: ?orte=true – Ortsliste mitnehmen (enthält Standorte; Download Standard aus,
         // Update-Sicherungen von update-pflicht immer mit orte=true)
         boolean orte = hasParamTrue(path, "orte");
+        // 0.1.38.8: Geräteschlüssel (.byd_device_id) nur auf ausdrücklichen Wunsch (Wiederherstellen nach Werksreset)
+        boolean geraeteschluessel = hasParamTrue(path, "geraeteschluessel");
         try {
             JSONObject bundle = ConfigBackupService.buildBundle(
                     AppUpdater.getInstalledVersion(),
                     deviceModel(),
                     System.currentTimeMillis(),
                     includeTrips,
-                    orte);
+                    orte,
+                    geraeteschluessel);
             if (metadaten) {
                 bundle.put("metadaten", metadatenSammeln());
                 JSONObject manifest = bundle.optJSONObject("manifest");

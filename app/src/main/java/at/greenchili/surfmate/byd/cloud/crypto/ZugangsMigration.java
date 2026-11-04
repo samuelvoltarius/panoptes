@@ -93,9 +93,48 @@ public final class ZugangsMigration {
         return schatten(klar, schattenAlt, CredentialCipher::encrypt, CredentialCipher::decrypt);
     }
 
-    /** Felder der Gesamt-Config mit Schattenkopie (Klartext bleibt in 0.1.38.6 stehen). */
+    /**
+     * Für Speicherwege: Schatten zu einem frisch gesetzten Klartext. Leerer Klartext oder Verschlüsseln geht gerade
+     * nicht → "" (ein veralteter Schatten darf nie neben einem neuen Klartext stehen bleiben).
+     */
+    public static String schattenNeu(String klar, UnaryOperator<String> ver, UnaryOperator<String> ent) {
+        String s = schatten(klar, "", ver, ent);
+        return s == null ? "" : s;
+    }
+
+    /** {@link #schattenNeu} mit dem echten {@link CredentialCipher}. */
+    public static String schattenNeu(String klar) {
+        return schattenNeu(klar, CredentialCipher::encrypt, CredentialCipher::decrypt);
+    }
+
+    /**
+     * 0.1.38.8: Schatten der {@code felder} in einem JSON-Objekt (z. B. {@code bruecke.json}) abgleichen, in place.
+     *
+     * @return true, wenn sich ein Schatten geändert hat (dann speichern)
+     */
+    public static boolean schattenImObjekt(org.json.JSONObject o, String[] felder,
+                                           UnaryOperator<String> ver, UnaryOperator<String> ent) {
+        boolean geaendert = false;
+        for (String f : felder) {
+            String sk = schattenSchluessel(f);
+            String neu = schatten(o.optString(f, ""), o.optString(sk, ""), ver, ent);
+            if (neu == null) continue;
+            try {
+                if (neu.isEmpty()) o.remove(sk); else o.put(sk, neu);
+                geaendert = true;
+            } catch (org.json.JSONException ignored) { }
+        }
+        return geaendert;
+    }
+
+    /**
+     * Felder der Gesamt-Config mit Schattenkopie (Klartext bleibt stehen, frühestens die Version nach 0.1.38.8 löscht
+     * ihn). 0.1.38.8: {@code auth.deviceSecret} (Signaturschlüssel der Anmeldung, App und SentryDaemon holen ihn
+     * künftig über {@code AuthZugangIpc}) und {@code hotspot.password}.
+     */
     static final String[][] CONFIG_FELDER = {{"planner", "memberToken"}, {"update", "token"},
-            {"bydCloud", "loginKey"}, {"bydCloud", "signPassword"}, {"bydCloud", "commandPwd"}};
+            {"bydCloud", "loginKey"}, {"bydCloud", "signPassword"}, {"bydCloud", "commandPwd"},
+            {"auth", "deviceSecret"}, {"hotspot", "password"}};
 
     /** Beim Daemon-Start: Schatten aller {@link #CONFIG_FELDER} abgleichen. Liefert die Zahl der Schreibvorgänge. */
     public static int bestandVerschluesseln() {

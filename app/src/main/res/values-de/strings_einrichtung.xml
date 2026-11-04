@@ -160,6 +160,7 @@
     <string name="einr_noch_titel">Noch einrichten</string>
     <string name="einr_noch_text">Alles freiwillig. Geht jederzeit.</string>
     <string name="einr_noch_knopf">Einrichten</string>
+    <string name="einr_noch_erledigt">Erledigt / nicht nötig</string>
     <string name="einr_updates_ja_knopf">Ja, nach Updates suchen</string>
     <string name="einr_updates_github">Panoptes fragt dazu regelmäßig bei GitHub nach. GitHub sieht dabei nur die Internet-Adresse des Autos, keine Fahrzeugdaten.</string>
     <!-- 0.1.38.3: Handy-App unterwegs nutzen? (Standard aus, ausdrücklich gefragt) -->

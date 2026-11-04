@@ -55,6 +55,14 @@ public final class TelegramSink implements NotificationBus.Sink {
             if ("system.updates".equals(event.category)) {
                 return;
             }
+            // 0.1.38.8 Fahrzeug-Aktionen (FahrzeugAktionen) melden Telegram selbst (CRITICAL), hier nur Push
+            if (at.greenchili.surfmate.byd.routing.FahrzeugAktionen.PUSH_KATEGORIE.equals(event.category)) {
+                return;
+            }
+            // 0.1.38.8: die einmalige Frage „Wächter einschalten?“ geht direkt an Telegram (mit Knopf), nicht doppelt hier.
+            if ("system.waechter".equals(event.category)) {
+                return;
+            }
             // 0.1.28: Ereignis-Clip (Kategorie EREIGNIS) und 12-V-Warnung (notifyBattery12v) gehen direkt an
             // Telegram, jede mit eigenem Schalter – hier nicht noch einmal über criticalAlerts.
             if (event.category != null && (event.category.startsWith("ereignis.")

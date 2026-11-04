@@ -122,7 +122,8 @@ public class RueckfallAuf01385Test {
         JSONObject root = alteConfig();
         String vorher = root.toString();
         for (String[] f : ZugangsMigration.CONFIG_FELDER) {
-            JSONObject sec = root.getJSONObject(f[0]);
+            JSONObject sec = root.optJSONObject(f[0]);
+            if (sec == null) continue;   // 0.1.38.8: auth/hotspot gibt es in dieser alten Config nicht
             String neu = ZugangsMigration.schatten(sec.optString(f[1], ""), "", v -> v, DEC);   // encrypt() fail-open
             if (neu != null) sec.put(ZugangsMigration.schattenSchluessel(f[1]), neu);
         }

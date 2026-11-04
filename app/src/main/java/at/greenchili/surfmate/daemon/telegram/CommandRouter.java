@@ -43,12 +43,18 @@ public class CommandRouter {
         alias("/sicherung", "/backup");
         alias("/camping", "/camp", "/zelt");
         alias("/tier", "/haustier", "/hund", "/pet", "/dog");
+        // 0.1.38.8 Fahrzeug-Aktionen: nur Stand und sofort aus, nie auslösen
+        alias("/aktionen", "/actions", "/notaus");
+        // 0.1.38.8 Bot auch bei abgestelltem Auto erreichbar (Frage nach der Kopplung)
+        alias("/erreichbar", "/reachable");
         // 0.1.38.2 Hauptmenü und Updates (Knöpfe statt Abtippen)
         alias("/menue", "/menü", "/menu", "/m");
         alias("/mehr", "/more");
         alias("/updates", "/aktualisieren");
         // 0.1.38.7 Rückweg vom Panoptes Launcher zum BYD-Startbildschirm (immer erlaubt, nur Besitzer)
         alias("/startbildschirm", "/homescreen", "/home");
+        // 0.1.38.8 verlorenes Handy: gekoppelte Geräte anzeigen und entfernen (nur Besitzer-Chat, mit Rückfrage)
+        alias("/kopplungen", "/geraete", "/geräte", "/devices");
 
         PERMISSION.put("/kamera", UnifiedTelegramConfig.REMOTE_CAMERA);
         PERMISSION.put("/aufnahmen", UnifiedTelegramConfig.REMOTE_CAMERA);
@@ -82,8 +88,11 @@ public class CommandRouter {
         handlers.add(new BackupCommandHandler());
         handlers.add(new CampingCommandHandler());
         handlers.add(new TierCommandHandler());
+        handlers.add(new AktionenCommandHandler());
+        handlers.add(new ErreichbarCommandHandler());
         handlers.add(new UpdateCommandHandler());
         handlers.add(new HomeCommandHandler());
+        handlers.add(new KopplungenCommandHandler());
     }
 
     /**

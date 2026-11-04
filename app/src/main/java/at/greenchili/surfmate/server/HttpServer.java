@@ -760,7 +760,10 @@ public class HttpServer {
                     && !WebHandyGuard.tachoErlaubt(pathOnly, at.greenchili.surfmate.auth.Kopplungen.get()
                             .hatRecht(AuthMiddleware.requestWebKopplungsId(), at.greenchili.surfmate.auth.Kopplungen.RECHT_TACHO))
                     && !WebHandyGuard.launcherErlaubt(method, pathOnly, at.greenchili.surfmate.auth.Kopplungen.get()
-                            .hatRecht(AuthMiddleware.requestWebKopplungsId(), at.greenchili.surfmate.auth.Kopplungen.RECHT_LAUNCHER))) {
+                            .hatRecht(AuthMiddleware.requestWebKopplungsId(), at.greenchili.surfmate.auth.Kopplungen.RECHT_LAUNCHER))
+                    // 0.1.38.8 Paket B: Auto finden/Lichthupe/Warnblinker nur mit Recht „signal“ (Rest prüft FahrzeugAktionen)
+                    && !WebHandyGuard.signalErlaubt(method, pathOnly, at.greenchili.surfmate.auth.Kopplungen.get()
+                            .hatRecht(AuthMiddleware.requestWebKopplungsId(), at.greenchili.surfmate.auth.Kopplungen.RECHT_SIGNAL))) {
                 BefehlsLog.grund("web_gesperrt");
                 WebHandyGuard.sendeGesperrt(out, pathOnly);
                 client.close();
@@ -1594,7 +1597,7 @@ public class HttpServer {
             return true;
         }
         // 0.1.39 HA-Geräte für die Panoptes-Oberfläche (nur Login; Kopplungen sperrt ExternGuard)
-        if (path.startsWith("/api/ha/geraete") && HaApiHandler.handleAnzeige(method, path, out)) return true;
+        if (path.startsWith("/api/ha/geraete") && HaApiHandler.handleAnzeige(method, path, body, out)) return true;
         // Wallbox über evcc oder Home Assistant (WALLBOX_VERTRAG v1, 0.1.11, Kern 6)
         if (path.startsWith("/api/wallbox/") && WallboxApiHandler.handle(method, path, body, out)) return true;
         // Ladeplan zu Hause (LADEPLAN_KONZEPT, 0.1.20)

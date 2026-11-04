@@ -30,7 +30,7 @@
         ];
     </script>
     <script src="../shared/app-tabs.js"></script>
-    <link rel="stylesheet" href="../shared/styles.css?v=pn13">
+    <link rel="stylesheet" href="../shared/styles.css?v=pn14">
     <style>
         /* ===== OLD WEBVIEW COMPAT (Chrome <88, Android 7.x) ===== */
         /* backdrop-filter needs -webkit- prefix on old Chrome */
@@ -569,6 +569,8 @@
             padding: 0;
             backdrop-filter: blur(4px);
         }
+        /* Chromium 74 (WebView am Auto) ohne backdrop-filter: dichter statt Glas */
+        @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .calendar-popup { background: var(--panel-overlay-bg-dicht, rgba(0, 0, 0, 0.72)); } }
         .calendar-popup.active { display: flex; }
         @media (min-width: 480px) {
             .calendar-popup { align-items: center; padding: 20px; }

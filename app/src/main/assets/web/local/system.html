@@ -8,7 +8,7 @@
     <script src="../shared/theme.js?v=13"></script>
     <script src="../shared/kartenquelle.js?v=5"></script>
     <script src="../shared/app-shell.js?v=pn34"></script>
-    <link rel="stylesheet" href="../shared/styles.css?v=pn13">
+    <link rel="stylesheet" href="../shared/styles.css?v=pn14">
     <style>
         .sys-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .sys-stat { background: var(--bg-elevated); border-radius: 8px; padding: 10px 12px; min-width: 0; }
@@ -42,6 +42,7 @@
         .pn-recht { display: flex; align-items: center; gap: 12px; min-height: 48px; cursor: pointer; }
         .pn-recht-text { flex: 1; min-width: 0; white-space: normal; overflow-wrap: anywhere; }
         .pn-recht-wort { display: block; font-size: 16px; font-weight: 600; color: var(--text-primary); }
+        .pn-ha-knopf { margin: 4px 8px 4px 0; min-height: 44px; }
         .pn-recht-info { display: block; font-size: 13px; color: var(--text-muted); line-height: 1.35; }
         .pn-rechte-mehr { margin-top: 6px; }
         .pn-rechte-mehr > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-size: 15px; color: var(--text-primary); }
@@ -974,7 +975,10 @@
                     protokoll: self.t('system.handy_wort_protokoll', 'Protokoll'),
                     dateien: self.t('dateien.recht_wort', 'Dateien'),
                     tacho: self.t('system.handy_wort_tacho', 'Tacho'),
-                    launcher: self.t('system.recht_wort_launcher', 'Launcher') };
+                    signal: self.t('system.handy_wort_signal', 'Hupe & Licht'),
+                    launcher: self.t('system.recht_wort_launcher', 'Launcher'),
+                    besitzer: self.t('system.handy_wort_besitzer', 'Besitzer'),
+                    einstellungen: self.t('system.handy_wort_einstellungen', 'Einstellungen') };
                 var namen = { klima: self.t('system.handy_recht_klima', 'Klima'), zusperren: self.t('system.handy_recht_zusperren', 'Zusperren'),
                     aufsperren: self.t('system.handy_recht_aufsperren', 'Aufsperren (mit Fingerabdruck/Face ID)'), push: self.t('system.handy_recht_push', 'Benachrichtigungen'),
                     web: self.t('system.handy_recht_web', 'Weboberfläche in der App (ohne PIN, Kopplungen, Netz, Updates)'),
@@ -986,14 +990,18 @@
                     protokoll: self.t('system.handy_recht_protokoll', 'Sieht, was andere Geräte am Auto gemacht haben'),
                     dateien: self.t('dateien.recht_info', 'Dateien zwischen Handy und Auto austauschen (höchstens 200 MB, keine Apps)'),
                     tacho: self.t('system.handy_recht_tacho', 'Wählen, was der Tacho zeigt, und „Tacho wieder normal“'),
-                    launcher: self.t('system.recht_info_launcher', 'Startbildschirm im Auto einrichten (nur der Aufbau, keine Befehle ans Auto)') };
+                    signal: self.t('system.handy_recht_signal', 'Auto finden, Lichthupe, Warnblinker (nur mit Rückfrage, nur wenn unter Fahrzeug eingeschaltet)'),
+                    launcher: self.t('system.recht_info_launcher', 'Startbildschirm im Auto einrichten (nur der Aufbau, keine Befehle ans Auto)'),
+                    // 0.1.38.8 Besitzer-Handy: alles einstellen und koppeln wie am Display (nie Zugang, nie Fahrzeug-Aktionen)
+                    besitzer: self.t('system.handy_recht_besitzer', 'Besitzer-Handy: alles einstellen, Geräte koppeln, Wächter schalten – ohne Fernzugang und ohne Fahrzeug-Aktionen'),
+                    einstellungen: self.t('system.handy_recht_einstellungen', 'Einstellungen ändern (jede Änderung wird gemeldet)') };
                 function schalter(k, an) {
                     var info = namen[k] !== wort[k] ? '<span class="pn-recht-info">' + self.esc(namen[k]) + '</span>' : '';
                     return '<label class="pn-recht"><span class="pn-recht-text"><span class="pn-recht-wort">' + self.esc(wort[k]) + '</span>' + info + '</span>'
                         + '<span class="toggle-switch"><input type="checkbox" data-handy-recht="' + k + '" data-id="' + self.esc(g.id) + '"'
                         + (an ? ' checked' : '') + ' aria-label="' + self.esc(wort[k]) + '"><span class="toggle-slider"></span></span></label>';
                 }
-                var alle = ['klima', 'zusperren', 'aufsperren', 'push', 'web', 'kamera', 'wallbox', 'route', 'update', 'ereignisclip', 'launcher', 'protokoll', 'dateien', 'tacho'];
+                var alle = ['besitzer', 'einstellungen', 'klima', 'zusperren', 'aufsperren', 'push', 'web', 'kamera', 'wallbox', 'route', 'update', 'ereignisclip', 'signal', 'launcher', 'protokoll', 'dateien', 'tacho'];
                 var hat = alle.filter(function (k) { return r.indexOf(k) >= 0; });
                 var fehlt = alle.filter(function (k) { return r.indexOf(k) < 0; });
                 var html = '<div class="pn-rechte">';
@@ -1066,35 +1074,158 @@
                     update: [self.t('system.handy_wort_update', 'Update'),
                         self.t('system.handy_recht_update', 'Panoptes und Launcher aktualisieren (nur geparkt)')],
                     geraete: [self.t('system.fremd_wort_geraete', 'Smarte Geräte'),
-                        self.t('system.fremd_recht_geraete', 'Home Assistant darf seine Geräte (Schalter, Licht, Klima) an Panoptes melden. Panoptes zeigt sie nur an; Steuern schaltest du je Gerät einzeln ein.')]
+                        self.t('system.fremd_recht_geraete', 'Home Assistant darf seine Geräte (Schalter, Licht, Klima) an Panoptes melden. Panoptes zeigt sie nur an; Steuern schaltest du je Gerät einzeln ein.')],
+                    geraete_steuern: [self.t('system.fremd_wort_geraete_steuern', 'Tor & Schloss steuern'),
+                        self.t('system.fremd_recht_geraete_steuern', 'Home Assistant darf Tore und Schlösser schalten, die du unten einzeln freigibst. Alarmanlagen und Sirenen nie.')]
                 };
                 var html = '<div class="pn-rechte">';
                 // 0.1.37: „tacho“, „launcher“ (0.1.38) und „update“ (0.1.38.2) nur für das Cockpit (Home Assistant und Dienste nie)
                 // 0.1.39: „geraete“ nur für Home Assistant (HA_VERTRAG v1.1 Teil D), Standard aus
+                // 0.1.38.8: „geraete_steuern“ getrennt davon, erst sichtbar mit „geraete“, Standard aus
                 (g.art === 'cockpit' ? ['kamera', 'standbild', 'tacho', 'launcher', 'update']
-                    : g.art === 'homeassistant' ? ['kamera', 'standbild', 'geraete'] : ['kamera', 'standbild']).forEach(function (k) {
+                    : g.art === 'homeassistant' ? ['kamera', 'standbild', 'geraete'].concat(r.indexOf('geraete') >= 0 ? ['geraete_steuern'] : [])
+                    : ['kamera', 'standbild']).forEach(function (k) {
                     html += '<label class="pn-recht"><span class="pn-recht-text"><span class="pn-recht-wort">' + self.esc(texte[k][0])
                         + '</span><span class="pn-recht-info">' + self.esc(texte[k][1]) + '</span></span>'
                         + '<span class="toggle-switch"><input type="checkbox" data-fremd-recht="' + k + '" data-id="' + self.esc(g.id) + '"'
                         + (r.indexOf(k) >= 0 ? ' checked' : '') + ' aria-label="' + self.esc(texte[k][0]) + '"><span class="toggle-slider"></span></span></label>';
                 });
-                // 0.1.39 HA-Geräte Stufe 1: nur anzeigen, was Home Assistant gemeldet hat (Steuern kommt später)
+                // 0.1.39 HA-Geräte: was Home Assistant gemeldet hat; 0.1.38.8 Tor und Schloss steuern (je Gerät freigeben)
                 if (g.art === 'homeassistant' && r.indexOf('geraete') >= 0) html += '<div class="pn-ha-geraete" data-ha-geraete></div>';
                 return html + '</div>';
             },
             haGeraeteLaden: function (box) {
                 var self = this;
-                fetch('/api/ha/geraete').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
+                fetch('/api/ha/geraete', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
                     .then(function (d) {
                         var l = d && Array.isArray(d.geraete) ? d.geraete : null;
                         if (!l) { box.textContent = self.t('system.ha_geraete_fehler', 'Geräteliste nicht lesbar.'); return; }
                         if (!l.length) { box.textContent = self.t('system.ha_geraete_leer', 'Home Assistant hat noch keine Geräte gemeldet.'); return; }
-                        box.innerHTML = '<div class="pn-recht-wort">' + self.esc(self.t('system.ha_geraete_titel', 'Gemeldete Geräte (nur Anzeige)'))
-                            + '</div><ul class="pn-ha-liste">' + l.map(function (x) {
-                                return '<li>' + self.esc(x.titel || x.entity) + (x.raum ? ' · ' + self.esc(x.raum) : '')
-                                    + (x.zustand != null ? ' <span class="pn-recht-info">' + self.esc(String(x.zustand)) + '</span>' : '') + '</li>';
-                            }).join('') + '</ul>';
+                        var html = '<div class="pn-recht-wort">' + self.esc(self.t('system.ha_geraete_titel', 'Gemeldete Geräte')) + '</div><ul class="pn-ha-liste">';
+                        l.forEach(function (x) {
+                            html += '<li>' + self.esc(x.titel || x.entity) + (x.raum ? ' · ' + self.esc(x.raum) : '')
+                                + (x.zustand != null ? ' <span class="pn-recht-info">' + self.esc(String(x.zustand)) + '</span>' : '');
+                            if (x.steuerbar) {
+                                // 0.1.38.8: Steuern je Gerät Standard aus; Knöpfe nur mit Freigabe und Recht
+                                html += '<label class="pn-recht"><span class="pn-recht-text"><span class="pn-recht-info">'
+                                    + self.esc(self.t('system.ha_steuern_freigabe', 'Steuern')) + '</span></span><span class="toggle-switch">'
+                                    + '<input type="checkbox" data-ha-frei="' + self.esc(x.entity) + '" data-ha-art="' + self.esc(x.art) + '"'
+                                    + (x.steuern ? ' checked' : '') + '><span class="toggle-slider"></span></span></label>';
+                                if (x.steuern && d.steuerRecht) {
+                                    var akt = x.art === 'tor' ? ['oeffnen', 'schliessen'] : ['aufsperren', 'zusperren'];
+                                    akt.forEach(function (a) {
+                                        var auf = a === 'oeffnen' || a === 'aufsperren';
+                                        if (auf && !d.amAuto) return;   // Öffnen/Aufsperren nur am Autobildschirm
+                                        html += '<button class="btn pn-ha-knopf" type="button" data-ha-befehl="' + self.esc(x.entity) + '" data-ha-aktion="' + a + '">'
+                                            + self.esc(self.t('system.ha_steuern_' + a, a)) + '</button>';
+                                    });
+                                    if (!d.amAuto) html += '<span class="pn-recht-info">' + self.esc(self.t('system.ha_steuern_nur_auto', 'Öffnen und Aufsperren gehen nur direkt am Autobildschirm.')) + '</span>';
+                                } else if (x.steuern) {
+                                    html += '<span class="pn-recht-info">' + self.esc(self.t('system.ha_steuern_recht_fehlt', 'Erst oben „Tor & Schloss steuern“ einschalten.')) + '</span>';
+                                }
+                            }
+                            html += '</li>';
+                        });
+                        html += '</ul>';
+                        html += self.haAutomatik(d, l);
+                        if (d.letzter) html += '<div class="pn-recht-info" data-ha-letzter>' + self.esc(self.t('system.ha_letzter', 'Letzte Aktion')) + ': '
+                            + self.esc(self.t('system.ha_steuern_' + d.letzter.aktion, d.letzter.aktion)) + ' – ' + self.esc(self.haStatusText(d.letzter.status)) + '</div>';
+                        box.innerHTML = html;
+                        Array.prototype.forEach.call(box.querySelectorAll('input[data-ha-frei]'), function (cb) {
+                            cb.onchange = function () { self.haFreigabe(cb, box); };
+                        });
+                        Array.prototype.forEach.call(box.querySelectorAll('button[data-ha-befehl]'), function (b) {
+                            b.onclick = function () { self.haBefehl(b, box); };
+                        });
+                        var auto = box.querySelector('[data-ha-auto]');
+                        if (auto) auto.onchange = function () { self.haAutomatikSetzen(box); };
                     });
+            },
+            // 0.1.38.8: Tor beim Heimkommen (Standard aus): ein freigegebenes Tor und eine SafeLocation-Zone „Zuhause“
+            haAutomatik: function (d, l) {
+                var self = this, tore = l.filter(function (x) { return x.art === 'tor' && x.steuern; });
+                if (!tore.length || !d.steuerRecht) return '';
+                var a = d.automatik || {}, zonen = Array.isArray(d.zonen) ? d.zonen : [];
+                var html = '<div class="pn-recht-wort">' + self.esc(self.t('system.ha_auto_titel', 'Tor beim Heimkommen öffnen')) + '</div>'
+                    + '<div class="pn-recht-info">' + self.esc(self.t('system.ha_auto_info', 'Öffnet das gewählte Tor, wenn du langsam auf deine Zone „Zuhause“ zufährst – höchstens einmal je Ankunft, nie bei unklarer Lage. Jede Auslösung wird gemeldet.')) + '</div>';
+                if (!zonen.length) return html + '<div class="pn-recht-info">' + self.esc(self.t('system.ha_auto_keine_zone', 'Erst unter Wächter → Sichere Orte eine Zone für Zuhause anlegen.')) + '</div>';
+                html += '<label class="pn-recht-info">' + self.esc(self.t('system.ha_auto_tor', 'Tor')) + ' <select data-ha-auto data-ha-auto-tor>'
+                    + '<option value="">' + self.esc(self.t('system.ha_auto_aus', 'Aus')) + '</option>'
+                    + tore.map(function (x) { return '<option value="' + self.esc(x.entity) + '"' + (a.tor === x.entity ? ' selected' : '') + '>' + self.esc(x.titel || x.entity) + '</option>'; }).join('')
+                    + '</select></label> <label class="pn-recht-info">' + self.esc(self.t('system.ha_auto_zone', 'Zone „Zuhause“')) + ' <select data-ha-auto data-ha-auto-zone>'
+                    + zonen.map(function (z) { return '<option value="' + self.esc(z.id) + '"' + (a.zone === z.id ? ' selected' : '') + '>' + self.esc(z.name) + '</option>'; }).join('')
+                    + '</select></label>';
+                return html;
+            },
+            haStatusText: function (st) {
+                var self = this;
+                return st === 'ok' ? self.t('system.ha_steuern_ok', 'Erledigt (Home Assistant bestätigt).')
+                    : st === 'fehler' ? self.t('system.ha_steuern_fehler', 'Home Assistant meldet einen Fehler.')
+                    : st === 'nicht_bestaetigt' ? self.t('system.ha_steuern_nicht_bestaetigt', 'Nicht bestätigt – bitte vor Ort prüfen.')
+                    : self.t('system.ha_steuern_gesendet', 'Gesendet – warte auf Home Assistant …');
+            },
+            haMeldung: function (text, gut) {
+                if (window.BYD && BYD.utils && BYD.utils.toast) BYD.utils.toast(text, gut ? 'success' : 'error');
+            },
+            haSenden: function (pfad, rumpf) {
+                rumpf.bestaetigt = true;   // nur nach der Rückfrage hier
+                return fetch(pfad, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rumpf) })
+                    .then(function (r) { return r.json(); }).catch(function () { return { ok: false, grund: 'fehler' }; });
+            },
+            haFreigabe: function (cb, box) {
+                var self = this, an = cb.checked, art = cb.getAttribute('data-ha-art');
+                if (an && !window.confirm(art === 'tor'
+                    ? self.t('system.ha_steuern_warn_tor', 'Panoptes kann dieses Tor öffnen. Nur einschalten, wenn ein plötzlich öffnendes Tor niemanden gefährdet. Einschalten?')
+                    : self.t('system.ha_steuern_warn_schloss', 'Panoptes kann diese Tür aufsperren – nur mit einem Tipp am Autobildschirm und Rückfrage, nie automatisch. Einschalten?'))) {
+                    cb.checked = false;
+                    return;
+                }
+                self.haSenden('/api/ha/geraete/freigabe', { entity: cb.getAttribute('data-ha-frei'), steuern: an }).then(function (d) {
+                    self.haMeldung(d.ok ? self.t('system.handy_gespeichert', 'Gespeichert') : self.t('system.handy_fehler', 'Konnte nicht speichern.'), d.ok);
+                    self.haGeraeteLaden(box);   // echten Stand zurücklesen
+                });
+            },
+            haBefehl: function (b, box) {
+                var self = this, a = b.getAttribute('data-ha-aktion');
+                if (!window.confirm(self.t('system.ha_steuern_frage_' + a, a + '?'))) return;
+                b.disabled = true;
+                self.haSenden('/api/ha/geraete/befehl', { entity: b.getAttribute('data-ha-befehl'), aktion: a }).then(function (d) {
+                    if (!d.ok) {
+                        var g = d.grund;
+                        self.haMeldung(g === 'nur_am_auto' ? self.t('system.ha_steuern_nur_auto', 'Öffnen und Aufsperren gehen nur direkt am Autobildschirm.')
+                            : g === 'nicht_verbunden' ? self.t('system.ha_steuern_nicht_verbunden', 'Home Assistant ist gerade nicht verbunden.')
+                            : g === 'recht_fehlt' ? self.t('system.ha_steuern_recht_fehlt', 'Erst oben „Tor & Schloss steuern“ einschalten.')
+                            : g === 'zu_oft' ? self.t('system.ha_steuern_zu_oft', 'Bitte kurz warten.')
+                            : self.t('system.ha_steuern_abgelehnt', 'Abgelehnt.'), false);
+                        b.disabled = false;
+                        return;
+                    }
+                    self.haMeldung(self.haStatusText('offen'), true);
+                    self.haWarten(d.id, box, 0);
+                });
+            },
+            // Erfolg nur mit Echo von Home Assistant: Stand abfragen, bis er nicht mehr „offen“ ist (höchstens ~35 s)
+            haWarten: function (id, box, n) {
+                var self = this;
+                setTimeout(function () {
+                    fetch('/api/ha/geraete/befehl?id=' + encodeURIComponent(id), { cache: 'no-store' })
+                        .then(function (r) { return r.json(); }).catch(function () { return {}; }).then(function (s) {
+                            if (s.status === 'offen' && n < 17) { self.haWarten(id, box, n + 1); return; }
+                            self.haMeldung(self.haStatusText(s.status || 'nicht_bestaetigt'), s.status === 'ok');
+                            self.haGeraeteLaden(box);
+                        });
+                }, 2000);
+            },
+            haAutomatikSetzen: function (box) {
+                var self = this, tor = box.querySelector('[data-ha-auto-tor]').value, z = box.querySelector('[data-ha-auto-zone]');
+                if (tor && !window.confirm(self.t('system.ha_auto_confirm', 'Das Tor öffnet sich dann automatisch beim Heimkommen. Einschalten?'))) {
+                    self.haGeraeteLaden(box);
+                    return;
+                }
+                self.haSenden('/api/ha/geraete/automatik', { tor: tor || null, zone: z ? z.value : null }).then(function (d) {
+                    self.haMeldung(d.ok ? self.t('system.handy_gespeichert', 'Gespeichert') : self.t('system.handy_fehler', 'Konnte nicht speichern.'), d.ok);
+                    self.haGeraeteLaden(box);
+                });
             },
             fremdRechte: function (cb) {
                 var self = this, id = cb.getAttribute('data-id'), k = cb.getAttribute('data-fremd-recht');
@@ -1110,6 +1241,11 @@
                 }
                 if (cb.checked && k === 'geraete'
                     && !window.confirm(self.t('system.fremd_geraete_confirm', 'Home Assistant meldet dann Namen und Räume seiner Geräte an Panoptes. Sie bleiben im Auto. Einschalten?'))) {
+                    cb.checked = false;
+                    return;
+                }
+                if (cb.checked && k === 'geraete_steuern'
+                    && !window.confirm(self.t('system.fremd_geraete_steuern_confirm', 'Home Assistant kann dann freigegebene Tore öffnen und Schlösser aufsperren. Jede Aktion wird gemeldet und protokolliert. Einschalten?'))) {
                     cb.checked = false;
                     return;
                 }
@@ -1169,6 +1305,12 @@
                 // 0.1.26.1 Panoptes aktualisieren vom Handy: eigene Rückfrage, Standard aus
                 if (cb.getAttribute('data-handy-recht') === 'update' && cb.checked
                     && !window.confirm(self.t('system.handy_update_confirm', 'Dieses Gerät darf dann Panoptes aktualisieren – nur auf eine freigegebene Version und nur, wenn das Auto in P steht und aus ist. Du bekommst bei jedem Start eine Telegram-Nachricht. Einschalten?'))) {
+                    cb.checked = false;
+                    return;
+                }
+                // 0.1.38.8 Hupe/Licht/Warnblinker vom Handy: eigene Rückfrage, Standard aus
+                if (cb.getAttribute('data-handy-recht') === 'signal' && cb.checked
+                    && !window.confirm(self.t('system.handy_signal_confirm', 'Dieses Handy darf dann von überall hupen, blinken und den Warnblinker einschalten – nur nach einer Rückfrage am Handy, nur für die Funktionen, die du unter Fahrzeug eingeschaltet hast, nie während der Fahrt. Das ist außen am Auto zu sehen und zu hören. Du bekommst bei jeder Auslösung eine Telegram-Nachricht. Einschalten?'))) {
                     cb.checked = false;
                     return;
                 }
@@ -1290,6 +1432,7 @@
                     .then(function (r) { return r.json().then(function (d) { return d || {}; }, function () { return {}; }); })
                     .then(function (d) {
                         if (d.ok) toast(was === 'erlauben' ? self.t('system.req_allowed', 'Erlaubt. Das Gerät verbindet sich jetzt.') : self.t('system.req_denied', 'Abgelehnt.'), 'success');
+                        if (d.ok && was === 'erlauben' && art === 'handy') self.unterwegsAnbieten();
                         else if (d.grund === 'schon_entschieden') toast(self.t('system.req_done', 'Wurde schon entschieden.'), 'info');
                         else if (d.grund === 'abgelaufen') toast(self.t('system.req_expired', 'Die Anfrage ist abgelaufen. Bitte am Gerät neu starten.'), 'warning');
                         else toast(self.t('system.req_fail', 'Das hat nicht geklappt.'), 'error');
@@ -1416,6 +1559,26 @@
                             });
                     };
                 }
+            },
+            // 0.1.38.8: nach dem Erlauben einer Handy-Kopplung einmal fragen, ob das Handy das Auto auch unterwegs bzw.
+            // abgestellt erreichen soll (Brücke). Standard bleibt aus; die Rückfrage enthält die Zustimmung zur Brücke.
+            unterwegsAnbieten: function () {
+                var self = this;
+                fetch('/api/bruecke', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (b) {
+                    if (!b || b.ein) return;
+                    var frage = self.t('system.handy_unterwegs_q', 'Soll dich die Handy-App auch erreichen, wenn du nicht beim Auto bist oder es abgestellt ist?')
+                        + '\n\n' + self.t('system.bridge_consent', 'Ich möchte mein Handy übers Internet verbinden. Dafür läuft verschlüsselter Verkehr über unseren Server in Deutschland. Der Server sieht keine Fahrzeugdaten.')
+                        + '\n\n' + self.t('system.handy_unterwegs_strom', 'Kostet etwas Strom der 12-V-Batterie. Später änderbar unter Verbindungen.');
+                    if (!window.confirm(frage)) return;
+                    fetch('/api/bruecke', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ein: true, zustimmung: true, quelle: 'kopplung' }) })
+                        .then(function (r) { return r.ok; }, function () { return false; }).then(function (ok) {
+                            if (window.BYD && BYD.utils && BYD.utils.toast) {
+                                BYD.utils.toast(ok ? self.t('system.handy_unterwegs_an', 'Eingeschaltet – das Handy erreicht das Auto jetzt auch unterwegs.')
+                                    : self.t('system.bridge_fail', 'Das hat nicht geklappt.'), ok ? 'success' : 'warning');
+                            }
+                            if (document.getElementById('brueckeEin')) self.brueckeInit();
+                        });
+                }, function () {});
             },
             brueckeInit: function () {
                 var self = this, ein = document.getElementById('brueckeEin');

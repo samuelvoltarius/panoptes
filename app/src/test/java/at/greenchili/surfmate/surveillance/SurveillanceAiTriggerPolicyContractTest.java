@@ -26,9 +26,16 @@ public class SurveillanceAiTriggerPolicyContractTest {
         assertTrue(finalGate >= 0);
         assertTrue(triggerDecision > finalGate);
         assertTrue(source.contains("triggerSpaceDets.add(baselineSpaceDets != null"));
-        assertTrue(source.contains("if (triggerEvidenceFound)"));
-        assertTrue(source.contains(
-                "lastAiConfirmationElapsedMs = detectionObservationElapsedMs"));
+        // 0.1.38.8 (Wächter-KI B1): the stamp is gated by trigger evidence AND the
+        // multi-batch verdict (fail-open on a counting error).
+        int stampGate = source.indexOf(
+                "if (triggerEvidenceFound && (mehrbildBestaetigt || mehrbildFehler))");
+        int stamp = source.indexOf(
+                "lastAiConfirmationElapsedMs = detectionObservationElapsedMs", stampGate);
+        assertTrue(stampGate >= 0);
+        assertTrue(stamp > stampGate && stamp - stampGate < 200);
+        assertTrue(source.indexOf("lastAiConfirmationElapsedMs = detectionObservationElapsedMs")
+                == stamp);
         assertTrue(source.contains(
                 "lastAiConfirmationElapsedMs >= firstMotionElapsedMs"));
         assertTrue(source.contains("if (baselineSpaceDets != null) {\n"

@@ -30,9 +30,40 @@ public final class UebernahmeApiHandler {
      */
     public static void anmelden() {
         ladepreisHakenSetzen();
-        EinrichtungApiHandler.overdriveErkennung = () -> OverdriveUebernahme.vorhanden(
-                OverdriveQuelle.erkenne(new File(OverdriveQuelle.STANDARD_ORDNER),
-                        OverdriveUebernahme.dateinamen(OverdriveUebernahme.REGELN), false));
+        // 0.1.38.8: extra_overdrive nur, wenn die Overdrive-App INSTALLIERT ist und Daten da sind. Die Paketabfrage
+        // (pm path) ist teuer → höchstens einmal/Stunde gecacht, nie je GET; die Datei-Erkennung läuft wie bisher.
+        EinrichtungApiHandler.overdriveErkennung = new java.util.function.BooleanSupplier() {
+            private volatile long ts;
+            private volatile boolean paket;
+            public boolean getAsBoolean() {
+                long now = System.currentTimeMillis();
+                if (now - ts > 3_600_000L) { paket = OverdriveQuelle.paketBekannt(); ts = now; }
+                return paket && OverdriveUebernahme.vorhanden(OverdriveQuelle.erkenne(
+                        new File(OverdriveQuelle.STANDARD_ORDNER), OverdriveUebernahme.dateinamen(OverdriveUebernahme.REGELN), paket));
+            }
+        };
+        // 0.1.38.8: extra_display erkannt, wenn am Auto ein eigenes Hintergrundbild abgelegt ist (nur Datei-Stat).
+        EinrichtungApiHandler.hintergrundErkennung = () -> new File(
+                at.greenchili.surfmate.util.DaemonStorage.path("hintergrund"),
+                at.greenchili.surfmate.overlay.HintergrundRegel.DATEI).exists();
+        // 0.1.38.8: extra_launcher erkannt, wenn die Launcher-APK installiert ist; pm-Abfrage höchstens einmal/Stunde.
+        EinrichtungApiHandler.launcherErkennung = new java.util.function.BooleanSupplier() {
+            private volatile long ts;
+            private volatile boolean val;
+            public boolean getAsBoolean() {
+                long now = System.currentTimeMillis();
+                if (now - ts > 3_600_000L) {
+                    try {
+                        val = at.greenchili.surfmate.appupdate.LauncherPaket.stand(
+                                at.greenchili.surfmate.appupdate.LauncherPaket.SHELL).installiert();
+                    } catch (Throwable t) {
+                        val = false;
+                    }
+                    ts = now;
+                }
+                return val;
+            }
+        };
     }
 
     /** Außenwelt für Tests austauschbar. */
@@ -131,6 +162,17 @@ public final class UebernahmeApiHandler {
                     req.optString("vorschau_id", null), req.optJSONArray("posten"), u.schreiber());
             int status = res.optInt("status", 200);
             res.remove("status");
+            // 0.1.38.8 (Projektinhaber, „Noch einrichten": vieles schon erledigt): nach einer echten Übernahme den
+            // Einrichtungs-Schritt extra_overdrive dauerhaft ausblenden (Marker, kein erneutes Nachfragen).
+            if (status == 200) {
+                org.json.JSONArray ue = res.optJSONArray("uebernommen");
+                OverdriveUebernahme.Schreiber sb = u.schreiber();
+                if (ue != null && ue.length() > 0 && sb != null) {
+                    java.util.Map<String, Object> w = new java.util.HashMap<>();
+                    w.put("overdriveErledigt", true);
+                    sb.werte("uebernahme", w);
+                }
+            }
             return new Object[] {status, res};
         }
         return fehler(405, "methode");

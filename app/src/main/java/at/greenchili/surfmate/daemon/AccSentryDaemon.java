@@ -4984,7 +4984,12 @@ public class AccSentryDaemon {
         boolean verifiedPanelMode =
                 isDilink4CameraMode() || isDilink5CameraMode();
         if (!verifiedPanelMode) {
-            if (!isScreenDeterrentActive() && !isCameraPipelineActive()) {
+            // 0.1.38.8 (Deploy 3, Surf DiLink 3): ein ausdrücklicher Nutzerbefehl (screen_power, Automation,
+            // Lenkradtaste) setzt die 60-s-Sperre StealthPanel.requestUserOverride. Der DiLink-4/5-Weg beachtet sie in
+            // panelDarkenDecision, dieser Legacy-Weg nicht – das Panel ging nach ~11 s wieder aus. Nach Ablauf
+            // der Sperre wird normal abgedunkelt (12 V), die Sperre selbst wird nie verlängert.
+            if (!isScreenDeterrentActive() && !isCameraPipelineActive()
+                    && !isLegacyUserOverrideActive()) {
                 if (!isPanelRequestCurrent(generation, false)) {
                     return true;
                 }
@@ -6138,6 +6143,22 @@ public class AccSentryDaemon {
         return "already-dark".equals(reason)
                 ? PanelDarkenDecision.ALREADY_DARK
                 : PanelDarkenDecision.RETRY_LATER;
+    }
+
+    /**
+     * Nutzer-Sperre für den Legacy-Weg. Ist das Panel nachweislich aus, kann eine Sperre nichts mehr halten – dann
+     * keine Config-Neulesung (sonst ~10 KB JSON alle 10 s die ganze Parkzeit, siehe isScreenDeterrentActive).
+     * Fehler zählen als „keine Sperre“, damit ein kaputter Wert das Abdunkeln nie dauerhaft verhindert.
+     */
+    private static boolean isLegacyUserOverrideActive() {
+        try {
+            if (at.greenchili.surfmate.power.StealthPanel.isPanelOff(appContext)) return false;
+            boolean aktiv = at.greenchili.surfmate.power.StealthPanel.isUserOverrideActive();
+            logPanelGate(aktiv ? "user-override" : null);
+            return aktiv;
+        } catch (Throwable t) {
+            return false;
+        }
     }
 
     private static volatile String lastPanelGateReason = "";

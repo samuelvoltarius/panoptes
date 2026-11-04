@@ -12,6 +12,9 @@ public final class StartWarten {
 
     public static final long INTERVALL_MS = 2_000L;
     public static final long HOECHSTENS_MS = 3 * 60_000L;
+    /** 0.1.38.8 Schnellstart: in den ersten 30 s alle 500 ms fragen (der Daemon kann jeden Moment antworten), danach alle 2 s. */
+    public static final long SCHNELL_INTERVALL_MS = 500L;
+    public static final long SCHNELL_BIS_MS = 30_000L;
 
     public enum Schritt { NEU_LADEN, WEITER_WARTEN, AUFGEBEN }
 
@@ -19,6 +22,11 @@ public final class StartWarten {
 
     public StartWarten(long beginnMs) {
         this.beginn = beginnMs;
+    }
+
+    /** Abstand bis zur nächsten Abfrage: anfangs schnell, später sparsam. */
+    public long naechstesIntervallMs(long jetztMs) {
+        return jetztMs - beginn < SCHNELL_BIS_MS ? SCHNELL_INTERVALL_MS : INTERVALL_MS;
     }
 
     /** Nach einer Abfrage: Server antwortet → neu laden; sonst weiter, bis die Höchstzeit um ist. */

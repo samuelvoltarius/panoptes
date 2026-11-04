@@ -11,7 +11,7 @@
     <meta name="theme-color" content="#0A2238">
     <script src="../shared/theme.js?v=13"></script>
     <script src="../shared/app-shell.js?v=pn34"></script>
-    <link rel="stylesheet" href="../shared/styles.css?v=pn13">
+    <link rel="stylesheet" href="../shared/styles.css?v=pn14">
     <style>
         .guard-page .main-content { padding: 0; }
         .gw { padding: 0 28px 60px; max-width: 1100px; box-sizing: border-box; }
@@ -59,6 +59,16 @@
     <main class="main-content">
         <div class="gw">
         <section class="gw-grid">
+            <!-- 0.1.38.8 Wächter Standard an: die einmalige Frage mit Rechtshinweis (steht nur, solange sie offen ist) -->
+            <article class="gc wide" id="sFrage" hidden>
+                <h2 data-i18n="guard.standard_titel">Soll der Wächter dein Auto bewachen?</h2>
+                <p class="lead" data-i18n="guard.standard_text">Neu: Der Wächter ist jetzt standardmäßig an und nimmt nur bei Erschütterung auf.</p>
+                <div class="actions">
+                    <button class="gbtn lime" type="button" id="sAn" style="font-size:1.25em;padding:14px 28px" data-i18n="guard.standard_knopf">Verstanden – Wächter einschalten</button>
+                </div>
+                <p class="note" id="sHinweis" hidden></p>
+            </article>
+
             <!-- 0.1.27 Ereignis-Clip: „Ereignis von HH:MM gesichert – behalten?“ (Koordination 29.10., F2) -->
             <article class="gc wide" id="eFrage" hidden>
                 <h2 id="eFrageTitel"></h2>
@@ -113,6 +123,14 @@
                 <p class="lead" data-i18n="guard.kameras_lead">Panoptes zeigt dir die Bilder der Kameras. Du tippst an, welches Bild vorne, hinten, links und rechts ist.</p>
                 <button class="gschalter" type="button" id="kamerasKnopf" aria-pressed="false" data-i18n="guard.kameras_knopf">Kameras einrichten</button>
                 <p class="sub" id="kamerasHinweis" role="status" aria-live="polite"></p>
+            </article>
+
+            <!-- 0.1.38.8 („Bericht beim Abstellen kann ich nicht drauf drücken und einstellen?“):
+                 Web-Schalter + Einstellungen für den Abschaltbericht (telegram.abschaltBericht*, Gruppe system).
+                 Am Display läuft der Schritt wie bisher; hier ist er jetzt auch nachholbar. -->
+            <article class="gc wide" id="abschaltbericht">
+                <h2 data-i18n="einr.schritt.extra_abschaltbericht">Bericht beim Abstellen</h2>
+                <div id="abBox"></div>
             </article>
 
             <!-- 5. Erweitert: alles Weitere, zugeklappt -->
@@ -178,6 +196,9 @@
             $('gState').textContent = txt;
             $('gDot').className = 'pn-dot' + (dot ? ' ' + dot : '');
             schalterZeigen(!!s.enabled);
+            // 0.1.38.8: die einmalige Frage „Wächter einschalten?“ nur zeigen, solange sie offen ist
+            rechtshinweis = s.rechtshinweis || '';
+            $('sFrage').hidden = !s.standardFrage;
             if (s.totalEventsToday != null) $('zHeute').textContent = s.totalEventsToday;
             $('gSub').textContent = s.totalEventsToday != null ? t('guard.today', 'Heute {n} Aufnahmen', { n: s.totalEventsToday }) : '';
             // 0.1.9.1: ohne gespeicherte Wahl nimmt der Wächter nur bei Erschütterung auf (Kern status.waechterAusloeser)
@@ -190,6 +211,35 @@
             } else st.hidden = true;
             kameraFps(s.kameraFps);
         }).catch(function () {});
+    }
+
+    // ---------------- 0.1.38.8 Wächter Standard an: „Verstanden – Wächter einschalten“ (der Rechtshinweis steht darüber)
+    var rechtshinweis = '', standardLaeuft = false;
+    function standardAn() {
+        if (standardLaeuft || !rechtshinweis) return;
+        standardLaeuft = true;
+        $('sAn').disabled = true;
+        fetch('/api/surveillance/standard-an', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rechtshinweis: rechtshinweis }) })
+            .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { ok: r.ok && d.success === true, d: d }; }); })
+            .then(function (x) {
+                standardLaeuft = false;
+                $('sAn').disabled = false;
+                var h = $('sHinweis');
+                if (x.ok) { toast(t('guard.standard_ok', 'Der Wächter ist eingeschaltet (nur bei Erschütterung).'), true); h.hidden = true; }
+                else {
+                    h.textContent = x.d && x.d.error === 'nicht_mehr_noetig'
+                        ? t('guard.standard_veraltet', 'Das hat sich inzwischen erledigt, es wurde nichts geändert.')
+                        : t('guard.standard_fehler', 'Das hat nicht geklappt. Bitte nochmal versuchen.');
+                    h.hidden = false;
+                }
+                loadState();
+            }, function () {
+                standardLaeuft = false;
+                $('sAn').disabled = false;
+                $('sHinweis').textContent = t('guard.standard_fehler', 'Das hat nicht geklappt. Bitte nochmal versuchen.');
+                $('sHinweis').hidden = false;
+            });
     }
 
     // ---------------- 0.1.38 großer Schalter (POST /api/surveillance/enable|disable, wie surveillance.js)
@@ -382,6 +432,8 @@
             store.zeichne($('dBox'), { gruppe: 'waechter', abschnitt: 'abschreckung' });
             store.zeichne($('sBox'), { gruppe: 'waechter', abschnitt: 'stopp' });
             store.zeichne($('sAuto'), { gruppe: 'auto' });
+            // 0.1.38.8: Abschaltbericht-Schalter + Einstellungen (Gruppe system), Texte aus dem Schema-Katalog.
+            store.zeichne($('abBox'), { gruppe: 'system', nur: ['telegram.abschaltBericht', 'telegram.abschaltBerichtMinMeter', 'telegram.abschaltBerichtMinMinuten'] });
         });
     }
 
@@ -430,6 +482,7 @@
         BYD.core.init();
         loadState(); loadHealth(); ladeEinstellungen(); ereignisFrage(); loadZahlen(); loadLetzte();
         $('gSchalter').onclick = schalten;
+        $('sAn').onclick = standardAn;
         $('kamerasKnopf').onclick = kamerasEinrichten;
         $('eBehalten').onclick = function () { ereignisAntwort(true); };
         $('eNein').onclick = function () { ereignisAntwort(false); };

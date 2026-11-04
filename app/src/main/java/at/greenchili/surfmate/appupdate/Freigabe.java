@@ -66,6 +66,11 @@ public final class Freigabe {
     public final String zertifikat;
     /** Sprache → Zeilen; leer, wenn version.json keine Notizen trägt. */
     public final JSONObject notizen;
+    /**
+     * 0.1.38.8 (Koordination 04.11.): gekürzte Sammelliste aller Änderungen seit der letzten großen Version, beim
+     * Release aus neuigkeiten.json erzeugt ({@code deploy/version-notizen.py}); leer bei kleinen Versionen.
+     */
+    public final JSONObject notizenSeitGross;
     /** Download-Adresse der APK; setzt der Dienst je nach {@link UpdateQuelle} (nie aus version.json). */
     private final String apkAdresse;
     /** 0.1.37 Stufe 4: Launcher-APK desselben Releases (optional, sonst null). */
@@ -124,23 +129,24 @@ public final class Freigabe {
     }
 
     private Freigabe(int vc, String name, String kanal, String tag, String apk, String sha, int minV, String cert,
-                     JSONObject notizen, String apkAdresse, Launcher launcher, String art) {
+                     JSONObject notizen, JSONObject notizenSeitGross, String apkAdresse, Launcher launcher, String art) {
         this.versionCode = vc; this.versionName = name; this.kanal = kanal; this.tag = tag; this.apk = apk;
         this.sha256 = sha; this.minVersion = minV; this.zertifikat = cert; this.notizen = notizen;
+        this.notizenSeitGross = notizenSeitGross;
         this.apkAdresse = apkAdresse; this.launcher = launcher; this.art = art;
     }
 
     /** Dieselbe Freigabe mit der Download-Adresse der APK. */
     public Freigabe mitApkUrl(String url) {
-        return new Freigabe(versionCode, versionName, kanal, tag, apk, sha256, minVersion, zertifikat, notizen, url,
-                launcher, art);
+        return new Freigabe(versionCode, versionName, kanal, tag, apk, sha256, minVersion, zertifikat, notizen,
+                notizenSeitGross, url, launcher, art);
     }
 
     /** Dieselbe Freigabe mit der Download-Adresse der Launcher-APK; null = Launcher nicht im Release erreichbar. */
     public Freigabe mitLauncherUrl(String url) {
         Launcher l = launcher == null || url == null ? null : launcher.mitApkUrl(url);
         return new Freigabe(versionCode, versionName, kanal, tag, apk, sha256, minVersion, zertifikat, notizen,
-                apkAdresse, l, art);
+                notizenSeitGross, apkAdresse, l, art);
     }
 
     public static Freigabe lies(String json) throws Fehler {
@@ -166,26 +172,31 @@ public final class Freigabe {
         if (!APK.matcher(apk).matches() || apk.startsWith(".")) throw new Fehler("nicht_erreichbar", "apk");
         if (!HEX64.matcher(sha).matches()) throw new Fehler("pruefsumme", "sha256");
         if (!zulaessig(cert)) throw new Fehler("signatur", "zertifikat " + cert);
-        JSONObject notizen = new JSONObject();
-        JSONObject n = j.optJSONObject("notizen");
-        if (n != null) {
-            for (String sprache : new String[]{"de", "en", "fr", "it", "nl"}) {
-                JSONArray a = n.optJSONArray(sprache);
-                if (a == null) continue;
-                JSONArray sauber = new JSONArray();
-                for (int i = 0; i < a.length() && i < 8; i++) {
-                    String z = a.optString(i, "").trim();
-                    if (!z.isEmpty()) sauber.put(z.length() > 200 ? z.substring(0, 200) : z);
-                }
-                try { notizen.put(sprache, sauber); } catch (Exception ignored) { }
-            }
-        }
+        JSONObject notizen = zeilen(j.optJSONObject("notizen"));
+        JSONObject seitGross = zeilen(j.optJSONObject("notizenSeitGross"));
         Launcher l = Launcher.lies(j.optJSONObject("launcher"));
         if (l != null && l.apk.equals(apk)) l = null;   // nie dieselbe Datei wie Panoptes
         String art = j.optString("art", "");
         if (!UpdateHinweis.ART_FIX.equals(art) && !UpdateHinweis.ART_FUNKTION.equals(art)
                 && !UpdateHinweis.ART_BEIDES.equals(art)) art = null;
-        return new Freigabe(vc, name, kanal, tag, apk, sha, Math.max(0, minV), cert, notizen, null, l, art);
+        return new Freigabe(vc, name, kanal, tag, apk, sha, Math.max(0, minV), cert, notizen, seitGross, null, l, art);
+    }
+
+    /** Je Sprache höchstens 8 Zeilen à 200 Zeichen, leere weg. */
+    private static JSONObject zeilen(JSONObject n) {
+        JSONObject r = new JSONObject();
+        if (n == null) return r;
+        for (String sprache : new String[]{"de", "en", "fr", "it", "nl"}) {
+            JSONArray a = n.optJSONArray(sprache);
+            if (a == null) continue;
+            JSONArray sauber = new JSONArray();
+            for (int i = 0; i < a.length() && i < 8; i++) {
+                String z = a.optString(i, "").trim();
+                if (!z.isEmpty()) sauber.put(z.length() > 200 ? z.substring(0, 200) : z);
+            }
+            try { r.put(sprache, sauber); } catch (Exception ignored) { }
+        }
+        return r;
     }
 
     /** Download-Adresse der APK (öffentlich oder API-Asset) oder null, wenn noch keine Quelle sie gesetzt hat. */
@@ -195,8 +206,17 @@ public final class Freigabe {
 
     /** Notizen in der gewünschten Sprache, sonst en, sonst leer. */
     public JSONArray notizen(String sprache) {
-        JSONArray a = sprache == null ? null : notizen.optJSONArray(sprache);
-        if (a == null) a = notizen.optJSONArray("en");
+        return inSprache(notizen, sprache);
+    }
+
+    /** 0.1.38.8: Sammelliste seit der letzten großen Version in der Sprache, sonst en, sonst leer. */
+    public JSONArray notizenSeitGross(String sprache) {
+        return inSprache(notizenSeitGross, sprache);
+    }
+
+    private static JSONArray inSprache(JSONObject n, String sprache) {
+        JSONArray a = sprache == null ? null : n.optJSONArray(sprache);
+        if (a == null) a = n.optJSONArray("en");
         return a == null ? new JSONArray() : a;
     }
 
@@ -206,6 +226,7 @@ public final class Freigabe {
             o.put("versionCode", versionCode).put("versionName", versionName).put("kanal", kanal).put("tag", tag)
                     .put("apk", apk).put("sha256", sha256).put("zertifikatSha256", zertifikat)
                     .put("minVersion", minVersion).put("notizen", notizen);
+            if (notizenSeitGross.length() > 0) o.put("notizenSeitGross", notizenSeitGross);
             if (launcher != null) o.put("launcher", launcher.alsJson());
             if (art != null) o.put("art", art);
         } catch (Exception ignored) { }

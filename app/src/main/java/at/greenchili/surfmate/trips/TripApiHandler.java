@@ -162,7 +162,7 @@ public class TripApiHandler {
             Matcher gpsMatcher = TRIP_GPS_PATTERN.matcher(path);
             if (gpsMatcher.matches() && "GET".equals(method)) {
                 long tripId = Long.parseLong(gpsMatcher.group(1));
-                return handleGetGpsTrace(tripId);
+                return handleGetGpsTrace(tripId, params.get("max"));
             }
 
             // Route: GET/DELETE /api/trips/{id}
@@ -1447,7 +1447,12 @@ public class TripApiHandler {
      * GET /api/trips/{id}/gps — lightweight GPS-only trace for map overlay.
      * Returns [[lat,lon], ...] array — much smaller than full telemetry.
      */
-    private JSONObject handleGetGpsTrace(long tripId) {
+    /**
+     * {@code GET /api/trips/{id}/gps[?max=N]}. Ohne {@code max} wie bisher (alle Punkte, volle Genauigkeit). Mit
+     * {@code max} (0.1.38.8, Handy-App „nur Luftlinie“): gleichmäßig auf höchstens N Punkte (2..2000), Start und Ziel
+     * bleiben, Koordinaten auf 5 Nachkommastellen (~1 m). {@code punkte_gesamt} = Zahl der Punkte vor dem Ausdünnen.
+     */
+    private JSONObject handleGetGpsTrace(long tripId, String maxParam) {
         TripDatabase db = manager.getDatabase();
         if (db == null) return errorResponse("Trip database not available", 500);
 
@@ -1465,26 +1470,55 @@ public class TripApiHandler {
         }
 
         List<TelemetrySample> samples = TelemetryStore.readFromFile(telemetryFile);
-        JSONArray gps = new JSONArray();
+        List<double[]> punkte = new java.util.ArrayList<>();
         for (TelemetrySample s : samples) {
-            if (s.lat != 0 && s.lon != 0) {
-                try {
-                    JSONArray point = new JSONArray();
-                    point.put(s.lat);
-                    point.put(s.lon);
-                    gps.put(point);
-                } catch (Exception ignored) {}
-            }
+            if (s.lat != 0 && s.lon != 0) punkte.add(new double[]{s.lat, s.lon});
         }
+        return gpsAntwort(punkte, maxPunkte(maxParam));
+    }
 
+    /** {@code max} aus der Anfrage: null = ohne Begrenzung (wie bisher), sonst auf 2..2000 begrenzt. */
+    static Integer maxPunkte(String max) {
+        if (max == null || !max.trim().matches("\\d{1,9}")) return null;
+        return Math.max(2, Math.min(2000, Integer.parseInt(max.trim())));
+    }
+
+    /** Antwort für {@code /gps}; rein (Tests). Mit {@code max} ausgedünnt und gerundet. */
+    static JSONObject gpsAntwort(List<double[]> punkte, Integer max) {
         JSONObject response = new JSONObject();
         try {
+            JSONArray gps = new JSONArray();
+            for (double[] p : max == null ? punkte : ausduennen(punkte, max)) {
+                JSONArray point = new JSONArray();
+                point.put(max == null ? p[0] : runde5(p[0]));
+                point.put(max == null ? p[1] : runde5(p[1]));
+                gps.put(point);
+            }
             response.put("success", true);
             response.put("gps", gps);
+            response.put("punkte_gesamt", punkte.size());
         } catch (Exception e) {
             logger.error("Error building GPS trace response", e);
         }
         return response;
+    }
+
+    /** Gleichmäßig auf höchstens {@code max} Punkte; erster und letzter Punkt bleiben immer. */
+    static List<double[]> ausduennen(List<double[]> punkte, int max) {
+        int n = punkte.size();
+        if (n <= max) return punkte;
+        List<double[]> out = new java.util.ArrayList<>(max);
+        int vorher = -1;
+        for (int i = 0; i < max; i++) {
+            int k = (int) Math.round((double) i * (n - 1) / (max - 1));
+            if (k != vorher) out.add(punkte.get(k));
+            vorher = k;
+        }
+        return out;
+    }
+
+    static double runde5(double v) {
+        return Math.round(v * 100_000d) / 100_000d;
     }
 
     // ==================== UTILITY METHODS ====================

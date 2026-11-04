@@ -9,12 +9,14 @@
  */
 @import url("design-tokens.css?v=pn2");
 @import url("app-shell.css?v=pn11");
-@import url("app-tabs.css?v=4");
+@import url("app-tabs.css?v=5");
 @import url("app-collapse.css?v=pn3");
 
 :root {
     --brand-gradient: linear-gradient(135deg, var(--primary) 0%, var(--tertiary) 100%);
     --bg-glass: rgba(22, 22, 26, 0.85);
+    /* Chromium 74 kennt backdrop-filter nicht: dort ersetzen diese dichteren Flächen das Glas */
+    --bg-glass-dicht: rgba(22, 22, 26, 0.96);
 
     /* Chart palette — accents used by data visualizations / legends.
        Mid-luminance hues that read OK on either theme; the light-theme
@@ -53,6 +55,7 @@
     --panel-overlay-bg-soft: rgba(0, 0, 0, 0.4);
     --panel-overlay-bg-faint: rgba(0, 0, 0, 0.2);
     --panel-overlay-bg-deep: rgba(0, 0, 0, 0.6);
+    --panel-overlay-bg-dicht: rgba(0, 0, 0, 0.72);
     --modal-backdrop: rgba(0, 0, 0, 0.75);
     --shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.5);
 
@@ -70,6 +73,7 @@
    are flipped automatically by design-tokens.css. */
 :root[data-theme="light"] {
     --bg-glass: rgba(247, 250, 247, 0.88);
+    --bg-glass-dicht: rgba(247, 250, 247, 0.97);
 
     --chart-line-1: #007A62;
     --chart-line-2: #00658F;
@@ -96,6 +100,7 @@
     --panel-overlay-bg-soft: rgba(24, 28, 26, 0.10);
     --panel-overlay-bg-faint: rgba(24, 28, 26, 0.05);
     --panel-overlay-bg-deep: rgba(24, 28, 26, 0.18);
+    --panel-overlay-bg-dicht: rgba(24, 28, 26, 0.34);
     --modal-backdrop: rgba(24, 28, 26, 0.45);
     --shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.14);
 }
@@ -2320,6 +2325,8 @@ select.md-input ~ .md-label {
         border-bottom: 1px solid transparent;
         box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
     }
+    /* Chromium 74 (WebView am Auto) ohne backdrop-filter: dichter statt Glas */
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { body.live-map-active.live-view-page .mobile-header { background: var(--bg-glass-dicht, rgba(22, 22, 26, 0.96)); } }
 
     /* Push the floating action buttons below the header so the hamburger
        isn't crowded against the My Location chip. */
@@ -2557,6 +2564,8 @@ select.md-input ~ .md-label {
     backdrop-filter: saturate(180%) blur(16px);
     -webkit-backdrop-filter: saturate(180%) blur(16px);
 }
+/* Chromium 74 (WebView am Auto) ohne backdrop-filter: dichter statt Glas */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .map-info-bar { background: var(--bg-glass-dicht, rgba(10, 20, 20, 0.96)); } }
 
 .map-info-bar .map-info-item {
     display: flex;
@@ -2859,6 +2868,8 @@ select.md-input ~ .md-label {
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-lg);
 }
+/* Chromium 74 (WebView am Auto) ohne backdrop-filter: dichter statt Glas */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .stream-controls { background: rgba(0, 0, 0, 0.92); } }
 
 .cam-btn {
     display: flex;
@@ -3033,6 +3044,8 @@ select.md-input ~ .md-label {
     transition: all 0.2s ease;
     white-space: nowrap;
 }
+/* Chromium 74 (WebView am Auto) ohne backdrop-filter: dichter statt Glas */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .cam-label { background: rgba(0, 0, 0, 0.85); } }
 
 .cam-label:hover,
 .cam-label.hover {
@@ -3121,6 +3134,8 @@ select.md-input ~ .md-label {
     background-position: right 12px center;
     transition: all 0.2s ease;
 }
+/* Chromium 74 (WebView am Auto) ohne backdrop-filter: dichter statt Glas */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .quality-select-large { background-color: rgba(20, 24, 30, 0.88); } }
 
 .quality-select-large:hover {
     border-color: var(--brand-primary);
@@ -3217,6 +3232,8 @@ select.md-input ~ .md-label {
     border-radius: var(--radius-full);
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
+/* Chromium 74 (WebView am Auto) ohne backdrop-filter: dichter statt Glas */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .stream-badge { background: rgba(0, 0, 0, 0.8); } }
 
 .stream-badge.live {
     background: rgba(34, 197, 94, 0.2);
@@ -3272,6 +3289,8 @@ select.md-input ~ .md-label {
     background-repeat: no-repeat;
     background-position: right 10px center;
 }
+/* Chromium 74 (WebView am Auto) ohne backdrop-filter: dichter statt Glas */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .quality-select { background-color: rgba(0, 0, 0, 0.8); } }
 
 .quality-select:hover {
     border-color: rgba(255, 255, 255, 0.2);
@@ -3296,6 +3315,8 @@ select.md-input ~ .md-label {
     cursor: pointer;
     transition: all 0.2s ease;
 }
+/* Chromium 74 (WebView am Auto) ohne backdrop-filter: dichter statt Glas */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .btn-icon { background: rgba(0, 0, 0, 0.8); } }
 
 .btn-icon:hover {
     background: rgba(255, 255, 255, 0.1);
@@ -4704,6 +4725,11 @@ h1, h2, h3, .page-title, .card-title, [class$="-value"], [class*="-value "], .st
     border-right: 1px solid var(--sm-line);
 }
 :root[data-theme="light"] .sidebar { background: rgba(255, 255, 255, .7); }
+/* Chromium 74 (WebView am Auto) ohne backdrop-filter: dichter statt Glas */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .sidebar { background: rgba(7, 24, 40, .94); }
+    :root[data-theme="light"] .sidebar { background: rgba(255, 255, 255, .95); }
+}
 .sidebar::before { background: linear-gradient(90deg, var(--sm-aqua), var(--sm-lime)); }
 .sidebar .brand-name { font-family: var(--family-display); font-weight: 700; letter-spacing: -0.01em; }
 .sidebar-nav .nav-link { border-radius: 14px; }

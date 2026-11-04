@@ -643,6 +643,22 @@ public class TelegramNotifier {
         });
     }
 
+    /**
+     * 0.1.38.8 Wächter Standard an: die einmalige Frage „Wächter einschalten?“ mit Rechtshinweis und Knopf (Bestand-Migration,
+     * {@code WaechterStandardHinweis}). Kategorie GUARD_STOP wie die übrigen Wächter-Hinweise; Text und Knopf baut der Bot.
+     */
+    public static void notifyWaechterStandard() {
+        executor.execute(() -> {
+            try {
+                JSONObject cmd = new JSONObject();
+                cmd.put("cmd", "notifyWaechterStandard");
+                sendIpc(cmd, /*spoolOnDaemonDown=*/false);
+            } catch (Exception e) {
+                Log.e(TAG, "notifyWaechterStandard IPC error", e);
+            }
+        });
+    }
+
     /** Gesundheitswächter: art = repariert | hilfe, minuten = wie lange der Wächter aus war. */
     public static void notifyGesundheit(String art, long minuten) {
         criticalExecutor.execute(() -> {

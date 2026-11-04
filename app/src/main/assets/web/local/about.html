@@ -12,7 +12,7 @@
     <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
     <script src="../shared/theme.js?v=13"></script>
     <script src="../shared/app-shell.js?v=pn34"></script>
-    <link rel="stylesheet" href="../shared/styles.css?v=pn13">
+    <link rel="stylesheet" href="../shared/styles.css?v=pn14">
     <link rel="manifest" href="/manifest.json">
     <style>
         .about-page-body { max-width: 720px; margin: 0 auto; }
@@ -393,6 +393,14 @@
                         <p class="about-section-sub" data-i18n="rueckmeldung.about_text">Etwas funktioniert nicht? Sag es uns.</p>
                         <a href="fehler-melden.html" style="display:flex;align-items:center;justify-content:center;min-height:56px;border-radius:12px;font-size:18px;font-weight:700;text-decoration:none;color:#06202f;background:var(--brand-primary)" data-i18n="rueckmeldung.titel">Fehler melden</a>
                     </section>
+                    <section class="about-section" id="community">
+                        <h3 class="about-subhead" data-i18n="communityGruppe.titel">Community</h3>
+                        <p class="about-section-sub" data-i18n="communityGruppe.satz">Fragen, Tipps und Neuigkeiten mit anderen BYD-Fahrern: In der Panoptes-Gruppe auf WhatsApp tauschst du dich aus.</p>
+                        <a data-community-link href="#" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;min-height:56px;border-radius:12px;font-size:18px;font-weight:700;text-decoration:none;background:var(--brand-primary);color:var(--on-brand, #0A2238);" data-i18n="communityGruppe.knopf">WhatsApp-Gruppe beitreten</a>
+                        <p class="about-section-sub" style="margin-top:16px;" data-i18n="communityGruppe.qr_hinweis">Am Auto: den QR-Code mit dem Handy scannen:</p>
+                        <div data-community-qr role="img" aria-label="QR-Code zur Panoptes-Gruppe auf WhatsApp"></div>
+                        <p class="about-section-sub" style="margin-top:12px;" data-i18n="communityGruppe.fremd">WhatsApp ist ein fremder Dienst. Alle in der Gruppe sehen deine Telefonnummer.</p>
+                    </section>
                     <section class="about-section" id="neu">
                         <h3 class="about-subhead" data-i18n="whatsnew.about_title">Was ist neu</h3>
                         <div class="about-section-sub" id="neuText"></div>
@@ -460,6 +468,8 @@
     <script src="../shared/backup-flow.js?v=3"></script>
     <script src="../shared/hinweise.js?v=pn9"></script>
     <script src="../shared/neuigkeiten.js?v=2"></script>
+    <script src="../shared/vendor/qrcode-generator-1.4.4.js"></script>
+    <script src="../shared/community-karte.js?v=1"></script>
     <script>
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('open');

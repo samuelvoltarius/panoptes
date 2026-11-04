@@ -271,7 +271,15 @@
       "defaultEnabled": true,
       "severity": "info",
       "defaultClickUrl": "/local/system.html",
-      "note": "0.1.38.1: new Panoptes or launcher version, and when an update is installed and running. Telegram goes directly (category UPDATE), TelegramSink skips this category."
+      "note": "0.1.38.1: new Panoptes or launcher version, and when an update is installed and running. Telegram goes directly (category UPDATE), TelegramSink skips this category."    },
+    {
+      "id": "system.waechter",
+      "label": "Turn Guardian on (notice)",
+      "group": "System",
+      "defaultEnabled": true,
+      "severity": "info",
+      "defaultClickUrl": "/local/waechter.html",
+      "note": "0.1.38.8: the one-time question after an update whether the Guardian should be on (existing installs). Telegram goes directly, TelegramSink skips this category."
     }
   ],
   "telegramHinweis": "Telegram-Kategorien (0.1.11, Koordination): NUR Ein/Aus je Kategorie; stufe dient nur der Sortierung/Anzeige. Eine Quelle für Web, Cockpit und Kern. key = Schlüssel im Abschnitt telegram.",
@@ -412,7 +420,8 @@
       "push": [
         "surveillance.motion.alert",
         "surveillance.motion.critical",
-        "surveillance.proximity"
+        "surveillance.proximity",
+        "system.waechter"
       ],
       "telegram": [
         "tierAlerts",

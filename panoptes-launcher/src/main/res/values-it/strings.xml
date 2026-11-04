@@ -3,6 +3,13 @@
     <string name="abbrechen">Annulla</string>
     <string name="akku_eta">ancora %1$s min</string>
     <string name="akku_gesundheit">Salute batteria %1$s%%</string>
+    <string name="akku_gesundheit_titel">Salute batteria</string>
+    <string name="akku_gesundheit_werte">Auto %1$s · stima %2$s</string>
+    <string name="akku_gesundheit_auto_zeile">Salute batteria secondo l\'auto (BYD): %1$s</string>
+    <string name="akku_gesundheit_schaetzung_zeile">Salute batteria, la nostra stima: %1$s</string>
+    <string name="akku_gesundheit_erklaerung">L\'auto indica il proprio valore. Panoptes ne calcola anche uno dal livello di carica e dall\'energia residua. I due possono differire: l\'auto arrotonda in modo generoso, la nostra stima oscilla un po\'. Fa fede il valore dell\'auto.</string>
+    <string name="akku_prozent">%1$s%%</string>
+    <string name="nicht_verfuegbar">non disponibile</string>
     <string name="akku_laedt">In carica a %1$s kW</string>
     <string name="akku_laedt_nicht">Non in carica</string>
     <string name="akku_ziel">Obiettivo %1$s%%</string>

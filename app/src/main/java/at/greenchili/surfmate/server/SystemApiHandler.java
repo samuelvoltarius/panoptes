@@ -284,6 +284,31 @@ public class SystemApiHandler {
         HttpResponse.sendJson(out, res.toString());
     }
 
+    /**
+     * 0.1.38.8 Besitzer-Handy (Telegram-Gleichstand {@code /dienst camera|acc|sentry start}): Stopp-Sperre eines
+     * Kerndienstes aufheben, die Gesundheitsprüfung startet ihn binnen ~30 s. Nur START, nur diese drei; Tunnel
+     * (Tailscale, WireGuard) und Stoppen bleiben Display/Telegram.
+     */
+    static DaemonType kernDienst(String name) {
+        if ("camera".equals(name)) return DaemonType.CAMERA_DAEMON;
+        if ("sentry".equals(name)) return DaemonType.SENTRY_DAEMON;
+        if ("acc".equals(name)) return DaemonType.ACC_SENTRY_DAEMON;
+        return null;
+    }
+
+    static boolean kernDienstFreigeben(String name) {
+        DaemonType t = kernDienst(name);
+        if (t == null) return false;
+        try {
+            UnifiedConfigManager.updateSection(DAEMONS_SECTION, new JSONObject().put(t.name(), true));
+        } catch (Exception ignored) {
+        }
+        File sentinel = new File(t.getSentinelPath());
+        if (sentinel.exists() && !sentinel.delete()) run("rm -f '" + t.getSentinelPath() + "'", 5);
+        logger.info(TAG + ": " + t.name() + " -> freigegeben (Besitzer-Handy)");
+        return !sentinel.exists();
+    }
+
     private static DaemonType switchable(String name) {
         for (DaemonType t : SWITCHABLE) if (t.name().equals(name)) return t;
         return null;

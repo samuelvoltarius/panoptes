@@ -1,8 +1,12 @@
 package at.greenchili.surfmate.surveillance;
 
 /**
- * SHADOW-MODE multi-batch AI-confirmation counter (parked-car single-frame
- * FP audit). LOG-ONLY: nothing in the trigger chain reads its verdicts.
+ * Multi-batch AI-confirmation counter (parked-car single-frame FP audit).
+ *
+ * <p><b>Seit 0.1.38.8 scharf</b> (Wächter-KI B1/B4, Feldauswertung 03./04.11.2026): Die
+ * Engine stempelt {@code lastAiConfirmationElapsedMs} nur noch, wenn
+ * {@link #bestaetigt} für mindestens ein Objekt des Bildes gilt. Die Abschnitte unten
+ * beschreiben die ursprüngliche Schatten-Messung, auf der die Schwellen beruhen.
  *
  * <p>Today a SINGLE qualifying YOLO frame stamps
  * {@code lastAiConfirmationElapsedMs} and authorizes recording (the final AI
@@ -171,6 +175,52 @@ final class MultiBatchConfirmationShadow {
     }
 
     private final java.util.HashMap<Integer, Counter> counters = new java.util.HashMap<>();
+
+    /** 0.1.38.8 (Wächter-KI A/B1): Ab dieser Konfidenz bestätigt eine Person schon mit EINEM Bild.
+     *  Feld 03./04.11.: echte Nah-/Verweil-Fälle meist 0,85–0,96, Einzelbild-Fehltreffer auf
+     *  Passanten/Schatten 0,37–0,51. Dunkle Nahfälle (28.10. 18:49: 0,38) laufen weiter über den
+     *  Weg „Person kommt zum Auto“, der den Personen-Zeitstempel liest und von dieser Regel
+     *  unberührt bleibt. */
+    static final float PERSON_EINZELBILD_KONF = 0.50f;
+
+    /** 0.1.38.8 (B4): Nachts zählen Fahrzeug/Rad-Bilder unter dieser Konfidenz nicht mit
+     *  (Scheinwerfer). Personen nachts unverändert – echte Fälle liegen dort bei 0,36–0,38. */
+    static final float FAHRZEUG_NACHT_MIN_KONF = 0.50f;
+
+    /**
+     * Ob ein Bild dieser Klasse überhaupt als Bestätigungs-Bild zählt (B4). Nur Fahrzeug/Rad
+     * nachts unter {@link #FAHRZEUG_NACHT_MIN_KONF} fällt heraus – alles andere zählt wie bisher.
+     */
+    static boolean zaehltAlsBild(int classId, float conf, boolean nacht) {
+        if (!nacht) return true;
+        Actor.ClassGroup g = Actor.groupOf(classId);
+        if (g == Actor.ClassGroup.VEHICLE || g == Actor.ClassGroup.BIKE) {
+            return conf >= FAHRZEUG_NACHT_MIN_KONF;
+        }
+        return true;
+    }
+
+    /**
+     * Scharfe Mehrbild-Bestätigung (0.1.38.8, B1) – ersetzt das Einzelbild-Stempeln:
+     * <ul>
+     *   <li>Person: ab {@link #PERSON_EINZELBILD_KONF} ein Bild, darunter
+     *       {@link #BATCHES_PERSON} verschiedene Bilder.</li>
+     *   <li>Fahrzeug/Rad: immer {@link #BATCHES_VEHICLE_BIKE} verschiedene Bilder – nie nach
+     *       einem Bild (Feld: 23 von 24 Fahrzeug-Auslösungen beruhten auf einem Bild).</li>
+     *   <li>Alles andere (Tiere, unbekannt): wie bisher ein Bild.</li>
+     * </ul>
+     * {@code inSeq} ist das Ergebnis von {@link #observe} für dieses Objekt.
+     */
+    static boolean bestaetigt(int classId, float conf, int inSeq) {
+        Actor.ClassGroup g = Actor.groupOf(classId);
+        if (g == Actor.ClassGroup.PERSON) {
+            return conf >= PERSON_EINZELBILD_KONF || inSeq >= BATCHES_PERSON;
+        }
+        if (g == Actor.ClassGroup.VEHICLE || g == Actor.ClassGroup.BIKE) {
+            return inSeq >= BATCHES_VEHICLE_BIKE;
+        }
+        return inSeq >= 1;
+    }
 
     /** Class-specific batch requirement for the candidate gate. */
     static int requiredBatches(int classId) {

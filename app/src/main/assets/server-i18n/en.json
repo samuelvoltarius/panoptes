@@ -399,6 +399,10 @@
       "system_updates": {
         "label": "Updates",
         "note": "New version of Panoptes or the launcher, and when an update is finished."
+      },
+      "system_waechter": {
+        "label": "Turn Guardian on (notice)",
+        "note": "The one-time question after an update whether the Guardian should be on. Telegram goes direct."
       }
     },
     "cloud_uebergabe_titel": "“{0}” wants to hand over the BYD cloud",
@@ -413,8 +417,13 @@
     "battery12v_niedrig_title": "12 V battery very weak: {0} V",
     "battery12v_niedrig_body": "It no longer recovers by itself. The car may soon not start. Go for a drive today or plug it in.",
     "update_installiert": "Panoptes {0} is installed and running.",
+    "waechter_standard_titel": "Should the Guardian be on?",
+    "waechter_standard_text": "It only records on impact. It is meant for your private property, and you are responsible for the recordings. To turn it on, open the Guardian page.",
+    "waechter_standard_display": "New: the Guardian can watch your car (impact only). To turn it on: open Panoptes, Guardian. The legal notice and the button are there.",
     "launcher_verfuegbar": "New launcher version {0}",
-    "launcher_installiert": "Launcher {0} is installed."
+    "launcher_installiert": "Launcher {0} is installed.",
+    "update_verfuegbar": "Panoptes {0} is available",
+    "update_zurueck": "The update did not work, Panoptes is back on {0}."
   },
   "parking": {
     "notify": {
@@ -528,7 +537,8 @@
       "some_locked": "🔒 Some commands are switched off. You can allow them in Panoptes under *Rules → Alerts → Telegram alerts*.",
       "footer": "_Panoptes {0}_",
       "menu": "/menue – All buttons at a glance",
-      "updates": "/updates – Update Panoptes and the launcher"
+      "updates": "/updates – Update Panoptes and the launcher",
+      "kopplungen": "/kopplungen – Show and remove paired devices (lost phone)"
     },
     "buttons": {
       "status": "📊 Status",
@@ -537,6 +547,7 @@
       "camera": "📷 Camera",
       "location": "📍 Where is it?",
       "guard_on": "🛡 Wake Guardian",
+      "guard_standard_an": "🛡 Understood – turn Guardian on",
       "guard_off": "😴 Let Guardian sleep",
       "refresh": "🔄 Refresh",
       "start_named": "▶️ Start {0}",
@@ -569,6 +580,9 @@
       "paket_an_fehler": "⚠️ The Panoptes Launcher could not be switched on. At the display it works under Display → Panoptes Launcher."
     },
     "guard": {
+      "standard_frage": "🛡 *Should the Guardian watch your car?*\nNew in this version: the Guardian is now on by default. You have not set it up yet, so we ask once. It only records on impact.\n\n*Legal notice:* the Guardian is meant for your own private property. Aim the cameras so that street, pavement and neighbouring property are not in the picture. You alone are responsible for the recordings and for sharing them.\n\nIt switches itself off when the 12 V battery is weak. You can turn it off at any time.",
+      "standard_an_ok": "🛡 *The Guardian is on* (impact only). It wakes up as soon as you park.",
+      "standard_an_veraltet": "This question is settled: the Guardian is already set up or was turned off on purpose. Nothing was changed.",
       "title": "🛡 *Guardian*",
       "usage": "`/guardian on` wakes it, `/guardian off` lets it sleep.",
       "on": "🛡 *The Guardian is awake* and watching your car now.",
@@ -624,7 +638,7 @@
     },
     "parking": {
       "where": {
-        "unavailable": "⚠️ The camera service isn't answering. You can start it under /services.",
+        "unavailable": "🅿️ I cannot read the parking spot right now. Please try again later.",
         "disabled": "🅿️ The parking log is off. Turn it on in Panoptes under *Guardian → Parking*.",
         "none": "🅿️ I haven't logged any parking yet.",
         "title_open": "🅿️ *Here's your car*",
@@ -935,6 +949,10 @@
       "system_updates": {
         "label": "Updates",
         "note": "A new Panoptes version is available or was installed."
+      },
+      "system_waechter": {
+        "label": "Turn Guardian on (notice)",
+        "note": "The one-time question after an update whether the Guardian should be on. Telegram goes direct."
       }
     },
     "handy": {
@@ -946,7 +964,8 @@
       "tiermodus_an": "🐾 Pet mode switched on from phone “{0}”.",
       "tiermodus_aus": "🐾 Pet mode switched off from phone “{0}”.",
       "update_gestartet": "⬆️ Update to {0} started by “{1}”. Panoptes will be away for about 3–8 minutes.",
-      "launcher_update_gestartet": "⬆️ Launcher update to {0} started by “{1}”. It takes about one minute."
+      "launcher_update_gestartet": "⬆️ Launcher update to {0} started by “{1}”. It takes about one minute.",
+      "naehe_schluessel": "🔑 Phone “{0}” stored a key for “Unlock when approaching”. Not you? /aktionen automatik aus and unpair the device."
     },
     "zurueck": {
       "text": "🚗 Welcome back to the car. It was parked for {0}.",
@@ -1035,6 +1054,60 @@
       "nicht_bereit": "⚠️ Panoptes is not answering right now. Please try again in a minute.",
       "ratenlimit": "Just checked. Here is the current state:",
       "gestartet": "The update is running."
+    },
+    "aktionen": {
+      "status": "🚗 *Vehicle actions*",
+      "aus_ok": "✅ All vehicle actions are now off.",
+      "automatik_aus_ok": "✅ Unlock when approaching is now off.",
+      "failed": "⚠️ I could not read the vehicle actions right now.",
+      "nur_auto": "Switching on and triggering only works in the car or in the Panoptes app; here you can only switch off.",
+      "btn_aus": "⛔ All off",
+      "btn_automatik_aus": "⛔ Automatic off",
+      "ausgeloest": "📣 *{0}* triggered via “{1}”. Not you? /aktionen aus",
+      "fehlgeschlagen": "⚠️ {0} via “{1}” did not work ({2}).",
+      "abgelehnt": "🔒 {0} via “{1}” refused ({2}).",
+      "alle_aus": "⛔ All vehicle actions switched off ({0}).",
+      "automatik_aus": "⛔ Unlock when approaching switched off ({0}).",
+      "ueberfuehrt": "ℹ️ New in Panoptes: horn, lights and unlocking now have their own switches (Settings → Car). Your phone unlock stays on, everything else is off. Switch off: /aktionen aus",
+      "name_autoFinden": "Find car (horn + lights)",
+      "name_licht": "Flash lights",
+      "name_warnblinker": "Hazard lights",
+      "name_aufsperren": "Unlock",
+      "name_annaeherung": "Unlock when approaching",
+      "annaeherung_auf": "🔓 *Unlocked on approach* – phone “{0}”. If no door opens within 60 s, the car locks again. Not you? /aktionen automatik aus",
+      "annaeherung_wieder_zu": "🔒 Locked again: no door was opened after unlocking on approach.",
+      "offen": "🚨 *The car is unlocked!* Locking again after the approach did not work. Unlock on approach is now off. Lock: /aktionen zusperren (or the button under /aktionen)",
+      "zusperren_ok": "🔒 Lock command sent.",
+      "zusperren_fehler": "⚠️ Locking did not work. Please lock in the BYD app.",
+      "btn_zusperren": "🔒 Lock",
+      "regeln_gesperrt": "ℹ️ These rules contain horn, lights or hazard lights: {0}. From now on rules never trigger them – only you, with a tap and a confirmation (switches under Settings → Car → Vehicle actions). The rest of the rules keeps running.",
+      "regel_lief": "ℹ️ A rule tried to trigger {0}. That no longer works: horn, lights and hazard lights are only triggered by you with a tap and a confirmation. The other steps of the rule keep running."
+    },
+    "dienst": {
+      "startet": "⏳ Panoptes in the car is still starting. Please try again in a minute or two.",
+      "aus": "ℹ️ Panoptes is switched off in the car. You can switch it on on the car screen in Panoptes under *Services*.",
+      "antwortet_nicht": "⚠️ Panoptes in the car is not responding right now. Tap /dienste to restart it, or open Panoptes on the car screen."
+    },
+    "erreichbar": {
+      "frage": "🅿️ Should the bot reach you even when the car is parked and switched off? Otherwise it only answers while the car is on. Uses a little power from the 12 V battery.",
+      "btn_ja": "✅ Yes, also when parked",
+      "btn_nein": "No, thanks",
+      "an": "✅ Done: from the next time you park, the bot is reachable while the car is off. Switch off: /erreichbar aus",
+      "aus": "The bot now sleeps with the car again. Switch on: /erreichbar an",
+      "nein": "All right, the bot only answers while the car is on. Switch on later: /erreichbar an",
+      "stand_an": "✅ The bot is reachable while the car is off. Switch off: /erreichbar aus",
+      "fehler": "⚠️ I could not save that in the car. Please try again in a moment."
+    },
+    "kopplungen": {
+      "titel": "📱 *Paired devices*",
+      "leer": "No devices paired.",
+      "fehler": "List not readable right now. Please try again later.",
+      "besitzer": "owner",
+      "hinweis": "Lost your phone? Tap the device to remove it. It is locked out immediately.",
+      "btn_entfernen": "🗑 Remove {0}",
+      "frage": "Really remove device no. {0}? It can do nothing with the car until it is paired again.",
+      "btn_ja": "Yes, remove",
+      "btn_nein": "Cancel"
     }
   },
   "vehicle_control": {
@@ -1060,7 +1133,11 @@
     "battery_heat_label": "Warm the battery",
     "close_all_windows_label": "Close every window",
     "car_off_climate_needs_cloud": "The car is off – pre-heating can’t work directly then. Set up the BYD cloud (System → BYD account), then it also works with the car switched off.",
-    "car_off_needs_cloud": "The car is off – this can’t work directly then. Set up the BYD cloud (System → BYD account), then it also works with the car switched off."
+    "car_off_needs_cloud": "The car is off – this can’t work directly then. Set up the BYD cloud (System → BYD account), then it also works with the car switched off.",
+    "aktion_aus": "This action is switched off. Switch it on under Settings → Car → Vehicle actions.",
+    "aktion_nur_nutzer": "Horn, lights and unlocking can only be triggered by a person: on the display, signed in, or from the paired phone – never by rules, buttons or other services.",
+    "aktion_bestaetigen": "Please confirm the question first.",
+    "aktion_ratenlimit": "Too many times in a row. Please try again in a few minutes."
   },
   "automation": {
     "lock": "Lock the car",
@@ -1927,7 +2004,8 @@
       "aufnahme": "Recording",
       "abschreckung": "Warn-off",
       "stopp": "Guardian stops when …",
-      "fahrt": "Driving"
+      "fahrt": "Driving",
+      "aktionen": "Vehicle actions"
     },
     "surveillance": {
       "triggerMode": {
@@ -1958,6 +2036,10 @@
         "niedrig": "Low (strong bumps only)",
         "mittel": "Medium",
         "hoch": "High (even light leaning)"
+      },
+      "surveillanceEnabled": {
+        "title": "Guard switched on",
+        "help": "Main switch like /waechter in Telegram. With the ignition on, the guard only arms when you park."
       }
     },
     "deterrent": {
@@ -2092,9 +2174,9 @@
       },
       "modus": {
         "title": "Install updates",
-        "help": "“Only notify”: Panoptes tells you, and downloads and installs only when you tap. “Fixes automatically”: small fixes install by themselves when the car has been off for at least 10 minutes, then Panoptes tells you; new features are reported and you decide. “Everything automatically”: new features install by themselves too. Never while driving; if something goes wrong, the previous version comes back by itself within 30 minutes.",
+        "help": "“Only notify”: Panoptes tells you about every update; it is downloaded and installed only when you tap. “Small updates on their own, report big ones”: small updates (only the last number changes, e.g. 0.1.38.7 → 0.1.38.8) arrive without asking once the car has been off for at least 10 minutes; you find them afterwards under “What’s new”. Big updates (e.g. 0.1.38 → 0.1.39) are announced first with a summary, you decide. “Everything automatically”: big updates arrive on their own too. Never while driving; if something goes wrong, the previous version comes back on its own within 30 minutes.",
         "melden": "Only notify",
-        "korrekturen": "Fixes automatically, report new features",
+        "korrekturen": "Small updates on their own, report big ones",
         "automatisch": "Everything automatically"
       },
       "pruefen": {
@@ -2549,6 +2631,28 @@
         "title": "Telegram message on event",
         "help": "Only a short text with the time. No video, no location."
       }
+    },
+    "fahrzeugAktionen": {
+      "autoFinden": {
+        "title": "Find car (horn + lights)",
+        "help": "Allows “Find car”: the car sounds the horn and flashes. Only with a confirmation. Default: off."
+      },
+      "licht": {
+        "title": "Flash lights",
+        "help": "Allows a short flash of the lights, without sound. Only with a confirmation. Default: off."
+      },
+      "warnblinker": {
+        "title": "Hazard lights (untested)",
+        "help": "Allows switching on the hazard lights. Only with a confirmation. Default: off."
+      },
+      "aufsperren": {
+        "title": "Unlock with the phone",
+        "help": "Allows unlocking from the paired phone with fingerprint or Face ID. Default: off."
+      },
+      "annaeherung": {
+        "title": "Unlock when approaching",
+        "help": "Unlocks when your paired phone is very close, and locks again after 60 s without a door opening. Needs the Panoptes app with a proximity key. Default: off."
+      }
     }
   },
   "kartenquelle": {
@@ -2816,5 +2920,80 @@
     "valet_fehler": "Not possible right now. Please try again.",
     "valet_fehlversuche_titel": "Display lock: wrong PIN",
     "valet_fehlversuche_text": "Someone entered a wrong PIN {0} times at the display."
+  },
+  "aktionen": {
+    "name": {
+      "autoFinden": "Find car (horn + lights)",
+      "licht": "Flash lights",
+      "warnblinker": "Hazard lights",
+      "aufsperren": "Unlock",
+      "annaeherung": "Unlock when approaching"
+    },
+    "push_ausgeloest": "{0} triggered via “{1}”",
+    "push_fehlgeschlagen": "{0} via “{1}” did not work",
+    "push_abgelehnt": "{0} via “{1}” refused",
+    "push_alle_aus": "All vehicle actions switched off",
+    "push_automatik_aus": "Unlock when approaching switched off",
+    "push_ueberfuehrt": "Horn, lights and unlocking now have their own switches",
+    "hinweis": {
+      "autoFinden": {
+        "title": "Find car: horn and lights",
+        "text": "The car sounds the horn and flashes when you trigger it: on the display, in a signed-in browser or from the paired phone with the “Horn & lights” permission. Always with a confirmation, never while driving, at most 3 times in 10 minutes. People outside will see and hear it, at night it can disturb neighbours. You get a Telegram message every time."
+      },
+      "licht": {
+        "title": "Flash lights",
+        "text": "The car briefly flashes its lights, without sound, when you trigger it: on the display, in a signed-in browser or from the paired phone with the “Horn & lights” permission. Always with a confirmation, never while driving, at most 3 times in 10 minutes. People outside will see it. You get a Telegram message every time."
+      },
+      "warnblinker": {
+        "title": "Hazard lights",
+        "text": "Panoptes may switch on the hazard lights when you trigger it: on the display, in a signed-in browser or from the paired phone with the “Horn & lights” permission. Always with a confirmation. Switching off always works. Not every model is confirmed to accept the command. You get a Telegram message every time."
+      },
+      "aufsperren": {
+        "title": "Unlock",
+        "text": "A paired phone with the “Unlock” permission may open the car, only after fingerprint or Face ID on the phone. Anyone who can unlock your phone can get into the car. At most 3 times in 10 minutes, never while driving, a Telegram message every time. You can switch it off at any time, also with /aktionen aus in Telegram."
+      },
+      "annaeherung": {
+        "title": "Unlock when approaching",
+        "text": "The car unlocks by itself when your paired phone is very close: the phone checks in, the car briefly looks for it via Bluetooth and compares the locations (at most 25 m). Only when the car is off and locked and the guard is not recording, at most once per approach. If nobody opens a door within 60 seconds, it locks again. Anyone who has your phone can get into the car. A radio amplifier could make the phone seem closer than it is. You get a Telegram message right away every time and can switch the automatic off there with /aktionen automatik aus."
+      }
+    },
+    "push_annaeherung_auf": "Unlocked on approach – phone “{0}”",
+    "push_annaeherung_wieder_zu": "Locked again (no door opened)",
+    "push_offen": "The car is unlocked! Locking again did not work",
+    "push_regeln_gesperrt": "Rules with horn/lights/hazard lights no longer trigger them: {0}",
+    "push_regel_lief": "A rule tried to trigger {0} – that no longer works"
+  },
+  "ha_steuern": {
+    "aktion_oeffnen": "Open gate",
+    "aktion_schliessen": "Close gate",
+    "aktion_aufsperren": "Unlock front door",
+    "aktion_zusperren": "Lock front door",
+    "ergebnis_ok": "done",
+    "ergebnis_fehler": "Home Assistant reports an error",
+    "ergebnis_nicht_bestaetigt": "not confirmed – please check on site",
+    "ergebnis_abgelehnt": "not triggered",
+    "heimkommen": "(arriving home)"
+  },
+  "besitzer": {
+    "telegram_erste": "Your phone {0} is now the owner phone: it can configure all of Panoptes and pair new devices (never remote access, never vehicle actions).",
+    "telegram_bestand": "Update: your oldest paired phone {0} is now the owner phone. It can configure all of Panoptes and pair new devices. Change this under Paired devices.",
+    "telegram_weitergegeben": "{0} is now also an owner phone.",
+    "einstellung_geaendert": "Setting {0} changed by device {1}.",
+    "code_angelegt": "Pairing code ({0}) created by owner phone {1}, valid for 10 min.",
+    "anfrage_erlaubt": "New device allowed by owner phone {0}.",
+    "entfernt": "Device {0} removed by owner phone {1}.",
+    "weitergegeben": "{0} is now also an owner phone (by {1}).",
+    "abgegeben": "{0} is no longer an owner phone.",
+    "dienst": "Service {0} released by owner phone {1}.",
+    "waechter_an": "Guard switched on by phone {0}.",
+    "waechter_aus": "Guard switched off by phone {0}.",
+    "rechte_selbst": "Owner phone {0} changed its rights: {1}."
+  },
+  "update_klein": {
+    "titel": "Updates",
+    "text": "Small fix updates now arrive on their own (only while parked, never while driving). Panoptes still tells you before big updates. To change: Settings → Updates.",
+    "autostart_titel": "Autostart",
+    "autostart_fehlt": "After the update Panoptes needs the autostart permission once more. Please tap “Turn autostart back on” on the Panoptes start page on the car display.",
+    "launcher_home": "After the update the Panoptes launcher is no longer your home screen. Open the launcher once and choose it again as home screen."
   }
 }

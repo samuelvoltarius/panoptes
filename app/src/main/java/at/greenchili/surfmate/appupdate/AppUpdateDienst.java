@@ -30,6 +30,12 @@ import java.util.concurrent.TimeUnit;
  * werden nie automatisch installiert. Fehlschläge (404/401/kein Netz) landen nur im Protokoll, als Warnung höchstens
  * einmal je Version und Tag ({@link UpdateRegel#berichtSchluessel}); keine Meldung am Display. Eine neue Version
  * meldet ab 0.1.31 zusätzlich die Karte am Display, nur im Stand ({@link UpdateHinweis}).
+ *
+ * <p>0.1.38.8 (04.11.): kleine Updates (nur die vierte Stelle neu, {@link UpdateHinweis#klein}) kommen im Modus
+ * „korrekturen“ und „automatisch“ ohne Meldung und ohne Rückfrage, sobald das Auto ≥ 10 min aus ist; danach keine
+ * Telegram-Meldung, nur der Eintrag unter „Was ist neu“. Große Updates meldet Panoptes vorher mit der Sammelliste seit
+ * der letzten großen Version. Einmalig ({@link #KLEIN_MARKE}) stellt der Updater „melden“ auf „korrekturen“ um und sagt
+ * das einmal (Telegram, Handy, Display).
  */
 public final class AppUpdateDienst {
 
@@ -128,11 +134,50 @@ public final class AppUpdateDienst {
         default LauncherPaket.Stand launcherStand() { return LauncherPaket.ausListe(""); }
         /** {@code pm install -r} der geprüften Launcher-APK; null = ok. */
         default String launcherInstallieren(File apk) { return "nicht_verfuegbar"; }
+        /** 0.1.38.8: nach dem Launcher-Update den gewählten Startbildschirm prüfen/herstellen ({@link LauncherHome#nachUpdate}). */
+        default String launcherHomeNachUpdate() { return null; }
+        /** 0.1.38.8: Startbildschirm ließ sich nach dem Update nicht wiederherstellen – eine Meldung. */
+        default void meldeLauncherHome(String grund) { }
 
         /** 0.1.38.1: Selbstprüfung der Startskripte ({@link UpdateMeldung#SELBST_GRUEN} …). */
         default String selbstpruefung() { return UpdateMeldung.SELBST_GRUEN; }
         /** 0.1.38.1: Update-Meldung senden (Telegram Kategorie UPDATE + Handy-Push {@code system.updates}). */
         default void meldeUpdate(UpdateMeldung.Meldung m) { }
+
+        /** 0.1.38.8: einmalige Umstellung „klein von selbst“ melden (Telegram + Handy-Push). */
+        default void meldeUmstellung(String titel, String text) { }
+        /** 0.1.38.8: dieselbe Nachricht als Karte am Display (nur im ruhigen Stand); true = steht wirklich da. */
+        default boolean zeigeInfo(String titel, String text) { return false; }
+        /** 0.1.38.8: Konfiguration (Wurzel) für die einmalige Wächter-Frage; null = nicht lesbar, dann wird nicht gefragt. */
+        default JSONObject konfig() { return null; }
+        /** 0.1.38.8: die einmalige Frage „Wächter einschalten?“ über Telegram, Handy und Display senden. */
+        default void frageWaechterStandard() { }
+    }
+
+    /**
+     * 0.1.38.8 Wächter Standard an, Phase 3: beim ersten Start auf einer neuen Version EINMAL fragen, ob der Wächter an soll
+     * (Bestand, nie still einschalten). Ein Marker je versionCode; Entscheidung in {@code WaechterStandardHinweis}.
+     */
+    private long waechterHinweisZuletzt = -1;
+
+    void waechterHinweisTakt(long now) {
+        if (waechterHinweisZuletzt >= 0 && now - waechterHinweisZuletzt < MELDUNG_TAKT_MS) return;
+        waechterHinweisZuletzt = now;
+        int vc = env.installierterVc();
+        int marker = at.greenchili.surfmate.surveillance.WaechterStandardHinweis.ladeMarker(env.basis());
+        if (vc <= 0 || marker >= vc) return;   // schon erledigt: die Konfiguration wird gar nicht erst gelesen
+        String was = at.greenchili.surfmate.surveillance.WaechterStandardHinweis.entscheide(env.konfig(), vc, marker);
+        if (at.greenchili.surfmate.surveillance.WaechterStandardHinweis.NICHTS.equals(was)) return;
+        // Marker zuerst: auch wenn der Versand scheitert oder niemand tippt, wird nicht erneut gefragt
+        at.greenchili.surfmate.surveillance.WaechterStandardHinweis.speichereMarker(env.basis(), vc);
+        if (at.greenchili.surfmate.surveillance.WaechterStandardHinweis.FRAGEN.equals(was)) {
+            logger.info("Wächter-Frage (Standard an) gesendet, versionCode " + vc);
+            try {
+                env.frageWaechterStandard();
+            } catch (Throwable t) {
+                logger.warn("Wächter-Frage: " + t.getMessage());
+            }
+        }
     }
 
     /** 0.1.38.1: Update-Meldungen höchstens alle 5 min prüfen (der Launcher-Stand kostet einen Shell-Aufruf). */
@@ -148,9 +193,16 @@ public final class AppUpdateDienst {
         synchronized (lock) {
             UpdateMeldung m = UpdateMeldung.lade(env.basis());
             boolean beobachtet = "beobachtet".equals(aktuellePhase(lage()));
+            int rueck = rueckfallFrisch() ? rueckfallVc() : -1;
             raus = m.pruefe(env.installierterVc(), env.installierteVersion(), gemeldetVc, env.selbstpruefung(),
-                    beobachtet, st.versionCode, verfuegbar == null ? null : verfuegbar.launcher);
+                    beobachtet, st.versionCode, verfuegbar == null ? null : verfuegbar.launcher, rueck, stillVc);
             m.speichern(env.basis());
+            if (stillVc > 0 && m.panoptesVc >= stillVc) {
+                // 0.1.38.8: kleines Update kam still – keine Meldung, es steht nur unter „Was ist neu“
+                logger.info("Update-Meldung: vC " + stillVc + " kam still, nichts gesendet");
+                stillVc = 0;
+                speichern();
+            }
         }
         for (UpdateMeldung.Meldung me : raus) {
             logger.info("Update-Meldung: " + me);
@@ -194,6 +246,12 @@ public final class AppUpdateDienst {
     private long hinweisPauseBis;
     private long hinweisRuhigSeit = -1;
     private long hinweisBlick;
+    /** 0.1.38.8: dieser versionCode wird still installiert: danach kein „installiert und läuft“ (0 = keiner). */
+    private int stillVc;
+    /** 0.1.38.8: Nachricht zur Umstellung steht noch aus (Telegram/Handy bzw. Karte am Display). */
+    private boolean umstellungMelden;
+    private boolean umstellungKarte;
+    private long umstellungRuhigSeit = -1;
 
     AppUpdateDienst(Netz netz, Umgebung env) {
         this.netz = netz;
@@ -201,6 +259,92 @@ public final class AppUpdateDienst {
         boolean bestand = standDatei().exists();
         laden();
         migriereQuelle(bestand);
+        umstellenAufKlein(bestand);
+    }
+
+    /** Marke der einmaligen Umstellung „melden“ → „korrekturen“ (0.1.38.8); einmal gesetzt, nie wieder umgestellt. */
+    static final String KLEIN_MARKE = ".appupdate-klein";
+
+    /**
+     * 0.1.38.8 (04.11.: „können wir das überrollen? dass es automatisch auch bei allen anderen ist?“): einmal je
+     * Gerät „Nur melden“ (auch ohne Wert, der Bestand) auf „korrekturen“, mit einer Nachricht. Wer danach wieder
+     * „melden“ wählt, behält es (die Marke bleibt). „automatisch“ und „korrekturen“ bleiben, ebenso Geräte mit
+     * {@code update.pruefen} aus und neue Einrichtungen (die fragt die Einrichtung). Scheitert das Speichern, versucht es
+     * der nächste Start erneut.
+     */
+    private void umstellenAufKlein(boolean bestand) {
+        File marke = new File(env.basis(), KLEIN_MARKE);
+        if (marke.exists()) return;
+        String modus = env.config("modus");
+        boolean umstellen = UpdateRegel.umstellenAufKlein(bestand, modus, env.config("pruefen"),
+                env.updatesUnbeantwortet());
+        if (umstellen) {
+            java.util.Map<String, Object> m = new java.util.HashMap<>();
+            m.put("modus", UpdateRegel.MODUS_KORREKTUREN);
+            boolean ok;
+            try {
+                ok = env.setzeConfig(m);
+            } catch (Throwable t) {
+                ok = false;
+            }
+            if (!ok) {
+                logger.warn("Update-Modus: Umstellung auf korrekturen nicht gespeichert, der nächste Start versucht es erneut");
+                return;
+            }
+            umstellungMelden = true;
+            umstellungKarte = true;
+            speichern();
+            logger.info("Update-Modus: " + (modus == null ? "(ohne Wert)" : modus) + " → korrekturen (einmalig)");
+        }
+        try {
+            //noinspection ResultOfMethodCallIgnored
+            env.basis().mkdirs();
+            Files.write(marke.toPath(), ((umstellen ? "umgestellt " : "unveraendert ") + (modus == null ? "-" : modus)
+                    + " " + env.jetzt() + "\n").getBytes(StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            logger.debug("Update-Modus: Marke: " + e.getMessage());
+        }
+    }
+
+    /** Telegram + Handy einmal, sobald der Takt läuft (der Bot ist dann sicher da). */
+    private void umstellungMeldenTakt() {
+        synchronized (lock) {
+            if (!umstellungMelden) return;
+            umstellungMelden = false;
+            speichern();
+        }
+        try {
+            env.meldeUmstellung(UpdateHinweis.umstellungTitel(), UpdateHinweis.umstellungText());
+        } catch (Throwable t) {
+            logger.warn("Umstellung melden: " + t.getMessage());
+        }
+    }
+
+    /** Karte am Display einmal, nur im ruhigen Stand wie der Update-Hinweis, nie über einer anderen Update-Karte. */
+    private void umstellungKarteTakt(long now) {
+        synchronized (lock) {
+            if (!umstellungKarte || hinweisGriff != null) return;
+        }
+        boolean ruhig = UpdateHinweis.ruhig(env.accAus(), env.fahrsperre(), env.kmh(), env.waechterEreignis());
+        synchronized (lock) {
+            umstellungRuhigSeit = !ruhig ? -1 : umstellungRuhigSeit < 0 ? now : umstellungRuhigSeit;
+            if (umstellungRuhigSeit < 0 || now - umstellungRuhigSeit < UpdateHinweis.RUHE_MS || now < hinweisPauseBis) return;
+        }
+        boolean gezeigt = false;
+        try {
+            gezeigt = env.zeigeInfo(UpdateHinweis.umstellungTitel(), UpdateHinweis.umstellungText());
+        } catch (Throwable t) {
+            logger.warn("Umstellung Karte: " + t.getMessage());
+        }
+        synchronized (lock) {
+            if (!gezeigt) {
+                hinweisPauseBis = now + UpdateHinweis.PAUSE_NACH_FEHLVERSUCH_MS;
+                return;
+            }
+            umstellungKarte = false;
+            speichern();
+        }
+        logger.info("Umstellung „kleine Updates von selbst“ am Display gezeigt");
     }
 
     public static synchronized void start() {
@@ -276,7 +420,11 @@ public final class AppUpdateDienst {
                     v.put("art", art);
                     v.put("artText", at.greenchili.surfmate.server.Messages.withLocale(sprache,
                             () -> UpdateHinweis.artText(art)));
-                    v.put("kurz", UpdateHinweis.kurz(vf.notizen(sprache)));
+                    // 0.1.38.8: klein = kommt von selbst; groß = Sammelliste seit der letzten großen Version (≤ 8)
+                    v.put("klein", UpdateHinweis.klein(vf, inst));
+                    org.json.JSONArray zus = UpdateHinweis.zusammenfassung(vf, inst, sprache);
+                    v.put("zusammenfassung", zus);
+                    v.put("kurz", UpdateHinweis.kurz(zus));
                     v.put("zurueckgerollt", verfuegbar.versionCode == l.rueckfallVc);
                     o.put("verfuegbar", v);
                 } else {
@@ -420,6 +568,7 @@ public final class AppUpdateDienst {
      */
     void hinweisTakt() {
         long now = env.jetzt();
+        umstellungKarteTakt(now);
         String griff;
         synchronized (lock) {
             griff = hinweisGriff;
@@ -460,8 +609,8 @@ public final class AppUpdateDienst {
         String neuerGriff = String.format("%016x", new SecureRandom().nextLong());
         boolean gezeigt = false;
         try {
-            gezeigt = env.zeigeHinweis(neuerGriff, f, UpdateHinweis.notizenText(
-                    f.notizen(at.greenchili.surfmate.server.LocaleManager.get())), zusatz);
+            gezeigt = env.zeigeHinweis(neuerGriff, f, UpdateHinweis.notizenText(UpdateHinweis.zusammenfassung(f,
+                    env.installierteVersion(), at.greenchili.surfmate.server.LocaleManager.get())), zusatz);
         } catch (Throwable t) {
             logger.warn("Update-Hinweis: " + t.getMessage());
         }
@@ -489,10 +638,17 @@ public final class AppUpdateDienst {
         } catch (Throwable t) {
             logger.warn("Update-Meldung: " + t.getMessage());
         }
+        umstellungMeldenTakt();
+        try {
+            waechterHinweisTakt(now);
+        } catch (Throwable t) {
+            logger.warn("Wächter-Frage: " + t.getMessage());
+        }
         // update.pruefen aus (Ersteinrichtung „Nein“): kein Abruf bei GitHub im Hintergrund, nichts von selbst
         if (pruefenAn() && UpdateRegel.pruefenFaellig(now, letztePruefung, fehler != null)) pruefen(false);
         Freigabe f;
         boolean alsVorgemerkt;
+        boolean still;
         synchronized (lock) {
             UpdateRegel.Lage l = lage();
             boolean frei = nichtWeil(l) == null;
@@ -508,13 +664,25 @@ public final class AppUpdateDienst {
             laufGetippt = false;
             laufGescheitert = false;
             f = verfuegbar;
+            // 0.1.38.8: kleines Update von selbst: danach keine Meldung (Marke übersteht den Neustart des Daemons)
+            still = !alsVorgemerkt && lautlos(f);
+            if (still) {
+                stillVc = f.versionCode;
+                speichern();
+            }
         }
-        logger.info("automatisch: installiere " + f.versionName + " (vC " + f.versionCode + ")");
+        logger.info("automatisch: installiere " + f.versionName + " (vC " + f.versionCode + ")"
+                + (still ? " still" : ""));
+        boolean gestartet = false;
         try {
-            ausfuehren(f);
+            gestartet = ausfuehren(f);
         } finally {
             synchronized (lock) {
                 installiertGerade = false;
+                if (still && !gestartet) {
+                    stillVc = 0;   // nicht angelaufen: ein späterer Tipp auf dieselbe Version meldet wieder
+                    speichern();
+                }
                 if (alsVorgemerkt) {
                     UpdateHinweis.versuchVorbei(hinweis, laufGescheitert, env.jetzt());
                     speichern();
@@ -604,6 +772,13 @@ public final class AppUpdateDienst {
                 if (neu.versionCode > env.installierterVc() && neu.versionCode > gemeldetVc) {
                     gemeldetVc = neu.versionCode;   // je Version nur einmal melden
                     melden = true;
+                    // 0.1.38.8 (Doppelmeldung 04.11. 19:17): wer gerade sucht oder installiert, braucht kein
+                    // „neue Version ist da … ich frage vorher nach“; gemerkt ist die Version trotzdem
+                    String schon = schonDabei(manuell, neu.versionCode);
+                    if (schon != null) {
+                        melden = false;
+                        logger.info("Neue Version " + neu.versionName + " nicht gemeldet: " + schon);
+                    }
                 }
             } else {
                 fehler = err == null ? "nicht_erreichbar" : err;
@@ -628,6 +803,25 @@ public final class AppUpdateDienst {
             berichte("Prüfung (" + k + ", " + q.art + " " + q.repo + ") fehlgeschlagen: " + fehler
                     + (ursache != null ? " (" + ursache + ")" : ""));
         }
+    }
+
+    /**
+     * Grund, warum „neue Version“ jetzt nicht gemeldet wird, oder null: Suche auf Knopfdruck (Telegram, Handy, Web
+     * zeigen das Ergebnis selbst), eigener Lauf, Phase, Deploy-Sperre oder ein Start von außen auf diese Version.
+     */
+    private String schonDabei(boolean manuell, int vc) {
+        if (manuell) return "Suche auf Knopfdruck";
+        if (installiertGerade || phase != null) return "Installation läuft";
+        if (new File(env.basis(), ".deploy.lock").exists()) return "Deploy-Sperre";
+        try {
+            File m = new File(env.basis(), FernUpdate.MARKE);
+            if (m.isFile()) {
+                String t = new String(Files.readAllBytes(m.toPath()), StandardCharsets.UTF_8).trim();
+                int sp = t.indexOf(' ');
+                if (Integer.parseInt(sp > 0 ? t.substring(0, sp) : t) >= vc) return "Start von außen";
+            }
+        } catch (Exception ignored) { }
+        return null;
     }
 
     /** Ohne Token: die APK liegt unter der öffentlichen Download-Adresse desselben Releases. */
@@ -725,8 +919,11 @@ public final class AppUpdateDienst {
         return null;
     }
 
-    /** Laden → prüfen → Sperre → Skript starten. Fehler landen in {@code fehler}, der Daemon läuft weiter. */
-    void ausfuehren(Freigabe f) {
+    /**
+     * Laden → prüfen → Sperre → Skript starten. Fehler landen in {@code fehler}, der Daemon läuft weiter. true = das
+     * Update-Skript ist angelaufen.
+     */
+    boolean ausfuehren(Freigabe f) {
         // 0.1.19: eine hier gesetzte Deploy-Sperre wird bei JEDEM Abbruch vor dem Skriptstart wieder freigegeben
         // (Befund 27.10.: „kein Context“ fiel ins äußere catch, .deploy.lock blieb liegen → dauerhaft laeuft_schon)
         File[] gesetzteSperre = {null};
@@ -737,6 +934,7 @@ public final class AppUpdateDienst {
         } finally {
             if (gesetzteSperre[0] != null && !gestartet[0]) sperreFreigeben(gesetzteSperre[0], sperrSchluessel[0]);
         }
+        return gestartet[0];
     }
 
     /** Nur unsere Sperre (Schlüssel in info) entfernen – nie die einer Deploy-Sitzung. */
@@ -1115,6 +1313,18 @@ public final class AppUpdateDienst {
                 return;
             }
             logger.info("Launcher " + f.versionName + " (vC " + f.versionCode + ") installiert");
+            String home = null;
+            try {
+                home = env.launcherHomeNachUpdate();
+            } catch (Throwable t) {
+                home = "fehler:" + t.getMessage();
+            }
+            if (home != null) {
+                logger.warn("Launcher-Startbildschirm nach Update: " + home);
+                try {
+                    env.meldeLauncherHome(home);
+                } catch (Throwable ignored) { }
+            }
         } catch (Exception e) {
             launcherScheitern("nicht_erreichbar", e.getMessage(), null);
         }
@@ -1212,14 +1422,13 @@ public final class AppUpdateDienst {
 
     /**
      * 0.1.38.6 (04.11.: „so viel wie möglich automatisch“): von selbst installieren? Modus „automatisch“ für
-     * alles, {@code korrekturen} nur Korrekturen ({@link UpdateHinweis#art} = fix), {@code melden} und kein Wert (Bestand)
-     * nie („Nur melden“). Kanal, Rückfall-Sperre, „Auto aus ≥ 10 min“ und {@code update.pruefen} prüft weiter
-     * {@link UpdateRegel#automatischAb}.
+     * alles, {@code korrekturen} ab 0.1.38.8 jedes kleine Update ({@link UpdateHinweis#klein}, unabhängig von der Art),
+     * {@code melden} und kein Wert (Bestand) nie („Nur melden“). Kanal, Rückfall-Sperre, „Auto aus ≥ 10 min“ und
+     * {@code update.pruefen} prüft weiter {@link UpdateRegel#automatischAb}.
      */
     private boolean automatischFuer(Freigabe f) {
         if (automatisch()) return true;
-        return korrekturen() && f != null
-                && UpdateHinweis.ART_FIX.equals(UpdateHinweis.art(f, env.installierteVersion()));
+        return korrekturen() && f != null && UpdateHinweis.klein(f, env.installierteVersion());
     }
 
     private boolean korrekturen() {
@@ -1227,12 +1436,14 @@ public final class AppUpdateDienst {
     }
 
     /**
-     * 0.1.38.6: Korrektur, die von selbst kommt: keine Meldung „neue Version“ vorher (lautlos), danach meldet
-     * {@link UpdateMeldung} „installiert und läuft“. Im Modus „automatisch“ wird wie bisher vorher gemeldet.
+     * 0.1.38.8: kleines Update, das von selbst kommt (Modus „korrekturen“ oder „automatisch“): keine Meldung „neue
+     * Version“ vorher und danach kein „installiert und läuft“ ({@link #stillVc}). Große Updates im Modus „automatisch“
+     * werden wie bisher vorher gemeldet.
      */
     private boolean lautlos(Freigabe f) {
-        return f != null && !automatisch() && automatischFuer(f) && pruefenAn() && "stabil".equals(f.kanal)
-                && f.versionCode != rueckfallVc() && env.installierterVc() >= f.minVersion;   // sonst käme sie nie
+        return f != null && UpdateHinweis.klein(f, env.installierteVersion()) && automatischFuer(f) && pruefenAn()
+                && "stabil".equals(f.kanal) && f.versionCode != rueckfallVc()
+                && env.installierterVc() >= f.minVersion;   // sonst käme sie nie
     }
 
     /** {@code update.pruefen}: nicht gesetzt (Bestand) = an; die Ersteinrichtung fragt ohne Vorauswahl. */
@@ -1276,6 +1487,9 @@ public final class AppUpdateDienst {
             hinweis.fehlversuche = j.optInt("vorgemerktFehlversuche", 0);
             hinweis.mobilVc = j.optInt("mobilVc", 0);
             hinweis.mobilAm = j.optLong("mobilAm", 0);
+            stillVc = j.optInt("stillVc", 0);
+            umstellungMelden = j.optBoolean("umstellungMelden", false);
+            umstellungKarte = j.optBoolean("umstellungKarte", false);
         } catch (Exception e) {
             verfuegbar = null;
         }
@@ -1299,7 +1513,8 @@ public final class AppUpdateDienst {
                     .put("mobilVc", hinweis.mobilVc).put("mobilAm", hinweis.mobilAm)
                     .put("launcherApkUrl", verfuegbar == null || verfuegbar.launcher == null
                             || verfuegbar.launcher.apkUrl() == null ? JSONObject.NULL : verfuegbar.launcher.apkUrl())
-                    .put("launcherGroesse", launcherGroesse);
+                    .put("launcherGroesse", launcherGroesse).put("stillVc", stillVc)
+                    .put("umstellungMelden", umstellungMelden).put("umstellungKarte", umstellungKarte);
             File f = standDatei();
             File tmp = new File(f.getPath() + ".tmp");
             Files.write(tmp.toPath(), j.toString().getBytes(StandardCharsets.UTF_8));
@@ -1608,9 +1823,41 @@ public final class AppUpdateDienst {
             // 0.1.38.2: mit Knopf „Jetzt installieren“ (Rückfrage im Bot, dann derselbe Weg wie die Karte)
             // 0.1.38.5: Art und Kurzfassung gleich mit (Sprache wie der Bot)
             String sprache = at.greenchili.surfmate.server.LocaleManager.get();
+            String neu = at.greenchili.surfmate.server.Messages.withLocale(sprache,
+                    () -> UpdateHinweis.wasNeu(f, installierteVersion(), sprache));
             at.greenchili.surfmate.telegram.TelegramNotifier.notifyUpdateNeu("panoptes", f.versionName,
-                    UpdateRegel.groesseText(groesseBytes), at.greenchili.surfmate.server.Messages.withLocale(sprache,
-                            () -> UpdateHinweis.wasNeu(f, installierteVersion(), sprache)));
+                    UpdateRegel.groesseText(groesseBytes), neu);
+            // 0.1.38.8: dieselbe Meldung mit Zusammenfassung aufs Handy (Kategorie system.updates; TelegramSink lässt sie aus)
+            try {
+                JSONObject data = new JSONObject().put("art", "panoptes_verfuegbar").put("versionCode", f.versionCode)
+                        .put("version", f.versionName);
+                at.greenchili.surfmate.notifications.NotificationBus.get().publish(
+                        new at.greenchili.surfmate.notifications.NotificationEvent("system.updates",
+                                at.greenchili.surfmate.notifications.NotificationEvent.Severity.INFO,
+                                at.greenchili.surfmate.server.Messages.get("notifications.update_verfuegbar", f.versionName),
+                                neu, "update-panoptes_verfuegbar-" + f.versionCode, "/local/system.html", data));
+            } catch (Throwable t) {
+                logger.warn("Update-Push: " + t.getMessage());
+            }
+        }
+
+        @Override
+        public void meldeUmstellung(String titel, String text) {
+            at.greenchili.surfmate.telegram.TelegramNotifier.sendMessage(text, "UPDATE");
+            try {
+                at.greenchili.surfmate.notifications.NotificationBus.get().publish(
+                        new at.greenchili.surfmate.notifications.NotificationEvent("system.updates",
+                                at.greenchili.surfmate.notifications.NotificationEvent.Severity.INFO, titel, text,
+                                "update-klein-umstellung", "/local/system.html",
+                                new JSONObject().put("art", "umstellung_klein")));
+            } catch (Throwable t) {
+                logger.warn("Umstellung-Push: " + t.getMessage());
+            }
+        }
+
+        @Override
+        public boolean zeigeInfo(String titel, String text) {
+            return at.greenchili.surfmate.byd.MessageOverlayController.showDialog(titel, text, "OK", "info", 120);
         }
 
         @Override
@@ -1644,6 +1891,16 @@ public final class AppUpdateDienst {
             } catch (Throwable t) {
                 logger.warn("Update-Push: " + t.getMessage());
             }
+        }
+
+        @Override
+        public JSONObject konfig() {
+            return at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig();
+        }
+
+        @Override
+        public void frageWaechterStandard() {
+            at.greenchili.surfmate.surveillance.WaechterStandardKanaele.senden();
         }
 
         @Override
@@ -1681,7 +1938,7 @@ public final class AppUpdateDienst {
         @Override
         public boolean zeigeHinweis(String griff, Freigabe f, String notizen, String zusatz) {
             // 0.1.38.5: Art und Kurzfassung über der Frage, der volle Text bleibt hinter „Was ist neu?“
-            String neu = UpdateHinweis.wasNeu(f, installierteVersion(), at.greenchili.surfmate.server.LocaleManager.get());
+            String neu = UpdateHinweis.wasNeuKurz(f, installierteVersion(), at.greenchili.surfmate.server.LocaleManager.get());
             String text = neu + "\n\n" + UpdateHinweis.frage() + (zusatz.isEmpty() ? "" : "\n\n" + zusatz);
             return at.greenchili.surfmate.byd.MessageOverlayController.showUpdateHinweis(griff, f.versionName,
                     UpdateHinweis.titel(f.versionName), text, notizen,
@@ -1697,5 +1954,29 @@ public final class AppUpdateDienst {
 
         @Override public LauncherPaket.Stand launcherStand() { return LauncherPaket.stand(LauncherPaket.SHELL); }
         @Override public String launcherInstallieren(File apk) { return LauncherPaket.installieren(LauncherPaket.SHELL, apk); }
+
+        @Override
+        public String launcherHomeNachUpdate() {
+            return LauncherHome.nachUpdate(LauncherPaket.SHELL, at.greenchili.surfmate.launcher.HomeWaechter.wunsch(),
+                    at.greenchili.surfmate.launcher.HomeWaechter.behalten());
+        }
+
+        @Override
+        public void meldeLauncherHome(String grund) {
+            String text = at.greenchili.surfmate.server.Messages.text("update_klein.launcher_home",
+                    "After the update the Panoptes launcher is no longer the home screen. Open the launcher once and "
+                            + "choose it again as home screen.");
+            at.greenchili.surfmate.telegram.TelegramNotifier.sendMessage(text, "UPDATE");
+            try {
+                at.greenchili.surfmate.notifications.NotificationBus.get().publish(
+                        new at.greenchili.surfmate.notifications.NotificationEvent("system.updates",
+                                at.greenchili.surfmate.notifications.NotificationEvent.Severity.WARN,
+                                at.greenchili.surfmate.server.Messages.text("update_klein.titel", "Updates"), text,
+                                "update-launcher-home", "/local/system.html",
+                                new JSONObject().put("art", "launcher_home").put("grund", grund)));
+            } catch (Throwable t) {
+                logger.warn("Launcher-Home-Push: " + t.getMessage());
+            }
+        }
     }
 }

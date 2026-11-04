@@ -58,7 +58,7 @@ public class BackupCommandHandler implements TelegramCommandHandler {
 
         JSONObject resp = ctx.sendIpcCommand(CAMERA_IPC_PORT, req, EXPORT_TIMEOUT_MS);
         if (resp == null) {
-            ctx.sendMessage(chatId, ctx.tr("backup.service_unreachable"));
+            ctx.sendMessage(chatId, DienstHinweis.text(ctx));   // 0.1.38.8: startet / aus / Ausfall
             return;
         }
         if (!resp.optBoolean("success", false)) {

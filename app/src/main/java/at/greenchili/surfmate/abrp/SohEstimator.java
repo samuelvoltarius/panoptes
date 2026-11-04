@@ -2777,6 +2777,16 @@ public class SohEstimator {
      *
      * @return the OEM percent in (0,100], or -1 when the trim doesn't report it.
      */
+    /** 0.1.38.8: vom Auto gemeldeter SoH in % (BYD-Index), -1 wenn das Modell keinen meldet. */
+    public double getOemSohPercent() { return readOemSohPercent(); }
+
+    /**
+     * 0.1.38.8: eigene Schätzung NEBEN dem kanonischen Wert (wie {@code estimatedSoh}/{@code hasEstimate} in
+     * {@link #getStatus()}), nur zur ausdrücklich beschrifteten Doppelanzeige „laut Auto · geschätzt“; -1 ohne Schätzung.
+     * Nie als „der“ SoH weitergeben – dafür bleibt {@link #getDisplaySoh()}.
+     */
+    public double getSchaetzungNebenSoh() { return hasDisplaySoh() && currentSoh > 0 ? currentSoh : -1; }
+
     private double readOemSohPercent() {
         try {
             at.greenchili.surfmate.byd.BydDataCollector col =

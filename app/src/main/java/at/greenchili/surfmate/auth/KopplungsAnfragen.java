@@ -272,6 +272,9 @@ public final class KopplungsAnfragen {
 
     // ---------------------------------------------------------------- Laufzeit (Daemon)
 
+    /** 0.1.38.8: true, während das Besitzer-Handy eine Anfrage entscheidet (die neue Kopplung wird nie Besitzer). */
+    public static final ThreadLocal<Boolean> VOM_HANDY = new ThreadLocal<>();
+
     private static volatile KopplungsAnfragen instanz;
 
     public static KopplungsAnfragen get() {
@@ -281,7 +284,9 @@ public final class KopplungsAnfragen {
                 if (instanz == null) {
                     instanz = new KopplungsAnfragen(new Ausgeber() {
                         public String[] ausstellen(String geraet, String art, long now) {
-                            String kid = Kopplungen.get().anlegen(geraet, art, now);
+                            // 0.1.38.8: am Display/Login/Telegram erlaubt → darf erste Besitzer-Kopplung werden;
+                            // vom Besitzer-Handy erlaubt → nie (VOM_HANDY)
+                            String kid = Kopplungen.get().anlegen(geraet, art, now, !Boolean.TRUE.equals(VOM_HANDY.get()));
                             if (kid == null) return null;
                             String jwt = AuthManager.generateJwt(PairingCodes.SCOPE, kid);
                             return jwt == null ? null : new String[] {kid, jwt};

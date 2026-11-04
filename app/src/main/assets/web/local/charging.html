@@ -29,7 +29,7 @@
         ];
     </script>
     <script src="../shared/app-tabs.js"></script>
-    <link rel="stylesheet" href="../shared/styles.css?v=pn13">
+    <link rel="stylesheet" href="../shared/styles.css?v=pn14">
     <style>
         /* ===== OLD WEBVIEW COMPAT (Chrome <88, Android 7.x) ===== */
         /* Flexbox gap is Grid-only on old Chrome — fall back to margin via > * + *. */
@@ -142,6 +142,8 @@
             z-index: 500; display: none; align-items: flex-end; justify-content: center;
             -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
         }
+        /* Chromium 74 (WebView am Auto) ohne backdrop-filter: dichter statt Glas */
+        @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .calendar-popup { background: var(--panel-overlay-bg-dicht, rgba(0, 0, 0, 0.72)); } }
         .calendar-popup.active { display: flex; }
         .calendar-panel {
             background: var(--bg-surface); border-radius: var(--radius-lg) var(--radius-lg) 0 0;

@@ -3,6 +3,13 @@
     <string name="abbrechen">Annuleren</string>
     <string name="akku_eta">nog %1$s min</string>
     <string name="akku_gesundheit">Accugezondheid %1$s%%</string>
+    <string name="akku_gesundheit_titel">Accugezondheid</string>
+    <string name="akku_gesundheit_werte">Auto %1$s · schatting %2$s</string>
+    <string name="akku_gesundheit_auto_zeile">Accugezondheid volgens de auto (BYD): %1$s</string>
+    <string name="akku_gesundheit_schaetzung_zeile">Accugezondheid, onze schatting: %1$s</string>
+    <string name="akku_gesundheit_erklaerung">De auto meldt zijn eigen waarde. Panoptes berekent er zelf ook een uit laadniveau en resterende energie. Die twee kunnen verschillen: de auto rondt ruim af, onze schatting schommelt een beetje. De waarde van de auto is bindend.</string>
+    <string name="akku_prozent">%1$s%%</string>
+    <string name="nicht_verfuegbar">niet beschikbaar</string>
     <string name="akku_laedt">Laadt met %1$s kW</string>
     <string name="akku_laedt_nicht">Laadt niet</string>
     <string name="akku_ziel">Doel %1$s%%</string>

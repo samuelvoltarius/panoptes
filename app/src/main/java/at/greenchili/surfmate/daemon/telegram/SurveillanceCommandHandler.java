@@ -30,6 +30,10 @@ public class SurveillanceCommandHandler implements TelegramCommandHandler {
             return;
         }
         String what = args.length > 1 ? args[1].toLowerCase(Locale.ROOT) : "";
+        if ("standard".equals(what)) {
+            standardAn(chatId, ctx);
+            return;
+        }
         Boolean on = parseOnOff(what);
         if (on == null) {
             showGuard(chatId, ctx);
@@ -52,6 +56,37 @@ public class SurveillanceCommandHandler implements TelegramCommandHandler {
                 return Boolean.FALSE;
             default:
                 return null;
+        }
+    }
+
+    /**
+     * 0.1.38.8 Knopf unter der einmaligen Frage „Wächter einschalten?“: schaltet wie der Assistent ein (Standard „nur bei
+     * Erschütterung“, Rechtshinweis bestätigt). Der Kern lehnt eine veraltete Frage ab (inzwischen eingerichtet oder bewusst aus).
+     */
+    private void standardAn(long chatId, CommandContext ctx) {
+        if (!UnifiedTelegramConfig.isRemoteAllowed(UnifiedTelegramConfig.REMOTE_GUARD)) {
+            ctx.sendMessage(chatId, ctx.tr("router.not_allowed"));
+            return;
+        }
+        JSONObject r = ctx.daemonHttp("POST", "/api/surveillance/standard-an",
+                standardAnBody());
+        if (r != null && r.optBoolean("success", false)) {
+            ctx.sendMessageWithButtons(chatId, ctx.tr("guard.standard_an_ok"), new String[][][]{
+                    {{ctx.tr("buttons.guard_off"), "cmd:/waechter aus"},
+                            {ctx.tr("buttons.status"), "cmd:/status"}}});
+        } else if (r != null && "nicht_mehr_noetig".equals(r.optString("error", ""))) {
+            ctx.sendMessage(chatId, ctx.tr("guard.standard_an_veraltet"));
+        } else {
+            ctx.sendMessage(chatId, ctx.tr("guard.on_failed"));
+        }
+    }
+
+    /** Der Rechtshinweis (Version) geht mit: nur wer ihn gesehen hat, schaltet so ein. */
+    static JSONObject standardAnBody() {
+        try {
+            return new JSONObject().put("rechtshinweis", at.greenchili.surfmate.einstellungen.Katalog.GUARD_LEGAL_VERSION);
+        } catch (org.json.JSONException e) {
+            return new JSONObject();
         }
     }
 
@@ -82,7 +117,7 @@ public class SurveillanceCommandHandler implements TelegramCommandHandler {
     private void showGuard(long chatId, CommandContext ctx) {
         JSONObject st = ipc("STATUS", ctx);
         if (st == null) {
-            ctx.sendMessage(chatId, ctx.tr("common.camera_service_down"));
+            ctx.sendMessage(chatId, DienstHinweis.text(ctx));   // 0.1.38.8: startet / aus / Ausfall
             return;
         }
         boolean enabled = st.optBoolean("enabled", false);
@@ -116,7 +151,7 @@ public class SurveillanceCommandHandler implements TelegramCommandHandler {
         JSONObject st = ipc("STATUS", ctx);
         boolean enabled = st != null && st.optBoolean("enabled", false);
         if (st == null) {
-            sb.append(ctx.tr("common.camera_service_down")).append("\n");
+            sb.append(DienstHinweis.text(ctx)).append("\n");   // 0.1.38.8: startet / aus / Ausfall
         } else {
             sb.append(guardLine(st, ctx)).append("\n");
         }

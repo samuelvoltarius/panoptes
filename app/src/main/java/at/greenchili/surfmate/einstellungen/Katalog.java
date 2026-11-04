@@ -40,6 +40,12 @@ public final class Katalog {
     /** Aktuelle Textversion der Haftungshinweise (DISCLAIMER.md, Neubau). Bei Textänderung hochzählen. */
     public static final String HINWEISE_VERSION = "2026-10-21";
 
+    /**
+     * 0.1.38.8: Textversion des Wächter-Rechtshinweises (guardLegal). Beim Bestätigen in {@code surveillance.guardLegalVersion}
+     * festgehalten, damit „Rechtshinweis gesehen" verlässlich belegt ist (bei Textänderung hochzählen).
+     */
+    public static final String GUARD_LEGAL_VERSION = "2026-11-04";
+
     public static final List<Gruppe> GRUPPEN = Collections.unmodifiableList(java.util.Arrays.asList(
             new Gruppe("waechter", "waechter", 30),
             new Gruppe("auto", "auto", 40),
@@ -81,6 +87,13 @@ public final class Katalog {
         l.add(ereignisTg);
 
         // ---------------------------------------------------------------- Wächter: Aufnahme
+        // 0.1.38.8 Besitzer-Handy (Telegram-Gleichstand /waechter an|aus): Hauptschalter. Wirkung wie Telegram und HA
+        // (SurveillanceApiHandler.waechterSetzen in EinstellungenApiHandler.nachwirkungen; Zündung an → erst beim Parken).
+        Feld waechterAn = new Feld("surveillance.surveillanceEnabled", Feld.Typ.BOOL);
+        waechterAn.gruppe = "waechter"; waechterAn.abschnitt = "aufnahme"; waechterAn.reihenfolge = r += 10;
+        waechterAn.standard = false; waechterAn.nurLesendExtern = true;   // Kopplungen ohne Besitzer: nur lesen
+        l.add(waechterAn);
+
         Feld trig = new Feld("surveillance.triggerMode", Feld.Typ.AUSWAHL);
         trig.gruppe = "waechter"; trig.abschnitt = "aufnahme"; trig.reihenfolge = r += 10;
         trig.standard = null;   // nicht gesetzt = „nicht gewählt“: bis zur Wahl nur Erschütterung (0.1.9.1)
@@ -196,6 +209,27 @@ public final class Katalog {
         chem.optionen.add(new Feld.Option(AkkuChemie.AGM, "settings.auto.akkuChemie.agm"));
         l.add(chem);
 
+        // 0.1.38.8 Fahrzeug-Aktionen (04.11.2026): außen Sicht-/Hörbares nur als eigene Nutzerwahl. Standard AUS,
+        // Einschalten mit Warnsatz, aus der Ferne nur lesbar (Handy-Web: Abschnitt gesperrt). Auslösen nur mit Rückfrage,
+        // Prüfung zentral in FahrzeugAktionen (Router).
+        int ra = 20;
+        for (String f : at.greenchili.surfmate.byd.routing.FahrzeugAktionen.FUNKTIONEN) {
+            Feld a = new Feld(at.greenchili.surfmate.byd.routing.FahrzeugAktionen.ABSCHNITT + "." + f, Feld.Typ.BOOL);
+            a.gruppe = "auto"; a.abschnitt = "aktionen"; a.reihenfolge = ra += 2; a.standard = false; a.gefahr = true;
+            // 0.1.38.8 Integration (Koordination): Einschalten nur am Display oder mit vollem Login, nie über eine Kopplung
+            // (auch nicht vom Besitzer-Handy). Ausschalten aus der Ferne läuft eigene Wege (FahrzeugAktionen.allesAus).
+            a.nurLesendExtern = true; a.nieExtern = true; a.bestaetigung = "aktionen.hinweis." + f;
+            l.add(a);
+        }
+        // Automatik „Aufsperren beim Annähern“: nur zusammen mit Aufsperren, Warnsatz samt Funk-Verstärker-Risiko
+        Feld nah = new Feld(at.greenchili.surfmate.byd.routing.FahrzeugAktionen.ABSCHNITT + "."
+                + at.greenchili.surfmate.byd.routing.FahrzeugAktionen.ANNAEHERUNG, Feld.Typ.BOOL);
+        nah.gruppe = "auto"; nah.abschnitt = "aktionen"; nah.reihenfolge = ra += 2; nah.standard = false; nah.gefahr = true;
+        nah.nurLesendExtern = true; nah.nieExtern = true; nah.bestaetigung = "aktionen.hinweis.annaeherung";
+        nah.nurWenn = obj("key", at.greenchili.surfmate.byd.routing.FahrzeugAktionen.ABSCHNITT + "."
+                + at.greenchili.surfmate.byd.routing.FahrzeugAktionen.AUFSPERREN, "gleich", true);
+        l.add(nah);
+
         // ---------------------------------------------------------------- System
         Feld id = new Feld("planner.autoId", Feld.Typ.TEXT);
         id.gruppe = "system"; id.reihenfolge = 10; id.nurLesend = true; id.nurLesendExtern = true;
@@ -209,6 +243,7 @@ public final class Katalog {
         ansage.gruppe = "system"; ansage.reihenfolge = 17; ansage.standard = false;
         l.add(ansage);
         Feld member = new Feld("planner.memberToken", Feld.Typ.GEHEIM);
+        member.nieExtern = true;   // 0.1.38.8 harte Ausnahme: nie über eine Kopplung
         member.gruppe = "system"; member.reihenfolge = 20; member.nurLesendExtern = true;
         l.add(member);
         // Community (Regeln teilen + Straßenzustand gemeinsam): Standard aus, ohne Einschalten kein Aufruf.
@@ -395,6 +430,7 @@ public final class Katalog {
         kennungAktion.zugriff = kennungAktion();
         l.add(kennungAktion);
         Feld zaehlenUrl = new Feld("zaehlen.url", Feld.Typ.TEXT);
+        zaehlenUrl.nieExtern = true;   // 0.1.38.8 harte Ausnahme: nie über eine Kopplung
         zaehlenUrl.gruppe = "datenschutz"; zaehlenUrl.reihenfolge = 33; zaehlenUrl.erweitert = true;
         zaehlenUrl.nurLesendExtern = true; zaehlenUrl.standard = at.greenchili.surfmate.analytics.Mitzaehlen.STANDARD_URL;
         l.add(zaehlenUrl);
@@ -409,6 +445,7 @@ public final class Katalog {
         kurveKennung.nurLesendExtern = true;
         l.add(kurveKennung);
         Feld kurveUrl = new Feld("ladekurve.url", Feld.Typ.TEXT);
+        kurveUrl.nieExtern = true;   // 0.1.38.8 harte Ausnahme: nie über eine Kopplung
         kurveUrl.gruppe = "datenschutz"; kurveUrl.reihenfolge = 36; kurveUrl.erweitert = true;
         kurveUrl.nurLesendExtern = true; kurveUrl.standard = at.greenchili.surfmate.ladekurve.LadekurveTeilen.STANDARD_URL;
         l.add(kurveUrl);
@@ -475,6 +512,7 @@ public final class Katalog {
         // In-App-Updater (NEUBAU2 §1): Kanal stabil/test, Modus melden/korrekturen/automatisch (Standard melden =
         // Bestand ohne Wert; neue Einrichtungen bekommen ab 0.1.38.6 „korrekturen“, siehe EinrichtungApiHandler)
         Feld kanal = new Feld("update.kanal", Feld.Typ.AUSWAHL);
+        kanal.nieExtern = true;   // 0.1.38.8 harte Ausnahme: nie über eine Kopplung
         kanal.gruppe = "update"; kanal.reihenfolge = 10; kanal.standard = "stabil";
         kanal.optionen.add(new Feld.Option("stabil", "settings.update.kanal.stabil"));
         kanal.optionen.add(new Feld.Option("test", "settings.update.kanal.test"));
@@ -502,6 +540,7 @@ public final class Katalog {
         // Update-Quelle (0.1.15): Standard öffentliches Repo ohne Token; „eigen“ = anderes Repo, optional Lese-Token.
         // Zugangs-Einstellung (Regel B): von gekoppelten Geräten nur lesbar. Signatur + sha256 gelten für jede Quelle.
         Feld quelle = new Feld("update.quelle", Feld.Typ.AUSWAHL);
+        quelle.nieExtern = true;   // 0.1.38.8 harte Ausnahme: nie über eine Kopplung
         quelle.gruppe = "update"; quelle.reihenfolge = 40; quelle.standard =
                 at.greenchili.surfmate.appupdate.UpdateQuelle.OEFFENTLICH;
         quelle.erweitert = true; quelle.nurLesendExtern = true;
@@ -511,6 +550,7 @@ public final class Katalog {
                 "settings.update.quelle.eigen"));
         l.add(quelle);
         Feld repo = new Feld("update.repo", Feld.Typ.TEXT);
+        repo.nieExtern = true;   // 0.1.38.8 harte Ausnahme: nie über eine Kopplung
         repo.gruppe = "update"; repo.reihenfolge = 41; repo.standard = null;
         repo.erweitert = true; repo.nurLesendExtern = true; repo.nullErlaubt = true;
         repo.nurWenn = obj("key", "update.quelle", "gleich", at.greenchili.surfmate.appupdate.UpdateQuelle.EIGEN);
@@ -522,6 +562,7 @@ public final class Katalog {
         };
         l.add(repo);
         Feld token = new Feld("update.token", Feld.Typ.GEHEIM);
+        token.nieExtern = true;   // 0.1.38.8 harte Ausnahme: nie über eine Kopplung
         token.gruppe = "update"; token.reihenfolge = 42;
         token.erweitert = true; token.nurLesendExtern = true;
         token.nurWenn = obj("key", "update.quelle", "gleich", at.greenchili.surfmate.appupdate.UpdateQuelle.EIGEN);

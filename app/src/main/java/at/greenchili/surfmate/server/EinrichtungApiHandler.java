@@ -68,6 +68,19 @@ public final class EinrichtungApiHandler {
     public static volatile java.util.function.BooleanSupplier overdriveErkennung = () -> false;
 
     /**
+     * 0.1.38.8: Haken für den Einrichtungs-Schritt {@code extra_display} – true, wenn am Auto ein eigenes
+     * Hintergrundbild gesetzt wurde (Daemon prüft die abgelegte Bilddatei). Standard false (Tests ohne Daemon),
+     * echte Prüfung setzt {@code UebernahmeApiHandler.anmelden()} beim Start.
+     */
+    public static volatile java.util.function.BooleanSupplier hintergrundErkennung = () -> false;
+
+    /**
+     * 0.1.38.8: Haken für {@code extra_launcher} – true, wenn die Panoptes-Launcher-APK installiert ist. Gecacht
+     * (nicht je Abruf, kein {@code pm} pro GET); echte Prüfung setzt {@code UebernahmeApiHandler.anmelden()} beim Start.
+     */
+    public static volatile java.util.function.BooleanSupplier launcherErkennung = () -> false;
+
+    /**
      * 0.1.28 P10: Wahl „Wächter stoppt …“ → {Akku unter %, Stunden geparkt}. „normal“ = Katalog-Standard (20 %, 24 h).
      */
     public static final Map<String, int[]> STOPP;
@@ -195,6 +208,11 @@ public final class EinrichtungApiHandler {
                 break;
             case "/api/einrichtung/spaeter":
                 a = spaeter(root, req.optString("id", ""));
+                break;
+            case "/api/einrichtung/erledigt":
+                // 0.1.38.8: „Erledigt / nicht nötig“ je optionalem Punkt (für Schritte, die sich nicht am Config-Zustand
+                // prüfen lassen, z. B. Launcher/Hintergrund/Tiermodus/Assistenz). Blendet den Punkt dauerhaft aus.
+                a = erledigt(root, req.optString("id", ""));
                 break;
             case "/api/einrichtung/neu":
                 a = neu(root);
@@ -496,7 +514,11 @@ public final class EinrichtungApiHandler {
             g.put("extra_overdrive", "einr.grund.kein_overdrive");
         }
         // 0.1.26 (Alfreds Auto): „später“ bzw. „offen“ überdeckt nie, was am Auto wirklich eingerichtet ist
-        for (String id : echtEingerichtet(root, felderOhneIo(root), planerSchluesselDa(root))) {
+        Set<String> echt = new HashSet<>(echtEingerichtet(root, felderOhneIo(root), planerSchluesselDa(root)));
+        // 0.1.38.8: nicht aus der Config prüfbare Schritte über Daemon-Haken (Standard false in Tests)
+        if (hintergrundGesetzt()) echt.add("extra_display");
+        if (launcherInstalliert()) echt.add("extra_launcher");
+        for (String id : echt) {
             String st = s.optString(id, OFFEN);
             // 0.1.38.3: wieder geöffnete Schritte bleiben offen, auch wenn sie am Auto schon eingerichtet sind
             if (!PFLICHT.contains(id) && !imWiederholen(z, id) && (OFFEN.equals(st) || SPAETER.equals(st))) s.put(id, ERLEDIGT);
@@ -550,9 +572,26 @@ public final class EinrichtungApiHandler {
      * „später“ ({@link #anfang}, {@link #bestandNachpruefen}); das darf nie einen erledigten Schritt überdecken.
      * „rechte“ kennt nur die App (Android-Rechte), sie meldet sie über {@code POST /api/einrichtung/schritt}.
      */
+    /**
+     * 0.1.38.8 (Wächter Standard an – REGEL NR.2 ist hier von Projektinhaber bewusst aufgehoben): Soll der Bestand beim ersten
+     * Start auf dieser Version EINMALIG mit Rechtshinweis gefragt werden, ob der Wächter an soll? Nur, wenn der Nutzer
+     * den Wächter nie eingerichtet hat (kein gültiger triggerMode) UND ihn nicht bewusst ausgeschaltet hat. Eine
+     * vorhandene Wahl – auch ausdrücklich „aus“ – bleibt unangetastet (wird nie still eingeschaltet). Rein/testbar.
+     */
+    public static boolean waechterStandardFragen(JSONObject root) {
+        JSONObject sv = root == null ? null : root.optJSONObject("surveillance");
+        if (sv == null) return true;
+        if (TriggerModus.gueltig(sv.optString("triggerMode", ""))) return false;   // schon eingerichtet (inkl. „aus“)
+        if (sv.optBoolean("disabledByUser", false)) return false;                  // bewusst ausgeschaltet
+        return true;
+    }
+
     public static Set<String> echtEingerichtet(JSONObject root, List<Feld> felder, boolean planerSchluessel) {
         Set<String> e = new HashSet<>();
         if (root == null) return e;
+        // 0.1.38.8 (Wächter Standard an): ist der Wächter an, gilt der Schritt als erledigt (fällt aus „Noch einrichten“).
+        JSONObject svAn = root.optJSONObject("surveillance");
+        if (svAn != null && svAn.optBoolean("surveillanceEnabled", false)) e.add("waechter");
         JSONObject tg = root.optJSONObject("telegram");
         if (tg != null && tg.optLong("ownerChatId", 0) > 0) e.add("extra_telegram");
         JSONObject k = root.optJSONObject("kopplungen");
@@ -575,6 +614,24 @@ public final class EinrichtungApiHandler {
         if (at.greenchili.surfmate.notzugang.Notzugang.an(root)) e.add("extra_notzugang");
         JSONObject sc = root.optJSONObject("speedcam");
         if (sc != null && sc.optBoolean("enabled", false)) e.add("blitzer");
+        // 0.1.38.8 (Projektinhaber, „Noch einrichten": „vieles davon hab ich doch schon?"): drei der neuen 0.1.38-Schritte
+        // lassen sich am echten Config-Zustand erkennen; erkannt heißt „erledigt" (fällt aus „Noch einrichten").
+        // extra_tacho: der Hinweis ist bestätigt (Pflicht vor jeder Freigabe) oder es ist schon eine App freigegeben.
+        JSONObject tn = root.optJSONObject("tachoNavi");
+        if (tn != null && (tn.optLong("hinweisVerstanden", 0) > 0
+                || (tn.optJSONArray("freigaben") != null && tn.optJSONArray("freigaben").length() > 0))) {
+            e.add("extra_tacho");
+        }
+        // extra_abschaltbericht: der Nutzer hat den Schalter angefasst (Standard an, Schlüssel erst nach Eingriff da).
+        if (tg != null && tg.has("abschaltBericht")) e.add("extra_abschaltbericht");
+        // extra_ladesaeule: Erkennung angefasst (Standard an) oder schon eine Säule gemerkt.
+        JSONObject ld = root.optJSONObject("laden");
+        if (ld != null && ld.has("saeuleNachschlagen")) e.add("extra_ladesaeule");
+        JSONObject ls = root.optJSONObject("ladesaeule");
+        if (ls != null && ls.optJSONArray("gemerkt") != null && ls.optJSONArray("gemerkt").length() > 0) e.add("extra_ladesaeule");
+        // extra_overdrive: eine echte Übernahme ist gelaufen (Marker, s. UebernahmeApiHandler) → nicht mehr anbieten.
+        JSONObject ue = root.optJSONObject("uebernahme");
+        if (ue != null && ue.optBoolean("overdriveErledigt", false)) e.add("extra_overdrive");
         // Daten teilen: mindestens eine Freigabe der Gruppe „datenschutz“ ist eingeschaltet
         for (Feld f : felder == null ? java.util.Collections.<Feld>emptyList() : felder) {
             if (f.typ != Feld.Typ.BOOL || !"datenschutz".equals(f.gruppe) || f.zugriff == null) continue;
@@ -666,6 +723,22 @@ public final class EinrichtungApiHandler {
         }
     }
 
+    private static boolean hintergrundGesetzt() {
+        try {
+            return hintergrundErkennung.getAsBoolean();
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    private static boolean launcherInstalliert() {
+        try {
+            return launcherErkennung.getAsBoolean();
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
     // ================================================================ Änderungen (rein, testbar)
 
     /** Ergebnis einer Änderung: HTTP-Code, Antwort und was zu schreiben ist (Abschnitt → Werte). */
@@ -718,11 +791,16 @@ public final class EinrichtungApiHandler {
                 if (fehlt.length() == 0) {
                     einst.put("surveillance.triggerMode", m);
                     bestaetigt.put("surveillance.triggerMode");
+                    boolean waechterAn = !TriggerModus.AUS.equals(m);
                     direkt.computeIfAbsent("recording", x -> new HashMap<>()).put("audioEnabled",
-                            !TriggerModus.AUS.equals(m) && an.getBoolean("ton"));
+                            waechterAn && an.getBoolean("ton"));
                     // §0 „Wächter an/aus“: „aus“ schaltet den Wächter ab (keine Aufnahme), jede andere Wahl an
-                    direkt.computeIfAbsent("surveillance", x -> new HashMap<>()).put("surveillanceEnabled",
-                            !TriggerModus.AUS.equals(m));
+                    Map<String, Object> svDirekt = direkt.computeIfAbsent("surveillance", x -> new HashMap<>());
+                    svDirekt.put("surveillanceEnabled", waechterAn);
+                    // 0.1.38.8: „aus“ ist eine bewusste Entscheidung (Rechtshinweis gesehen) → nicht wieder einschalten;
+                    // jede andere Wahl bestätigt zugleich den Wächter-Rechtshinweis (guardLegal), festgehalten als Version.
+                    svDirekt.put("disabledByUser", !waechterAn);
+                    if (waechterAn) svDirekt.put("guardLegalVersion", Katalog.GUARD_LEGAL_VERSION);
                 }
                 // 0.1.28 P10: Ereignis-Clip beim Fahren (Vollbremsung/Stoß) – eigene Frage ohne Vorauswahl.
                 // Optional für ältere Oberflächen; fehlt sie, gilt der Standard nach Land wie bisher.
@@ -883,6 +961,27 @@ public final class EinrichtungApiHandler {
         Antwort a = new Antwort();
         a.schreiben.put(ABSCHNITT, zustandWerte(z));
         a.body.put("success", true).put("id", id).put("status", neu);
+        return a;
+    }
+
+    /**
+     * 0.1.38.8: „Erledigt / nicht nötig“ – ein optionaler Schritt wird dauerhaft als erledigt markiert, ohne ihn im
+     * Assistenten durchzugehen. Für Punkte, die sich nicht am echten Config-Zustand erkennen lassen (Launcher,
+     * Hintergrundbild/Display-Sperre, Tiermodus, Assistenz, Overdrive). Pflicht und „fertig“ sind ausgenommen (422).
+     * Entfallene bleiben entfallen. Grund-Merker {@code einr.grund.manuell}, damit „Alle Schritte“ es sauber zeigt.
+     */
+    public static Antwort erledigt(JSONObject root, String id) throws Exception {
+        if (!SCHRITTE.contains(id)) return Antwort.fehler(404, "unbekannt");
+        if (PFLICHT.contains(id) || "fertig".equals(id)) return Antwort.fehler(422, "pflicht");
+        JSONObject z = zustand(root);
+        if (ENTFAELLT.equals(z.getJSONObject("schritte").optString(id, OFFEN))) return Antwort.fehler(422, "entfaellt");
+        z.getJSONObject("schritte").put(id, ERLEDIGT);
+        JSONObject g = z.optJSONObject("gruende");
+        if (g == null) { g = new JSONObject(); z.put("gruende", g); }
+        g.put(id, "einr.grund.manuell");
+        Antwort a = new Antwort();
+        a.schreiben.put(ABSCHNITT, zustandWerte(z));
+        a.body.put("success", true).put("id", id).put("status", ERLEDIGT);
         return a;
     }
 

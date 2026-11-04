@@ -244,6 +244,20 @@ public final class UpdateHinweis {
         return gleich && vierte ? ART_FIX : ART_FUNKTION;
     }
 
+    /**
+     * 0.1.38.8 (04.11.: „bei xx.x-Versionen soll die Meldung gar nicht kommen, sondern sie einfach installiert
+     * werden“): kleines Update = gleiche ersten drei Stellen wie die installierte Version, nur die vierte Stelle neu
+     * (0.1.38.7 → 0.1.38.8, auch 0.1.38 → 0.1.38.1). Alles andere (0.1.38.8 → 0.1.39, 0.1.37 → 0.1.38.4) ist groß.
+     * Unabhängig von {@code art}; nicht lesbare Versionen zählen als groß (dann wird vorher gefragt).
+     */
+    public static boolean klein(Freigabe f, String installiert) {
+        int[] neu = stellen(f == null ? null : f.versionName);
+        int[] alt = stellen(installiert);
+        if (neu == null || alt == null || neu.length < 4 || alt.length < 3) return false;
+        if (neu[0] != alt[0] || neu[1] != alt[1] || neu[2] != alt[2]) return false;
+        return neu[3] > (alt.length >= 4 ? alt[3] : 0);
+    }
+
     /** „0.1.38.4“ (auch mit „-test.2“) → {0,1,38,4}; null, wenn nicht lesbar. */
     static int[] stellen(String name) {
         if (name == null) return null;
@@ -265,12 +279,20 @@ public final class UpdateHinweis {
 
     /** Höchstens {@link #KURZ_ZEILEN} Stichpunkte, je höchstens {@link #KURZ_ZEICHEN} Zeichen. */
     public static String kurz(JSONArray notizen) {
+        return punkte(notizen, KURZ_ZEILEN, KURZ_ZEICHEN);
+    }
+
+    /** 0.1.38.8: so viele Punkte trägt die Meldung eines großen Updates (Zusammenfassung seit der letzten großen). */
+    public static final int GROSS_ZEILEN = 8;
+    public static final int GROSS_ZEICHEN = 160;
+
+    static String punkte(JSONArray notizen, int zeilen, int zeichen) {
         StringBuilder b = new StringBuilder();
         int n = 0;
-        for (int i = 0; notizen != null && i < notizen.length() && n < KURZ_ZEILEN; i++) {
+        for (int i = 0; notizen != null && i < notizen.length() && n < zeilen; i++) {
             String z = notizen.optString(i, "").trim();
             if (z.isEmpty()) continue;
-            if (z.length() > KURZ_ZEICHEN) z = z.substring(0, KURZ_ZEICHEN - 1).trim() + "…";
+            if (z.length() > zeichen) z = z.substring(0, zeichen - 1).trim() + "…";
             if (b.length() > 0) b.append('\n');
             b.append("• ").append(z);
             n++;
@@ -279,11 +301,32 @@ public final class UpdateHinweis {
     }
 
     /**
+     * 0.1.38.8: Was die Meldung zeigt. Großes Update: die Sammelliste seit der letzten großen Version aus version.json
+     * ({@link Freigabe#notizenSeitGross}), fehlt sie, die eigenen Notizen. Kleines Update: die eigenen Notizen.
+     */
+    public static JSONArray zusammenfassung(Freigabe f, String installiert, String sprache) {
+        if (!klein(f, installiert)) {
+            JSONArray s = f.notizenSeitGross(sprache);
+            if (s.length() > 0) return s;
+        }
+        return f.notizen(sprache);
+    }
+
+    /**
      * Zeile Art plus Kurzfassung in der aktuellen Sprache von {@link Messages}, z. B. „Korrektur\n• …“. Notizen in
      * {@code sprache} (Rückfall Englisch); ohne Notizen nur die Art.
      */
     public static String wasNeu(Freigabe f, String installiert, String sprache) {
-        String k = kurz(f.notizen(sprache));
+        // 0.1.38.8: ein großes Update meldet bis zu 8 Punkte (Telegram, Handy); ein kleines kommt ohnehin still
+        JSONArray z = zusammenfassung(f, installiert, sprache);
+        String k = klein(f, installiert) ? kurz(z) : punkte(z, GROSS_ZEILEN, GROSS_ZEICHEN);
+        String a = artText(art(f, installiert));
+        return k.isEmpty() ? a : a + "\n" + k;
+    }
+
+    /** 0.1.38.8: für die Karte am Display nur Art plus 3 Punkte; die ganze Liste steht hinter „Was ist neu?“. */
+    public static String wasNeuKurz(Freigabe f, String installiert, String sprache) {
+        String k = kurz(zusammenfassung(f, installiert, sprache));
         String a = artText(art(f, installiert));
         return k.isEmpty() ? a : a + "\n" + k;
     }
@@ -336,6 +379,18 @@ public final class UpdateHinweis {
                 : Messages.text("update_hinweis.vorgemerkt",
                         "Panoptes installs the update about 10 minutes after you park the car. "
                                 + "The guard is off for a few minutes while it does.");
+    }
+
+    // ------------------------------------------------------------------ 0.1.38.8 einmalige Umstellung
+
+    public static String umstellungTitel() {
+        return Messages.text("update_klein.titel", "Updates");
+    }
+
+    /** Eine Nachricht für Telegram, Handy und Display (04.11.). */
+    public static String umstellungText() {
+        return Messages.text("update_klein.text", "Small fix updates now arrive on their own (only while parked, "
+                + "never while driving). Panoptes still tells you before big updates. To change: Settings → Updates.");
     }
 
     public static String geraetName() {

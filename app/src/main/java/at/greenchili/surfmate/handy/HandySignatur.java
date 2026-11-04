@@ -86,6 +86,21 @@ public final class HandySignatur {
     }
 
     /**
+     * 0.1.38.8 Aufsperren beim Annähern (ANNAEHERUNG_VERTRAG §3): Meldung, signiert mit dem Nähe-Schlüssel der Kopplung;
+     * {@code aktion} enthält den Handy-Standort ({@code annaeherung:<lat6>:<lon6>:<acc>}), damit er mitsigniert ist.
+     * Bei Erfolg die Freigabe für genau diese Kopplung – wie beim Aufsperren nur hier baubar.
+     */
+    public Ergebnis pruefeAnnaeherung(String naeheSchluessel, String aktion, String kopplungId, long zeitMs, String nonce,
+                                      String sigBase64, String geraet, long jetztMs) {
+        if (aktion == null || !aktion.startsWith(ANNAEHERUNG + ":")) return new Ergebnis(GRUND_SIGNATUR, null);
+        String g = pruefe(naeheSchluessel, aktion, kopplungId, zeitMs, nonce, sigBase64, jetztMs);
+        return g != null ? new Ergebnis(g, null) : new Ergebnis(null, new Freigabe(kopplungId, geraet, jetztMs));
+    }
+
+    /** Zweck der Annäherungs-Signatur. */
+    public static final String ANNAEHERUNG = "annaeherung";
+
+    /**
      * 0.1.33 Aufsperren mit Passkey (Kopplung {@code plattform:"web"}): Reihenfolge wie {@link #pruefe}, die Signatur
      * zuerst. Signiert ist {@code authenticatorData ‖ SHA-256(clientDataJSON)}, die Challenge rechnet das Auto selbst
      * nach. Die Nonce wird erst verbraucht, wenn alles andere bestanden ist.

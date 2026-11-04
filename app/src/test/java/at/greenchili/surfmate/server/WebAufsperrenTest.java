@@ -66,6 +66,9 @@ public class WebAufsperrenTest {
             }
         });
         HandyApiHandler.kopplungen = kopplungen;
+        // 0.1.38.8: Aufsperren hat einen eigenen Schalter (Standard aus) – hier an
+        at.greenchili.surfmate.byd.routing.FahrzeugAktionen.fuerTest(
+                new JSONObject().put("fahrzeugAktionen", new JSONObject().put("aufsperren", true)), () -> jetzt);
         HandyApiHandler.umgebung = new HandyApiHandler.Umgebung() {
             public VehicleCommandRouter.CommandResult ausfuehren(VehicleCommandRouter.VehicleCommand cmd) {
                 befehle.add(cmd);
@@ -90,6 +93,7 @@ public class WebAufsperrenTest {
     public void ab() {
         HandyApiHandler.umgebung = vorher;
         HandyApiHandler.kopplungen = null;
+        at.greenchili.surfmate.byd.routing.FahrzeugAktionen.fuerTest(null);
         AuthMiddleware.setRequestPeerForTest(null);
         AuthMiddleware.setRequestScopeForTest(null);
     }

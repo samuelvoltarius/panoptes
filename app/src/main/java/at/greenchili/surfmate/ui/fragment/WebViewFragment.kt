@@ -2079,7 +2079,9 @@ class WebViewFragment : Fragment() {
         btnStartRetry?.visibility = View.GONE
         startWarten = at.greenchili.surfmate.ui.StartWarten(android.os.SystemClock.elapsedRealtime())
         val runde = ++startRunde
-        startHandler.postDelayed({ startAbfrage(runde) }, at.greenchili.surfmate.ui.StartWarten.INTERVALL_MS)
+        startHandler.postDelayed({ startAbfrage(runde) },
+            startWarten?.naechstesIntervallMs(android.os.SystemClock.elapsedRealtime())
+                ?: at.greenchili.surfmate.ui.StartWarten.INTERVALL_MS)
     }
 
     private fun startAbfrage(runde: Int) {
@@ -2111,7 +2113,8 @@ class WebViewFragment : Fragment() {
         when (w.nachAbfrage(android.os.SystemClock.elapsedRealtime(), antwortet)) {
             at.greenchili.surfmate.ui.StartWarten.Schritt.NEU_LADEN -> retryLoad()
             at.greenchili.surfmate.ui.StartWarten.Schritt.WEITER_WARTEN ->
-                startHandler.postDelayed({ startAbfrage(runde) }, at.greenchili.surfmate.ui.StartWarten.INTERVALL_MS)
+                startHandler.postDelayed({ startAbfrage(runde) },
+                    w.naechstesIntervallMs(android.os.SystemClock.elapsedRealtime()))
             at.greenchili.surfmate.ui.StartWarten.Schritt.AUFGEBEN -> {
                 startWarten = null
                 startSpinner?.visibility = View.GONE

@@ -402,7 +402,11 @@ class DaemonStartupManager(
 
     fun initializeOnAppLaunch() {
         log.info(TAG, "=== Initializing daemon startup on app launch ===")
-        log.info(TAG, "Waiting 45 seconds before starting daemons (system stabilization)...")
+        // 0.1.38.8 Schnellstart: Die 45 s "System stabilisieren" gelten seit dem Boot des Kopfgeräts, nicht seit diesem
+        // Aufruf (DaemonStartPlan). Läuft das Gerät schon länger (ACC an nach dem Parken, App später geöffnet, nach einem
+        // Update), startet der Kamera-Daemon gleich; nur direkt nach dem Boot wird der Rest der 45 s abgewartet.
+        val kameraWarteMs = DaemonStartPlan.kameraVerzoegerungMs(android.os.SystemClock.elapsedRealtime())
+        log.info(TAG, "Starting camera daemon in ${kameraWarteMs} ms (device uptime based stabilization)...")
 
         // Hand off from any pre-existing bootManager (which was launched
         // before MainActivity attached). If we don't shut its scheduler
@@ -465,12 +469,13 @@ class DaemonStartupManager(
         // only machine-written markers immediately before starting a daemon.
         clearStaleSentinels()
 
-        // Wait 45 seconds for system to fully stabilize before starting any daemons
-        handler.postDelayed({ startCoreDaemons() }, 45000)
-        handler.postDelayed({ startOptionalDaemonsFromPreferences() }, 60000)
+        // Kamera-Daemon (Webserver :8180) so früh wie vertretbar; Sentry/ACC-Sentry folgen in startCoreDaemons nach
+        // 5/10 s, optionale Daemons und Health-Check bleiben später (relativ zum Kamera-Start wie bisher).
+        handler.postDelayed({ startCoreDaemons() }, kameraWarteMs)
+        handler.postDelayed({ startOptionalDaemonsFromPreferences() }, kameraWarteMs + DaemonStartPlan.OPTIONAL_NACH_KAMERA_MS)
 
         // Start periodic health check after initial daemons have had time to start
-        handler.postDelayed({ startDaemonHealthCheck() }, 90000)
+        handler.postDelayed({ startDaemonHealthCheck() }, kameraWarteMs + DaemonStartPlan.HEALTH_NACH_KAMERA_MS)
     }
 
     /**
@@ -507,8 +512,10 @@ class DaemonStartupManager(
 
     private fun initializeOnBoot() {
         log.info(TAG, "=== Initializing daemon startup on boot ===")
-        log.info(TAG, "Waiting 45 seconds before starting daemons (system stabilization)...")
-        
+        // 0.1.38.8: wie initializeOnAppLaunch, die 45 s zählen ab Boot des Geräts (Aufruf kommt kurz nach dem Boot).
+        val kameraWarteMs = DaemonStartPlan.kameraVerzoegerungMs(android.os.SystemClock.elapsedRealtime())
+        log.info(TAG, "Starting camera daemon in ${kameraWarteMs} ms (device uptime based stabilization)...")
+
         // Reset only the process-local cache; durable manual stops survive boot.
         userStoppedDaemons.clear()
 
@@ -518,12 +525,11 @@ class DaemonStartupManager(
         // Keep manual-stop sentinels; see initializeOnAppLaunch.
         clearStaleSentinels()
 
-        // Wait 45 seconds for system to fully stabilize before starting any daemons
-        handler.postDelayed({ startCoreDaemonsViaAdb() }, 45000)
-        handler.postDelayed({ startOptionalDaemonsViaAdb() }, 60000)
+        handler.postDelayed({ startCoreDaemonsViaAdb() }, kameraWarteMs)
+        handler.postDelayed({ startOptionalDaemonsViaAdb() }, kameraWarteMs + DaemonStartPlan.OPTIONAL_NACH_KAMERA_MS)
 
         // Start periodic health check after initial daemons have had time to start
-        handler.postDelayed({ startDaemonHealthCheck() }, 90000)
+        handler.postDelayed({ startDaemonHealthCheck() }, kameraWarteMs + DaemonStartPlan.HEALTH_NACH_KAMERA_MS)
     }
 
 

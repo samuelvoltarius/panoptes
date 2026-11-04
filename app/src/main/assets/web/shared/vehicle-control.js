@@ -2388,11 +2388,13 @@ var VC = {
         });
 
         // Flash lights — routed (cloud-only on this gen). Toast reads server-resolved message.
+        // 0.1.38.8: Rückfrage vor jeder außen sichtbaren Aktion; der Server löst nur mit bestaetigt aus
         this.bindBtn('btnFlash', function() {
             if (!self.requireCloud()) return;
+            if (!window.confirm(BYD.i18n.t('home.confirm_flash', 'Licht jetzt blinken lassen?'))) return;
             self.setPending('btnFlash', true);
             self.triggerFlashVFX();
-            self.apiPost('/api/vehicle/flash').then(function(result) {
+            self.apiPost('/api/vehicle/flash', { bestaetigt: true }).then(function(result) {
                 self.setPending('btnFlash', false);
                 self.toastFromResult(result, BYD.i18n.t('vehicle.lights_flashed'), BYD.i18n.t('vehicle.flash_failed'));
             });
@@ -2402,9 +2404,10 @@ var VC = {
         // then horn + lights pulse.
         this.bindBtn('btnFindCar', function() {
             if (!self.requireCloud()) return;
+            if (!window.confirm(BYD.i18n.t('home.confirm_find', 'Auto suchen? Es blinkt und hupt.'))) return;
             self.setPending('btnFindCar', true);
             self.triggerFlashVFX();
-            self.apiPost('/api/vehicle/find-car').then(function(result) {
+            self.apiPost('/api/vehicle/find-car', { bestaetigt: true }).then(function(result) {
                 self.setPending('btnFindCar', false);
                 self.toastFromResult(result, BYD.i18n.t('vehicle_control.find_car_label'), null);
             });

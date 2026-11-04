@@ -213,7 +213,8 @@ public class UpdateQuelleTest {
         assertFalse(new File(basis, ".appupdate-quelle").exists());
         schreibenOk = true;
         dienst();
-        assertEquals(2, geschrieben.size());
+        // 0.1.38.8: dazu schreibt die einmalige Umstellung „modus“; hier zählen nur die Quelle-Schreibversuche
+        assertEquals(2, geschrieben.stream().filter(w -> w.containsKey("quelle")).count());
         assertEquals("eigen", cfg.get("quelle"));
     }
 

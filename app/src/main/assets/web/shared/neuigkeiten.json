@@ -451,6 +451,60 @@
         "Wat je op telefoon of pc instelt voor het autodisplay (licht/donker, startweergave en meer) komt nu in de auto aan. De webinterface wordt daar ook goed weergegeven.",
         "Telegram-koppelen werkt weer, en de teksten noemen de juiste menu's. Home Assistant kan slimme apparaten melden en Panoptes toont ze (uit tot je het toestaat)."
       ]
+    },
+    {
+      "version": "0.1.38.8",
+      "versionCode": 72,
+      "de": [
+        "Kleine Updates (nur die letzte Zahl ändert sich) kommen jetzt von selbst, wenn das Auto 10 Minuten steht. „Nur melden“ wird dafür einmal umgestellt, mit Nachricht. Ändern: Einstellungen → Updates.",
+        "Hupe, Licht, Warnblinker und Aufsperren haben eigene Schalter (Standard aus), einschalten nur am Auto. /aktionen in Telegram schaltet alles sofort ab.",
+        "Das erste gekoppelte Handy kann alles einstellen und weitere Geräte koppeln, aber nichts am Auto auslösen. Rechte fürs Auto vergibst du nur am Display.",
+        "Home Assistant kann freigegebene Tore und Haustüren schalten, auf Wunsch das Tor beim Heimkommen. Alles bleibt aus, bis du es einzeln erlaubst.",
+        "Der Wächter ist bei neuer Einrichtung an; wer ihn nie eingerichtet hat, wird einmal gefragt. Weniger Fehlalarme durch vorbeifahrende Autos.",
+        "Panoptes startet schneller. Der Telegram-Bot sagt, wenn Panoptes im Auto noch startet, und ist auf Wunsch auch bei abgestelltem Auto erreichbar.",
+        "Der Stopp-Knopf fürs Klima erscheint nur, wenn wirklich etwas läuft. „Noch einrichten“ erkennt mehr von selbst, und die Hilfe führt zur Community-Gruppe.",
+        "Gespeicherte Zugangsdaten sind zusätzlich verschlüsselt. Sicherungen enthalten den Geräteschlüssel nur noch, wenn du das ausdrücklich wählst."
+      ],
+      "en": [
+        "Small updates (only the last number changes) now install on their own once the car has been parked for 10 minutes. “Only notify” is switched over once, with a message. Change: Settings → Updates.",
+        "Horn, lights, hazard lights and unlocking have their own switches (off by default), switched on only in the car. /aktionen in Telegram turns everything off at once.",
+        "The first paired phone can change all settings and pair more devices, but never trigger anything on the car. Car permissions are granted only on the car display.",
+        "Home Assistant can operate gates and front doors you release, optionally the gate when you come home. Everything stays off until you allow each one.",
+        "The guard is on for new setups; if you never set it up, you are asked once. Fewer false alarms from passing cars.",
+        "Panoptes starts faster. The Telegram bot tells you when Panoptes in the car is still starting and, if you want, stays reachable while the car is parked.",
+        "The climate stop button only appears when something is really running. “Still to set up” detects more by itself, and Help links to the community group.",
+        "Stored credentials are additionally encrypted. Backups only contain the device key if you explicitly choose so."
+      ],
+      "fr": [
+        "Les petites mises à jour (seul le dernier chiffre change) s’installent seules, voiture garée depuis 10 min. « Seulement signaler » change une fois, avec message. Réglages → Mises à jour.",
+        "Klaxon, feux, warnings et déverrouillage ont leurs propres interrupteurs (désactivés par défaut), activables seulement dans la voiture. /aktionen dans Telegram coupe tout.",
+        "Le premier téléphone couplé peut tout régler et coupler d’autres appareils, mais rien déclencher sur la voiture. Les droits sur la voiture se donnent à l’écran.",
+        "Home Assistant peut actionner les portails et portes d’entrée autorisés, au besoin le portail en rentrant. Tout reste désactivé jusqu’à ton accord, un par un.",
+        "Le gardien est activé pour les nouvelles installations ; sinon, une seule question. Moins de fausses alertes dues aux voitures qui passent.",
+        "Panoptes démarre plus vite. Le bot Telegram dit quand Panoptes démarre encore et reste joignable, si tu veux, voiture garée.",
+        "Le bouton d’arrêt de la clim n’apparaît que si quelque chose tourne vraiment. « Encore à configurer » détecte plus de choses, et l’aide mène au groupe communautaire.",
+        "Les identifiants enregistrés sont chiffrés en plus. Les sauvegardes ne contiennent la clé de l’appareil que si tu le choisis expressément."
+      ],
+      "it": [
+        "I piccoli aggiornamenti (cambia solo l’ultimo numero) si installano da soli con l’auto ferma da 10 minuti. «Solo avvisare» cambia una volta, con messaggio. Impostazioni → Aggiornamenti.",
+        "Clacson, luci, frecce d’emergenza e sblocco hanno interruttori propri (spenti di serie), accendibili solo in auto. /aktionen in Telegram spegne tutto subito.",
+        "Il primo telefono abbinato può impostare tutto e abbinare altri dispositivi, ma non attivare nulla sull’auto. I permessi per l’auto si danno solo sul display.",
+        "Home Assistant può azionare cancelli e porte di casa autorizzati, a scelta il cancello quando torni. Tutto resta spento finché non lo permetti uno per uno.",
+        "Il guardiano è acceso nelle nuove configurazioni; se non l’hai mai configurato, ti chiede una volta. Meno falsi allarmi dalle auto che passano.",
+        "Panoptes si avvia più in fretta. Il bot Telegram dice quando Panoptes in auto si sta ancora avviando e, se vuoi, resta raggiungibile ad auto ferma.",
+        "Il pulsante stop del clima appare solo se qualcosa è davvero acceso. «Ancora da configurare» riconosce di più da solo, e l’aiuto porta al gruppo della community.",
+        "I dati di accesso salvati sono cifrati in più. I backup contengono la chiave del dispositivo solo se lo scegli espressamente."
+      ],
+      "nl": [
+        "Kleine updates (alleen het laatste getal verandert) komen vanzelf als de auto 10 minuten stilstaat. „Alleen melden” wordt één keer omgezet, met bericht. Wijzigen: Instellingen → Updates.",
+        "Claxon, licht, alarmlichten en ontgrendelen hebben eigen schakelaars (standaard uit), alleen in de auto in te schakelen. /aktionen in Telegram zet alles meteen uit.",
+        "De eerste gekoppelde telefoon kan alles instellen en andere apparaten koppelen, maar niets op de auto activeren. Rechten voor de auto geef je alleen op het scherm.",
+        "Home Assistant kan vrijgegeven poorten en voordeuren bedienen, desgewenst de poort bij thuiskomst. Alles blijft uit tot je het per stuk toestaat.",
+        "De bewaker staat aan bij een nieuwe installatie; heb je hem nooit ingesteld, dan krijg je één vraag. Minder valse alarmen door voorbijrijdende auto’s.",
+        "Panoptes start sneller. De Telegram-bot zegt wanneer Panoptes in de auto nog opstart en is desgewenst ook bereikbaar als de auto geparkeerd staat.",
+        "De stopknop voor de airco verschijnt alleen als er echt iets draait. „Nog in te stellen” herkent meer vanzelf, en de hulp leidt naar de communitygroep.",
+        "Opgeslagen inloggegevens zijn extra versleuteld. Back-ups bevatten de apparaatsleutel alleen als je dat uitdrukkelijk kiest."
+      ]
     }
   ]
 }

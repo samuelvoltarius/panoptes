@@ -329,7 +329,19 @@ public class AuthApiHandler {
         if (herkunft != at.greenchili.surfmate.auth.PairingCodes.UNGUELTIG) {
             clearRateLimit(rateLimitIdentity);
             // Jede Kopplung bekommt einen eigenen Listeneintrag; der JWT trägt dessen id (Widerruf).
-            String kid = at.greenchili.surfmate.auth.Kopplungen.get().anlegen(name, art, now);
+            // 0.1.38.8: Code vom Display/Login darf die erste Handy-Kopplung zum Besitzer machen; ein Code vom
+            // Besitzer-Handy legt genau Art + Rechte aus dem Code an (nie Besitzer)
+            String kid;
+            if (herkunft == at.greenchili.surfmate.auth.PairingCodes.HANDY) {
+                Object[] b = at.greenchili.surfmate.auth.PairingCodes.letzteBindung();
+                art = b == null ? null : (String) b[0];
+                @SuppressWarnings("unchecked")
+                java.util.List<String> r = b == null ? null : (java.util.List<String>) b[1];
+                kid = art == null ? null : at.greenchili.surfmate.auth.Kopplungen.get().anlegenGebunden(name, art, r, now);
+            } else {
+                kid = at.greenchili.surfmate.auth.Kopplungen.get().anlegen(name, art, now,
+                        herkunft == at.greenchili.surfmate.auth.PairingCodes.BESITZER);
+            }
             String jwt = kid == null ? null
                     : AuthManager.generateJwt(at.greenchili.surfmate.auth.PairingCodes.SCOPE, kid);
             if (jwt != null) {

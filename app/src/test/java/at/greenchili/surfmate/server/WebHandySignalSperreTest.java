@@ -45,6 +45,22 @@ public class WebHandySignalSperreTest {
     }
 
     @Test
+    public void signalAusnahmeNurDreiDirekteKnoepfe() {
+        // 0.1.38.8 Paket B: mit Recht „signal“ nur Auto finden, Lichthupe, Warnblinker (Rest prüft FahrzeugAktionen)
+        for (String p : new String[] {"/api/vehicle/flash", "/api/vehicle/find-car", "/api/vehicle/warnblinker"}) {
+            assertTrue(p, WebHandyGuard.blocks("POST", p));
+            assertTrue(p, WebHandyGuard.signalErlaubt("POST", p, true));
+            assertFalse(p + " ohne Recht", WebHandyGuard.signalErlaubt("POST", p, false));
+            assertFalse(p + " PUT", WebHandyGuard.signalErlaubt("PUT", p, true));
+        }
+        for (String p : new String[] {"/api/vehicle/unlock", "/api/vehicle/hazard", "/api/bydcloud/test",
+                "/api/keymap/fire", "/api/quick-controls/fire/abc123", "/api/automations/test/regel-1",
+                "/api/action-groups/gruppe-1/run", "/api/debug/light/fire"}) {
+            assertFalse(p + " bleibt zu", WebHandyGuard.signalErlaubt("POST", p, true));
+        }
+    }
+
+    @Test
     public void kopplungenErreichenDiePfadeNicht() {
         for (String p : PFADE) {
             assertFalse(p, ExternGuard.erlaubt("POST", p));

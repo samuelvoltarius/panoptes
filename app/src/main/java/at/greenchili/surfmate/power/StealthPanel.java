@@ -589,15 +589,19 @@ public final class StealthPanel {
         try {
             JSONObject s = UnifiedConfigManager.forceReload().optJSONObject(SECTION_SURVEILLANCE);
             if (s == null) return false;
-            long until = s.optLong(KEY_USER_OVERRIDE_UNTIL, 0L);
-            long now = System.currentTimeMillis();
-            // Upper-bound the deadline: a stale far-future value (unclean teardown
-            // plus a backward RTC step, a documented condition on these head units)
-            // must never disable parked darkening permanently.
-            return until > now && until <= now + USER_OVERRIDE_GRACE_MS;
+            return userOverrideLive(s.optLong(KEY_USER_OVERRIDE_UNTIL, 0L), System.currentTimeMillis());
         } catch (Throwable t) {
             return false;
         }
+    }
+
+    /**
+     * Rein: gilt eine Sperre bis {@code untilMs} zum Zeitpunkt {@code nowMs}? Upper-bound the deadline: a stale
+     * far-future value (unclean teardown plus a backward RTC step, a documented condition on these head units)
+     * must never disable parked darkening permanently.
+     */
+    static boolean userOverrideLive(long untilMs, long nowMs) {
+        return untilMs > nowMs && untilMs <= nowMs + USER_OVERRIDE_GRACE_MS;
     }
 
     private static final String SECTION_SURVEILLANCE = "surveillance";

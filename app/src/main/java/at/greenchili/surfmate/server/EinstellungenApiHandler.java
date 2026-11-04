@@ -84,9 +84,13 @@ public final class EinstellungenApiHandler {
             // 0.1.20 Web-Sitzung der Handy-App (Stufe B): Geheimnisse und Updates nur am Auto oder mit PIN
             java.util.List<String> gesperrt = AuthMiddleware.isHandyWebRequest()
                     ? WebHandyGuard.gesperrteFelder(Katalog.felder(k), req) : java.util.Collections.<String>emptyList();
+            // 0.1.38.8 Besitzer-Handy: Besitzer auch nurLesendExtern (nie Feld.nieExtern), andere Kopplungen nur mit
+            // Recht „einstellungen“ oder Bestandsschutz
+            Einstellungen.Stufe stufe = BesitzerMeldung.stufe(AuthMiddleware.isExternRequest(),
+                    AuthMiddleware.requestKopplungsId(), AuthMiddleware.isHandyWebRequest(),
+                    AuthMiddleware.requestWebKopplungsId(), Kopplungen.get());
             Einstellungen.Ergebnis e = Einstellungen.aendern(Katalog.felder(k), root, k, req,
-                    AuthMiddleware.isExternRequest(), EinstellungenApiHandler::schreibe,
-                    System.currentTimeMillis());
+                    stufe, EinstellungenApiHandler::schreibe, System.currentTimeMillis());
             JSONObject res = new JSONObject();
             res.put("ok", e.ok());
             res.put("etag", e.etag);
@@ -99,6 +103,11 @@ public final class EinstellungenApiHandler {
             for (String g : gesperrt) e.fehler.put(g, "nurAutoOderPin");
             res.put("fehler", e.fehler);
             nachwirkungen(e);
+            // 0.1.38.8: jede Änderung über eine Kopplung oder Web-Sitzung → Meldung an den Besitzer (Titel, nie Werte)
+            if (stufe != Einstellungen.Stufe.LOGIN) {
+                BesitzerMeldung.einstellungen(Katalog.felder(k), e.gespeichert, AuthMiddleware.isExternRequest()
+                        ? AuthMiddleware.requestKopplungsId() : AuthMiddleware.requestWebKopplungsId());
+            }
             HttpResponse.sendJson(out, res.toString());
             return true;
         }
@@ -159,6 +168,12 @@ public final class EinstellungenApiHandler {
                 update = erlauben && b.optBoolean("update", false);
             } catch (Exception ignored) {
             }
+            // 0.1.38.8 Nachzug: Aufsperren/Wallbox gleich beim Erlauben nur direkt am Autobildschirm (nie Login aus der Ferne)
+            if ((aufsperren || wallbox) && !AuthMiddleware.isDirektAmAuto()) {
+                BefehlsLog.grund("recht_nur_display");
+                HttpResponse.sendJson(out, 400, new JSONObject().put("ok", false).put("grund", "recht_nur_display").toString());
+                return true;
+            }
             // 0.1.32.1: Zusatzrechte sichtbar im Log, damit eine Vergabe nachvollziehbar bleibt
             if (aufsperren || wallbox || update) {
                 at.greenchili.surfmate.logging.DaemonLogger.getInstance("Kopplung").info("Erlauben mit Zusatzrechten:"
@@ -177,6 +192,22 @@ public final class EinstellungenApiHandler {
                 default: res.put("grund", "abgelaufen"); code = 410; break;
             }
             HttpResponse.sendJson(out, code, res.toString());
+            return true;
+        }
+        // 0.1.38.8 Telegram /kopplungen (verlorenes Handy): Liste mit Einmal-Griffen statt Kopplungs-ids, nur Login/lokal
+        if (pathOnly.equals("/api/kopplung/telegram-liste") && method.equals("GET")) {
+            if (AuthMiddleware.isExternRequest() || AuthMiddleware.isHandyWebRequest()) return verboten(out);
+            long jetzt = System.currentTimeMillis();
+            org.json.JSONArray a = new org.json.JSONArray();
+            org.json.JSONArray alle = Kopplungen.get().alle(jetzt);
+            for (int i = 0; i < alle.length(); i++) {
+                JSONObject g = alle.getJSONObject(i);
+                a.put(new JSONObject().put("name", Kopplungen.get().anzeigeName(g.optString("id")))
+                        .put("art", g.optString("art", "")).put("besitzer", Kopplungen.get().istBesitzer(g.optString("id")))
+                        .put("zuletzt", g.optLong("zuletzt"))
+                        .put("ref", at.greenchili.surfmate.auth.NeueKopplungMeldung.griffFuerListe(g.optString("id"), jetzt)));
+            }
+            HttpResponse.sendJson(out, new JSONObject().put("ok", true).put("geraete", a).toString());
             return true;
         }
         // 0.1.25 Telegram [Entfernen] an „Neues Gerät verbunden“: Einmal-Griff (24 h) statt Kopplungs-id, nur Login
@@ -224,6 +255,14 @@ public final class EinstellungenApiHandler {
             java.util.List<String> rechte = new java.util.ArrayList<>();
             org.json.JSONArray a = req.optJSONArray("rechte");
             for (int i = 0; a != null && i < a.length(); i++) rechte.add(a.optString(i));
+            // 0.1.38.8 Nachzug: Fahrzeug-Aktionen/geraete_steuern neu vergeben nur direkt am Autobildschirm, nie mit einem
+            // Login aus der Ferne (Brücke, Tailscale). Entziehen geht immer.
+            if (!AuthMiddleware.isDirektAmAuto()
+                    && !Kopplungen.get().neueDisplayRechte(req.optString("id", ""), rechte).isEmpty()) {
+                BefehlsLog.grund("recht_nur_display");
+                HttpResponse.sendJson(out, 400, new JSONObject().put("ok", false).put("grund", "recht_nur_display").toString());
+                return true;
+            }
             boolean ok = Kopplungen.get().rechteSetzen(req.optString("id", ""), rechte);
             HttpResponse.sendJson(out, ok ? 200 : 404, new JSONObject().put("ok", ok).toString());
             return true;
@@ -474,6 +513,14 @@ public final class EinstellungenApiHandler {
 
     /** Nachwirkungen gespeicherter Werte (keine Befehle ans Auto). */
     private static void nachwirkungen(Einstellungen.Ergebnis e) {
+        // 0.1.38.8 Wächter-Hauptschalter: dieselbe Wirkung wie Telegram /waechter (Zündung an → erst beim Parken)
+        if (e.gespeichert.has("surveillance.surveillanceEnabled")) {
+            try {
+                SurveillanceApiHandler.waechterSetzen(e.gespeichert.optBoolean("surveillance.surveillanceEnabled", false),
+                        new java.io.ByteArrayOutputStream());
+            } catch (Throwable ignored) {
+            }
+        }
         if (e.gespeichert.has("deterrent.light") || e.gespeichert.has("deterrent.horn")) {
             try {
                 at.greenchili.surfmate.byd.cloud.BydCloudDeterrent.getInstance().reset();

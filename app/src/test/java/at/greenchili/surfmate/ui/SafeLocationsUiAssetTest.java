@@ -45,7 +45,7 @@ public class SafeLocationsUiAssetTest {
         assertTrue(styles.contains(".safe-zone-icon-btn"));
         assertTrue(styles.contains(".safe-zone-dialog"));
         assertTrue(html.contains("safe-locations.js?v=ml4"));
-        assertTrue(html.contains("styles.css?v=pn13"));
+        assertTrue(html.contains("styles.css?v=pn14"));
         assertTrue(html.contains("data-i18n=\"safe_loc.saved_zones\""));
 
         assertTrue(english.contains("\"edit_title\": \"Change quiet zone\""));

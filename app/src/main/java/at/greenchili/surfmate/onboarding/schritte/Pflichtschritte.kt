@@ -100,113 +100,56 @@ class HaftungSchritt(a: Assistent) : SchrittAnsicht("haftung", a) {
     else null
 }
 
-// ---------------------------------------------------------------- 8 Wächter (a/b/c/aus ohne Vorauswahl, danach Ton)
+// ------------------------------------------------- 8 Wächter (0.1.38.8: Standard AN, ein Tipp „Verstanden“, KI optional)
+/**
+ * 0.1.38.8 „Wächter Standard an“ (REGEL NR.2 hier bewusst von Projektinhaber aufgehoben): Der Wächter ist vorbelegt AN mit dem
+ * datensparsamen Standard „nur Erschütterung“ (shock); Kameras richtet Panoptes automatisch ein. Der Rechtshinweis
+ * (guardLegal) steht auf demselben Bildschirm; ein Tipp „Verstanden“ bestätigt ihn und schaltet ein. Darunter ein
+ * einzelner Schalter für die KI-Stufe (ai_private), nicht vorausgewählt. „Wächter aus“ lässt ihn aus (bleibt aus).
+ * Ohne Tipp bleibt der Wächter aus (der Rechtshinweis ist Pflicht). Keine weiteren Schritte (Ton aus, Ereignis-Clip
+ * nach Landes-Standard).
+ */
 class WaechterSchritt(a: Assistent) : SchrittAnsicht("waechter", a) {
+    override val weiterZeigen = false
     // 0.1.38.3: beim „Noch einmal durchgehen“ überspringbar (der Kern lässt „Später“ nur dann zu)
     override val spaeterZeigen: Boolean get() = a.stand().wiederholung
 
-    private val ton = Wahl(a) { a.geaendert() }
-    private var bHinweis: View? = null
-    private var tonBlock: View? = null
-    private var gesperrt: Map<String, String> = emptyMap()
-    private lateinit var liste: LinearLayout
+    private var ki = false
+    private var kiKarte: View? = null
 
     override fun ansicht(): View = spalte().apply {
-        dazu(titel(t.web("guardLegal.trigger.title", "Wann soll der Wächter aufnehmen?")), 0f)
-        dazu(a.text(t.web("guardLegal.trigger.intro"), 17f, leise = true))
-        liste = spalte()
-        dazu(liste, 16f)
-        optionen()
-        bHinweis = a.text(t.web("guardLegal.trigger.b.note"), 16f).apply { setTextColor(a.farbeWarnung); visibility = View.GONE }
-        dazu(bHinweis!!)
+        dazu(titel(t.web("guardLegal.standard.titel", "Der Wächter passt auf dein Auto auf")), 0f)
+        dazu(a.text(t.web("guardLegal.standard.intro",
+            "Er ist eingeschaltet und nimmt nur bei Erschütterung auf – überall unbedenklich. Die Kameras richtet Panoptes automatisch ein."), 17f))
         dazu(a.text(t.web("disclaimer.guard.body"), 16f, leise = true))
-        // Ton (Pflichttext D, Standard aus, ohne Vorauswahl)
-        val tb = spalte().apply { visibility = View.GONE }
-        tb.dazu(a.text(t.web("guardLegal.audio.label", "Ton aufnehmen"), 21f, fett = true), 18f)
-        tb.dazu(a.text(t.web("guardLegal.audio.body"), 16f))
-        ton.option("aus", t.web("guardLegal.audio.cancel", "Ohne Ton"), null)
-        ton.option("an", t.web("guardLegal.audio.confirm", "Ton einschalten"), null)
-        tb.dazu(ton.ansicht)
-        tonBlock = tb
-        dazu(tb)
-        // 0.1.28 P10: Ereignis-Clip beim Fahren – eigene Frage, ohne Vorauswahl (Schweiz: eigener Hinweis)
-        dazu(a.text(t.web("settings.recording.ereignisClip.title", "Ereignisse automatisch sichern"), 21f, fett = true), 22f)
-        dazu(a.text(t.web("settings.recording.ereignisClip.help"), 16f))
-        chHinweis = a.text(t.web("settings.recording.ereignisClip.helpCH"), 16f).apply {
-            setTextColor(a.farbeWarnung); visibility = View.GONE
-        }
-        dazu(chHinweis!!)
-        dazu(a.text(t.web("einrichtung_p10.ereignis_handy",
-            "Auf dein Handy kommt ein Clip nur, wenn du dort auf „Aufs Handy laden“ tippst."), 16f, leise = true))
-        ereignis.option("ja", t.web("einrichtung_p10.ereignis_ja", "Ja, Ereignisse sichern"), null)
-        ereignis.option("nein", t.web("einrichtung_p10.ereignis_nein", "Nein"), null)
-        dazu(ereignis.ansicht)
-        // 0.1.38.3: beim Wiederholen mit der bisherigen Antwort vorbelegt
-        a.stand().vorbelegung(this@WaechterSchritt.id)?.let { v ->
-            v.optString("modus").takeIf { it.isNotEmpty() }?.let { wahlAktuell?.waehle(it) }
-            if (v.has("ton")) ton.waehle(if (v.optBoolean("ton")) "an" else "aus")
-            if (v.has("ereignisClip")) ereignis.waehle(if (v.optBoolean("ereignisClip")) "ja" else "nein")
+        // KI-Stufe: ein Tipp, nicht vorausgewählt (ai_private)
+        val karte = a.wahlKarte(
+            t.web("guardLegal.standard.ki_label", "Auch Personen am Auto erkennen (KI) – empfohlen"),
+            t.web("guardLegal.standard.ki_sub",
+                "Erkennt Annäherung nur an deinen privaten Orten (z. B. Garage, Einfahrt); sonst nur bei Erschütterung. Bitte den Rechtshinweis beachten.")
+        ) { ki = !ki; kiKarte?.let { a.markiere(it, ki) }; a.geaendert() }
+        kiKarte = karte
+        dazu(karte, 18f)
+        dazu(a.text(t.web("guardLegal.standard.zwoelfvolt",
+            "Der Wächter schaltet sich bei schwacher 12-V-Batterie von selbst ab."), 15f, leise = true))
+        // Verstanden (primär, schaltet ein) + Wächter aus
+        val zeile = LinearLayout(a.activity).apply { orientation = LinearLayout.HORIZONTAL }
+        zeile.addView(a.knopf(t.web("guardLegal.standard.verstanden", "Verstanden – Wächter an"), primaer = true) { antworte(if (ki) "ai_private" else "shock") },
+            LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        zeile.addView(a.knopf(t.web("guardLegal.trigger.aus.label", "Wächter aus – nimmt nichts auf")) { antworte("aus") },
+            LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { leftMargin = a.px(16f) })
+        dazu(zeile, 22f)
+        // 0.1.38.3: beim Wiederholen die KI-Stufe vorbelegen, wenn zuvor gewählt
+        a.stand().vorbelegung(this@WaechterSchritt.id)?.optString("modus")?.let { m ->
+            if (m == "ai_private" || m == "ai_everywhere") { ki = true; kiKarte?.let { a.markiere(it, true) } }
         }
     }
 
-    private val ereignis = Wahl(a, nebeneinander = true) { a.geaendert() }
-    private var chHinweis: View? = null
-
-    private fun optionen() {
-        liste.removeAllViews()
-        val w = Wahl(a) { onWahl(it) }
-        listOf("shock" to "a", "ai_everywhere" to "b", "ai_private" to "c").forEach { (wert, k) ->
-            w.option(wert, t.web("guardLegal.trigger.$k.label"), t.web("guardLegal.trigger.$k.desc"), gesperrt[wert])
+    /** Antwort (modus + Ton aus; ohne ereignisClip, es gilt der Landes-Standard); „aus“ lässt den Wächter aus, jede andere Wahl schaltet ein und bestätigt guardLegal. */
+    private fun antworte(modus: String) {
+        a.speichereAntwort(id, JSONObject().put("modus", modus).put("ton", false)) { ok, text ->
+            if (ok) a.weiterNach(id) else a.zeigeMeldung(text ?: t.res(R.string.einr_fehler_speichern))
         }
-        w.option("aus", t.web("guardLegal.trigger.aus.label", "Wächter aus – nimmt nichts auf"), null)
-        liste.addView(w.ansicht)
-        wahlAktuell = w
-    }
-    private var wahlAktuell: Wahl? = null
-
-    override fun betreten() {
-        // Vom Kern gesperrte Optionen (z. B. (b) in der Schweiz) aus dem Schema
-        if (!a.stand().vomKern) return
-        a.imHintergrund({ EinrichtungApi.get("/api/einstellungen/schema") }) { r ->
-            val g = HashMap<String, String>()
-            r?.json?.optJSONArray("gruppen")?.let { gr ->
-                for (i in 0 until gr.length()) gr.optJSONObject(i)?.optJSONArray("felder")?.let { f ->
-                    for (j in 0 until f.length()) {
-                        val feld = f.optJSONObject(j) ?: continue
-                        if (feld.optString("key") != "surveillance.triggerMode") continue
-                        feld.optJSONArray("optionen")?.let { o -> for (x in 0 until o.length()) o.optJSONObject(x)?.let { op ->
-                            if (op.optBoolean("gesperrt")) g[op.optString("wert")] = op.optString("gesperrtGrund", t.web("guardLegal.trigger.blockedCH"))
-                        } }
-                    }
-                }
-            }
-            if (g.isNotEmpty()) { gesperrt = g; optionen() }
-            // Schweiz: das Feld trägt den eigenen Hilfetext (Katalog hilfeKey …helpCH)
-            r?.json?.optJSONArray("gruppen")?.let { gr ->
-                for (i in 0 until gr.length()) gr.optJSONObject(i)?.optJSONArray("felder")?.let { f ->
-                    for (j in 0 until f.length()) {
-                        val feld = f.optJSONObject(j) ?: continue
-                        if (feld.optString("key") == "recording.ereignisClip" && feld.optString("hilfeKey").endsWith("helpCH")) {
-                            chHinweis?.visibility = View.VISIBLE
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private fun onWahl(w: String) {
-        bHinweis?.visibility = if (w == "ai_everywhere") View.VISIBLE else View.GONE
-        tonBlock?.visibility = if (w == "aus") View.GONE else View.VISIBLE
-        a.geaendert()
-    }
-
-    override fun antwort(): JSONObject? {
-        val m = wahlAktuell?.wert ?: return JSONObject()
-        val o = JSONObject().put("modus", m)
-        if (m == "aus") o.put("ton", false) else ton.wert?.let { o.put("ton", it == "an") }
-        ereignis.wert?.let { o.put("ereignisClip", it == "ja") }
-        return o
     }
 }
 

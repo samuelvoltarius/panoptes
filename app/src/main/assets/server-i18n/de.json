@@ -399,6 +399,10 @@
       "system_updates": {
         "label": "Updates",
         "note": "Neue Version für Panoptes oder den Launcher, und wenn ein Update fertig ist."
+      },
+      "system_waechter": {
+        "label": "Wächter einschalten (Hinweis)",
+        "note": "Die einmalige Frage nach einem Update, ob der Wächter an sein soll. Telegram geht direkt."
       }
     },
     "cloud_uebergabe_titel": "„{0}“ will die BYD-Cloud übergeben",
@@ -413,8 +417,13 @@
     "battery12v_niedrig_title": "Starterbatterie sehr schwach: {0} V",
     "battery12v_niedrig_body": "Sie erholt sich nicht mehr von selbst. Das Auto startet vielleicht bald nicht mehr. Fahr heute noch eine Runde oder lade es.",
     "update_installiert": "Panoptes {0} ist installiert und läuft.",
+    "waechter_standard_titel": "Soll der Wächter an sein?",
+    "waechter_standard_text": "Er nimmt nur bei Erschütterung auf. Er ist für deinen Privatgrund gedacht, für die Aufnahmen bist du verantwortlich. Zum Einschalten die Wächter-Seite öffnen.",
+    "waechter_standard_display": "Neu: Der Wächter kann dein Auto bewachen (nur bei Erschütterung). Zum Einschalten: Panoptes öffnen, Wächter. Dort stehen der Rechtshinweis und der Knopf.",
     "launcher_verfuegbar": "Neue Launcher-Version {0}",
-    "launcher_installiert": "Launcher {0} ist installiert."
+    "launcher_installiert": "Launcher {0} ist installiert.",
+    "update_verfuegbar": "Panoptes {0} ist da",
+    "update_zurueck": "Update hat nicht geklappt, Panoptes läuft wieder auf {0}."
   },
   "parking": {
     "notify": {
@@ -547,6 +556,7 @@
       "camera": "📷 Kamera",
       "location": "📍 Wo steht es?",
       "guard_on": "🛡 Wächter wecken",
+      "guard_standard_an": "🛡 Verstanden – Wächter einschalten",
       "guard_off": "😴 Wächter schlafen legen"
     },
     "daemons": {
@@ -580,11 +590,12 @@
       "some_locked": "🔒 Manche Befehle sind ausgeschaltet. Erlauben kannst du sie in Panoptes unter *Regeln → Meldungen → Telegram-Meldungen*.",
       "footer": "_Panoptes {0}_",
       "menu": "/menue – Alle Knöpfe auf einen Blick",
-      "updates": "/updates – Panoptes und Launcher aktualisieren"
+      "updates": "/updates – Panoptes und Launcher aktualisieren",
+      "kopplungen": "/kopplungen – Gekoppelte Geräte zeigen und entfernen (Handy verloren)"
     },
     "parking": {
       "where": {
-        "unavailable": "⚠️ Der Kamera-Dienst antwortet nicht. Unter /dienste kannst du ihn starten.",
+        "unavailable": "🅿️ Den Parkort kann ich gerade nicht lesen. Bitte später noch einmal versuchen.",
         "disabled": "🅿️ Das Parkprotokoll ist aus. Einschalten kannst du es in Panoptes unter *Wächter → Parken*.",
         "none": "🅿️ Ich habe noch kein Parken mitgeschrieben.",
         "title_open": "🅿️ *Hier steht dein Auto*",
@@ -810,6 +821,9 @@
       "paket_an_fehler": "⚠️ Der Panoptes Launcher ließ sich nicht einschalten. Am Display geht es unter Display → Panoptes Launcher."
     },
     "guard": {
+      "standard_frage": "🛡 *Soll der Wächter dein Auto bewachen?*\nNeu in dieser Version: Der Wächter ist jetzt standardmäßig an. Du hast ihn bisher nicht eingerichtet, deshalb fragen wir einmal nach. Er nimmt nur bei Erschütterung auf.\n\n*Rechtshinweis:* Der Wächter ist für deinen eigenen Privatgrund gedacht. Richte die Kameras so aus, dass Straße, Gehweg und Nachbargrund nicht im Bild sind. Für die Aufnahmen und ihre Weitergabe bist du allein verantwortlich.\n\nBei schwacher 12-V-Batterie schaltet er sich von selbst ab. Du kannst ihn jederzeit ausschalten.",
+      "standard_an_ok": "🛡 *Der Wächter ist eingeschaltet* (nur bei Erschütterung). Er wird wach, sobald du das Auto abstellst.",
+      "standard_an_veraltet": "Diese Frage hat sich erledigt: Der Wächter ist schon eingerichtet oder bewusst aus. Es wurde nichts geändert.",
       "title": "🛡 *Wächter*",
       "usage": "`/waechter an` weckt ihn, `/waechter aus` legt ihn schlafen.",
       "on": "🛡 *Der Wächter ist wach* und passt jetzt auf dein Auto auf.",
@@ -935,6 +949,10 @@
       "system_updates": {
         "label": "Updates",
         "note": "Eine neue Panoptes-Version ist da oder wurde installiert."
+      },
+      "system_waechter": {
+        "label": "Wächter einschalten (Hinweis)",
+        "note": "Die einmalige Frage nach einem Update, ob der Wächter an sein soll. Telegram geht direkt."
       }
     },
     "handy": {
@@ -946,7 +964,8 @@
       "tiermodus_an": "🐾 Tiermodus eingeschaltet über Handy „{0}“.",
       "tiermodus_aus": "🐾 Tiermodus ausgeschaltet über Handy „{0}“.",
       "update_gestartet": "⬆️ Update auf {0} gestartet von „{1}“. Panoptes ist ca. 3–8 Minuten weg.",
-      "launcher_update_gestartet": "⬆️ Launcher-Update auf {0} gestartet von „{1}“. Das dauert etwa eine Minute."
+      "launcher_update_gestartet": "⬆️ Launcher-Update auf {0} gestartet von „{1}“. Das dauert etwa eine Minute.",
+      "naehe_schluessel": "🔑 Handy „{0}“ hat einen Schlüssel für „Aufsperren beim Annähern“ hinterlegt. Warst du das nicht: /aktionen automatik aus und das Gerät entkoppeln."
     },
     "zurueck": {
       "text": "🚗 Willkommen zurück am Auto. Es stand {0}.",
@@ -1035,6 +1054,60 @@
       "nicht_bereit": "⚠️ Panoptes antwortet gerade nicht. Bitte in einer Minute noch einmal versuchen.",
       "ratenlimit": "Gerade erst nachgesehen. Hier der Stand:",
       "gestartet": "Das Update läuft."
+    },
+    "aktionen": {
+      "status": "🚗 *Fahrzeug-Aktionen*",
+      "aus_ok": "✅ Alle Fahrzeug-Aktionen sind jetzt aus.",
+      "automatik_aus_ok": "✅ Aufsperren beim Annähern ist jetzt aus.",
+      "failed": "⚠️ Die Fahrzeug-Aktionen konnte ich gerade nicht abfragen.",
+      "nur_auto": "Einschalten und Auslösen geht nur am Auto oder in der Panoptes-App, hier nur Ausschalten.",
+      "btn_aus": "⛔ Alle aus",
+      "btn_automatik_aus": "⛔ Automatik aus",
+      "ausgeloest": "📣 *{0}* ausgelöst über „{1}“. Warst du das nicht: /aktionen aus",
+      "fehlgeschlagen": "⚠️ {0} über „{1}“ hat nicht geklappt ({2}).",
+      "abgelehnt": "🔒 {0} über „{1}“ abgelehnt ({2}).",
+      "alle_aus": "⛔ Alle Fahrzeug-Aktionen ausgeschaltet ({0}).",
+      "automatik_aus": "⛔ Aufsperren beim Annähern ausgeschaltet ({0}).",
+      "ueberfuehrt": "ℹ️ Neu in Panoptes: Hupe, Licht und Aufsperren haben jetzt eigene Schalter (Einstellungen → Auto). Dein Handy-Aufsperren bleibt eingeschaltet, alles andere ist aus. Abschalten: /aktionen aus",
+      "name_autoFinden": "Auto finden (Hupe + Licht)",
+      "name_licht": "Lichthupe",
+      "name_warnblinker": "Warnblinker",
+      "name_aufsperren": "Aufsperren",
+      "name_annaeherung": "Aufsperren beim Annähern",
+      "annaeherung_auf": "🔓 *Aufgesperrt beim Annähern* – Handy „{0}“. Bleibt 60 s jede Tür zu, sperrt das Auto wieder zu. Warst du das nicht: /aktionen automatik aus",
+      "annaeherung_wieder_zu": "🔒 Wieder zugesperrt: Nach dem Aufsperren beim Annähern wurde keine Tür geöffnet.",
+      "offen": "🚨 *Auto ist offen!* Das Wiederzusperren nach dem Annähern hat nicht geklappt. Aufsperren beim Annähern ist jetzt aus. Zusperren: /aktionen zusperren (oder Knopf unter /aktionen)",
+      "zusperren_ok": "🔒 Zusperr-Befehl gesendet.",
+      "zusperren_fehler": "⚠️ Zusperren hat nicht geklappt. Bitte in der BYD-App zusperren.",
+      "btn_zusperren": "🔒 Zusperren",
+      "regeln_gesperrt": "ℹ️ Diese Regeln enthalten Hupe, Licht oder Warnblinker: {0}. Ab jetzt lösen Regeln das nie mehr aus – nur noch du selbst mit einem Tipp und Rückfrage (Schalter unter Einstellungen → Auto → Fahrzeug-Aktionen). Der Rest der Regeln läuft weiter.",
+      "regel_lief": "ℹ️ Eine Regel wollte {0} auslösen. Das geht nicht mehr: Hupe, Licht und Warnblinker löst nur noch du selbst mit Tipp und Rückfrage aus. Die übrigen Schritte der Regel laufen weiter."
+    },
+    "dienst": {
+      "startet": "⏳ Panoptes im Auto startet gerade noch. Bitte in ein, zwei Minuten noch einmal versuchen.",
+      "aus": "ℹ️ Panoptes ist im Auto ausgeschaltet. Einschalten kannst du es am Autobildschirm in Panoptes unter *Dienste*.",
+      "antwortet_nicht": "⚠️ Panoptes im Auto antwortet gerade nicht. Tippe auf /dienste, um es neu zu starten, oder öffne Panoptes am Autobildschirm."
+    },
+    "erreichbar": {
+      "frage": "🅿️ Soll dich der Bot auch erreichen, wenn das Auto abgestellt ist? Sonst antwortet er nur, solange das Auto an ist. Kostet etwas Strom der 12-V-Batterie.",
+      "btn_ja": "✅ Ja, auch abgestellt",
+      "btn_nein": "Nein, danke",
+      "an": "✅ Erledigt: Der Bot ist ab dem nächsten Abstellen auch bei abgestelltem Auto erreichbar. Ausschalten: /erreichbar aus",
+      "aus": "Der Bot schläft jetzt wieder mit dem Auto. Einschalten: /erreichbar an",
+      "nein": "Gut, der Bot antwortet nur, solange das Auto an ist. Später einschalten: /erreichbar an",
+      "stand_an": "✅ Der Bot ist auch bei abgestelltem Auto erreichbar. Ausschalten: /erreichbar aus",
+      "fehler": "⚠️ Das konnte ich am Auto nicht speichern. Bitte gleich noch einmal versuchen."
+    },
+    "kopplungen": {
+      "titel": "📱 *Gekoppelte Geräte*",
+      "leer": "Keine Geräte gekoppelt.",
+      "fehler": "Liste gerade nicht lesbar. Bitte später nochmal.",
+      "besitzer": "Besitzer",
+      "hinweis": "Handy verloren? Tippe auf das Gerät, um es zu entfernen. Es ist dann sofort draußen.",
+      "btn_entfernen": "🗑 {0} entfernen",
+      "frage": "Gerät Nr. {0} wirklich entfernen? Es kann danach nichts mehr am Auto, bis es neu gekoppelt wird.",
+      "btn_ja": "Ja, entfernen",
+      "btn_nein": "Abbrechen"
     }
   },
   "vehicle_control": {
@@ -1060,7 +1133,11 @@
     "battery_heat_label": "Akku vorwärmen",
     "close_all_windows_label": "Alle Fenster schließen",
     "car_off_climate_needs_cloud": "Das Auto ist aus – direkt geht Vorheizen dann nicht. Richte die BYD-Cloud ein (System → BYD-Konto), dann geht es auch bei ausgeschaltetem Auto.",
-    "car_off_needs_cloud": "Das Auto ist aus – direkt geht das dann nicht. Richte die BYD-Cloud ein (System → BYD-Konto), dann geht es auch bei ausgeschaltetem Auto."
+    "car_off_needs_cloud": "Das Auto ist aus – direkt geht das dann nicht. Richte die BYD-Cloud ein (System → BYD-Konto), dann geht es auch bei ausgeschaltetem Auto.",
+    "aktion_aus": "Diese Aktion ist ausgeschaltet. Einschalten unter Einstellungen → Auto → Fahrzeug-Aktionen.",
+    "aktion_nur_nutzer": "Hupe, Licht und Aufsperren lösen nur Menschen aus: am Display, mit Anmeldung oder vom gekoppelten Handy – nie Regeln, Tasten oder andere Dienste.",
+    "aktion_bestaetigen": "Bitte erst die Rückfrage bestätigen.",
+    "aktion_ratenlimit": "Zu oft hintereinander. Bitte in ein paar Minuten noch einmal."
   },
   "automation": {
     "lock": "Auto verriegeln",
@@ -1927,7 +2004,8 @@
       "aufnahme": "Aufnahme",
       "abschreckung": "Abschreckung",
       "stopp": "Wächter stoppt, wenn …",
-      "fahrt": "Fahrt"
+      "fahrt": "Fahrt",
+      "aktionen": "Fahrzeug-Aktionen"
     },
     "surveillance": {
       "triggerMode": {
@@ -1958,6 +2036,10 @@
         "niedrig": "Niedrig (nur kräftige Stöße)",
         "mittel": "Mittel",
         "hoch": "Hoch (auch leichtes Anlehnen)"
+      },
+      "surveillanceEnabled": {
+        "title": "Wächter eingeschaltet",
+        "help": "Hauptschalter wie /waechter in Telegram. Bei laufender Zündung wird der Wächter erst beim Parken scharf."
       }
     },
     "deterrent": {
@@ -2092,9 +2174,9 @@
       },
       "modus": {
         "title": "Updates installieren",
-        "help": "„Nur melden“: Panoptes sagt Bescheid, geladen und installiert wird erst, wenn du tippst. „Korrekturen automatisch“: kleine Korrekturen kommen von selbst, wenn das Auto mindestens 10 Minuten aus ist, danach sagt Panoptes Bescheid; neue Funktionen meldet es, du entscheidest. „Alles automatisch“: auch neue Funktionen kommen von selbst. Nie während der Fahrt; geht etwas schief, kommt die vorige Version nach spätestens 30 Minuten von selbst zurück.",
+        "help": "„Nur melden“: Panoptes sagt bei jedem Update Bescheid, geladen und installiert wird erst, wenn du tippst. „Kleine Updates von selbst, große melden“: Kleine Updates (nur die letzte Zahl ändert sich, z. B. 0.1.38.7 → 0.1.38.8) kommen ohne Nachfrage, wenn das Auto mindestens 10 Minuten aus ist; du findest sie danach unter „Was ist neu“. Große Updates (z. B. 0.1.38 → 0.1.39) meldet Panoptes vorher mit einer Zusammenfassung, du entscheidest. „Alles automatisch“: auch große Updates kommen von selbst. Nie während der Fahrt; geht etwas schief, kommt die vorige Version nach spätestens 30 Minuten von selbst zurück.",
         "melden": "Nur melden",
-        "korrekturen": "Korrekturen automatisch, Neues melden",
+        "korrekturen": "Kleine Updates von selbst, große melden",
         "automatisch": "Alles automatisch"
       },
       "pruefen": {
@@ -2549,6 +2631,28 @@
         "title": "Telegram-Nachricht bei Ereignis",
         "help": "Nur ein kurzer Text mit der Uhrzeit. Kein Video, kein Ort."
       }
+    },
+    "fahrzeugAktionen": {
+      "autoFinden": {
+        "title": "Auto finden (Hupe + Licht)",
+        "help": "Erlaubt „Auto finden“: Das Auto hupt und blinkt. Nur mit Rückfrage. Standard: aus."
+      },
+      "licht": {
+        "title": "Lichthupe",
+        "help": "Erlaubt kurzes Blinken mit dem Licht, ohne Ton. Nur mit Rückfrage. Standard: aus."
+      },
+      "warnblinker": {
+        "title": "Warnblinker (ungetestet)",
+        "help": "Erlaubt, den Warnblinker einzuschalten. Nur mit Rückfrage. Standard: aus."
+      },
+      "aufsperren": {
+        "title": "Aufsperren mit dem Handy",
+        "help": "Erlaubt das Aufsperren vom gekoppelten Handy mit Fingerabdruck oder Face ID. Standard: aus."
+      },
+      "annaeherung": {
+        "title": "Aufsperren beim Annähern",
+        "help": "Sperrt auf, wenn dein gekoppeltes Handy ganz nah ist, und nach 60 s ohne Türöffnen wieder zu. Braucht die Panoptes-App mit Nähe-Schlüssel. Standard: aus."
+      }
     }
   },
   "kartenquelle": {
@@ -2816,5 +2920,80 @@
     "valet_fehler": "Gerade nicht möglich. Bitte gleich nochmal.",
     "valet_fehlversuche_titel": "Display-Sperre: falsche PIN",
     "valet_fehlversuche_text": "Am Display wurde {0} Mal eine falsche PIN eingegeben."
+  },
+  "aktionen": {
+    "name": {
+      "autoFinden": "Auto finden (Hupe + Licht)",
+      "licht": "Lichthupe",
+      "warnblinker": "Warnblinker",
+      "aufsperren": "Aufsperren",
+      "annaeherung": "Aufsperren beim Annähern"
+    },
+    "push_ausgeloest": "{0} ausgelöst über „{1}“",
+    "push_fehlgeschlagen": "{0} über „{1}“ hat nicht geklappt",
+    "push_abgelehnt": "{0} über „{1}“ abgelehnt",
+    "push_alle_aus": "Alle Fahrzeug-Aktionen ausgeschaltet",
+    "push_automatik_aus": "Aufsperren beim Annähern ausgeschaltet",
+    "push_ueberfuehrt": "Hupe, Licht und Aufsperren haben jetzt eigene Schalter",
+    "hinweis": {
+      "autoFinden": {
+        "title": "Auto finden: Hupe und Licht",
+        "text": "Das Auto hupt und blinkt, wenn du es auslöst: am Display, im Browser mit Anmeldung oder vom gekoppelten Handy mit dem Recht „Hupe & Licht“. Jedes Mal mit Rückfrage, nie während der Fahrt, höchstens 3-mal in 10 Minuten. Das ist außen zu sehen und zu hören, nachts kann es Nachbarn stören. Du bekommst jedes Mal eine Telegram-Nachricht."
+      },
+      "licht": {
+        "title": "Lichthupe",
+        "text": "Das Auto blinkt kurz mit dem Licht, ohne Ton, wenn du es auslöst: am Display, im Browser mit Anmeldung oder vom gekoppelten Handy mit dem Recht „Hupe & Licht“. Jedes Mal mit Rückfrage, nie während der Fahrt, höchstens 3-mal in 10 Minuten. Das ist außen zu sehen. Du bekommst jedes Mal eine Telegram-Nachricht."
+      },
+      "warnblinker": {
+        "title": "Warnblinker",
+        "text": "Panoptes darf den Warnblinker einschalten, wenn du es auslöst: am Display, im Browser mit Anmeldung oder vom gekoppelten Handy mit dem Recht „Hupe & Licht“. Jedes Mal mit Rückfrage. Ausschalten geht immer. Ob dein Auto den Befehl annimmt, ist nicht bei jedem Modell belegt. Du bekommst jedes Mal eine Telegram-Nachricht."
+      },
+      "aufsperren": {
+        "title": "Aufsperren",
+        "text": "Ein gekoppeltes Handy mit dem Recht „Aufsperren“ darf das Auto öffnen, nur nach Fingerabdruck oder Face ID am Handy. Wer dein Handy entsperren kann, kommt ins Auto. Höchstens 3-mal in 10 Minuten, nie während der Fahrt, jedes Mal eine Telegram-Nachricht. Ausschalten geht jederzeit, auch mit /aktionen aus in Telegram."
+      },
+      "annaeherung": {
+        "title": "Aufsperren beim Annähern",
+        "text": "Das Auto sperrt von selbst auf, wenn dein gekoppeltes Handy ganz nah ist: Das Handy meldet sich, das Auto sucht kurz per Bluetooth nach ihm und vergleicht die Standorte (höchstens 25 m). Nur wenn das Auto aus und zugesperrt ist und der Wächter gerade nichts aufnimmt, höchstens einmal je Annäherung. Öffnet in 60 Sekunden niemand eine Tür, sperrt es wieder zu. Wer dein Handy hat, kommt ins Auto. Ein Funk-Verstärker könnte das Handy näher wirken lassen, als es ist. Du bekommst jedes Mal sofort eine Telegram-Nachricht und kannst die Automatik dort mit /aktionen automatik aus abschalten."
+      }
+    },
+    "push_annaeherung_auf": "Aufgesperrt beim Annähern – Handy „{0}“",
+    "push_annaeherung_wieder_zu": "Wieder zugesperrt (keine Tür geöffnet)",
+    "push_offen": "Auto ist offen! Wiederzusperren hat nicht geklappt",
+    "push_regeln_gesperrt": "Regeln mit Hupe/Licht/Warnblinker lösen nicht mehr aus: {0}",
+    "push_regel_lief": "Eine Regel wollte {0} auslösen – das geht nicht mehr"
+  },
+  "ha_steuern": {
+    "aktion_oeffnen": "Tor öffnen",
+    "aktion_schliessen": "Tor schließen",
+    "aktion_aufsperren": "Haustür aufsperren",
+    "aktion_zusperren": "Haustür zusperren",
+    "ergebnis_ok": "erledigt",
+    "ergebnis_fehler": "Home Assistant meldet einen Fehler",
+    "ergebnis_nicht_bestaetigt": "nicht bestätigt – bitte vor Ort prüfen",
+    "ergebnis_abgelehnt": "nicht ausgelöst",
+    "heimkommen": "(beim Heimkommen)"
+  },
+  "besitzer": {
+    "telegram_erste": "Dein Handy {0} ist jetzt Besitzer-Handy: Es kann Panoptes ganz einstellen und neue Geräte koppeln (nie Fernzugang, nie Fahrzeug-Aktionen).",
+    "telegram_bestand": "Update: Dein ältestes gekoppeltes Handy {0} ist jetzt Besitzer-Handy. Es kann Panoptes ganz einstellen und neue Geräte koppeln. Ändern unter Gekoppelte Geräte.",
+    "telegram_weitergegeben": "{0} ist jetzt auch Besitzer-Handy.",
+    "einstellung_geaendert": "Einstellung {0} geändert vom Gerät {1}.",
+    "code_angelegt": "Kopplungs-Code ({0}) erstellt vom Besitzer-Handy {1}, 10 min gültig.",
+    "anfrage_erlaubt": "Neues Gerät erlaubt vom Besitzer-Handy {0}.",
+    "entfernt": "Gerät {0} entfernt vom Besitzer-Handy {1}.",
+    "weitergegeben": "{0} ist jetzt auch Besitzer-Handy (von {1}).",
+    "abgegeben": "{0} ist nicht mehr Besitzer-Handy.",
+    "dienst": "Dienst {0} freigegeben vom Besitzer-Handy {1}.",
+    "waechter_an": "Wächter eingeschaltet vom Handy {0}.",
+    "waechter_aus": "Wächter ausgeschaltet vom Handy {0}.",
+    "rechte_selbst": "Besitzer-Handy {0} hat seine Rechte geändert: {1}."
+  },
+  "update_klein": {
+    "titel": "Updates",
+    "text": "Kleine Korrektur-Updates kommen ab jetzt von selbst (nur im Stand, nie während der Fahrt). Große Updates meldet Panoptes weiter vorher. Ändern: Einstellungen → Updates.",
+    "autostart_titel": "Autostart",
+    "autostart_fehlt": "Nach dem Update braucht Panoptes einmal die Autostart-Freigabe. Bitte am Auto-Display auf der Startseite von Panoptes „Autostart wieder einschalten“ antippen.",
+    "launcher_home": "Nach dem Update ist der Panoptes Launcher nicht mehr dein Startbildschirm. Öffne den Launcher einmal und wähle ihn wieder als Startbildschirm."
   }
 }

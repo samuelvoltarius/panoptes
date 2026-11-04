@@ -22,6 +22,10 @@ import java.util.List;
  * </ul>
  * Je Version höchstens einmal. Beim allerersten Lauf (Neuinstallation) wird nur gemerkt, nichts gemeldet, außer die
  * laufende Version war vorher schon als „neu verfügbar“ gemeldet (dann war es ein Update).
+ *
+ * <p>0.1.38.8 (04.11.): Ein kleines Update, das von selbst kam ({@code stillVc}), meldet „installiert und läuft“
+ * nicht; es steht nur unter „Was ist neu“. Schlägt eine Installation fehl (Rückfall-Marke des Update-Skripts), geht
+ * genau eine Meldung hinaus ({@link #PANOPTES_ZURUECK}).
  */
 public final class UpdateMeldung {
 
@@ -30,6 +34,8 @@ public final class UpdateMeldung {
     public static final String PANOPTES_INSTALLIERT = "panoptes_installiert";
     public static final String LAUNCHER_VERFUEGBAR = "launcher_verfuegbar";
     public static final String LAUNCHER_INSTALLIERT = "launcher_installiert";
+    /** 0.1.38.8: Installation gescheitert, die vorige Version läuft wieder ({@code version} = die laufende). */
+    public static final String PANOPTES_ZURUECK = "panoptes_zurueck";
 
     /** Selbstprüfung: grün, gemeldete Störung, noch kein Ergebnis. */
     public static final String SELBST_GRUEN = "gruen";
@@ -54,6 +60,15 @@ public final class UpdateMeldung {
     int panoptesVc;
     int launcherVc;
     int launcherVerfuegbarVc;
+    /** 0.1.38.8: höchster zurückgerollter versionCode, der schon gemeldet wurde. */
+    int zurueckVc;
+
+    /** Wie unten, ohne Rückfall und ohne stille Installation (Bestand der Tests). */
+    List<Meldung> pruefe(int installiertVc, String installiertName, int gemeldetVerfuegbarVc, String selbst,
+                         boolean beobachtet, int launcherInstalliertVc, Freigabe.Launcher launcherFrei) {
+        return pruefe(installiertVc, installiertName, gemeldetVerfuegbarVc, selbst, beobachtet, launcherInstalliertVc,
+                launcherFrei, -1, 0);
+    }
 
     /**
      * Ein Durchgang. Ändert den Zustand (danach {@link #speichern}).
@@ -62,10 +77,17 @@ public final class UpdateMeldung {
      * @param beobachtet           der Updater prüft die neue Version noch (Selbstbestätigung offen)
      * @param launcherInstalliertVc 0 = Launcher nicht installiert
      * @param launcherFrei          bekannte Launcher-Freigabe oder null
+     * @param rueckfallVc           frische Rückfall-Marke (versionCode, der nicht lief) oder −1
+     * @param stillVc               diese Version kam still von selbst: „installiert und läuft“ nicht melden (0 = keine)
      */
     List<Meldung> pruefe(int installiertVc, String installiertName, int gemeldetVerfuegbarVc, String selbst,
-                         boolean beobachtet, int launcherInstalliertVc, Freigabe.Launcher launcherFrei) {
+                         boolean beobachtet, int launcherInstalliertVc, Freigabe.Launcher launcherFrei,
+                         int rueckfallVc, int stillVc) {
         List<Meldung> out = new ArrayList<>();
+        if (rueckfallVc > 0 && rueckfallVc > installiertVc && rueckfallVc > zurueckVc && !beobachtet) {
+            out.add(new Meldung(PANOPTES_ZURUECK, rueckfallVc, installiertName));
+            zurueckVc = rueckfallVc;
+        }
         if (installiertVc > 0) {
             if (panoptesVc <= 0) {
                 // Erster Lauf: war genau diese Version vorher als „neu“ gemeldet, ist es ein Update.
@@ -75,7 +97,7 @@ public final class UpdateMeldung {
                 panoptesVc = installiertVc;   // Rückfall: still mitgehen
             } else if (installiertVc > panoptesVc && !beobachtet) {
                 if (SELBST_GRUEN.equals(selbst)) {
-                    out.add(new Meldung(PANOPTES_INSTALLIERT, installiertVc, installiertName));
+                    if (installiertVc != stillVc) out.add(new Meldung(PANOPTES_INSTALLIERT, installiertVc, installiertName));
                     panoptesVc = installiertVc;
                 } else if (SELBST_STOERUNG.equals(selbst)) {
                     panoptesVc = installiertVc;   // die Störungsmeldung ist schon draußen
@@ -111,6 +133,7 @@ public final class UpdateMeldung {
             m.panoptesVc = j.optInt("panoptesVc", 0);
             m.launcherVc = j.optInt("launcherVc", 0);
             m.launcherVerfuegbarVc = j.optInt("launcherVerfuegbarVc", 0);
+            m.zurueckVc = j.optInt("zurueckVc", 0);
         } catch (Exception ignored) {
         }
         return m;
@@ -119,7 +142,7 @@ public final class UpdateMeldung {
     void speichern(File basis) {
         try {
             JSONObject j = new JSONObject().put("panoptesVc", panoptesVc).put("launcherVc", launcherVc)
-                    .put("launcherVerfuegbarVc", launcherVerfuegbarVc);
+                    .put("launcherVerfuegbarVc", launcherVerfuegbarVc).put("zurueckVc", zurueckVc);
             File tmp = new File(basis, DATEI + ".neu");
             Files.write(tmp.toPath(), j.toString().getBytes(StandardCharsets.UTF_8));
             if (!tmp.renameTo(new File(basis, DATEI))) {
@@ -135,6 +158,7 @@ public final class UpdateMeldung {
         switch (art) {
             case PANOPTES_INSTALLIERT: return "update.installiert_laeuft";
             case LAUNCHER_VERFUEGBAR: return "update.launcher_verfuegbar";
+            case PANOPTES_ZURUECK: return "update.rolled_back";
             default: return "update.launcher_installiert";
         }
     }
@@ -143,6 +167,7 @@ public final class UpdateMeldung {
         switch (art) {
             case PANOPTES_INSTALLIERT: return "notifications.update_installiert";
             case LAUNCHER_VERFUEGBAR: return "notifications.launcher_verfuegbar";
+            case PANOPTES_ZURUECK: return "notifications.update_zurueck";
             default: return "notifications.launcher_installiert";
         }
     }

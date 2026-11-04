@@ -37,6 +37,14 @@ public final class HaDienst {
                 logger.warn("Anwesenheit: " + t.getMessage());
             }
         }, 60, 30, java.util.concurrent.TimeUnit.SECONDS);
+        // 0.1.38.8 HA-Geräte Stufe 2: Aufträge ablaufen lassen, Tor beim Heimkommen (nur mit Automatik, Standard aus)
+        ex.scheduleWithFixedDelay(() -> {
+            try {
+                HaSteuerDienst.takt();
+            } catch (Throwable t) {
+                logger.warn("Geräte steuern: " + t.getMessage());
+            }
+        }, 30, HaSteuerDienst.TAKT_S, java.util.concurrent.TimeUnit.SECONDS);
         try {
             HaMdns.start();
         } catch (Throwable t) {

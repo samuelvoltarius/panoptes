@@ -405,6 +405,10 @@
       "system_updates": {
         "label": "Mises à jour",
         "note": "Nouvelle version de Panoptes ou du launcher, et quand une mise à jour est terminée."
+      },
+      "system_waechter": {
+        "label": "Activer le Gardien (avis)",
+        "note": "La question unique après une mise à jour : le Gardien doit-il être activé. Telegram part directement."
       }
     },
     "cloud_uebergabe_titel": "« {0} » veut transmettre le cloud BYD",
@@ -419,8 +423,13 @@
     "battery12v_niedrig_title": "Batterie 12 V très faible : {0} V",
     "battery12v_niedrig_body": "Elle ne se rétablit plus d’elle-même. La voiture risque bientôt de ne plus démarrer. Faites un tour aujourd’hui ou branchez-la.",
     "update_installiert": "Panoptes {0} est installé et fonctionne.",
+    "waechter_standard_titel": "Le Gardien doit-il être activé ?",
+    "waechter_standard_text": "Il n'enregistre qu'en cas de choc. Il est prévu pour ta propriété privée, tu es responsable des enregistrements. Pour l'activer, ouvre la page du Gardien.",
+    "waechter_standard_display": "Nouveau : le Gardien peut surveiller ta voiture (choc uniquement). Pour l'activer : ouvrir Panoptes, Gardien. L'avis juridique et le bouton s'y trouvent.",
     "launcher_verfuegbar": "Nouvelle version du launcher {0}",
-    "launcher_installiert": "Le launcher {0} est installé."
+    "launcher_installiert": "Le launcher {0} est installé.",
+    "update_verfuegbar": "Panoptes {0} est disponible",
+    "update_zurueck": "La mise à jour n’a pas marché, Panoptes tourne de nouveau en {0}."
   },
   "parking": {
     "notify": {
@@ -534,7 +543,8 @@
       "some_locked": "🔒 Certaines commandes sont désactivées. Vous pouvez les autoriser dans Panoptes sous *Règles → Alertes → Alertes Telegram*.",
       "footer": "_Panoptes {0}_",
       "menu": "/menue – Tous les boutons d’un coup d’œil",
-      "updates": "/updates – Mettre à jour Panoptes et le lanceur"
+      "updates": "/updates – Mettre à jour Panoptes et le lanceur",
+      "kopplungen": "/kopplungen – Voir et retirer les appareils appairés (téléphone perdu)"
     },
     "buttons": {
       "status": "📊 État",
@@ -543,6 +553,7 @@
       "camera": "📷 Caméra",
       "location": "📍 Où est-elle ?",
       "guard_on": "🛡 Réveiller le Gardien",
+      "guard_standard_an": "🛡 Compris – activer le Gardien",
       "guard_off": "😴 Endormir le Gardien",
       "refresh": "🔄 Actualiser",
       "start_named": "▶️ Démarrer {0}",
@@ -575,6 +586,9 @@
       "paket_an_fehler": "⚠️ Le Panoptes Launcher n'a pas pu être activé. À l'écran, cela se fait sous Écran → Panoptes Launcher."
     },
     "guard": {
+      "standard_frage": "🛡 *Le Gardien doit-il surveiller ta voiture ?*\nNouveau dans cette version : le Gardien est désormais activé par défaut. Tu ne l'avais pas encore configuré, donc on demande une fois. Il n'enregistre qu'en cas de choc.\n\n*Avis juridique :* le Gardien est prévu pour ta propriété privée. Oriente les caméras de sorte que la rue, le trottoir et le terrain voisin ne soient pas dans l'image. Tu es seul responsable des enregistrements et de leur diffusion.\n\nIl s'éteint tout seul si la batterie 12 V est faible. Tu peux l'éteindre à tout moment.",
+      "standard_an_ok": "🛡 *Le Gardien est activé* (choc uniquement). Il se réveille dès que tu gares la voiture.",
+      "standard_an_veraltet": "Cette question est réglée : le Gardien est déjà configuré ou volontairement éteint. Rien n'a été modifié.",
       "title": "🛡 *Gardien*",
       "usage": "`/guardian on` le réveille, `/guardian off` le laisse dormir.",
       "on": "🛡 *Le Gardien est en éveil* et veille sur votre voiture.",
@@ -630,7 +644,7 @@
     },
     "parking": {
       "where": {
-        "unavailable": "⚠️ Le service caméra ne répond pas. Vous pouvez le démarrer sous /services.",
+        "unavailable": "🅿️ Je ne peux pas lire l’emplacement de stationnement pour le moment. Réessaie plus tard.",
         "disabled": "🅿️ Le journal de stationnement est désactivé. Activez-le dans Panoptes sous *Gardien → Stationnement*.",
         "none": "🅿️ Je n'ai encore enregistré aucun stationnement.",
         "title_open": "🅿️ *Voici votre voiture*",
@@ -941,6 +955,10 @@
       "system_updates": {
         "label": "Mises à jour",
         "note": "Une nouvelle version de Panoptes est disponible ou a été installée."
+      },
+      "system_waechter": {
+        "label": "Activer le Gardien (avis)",
+        "note": "La question unique après une mise à jour : le Gardien doit-il être activé. Telegram part directement."
       }
     },
     "handy": {
@@ -952,7 +970,8 @@
       "tiermodus_an": "🐾 Mode animal activé depuis le téléphone « {0} ».",
       "tiermodus_aus": "🐾 Mode animal désactivé depuis le téléphone « {0} ».",
       "update_gestartet": "⬆️ Mise à jour vers {0} lancée par « {1} ». Panoptes sera absent environ 3 à 8 minutes.",
-      "launcher_update_gestartet": "⬆️ Mise à jour du lanceur vers {0} lancée par « {1} ». Cela prend environ une minute."
+      "launcher_update_gestartet": "⬆️ Mise à jour du lanceur vers {0} lancée par « {1} ». Cela prend environ une minute.",
+      "naehe_schluessel": "🔑 Le téléphone « {0} » a enregistré une clé pour « Déverrouiller à l’approche ». Ce n’était pas toi ? /aktionen automatik aus et découple l’appareil."
     },
     "zurueck": {
       "text": "🚗 Bon retour à la voiture. Elle était garée depuis {0}.",
@@ -1041,6 +1060,60 @@
       "nicht_bereit": "⚠️ Panoptes ne répond pas en ce moment. Réessaie dans une minute.",
       "ratenlimit": "Vérifié à l’instant. Voici l’état actuel :",
       "gestartet": "La mise à jour est en cours."
+    },
+    "aktionen": {
+      "status": "🚗 *Actions du véhicule*",
+      "aus_ok": "✅ Toutes les actions du véhicule sont désactivées.",
+      "automatik_aus_ok": "✅ Le déverrouillage à l’approche est désactivé.",
+      "failed": "⚠️ Impossible de lire les actions du véhicule pour le moment.",
+      "nur_auto": "Activer et déclencher ne fonctionne que dans la voiture ou dans l’app Panoptes, ici seulement désactiver.",
+      "btn_aus": "⛔ Tout désactiver",
+      "btn_automatik_aus": "⛔ Automatique désactivé",
+      "ausgeloest": "📣 *{0}* déclenché via « {1} ». Ce n’était pas toi ? /aktionen aus",
+      "fehlgeschlagen": "⚠️ {0} via « {1} » n’a pas fonctionné ({2}).",
+      "abgelehnt": "🔒 {0} via « {1} » refusé ({2}).",
+      "alle_aus": "⛔ Toutes les actions du véhicule désactivées ({0}).",
+      "automatik_aus": "⛔ Déverrouillage à l’approche désactivé ({0}).",
+      "ueberfuehrt": "ℹ️ Nouveau dans Panoptes : klaxon, feux et déverrouillage ont maintenant leurs propres interrupteurs (Réglages → Voiture). Le déverrouillage par téléphone reste activé, tout le reste est désactivé. Désactiver : /aktionen aus",
+      "name_autoFinden": "Trouver la voiture (klaxon + feux)",
+      "name_licht": "Appel de phares",
+      "name_warnblinker": "Feux de détresse",
+      "name_aufsperren": "Déverrouiller",
+      "name_annaeherung": "Déverrouiller à l’approche",
+      "annaeherung_auf": "🔓 *Déverrouillée à l’approche* – téléphone « {0} ». Si aucune porte ne s’ouvre en 60 s, la voiture se reverrouille. Ce n’était pas toi ? /aktionen automatik aus",
+      "annaeherung_wieder_zu": "🔒 Reverrouillée : aucune porte n’a été ouverte après le déverrouillage à l’approche.",
+      "offen": "🚨 *La voiture est ouverte !* Le reverrouillage après l’approche n’a pas fonctionné. Le déverrouillage à l’approche est désactivé. Verrouiller : /aktionen zusperren (ou le bouton sous /aktionen)",
+      "zusperren_ok": "🔒 Commande de verrouillage envoyée.",
+      "zusperren_fehler": "⚠️ Le verrouillage n’a pas fonctionné. Verrouille dans l’app BYD.",
+      "btn_zusperren": "🔒 Verrouiller",
+      "regeln_gesperrt": "ℹ️ Ces règles contiennent klaxon, feux ou feux de détresse : {0}. Désormais les règles ne les déclenchent plus – seulement toi, d’un tap avec confirmation (interrupteurs sous Réglages → Voiture → Actions du véhicule). Le reste des règles continue.",
+      "regel_lief": "ℹ️ Une règle a voulu déclencher {0}. Ce n’est plus possible : klaxon, feux et feux de détresse ne se déclenchent que par toi, d’un tap avec confirmation. Les autres étapes de la règle continuent."
+    },
+    "dienst": {
+      "startet": "⏳ Panoptes démarre encore dans la voiture. Réessaie dans une ou deux minutes.",
+      "aus": "ℹ️ Panoptes est désactivé dans la voiture. Tu peux l’activer sur l’écran de la voiture dans Panoptes sous *Services*.",
+      "antwortet_nicht": "⚠️ Panoptes ne répond pas dans la voiture pour le moment. Touche /dienste pour le redémarrer, ou ouvre Panoptes sur l’écran de la voiture."
+    },
+    "erreichbar": {
+      "frage": "🅿️ Le bot doit-il te joindre aussi quand la voiture est garée et éteinte ? Sinon il ne répond que lorsque la voiture est allumée. Consomme un peu de courant de la batterie 12 V.",
+      "btn_ja": "✅ Oui, aussi garée",
+      "btn_nein": "Non, merci",
+      "an": "✅ C’est fait : dès le prochain arrêt, le bot est joignable voiture éteinte. Désactiver : /erreichbar aus",
+      "aus": "Le bot dort de nouveau avec la voiture. Activer : /erreichbar an",
+      "nein": "D’accord, le bot ne répond que lorsque la voiture est allumée. Activer plus tard : /erreichbar an",
+      "stand_an": "✅ Le bot est joignable voiture éteinte. Désactiver : /erreichbar aus",
+      "fehler": "⚠️ Je n’ai pas pu l’enregistrer dans la voiture. Réessaie dans un instant."
+    },
+    "kopplungen": {
+      "titel": "📱 *Appareils appairés*",
+      "leer": "Aucun appareil appairé.",
+      "fehler": "Liste illisible pour le moment. Réessaie plus tard.",
+      "besitzer": "propriétaire",
+      "hinweis": "Téléphone perdu ? Touche l’appareil pour le retirer. Il est exclu immédiatement.",
+      "btn_entfernen": "🗑 Retirer {0}",
+      "frage": "Vraiment retirer l’appareil n° {0} ? Il ne pourra plus rien faire avec la voiture avant un nouvel appairage.",
+      "btn_ja": "Oui, retirer",
+      "btn_nein": "Annuler"
     }
   },
   "vehicle_control": {
@@ -1066,7 +1139,11 @@
     "battery_heat_label": "Préchauffer la batterie",
     "close_all_windows_label": "Fermer toutes les vitres",
     "car_off_climate_needs_cloud": "La voiture est éteinte – le préchauffage ne peut alors pas se faire directement. Configure le cloud BYD (Système → Compte BYD), et ça marchera aussi voiture éteinte.",
-    "car_off_needs_cloud": "La voiture est éteinte – cela ne peut alors pas se faire directement. Configure le cloud BYD (Système → Compte BYD), et ça marchera aussi voiture éteinte."
+    "car_off_needs_cloud": "La voiture est éteinte – cela ne peut alors pas se faire directement. Configure le cloud BYD (Système → Compte BYD), et ça marchera aussi voiture éteinte.",
+    "aktion_aus": "Cette action est désactivée. Active-la sous Réglages → Voiture → Actions du véhicule.",
+    "aktion_nur_nutzer": "Klaxon, feux et déverrouillage ne se déclenchent que par une personne : à l’écran, connecté ou depuis le téléphone couplé – jamais par des règles, des touches ou d’autres services.",
+    "aktion_bestaetigen": "Confirme d’abord la question.",
+    "aktion_ratenlimit": "Trop de fois de suite. Réessaie dans quelques minutes."
   },
   "automation": {
     "lock": "Verrouiller la voiture",
@@ -1933,7 +2010,8 @@
       "aufnahme": "Enregistrement",
       "abschreckung": "Dissuasion",
       "stopp": "Le Gardien s'arrête quand …",
-      "fahrt": "Trajet"
+      "fahrt": "Trajet",
+      "aktionen": "Actions du véhicule"
     },
     "surveillance": {
       "triggerMode": {
@@ -1964,6 +2042,10 @@
         "niedrig": "Faible (chocs forts uniquement)",
         "mittel": "Moyenne",
         "hoch": "Élevée (même un léger appui)"
+      },
+      "surveillanceEnabled": {
+        "title": "Gardien activé",
+        "help": "Interrupteur principal comme /waechter dans Telegram. Contact mis, le gardien ne s’arme qu’au stationnement."
       }
     },
     "deterrent": {
@@ -2098,9 +2180,9 @@
       },
       "modus": {
         "title": "Installer les mises à jour",
-        "help": "« Seulement signaler » : Panoptes vous prévient, le téléchargement et l’installation ne se font que si vous touchez. « Corrections automatiques » : les petites corrections s’installent toutes seules quand la voiture est éteinte depuis au moins 10 minutes, puis Panoptes vous prévient ; les nouvelles fonctions sont signalées, vous décidez. « Tout automatiquement » : les nouvelles fonctions aussi. Jamais en roulant ; en cas de problème, la version précédente revient toute seule en 30 minutes au plus.",
+        "help": "« Seulement signaler » : Panoptes te prévient à chaque mise à jour, elle n’est téléchargée et installée que quand tu touches. « Petites mises à jour seules, grandes signalées » : les petites mises à jour (seul le dernier chiffre change, p. ex. 0.1.38.7 → 0.1.38.8) arrivent sans question dès que la voiture est éteinte depuis au moins 10 minutes ; tu les retrouves ensuite sous « Nouveautés ». Les grandes mises à jour (p. ex. 0.1.38 → 0.1.39) sont annoncées avant avec un résumé, tu décides. « Tout automatiquement » : les grandes arrivent aussi seules. Jamais en roulant ; en cas de problème, la version précédente revient seule en 30 minutes au plus.",
         "melden": "Seulement signaler",
-        "korrekturen": "Corrections automatiques, nouveautés signalées",
+        "korrekturen": "Petites mises à jour seules, grandes signalées",
         "automatisch": "Tout automatiquement"
       },
       "pruefen": {
@@ -2555,6 +2637,28 @@
         "title": "Message Telegram en cas d’événement",
         "help": "Seulement un court texte avec l’heure. Pas de vidéo, pas de lieu."
       }
+    },
+    "fahrzeugAktionen": {
+      "autoFinden": {
+        "title": "Trouver la voiture (klaxon + feux)",
+        "help": "Autorise « Trouver la voiture » : la voiture klaxonne et clignote. Seulement avec confirmation. Par défaut : désactivé."
+      },
+      "licht": {
+        "title": "Appel de phares",
+        "help": "Autorise un bref clignotement des feux, sans son. Seulement avec confirmation. Par défaut : désactivé."
+      },
+      "warnblinker": {
+        "title": "Feux de détresse (non testé)",
+        "help": "Autorise l’allumage des feux de détresse. Seulement avec confirmation. Par défaut : désactivé."
+      },
+      "aufsperren": {
+        "title": "Déverrouiller avec le téléphone",
+        "help": "Autorise le déverrouillage depuis le téléphone couplé avec empreinte ou Face ID. Par défaut : désactivé."
+      },
+      "annaeherung": {
+        "title": "Déverrouiller à l’approche",
+        "help": "Déverrouille quand ton téléphone couplé est tout près et reverrouille après 60 s sans ouverture de porte. Nécessite l’app Panoptes avec une clé de proximité. Par défaut : désactivé."
+      }
     }
   },
   "kartenquelle": {
@@ -2822,5 +2926,80 @@
     "valet_fehler": "Impossible pour le moment. Réessayez tout de suite.",
     "valet_fehlversuche_titel": "Verrouillage de l’écran : PIN erroné",
     "valet_fehlversuche_text": "Un PIN erroné a été saisi {0} fois sur l’écran."
+  },
+  "aktionen": {
+    "name": {
+      "autoFinden": "Trouver la voiture (klaxon + feux)",
+      "licht": "Appel de phares",
+      "warnblinker": "Feux de détresse",
+      "aufsperren": "Déverrouiller",
+      "annaeherung": "Déverrouiller à l’approche"
+    },
+    "push_ausgeloest": "{0} déclenché via « {1} »",
+    "push_fehlgeschlagen": "{0} via « {1} » n’a pas fonctionné",
+    "push_abgelehnt": "{0} via « {1} » refusé",
+    "push_alle_aus": "Toutes les actions du véhicule désactivées",
+    "push_automatik_aus": "Déverrouillage à l’approche désactivé",
+    "push_ueberfuehrt": "Klaxon, feux et déverrouillage ont maintenant leurs propres interrupteurs",
+    "hinweis": {
+      "autoFinden": {
+        "title": "Trouver la voiture : klaxon et feux",
+        "text": "La voiture klaxonne et clignote quand tu le déclenches : à l’écran, dans un navigateur connecté ou depuis le téléphone couplé avec l’autorisation « Klaxon et feux ». Toujours avec confirmation, jamais en roulant, au plus 3 fois en 10 minutes. On le voit et l’entend dehors, la nuit cela peut déranger les voisins. Tu reçois un message Telegram à chaque fois."
+      },
+      "licht": {
+        "title": "Appel de phares",
+        "text": "La voiture fait clignoter brièvement ses feux, sans son, quand tu le déclenches : à l’écran, dans un navigateur connecté ou depuis le téléphone couplé avec l’autorisation « Klaxon et feux ». Toujours avec confirmation, jamais en roulant, au plus 3 fois en 10 minutes. On le voit dehors. Tu reçois un message Telegram à chaque fois."
+      },
+      "warnblinker": {
+        "title": "Feux de détresse",
+        "text": "Panoptes peut allumer les feux de détresse quand tu le déclenches : à l’écran, dans un navigateur connecté ou depuis le téléphone couplé avec l’autorisation « Klaxon et feux ». Toujours avec confirmation. L’extinction fonctionne toujours. Tous les modèles n’acceptent pas forcément la commande. Tu reçois un message Telegram à chaque fois."
+      },
+      "aufsperren": {
+        "title": "Déverrouiller",
+        "text": "Un téléphone couplé avec l’autorisation « Déverrouiller » peut ouvrir la voiture, seulement après empreinte ou Face ID sur le téléphone. Quiconque peut déverrouiller ton téléphone peut entrer dans la voiture. Au plus 3 fois en 10 minutes, jamais en roulant, un message Telegram à chaque fois. Tu peux le désactiver à tout moment, aussi avec /aktionen aus dans Telegram."
+      },
+      "annaeherung": {
+        "title": "Déverrouiller à l’approche",
+        "text": "La voiture se déverrouille seule quand ton téléphone couplé est tout près : le téléphone se signale, la voiture le cherche brièvement par Bluetooth et compare les positions (25 m au plus). Seulement si la voiture est éteinte et verrouillée et que la surveillance n’enregistre rien, au plus une fois par approche. Si personne n’ouvre de porte en 60 secondes, elle se reverrouille. Quiconque a ton téléphone peut entrer dans la voiture. Un amplificateur radio pourrait faire paraître le téléphone plus proche qu’il ne l’est. Tu reçois chaque fois tout de suite un message Telegram et peux y désactiver l’automatique avec /aktionen automatik aus."
+      }
+    },
+    "push_annaeherung_auf": "Déverrouillée à l’approche – téléphone « {0} »",
+    "push_annaeherung_wieder_zu": "Reverrouillée (aucune porte ouverte)",
+    "push_offen": "La voiture est ouverte ! Le reverrouillage n’a pas fonctionné",
+    "push_regeln_gesperrt": "Les règles avec klaxon/feux/feux de détresse ne les déclenchent plus : {0}",
+    "push_regel_lief": "Une règle a voulu déclencher {0} – ce n’est plus possible"
+  },
+  "ha_steuern": {
+    "aktion_oeffnen": "Ouvrir le portail",
+    "aktion_schliessen": "Fermer le portail",
+    "aktion_aufsperren": "Déverrouiller la porte d’entrée",
+    "aktion_zusperren": "Verrouiller la porte d’entrée",
+    "ergebnis_ok": "fait",
+    "ergebnis_fehler": "Home Assistant signale une erreur",
+    "ergebnis_nicht_bestaetigt": "non confirmé – vérifiez sur place",
+    "ergebnis_abgelehnt": "non déclenché",
+    "heimkommen": "(en rentrant)"
+  },
+  "besitzer": {
+    "telegram_erste": "Ton téléphone {0} est maintenant le téléphone propriétaire : il peut tout régler dans Panoptes et appairer de nouveaux appareils (jamais l’accès à distance, jamais d’actions sur le véhicule).",
+    "telegram_bestand": "Mise à jour : ton plus ancien téléphone appairé {0} est maintenant le téléphone propriétaire. Il peut tout régler dans Panoptes et appairer de nouveaux appareils. Modifiable sous Appareils appairés.",
+    "telegram_weitergegeben": "{0} est maintenant aussi un téléphone propriétaire.",
+    "einstellung_geaendert": "Réglage {0} modifié par l’appareil {1}.",
+    "code_angelegt": "Code d’appairage ({0}) créé par le téléphone propriétaire {1}, valable 10 min.",
+    "anfrage_erlaubt": "Nouvel appareil autorisé par le téléphone propriétaire {0}.",
+    "entfernt": "Appareil {0} retiré par le téléphone propriétaire {1}.",
+    "weitergegeben": "{0} est maintenant aussi un téléphone propriétaire (par {1}).",
+    "abgegeben": "{0} n’est plus un téléphone propriétaire.",
+    "dienst": "Service {0} libéré par le téléphone propriétaire {1}.",
+    "waechter_an": "Gardien activé par le téléphone {0}.",
+    "waechter_aus": "Gardien désactivé par le téléphone {0}.",
+    "rechte_selbst": "Le téléphone propriétaire {0} a modifié ses droits : {1}."
+  },
+  "update_klein": {
+    "titel": "Mises à jour",
+    "text": "Les petites mises à jour de correction arrivent désormais seules (seulement à l’arrêt, jamais en roulant). Panoptes continue d’annoncer les grandes mises à jour avant. Modifier : Réglages → Mises à jour.",
+    "autostart_titel": "Démarrage auto",
+    "autostart_fehlt": "Après la mise à jour, Panoptes a besoin une fois de l’autorisation de démarrage automatique. Touche « Réactiver le démarrage auto » sur la page d’accueil de Panoptes à l’écran de la voiture.",
+    "launcher_home": "Après la mise à jour, le launcher Panoptes n’est plus ton écran d’accueil. Ouvre le launcher une fois et choisis-le de nouveau comme écran d’accueil."
   }
 }

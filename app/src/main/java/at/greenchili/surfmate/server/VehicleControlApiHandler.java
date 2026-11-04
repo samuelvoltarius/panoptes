@@ -183,7 +183,20 @@ public class VehicleControlApiHandler {
 
         // POST /api/vehicle/flash
         if (cleanPath.equals("/api/vehicle/flash") && method.equals("POST")) {
-            handleFlash(out);
+            handleFlash(out, body);
+            return true;
+        }
+
+        // POST /api/vehicle/warnblinker {an, bestaetigt} — 0.1.38.8, EIN nur mit Schalter + Rückfrage, AUS immer
+        if (cleanPath.equals("/api/vehicle/warnblinker") && method.equals("POST")) {
+            handleWarnblinker(out, body);
+            return true;
+        }
+
+        // GET /api/vehicle/aktionen — 0.1.38.8 Stand der Schalter (Hupe/Licht/Warnblinker/Aufsperren/Annäherung)
+        if (cleanPath.equals("/api/vehicle/aktionen") && method.equals("GET")) {
+            HttpResponse.sendJson(out, new JSONObject().put("ok", true)
+                    .put("schalter", at.greenchili.surfmate.byd.routing.FahrzeugAktionen.stand()).toString());
             return true;
         }
 
@@ -285,7 +298,7 @@ public class VehicleControlApiHandler {
 
         // POST /api/vehicle/find-car
         if (cleanPath.equals("/api/vehicle/find-car") && method.equals("POST")) {
-            handleFindCar(out);
+            handleFindCar(out, body);
             return true;
         }
 
@@ -944,6 +957,10 @@ public class VehicleControlApiHandler {
                     diLink5 || vehiclePoweredOn,
                     data.acStartState == BydVehicleData.UNAVAILABLE ? -1 : data.acStartState);
             climate.put("laeuft", laeuft.json());
+            // 0.1.38.8: eine Entscheidung für den roten Stopp-Knopf (Web, Handy-App): nur zeigen, wenn etwas laufen könnte
+            JSONObject stopp = at.greenchili.surfmate.byd.StoppKnopf.json(laeuft, fern,
+                    response.optBoolean("batteryHeat", false), System.currentTimeMillis());
+            if (stopp != null) climate.put("stopp", stopp);
         } catch (Exception e) {
             logger.debug("climate run state failed: " + e.getMessage());
         }
@@ -1080,9 +1097,8 @@ public class VehicleControlApiHandler {
     /**
      * Find car (horn + lights) — cloud-only on this BYD generation.
      */
-    private static void handleFindCar(OutputStream out) throws Exception {
-        CommandResult r = VehicleCommandRouter.getInstance()
-                .execute(new VehicleCommandRouter.FindCarCommand());
+    private static void handleFindCar(OutputStream out, String body) throws Exception {
+        CommandResult r = aktionWeb(new VehicleCommandRouter.FindCarCommand(), body);
         logger.info("FindCar: routed result=" + r.outcome + " path=" + r.path);
         HttpResponse.sendJson(out, routedResponse(r, "find-car").toString());
     }
@@ -1310,11 +1326,63 @@ public class VehicleControlApiHandler {
     /**
      * Flash lights routed via the router.
      */
-    private static void handleFlash(OutputStream out) throws Exception {
-        CommandResult r = VehicleCommandRouter.getInstance()
-                .execute(new VehicleCommandRouter.FlashLightsCommand());
+    private static void handleFlash(OutputStream out, String body) throws Exception {
+        CommandResult r = aktionWeb(new VehicleCommandRouter.FlashLightsCommand(), body);
         logger.info("Flash: routed result=" + r.outcome + " path=" + r.path);
         HttpResponse.sendJson(out, routedResponse(r, "flash").toString());
+    }
+
+    /** 0.1.38.8 Warnblinker: AUS läuft immer durch, EIN nur über {@link #aktionWeb}. */
+    private static void handleWarnblinker(OutputStream out, String body) throws Exception {
+        JSONObject b;
+        try {
+            b = new JSONObject(body == null || body.isEmpty() ? "{}" : body);
+        } catch (Exception e) {
+            HttpResponse.sendJson(out, 400, new JSONObject().put("success", false).put("error", "json").toString());
+            return;
+        }
+        Object an = b.opt("an");
+        if (!(an instanceof Boolean)) {
+            HttpResponse.sendJson(out, 400, new JSONObject().put("success", false).put("error", "an").toString());
+            return;
+        }
+        VehicleCommandRouter.HazardCommand cmd = new VehicleCommandRouter.HazardCommand((Boolean) an);
+        CommandResult r = (Boolean) an ? aktionWeb(cmd, body) : VehicleCommandRouter.getInstance().execute(cmd);
+        HttpResponse.sendJson(out, routedResponse(r, "hazard").toString());
+    }
+
+    /**
+     * 0.1.38.8 Fahrzeug-Aktion aus der Weboberfläche: nur ein Mensch an der Oberfläche (Display oder voller Login) oder
+     * die Web-Sitzung der Handy-App mit Recht „signal“ (Aufsperren nie über das Web). Kopplungen, Automationen, KI und
+     * Tasten kommen nicht durch. Die Rückfrage der Seite schickt {@code bestaetigt:true}.
+     */
+    static CommandResult aktionWeb(VehicleCommand cmd, String body) {
+        boolean bestaetigt = false;
+        try {
+            bestaetigt = new JSONObject(body == null || body.isEmpty() ? "{}" : body).optBoolean("bestaetigt", false);
+        } catch (Exception ignored) {
+        }
+        String quelle = null, wer = null;
+        String herkunft = at.greenchili.surfmate.gewohnheiten.Herkunft.gesetzt();
+        if (AuthMiddleware.isExternRequest() || HttpServer.isAutomationRequest()) {
+            quelle = null;   // Kopplung bzw. Regel/Taste/KI im Prozess: nie
+        } else if (AuthMiddleware.isHandyWebRequest()) {
+            String kid = AuthMiddleware.requestWebKopplungsId();
+            at.greenchili.surfmate.auth.Kopplungen k = at.greenchili.surfmate.auth.Kopplungen.get();
+            if (kid != null && k.hatRecht(kid, at.greenchili.surfmate.auth.Kopplungen.RECHT_SIGNAL)) {
+                quelle = at.greenchili.surfmate.byd.routing.FahrzeugAktionen.QUELLE_HANDYWEB;
+                wer = k.anzeigeName(kid);
+            }
+        } else if (at.greenchili.surfmate.gewohnheiten.Herkunft.DISPLAY.equals(herkunft)) {
+            quelle = at.greenchili.surfmate.byd.routing.FahrzeugAktionen.QUELLE_WEB;
+            wer = AuthMiddleware.isDirektAmAuto() ? "Display" : "Browser";
+        }
+        if (quelle == null) {
+            // Router sperrt ohne Auslösung ohnehin; so bekommt die Ablehnung den richtigen Grund und das Protokoll
+            return VehicleCommandRouter.getInstance().execute(cmd);
+        }
+        return at.greenchili.surfmate.byd.routing.FahrzeugAktionen.ausloesen(cmd, quelle, wer, bestaetigt,
+                VehicleCommandRouter.getInstance()::execute);
     }
 
     /**
@@ -1333,6 +1401,25 @@ public class VehicleControlApiHandler {
             if (action == null) action = "";
             VehicleCommand cmd;
             Integer powerOnAutoOffMinutes = null;
+            // 0.1.38.8: ein Stopp ohne ausdrücklichen Weg schickt bei schlafendem Auto nie einen lokalen Befehl (weckt Auto und
+            // Display): mit Fern-Sitzung über die Cloud, sonst „nichts zu stoppen“ ohne jeden Befehl
+            if ("power_off".equals(action) && !req.optBoolean("remote", false)) {
+                BydVehicleData sd = BydDataCollector.getInstance().getData();
+                String weg = at.greenchili.surfmate.byd.StoppKnopf.stoppWeg(
+                        sd != null && at.greenchili.surfmate.byd.StoppKnopf.schlaeft(
+                                sd.powerLevel != BydVehicleData.UNAVAILABLE, sd.powerLevel),
+                        at.greenchili.surfmate.byd.StoppKnopf.fernRelevant(
+                                at.greenchili.surfmate.byd.KlimaZustand.fernJson(), System.currentTimeMillis()));
+                if (at.greenchili.surfmate.byd.StoppKnopf.WEG_NICHTS.equals(weg)) {
+                    logger.info("Climate: power_off bei schlafendem Auto ohne Fern-Sitzung – nichts gesendet");
+                    response.put("success", false);
+                    response.put("nichtsZuStoppen", true);
+                    response.put("message", "Das Auto schläft, nichts zu stoppen");
+                    HttpResponse.sendJson(out, response.toString());
+                    return;
+                }
+                if (at.greenchili.surfmate.byd.StoppKnopf.WEG_CLOUD.equals(weg)) req.put("remote", true);
+            }
             // 0.1.16 (Koordination 23.10.2026): {"remote": true} = ausdrückliches Fernklima über die BYD-Cloud
             // (OPENAIR/CLOSEAIR), ohne lokale Seite – nur bei frischem „Auto aus“ (CloudPowerGate).
             if (req.optBoolean("remote", false)

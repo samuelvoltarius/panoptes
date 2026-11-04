@@ -83,6 +83,32 @@ final class LoopbackPeer {
         return -1;
     }
 
+    /**
+     * 0.1.38.8: Gehört der Client-Socket irgendeinem tailscaled (Weg 1 und Notzugang laufen beide als shell)?
+     * Fail-closed: ohne auffindbaren Socket gilt die Verbindung als weitergereicht (true).
+     */
+    static boolean gehoertTailscaled(int clientPort, int serverPort) {
+        long inode = -1;
+        for (String table : new String[] {"/proc/net/tcp", "/proc/net/tcp6"}) {
+            inode = findClientInode(readOrEmpty(Paths.get(table)), clientPort, serverPort);
+            if (inode > 0) break;
+        }
+        if (inode <= 0) return true;
+        File[] entries = PROC.toFile().listFiles();
+        if (entries == null) return true;
+        for (File entry : entries) {
+            String name = entry.getName();
+            if (name.isEmpty() || !Character.isDigit(name.charAt(0))) continue;
+            try {
+                int pid = Integer.parseInt(name);
+                if (isTailscaled(pid) && ownsSocket(entry.toPath().resolve("fd"), inode)) return true;
+            } catch (NumberFormatException ignored) {
+                // not a pid directory
+            }
+        }
+        return false;
+    }
+
     /** Wie {@link #findClientInode}, liefert aber die uid-Spalte; -1 ohne passende Zeile. */
     static int findClientUid(String table, int clientPort, int serverPort) {
         String[] lines = table.split("\n");

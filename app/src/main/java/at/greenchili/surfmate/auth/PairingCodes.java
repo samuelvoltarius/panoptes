@@ -28,8 +28,34 @@ public final class PairingCodes {
     /** 0.1.26.1: offener Code stammt aus „weiteres Gerät koppeln“ (Cockpit), nicht vom Besitzer am Display. */
     private static boolean openWeiteres;
 
-    /** Ergebnis von {@link #einloesen}: ungültig, Code des Besitzers bzw. aus „weiteres Gerät koppeln“. */
-    public static final int UNGUELTIG = 0, BESITZER = 1, WEITERES = 2;
+    /**
+     * Ergebnis von {@link #einloesen}: ungültig, Code vom Display/Login ({@code BESITZER}), aus „weiteres Gerät koppeln“
+     * bzw. 0.1.38.8 vom Besitzer-Handy ({@link #HANDY}, Art und Rechte fest im Code, {@link #letzteBindung}).
+     */
+    public static final int UNGUELTIG = 0, BESITZER = 1, WEITERES = 2, HANDY = 3;
+
+    /** 0.1.38.8: Art + Rechte des offenen Handy-Codes (null = kein Handy-Code). */
+    private static String openArt;
+    private static java.util.List<String> openRechte;
+    /** Art + Rechte des zuletzt eingelösten Handy-Codes, nur für den Thread, der ihn eingelöst hat. */
+    private static final ThreadLocal<Object[]> BINDUNG = new ThreadLocal<>();
+
+    /**
+     * 0.1.38.8 Koppeln vom Besitzer-Handy: Code mit fester Art und festen Rechten ({@link #TTL_MS}, einmal, ersetzt einen
+     * offenen Code). Die neue Kopplung bekommt genau diese Art und Rechte, nicht was das einlösende Gerät angibt.
+     */
+    public static synchronized String createGebunden(long nowMs, String art, java.util.List<String> rechte) {
+        String code = create(nowMs, false);
+        openArt = art;
+        openRechte = rechte == null ? java.util.Collections.<String>emptyList()
+                : java.util.Collections.unmodifiableList(new java.util.ArrayList<>(rechte));
+        return code;
+    }
+
+    /** Nach {@link #einloesen} mit Ergebnis {@link #HANDY}: {art, List rechte} des Codes, sonst null. */
+    public static Object[] letzteBindung() {
+        return BINDUNG.get();
+    }
 
     private PairingCodes() {}
 
@@ -46,6 +72,8 @@ public final class PairingCodes {
         openHash = hash(code);
         openUntil = nowMs + TTL_MS;
         openWeiteres = weiteres;
+        openArt = null;
+        openRechte = null;
         return code;
     }
 
@@ -58,6 +86,7 @@ public final class PairingCodes {
 
     /** Wie {@link #redeem}, sagt zusätzlich, woher der Code kam ({@link #BESITZER} | {@link #WEITERES}). */
     public static synchronized int einloesen(String code, long nowMs) {
+        BINDUNG.remove();
         if (openHash == null || code == null) return UNGUELTIG;
         if (nowMs > openUntil) {
             openHash = null;
@@ -67,6 +96,12 @@ public final class PairingCodes {
         boolean ok = MessageDigest.isEqual(openHash, hash(norm));
         if (!ok) return UNGUELTIG;
         openHash = null;   // einmal verwendbar
+        if (openArt != null) {
+            BINDUNG.set(new Object[]{openArt, openRechte});
+            openArt = null;
+            openRechte = null;
+            return HANDY;
+        }
         return openWeiteres ? WEITERES : BESITZER;
     }
 
@@ -74,6 +109,8 @@ public final class PairingCodes {
     static synchronized void reset() {
         openHash = null;
         openUntil = 0L;
+        openArt = null;
+        openRechte = null;
     }
 
     private static byte[] hash(String s) {
