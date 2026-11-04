@@ -587,8 +587,11 @@ public class ChargingApiHandler {
             int isDc = row.isNull("isDc") ? -1 : (row.optBoolean("isDc") ? 1 : 0);
             String betreiber = row.isNull("betreiber") ? "" : row.optString("betreiber", "");
             JSONArray sitz = db().getChargingSessionsV2Range(0, System.currentTimeMillis() + 86_400_000L, 5000, 0);
+            // Land der Ladung: aus der gespeicherten Position, sonst aus der gewählten Säule; unbekannt = kein eigener Preis
+            String land = LadeLand.von(row);
+            if (land == null && gewaehlt != null) land = LadeLand.von(gewaehlt);
             o.put("vorschlaege", betreiber.isEmpty() && gewaehlt == null ? new JSONArray()
-                    : LadePreisVorschlag.vorschlaege(betreiber, isDc, gewaehlt, sitz, id));
+                    : LadePreisVorschlag.vorschlaege(betreiber, land, isDc, gewaehlt, sitz, id));
             o.put("schalter", LadesaeuleDienst.schalterAn(LadesaeuleDienst.config()));
             return o;
         } catch (Exception e) {

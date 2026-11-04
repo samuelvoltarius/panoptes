@@ -908,6 +908,7 @@ public class RecordingModeManager {
         // the design no longer needs a new special-case patch for each newly
         // discovered no-edge path — the ladder + the tick cover them by
         // construction. (Profile only; teardown stays with the existing owners.)
+        parkFreigabePruefen();
         try {
             reconcileCameraProfile();
         } catch (Throwable t) {
@@ -2148,6 +2149,9 @@ public class RecordingModeManager {
 
             int previousGear = currentGear;
             currentGear = gear;
+            if (previousGear == GEAR_P && gear != GEAR_P) {
+                parkWiederOeffnen("Gang aus P");
+            }
 
             // Only DRIVE_MODE responds to gear changes. PROXIMITY_GUARD is now
             // ACC-gated in ALL gears (the low-power ring stays warm parked in P
@@ -2698,10 +2702,132 @@ public class RecordingModeManager {
             org.json.JSONObject bs = UnifiedConfigManager.getBlindSpot();
             boolean enabled = bs != null && (bs.optBoolean("enabled", false)
                     || bs.optBoolean("debugPreview", false));
-            return accIsOn && enabled;
+            // Park-Freigabe: im Stand (P, anwesend, nichts sonst) hält der Totwinkel die Kamera nicht warm,
+            // siehe KameraParkRegel. Fällt eine Bedingung weg, ist die Kamera sofort wieder Pflicht.
+            return accIsOn && enabled && !parkFreigabeAktiv();
         } catch (Throwable t) {
             return false;
         }
+    }
+
+    // ==================== PARK-FREIGABE (Kamera im Stand schließen) ====================
+    // Totwinkel hält die Pano-Kamera in jedem Gang warm. Auf DiLink 3 nimmt die HAL setCameraFps nicht an und
+    // läuft in P mit voller Rate (~1 Kern), obwohl wir alle Bilder verwerfen. Einziger Hebel: Kamera schließen.
+    // Regel und Bedingungen: KameraParkRegel. Opt-in-Schalter kamera.parkFreigeben (Standard AUS).
+    private final KameraParkRegel parkRegel = new KameraParkRegel();
+    private final java.util.concurrent.atomic.AtomicBoolean parkSchliessenLaeuft =
+            new java.util.concurrent.atomic.AtomicBoolean(false);
+
+    private boolean parkSchalterAn() {
+        try {
+            org.json.JSONObject k = UnifiedConfigManager.loadConfig().optJSONObject("kamera");
+            return k != null && k.optBoolean("parkFreigeben", false);
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    private KameraParkRegel.Lage parkLage() {
+        KameraParkRegel.Lage l = new KameraParkRegel.Lage();
+        l.schalterAn = parkSchalterAn();
+        l.zuendungAn = accIsOn;
+        // P nur, wenn der GearMonitor lebt und P meldet: ein unbelegter Vorgabewert darf nie schließen.
+        boolean monitorP = false;
+        try {
+            at.greenchili.surfmate.monitor.GearMonitor gm = at.greenchili.surfmate.monitor.GearMonitor.getInstance();
+            monitorP = gm.isRunning() && gm.getCurrentGear() == GEAR_P;
+        } catch (Throwable ignored) {}
+        l.gangP = currentGear == GEAR_P && monitorP;
+        try {
+            l.dauerhafteKamera = at.greenchili.surfmate.daemon.CameraDaemon.isDilink4ModeActiveStatic()
+                    || at.greenchili.surfmate.camera.dilink5.DiLink5Platform.isEnabled();
+        } catch (Throwable t) {
+            l.dauerhafteKamera = true;   // im Zweifel offen lassen
+        }
+        boolean waechter = false;
+        try { waechter = pipeline.isSurveillanceMode(); } catch (Throwable ignored) {}
+        l.aufnahmeOderWaechter = modeWouldOwnCameraNow(currentMode) || recordingModeOwnsCamera()
+                || pipelineIsRecording() || activatingCameraOwner || waechter;
+        l.streamAktiv = activeStreamFps() > 0;
+        l.kameraAnsichtAktiv = camViewKeepWarmActive();
+        l.totwinkelAnsichtSichtbar = bsViewShown();
+        try {
+            org.json.JSONObject bs = UnifiedConfigManager.getBlindSpot();
+            l.totwinkelKalibrierung = bs != null && bs.optBoolean("debugPreview", false);
+        } catch (Throwable t) {
+            l.totwinkelKalibrierung = true;
+        }
+        return l;
+    }
+
+    /** true = die Kamera darf im Stand geschlossen bleiben (Karenz abgelaufen). */
+    public boolean parkFreigabeAktiv() {
+        return parkRegel.freigeben(parkLage(), android.os.SystemClock.elapsedRealtime());
+    }
+
+    /**
+     * Vom 30-s-Takt: Läuft die Pipeline, obwohl die Park-Freigabe gilt, wird sie geschlossen (wie der NONE-Zweig:
+     * stop + AVC-Keep-alive aus). Im eigenen Thread unter dem activationLock, damit der Takt nie an einer
+     * laufenden Aktivierung hängt; die Bedingungen werden dort noch einmal geprüft.
+     */
+    private void parkFreigabePruefen() {
+        try {
+            if (shuttingDown || !pipeline.isRunning() || !parkFreigabeAktiv()) return;
+            if (!parkSchliessenLaeuft.compareAndSet(false, true)) return;
+            Thread t = new Thread(() -> {
+                try {
+                    synchronized (activationLock) {
+                        if (shuttingDown || !pipeline.isRunning() || !parkFreigabeAktiv()) return;
+                        logger.info("Kamera-Park-Freigabe: P, Zündung an, kein Wächter/Stream/Aufnahme, Totwinkel-Ansicht"
+                                + " versteckt seit " + (KameraParkRegel.KARENZ_MS / 1000) + " s - Pipeline wird geschlossen");
+                        pipeline.stop();
+                        CameraDaemon.stopAvcKeepAlive();
+                    }
+                } catch (Throwable e) {
+                    logger.warn("Kamera-Park-Freigabe: Schließen fehlgeschlagen: " + e.getMessage());
+                } finally {
+                    parkSchliessenLaeuft.set(false);
+                }
+            }, "KameraParkFreigabe");
+            t.setDaemon(true);
+            t.start();
+        } catch (Throwable e) {
+            parkSchliessenLaeuft.set(false);
+            logger.warn("Kamera-Park-Freigabe: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Gang aus P: Karenz verwerfen und die Kamera sofort wieder anfahren (Totwinkel-Selbstarmierung). Der Kaltstart
+     * kann an der HAL scheitern (Frame-Stall, 04.11. 13:41 schon 9,6 s im Warmbetrieb); die eigene Wiederherstellung
+     * der Pipeline bleibt davon unberührt, hier wird zusätzlich bis zu dreimal nachgefasst (sofort, nach 4 s, nach
+     * 10 s), solange noch immer Gang aus P, Zündung an und die Kamera/der Totwinkel nicht oben sind. Der
+     * 30-s-Takt der Selbstheilung bleibt der Rückhalt.
+     */
+    private void parkWiederOeffnen(String grund) {
+        parkRegel.zuruecksetzen();
+        Thread t = new Thread(() -> {
+            final long[] pausenMs = {0L, 4_000L, 6_000L};
+            for (int i = 0; i < pausenMs.length; i++) {
+                try {
+                    if (pausenMs[i] > 0) Thread.sleep(pausenMs[i]);
+                    if (shuttingDown || !accIsOn || currentGear == GEAR_P) return;
+                    if (pipeline.isRunning() && pipeline.isBlindSpotEnabled()) return;
+                    if (!pipeline.isRunning()) {
+                        logger.info("Kamera-Park-Freigabe: " + grund + " - Kamera wird wieder geöffnet (Versuch "
+                                + (i + 1) + "/" + pausenMs.length + ")");
+                    }
+                    at.greenchili.surfmate.server.StreamingApiHandler.resolveBlindSpotLifecycle();
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    return;
+                } catch (Throwable e) {
+                    logger.warn("Kamera-Park-Freigabe: Wiederöffnen: " + e.getMessage());
+                }
+            }
+        }, "KameraParkWiederOeffnen");
+        t.setDaemon(true);
+        t.start();
     }
 
     /**

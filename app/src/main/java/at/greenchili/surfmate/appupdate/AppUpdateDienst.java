@@ -250,7 +250,7 @@ public final class AppUpdateDienst {
                 UpdateQuelle q = quelle();
                 o.put("quelle", q.art);
                 o.put("quelleRepo", q.repo);
-                o.put("modus", automatisch() ? "automatisch" : "melden");
+                o.put("modus", automatisch() ? "automatisch" : korrekturen() ? UpdateRegel.MODUS_KORREKTUREN : "melden");
                 o.put("pruefen", pruefenAn());
                 o.put("mobilfunk", !l.nurWlan);
                 o.put("netz", l.netz);
@@ -292,7 +292,7 @@ public final class AppUpdateDienst {
                 o.put("prozent", prozent == null ? JSONObject.NULL : prozent);
                 long geladen = geladenBytes();
                 o.put("geladenBytes", geladen > 0 ? geladen : JSONObject.NULL);
-                long ab = UpdateRegel.automatischAb(l, automatisch(), pruefenAn(), ausSeit);
+                long ab = UpdateRegel.automatischAb(l, automatischFuer(verfuegbar), pruefenAn(), ausSeit);
                 o.put("automatischGeplant", ab > 0 ? ab : JSONObject.NULL);
                 o.put("vorgemerkt", vorgemerkt());
             } catch (Exception ignored) { }
@@ -444,7 +444,7 @@ public final class AppUpdateDienst {
             UpdateHinweis.Lage l = new UpdateHinweis.Lage();
             l.schalterAn = UpdateRegel.an(env.config("hinweis"));
             l.pruefenAn = pruefenAn();
-            l.automatisch = automatisch();
+            l.automatisch = automatischFuer(verfuegbar);   // 0.1.38.6: Korrektur kommt lautlos, keine Karte
             l.kanal = kanal();
             l.installiert = env.installierterVc();
             l.verfuegbar = verfuegbar;
@@ -498,10 +498,10 @@ public final class AppUpdateDienst {
             boolean frei = nichtWeil(l) == null;
             if (!frei) ausSeit = -1;
             else if (ausSeit < 0) ausSeit = now;
-            alsVorgemerkt = vorgemerkt() && !automatisch();
+            alsVorgemerkt = vorgemerkt() && !automatischFuer(verfuegbar);
             long ab = alsVorgemerkt
                     ? UpdateHinweis.vorgemerktAb(l, hinweis, kanal(), vorgemerktFrei(), now, ausSeit)
-                    : UpdateRegel.automatischAb(l, automatisch(), pruefenAn(), ausSeit);
+                    : UpdateRegel.automatischAb(l, automatischFuer(verfuegbar), pruefenAn(), ausSeit);
             if (ab < 0 || now < ab || installiertGerade) return;
             installiertGerade = true;
             laufVorgemerkt = alsVorgemerkt;
@@ -612,7 +612,9 @@ public final class AppUpdateDienst {
             }
             speichern();
         }
-        if (melden) {
+        if (melden && lautlos(neu)) {
+            logger.info("Korrektur " + neu.versionName + " kommt lautlos, sobald das Auto aus ist");
+        } else if (melden) {
             try {
                 env.melde(neu, g);
             } catch (Throwable t) {
@@ -1204,6 +1206,31 @@ public final class AppUpdateDienst {
         return UpdateRegel.automatisch(env.config("modus"));
     }
 
+    /**
+     * 0.1.38.6 (04.11.: „so viel wie möglich automatisch“): von selbst installieren? Modus „automatisch“ für
+     * alles, {@code korrekturen} nur Korrekturen ({@link UpdateHinweis#art} = fix), {@code melden} und kein Wert (Bestand)
+     * nie („Nur melden“). Kanal, Rückfall-Sperre, „Auto aus ≥ 10 min“ und {@code update.pruefen} prüft weiter
+     * {@link UpdateRegel#automatischAb}.
+     */
+    private boolean automatischFuer(Freigabe f) {
+        if (automatisch()) return true;
+        return korrekturen() && f != null
+                && UpdateHinweis.ART_FIX.equals(UpdateHinweis.art(f, env.installierteVersion()));
+    }
+
+    private boolean korrekturen() {
+        return UpdateRegel.nurKorrekturen(env.config("modus"));
+    }
+
+    /**
+     * 0.1.38.6: Korrektur, die von selbst kommt: keine Meldung „neue Version“ vorher (lautlos), danach meldet
+     * {@link UpdateMeldung} „installiert und läuft“. Im Modus „automatisch“ wird wie bisher vorher gemeldet.
+     */
+    private boolean lautlos(Freigabe f) {
+        return f != null && !automatisch() && automatischFuer(f) && pruefenAn() && "stabil".equals(f.kanal)
+                && f.versionCode != rueckfallVc() && env.installierterVc() >= f.minVersion;   // sonst käme sie nie
+    }
+
     /** {@code update.pruefen}: nicht gesetzt (Bestand) = an; die Ersteinrichtung fragt ohne Vorauswahl. */
     private boolean pruefenAn() {
         return UpdateRegel.an(env.config("pruefen")) && !env.updatesUnbeantwortet();
@@ -1481,7 +1508,9 @@ public final class AppUpdateDienst {
         public String config(String key) {
             try {
                 JSONObject u = at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig().optJSONObject("update");
-                return u == null ? null : u.optString(key, null);
+                String v = u == null ? null : u.optString(key, null);
+                // 0.1.38.6: Klartext bleibt maßgeblich (Rückfall-Updater 0.1.38.5); decrypt() reicht ihn durch, liest ENC:
+                return "token".equals(key) ? at.greenchili.surfmate.byd.cloud.crypto.CredentialCipher.decrypt(v) : v;
             } catch (Throwable t) {
                 return null;
             }

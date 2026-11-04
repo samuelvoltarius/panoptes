@@ -2,6 +2,7 @@ package at.greenchili.surfmate.byd.cloud;
 
 import at.greenchili.surfmate.byd.cloud.crypto.CredentialCipher;
 import at.greenchili.surfmate.byd.cloud.crypto.CredentialUpgrade;
+import at.greenchili.surfmate.byd.cloud.crypto.ZugangsMigration;
 import at.greenchili.surfmate.config.UnifiedConfigManager;
 import at.greenchili.surfmate.logging.DaemonLogger;
 
@@ -12,6 +13,9 @@ import org.json.JSONObject;
  * Reads credentials from the bydCloud section of UnifiedConfigManager.
  */
 public final class BydCloudConfig {
+
+    /** Felder, die wie ein Passwort wirken (0.1.38.6: Klartext + verschlüsselte Schattenkopie {@code enc_*}). */
+    static final String[] SCHLUESSEL_FELDER = {"loginKey", "signPassword", "commandPwd"};
 
     private static final DaemonLogger logger = DaemonLogger.getInstance("BydCloudConfig");
 
@@ -118,13 +122,24 @@ public final class BydCloudConfig {
             // bydCloud keys (or the password itself) isn't resurrected.
             CredentialUpgrade.reEncryptKeyIfLegacy("bydCloud", "rawPassword");
         }
+        // 0.1.38.6: loginKey/signPassword/commandPwd wirken wie das Passwort selbst (commandPwd = md5 der PIN). Sie
+        // bleiben für den Rückfall auf 0.1.38.5 im Klartext; die verschlüsselte Schattenkopie enc_* gleicht der
+        // Daemon-Start ab (ZugangsMigration.bestandVerschluesseln), neue Werte schreibt saveCredentials mit Schatten.
+        return ausAbschnitt(bydCloud, rawPassword, CredentialCipher::decrypt);
+    }
 
+    /**
+     * Rein (ohne Config-Zugriff, ohne Migration): Konfiguration aus dem Abschnitt {@code bydCloud}. Felder ohne
+     * {@code ENC:} sind alter Klartext und gelten unverändert weiter (Rückwärtssicherheit 0.1.38.6).
+     */
+    static BydCloudConfig ausAbschnitt(JSONObject bydCloud, String rawPassword,
+                                       java.util.function.UnaryOperator<String> entschluessle) {
         return new BydCloudConfig(
                 bydCloud.optBoolean("enabled", false),
                 bydCloud.optString("username", ""),
-                bydCloud.optString("loginKey", ""),
-                bydCloud.optString("signPassword", ""),
-                bydCloud.optString("commandPwd", ""),
+                entschluessle.apply(bydCloud.optString("loginKey", "")),
+                entschluessle.apply(bydCloud.optString("signPassword", "")),
+                entschluessle.apply(bydCloud.optString("commandPwd", "")),
                 rawPassword,
                 bydCloud.optString("vin", ""),
                 bydCloud.optString("countryCode", BydCloudRegionCatalog.DEFAULT_COUNTRY_CODE),
@@ -213,9 +228,13 @@ public final class BydCloudConfig {
         try {
             bydCloud.put("enabled", true);
             bydCloud.put("username", username);
-            bydCloud.put("loginKey", loginKey);
-            bydCloud.put("signPassword", signPassword);
-            bydCloud.put("commandPwd", commandPwd);
+            String[] klar = {loginKey, signPassword, commandPwd};
+            for (int i = 0; i < SCHLUESSEL_FELDER.length; i++) {
+                bydCloud.put(SCHLUESSEL_FELDER[i], klar[i]);   // Klartext bleibt (Rückfall 0.1.38.5)
+                String schatten = ZugangsMigration.schatten(klar[i], "");
+                bydCloud.put(ZugangsMigration.schattenSchluessel(SCHLUESSEL_FELDER[i]),
+                        schatten == null ? "" : schatten);
+            }
             String encPw = CredentialCipher.encrypt(rawPassword);
             // Never persist a non-empty password in cleartext (encrypt() is
             // fail-open on a JCE error). An empty password legitimately stays
@@ -262,6 +281,7 @@ public final class BydCloudConfig {
             bydCloud.put("commandPwd", "");
             bydCloud.put("rawPassword", "");
             bydCloud.put("vin", "");
+            for (String k : SCHLUESSEL_FELDER) bydCloud.put(ZugangsMigration.schattenSchluessel(k), "");
         } catch (Exception ignored) {}
         UnifiedConfigManager.updateSection("bydCloud", bydCloud);
     }

@@ -160,4 +160,26 @@
     <string name="im_vollbild_oeffnen">Apri a schermo intero</string>
     <string name="neben_jetzt">Apri accanto al launcher</string>
     <string name="neben_kurz_nein">non possibile per questa app</string>
+    <!-- 0.1.38.6 Komfort -->
+    <string name="komfort_oeffnen">Comfort: sedili, volante, sbrinamento</string>
+    <string name="komfort_titel">Comfort</string>
+    <string name="komfort_an">Acceso</string>
+    <string name="komfort_aus">Spento</string>
+    <string name="komfort_auto">Modo auto</string>
+    <string name="komfort_entfrosten_vorn">Sbrinamento anteriore</string>
+    <string name="komfort_entfrosten_hinten">Sbrinamento posteriore</string>
+    <string name="komfort_nur_geblaese">Solo ventola</string>
+    <string name="komfort_sitz_fahrer">Sedile riscaldato guidatore</string>
+    <string name="komfort_sitz_beifahrer">Sedile riscaldato passeggero</string>
+    <string name="komfort_lueftung_fahrer">Sedile ventilato guidatore</string>
+    <string name="komfort_lueftung_beifahrer">Sedile ventilato passeggero</string>
+    <string name="komfort_lenkrad">Volante riscaldato</string>
+    <string name="komfort_umluft">Presa d\'aria</string>
+    <string name="komfort_stufe_1">Livello 1</string>
+    <string name="komfort_stufe_2">Livello 2</string>
+    <string name="komfort_umluft_ein">Ricircolo</string>
+    <string name="komfort_frischluft">Aria fresca</string>
+    <string name="komfort_neu">%1$s: %2$s</string>
+    <string name="komfort_nichts_lesbar">Ancora nulla di leggibile. Accendi l\'auto; i comandi senza lettura sono qui sotto.</string>
+    <string name="klima_temp_unbekannt">La regolazione della temperatura non è ancora confermata per questo modello. Ventola e acceso/spento funzionano.</string>
 </resources>

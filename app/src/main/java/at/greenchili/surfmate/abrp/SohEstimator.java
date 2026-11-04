@@ -176,6 +176,8 @@ public class SohEstimator {
     // to 100, not discarded, so a slightly-high reading still yields a usable
     // (healthy) estimate instead of none.
     private static final double MAX_SOH = 100.0;
+    /** Roh-SOH bis hierher gilt als Rauschen und wird still auf {@link #MAX_SOH} geklemmt (kein Warn-Zähler). */
+    static final double SATURATION_TOLERANCE_PERCENT = 103.0;
     private static final double MIN_SOH = 60.0;
 
     private double currentSoh = -1;
@@ -1271,6 +1273,11 @@ public class SohEstimator {
      * Compute live SOH from one tick of BMS data WITHOUT side effects.
      * Used by both updateFromEnergy() and any read-only consumer.
      */
+    /** Test: wie viele Roh-Werte in Folge außerhalb der Toleranz lagen. */
+    int saturationStreakForTest() {
+        return saturationStreak;
+    }
+
     public double computeLiveSoh(double remainKwh, double socPercent, double highCellVoltage) {
         if (nominalCapacityKwh <= 0) return -1;
         if (socPercent <= 0 || socPercent > 100) return -1;
@@ -1279,7 +1286,10 @@ public class SohEstimator {
         double absSoc = scaleDisplaySoc(socPercent, scale);
         double impliedTotalCap = remainKwh / (absSoc / 100.0);
         double rawSoh = (impliedTotalCap / nominalCapacityKwh) * 100.0;
-        boolean saturated = (rawSoh < MIN_SOH || rawSoh > MAX_SOH);
+        // Messrauschen (SOC in 1-%-Stufen, Rest-kWh gerundet) lässt den Roh-Wert bei vollem Akku knapp über 100 %
+        // liegen (Surf, 43,2 kWh Herstellerwert: raw 100,1 %). Das ist kein falscher Nennwert: bis
+        // SATURATION_TOLERANCE_PERCENT still auf 100 klemmen, Warnung nur bei deutlich darüber.
+        boolean saturated = (rawSoh < MIN_SOH || rawSoh > SATURATION_TOLERANCE_PERCENT);
         if (saturated) {
             saturationStreak++;
             if (saturationStreak == 1 || saturationStreak % SATURATION_WARN_PERIOD == 0) {
@@ -1288,7 +1298,8 @@ public class SohEstimator {
                     + "%, nominal=" + String.format("%.1f", nominalCapacityKwh) + " kWh"
                     + ", source=" + nominalSource + ", streak=" + saturationStreak
                     + (rawSoh > MAX_SOH
-                        ? ") — BMS reads above nominal (impossible SOH>100%); nominal may be set too low"
+                        ? ") — BMS reads clearly above nominal (impossible SOH>100%); check the capacity (catalog"
+                            + " variant) — a user value is never changed automatically"
                         : ") — likely wrong nominal capacity selected"));
             }
         } else {

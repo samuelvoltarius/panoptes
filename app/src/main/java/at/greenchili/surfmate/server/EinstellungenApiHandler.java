@@ -504,6 +504,11 @@ public final class EinstellungenApiHandler {
             }
         } catch (Throwable ignored) {
         }
+        try {
+            k.kameraDauerhaft = at.greenchili.surfmate.daemon.CameraDaemon.isDilink4ModeActiveStatic()
+                    || at.greenchili.surfmate.camera.dilink5.DiLink5Platform.isEnabled();
+        } catch (Throwable ignored) {
+        }
         return k;
     }
 

@@ -23,6 +23,7 @@
     "kamera_recht_fehlt": "Kamera-Recht fehlt – in Panoptes unter Gekoppelte Geräte einschalten.",
     "standbild_recht_fehlt": "Standbild-Recht fehlt – in Panoptes unter Gekoppelte Geräte einschalten.",
     "launcher_recht_fehlt": "Launcher-Recht fehlt – in Panoptes unter Gekoppelte Geräte einschalten.",
+    "route_recht_fehlt": "Route-Recht fehlt – in Panoptes unter Gekoppelte Geräte einschalten.",
     "web_link_expired": "Der Link ist abgelaufen. Bitte in der App noch einmal öffnen.",
     "invalid_request_with_detail": "Die Anfrage passt nicht: {0}",
     "bydcloud_not_configured": "BYD-Konto ist nicht eingerichtet",
@@ -2077,9 +2078,10 @@
       },
       "modus": {
         "title": "Updates installieren",
-        "help": "„Nur melden“ zeigt neue Versionen an, du installierst selbst. „Automatisch“ installiert, wenn das Auto mindestens 10 Minuten aus ist. Nie während der Fahrt; geht etwas schief, kommt die vorige Version nach spätestens 30 Minuten von selbst zurück.",
+        "help": "„Nur melden“: Panoptes sagt Bescheid, geladen und installiert wird erst, wenn du tippst. „Korrekturen automatisch“: kleine Korrekturen kommen von selbst, wenn das Auto mindestens 10 Minuten aus ist, danach sagt Panoptes Bescheid; neue Funktionen meldet es, du entscheidest. „Alles automatisch“: auch neue Funktionen kommen von selbst. Nie während der Fahrt; geht etwas schief, kommt die vorige Version nach spätestens 30 Minuten von selbst zurück.",
         "melden": "Nur melden",
-        "automatisch": "Automatisch"
+        "korrekturen": "Korrekturen automatisch, Neues melden",
+        "automatisch": "Alles automatisch"
       },
       "pruefen": {
         "title": "Nach Updates suchen",
@@ -2308,6 +2310,10 @@
       "fpsBewegung": {
         "title": "Kamera im Stand bei Bewegung",
         "help": "Bilder pro Sekunde, sobald sich etwas bewegt oder aufgenommen wird. Mehr Bilder = flüssigere Aufnahmen, aber mehr Strom. 10 oder 15 empfohlen; unter 5 werden schnelle Bewegungen in der Aufnahme ruckelig. Leer = wie bisher (meist 15)."
+      },
+      "parkFreigeben": {
+        "title": "Kamera im Stand ausruhen",
+        "help": "Spart Leistung, wenn das Auto in P steht und nichts aufnimmt. Nach 2 Minuten wird die Kamera ausgeschaltet. Beim Losfahren geht sie sofort wieder an. Der Tote-Winkel-Blick braucht dann kurz, etwa 5 Sekunden. Aufnahme, Wächter und Live-Bild bleiben unberührt. Wirkt nur bei Autos, deren Kamera im Stand sonst weiterläuft."
       },
       "fps": {
         "2": "2 Bilder/s – sparsamste Stufe",

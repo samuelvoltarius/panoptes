@@ -95,8 +95,9 @@ class LauncherStufe4Test {
         assertTrue(main.contains("klimaSenden(if (summary?.klima?.an == true) \"aus\" else \"an\")"))
         // 0.1.38.5: Aufrufer = Dock (Knöpfe, an/aus) und Klima-Feld (−/+ je Reihe, an/aus); nur Aktionen der festen Liste
         val aufrufe = Regex("klimaSenden\\(([^)]*)\\)").findAll(main).map { it.groupValues[1] }.toList()
+        // 0.1.38.6: dazu das Komfort-Feld (an/aus-Paar und Kachel); deren feste Namen prüft LauncherKomfortTest
         assertEquals(listOf("aktion(", "if (summary?.klima?.an == true", "aktion: String", "runter", "hoch",
-            "if (summary?.klima?.an == true"), aufrufe)
+            "if (summary?.klima?.an == true", "an", "aus", "aktion"), aufrufe)
     }
 
     @Test

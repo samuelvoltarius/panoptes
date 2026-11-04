@@ -48,6 +48,7 @@ public class UpdateHinweisTest {
     final List<String> notizen = new ArrayList<>();
     final List<String> weg = new ArrayList<>();
     final List<String> gestartet = new ArrayList<>();
+    final List<String> gemeldet = new ArrayList<>();
     File basis;
     File dd;
     AppUpdateDienst d;
@@ -96,6 +97,7 @@ public class UpdateHinweisTest {
                 return true;
             }
             @Override public void nimmHinweisWeg(String griff) { weg.add(griff); }
+            @Override public void melde(Freigabe f, long g) { gemeldet.add(f.versionName); }
         });
     }
 
@@ -875,6 +877,174 @@ public class UpdateHinweisTest {
         assertTrue(bot.contains("cmd.optString(\"neu\", \"\")"));
         String js = lies("src/main/assets/web/shared/app-updates.js");
         assertTrue(js.contains("v.artText"));
+    }
+
+    // ------------------------------------------------------------- 0.1.38.6 Korrekturen von selbst, lautlos
+
+    /** Installiert ist 0.1.7 (vC 8); {@code name} mit vierter Stelle = Korrektur laut Schätzung. */
+    void freigabe(String name, String kanal, String art) {
+        String tag = "v" + name + ("test".equals(kanal) ? "-test.1" : "");
+        String j = AppUpdateTest.vj(9, name, kanal, tag, AppUpdateTest.SHA0);
+        if (art != null) j = j.substring(0, j.length() - 1) + ",\"art\":\"" + art + "\"}";
+        if ("test".equals(kanal)) {
+            texte.put(LATEST, AppUpdateTest.vj(8, "0.1.7", "stabil", "v0.1.7", AppUpdateTest.SHA0));
+            texte.put(UpdateQuelle.aus(null, null, null).releasesListe(), "[{\"tag_name\":\"" + tag + "\",\"draft\":false}]");
+            texte.put(UpdateQuelle.aus(null, null, null).download(tag, "version.json"), j);
+        } else {
+            texte.put(LATEST, j);
+        }
+        d.pruefen();
+    }
+
+    /** Auto aus, ruhig, dann so lange gewartet, wie „automatisch“ braucht. */
+    void ausUndWarten() {
+        autoAus = new Object[]{true, null};
+        accAus = true;
+        d.takt();
+        jetzt += UpdateRegel.AUTOMATISCH_NACH_MS + 1000;
+        d.takt();
+    }
+
+    @Test
+    public void korrekturKommtVonSelbstUndLautlos() throws Exception {
+        cfg.put("modus", UpdateRegel.MODUS_KORREKTUREN);
+        freigabe("0.1.7.1", "stabil", null);                       // Schätzung: Korrektur
+        assertEquals("keine Meldung „neue Version“ vorher", 0, gemeldet.size());
+        stehen(UpdateHinweis.RUHE_MS + 6000);                       // Zündung an, in P, ruhig
+        assertEquals("keine Karte", 0, gezeigt.size());
+        jetzt += 1000;
+        d.takt();
+        assertEquals("Zündung an: nie von selbst", 0, apkAbrufe());
+        ausUndWarten();
+        assertEquals("Auto ≥ 10 min aus: installiert", 1, apkAbrufe());
+    }
+
+    @Test
+    public void korrekturMitArtFeldUndZehnMinuten() throws Exception {
+        cfg.put("modus", UpdateRegel.MODUS_KORREKTUREN);
+        freigabe("0.1.8", "stabil", "fix");                         // art schlägt die Schätzung
+        assertEquals(0, gemeldet.size());
+        autoAus = new Object[]{true, null};
+        accAus = true;
+        d.takt();
+        jetzt += UpdateRegel.AUTOMATISCH_NACH_MS - 60_000;
+        d.takt();
+        assertEquals("vor 10 min nicht", 0, apkAbrufe());
+        jetzt += 2 * 60_000;
+        d.takt();
+        assertEquals(1, apkAbrufe());
+    }
+
+    @Test
+    public void neueFunktionMeldetWieBisher() throws Exception {
+        cfg.put("modus", UpdateRegel.MODUS_KORREKTUREN);
+        freigabe("0.1.8", "stabil", null);                          // Schätzung: neue Funktion
+        assertEquals(java.util.Arrays.asList("0.1.8"), gemeldet);
+        stehen(UpdateHinweis.RUHE_MS + 6000);
+        assertEquals("Karte kommt", 1, gezeigt.size());
+        ausUndWarten();
+        jetzt += 3 * UpdateRegel.AUTOMATISCH_NACH_MS;
+        d.takt();
+        assertEquals("nie von selbst", 0, apkAbrufe());
+    }
+
+    @Test
+    public void beidesMeldetWieBisher() throws Exception {
+        cfg.put("modus", UpdateRegel.MODUS_KORREKTUREN);
+        freigabe("0.1.7.1", "stabil", "beides");
+        assertEquals(1, gemeldet.size());
+        ausUndWarten();
+        assertEquals(0, apkAbrufe());
+    }
+
+    @Test
+    public void allesAutomatischGiltWeiterFuerNeueFunktionen() throws Exception {
+        cfg.put("modus", "automatisch");
+        freigabe("0.1.8", "stabil", null);
+        assertEquals("im Modus „automatisch“ wie bisher vorher gemeldet", 1, gemeldet.size());
+        ausUndWarten();
+        assertEquals(1, apkAbrufe());
+    }
+
+    @Test
+    public void testkanalNieVonSelbst() throws Exception {
+        cfg.put("modus", UpdateRegel.MODUS_KORREKTUREN);
+        cfg.put("kanal", "test");
+        freigabe("0.1.7.1", "test", "fix");
+        assertEquals("Testkanal: gemeldet", 1, gemeldet.size());
+        ausUndWarten();
+        jetzt += 3 * UpdateRegel.AUTOMATISCH_NACH_MS;
+        d.takt();
+        assertEquals(0, apkAbrufe());
+        cfg.put("modus", "automatisch");
+        d.takt();
+        jetzt += 3 * UpdateRegel.AUTOMATISCH_NACH_MS;
+        d.takt();
+        assertEquals("auch nicht im Modus „automatisch“", 0, apkAbrufe());
+    }
+
+    @Test
+    public void zurueckgerollteKorrekturNieErneut() throws Exception {
+        freigabe("0.1.7.1", "stabil", "fix");
+        UpdateRegel.Lage l = d.lage();
+        l.rueckfallVc = 9;
+        assertEquals(-1, UpdateRegel.automatischAb(l, true, true, 1000));
+    }
+
+    @Test
+    public void pruefenAusHeisstNieVonSelbst() throws Exception {
+        cfg.put("modus", UpdateRegel.MODUS_KORREKTUREN);
+        cfg.put("pruefen", "false");
+        freigabe("0.1.7.1", "stabil", "fix");
+        ausUndWarten();
+        assertEquals(0, apkAbrufe());
+    }
+
+    // ------------------------------------------------------------- 0.1.38.6 „Nur melden“ bleibt (04.11.)
+
+    /** „Meldung + herunterladen, wenn drauf gedrückt wird“: auch eine Korrektur kommt nie von selbst. */
+    void nurMeldenPruefen() throws Exception {
+        freigabe("0.1.7.1", "stabil", "fix");
+        assertEquals("gemeldet", java.util.Arrays.asList("0.1.7.1"), gemeldet);
+        stehen(UpdateHinweis.RUHE_MS + 6000);
+        assertEquals("Karte kommt", 1, gezeigt.size());
+        ausUndWarten();
+        jetzt += 3 * UpdateRegel.AUTOMATISCH_NACH_MS;
+        d.takt();
+        assertEquals("nichts geladen ohne Tipp", 0, apkAbrufe());
+        assertTrue(d.status("de").isNull("automatischGeplant"));
+        assertEquals("melden", d.status("de").getString("modus"));
+        // erst der Tipp lädt (Auto ist aus, also sofort)
+        assertTrue(d.hinweisInstallieren(fern(null), "0.1.7.1", "de").getBoolean("ok"));
+        assertEquals(1, apkAbrufeNachStart());
+    }
+
+    @Test
+    public void nurMeldenAusdruecklich() throws Exception {
+        cfg.put("modus", "melden");
+        nurMeldenPruefen();
+    }
+
+    @Test
+    public void bestandOhneWertBleibtNurMelden() throws Exception {
+        assertNull(cfg.get("modus"));
+        nurMeldenPruefen();
+    }
+
+    @Test
+    public void dreiWahlenImKatalog() throws Exception {
+        Feld f = Katalog.finde(Katalog.felder(new Katalog.Kontext()), "update.modus");
+        java.util.List<String> werte = new ArrayList<>();
+        for (Feld.Option o : f.optionen) werte.add(o.wert);
+        assertEquals(java.util.Arrays.asList("melden", "korrekturen", "automatisch"), werte);
+        assertEquals("Bestand ohne Wert = Nur melden", "melden", f.standard);
+        for (String sp : new String[]{"de", "en", "fr", "it", "nl"}) {
+            JSONObject m = new JSONObject(lies("src/main/assets/server-i18n/" + sp + ".json"))
+                    .getJSONObject("settings").getJSONObject("update").getJSONObject("modus");
+            assertTrue(sp, m.has("melden") && m.has("korrekturen") && m.has("automatisch"));
+        }
+        assertEquals("Nur melden", new JSONObject(lies("src/main/assets/server-i18n/de.json"))
+                .getJSONObject("settings").getJSONObject("update").getJSONObject("modus").getString("melden"));
     }
 
     static String lies(String pfad) throws Exception {

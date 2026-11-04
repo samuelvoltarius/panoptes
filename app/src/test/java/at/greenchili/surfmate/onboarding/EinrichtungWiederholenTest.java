@@ -103,7 +103,7 @@ public class EinrichtungWiederholenTest {
         JSONObject s = sicht(root);
         assertFalse(s.getBoolean("wiederholung"));
         assertEquals("nicht durchgegangene Schritte zurück wie vorher", "erledigt", eintrag(s, "karte").getString("status"));
-        assertTrue(eintrag(s, "waechter").getBoolean("pflicht"));
+        assertFalse("0.1.38.5: Wächter ist kein Pflichtschritt mehr", eintrag(s, "waechter").getBoolean("pflicht"));
         assertEquals("fertig", s.getString("aktuell"));
     }
 
@@ -123,10 +123,11 @@ public class EinrichtungWiederholenTest {
 
     @Test
     public void pflichtOhneAntwortBleibtPflicht() throws Exception {
+        // 0.1.38.5: Pflicht ist nur noch sprache/haftung – eine unbeantwortete Haftung bleibt auch beim Wiederholen Pflicht.
         JSONObject root = new JSONObject();
         root = anwenden(root, EinrichtungApiHandler.wiederholen(root, null));
-        assertEquals(422, EinrichtungApiHandler.spaeter(root, "waechter").code);
-        assertTrue(eintrag(sicht(root), "waechter").getBoolean("pflicht"));
+        assertEquals(422, EinrichtungApiHandler.spaeter(root, "haftung").code);
+        assertTrue(eintrag(sicht(root), "haftung").getBoolean("pflicht"));
     }
 
     @Test

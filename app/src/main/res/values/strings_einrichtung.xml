@@ -145,7 +145,7 @@
     <string name="einr_handy_datenschutz">Privacy: byd.serveone.at/en/datenschutz</string>
     <string name="einr_handy_fehler">That didn\'t work. Maybe no signal. Please try again later.</string>
     <string name="einr_freigaben_titel">Allow Panoptes</string>
-    <string name="einr_freigaben_text">Panoptes needs these three things to run by itself.</string>
+    <string name="einr_freigaben_text">This is what Panoptes needs to run by itself.</string>
     <string name="einr_freigabe_autostart">Starts by itself</string>
     <string name="einr_freigabe_anzeige">Hints over other apps</string>
     <string name="einr_freigabe_rechte">Camera, location, storage</string>

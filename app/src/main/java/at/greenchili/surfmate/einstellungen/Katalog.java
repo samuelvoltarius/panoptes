@@ -25,6 +25,8 @@ public final class Katalog {
         public boolean hud;
         /** Nachweislich höchste HAL-Rate, wenn der HAL die Rate nicht setzen kann (0 = unbekannt/setzbar). */
         public int kameraHalMaxFps;
+        /** DiLink 4/5: Kamera bleibt dort ohnehin dauerhaft offen, der Park-Schalter wäre wirkungslos. */
+        public boolean kameraDauerhaft;
     }
 
     public static final class Gruppe {
@@ -424,6 +426,13 @@ public final class Katalog {
         parkLesen.gruppe = "energie"; parkLesen.reihenfolge = 40; parkLesen.standard = 90; parkLesen.min = 90.0; parkLesen.max = 180.0;
         parkLesen.schritt = 10.0; parkLesen.einheit = "s"; parkLesen.erweitert = true;
         l.add(parkLesen);
+        // Kamera im Stand ausruhen (Opt-in, Standard aus; Totwinkel = Sicherheit). Nur DiLink 3: auf DiLink 4/5
+        // hält der Code die Kamera ohnehin dauerhaft offen, dort ausgeblendet (wirkungslos).
+        Feld parkFrei = new Feld("kamera.parkFreigeben", Feld.Typ.BOOL);
+        parkFrei.gruppe = "waechter"; parkFrei.abschnitt = "aufnahme"; parkFrei.reihenfolge = r += 10;
+        parkFrei.standard = false;
+        parkFrei.verborgen = k.kameraDauerhaft;
+        l.add(parkFrei);
         // 0.1.36 Log-Archiv (03.11.: Logs dürfen auch bei Updates nicht überschrieben werden): je Art höchstens
         // so viele Tage und MB, älteste zuerst; bei wenig freiem Platz enger (logging.LogArchiv).
         Feld logTage = new Feld("logs.tage", Feld.Typ.INT);
@@ -438,7 +447,8 @@ public final class Katalog {
         logMb.max = (double) at.greenchili.surfmate.logging.LogArchiv.MAX_MB;
         logMb.schritt = 5.0; logMb.einheit = "MB"; logMb.erweitert = true;
         l.add(logMb);
-        // In-App-Updater (NEUBAU2 §1): Kanal stabil/test, Modus melden/automatisch (Standard melden)
+        // In-App-Updater (NEUBAU2 §1): Kanal stabil/test, Modus melden/korrekturen/automatisch (Standard melden =
+        // Bestand ohne Wert; neue Einrichtungen bekommen ab 0.1.38.6 „korrekturen“, siehe EinrichtungApiHandler)
         Feld kanal = new Feld("update.kanal", Feld.Typ.AUSWAHL);
         kanal.gruppe = "update"; kanal.reihenfolge = 10; kanal.standard = "stabil";
         kanal.optionen.add(new Feld.Option("stabil", "settings.update.kanal.stabil"));
@@ -447,6 +457,7 @@ public final class Katalog {
         Feld modus = new Feld("update.modus", Feld.Typ.AUSWAHL);
         modus.gruppe = "update"; modus.reihenfolge = 20; modus.standard = "melden";
         modus.optionen.add(new Feld.Option("melden", "settings.update.modus.melden"));
+        modus.optionen.add(new Feld.Option("korrekturen", "settings.update.modus.korrekturen"));
         modus.optionen.add(new Feld.Option("automatisch", "settings.update.modus.automatisch"));
         l.add(modus);
         campingFelder(l, k);

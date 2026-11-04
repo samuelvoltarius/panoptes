@@ -160,4 +160,26 @@
     <string name="im_vollbild_oeffnen">Op volledig scherm openen</string>
     <string name="neben_jetzt">Naast de launcher openen</string>
     <string name="neben_kurz_nein">kan niet bij deze app</string>
+    <!-- 0.1.38.6 Komfort -->
+    <string name="komfort_oeffnen">Comfort: stoelen, stuur, ontdooien</string>
+    <string name="komfort_titel">Comfort</string>
+    <string name="komfort_an">Aan</string>
+    <string name="komfort_aus">Uit</string>
+    <string name="komfort_auto">Automodus</string>
+    <string name="komfort_entfrosten_vorn">Voorruit ontdooien</string>
+    <string name="komfort_entfrosten_hinten">Achterruit ontdooien</string>
+    <string name="komfort_nur_geblaese">Alleen ventilator</string>
+    <string name="komfort_sitz_fahrer">Stoelverwarming bestuurder</string>
+    <string name="komfort_sitz_beifahrer">Stoelverwarming passagier</string>
+    <string name="komfort_lueftung_fahrer">Stoelventilatie bestuurder</string>
+    <string name="komfort_lueftung_beifahrer">Stoelventilatie passagier</string>
+    <string name="komfort_lenkrad">Stuurverwarming</string>
+    <string name="komfort_umluft">Luchttoevoer</string>
+    <string name="komfort_stufe_1">Stand 1</string>
+    <string name="komfort_stufe_2">Stand 2</string>
+    <string name="komfort_umluft_ein">Recirculatie</string>
+    <string name="komfort_frischluft">Verse lucht</string>
+    <string name="komfort_neu">%1$s: %2$s</string>
+    <string name="komfort_nichts_lesbar">Nog niets leesbaar. Zet de auto aan; functies zonder uitlezing staan hieronder.</string>
+    <string name="klima_temp_unbekannt">Temperatuurbediening is voor dit automodel nog niet bevestigd. Ventilator en aan/uit werken wel.</string>
 </resources>

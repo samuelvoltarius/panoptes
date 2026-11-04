@@ -371,6 +371,7 @@ class MainActivity : AppCompatActivity() {
             background = GradientDrawable().apply { cornerRadius = ui.dpf(16f); setColor(ui.p.act); setStroke(ui.dp(1), ui.p.line) }
             contentDescription = getString(R.string.klima_hinweis)
         }
+        val tempKnoepfe = mutableListOf<View>()
         fun knopf(res: Int, beschreibung: Int, aktion: () -> String) = FrameLayout(this).apply {
             addView(ui.icon(res, ui.p.onSurface, 24), FrameLayout.LayoutParams(ui.dp(24), ui.dp(24), Gravity.CENTER))
             contentDescription = getString(beschreibung); isClickable = true; foreground = ui.welle()
@@ -385,9 +386,9 @@ class MainActivity : AppCompatActivity() {
         val soll = ui.zahl("—", 21f).apply { minWidth = ui.dp(52); gravity = Gravity.CENTER; maxLines = 1 }
         val stufe = ui.zahl("—", 21f).apply { minWidth = ui.dp(20); gravity = Gravity.CENTER }
         val power = ui.icon(R.drawable.ic_pn_power, ui.p.onSurfaceVariant, 26)
-        z.addView(knopf(R.drawable.ic_pn_minus, R.string.klima_temp_runter) { "temp_runter" }, ui.lp(ui.dp(DOCK_KNOPF), -1))
+        z.addView(knopf(R.drawable.ic_pn_minus, R.string.klima_temp_runter) { "temp_runter" }.also { tempKnoepfe += it }, ui.lp(ui.dp(DOCK_KNOPF), -1))
         z.addView(wert(R.drawable.ic_pn_thermo, soll), ui.lp(h = -1))
-        z.addView(knopf(R.drawable.ic_pn_plus, R.string.klima_temp_hoch) { "temp_hoch" }, ui.lp(ui.dp(DOCK_KNOPF), -1, rechts = 6))
+        z.addView(knopf(R.drawable.ic_pn_plus, R.string.klima_temp_hoch) { "temp_hoch" }.also { tempKnoepfe += it }, ui.lp(ui.dp(DOCK_KNOPF), -1, rechts = 6))
         z.addView(knopf(R.drawable.ic_pn_minus, R.string.klima_luft_runter) { "luft_runter" }, ui.lp(ui.dp(DOCK_KNOPF), -1))
         z.addView(wert(R.drawable.ic_pn_fan, stufe), ui.lp(h = -1))
         z.addView(knopf(R.drawable.ic_pn_plus, R.string.klima_luft_hoch) { "luft_hoch" }, ui.lp(ui.dp(DOCK_KNOPF), -1, rechts = 6))
@@ -400,6 +401,7 @@ class MainActivity : AppCompatActivity() {
         aktualisierer += {
             val k = summary?.klima
             soll.text = sollText(k) ?: "—"
+            tempKnoepfe.forEach { it.alpha = if (k?.tempArt == "unbekannt") 0.35f else 1f }
             stufe.text = k?.stufe?.toString() ?: "—"
             power.setColorFilter(if (k?.an == true) ui.p.lime else ui.p.onSurfaceVariant)
         }
@@ -408,6 +410,10 @@ class MainActivity : AppCompatActivity() {
 
     /** Eine Klimaaktion an den Kern; solange eine läuft, werden weitere Tipps verworfen (der Kern drosselt zusätzlich). */
     private fun klimaSenden(aktion: String) {
+        // 0.1.38.6: Modell weder als Stufen- noch als Grad-Modell bestätigt: keine Temperatur-Bedienung, nie raten
+        if ((aktion == "temp_hoch" || aktion == "temp_runter") && summary?.klima?.tempArt == "unbekannt") {
+            zeigeHinweis(getString(R.string.klima_temp_unbekannt)); return
+        }
         if (!klimaLaeuft.compareAndSet(false, true)) return
         klimaIo.execute {
             val antwort = try {
@@ -780,11 +786,11 @@ class MainActivity : AppCompatActivity() {
         val gang = listOf("P", "R", "N", "D").associateWith { g -> ui.zahl(g, 22f).apply { setPadding(ui.dp(10), 0, ui.dp(10), 0) }.also { gaenge.addView(it) } }
         unten.addView(gaenge, ui.lp(rechts = 36))
         val tempoBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
-        val tempo = ui.zahl("—", 60f); tempoBox.addView(tempo); tempoBox.addView(ui.leise("km/h", 15f))
+        val tempo = ui.zahl("—", 60f); tempoBox.addView(tempo, LinearLayout.LayoutParams(-2, -2)); tempoBox.addView(ui.leise("km/h", 15f))   // WRAP_CONTENT, sonst nur das erste Zeichen
         unten.addView(tempoBox, ui.lp(rechts = 36))
         val akkuBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
         akkuBox.addView(ui.icon(R.drawable.ic_pn_battery, ui.p.aqua, 34))
-        val soc = ui.zahl("—", 34f); akkuBox.addView(soc)
+        val soc = ui.zahl("—", 34f); akkuBox.addView(soc, LinearLayout.LayoutParams(-2, -2))   // WRAP_CONTENT, sonst zeigt die Zahl nur die erste Ziffer
         unten.addView(akkuBox)
         f.addView(unten, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM))
         reg {
@@ -1438,14 +1444,15 @@ class MainActivity : AppCompatActivity() {
     private fun klimaFeld() {
         val c = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(ui.dp(28), ui.dp(20), ui.dp(28), ui.dp(24)) }
         c.addView(kopf(getString(R.string.klima_feld_titel)))
+        val tempKnoepfe = mutableListOf<View>()
         fun reihe(titel: Int, icon: Int, runter: String, hoch: String, wert: TextView) = LinearLayout(this).apply {
             gravity = Gravity.CENTER_VERTICAL
             addView(ui.icon(icon, ui.p.aqua, 32), ui.lp(rechts = 14))
             addView(ui.text(getString(titel), 20f, 600), ui.lp(0, -2, 1f))
-            addView(ui.act(R.drawable.ic_pn_minus, null) { klimaSenden(runter) }.apply { contentDescription = getString(R.string.klima_runter) },
+            addView(ui.act(R.drawable.ic_pn_minus, null) { klimaSenden(runter) }.apply { contentDescription = getString(R.string.klima_runter); if (runter.startsWith("temp")) tempKnoepfe += this },
                 ui.lp(ui.dp(GROSS_KNOPF), ui.dp(GROSS_KNOPF)))
             addView(wert.apply { gravity = Gravity.CENTER; minWidth = ui.dp(120) }, ui.lp())
-            addView(ui.act(R.drawable.ic_pn_plus, null) { klimaSenden(hoch) }.apply { contentDescription = getString(R.string.klima_hoch) },
+            addView(ui.act(R.drawable.ic_pn_plus, null) { klimaSenden(hoch) }.apply { contentDescription = getString(R.string.klima_hoch); if (hoch.startsWith("temp")) tempKnoepfe += this },
                 ui.lp(ui.dp(GROSS_KNOPF), ui.dp(GROSS_KNOPF)))
         }
         val soll = ui.zahl("—", 34f); val luft = ui.zahl("—", 34f)
@@ -1456,12 +1463,16 @@ class MainActivity : AppCompatActivity() {
         }.apply { orientation = LinearLayout.HORIZONTAL; (getChildAt(1) as? TextView)?.apply { textSize = 18f; setPadding(ui.dp(12), 0, 0, 0) } }
         c.addView(anAus, ui.lp(-1, ui.dp(GROSS_KNOPF), oben = 20))
         val stand = ui.leise("", 16f); c.addView(stand, ui.lp(oben = 14))
+        c.addView(ui.act(R.drawable.ic_pn_thermo, getString(R.string.komfort_oeffnen)) { komfortFeld() }
+            .apply { orientation = LinearLayout.HORIZONTAL; (getChildAt(1) as? TextView)?.apply { textSize = 18f; setPadding(ui.dp(12), 0, 0, 0) } },
+            ui.lp(-1, ui.dp(GROSS_KNOPF), oben = 14))
         c.addView(ui.act(R.drawable.ic_pn_car, getString(R.string.mehr_in_panoptes)) { schliesseOverlay(); oeffnePanoptes("vehicle") }
             .apply { orientation = LinearLayout.HORIZONTAL; (getChildAt(1) as? TextView)?.setPadding(ui.dp(12), 0, 0, 0) },
             ui.lp(-1, ui.dp(64), oben = 14))
         val zeichnen = {
             val k = summary?.klima
             soll.text = sollText(k) ?: "—"
+            tempKnoepfe.forEach { it.alpha = if (k?.tempArt == "unbekannt") 0.35f else 1f }
             luft.text = k?.stufe?.toString() ?: "—"
             (anAus.getChildAt(1) as? TextView)?.text = getString(if (k?.an == true) R.string.klima_ausschalten else R.string.klima_einschalten)
             stand.text = listOfNotNull(k?.innenC?.let { getString(R.string.klima_innen, nf1.format(it)) },
@@ -1473,6 +1484,62 @@ class MainActivity : AppCompatActivity() {
     }
 
     private var klimaFeldZeichnen: (() -> Unit)? = null
+
+    /**
+     * 0.1.38.6 Komfort (04.11.: „Sitzheizung steuern und Klimaanlage und so weiter“): große Kacheln, ein Tipp = eine
+     * Aktion über den engen Kern-Weg `klima` (feste Namen). Sitze, Lenkrad und Umluft zeigen den gelesenen Zustand und
+     * erscheinen nur, wenn er lesbar ist (keine toten Knöpfe); Auto-Modus, Entfrosten und Nur-Gebläse haben keinen Lese-Wert
+     * und kommen als An/Aus-Paar, die Rückmeldung sagt dann nur „gesendet“.
+     */
+    private fun komfortFeld() {
+        val c = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(ui.dp(28), ui.dp(20), ui.dp(28), ui.dp(24)) }
+        c.addView(kopf(getString(R.string.komfort_titel)))
+        val kacheln = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        val paare = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        fun paar(titel: Int, icon: Int, an: String, aus: String) = LinearLayout(this).apply {
+            gravity = Gravity.CENTER_VERTICAL
+            addView(ui.icon(icon, ui.p.aqua, 32), ui.lp(rechts = 14))
+            addView(ui.text(getString(titel), 20f, 600), ui.lp(0, -2, 1f))
+            addView(ui.act(null, getString(R.string.komfort_an)) { klimaSenden(an) }, ui.lp(ui.dp(GROSS_KNOPF), ui.dp(GROSS_KNOPF), rechts = 10))
+            addView(ui.act(null, getString(R.string.komfort_aus)) { klimaSenden(aus) }, ui.lp(ui.dp(GROSS_KNOPF), ui.dp(GROSS_KNOPF)))
+        }
+        paare.addView(paar(R.string.komfort_auto, R.drawable.ic_pn_leaf, "auto_an", "auto_aus"), ui.lp(-1, -2, oben = 14))
+        paare.addView(paar(R.string.komfort_entfrosten_vorn, R.drawable.ic_pn_fan, "entfrosten_vorn_an", "entfrosten_vorn_aus"), ui.lp(-1, -2, oben = 14))
+        paare.addView(paar(R.string.komfort_entfrosten_hinten, R.drawable.ic_pn_fan, "entfrosten_hinten_an", "entfrosten_hinten_aus"), ui.lp(-1, -2, oben = 14))
+        paare.addView(paar(R.string.komfort_nur_geblaese, R.drawable.ic_pn_fan, "nur_geblaese_an", "nur_geblaese_aus"), ui.lp(-1, -2, oben = 14))
+        fun kachel(icon: Int, name: Int, zustand: String, aktion: String) = ui.act(icon, null) { klimaSenden(aktion) }.apply {
+            minimumHeight = ui.dp(GROSS_KNOPF)
+            addView(ui.text(getString(name), 17f, 600).apply { gravity = Gravity.CENTER; maxLines = 2 })
+            addView(ui.text(zustand, 20f, 700, ui.p.aqua).apply { gravity = Gravity.CENTER; maxLines = 1 })
+        }
+        val zeichnen = {
+            val k = summary?.klima
+            val tiles = listOfNotNull(
+                k?.sitzFahrer?.let { kachel(R.drawable.ic_pn_thermo, R.string.komfort_sitz_fahrer, stufeKlartext(it), "sitz_fahrer") },
+                k?.sitzBeifahrer?.let { kachel(R.drawable.ic_pn_thermo, R.string.komfort_sitz_beifahrer, stufeKlartext(it), "sitz_beifahrer") },
+                k?.lueftungFahrer?.let { kachel(R.drawable.ic_pn_fan, R.string.komfort_lueftung_fahrer, stufeKlartext(it), "lueftung_fahrer") },
+                k?.lueftungBeifahrer?.let { kachel(R.drawable.ic_pn_fan, R.string.komfort_lueftung_beifahrer, stufeKlartext(it), "lueftung_beifahrer") },
+                k?.lenkrad?.let { kachel(R.drawable.ic_pn_thermo, R.string.komfort_lenkrad,
+                    getString(if (it) R.string.komfort_an else R.string.komfort_aus), "lenkrad") },
+                k?.umluft?.let { kachel(R.drawable.ic_pn_fan, R.string.komfort_umluft,
+                    getString(if (it) R.string.komfort_umluft_ein else R.string.komfort_frischluft), "umluft") })
+            kacheln.removeAllViews()
+            tiles.chunked(2).forEach { zeile ->
+                kacheln.addView(LinearLayout(this).apply {
+                    zeile.forEachIndexed { i, t -> addView(t, ui.lp(0, -2, 1f, rechts = if (i == 0) 12 else 0)) }
+                }, ui.lp(-1, -2, oben = 12))
+            }
+            if (tiles.isEmpty()) kacheln.addView(ui.leise(getString(R.string.komfort_nichts_lesbar), 16f), ui.lp(oben = 12))
+        }
+        c.addView(kacheln, ui.lp(-1, -2))
+        c.addView(paare, ui.lp(-1, -2))
+        zeichnen(); klimaFeldZeichnen = zeichnen
+        val scroll = ScrollView(this).apply { addView(c) }
+        zeigeOverlay(scroll, breit = false)
+        (scroll.parent as? View)?.layoutParams = FrameLayout.LayoutParams(ui.dp(640), -2, Gravity.CENTER)
+    }
+
+    private fun stufeKlartext(s: Int) = getString(when (s) { 1 -> R.string.komfort_stufe_1; 2 -> R.string.komfort_stufe_2; else -> R.string.komfort_aus })
 
     /**
      * Sollwert für die Anzeige: beim Surf die Stufe wie im Display („Heizen 2“, „Neutral“, „Kühlen 1“), sonst °C.
@@ -1493,7 +1560,14 @@ class MainActivity : AppCompatActivity() {
             "temp_hoch", "temp_runter" -> sollText(k)?.let { getString(R.string.klima_neu_soll, it) }
             "luft_hoch", "luft_runter" -> k?.stufe?.let { getString(R.string.klima_neu_luft, it.toString()) }
             "an" -> getString(R.string.klima_an_ok)
-            else -> getString(R.string.klima_aus_ok)
+            "aus" -> getString(R.string.klima_aus_ok)
+            "sitz_fahrer" -> k?.sitzFahrer?.let { getString(R.string.komfort_neu, getString(R.string.komfort_sitz_fahrer), stufeKlartext(it)) }
+            "sitz_beifahrer" -> k?.sitzBeifahrer?.let { getString(R.string.komfort_neu, getString(R.string.komfort_sitz_beifahrer), stufeKlartext(it)) }
+            "lueftung_fahrer" -> k?.lueftungFahrer?.let { getString(R.string.komfort_neu, getString(R.string.komfort_lueftung_fahrer), stufeKlartext(it)) }
+            "lueftung_beifahrer" -> k?.lueftungBeifahrer?.let { getString(R.string.komfort_neu, getString(R.string.komfort_lueftung_beifahrer), stufeKlartext(it)) }
+            "lenkrad" -> k?.lenkrad?.let { getString(R.string.komfort_neu, getString(R.string.komfort_lenkrad), getString(if (it) R.string.komfort_an else R.string.komfort_aus)) }
+            "umluft" -> k?.umluft?.let { getString(R.string.komfort_neu, getString(R.string.komfort_umluft), getString(if (it) R.string.komfort_umluft_ein else R.string.komfort_frischluft)) }
+            else -> null   // Auto-Modus, Entfrosten, Nur-Gebläse: kein Lese-Wert, nur „gesendet“
         } ?: getString(R.string.klima_gesendet)
         zeigeHinweis(text)
     }

@@ -129,8 +129,16 @@ public final class ExternGuard {
             "/api/handy/v1/bruecke",   // 0.1.20 Panoptes-Brücke: Handy-Schlüssel + Zugang (BRUECKE_VERTRAG §2.4)
             "/api/handy/v1/bruecke/aus",
             "/api/handy/v1/websitzung",   // 0.1.20 Weboberfläche in der Handy-App (HANDY_WEB_SITZUNG_VERTRAG)
-            "/api/handy/v1/clips/behalten"   // 0.1.28 P5: im Auto behalten / Frist (Recht „kamera“ prüft der Handler)
+            "/api/handy/v1/clips/behalten",   // 0.1.28 P5: im Auto behalten / Frist (Recht „kamera“ prüft der Handler)
+            "/api/navi/unterwegs/ablehnen"   // 0.1.38.6 (= UNTERWEGS_ABLEHNEN): Neuplanungs-Vorschlag verwerfen, nur mit Recht „route“ (noetigesRecht)
     )));
+
+    /**
+     * 0.1.38.6 „Reicht es noch?“: Der Fahrer (auch in der Handy-App) verwirft den Neuplanungs-Vorschlag. Nur für
+     * Kopplungen der Art {@code handy} und nur mit dem bestehenden Recht {@code route}; kein neues Recht, keine neue
+     * Aktion. Wirkung: Vorschlag weg, 30 min kein neuer, Planer bekommt {@code auto-status abgelehnt}.
+     */
+    static final String UNTERWEGS_ABLEHNEN = "/api/navi/unterwegs/ablehnen";
 
     /** 0.1.28 P5: Lesepfade unter /api/handy/v1 nur für {@code handy} (Clip-Liste; Recht „kamera“ prüft der Handler). */
     static final Set<String> HANDY_LESEN = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
@@ -258,6 +266,7 @@ public final class ExternGuard {
             return at.greenchili.surfmate.auth.Kopplungen.RECHT_DATEIEN;
         }
         if (p.equals(TACHO_AUSWAHL) || p.equals(TACHO_NORMAL)) return at.greenchili.surfmate.auth.Kopplungen.RECHT_TACHO;
+        if (p.equals(UNTERWEGS_ABLEHNEN)) return at.greenchili.surfmate.auth.Kopplungen.RECHT_ROUTE;
         if (p.equals(LAUNCHER_LAYOUT_PFAD) || p.startsWith(LAUNCHER_LAYOUT_PFAD + "/") || p.equals(LAUNCHER_STAND_PFAD)) {
             return at.greenchili.surfmate.auth.Kopplungen.RECHT_LAUNCHER;
         }
@@ -289,9 +298,12 @@ public final class ExternGuard {
             boolean standbild = at.greenchili.surfmate.auth.Kopplungen.RECHT_STANDBILD.equals(recht);
             boolean dateien = at.greenchili.surfmate.auth.Kopplungen.RECHT_DATEIEN.equals(recht);
             boolean launcher = at.greenchili.surfmate.auth.Kopplungen.RECHT_LAUNCHER.equals(recht);
-            String key = launcher ? "errors.launcher_recht_fehlt" : dateien ? "dateien.recht_fehlt"
+            boolean route = at.greenchili.surfmate.auth.Kopplungen.RECHT_ROUTE.equals(recht);
+            String key = route ? "errors.route_recht_fehlt" : launcher ? "errors.launcher_recht_fehlt" : dateien ? "dateien.recht_fehlt"
                     : standbild ? "errors.standbild_recht_fehlt" : "errors.kamera_recht_fehlt";
-            String fallback = launcher
+            String fallback = route
+                    ? "Route-Recht fehlt – in Panoptes unter Gekoppelte Geräte einschalten."
+                    : launcher
                     ? "Launcher-Recht fehlt – in Panoptes unter Gekoppelte Geräte einschalten."
                     : dateien
                     ? "File permission missing – switch it on in Panoptes under Paired devices."

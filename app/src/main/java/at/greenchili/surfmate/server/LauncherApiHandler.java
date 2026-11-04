@@ -1450,21 +1450,38 @@ public final class LauncherApiHandler {
             JSONObject o = new JSONObject();
             // 0.1.38.5: Stufen-Modelle (Surf) stellen keine Grad ein – dann keine Gradzahl, sondern die Stufe 1..17
             boolean stufen = at.greenchili.surfmate.byd.KlimaStufe.stufenModell();
+            // 0.1.38.6: weder Stufen- noch Grad-Modell bestätigt: keine Gradzahl, der Launcher zeigt „—“ und sperrt die Tasten
+            String tempArt = at.greenchili.surfmate.byd.KlimaStufe.temperaturArt();
+            o.put("tempArt", tempArt);
             int tempStufe = an && vd.acSetpointDriver != u ? at.greenchili.surfmate.byd.KlimaStufe.ausSdk(vd.acSetpointDriver) : -1;
             o.put("stufenModell", stufen);
             o.put("tempStufe", stufen && tempStufe > 0 ? (Object) tempStufe : JSONObject.NULL);
-            o.put("sollC", !stufen && an && vd.acSetpointDriver != u
+            o.put("sollC", at.greenchili.surfmate.byd.KlimaStufe.ART_GRAD.equals(tempArt) && an && vd.acSetpointDriver != u
                     ? (Object) VehicleControlApiHandler.climateSetpointToCelsius(vd.acSetpointDriver) : JSONObject.NULL);
             o.put("stufe", an && vd.acFanLevel != u ? (Object) vd.acFanLevel : JSONObject.NULL);
             o.put("innenC", vd.hasFreshCabinTemperature() && !Double.isNaN(vd.insideTempC)
                     ? (Object) round1(vd.insideTempC) : JSONObject.NULL);
             // 0.1.37 Stufe 4: läuft die Klimaanlage? (für den An/Aus-Knopf im Dock; gleiche Regel wie acOn)
             o.put("an", an && vd.acStartState != u ? (Object) (vd.acStartState == 1) : JSONObject.NULL);
-            if (o.isNull("sollC") && o.isNull("tempStufe") && o.isNull("stufe") && o.isNull("innenC")) return JSONObject.NULL;
+            // 0.1.38.6 Komfort: nur was wirklich lesbar ist (sonst null, der Launcher zeigt dann keine Kachel)
+            o.put("sitzFahrer", stufeOderNull(LauncherKlimaBefehl.sitzStufe(vd, true, 0)));
+            o.put("sitzBeifahrer", stufeOderNull(LauncherKlimaBefehl.sitzStufe(vd, true, 1)));
+            o.put("lueftungFahrer", stufeOderNull(LauncherKlimaBefehl.sitzStufe(vd, false, 0)));
+            o.put("lueftungBeifahrer", stufeOderNull(LauncherKlimaBefehl.sitzStufe(vd, false, 1)));
+            int lenkrad = LauncherKlimaBefehl.lenkradStand(vd);
+            int umluft = LauncherKlimaBefehl.umluftStand(vd);
+            o.put("lenkrad", lenkrad < 0 ? JSONObject.NULL : (Object) (lenkrad == 1));
+            o.put("umluft", umluft < 0 ? JSONObject.NULL : (Object) (umluft == 1));
+            if (o.isNull("sollC") && o.isNull("tempStufe") && o.isNull("stufe") && o.isNull("innenC")
+                    && o.isNull("sitzFahrer") && o.isNull("sitzBeifahrer") && o.isNull("lenkrad") && o.isNull("umluft")) return JSONObject.NULL;
             return o;
         } catch (Throwable t) {
             return JSONObject.NULL;
         }
+    }
+
+    private static Object stufeOderNull(int s) {
+        return s < 0 ? JSONObject.NULL : (Object) s;
     }
 
     /** Wächter-Kachel: eingeschaltet, scharf, nimmt auf, Zustand. Nur lesen. */

@@ -1,6 +1,6 @@
 # Codekarte Panoptes
 
-**Stand: Version 0.1.38.5, Commit 3c85bde5**
+**Stand: Version 0.1.38.6, Commit 30d32358**
 
 Wegweiser durch den Code. Zuerst hier suchen, dann gezielt die genannte Datei öffnen.
 Die Karte nennt Dateien und Klassen, keine Zeilennummern. Kurze Pfade gelten ab
@@ -66,7 +66,7 @@ Jedes Paket steht hier, auch Unterpakete. Pfade ab dem Wurzelpaket. Lose Dateien
 | `blitzer/` | Blitzer-Warnung |
 | `bridge/` | Fahrzeugdaten für App-Oberfläche (nicht die Handy-Brücke) |
 | `bruecke/` | Panoptes-Brücke zum Handy |
-| `byd/`, `byd/bodywork/`, `byd/cloud/`, `byd/cloud/crypto/`, `byd/dilink5/`, `byd/light/`, `byd/radar/`, `byd/routing/` | BYD-Zugriff: Daten lesen, Befehle, Cloud, DiLink 5 |
+| `byd/`, `byd/bodywork/`, `byd/cloud/`, `byd/cloud/crypto/`, `byd/dilink5/`, `byd/light/`, `byd/radar/`, `byd/routing/` | BYD-Zugriff: Daten lesen, Befehle, Cloud, DiLink 5. `byd/cloud/crypto/`: Zugangsdaten über `CredentialCipher`; 0.1.38.6 legt neben dem Klartext (bleibt für den Rückfall auf 0.1.38.5) eine geprüfte Schattenkopie `enc_<feld>` an (`ZugangsMigration.schatten`, Abgleich beim Daemon-Start), Klartext erst ab 0.1.38.7 löschen |
 | `camera/`, `camera/dilink5/` | Kamera-Zugriff, Panorama, Dashcam-Pipeline |
 | `camping/` | Camping-Modus |
 | `charging/` | Ladesitzungen, Tarife |
@@ -106,7 +106,7 @@ Jedes Paket steht hier, auch Unterpakete. Pfade ab dem Wurzelpaket. Lose Dateien
 | `power/` | 12-V-Spannung, Standby, Warmhalten |
 | `proximity/` | Annäherung per Radar |
 | `receiver/` | Broadcast-Empfänger |
-| `recording/` | Aufnahmemodus, Ereignis-Clips |
+| `recording/` | Aufnahmemodus, Ereignis-Clips, Kamera im Stand schließen (`KameraParkRegel`: P + Zündung an + nichts sonst, 120 s; Opt-in-Schalter `kamera.parkFreigeben`, Standard aus, auf DiLink 4/5 verborgen; Haken `RecordingModeManager.parkFreigabePruefen`, `StreamingApiHandler.resolveBlindSpotLifecycle`) |
 | `reichweite/` | Reichweiten-Wacht |
 | `remote/` | Fernansicht |
 | `rueckmeldung/` | Fehler melden, Auto-Angaben fürs Mitzählen |
@@ -180,13 +180,13 @@ Jedes Paket steht hier, auch Unterpakete. Pfade ab dem Wurzelpaket. Lose Dateien
 | Web-Seiten | `assets/web/local/`, Menü in `web/shared/app-shell.js`, Startprofile in `web/shared/home-layout.js` und `OBERFLAECHEN_MVP.md`, Auslieferung in `HttpServer`; Abschlussregeln der Startseite in `HomeDashboard0133Test`, Release-Nachträge in `ABSCHLUSS_0.1.33.md` und `RELEASE_0.1.34.md` | Abschnitt 4 |
 | Telegram | `TelegramBotDaemon`, `daemon/telegram/` (Befehle, `CommandRouter`; 0.1.38.2 Hauptmenü `/menue` in `SystemCommandHandler`, Text ohne „/“ zeigt es, fester Knopf „☰ Menü“, `setMyCommands`; Updates `UpdateCommandHandler` mit Knöpfen `up:…`, Rückfrage vor jedem Start, nur über `/api/appupdate/fern`), `TelegramNotifier` (`notifyUpdateNeu`: „neue Version“ mit Knopf), `TelegramSpool`, `UnifiedTelegramConfig`, `TelegramApiHandler` | `CommandRouter` |
 | Meldungen | `NotificationStore`, `notifications/sinks/`, `NotificationApiHandler` | `NotificationStore` |
-| Routenplaner | `PlanerVerbindung`, `PlanerRoute`, `AutoZustand`, `PlanerBackoff`, `Einstellungen`; Fahrerdisplay-Karte über `ClusterMapProjector` nur nach zentralem, positivem `TachoFaehigkeit.karte`-Plattformurteil (Single-OS/Dienst/Shell/DiLink 5), bewusst nicht nach einer vor Aktivierung oft noch fehlenden VirtualDisplay-ID | `PlanerVerbindung` |
+| Routenplaner | `PlanerVerbindung`, `PlanerRoute`, `AutoZustand`, `PlanerBackoff`, `Einstellungen`, Handy-Weg `HandyRoute` (route/route_stand; ab 0.1.38.6 `route {plan_id}` = genau diesen Plan per `an-auto {plan_id}` übernehmen, 410 → `plan_abgelaufen`) und `HandyPlanVorschau` (Handy-Aktion `plan_vorschau`/`plan_vorschau_stand`, Recht `route`: Planer `POST plan` mit Auto-Standort, `ausgabe:kompakt`, Ergebnis `plan-ergebnis/1` samt `plan_id` unverändert unter `ergebnis`, plan_id 2 h nur im RAM, 10 Planungen/min; Standort nie vom Handy); Fahrerdisplay-Karte über `ClusterMapProjector` nur nach zentralem, positivem `TachoFaehigkeit.karte`-Plattformurteil (Single-OS/Dienst/Shell/DiLink 5), bewusst nicht nach einer vor Aktivierung oft noch fehlenden VirtualDisplay-ID | `PlanerVerbindung` |
 | Laden, Ladeplan | `LadenApiHandler`, `LadenVorlieben`, `LadeplanDienst`, `ChargingSessionManager`, `TariffManager` | `LadenApiHandler` |
 | Ladekosten laut Säule | `LadeAbrechnung` (abgerechnete kWh: Eintrag laut Säule, sonst Akku-kWh plus Ladeverlust-Zuschlag `laden.verlustAc`/`laden.verlustDc`, nur beim Lesen), `LadeKosten`, Spalten `saeule_kwh`/`saeule_betrag` in `SocHistoryDatabase`; Eintrag per `POST /api/charging/{id}/saeule`; „Kosten ändern“ zählt als Betrag laut Säule; Fahrtpreis über `rateAbgerechnet` in `TripAnalyticsManager.satz`; einmaliger Hinweis `web/shared/ladeverlust-hinweis.js` (`laden.verlustHinweis`) | `LadeAbrechnung` |
-| Ladesäule erkennen | `LadesaeuleZuordnung` (rein: gerundete Planer-Anfrage, Zuordnung ≤ 150 m, Stromart, kW × 1,15, „auto“ nur bei genau einer Säule < 60 m, Datenschutz, gemerkte Säule), `LadesaeuleDienst` (eine Anfrage je Ladeende, Knopf „nachtragen“, Schalter `laden.saeuleNachschlagen`), `LadePreisVorschlag` (Vorschlag „~“ je Betreiber und Stromart), Spalten `station_id`/`station_name`/`betreiber`/`station_art`/`zuordnung`/`station_kandidaten` in `SocHistoryDatabase`; `GET`/`POST /api/charging/{id}/station`, `POST /api/charging/stationen/nachtragen`; Oberfläche `web/shared/ladesaeule.js` | `LadesaeuleZuordnung` |
+| Ladesäule erkennen | `LadesaeuleZuordnung` (rein: gerundete Planer-Anfrage, Zuordnung ≤ 150 m, Stromart, kW × 1,15, „auto“ nur bei genau einer Säule < 60 m, Datenschutz, gemerkte Säule), `LadesaeuleDienst` (eine Anfrage je Ladeende, Knopf „nachtragen“, Schalter `laden.saeuleNachschlagen`), `LadePreisVorschlag` (Vorschlag „~“ je Betreiber und Stromart), Spalten `station_id`/`station_name`/`betreiber`/`station_art`/`zuordnung`/`station_kandidaten` in `SocHistoryDatabase`; `GET`/`POST /api/charging/{id}/station`, `POST /api/charging/stationen/nachtragen`; Oberfläche `web/shared/ladesaeule.js`; eigener Preis `LadePreisVorschlag` je Betreiber, Land UND Stromart, Land über `LadeLand` (ausdrücklich oder nur aus Kernbereich AT/DE/CH, sonst kein eigener Preis) | `LadesaeuleZuordnung` |
 | Camping | `Camping`, `CampingRegler`, `CampingPlan`, `RouterHeizweg` | `Camping` |
 | Tiermodus | `Tiermodus` (Laufzeit, Klima über `RouterHeizweg`, kein eigener Regler), `TiermodusRegel` (rein), `TiermodusApiHandler`, Seite `tiermodus.html`, Telegram `/tier` (`TierCommandHandler`: nur Stand und Gesehen), Handy `aktion: tiermodus` (Recht `klima`); ruht Erschütterung und Abschreckung | `TiermodusRegel` |
-| Wallbox | `WallboxDienst`, `WallboxKonfig`, `WallboxSuche`, Adapter in `wallbox/` | `WallboxDienst` |
+| Wallbox | `WallboxDienst`, `WallboxKonfig`, `WallboxSuche`, Adapter in `wallbox/`; Sitzungs-kWh der Brücke nur als Protokollzeile je AC-Ladung (`WallboxEnergieProtokoll`, nie im SoH-Anker) | `WallboxDienst` |
 | Home Assistant | `HaApiHandler`, `HaDienst`, `HaEreignisse`, `HaZustand`, `HaMdns` | `HaApiHandler` |
 | Regeln (Automation) | `Automations`, `AutomationQueue`, `Actions`, `Conditions`, `AutomationApiHandler` | `Automations` |
 | KI-Sperre (REGEL A+) | `KiSperre` ist eine Erlaubnisliste, zentral vor jedem KI-Vorschlag, beim Ausführen und bei KI-Entwürfen: die KI darf über Regeln nur Klima, Sitzheizung, Sonnenrollo, Anzeigen und reinen Ablauf auslösen, rekursiv über Aktionsgruppe, Wenn/Schleife und „Regel einschalten“; neue Aktionen in `Actions` sind für die KI automatisch gesperrt (`KiSperreTest`); nur `GenAiAction`/`GenAiAutomation` rufen sie, Nutzerwege nie | `KiSperre` |
@@ -235,7 +235,7 @@ Extern, ist die Route für Kopplungen gesperrt.
 | `/api/positions` | `PositionsApiHandler` | Login |
 | `/api/apps/` | `AppsApiHandler` | Login; `/api/apps/verwaltung` für Handy-Web gesperrt |
 | `/api/display/` | `DisplayApiHandler` | Login; für Handy-Web gesperrt; `sperre/aus` am Display nur mit PIN |
-| `/api/launcher/` | `LauncherApiHandler` | Login; Extern `/api/launcher/v1/summary` lesen; `vehicle/*` → 404; `apps/launch` mit `mode:"neben"` = Split neben dem Launcher; einziger Fahrzeugweg `klima` (`LauncherKlimaBefehl`) und `update/installieren` sowie „Tacho wieder normal“ `tacho/normal` nur von der Launcher-APK mit Panoptes-Signatur (`LauncherAufrufer`); 0.1.38 Layout `layout` (GET/PUT), `layout/standard`, `layout/apps` in der Datei launcher_layout.json (`LauncherLayoutSpeicher`, Prüfung `LauncherLayoutPruefung`, 64 KB, neueste gewinnt, 409), Extern nur Art `handy`/`cockpit` mit Recht `launcher`, Handy-Web nur mit Recht `launcher`, nie Automationen; Seite `launcher.html` |
+| `/api/launcher/` | `LauncherApiHandler` | Login; Extern `/api/launcher/v1/summary` lesen; `vehicle/*` → 404; `apps/launch` mit `mode:"neben"` = Split neben dem Launcher; einziger Fahrzeugweg `klima` (`LauncherKlimaBefehl`: sechs Klima-Aktionen, ab 0.1.38.6 dazu 14 feste Komfort-Aktionen: Sitzheizung/-lüftung je Sitz, Lenkrad, Umluft aus dem gelesenen Ist-Stand, Auto-Modus/Entfrosten/Nur-Gebläse als an/aus-Paar; nie Hupe, Licht, Blinker, Auf-/Zusperren, Fenster, Dach, Kofferraum, Spiegel, Sitzspeicher; Test `LauncherKomfortWegTest`) und `update/installieren` sowie „Tacho wieder normal“ `tacho/normal` nur von der Launcher-APK mit Panoptes-Signatur (`LauncherAufrufer`); 0.1.38 Layout `layout` (GET/PUT), `layout/standard`, `layout/apps` in der Datei launcher_layout.json (`LauncherLayoutSpeicher`, Prüfung `LauncherLayoutPruefung`, 64 KB, neueste gewinnt, 409), Extern nur Art `handy`/`cockpit` mit Recht `launcher`, Handy-Web nur mit Recht `launcher`, nie Automationen; Seite `launcher.html` |
 | `/api/about/vehicle-info` | `AboutApiHandler` | Login |
 
 ### Einstellungen, Konto, Kopplung

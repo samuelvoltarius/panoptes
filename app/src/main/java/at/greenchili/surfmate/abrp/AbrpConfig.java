@@ -1,5 +1,7 @@
 package at.greenchili.surfmate.abrp;
 
+import at.greenchili.surfmate.byd.cloud.crypto.CredentialCipher;
+import at.greenchili.surfmate.byd.cloud.crypto.ZugangsMigration;
 import at.greenchili.surfmate.logging.DaemonLogger;
 import org.json.JSONObject;
 
@@ -13,6 +15,10 @@ import java.util.Properties;
  *
  * Reads and writes ABRP settings from /data/user_de/0/com.android.shell/surfmate/abrp_config.properties.
  * Mirrors the pattern from TelegramBotDaemon.loadConfig().
+ *
+ * <p>0.1.38.6: {@code user_token} und {@code api_key} bekommen eine verschlüsselte Schattenkopie
+ * ({@code enc_user_token}, {@code enc_api_key}, {@link ZugangsMigration#schatten}); der Klartext bleibt für den
+ * Rückfall auf 0.1.38.5 stehen und wird erst in einer späteren Version entfernt.
  */
 public class AbrpConfig {
 
@@ -93,7 +99,9 @@ public class AbrpConfig {
                 props.load(fis);
             }
 
-            userToken = props.getProperty(PROP_USER_TOKEN);
+            String rohToken = props.getProperty(PROP_USER_TOKEN);
+            String rohApiKey = props.getProperty(PROP_API_KEY);
+            userToken = CredentialCipher.decrypt(rohToken);
             if (userToken != null && userToken.isEmpty()) {
                 userToken = null;
             }
@@ -103,7 +111,7 @@ public class AbrpConfig {
 
             carModel = props.getProperty(PROP_CAR_MODEL);
 
-            apiKey = props.getProperty(PROP_API_KEY);
+            apiKey = CredentialCipher.decrypt(rohApiKey);
             if (apiKey != null && apiKey.isEmpty()) {
                 apiKey = null;
             }
@@ -139,6 +147,12 @@ public class AbrpConfig {
                     + ", enabled=" + enabled
                     + ", car_model=" + (carModel != null ? carModel : "not set")
                     + ", interval=" + uploadIntervalSeconds + "s");
+            // 0.1.38.6: Schattenkopie fehlt oder passt nicht (z. B. Token in 0.1.38.5 geändert) → neu speichern
+            if (ZugangsMigration.schatten(rohToken, props.getProperty(ZugangsMigration.schattenSchluessel(PROP_USER_TOKEN))) != null
+                    || ZugangsMigration.schatten(rohApiKey, props.getProperty(ZugangsMigration.schattenSchluessel(PROP_API_KEY))) != null) {
+                logger.info("Config: verschlüsselte Schattenkopie der Zugangsdaten wird nachgezogen");
+                save();
+            }
             return true;
         } catch (Exception e) {
             logger.error("Config load error: " + e.getMessage());
@@ -155,7 +169,8 @@ public class AbrpConfig {
         try {
             Properties props = new Properties();
             if (userToken != null) {
-                props.setProperty(PROP_USER_TOKEN, userToken);
+                props.setProperty(PROP_USER_TOKEN, userToken);   // Klartext bleibt (Rückfall 0.1.38.5)
+                schattenSetzen(props, PROP_USER_TOKEN, userToken);
             }
             props.setProperty(PROP_ENABLED, String.valueOf(enabled));
             if (carModel != null) {
@@ -163,6 +178,7 @@ public class AbrpConfig {
             }
             if (apiKey != null) {
                 props.setProperty(PROP_API_KEY, apiKey);
+                schattenSetzen(props, PROP_API_KEY, apiKey);
             }
             props.setProperty(PROP_UPLOAD_INTERVAL, String.valueOf(uploadIntervalSeconds));
             props.setProperty(PROP_CHANGE_ONLY, String.valueOf(changeOnly));
@@ -184,6 +200,12 @@ public class AbrpConfig {
             logger.error("Config save error: " + e.getMessage());
             return false;
         }
+    }
+
+    /** 0.1.38.6: verschlüsselte Schattenkopie {@code enc_<prop>} neben dem Klartext (nur mit bestandener Rückprüfung). */
+    private static void schattenSetzen(Properties props, String prop, String klar) {
+        String s = ZugangsMigration.schatten(klar, "");
+        if (s != null && !s.isEmpty()) props.setProperty(ZugangsMigration.schattenSchluessel(prop), s);
     }
 
     // ==================== GETTERS ====================

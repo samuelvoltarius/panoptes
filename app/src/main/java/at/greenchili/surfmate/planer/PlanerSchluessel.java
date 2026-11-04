@@ -38,6 +38,11 @@ public final class PlanerSchluessel {
             if (klar != null && klar.matches("^[0-9a-f]{64}$")) return new String[] {KOPF_GERAET, klar};
         }
         String m = planner.optString("memberToken", "").trim();
+        // 0.1.38.6: Klartext bleibt maßgeblich (Rückfall 0.1.38.5); ein ENC:-Wert wird entschlüsselt
+        if (at.greenchili.surfmate.byd.cloud.crypto.CredentialCipher.isEncrypted(m)) {
+            try { m = e.klar(m); } catch (Throwable ignored) { m = ""; }
+            m = m == null ? "" : m.trim();
+        }
         if (m.matches("^[0-9a-fA-F]{32}$")) return new String[] {KOPF_MITGLIED, m};
         return null;
     }

@@ -33,6 +33,48 @@ public final class CredentialUpgrade {
 
     private CredentialUpgrade() {}
 
+    /**
+     * 0.1.38.6: Schattenkopie {@code enc_<key>} des Klartexts abgleichen ({@link ZugangsMigration#schatten}). Schreibt
+     * nur den Schatten (Klartext bleibt für den Rückfall auf 0.1.38.5), Compare-and-set auf Klartext und Schatten.
+     *
+     * @return true, wenn ein Schreiben stattfand.
+     */
+    public static boolean schattenAbgleich(String section, String key) {
+        try {
+            String sk = ZugangsMigration.schattenSchluessel(key);
+            JSONObject sec = UnifiedConfigManager.loadConfig().optJSONObject(section);
+            if (sec == null) return false;
+            String klar = sec.optString(key, "");
+            String alt = sec.optString(sk, "");
+            String neu = ZugangsMigration.schatten(klar, alt);
+            if (neu == null) return false;
+            try {
+                UnifiedConfigManager.forceReload();
+            } catch (Exception ignored) {}
+            JSONObject nowSec = UnifiedConfigManager.loadConfig().optJSONObject(section);
+            if (nowSec == null || !klar.equals(nowSec.optString(key, "")) || !alt.equals(nowSec.optString(sk, ""))) {
+                return false;   // geändert inzwischen → nächster Start
+            }
+            JSONObject delta = new JSONObject();
+            delta.put(sk, neu);
+            return UnifiedConfigManager.updateSection(section, delta);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Rein: verschlüsselte Form eines Klartext-Werts, aber nur, wenn sie {@code ENC:} trägt UND sich wieder genau zum
+     * Klartext entschlüsseln lässt. Sonst null – der Aufrufer behält den Klartext (kein Verlust der Anmeldung).
+     */
+    static String geprueftVerschluesselt(String klar, java.util.function.UnaryOperator<String> ver,
+                                         java.util.function.UnaryOperator<String> ent) {
+        if (!ZugangsMigration.klartext(klar)) return null;
+        String enc = ver.apply(klar);
+        if (!CredentialCipher.isEncrypted(enc)) return null;
+        return klar.equals(ent.apply(enc)) ? enc : null;
+    }
+
     public static boolean reEncryptKeyIfLegacy(String section, String key) {
         try {
             JSONObject sec = UnifiedConfigManager.loadConfig().optJSONObject(section);

@@ -71,10 +71,16 @@ public class EinrichtungSchnellstartTest {
 
     @Test
     public void pflichtBleibtNurDasWirklichNoetige() {
-        assertEquals(new HashSet<>(Arrays.asList("sprache", "haftung", "usb_freigabe", "waechter", "updates")), EinrichtungApiHandler.PFLICHT);
+        // 0.1.38.5 (Einrichtung verschlanken): nur noch rechtlich/technisch Unverzichtbares ist Pflicht.
+        assertEquals(new HashSet<>(Arrays.asList("sprache", "haftung", "usb_freigabe")), EinrichtungApiHandler.PFLICHT);
         assertTrue("alle Pflichtschritte im Schnellstart", EinrichtungApiHandler.SCHNELLSTART.containsAll(EinrichtungApiHandler.PFLICHT));
-        assertTrue("Kameras werden vor dem Selbsttest geführt zugeordnet", EinrichtungApiHandler.SCHNELLSTART.contains("kameras"));
-        assertTrue("QR am Ende", EinrichtungApiHandler.SCHNELLSTART.contains("extra_handy"));
+        // Schnellstart = Sprache, Kurz-Haftung und der eine Freigabe-Bündel-Bildschirm (autostart/ueberlagerung/
+        // rechte/usb_freigabe) + Abschluss. Sonst nichts mehr.
+        assertEquals(new HashSet<>(Arrays.asList("sprache", "haftung", "autostart", "ueberlagerung", "rechte",
+                "usb_freigabe", "fertig")), EinrichtungApiHandler.SCHNELLSTART);
+        for (String raus : new String[]{"kameras", "waechter", "updates", "extra_handy", "betrieb", "karte"}) {
+            assertFalse(raus + " nicht mehr Schnellstart", EinrichtungApiHandler.SCHNELLSTART.contains(raus));
+        }
         assertTrue(EinrichtungApiHandler.SCHRITTE.containsAll(EinrichtungApiHandler.SCHNELLSTART));
     }
 
@@ -88,9 +94,10 @@ public class EinrichtungSchnellstartTest {
             assertEquals(e.toString(), EinrichtungApiHandler.SCHNELLSTART.contains(e.getString("id")), e.getBoolean("schnellstart"));
             if ("offen".equals(e.getString("status"))) offen.add(e.getString("id"));
         }
-        assertEquals(Arrays.asList("sprache", "haftung", "autostart", "ueberlagerung", "rechte", "kameras", "waechter", "updates", "extra_handy", "fertig"), offen);
-        for (String id : new String[]{"auto", "betrieb", "karte", "daten", "blitzer", "strompreis", "extra_telegram",
-                "extra_planer", "extra_cockpit", "extra_fernzugang", "extra_notzugang"}) {
+        // 0.1.38.5: usb_freigabe meldet der Dienst selbst (erledigt), bleibt also nicht „offen“.
+        assertEquals(Arrays.asList("sprache", "haftung", "autostart", "ueberlagerung", "rechte", "fertig"), offen);
+        for (String id : new String[]{"auto", "kameras", "waechter", "betrieb", "karte", "daten", "blitzer", "updates",
+                "strompreis", "extra_telegram", "extra_handy", "extra_planer", "extra_cockpit", "extra_fernzugang", "extra_notzugang"}) {
             assertEquals(id, "spaeter", status(s, id));
         }
     }
@@ -101,22 +108,16 @@ public class EinrichtungSchnellstartTest {
         r = schritt(r, "sprache", new JSONObject().put("locale", "de"));
         r = schritt(r, "haftung", new JSONObject().put("gelesen", true).put("version", Katalog.HINWEISE_VERSION));
         assertEquals("autostart", sicht(r).getString("aktuell"));
-        for (String id : new String[]{"autostart", "ueberlagerung", "rechte"}) {
+        // 0.1.38.5: autostart + ueberlagerung + rechte + usb_freigabe sind EIN Bündel-Bildschirm „Panoptes darf
+        // loslegen“; der Kern speichert sie als Prüf-Schritte. Danach läuft Panoptes und der Assistent ist fertig.
+        for (String id : new String[]{"autostart", "ueberlagerung", "rechte", "usb_freigabe"}) {
             r = schritt(r, id, new JSONObject().put("geprueft", true).put("ok", true));
         }
-        assertEquals("kameras", sicht(r).getString("aktuell"));
-        r = schritt(r, "kameras", new JSONObject().put("geprueft", true).put("ok", true));
-        assertEquals("waechter", sicht(r).getString("aktuell"));
-        assertFalse(sicht(r).getBoolean("abgeschlossen"));
-        r = schritt(r, "waechter", new JSONObject().put("modus", "shock").put("ton", false).put("ereignisClip", false));
-        assertEquals("updates", sicht(r).getString("aktuell"));
-        assertFalse("ohne Update-Antwort nicht fertig", sicht(r).getBoolean("abgeschlossen"));
-        r = schritt(r, "updates", new JSONObject().put("pruefen", false));
-        assertFalse(r.getJSONObject("update").getBoolean("pruefen"));
         assertTrue(sicht(r).getBoolean("abgeschlossen"));
-        assertEquals("extra_handy", sicht(r).getString("aktuell"));
-        r = anwenden(r, EinrichtungApiHandler.spaeter(r, "extra_handy"));
         assertEquals("fertig", sicht(r).getString("aktuell"));
+        // Wächter und Updates bleiben freiwillig in „Noch einrichten“ (nicht mehr Teil des Ablaufs)
+        assertEquals("spaeter", status(sicht(r), "waechter"));
+        assertEquals("spaeter", status(sicht(r), "updates"));
         // ein freiwilliger Punkt aus der Liste, danach steht weiter „fertig“ an
         r = schritt(r, "karte", new JSONObject().put("quelle", "osm"));
         assertEquals("erledigt", status(sicht(r), "karte"));
@@ -125,14 +126,18 @@ public class EinrichtungSchnellstartTest {
 
     @Test
     public void rechtlichePflichtBleibtOhneVorauswahlUndOhneSpaeter() throws Exception {
-        for (String id : new String[]{"haftung", "waechter", "updates"}) {
+        // 0.1.38.5: Pflicht (nie „später“) ist nur noch sprache/haftung (usb_freigabe meldet der Dienst).
+        for (String id : new String[]{"sprache", "haftung"}) {
             assertEquals(id, 422, EinrichtungApiHandler.spaeter(new JSONObject(), id).code);
+        }
+        // Wächter, Updates, Karte, Betrieb sind jetzt optional → „später“ erlaubt …
+        for (String id : new String[]{"waechter", "updates", "karte", "betrieb"}) {
+            assertEquals(id, 200, EinrichtungApiHandler.spaeter(new JSONObject(), id).code);
+        }
+        // … ihre Antwort wird aber ohne Vorauswahl geprüft, wenn man sie aufruft
+        for (String id : new String[]{"haftung", "waechter", "updates", "karte", "betrieb"}) {
             assertEquals(id, 422, EinrichtungApiHandler.schritt(new JSONObject(), id, new JSONObject(), FELDER, false, 1L).code);
         }
-        // Freiwillige Schritte prüfen ihre Antwort weiter, wenn sie aufgerufen werden
-        assertEquals(422, EinrichtungApiHandler.schritt(new JSONObject(), "karte", new JSONObject(), FELDER, false, 1L).code);
-        assertEquals(422, EinrichtungApiHandler.schritt(new JSONObject(), "updates", new JSONObject(), FELDER, false, 1L).code);
-        assertEquals(422, EinrichtungApiHandler.schritt(new JSONObject(), "betrieb", new JSONObject(), FELDER, false, 1L).code);
     }
 
     @Test
@@ -205,7 +210,7 @@ public class EinrichtungSchnellstartTest {
         JSONObject root = new JSONObject().put("einrichtung", new JSONObject().put("version", 1).put("art", "neu").put("schritte", schritte));
         JSONObject s = sicht(root);
         assertEquals("autostart", s.getString("aktuell"));
-        assertEquals("offen", status(s, "updates"));
+        assertEquals("spaeter", status(s, "updates"));   // 0.1.38.5: nicht mehr Schnellstart
         assertEquals("spaeter", status(s, "betrieb"));
         assertEquals("erledigt", status(s, "karte"));
     }
@@ -220,7 +225,8 @@ public class EinrichtungSchnellstartTest {
         assertTrue(ja.getJSONObject("update").getBoolean("pruefen"));
         assertFalse("neue Einrichtung: Mobilfunk-Download aus", ja.getJSONObject("update").getBoolean("mobilfunk"));
         assertTrue("Einwilligung je Download am Hinweis", ja.getJSONObject("update").getBoolean("mobilfunkEinmal"));
-        assertEquals("melden", ja.getJSONObject("update").getString("modus"));
+        // 0.1.38.6: neue Einrichtungen bekommen „Korrekturen automatisch, Neues melden“
+        assertEquals("korrekturen", ja.getJSONObject("update").getString("modus"));
         assertFalse("Bestand ohne Wert prüft wie bisher", EinrichtungApiHandler.updatesUnbeantwortet(bestand031()));
         assertFalse(EinrichtungApiHandler.updatesUnbeantwortet(null));
         assertFalse("kein Zustand: Daemon vor dem ersten GET", EinrichtungApiHandler.updatesUnbeantwortet(new JSONObject()));
@@ -241,13 +247,32 @@ public class EinrichtungSchnellstartTest {
     }
 
     @Test
+    public void neueEinrichtungBekommtUpdateStandardStabilAutomatisch() throws Exception {
+        // 0.1.38.5 (Entscheidung b): Updates werden nicht gefragt, sondern einmal sinnvoll vorbelegt.
+        JSONObject neu = EinrichtungApiHandler.zustand(new JSONObject());   // art=neu
+        Map<String, Object> w = EinrichtungApiHandler.updateStandardNeu(new JSONObject(), neu);
+        assertEquals(Boolean.TRUE, w.get("pruefen"));
+        assertEquals("0.1.38.6: Korrekturen automatisch, Neues melden", "korrekturen", w.get("modus"));
+        assertEquals("neue Einrichtung lädt nicht ungefragt über Mobilfunk", Boolean.FALSE, w.get("mobilfunk"));
+        assertEquals(Boolean.TRUE, w.get("mobilfunkEinmal"));
+        // schon gesetzte Werte nicht überschreiben (der Nutzer bzw. Bestand behält seine Wahl)
+        JSONObject mitWert = new JSONObject().put("update",
+                new JSONObject().put("pruefen", false).put("modus", "melden").put("mobilfunk", true));
+        assertTrue(EinrichtungApiHandler.updateStandardNeu(mitWert, neu).isEmpty());
+        // Bestand bekommt keine Standards aufgedrängt
+        JSONObject best = bestand031();
+        assertTrue(EinrichtungApiHandler.updateStandardNeu(best, EinrichtungApiHandler.zustand(best)).isEmpty());
+    }
+
+    @Test
     public void erneutStartenLaesstDemBestandSeineUpdates() throws Exception {
         JSONObject root = bestand031();
         JSONObject r = anwenden(root, EinrichtungApiHandler.neu(root));
         JSONObject s = sicht(r);
         assertEquals("sprache", s.getString("aktuell"));
-        assertEquals("offen", status(s, "waechter"));
-        assertEquals("offen", status(s, "updates"));
+        // 0.1.38.5: Wächter/Updates sind kein Schnellstart mehr → „erneut starten“ behält die Bestandsantwort als erledigt
+        assertEquals("erledigt", status(s, "waechter"));
+        assertEquals("erledigt", status(s, "updates"));
         assertEquals("erledigt", status(s, "karte"));
         assertEquals("spaeter", status(s, "extra_telegram"));
         assertFalse(EinrichtungApiHandler.updatesUnbeantwortet(r));

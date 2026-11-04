@@ -2830,6 +2830,10 @@
   },
   "soh": {
     "fallback_caption": "From the last charge · {pct}% · {date}",
+    "both_oem_label": "According to the car (BYD)",
+    "both_est_label": "Our estimate",
+    "both_none": "not available",
+    "both_explain": "The car reports its own value. Panoptes also calculates one itself from charge level and remaining energy. The two can differ: the car rounds generously, our estimate fluctuates a little. The car's value is the binding one.",
     "unavailable_caption": "Battery health unknown – drive or charge to get a reading",
     "last_verified": "Last checked: {pct}% · {date}",
     "tap_to_set": "Tap to change",

@@ -43,6 +43,7 @@ public final class VapidKeyStore {
         if (kp != null) return kp;
 
         if (keyFile.exists() && keyFile.length() > 0) {
+            nurBesitzer(keyFile);   // 0.1.38.6: Bestand (früher Modus nach umask) einmal auf 0600
             kp = readFromDisk();
         }
         if (kp == null) {
@@ -109,6 +110,7 @@ public final class VapidKeyStore {
             fos.write(j.toString().getBytes("UTF-8"));
             fos.getFD().sync();
         }
+        nurBesitzer(tmp);
         if (!tmp.renameTo(keyFile)) {
             // renameTo fails silently on some filesystems if dest exists
             keyFile.delete();
@@ -117,6 +119,23 @@ public final class VapidKeyStore {
             }
         }
         return kp;
+    }
+
+    /**
+     * 0.1.38.6 Sicherheit: privater VAPID-Schlüssel nur für den Besitzer (0600, uid 2000). Gelesen wird er nur im
+     * Kamera-Daemon ({@code CameraDaemon}, gleiche uid), wie {@code bruecke.json}. Vorher hing der Modus an der umask.
+     */
+    static void nurBesitzer(File f) {
+        //noinspection ResultOfMethodCallIgnored
+        f.setReadable(false, false);
+        //noinspection ResultOfMethodCallIgnored
+        f.setReadable(true, true);
+        //noinspection ResultOfMethodCallIgnored
+        f.setWritable(false, false);
+        //noinspection ResultOfMethodCallIgnored
+        f.setWritable(true, true);
+        //noinspection ResultOfMethodCallIgnored
+        f.setExecutable(false, false);
     }
 
     private static byte[] readAll(FileInputStream fis) throws Exception {

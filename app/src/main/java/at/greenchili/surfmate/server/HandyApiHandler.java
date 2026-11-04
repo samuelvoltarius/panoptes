@@ -83,6 +83,16 @@ public final class HandyApiHandler {
             return at.greenchili.surfmate.camping.Tiermodus.status();
         }
 
+        /** 0.1.38.6 Plan-Vorschau über Panoptes (Recht „route“): sofort {ok, status:"plant"} oder {ok:false, grund}. */
+        default JSONObject planVorschau(String kid, JSONObject req, long jetzt) throws Exception {
+            return at.greenchili.surfmate.planer.HandyPlanVorschau.get().starten(kid, req, jetzt);
+        }
+
+        /** 0.1.38.6 Stand der Plan-Vorschau dieser Kopplung (plan-ergebnis/1 samt plan_id, wenn bereit). */
+        default JSONObject planVorschauStand(String kid) throws Exception {
+            return at.greenchili.surfmate.planer.HandyPlanVorschau.get().stand(kid);
+        }
+
         /** 0.1.25 Stand der letzten Handy-Route dieser Kopplung. */
         default JSONObject routeStand(String kid) throws Exception {
             return at.greenchili.surfmate.planer.HandyRoute.get().stand(kid);
@@ -443,6 +453,8 @@ public final class HandyApiHandler {
                 break;
             case "route":     // 0.1.25: Ziel ins Auto schicken (nur Anzeige), Standard AN
             case "route_stand":
+            case "plan_vorschau":         // 0.1.38.6: Handy plant über Panoptes, gleiches Recht wie die Route
+            case "plan_vorschau_stand":
                 recht = Kopplungen.RECHT_ROUTE;
                 break;
             case "update_starten":   // 0.1.26.1: nur die vom Updater freigegebene Version, nur geparkt, Standard AUS
@@ -457,6 +469,7 @@ public final class HandyApiHandler {
         }
         // 0.1.25: Stand der Handy-Route nur lesen – zählt nicht zum Ratenlimit (die App fragt nach)
         if ("route_stand".equals(aktion)) return u.routeStand(kid);
+        if ("plan_vorschau_stand".equals(aktion)) return u.planVorschauStand(kid);
         // Tiermodus: Stand lesen und „Gesehen“ zählen nicht zum Ratenlimit (Meldungen wiederholen sich)
         if ("tiermodus_stand".equals(aktion)) return u.tiermodusStand();
         if ("tiermodus".equals(aktion) && !"an".equals(req.optString("was", ""))
@@ -492,6 +505,9 @@ public final class HandyApiHandler {
                         req.optBoolean("mobil", false), k().anzeigeName(kid), EinstellungenApiHandler.sprache("sprache=" + req.optString("sprache", "")));
             case "tiermodus":
                 return tiermodus(req, kid, u);
+            case "plan_vorschau":
+                // 0.1.38.6 Weg B (Koordination 04.11.): plan-ergebnis/1 über Panoptes, Standort nur vom Auto
+                return u.planVorschau(kid, req, jetzt);
             case "route":
                 // Weg A (Koordination 28.10.): planen ab Auto-Position, ins Planer-Postfach; Karte am Display bleibt der
                 // einzige Weg ins Navi – nichts startet von selbst

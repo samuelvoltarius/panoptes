@@ -408,7 +408,14 @@ public class TelegramApiHandler {
             int n = PIN_RNG.nextInt(1_000_000);
             String pin = String.format(java.util.Locale.US, "%06d", n);
             long expiry = System.currentTimeMillis() + PIN_TTL_MS;
-            UnifiedTelegramConfig.setPairPin(pin, expiry);
+            if (!UnifiedTelegramConfig.setPairPin(pin, expiry)) {
+                // 0.1.38.6: PIN konnte nicht (verschlüsselt) gespeichert werden – keine PIN zeigen, die nie gilt
+                response.put("success", false);
+                response.put("error", "PIN could not be stored");
+                response.put("code", "pin_not_stored");
+                HttpResponse.sendJson(out, response.toString());
+                return;
+            }
 
             response.put("success", true);
             response.put("pin", pin);

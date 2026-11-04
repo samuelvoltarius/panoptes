@@ -29,6 +29,7 @@
     "kamera_recht_fehlt": "Autorisation caméra manquante – à activer dans Panoptes sous Appareils associés.",
     "standbild_recht_fehlt": "Autorisation image fixe manquante – à activer dans Panoptes sous Appareils associés.",
     "launcher_recht_fehlt": "Autorisation lanceur manquante – à activer dans Panoptes sous Appareils associés.",
+    "route_recht_fehlt": "Autorisation itinéraire manquante – à activer dans Panoptes sous Appareils associés.",
     "web_link_expired": "Ce lien a expiré. Veuillez l'ouvrir à nouveau dans l'application.",
     "invalid_request_with_detail": "La requête n’est pas valide : {0}",
     "bydcloud_not_configured": "Le compte BYD n'est pas configuré",
@@ -2083,9 +2084,10 @@
       },
       "modus": {
         "title": "Installer les mises à jour",
-        "help": "« Notifier seulement » affiche les nouvelles versions et vous les installez vous-même. « Automatique » installe dès que la voiture est éteinte depuis au moins 10 minutes. Jamais en conduisant ; si quelque chose se passe mal, la version précédente revient toute seule au bout de 30 minutes au plus.",
-        "melden": "Notifier seulement",
-        "automatisch": "Automatique"
+        "help": "« Seulement signaler » : Panoptes vous prévient, le téléchargement et l’installation ne se font que si vous touchez. « Corrections automatiques » : les petites corrections s’installent toutes seules quand la voiture est éteinte depuis au moins 10 minutes, puis Panoptes vous prévient ; les nouvelles fonctions sont signalées, vous décidez. « Tout automatiquement » : les nouvelles fonctions aussi. Jamais en roulant ; en cas de problème, la version précédente revient toute seule en 30 minutes au plus.",
+        "melden": "Seulement signaler",
+        "korrekturen": "Corrections automatiques, nouveautés signalées",
+        "automatisch": "Tout automatiquement"
       },
       "pruefen": {
         "title": "Rechercher des mises à jour",
@@ -2314,6 +2316,10 @@
       "fpsBewegung": {
         "title": "Caméra à l'arrêt avec mouvement",
         "help": "Images par seconde dès que quelque chose bouge ou est enregistré. Plus d'images = enregistrements plus fluides mais plus de courant. 10 ou 15 recommandés ; en dessous de 5, les mouvements rapides saccadent dans l'enregistrement. Vide = comme avant (en général 15)."
+      },
+      "parkFreigeben": {
+        "title": "Mettre la caméra au repos à l'arrêt",
+        "help": "Économise de l'énergie quand la voiture est en P et que rien n'enregistre. Après 2 minutes, la caméra est éteinte. Elle se rallume dès que vous démarrez. La vue de l'angle mort met alors un instant, environ 5 secondes. L'enregistrement, la surveillance et la vue en direct ne changent pas. Ne fonctionne que sur les voitures dont la caméra continuerait sinon de tourner à l'arrêt."
       },
       "fps": {
         "2": "2 images/s – le plus économe",

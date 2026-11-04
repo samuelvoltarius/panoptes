@@ -23,7 +23,9 @@ public final class Geheimnisse {
 
     static final Pattern GEHEIM = Pattern.compile(
             "(?i)^(.*secret|.*token|.*passw(or)?d|passwort|.*pwd|.*api_?key|.*private_?key|.*auth_?key|login_?key"
-                    + "|local_?key|.*pin|pair_?pin|refresh)$");
+                    + "|local_?key|.*pin|pair_?pin|refresh"
+                    // 0.1.38.6: verschlüsselte Schattenkopien (ZugangsMigration.SCHATTEN) gehen auch nie hinaus
+                    + "|enc_.*)$");
 
     /** true, wenn ein Konfigurations-Schlüssel ein Geheimnis trägt. */
     public static boolean istGeheim(String schluessel) {

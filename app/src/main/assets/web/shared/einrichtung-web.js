@@ -107,6 +107,8 @@
 
     // 0.1.32 „Noch einrichten“: wo jeder Punkt im Web liegt. Ohne Eintrag (Auto, Rechte) geht es nur im Assistenten am Display.
     var ZIEL = {
+        // 0.1.38.5: Wächter ist jetzt optional (nachholbar) – Einstellungen auf surveillance.html
+        waechter: 'surveillance.html',
         betrieb: 'surveillance.html', karte: 'system.html#kartenquelle', daten: 'system.html#datenschutz',
         blitzer: 'system.html#blitzer', updates: 'system.html#updates', strompreis: 'charging.html#settings',
         extra_telegram: 'telegram.html', extra_handy: 'system.html#kopplung', extra_planer: 'system.html#planerKarte',

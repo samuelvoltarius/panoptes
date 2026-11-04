@@ -160,4 +160,26 @@
     <string name="im_vollbild_oeffnen">Im Vollbild öffnen</string>
     <string name="neben_jetzt">Neben dem Launcher öffnen</string>
     <string name="neben_kurz_nein">geht bei dieser App nicht</string>
+    <!-- 0.1.38.6 Komfort -->
+    <string name="komfort_oeffnen">Komfort: Sitze, Lenkrad, Entfrosten</string>
+    <string name="komfort_titel">Komfort</string>
+    <string name="komfort_an">An</string>
+    <string name="komfort_aus">Aus</string>
+    <string name="komfort_auto">Auto-Modus</string>
+    <string name="komfort_entfrosten_vorn">Frontscheibe entfrosten</string>
+    <string name="komfort_entfrosten_hinten">Heckscheibe entfrosten</string>
+    <string name="komfort_nur_geblaese">Nur Gebläse</string>
+    <string name="komfort_sitz_fahrer">Sitzheizung Fahrer</string>
+    <string name="komfort_sitz_beifahrer">Sitzheizung Beifahrer</string>
+    <string name="komfort_lueftung_fahrer">Sitzlüftung Fahrer</string>
+    <string name="komfort_lueftung_beifahrer">Sitzlüftung Beifahrer</string>
+    <string name="komfort_lenkrad">Lenkradheizung</string>
+    <string name="komfort_umluft">Luftzufuhr</string>
+    <string name="komfort_stufe_1">Stufe 1</string>
+    <string name="komfort_stufe_2">Stufe 2</string>
+    <string name="komfort_umluft_ein">Umluft</string>
+    <string name="komfort_frischluft">Frischluft</string>
+    <string name="komfort_neu">%1$s: %2$s</string>
+    <string name="komfort_nichts_lesbar">Noch nichts lesbar. Auto einschalten; Funktionen ohne Anzeige stehen darunter.</string>
+    <string name="klima_temp_unbekannt">Die Temperatur-Bedienung ist für dieses Automodell noch nicht bestätigt. Gebläse und An/Aus gehen weiter.</string>
 </resources>

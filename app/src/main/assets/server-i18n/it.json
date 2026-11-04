@@ -29,6 +29,7 @@
     "kamera_recht_fehlt": "Manca il permesso telecamera – attivalo in Panoptes in Dispositivi collegati.",
     "standbild_recht_fehlt": "Manca il permesso immagine – attivalo in Panoptes in Dispositivi collegati.",
     "launcher_recht_fehlt": "Manca il permesso launcher – attivalo in Panoptes in Dispositivi collegati.",
+    "route_recht_fehlt": "Manca il permesso percorso – attivalo in Panoptes in Dispositivi collegati.",
     "web_link_expired": "Il link è scaduto. Aprilo di nuovo nell'app.",
     "invalid_request_with_detail": "La richiesta non è valida: {0}",
     "bydcloud_not_configured": "L'account BYD non è configurato",
@@ -2083,9 +2084,10 @@
       },
       "modus": {
         "title": "Installa aggiornamenti",
-        "help": "“Solo avviso” mostra le nuove versioni e le installi tu. “Automatico” installa quando l'auto è spenta da almeno 10 minuti. Mai durante la guida; se qualcosa va storto, la versione precedente torna da sola entro 30 minuti al massimo.",
-        "melden": "Solo avviso",
-        "automatisch": "Automatico"
+        "help": "«Solo avvisare»: Panoptes ti avvisa, scarica e installa solo quando tocchi. «Correzioni automatiche»: le piccole correzioni si installano da sole quando l’auto è spenta da almeno 10 minuti, poi Panoptes ti avvisa; le nuove funzioni vengono segnalate, decidi tu. «Tutto automatico»: anche le nuove funzioni. Mai durante la guida; se qualcosa va storto, la versione precedente torna da sola entro 30 minuti.",
+        "melden": "Solo avvisare",
+        "korrekturen": "Correzioni automatiche, novità segnalate",
+        "automatisch": "Tutto automatico"
       },
       "pruefen": {
         "title": "Cerca aggiornamenti",
@@ -2314,6 +2316,10 @@
       "fpsBewegung": {
         "title": "Telecamera da ferma con movimento",
         "help": "Fotogrammi al secondo appena qualcosa si muove o viene registrato. Più fotogrammi = registrazioni più fluide ma più corrente. Consigliati 10 o 15; sotto 5 i movimenti rapidi risultano a scatti nella registrazione. Vuoto = come prima (di solito 15)."
+      },
+      "parkFreigeben": {
+        "title": "Far riposare la telecamera da fermi",
+        "help": "Risparmia energia quando l'auto è in P e non registra nulla. Dopo 2 minuti la telecamera si spegne. Si riaccende appena si parte. La vista dell'angolo cieco impiega allora un attimo, circa 5 secondi. Registrazione, sorveglianza e vista in diretta non cambiano. Funziona solo sulle auto la cui telecamera altrimenti resterebbe accesa da ferme."
       },
       "fps": {
         "2": "2 fotogrammi/s – il più parsimonioso",

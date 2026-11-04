@@ -150,4 +150,15 @@ public class KlimaStufeTest {
         assertFalse("Abweichung = nicht belegt", KlimaStufe.skalaBelegt(new int[][]{{10, 10}, {6, 8}}));
         assertFalse(KlimaStufe.skalaBelegt(new int[][]{{10, 10}, {0, 0}}));
     }
+
+    /** 0.1.38.6: Grad gibt es nur für per Konfig {@code klima.gradModelle} bestätigte Modelle, nie geraten. */
+    @Test
+    public void gradModellNurPerKonfig() throws Exception {
+        org.json.JSONObject k = new org.json.JSONObject().put("gradModelle", new org.json.JSONArray().put("Atto3"));
+        assertTrue(KlimaStufe.istGradModell("atto3", k));
+        assertFalse(KlimaStufe.istGradModell("atto3", null));
+        assertFalse(KlimaStufe.istGradModell("seal", k));
+        assertFalse(KlimaStufe.istGradModell(null, k));
+        assertFalse(KlimaStufe.istGradModell("dolphinsurf", k));
+    }
 }

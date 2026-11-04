@@ -20,8 +20,8 @@ object SchrittKatalog {
     fun erzeuge(id: String, a: Assistent): SchrittAnsicht? = when (id) {
         "sprache" -> SpracheSchritt(a)
         "haftung" -> HaftungSchritt(a)
-        "autostart", "ueberlagerung", "rechte" -> FreigabenSchritt(id, a)
-        "usb_freigabe" -> UsbFreigabeSchritt(a, a.host)
+        // 0.1.38.5: autostart, ueberlagerung, rechte und usb_freigabe sind EIN Bildschirm „Panoptes darf loslegen“.
+        "autostart", "ueberlagerung", "rechte", "usb_freigabe" -> FreigabenSchritt(id, a, a.host)
         "auto" -> AutoSchritt(a, a.host)
         "kameras" -> KamerasSchritt(a, a.host)
         "waechter" -> WaechterSchritt(a)

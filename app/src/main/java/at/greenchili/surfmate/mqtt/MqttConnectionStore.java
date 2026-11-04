@@ -1,5 +1,6 @@
 package at.greenchili.surfmate.mqtt;
 
+import at.greenchili.surfmate.byd.cloud.crypto.ZugangsMigration;
 import at.greenchili.surfmate.logging.DaemonLogger;
 
 import org.json.JSONArray;
@@ -19,6 +20,10 @@ import java.util.List;
  * Thread-safe — all reads/writes are synchronized.
  *
  * Maximum 5 connections to keep resource usage reasonable on the BYD head unit.
+ *
+ * <p>0.1.38.6: username/password sind seit {@link MqttConnectionConfig#toJson()} verschlüsselt, Bestandsdateien
+ * blieben aber bis zum nächsten Speichern Klartext. {@link #load()} schreibt sie jetzt einmal neu
+ * ({@link ZugangsMigration}).
  */
 public class MqttConnectionStore {
 
@@ -53,14 +58,21 @@ public class MqttConnectionStore {
 
                 String content = new String(bytes, StandardCharsets.UTF_8);
                 JSONArray array = new JSONArray(content);
+                List<String> rohwerte = new ArrayList<>();
 
                 for (int i = 0; i < array.length() && i < MAX_CONNECTIONS; i++) {
                     JSONObject obj = array.getJSONObject(i);
+                    rohwerte.add(obj.optString("username", ""));
+                    rohwerte.add(obj.optString("password", ""));
                     MqttConnectionConfig config = MqttConnectionConfig.fromJson(obj);
                     connections.add(config);
                 }
 
                 logger.info("Loaded " + connections.size() + " MQTT connections");
+                if (ZugangsMigration.noetig(rohwerte)) {
+                    logger.info("MQTT: Zugangsdaten werden verschlüsselt neu gespeichert");
+                    save();
+                }
                 return connections.size();
             } catch (Exception e) {
                 logger.error("Failed to load MQTT connections: " + e.getMessage());

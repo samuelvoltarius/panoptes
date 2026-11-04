@@ -138,7 +138,7 @@ public class NaviGuenstigsteTest {
 
     private static JSONObject ladung(long id, String betreiber, boolean dc, double kwh, double betrag, long zeit)
             throws Exception {
-        return new JSONObject().put("id", id).put("betreiber", betreiber).put("isDc", dc)
+        return new JSONObject().put("id", id).put("land", "AT").put("betreiber", betreiber).put("isDc", dc)
                 .put("saeuleKwh", kwh).put("saeuleBetrag", betrag).put("startTime", zeit);
     }
 
@@ -148,17 +148,19 @@ public class NaviGuenstigsteTest {
                 .put(ladung(1, "Kraftwerk Nord", true, 20, 9.0, 1000))     // DC alt 0,45
                 .put(ladung(2, "Kraftwerk  nord ", true, 20, 7.0, 2000))   // DC jung 0,35 (Name normalisiert)
                 .put(ladung(3, "Kraftwerk Nord", false, 10, 2.5, 3000))    // AC 0,25
-                .put(new JSONObject().put("id", 4).put("betreiber", "Nutzerpreis").put("isDc", false)
+                .put(new JSONObject().put("id", 4).put("land", "AT").put("betreiber", "Nutzerpreis").put("isDc", false)
                         .put("preisQuelle", "nutzer").put("electricityRate", 0.31).put("startTime", 500));
         NaviApiHandler.eigeneLadungenQuelle = () -> sitz;
         JSONObject antwort = new JSONObject().put("stationen", new JSONArray()
-                .put(new JSONObject().put("name", "A").put("betreiber", "Kraftwerk Nord").put("art", "HPC")
+                .put(new JSONObject().put("name", "A").put("land", "AT").put("betreiber", "Kraftwerk Nord").put("art", "HPC")
                         .put("preis_adhoc", new JSONObject().put("preis_kwh", 0.69)))
-                .put(new JSONObject().put("name", "B").put("betreiber", "kraftwerk nord").put("art", "AC"))
-                .put(new JSONObject().put("name", "C").put("betreiber", "Fremd").put("art", "DC")
+                .put(new JSONObject().put("name", "B").put("land", "AT").put("betreiber", "kraftwerk nord").put("art", "AC"))
+                .put(new JSONObject().put("name", "C").put("land", "AT").put("betreiber", "Fremd").put("art", "DC")
                         .put("preis_eigen", new JSONObject().put("preis_kwh", 0.01)))   // vom Planer: nie übernehmen
-                .put(new JSONObject().put("name", "D").put("betreiber", "Nutzerpreis").put("art", "AC"))
-                .put(new JSONObject().put("name", "E").put("betreiber", "Kraftwerk Nord").put("art", "?")));
+                .put(new JSONObject().put("name", "D").put("land", "AT").put("betreiber", "Nutzerpreis").put("art", "AC"))
+                .put(new JSONObject().put("name", "E").put("land", "AT").put("betreiber", "Kraftwerk Nord").put("art", "?"))
+                .put(new JSONObject().put("name", "F").put("land", "DE").put("betreiber", "Kraftwerk Nord").put("art", "DC"))
+                .put(new JSONObject().put("name", "G").put("betreiber", "Kraftwerk Nord").put("art", "DC")));
         JSONObject o = new JSONObject(NaviApiHandler.mitEigenenPreisen(antwort.toString()));
         JSONArray st = o.getJSONArray("stationen");
         assertEquals("DC/HPC: jüngster eigener DC-Preis", 0.35, st.getJSONObject(0).getJSONObject("preis_eigen").getDouble("preis_kwh"), 1e-9);
@@ -167,6 +169,8 @@ public class NaviGuenstigsteTest {
         assertFalse("fremder Betreiber ohne eigenen Preis, Planer-Feld weg", st.getJSONObject(2).has("preis_eigen"));
         assertEquals("selbst gesetzter Preis zählt", 0.31, st.getJSONObject(3).getJSONObject("preis_eigen").getDouble("preis_kwh"), 1e-9);
         assertFalse("Stromart unbekannt → nichts", st.getJSONObject(4).has("preis_eigen"));
+        assertFalse("anderes Land: kein AT-Preis (0.1.38.6)", st.getJSONObject(5).has("preis_eigen"));
+        assertFalse("Land unbekannt: kein eigener Preis", st.getJSONObject(6).has("preis_eigen"));
         assertFalse("keine Ladungs-ID in der Antwort", o.toString().contains("ladungId"));
 
         NaviApiHandler.eigeneLadungenQuelle = () -> null;

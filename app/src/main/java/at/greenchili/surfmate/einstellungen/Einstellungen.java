@@ -35,6 +35,27 @@ public final class Einstellungen {
 
     private Einstellungen() {}
 
+    /**
+     * 0.1.38.6 Sicherheitsfix: Werte vom Typ GEHEIM ({@code planner.memberToken}, {@code update.token}) bekommen eine
+     * verschlüsselte Schattenkopie {@code enc_<name>} über {@link at.greenchili.surfmate.byd.cloud.crypto.CredentialCipher}.
+     * Der Klartext bleibt in 0.1.38.6 stehen (Rückfall auf 0.1.38.5, dessen Updater {@code update.token} liest).
+     * Tests setzen Attrappen.
+     */
+    static volatile java.util.function.UnaryOperator<String> verschluessler =
+            at.greenchili.surfmate.byd.cloud.crypto.CredentialCipher::encrypt;
+    static volatile java.util.function.UnaryOperator<String> entschluessler =
+            at.greenchili.surfmate.byd.cloud.crypto.CredentialCipher::decrypt;
+
+    /** Schattenkopie {@code enc_<name>} in denselben Abschnitt; leerer/gelöschter Wert leert den Schatten. */
+    static void schattenDazu(Feld f, Object wert, Map<String, Map<String, Object>> w) {
+        Map<String, Object> sec = w.get(f.abschnittConfig());
+        if (sec == null) return;
+        String klar = wert instanceof String ? (String) wert : "";
+        String s = at.greenchili.surfmate.byd.cloud.crypto.ZugangsMigration.schatten(klar, "", verschluessler, entschluessler);
+        sec.put(at.greenchili.surfmate.byd.cloud.crypto.ZugangsMigration.schattenSchluessel(f.schluesselConfig()),
+                s == null ? "" : s);
+    }
+
     // ================================================================ Schema
 
     public static JSONObject schema(List<Feld> felder, JSONObject root, Katalog.Kontext k, Texte t) throws Exception {
@@ -227,6 +248,7 @@ public final class Einstellungen {
                 aktionGesetzt.add(key);
             }
             Map<String, Map<String, Object>> w = f.zugriff.schreibe(wert, arbeit);
+            if (f.typ == Feld.Typ.GEHEIM) schattenDazu(f, wert, w);
             for (Map.Entry<String, Map<String, Object>> s : w.entrySet()) {
                 JSONObject sec = arbeit.optJSONObject(s.getKey());
                 if (sec == null) { sec = new JSONObject(); arbeit.put(s.getKey(), sec); }

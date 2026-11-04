@@ -2375,6 +2375,34 @@ public class SocHistoryDatabase {
                                 && tAvg >= 15.0
                                 && tAvg <= 35.0
                                 && energyRes.canCalibrateSoh();
+                // Eine Zeile je Ladung: warum entsteht ein SOH-Anker oder warum nicht (Befund 04.11.: Zähler 0,
+                // Integral 0 -> keine SOC-unabhängige Energie). Ohne Orte, ohne Rohproben.
+                logger.info(String.format(java.util.Locale.US,
+                        "SOH-Anker-Pruefung: Kandidat=%s (dSoc=%.1f>=25:%s, tAvg=%.1f in 15..35:%s,"
+                                + " SOC-unabhaengige Energie:%s, Quelle=%s, metered=%s, integrated=%.3f)",
+                        sohCalibrationCandidate,
+                        socDelta, isFinite(socDelta) && socDelta >= 25.0,
+                        tAvg, isFinite(tAvg) && tAvg >= 15.0 && tAvg <= 35.0,
+                        energyRes.canCalibrateSoh(), energyRes.source,
+                        Double.isNaN(meteredKwh) ? "n/a" : String.format(java.util.Locale.US, "%.3f", meteredKwh),
+                        integrated));
+                // Wallbox-Energie dieser AC-Ladung nur ins Protokoll (netzseitig, nicht in den Anker). Eigener Thread:
+                // der Wallbox-Status liest per MQTT und darf den Ladeabschluss nie aufhalten.
+                if (isDc == 0) {
+                    final long wbStart = chargingStartTime;
+                    final double wbDelta = socDelta;
+                    Thread wb = new Thread(() -> {
+                        try {
+                            String zeile = at.greenchili.surfmate.charging.WallboxEnergieProtokoll.zeile(
+                                    at.greenchili.surfmate.server.WallboxApiHandler.dienst().status().json, wbStart, wbDelta);
+                            if (zeile != null) logger.info(zeile);
+                        } catch (Throwable t) {
+                            logger.debug("Wallbox-Energie-Protokoll: " + t.getMessage());
+                        }
+                    }, "WallboxEnergieProtokoll");
+                    wb.setDaemon(true);
+                    wb.start();
+                }
                 final SohCalibrationFrame stagedSohFrame =
                         sohCalibrationCandidate
                                 ? captureSohCalibrationFrame(getSohEstimator()) : null;

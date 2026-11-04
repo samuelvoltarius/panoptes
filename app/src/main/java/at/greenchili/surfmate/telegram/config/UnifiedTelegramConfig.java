@@ -256,7 +256,8 @@ public final class UnifiedTelegramConfig {
     }
 
     public static String getPairPin() {
-        return load().optString(K_PAIR_PIN, "");
+        // 0.1.38.6: verschlüsselt gespeichert; decrypt() reicht eine alte Klartext-PIN durch
+        return CredentialCipher.decrypt(load().optString(K_PAIR_PIN, ""));
     }
 
     public static long getPairPinExpiry() {
@@ -565,7 +566,11 @@ public final class UnifiedTelegramConfig {
     public static boolean setPairPin(String pin, long expiryMs) {
         JSONObject delta = new JSONObject();
         try {
-            delta.put(K_PAIR_PIN, pin == null ? "" : pin);
+            // 0.1.38.6 Sicherheit: die Kopplungs-PIN liegt nicht mehr lesbar in der 0666-Config. Geht das Verschlüsseln
+            // nicht, wird keine PIN gespeichert (Kopplung schlägt sichtbar fehl, statt im Klartext zu liegen).
+            String enc = pin == null || pin.isEmpty() ? "" : CredentialCipher.encrypt(pin);
+            if (!enc.isEmpty() && !CredentialCipher.isEncrypted(enc)) return false;
+            delta.put(K_PAIR_PIN, enc);
             delta.put(K_PAIR_PIN_EXPIRY, expiryMs);
         } catch (Exception e) {
             return false;
@@ -758,8 +763,9 @@ public final class UnifiedTelegramConfig {
             // PIN — only import if not yet expired, otherwise it's noise.
             String pin = props.getProperty("pair_pin", "");
             long pinExpiry = parseLongOr(props.getProperty("pair_pin_expiry", "0"), 0);
-            if (!pin.isEmpty() && pinExpiry > System.currentTimeMillis()) {
-                delta.put(K_PAIR_PIN, pin);
+            String pinEnc = pin.isEmpty() ? "" : CredentialCipher.encrypt(pin);
+            if (!pin.isEmpty() && pinExpiry > System.currentTimeMillis() && CredentialCipher.isEncrypted(pinEnc)) {
+                delta.put(K_PAIR_PIN, pinEnc);
                 delta.put(K_PAIR_PIN_EXPIRY, pinExpiry);
             }
 

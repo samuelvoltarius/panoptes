@@ -2830,6 +2830,10 @@
   },
   "soh": {
     "fallback_caption": "Dall'ultima ricarica · {pct}% · {date}",
+    "both_oem_label": "Secondo l'auto (BYD)",
+    "both_est_label": "La nostra stima",
+    "both_none": "non disponibile",
+    "both_explain": "L'auto indica il proprio valore. Panoptes ne calcola anche uno dal livello di carica e dall'energia residua. I due possono differire: l'auto arrotonda in modo generoso, la nostra stima oscilla un po'. Fa fede il valore dell'auto.",
     "unavailable_caption": "Salute della batteria sconosciuta – guida o ricarica per ottenere una misura",
     "last_verified": "Ultimo controllo: {pct}% · {date}",
     "tap_to_set": "Tocca per cambiare",

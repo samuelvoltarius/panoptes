@@ -31,14 +31,18 @@ object Einrichtung {
     /** Schritte, die ohne laufenden Daemon gezeigt werden (Neuinstallation vor der USB-Freigabe). */
     val VORLAUF = listOf("sprache", "haftung", "autostart", "ueberlagerung", "rechte", "usb_freigabe")
 
-    /** Pflichtschritte, 0.1.32 Schnellstart (gilt, falls der Kern „pflicht“ nicht mitliefert). */
-    val PFLICHT = setOf("sprache", "haftung", "usb_freigabe", "waechter", "updates")
+    /** Pflichtschritte (gilt, falls der Kern „pflicht“ nicht mitliefert). 0.1.38.5: nur noch das Unverzichtbare. */
+    val PFLICHT = setOf("sprache", "haftung", "usb_freigabe")
 
-    /** Teil des Bildschirms „Panoptes erlauben“ ([FreigabenSchritt], Schritt-ID autostart), kein eigener Bildschirm im Ablauf. */
-    val IM_SAMMELSCHRITT = setOf("ueberlagerung", "rechte")
+    /**
+     * Teil des Bildschirms „Panoptes darf loslegen“ ([FreigabenSchritt], Schritt-ID autostart), kein eigener Bildschirm
+     * im Ablauf. 0.1.38.5: auch die USB-Freigabe gehört jetzt auf diesen einen Bildschirm (gebündelte Android-Dialoge),
+     * damit „läuft schnell“ = 3 Bildschirme (Sprache, Kurz-Haftung, Freigaben) ist.
+     */
+    val IM_SAMMELSCHRITT = setOf("ueberlagerung", "rechte", "usb_freigabe")
 
-    /** Schritte des Schnellstarts nach dem Vorlauf (waechter, updates, extra_handy): nur für „Schritt n von m“ ohne Daemon. */
-    const val NACH_VORLAUF = 3
+    /** 0.1.38.5: Nach dem Vorlauf kommt kein eigener Schnellstart-Schritt mehr (alles Weitere ist „Noch einrichten“). */
+    const val NACH_VORLAUF = 0
 
     const val ERLEDIGT = "erledigt"
     const val OFFEN = "offen"

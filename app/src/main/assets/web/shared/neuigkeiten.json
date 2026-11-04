@@ -373,6 +373,45 @@
         "In de launcher stel je de airco direct in, op de Surf in stappen (verwarmen, neutraal, koelen). Tegels en tabbladen werken nu meteen, zonder omweg via Panoptes.",
         "Apps kun je eerlijk naast de launcher openen, en Panoptes herstelt zichzelf betrouwbaarder als de verbinding met de auto even wegvalt."
       ]
+    },
+    {
+      "version": "0.1.38.6",
+      "versionCode": 70,
+      "de": [
+        "Bei Updates hast du jetzt drei Wahlen: „Nur melden“, „Korrekturen automatisch, Neues melden“ (kleine Korrekturen kommen lautlos, sobald das Auto 10 Minuten aus ist) oder „Alles automatisch“. Deine bisherige Einstellung bleibt.",
+        "Die Einrichtung ist kürzer: drei Bildschirme, bis Panoptes läuft, alle Freigaben auf einem Bildschirm. Den Rest holst du unter „Noch einrichten“ nach.",
+        "Im Launcher steuerst du jetzt auch Sitzheizung, Sitzlüftung, Lenkradheizung, Umluft und Entfrosten, soweit dein Auto sie meldet. Kann Panoptes einen Wert nicht lesen, wird nichts geraten.",
+        "Die Akku-Karte im Web zeigt den Gesundheitswert von BYD und die eigene Schätzung von Panoptes nebeneinander. Dein eigener Ladepreis gilt jetzt je Land, zum Beispiel Lidl in Österreich und in Deutschland getrennt.",
+        "Neuer Schalter (Standard aus): Im Stand (Gang P) darf die Kamera schließen und Strom sparen. Der Totwinkel braucht danach beim Losfahren ein paar Sekunden."
+      ],
+      "en": [
+        "Updates now offer three choices: “Only notify”, “Fixes automatically, report new features” (small fixes arrive silently once the car has been off for 10 minutes) or “Everything automatically”. Your current setting stays.",
+        "Setup is shorter: three screens until Panoptes runs, all permissions on one screen. You can do the rest later under “Still to set up”.",
+        "In the launcher you can now also control seat heating, seat ventilation, steering wheel heating, recirculation and defrost, as far as your car reports them. If Panoptes cannot read a value, it does not guess.",
+        "The battery card on the web shows BYD’s health value and Panoptes’ own estimate side by side. Your own charging price now applies per country, for example Lidl in Austria and in Germany separately.",
+        "New switch (off by default): when parked (gear P) the camera may close to save power. The blind-spot view then needs a few seconds when you drive off."
+      ],
+      "fr": [
+        "Pour les mises à jour tu as maintenant trois choix : « Seulement signaler », « Corrections automatiques, nouveautés signalées » (les petites corrections arrivent sans bruit dès que la voiture est éteinte depuis 10 minutes) ou « Tout automatiquement ». Ton réglage actuel est conservé.",
+        "La configuration est plus courte : trois écrans jusqu’à ce que Panoptes tourne, toutes les autorisations sur un seul écran. Le reste, tu le fais plus tard sous « Encore à configurer ».",
+        "Dans le launcher tu règles maintenant aussi le chauffage et la ventilation des sièges, le volant chauffant, le recyclage d’air et le désembuage, si ta voiture les indique. Si Panoptes ne peut pas lire une valeur, il ne devine rien.",
+        "La carte batterie sur le web montre côte à côte la valeur de santé de BYD et l’estimation propre de Panoptes. Ton propre prix de recharge vaut maintenant par pays, par exemple Lidl en Autriche et en Allemagne séparément.",
+        "Nouvel interrupteur (désactivé par défaut) : à l’arrêt (vitesse P), la caméra peut se fermer pour économiser du courant. L’angle mort a ensuite besoin de quelques secondes au démarrage."
+      ],
+      "it": [
+        "Per gli aggiornamenti ora hai tre scelte: «Solo avvisare», «Correzioni automatiche, novità segnalate» (le piccole correzioni arrivano in silenzio quando l’auto è spenta da 10 minuti) o «Tutto automatico». La tua impostazione attuale resta.",
+        "La configurazione è più breve: tre schermate finché Panoptes funziona, tutti i permessi su una sola schermata. Il resto lo fai dopo in «Ancora da configurare».",
+        "Nel launcher ora regoli anche riscaldamento e ventilazione dei sedili, volante riscaldato, ricircolo e sbrinamento, se la tua auto li segnala. Se Panoptes non riesce a leggere un valore, non tira a indovinare.",
+        "La scheda batteria sul web mostra affiancati il valore di salute di BYD e la stima propria di Panoptes. Il tuo prezzo di ricarica ora vale per paese, per esempio Lidl in Austria e in Germania separati.",
+        "Nuovo interruttore (spento di serie): da fermo (marcia P) la telecamera può chiudersi e risparmiare corrente. L’angolo cieco poi ha bisogno di qualche secondo quando riparti."
+      ],
+      "nl": [
+        "Bij updates heb je nu drie keuzes: „Alleen melden”, „Correcties automatisch, nieuwe functies melden” (kleine correcties komen stil binnen zodra de auto 10 minuten uit staat) of „Alles automatisch”. Je huidige instelling blijft.",
+        "De installatie is korter: drie schermen tot Panoptes draait, alle toestemmingen op één scherm. De rest doe je later onder „Nog instellen”.",
+        "In de launcher bedien je nu ook stoelverwarming, stoelventilatie, stuurverwarming, recirculatie en ontwasemen, voor zover je auto ze meldt. Kan Panoptes een waarde niet lezen, dan wordt er niets gegokt.",
+        "De accukaart op het web toont de gezondheidswaarde van BYD en de eigen schatting van Panoptes naast elkaar. Je eigen laadprijs geldt nu per land, bijvoorbeeld Lidl in Oostenrijk en in Duitsland apart.",
+        "Nieuwe schakelaar (standaard uit): in stilstand (versnelling P) mag de camera sluiten en stroom sparen. De dodehoekweergave heeft daarna bij het wegrijden een paar seconden nodig."
+      ]
     }
   ]
 }

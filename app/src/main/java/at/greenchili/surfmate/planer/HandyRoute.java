@@ -54,9 +54,22 @@ public final class HandyRoute {
     private final Map<String, JSONObject> staende = new HashMap<>();
     private boolean laeuft;
 
+    /** Gemerkte Pläne der Vorschau (für „route {plan_id}“); im Test ersetzbar, sonst die Laufzeit-Instanz. */
+    private HandyPlanVorschau vorschau;
+
     HandyRoute(Umgebung env, Executor ausfuehrer) {
         this.env = env;
         this.ausfuehrer = ausfuehrer;
+    }
+
+    HandyRoute(Umgebung env, Executor ausfuehrer, HandyPlanVorschau vorschau) {
+        this(env, ausfuehrer);
+        this.vorschau = vorschau;
+    }
+
+    private HandyPlanVorschau vorschau() {
+        HandyPlanVorschau v = vorschau;
+        return v != null ? v : HandyPlanVorschau.get();
     }
 
     static boolean ort(JSONObject o) {
@@ -76,6 +89,8 @@ public final class HandyRoute {
 
     /** Prüft die Anfrage und startet das Planen im Hintergrund. Antwort sofort. */
     public JSONObject starten(String kid, JSONObject req, long jetzt) throws Exception {
+        // 0.1.38.6: „Ins Auto“ mit plan_id = GENAU den Plan der Vorschau übernehmen, nicht neu planen
+        if (req.has("plan_id")) return insAuto(kid, req.optString("plan_id", ""), jetzt);
         JSONObject ziel = req.optJSONObject("ziel");
         if (!ort(ziel)) return fehler("werte");
         JSONArray zz = req.optJSONArray("zwischenziele");
@@ -110,6 +125,63 @@ public final class HandyRoute {
             }
         });
         return new JSONObject().put("ok", true).put("status", "plant");
+    }
+
+    /**
+     * 0.1.38.6 {@code route {plan_id}}: legt den Plan der Vorschau mit {@code an-auto {plan_id, auto}} ins Planer-Postfach
+     * (nur die eigene Auto-Kennung). Ein unbekannter oder abgelaufener Plan (älter als 2 h, nach einem Neustart oder vom
+     * Planer mit 410/404 beantwortet) ist ehrlich {@code plan_abgelaufen}/{@code plan_unbekannt}: das Handy plant neu.
+     * Panoptes plant hier nichts selbst.
+     */
+    JSONObject insAuto(String kid, String planId, long jetzt) throws Exception {
+        if (!planId.matches("^p_[A-Za-z0-9_-]{3,80}$")) return fehler("werte");
+        String[] token = env.token();
+        String auto = env.autoId();
+        if (token == null || auto == null || auto.isEmpty()) return fehler("kein_planer");
+        HandyPlanVorschau v = vorschau();
+        String grund = v.pruefe(kid, planId, jetzt);
+        if (grund != null) return fehler(grund);
+        synchronized (this) {
+            if (laeuft) return fehler("laeuft_schon");
+            laeuft = true;
+            staende.put(kid, new JSONObject().put("status", "plant").put("zeit", jetzt));
+        }
+        ausfuehrer.execute(() -> {
+            JSONObject e;
+            try {
+                e = planUebernehmen(v, token, auto, planId);
+            } catch (Throwable t) {
+                e = stand("fehler", "intern");
+            }
+            synchronized (HandyRoute.this) {
+                try { e.put("zeit", jetzt); } catch (Exception ignored) { }
+                staende.put(kid, e);
+                laeuft = false;
+            }
+        });
+        return new JSONObject().put("ok", true).put("status", "plant");
+    }
+
+    private JSONObject planUebernehmen(HandyPlanVorschau v, String[] token, String auto, String planId) throws Exception {
+        // Bindung der Auto-Kennung an den Schlüssel wie beim normalen Weg
+        env.http("GET", "fahrtenbuch/offen?auto=" + auto, token, null, 8_000);
+        Object[] a = env.http("POST", "an-auto", token, new JSONObject().put("plan_id", planId).put("auto", auto).toString(), 15_000);
+        if (a == null) return stand("fehler", "netz");
+        int ac = (Integer) a[0];
+        if (ac == 410) { v.vergessen(planId); return stand("fehler", "plan_abgelaufen"); }
+        if (ac == 404) { v.vergessen(planId); return stand("fehler", "plan_unbekannt"); }
+        if (ac == 403) return stand("fehler", "planer_recht_fehlt");
+        if (ac == 401) return stand("fehler", "kein_planer");
+        if (ac == 429) return stand("fehler", "zu_oft");
+        if (ac != 200) return stand("fehler", "planer");
+        env.routeNeuLaden();
+        JSONObject r = stand("bereit", null);
+        Object[] k = v.kurz(planId);
+        if (k != null) {
+            if (!"".equals(k[0])) r.put("titel", k[0]);
+            if (k[1] != null) r.put("km", k[1]);
+        }
+        return r;
     }
 
     /** Planen und ins Postfach legen (blockiert; im Hintergrund). */

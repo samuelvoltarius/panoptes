@@ -31,6 +31,8 @@
         wallbox: ['protokoll.a_wallbox', 'Wallbox'],
         route: ['protokoll.a_route', 'Ziel gesendet'],
         route_stand: ['protokoll.a_route', 'Ziel gesendet'],
+        plan_vorschau: ['protokoll.a_route', 'Ziel gesendet'],
+        plan_vorschau_stand: ['protokoll.a_route', 'Ziel gesendet'],
         update_starten: ['protokoll.a_update', 'Update'],
         tiermodus: ['protokoll.a_tiermodus', 'Tiermodus'],
         tiermodus_stand: ['protokoll.a_tiermodus', 'Tiermodus']

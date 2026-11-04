@@ -304,7 +304,10 @@ public class LauncherKlimaWegTest {
         String src = lies("app/src/main/java/at/greenchili/surfmate/server/LauncherKlimaBefehl.java");
         java.util.regex.Matcher m = java.util.regex.Pattern.compile("VehicleCommandRouter\\.(\\w+Command)\\b").matcher(src);
         List<String> erlaubt = Arrays.asList("ClimateOnCommand", "ClimateOffCommand", "ClimateStepTempCommand",
-                "ClimateSetFanCommand", "ClimateSetTempCommand");
+                "ClimateSetFanCommand", "ClimateSetTempCommand",
+                // 0.1.38.6 Komfort (LauncherKomfortWegTest): nur diese, nie Fenster, Schloss, Licht, Hupe, Kofferraum
+                "SeatHeatCommand", "SeatVentCommand", "SteeringWheelHeatCommand", "AcRecirculationCommand",
+                "AcAutoModeCommand", "FrontDefrostCommand", "RearDefrostCommand", "FanOnlyModeCommand");
         int n = 0;
         while (m.find()) {
             if (m.group(1).equals("VehicleCommand")) continue;   // Import des Typs
@@ -317,7 +320,8 @@ public class LauncherKlimaWegTest {
             assertFalse(verboten, src.contains(verboten));
         }
         assertEquals(new java.util.HashSet<>(Arrays.asList("an", "aus", "temp_hoch", "temp_runter", "luft_hoch",
-                "luft_runter")), LauncherKlimaBefehl.AKTIONEN);
+                "luft_runter")), LauncherKlimaBefehl.KLIMA_AKTIONEN);
+        assertEquals(20, LauncherKlimaBefehl.AKTIONEN.size());
     }
 
     @Test

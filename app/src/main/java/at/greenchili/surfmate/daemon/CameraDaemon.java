@@ -1184,6 +1184,13 @@ public class CameraDaemon {
             }
         } catch (Throwable ignored) {
         }
+        // 0.1.38.6 Sicherheitsfix: verschlüsselte Schattenkopien (enc_*) der Zugangsdaten abgleichen, Klartext bleibt
+        try {
+            int n = at.greenchili.surfmate.byd.cloud.crypto.ZugangsMigration.bestandVerschluesseln();
+            if (n > 0) log("Zugangsdaten: " + n + " Schattenkopie(n) nachgezogen");
+        } catch (Throwable t) {
+            log("Zugangsdaten-Schatten übersprungen: " + t.getClass().getSimpleName());
+        }
         at.greenchili.surfmate.reichweite.RangeWatchDienst.start();
         // Vertrag 9 (0.1.9): Auto-Zustand an den Planer – sendet nur mit Einwilligung planner.zustandSenden.
         at.greenchili.surfmate.planer.AutoZustand.laufzeit();

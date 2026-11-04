@@ -32,20 +32,35 @@ interface AssistentHost {
 // ================================================================ Teil D: Rechte
 
 /**
- * 0.1.32 Schnellstart: Autostart, Anzeige über anderen Apps und Android-Rechte auf einem Bildschirm.
- * [id] ist der Schritt, über den man kam; gespeichert werden immer alle drei (Prüf-Schritte, §0).
+ * 0.1.38.5 „Panoptes darf loslegen“ – EIN Bildschirm bündelt die vier Android-Freigaben: Autostart, Anzeige über
+ * anderen Apps, Android-Rechte und die USB-Freigabe (der Daemon-Start). Jede Zeile öffnet ihren eigenen
+ * System-Dialog; der Bildschirm erkennt die Erteilung selbst (alle 2 s) und schaltet „Weiter“ erst frei, wenn
+ * alle vier erteilt sind und der Daemon läuft. So wird „läuft schnell“ zu drei Bildschirmen.
+ *
+ * Gespeichert werden alle vier als Prüf-Schritte (§0, {geprueft, ok}). Vor der USB-Freigabe läuft kein Daemon,
+ * dann merkt der [Vorlauf] die Antworten und reicht sie nach. Fail-closed: ohne BYD-Infotainment kann die
+ * USB-Freigabe nicht erteilt werden – „Weiter“ bleibt gesperrt (die Kern-App gehört aufs Fahrzeugdisplay).
  */
-class FreigabenSchritt(id: String, a: Assistent) : SchrittAnsicht(id, a) {
+class FreigabenSchritt(id: String, a: Assistent, private val host: AssistentHost) : SchrittAnsicht(id, a) {
     private lateinit var liste: LinearLayout
-    private val ids = listOf("autostart", "ueberlagerung", "rechte")
+    private val ids = listOf("autostart", "ueberlagerung", "rechte", "usb_freigabe")
 
+    // Der Bundle-Schritt bringt Panoptes erst zum Laufen und enthält die Pflicht-USB-Freigabe → nicht überspringbar.
+    override val spaeterZeigen = false
     override val spaeterIds: List<String> get() = ids
+
+    private val usbAblauf = UsbFreigabeAblauf()
+    private var usbZustand = UsbFreigabeAblauf.Zustand.BEREIT
+    private var bydInfotainment = true
 
     private fun autostartOk() = !SetupGuideDialog.autostartFehlt(a.activity)
     private fun anzeigeOk() = !SetupGuideDialog.ueberlagerungFehlt(a.activity)
     private fun erteilt(p: String) = a.activity.checkSelfPermission(p) == PackageManager.PERMISSION_GRANTED
     private fun rechteOk() = ANDROID_RECHTE.all { erteilt(it) }
-    private fun ok(schritt: String) = when (schritt) { "autostart" -> autostartOk(); "ueberlagerung" -> anzeigeOk(); else -> rechteOk() }
+    private fun usbOk() = usbZustand == UsbFreigabeAblauf.Zustand.ERLEDIGT
+    private fun ok(schritt: String) = when (schritt) {
+        "autostart" -> autostartOk(); "ueberlagerung" -> anzeigeOk(); "rechte" -> rechteOk(); else -> usbOk()
+    }
 
     override fun ansicht(): View = spalte().apply {
         dazu(titel(t.res(R.string.einr_freigaben_titel)), 0f)
@@ -54,17 +69,40 @@ class FreigabenSchritt(id: String, a: Assistent) : SchrittAnsicht(id, a) {
         dazu(liste, 16f)
     }
 
-    override fun betreten() { pruefe() }
+    override fun betreten() {
+        bydInfotainment = host.istBydInfotainment()
+        pruefe()
+    }
 
+    /** Autostart/Anzeige/Rechte prüft die App selbst (synchron); den Daemon-Lauf fragt sie asynchron ab, dann zeichnen. */
     private fun pruefe() {
+        if (!bydInfotainment) {
+            usbZustand = UsbFreigabeAblauf.Zustand.NICHT_UNTERSTUETZT
+            zeichne()
+            // die drei Android-Freigaben trotzdem weiter selbst erkennen (sonst bleibt eine erteilte Zeile auf ✗)
+            if (!(autostartOk() && anzeigeOk() && rechteOk())) nachher(2000) { pruefe() }
+            return
+        }
+        host.daemonLaeuft { laeuft ->
+            a.haupt.post {
+                usbZustand = usbAblauf.zustand(true, laeuft, android.os.SystemClock.elapsedRealtime())
+                zeichne()
+                if (!ids.all { ok(it) }) nachher(2000) { pruefe() }
+            }
+        }
+    }
+
+    private fun zeichne() {
         liste.removeAllViews()
         zeile(R.string.einr_freigabe_autostart, autostartOk()) { SetupGuideDialog.autostartEinrichten(a.activity) }
         zeile(R.string.einr_freigabe_anzeige, anzeigeOk()) { SetupGuideDialog.ueberlagerungOeffnen(a.activity) }
         zeile(R.string.einr_freigabe_rechte, rechteOk()) {
-            a.activity.requestPermissions(ANDROID_RECHTE.filter { !erteilt(it) }.toTypedArray(), 4711)
+            // schon alle erteilt (Zeile noch nicht neu gezeichnet): leere Liste würde Android abstürzen lassen
+            val fehlen = ANDROID_RECHTE.filter { !erteilt(it) }
+            if (fehlen.isEmpty()) zeichne() else a.activity.requestPermissions(fehlen.toTypedArray(), 4711)
         }
+        usbZeile()
         a.geaendert()
-        if (!ids.all { ok(it) }) nachher(2000) { pruefe() }
     }
 
     private fun zeile(text: Int, ok: Boolean, klick: () -> Unit) {
@@ -73,6 +111,44 @@ class FreigabenSchritt(id: String, a: Assistent) : SchrittAnsicht(id, a) {
             LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         if (!ok) z.addView(a.knopf(t.res(R.string.einr_freigabe_knopf), primaer = true, klick = klick))
         liste.dazu(z, 12f)
+    }
+
+    /** Die USB-Zeile: eigener Zustand (Warte/Zeit abgelaufen/erledigt), Knopf löst das Android-Popup aus. */
+    private fun usbZeile() {
+        val ok = usbOk()
+        val z = LinearLayout(a.activity).apply { orientation = LinearLayout.HORIZONTAL; gravity = android.view.Gravity.CENTER_VERTICAL }
+        z.addView(a.text((if (ok) "✓ " else "✗ ") + t.res(R.string.einr_usb_titel), 21f, fett = true).apply { if (!ok) setTextColor(a.farbeWarnung) },
+            LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        if (!ok && usbZustand != UsbFreigabeAblauf.Zustand.NICHT_UNTERSTUETZT) {
+            val knopfText = when (usbZustand) {
+                UsbFreigabeAblauf.Zustand.WARTET -> t.res(R.string.einr_usb_knopf_warte)
+                UsbFreigabeAblauf.Zustand.ZEIT_ABGELAUFEN -> t.res(R.string.einr_usb_knopf_nochmal)
+                else -> t.res(R.string.einr_usb_knopf)
+            }
+            val b = a.knopf(knopfText, primaer = true) { usbAnfordern() }
+            if (usbZustand == UsbFreigabeAblauf.Zustand.WARTET) b.isEnabled = false
+            z.addView(b)
+        }
+        liste.dazu(z, 12f)
+        // Erklärung je Zustand (warum / Popup-Beschreibung / nicht unterstützt)
+        val hinweis = when (usbZustand) {
+            UsbFreigabeAblauf.Zustand.NICHT_UNTERSTUETZT -> t.res(R.string.einr_usb_nur_infotainment)
+            UsbFreigabeAblauf.Zustand.WARTET -> t.res(R.string.einr_usb_popup)
+            UsbFreigabeAblauf.Zustand.ZEIT_ABGELAUFEN -> t.res(R.string.einr_usb_zeit_abgelaufen)
+            UsbFreigabeAblauf.Zustand.ERLEDIGT -> ""
+            UsbFreigabeAblauf.Zustand.BEREIT -> t.res(R.string.einr_usb_warum)
+        }
+        if (hinweis.isNotEmpty()) liste.dazu(a.text(hinweis, 16f, leise = usbZustand != UsbFreigabeAblauf.Zustand.WARTET).apply {
+            if (usbZustand == UsbFreigabeAblauf.Zustand.WARTET) setTextColor(a.farbeAkzent)
+            if (usbZustand == UsbFreigabeAblauf.Zustand.ZEIT_ABGELAUFEN) setTextColor(a.farbeWarnung)
+        }, 4f)
+    }
+
+    private fun usbAnfordern() {
+        usbAblauf.anfragen(android.os.SystemClock.elapsedRealtime())
+        usbZustand = UsbFreigabeAblauf.Zustand.WARTET
+        host.usbAnfragen()
+        pruefe()
     }
 
     override fun weiterMoeglich(): Boolean = ids.all { ok(it) }
@@ -90,73 +166,6 @@ class FreigabenSchritt(id: String, a: Assistent) : SchrittAnsicht(id, a) {
     companion object {
         /** Die Android-Rechte (auch für den Abgleich beim App-Start, OnboardingHost). */
         val ANDROID_RECHTE = listOf(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-    }
-}
-
-class UsbFreigabeSchritt(a: Assistent, private val host: AssistentHost) : SchrittAnsicht("usb_freigabe", a) {
-    override val spaeterZeigen = false
-    private lateinit var status: android.widget.TextView
-    private var laeuft = false
-    private val ablauf = UsbFreigabeAblauf()
-    private var zustand = UsbFreigabeAblauf.Zustand.BEREIT
-    private var unterstuetzt = true
-
-    override fun ansicht(): View = spalte().apply {
-        dazu(titel(t.res(R.string.einr_usb_titel)), 0f)
-        dazu(a.text(t.res(R.string.einr_usb_warum)))
-        // Erst die Erklärung (mit Beschreibung des Popups), dann das Popup auslösen
-        dazu(a.text(t.res(R.string.einr_usb_popup), 18f).apply { setTextColor(a.farbeAkzent) })
-        status = a.text("", 18f, fett = true)
-        dazu(status)
-    }
-    override fun betreten() {
-        unterstuetzt = host.istBydInfotainment()
-        if (!unterstuetzt) {
-            zustand = UsbFreigabeAblauf.Zustand.NICHT_UNTERSTUETZT
-            status.text = t.res(R.string.einr_usb_nur_infotainment)
-            a.geaendert()
-            return
-        }
-        pruefe()
-    }
-    private fun pruefe() {
-        host.daemonLaeuft { ok ->
-            a.haupt.post {
-                laeuft = ok
-                zustand = ablauf.zustand(unterstuetzt, ok, android.os.SystemClock.elapsedRealtime())
-                status.text = when (zustand) {
-                    UsbFreigabeAblauf.Zustand.NICHT_UNTERSTUETZT -> t.res(R.string.einr_usb_nur_infotainment)
-                    UsbFreigabeAblauf.Zustand.ERLEDIGT -> "✓ " + t.res(R.string.einr_usb_ok)
-                    UsbFreigabeAblauf.Zustand.WARTET -> t.res(R.string.einr_usb_warte)
-                    UsbFreigabeAblauf.Zustand.ZEIT_ABGELAUFEN -> t.res(R.string.einr_usb_zeit_abgelaufen)
-                    UsbFreigabeAblauf.Zustand.BEREIT -> ""
-                }
-                a.geaendert()
-                if (!ok && zustand == UsbFreigabeAblauf.Zustand.WARTET) nachher(2000) { pruefe() }
-            }
-        }
-    }
-    override fun weiterText(): String? = when (zustand) {
-        UsbFreigabeAblauf.Zustand.NICHT_UNTERSTUETZT -> t.res(R.string.einr_usb_knopf_nur_auto)
-        UsbFreigabeAblauf.Zustand.ERLEDIGT -> null
-        UsbFreigabeAblauf.Zustand.WARTET -> t.res(R.string.einr_usb_knopf_warte)
-        UsbFreigabeAblauf.Zustand.ZEIT_ABGELAUFEN -> t.res(R.string.einr_usb_knopf_nochmal)
-        UsbFreigabeAblauf.Zustand.BEREIT -> t.res(R.string.einr_usb_knopf)
-    }
-    override fun weiterMoeglich(): Boolean = zustand != UsbFreigabeAblauf.Zustand.WARTET &&
-        zustand != UsbFreigabeAblauf.Zustand.NICHT_UNTERSTUETZT
-    override fun weiter(fertig: (Boolean, String?) -> Unit) {
-        if (!laeuft) {
-            ablauf.anfragen(android.os.SystemClock.elapsedRealtime())
-            zustand = UsbFreigabeAblauf.Zustand.WARTET
-            status.text = t.res(R.string.einr_usb_warte)
-            a.geaendert()
-            host.usbAnfragen()
-            pruefe()
-            fertig(false, t.res(R.string.einr_usb_popup_jetzt))
-            return
-        }
-        a.speichereAntwort(id, JSONObject().put("geprueft", true).put("ok", true), fertig)
     }
 }
 

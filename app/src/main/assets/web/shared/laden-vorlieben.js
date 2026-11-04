@@ -166,7 +166,7 @@
             arr.forEach(function (x) {
                 var id = x.tarif_id != null ? x.tarif_id : x.id;
                 if (id == null) return;
-                var name = [x.anbieter || x.name, x.tarif].filter(Boolean).join(' · ') + (x.land ? ' (' + x.land + ')' : '');
+                var name = [x.anbieter || x.msp || x.name, x.tarif].filter(Boolean).join(' · ') + (x.land ? ' (' + x.land + ')' : '');
                 var o = el('option', null, name); o.value = String(id); o.setAttribute('data-anzeige', name.slice(0, 80));
                 sel.appendChild(o);
             });

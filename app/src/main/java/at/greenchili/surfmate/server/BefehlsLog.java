@@ -52,7 +52,7 @@ public final class BefehlsLog {
     /** Aktionen von {@code /api/handy/v1/aktion} (HandyApiHandler §3); alles andere wird {@code unbekannt}. */
     static final Set<String> AKTIONEN = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             "aufsperren", "zusperren", "klima_an", "klima_aus", "sitzheizung", "akku_heizen", "heizen_stoppen",
-            "wallbox", "route", "route_stand", "update_starten", "tiermodus", "tiermodus_stand")));
+            "wallbox", "route", "route_stand", "plan_vorschau", "plan_vorschau_stand", "update_starten", "tiermodus", "tiermodus_stand")));
 
     /** Pfade, deren Schreibzugriffe immer zu {@link #PFLICHT} gehören. */
     static final String[] PFLICHT_PFADE = {

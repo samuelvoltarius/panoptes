@@ -3018,6 +3018,11 @@ BYD.performance = {
         // When no nominal is set, hide the SOH percentage entirely and prompt
         // the user to configure capacity. Without a nominal the formula has
         // nothing to divide by.
+        // Beide Werte nebeneinander: BYD-Index (oemSoh) und eigene Schätzung (estimatedSoh).
+        var bothFmt = function(v) { return (typeof v === 'number' && v > 0) ? v.toFixed(1) + '%' : BYD.i18n.t('soh.both_none'); };
+        setEl('sohBothOem', bothFmt(data.oemSoh));
+        setEl('sohBothEst', data.hasEstimate ? bothFmt(data.estimatedSoh) : BYD.i18n.t('soh.both_none'));
+
         var nominalSet = data.nominalCapacityKwh > 0;
         var displaySource = data.displaySource || (data.hasEstimate ? 'live' : 'unavailable');
         var displaySoh = (typeof data.displaySoh === 'number') ? data.displaySoh : -1;

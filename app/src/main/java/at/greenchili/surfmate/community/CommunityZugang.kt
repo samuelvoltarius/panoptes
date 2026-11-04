@@ -35,7 +35,9 @@ object CommunityZugang {
 
     /** Mitglieds-Schlüssel aus `planner.memberToken` oder null. */
     fun schluessel(root: JSONObject?): String? {
-        val t = root?.optJSONObject("planner")?.optString("memberToken", "")?.trim() ?: return null
+        val roh = root?.optJSONObject("planner")?.optString("memberToken", "")?.trim() ?: return null
+        // 0.1.38.6: Klartext bleibt maßgeblich; decrypt() reicht ihn durch und liest auch einen ENC:-Wert
+        val t = at.greenchili.surfmate.byd.cloud.crypto.CredentialCipher.decrypt(roh)?.trim() ?: return null
         return if (SCHLUESSEL.matches(t)) t else null
     }
 

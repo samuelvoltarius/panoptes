@@ -2830,6 +2830,10 @@
   },
   "soh": {
     "fallback_caption": "Van de laatste laadbeurt · {pct}% · {date}",
+    "both_oem_label": "Volgens de auto (BYD)",
+    "both_est_label": "Onze schatting",
+    "both_none": "niet beschikbaar",
+    "both_explain": "De auto meldt zijn eigen waarde. Panoptes berekent er zelf ook een uit laadniveau en resterende energie. Die twee kunnen verschillen: de auto rondt ruim af, onze schatting schommelt een beetje. De waarde van de auto is bindend.",
     "unavailable_caption": "Accugezondheid onbekend – rijd of laad om een meting te krijgen",
     "last_verified": "Laatst gecontroleerd: {pct}% · {date}",
     "tap_to_set": "Tik om te wijzigen",

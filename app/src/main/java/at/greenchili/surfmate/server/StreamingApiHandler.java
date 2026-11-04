@@ -1661,6 +1661,10 @@ public class StreamingApiHandler {
             GpuSurveillancePipeline pipeline = CameraDaemon.getGpuPipeline();
             if (pipeline == null) return;
             if (pipeline.isBlindSpotEnabled()) return;   // already armed — no-op
+            // Park-Freigabe (P, anwesend, nichts sonst): die Kamera bleibt zu, der 30-s-Takt darf sie nicht
+            // wieder starten. Der Gangwechsel aus P ruft diese Methode erst NACH dem Zurücksetzen der Karenz.
+            at.greenchili.surfmate.recording.RecordingModeManager rmm = CameraDaemon.getRecordingModeManager();
+            if (rmm != null && rmm.parkFreigabeAktiv()) return;
             if (!pipeline.isRunning()) {
                 // Pano not up yet. Kick a cold-start; the pano-ready hook in
                 // GpuSurveillancePipeline.start() re-drives this resolver once

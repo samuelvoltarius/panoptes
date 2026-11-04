@@ -951,6 +951,20 @@
                         </div>
                     </div>
 
+                    <!-- Beide Gesundheitswerte nebeneinander: Auto (BYD) und eigene Schätzung -->
+                    <div id="sohBoth" style="margin:0 0 14px 0;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                            <div style="background:var(--bg-elevated);padding:12px 14px;border-radius:12px;border:1px solid var(--border-subtle);">
+                                <div style="font-size:16px;color:var(--text-muted);" data-i18n="soh.both_oem_label">Laut Auto (BYD)</div>
+                                <div id="sohBothOem" style="font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;color:var(--text-primary);margin-top:4px;">--</div>
+                            </div>
+                            <div style="background:var(--bg-elevated);padding:12px 14px;border-radius:12px;border:1px solid var(--border-subtle);">
+                                <div style="font-size:16px;color:var(--text-muted);" data-i18n="soh.both_est_label">Unsere Schätzung</div>
+                                <div id="sohBothEst" style="font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;color:var(--text-primary);margin-top:4px;">--</div>
+                            </div>
+                        </div>
+                        <div style="font-size:16px;color:var(--text-muted);margin-top:8px;line-height:1.4;" data-i18n="soh.both_explain">Das Auto meldet seinen eigenen Wert. Panoptes rechnet zusätzlich selbst aus Akku-Prozent und Restenergie. Die beiden können sich unterscheiden: Das Auto rundet großzügig, unsere Schätzung schwankt etwas. Verbindlich ist der Wert vom Auto.</div>
+                    </div>
                     <!-- Metadata row -->
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                         <div style="background:var(--bg-elevated);padding:8px 10px;border-radius:6px;">

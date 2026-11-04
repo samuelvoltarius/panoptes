@@ -23,6 +23,7 @@
     "kamera_recht_fehlt": "Camera permission missing – switch it on in Panoptes under Paired devices.",
     "standbild_recht_fehlt": "Still image permission missing – switch it on in Panoptes under Paired devices.",
     "launcher_recht_fehlt": "Launcher permission missing – switch it on in Panoptes under Paired devices.",
+    "route_recht_fehlt": "Route permission missing – switch it on in Panoptes under Paired devices.",
     "web_link_expired": "This link has expired. Please open it again in the app.",
     "invalid_request_with_detail": "The request isn't valid: {0}",
     "bydcloud_not_configured": "BYD account isn't set up",
@@ -2077,9 +2078,10 @@
       },
       "modus": {
         "title": "Install updates",
-        "help": "“Notify only” shows new versions and you install them yourself. “Automatic” installs once the car has been off for at least 10 minutes. Never while driving; if something goes wrong, the previous version comes back by itself within 30 minutes.",
-        "melden": "Notify only",
-        "automatisch": "Automatic"
+        "help": "“Only notify”: Panoptes tells you, and downloads and installs only when you tap. “Fixes automatically”: small fixes install by themselves when the car has been off for at least 10 minutes, then Panoptes tells you; new features are reported and you decide. “Everything automatically”: new features install by themselves too. Never while driving; if something goes wrong, the previous version comes back by itself within 30 minutes.",
+        "melden": "Only notify",
+        "korrekturen": "Fixes automatically, report new features",
+        "automatisch": "Everything automatically"
       },
       "pruefen": {
         "title": "Check for updates",
@@ -2308,6 +2310,10 @@
       "fpsBewegung": {
         "title": "Camera when parked with motion",
         "help": "Frames per second as soon as something moves or is recorded. More frames = smoother recordings but more power. 10 or 15 recommended; below 5, fast movement looks jerky in the recording. Empty = as before (usually 15)."
+      },
+      "parkFreigeben": {
+        "title": "Let the camera rest while parked",
+        "help": "Saves power while the car is in P and nothing is recording. After 2 minutes the camera is switched off. It comes back on as soon as you drive off. The blind-spot view then needs a moment, about 5 seconds. Recording, guard and live view are not affected. Only works on cars whose camera would otherwise keep running while parked."
       },
       "fps": {
         "2": "2 frames/s – lowest power",

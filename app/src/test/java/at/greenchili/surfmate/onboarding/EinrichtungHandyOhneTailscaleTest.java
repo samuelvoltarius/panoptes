@@ -51,7 +51,9 @@ public class EinrichtungHandyOhneTailscaleTest {
         JSONObject z = EinrichtungApiHandler.zustand(root);
         assertEquals("Bestand: unter „Noch offen“", "spaeter", z.getJSONObject("schritte").getString("extra_handy"));
         assertEquals("fertig", EinrichtungApiHandler.sicht(root, z, null, null).getString("aktuell"));
-        assertEquals("offen", EinrichtungApiHandler.zustand(new JSONObject()).getJSONObject("schritte").getString("extra_handy"));
+        // 0.1.38.5: „Handy verbinden“ ist aus dem Schnellstart raus – auch der neue Nutzer sieht es unter „Noch
+        // einrichten“ (die Brücke-Frage kommt erst beim Koppeln). Nie Pflicht, nie im geführten Ablauf.
+        assertEquals("spaeter", EinrichtungApiHandler.zustand(new JSONObject()).getJSONObject("schritte").getString("extra_handy"));
     }
 
     @Test

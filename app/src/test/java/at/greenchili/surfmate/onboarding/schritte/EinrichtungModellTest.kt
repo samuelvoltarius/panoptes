@@ -73,12 +73,16 @@ class EinrichtungModellTest {
         assertFalse(v.vomKern)
         assertEquals(Einrichtung.VORLAUF, v.schritte.map { it.id })
         assertEquals("haftung", v.startSchritt())
-        assertEquals(Pair(1, 7), v.fortschritt("sprache"))
+        // 0.1.38.5: ueberlagerung/rechte/usb_freigabe gehören auf den autostart-Bildschirm, nach dem Vorlauf kommt
+        // kein eigener Schnellstart-Schritt mehr → sichtbar sind sprache, haftung, autostart (3).
+        assertEquals(Pair(1, 3), v.fortschritt("sprache"))
     }
 
     @Test fun pflichtAusListeWennKernNichtsSagt() {
-        val s = stand("""{"schritte":[{"id":"waechter","status":"offen"},{"id":"daten","status":"offen"}]}""")
-        assertTrue(s.schritt("waechter")!!.pflicht)
+        // 0.1.38.5: Pflicht ist nur noch sprache/haftung/usb_freigabe – haftung Pflicht, waechter/daten nicht.
+        val s = stand("""{"schritte":[{"id":"haftung","status":"offen"},{"id":"waechter","status":"offen"},{"id":"daten","status":"offen"}]}""")
+        assertTrue(s.schritt("haftung")!!.pflicht)
+        assertFalse(s.schritt("waechter")!!.pflicht)
         assertFalse(s.schritt("daten")!!.pflicht)
     }
 

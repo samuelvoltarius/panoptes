@@ -164,6 +164,16 @@ public final class UpdateRegel {
         return "automatisch".equals(wert);
     }
 
+    /**
+     * 0.1.38.6 (04.11.): "korrekturen" = Korrekturen von selbst, Neues melden. "melden" (und kein Wert, der
+     * Bestand) bleibt „Nur melden“: Meldung, herunterladen und installieren erst nach dem Tipp.
+     */
+    public static final String MODUS_KORREKTUREN = "korrekturen";
+
+    public static boolean nurKorrekturen(String wert) {
+        return MODUS_KORREKTUREN.equals(wert);
+    }
+
     /** Neuere Freigabe der beiden (Kanal test sieht auch stabile Versionen). */
     public static Freigabe neuere(Freigabe a, Freigabe b) {
         if (a == null) return b;

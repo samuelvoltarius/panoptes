@@ -29,6 +29,7 @@
     "kamera_recht_fehlt": "Camerarecht ontbreekt – zet het aan in Panoptes onder Gekoppelde apparaten.",
     "standbild_recht_fehlt": "Recht voor stilstaand beeld ontbreekt – zet het aan in Panoptes onder Gekoppelde apparaten.",
     "launcher_recht_fehlt": "Launcher-recht ontbreekt – zet het aan in Panoptes onder Gekoppelde apparaten.",
+    "route_recht_fehlt": "Route-recht ontbreekt – zet het aan in Panoptes onder Gekoppelde apparaten.",
     "web_link_expired": "Deze link is verlopen. Open hem opnieuw in de app.",
     "invalid_request_with_detail": "Het verzoek is niet geldig: {0}",
     "bydcloud_not_configured": "BYD-account is niet ingesteld",
@@ -2083,9 +2084,10 @@
       },
       "modus": {
         "title": "Updates installeren",
-        "help": "“Alleen melden” toont nieuwe versies en je installeert ze zelf. “Automatisch” installeert zodra de auto minstens 10 minuten uit is. Nooit tijdens het rijden; gaat er iets mis, dan komt de vorige versie na uiterlijk 30 minuten vanzelf terug.",
+        "help": "„Alleen melden”: Panoptes meldt het, downloaden en installeren gebeurt pas als jij tikt. „Correcties automatisch”: kleine correcties komen vanzelf als de auto minstens 10 minuten uit staat, daarna meldt Panoptes het; nieuwe functies worden gemeld, jij beslist. „Alles automatisch”: ook nieuwe functies komen vanzelf. Nooit tijdens het rijden; gaat er iets mis, dan komt de vorige versie binnen 30 minuten vanzelf terug.",
         "melden": "Alleen melden",
-        "automatisch": "Automatisch"
+        "korrekturen": "Correcties automatisch, nieuwe functies melden",
+        "automatisch": "Alles automatisch"
       },
       "pruefen": {
         "title": "Naar updates zoeken",
@@ -2314,6 +2316,10 @@
       "fpsBewegung": {
         "title": "Camera geparkeerd bij beweging",
         "help": "Beelden per seconde zodra er iets beweegt of wordt opgenomen. Meer beelden = vloeiendere opnames maar meer stroom. 10 of 15 aanbevolen; onder 5 schokken snelle bewegingen in de opname. Leeg = zoals voorheen (meestal 15)."
+      },
+      "parkFreigeben": {
+        "title": "Camera laten rusten in stilstand",
+        "help": "Bespaart stroom als de auto in P staat en niets opneemt. Na 2 minuten gaat de camera uit. Bij het wegrijden gaat ze meteen weer aan. Het dodehoekbeeld heeft dan even nodig, ongeveer 5 seconden. Opname, bewaking en live beeld blijven ongewijzigd. Werkt alleen bij auto's waarvan de camera in stilstand anders blijft draaien."
       },
       "fps": {
         "2": "2 beelden/s – zuinigst",

@@ -160,4 +160,26 @@
     <string name="im_vollbild_oeffnen">Open full screen</string>
     <string name="neben_jetzt">Open next to the launcher</string>
     <string name="neben_kurz_nein">not possible for this app</string>
+    <!-- 0.1.38.6 Komfort -->
+    <string name="komfort_oeffnen">Comfort: seats, steering wheel, defrost</string>
+    <string name="komfort_titel">Comfort</string>
+    <string name="komfort_an">On</string>
+    <string name="komfort_aus">Off</string>
+    <string name="komfort_auto">Auto mode</string>
+    <string name="komfort_entfrosten_vorn">Front defrost</string>
+    <string name="komfort_entfrosten_hinten">Rear defrost</string>
+    <string name="komfort_nur_geblaese">Fan only</string>
+    <string name="komfort_sitz_fahrer">Driver seat heating</string>
+    <string name="komfort_sitz_beifahrer">Passenger seat heating</string>
+    <string name="komfort_lueftung_fahrer">Driver seat ventilation</string>
+    <string name="komfort_lueftung_beifahrer">Passenger seat ventilation</string>
+    <string name="komfort_lenkrad">Steering wheel heating</string>
+    <string name="komfort_umluft">Air intake</string>
+    <string name="komfort_stufe_1">Level 1</string>
+    <string name="komfort_stufe_2">Level 2</string>
+    <string name="komfort_umluft_ein">Recirculation</string>
+    <string name="komfort_frischluft">Fresh air</string>
+    <string name="komfort_neu">%1$s: %2$s</string>
+    <string name="komfort_nichts_lesbar">Nothing readable yet. Switch the car on; controls without a reading are below.</string>
+    <string name="klima_temp_unbekannt">Temperature control is not confirmed for this car model yet. Fan and on/off still work.</string>
 </resources>

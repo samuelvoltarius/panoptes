@@ -160,4 +160,26 @@
     <string name="im_vollbild_oeffnen">Ouvrir en plein écran</string>
     <string name="neben_jetzt">Ouvrir à côté du launcher</string>
     <string name="neben_kurz_nein">impossible pour cette appli</string>
+    <!-- 0.1.38.6 Komfort -->
+    <string name="komfort_oeffnen">Confort : sièges, volant, dégivrage</string>
+    <string name="komfort_titel">Confort</string>
+    <string name="komfort_an">Marche</string>
+    <string name="komfort_aus">Arrêt</string>
+    <string name="komfort_auto">Mode auto</string>
+    <string name="komfort_entfrosten_vorn">Dégivrage avant</string>
+    <string name="komfort_entfrosten_hinten">Dégivrage arrière</string>
+    <string name="komfort_nur_geblaese">Ventilation seule</string>
+    <string name="komfort_sitz_fahrer">Siège chauffant conducteur</string>
+    <string name="komfort_sitz_beifahrer">Siège chauffant passager</string>
+    <string name="komfort_lueftung_fahrer">Siège ventilé conducteur</string>
+    <string name="komfort_lueftung_beifahrer">Siège ventilé passager</string>
+    <string name="komfort_lenkrad">Volant chauffant</string>
+    <string name="komfort_umluft">Arrivée d\'air</string>
+    <string name="komfort_stufe_1">Niveau 1</string>
+    <string name="komfort_stufe_2">Niveau 2</string>
+    <string name="komfort_umluft_ein">Recyclage</string>
+    <string name="komfort_frischluft">Air frais</string>
+    <string name="komfort_neu">%1$s : %2$s</string>
+    <string name="komfort_nichts_lesbar">Rien de lisible pour l\'instant. Allumez la voiture ; les commandes sans valeur sont en dessous.</string>
+    <string name="klima_temp_unbekannt">Le réglage de la température n\'est pas encore confirmé pour ce modèle. Ventilation et marche/arrêt fonctionnent.</string>
 </resources>

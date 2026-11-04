@@ -84,6 +84,9 @@ final class BrueckeAdapter implements DirektAdapter {
         o.put("verbunden", z.isNull("angesteckt") ? JSONObject.NULL : (Object) z.optBoolean("angesteckt"));
         if (!z.isNull("leistung_kw") && z.has("leistung_kw")) o.put("leistungW", Math.round(z.optDouble("leistung_kw") * 1000.0));
         if (!z.isNull("strom_soll_a") && z.has("strom_soll_a")) o.put("stromA", z.optInt("strom_soll_a"));
+        // Nur zum Protokollieren je Ladung (SoH-Abgleich, charging.WallboxEnergieProtokoll); netzseitig, nicht geeicht.
+        if (!z.isNull("energie_sitzung_kwh") && z.has("energie_sitzung_kwh")) o.put("energieSitzungKwh", z.optDouble("energie_sitzung_kwh"));
+        if (!z.isNull("zaehler_roh") && z.has("zaehler_roh")) o.put("zaehlerRoh", z.opt("zaehler_roh"));
         String status = z.optString("status", "");
         o.put("modus", z.optBoolean("laedt") || "waiting".equals(status) ? WallboxQuelle.MODUS_SOFORT : WallboxQuelle.MODUS_AUS);
         o.put("modusRoh", "status=" + status);

@@ -2830,6 +2830,10 @@
   },
   "soh": {
     "fallback_caption": "Depuis la dernière recharge · {pct} % · {date}",
+    "both_oem_label": "Selon la voiture (BYD)",
+    "both_est_label": "Notre estimation",
+    "both_none": "non disponible",
+    "both_explain": "La voiture indique sa propre valeur. Panoptes en calcule aussi une à partir du niveau de charge et de l'énergie restante. Les deux peuvent différer : la voiture arrondit largement, notre estimation varie un peu. La valeur de la voiture fait foi.",
     "unavailable_caption": "Santé de la batterie inconnue – roulez ou rechargez pour obtenir une mesure",
     "last_verified": "Dernière vérification : {pct} % · {date}",
     "tap_to_set": "Touchez pour modifier",

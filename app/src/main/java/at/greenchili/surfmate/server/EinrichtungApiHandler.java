@@ -84,21 +84,25 @@ public final class EinrichtungApiHandler {
      * bzw. technisch ohne Antwort nicht geht. Rest läuft mit sicherem Standard, bis die Liste „Noch einrichten“ dran ist.
      */
     public static final Set<String> PFLICHT = new HashSet<>(Arrays.asList(
-            "sprache", "haftung", "usb_freigabe", "waechter", "updates"));
+            // 0.1.38.5 (Einrichtung verschlanken): nur noch rechtlich (sprache, haftung) bzw. technisch (usb_freigabe)
+            // Unverzichtbares. waechter ist ein Zusatzdienst (Standard aus), updates laufen mit sinnvollem Standard –
+            // beide nur noch optional unter „Noch einrichten“, nicht mehr Pflicht.
+            "sprache", "haftung", "usb_freigabe"));
 
     /** Bis 0.1.31 Pflicht: Eine vorhandene Antwort zählt beim Bestand weiter als erledigt, nichts wird neu gefragt. */
     static final Set<String> FRUEHER_PFLICHT = new HashSet<>(Arrays.asList(
             "sprache", "haftung", "usb_freigabe", "auto", "waechter", "betrieb", "karte", "updates"));
 
     /**
-     * Ablauf einer neuen Einrichtung. Seit 0.1.34 gehört die Kamera-Zuordnung wieder in den geführten
-     * Ablauf: Der Abschluss darf einen Nutzer nicht erstmals mit „Kameras … fehlt“ überraschen und ihn
-     * anschließend in die Diagnose schicken. Fahrzeuge mit belegten 0 Kameras blenden den Schritt über
-     * {@link #sicht(JSONObject, JSONObject, JSONObject, JSONObject)} weiterhin aus.
+     * 0.1.38.5 (Einrichtung verschlanken): „läuft schnell“ = 3 Bildschirme bis Panoptes läuft –
+     * Sprache, Kurz-Haftung, und EIN gebündelter Freigabe-Schritt (autostart + ueberlagerung + rechte + usb_freigabe,
+     * nativ auf einem Bildschirm „Panoptes darf loslegen“). Danach läuft Panoptes. Alles andere – kameras, waechter,
+     * updates, betrieb, karte, daten, blitzer, strompreis und alle extra_* – ist nur noch optional unter
+     * „Noch einrichten“ (jederzeit nachholbar) bzw. läuft mit sinnvollem Standard. Kameras bleiben nachholbar
+     * ({@link #sicht(JSONObject, JSONObject, JSONObject, JSONObject)} blendet sie bei 0 Kameras aus).
      */
     public static final Set<String> SCHNELLSTART = new HashSet<>(Arrays.asList(
-            "sprache", "haftung", "autostart", "ueberlagerung", "rechte", "usb_freigabe", "kameras", "waechter", "updates",
-            "extra_handy", "fertig"));
+            "sprache", "haftung", "autostart", "ueberlagerung", "rechte", "usb_freigabe", "fertig"));
 
     /** Gab es schon in 0.1.9 (für Bestandsnutzer nicht erneut, B2). */
     /** Prüf-Schritte: die App stellt sie fest und meldet {geprueft:true, ok}; ok:false lässt den Schritt offen. */
@@ -124,7 +128,11 @@ public final class EinrichtungApiHandler {
         if (p.equals("/api/einrichtung") && method.equals("GET")) {
             JSONObject root = UnifiedConfigManager.loadConfig();
             JSONObject z = zustand(root);
-            if (root.optJSONObject(ABSCHNITT) == null) speichere(z);   // Bestand/Neu einmal festhalten
+            if (root.optJSONObject(ABSCHNITT) == null) {
+                speichere(z);   // Bestand/Neu einmal festhalten
+                // 0.1.38.5: Updates werden nicht mehr gefragt – sinnvoller Standard für die Neuinstallation einmal setzen.
+                if (standardsNeuEinrichtung(root, z)) root = UnifiedConfigManager.loadConfig();
+            }
             JSONObject gespeichert = root.optJSONObject(ABSCHNITT);
             JSONObject st = gespeichert == null ? null : gespeichert.optJSONObject("selbsttest");
             JSONObject antwort = sicht(root, z, faehigkeiten(), st);
@@ -244,6 +252,39 @@ public final class EinrichtungApiHandler {
             UnifiedConfigManager.updateValues(ABSCHNITT, w);
         } catch (Exception ignored) {
         }
+    }
+
+    /**
+     * 0.1.38.5 (Einrichtung verschlanken, Entscheidung b der Koordination): Updates werden im ersten Start nicht mehr
+     * gefragt, sondern einmal sinnvoll vorbelegt – Kanal „stabil“ (Standard der {@code UpdateRegel}) + Korrekturen automatisch,
+     * Mobilfunk-Download aus (einzeln am Hinweis erlaubbar). Nur bei einer Neuinstallation (art=neu) und nur, was noch
+     * nicht gesetzt ist; der Bestand behält seine Wahl. Kein Datenabfluss nach außen – nur die Versionsabfrage.
+     * Gibt true zurück, wenn etwas geschrieben wurde.
+     */
+    static boolean standardsNeuEinrichtung(JSONObject root, JSONObject z) {
+        Map<String, Object> w = updateStandardNeu(root, z);
+        if (w.isEmpty()) return false;
+        try {
+            return UnifiedConfigManager.updateValues("update", w);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Rein und testbar: die Update-Standardwerte, die eine Neuinstallation einmal bekommt (leer = nichts schreiben).
+     * Nur bei art=neu; nur Felder, die noch nicht gesetzt sind (der Bestand behält seine Wahl).
+     */
+    public static Map<String, Object> updateStandardNeu(JSONObject root, JSONObject z) {
+        Map<String, Object> w = new LinkedHashMap<>();
+        if (root == null || z == null || !"neu".equals(z.optString("art"))) return w;
+        JSONObject u = root.optJSONObject("update");
+        if (u == null || !u.has("pruefen")) w.put("pruefen", true);
+        // 0.1.38.6: „automatisch“ heißt jetzt „Alles automatisch“; neue Einrichtungen bekommen wie der Schritt
+        // „updates“ nur „Korrekturen automatisch, Neues melden“
+        if (u == null || !u.has("modus")) w.put("modus", at.greenchili.surfmate.appupdate.UpdateRegel.MODUS_KORREKTUREN);
+        if (u == null || !u.has("mobilfunk")) { w.put("mobilfunk", false); w.put("mobilfunkEinmal", true); }
+        return w;
     }
 
     private static List<Feld> felder(JSONObject root) {
@@ -724,11 +765,16 @@ public final class EinrichtungApiHandler {
                 if (!(an.opt("pruefen") instanceof Boolean)) fehlt.put("pruefen");
                 Object mob = an.opt("mobilfunk");
                 if (mob != null && mob != JSONObject.NULL && !(mob instanceof Boolean)) fehlt.put("mobilfunk");
-                String mo = an.optString("modus", "melden");
-                if (!"melden".equals(mo) && !"automatisch".equals(mo)) fehlt.put("modus");
+                // 0.1.38.6 (04.11.): ohne Angabe bekommen neue Einrichtungen „Korrekturen automatisch“, der
+                // Bestand behält seinen Wert (kein Wert = „Nur melden“)
+                String korr = at.greenchili.surfmate.appupdate.UpdateRegel.MODUS_KORREKTUREN;
+                String mo = an.optString("modus", ersteEinrichtung(root) ? korr : "");
+                if (!mo.isEmpty() && !"melden".equals(mo) && !"automatisch".equals(mo) && !korr.equals(mo)) {
+                    fehlt.put("modus");
+                }
                 if (fehlt.length() == 0) {
                     einst.put("update.pruefen", an.getBoolean("pruefen"));
-                    einst.put("update.modus", mo);
+                    if (!mo.isEmpty()) einst.put("update.modus", mo);
                     if (mob instanceof Boolean) einst.put("update.mobilfunk", mob);
                     else if (ersteEinrichtung(root)) {
                         // 0.1.32 fremdes Datenvolumen: nur neue Einrichtungen laden im WLAN, jeden Mobilfunk-Download

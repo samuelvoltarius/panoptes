@@ -77,11 +77,12 @@ public class EinrichtungApiHandlerTest {
         assertEquals("neu", s.getString("art"));
         assertFalse(s.getBoolean("abgeschlossen"));
         assertEquals("sprache", s.getString("aktuell"));
-        assertEquals("offen", status(s, "waechter"));
         assertEquals("offen", status(s, "autostart"));
         assertEquals("erledigt", status(s, "usb_freigabe"));   // der Dienst antwortet = Freigabe da
-        // 0.1.32: „updates“ ist Pflichtfrage im Schnellstart; ohne Antwort ruft nichts ab
-        assertEquals("offen", status(s, "updates"));
+        // 0.1.38.5: Wächter und Updates sind nicht mehr Schnellstart → „Noch einrichten“ (Wächter aus,
+        // Updates mit Standard Stabil+automatisch). Beide tauchen im geführten Ablauf nicht mehr auf.
+        assertEquals("spaeter", status(s, "waechter"));
+        assertEquals("spaeter", status(s, "updates"));
         assertTrue(s.getJSONArray("offen_spaeter").toString().contains("extra_telegram"));
     }
 
@@ -98,13 +99,14 @@ public class EinrichtungApiHandlerTest {
     }
 
     @Test
-    public void bestandMitFehlenderWaechterWahl() throws Exception {
+    public void bestandOhneWaechterWahlWirdNichtMehrGefragt() throws Exception {
+        // 0.1.38.5: Wächter ist kein Pflichtschritt mehr. Ein Bestand ohne Wächter-Wahl bekommt deshalb NICHT mehr
+        // den Assistenten, sondern den Punkt ruhig unter „Noch einrichten“; die Pflicht (Sprache/Haftung/USB) ist erfüllt.
         JSONObject s = sicht(bestand(false));
         assertEquals("bestand", s.getString("art"));
-        assertFalse(s.getBoolean("abgeschlossen"));
-        // 0.1.10.1: Bestand bekommt den Assistenten nur für fehlende Pflichtantworten
-        assertEquals("waechter", s.getString("aktuell"));
-        assertEquals("offen", status(s, "waechter"));
+        assertTrue(s.getBoolean("abgeschlossen"));
+        assertEquals("fertig", s.getString("aktuell"));
+        assertEquals("spaeter", status(s, "waechter"));
         assertEquals("erledigt", status(s, "sprache"));
         assertEquals("erledigt", status(s, "karte"));
         assertEquals("entfaellt", status(s, "autostart"));   // gab es in 0.1.9 schon
@@ -179,10 +181,12 @@ public class EinrichtungApiHandlerTest {
         assertEquals(422, EinrichtungApiHandler.schritt(new JSONObject(), "karte", null, FELDER, false, 1L).code);
         assertEquals(422, EinrichtungApiHandler.schritt(new JSONObject(), "updates",
                 new JSONObject().put("mobilfunk", true), FELDER, false, 1L).code);
-        // B4: Pflicht nie „später“
-        Antwort sp = EinrichtungApiHandler.spaeter(new JSONObject(), "waechter");
+        // B4: Pflicht nie „später“ (0.1.38.5: nur noch sprache/haftung/usb_freigabe)
+        Antwort sp = EinrichtungApiHandler.spaeter(new JSONObject(), "haftung");
         assertEquals(422, sp.code);
         assertEquals("pflicht", sp.body.getString("error"));
+        // Wächter ist jetzt optional → „später“ erlaubt
+        assertEquals(200, EinrichtungApiHandler.spaeter(new JSONObject(), "waechter").code);
         assertEquals(200, EinrichtungApiHandler.spaeter(new JSONObject(), "extra_telegram").code);
         assertEquals(404, EinrichtungApiHandler.spaeter(new JSONObject(), "quatsch").code);
     }
@@ -203,6 +207,25 @@ public class EinrichtungApiHandlerTest {
         Antwort sp = EinrichtungApiHandler.schritt(new JSONObject(), "sprache",
                 new JSONObject().put("locale", "nl"), FELDER, false, 1L);
         assertEquals("nl", sp.locale);
+    }
+
+    /** 0.1.38.6: neue Einrichtungen bekommen „Korrekturen automatisch“, der Bestand behält seinen Update-Modus. */
+    @Test
+    public void updateModusNeuKorrekturenBestandBleibt() throws Exception {
+        JSONObject neu = schritt(new JSONObject(), "updates", new JSONObject().put("pruefen", true));
+        assertEquals("korrekturen", neu.getJSONObject("update").getString("modus"));
+        JSONObject bestand = new JSONObject().put("update", new JSONObject().put("mobilfunk", true).put("modus", "melden"));
+        bestand = schritt(bestand, "updates", new JSONObject().put("pruefen", true));
+        assertEquals("melden", bestand.getJSONObject("update").getString("modus"));
+        JSONObject ohne = new JSONObject().put("update", new JSONObject().put("mobilfunk", true));
+        ohne = schritt(ohne, "updates", new JSONObject().put("pruefen", true));
+        assertFalse("Bestand ohne Wert bleibt ohne Wert (= Nur melden)", ohne.getJSONObject("update").has("modus"));
+        for (String m : new String[]{"melden", "korrekturen", "automatisch"}) {
+            JSONObject r = schritt(new JSONObject(), "updates", new JSONObject().put("pruefen", true).put("modus", m));
+            assertEquals(m, r.getJSONObject("update").getString("modus"));
+        }
+        assertEquals(422, EinrichtungApiHandler.schritt(new JSONObject(), "updates",
+                new JSONObject().put("pruefen", true).put("modus", "quatsch"), FELDER, false, 1L).code);
     }
 
     /** 0.1.28 P10: Ereignis-Clip im Wächter-Schritt, „Wächter stoppt …“ im Betriebs-Schritt (beides optional im Vertrag). */

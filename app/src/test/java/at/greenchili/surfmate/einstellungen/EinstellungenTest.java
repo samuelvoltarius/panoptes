@@ -148,11 +148,52 @@ public class EinstellungenTest {
         assertEquals(30, e.gespeichert.getInt("guardStop.socBelow"));
         assertFalse(m.geschrieben.containsKey("planner"));
         // lokal geht der Schlüssel, autoId nirgends
+        java.util.function.UnaryOperator<String> vorher = Einstellungen.verschluessler;
+        Einstellungen.verschluessler = v -> "ENC:" + v;
         Einstellungen.Ergebnis lokal = Einstellungen.aendern(Katalog.felder(k), new JSONObject(), k,
                 new JSONObject().put("werte", new JSONObject().put("planner.memberToken", "abc")
                         .put("planner.autoId", "x")), false, new Merker(), 0L);
         assertTrue(lokal.gespeichert.has("planner.memberToken"));
         assertEquals("nurLesendExtern", lokal.fehler.getString("planner.autoId"));
+        Einstellungen.verschluessler = vorher;
+    }
+
+    /** 0.1.38.6 Sicherheitsfix: GEHEIM bleibt Klartext (Rückfall 0.1.38.5) und bekommt den Schatten enc_*. */
+    @Test
+    public void geheimMitSchattenKlartextBleibt() throws Exception {
+        java.util.function.UnaryOperator<String> vorV = Einstellungen.verschluessler, vorE = Einstellungen.entschluessler;
+        try {
+            Katalog.Kontext k = kontext(Laenderprofil.Land.ANDERES);
+            Einstellungen.verschluessler = v -> "ENC:" + new StringBuilder(v).reverse();
+            Einstellungen.entschluessler = v -> new StringBuilder(v.substring(4)).reverse().toString();
+            Merker m = new Merker();
+            Einstellungen.aendern(Katalog.felder(k), new JSONObject(), k,
+                    new JSONObject().put("werte", new JSONObject().put("planner.memberToken", "abc")
+                            .put("update.token", "tok")), false, m, 0L);
+            assertEquals("abc", m.geschrieben.get("planner").get("memberToken"));
+            assertEquals("ENC:cba", m.geschrieben.get("planner").get("enc_memberToken"));
+            assertEquals("tok", m.geschrieben.get("update").get("token"));
+            assertEquals("ENC:kot", m.geschrieben.get("update").get("enc_token"));
+
+            // Verschlüsseln geht nicht: Klartext wie in 0.1.38.5, Schatten leer (nachgezogen beim nächsten Start)
+            Einstellungen.verschluessler = v -> v;
+            Merker m2 = new Merker();
+            Einstellungen.Ergebnis e2 = Einstellungen.aendern(Katalog.felder(k), new JSONObject(), k,
+                    new JSONObject().put("werte", new JSONObject().put("planner.memberToken", "abc")), false, m2, 0L);
+            assertFalse(e2.fehler.has("planner.memberToken"));
+            assertEquals("abc", m2.geschrieben.get("planner").get("memberToken"));
+            assertEquals("", m2.geschrieben.get("planner").get("enc_memberToken"));
+
+            // Löschen leert auch den Schatten
+            Merker m3 = new Merker();
+            Einstellungen.aendern(Katalog.felder(k), new JSONObject(), k,
+                    new JSONObject().put("werte", new JSONObject().put("planner.memberToken", JSONObject.NULL)), false, m3, 0L);
+            assertEquals(JSONObject.NULL, m3.geschrieben.get("planner").get("memberToken"));
+            assertEquals("", m3.geschrieben.get("planner").get("enc_memberToken"));
+        } finally {
+            Einstellungen.verschluessler = vorV;
+            Einstellungen.entschluessler = vorE;
+        }
     }
 
     @Test

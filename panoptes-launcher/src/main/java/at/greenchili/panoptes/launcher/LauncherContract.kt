@@ -36,7 +36,13 @@ data class LauncherKlima(
     val sollC: Double?, val stufe: Int?, val innenC: Double?, val an: Boolean? = null,
     /** 0.1.38.5: Auto stellt die Temperatur in festen Stufen (Surf); dann gilt [tempStufe] 1..17 statt [sollC]. */
     val stufenModell: Boolean = false,
-    val tempStufe: Int? = null
+    val tempStufe: Int? = null,
+    /** 0.1.38.6 Komfort: Sitzheizung/-lüftung 0..2 (null = nicht lesbar, dann keine Kachel), Lenkrad und Umluft an/aus. */
+    val sitzFahrer: Int? = null, val sitzBeifahrer: Int? = null,
+    val lueftungFahrer: Int? = null, val lueftungBeifahrer: Int? = null,
+    val lenkrad: Boolean? = null, val umluft: Boolean? = null,
+    /** 0.1.38.6: "stufen", "grad" oder "unbekannt" (dann keine Temperatur-Bedienung); null = älterer Kern, wie bisher. */
+    val tempArt: String? = null
 )
 
 /** 0.1.38.5: Ausgang von „neben dem Launcher öffnen“. */
@@ -144,13 +150,28 @@ object LauncherContract {
 
     private fun klima(it: JSONObject) =
         LauncherKlima(it.nullableDouble("sollC"), it.nullableDouble("stufe")?.toInt(), it.nullableDouble("innenC"), it.nullableBoolean("an"),
-            it.optBoolean("stufenModell", false), it.nullableDouble("tempStufe")?.toInt()?.takeIf { s -> s in 1..17 })
+            it.optBoolean("stufenModell", false), it.nullableDouble("tempStufe")?.toInt()?.takeIf { s -> s in 1..17 },
+            stufe02(it, "sitzFahrer"), stufe02(it, "sitzBeifahrer"), stufe02(it, "lueftungFahrer"), stufe02(it, "lueftungBeifahrer"),
+            it.nullableBoolean("lenkrad"), it.nullableBoolean("umluft"),
+            it.nullableString("tempArt")?.takeIf { a -> a == "stufen" || a == "grad" || a == "unbekannt" })
+
+    private fun stufe02(it: JSONObject, name: String): Int? = it.nullableDouble(name)?.toInt()?.takeIf { s -> s in 0..2 }
 
     /** Die sechs Aktionen des Kern-Klimawegs; nichts anderes wird je gesendet. */
     val KLIMA_AKTIONEN = setOf("an", "aus", "temp_hoch", "temp_runter", "luft_hoch", "luft_runter")
 
+    /**
+     * 0.1.38.6 Komfort: feste Namen, Sitze/Lenkrad/Umluft schaltet der Kern aus dem gelesenen Ist-Stand weiter, der Rest
+     * kommt als an/aus-Paar. Nie Hupe, Licht, Blinker, Auf-/Zusperren, „Auto finden“, Alarm, Fenster, Dach, Kofferraum.
+     */
+    val KOMFORT_AKTIONEN = setOf(
+        "sitz_fahrer", "sitz_beifahrer", "lueftung_fahrer", "lueftung_beifahrer", "lenkrad", "umluft",
+        "auto_an", "auto_aus", "entfrosten_vorn_an", "entfrosten_vorn_aus",
+        "entfrosten_hinten_an", "entfrosten_hinten_aus", "nur_geblaese_an", "nur_geblaese_aus"
+    )
+
     fun klimaBody(aktion: String): String {
-        require(aktion in KLIMA_AKTIONEN) { "aktion" }
+        require(aktion in KLIMA_AKTIONEN || aktion in KOMFORT_AKTIONEN) { "aktion" }
         return JSONObject().put("aktion", aktion).toString()
     }
 

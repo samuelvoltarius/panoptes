@@ -69,6 +69,61 @@ public final class KlimaStufe {
         return r;
     }
 
+    // ------------------------------------------------------------------ Temperatur-Art für den Launcher (0.1.38.6)
+
+    /** Temperatur-Art des Autos für die Bedienung im Launcher. */
+    public static final String ART_STUFEN = "stufen", ART_GRAD = "grad", ART_UNBEKANNT = "unbekannt";
+
+    /** Nur für Tests: erzwingt {@link #gradModell()} (null = echte Konfiguration). */
+    static volatile Boolean testGradModell;
+
+    /** Nur für Tests (andere Pakete): {@code true} = bestätigtes Grad-Modell, {@code false} = unbekannt, {@code null} = echt. */
+    public static void fuerTestGrad(Boolean grad) {
+        testGradModell = grad;
+    }
+    private static volatile long gradGeprueftAm;
+    private static volatile boolean gradZuletzt;
+
+    /**
+     * Ist das Modell per Konfiguration {@code klima.gradModelle} (Liste von Modell-IDs, Community-Meldung) als
+     * Grad-Modell bestätigt? Es gibt bewusst keine eingebaute Liste: Was nicht bestätigt ist, wird nicht geraten.
+     */
+    public static boolean gradModell() {
+        Boolean t = testGradModell;
+        if (t != null) return t;
+        long jetzt = System.currentTimeMillis();
+        if (jetzt - gradGeprueftAm < 60_000L) return gradZuletzt;
+        boolean r = false;
+        try {
+            r = istGradModell(at.greenchili.surfmate.config.UnifiedConfigManager.getSelectedVehicleModelId(),
+                    at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig().optJSONObject("klima"));
+        } catch (Throwable ignored) { }
+        gradZuletzt = r;
+        gradGeprueftAm = jetzt;
+        return r;
+    }
+
+    static boolean istGradModell(String modellId, org.json.JSONObject klimaKonfig) {
+        if (modellId == null) return false;
+        String m = modellId.trim().toLowerCase(java.util.Locale.ROOT);
+        org.json.JSONArray extra = klimaKonfig == null ? null : klimaKonfig.optJSONArray("gradModelle");
+        if (extra == null) return false;
+        for (int i = 0; i < extra.length(); i++) {
+            if (m.equals(extra.optString(i, "").trim().toLowerCase(java.util.Locale.ROOT))) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Wie der Launcher die Temperatur bedient: Stufen (Surf und per {@code klima.stufenModelle} bestätigte Modelle),
+     * Grad (nur per {@code klima.gradModelle} bestätigte Modelle) sonst {@link #ART_UNBEKANNT}: keine Gradzahl, kein
+     * Dreh-Befehl. Stufen gehen vor Grad, falls ein Modell in beiden Listen steht.
+     */
+    public static String temperaturArt() {
+        if (stufenModell()) return ART_STUFEN;
+        return gradModell() ? ART_GRAD : ART_UNBEKANNT;
+    }
+
     static boolean istStufenModell(String modellId, org.json.JSONObject klimaKonfig) {
         if (modellId == null) return false;
         String m = modellId.trim().toLowerCase(java.util.Locale.ROOT);

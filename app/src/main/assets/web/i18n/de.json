@@ -2830,6 +2830,10 @@
   },
   "soh": {
     "fallback_caption": "Vom letzten Laden · {pct}% · {date}",
+    "both_oem_label": "Laut Auto (BYD)",
+    "both_est_label": "Unsere Schätzung",
+    "both_none": "nicht verfügbar",
+    "both_explain": "Das Auto meldet seinen eigenen Wert. Panoptes rechnet zusätzlich selbst aus Akku-Prozent und Restenergie. Die beiden können sich unterscheiden: Das Auto rundet großzügig, unsere Schätzung schwankt etwas. Verbindlich ist der Wert vom Auto.",
     "unavailable_caption": "Akku-Gesundheit unbekannt – fahre oder lade, damit sie gemessen wird",
     "last_verified": "Zuletzt geprüft: {pct}% · {date}",
     "tap_to_set": "Zum Ändern tippen",
