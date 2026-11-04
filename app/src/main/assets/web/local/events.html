@@ -225,6 +225,7 @@
         }
         
         .calendar-day {
+            min-height: 38px;   /* Chrome 74: aspect-ratio fehlt */
             aspect-ratio: 1;
             display: flex;
             align-items: center;
@@ -1054,7 +1055,7 @@
         /* Video Modal */
         .video-modal {
             position: fixed;
-            inset: 0;
+            top: 0; right: 0; bottom: 0; left: 0; /* Chrome 83: inset erst ab 87 */ inset: 0;
             background: var(--modal-backdrop);
             /* Above the body-level theme FAB (z-index 9000 in theme.js).
                Keeps the floating theme picker from sitting on top of the
@@ -1121,7 +1122,7 @@
         .video-container:-webkit-full-screen,
         .video-container.is-fullscreen {
             position: fixed;
-            inset: 0;
+            top: 0; right: 0; bottom: 0; left: 0; /* Chrome 83: inset erst ab 87 */ inset: 0;
             width: 100vw;
             height: 100vh;
             height: calc(var(--vh, 1vh) * 100);

@@ -18,6 +18,7 @@ object PreferencesManager {
     private const val PREFS_NAME = "surfmate_prefs"
     private const val KEY_ENABLED_DAEMONS = "enabled_daemons"
     private const val KEY_THEME_MODE = "theme_mode"
+    private const val KEY_KERN_THEMA = "kern_thema"
     private const val KEY_SELECTED_CAMERAS = "selected_cameras"
     private const val KEY_LAST_TUNNEL_URL = "last_tunnel_url"
     private const val KEY_LOGS_EXPANDED = "logs_expanded"
@@ -116,6 +117,27 @@ object PreferencesManager {
                 Log.w(TAG, "overlay theme refresh failed: ${e.message}")
             }
         }
+    }
+
+    /**
+     * Spiegel des Kern-Werts `anzeige.thema` (dark|light|auto), vom Web-Teil über die Brücke gesetzt. Geht vor der
+     * Native-Wahl (siehe [KernThema]); gespeichert, damit schon die erste Seite nach dem Start stimmt.
+     */
+    fun getKernThema(): String {
+        // Quelle zuerst: der Kern-Config selbst (gleiche Datei wie der Daemon, gecacht), dann der Spiegel.
+        try {
+            val direkt = KernThema.ausKern(at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig())
+            if (direkt != null) return direkt
+        } catch (e: Throwable) { /* Config nicht lesbar: Spiegel */ }
+        return KernThema.pruefen(prefs?.getString(KEY_KERN_THEMA, KernThema.AUTO))
+    }
+
+    /** @return true, wenn sich der Wert geändert hat. */
+    fun setKernThema(v: String?): Boolean {
+        val neu = KernThema.pruefen(v)
+        if (neu == KernThema.pruefen(prefs?.getString(KEY_KERN_THEMA, KernThema.AUTO))) return false
+        prefs?.edit()?.putString(KEY_KERN_THEMA, neu)?.apply() ?: return false
+        return true
     }
 
     // Enabled Daemons

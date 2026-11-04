@@ -19,7 +19,9 @@ object HomeRueckweg {
             k.packageName.isNotBlank() &&
             k.packageName != eigenesPaket &&
             k.packageName != "android" &&
-            !k.className.endsWith("ResolverActivity")
+            !k.className.endsWith("ResolverActivity") &&
+            // Boot-Notbehelf des Systems (priority -1000), kein echter Startbildschirm
+            !k.className.endsWith("FallbackHome")
         if (erlaubt(standard)) return standard
         return kandidaten.firstOrNull { erlaubt(it) }
     }

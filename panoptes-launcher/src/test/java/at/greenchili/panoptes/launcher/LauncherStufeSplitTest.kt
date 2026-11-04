@@ -39,6 +39,8 @@ class LauncherStufeSplitTest {
         assertEquals(NebenErgebnis.NICHT_TEILBAR, LauncherContract.parseNeben("""{"success":false,"error":"nicht_teilbar"}"""))
         assertEquals(NebenErgebnis.FEHLER, LauncherContract.parseNeben("""{"success":false,"error":"x"}"""))
         assertEquals(NebenErgebnis.FEHLER, LauncherContract.parseNeben(null))
+        assertEquals(NebenErgebnis.VOLLBILD, LauncherContract.parseNeben("""{"success":true,"modus":"vollbild","grund":"nicht_aufloesbar"}"""))
+        assertEquals(NebenErgebnis.FEHLER, LauncherContract.parseNeben("""{"success":false,"error":"nicht_aufloesbar"}"""))
         assertEquals(mapOf("com.waze" to "ja", "com.byd.youtube" to "nein"),
             LauncherContract.parseTeilbar("""{"pakete":{"com.waze":"ja","com.byd.youtube":"nein","x.y":"vielleicht"}}"""))
         val main = quelle("MainActivity.kt")

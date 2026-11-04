@@ -1404,7 +1404,11 @@ public class MqttConnectionManager {
                 // 0.1.16 (Deploy-Test 23.10.): nach dem Ausschalten blieben ac_on/climate_on/ac_fan auf dem letzten
                 // Wert stehen. Wie REST (/api/vehicle/state): ohne „Auto an“ läuft die lokale AC nicht → 0.
                 boolean klimaRuht = klimaRuht(vd, diLink5);
-                if (vd.acStartState == 0 || vd.acStartState == 1) payload.put("climate_on", klimaRuht ? 0 : vd.acStartState);
+                // 0.1.38.7: bei Zündung aus ist lokal 0 kein Beleg für „aus“ (Fernklima lief, HA zeigte 0). Belegt die frische
+                // Cloud-Rückmeldung (airRunState) „läuft“, gilt das; „aus“ aus lokal 0 bleibt wie bisher, damit nichts stehen bleibt.
+                boolean cloudLaeuft = klimaRuht && at.greenchili.surfmate.byd.KlimaLaeuft.LAEUFT.equals(
+                        at.greenchili.surfmate.byd.KlimaZustand.aktuell(false, -1).zustand);
+                if (vd.acStartState == 0 || vd.acStartState == 1) payload.put("climate_on", cloudLaeuft ? 1 : klimaRuht ? 0 : vd.acStartState);
                 if (Double.isFinite(vd.avgElecConPer100Km) && vd.avgElecConPer100Km > 0 && vd.avgElecConPer100Km < 100)
                     payload.put("consumption_avg", vd.avgElecConPer100Km);
                 if (Double.isFinite(vd.lastElecConPer100Km) && vd.lastElecConPer100Km > 0 && vd.lastElecConPer100Km < 100)
@@ -1420,7 +1424,7 @@ public class MqttConnectionManager {
                 }
 
                 // Climate
-                if (vd.acStartState != BydVehicleData.UNAVAILABLE) payload.put("ac_on", klimaRuht ? 0 : vd.acStartState);
+                if (vd.acStartState != BydVehicleData.UNAVAILABLE) payload.put("ac_on", cloudLaeuft ? 1 : klimaRuht ? 0 : vd.acStartState);
                 if (vd.acCycleMode != BydVehicleData.UNAVAILABLE) payload.put("ac_cycle", vd.acCycleMode);
                 if (vd.acWindMode != BydVehicleData.UNAVAILABLE) payload.put("ac_wind", vd.acWindMode);
                 if (vd.acFanLevel != BydVehicleData.UNAVAILABLE) payload.put("ac_fan", klimaRuht ? 0 : vd.acFanLevel);

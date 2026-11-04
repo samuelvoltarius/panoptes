@@ -1,0 +1,12 @@
+{
+  "trips": [
+    {
+      "distanceKm": 21.7
+    }
+  ],
+  "charging": [
+    {
+      "kwh": 28.4
+    }
+  ]
+}

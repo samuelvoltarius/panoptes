@@ -143,7 +143,12 @@
         u.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">'
             + '<rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/>'
             + '<rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/></svg><span></span>';
-        u.onclick = function () { setzeAnsicht(ansicht() === 'kacheln' ? 'auto' : 'kacheln', true); };
+        u.onclick = function () {
+            var neu = ansicht() === 'kacheln' ? 'auto' : 'kacheln';
+            setzeAnsicht(neu, true);
+            // Am Auto-Display gilt der Kern (sonst holt der Takt den alten Wert zurück)
+            if (global.PanoptesAnzeige && PanoptesAnzeige.display()) PanoptesAnzeige.setzenKern('befehleAnsicht', neu);
+        };
         viewport.appendChild(u);
 
         // Ab Werk: am schmalen Handy die Kacheln (dort füllt das Auto sonst den ganzen Bildschirm), sonst das Auto
@@ -168,6 +173,18 @@
         if (global.BYD && BYD.i18n && BYD.i18n.onChange) BYD.i18n.onChange(zeichnen);
     }
 
+    // 0.1.38.7: Kern-Wert vom Auto-Display-Takt (auch vom PC/Handy aus geändert) sofort übernehmen
+    try {
+        global.addEventListener('pn-befehleAnsicht', function (e) {
+            var w = e && e.detail ? e.detail.wert : null;
+            if (!document.getElementById('pnBefehleKacheln')) return;
+            if (w === 'auto' || w === 'kacheln') setzeAnsicht(w, false);
+            else if (w === 'automatisch') {
+                var schmal = global.matchMedia && global.matchMedia('(max-width: 720px)').matches;
+                setzeAnsicht(schmal ? 'kacheln' : 'auto', false);
+            }
+        });
+    } catch (e) {}
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', einbauen);
     else einbauen();
 

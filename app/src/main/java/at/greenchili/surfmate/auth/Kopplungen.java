@@ -155,6 +155,7 @@ public final class Kopplungen {
         }
         geraete = neu;
         at.greenchili.surfmate.ha.HaEreignisse.schliessen(id);   // offene HA-Streams dieser Kopplung sofort zu
+        geraeteVergessen(id);   // 0.1.39: gemeldete HA-Geräte dieser Kopplung mit weg
         // 0.1.20: offene Web-Einmal-Codes verwerfen (der Web-JWT selbst fällt bei der nächsten Anfrage durch)
         WebSitzung.get().kopplungWeg(id);
         // 0.1.20: Brücken-Zugang des Handys am Server löschen und offene Kanäle schließen
@@ -259,7 +260,10 @@ public final class Kopplungen {
             RECHT_TACHO = "tacho",
             // 0.1.38 Launcher-Layout lesen und ändern (/api/launcher/v1/layout): Standard AUS, auch für Handy, nie
             // automatisch (auch nicht für Bestand); nur der Besitzer schaltet es unter Gekoppelte Geräte ein.
-            RECHT_LAUNCHER = "launcher";
+            RECHT_LAUNCHER = "launcher",
+            // 0.1.39 HA-Geräte (HA_VERTRAG v1.1 Teil D, Weg A): Home Assistant darf seine smarten Geräte melden und
+            // Freigaben lesen (/api/ha/v1/geraete). Nur Art homeassistant, Standard AUS, nie automatisch.
+            RECHT_GERAETE = "geraete";
     public static final java.util.List<String> RECHTE = java.util.Collections.unmodifiableList(
             java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_AUFSPERREN, RECHT_PUSH, RECHT_WEB, RECHT_KAMERA,
                     RECHT_WALLBOX, RECHT_ROUTE, RECHT_UPDATE, RECHT_EREIGNISCLIP, RECHT_STANDBILD, RECHT_PROTOKOLL,
@@ -278,8 +282,22 @@ public final class Kopplungen {
     public static final java.util.List<String> COCKPIT_RECHTE = java.util.Collections.unmodifiableList(
             java.util.Arrays.asList(RECHT_KAMERA, RECHT_STANDBILD, RECHT_TACHO, RECHT_LAUNCHER, RECHT_UPDATE));
 
+    /** 0.1.39: Liste der HA-Geräte löschen, wenn sie von dieser Kopplung stammt. Nie eine Ausnahme nach außen. */
+    static void geraeteVergessen(String id) {
+        try {
+            at.greenchili.surfmate.ha.HaGeraeteSpeicher sp = at.greenchili.surfmate.ha.HaGeraeteSpeicher.get();
+            org.json.JSONObject b = sp.lies();
+            if (b != null && id != null && id.equals(b.optString("kid"))) sp.loeschen();
+        } catch (Throwable ignored) { }
+    }
+
+    /** Home Assistant: wie {@link #FREMD_RECHTE}, dazu {@code geraete} (Standard AUS). */
+    public static final java.util.List<String> HA_RECHTE = java.util.Collections.unmodifiableList(
+            java.util.Arrays.asList(RECHT_KAMERA, RECHT_STANDBILD, RECHT_TACHO, RECHT_GERAETE));
+
     /** Rechte, die eine Nicht-Handy-Art tragen kann. */
     static java.util.List<String> fremdRechte(String art) {
+        if ("homeassistant".equals(art)) return HA_RECHTE;
         return "cockpit".equals(art) ? COCKPIT_RECHTE : FREMD_RECHTE;
     }
 
@@ -399,6 +417,10 @@ public final class Kopplungen {
         for (String x : handy ? RECHTE : fremdRechte(g.optString("art"))) if (rechte != null && rechte.contains(x)) r.put(x);
         try { g.put("rechte", r).put("rechteStand", RECHTE_STAND); } catch (Exception e) { return false; }
         boolean ok = speichernSofort();
+        // 0.1.39: Recht „geraete“ weg → gemeldete HA-Geräte (Namen, Räume) dieser Kopplung sofort löschen
+        if ("homeassistant".equals(g.optString("art")) && (rechte == null || !rechte.contains(RECHT_GERAETE))) {
+            geraeteVergessen(id);
+        }
         // 0.1.34 Befehls-Log: welche Rechte jetzt gelten (Namen aus RECHTE, keine Werte)
         StringBuilder neu = new StringBuilder();
         for (int i = 0; i < r.length(); i++) neu.append(i == 0 ? "" : "+").append(r.optString(i));

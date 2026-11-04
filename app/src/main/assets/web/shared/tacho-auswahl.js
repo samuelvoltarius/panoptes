@@ -53,7 +53,7 @@
             vorschauen.push({ cv: cv, design: e.design });
         } else {
             var z = document.createElement('div');
-            z.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;'
+            z.style.cssText = 'position:absolute;top:0;right:0;bottom:0;left:0;inset:0;display:flex;align-items:center;justify-content:center;'
                 + 'font:700 40px/1 sans-serif;color:' + (e.art === 'normal' ? '#EEF4F8' : '#B5F23D') + ';';
             z.textContent = e.art === 'normal' ? 'BYD' : (e.name || '?').trim().charAt(0).toUpperCase();
             bild.appendChild(z);

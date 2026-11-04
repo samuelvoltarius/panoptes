@@ -118,6 +118,7 @@
             top: calc(100% + 8px);
             left: 0;
             width: max-content;
+            max-width: 240px;   /* Chrome 74: min() fehlt */
             max-width: min(240px, calc(100vw - 48px));
             padding: 8px 10px;
             background: var(--panel-overlay-bg);
@@ -425,8 +426,11 @@
            keyboard ring never paints inside the WebView. Modern browsers
            respect both, with :focus-visible's tighter "only on keyboard
            focus" semantics taking precedence. */
-        .notif-radio:focus,
-        .notif-radio:focus-visible {
+        .notif-radio:focus {
+            outline: 2px solid #00E5FF;
+            outline-offset: 3px;
+        }
+.notif-radio:focus-visible {
             outline: 2px solid #00E5FF;
             outline-offset: 3px;
         }

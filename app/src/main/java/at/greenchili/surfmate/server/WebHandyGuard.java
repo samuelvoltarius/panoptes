@@ -42,6 +42,7 @@ public final class WebHandyGuard {
             "/api/tacho/navi/fahrt",   // 0.1.37 „auch beim Fahren“: nur am Auto oder mit vollem Login
             "/api/tacho/auswahl",   // 0.1.37 „Was zeigt der Tacho?“: nur mit Recht „tacho“ der Kopplung (tachoErlaubt)
             "/api/launcher/v1/layout",   // 0.1.38 Launcher-Layout: nur mit Recht „launcher“ (launcherErlaubt)
+            "/api/ha/geraete",   // 0.1.39 HA-Geräte (Namen, Räume privat): nur am Auto oder mit vollem Login
     };
 
     /** Seiten, die nur Sicherheits-Funktionen tragen. */
@@ -169,6 +170,26 @@ public final class WebHandyGuard {
                 return true;
             }
         }
-        return false;
+        // 0.1.38.7 Sicherheitsfix: außen Sicht-/Hörbares nie aus der Web-Sitzung der Handy-App
+        return !"GET".equals(method) && aussenAusloeser(p);
     }
+
+    /**
+     * 0.1.38.7 Sicherheitsfix (Befund 04.11.2026): Hupe, Licht, Warnblinker, „Auto finden“ und Aufsperren löst die
+     * Web-Sitzung der Handy-App nie aus – weder direkt noch über die Test-/Auslöse-Wege, hinter denen dieselben Befehle
+     * liegen können (Taste testen, Schnellknopf, Regel testen, Aktionsgruppe, Licht-Diagnose). Display und voller Login
+     * bleiben wie bisher; Kopplungen erreichen {@code /api/vehicle/*} ohnehin nicht (ExternGuard-Erlaubnisliste).
+     */
+    static boolean aussenAusloeser(String p) {
+        if (p == null) return true;
+        for (String a : AUSSEN_AUSLOESER) if (p.equals(a)) return true;
+        for (String a : AUSSEN_AUSLOESER_PRAEFIX) if (p.startsWith(a)) return true;
+        return p.startsWith("/api/action-groups/") && p.endsWith("/run");
+    }
+
+    static final String[] AUSSEN_AUSLOESER = {
+            "/api/vehicle/flash", "/api/vehicle/find-car", "/api/vehicle/unlock", "/api/vehicle/hazard",
+            "/api/bydcloud/test", "/api/keymap/fire"};
+    static final String[] AUSSEN_AUSLOESER_PRAEFIX = {
+            "/api/quick-controls/fire/", "/api/automations/test/", "/api/debug/light/"};
 }

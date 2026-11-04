@@ -5477,6 +5477,8 @@
     "lnc_update": "Aktualisieren",
     "lnc_open": "Öffnen",
     "lnc_remove": "Entfernen",
+    "lnc_enable": "Launcher wieder einschalten",
+    "lnc_disabled_hint": "Der Panoptes Launcher wurde zur Sicherheit ausgeschaltet. Mit dem Knopf schaltest du ihn wieder ein. Der BYD-Startbildschirm bleibt, bis du selbst etwas umstellst.",
     "lnc_build": "Build {n}",
     "lnc_not_installed": "Nicht installiert",
     "lnc_badge_installed": "Installiert",
@@ -5504,6 +5506,12 @@
     "fremd_recht_standbild": "Ein Foto, wenn der Wächter etwas bemerkt. Kein Video.",
     "recht_wort_launcher": "Launcher",
     "recht_info_launcher": "Startbildschirm im Auto einrichten (nur der Aufbau, keine Befehle ans Auto)",
+    "fremd_wort_geraete": "Smarte Geräte",
+    "fremd_recht_geraete": "Home Assistant darf seine Geräte (Schalter, Licht, Klima) an Panoptes melden. Panoptes zeigt sie nur an; Steuern schaltest du je Gerät einzeln ein.",
+    "fremd_geraete_confirm": "Home Assistant meldet dann Namen und Räume seiner Geräte an Panoptes. Sie bleiben im Auto. Einschalten?",
+    "ha_geraete_titel": "Gemeldete Geräte (nur Anzeige)",
+    "ha_geraete_leer": "Home Assistant hat noch keine Geräte gemeldet.",
+    "ha_geraete_fehler": "Geräteliste nicht lesbar.",
     "fremd_kamera_confirm": "Aufnahmen zeigen auch Passanten. Dieses Gerät darf dann Wächter-Aufnahmen und Vorschaubilder ansehen. Einschalten?",
     "fremd_standbild_confirm": "Fotos können Passanten zeigen. Dieses Gerät darf dann bei jedem Wächter-Ereignis ein Foto holen – kein Video, nichts Älteres als 15 Minuten. Einschalten?",
     "handy_wort_wallbox": "Wallbox",
@@ -5677,6 +5685,8 @@
     "paired": "Gekoppelt!",
     "pin_fail": "Konnte keine Kopplung starten.",
     "pin_gone": "Abgelaufen – bitte neu starten.",
+    "pin_invalid": "Diese PIN ist nicht mehr gültig – bitte eine neue PIN holen.",
+    "poll_conflict": "Dieser Bot wird gerade auch woanders benutzt (anderes Gerät/Programm). Bitte dort beenden oder einen eigenen Bot anlegen.",
     "pin_left": "Gilt noch {time} Minuten.",
     "quiet_from_to": "Von – bis",
     "quiet_hint": "Uhrzeit des Autos. Geht auch über Mitternacht.",
@@ -5963,6 +5973,8 @@
     "fehler": "Speichern hat nicht geklappt. Die Einstellung ist unverändert."
   },
   "darstellung": {
+    "auto_wirkt": "Gilt für den Bildschirm im Auto. Das Auto übernimmt es in wenigen Sekunden.",
+    "nur_hier": "Gilt nur für dieses Gerät bzw. diesen Browser, nicht im Auto.",
     "leicht_hinweis": "Leicht: Karten in 2D, ohne Unschärfe-Effekte und Dauer-Animationen. So läuft die Oberfläche im Auto flüssig.",
     "voll_hinweis": "Voll zeigt 3D-Karte, Effekte und Animationen. Am Bildschirm im Auto kostet das spürbar Leistung und kann ruckeln.",
     "geraet_auto": "Gilt für den Bildschirm im Auto.",
@@ -5971,6 +5983,8 @@
     "3d_laden": "3D-Ansicht laden"
   },
   "startAnsicht": {
+    "auto_wirkt": "Gilt für den Bildschirm im Auto. Das Auto übernimmt es in wenigen Sekunden.",
+    "nur_hier": "Gilt nur für dieses Gerät bzw. diesen Browser, nicht im Auto.",
     "fehler": "Speichern hat nicht geklappt. Die Startansicht ist unverändert.",
     "geraet_auto": "Gilt für den Bildschirm im Auto.",
     "geraet": "Gilt nur für dieses Gerät bzw. diesen Browser."
@@ -6840,7 +6854,13 @@
     }
   },
   "klima_laeuft": {
-    "unbestaetigt": "Gestartet – das Auto hat es noch nicht bestätigt."
+    "unbestaetigt": "Gestartet – das Auto hat es noch nicht bestätigt.",
+    "fern_laeuft": "Fernklima läuft (gestartet {von}, bis ca. {bis}{art}) – laut Befehl, vom Auto nicht bestätigt",
+    "fern_beendet": "Fernklima beendet ({um})",
+    "zuendung_aus": "Klima: Zustand unbekannt (Zündung aus)",
+    "art_heizen": ", Heizen Stufe {n}",
+    "art_kuehlen": ", Kühlen Stufe {n}",
+    "art_neutral": ", Neutral"
   },
   "abfahrt_klima": {
     "title": "Warm zur Abfahrt",
@@ -7073,6 +7093,23 @@
     "nicht_aufloesbar": "Der Kurzlink ließ sich nicht auflösen. Bitte den langen Link teilen."
   },
   "display": {
+    "befehle_titel": "Befehle-Ansicht",
+    "befehle_hilfe": "Auf der Seite Steuerung: Automatisch richtet sich nach der Bildschirmbreite. Auto zeigt das Auto, Kacheln zeigt große Kacheln.",
+    "befehle_automatisch": "Automatisch",
+    "befehle_auto": "Auto zeigen",
+    "befehle_kacheln": "Kacheln",
+    "fahrzeug_titel": "Fahrzeugseite",
+    "fahrzeug_hilfe": "Einfach zeigt nur die Bedienung. 3D lädt die 3D-Ansicht und kostet am Display spürbar Leistung.",
+    "fahrzeug_lite": "Einfach",
+    "fahrzeug_immersive": "3D",
+    "fuer_auto_titel": "Für das Auto-Display",
+    "fuer_auto_hilfe": "Das wird im Auto gespeichert. Du kannst es auch vom PC oder Handy aus ändern. Das Auto übernimmt es in wenigen Sekunden.",
+    "nur_geraet_titel": "Nur für dieses Gerät",
+    "nur_geraet_hilfe": "Das bleibt nur in diesem Browser. Im Auto ändert sich dadurch nichts.",
+    "nur_geraet_sprache": "Sprache und gemerkte Ansichten (Reiter, Gruppen, Zeiträume, Hinweise) gelten nur für dieses Gerät. Sie werden nicht ins Auto übertragen.",
+    "thema_auto_titel": "Hell oder dunkel im Auto",
+    "thema_auto_hilfe": "Automatisch nimmt die Wahl aus den Android-Einstellungen der App.",
+    "thema_fehler": "Speichern hat nicht geklappt. Hell oder dunkel im Auto ist unverändert.",
     "apps_titel": "Apps ausschalten",
     "apps_an": "Wieder einschalten",
     "apps_aus": "Deaktivieren",

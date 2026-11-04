@@ -44,7 +44,9 @@ public class EinklappenUndGeraeteKachelnTest {
         assertTrue(d.contains("<div class=\"card\" id=\"anzeige\">") && d.contains("id=\"themaWahl\""));
         assertTrue(d.contains("data-thema=\"dark\"") && d.contains("data-thema=\"light\"") && d.contains("data-thema=\"auto\""));
         assertTrue(d.contains("BYD.theme.set(b.getAttribute('data-thema'))"));
-        assertTrue(d.contains("PanoptesDarstellung.waehler(ab)") && d.contains("PanoptesHomeLayout.waehler(hw)"));
+        // 0.1.38.7: Auto-Display (Kern) und dieses Gerät (lokal) getrennt, je mit denselben Bausteinen
+        assertTrue(d.contains("darst.waehler(ab, 'geraet')") && d.contains("home.waehler(hw, 'geraet')"));
+        assertTrue(d.contains("darst.waehler(aa, 'auto')") && d.contains("home.waehler(ha, 'auto')"));
         String s = lies("app/src/main/assets/web/local/system.html");
         assertTrue("Einstellungen: nur der Sprung", s.contains("href=\"display.html#anzeige\""));
         assertFalse("keine zweite Logik", s.contains("PanoptesDarstellung.waehler(") || s.contains("id=\"anzeigeWahl\""));

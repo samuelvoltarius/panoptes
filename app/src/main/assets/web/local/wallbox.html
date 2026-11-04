@@ -36,7 +36,7 @@
         .werte { color: var(--on-surface); font-size: 14px; }
         .warn { color: var(--status-warning); font-size: 13.5px; margin: 8px 0 0; }
         .log { font-size: 12.5px; color: var(--on-surface-variant); margin: 0; padding-left: 18px; }
-        #dlg { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: center; justify-content: center; z-index: 50; }
+        #dlg { position: fixed; top: 0; right: 0; bottom: 0; left: 0; /* Chrome 83: inset erst ab 87 */ inset: 0; background: rgba(0,0,0,.55); display: none; align-items: center; justify-content: center; z-index: 50; }
         #dlg .box { background: var(--sm-card); border: 1px solid var(--sm-line); border-radius: 20px; padding: 22px; max-width: 420px; margin: 16px; }
         #dlg .box p { color: var(--on-surface); font-size: 16px; margin: 0 0 16px; }
         .feld2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }

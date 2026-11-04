@@ -20,7 +20,7 @@
         background: #0a0a0e; color: #e4e4e7;
         font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
     }
-    #stage { position: fixed; inset: 0; }
+    #stage { position: fixed; top: 0; right: 0; bottom: 0; left: 0; /* Chrome 83: inset erst ab 87 */ inset: 0; }
     #stage canvas { display: block; }
 
     .panel {

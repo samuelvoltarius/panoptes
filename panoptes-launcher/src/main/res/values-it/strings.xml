@@ -182,4 +182,16 @@
     <string name="komfort_neu">%1$s: %2$s</string>
     <string name="komfort_nichts_lesbar">Ancora nulla di leggibile. Accendi l\'auto; i comandi senza lettura sono qui sotto.</string>
     <string name="klima_temp_unbekannt">La regolazione della temperatura non è ancora confermata per questo modello. Ventola e acceso/spento funzionano.</string>
+    <string name="home_frage_titel">Usare Panoptes Launcher come schermata iniziale?</string>
+    <string name="home_frage_text">Il tasto Home aprirà quindi questo launcher. Puoi tornare alla schermata iniziale BYD in ogni momento con il tasto casa all\'estrema sinistra del dock.</string>
+    <string name="home_behalten">Sì, mantieni</string>
+    <string name="home_nein">No, torna a BYD</string>
+    <string name="home_ok">Fatto. Il tasto Home ora apre questo launcher.</string>
+    <string name="home_fehler">Non ha funzionato. Resta la schermata iniziale BYD.</string>
+    <!-- 0.1.38.7 Fernklima laut Befehl -->
+    <string name="fern_laeuft">Clima da remoto in corso (avviato alle %1$s, fino alle %2$s circa%3$s) – secondo il comando, non confermato dall’auto</string>
+    <string name="fern_beendet">Clima da remoto terminato (%1$s)</string>
+    <string name="fern_art_heizen">, riscaldamento livello %1$d</string>
+    <string name="fern_art_kuehlen">, raffreddamento livello %1$d</string>
+    <string name="fern_art_neutral">, neutro</string>
 </resources>

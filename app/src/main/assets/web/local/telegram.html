@@ -106,6 +106,8 @@
                 <h2 data-i18n="tgp.setup_title">Einrichtung</h2>
                 <div class="state"><i class="pn-dot" id="stDot"></i><span class="big" id="stText">…</span></div>
                 <div class="sub" id="stSub">&nbsp;</div>
+                <!-- 0.1.38.7: HTTP 409 beim Abruf – derselbe Bot läuft noch woanders -->
+                <p class="note err" id="pollKonflikt" hidden data-i18n="tgp.poll_conflict">Dieser Bot wird gerade auch woanders benutzt (anderes Gerät/Programm). Bitte dort beenden oder einen eigenen Bot anlegen.</p>
 
                 <div class="stepbar" style="margin-top:16px">
                     <div class="sb" id="sb1"><span class="n">1</span><span class="l" data-i18n="tgp.step1_short">Bot anlegen</span></div>
@@ -451,7 +453,11 @@
         $('botHandle').textContent = s.botUsername ? '@' + s.botUsername : '';
         $('ownerName').textContent = s.ownerFirstName || t('tgp.owner', 'Gekoppelt');
         $('ownerHandle').textContent = (s.ownerUsername ? '@' + s.ownerUsername : '') + (s.botUsername ? '  ·  ' + t('tgp.via', 'über @{bot}', { bot: s.botUsername }) : '');
-        if (step === 2 && s.pendingPin && s.pendingPinExpiresAt) showPin(s.pendingPin, s.pendingPinExpiresAt);
+        $('pollKonflikt').hidden = !s.pollKonflikt;
+        // 0.1.38.7: Die angezeigte PIN gilt nur, solange der Kern genau diese PIN noch kennt (clear, Entkoppeln,
+        // neuer Schlüssel oder Ablauf löschen sie dort). Sonst nicht weiterzählen, sondern sagen und neu anbieten.
+        if (shownPin && !pinGiltNoch(s, shownPin)) pinUngueltig(step === 2);
+        if (step === 2 && s.pendingPin && s.pendingPinExpiresAt && s.pendingPin !== shownPin) showPin(s.pendingPin, s.pendingPinExpiresAt);
 
         // Meldungen + Fernbefehle
         // Schalter, die dieses Panoptes noch nicht kennt (Schlüssel fehlt in der Antwort), nicht falsch als „aus“ zeigen.
@@ -503,7 +509,9 @@
             if (d && d.success) {
                 $('token').value = '';
                 msg('tokenMsg', t('tgp.token_ok', 'Passt! Weiter mit Schritt 2.'), 'ok');
-                load();
+                // 0.1.38.7: neuer Schlüssel → alte PIN verwerfen und gleich eine frische anbieten (dann nur noch ein Tipp)
+                pinVerwerfen();
+                load().then(function () { if (last && last.configured && !last.paired) startPairing(); });
             } else {
                 var e = TOKEN_ERR[d && d.code] || null;
                 msg('tokenMsg', e ? t(e[0], e[1]) : ((d && d.error) || t('tgp.save_fail', 'Konnte nicht speichern')), 'err');
@@ -513,8 +521,30 @@
     }
 
     // ---------------- Schritt 2: Koppeln
-    var pinTimer = null, pollTimer = null;
+    var pinTimer = null, pollTimer = null, shownPin = null;
+    /** Rein: gilt die gezeigte PIN laut Kern noch? (Status liefert die offene PIN nur, solange sie gilt.) */
+    function pinGiltNoch(s, pin) {
+        return !!(s && s.configured && !s.paired && s.pendingPin && s.pendingPin === pin
+            && s.pendingPinExpiresAt && s.pendingPinExpiresAt > Date.now());
+    }
+    function pinVerwerfen() {
+        shownPin = null;
+        if (pinTimer) { clearInterval(pinTimer); pinTimer = null; }
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        $('pinValue').textContent = '— — —';
+        $('pinCountdown').textContent = '';
+        $('pairBox').hidden = true;
+        $('pairStartRow').hidden = false;
+    }
+    function pinUngueltig(sagen, abgelaufen) {
+        pinVerwerfen();
+        if (!sagen) return;
+        if (abgelaufen) msg('pairMsg', t('tgp.pin_gone', 'Abgelaufen – bitte neu starten.'), 'err');
+        else msg('pairMsg', t('tgp.pin_invalid', 'Diese PIN ist nicht mehr gültig – bitte eine neue PIN holen.'), 'err');
+    }
     function showPin(pin, expiresAt) {
+        shownPin = pin;
+        msg('pairMsg', '');
         $('pairBox').hidden = false;
         $('pairStartRow').hidden = true;
         $('pinValue').textContent = '/koppeln ' + pin;
@@ -528,9 +558,7 @@
             if (left > 0) {
                 $('pinCountdown').textContent = t('tgp.pin_left', 'Gilt noch {time} Minuten.', { time: mm + ':' + (ss < 10 ? '0' : '') + ss });
             } else {
-                $('pinCountdown').textContent = t('tgp.pin_gone', 'Abgelaufen – bitte neu starten.');
-                clearInterval(pinTimer); pinTimer = null;
-                $('pairStartRow').hidden = false; $('pairBox').hidden = true;
+                pinUngueltig(true, true);
             }
         }
         tick();
@@ -552,8 +580,13 @@
                 if (s.paired) {
                     clearInterval(pollTimer); pollTimer = null;
                     if (pinTimer) { clearInterval(pinTimer); pinTimer = null; }
+                    shownPin = null;
                     toast(t('tgp.paired', 'Gekoppelt!'), true);
                     paint(s);
+                } else if (!pinGiltNoch(s, shownPin)) {
+                    paint(s);   // PIN im Kern weg (clear, neuer Schlüssel, Ablauf) → Hinweis + neue PIN anbieten
+                } else {
+                    $('pollKonflikt').hidden = !s.pollKonflikt;
                 }
             }).catch(function () {});
         }, 3000);
@@ -616,10 +649,12 @@
         $('autoStart').onchange = function () { savePref({ autoStartAccOff: this.checked }, this); };
         $('unpairBtn').onclick = function () {
             if (!window.confirm(t('tgp.confirm_unpair', 'Verbindung zu deinem Telegram lösen? Danach koppelst du neu.'))) return;
+            pinVerwerfen();
             post('/api/telegram/owner/clear').then(load);
         };
         $('clearBtn').onclick = function () {
             if (!window.confirm(t('tgp.confirm_clear', 'Bot wirklich entfernen? Der Schlüssel wird gelöscht, Meldungen kommen keine mehr.'))) return;
+            pinVerwerfen();
             post('/api/telegram/clear').then(load);
         };
     });

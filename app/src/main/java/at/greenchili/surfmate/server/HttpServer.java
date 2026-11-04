@@ -641,6 +641,11 @@ public class HttpServer {
             // Route auth endpoints (all public). The /auth/token endpoint is
             // rate-limited by client identity (real IP via X-Forwarded-For if
             // present, else socket) to slow brute-force attempts via tunnels.
+            // 0.1.38.5 Demo-Profil: Koppeln der Handy-App nur simuliert (nichts gespeichert, keine echte Kopplung)
+            if (DemoProfil.beantworteKopplung(method, path.contains("?") ? path.substring(0, path.indexOf('?')) : path, out)) {
+                client.close();
+                return;
+            }
             if (path.startsWith("/auth/")) {
                 String identity;
                 if (forwardedFor != null && !forwardedFor.isEmpty()) {
@@ -695,6 +700,12 @@ public class HttpServer {
                 return;
             }
             
+            // 0.1.38.5 Demo-Profil: die simulierte Handy-Kopplung bekommt nur Muster oder 403, nie einen echten Handler
+            if (DemoProfil.beantworteGeraet(method, path, pathOnly, authHeader, rangeHeader, out)) {
+                client.close();
+                return;
+            }
+
             // Check authentication for all other paths
             boolean remoteDevRequest = pathOnly.equals("/remote-dev-view")
                     || pathOnly.equals("/remote-dev-view.html")
@@ -768,7 +779,7 @@ public class HttpServer {
 
             // 0.1.38.2 Demo-Profil (nur Emulator/Screenshot-Build + debug.panoptes.demo=1): Musterdaten, alles
             // Schreibende und alle Fahrzeug-/Kamerawege 403. /api/demo antwortet immer (Band „Musterdaten“).
-            if (DemoProfil.beantworte(method, pathOnly, out)) {
+            if (DemoProfil.beantworte(method, path, pathOnly, rangeHeader, out)) {
                 // Musterdaten, Stand oder Sperre
             }
             // Route to modular handlers first
@@ -1582,6 +1593,8 @@ public class HttpServer {
                 && HaApiHandler.handle(method, path, body, out)) {
             return true;
         }
+        // 0.1.39 HA-Geräte für die Panoptes-Oberfläche (nur Login; Kopplungen sperrt ExternGuard)
+        if (path.startsWith("/api/ha/geraete") && HaApiHandler.handleAnzeige(method, path, out)) return true;
         // Wallbox über evcc oder Home Assistant (WALLBOX_VERTRAG v1, 0.1.11, Kern 6)
         if (path.startsWith("/api/wallbox/") && WallboxApiHandler.handle(method, path, body, out)) return true;
         // Ladeplan zu Hause (LADEPLAN_KONZEPT, 0.1.20)

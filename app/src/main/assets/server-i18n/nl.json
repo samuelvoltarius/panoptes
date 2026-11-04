@@ -30,6 +30,7 @@
     "standbild_recht_fehlt": "Recht voor stilstaand beeld ontbreekt – zet het aan in Panoptes onder Gekoppelde apparaten.",
     "launcher_recht_fehlt": "Launcher-recht ontbreekt – zet het aan in Panoptes onder Gekoppelde apparaten.",
     "route_recht_fehlt": "Route-recht ontbreekt – zet het aan in Panoptes onder Gekoppelde apparaten.",
+    "geraete_recht_fehlt": "Apparaten-recht ontbreekt – zet het aan in Panoptes onder Gekoppelde apparaten.",
     "web_link_expired": "Deze link is verlopen. Open hem opnieuw in de app.",
     "invalid_request_with_detail": "Het verzoek is niet geldig: {0}",
     "bydcloud_not_configured": "BYD-account is niet ingesteld",
@@ -497,11 +498,11 @@
       "paired": "👋 *Hallo, hier is Panoptes.*\nIk meld me als er iets bij de auto gebeurt. Onderaan staat nu altijd de knop *☰ Menu*."
     },
     "pair": {
-      "no_owner": "🔐 *Deze bot heeft nog geen eigenaar.*\nOpen in Panoptes *Systeem → Telegram-meldingen* en tik op “Koppelen”. Open dan de link, of stuur hier `/pair 123456` met je pincode.",
+      "no_owner": "🔐 *Deze bot heeft nog geen eigenaar.*\nOpen in Panoptes *Regels → Meldingen → Telegram-meldingen* en tik op “Koppelen starten”. Open dan de link, of stuur hier `/pair 123456` met je pincode.",
       "already_paired": "🔒 Deze bot is al aan iemand anders gekoppeld.",
       "invalid_format": "🔢 De pincode bestaat uit 6 cijfers, bijvoorbeeld `/pair 123456`.",
-      "no_pin": "🔢 Er is nu geen pincode. Vraag een nieuwe aan in Panoptes onder *Systeem → Telegram-meldingen*.",
-      "expired": "⌛ Die pincode is verlopen (hij geldt 10 minuten). Haal een nieuwe op in Panoptes.",
+      "no_pin": "🔢 Er is nu geen pincode. Vraag een nieuwe aan in Panoptes onder *Regels → Meldingen → Telegram-meldingen*.",
+      "expired": "⌛ Die pincode is verlopen (hij geldt 10 minuten). Haal een nieuwe op in Panoptes onder *Regels → Meldingen → Telegram-meldingen*.",
       "invalid": "❌ Die pincode klopt niet. Controleer hem nog eens in Panoptes.",
       "storage_error": "⚠️ De auto kon de koppeling niet opslaan. Probeer het nog eens; lukt het weer niet, start dan Panoptes in de auto opnieuw.",
       "success": "✅ *Gekoppeld, {0}!*\nVanaf nu komen de meldingen van je auto hier binnen. /help laat zien wat je kunt doen.",
@@ -512,7 +513,7 @@
     },
     "router": {
       "unknown_command": "🤔 Die opdracht ken ik niet. Tik onderaan op *☰ Menu*, dan zie je alles.",
-      "not_allowed": "🔒 Dit commando staat uit. Je kunt het toestaan in Panoptes onder *Systeem → Telegram-meldingen → Commando's op afstand*."
+      "not_allowed": "🔒 Dit commando staat uit. Je kunt het toestaan in Panoptes onder *Regels → Meldingen → Telegram-meldingen → Commando's op afstand*."
     },
     "help": {
       "title": "🧭 *Wat je me kunt sturen*",
@@ -530,7 +531,7 @@
       "services": "/services – Welke diensten draaien, start/stop ze",
       "backup": "/backup – Stuur je instellingen als bestand (`/backup trips` voegt het ritboek toe)",
       "help": "/help – Deze lijst",
-      "some_locked": "🔒 Sommige commando's staan uit. Je kunt ze toestaan in Panoptes onder *Systeem → Telegram-meldingen*.",
+      "some_locked": "🔒 Sommige commando's staan uit. Je kunt ze toestaan in Panoptes onder *Regels → Meldingen → Telegram-meldingen*.",
       "footer": "_Panoptes {0}_",
       "menu": "/menue – Alle knoppen in één oogopslag",
       "updates": "/updates – Panoptes en launcher bijwerken"
@@ -558,7 +559,20 @@
       "v12_low": "🪫 12 V-accu: {0} V – *laag*",
       "temp": "🌡 Head-unit: {0} °C",
       "temp_hot": "🔥 Head-unit: {0} °C – wordt heet",
-      "quiet": "🌙 Stille uren {0}–{1}: ’s nachts alleen alarmen"
+      "quiet": "🌙 Stille uren {0}–{1}: ’s nachts alleen alarmen",
+      "fernklima_laeuft": "🌡 Klimaat op afstand loopt (gestart {0}, tot ongeveer {1}{2}) – volgens het commando, niet bevestigd door de auto",
+      "fernklima_beendet": "🌡 Klimaat op afstand beëindigd ({0})",
+      "fern_heizen": ", verwarmen stand {0}",
+      "fern_kuehlen": ", koelen stand {0}",
+      "fern_neutral": ", neutraal"
+    },
+    "home": {
+      "original_ok": "🏠 *Klaar.* Het BYD-startscherm is weer de standaard. De Panoptes Launcher blijft als gewone app in de auto.",
+      "original_fehler": "⚠️ Dat is niet gelukt. Tik op het display op de huisknop in de launcher of zet de schakelaar onder Display uit.",
+      "status_an": "De Panoptes Launcher staat aan als startscherm. `/startbildschirm original` brengt het BYD-startscherm terug.",
+      "status_aus": "Het BYD-startscherm is actief. De Panoptes Launcher kun je op het display onder Display inschakelen.",
+      "paket_an_ok": "✅ De Panoptes Launcher staat weer aan. Het BYD-startscherm blijft de standaard totdat je het zelf op het display wijzigt.",
+      "paket_an_fehler": "⚠️ De Panoptes Launcher kon niet worden ingeschakeld. Op het display kan dat onder Display → Panoptes Launcher."
     },
     "guard": {
       "title": "🛡 *Bewaker*",
@@ -980,7 +994,7 @@
     },
     "menu": {
       "title": "🧭 *Wat wil je doen?*\nTik gewoon op een knop.",
-      "locked": "🔒 Meer knoppen zet je aan in Panoptes onder *Systeem → Telegram-meldingen → Opdrachten op afstand*.",
+      "locked": "🔒 Meer knoppen zet je aan in Panoptes onder *Regels → Meldingen → Telegram-meldingen → Opdrachten op afstand*.",
       "more_title": "⋯ *Meer*\nTik gewoon op een knop.",
       "btn_menu": "☰ Menu",
       "btn_status": "🚗 Hoe gaat het met de auto?",
@@ -2263,7 +2277,7 @@
     "telegram": {
       "parkingMessages": {
         "title": "Parkeerbericht in Telegram",
-        "help": "Stuurt na het parkeren een Telegram-bericht met de positie van de auto. Uit bij nieuwe installaties; bestaande installaties behouden hun eerdere instelling."
+        "help": "Stuurt na het parkeren een Telegram-bericht met de positie van de auto. Staat aan zodra je Telegram instelt; hier kun je het uitzetten."
       },
       "zurueckAmAuto": {
         "title": "Melding „terug bij de auto”",
@@ -2295,6 +2309,26 @@
         "leicht": "Licht",
         "voll": "Volledig"
       },
+      "thema": {
+        "title": "Licht of donker in de auto",
+        "help": "Geldt voor het scherm in de auto en de launcher. Automatisch gebruikt de keuze uit de Android-instellingen van de app.",
+        "auto": "Automatisch",
+        "dark": "Donker",
+        "light": "Licht"
+      },
+      "befehleAnsicht": {
+        "title": "Opdrachtenweergave",
+        "help": "Op de pagina Bediening: Automatisch volgt de schermbreedte. Auto toont de auto, Tegels toont grote tegels.",
+        "automatisch": "Automatisch",
+        "auto": "Auto tonen",
+        "kacheln": "Tegels"
+      },
+      "fahrzeugAnsicht": {
+        "title": "Voertuigpagina",
+        "help": "Eenvoudig toont alleen de bediening. 3D laadt de 3D-weergave en kost merkbaar prestaties op het scherm.",
+        "lite": "Eenvoudig",
+        "immersive": "3D"
+      },
       "bandGroesse": {
         "title": "Grootte van meldingen op het scherm",
         "help": "Geldt voor flitsermeldingen en „Haal ik het?”. Groot is ook via CarPlay of Android Auto goed leesbaar.",
@@ -2306,6 +2340,12 @@
         "help": "Waar de melding bovenaan het scherm verschijnt.",
         "oben_rechts": "Hoek rechtsboven",
         "oben_mitte": "Midden bovenaan"
+      }
+    },
+    "launcher": {
+      "startbildschirm": {
+        "title": "Panoptes Launcher als startscherm",
+        "help": "Met Home kom je dan bij de Panoptes Launcher in plaats van het BYD-startscherm. Na het inschakelen vraagt de launcher of hij moet blijven. Tik je niet binnen 5 minuten op Behouden, dan gaat alles vanzelf terug. Terug kan altijd: huisknop in de launcher, deze schakelaar of Telegram \"/startbildschirm original\". Het BYD-startscherm blijft in de auto en wordt nooit verwijderd."
       }
     },
     "kamera": {

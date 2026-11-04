@@ -223,14 +223,17 @@ public final class AppsApiHandler {
                 HttpResponse.sendJson(out, resp.toString());
                 return;
             }
+            int paar = pairRequested ? AppLauncher.oeffnePaar(pkg, secondaryPkg) : AppLauncher.PAAR_FEHLER;
             boolean ok = pairRequested
-                    ? AppLauncher.launchSplitPair(pkg, secondaryPkg)
+                    ? paar == AppLauncher.PAAR_OK
                     : AppLauncher.launch(pkg, split);
             resp.put("success", ok);
             if (!ok) {
                 resp.put("error", pairRequested
                         ? "Could not launch split-screen app pair"
                         : "Could not launch " + pkg);
+                // 0.1.38.8: Startkomponente fehlt, Bildschirm unberührt → Aufrufer darf sicher ins Vollbild ausweichen
+                if (paar == AppLauncher.PAAR_NICHT_AUFGELOEST) resp.put("grund", "nicht_aufloesbar");
             }
         } catch (Throwable t) {
             logger.warn("apps/launch failed: " + t.getMessage());

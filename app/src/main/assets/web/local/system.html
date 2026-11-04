@@ -939,6 +939,7 @@
                         Array.prototype.forEach.call(rows.querySelectorAll('input[data-fremd-recht]'), function (cb) {
                             cb.onchange = function () { self.fremdRechte(cb); };
                         });
+                        Array.prototype.forEach.call(rows.querySelectorAll('[data-ha-geraete]'), function (box) { self.haGeraeteLaden(box); });
                         Array.prototype.forEach.call(rows.querySelectorAll('button[data-handy-schluessel]'), function (b) {
                             b.onclick = function () { self.handySchluesselWeg(b); };
                         });
@@ -1063,17 +1064,37 @@
                     launcher: [self.t('system.recht_wort_launcher', 'Launcher'),
                         self.t('system.recht_info_launcher', 'Startbildschirm im Auto einrichten (nur der Aufbau, keine Befehle ans Auto)')],
                     update: [self.t('system.handy_wort_update', 'Update'),
-                        self.t('system.handy_recht_update', 'Panoptes und Launcher aktualisieren (nur geparkt)')]
+                        self.t('system.handy_recht_update', 'Panoptes und Launcher aktualisieren (nur geparkt)')],
+                    geraete: [self.t('system.fremd_wort_geraete', 'Smarte Geräte'),
+                        self.t('system.fremd_recht_geraete', 'Home Assistant darf seine Geräte (Schalter, Licht, Klima) an Panoptes melden. Panoptes zeigt sie nur an; Steuern schaltest du je Gerät einzeln ein.')]
                 };
                 var html = '<div class="pn-rechte">';
                 // 0.1.37: „tacho“, „launcher“ (0.1.38) und „update“ (0.1.38.2) nur für das Cockpit (Home Assistant und Dienste nie)
-                (g.art === 'cockpit' ? ['kamera', 'standbild', 'tacho', 'launcher', 'update'] : ['kamera', 'standbild']).forEach(function (k) {
+                // 0.1.39: „geraete“ nur für Home Assistant (HA_VERTRAG v1.1 Teil D), Standard aus
+                (g.art === 'cockpit' ? ['kamera', 'standbild', 'tacho', 'launcher', 'update']
+                    : g.art === 'homeassistant' ? ['kamera', 'standbild', 'geraete'] : ['kamera', 'standbild']).forEach(function (k) {
                     html += '<label class="pn-recht"><span class="pn-recht-text"><span class="pn-recht-wort">' + self.esc(texte[k][0])
                         + '</span><span class="pn-recht-info">' + self.esc(texte[k][1]) + '</span></span>'
                         + '<span class="toggle-switch"><input type="checkbox" data-fremd-recht="' + k + '" data-id="' + self.esc(g.id) + '"'
                         + (r.indexOf(k) >= 0 ? ' checked' : '') + ' aria-label="' + self.esc(texte[k][0]) + '"><span class="toggle-slider"></span></span></label>';
                 });
+                // 0.1.39 HA-Geräte Stufe 1: nur anzeigen, was Home Assistant gemeldet hat (Steuern kommt später)
+                if (g.art === 'homeassistant' && r.indexOf('geraete') >= 0) html += '<div class="pn-ha-geraete" data-ha-geraete></div>';
                 return html + '</div>';
+            },
+            haGeraeteLaden: function (box) {
+                var self = this;
+                fetch('/api/ha/geraete').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
+                    .then(function (d) {
+                        var l = d && Array.isArray(d.geraete) ? d.geraete : null;
+                        if (!l) { box.textContent = self.t('system.ha_geraete_fehler', 'Geräteliste nicht lesbar.'); return; }
+                        if (!l.length) { box.textContent = self.t('system.ha_geraete_leer', 'Home Assistant hat noch keine Geräte gemeldet.'); return; }
+                        box.innerHTML = '<div class="pn-recht-wort">' + self.esc(self.t('system.ha_geraete_titel', 'Gemeldete Geräte (nur Anzeige)'))
+                            + '</div><ul class="pn-ha-liste">' + l.map(function (x) {
+                                return '<li>' + self.esc(x.titel || x.entity) + (x.raum ? ' · ' + self.esc(x.raum) : '')
+                                    + (x.zustand != null ? ' <span class="pn-recht-info">' + self.esc(String(x.zustand)) + '</span>' : '') + '</li>';
+                            }).join('') + '</ul>';
+                    });
             },
             fremdRechte: function (cb) {
                 var self = this, id = cb.getAttribute('data-id'), k = cb.getAttribute('data-fremd-recht');
@@ -1084,6 +1105,11 @@
                 }
                 if (cb.checked && k === 'update'
                     && !window.confirm(self.t('system.handy_update_confirm', 'Dieses Gerät darf dann Panoptes und den Launcher aktualisieren. Vor jedem Update fragt es nach. Einschalten?'))) {
+                    cb.checked = false;
+                    return;
+                }
+                if (cb.checked && k === 'geraete'
+                    && !window.confirm(self.t('system.fremd_geraete_confirm', 'Home Assistant meldet dann Namen und Räume seiner Geräte an Panoptes. Sie bleiben im Auto. Einschalten?'))) {
                     cb.checked = false;
                     return;
                 }

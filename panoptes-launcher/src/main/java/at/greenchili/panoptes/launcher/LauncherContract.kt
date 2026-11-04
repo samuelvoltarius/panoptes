@@ -42,11 +42,15 @@ data class LauncherKlima(
     val lueftungFahrer: Int? = null, val lueftungBeifahrer: Int? = null,
     val lenkrad: Boolean? = null, val umluft: Boolean? = null,
     /** 0.1.38.6: "stufen", "grad" oder "unbekannt" (dann keine Temperatur-Bedienung); null = älterer Kern, wie bisher. */
-    val tempArt: String? = null
+    val tempArt: String? = null,
+    /** 0.1.38.7: letzter Fern-Start laut Befehl (nie ein Messwert): läuft noch / beendet um (ms), Stufe 1..17 und Art nur auf Stufen-Modellen. */
+    val fernAktiv: Boolean? = null, val fernGestartetMs: Long? = null, val fernBisMs: Long? = null,
+    val fernBeendetUmMs: Long? = null, val fernStufe: Int? = null, val fernArt: String? = null
 )
 
 /** 0.1.38.5: Ausgang von „neben dem Launcher öffnen“. */
-enum class NebenErgebnis { OK, NICHT_TEILBAR, FEHLER }
+/** VOLLBILD (0.1.38.8): Kern konnte nicht teilen, ohne etwas anzufassen, und hat die App im Vollbild geöffnet. */
+enum class NebenErgebnis { OK, VOLLBILD, NICHT_TEILBAR, FEHLER }
 
 /** Antwort von `POST klima`: ok, Grund bei Ablehnung, neuer Klima-Stand (falls mitgeschickt). */
 data class KlimaAntwort(val ok: Boolean, val grund: String?, val klima: LauncherKlima?)
@@ -153,7 +157,12 @@ object LauncherContract {
             it.optBoolean("stufenModell", false), it.nullableDouble("tempStufe")?.toInt()?.takeIf { s -> s in 1..17 },
             stufe02(it, "sitzFahrer"), stufe02(it, "sitzBeifahrer"), stufe02(it, "lueftungFahrer"), stufe02(it, "lueftungBeifahrer"),
             it.nullableBoolean("lenkrad"), it.nullableBoolean("umluft"),
-            it.nullableString("tempArt")?.takeIf { a -> a == "stufen" || a == "grad" || a == "unbekannt" })
+            it.nullableString("tempArt")?.takeIf { a -> a == "stufen" || a == "grad" || a == "unbekannt" },
+            it.optJSONObject("fern")?.optBoolean("aktiv"), it.optJSONObject("fern")?.optLong("gestartet")?.takeIf { v -> v > 0 },
+            it.optJSONObject("fern")?.optLong("bis")?.takeIf { v -> v > 0 },
+            it.optJSONObject("fern")?.takeIf { f -> !f.isNull("beendetUm") }?.optLong("beendetUm")?.takeIf { v -> v > 0 },
+            it.optJSONObject("fern")?.takeIf { f -> !f.isNull("stufe") }?.optInt("stufe")?.takeIf { v -> v in 1..17 },
+            it.optJSONObject("fern")?.takeIf { f -> !f.isNull("art") }?.optString("art")?.takeIf { a -> a == "heizen" || a == "kuehlen" || a == "neutral" })
 
     private fun stufe02(it: JSONObject, name: String): Int? = it.nullableDouble(name)?.toInt()?.takeIf { s -> s in 0..2 }
 
@@ -272,6 +281,7 @@ object LauncherContract {
     fun parseNeben(json: String?): NebenErgebnis = try {
         val r = JSONObject(json ?: "")
         when {
+            r.optBoolean("success", false) && r.optString("modus") == "vollbild" -> NebenErgebnis.VOLLBILD
             r.optBoolean("success", false) -> NebenErgebnis.OK
             r.optString("error") == "nicht_teilbar" -> NebenErgebnis.NICHT_TEILBAR
             else -> NebenErgebnis.FEHLER

@@ -91,28 +91,52 @@ public final class AppLauncher {
      * dispatched as a split pair.
      */
     public static boolean launchSplitPair(String primaryPkg, String secondaryPkg) {
+        return oeffnePaar(primaryPkg, secondaryPkg) == PAAR_OK;
+    }
+
+    /** {@link #oeffnePaar}: das Paar steht geteilt. */
+    public static final int PAAR_OK = 0;
+    /** {@link #oeffnePaar}: eine Startkomponente fehlt; der Bildschirm wurde NICHT angefasst (Vollbild-Rückfall sicher). */
+    public static final int PAAR_NICHT_AUFGELOEST = 1;
+    /** {@link #oeffnePaar}: sonstiger Fehler (keine Teilung möglich, ungültig, Andocken gescheitert). */
+    public static final int PAAR_FEHLER = 2;
+
+    /**
+     * Wie {@link #launchSplitPair}, mit Grund. 0.1.38.8: Hat die zweite App keine eigene Start-Activity, aber einen
+     * Medien-Dienst (BYD-Spotify), kommt ihr Medien-Host ({@link #MEDIEN_HOSTS}) in die rechte Hälfte.
+     */
+    public static int oeffnePaar(String primaryPkg, String secondaryPkg) {
         if (!isSplitScreenSupported()) {
             logger.warn("openAppPair: platform does not confirm split-screen support");
-            return false;
+            return PAAR_FEHLER;
         }
         if (primaryPkg == null || secondaryPkg == null) {
             logger.warn("openAppPair: missing package");
-            return false;
+            return PAAR_FEHLER;
         }
         String primary = primaryPkg.trim();
         String secondary = secondaryPkg.trim();
         if (!isValidSplitPair(primary, secondary)) {
             logger.warn("openAppPair: invalid or duplicate package");
-            return false;
+            return PAAR_FEHLER;
         }
 
         // Resolve both before changing the foreground app, so an uninstalled selection
         // fails without disturbing the user's current screen.
         String primaryComponent = resolveLauncherComponent(primary);
         String secondaryComponent = resolveLauncherComponent(secondary);
+        if (secondaryComponent == null) {
+            String host = medienHostFuer(secondary);
+            if (host != null && !host.equals(primary)) {
+                logger.info("openAppPair: " + secondary + " has no activity, using media host " + host);
+                secondary = host;
+                secondaryComponent = resolveLauncherComponent(host);
+            }
+        }
         if (primaryComponent == null || secondaryComponent == null) {
-            logger.warn("openAppPair: could not resolve both launcher components");
-            return false;
+            logger.warn("openAppPair: could not resolve both launcher components ("
+                    + (primaryComponent == null ? primary : secondary) + ")");
+            return PAAR_NICHT_AUFGELOEST;
         }
 
         synchronized (APP_LAUNCH_LOCK) {
@@ -120,17 +144,17 @@ public final class AppLauncher {
                     || !waitForPackageInWindowingMode(
                             primary, WINDOWING_MODE_SPLIT_SCREEN_PRIMARY)) {
                 logger.warn("openAppPair: could not dock primary app " + primary);
-                return false;
+                return PAAR_FEHLER;
             }
             if (!dockSplitScreenSecondary(secondary, secondaryComponent)
                     || !waitForPackageInWindowingMode(
                             primary, WINDOWING_MODE_SPLIT_SCREEN_PRIMARY)) {
                 logger.warn("openAppPair: split pair did not settle into separate panes");
-                return false;
+                return PAAR_FEHLER;
             }
         }
         logger.info("openAppPair: opened " + primary + " + " + secondary + " in split-screen");
-        return true;
+        return PAAR_OK;
     }
 
     /**
@@ -255,6 +279,13 @@ public final class AppLauncher {
             } catch (Throwable t) {
                 logger.warn("openApp: Intent launch failed for " + pkg + " (" + t.getMessage() + ") — trying shell");
             }
+        }
+
+        // 1b) 0.1.38.8: App ohne eigene Start-Activity, aber mit Medien-Dienst (BYD-Spotify) → ihr Medien-Host.
+        String host = medienHostFuer(pkg);
+        if (host != null) {
+            logger.info("openApp: " + pkg + " has no activity, opening media host " + host);
+            return launchLocked(host, false);
         }
 
         // 2) Shell fallback. Prefer the explicit display-0 component launch — the SAME
@@ -1058,25 +1089,85 @@ public final class AppLauncher {
                 if (launch != null && launch.getComponent() != null) {
                     return launch.getComponent().flattenToShortString();
                 }
+                // 0.1.38.8: direkt abfragen (Alias-Activities, mehrere Start-Einträge), dann Leanback-Start
+                Intent main = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER).setPackage(pkg);
+                List<ResolveInfo> treffer = pm.queryIntentActivities(main, 0);
+                if (treffer != null) {
+                    for (ResolveInfo ri : treffer) {
+                        if (ri != null && ri.activityInfo != null && pkg.equals(ri.activityInfo.packageName)) {
+                            return new android.content.ComponentName(pkg, ri.activityInfo.name).flattenToShortString();
+                        }
+                    }
+                }
+                Intent leanback = pm.getLeanbackLaunchIntentForPackage(pkg);
+                if (leanback != null && leanback.getComponent() != null) {
+                    return leanback.getComponent().flattenToShortString();
+                }
             } catch (Throwable t) {
                 logger.warn("resolveLauncherComponent: PackageManager failed for " + pkg + " (" + t.getMessage() + ")");
             }
         }
-        // Shell fallback: parse `cmd package resolve-activity --brief` for the component.
+        // Shell fallback: parse `cmd package resolve-activity --brief` for the component. Hat ein Paket mehrere
+        // Start-Einträge, antwortet resolve-activity mit dem System-Auswahldialog → dann query-activities.
         try {
-            String out = runShellCapture(
+            String c = komponenteAusShell(runShellCapture(
                     "cmd package resolve-activity --brief -c android.intent.category.LAUNCHER "
-                            + shellQuote(pkg));
-            if (out == null) return null;
-            for (String line : out.split("\\r?\\n")) {
-                line = line.trim();
-                // A resolved component line looks like "pkg/.Activity" or "pkg/pkg.Activity".
-                if (line.startsWith(pkg + "/")) return line;
-            }
+                            + shellQuote(pkg)), pkg);
+            if (c != null) return c;
+            return komponenteAusShell(runShellCapture(
+                    "cmd package query-activities --brief -a android.intent.action.MAIN"
+                            + " -c android.intent.category.LAUNCHER " + shellQuote(pkg)), pkg);
         } catch (Throwable t) {
             logger.warn("resolveLauncherComponent: shell resolve failed for " + pkg + " (" + t.getMessage() + ")");
         }
         return null;
+    }
+
+    /** Rein: erste Zeile der Form {@code pkg/.Activity} aus einer {@code cmd package}-Ausgabe, sonst null. */
+    static String komponenteAusShell(String out, String pkg) {
+        if (out == null || pkg == null) return null;
+        for (String line : out.split("\\r?\\n")) {
+            line = line.trim();
+            // A resolved component line looks like "pkg/.Activity" or "pkg/pkg.Activity".
+            if (line.startsWith(pkg + "/") && line.length() > pkg.length() + 1 && line.indexOf(' ') < 0) return line;
+        }
+        return null;
+    }
+
+    /**
+     * 0.1.38.8: OEM-Medien-Apps, die reine Medien-Dienste ohne eigene Activity abspielen. Belegt am Surf (DiLink 3,
+     * 04.11.): das vorinstallierte Spotify ({@code /system/app/SpotifySDK}, Automotive-SDK) hat keine Start-Activity,
+     * nur einen {@code MediaBrowserService}; BYD zeigt es im Medien-Center.
+     */
+    static final String[] MEDIEN_HOSTS = { "com.byd.mediacenter" };
+
+    /**
+     * Medien-Host für ein Paket ohne eigene Start-Activity, das einen Medien-Dienst anbietet (sonst null).
+     * Nur für Pakete, die selbst nicht startbar sind; eine normale App wird nie umgeleitet.
+     */
+    static String medienHostFuer(String pkg) {
+        if (pkg == null || !isValidPackageName(pkg) || resolveLauncherComponent(pkg) != null) return null;
+        if (!hatMedienDienst(pkg)) return null;
+        for (String host : MEDIEN_HOSTS) {
+            if (!host.equals(pkg) && resolveLauncherComponent(host) != null) return host;
+        }
+        return null;
+    }
+
+    private static boolean hatMedienDienst(String pkg) {
+        Context ctx = CameraDaemon.getAppContext();
+        if (ctx != null) {
+            try {
+                Intent media = new Intent("android.media.browse.MediaBrowserService").setPackage(pkg);
+                List<ResolveInfo> dienste = ctx.getPackageManager().queryIntentServices(media, 0);
+                if (dienste != null && !dienste.isEmpty()) return true;
+            } catch (Throwable ignored) {
+                // weiter mit der Shell
+            }
+        }
+        return komponenteAusShell(runShellCapture(
+                "cmd package query-services --brief -a android.media.browse.MediaBrowserService "
+                        + shellQuote(pkg)), pkg) != null;
     }
 
     /**

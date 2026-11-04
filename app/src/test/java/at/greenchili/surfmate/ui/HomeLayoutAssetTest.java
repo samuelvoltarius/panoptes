@@ -49,7 +49,7 @@ public class HomeLayoutAssetTest {
         String page = read("app/src/main/assets/web/local/index.html");
         String styles = read("app/src/main/assets/web/shared/styles.css");
         assertTrue(system.contains("id=\"startAnsichtWahl\""));
-        assertTrue(system.contains("PanoptesHomeLayout.waehler(hw)"));
+        assertTrue(system.contains("home.waehler(hw, 'geraet')") && system.contains("home.waehler(ha, 'auto')"));
         assertTrue(layout.contains("mode-selector home-layout-selector"));
         assertTrue(layout.contains("mode-card"));
         assertTrue(styles.contains(".mode-card {") && styles.contains("min-height: 88px"));

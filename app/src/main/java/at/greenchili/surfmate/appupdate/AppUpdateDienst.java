@@ -972,6 +972,10 @@ public final class AppUpdateDienst {
                 LauncherRegel.Lage l = launcherLage();
                 o.put("paket", LauncherPaket.PAKET);
                 o.put("installiert", st.installiert() ? (Object) st.versionCode : JSONObject.NULL);
+                // 0.1.38.7: Rückfall-Stufe 2 hat das Paket ausgeschaltet: die Karte zeigt dann „Launcher wieder einschalten“
+                boolean aus = false;
+                try { aus = st.installiert() && LauncherHome.paketDeaktiviert(LauncherPaket.SHELL); } catch (Throwable ignored) { }
+                o.put("deaktiviert", aus);
                 Freigabe.Launcher f = l.verfuegbar;
                 if (f != null && f.apkUrl() != null) {
                     o.put("verfuegbar", new JSONObject().put("version", f.versionName).put("versionCode", f.versionCode)

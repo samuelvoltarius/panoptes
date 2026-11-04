@@ -2,7 +2,7 @@
  * Panoptes — Karte „Panoptes Launcher“ auf der System-Seite (0.1.37 Stufe 4, docs/LAUNCHER_SPEC.md §1).
  *
  *   GET  /api/appupdate/launcher   Stand: installiert, verfügbar (Version, Größe), installierbar, nichtWeil, mobilFrage
- *   POST /api/appupdate/launcher   {aktion: installieren|oeffnen|entfernen, mobil}
+ *   POST /api/appupdate/launcher   {aktion: installieren|oeffnen|aktivieren|entfernen, mobil}
  *
  * Die Launcher-APK kommt aus dem Panoptes-Release (sha256 + gleiche Signatur prüft der Kern). „Öffnen“ startet sie
  * nur als App. Panoptes setzt sie nie als Standard-Startbildschirm; das macht nur der Nutzer selbst in Android.
@@ -50,7 +50,7 @@
 
         ohneRecht: function (text) {
             $('lncState').textContent = text || t('system.lnc_ohne_recht', 'Für diese Funktion braucht dein Handy das Recht „Launcher“. Einschalten am Bildschirm im Auto unter Gekoppelte Geräte.');
-            ['lncInstall', 'lncUpdate', 'lncOpen', 'lncRemove', 'lncOpenHint'].forEach(function (id) { if ($(id)) $(id).style.display = 'none'; });
+            ['lncInstall', 'lncUpdate', 'lncOpen', 'lncRemove', 'lncEnable', 'lncDeaktiviertHinweis', 'lncOpenHint'].forEach(function (id) { if ($(id)) $(id).style.display = 'none'; });
         },
 
         grundText: function (g) {
@@ -89,6 +89,9 @@
             $('lncOpen').style.display = inst ? '' : 'none';
             if ($('lncOpenHint')) $('lncOpenHint').style.display = inst ? '' : 'none';
             $('lncRemove').style.display = amAuto && inst && !laeuft ? '' : 'none';
+            // 0.1.38.7: Rückfall-Stufe 2 (Paket ausgeschaltet) ohne adb wieder einschalten
+            if ($('lncEnable')) $('lncEnable').style.display = inst && d.deaktiviert ? '' : 'none';
+            if ($('lncDeaktiviertHinweis')) $('lncDeaktiviertHinweis').style.display = inst && d.deaktiviert ? '' : 'none';
             var self = this;
             clearTimeout(this.timer);
             if (laeuft) this.timer = setTimeout(function () { self.laden(); }, 2000);
@@ -139,6 +142,10 @@
                 });
             };
             $('lncRemove').onclick = function () { self.entfernen(); };
+            if ($('lncEnable')) $('lncEnable').onclick = function () {
+                $('lncEnable').disabled = true;
+                self.senden('aktivieren').then(function () { $('lncEnable').disabled = false; });
+            };
             this.laden();
         }
     };

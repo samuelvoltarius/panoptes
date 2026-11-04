@@ -232,6 +232,21 @@ public class SelbstheilungTest {
         assertEquals("Kamera-Skript (am Auto 227 Zeilen) + Anhänge-Modus", 248, kamera().size());
     }
 
+    /**
+     * Eindeutiger Prozessname je Testlauf. Die Prozesse werden über /proc nach argv[0] gezählt, und /proc zeigt alle
+     * Prozesse der Maschine: Laufen mehrere Suiten oder Sitzungen gleichzeitig (jede mit eigenem „byd_cam_daemon“-Ersatz),
+     * zählte die Zählung fremde Ersatz-Daemons mit. Darum bekommt jeder Test einen eigenen Namen und das Skript wird für
+     * den Test genau darauf umgeschrieben (Produktverhalten unverändert: es ist nur der Name).
+     */
+    private static String eindeutig(String name) {
+        return name + "_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+    }
+
+    /** Ersetzt den Daemon-Namen im Skripttext (nur für den Test). */
+    private static String fuer(String text, String name) {
+        return text.replace("byd_cam_daemon", name);
+    }
+
     /** Ersatz-Daemon: eine Shell mit argv[0] = name, die schläft. Gibt {pid (Shell-Sicht), Prozess} zurück. */
     private static Object[] ersatzDaemon(File dir, String name) throws Exception {
         File f = new File(dir, "ersatz_" + name + ".sh");
@@ -259,14 +274,14 @@ public class SelbstheilungTest {
     }
 
     /** Nur der Anhänge-Block des Kamera-Skripts, danach „NORMALER_START“ statt der Schleife. */
-    private static File anhaengeSkript(File dir) throws Exception {
+    private static File anhaengeSkript(File dir, String name) throws Exception {
         List<String> z = kamera();
         int von = z.indexOf(DaemonLauncher.ANHAENGEN_MARKE);
         // das erste „fi“ ohne Einrückung schließt den Block
         int ende = von;
         while (!z.get(ende).equals("fi")) ende++;
         StringBuilder sb = new StringBuilder("LOG_FILE=\"" + LogArchivShellTest.pfad(new File(dir, "log")) + "\"\n");
-        for (String s : z.subList(von, ende + 1)) sb.append(s).append('\n');
+        for (String s : z.subList(von, ende + 1)) sb.append(fuer(s, name)).append('\n');
         sb.append("echo NORMALER_START\n");
         File f = new File(dir, "anhaengen.sh");
         Files.write(f.toPath(), sb.toString().getBytes(StandardCharsets.UTF_8));
@@ -277,13 +292,14 @@ public class SelbstheilungTest {
     public void anhaengenWartetAufDenLaufendenDaemonUndStartetErstDanach() throws Exception {
         prozessCheck();
         File dir = Files.createTempDirectory("anhaengen").toFile();
-        Object[] d = ersatzDaemon(dir, "byd_cam_daemon");
+        String name = eindeutig("byd_cam_daemon");
+        Object[] d = ersatzDaemon(dir, name);
         try {
-            File f = anhaengeSkript(dir);
+            File f = anhaengeSkript(dir, name);
             Process w = new ProcessBuilder(LogArchivShellTest.shell(), LogArchivShellTest.pfad(f), "anhaengen", (String) d[0])
                     .redirectErrorStream(true).start();
             assertFalse("Watchdog wartet, solange der Daemon lebt", w.waitFor(3, TimeUnit.SECONDS));
-            assertEquals("kein zweiter Daemon", 1, anzahl("byd_cam_daemon"));
+            assertEquals("kein zweiter Daemon", 1, anzahl(name));
             sh("kill " + d[0]);
             assertTrue(w.waitFor(15, TimeUnit.SECONDS));
             String out = new String(w.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
@@ -300,17 +316,18 @@ public class SelbstheilungTest {
     public void anhaengenMitFremderPidStartetKeinenZweitenDaemon() throws Exception {
         prozessCheck();
         File dir = Files.createTempDirectory("anhaengen-fremd").toFile();
-        Object[] d = ersatzDaemon(dir, "byd_cam_daemon");
-        Object[] fremd = ersatzDaemon(dir, "irgendwas_anderes");
+        String name = eindeutig("byd_cam_daemon");
+        Object[] d = ersatzDaemon(dir, name);
+        Object[] fremd = ersatzDaemon(dir, eindeutig("irgendwas_anderes"));
         try {
-            File f = anhaengeSkript(dir);
+            File f = anhaengeSkript(dir, name);
             Process w = new ProcessBuilder(LogArchivShellTest.shell(), LogArchivShellTest.pfad(f), "anhaengen", (String) fremd[0])
                     .redirectErrorStream(true).start();
             assertTrue(w.waitFor(30, TimeUnit.SECONDS));
             String out = new String(w.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
             assertFalse(out, out.contains("NORMALER_START"));
             assertEquals(0, w.exitValue());
-            assertEquals(1, anzahl("byd_cam_daemon"));
+            assertEquals(1, anzahl(name));
         } finally {
             for (Object[] o : new Object[][] {d, fremd}) {
                 ((Process) o[1]).destroyForcibly();
@@ -329,12 +346,16 @@ public class SelbstheilungTest {
         prozessCheck();
         File dir = Files.createTempDirectory("selbstheilung").toFile();
         String b = LogArchivShellTest.pfad(dir);
-        Object[] d = ersatzDaemon(dir, "byd_cam_daemon");
+        String name = eindeutig("byd_cam_daemon");
+        Object[] d = ersatzDaemon(dir, name);
         String wpid = null;
         try {
+            // Der Name wird nur EINMAL ersetzt (am fertigen Heil-Skript); die erwarteten Zeilen bekommen dieselbe Ersetzung.
+            List<String> roh = new ArrayList<>();
+            for (String z : kamera()) roh.add(z.replace(BASIS, b));
+            String heil = fuer(DaemonLauncher.buildSelbstheilSkript(DaemonLauncher.ART_KAMERA, roh).replace(BASIS, b), name);
             List<String> zeilen = new ArrayList<>();
-            for (String z : kamera()) zeilen.add(z.replace(BASIS, b));
-            String heil = DaemonLauncher.buildSelbstheilSkript(DaemonLauncher.ART_KAMERA, zeilen).replace(BASIS, b);
+            for (String z : roh) zeilen.add(fuer(z, name));
             // Sentinel gesetzt: nichts tun
             Files.write(new File(dir, "camera_daemon.disabled").toPath(), "x\n".getBytes(StandardCharsets.UTF_8));
             assertEquals("gesperrt", DaemonLauncher.selbstheilBefund(sh(heil)));
@@ -351,14 +372,14 @@ public class SelbstheilungTest {
             String argv = sh("tr '\\000' ' ' < /proc/" + wpid + "/cmdline");
             assertTrue(argv, argv.contains(b + "/start_cam_daemon.sh anhaengen " + d[0]));
             Thread.sleep(1500);
-            assertEquals(1, anzahl("byd_cam_daemon"));
+            assertEquals(1, anzahl(name));
             assertEquals("gruen", DaemonLauncher.selbstheilBefund(sh(heil)));
 
             // Skript weg, Watchdog lebt: nur neu schreiben
             assertTrue(skript.delete());
             assertEquals("skript_neu", DaemonLauncher.selbstheilBefund(sh(heil)));
             assertTrue(skript.isFile());
-            assertEquals(1, anzahl("byd_cam_daemon"));
+            assertEquals(1, anzahl(name));
             File[] reste = dir.listFiles((x, n) -> n.startsWith(DaemonLauncher.TEMP_PRAEFIX) || n.contains(".neu."));
             assertEquals(0, reste == null ? 0 : reste.length);
         } finally {
@@ -398,7 +419,9 @@ public class SelbstheilungTest {
         String fn = a.substring(a.indexOf("skripte_befund() {"));
         fn = fn.substring(0, fn.indexOf("\n}\n") + 3);
         File dir = Files.createTempDirectory("update-befund").toFile();
-        Object[] d = ersatzDaemon(dir, "byd_cam_daemon");
+        String name = eindeutig("byd_cam_daemon");
+        fn = fuer(fn, name);
+        Object[] d = ersatzDaemon(dir, name);
         try {
             String b = LogArchivShellTest.pfad(dir);
             // Test-Shell ohne pidof: dieselbe Zählung über argv[0]

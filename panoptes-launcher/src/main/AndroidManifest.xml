@@ -28,9 +28,10 @@
         android:theme="@style/Theme.PanoptesLauncher"
         android:usesCleartextTraffic="true">
         <!--
-            Bewusst KEIN HOME-Filter (Stand 0.1.37, LAUNCHER_SPEC §1): Der Rückweg zum
-            BYD-Startbildschirm ist am Auto nicht belegt. Diese App startet wie jede
-            normale App und kann nie Standard-Home werden. HOME erst nach belegtem Rückweg.
+            HOME gibt es NUR im deaktivierten Alias .HomeAlias (0.1.38.7, LAUNCHER_SPEC §1). MainActivity hat nie
+            HOME. Ohne den bewussten Schalter in Panoptes bleibt der Alias aus: Die App startet wie jede normale
+            App und kann nicht Standard-Home werden. Der Daemon schaltet ihn ein (pm enable) und im Notfall wieder
+            aus (pm disable) - dann nimmt Android von selbst den BYD-Startbildschirm. Der BYD-Launcher wird nie angetastet.
         -->
         <activity
             android:name=".MainActivity"
@@ -43,6 +44,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity-alias
+            android:name=".HomeAlias"
+            android:targetActivity=".MainActivity"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
         <!-- Medien-Session und Benachrichtigungspunkt; nur aktiv, wenn der Nutzer den Zugriff selbst erlaubt. -->
         <service
             android:name=".MedienDienst"

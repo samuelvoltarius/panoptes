@@ -18,6 +18,9 @@
         .dp-knoepfe { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
         .dp-knoepfe .btn { min-height:48px; font-size:16px; }
         .dp-titel { font-size:17px; font-weight:700; margin:18px 0 6px; }
+        .dp-gruppe { margin-bottom:22px; padding-bottom:6px; }
+        .dp-gruppentitel { font-size:20px; font-weight:800; margin:6px 0 4px; }
+        .dp-gruppe[hidden] { display:none; }
         .dp-warn { margin-top:10px; padding:12px; border-radius:12px; background:var(--bg-elevated); line-height:1.5; }
         .dp-normal { width:100%; margin-top:12px; min-height:56px; font-size:17px; font-weight:700; color:var(--status-error);
             border:2px solid var(--status-error); border-radius:12px; background:transparent; }
@@ -63,18 +66,51 @@
             <div class="card" id="anzeige"><a id="faehigkeiten"></a>
                 <div class="card-header"><div class="card-title" data-i18n="display.aussehen_titel">Aussehen</div></div>
                 <div class="card-body">
-                    <div class="dp-titel" data-i18n="display.thema_titel">Hell oder dunkel</div>
-                    <div class="dp-themen" id="themaWahl">
-                        <button type="button" class="dp-thema" data-thema="dark"><span class="dp-vorschau dp-v-dunkel"><i></i><i></i><i></i></span><span data-i18n="display.thema_dunkel">Dunkel</span></button>
-                        <button type="button" class="dp-thema" data-thema="light"><span class="dp-vorschau dp-v-hell"><i></i><i></i><i></i></span><span data-i18n="display.thema_hell">Hell</span></button>
-                        <button type="button" class="dp-thema" data-thema="auto"><span class="dp-vorschau dp-v-auto"><i></i><i></i><i></i></span><span data-i18n="display.thema_auto">Automatisch</span></button>
+                    <!-- 0.1.38.7: klar getrennt. „Für das Auto-Display“ liegt im Kern und geht auch vom PC/Handy aus (Auto holt es alle 8 s);
+                         „Nur für dieses Gerät“ bleibt im Browser und erscheint nur am Handy/PC. -->
+                    <div class="dp-gruppe" id="ausAuto">
+                        <div class="dp-gruppentitel" data-i18n="display.fuer_auto_titel">Für das Auto-Display</div>
+                        <p class="dp-note" data-i18n="display.fuer_auto_hilfe">Das wird im Auto gespeichert. Du kannst es auch vom PC oder Handy aus ändern. Das Auto übernimmt es in wenigen Sekunden.</p>
+                        <div class="dp-titel" data-i18n="display.thema_auto_titel">Hell oder dunkel im Auto</div>
+                        <p class="dp-note" data-i18n="display.thema_auto_hilfe">Automatisch nimmt die Wahl aus den Android-Einstellungen der App.</p>
+                        <div class="dp-themen" id="themaAuto">
+                            <button type="button" class="dp-thema" data-thema-auto="dark"><span class="dp-vorschau dp-v-dunkel"><i></i><i></i><i></i></span><span data-i18n="display.thema_dunkel">Dunkel</span></button>
+                            <button type="button" class="dp-thema" data-thema-auto="light"><span class="dp-vorschau dp-v-hell"><i></i><i></i><i></i></span><span data-i18n="display.thema_hell">Hell</span></button>
+                            <button type="button" class="dp-thema" data-thema-auto="auto"><span class="dp-vorschau dp-v-auto"><i></i><i></i><i></i></span><span data-i18n="display.thema_auto">Automatisch</span></button>
+                        </div>
+                        <div class="dp-note" id="themaAutoMeldung" aria-live="polite"></div>
+                        <div class="dp-titel" data-i18n="settings.anzeige.darstellung.title">Darstellung im Auto</div>
+                        <p class="dp-note" data-i18n="settings.anzeige.darstellung.help">Leicht schont den Bildschirm im Auto: Karten in 2D, ohne Unschärfe-Effekte und Dauer-Animationen. Voll zeigt alles, kostet am Display aber spürbar Leistung.</p>
+                        <div id="anzeigeWahlAuto"></div>
+                        <div class="dp-titel" data-i18n="settings.anzeige.startAnsicht.title">Startansicht</div>
+                        <p class="dp-note" data-i18n="settings.anzeige.startAnsicht.help">Wähle, welche vorhandenen Bereiche auf der Startseite zuerst stehen. Alle Funktionen bleiben über die Leiste erreichbar.</p>
+                        <div id="startAnsichtWahlAuto"></div>
+                        <div class="dp-titel" data-pn-titel="befehleAnsicht">Befehle-Ansicht</div>
+                        <p class="dp-note" data-pn-hilfe="befehleAnsicht"></p>
+                        <div id="befehleWahlAuto"></div>
+                        <div class="dp-titel" data-pn-titel="fahrzeugAnsicht">Fahrzeugseite</div>
+                        <p class="dp-note" data-pn-hilfe="fahrzeugAnsicht"></p>
+                        <div id="fahrzeugWahlAuto"></div>
                     </div>
-                    <div class="dp-titel" data-i18n="settings.anzeige.darstellung.title">Darstellung im Auto</div>
-                    <p class="dp-note" data-i18n="settings.anzeige.darstellung.help">Leicht schont den Bildschirm im Auto: Karten in 2D, ohne Unschärfe-Effekte und Dauer-Animationen. Voll zeigt alles, kostet am Display aber spürbar Leistung.</p>
-                    <div id="anzeigeWahl"></div>
-                    <div class="dp-titel" data-i18n="settings.anzeige.startAnsicht.title">Startansicht</div>
-                    <p class="dp-note" data-i18n="settings.anzeige.startAnsicht.help">Wähle, welche vorhandenen Bereiche auf der Startseite zuerst stehen. Alle Funktionen bleiben über die Leiste erreichbar.</p>
-                    <div id="startAnsichtWahl"></div>
+                    <div class="dp-gruppe" id="ausGeraet" hidden>
+                        <div class="dp-gruppentitel" data-i18n="display.nur_geraet_titel">Nur für dieses Gerät</div>
+                        <p class="dp-note" data-i18n="display.nur_geraet_hilfe">Das bleibt nur in diesem Browser. Im Auto ändert sich dadurch nichts.</p>
+                        <div class="dp-titel" data-i18n="display.thema_titel">Hell oder dunkel</div>
+                        <div class="dp-themen" id="themaWahl">
+                            <button type="button" class="dp-thema" data-thema="dark"><span class="dp-vorschau dp-v-dunkel"><i></i><i></i><i></i></span><span data-i18n="display.thema_dunkel">Dunkel</span></button>
+                            <button type="button" class="dp-thema" data-thema="light"><span class="dp-vorschau dp-v-hell"><i></i><i></i><i></i></span><span data-i18n="display.thema_hell">Hell</span></button>
+                            <button type="button" class="dp-thema" data-thema="auto"><span class="dp-vorschau dp-v-auto"><i></i><i></i><i></i></span><span data-i18n="display.thema_auto">Automatisch</span></button>
+                        </div>
+                        <div class="dp-titel" data-i18n="settings.anzeige.darstellung.title">Darstellung im Auto</div>
+                        <div id="anzeigeWahl"></div>
+                        <div class="dp-titel" data-i18n="settings.anzeige.startAnsicht.title">Startansicht</div>
+                        <div id="startAnsichtWahl"></div>
+                        <div class="dp-titel" data-pn-titel="befehleAnsicht">Befehle-Ansicht</div>
+                        <div id="befehleWahl"></div>
+                        <div class="dp-titel" data-pn-titel="fahrzeugAnsicht">Fahrzeugseite</div>
+                        <div id="fahrzeugWahl"></div>
+                    </div>
+                    <p class="dp-note" id="nurGeraetSprache" data-i18n="display.nur_geraet_sprache">Sprache und gemerkte Ansichten (Reiter, Gruppen, Zeiträume, Hinweise) gelten nur für dieses Gerät. Sie werden nicht ins Auto übertragen.</p>
                     <!-- 0.1.9.1: Blitzer-Band am Bildschirm im Auto (anzeige.bandGroesse/bandPosition, Kern-Schema) -->
                     <div id="anzeigeBand"></div>
                     <!-- Bildschirm reinigen: 30 s alle Berührungen sperren, nur in P, lang drücken beendet (reinigung.js) -->
@@ -164,12 +200,15 @@
                     </div>
                     <div class="sys-note" id="lncState"></div>
                     <div class="sys-note" data-i18n="system.lnc_home_hint">Panoptes macht den Launcher nie selbst zum Standard-Startbildschirm. Rückweg jederzeit: Haus-Knopf ganz links im Launcher-Dock, oder den Launcher hier entfernen.</div>
+                    <div id="lncStartFelder" style="margin-top:12px;"></div>
                     <div class="sys-actions">
                         <button class="btn btn-primary" id="lncInstall" type="button" style="display:none;" data-i18n="system.lnc_install">Installieren und aktivieren</button>
                         <button class="btn btn-primary" id="lncUpdate" type="button" style="display:none;" data-i18n="system.lnc_update">Aktualisieren</button>
                         <button class="btn" id="lncOpen" type="button" style="display:none;" data-i18n="system.lnc_open">Öffnen</button>
+                        <button class="btn btn-primary" id="lncEnable" type="button" style="display:none;" data-i18n="system.lnc_enable">Launcher wieder einschalten</button>
                         <button class="btn" id="lncRemove" type="button" style="display:none;" data-i18n="system.lnc_remove">Entfernen</button>
                     </div>
+                    <div class="sys-note" id="lncDeaktiviertHinweis" style="display:none;font-size:16px;" data-i18n="system.lnc_disabled_hint">Der Panoptes Launcher wurde zur Sicherheit ausgeschaltet. Mit dem Knopf schaltest du ihn wieder ein.</div>
                     <div class="sys-note" id="lncOpenHint" style="display:none;" data-i18n="system.lnc_open_hint">„Öffnen“ öffnet den Launcher am Bildschirm im Auto.</div>
                 </div>
             </div>
@@ -193,26 +232,84 @@
     'use strict';
     // 0.1.38.4 Aussehen: dieselben Bausteine wie früher in Einstellungen (keine zweite Logik)
     function aussehen() {
-        var themen = document.querySelectorAll('[data-thema]');
-        function markiere() {
-            var jetzt = window.BYD && BYD.theme && BYD.theme.get ? BYD.theme.get() : 'dark';
-            Array.prototype.forEach.call(themen, function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-thema') === jetzt ? 'true' : 'false'); });
+        var darst = window.PanoptesDarstellung, home = window.PanoptesHomeLayout;
+        var amAuto = !!(darst && darst.display && darst.display());
+        function neuZeichnen(f) { if (window.BYD && BYD.i18n && BYD.i18n.onChange) BYD.i18n.onChange(f); }
+        // ---- Für das Auto-Display (im Kern, auch vom PC/Handy aus)
+        var autoThemen = document.querySelectorAll('[data-thema-auto]');
+        function markiereAuto(w) {
+            Array.prototype.forEach.call(autoThemen, function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-thema-auto') === w ? 'true' : 'false'); });
         }
-        Array.prototype.forEach.call(themen, function (b) {
-            b.onclick = function () { if (window.BYD && BYD.theme && BYD.theme.set) BYD.theme.set(b.getAttribute('data-thema')); markiere(); };
+        if (window.BYD && BYD.theme && BYD.theme.kernLesen) BYD.theme.kernLesen().then(function (w) { markiereAuto(w || 'auto'); });
+        Array.prototype.forEach.call(autoThemen, function (b) {
+            b.onclick = function () {
+                var w = b.getAttribute('data-thema-auto'), m = document.getElementById('themaAutoMeldung');
+                if (!(window.BYD && BYD.theme && BYD.theme.kernSetzen)) return;
+                BYD.theme.kernSetzen(w).then(function (ok) {
+                    if (ok) { markiereAuto(w); if (m) m.textContent = ''; }
+                    else if (m) m.textContent = (window.BYD && BYD.i18n && BYD.i18n.t && BYD.i18n.t('display.thema_fehler')) || 'Speichern hat nicht geklappt. Hell oder dunkel im Auto ist unverändert.';
+                });
+            };
         });
-        markiere();
-        if (window.PanoptesDarstellung) {
-            var ab = document.getElementById('anzeigeWahl');
-            PanoptesDarstellung.waehler(ab);
-            PanoptesDarstellung.abgleichen().then(function () { PanoptesDarstellung.waehler(ab); });
-            if (window.BYD && BYD.i18n && BYD.i18n.onChange) BYD.i18n.onChange(function () { PanoptesDarstellung.waehler(ab); });
+        if (darst) {
+            var aa = document.getElementById('anzeigeWahlAuto');
+            darst.waehler(aa, 'auto');
+            darst.abgleichen().then(function () { darst.waehler(aa, 'auto'); });
+            neuZeichnen(function () { darst.waehler(aa, 'auto'); });
         }
-        if (window.PanoptesHomeLayout) {
-            var hw = document.getElementById('startAnsichtWahl');
-            PanoptesHomeLayout.waehler(hw);
-            PanoptesHomeLayout.abgleichen().then(function () { PanoptesHomeLayout.waehler(hw); });
-            if (window.BYD && BYD.i18n && BYD.i18n.onChange) BYD.i18n.onChange(function () { PanoptesHomeLayout.waehler(hw); });
+        if (home) {
+            var ha = document.getElementById('startAnsichtWahlAuto');
+            home.waehler(ha, 'auto');
+            home.abgleichen().then(function () { home.waehler(ha, 'auto'); });
+            neuZeichnen(function () { home.waehler(ha, 'auto'); });
+        }
+        // ---- Befehle-Ansicht und Fahrzeugseite (0.1.38.7): Titel/Hilfe aus den Texten, Auswahl über PanoptesAnzeige
+        var az = window.PanoptesAnzeige;
+        function azTexte() {
+            if (!az) return;
+            Array.prototype.forEach.call(document.querySelectorAll('[data-pn-titel]'), function (e) { e.textContent = az.titel(e.getAttribute('data-pn-titel')); });
+            Array.prototype.forEach.call(document.querySelectorAll('[data-pn-hilfe]'), function (e) { e.textContent = az.hilfe(e.getAttribute('data-pn-hilfe')); });
+        }
+        if (az) {
+            azTexte();
+            az.waehler(document.getElementById('befehleWahlAuto'), 'befehleAnsicht', 'auto');
+            az.waehler(document.getElementById('fahrzeugWahlAuto'), 'fahrzeugAnsicht', 'auto');
+            neuZeichnen(function () {
+                azTexte();
+                az.waehler(document.getElementById('befehleWahlAuto'), 'befehleAnsicht', 'auto');
+                az.waehler(document.getElementById('fahrzeugWahlAuto'), 'fahrzeugAnsicht', 'auto');
+            });
+        }
+        // ---- Nur für dieses Gerät (nur am Handy/PC)
+        if (!amAuto) {
+            if (az) {
+                az.waehler(document.getElementById('befehleWahl'), 'befehleAnsicht', 'geraet');
+                az.waehler(document.getElementById('fahrzeugWahl'), 'fahrzeugAnsicht', 'geraet');
+                neuZeichnen(function () {
+                    az.waehler(document.getElementById('befehleWahl'), 'befehleAnsicht', 'geraet');
+                    az.waehler(document.getElementById('fahrzeugWahl'), 'fahrzeugAnsicht', 'geraet');
+                });
+            }
+            document.getElementById('ausGeraet').hidden = false;
+            var themen = document.querySelectorAll('[data-thema]');
+            var markiere = function () {
+                var jetzt = window.BYD && BYD.theme && BYD.theme.get ? BYD.theme.get() : 'dark';
+                Array.prototype.forEach.call(themen, function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-thema') === jetzt ? 'true' : 'false'); });
+            };
+            Array.prototype.forEach.call(themen, function (b) {
+                b.onclick = function () { if (window.BYD && BYD.theme && BYD.theme.set) BYD.theme.set(b.getAttribute('data-thema')); markiere(); };
+            });
+            markiere();
+            if (darst) {
+                var ab = document.getElementById('anzeigeWahl');
+                darst.waehler(ab, 'geraet');
+                neuZeichnen(function () { darst.waehler(ab, 'geraet'); });
+            }
+            if (home) {
+                var hw = document.getElementById('startAnsichtWahl');
+                home.waehler(hw, 'geraet');
+                neuZeichnen(function () { home.waehler(hw, 'geraet'); });
+            }
         }
         if (window.PanoptesEinstellungen) PanoptesEinstellungen.laden().then(function (store) {
             var bandKeys = store ? ['anzeige.bandGroesse', 'anzeige.bandPosition', 'faehigkeiten.ueberCarPlay', 'faehigkeiten.ueberAndroidAuto'].filter(function (k) { return store.feld(k); }) : [];
@@ -223,6 +320,10 @@
     function start() {
         aussehen();
         if (window.PanoptesLauncherKarte) PanoptesLauncherKarte.init();
+        // 0.1.38.7: Launcher als Startbildschirm (Opt-in, Standard aus)
+        if (window.PanoptesEinstellungen) PanoptesEinstellungen.laden().then(function (store) {
+            if (store && store.feld('launcher.startbildschirm')) store.zeichne(document.getElementById('lncStartFelder'), { gruppe: store.feld('launcher.startbildschirm').gruppe, nur: ['launcher.startbildschirm'] });
+        });
         // „Launcher einrichten“ nur zeigen, wenn die Seite im Auto vorhanden ist
         fetch('launcher.html', { cache: 'no-store' }).then(function (r) {
             if (r.ok) document.getElementById('dpLauncherEinrichten').style.display = '';

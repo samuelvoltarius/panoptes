@@ -111,6 +111,8 @@ public class DemoProfilTest {
     public void jedeMusterdateiDaUndGueltig() throws Exception {
         Set<String> genannt = new HashSet<>(DemoProfil.DATEIEN.values());
         genannt.addAll(DemoProfil.LESE_POSTS.values());
+        genannt.addAll(DemoProfil.GERAET_DATEIEN.values());
+        for (String typ : new String[] {"", "sentry", "ereignis", "normal"}) genannt.add(DemoProfil.aufnahmenDatei("type=" + typ));
         for (String name : genannt) {
             File f = new File(DEMO, name);
             assertTrue("fehlt: " + f, f.isFile());
@@ -119,10 +121,123 @@ public class DemoProfilTest {
         }
         String[] alle = DEMO.list();
         assertNotNull(alle);
-        for (String name : alle) assertTrue("ungenutzt: " + name, genannt.contains(name));
+        for (String name : alle) assertTrue("ungenutzt: " + name, genannt.contains(name) || "medien".equals(name));
     }
 
-    /** Keine privaten Orte: jede Koordinate liegt in Wien und Umgebung (Ziele St. Pölten, Wiener Neustadt; Park-Regel des Repos). */
+    /** 0.1.38.5: Bilder und Clips sind da, echte JPEG/MP4, klein, und jede Datei im Ordner ist genannt. */
+    @Test
+    public void musterMedienDaUndGenutzt() throws Exception {
+        Set<String> genannt = new HashSet<>(DemoProfil.MEDIEN.values());
+        genannt.add(DemoProfil.STANDBILD);
+        for (String name : genannt) {
+            byte[] b = Files.readAllBytes(new File(DEMO, name).toPath());
+            assertTrue(name, b.length > 1000 && b.length < 200_000);
+            if (name.endsWith(".jpg")) assertTrue(name, (b[0] & 0xff) == 0xff && (b[1] & 0xff) == 0xd8);
+            else assertEquals(name, "ftyp", new String(b, 4, 4, StandardCharsets.US_ASCII));
+        }
+        String[] alle = new File(DEMO, "medien").list();
+        assertNotNull(alle);
+        for (String name : alle) assertTrue("ungenutzt: " + name, genannt.contains("medien/" + name));
+        for (String id : DemoProfil.CLIPS) {
+            assertEquals("medien/" + id + ".mp4", DemoProfil.medium("GET", "/video/id/" + id));
+            assertEquals("medien/" + id + ".jpg", DemoProfil.medium("GET", "/thumb/id/" + id));
+        }
+        assertEquals(DemoProfil.STANDBILD, DemoProfil.medium("GET", "/api/waechter/standbild/vorne"));
+        assertNull(DemoProfil.medium("POST", "/video/id/" + DemoProfil.CLIPS[0]));
+        assertNull(DemoProfil.medium("GET", "/video/id/0123456789abcdef0123456789abcdef"));
+    }
+
+    /** 0.1.38.5: Planer-Muster im Vertrag plan-ergebnis/1, Linz → Wien mit einem Ladestopp, dazu was navi.html liest. */
+    @Test
+    public void planerMusterLinzWien() throws Exception {
+        assertEquals("navi_plan.json", DemoProfil.datei("POST", "/api/navi/plan"));
+        assertFalse(DemoProfil.gesperrt("POST", "/api/navi/plan"));
+        assertTrue("Ziel ins Auto bleibt zu", DemoProfil.gesperrt("POST", "/api/telenav/navigate"));
+        assertTrue("Route übernehmen bleibt zu", DemoProfil.gesperrt("POST", "/api/navi/planer-route/annehmen"));
+        JSONObject p = json("navi_plan.json");
+        assertEquals("plan-ergebnis/1", p.getString("vertrag"));
+        assertTrue(p.getBoolean("ok") && p.getBoolean("fahrbar"));
+        assertEquals("Linz", p.getJSONObject("start").getString("name"));
+        assertEquals("Wien", p.getJSONObject("ziel").getString("name"));
+        assertEquals(1, p.getJSONArray("etappen").length());
+        assertEquals("laden", p.getJSONArray("etappen").getJSONObject(0).getString("art"));
+        assertEquals(1, p.getJSONArray("stopps").length());
+        assertTrue(p.getJSONObject("route").getJSONArray("geometrie").length() > 50);
+        assertTrue(p.getJSONObject("kosten").getJSONObject("basis").getDouble("gesamt") > 0);
+        JSONObject u = json("navi_unterwegs.json");
+        assertTrue("Reicht es noch? ist an", u.getBoolean("aktiv"));
+        assertTrue(u.getJSONArray("verlauf").length() >= 2);
+    }
+
+    /** 0.1.38.5: Aufnahmen-Liste je Filter, Datum passend zum verschobenen Zeitstempel. */
+    @Test
+    public void aufnahmenJeFilterMitDatum() throws Exception {
+        assertEquals("recordings.json", DemoProfil.aufnahmenDatei(""));
+        assertEquals("recordings.json", DemoProfil.aufnahmenDatei("page=1&pageSize=4"));
+        assertEquals("recordings_sentry.json", DemoProfil.aufnahmenDatei("type=sentry&page=1&pageSize=6"));
+        assertEquals("recordings_ereignis.json", DemoProfil.aufnahmenDatei("type=ereignis"));
+        assertEquals("recordings_leer.json", DemoProfil.aufnahmenDatei("type=proximity"));
+        String roh = new String(Files.readAllBytes(new File(DEMO, "recordings.json").toPath()), StandardCharsets.UTF_8);
+        long heute = DemoProfil.ANKER_MS + 14 * 86_400_000L + 50_000_000L;
+        String s = DemoProfil.aufnahmenMitDatum(DemoProfil.verschiebe(roh, heute), java.util.TimeZone.getTimeZone("UTC"));
+        JSONArray liste = new JSONObject(s).getJSONArray("recordings");
+        assertEquals(DemoProfil.CLIPS.length, liste.length());
+        Set<String> tage = new HashSet<>();
+        for (int i = 0; i < liste.length(); i++) {
+            JSONObject r = liste.getJSONObject(i);
+            assertTrue(r.getLong("timestamp") <= heute);
+            assertTrue(r.getString("date"), r.getString("date").startsWith("2026-11-0"));
+            assertTrue(r.getString("dateFormatted"), r.getString("dateFormatted").startsWith("Nov "));
+            assertEquals("/video/id/" + r.getString("id"), r.getString("videoUrl"));
+            tage.add(r.getString("date"));
+        }
+        JSONArray d = new JSONObject(DemoProfil.tageJson(s)).getJSONArray("dates");
+        assertEquals(tage.size(), d.length());
+    }
+
+    /** 0.1.38.5: Launcher-Zusammenfassung ohne Striche, als Demo-Ansicht erkennbar. */
+    @Test
+    public void launcherMusterOhneStriche() throws Exception {
+        assertEquals("launcher_summary.json", DemoProfil.datei("GET", "/api/launcher/v1/summary"));
+        assertTrue("Klima bleibt zu", DemoProfil.gesperrt("POST", "/api/launcher/v1/klima"));
+        JSONObject s = json("launcher_summary.json");
+        assertTrue(s.getJSONObject("vehicle").getString("name").contains("Demo-Ansicht"));
+        assertTrue(s.getJSONObject("range").getDouble("totalKm") > 0);
+        assertTrue(s.getJSONObject("battery").getDouble("socPct") > 0);
+        assertEquals("P", s.getJSONObject("state").getString("gear"));
+        assertTrue(s.getJSONObject("navi").getBoolean("aktiv"));
+        assertTrue(s.getJSONObject("waechter").getBoolean("scharf"));
+    }
+
+    /** 0.1.38.5: simulierte Handy-Kopplung nur im Profil; schreibend bestätigt sie nur Harmloses, nie Befehle. */
+    @Test
+    public void handyKopplungNurSimuliert() throws Exception {
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        // Unit-Test-JVM: Profil aus → nichts abgefangen, der Demo-Schlüssel gilt nicht
+        assertFalse(DemoProfil.beantworteKopplung("POST", "/auth/kopplung", out));
+        assertFalse(DemoProfil.istDemoGeraet("Bearer " + DemoProfil.GERAET_TOKEN));
+        assertFalse(DemoProfil.beantworteGeraet("GET", "/api/vehicle/state", "/api/vehicle/state",
+                "Bearer " + DemoProfil.GERAET_TOKEN, null, out));
+        assertEquals(0, out.size());
+        for (String p : DemoProfil.GERAET_BESTAETIGT) {
+            assertFalse(p, p.contains("aktion") || p.contains("bruecke") || p.contains("websitzung") || p.contains("vehicle"));
+        }
+        for (String p : new String[] {"/api/handy/v1/aktion", "/api/handy/v1/bruecke", "/api/ha/v1/aktion", "/api/ladeplan"}) {
+            assertTrue("POST " + p, DemoProfil.gesperrt("POST", p));
+        }
+        for (String name : DemoProfil.GERAET_DATEIEN.values()) assertNotNull(name, json(name));
+        assertEquals(1, json("handy_clips.json").getInt("v"));
+        assertTrue(json("ha_zustand.json").getJSONObject("geraet").getString("name").contains("Demo-Ansicht"));
+    }
+
+    private static JSONObject json(String name) throws Exception {
+        return new JSONObject(new String(Files.readAllBytes(new File(DEMO, name).toPath()), StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Keine privaten Orte: jede Koordinate liegt in Wien und Umgebung (Ziele St. Pölten, Wiener Neustadt) oder ab
+     * 0.1.38.5 im Korridor des Musterplans Linz → Wien (Park-Regel des Repos).
+     */
     @Test
     public void koordinatenNurWien() throws Exception {
         Pattern feld = Pattern.compile("\"(lat|lon|lng|latitude|longitude|startLat|startLon|endLat|endLon|start_lat|start_lon|end_lat|end_lon)\"\\s*:\\s*(-?\\d+\\.\\d+)");
@@ -131,6 +246,7 @@ public class DemoProfilTest {
         assertNotNull(dateien);
         int geprueft = 0;
         for (File f : dateien) {
+            if (!f.getName().endsWith(".json")) continue;
             String s = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
             Matcher m = feld.matcher(s);
             while (m.find()) {
@@ -160,16 +276,22 @@ public class DemoProfilTest {
 
     private static boolean wienBreite(double v) { return v > 47.7 && v < 48.45; }
 
-    private static boolean wienLaenge(double v) { return v > 15.5 && v < 16.75; }
+    private static boolean wienLaenge(double v) { return v > 14.2 && v < 16.75; }
 
     @Test
     public void hakenNachDenWaechternVorDenHandlern() throws Exception {
         String s = Quelltext.lies(Paths.get("src/main/java/at/greenchili/surfmate/server/HttpServer.java"));
         int guard = s.indexOf("ExternGuard.blocks(method, pathOnly");
         int web = s.indexOf("WebHandyGuard.sendeGesperrt(out, pathOnly)");
-        int demo = s.indexOf("DemoProfil.beantworte(method, pathOnly, out)");
+        int demo = s.indexOf("DemoProfil.beantworte(method, path, pathOnly, rangeHeader, out)");
         int route = s.indexOf("routeToHandlers(method, path, body");
         assertTrue(guard > 0 && web > guard && demo > web && route > demo);
+        // 0.1.38.5: simulierte Kopplung vor AuthApiHandler, Demo-Gerät vor AuthMiddleware
+        int kopplung = s.indexOf("DemoProfil.beantworteKopplung(method");
+        int authApi = s.indexOf("AuthApiHandler.handle(method, path, body, out, identity, authHeader)");
+        int geraet = s.indexOf("DemoProfil.beantworteGeraet(method, path, pathOnly, authHeader, rangeHeader, out)");
+        int auth = s.indexOf("AuthMiddleware.checkAuth(path, cookieHeader, authHeader, out,");
+        assertTrue(kopplung > 0 && authApi > kopplung && geraet > authApi && auth > geraet);
     }
 
     @Test

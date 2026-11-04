@@ -124,6 +124,7 @@
         // Display spät erkannt: Darstellung (Standard leicht) und Kern-Wert nachziehen
         dstAnwenden();
         dstAbgleichen();
+        if (window.PanoptesDarstellung && PanoptesDarstellung.taktStarten) PanoptesDarstellung.taktStarten();
     }
     // Die App-Hülle setzt html[data-android-app] je nach Zeitpunkt erst nach dem Laden: dann nachträglich einschalten.
     function anzeigeStarten() {
@@ -193,8 +194,9 @@
         } catch (e) {}
     }
     function dstSpiegel(v) { try { localStorage.setItem(DST_KEY, v); } catch (e) {} }
-    function dstKernLesen() {
-        if (!window.fetch || !dstDisplay()) return Promise.resolve(null);
+    // allen = auch am Handy/PC lesen (für „Für das Auto-Display“ aus der Ferne, 0.1.38.7)
+    function dstKernLesen(allen) {
+        if (!window.fetch || (!allen && !dstDisplay())) return Promise.resolve(null);
         return fetch('/api/einstellungen', { cache: 'no-store', credentials: 'same-origin' })
             .then(function (r) { return r.ok ? r.json() : null; })
             .then(function (d) {
@@ -215,18 +217,26 @@
         });
         return dstAbgleich;
     }
-    // Speichern: am Display im Kern (PUT mit etag, danach zurücklesen), sonst nur lokal.
-    function dstSetzen(v) {
+    // Speichern. ziel „auto“ = im Kern (gilt für das Auto-Display, auch vom PC/Handy aus, PUT mit etag, danach
+    // zurücklesen); ziel „geraet“ = nur in diesem Browser. Ohne Angabe: am Display Kern, sonst lokal (wie bisher).
+    function dstSetzen(v, ziel) {
         if (v !== 'leicht' && v !== 'voll') return Promise.resolve(false);
-        return dstKernLesen().then(function (r) {
-            if (!r || r.wert === null) { dstSpiegel(v); dstAnwenden(); return dstWert() === v; }
+        ziel = ziel || (dstDisplay() ? 'auto' : 'geraet');
+        if (ziel === 'geraet') { dstSpiegel(v); dstAnwenden(); return Promise.resolve(dstWert() === v); }
+        return dstKernLesen(true).then(function (r) {
+            if (!r || r.wert === null) {
+                // Auto ohne Kern-Feld (altes Panoptes): nur am Display lokal weiter
+                if (dstDisplay()) { dstSpiegel(v); dstAnwenden(); return dstWert() === v; }
+                return false;
+            }
             var w = {}; w[DST_FELD] = v;
             return fetch('/api/einstellungen', {
                 method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ etag: r.etag, werte: w })
-            }).then(function () { return dstKernLesen(); }).then(function (r2) {
+            }).then(function () { return dstKernLesen(true); }).then(function (r2) {
                 if (!r2 || r2.wert !== v) return false;
-                dstSpiegel(v); dstAnwenden(); return true;
+                if (dstDisplay()) { dstSpiegel(v); dstAnwenden(); }
+                return true;
             });
         }).catch(function () { return false; });
     }
@@ -236,11 +246,18 @@
         } catch (e) {}
         return f;
     }
-    // Schalter „Darstellung im Auto: Leicht / Voll“ (Seite System → Anzeige).
-    function dstWaehler(box) {
-        if (!box) return;
+    // Schalter „Darstellung im Auto: Leicht / Voll“. ziel „auto“: Kern (Auto-Display), „geraet“: nur dieser Browser.
+    function dstWaehler(box, ziel) {
+        if (!box) return Promise.resolve();
+        ziel = ziel || (dstDisplay() ? 'auto' : 'geraet');
+        if (ziel === 'auto' && !dstDisplay()) {
+            return dstKernLesen(true).then(function (r) { dstZeichnen(box, ziel, r && r.wert ? r.wert : 'leicht'); });
+        }
+        dstZeichnen(box, ziel, dstWert());
+        return Promise.resolve();
+    }
+    function dstZeichnen(box, ziel, akt) {
         box.innerHTML = '';
-        var akt = dstWert();
         var zeile = document.createElement('div');
         zeile.className = 'pn-dst-zeile';
         zeile.style.cssText = 'display:flex;flex-wrap:wrap;margin-top:8px';
@@ -255,8 +272,8 @@
                 (akt === o[0] ? 'background:var(--primary,#5FD6E6);color:var(--on-primary,#06283a)' : 'background:transparent;color:inherit');
             b.onclick = function () {
                 b.disabled = true;
-                dstSetzen(o[0]).then(function (ok) {
-                    dstWaehler(box);
+                dstSetzen(o[0], ziel).then(function (ok) {
+                    dstWaehler(box, ziel);
                     if (!ok) {
                         var f = document.createElement('div');
                         f.className = 'sys-note';
@@ -276,18 +293,174 @@
         box.appendChild(h);
         var g = document.createElement('div');
         g.className = 'sys-note';
-        g.textContent = dstDisplay() && dstKern === true
-            ? dstT('darstellung.geraet_auto', 'Gilt für den Bildschirm im Auto.')
-            : dstT('darstellung.geraet', 'Gilt für dieses Gerät bzw. diesen Browser.');
+        g.textContent = ziel === 'auto'
+            ? dstT('darstellung.auto_wirkt', 'Gilt für den Bildschirm im Auto. Das Auto übernimmt es in wenigen Sekunden.')
+            : dstT('darstellung.nur_hier', 'Gilt nur für dieses Gerät bzw. diesen Browser, nicht im Auto.');
         box.appendChild(g);
+    }
+    // ---------------------------------------------------------------- weitere Auto-Display-Einstellungen im Kern (0.1.38.7)
+    // Befehle-Ansicht (Seite Steuerung) und Fahrzeugseite (einfach/3D): Kern-Feld führt am Auto-Display, vom PC/Handy aus
+    // änderbar; „nur dieses Gerät“ bleibt localStorage (pn.befehle.ansicht / vc.viewMode).
+    var AZ = {
+        befehleAnsicht: {
+            feld: 'anzeige.befehleAnsicht', lokal: 'pn.befehle.ansicht', std: 'automatisch',
+            opt: [['automatisch', 'befehle_automatisch', 'Automatisch'], ['auto', 'befehle_auto', 'Auto zeigen'], ['kacheln', 'befehle_kacheln', 'Kacheln']],
+            titel: ['befehle_titel', 'Befehle-Ansicht'],
+            hilfe: ['befehle_hilfe', 'Auf der Seite Steuerung: Automatisch richtet sich nach der Bildschirmbreite. Auto zeigt das Auto, Kacheln zeigt große Kacheln.']
+        },
+        fahrzeugAnsicht: {
+            feld: 'anzeige.fahrzeugAnsicht', lokal: 'vc.viewMode', std: 'lite',
+            opt: [['lite', 'fahrzeug_lite', 'Einfach'], ['immersive', 'fahrzeug_immersive', '3D']],
+            titel: ['fahrzeug_titel', 'Fahrzeugseite'],
+            hilfe: ['fahrzeug_hilfe', 'Einfach zeigt nur die Bedienung. 3D lädt die 3D-Ansicht und kostet am Display spürbar Leistung.']
+        }
+    };
+    function azGueltig(name, v) {
+        var o = AZ[name].opt;
+        for (var i = 0; i < o.length; i++) if (o[i][0] === v) return true;
+        return false;
+    }
+    function azLokal(name) {
+        var v = null;
+        try { v = localStorage.getItem(AZ[name].lokal); } catch (e) { v = null; }
+        if (name === 'befehleAnsicht') return v === 'auto' || v === 'kacheln' ? v : 'automatisch';
+        return v === 'immersive' ? 'immersive' : 'lite';
+    }
+    function azEreignis(name, v) {
+        try {
+            var ev = document.createEvent('CustomEvent');
+            ev.initCustomEvent('pn-' + name, false, false, { wert: v });
+            window.dispatchEvent(ev);
+        } catch (e) {}
+    }
+    function azSpiegel(name, v) {
+        try {
+            if (name === 'befehleAnsicht' && v === 'automatisch') localStorage.removeItem(AZ[name].lokal);
+            else localStorage.setItem(AZ[name].lokal, v);
+        } catch (e) {}
+    }
+    /** Display-Takt: neuen Kern-Wert spiegeln und anwenden. */
+    function azUebernehmen(name, v) {
+        if (!AZ[name] || !azGueltig(name, v)) return;
+        if (azLokal(name) !== v) { azSpiegel(name, v); azEreignis(name, v); }
+    }
+    function azKern() {
+        return fetch('/api/einstellungen', { cache: 'no-store', credentials: 'same-origin' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (d) { return d && d.werte ? d : null; });
+    }
+    function azKernWert(name) {
+        return azKern().then(function (d) {
+            var f = d && d.werte[AZ[name].feld];
+            return f && azGueltig(name, f.wert) ? f.wert : null;
+        }).catch(function () { return null; });
+    }
+    function azSetzenKern(name, v) {
+        if (!AZ[name] || !azGueltig(name, v) || !window.fetch) return Promise.resolve(false);
+        return azKern().then(function (d) {
+            if (!d || !d.werte[AZ[name].feld]) return false;
+            var w = {}; w[AZ[name].feld] = v;
+            return fetch('/api/einstellungen', {
+                method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ etag: d.etag, werte: w })
+            }).then(function () { return azKernWert(name); }).then(function (n) {
+                if (n !== v) return false;
+                if (dstDisplay()) azSpiegel(name, v);
+                return true;
+            });
+        }).catch(function () { return false; });
+    }
+    function azSetzenLokal(name, v) {
+        if (!AZ[name] || !azGueltig(name, v)) return Promise.resolve(false);
+        azSpiegel(name, v); azEreignis(name, v);
+        return Promise.resolve(azLokal(name) === v);
+    }
+    function azWaehler(box, name, ziel) {
+        if (!box || !AZ[name]) return Promise.resolve();
+        ziel = ziel || (dstDisplay() ? 'auto' : 'geraet');
+        if (ziel === 'auto' && !dstDisplay()) {
+            return azKernWert(name).then(function (w) { azZeichnen(box, name, ziel, w || AZ[name].std); });
+        }
+        azZeichnen(box, name, ziel, ziel === 'auto' ? azLokal(name) : azLokal(name));
+        return Promise.resolve();
+    }
+    function azZeichnen(box, name, ziel, akt) {
+        var def = AZ[name];
+        box.innerHTML = '';
+        var zeile = document.createElement('div');
+        zeile.style.cssText = 'display:flex;flex-wrap:wrap;margin-top:8px';
+        def.opt.forEach(function (o) {
+            var b = document.createElement('button');
+            b.type = 'button';
+            b.setAttribute('data-az', o[0]);
+            b.setAttribute('aria-pressed', akt === o[0] ? 'true' : 'false');
+            b.textContent = dstT('display.' + o[1], o[2]);
+            b.style.cssText = 'min-height:48px;min-width:120px;margin:0 8px 8px 0;padding:0 18px;border-radius:12px;font-size:15px;' +
+                'font-weight:600;cursor:pointer;border:1px solid var(--outline,#2a6474);' +
+                (akt === o[0] ? 'background:var(--primary,#5FD6E6);color:var(--on-primary,#06283a)' : 'background:transparent;color:inherit');
+            b.onclick = function () {
+                b.disabled = true;
+                (ziel === 'auto' ? azSetzenKern(name, o[0]) : azSetzenLokal(name, o[0])).then(function (ok) {
+                    azWaehler(box, name, ziel);
+                    if (!ok) {
+                        var f = document.createElement('div');
+                        f.className = 'sys-note';
+                        f.textContent = dstT('darstellung.fehler', 'Speichern hat nicht geklappt. Die Darstellung ist unverändert.');
+                        box.appendChild(f);
+                    }
+                });
+            };
+            zeile.appendChild(b);
+        });
+        box.appendChild(zeile);
+        var g = document.createElement('div');
+        g.className = 'sys-note';
+        g.textContent = ziel === 'auto'
+            ? dstT('darstellung.auto_wirkt', 'Gilt für den Bildschirm im Auto. Das Auto übernimmt es in wenigen Sekunden.')
+            : dstT('darstellung.nur_hier', 'Gilt nur für dieses Gerät bzw. diesen Browser, nicht im Auto.');
+        box.appendChild(g);
+    }
+    window.PanoptesAnzeige = {
+        display: dstDisplay, waehler: azWaehler, setzenKern: azSetzenKern, kernWert: azKernWert,
+        lokal: azLokal, felder: AZ,
+        titel: function (name) { return dstT('display.' + AZ[name].titel[0], AZ[name].titel[1]); },
+        hilfe: function (name) { return dstT('display.' + AZ[name].hilfe[0], AZ[name].hilfe[1]); }
+    };
+
+    // 0.1.38.7: Das Auto-Display übernimmt Änderungen aus dem Kern (auch vom PC/Handy) ohne Neuladen:
+    // alle 8 s drei kleine Werte (Darstellung, Startansicht, Hell/Dunkel), nur solange die Seite sichtbar ist.
+    var anzeigeTaktId = null;
+    function anzeigeAbfragen() {
+        if (document.hidden || !window.fetch) return;
+        fetch('/api/einstellungen/anzeige', { cache: 'no-store', credentials: 'same-origin' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (d) {
+                if (!d) return;
+                if (d.darstellung === 'leicht' || d.darstellung === 'voll') {
+                    if (dstLokal() !== d.darstellung) dstSpiegel(d.darstellung);
+                    dstAnwenden();
+                }
+                if (window.PanoptesHomeLayout && PanoptesHomeLayout.uebernehmen) PanoptesHomeLayout.uebernehmen(d.startAnsicht);
+                if (window.BYD && BYD.theme && BYD.theme.kernAnwenden) BYD.theme.kernAnwenden(d.thema);
+                azUebernehmen('befehleAnsicht', d.befehleAnsicht);
+                azUebernehmen('fahrzeugAnsicht', d.fahrzeugAnsicht);
+            })
+            .catch(function () { });
+    }
+    function anzeigeTaktStarten() {
+        if (anzeigeTaktId || !dstDisplay() || !window.fetch) return;
+        anzeigeTaktId = setInterval(anzeigeAbfragen, 8000);
+        // gleich nach dem Laden einmal (Kern-Thema an die App melden), dann im Takt
+        setTimeout(anzeigeAbfragen, 1500);
+        try { document.addEventListener('visibilitychange', function () { if (!document.hidden) anzeigeAbfragen(); }); } catch (e) {}
     }
     dstCss();
     dstAnwenden();
     window.PanoptesDarstellung = {
         wert: dstWert, leicht: function () { return dstWert() === 'leicht'; },
-        setzen: dstSetzen, abgleichen: dstAbgleichen, waehler: dstWaehler, display: dstDisplay
+        setzen: dstSetzen, abgleichen: dstAbgleichen, waehler: dstWaehler, display: dstDisplay, taktStarten: anzeigeTaktStarten
     };
-    if (dstDisplay()) dstAbgleichen();
+    if (dstDisplay()) { dstAbgleichen(); anzeigeTaktStarten(); }
 
     // ---------------------------------------------------------------- Position in einer Karten-App öffnen (0.1.9)
     // Nur auf Klick. Android-Handy: geo:-Link (öffnet die Navi-App des Nutzers, kein Webdienst dazwischen).

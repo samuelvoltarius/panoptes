@@ -1,0 +1,18 @@
+{
+  "success": true,
+  "status": {
+    "enabled": true,
+    "active": true,
+    "zustand": "scharf",
+    "safeZoneSuppressed": false,
+    "inSafeZone": false,
+    "guardStopActive": false,
+    "totalEventsToday": 1,
+    "waechterAusloeser": "naehe",
+    "kameraFps": {
+      "verarbeitet": 5,
+      "geliefert": 5,
+      "drosselAktiv": false
+    }
+  }
+}

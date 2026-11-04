@@ -34,13 +34,32 @@ class HomeRueckwegTest {
         assertNull(HomeRueckweg.ziel(eigen, null, emptyList()))
     }
 
-    /** Sperre: Solange der Rückweg am Auto nicht belegt ist, darf die APK kein HOME deklarieren. */
-    @Test fun manifestDeklariertKeinHome() {
+    @Test fun nieFallbackHome() {
+        val fallback = HomeKandidat("com.android.settings", "com.android.settings.FallbackHome")
+        assertEquals(byd, HomeRueckweg.ziel(eigen, selbst, listOf(fallback, selbst, byd)))
+        assertNull(HomeRueckweg.ziel(eigen, selbst, listOf(fallback, selbst)))
+    }
+
+    private fun manifestOhneKommentare(): String {
         val manifest = String(Files.readAllBytes(Paths.get("src/main/AndroidManifest.xml")), Charsets.UTF_8)
-        val ohneKommentare = manifest.replace(Regex("<!--.*?-->", RegexOption.DOT_MATCHES_ALL), "")
+        return manifest.replace(Regex("<!--.*?-->", RegexOption.DOT_MATCHES_ALL), "")
+    }
+
+    /**
+     * Sperre (0.1.38.7): HOME ist nur im deaktivierten Alias .HomeAlias erlaubt. MainActivity und alles andere
+     * deklarieren nie HOME, damit die App ohne den bewussten Schalter nie Standard-Startbildschirm werden kann.
+     */
+    @Test fun homeNurImDeaktiviertenAlias() {
+        val m = manifestOhneKommentare()
+        val aliasse = Regex("<activity-alias.*?</activity-alias>", RegexOption.DOT_MATCHES_ALL).findAll(m).map { it.value }.toList()
+        val ohneAliasse = aliasse.fold(m) { acc, a -> acc.replace(a, "") }
         val filter = Regex("<intent-filter>.*?</intent-filter>", RegexOption.DOT_MATCHES_ALL)
-            .findAll(ohneKommentare).map { it.value }.toList()
-        assertTrue("LAUNCHER-Eintrag fehlt", filter.any { it.contains("android.intent.category.LAUNCHER") })
-        assertFalse("HOME-Filter ist gesperrt (LAUNCHER_SPEC §1)", filter.any { it.contains("android.intent.category.HOME") })
+        assertTrue("LAUNCHER-Eintrag fehlt", filter.findAll(ohneAliasse).any { it.value.contains("android.intent.category.LAUNCHER") })
+        assertFalse("HOME außerhalb des Alias ist gesperrt", filter.findAll(ohneAliasse).any { it.value.contains("android.intent.category.HOME") })
+        val mitHome = aliasse.filter { it.contains("android.intent.category.HOME") }
+        assertEquals("genau ein Alias darf HOME tragen", 1, mitHome.size)
+        assertTrue("Alias heißt .HomeAlias", mitHome[0].contains("android:name=\".HomeAlias\""))
+        assertTrue("Alias ist im Manifest ausgeschaltet", mitHome[0].contains("android:enabled=\"false\""))
+        assertTrue("Alias führt zur MainActivity", mitHome[0].contains("android:targetActivity=\".MainActivity\""))
     }
 }

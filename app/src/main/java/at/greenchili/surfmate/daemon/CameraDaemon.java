@@ -909,6 +909,8 @@ public class CameraDaemon {
         // re-scans com.byd.trafficmonitor and resurrects it, so without this the
         // user had to re-disable it by hand after every single update.
         at.greenchili.surfmate.byd.TrafficMonitorPolicy.enforceStickyDisableIfRequested();
+        // 0.1.38.7: Wächter für den Panoptes Launcher als Standard-Startbildschirm (Rückfall zum BYD-Home; Schalter Standard aus).
+        at.greenchili.surfmate.launcher.HomeWaechter.start();
         // OEM Dashcam pipeline: sticky enable is INTENTIONALLY deferred until
         // after the ACC hardware probe at line ~794. The two-axis resolver
         // gates each axis on AccMonitor.isAccOn(), and AccMonitor defaults to

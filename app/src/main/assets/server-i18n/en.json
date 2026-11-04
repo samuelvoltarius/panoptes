@@ -24,6 +24,7 @@
     "standbild_recht_fehlt": "Still image permission missing – switch it on in Panoptes under Paired devices.",
     "launcher_recht_fehlt": "Launcher permission missing – switch it on in Panoptes under Paired devices.",
     "route_recht_fehlt": "Route permission missing – switch it on in Panoptes under Paired devices.",
+    "geraete_recht_fehlt": "Device permission missing – switch it on in Panoptes under Paired devices.",
     "web_link_expired": "This link has expired. Please open it again in the app.",
     "invalid_request_with_detail": "The request isn't valid: {0}",
     "bydcloud_not_configured": "BYD account isn't set up",
@@ -491,11 +492,11 @@
       "paired": "👋 *Hi, this is Panoptes.*\nI’ll let you know when something happens at the car. The *☰ Menu* button is now always at the bottom."
     },
     "pair": {
-      "no_owner": "🔐 *This bot has no owner yet.*\nIn Panoptes open *System → Telegram alerts* and tap “Pair”. Then open the link, or send `/pair 123456` here with your PIN.",
+      "no_owner": "🔐 *This bot has no owner yet.*\nIn Panoptes open *Rules → Alerts → Telegram alerts* and tap “Start pairing”. Then open the link, or send `/pair 123456` here with your PIN.",
       "already_paired": "🔒 This bot is already paired with someone else.",
       "invalid_format": "🔢 The PIN has 6 digits, for example `/pair 123456`.",
-      "no_pin": "🔢 There is no PIN right now. Get a new one in Panoptes under *System → Telegram alerts*.",
-      "expired": "⌛ That PIN has run out (it lasts 10 minutes). Get a fresh one in Panoptes.",
+      "no_pin": "🔢 There is no PIN right now. Get a new one in Panoptes under *Rules → Alerts → Telegram alerts*.",
+      "expired": "⌛ That PIN has run out (it lasts 10 minutes). Get a fresh one in Panoptes under *Rules → Alerts → Telegram alerts*.",
       "invalid": "❌ That PIN doesn't match. Check it again in Panoptes.",
       "storage_error": "⚠️ The car couldn't save the pairing. Please try once more; if it fails again, restart Panoptes on the car.",
       "success": "✅ *Paired, {0}!*\nFrom now on your car's alerts arrive here. /help shows what you can do.",
@@ -506,7 +507,7 @@
     },
     "router": {
       "unknown_command": "🤔 I don’t know that command. Tap *☰ Menu* below to see everything.",
-      "not_allowed": "🔒 This command is switched off. You can allow it in Panoptes under *System → Telegram alerts → Remote commands*."
+      "not_allowed": "🔒 This command is switched off. You can allow it in Panoptes under *Rules → Alerts → Telegram alerts → Remote commands*."
     },
     "help": {
       "title": "🧭 *What you can send me*",
@@ -524,7 +525,7 @@
       "services": "/services – Which services run, start/stop them",
       "backup": "/backup – Send your settings as a file (`/backup trips` adds the logbook)",
       "help": "/help – This list",
-      "some_locked": "🔒 Some commands are switched off. You can allow them in Panoptes under *System → Telegram alerts*.",
+      "some_locked": "🔒 Some commands are switched off. You can allow them in Panoptes under *Rules → Alerts → Telegram alerts*.",
       "footer": "_Panoptes {0}_",
       "menu": "/menue – All buttons at a glance",
       "updates": "/updates – Update Panoptes and the launcher"
@@ -552,7 +553,20 @@
       "v12_low": "🪫 12 V battery: {0} V – *low*",
       "temp": "🌡 Head unit: {0} °C",
       "temp_hot": "🔥 Head unit: {0} °C – running hot",
-      "quiet": "🌙 Quiet hours {0}–{1}: only alarms at night"
+      "quiet": "🌙 Quiet hours {0}–{1}: only alarms at night",
+      "fernklima_laeuft": "🌡 Remote climate running (started {0}, until about {1}{2}) – per command, not confirmed by the car",
+      "fernklima_beendet": "🌡 Remote climate ended ({0})",
+      "fern_heizen": ", heating level {0}",
+      "fern_kuehlen": ", cooling level {0}",
+      "fern_neutral": ", neutral"
+    },
+    "home": {
+      "original_ok": "🏠 *Done.* The BYD home screen is the default again. The Panoptes Launcher stays in the car as a normal app.",
+      "original_fehler": "⚠️ That did not work. Tap the house button in the launcher on the display or switch it off under Display.",
+      "status_an": "The Panoptes Launcher is switched on as home screen. `/startbildschirm original` brings the BYD home screen back.",
+      "status_aus": "The BYD home screen is active. You can switch the Panoptes Launcher on at the display under Display.",
+      "paket_an_ok": "✅ The Panoptes Launcher is switched on again. The BYD home screen stays the default until you change it yourself at the display.",
+      "paket_an_fehler": "⚠️ The Panoptes Launcher could not be switched on. At the display it works under Display → Panoptes Launcher."
     },
     "guard": {
       "title": "🛡 *Guardian*",
@@ -974,7 +988,7 @@
     },
     "menu": {
       "title": "🧭 *What would you like to do?*\nJust tap a button.",
-      "locked": "🔒 You can switch on more buttons in Panoptes under *System → Telegram messages → Remote commands*.",
+      "locked": "🔒 You can switch on more buttons in Panoptes under *Rules → Alerts → Telegram alerts → Remote commands*.",
       "more_title": "⋯ *More*\nJust tap a button.",
       "btn_menu": "☰ Menu",
       "btn_status": "🚗 How is the car?",
@@ -2257,7 +2271,7 @@
     "telegram": {
       "parkingMessages": {
         "title": "Parking message in Telegram",
-        "help": "After parking, sends a Telegram message with the car’s position. Off for new setups; existing setups keep their previous setting."
+        "help": "After parking, sends a Telegram message with the car’s position. It is on as soon as you set up Telegram; you can switch it off here."
       },
       "zurueckAmAuto": {
         "title": "“Back at the car” message",
@@ -2289,6 +2303,26 @@
         "leicht": "Light",
         "voll": "Full"
       },
+      "thema": {
+        "title": "Light or dark in the car",
+        "help": "Applies to the screen in the car and the launcher. Automatic uses the choice from the app's Android settings.",
+        "auto": "Automatic",
+        "dark": "Dark",
+        "light": "Light"
+      },
+      "befehleAnsicht": {
+        "title": "Commands view",
+        "help": "On the Controls page: Automatic follows the screen width. Car shows the car, Tiles shows large tiles.",
+        "automatisch": "Automatic",
+        "auto": "Show car",
+        "kacheln": "Tiles"
+      },
+      "fahrzeugAnsicht": {
+        "title": "Vehicle page",
+        "help": "Simple shows only the controls. 3D loads the 3D view and costs noticeable performance on the display.",
+        "lite": "Simple",
+        "immersive": "3D"
+      },
       "bandGroesse": {
         "title": "Size of on-screen notes",
         "help": "Applies to speed camera notes and “Will it reach?”. Large is easy to read through CarPlay or Android Auto too.",
@@ -2300,6 +2334,12 @@
         "help": "Where the note appears at the top of the screen.",
         "oben_rechts": "Top right",
         "oben_mitte": "Top centre"
+      }
+    },
+    "launcher": {
+      "startbildschirm": {
+        "title": "Panoptes Launcher as home screen",
+        "help": "Pressing Home then takes you to the Panoptes Launcher instead of the BYD home screen. After switching on, the launcher asks whether it should stay. If you do not tap Keep within 5 minutes, everything goes back by itself. You can go back at any time: the house button in the launcher, this switch, or Telegram \"/startbildschirm original\". The BYD home screen stays in the car and is never deleted."
       }
     },
     "kamera": {

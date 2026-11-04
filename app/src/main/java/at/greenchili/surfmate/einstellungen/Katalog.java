@@ -293,15 +293,35 @@ public final class Katalog {
         // Dauer-Animationen …). Gilt nur fürs Display; Handy/PC zeigen lokal immer „voll“.
         Feld darst = new Feld("anzeige.darstellung", Feld.Typ.AUSWAHL);
         darst.gruppe = "system"; darst.reihenfolge = 5; darst.standard = "leicht";
-        darst.nurLesendExtern = true;
+        // 0.1.38.7: vom PC/Handy aus änderbar (Login und Recht „web“ wie bei allen Einstellungen); gilt für das Auto-Display
         darst.optionen.add(new Feld.Option("leicht", "settings.anzeige.darstellung.leicht"));
         darst.optionen.add(new Feld.Option("voll", "settings.anzeige.darstellung.voll"));
         l.add(darst);
+        // Hell/Dunkel für das Auto-Display (0.1.38.7): auto = die Wahl in den Android-Einstellungen der App gilt, dark/light
+        // setzt der Kern (auch vom PC/Handy aus). Das Display fragt kurz nach und übernimmt ohne Neuladen.
+        Feld thema = new Feld("anzeige.thema", Feld.Typ.AUSWAHL);
+        thema.gruppe = "system"; thema.reihenfolge = 5; thema.standard = "auto";
+        thema.optionen.add(new Feld.Option("auto", "settings.anzeige.thema.auto"));
+        thema.optionen.add(new Feld.Option("dark", "settings.anzeige.thema.dark"));
+        thema.optionen.add(new Feld.Option("light", "settings.anzeige.thema.light"));
+        l.add(thema);
+        // Befehle-Ansicht (Seite Steuerung): automatisch = je nach Bildschirmbreite (Handy Kacheln, sonst Auto), sonst fest.
+        Feld befAns = new Feld("anzeige.befehleAnsicht", Feld.Typ.AUSWAHL);
+        befAns.gruppe = "system"; befAns.reihenfolge = 5; befAns.standard = "automatisch";
+        befAns.optionen.add(new Feld.Option("automatisch", "settings.anzeige.befehleAnsicht.automatisch"));
+        befAns.optionen.add(new Feld.Option("auto", "settings.anzeige.befehleAnsicht.auto"));
+        befAns.optionen.add(new Feld.Option("kacheln", "settings.anzeige.befehleAnsicht.kacheln"));
+        l.add(befAns);
+        // Fahrzeugseite: einfach (nur Bedienung) oder 3D (laedt die 3D-Ansicht, kostet am Display Leistung).
+        Feld fzAns = new Feld("anzeige.fahrzeugAnsicht", Feld.Typ.AUSWAHL);
+        fzAns.gruppe = "system"; fzAns.reihenfolge = 5; fzAns.standard = "lite";
+        fzAns.optionen.add(new Feld.Option("lite", "settings.anzeige.fahrzeugAnsicht.lite"));
+        fzAns.optionen.add(new Feld.Option("immersive", "settings.anzeige.fahrzeugAnsicht.immersive"));
+        l.add(fzAns);
         // Startseite: dieselben Widgets, je nach Einsatz anders geordnet. Am Auto dauerhaft im Kern;
         // Handy/PC verwenden browserlokal denselben Katalog der vier Werte.
         Feld startAnsicht = new Feld("anzeige.startAnsicht", Feld.Typ.AUSWAHL);
         startAnsicht.gruppe = "system"; startAnsicht.reihenfolge = 5; startAnsicht.standard = "panoptes";
-        startAnsicht.nurLesendExtern = true;
         startAnsicht.optionen.add(new Feld.Option("panoptes", "settings.anzeige.startAnsicht.panoptes"));
         startAnsicht.optionen.add(new Feld.Option("fahren", "settings.anzeige.startAnsicht.fahren"));
         startAnsicht.optionen.add(new Feld.Option("fahrzeug", "settings.anzeige.startAnsicht.fahrzeug"));
@@ -433,6 +453,11 @@ public final class Katalog {
         parkFrei.standard = false;
         parkFrei.verborgen = k.kameraDauerhaft;
         l.add(parkFrei);
+        // Panoptes Launcher als Standard-Startbildschirm (0.1.38.7): Opt-in, Standard aus. Der Wächter im Daemon
+        // (launcher.HomeWaechter) setzt bei Totmann/Absturz/Schalter aus den BYD-Startbildschirm wieder ein.
+        Feld startbild = new Feld("launcher.startbildschirm", Feld.Typ.BOOL);
+        startbild.gruppe = "system"; startbild.reihenfolge = 86; startbild.standard = false;
+        l.add(startbild);
         // 0.1.36 Log-Archiv (03.11.: Logs dürfen auch bei Updates nicht überschrieben werden): je Art höchstens
         // so viele Tage und MB, älteste zuerst; bei wenig freiem Platz enger (logging.LogArchiv).
         Feld logTage = new Feld("logs.tage", Feld.Typ.INT);

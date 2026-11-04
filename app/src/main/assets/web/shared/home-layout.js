@@ -53,8 +53,9 @@
         }, 0);
         return v;
     }
-    function kernLesen() {
-        if (!window.fetch || !istAuto()) return Promise.resolve(null);
+    // allen = auch am Handy/PC lesen („Für das Auto-Display“ aus der Ferne, 0.1.38.7)
+    function kernLesen(allen) {
+        if (!window.fetch || (!allen && !istAuto())) return Promise.resolve(null);
         return fetch('/api/einstellungen', { cache: 'no-store', credentials: 'same-origin' })
             .then(function (r) { return r.ok ? r.json() : null; })
             .then(function (d) {
@@ -74,14 +75,23 @@
         });
         return abgleich;
     }
-    function setzen(v) {
+    /** Vom Kern-Takt am Auto-Display: neuen Wert übernehmen (Spiegel + anwenden), ohne zu schreiben. */
+    function uebernehmen(v) {
+        if (!istProfil(v) || !istAuto()) return;
+        if (lokal() !== v) spiegel(v);
+        anwenden();
+    }
+    // ziel „auto“ = im Kern (gilt für das Auto-Display, auch vom PC/Handy aus); „geraet“ = nur dieser Browser.
+    // Ohne Angabe: am Display Kern, sonst lokal (wie bisher).
+    function setzen(v, ziel) {
         if (!istProfil(v)) return Promise.resolve(false);
-        if (!istAuto()) {
+        ziel = ziel || (istAuto() ? 'auto' : 'geraet');
+        if (ziel === 'geraet') {
             spiegel(v);
             anwenden();
             return Promise.resolve(wert() === v);
         }
-        return kernLesen().then(function (r) {
+        return kernLesen(true).then(function (r) {
             if (!r || r.wert === null) return false;
             var werte = {};
             werte[FELD] = v;
@@ -89,10 +99,9 @@
                 method: 'PUT', credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ etag: r.etag, werte: werte })
-            }).then(function () { return kernLesen(); }).then(function (neu) {
+            }).then(function () { return kernLesen(true); }).then(function (neu) {
                 if (!neu || neu.wert !== v) return false;
-                spiegel(v);
-                anwenden();
+                if (istAuto()) { spiegel(v); anwenden(); }
                 return true;
             });
         }).catch(function () { return false; });
@@ -108,9 +117,16 @@
         };
         return '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths[name] + '</svg>';
     }
-    function waehler(box) {
-        if (!box) return;
-        var aktuell = wert();
+    function waehler(box, ziel) {
+        if (!box) return Promise.resolve();
+        ziel = ziel || (istAuto() ? 'auto' : 'geraet');
+        if (ziel === 'auto' && !istAuto()) {
+            return kernLesen(true).then(function (r) { zeichne(box, ziel, r && r.wert ? r.wert : 'panoptes'); });
+        }
+        zeichne(box, ziel, wert());
+        return Promise.resolve();
+    }
+    function zeichne(box, ziel, aktuell) {
         var namen = {
             panoptes: ['Panoptes', 'Die vertraute Startseite mit allen Bereichen.'],
             fahren: ['Fahren', 'Navigation, Reichweite, Fahrten und Laden zuerst.'],
@@ -140,9 +156,9 @@
                 input.onchange = function () {
                     if (!input.checked) return;
                     gruppe.setAttribute('aria-busy', 'true');
-                    setzen(p).then(function (ok) {
+                    setzen(p, ziel).then(function (ok) {
                         gruppe.removeAttribute('aria-busy');
-                        waehler(box);
+                        waehler(box, ziel);
                         if (!ok) {
                             var fehler = document.createElement('div');
                             fehler.className = 'sys-note';
@@ -157,9 +173,9 @@
         box.appendChild(gruppe);
         var hinweis = document.createElement('div');
         hinweis.className = 'sys-note';
-        hinweis.textContent = istAuto() && kern === true
-            ? text('startAnsicht.geraet_auto', 'Gilt für den Bildschirm im Auto.')
-            : text('startAnsicht.geraet', 'Gilt nur für dieses Gerät bzw. diesen Browser.');
+        hinweis.textContent = ziel === 'auto'
+            ? text('startAnsicht.auto_wirkt', 'Gilt für den Bildschirm im Auto. Das Auto übernimmt es in wenigen Sekunden.')
+            : text('startAnsicht.nur_hier', 'Gilt nur für dieses Gerät bzw. diesen Browser, nicht im Auto.');
         box.appendChild(hinweis);
     }
 
@@ -167,7 +183,7 @@
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', anwenden);
     window.PanoptesHomeLayout = {
         profile: PROFILE.slice(0), wert: wert, setzen: setzen, anwenden: anwenden,
-        abgleichen: abgleichen, waehler: waehler, display: istAuto
+        abgleichen: abgleichen, waehler: waehler, display: istAuto, uebernehmen: uebernehmen
     };
     if (istAuto()) abgleichen();
 }());

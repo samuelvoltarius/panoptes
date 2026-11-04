@@ -182,4 +182,16 @@
     <string name="komfort_neu">%1$s : %2$s</string>
     <string name="komfort_nichts_lesbar">Rien de lisible pour l\'instant. Allumez la voiture ; les commandes sans valeur sont en dessous.</string>
     <string name="klima_temp_unbekannt">Le réglage de la température n\'est pas encore confirmé pour ce modèle. Ventilation et marche/arrêt fonctionnent.</string>
+    <string name="home_frage_titel">Utiliser Panoptes Launcher comme écran d\'accueil ?</string>
+    <string name="home_frage_text">La touche Home ouvrira alors ce launcher. Retour à l\'écran d\'accueil BYD à tout moment avec le bouton maison tout à gauche du dock.</string>
+    <string name="home_behalten">Oui, garder</string>
+    <string name="home_nein">Non, retour à BYD</string>
+    <string name="home_ok">Terminé. La touche Home ouvre maintenant ce launcher.</string>
+    <string name="home_fehler">Cela n\'a pas fonctionné. L\'écran d\'accueil BYD reste.</string>
+    <!-- 0.1.38.7 Fernklima laut Befehl -->
+    <string name="fern_laeuft">Climatisation à distance en cours (démarrée à %1$s, jusqu’à environ %2$s%3$s) – selon la commande, non confirmée par la voiture</string>
+    <string name="fern_beendet">Climatisation à distance terminée (%1$s)</string>
+    <string name="fern_art_heizen">, chauffage niveau %1$d</string>
+    <string name="fern_art_kuehlen">, refroidissement niveau %1$d</string>
+    <string name="fern_art_neutral">, neutre</string>
 </resources>

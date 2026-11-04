@@ -412,6 +412,45 @@
         "De accukaart op het web toont de gezondheidswaarde van BYD en de eigen schatting van Panoptes naast elkaar. Je eigen laadprijs geldt nu per land, bijvoorbeeld Lidl in Oostenrijk en in Duitsland apart.",
         "Nieuwe schakelaar (standaard uit): in stilstand (versnelling P) mag de camera sluiten en stroom sparen. De dodehoekweergave heeft daarna bij het wegrijden een paar seconden nodig."
       ]
+    },
+    {
+      "version": "0.1.38.7",
+      "versionCode": 71,
+      "de": [
+        "Neuer Schalter (Standard aus): Der Panoptes Launcher kann dein Startbildschirm werden. Zurück zum BYD-Startbildschirm geht jederzeit mit dem Haus-Knopf ganz links im Dock.",
+        "Fernklima zeigt jetzt ehrlich an, ob es läuft: laut Auto, laut BYD-Cloud oder laut Befehl. Bei ausgeschaltetem Auto steht nicht mehr fälschlich „Klima aus“.",
+        "Spotify und andere Medien-Apps öffnen neben dem Launcher. Geht nebeneinander nicht, öffnet die App im Vollbild statt mit einer Fehlermeldung.",
+        "Was du am Handy oder PC für das Auto-Display einstellst (Hell/Dunkel, Startansicht und mehr), kommt jetzt am Auto an. Die Web-Oberfläche wird dort auch richtig dargestellt.",
+        "Die Telegram-Kopplung klappt wieder, und die Texte nennen die richtigen Menüs. Home Assistant kann smarte Geräte melden, Panoptes zeigt sie an (aus, bis du es erlaubst)."
+      ],
+      "en": [
+        "New switch (off by default): the Panoptes Launcher can become your home screen. You can go back to the BYD home screen at any time with the house button at the far left of the dock.",
+        "Remote climate now honestly shows whether it is running: according to the car, the BYD cloud or the command. With the car off it no longer wrongly says “climate off”.",
+        "Spotify and other media apps open next to the launcher. If side by side is not possible, the app opens full screen instead of showing an error.",
+        "What you set on your phone or PC for the car display (light/dark, start view and more) now reaches the car. The web interface also displays correctly there.",
+        "Telegram pairing works again, and the texts name the right menus. Home Assistant can report smart devices and Panoptes shows them (off until you allow it)."
+      ],
+      "fr": [
+        "Nouvel interrupteur (désactivé par défaut) : le Panoptes Launcher peut devenir ton écran d’accueil. Tu reviens à l’écran d’accueil BYD à tout moment avec le bouton maison tout à gauche du dock.",
+        "La climatisation à distance indique maintenant honnêtement si elle tourne : selon la voiture, le cloud BYD ou la commande. Voiture éteinte, elle n’affiche plus à tort « clim arrêtée ».",
+        "Spotify et les autres applis média s’ouvrent à côté du launcher. Si ce n’est pas possible, l’appli s’ouvre en plein écran au lieu d’afficher une erreur.",
+        "Ce que tu règles sur le téléphone ou le PC pour l’écran de la voiture (clair/sombre, vue de départ, etc.) arrive maintenant dans la voiture. L’interface web s’y affiche aussi correctement.",
+        "L’association Telegram fonctionne de nouveau, et les textes citent les bons menus. Home Assistant peut signaler des appareils connectés, Panoptes les affiche (désactivé par défaut)."
+      ],
+      "it": [
+        "Nuovo interruttore (spento di serie): il Panoptes Launcher può diventare la tua schermata Home. Torni alla schermata Home BYD in ogni momento con il tasto casa all’estrema sinistra del dock.",
+        "Il clima a distanza ora mostra onestamente se è acceso: secondo l’auto, il cloud BYD o il comando. Ad auto spenta non dice più per errore «clima spento».",
+        "Spotify e le altre app multimediali si aprono accanto al launcher. Se affiancate non è possibile, l’app si apre a schermo intero invece di dare un errore.",
+        "Quello che imposti su telefono o PC per il display dell’auto (chiaro/scuro, vista iniziale e altro) ora arriva all’auto. Anche l’interfaccia web lì si vede bene.",
+        "L’abbinamento Telegram funziona di nuovo, e i testi indicano i menu giusti. Home Assistant può segnalare dispositivi smart e Panoptes li mostra (spento finché non lo permetti)."
+      ],
+      "nl": [
+        "Nieuwe schakelaar (standaard uit): de Panoptes Launcher kan je startscherm worden. Terug naar het BYD-startscherm kan altijd met de huisknop helemaal links in het dock.",
+        "Klimaat op afstand toont nu eerlijk of het draait: volgens de auto, de BYD-cloud of het commando. Met de auto uit staat er niet meer ten onrechte „klimaat uit”.",
+        "Spotify en andere media-apps openen naast de launcher. Lukt naast elkaar niet, dan opent de app op volledig scherm in plaats van met een foutmelding.",
+        "Wat je op telefoon of pc instelt voor het autodisplay (licht/donker, startweergave en meer) komt nu in de auto aan. De webinterface wordt daar ook goed weergegeven.",
+        "Telegram-koppelen werkt weer, en de teksten noemen de juiste menu's. Home Assistant kan slimme apparaten melden en Panoptes toont ze (uit tot je het toestaat)."
+      ]
     }
   ]
 }

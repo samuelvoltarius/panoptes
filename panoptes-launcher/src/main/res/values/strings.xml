@@ -182,4 +182,16 @@
     <string name="komfort_neu">%1$s: %2$s</string>
     <string name="komfort_nichts_lesbar">Nothing readable yet. Switch the car on; controls without a reading are below.</string>
     <string name="klima_temp_unbekannt">Temperature control is not confirmed for this car model yet. Fan and on/off still work.</string>
+    <string name="home_frage_titel">Use Panoptes Launcher as home screen?</string>
+    <string name="home_frage_text">The Home key will then open this launcher. You can go back to the BYD home screen at any time with the house button at the far left of the dock.</string>
+    <string name="home_behalten">Yes, keep</string>
+    <string name="home_nein">No, back to BYD</string>
+    <string name="home_ok">Done. The Home key now opens this launcher.</string>
+    <string name="home_fehler">That did not work. The BYD home screen stays.</string>
+    <!-- 0.1.38.7 Fernklima laut Befehl -->
+    <string name="fern_laeuft">Remote climate running (started %1$s, until about %2$s%3$s) – per command, not confirmed by the car</string>
+    <string name="fern_beendet">Remote climate ended (%1$s)</string>
+    <string name="fern_art_heizen">, heating level %1$d</string>
+    <string name="fern_art_kuehlen">, cooling level %1$d</string>
+    <string name="fern_art_neutral">, neutral</string>
 </resources>

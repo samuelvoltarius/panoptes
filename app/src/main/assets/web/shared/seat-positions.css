@@ -268,7 +268,7 @@
     background: var(--surface-container-high);
 }
 .sp-chip.used-by {
-    appearance: none;
+    -webkit-appearance: none; appearance: none;
     font-family: inherit;
     cursor: pointer;
     display: -webkit-inline-flex;
@@ -314,7 +314,7 @@
 .sp-menu > * + * { margin-top: 2px; }
 .sp-menu.open { display: -webkit-flex; display: flex; }
 .sp-menu button {
-    appearance: none;
+    -webkit-appearance: none; appearance: none;
     border: 0;
     background: transparent;
     font: inherit;

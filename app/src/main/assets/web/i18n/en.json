@@ -5477,6 +5477,8 @@
     "lnc_update": "Update",
     "lnc_open": "Open",
     "lnc_remove": "Remove",
+    "lnc_enable": "Switch launcher on again",
+    "lnc_disabled_hint": "The Panoptes Launcher was switched off for safety. The button switches it on again. The BYD home screen stays until you change something yourself.",
     "lnc_build": "Build {n}",
     "lnc_not_installed": "Not installed",
     "lnc_badge_installed": "Installed",
@@ -5504,6 +5506,12 @@
     "fremd_recht_standbild": "One photo when the guard notices something. No video.",
     "recht_wort_launcher": "Launcher",
     "recht_info_launcher": "Set up the home screen in the car (layout only, no commands to the car)",
+    "fremd_wort_geraete": "Smart devices",
+    "fremd_recht_geraete": "Home Assistant may report its devices (switches, lights, climate) to Panoptes. Panoptes only shows them; control is switched on per device.",
+    "fremd_geraete_confirm": "Home Assistant will then report the names and rooms of its devices to Panoptes. They stay in the car. Switch on?",
+    "ha_geraete_titel": "Reported devices (display only)",
+    "ha_geraete_leer": "Home Assistant has not reported any devices yet.",
+    "ha_geraete_fehler": "Device list not readable.",
     "fremd_kamera_confirm": "Recordings can show passers-by. This device may then view guard recordings and preview images. Switch on?",
     "fremd_standbild_confirm": "Photos can show passers-by. This device may then fetch one photo for each guard event – no video, nothing older than 15 minutes. Switch on?",
     "handy_wort_wallbox": "Wallbox",
@@ -5677,6 +5685,8 @@
     "paired": "Paired!",
     "pin_fail": "Couldn't start pairing.",
     "pin_gone": "Expired – please start again.",
+    "pin_invalid": "This PIN is no longer valid – please get a new PIN.",
+    "poll_conflict": "This bot is also being used somewhere else right now (another device or program). Please stop it there or create your own bot.",
     "pin_left": "Valid for another {time} minutes.",
     "quiet_from_to": "From – to",
     "quiet_hint": "Car's clock. Can run past midnight.",
@@ -5963,6 +5973,8 @@
     "fehler": "Saving did not work. The setting is unchanged."
   },
   "darstellung": {
+    "auto_wirkt": "Applies to the screen in the car. The car picks it up within a few seconds.",
+    "nur_hier": "Applies only to this device or browser, not in the car.",
     "leicht_hinweis": "Light: maps in 2D, no blur effects or continuous animations. This keeps the interface smooth in the car.",
     "voll_hinweis": "Full shows the 3D map, effects and animations. On the car screen this costs noticeable performance and can stutter.",
     "geraet_auto": "Applies to the car screen.",
@@ -5971,6 +5983,8 @@
     "3d_laden": "Load 3D view"
   },
   "startAnsicht": {
+    "auto_wirkt": "Applies to the screen in the car. The car picks it up within a few seconds.",
+    "nur_hier": "Applies only to this device or browser, not in the car.",
     "fehler": "Saving failed. The Home view is unchanged.",
     "geraet_auto": "Applies to the display in the car.",
     "geraet": "Applies only to this device or browser."
@@ -6840,7 +6854,13 @@
     }
   },
   "klima_laeuft": {
-    "unbestaetigt": "Started – the car has not confirmed it yet."
+    "unbestaetigt": "Started – the car has not confirmed it yet.",
+    "fern_laeuft": "Remote climate running (started {von}, until about {bis}{art}) – per command, not confirmed by the car",
+    "fern_beendet": "Remote climate ended ({um})",
+    "zuendung_aus": "Climate: state unknown (ignition off)",
+    "art_heizen": ", heating level {n}",
+    "art_kuehlen": ", cooling level {n}",
+    "art_neutral": ", neutral"
   },
   "abfahrt_klima": {
     "title": "Warm when you leave",
@@ -7073,6 +7093,23 @@
     "nicht_aufloesbar": "The short link could not be resolved. Please share the long link."
   },
   "display": {
+    "befehle_titel": "Commands view",
+    "befehle_hilfe": "On the Controls page: Automatic follows the screen width. Car shows the car, Tiles shows large tiles.",
+    "befehle_automatisch": "Automatic",
+    "befehle_auto": "Show car",
+    "befehle_kacheln": "Tiles",
+    "fahrzeug_titel": "Vehicle page",
+    "fahrzeug_hilfe": "Simple shows only the controls. 3D loads the 3D view and costs noticeable performance on the display.",
+    "fahrzeug_lite": "Simple",
+    "fahrzeug_immersive": "3D",
+    "fuer_auto_titel": "For the car display",
+    "fuer_auto_hilfe": "This is saved in the car. You can also change it from a PC or phone. The car picks it up within a few seconds.",
+    "nur_geraet_titel": "Only for this device",
+    "nur_geraet_hilfe": "This stays in this browser only. Nothing changes in the car.",
+    "nur_geraet_sprache": "Language and remembered views (tabs, groups, periods, dismissed notes) apply to this device only. They are not sent to the car.",
+    "thema_auto_titel": "Light or dark in the car",
+    "thema_auto_hilfe": "Automatic uses the choice from the app's Android settings.",
+    "thema_fehler": "Saving did not work. Light or dark in the car is unchanged.",
     "apps_titel": "Turn apps off",
     "apps_an": "Turn back on",
     "apps_aus": "Turn off",

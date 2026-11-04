@@ -552,6 +552,29 @@ public class SurveillanceIpcServer implements Runnable {
                     break;
                 }
 
+                case "LAUNCHER_HOME": {
+                    // 0.1.38.7: /startbildschirm aus Telegram. „original“ ist immer erlaubt (Rückweg), Einschalten nur am Display.
+                    String aktion = request.optString("aktion", "status");
+                    if ("original".equals(aktion)) {
+                        String fehler = at.greenchili.surfmate.launcher.HomeWaechter.rueckfall(
+                                at.greenchili.surfmate.launcher.HomeWaechterRegel.Aktion.ZURUECK_SCHALTER_AUS, null);
+                        response.put("success", fehler == null);
+                        if (fehler != null) response.put("fehler", fehler);
+                    } else if ("paketan".equals(aktion)) {
+                        // Rückfall-Stufe 2 rückgängig: Launcher-Paket wieder einschalten
+                        String fehler = at.greenchili.surfmate.appupdate.LauncherHome.paketAn(
+                                at.greenchili.surfmate.appupdate.LauncherPaket.SHELL);
+                        response.put("success", fehler == null);
+                        if (fehler != null) response.put("fehler", fehler);
+                    } else {
+                        response.put("success", true);
+                    }
+                    response.put("data", new JSONObject()
+                            .put("gewuenscht", at.greenchili.surfmate.launcher.HomeWaechter.wunsch())
+                            .put("behalten", at.greenchili.surfmate.launcher.HomeWaechter.behalten()));
+                    break;
+                }
+
                 case "TIERMODUS": {
                     // Tiermodus aus Telegram (/tier): nur Stand und „Gesehen“ – Einschalten geht nur am Display
                     // oder in der Handy-App (Recht klima), nie über Telegram.
@@ -802,6 +825,14 @@ public class SurveillanceIpcServer implements Runnable {
                 case "GET_CHARGING_STATE":
                     response.put("success", true);
                     response.put("data", getChargingStateData());
+                    break;
+
+                case "GET_FERNKLIMA":   // 0.1.38.7: letzter Fern-Start laut Befehl für Telegram /status
+                    response.put("success", true);
+                    {
+                        org.json.JSONObject fern = at.greenchili.surfmate.byd.KlimaZustand.fernJson();
+                        response.put("data", fern == null ? new org.json.JSONObject() : fern);
+                    }
                     break;
                     
                 case "GET_CHARGING_POWER":

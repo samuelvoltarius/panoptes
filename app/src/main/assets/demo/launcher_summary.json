@@ -1,0 +1,85 @@
+{
+  "ts": 1792587600000,
+  "vehicle": {
+    "modelId": "seagull",
+    "modellGewaehlt": true,
+    "color": "#5FD6E6",
+    "driveSide": "lhd",
+    "name": "Demo-Ansicht · BYD Dolphin Surf",
+    "isPhev": false,
+    "paint": null
+  },
+  "state": {
+    "acc": "off",
+    "gear": "P",
+    "locked": true,
+    "parked": true,
+    "speedKmh": 0
+  },
+  "range": {
+    "totalKm": 262,
+    "socPct": 86,
+    "quelle": "auto"
+  },
+  "battery": {
+    "socPct": 86,
+    "usableKwh": 43.2,
+    "healthPct": 98
+  },
+  "charging": {
+    "active": false,
+    "kw": 0,
+    "targetPct": 80,
+    "etaMin": null
+  },
+  "trip": {
+    "distanceKm": 21.7,
+    "kwh": 3.4
+  },
+  "roadsense": null,
+  "tyres": {
+    "flBar": 2.5,
+    "frBar": 2.5,
+    "rlBar": 2.4,
+    "rrBar": 2.5,
+    "loBar": 2.2,
+    "hiBar": 2.9
+  },
+  "air": {
+    "pm25Inside": 6,
+    "pm25Outside": 11
+  },
+  "media": null,
+  "env": {
+    "outsideC": 12
+  },
+  "navi": {
+    "aktiv": true,
+    "grund": null,
+    "naechsterStopp": "Wien",
+    "naechsterKm": 40.0,
+    "istZiel": true,
+    "prognoseProzent": 33
+  },
+  "waechter": {
+    "an": true,
+    "scharf": true,
+    "aufnahme": false,
+    "zustand": "scharf"
+  },
+  "klima": {
+    "sollC": 21,
+    "stufe": 2,
+    "innenC": 13,
+    "an": false,
+    "stufenModell": false,
+    "tempStufe": null
+  },
+  "tacho": {
+    "aktiv": false,
+    "fahrtHinweis": false
+  },
+  "naviApp": null,
+  "launcherLayout": null,
+  "demo": true
+}

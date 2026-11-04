@@ -38,7 +38,7 @@
         hg.id = 'pnZaehlFrage';
         hg.setAttribute('role', 'dialog');
         hg.setAttribute('aria-modal', 'true');
-        hg.style.cssText = 'position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.6)';
+        hg.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.6)';
         var box = document.createElement('div');
         box.style.cssText = 'max-width:620px;width:100%;box-sizing:border-box;padding:24px;border-radius:16px;color:var(--text-primary);background:var(--bg-elevated);border:1px solid var(--border-subtle)';
         var h = document.createElement('h2');

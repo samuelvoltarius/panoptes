@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "geraet": {
+    "autoId": "demo",
+    "haId": "demo",
+    "name": "Demo-Ansicht · Mein Surf",
+    "modell": "BYD Dolphin Surf",
+    "modellId": "seagull",
+    "lack": null,
+    "appVersion": "0.1.38.5",
+    "dilink": null
+  },
+  "telemetrie": {
+    "soc": 86,
+    "ext_temp": 12.0,
+    "is_charging": 0,
+    "plugged": 0,
+    "power_level": 0
+  },
+  "waechter": {
+    "zustand": "scharf",
+    "grund": null,
+    "seit": null
+  },
+  "gesundheit": {
+    "zustand": "ok",
+    "punkte": []
+  },
+  "ruhezeit": {
+    "aktiv": false,
+    "bis": null
+  },
+  "position": null,
+  "camping": {
+    "aktiv": false,
+    "probelauf": true,
+    "phase": "ende",
+    "naechsterZyklus": null,
+    "reichtBis": null
+  },
+  "cloud": {
+    "eingerichtet": false
+  },
+  "demo": true
+}

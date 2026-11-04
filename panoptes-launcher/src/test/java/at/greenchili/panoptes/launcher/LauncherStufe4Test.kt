@@ -127,7 +127,9 @@ class LauncherStufe4Test {
         assertEquals("neben", body.getString("mode"))
         val main = quelle("MainActivity.kt")
         // 0.1.38.5: kein stilles Vollbild mehr – ehrliche Frage, Vollbild nur auf „Im Vollbild öffnen“
-        assertTrue(main.contains("main.post { if (r != NebenErgebnis.OK) nichtTeilbarFragen(p, r) }"))
+        assertTrue(main.contains("else -> nichtTeilbarFragen(p, r)"))
+        // 0.1.38.8: hat der Kern selbst ins Vollbild ausweichen müssen, sagt der Launcher das kurz
+        assertTrue(main.contains("NebenErgebnis.VOLLBILD -> zeigeHinweis(getString(R.string.neben_geht_nicht))"))
         assertTrue(main.contains(".setPositiveButton(R.string.im_vollbild_oeffnen) { _, _ -> starteVollbild(p) }"))
         // Video-Sperre greift vor dem Nebeneinander
         assertTrue(main.indexOf("appStartErlaubt") < main.indexOf("if (Raster.oeffnetNeben(layout, p) && p != Raster.PANOPTES)"))

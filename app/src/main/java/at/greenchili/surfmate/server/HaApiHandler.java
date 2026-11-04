@@ -54,6 +54,13 @@ public final class HaApiHandler {
             HttpResponse.sendJson(out, r[1].optInt("_status", 200), entferneStatus(r[1]).toString());
             return true;
         }
+        // 0.1.39 HA-Geräte (HA_VERTRAG v1.1 Teil D, Weg A). ExternGuard lässt nur homeassistant mit Recht „geraete“ durch.
+        if (pathOnly.equals(ExternGuard.HA_GERAETE_PFAD) && (method.equals("GET") || method.equals("POST"))) {
+            JSONObject r = geraete(method, body, AuthMiddleware.isExternRequest() ? AuthMiddleware.requestKopplungsId() : null,
+                    at.greenchili.surfmate.ha.HaGeraeteSpeicher.get(), System.currentTimeMillis());
+            HttpResponse.sendJson(out, r.optInt("_status", 200), entferneStatus(r).toString());
+            return true;
+        }
         if (pathOnly.equals("/api/ha/v1/ereignisse") && method.equals("GET")) {
             sse(out);
             return true;
@@ -204,6 +211,50 @@ public final class HaApiHandler {
     private static String kurz(String id) { return id.length() > 8 ? id.substring(0, 8) : id; }
 
     // ------------------------------------------------------------------ aktion
+
+    /** {@code GET /api/ha/geraete}: Liste fürs Panoptes-Web (System → Home Assistant), Stufe 1 nur lesen. */
+    public static boolean handleAnzeige(String method, String path, OutputStream out) throws Exception {
+        String pathOnly = path.contains("?") ? path.substring(0, path.indexOf('?')) : path;
+        if (!"/api/ha/geraete".equals(pathOnly) || !"GET".equals(method)) return false;
+        if (AuthMiddleware.isExternRequest()) {   // zweite Sperre neben ExternGuard
+            HttpResponse.sendError(out, 403, "Nicht für gekoppelte Geräte");
+            return true;
+        }
+        HttpResponse.sendJson(out, at.greenchili.surfmate.ha.HaGeraete
+                .fuerAnzeige(at.greenchili.surfmate.ha.HaGeraeteSpeicher.get().lies()).toString());
+        return true;
+    }
+
+    /**
+     * {@code GET|POST /api/ha/v1/geraete}. Nur eine HA-Kopplung (kid, Art homeassistant, Recht geraete – zusätzlich
+     * hier geprüft, falls der Pfad je anders erreicht wird). Antwort mit optional {@code _status}.
+     */
+    static JSONObject geraete(String method, String body, String kid, at.greenchili.surfmate.ha.HaGeraeteSpeicher speicher,
+                              long jetzt) {
+        JSONObject o = new JSONObject();
+        try {
+            if (kid == null || !"homeassistant".equals(Kopplungen.get().art(kid))
+                    || !Kopplungen.get().hatRecht(kid, Kopplungen.RECHT_GERAETE)) {
+                JSONObject f = ExternGuard.rechtFehltAntwort(Kopplungen.RECHT_GERAETE);
+                f.put("_status", 403);
+                return f;
+            }
+            if ("GET".equals(method)) return at.greenchili.surfmate.ha.HaGeraete.fuerIntegration(speicher.lies());
+            at.greenchili.surfmate.ha.HaGeraete.Meldung m;
+            try {
+                m = at.greenchili.surfmate.ha.HaGeraete.pruefe(body);
+            } catch (Exception e) {
+                return o.put("ok", false).put("grund", "ungueltig").put("_status", 400);
+            }
+            JSONObject neu = at.greenchili.surfmate.ha.HaGeraete.zusammenfuehren(speicher.lies(), m, jetzt).put("kid", kid);
+            if (!speicher.schreibe(neu)) return o.put("ok", false).put("grund", "speichern").put("_status", 500);
+            // Befehls-Log: nur das Kennwort, nie Namen/Räume
+            BefehlsLog.ereignis("ha.geraete", "gemeldet", null, null);
+            return o.put("ok", true).put("angenommen", m.geraete.length()).put("verworfen", m.verworfen);
+        } catch (Exception e) {
+            try { return o.put("ok", false).put("grund", "fehler").put("_status", 500); } catch (Exception ignored) { return o; }
+        }
+    }
 
     /** {_, antwort mit optional _status}. Auch vom Webhook-Weg nutzbar. */
     public static JSONObject[] aktion(String body) {

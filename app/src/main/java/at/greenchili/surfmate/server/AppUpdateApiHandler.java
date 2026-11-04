@@ -246,6 +246,11 @@ public final class AppUpdateApiHandler {
                 grund = at.greenchili.surfmate.appupdate.LauncherPaket.stand(g).installiert()
                         ? at.greenchili.surfmate.appupdate.LauncherPaket.oeffnen(g) : "nicht_installiert";
                 break;
+            case "aktivieren":
+                // Rückfall-Stufe 2 rückgängig (pm enable des Launcher-Pakets), ohne adb
+                grund = at.greenchili.surfmate.appupdate.LauncherPaket.stand(g).installiert()
+                        ? at.greenchili.surfmate.appupdate.LauncherHome.paketAn(g) : "nicht_installiert";
+                break;
             case "entfernen":
                 grund = at.greenchili.surfmate.appupdate.LauncherPaket.stand(g).installiert()
                         ? at.greenchili.surfmate.appupdate.LauncherPaket.entfernen(g) : null;

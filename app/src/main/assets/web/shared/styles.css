@@ -1868,7 +1868,11 @@ select.md-input ~ .md-label {
     width: 18px;
     height: 18px;
 }
-.safe-zone-icon-btn:hover,
+.safe-zone-icon-btn:hover {
+    border-color: var(--border-default);
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+}
 .safe-zone-icon-btn:focus-visible {
     border-color: var(--border-default);
     background: var(--bg-elevated);
@@ -1877,7 +1881,10 @@ select.md-input ~ .md-label {
 .safe-zone-icon-btn.is-danger {
     color: var(--danger);
 }
-.safe-zone-icon-btn.is-danger:hover,
+.safe-zone-icon-btn.is-danger:hover {
+    border-color: rgba(239, 68, 68, 0.35);
+    background: rgba(239, 68, 68, 0.10);
+}
 .safe-zone-icon-btn.is-danger:focus-visible {
     border-color: rgba(239, 68, 68, 0.35);
     background: rgba(239, 68, 68, 0.10);

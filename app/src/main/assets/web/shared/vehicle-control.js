@@ -351,6 +351,13 @@ var VC = {
         var self = this;
         var btn = document.getElementById('btnViewMode');
         if (!btn) return;
+        // 0.1.38.7: Kern-Wert vom Auto-Display-Takt (auch vom PC/Handy aus geändert) live übernehmen
+        try {
+            window.addEventListener('pn-fahrzeugAnsicht', function (e) {
+                var w = e && e.detail ? e.detail.wert : null;
+                if ((w === 'lite') !== !!self.liteMode) self.switchViewMode(true);
+            });
+        } catch (e) {}
         this._syncViewModeChip();
         btn.addEventListener('click', function() {
             self.switchViewMode();
@@ -377,7 +384,7 @@ var VC = {
     },
 
     /** Swap the stage between the static hero and the GL scene, in place. */
-    switchViewMode: function() {
+    switchViewMode: function(ausKern) {
         var self = this;
         if (this._viewModeSwitching) return;
         this._viewModeSwitching = true;
@@ -385,6 +392,10 @@ var VC = {
         try {
             localStorage.setItem('vc.viewMode', toImmersive ? 'immersive' : 'lite');
         } catch (e) {}
+        // 0.1.38.7: Am Auto-Display gilt der Kern (sonst holt der Takt den alten Wert zurück)
+        if (!ausKern && window.PanoptesAnzeige && PanoptesAnzeige.display()) {
+            try { PanoptesAnzeige.setzenKern('fahrzeugAnsicht', toImmersive ? 'immersive' : 'lite'); } catch (e) {}
+        }
 
         if (!toImmersive) {
             this._enterLiteMode();
@@ -3755,6 +3766,9 @@ var VC = {
                 // 0.1.28 (P3): „an“ nur mit Beleg (climate.laeuft). Eine Cloud-Sitzung nach der Uhr
                 // (remoteClimateActive) ist KEIN Beleg – dann „Gestartet, noch nicht bestätigt“.
                 var lf = data.climate.laeuft;
+                // 0.1.38.7: Fernklima laut Befehl bzw. „Zustand unbekannt“ statt „Klima aus“ (Hinweiszeile unten)
+                self.vehicleState.fernHinweis = window.PanoptesKlimaStufe && PanoptesKlimaStufe.fernText
+                    ? PanoptesKlimaStufe.fernText(data.climate) : { zustand: null, text: '' };
                 self.vehicleState.acUnbestaetigt = !!(lf && lf.unbestaetigt);
                 self.vehicleState.acQuelle = lf && lf.quelle ? lf.quelle : null;
                 if (lf && (lf.zustand === 'laeuft' || lf.zustand === 'aus')
@@ -4352,10 +4366,17 @@ var VC = {
         // 0.1.28 (P3): ehrlich sagen, wenn das Auto den Start noch nicht bestätigt hat
         var laeuftEl = document.getElementById('klimaLaeuftHinweis');
         if (laeuftEl) {
-            laeuftEl.hidden = !this.vehicleState.acUnbestaetigt;
-            if (this.vehicleState.acUnbestaetigt) {
-                laeuftEl.textContent = this.translatedText('klima_laeuft.unbestaetigt',
-                    'Gestartet – das Auto hat es noch nicht bestätigt.');
+            var fernH = this.vehicleState.fernHinweis;
+            if (fernH && fernH.text) {
+                // 0.1.38.7: Vorrang vor dem allgemeinen „nicht bestätigt“: genaue Angabe laut Befehl
+                laeuftEl.hidden = false;
+                laeuftEl.textContent = fernH.text;
+            } else {
+                laeuftEl.hidden = !this.vehicleState.acUnbestaetigt;
+                if (this.vehicleState.acUnbestaetigt) {
+                    laeuftEl.textContent = this.translatedText('klima_laeuft.unbestaetigt',
+                        'Gestartet – das Auto hat es noch nicht bestätigt.');
+                }
             }
         }
 

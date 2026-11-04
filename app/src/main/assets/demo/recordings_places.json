@@ -1,0 +1,11 @@
+{
+  "success": true,
+  "places": [
+    {
+      "key": "wien",
+      "label": "Wien",
+      "count": 3
+    }
+  ],
+  "totalDistinct": 1
+}

@@ -5477,6 +5477,8 @@
     "lnc_update": "Aggiorna",
     "lnc_open": "Apri",
     "lnc_remove": "Rimuovi",
+    "lnc_enable": "Riattiva il launcher",
+    "lnc_disabled_hint": "Il Panoptes Launcher è stato disattivato per sicurezza. Il pulsante lo riattiva. La schermata iniziale BYD resta finché non cambi qualcosa tu stesso.",
     "lnc_build": "Build {n}",
     "lnc_not_installed": "Non installato",
     "lnc_badge_installed": "Installato",
@@ -5504,6 +5506,12 @@
     "fremd_recht_standbild": "Una foto quando la sorveglianza nota qualcosa. Nessun video.",
     "recht_wort_launcher": "Launcher",
     "recht_info_launcher": "Configurare la schermata iniziale in auto (solo la disposizione, nessun comando all’auto)",
+    "fremd_wort_geraete": "Dispositivi smart",
+    "fremd_recht_geraete": "Home Assistant può segnalare i suoi dispositivi (interruttori, luci, clima) a Panoptes. Panoptes li mostra soltanto; il comando si attiva per ogni dispositivo.",
+    "fremd_geraete_confirm": "Home Assistant comunicherà allora nomi e stanze dei suoi dispositivi a Panoptes. Restano nell'auto. Attivare?",
+    "ha_geraete_titel": "Dispositivi segnalati (solo visualizzazione)",
+    "ha_geraete_leer": "Home Assistant non ha ancora segnalato dispositivi.",
+    "ha_geraete_fehler": "Elenco dispositivi non leggibile.",
     "fremd_kamera_confirm": "Le registrazioni possono mostrare passanti. Questo dispositivo potrà vedere le registrazioni della sorveglianza e le anteprime. Attivare?",
     "fremd_standbild_confirm": "Le foto possono mostrare passanti. Questo dispositivo potrà prendere una foto per ogni evento della sorveglianza – nessun video, niente più vecchio di 15 minuti. Attivare?",
     "handy_wort_wallbox": "Wallbox",
@@ -5677,6 +5685,8 @@
     "paired": "Abbinato!",
     "pin_fail": "Impossibile avviare l'abbinamento.",
     "pin_gone": "Scaduto: riavvia.",
+    "pin_invalid": "Questo PIN non è più valido – richiedine uno nuovo.",
+    "poll_conflict": "Questo bot è in uso anche altrove in questo momento (altro dispositivo o programma). Fermalo lì oppure crea un bot tuo.",
     "pin_left": "Valido ancora per {time} minuti.",
     "quiet_from_to": "Da – a",
     "quiet_hint": "Orario dell'auto. Può superare la mezzanotte.",
@@ -5963,6 +5973,8 @@
     "fehler": "Salvataggio non riuscito. L’impostazione non è cambiata."
   },
   "darstellung": {
+    "auto_wirkt": "Vale per lo schermo in auto. L'auto lo recepisce in pochi secondi.",
+    "nur_hier": "Vale solo per questo dispositivo o browser, non in auto.",
     "leicht_hinweis": "Leggera: mappe in 2D, senza effetti di sfocatura né animazioni continue. Così l’interfaccia in auto resta fluida.",
     "voll_hinweis": "Completa mostra mappa 3D, effetti e animazioni. Sullo schermo dell’auto costa prestazioni in modo evidente e può scattare.",
     "geraet_auto": "Vale per lo schermo dell’auto.",
@@ -5971,6 +5983,8 @@
     "3d_laden": "Carica la vista 3D"
   },
   "startAnsicht": {
+    "auto_wirkt": "Vale per lo schermo in auto. L'auto lo recepisce in pochi secondi.",
+    "nur_hier": "Vale solo per questo dispositivo o browser, non in auto.",
     "fehler": "Salvataggio non riuscito. La vista iniziale non è cambiata.",
     "geraet_auto": "Si applica allo schermo dell’auto.",
     "geraet": "Si applica solo a questo dispositivo o browser."
@@ -6840,7 +6854,13 @@
     }
   },
   "klima_laeuft": {
-    "unbestaetigt": "Avviato – l’auto non l’ha ancora confermato."
+    "unbestaetigt": "Avviato – l’auto non l’ha ancora confermato.",
+    "fern_laeuft": "Clima da remoto in corso (avviato alle {von}, fino alle {bis} circa{art}) – secondo il comando, non confermato dall’auto",
+    "fern_beendet": "Clima da remoto terminato ({um})",
+    "zuendung_aus": "Clima: stato sconosciuto (quadro spento)",
+    "art_heizen": ", riscaldamento livello {n}",
+    "art_kuehlen": ", raffreddamento livello {n}",
+    "art_neutral": ", neutro"
   },
   "abfahrt_klima": {
     "title": "Caldo alla partenza",
@@ -7073,6 +7093,23 @@
     "nicht_aufloesbar": "Non è stato possibile risolvere il link breve. Condividi il link lungo."
   },
   "display": {
+    "befehle_titel": "Vista dei comandi",
+    "befehle_hilfe": "Nella pagina Comandi: Automatico segue la larghezza dello schermo. Auto mostra l'auto, Riquadri mostra grandi riquadri.",
+    "befehle_automatisch": "Automatico",
+    "befehle_auto": "Mostra l'auto",
+    "befehle_kacheln": "Riquadri",
+    "fahrzeug_titel": "Pagina del veicolo",
+    "fahrzeug_hilfe": "Semplice mostra solo i comandi. 3D carica la vista 3D e costa prestazioni sul display.",
+    "fahrzeug_lite": "Semplice",
+    "fahrzeug_immersive": "3D",
+    "fuer_auto_titel": "Per lo schermo dell'auto",
+    "fuer_auto_hilfe": "Viene salvato nell'auto. Puoi cambiarlo anche da PC o telefono. L'auto lo recepisce in pochi secondi.",
+    "nur_geraet_titel": "Solo per questo dispositivo",
+    "nur_geraet_hilfe": "Resta solo in questo browser. Nell'auto non cambia nulla.",
+    "nur_geraet_sprache": "La lingua e le viste memorizzate (schede, gruppi, periodi, avvisi nascosti) valgono solo per questo dispositivo. Non vengono trasferite all'auto.",
+    "thema_auto_titel": "Chiaro o scuro in auto",
+    "thema_auto_hilfe": "Automatico usa la scelta delle impostazioni Android dell'app.",
+    "thema_fehler": "Salvataggio non riuscito. Chiaro o scuro in auto resta invariato.",
     "apps_titel": "Disattivare app",
     "apps_an": "Riattivare",
     "apps_aus": "Disattivare",

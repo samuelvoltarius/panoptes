@@ -5477,6 +5477,8 @@
     "lnc_update": "Bijwerken",
     "lnc_open": "Openen",
     "lnc_remove": "Verwijderen",
+    "lnc_enable": "Launcher weer inschakelen",
+    "lnc_disabled_hint": "De Panoptes Launcher is voor de veiligheid uitgezet. Met de knop zet je hem weer aan. Het BYD-startscherm blijft tot je zelf iets wijzigt.",
     "lnc_build": "Build {n}",
     "lnc_not_installed": "Niet geïnstalleerd",
     "lnc_badge_installed": "Geïnstalleerd",
@@ -5504,6 +5506,12 @@
     "fremd_recht_standbild": "Eén foto als de bewaking iets opmerkt. Geen video.",
     "recht_wort_launcher": "Launcher",
     "recht_info_launcher": "Startscherm in de auto instellen (alleen de indeling, geen opdrachten aan de auto)",
+    "fremd_wort_geraete": "Slimme apparaten",
+    "fremd_recht_geraete": "Home Assistant mag zijn apparaten (schakelaars, lampen, klimaat) aan Panoptes melden. Panoptes toont ze alleen; bedienen zet je per apparaat aan.",
+    "fremd_geraete_confirm": "Home Assistant meldt dan namen en ruimtes van zijn apparaten aan Panoptes. Ze blijven in de auto. Inschakelen?",
+    "ha_geraete_titel": "Gemelde apparaten (alleen weergave)",
+    "ha_geraete_leer": "Home Assistant heeft nog geen apparaten gemeld.",
+    "ha_geraete_fehler": "Apparatenlijst niet leesbaar.",
     "fremd_kamera_confirm": "Opnames kunnen voorbijgangers tonen. Dit apparaat mag dan bewakingsopnames en voorbeeldbeelden bekijken. Aanzetten?",
     "fremd_standbild_confirm": "Foto's kunnen voorbijgangers tonen. Dit apparaat mag dan bij elke bewakingsgebeurtenis één foto ophalen – geen video, niets ouder dan 15 minuten. Aanzetten?",
     "handy_wort_wallbox": "Wallbox",
@@ -5677,6 +5685,8 @@
     "paired": "Gekoppeld!",
     "pin_fail": "Koppelen starten mislukt.",
     "pin_gone": "Verlopen – begin opnieuw.",
+    "pin_invalid": "Deze pincode is niet meer geldig – vraag een nieuwe pincode aan.",
+    "poll_conflict": "Deze bot wordt nu ook ergens anders gebruikt (ander apparaat of programma). Stop hem daar of maak een eigen bot aan.",
     "pin_left": "Nog {time} minuten geldig.",
     "quiet_from_to": "Van – tot",
     "quiet_hint": "Tijd van de auto. Mag over middernacht heen lopen.",
@@ -5963,6 +5973,8 @@
     "fehler": "Opslaan is niet gelukt. De instelling is ongewijzigd."
   },
   "darstellung": {
+    "auto_wirkt": "Geldt voor het scherm in de auto. De auto neemt het binnen enkele seconden over.",
+    "nur_hier": "Geldt alleen voor dit apparaat of deze browser, niet in de auto.",
     "leicht_hinweis": "Licht: kaarten in 2D, zonder vervagingseffecten en doorlopende animaties. Zo blijft de interface in de auto vloeiend.",
     "voll_hinweis": "Volledig toont de 3D-kaart, effecten en animaties. Op het scherm in de auto kost dat merkbaar prestaties en kan het haperen.",
     "geraet_auto": "Geldt voor het scherm in de auto.",
@@ -5971,6 +5983,8 @@
     "3d_laden": "3D-weergave laden"
   },
   "startAnsicht": {
+    "auto_wirkt": "Geldt voor het scherm in de auto. De auto neemt het binnen enkele seconden over.",
+    "nur_hier": "Geldt alleen voor dit apparaat of deze browser, niet in de auto.",
     "fehler": "Opslaan is mislukt. De startweergave is niet gewijzigd.",
     "geraet_auto": "Geldt voor het scherm in de auto.",
     "geraet": "Geldt alleen voor dit apparaat of deze browser."
@@ -6840,7 +6854,13 @@
     }
   },
   "klima_laeuft": {
-    "unbestaetigt": "Gestart – de auto heeft het nog niet bevestigd."
+    "unbestaetigt": "Gestart – de auto heeft het nog niet bevestigd.",
+    "fern_laeuft": "Klimaat op afstand loopt (gestart {von}, tot ongeveer {bis}{art}) – volgens het commando, niet bevestigd door de auto",
+    "fern_beendet": "Klimaat op afstand beëindigd ({um})",
+    "zuendung_aus": "Klimaat: toestand onbekend (contact uit)",
+    "art_heizen": ", verwarmen stand {n}",
+    "art_kuehlen": ", koelen stand {n}",
+    "art_neutral": ", neutraal"
   },
   "abfahrt_klima": {
     "title": "Warm bij vertrek",
@@ -7073,6 +7093,23 @@
     "nicht_aufloesbar": "De korte link kon niet worden opgelost. Deel de lange link."
   },
   "display": {
+    "befehle_titel": "Opdrachtenweergave",
+    "befehle_hilfe": "Op de pagina Bediening: Automatisch volgt de schermbreedte. Auto toont de auto, Tegels toont grote tegels.",
+    "befehle_automatisch": "Automatisch",
+    "befehle_auto": "Auto tonen",
+    "befehle_kacheln": "Tegels",
+    "fahrzeug_titel": "Voertuigpagina",
+    "fahrzeug_hilfe": "Eenvoudig toont alleen de bediening. 3D laadt de 3D-weergave en kost merkbaar prestaties op het scherm.",
+    "fahrzeug_lite": "Eenvoudig",
+    "fahrzeug_immersive": "3D",
+    "fuer_auto_titel": "Voor het autoscherm",
+    "fuer_auto_hilfe": "Dit wordt in de auto opgeslagen. Je kunt het ook vanaf een pc of telefoon wijzigen. De auto neemt het binnen enkele seconden over.",
+    "nur_geraet_titel": "Alleen voor dit apparaat",
+    "nur_geraet_hilfe": "Dit blijft alleen in deze browser. In de auto verandert er niets.",
+    "nur_geraet_sprache": "Taal en onthouden weergaven (tabbladen, groepen, perioden, verborgen meldingen) gelden alleen voor dit apparaat. Ze worden niet naar de auto gestuurd.",
+    "thema_auto_titel": "Licht of donker in de auto",
+    "thema_auto_hilfe": "Automatisch gebruikt de keuze uit de Android-instellingen van de app.",
+    "thema_fehler": "Opslaan is niet gelukt. Licht of donker in de auto is ongewijzigd.",
     "apps_titel": "Apps uitschakelen",
     "apps_an": "Weer inschakelen",
     "apps_aus": "Uitschakelen",

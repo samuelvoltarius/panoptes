@@ -1,0 +1,21 @@
+{
+  "ok": true,
+  "einstellungen": {
+    "modus": "abfahrt",
+    "ziel": 80
+  },
+  "zustand": {
+    "zuhause": true,
+    "angesteckt": true,
+    "laedtJetzt": false,
+    "sofort": false,
+    "pausiert": false,
+    "ladepunktTitel": "Wallbox",
+    "abfahrt": {
+      "zeit": "07:30"
+    }
+  },
+  "tarif": {
+    "tarifName": "Nachtstrom (Muster)"
+  }
+}

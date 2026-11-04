@@ -167,6 +167,47 @@
         el.setAttribute('aria-label', text(v));
     }
 
+    function zweistellig(n) { return (n < 10 ? '0' : '') + n; }
+    function hhmm(ms) {
+        var d = new Date(Number(ms));
+        return isNaN(d.getTime()) ? '--:--' : zweistellig(d.getHours()) + ':' + zweistellig(d.getMinutes());
+    }
+
+    /**
+     * 0.1.38.7 Fernklima ehrlich: Was sagt Panoptes zum Klima, wenn das Auto selbst nichts weiß (Zündung aus)?
+     * Echter Zustand (climate.laeuft = läuft/aus oder climate.acOn) gewinnt immer: dann {zustand: null, text: ''}.
+     * Sonst: climate.fern.aktiv  → {zustand: 'laeuft', text: 'Fernklima läuft (gestartet 16:49, bis ca. 16:59, Heizen Stufe 3) – laut Befehl …'},
+     *        climate.fern.beendet → {zustand: 'beendet', text: 'Fernklima beendet (16:59)'},
+     *        sonst, wenn der Kern „unbekannt“ meldet → {zustand: 'unbekannt', text: 'Klima: Zustand unbekannt (Zündung aus)'}.
+     * Nie „Klima aus“, wenn Panoptes es nicht weiß.
+     */
+    function fernText(cl) {
+        cl = cl || {};
+        var lz = cl.laeuft && cl.laeuft.zustand;
+        if (lz === 'laeuft' || lz === 'aus' || typeof cl.acOn === 'boolean') return { zustand: null, text: '' };
+        var f = cl.fern;
+        if (f && f.aktiv) {
+            var a = '';
+            if (typeof f.stufe === 'number' && (f.art === 'heizen' || f.art === 'kuehlen' || f.art === 'neutral')) {
+                var fb = { heizen: ', Heizen Stufe {n}', kuehlen: ', Kühlen Stufe {n}', neutral: ', Neutral' };
+                // fern.stufe = Balkenstufe 1..17 (Mitte 9); im Text steht der Abstand zur Mitte: Stufe 12 -> „Heizen Stufe 3“
+                a = tr('klima_laeuft.art_' + f.art, fb[f.art], { n: Math.abs(f.stufe + VERSATZ - SDK_MITTE) });
+            }
+            return {
+                zustand: 'laeuft',
+                text: tr('klima_laeuft.fern_laeuft', 'Fernklima läuft (gestartet {von}, bis ca. {bis}{art}) – laut Befehl, vom Auto nicht bestätigt',
+                    { von: hhmm(f.gestartet), bis: hhmm(f.bis), art: a })
+            };
+        }
+        if (f && f.beendet) {
+            return { zustand: 'beendet', text: tr('klima_laeuft.fern_beendet', 'Fernklima beendet ({um})', { um: hhmm(f.beendetUm) }) };
+        }
+        if (lz === 'unbekannt') {
+            return { zustand: 'unbekannt', text: tr('klima_laeuft.zuendung_aus', 'Klima: Zustand unbekannt (Zündung aus)') };
+        }
+        return { zustand: null, text: '' };
+    }
+
     function stil() {
         if (!global.document || document.getElementById('klima-stufe-stil')) return;
         var s = document.createElement('style');
@@ -189,6 +230,6 @@
         SDK_MIN: SDK_MIN, SDK_MITTE: SDK_MITTE, SDK_MAX: SDK_MAX, HEIZEN_AB_SDK: 26,
         sdk: sdk, stufe: stufe, zuSdk: zuSdk, art: art, text: text, balken: balken,
         stufen: stufen, sdkAusCloudRoh: sdkAusCloudRoh, vorklimaSdk: vorklimaSdk, hinweis: hinweis,
-        cloudBelegt: cloudBelegt
+        cloudBelegt: cloudBelegt, fernText: fernText
     };
 })(typeof window !== 'undefined' ? window : this);

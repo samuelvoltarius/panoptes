@@ -73,6 +73,8 @@ public final class VehicleCommandRouter {
     // another seat command.
     private final Object seatCommandLock = new Object();
     private long remoteClimateActiveUntilMs;
+    /** 0.1.38.7: letzter erfolgreicher Cloud-Start (laut Befehl), auch nach Ablauf eine Stunde sichtbar. */
+    private at.greenchili.surfmate.byd.FernKlima.Sitzung fernKlimaSitzung;
     // Guarded by cloudLock. Updated only after a terminally-confirmed cloud or SDK seat result.
     private int[] seatCompositeState;
     private long seatCompositeStateAtMs;
@@ -143,6 +145,15 @@ public final class VehicleCommandRouter {
     /** Clear remote-HVAC state when the cloud identity or credentials change. */
     public synchronized void clearRemoteClimateSession() {
         remoteClimateActiveUntilMs = 0L;
+        fernKlimaSitzung = null;
+    }
+
+    /**
+     * 0.1.38.7: der letzte erfolgreiche Fern-Start nach der Uhr (läuft noch oder vor kurzem beendet), sonst null. Das ist
+     * ein Befehlsprotokoll, kein Messwert des Autos.
+     */
+    public synchronized at.greenchili.surfmate.byd.FernKlima.Sitzung fernKlimaSitzung() {
+        return fernKlimaSitzung == null ? null : fernKlimaSitzung.stand(System.currentTimeMillis());
     }
 
     /**
@@ -2326,13 +2337,22 @@ public final class VehicleCommandRouter {
 
     private synchronized void updateRemoteClimateSession(VehicleCommand cmd, CommandResult result) {
         if (result == null || result.outcome != Outcome.SUCCESS) return;
+        long jetzt = System.currentTimeMillis();
         if (cmd instanceof ClimateOnCommand
                 && (result.path == Path.CLOUD || result.path == Path.SDK_THEN_CLOUD)) {
             ClimateOnCommand climateOn = (ClimateOnCommand) cmd;
-            remoteClimateActiveUntilMs = System.currentTimeMillis()
-                    + TimeUnit.MINUTES.toMillis(climateOn.remoteDurationMinutes);
-        } else if (cmd instanceof ClimateOffCommand) {
+            remoteClimateActiveUntilMs = jetzt + TimeUnit.MINUTES.toMillis(climateOn.remoteDurationMinutes);
+            fernKlimaSitzung = at.greenchili.surfmate.byd.FernKlima.Sitzung.neu(jetzt, climateOn.remoteDurationMinutes,
+                    (int) Math.round(climateOn.tempCelsius));
+        } else if (cmd instanceof ClimateRemoteOnCommand && result.path == Path.CLOUD) {
+            // 0.1.38.7 (Befund 04.11.): der ausdrückliche Fern-Start ({"remote":true}) wurde bisher NICHT vermerkt, darum
+            // blieb die Sitzung leer und die Anzeige sagte „Klima aus“, obwohl die Heizung lief
+            ClimateRemoteOnCommand fern = (ClimateRemoteOnCommand) cmd;
+            remoteClimateActiveUntilMs = jetzt + TimeUnit.MINUTES.toMillis(fern.dauerMinuten);
+            fernKlimaSitzung = at.greenchili.surfmate.byd.FernKlima.Sitzung.neu(jetzt, fern.dauerMinuten, fern.tempCelsius);
+        } else if (cmd instanceof ClimateOffCommand || cmd instanceof ClimateRemoteOffCommand) {
             remoteClimateActiveUntilMs = 0L;
+            if (fernKlimaSitzung != null) fernKlimaSitzung = fernKlimaSitzung.beendet(jetzt, at.greenchili.surfmate.byd.FernKlima.ENDE_AUS);
         }
     }
 

@@ -60,6 +60,11 @@ public final class EinstellungenApiHandler {
             HttpResponse.sendJson(out, res.toString());
             return true;
         }
+        // 0.1.38.7: drei Werte für das Auto-Display (Darstellung, Startansicht, Hell/Dunkel), kurz genug zum Abfragen im Takt
+        if (pathOnly.equals("/api/einstellungen/anzeige") && method.equals("GET")) {
+            HttpResponse.sendJson(out, anzeigeStand(UnifiedConfigManager.loadConfig()).toString());
+            return true;
+        }
         if (pathOnly.equals("/api/einstellungen") && method.equals("GET")) {
             JSONObject root = UnifiedConfigManager.loadConfig();
             Katalog.Kontext k = kontext(root);
@@ -480,6 +485,24 @@ public final class EinstellungenApiHandler {
             new Thread(() -> at.greenchili.surfmate.analytics.Mitzaehlen.taktImDaemon(System.currentTimeMillis()),
                     "ZaehlenSofort").start();
         }
+    }
+
+    /** {darstellung, startAnsicht, thema, befehleAnsicht, fahrzeugAnsicht}: gültige Werte aus dem Kern, sonst die Standards. */
+    public static JSONObject anzeigeStand(JSONObject root) throws Exception {
+        JSONObject a = root == null ? null : root.optJSONObject("anzeige");
+        String d = a == null ? "" : a.optString("darstellung", "");
+        String s = a == null ? "" : a.optString("startAnsicht", "");
+        String t = a == null ? "" : a.optString("thema", "");
+        String b = a == null ? "" : a.optString("befehleAnsicht", "");
+        String v = a == null ? "" : a.optString("fahrzeugAnsicht", "");
+        boolean sOk = false;
+        for (String p : new String[]{"panoptes", "fahren", "fahrzeug", "kompakt", "cockpit"}) sOk |= p.equals(s);
+        return new JSONObject()
+                .put("darstellung", "voll".equals(d) ? "voll" : "leicht")
+                .put("startAnsicht", sOk ? s : "panoptes")
+                .put("thema", "dark".equals(t) || "light".equals(t) ? t : "auto")
+                .put("befehleAnsicht", "auto".equals(b) || "kacheln".equals(b) ? b : "automatisch")
+                .put("fahrzeugAnsicht", "immersive".equals(v) ? "immersive" : "lite");
     }
 
     static Katalog.Kontext kontext(JSONObject root) {

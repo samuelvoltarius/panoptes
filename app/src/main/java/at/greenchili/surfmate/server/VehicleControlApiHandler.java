@@ -899,9 +899,10 @@ public class VehicleControlApiHandler {
         // DiLink 5 refreshes these fields directly and may not expose powerLevel.
         JSONObject climate = new JSONObject();
         boolean vehiclePoweredOn = (data.powerLevel != BydVehicleData.UNAVAILABLE && data.powerLevel >= 2);
-        if (data.acStartState != BydVehicleData.UNAVAILABLE) {
-            climate.put("acOn",
-                    (diLink5 || vehiclePoweredOn) && data.acStartState == 1);
+        // 0.1.38.7: bei Zündung aus meldet das SDK acOn=0, ohne dass es etwas heißt (Fernklima lief, Anzeige „aus“).
+        // Dann ist der Zustand unbekannt, also fehlt das Feld; die Anzeigen nehmen climate.laeuft und climate.fern.
+        if (data.acStartState != BydVehicleData.UNAVAILABLE && (diLink5 || vehiclePoweredOn)) {
+            climate.put("acOn", data.acStartState == 1);
         }
         if (data.hasFreshCabinTemperature() && !Double.isNaN(data.insideTempC)) {
             climate.put("insideTempC", data.insideTempC);
@@ -928,6 +929,9 @@ public class VehicleControlApiHandler {
             climate.put("setpointPassenger",
                     climateSetpointToCelsius(data.acSetpointPassenger));
         }
+        // 0.1.38.7: der letzte Fern-Start laut Befehl (läuft noch / beendet), nie ein Messwert des Autos
+        JSONObject fern = at.greenchili.surfmate.byd.KlimaZustand.fernJson();
+        if (fern != null) climate.put("fern", fern);
         Boolean remoteClimateActive = remoteClimateActive();
         if (remoteClimateActive != null) {
             // Nur Uhr nach einem Cloud-Befehl, kein Beleg – Anzeige über „laeuft“ (0.1.28 P3)
@@ -935,19 +939,10 @@ public class VehicleControlApiHandler {
         }
         // 0.1.28 (P3): ehrlicher Dreizustand läuft / aus / unbekannt, plus „gestartet, nicht bestätigt“
         try {
-            int air = -1;
-            long airAlter = -1;
-            at.greenchili.surfmate.byd.cloud.VehicleCloudSnapshot cs =
-                    at.greenchili.surfmate.byd.cloud.BydCloudDataProvider.getInstance().getSnapshot();
-            if (cs != null && cs.airRunState >= 0) {
-                air = cs.airRunState;
-                long t = cs.vehicleInfoTimestamp > 0 ? Math.min(cs.vehicleInfoTimestamp, cs.receivedAt) : cs.receivedAt;
-                airAlter = System.currentTimeMillis() - t;
-            }
-            at.greenchili.surfmate.byd.KlimaLaeuft.Ergebnis laeuft = at.greenchili.surfmate.byd.KlimaLaeuft.bewerte(
+            // 0.1.38.7: eine Quelle für Web, Handy-API, Launcher, HA: frischer Cloud-airRunState > laut Befehl > unbekannt
+            at.greenchili.surfmate.byd.KlimaLaeuft.Ergebnis laeuft = at.greenchili.surfmate.byd.KlimaZustand.aktuell(
                     diLink5 || vehiclePoweredOn,
-                    data.acStartState == BydVehicleData.UNAVAILABLE ? -1 : data.acStartState,
-                    air, airAlter, Boolean.TRUE.equals(remoteClimateActive));
+                    data.acStartState == BydVehicleData.UNAVAILABLE ? -1 : data.acStartState);
             climate.put("laeuft", laeuft.json());
         } catch (Exception e) {
             logger.debug("climate run state failed: " + e.getMessage());

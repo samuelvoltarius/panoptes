@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "zustand": "ok",
+  "befunde": [],
+  "punkte": [],
+  "rechte": {
+    "zustand": "ok",
+    "offen": [],
+    "repariert": []
+  }
+}

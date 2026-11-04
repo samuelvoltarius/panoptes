@@ -166,4 +166,39 @@ public class AppLauncherSplitPairTest {
 
         assertEquals(8, AppLauncher.secondaryGhostStackIdInDump(dump));
     }
+
+    @Test
+    public void komponenteAusShellNimmtNurEigeneKomponente() {
+        // resolve-activity --brief mit einem Treffer
+        assertEquals("com.music.app/.MainActivity", AppLauncher.komponenteAusShell(
+                "priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=false\ncom.music.app/.MainActivity\n",
+                "com.music.app"));
+        // mehrere Start-Einträge: resolve-activity nennt den System-Auswahldialog → kein Treffer
+        assertEquals(null, AppLauncher.komponenteAusShell(
+                "priority=0\nandroid/com.android.internal.app.ResolverActivity\n", "com.music.app"));
+        // query-activities listet beide, die erste eigene zählt (CRLF wie über adb)
+        assertEquals("com.music.app/com.music.app.Alias", AppLauncher.komponenteAusShell(
+                "2 activities found:\r\n  Activity #0:\r\n    priority=0\r\n    com.music.app/com.music.app.Alias\r\n"
+                        + "    com.music.app/.Zweite\r\n",
+                "com.music.app"));
+        // BYD-Medien-Center am Surf (04.11.): zwei Start-Einträge, Medien vor Radio
+        assertEquals("com.byd.mediacenter/.main.MediaActivity", AppLauncher.komponenteAusShell(
+                "2 activities found:\n  Activity #0:\n    priority=0 preferredOrder=0 match=0x108000\n"
+                        + "    com.byd.mediacenter/.main.MediaActivity\n  Activity #1:\n"
+                        + "    com.byd.mediacenter/.radio.view.RadioActivity\n",
+                "com.byd.mediacenter"));
+        // BYD-Spotify (Automotive-SDK, 04.11. am Surf): keine Start-Activity
+        assertEquals(null, AppLauncher.komponenteAusShell("No activity found\n", "com.spotify.music"));
+        assertEquals(null, AppLauncher.komponenteAusShell("No activities found\n", "com.spotify.music"));
+        // Präfix eines anderen Pakets zählt nicht
+        assertEquals(null, AppLauncher.komponenteAusShell("com.music.application/.Main\n", "com.music.app"));
+        assertEquals(null, AppLauncher.komponenteAusShell(null, "com.music.app"));
+    }
+
+    @Test
+    public void medienHostIstNurDasBydMedienCenter() {
+        assertEquals(1, AppLauncher.MEDIEN_HOSTS.length);
+        assertEquals("com.byd.mediacenter", AppLauncher.MEDIEN_HOSTS[0]);
+        assertEquals(null, AppLauncher.medienHostFuer("bad package"));
+    }
 }

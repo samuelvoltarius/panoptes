@@ -1342,6 +1342,7 @@ class MainActivity : AppCompatActivity() {
             try {
                 val s = client.summary()
                 val trafficValue = runCatching { client.traffic() }.getOrDefault(LauncherTraffic(0, 0))
+                val homeWunsch = runCatching { client.homeWunsch() }.getOrNull()
                 val a = runCatching { client.appearance() }.getOrDefault(LauncherAppearance("auto", "crystal"))
                 val now = System.currentTimeMillis()
                 if (now - lastUpdateFetch >= UPDATE_TAKT_MS) {
@@ -1356,12 +1357,42 @@ class MainActivity : AppCompatActivity() {
                         lastHistoryFetch = now
                     }
                 }
-                main.post { neueDaten(s, trafficValue, a, true) }
+                main.post { neueDaten(s, trafficValue, a, true); homeAbgleichen(homeWunsch) }
             } catch (_: Exception) {
                 main.post { neueDaten(null, LauncherTraffic(0, 0), appearance, false) }
             } finally {
                 refreshInFlight.set(false)
             }
+        }
+    }
+
+    private var homeFrageOffen = false
+
+    /**
+     * 0.1.38.7: Alias des Launchers dem Kern-Wunsch anpassen (nie bei unerreichbarem Kern) und, wenn der Schalter frisch an
+     * ist, groß fragen. „Ja“: der Kern setzt uns als Standard; „Nein“: Rückweg zum BYD-Startbildschirm.
+     */
+    private fun homeAbgleichen(w: HomeWunsch?) {
+        HomeAbgleich.aliasSoll(w, HomeSchalter.istAn(this))?.let { HomeSchalter.setze(this, it) }
+        if (HomeAbgleich.fragen(w, HomeSchalter.istAn(this)) && !homeFrageOffen && !isFinishing) {
+            homeFrageOffen = true
+            val d = AlertDialog.Builder(this).setTitle(R.string.home_frage_titel).setMessage(R.string.home_frage_text)
+                .setCancelable(false)
+                .setPositiveButton(R.string.home_behalten) { _, _ ->
+                    homeFrageOffen = false
+                    io.execute {
+                        val ok = client.homeBehalten()
+                        main.post { zeigeHinweis(getString(if (ok) R.string.home_ok else R.string.home_fehler)) }
+                    }
+                }
+                .setNegativeButton(R.string.home_nein) { _, _ ->
+                    homeFrageOffen = false
+                    io.execute { client.homeAus(); main.post { HomeSchalter.setze(this, false) } }
+                }.create()
+            d.setOnDismissListener { homeFrageOffen = false }
+            d.show()
+            d.getButton(AlertDialog.BUTTON_POSITIVE)?.apply { textSize = 22f; minHeight = ui.dp(72) }
+            d.getButton(AlertDialog.BUTTON_NEGATIVE)?.apply { textSize = 22f; minHeight = ui.dp(72) }
         }
     }
 
@@ -1476,7 +1507,7 @@ class MainActivity : AppCompatActivity() {
             luft.text = k?.stufe?.toString() ?: "—"
             (anAus.getChildAt(1) as? TextView)?.text = getString(if (k?.an == true) R.string.klima_ausschalten else R.string.klima_einschalten)
             stand.text = listOfNotNull(k?.innenC?.let { getString(R.string.klima_innen, nf1.format(it)) },
-                when (k?.an) { true -> getString(R.string.klima_an_ok); false -> getString(R.string.klima_aus_ok); null -> null }).joinToString(" · ")
+                when (k?.an) { true -> getString(R.string.klima_an_ok); false -> getString(R.string.klima_aus_ok); null -> fernText(k) }).joinToString(" · ")
         }
         zeichnen(); klimaFeldZeichnen = zeichnen
         zeigeOverlay(c, breit = false)
@@ -1552,6 +1583,28 @@ class MainActivity : AppCompatActivity() {
             return when (art) { 1 -> getString(R.string.stufe_heizen, zahl); -1 -> getString(R.string.stufe_kuehlen, zahl); else -> getString(R.string.stufe_neutral) }
         }
         return k.sollC?.let { "${nf1.format(it)}°" }
+    }
+
+    /**
+     * 0.1.38.7: Fernklima laut Befehl, nur wenn das Auto selbst nichts meldet (an == null). Nie „aus“, wenn wir es nicht wissen;
+     * der Text nennt immer „laut Befehl“.
+     */
+    private fun fernText(k: LauncherKlima?): String? {
+        if (k == null) return null
+        val zeit = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+        if (k.fernAktiv == true && k.fernGestartetMs != null && k.fernBisMs != null) {
+            // fern.stufe = Balkenstufe 1..17 (Mitte 9); im Text steht der Abstand zur Mitte (Stufe 12 -> Heizen Stufe 3)
+            val ks = Fahrsicherheit.klimaStufe(k.fernStufe)
+            val art = when {
+                ks == null -> ""
+                ks.first == 1 -> getString(R.string.fern_art_heizen, ks.second)
+                ks.first == -1 -> getString(R.string.fern_art_kuehlen, ks.second)
+                else -> getString(R.string.fern_art_neutral)
+            }
+            return getString(R.string.fern_laeuft, zeit.format(java.util.Date(k.fernGestartetMs)), zeit.format(java.util.Date(k.fernBisMs)), art)
+        }
+        if (k.fernAktiv == false && k.fernBeendetUmMs != null) return getString(R.string.fern_beendet, zeit.format(java.util.Date(k.fernBeendetUmMs)))
+        return null
     }
 
     /** Rückmeldung nach einem Klima-Tipp: neuer Wert in Klartext (REGEL 50+). */
@@ -1666,7 +1719,13 @@ class MainActivity : AppCompatActivity() {
         io.execute {
             val r = client.nebenOeffnen(p)
             if (r == NebenErgebnis.NICHT_TEILBAR) teilbarCache[p] = "nein"
-            main.post { if (r != NebenErgebnis.OK) nichtTeilbarFragen(p, r) }
+            main.post {
+                when (r) {
+                    NebenErgebnis.OK -> Unit
+                    NebenErgebnis.VOLLBILD -> zeigeHinweis(getString(R.string.neben_geht_nicht))
+                    else -> nichtTeilbarFragen(p, r)
+                }
+            }
         }
     }
 

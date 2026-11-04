@@ -58,7 +58,7 @@
         hg.id = 'pnReinigung';
         hg.setAttribute('role', 'dialog');
         hg.setAttribute('aria-modal', 'true');
-        hg.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#000;color:#fff;display:flex;'
+        hg.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;inset:0;z-index:2147483647;background:#000;color:#fff;display:flex;'
             + 'flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;'
             + 'touch-action:none;user-select:none;-webkit-user-select:none;padding:24px';
         var titel = document.createElement('div');

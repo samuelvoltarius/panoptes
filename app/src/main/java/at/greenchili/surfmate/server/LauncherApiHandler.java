@@ -169,6 +169,32 @@ public final class LauncherApiHandler {
                 HttpResponse.sendJson(out, 404, "{\"ok\":false,\"error\":\"unknown launcher endpoint\"}");
                 return true;
             }
+            // 0.1.38.7: Launcher als Standard-Startbildschirm. Lesen ist offen; „Behalten“ und „zurück zum BYD-Startbildschirm“
+            // nur von der Launcher-APK (Panoptes-Signatur). Der Wächter im Daemon setzt den Rückfall auch ohne Launcher durch.
+            if (cleanPath.equals(HOME_PFAD) && "GET".equals(method)) {
+                sendHome(out);
+                return true;
+            }
+            if (cleanPath.equals(HOME_PFAD + "/behalten") && "POST".equals(method)) {
+                if (!launcherDarf(out)) return true;
+                // „Behalten“: erst jetzt wird der Launcher Standard (set-home-activity), dann gilt der Totmann als erledigt.
+                String fehler = at.greenchili.surfmate.launcher.HomeWaechter.wunsch()
+                        ? at.greenchili.surfmate.appupdate.LauncherHome.alsStandardSetzen(
+                                at.greenchili.surfmate.appupdate.LauncherPaket.SHELL)
+                        : "schalter_aus";
+                boolean ok = fehler == null && at.greenchili.surfmate.launcher.HomeWaechter.setze(true, true);
+                HttpResponse.sendJson(out, new JSONObject().put("ok", ok)
+                        .put("fehler", fehler == null ? JSONObject.NULL : fehler).toString());
+                return true;
+            }
+            if (cleanPath.equals(HOME_PFAD + "/aus") && "POST".equals(method)) {
+                if (!launcherDarf(out)) return true;
+                String fehler = at.greenchili.surfmate.launcher.HomeWaechter.rueckfall(
+                        at.greenchili.surfmate.launcher.HomeWaechterRegel.Aktion.ZURUECK_SCHALTER_AUS, null);
+                HttpResponse.sendJson(out, new JSONObject().put("ok", fehler == null)
+                        .put("fehler", fehler == null ? JSONObject.NULL : fehler).toString());
+                return true;
+            }
             // Update-Karte im Launcher (Stufe 4): Stand von Panoptes und Launcher lesen, installieren nur vom Launcher.
             if (cleanPath.equals(UPDATE_PFAD) && "GET".equals(method)) {
                 sendUpdate(out);
@@ -222,6 +248,7 @@ public final class LauncherApiHandler {
 
     static final String KLIMA_PFAD = "/api/launcher/v1/klima";
     static final String UPDATE_PFAD = "/api/launcher/v1/update";
+    static final String HOME_PFAD = "/api/launcher/v1/home";
     static final String TACHO_NORMAL_PFAD = "/api/launcher/v1/tacho/normal";
     static final String LAUNCHER_PAKET = at.greenchili.surfmate.appupdate.LauncherPaket.PAKET;
     static final String LAYOUT_PFAD = "/api/launcher/v1/layout";
@@ -300,6 +327,17 @@ public final class LauncherApiHandler {
         BefehlsLog.grund(grund);
         HttpResponse.sendJson(out, 403, new JSONObject().put("ok", false).put("grund", grund).toString());
         return false;
+    }
+
+    /**
+     * {@code {gewuenscht, behalten, frage, totmannSekunden}}: Schalter „Launcher als Startbildschirm“ (Standard aus), ob
+     * der Nutzer „Behalten“ getippt hat, und ob der Launcher jetzt fragen soll (Schalter an, noch nicht bestätigt).
+     */
+    private static void sendHome(OutputStream out) throws Exception {
+        boolean w = at.greenchili.surfmate.launcher.HomeWaechter.wunsch();
+        boolean b = at.greenchili.surfmate.launcher.HomeWaechter.behalten();
+        HttpResponse.sendJson(out, new JSONObject().put("gewuenscht", w).put("behalten", b).put("frage", w && !b)
+                .put("totmannSekunden", at.greenchili.surfmate.launcher.HomeWaechterRegel.TOTMANN_MS / 1000).toString());
     }
 
     /** {@code {panoptes: <Updater-Status>, launcher: <Launcher-Stand>}}; ohne Updater {@code null} je Teil. */
@@ -1240,6 +1278,16 @@ public final class LauncherApiHandler {
             AppsApiHandler.handle("POST", "/api/apps/launch", fwd.toString(), puffer);
             String antwort = new String(puffer.toByteArray(), java.nio.charset.StandardCharsets.UTF_8);
             boolean ok = antwort.contains("\"success\":true");
+            if (!ok && antwort.contains("\"grund\":\"nicht_aufloesbar\"")) {
+                // 0.1.38.8 (Autotest 0.1.38.6, Spotify): nichts wurde angedockt → sauber im Vollbild öffnen statt Fehler
+                boolean voll = at.greenchili.surfmate.launcher.AppLauncher.launch(pkg, false);
+                BefehlsLog.ereignis(logName, voll ? "vollbild" : "fehler", null, null);
+                if (!voll) BefehlsLog.grund("nicht_aufloesbar");
+                HttpResponse.sendJson(out, voll
+                        ? "{\"success\":true,\"modus\":\"vollbild\",\"grund\":\"nicht_aufloesbar\"}"
+                        : "{\"success\":false,\"error\":\"nicht_aufloesbar\"}");
+                return;
+            }
             BefehlsLog.ereignis(logName, ok ? "ok" : "fehler", null, null);
             // Player-/Video-Activities in neuen Tasks (YouTube, Netflix, CarPlay) in den Secondary-Stack nachführen
             if (ok) at.greenchili.surfmate.launcher.AppLauncher.haltePaarImSplit(pkg,
@@ -1273,7 +1321,15 @@ public final class LauncherApiHandler {
             String theme = app.optString("theme", "auto");
             // modus: Hell/Dunkel wie die Panoptes-Weboberfläche (appearance.theme dark|light|auto,
             // Standard dark wie getAppearance()). Der Launcher zeichnet damit dieselben Tokens.
-            o.put("modus", modusPruefen(app.optString("theme", "dark")));
+            // 0.1.38.7: das Hell/Dunkel für das Auto-Display (anzeige.thema dark|light) geht vor dem Web-Thema
+            String modusQuelle = app.optString("theme", "dark");
+            try {
+                JSONObject an = at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig().optJSONObject("anzeige");
+                String at0 = an == null ? "" : an.optString("thema", "");
+                if ("dark".equals(at0) || "light".equals(at0)) modusQuelle = at0;
+            } catch (Throwable ignored) {
+            }
+            o.put("modus", modusPruefen(modusQuelle));
             if (!("polar".equals(theme) || "glacier".equals(theme)
                     || "ember".equals(theme) || "signal".equals(theme) || "auto".equals(theme))) {
                 theme = "auto";
@@ -1472,8 +1528,12 @@ public final class LauncherApiHandler {
             int umluft = LauncherKlimaBefehl.umluftStand(vd);
             o.put("lenkrad", lenkrad < 0 ? JSONObject.NULL : (Object) (lenkrad == 1));
             o.put("umluft", umluft < 0 ? JSONObject.NULL : (Object) (umluft == 1));
+            // 0.1.38.7: letzter Fern-Start laut Befehl (läuft noch / beendet), nie ein Messwert des Autos
+            JSONObject fern = at.greenchili.surfmate.byd.KlimaZustand.fernJson();
+            o.put("fern", fern == null ? JSONObject.NULL : fern);
             if (o.isNull("sollC") && o.isNull("tempStufe") && o.isNull("stufe") && o.isNull("innenC")
-                    && o.isNull("sitzFahrer") && o.isNull("sitzBeifahrer") && o.isNull("lenkrad") && o.isNull("umluft")) return JSONObject.NULL;
+                    && o.isNull("sitzFahrer") && o.isNull("sitzBeifahrer") && o.isNull("lenkrad") && o.isNull("umluft")
+                    && o.isNull("fern")) return JSONObject.NULL;
             return o;
         } catch (Throwable t) {
             return JSONObject.NULL;

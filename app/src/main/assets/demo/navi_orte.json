@@ -1,0 +1,23 @@
+{
+  "ok": true,
+  "orte": [
+    {
+      "kurz": "Wien",
+      "name": "Wien, Österreich",
+      "lat": 48.2082,
+      "lon": 16.3738
+    },
+    {
+      "kurz": "Wien Hauptbahnhof",
+      "name": "Wien Hauptbahnhof, Favoriten, Wien",
+      "lat": 48.1851,
+      "lon": 16.3767
+    },
+    {
+      "kurz": "St. Pölten",
+      "name": "St. Pölten, Niederösterreich",
+      "lat": 48.2047,
+      "lon": 15.6256
+    }
+  ]
+}

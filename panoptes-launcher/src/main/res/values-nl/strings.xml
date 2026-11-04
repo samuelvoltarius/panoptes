@@ -182,4 +182,16 @@
     <string name="komfort_neu">%1$s: %2$s</string>
     <string name="komfort_nichts_lesbar">Nog niets leesbaar. Zet de auto aan; functies zonder uitlezing staan hieronder.</string>
     <string name="klima_temp_unbekannt">Temperatuurbediening is voor dit automodel nog niet bevestigd. Ventilator en aan/uit werken wel.</string>
+    <string name="home_frage_titel">Panoptes Launcher als startscherm gebruiken?</string>
+    <string name="home_frage_text">De Home-toets opent dan deze launcher. Je kunt altijd terug naar het BYD-startscherm met de huisknop uiterst links in de dock.</string>
+    <string name="home_behalten">Ja, behouden</string>
+    <string name="home_nein">Nee, terug naar BYD</string>
+    <string name="home_ok">Klaar. De Home-toets opent nu deze launcher.</string>
+    <string name="home_fehler">Dat is niet gelukt. Het BYD-startscherm blijft.</string>
+    <!-- 0.1.38.7 Fernklima laut Befehl -->
+    <string name="fern_laeuft">Klimaat op afstand loopt (gestart %1$s, tot ongeveer %2$s%3$s) – volgens het commando, niet bevestigd door de auto</string>
+    <string name="fern_beendet">Klimaat op afstand beëindigd (%1$s)</string>
+    <string name="fern_art_heizen">, verwarmen stand %1$d</string>
+    <string name="fern_art_kuehlen">, koelen stand %1$d</string>
+    <string name="fern_art_neutral">, neutraal</string>
 </resources>

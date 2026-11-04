@@ -1752,6 +1752,19 @@ class WebViewFragment : Fragment() {
             setCaptureArmed(armed)
         }
 
+        /**
+         * Darstellung-Sync: die Web-Seite meldet den Kern-Wert anzeige.thema (dark|light|auto). Ungueltiges wird zu auto.
+         * Aendert er sich, wird das Thema sofort auf alle sichtbaren Seiten angewendet (Quelle bleibt eine).
+         */
+        @android.webkit.JavascriptInterface
+        fun setKernThema(v: String?) {
+            try {
+                if (at.greenchili.surfmate.ui.util.PreferencesManager.setKernThema(v)) {
+                    activity?.runOnUiThread { applyTheme(resolveActiveTheme()) }
+                }
+            } catch (ignored: Exception) { /* Prefs noch nicht bereit */ }
+        }
+
         @android.webkit.JavascriptInterface
         fun getAppTheme(): String {
             // Source-of-truth ordering — try the strongest signal first:
@@ -1768,6 +1781,13 @@ class WebViewFragment : Fragment() {
             // SYSTEM uiMode and ignored AppCompat overrides — picking Light
             // in the app left this returning "dark" until the OS itself
             // flipped, which is exactly the bug the user reported.
+            //
+            // 0.1.38.7 Darstellung-Sync: Der Kern-Wert anzeige.thema (dark|light, gespiegelt ueber setKernThema)
+            // geht vor allem Obigen; nur "auto" laesst die Native-Wahl gelten. So gibt es keine zwei Quellen mehr.
+            try {
+                val kern = at.greenchili.surfmate.ui.util.PreferencesManager.getKernThema()
+                if (kern != at.greenchili.surfmate.ui.util.KernThema.AUTO) return kern
+            } catch (ignored: Exception) { /* nicht initialisiert: weiter */ }
             try {
                 val pref = at.greenchili.surfmate.ui.util.PreferencesManager.getThemeMode()
                 when (pref) {
@@ -2228,6 +2248,10 @@ class WebViewFragment : Fragment() {
     }
 
     private fun resolveActiveTheme(): String {
+        try {
+            val kern = at.greenchili.surfmate.ui.util.PreferencesManager.getKernThema()
+            if (kern != at.greenchili.surfmate.ui.util.KernThema.AUTO) return kern
+        } catch (ignored: Exception) { /* weiter mit Native-Wahl */ }
         try {
             val pref = at.greenchili.surfmate.ui.util.PreferencesManager.getThemeMode()
             when (pref) {

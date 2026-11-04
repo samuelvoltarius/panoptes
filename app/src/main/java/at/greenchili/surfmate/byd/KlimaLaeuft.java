@@ -22,11 +22,11 @@ public final class KlimaLaeuft {
     public static final String QUELLE_AUTO = "auto", QUELLE_CLOUD = "cloud";
 
     /**
-     * Gemessene {@code airRunState}-Werte. <b>Leer = ungemessen</b> (Stand 29.10.2026). Erst nach einem Lauf aus
-     * PLAN_0128 §4 mit Datum eintragen, z. B. {@code {1}} – nie raten.
+     * Gemessene {@code airRunState}-Werte. <b>Leer = ungemessen</b>. „läuft“ = 1 (einmal gemessen am 04.11.2026 beim Fernklima, Projektinhaber
+     * sah die Heizung laufen); „aus“ ist ungemessen und bleibt leer, bis ein Lauf aus PLAN_0128 §4 es mit Datum belegt – nie raten.
      */
-    static final int[] AIR_RUN_LAEUFT = {};
-    static final int[] AIR_RUN_AUS = {};
+    static final int[] AIR_RUN_LAEUFT = {1};   // gemessen 04.11.2026 16:52:10: Fernklima Heizen Stufe 3 lief, Log „Cloud-Klima (nach Befehl) airRunState=1“
+    static final int[] AIR_RUN_AUS = {};       // „aus“ ist NOCH NICHT gemessen: nie aus dem Fehlen von 1 oder aus 0 schließen
 
     /** Cloud-Wert älter als das gilt nicht als Beleg (BYD liefert bei schlafendem Auto alte Stände). */
     public static final long CLOUD_MAX_ALTER_MS = 5 * 60_000L;

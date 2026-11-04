@@ -47,6 +47,27 @@ class PanoptesClient(private val baseUrl: String = "http://127.0.0.1:8180") {
 
     fun update(): UpdateStand = LauncherContract.parseUpdate(get("/api/launcher/v1/update"))
 
+    /** 0.1.38.7: Wunsch „Launcher als Startbildschirm“ aus dem Kern; null = nicht erreichbar. */
+    fun homeWunsch(): HomeWunsch? = try {
+        HomeAbgleich.parse(get("/api/launcher/v1/home"))
+    } catch (_: Exception) {
+        null
+    }
+
+    /** „Behalten“: der Kern setzt den Launcher jetzt als Standard. true = geschafft. */
+    fun homeBehalten(): Boolean = try {
+        org.json.JSONObject(requestMitFehler("POST", "/api/launcher/v1/home/behalten", "{}", 20_000)).optBoolean("ok", false)
+    } catch (_: Exception) {
+        false
+    }
+
+    /** „Zurück zum BYD-Startbildschirm“: der Kern setzt den Standard zurück. true = geschafft. */
+    fun homeAus(): Boolean = try {
+        org.json.JSONObject(requestMitFehler("POST", "/api/launcher/v1/home/aus", "{}", 20_000)).optBoolean("ok", false)
+    } catch (_: Exception) {
+        false
+    }
+
     /** 0.1.38: Layout aus dem Kern; null = Kern nicht erreichbar oder Antwort unbrauchbar (dann gilt die lokale Kopie). */
     fun layoutHolen(): KernLayout? = try {
         LayoutAbgleich.parseKern(get("/api/launcher/v1/layout"))

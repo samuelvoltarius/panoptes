@@ -1,0 +1,83 @@
+{
+  "success": true,
+  "recordings": [
+    {
+      "id": "de30a0000000000000000000000000a2",
+      "filename": "SENTRY_00A2.mp4",
+      "available": true,
+      "storage": "INTERNAL",
+      "type": "sentry",
+      "cameraId": 2,
+      "timestamp": 1792555925000,
+      "size": 41943040,
+      "sizeFormatted": "40 MB",
+      "date": "",
+      "time": "",
+      "dateFormatted": "",
+      "timeFormatted": "",
+      "videoUrl": "/video/id/de30a0000000000000000000000000a2",
+      "thumbnailUrl": "/thumb/id/de30a0000000000000000000000000a2",
+      "heroThumbnailUrl": "/thumb/id/de30a0000000000000000000000000a2",
+      "deleteUrl": "/api/recordings/id/de30a0000000000000000000000000a2",
+      "eventUrl": "/api/events/id/de30a0000000000000000000000000a2",
+      "schemaVersion": 5,
+      "place": {
+        "short": "Wien",
+        "medium": "Wien, Österreich",
+        "displayName": "Wien, Österreich",
+        "countryCode": "AT",
+        "source": "demo"
+      },
+      "vehicleCount": 1,
+      "actors": [
+        {
+          "class": "car"
+        }
+      ],
+      "peakSeverity": "info",
+      "peakProximity": "near",
+      "durationMs": 8000
+    },
+    {
+      "id": "de30a0000000000000000000000000a1",
+      "filename": "SENTRY_00A1.mp4",
+      "available": true,
+      "storage": "INTERNAL",
+      "type": "sentry",
+      "cameraId": 0,
+      "timestamp": 1792528520000,
+      "size": 52428800,
+      "sizeFormatted": "50 MB",
+      "date": "",
+      "time": "",
+      "dateFormatted": "",
+      "timeFormatted": "",
+      "videoUrl": "/video/id/de30a0000000000000000000000000a1",
+      "thumbnailUrl": "/thumb/id/de30a0000000000000000000000000a1",
+      "heroThumbnailUrl": "/thumb/id/de30a0000000000000000000000000a1",
+      "deleteUrl": "/api/recordings/id/de30a0000000000000000000000000a1",
+      "eventUrl": "/api/events/id/de30a0000000000000000000000000a1",
+      "schemaVersion": 5,
+      "place": {
+        "short": "Wien",
+        "medium": "Wien, Österreich",
+        "displayName": "Wien, Österreich",
+        "countryCode": "AT",
+        "source": "demo"
+      },
+      "personCount": 1,
+      "actors": [
+        {
+          "class": "person"
+        }
+      ],
+      "peakSeverity": "warning",
+      "peakProximity": "close",
+      "durationMs": 8000
+    }
+  ],
+  "totalCount": 2,
+  "totalPages": 1,
+  "page": 1,
+  "pageSize": 50
+}

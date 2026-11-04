@@ -207,7 +207,9 @@ public class VehicleControlApiHandlerContractTest {
         assertTrue(source.contains("volume channel must be media, navigation, voice, phone, call, system, alarm, or ring"));
         assertTrue(source.contains("String zone = optionalAmbientZone(req)"));
         assertTrue(source.contains("climate.put(\"remoteClimateActive\", remoteClimateActive.booleanValue())"));
-        assertTrue(source.contains("(diLink5 || vehiclePoweredOn) && data.acStartState == 1"));
+        // 0.1.38.7: bei Zündung aus fehlt acOn (unbekannt) statt „false“; mit Beleg weiter nur, wenn das Auto an ist oder DiLink 5
+        assertTrue(source.contains("data.acStartState != BydVehicleData.UNAVAILABLE && (diLink5 || vehiclePoweredOn)"));
+        assertTrue(source.contains("climate.put(\"acOn\", data.acStartState == 1)"));
         assertTrue(source.contains(
                 "if (data.tempUnit != BydVehicleData.UNAVAILABLE)"));
         assertTrue(source.contains(

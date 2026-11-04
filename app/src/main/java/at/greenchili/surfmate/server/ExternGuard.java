@@ -207,6 +207,18 @@ public final class ExternGuard {
         return "POST".equals(method) && ((LAUNCHER_LAYOUT_PFAD + "/standard").equals(p) || LAUNCHER_STAND_PFAD.equals(p));
     }
 
+    /**
+     * 0.1.39 HA-Geräte (HA_VERTRAG v1.1 Teil D): nur Kopplungen der Art {@code homeassistant}, GET (Domänen +
+     * Freigaben) und POST (Kandidaten melden), dazu das Recht {@code geraete} ({@link #noetigesRecht}, Standard aus).
+     */
+    public static final String HA_GERAETE_PFAD = "/api/ha/v1/geraete";
+
+    static boolean haGeraeteErlaubt(String method, String pathOnly, String kopplungsArt) {
+        if (!"homeassistant".equals(kopplungsArt)) return false;
+        String p = normal(pathOnly);
+        return HA_GERAETE_PFAD.equals(p) && ("GET".equals(method) || "POST".equals(method));
+    }
+
     /** true, wenn die Anfrage eines gekoppelten Geräts abgelehnt werden muss. */
     public static boolean blocks(String method, String pathOnly) {
         return !erlaubt(method, pathOnly);
@@ -222,6 +234,7 @@ public final class ExternGuard {
         if (tachoErlaubt(method, pathOnly, kopplungsArt)) return false;
         if (launcherErlaubt(method, pathOnly, kopplungsArt)) return false;
         if (updateErlaubt(method, pathOnly, kopplungsArt)) return false;
+        if (haGeraeteErlaubt(method, pathOnly, kopplungsArt)) return false;
         return !handyErlaubt(method, pathOnly, kopplungsArt);
     }
 
@@ -267,6 +280,7 @@ public final class ExternGuard {
         }
         if (p.equals(TACHO_AUSWAHL) || p.equals(TACHO_NORMAL)) return at.greenchili.surfmate.auth.Kopplungen.RECHT_TACHO;
         if (p.equals(UNTERWEGS_ABLEHNEN)) return at.greenchili.surfmate.auth.Kopplungen.RECHT_ROUTE;
+        if (p.equals(HA_GERAETE_PFAD)) return at.greenchili.surfmate.auth.Kopplungen.RECHT_GERAETE;
         if (p.equals(LAUNCHER_LAYOUT_PFAD) || p.startsWith(LAUNCHER_LAYOUT_PFAD + "/") || p.equals(LAUNCHER_STAND_PFAD)) {
             return at.greenchili.surfmate.auth.Kopplungen.RECHT_LAUNCHER;
         }
@@ -299,6 +313,12 @@ public final class ExternGuard {
             boolean dateien = at.greenchili.surfmate.auth.Kopplungen.RECHT_DATEIEN.equals(recht);
             boolean launcher = at.greenchili.surfmate.auth.Kopplungen.RECHT_LAUNCHER.equals(recht);
             boolean route = at.greenchili.surfmate.auth.Kopplungen.RECHT_ROUTE.equals(recht);
+            boolean geraete = at.greenchili.surfmate.auth.Kopplungen.RECHT_GERAETE.equals(recht);
+            if (geraete) {
+                o.put("ok", false).put("grund", "nicht_erlaubt").put("recht", recht).put("text", Messages.text(
+                        "errors.geraete_recht_fehlt", "Geräte-Recht fehlt – in Panoptes unter Gekoppelte Geräte einschalten."));
+                return o;
+            }
             String key = route ? "errors.route_recht_fehlt" : launcher ? "errors.launcher_recht_fehlt" : dateien ? "dateien.recht_fehlt"
                     : standbild ? "errors.standbild_recht_fehlt" : "errors.kamera_recht_fehlt";
             String fallback = route

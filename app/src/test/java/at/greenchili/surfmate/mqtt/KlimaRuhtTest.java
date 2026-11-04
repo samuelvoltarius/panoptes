@@ -29,8 +29,9 @@ public class KlimaRuhtTest {
     @Test
     public void payloadNutztDieRegel() throws Exception {
         String q = Quelltext.lies(Paths.get("src/main/java/at/greenchili/surfmate/mqtt/MqttConnectionManager.java"));
-        assertTrue(q.contains("payload.put(\"ac_on\", klimaRuht ? 0 : vd.acStartState)"));
+        // 0.1.38.7: bei Zündung aus gilt „läuft“, wenn die frische Cloud-Rückmeldung es belegt; lokal 0 bleibt 0
+        assertTrue(q.contains("payload.put(\"ac_on\", cloudLaeuft ? 1 : klimaRuht ? 0 : vd.acStartState)"));
         assertTrue(q.contains("payload.put(\"ac_fan\", klimaRuht ? 0 : vd.acFanLevel)"));
-        assertTrue(q.contains("payload.put(\"climate_on\", klimaRuht ? 0 : vd.acStartState)"));
+        assertTrue(q.contains("payload.put(\"climate_on\", cloudLaeuft ? 1 : klimaRuht ? 0 : vd.acStartState)"));
     }
 }

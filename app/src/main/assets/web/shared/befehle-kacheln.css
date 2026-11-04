@@ -34,7 +34,8 @@ html[data-befehle="kacheln"] .vc-tyre-strip { visibility: hidden; }
     background: var(--sm-card, rgba(255, 255, 255, .045)); color: var(--on-surface, #e6f1f4);
     font: 600 15px/1.25 var(--family-body, 'Manrope', system-ui, sans-serif);
 }
-.pn-bk-oeffnen:hover, .pn-bk-oeffnen:focus-visible { border-color: var(--sm-aqua, #5FD6E6); outline: none; }
+.pn-bk-oeffnen:hover { border-color: var(--sm-aqua, #5FD6E6); outline: none; }
+.pn-bk-oeffnen:focus-visible { border-color: var(--sm-aqua, #5FD6E6); outline: none; }
 .pn-bk-symbol {
     -webkit-flex: none; flex: none; width: 38px; height: 38px; margin-bottom: 12px; border-radius: 11px;
     display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;

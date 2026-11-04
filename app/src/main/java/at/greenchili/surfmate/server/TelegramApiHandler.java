@@ -168,6 +168,11 @@ public class TelegramApiHandler {
         // Der Bot spricht die Sprache der App (LocaleManager), Standard Deutsch.
         response.put("language",            LocaleManager.get());
 
+        // 0.1.38.7: HTTP 409 beim Abruf = derselbe Bot wird gerade auch woanders abgerufen; dann kommt am Auto nichts an
+        long konfliktSeit = configured ? at.greenchili.surfmate.telegram.PollKonflikt.seit() : 0;
+        response.put("pollKonflikt", konfliktSeit > 0);
+        if (konfliktSeit > 0) response.put("pollKonfliktSeit", konfliktSeit);
+
         // Live pairing PIN (if a PIN flow is in-progress and unexpired).
         String pin = UnifiedTelegramConfig.getPairPin();
         long pinExpiry = UnifiedTelegramConfig.getPairPinExpiry();
@@ -247,6 +252,8 @@ public class TelegramApiHandler {
                 logger.warn("daemon launch after token save failed: " + e.getMessage());
             }
 
+            // 0.1.38.7: ein alter 409 (zweiter Abrufer) gehörte zum alten Schlüssel
+            at.greenchili.surfmate.telegram.PollKonflikt.zuruecksetzen();
             response.put("success", true);
             response.put("botInfo", botInfo);
             HttpResponse.sendJson(out, response.toString());
@@ -486,6 +493,7 @@ public class TelegramApiHandler {
     /** POST /api/telegram/clear — full wipe (token + bot info + owner). */
     private static void handleClear(OutputStream out) throws Exception {
         UnifiedTelegramConfig.clearAll();
+        at.greenchili.surfmate.telegram.PollKonflikt.zuruecksetzen();
 
         JSONObject response = new JSONObject();
         response.put("success", true);

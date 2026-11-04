@@ -434,7 +434,7 @@ public class VehicleControlAssetTest {
         String script = readRepositoryFile("app/src/main/assets/web/shared/vehicle-control.js");
 
         assertFalse(script.contains("location.reload();"));
-        assertTrue(script.contains("switchViewMode: function()"));
+        assertTrue(script.contains("switchViewMode: function(ausKern)"));   // 0.1.38.7: ausKern = Kern-Wert vom Auto-Display-Takt
         assertTrue(script.contains("_startImmersiveScene: function()"));
         // The paint row appears with the stage, not after the vendor download: its
         // presets are local, and the swatches stay inert until the scene exists.

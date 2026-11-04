@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "events": [
+    {
+      "t": 2000,
+      "class": "car",
+      "trend": "approaching"
+    }
+  ],
+  "durationMs": 8000
+}

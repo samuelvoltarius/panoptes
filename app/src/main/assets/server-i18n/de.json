@@ -24,6 +24,7 @@
     "standbild_recht_fehlt": "Standbild-Recht fehlt – in Panoptes unter Gekoppelte Geräte einschalten.",
     "launcher_recht_fehlt": "Launcher-Recht fehlt – in Panoptes unter Gekoppelte Geräte einschalten.",
     "route_recht_fehlt": "Route-Recht fehlt – in Panoptes unter Gekoppelte Geräte einschalten.",
+    "geraete_recht_fehlt": "Geräte-Recht fehlt – in Panoptes unter Gekoppelte Geräte einschalten.",
     "web_link_expired": "Der Link ist abgelaufen. Bitte in der App noch einmal öffnen.",
     "invalid_request_with_detail": "Die Anfrage passt nicht: {0}",
     "bydcloud_not_configured": "BYD-Konto ist nicht eingerichtet",
@@ -526,7 +527,7 @@
     },
     "router": {
       "unknown_command": "🤔 Den Befehl kenne ich nicht. Tipp unten auf *☰ Menü*, dann siehst du alles.",
-      "not_allowed": "🔒 Dieser Befehl ist ausgeschaltet. Du kannst ihn in Panoptes unter *System → Telegram-Meldungen → Fernbefehle* erlauben."
+      "not_allowed": "🔒 Dieser Befehl ist ausgeschaltet. Du kannst ihn in Panoptes unter *Regeln → Meldungen → Telegram-Meldungen → Fernbefehle* erlauben."
     },
     "daemon_names": {
       "camera": "Kamera-Dienst",
@@ -576,7 +577,7 @@
       "services": "/dienste – Welche Dienste laufen, starten/stoppen",
       "backup": "/sicherung – Einstellungen als Datei schicken (`/sicherung fahrten` mit Fahrtenbuch)",
       "help": "/hilfe – Diese Liste",
-      "some_locked": "🔒 Manche Befehle sind ausgeschaltet. Erlauben kannst du sie in Panoptes unter *System → Telegram-Meldungen*.",
+      "some_locked": "🔒 Manche Befehle sind ausgeschaltet. Erlauben kannst du sie in Panoptes unter *Regeln → Meldungen → Telegram-Meldungen*.",
       "footer": "_Panoptes {0}_",
       "menu": "/menue – Alle Knöpfe auf einen Blick",
       "updates": "/updates – Panoptes und Launcher aktualisieren"
@@ -679,11 +680,11 @@
       "unknown_action": "🤔 Mit diesem Knopf kann ich nichts anfangen."
     },
     "pair": {
-      "no_owner": "🔐 *Dieser Bot gehört noch niemandem.*\nÖffne in Panoptes *System → Telegram-Meldungen* und tippe auf „Koppeln“. Dann den Link öffnen oder hier `/koppeln 123456` mit deiner PIN schicken.",
+      "no_owner": "🔐 *Dieser Bot gehört noch niemandem.*\nÖffne in Panoptes *Regeln → Meldungen → Telegram-Meldungen* und tippe auf „Kopplung starten“. Dann den Link öffnen oder hier `/koppeln 123456` mit deiner PIN schicken.",
       "already_paired": "🔒 Dieser Bot ist schon mit jemand anderem gekoppelt.",
       "invalid_format": "🔢 Die PIN hat 6 Ziffern, zum Beispiel `/koppeln 123456`.",
-      "no_pin": "🔢 Es gibt gerade keine PIN. Hol dir in Panoptes unter *System → Telegram-Meldungen* eine neue.",
-      "expired": "⌛ Die PIN ist abgelaufen (sie gilt 10 Minuten). Hol dir in Panoptes eine neue.",
+      "no_pin": "🔢 Es gibt gerade keine PIN. Hol dir in Panoptes unter *Regeln → Meldungen → Telegram-Meldungen* eine neue.",
+      "expired": "⌛ Die PIN ist abgelaufen (sie gilt 10 Minuten). Hol dir in Panoptes unter *Regeln → Meldungen → Telegram-Meldungen* eine neue.",
       "invalid": "❌ Diese PIN passt nicht. Schau noch einmal in Panoptes nach.",
       "storage_error": "⚠️ Die Kopplung konnte am Auto nicht gespeichert werden. Bitte gleich noch einmal versuchen; klappt es wieder nicht, Panoptes am Auto neu starten.",
       "success": "✅ *Gekoppelt, {0}!*\nAb jetzt bekommst du hier die Meldungen deines Autos. /hilfe zeigt, was geht.",
@@ -793,7 +794,20 @@
       "v12_low": "🪫 Starterbatterie: {0} V – *schwach*",
       "temp": "🌡 Gerät: {0} °C",
       "temp_hot": "🔥 Gerät: {0} °C – sehr warm",
-      "quiet": "🌙 Ruhezeit {0}–{1}: nachts kommt nur Alarm"
+      "quiet": "🌙 Ruhezeit {0}–{1}: nachts kommt nur Alarm",
+      "fernklima_laeuft": "🌡 Fernklima läuft (gestartet {0}, bis ca. {1}{2}) – laut Befehl, vom Auto nicht bestätigt",
+      "fernklima_beendet": "🌡 Fernklima beendet ({0})",
+      "fern_heizen": ", Heizen Stufe {0}",
+      "fern_kuehlen": ", Kühlen Stufe {0}",
+      "fern_neutral": ", Neutral"
+    },
+    "home": {
+      "original_ok": "🏠 *Erledigt.* Der BYD-Startbildschirm ist wieder Standard. Der Panoptes Launcher bleibt als normale App im Auto.",
+      "original_fehler": "⚠️ Das hat nicht geklappt. Tippe am Display den Haus-Knopf im Launcher oder schalte den Schalter unter Display aus.",
+      "status_an": "Der Panoptes Launcher ist als Startbildschirm eingeschaltet. `/startbildschirm original` bringt den BYD-Startbildschirm zurück.",
+      "status_aus": "Der BYD-Startbildschirm ist aktiv. Den Panoptes Launcher kannst du am Display unter Display einschalten.",
+      "paket_an_ok": "✅ Der Panoptes Launcher ist wieder eingeschaltet. Startbildschirm bleibt der von BYD, bis du ihn selbst am Display umstellst.",
+      "paket_an_fehler": "⚠️ Der Panoptes Launcher ließ sich nicht einschalten. Am Display geht es unter Display → Panoptes Launcher."
     },
     "guard": {
       "title": "🛡 *Wächter*",
@@ -974,7 +988,7 @@
     },
     "menu": {
       "title": "🧭 *Was möchtest du tun?*\nTipp einfach auf einen Knopf.",
-      "locked": "🔒 Weitere Knöpfe kannst du in Panoptes unter *System → Telegram-Meldungen → Fernbefehle* einschalten.",
+      "locked": "🔒 Weitere Knöpfe kannst du in Panoptes unter *Regeln → Meldungen → Telegram-Meldungen → Fernbefehle* einschalten.",
       "more_title": "⋯ *Mehr*\nTipp einfach auf einen Knopf.",
       "btn_menu": "☰ Menü",
       "btn_status": "🚗 Wie geht’s dem Auto?",
@@ -2257,7 +2271,7 @@
     "telegram": {
       "parkingMessages": {
         "title": "Parknachricht in Telegram",
-        "help": "Schickt nach dem Abstellen eine Telegram-Nachricht mit der Position des Autos. Bei neuer Einrichtung aus; bestehende Einrichtungen behalten ihre bisherige Einstellung."
+        "help": "Schickt nach dem Abstellen eine Telegram-Nachricht mit der Position des Autos. Sobald du Telegram einrichtest, ist sie an; hier kannst du sie ausschalten."
       },
       "zurueckAmAuto": {
         "title": "Meldung „zurück am Auto“",
@@ -2289,6 +2303,26 @@
         "leicht": "Leicht",
         "voll": "Voll"
       },
+      "thema": {
+        "title": "Hell oder dunkel im Auto",
+        "help": "Gilt für den Bildschirm im Auto und den Launcher. Automatisch nimmt die Wahl aus den Android-Einstellungen der App.",
+        "auto": "Automatisch",
+        "dark": "Dunkel",
+        "light": "Hell"
+      },
+      "befehleAnsicht": {
+        "title": "Befehle-Ansicht",
+        "help": "Auf der Seite Steuerung: Automatisch richtet sich nach der Bildschirmbreite. Auto zeigt das Auto, Kacheln zeigt große Kacheln.",
+        "automatisch": "Automatisch",
+        "auto": "Auto zeigen",
+        "kacheln": "Kacheln"
+      },
+      "fahrzeugAnsicht": {
+        "title": "Fahrzeugseite",
+        "help": "Einfach zeigt nur die Bedienung. 3D lädt die 3D-Ansicht und kostet am Display spürbar Leistung.",
+        "lite": "Einfach",
+        "immersive": "3D"
+      },
       "bandGroesse": {
         "title": "Größe der Hinweise am Bildschirm",
         "help": "Gilt für Blitzer-Hinweise und „Reicht es noch?“. Groß ist auch über CarPlay bzw. Android Auto gut lesbar.",
@@ -2300,6 +2334,12 @@
         "help": "Wo der Hinweis oben am Bildschirm erscheint.",
         "oben_rechts": "Oben rechts",
         "oben_mitte": "Oben in der Mitte"
+      }
+    },
+    "launcher": {
+      "startbildschirm": {
+        "title": "Panoptes Launcher als Startbildschirm",
+        "help": "Mit „Home“ kommst du dann zum Panoptes Launcher statt zum BYD-Startbildschirm. Nach dem Einschalten fragt der Launcher, ob er bleiben soll. Tippst du nicht innerhalb von 5 Minuten auf „Behalten“, geht alles von selbst zurück. Zurück geht jederzeit: Haus-Knopf im Launcher, dieser Schalter oder Telegram „/startbildschirm original“. Der BYD-Startbildschirm bleibt im Auto und wird nie gelöscht."
       }
     },
     "kamera": {

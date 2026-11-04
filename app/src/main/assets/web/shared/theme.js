@@ -225,7 +225,63 @@
         },
 
         /** Re-apply the stored theme (e.g. after dynamic DOM changes). */
-        apply: function () { stamp(resolveEffective(readStoredTheme())); }
+        apply: function () { stamp(resolveEffective(readStoredTheme())); },
+
+        /**
+         * 0.1.38.7: Hell/Dunkel für das AUTO-DISPLAY aus dem Kern (anzeige.thema dark|light|auto). Der Wert wird an
+         * die Native-App gemeldet (AndroidBridge.setKernThema): dort geht dark/light an der Quelle vor der Wahl aus den
+         * Android-Einstellungen (getAppTheme/onPageFinished lesen ihn), nur auto lässt die App-Wahl gelten. Dadurch
+         * stempeln Seite und App denselben Wert, es gibt kein Gegenstempeln und kein Flackern.
+         */
+        kernAnwenden: function (v) {
+            if (v !== 'dark' && v !== 'light' && v !== 'auto') return;
+            var ziel = v;
+            if (IN_APP_WEBVIEW) {
+                try { window.AndroidBridge.setKernThema(v); } catch (e) {}
+                if (v === 'auto') {
+                    try { ziel = window.AndroidBridge.getAppTheme() === 'light' ? 'light' : 'dark'; } catch (e) { return; }
+                }
+            } else if (v === 'auto') {
+                return;
+            }
+            if (document.documentElement.getAttribute('data-theme') !== ziel) stamp(ziel);
+        },
+
+        /** Hell/Dunkel für das Auto-Display im Kern speichern (auch vom PC/Handy). Promise<boolean>, liest zurück. */
+        kernSetzen: function (value) {
+            if (value !== 'dark' && value !== 'light' && value !== 'auto') return Promise.resolve(false);
+            var FELD = 'anzeige.thema';
+            function lesen() {
+                return fetch('/api/einstellungen', { cache: 'no-store', credentials: 'same-origin' })
+                    .then(function (r) { return r.ok ? r.json() : null; })
+                    .then(function (d) {
+                        if (!d || !d.werte || !d.werte[FELD]) return null;
+                        return { etag: d.etag, wert: d.werte[FELD].wert };
+                    });
+            }
+            return lesen().then(function (r) {
+                if (!r) return false;
+                var w = {}; w[FELD] = value;
+                return fetch('/api/einstellungen', {
+                    method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ etag: r.etag, werte: w })
+                }).then(function () { return lesen(); }).then(function (n) {
+                    if (!n || n.wert !== value) return false;
+                    if (document.documentElement.getAttribute('data-android-app') !== null
+                            || /PanoptesDisplay/.test(navigator.userAgent || '')) { BYD.theme.kernAnwenden(value); }
+                    return true;
+                });
+            }).catch(function () { return false; });
+        },
+
+        /** Aktueller Kern-Wert für „Hell/Dunkel im Auto“ (dark|light|auto) oder null. */
+        kernLesen: function () {
+            // über die normale Einstellungs-Schnittstelle (geht auch vom PC/Handy aus, mit Login)
+            return fetch('/api/einstellungen', { cache: 'no-store', credentials: 'same-origin' })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (d) { return d && d.werte && d.werte['anzeige.thema'] ? d.werte['anzeige.thema'].wert : null; })
+                .catch(function () { return null; });
+        }
     };
 
     // ─── Step 5: floating theme picker ──────────────────────────────────────

@@ -2479,6 +2479,8 @@ public class TelegramBotDaemon {
                             : nextPollBackoffMs();
                 } else if (code == 409 || code == 401) {
                     pendingBackoffMs = POLL_TERMINAL_ERROR_MS;
+                    // 0.1.38.7: zweiter Abrufer mit demselben Schlüssel → telegram.html sagt es (PollKonflikt)
+                    if (code == 409) at.greenchili.surfmate.telegram.PollKonflikt.abruf(true, System.currentTimeMillis());
                 } else {
                     pendingBackoffMs = nextPollBackoffMs();
                 }
@@ -2526,6 +2528,7 @@ public class TelegramBotDaemon {
                 // Genuine success (2xx + ok) — only now is the transport AND the API
                 // call proven healthy, so clear the accumulated error backoff.
                 pollErrorBackoffMs = 0;
+                at.greenchili.surfmate.telegram.PollKonflikt.abruf(false, System.currentTimeMillis());
                 JSONArray updates = json.optJSONArray("result");
                 if (updates != null && updates.length() > 0) {
                     for (int i = 0; i < updates.length(); i++) {

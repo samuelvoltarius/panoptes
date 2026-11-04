@@ -135,6 +135,10 @@ public class SurveillanceCommandHandler implements TelegramCommandHandler {
         String chgLine = ChargeCommandHandler.chargingLine(chg, ctx);
         if (chgLine != null) sb.append(chgLine).append("\n");
 
+        // 0.1.38.7: Fernklima laut Befehl, sonst keine Zeile (nie „Klima aus“, wenn Panoptes es nicht weiß)
+        String fernLine = fernKlimaLine(data("GET_FERNKLIMA", ctx), ctx);
+        if (fernLine != null) sb.append(fernLine).append("\n");
+
         JSONObject v12 = data("GET_BATTERY_POWER", ctx);
         if (v12 != null && v12.optDouble("voltageVolts", 0) > 0) {
             String volts = String.format(locale(), "%.1f", v12.optDouble("voltageVolts"));
@@ -158,6 +162,33 @@ public class SurveillanceCommandHandler implements TelegramCommandHandler {
                 guardButtons(enabled, ctx)[0],
                 {{ctx.tr("buttons.camera"), "cmd:/kamera"},
                         {ctx.tr("buttons.location"), "cmd:/wo"}}});
+    }
+
+    /**
+     * 0.1.38.7: Zeile zum Fernklima aus {@code GET_FERNKLIMA} ({@code FernKlima.json}) oder null. „Läuft“ und „beendet“ stehen
+     * immer als „laut Befehl“ da, nie als Messwert des Autos.
+     */
+    static String fernKlimaLine(JSONObject f, CommandContext ctx) {
+        if (f == null || !f.has("aktiv")) return null;
+        java.text.SimpleDateFormat zeit = new java.text.SimpleDateFormat("HH:mm", locale());
+        if (f.optBoolean("aktiv", false)) {
+            String art = "";
+            int stufe = f.optInt("stufe", -1);
+            String a = f.isNull("art") ? "" : f.optString("art", "");
+            if (stufe >= 1 && stufe <= 17) {
+                // fern.stufe = Balkenstufe 1..17 (Mitte 9); im Text steht der Abstand zur Mitte: Stufe 12 -> Heizen Stufe 3
+                String n = String.valueOf(at.greenchili.surfmate.byd.KlimaStufe.textStufe(stufe));
+                if ("heizen".equals(a)) art = ctx.tr("status.fern_heizen", n);
+                else if ("kuehlen".equals(a)) art = ctx.tr("status.fern_kuehlen", n);
+            }
+            if ("neutral".equals(a)) art = ctx.tr("status.fern_neutral");
+            return ctx.tr("status.fernklima_laeuft", zeit.format(new java.util.Date(f.optLong("gestartet"))),
+                    zeit.format(new java.util.Date(f.optLong("bis"))), art);
+        }
+        if (f.optBoolean("beendet", false) && !f.isNull("beendetUm")) {
+            return ctx.tr("status.fernklima_beendet", zeit.format(new java.util.Date(f.optLong("beendetUm"))));
+        }
+        return null;
     }
 
     static Locale locale() {

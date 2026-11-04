@@ -37,7 +37,9 @@ public class DarstellungLeichtTest {
         // 0.1.38.4: Darstellung liegt unter Apps & Display → Display (Abschnitt „Aussehen“)
         String sys = read(WEB + "local/display.html");
         assertTrue(sys.contains("id=\"anzeigeWahl\""));
-        assertTrue(sys.contains("PanoptesDarstellung.waehler(ab)"));
+        // 0.1.38.7: getrennt in „Für das Auto-Display“ (Kern) und „Nur für dieses Gerät“ (lokal)
+        assertTrue(sys.contains("id=\"anzeigeWahlAuto\"") && sys.contains("darst.waehler(aa, 'auto')"));
+        assertTrue(sys.contains("darst.waehler(ab, 'geraet')"));
     }
 
     private static String read(String relativePath) throws Exception {

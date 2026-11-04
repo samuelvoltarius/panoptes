@@ -5477,6 +5477,8 @@
     "lnc_update": "Mettre à jour",
     "lnc_open": "Ouvrir",
     "lnc_remove": "Supprimer",
+    "lnc_enable": "Réactiver le launcher",
+    "lnc_disabled_hint": "Le Panoptes Launcher a été désactivé par sécurité. Le bouton le réactive. L'écran d'accueil BYD reste jusqu'à ce que vous changiez quelque chose vous-même.",
     "lnc_build": "Build {n}",
     "lnc_not_installed": "Non installé",
     "lnc_badge_installed": "Installé",
@@ -5504,6 +5506,12 @@
     "fremd_recht_standbild": "Une photo quand le gardien remarque quelque chose. Pas de vidéo.",
     "recht_wort_launcher": "Lanceur",
     "recht_info_launcher": "Configurer l’écran d’accueil de la voiture (disposition seulement, aucune commande à la voiture)",
+    "fremd_wort_geraete": "Appareils connectés",
+    "fremd_recht_geraete": "Home Assistant peut signaler ses appareils (interrupteurs, lumières, climat) à Panoptes. Panoptes les affiche seulement ; la commande s'active appareil par appareil.",
+    "fremd_geraete_confirm": "Home Assistant transmettra alors les noms et pièces de ses appareils à Panoptes. Ils restent dans la voiture. Activer ?",
+    "ha_geraete_titel": "Appareils signalés (affichage seul)",
+    "ha_geraete_leer": "Home Assistant n'a encore signalé aucun appareil.",
+    "ha_geraete_fehler": "Liste des appareils illisible.",
     "fremd_kamera_confirm": "Les enregistrements peuvent montrer des passants. Cet appareil pourra alors voir les enregistrements du gardien et les aperçus. Activer ?",
     "fremd_standbild_confirm": "Les photos peuvent montrer des passants. Cet appareil pourra alors récupérer une photo par événement du gardien – pas de vidéo, rien de plus de 15 minutes. Activer ?",
     "handy_wort_wallbox": "Wallbox",
@@ -5677,6 +5685,8 @@
     "paired": "Associé !",
     "pin_fail": "Impossible de lancer l'association.",
     "pin_gone": "Expiré – veuillez recommencer.",
+    "pin_invalid": "Ce code PIN n'est plus valable – veuillez en obtenir un nouveau.",
+    "poll_conflict": "Ce bot est actuellement utilisé ailleurs aussi (autre appareil ou programme). Arrêtez-le là-bas ou créez votre propre bot.",
     "pin_left": "Valable encore {time} minutes.",
     "quiet_from_to": "De – à",
     "quiet_hint": "Heure de la voiture. Peut dépasser minuit.",
@@ -5963,6 +5973,8 @@
     "fehler": "L’enregistrement a échoué. Le réglage n’a pas changé."
   },
   "darstellung": {
+    "auto_wirkt": "S'applique à l'écran de la voiture. La voiture le reprend en quelques secondes.",
+    "nur_hier": "S'applique seulement à cet appareil ou navigateur, pas dans la voiture.",
     "leicht_hinweis": "Léger : cartes en 2D, sans effets de flou ni animations continues. L’interface reste fluide dans la voiture.",
     "voll_hinweis": "Complet affiche la carte 3D, les effets et les animations. Sur l’écran de la voiture, cela coûte nettement en performance et peut saccader.",
     "geraet_auto": "S’applique à l’écran de la voiture.",
@@ -5971,6 +5983,8 @@
     "3d_laden": "Charger la vue 3D"
   },
   "startAnsicht": {
+    "auto_wirkt": "S'applique à l'écran de la voiture. La voiture le reprend en quelques secondes.",
+    "nur_hier": "S'applique seulement à cet appareil ou navigateur, pas dans la voiture.",
     "fehler": "L’enregistrement a échoué. La vue d’accueil reste inchangée.",
     "geraet_auto": "S’applique à l’écran de la voiture.",
     "geraet": "S’applique uniquement à cet appareil ou navigateur."
@@ -6840,7 +6854,13 @@
     }
   },
   "klima_laeuft": {
-    "unbestaetigt": "Démarré – la voiture ne l’a pas encore confirmé."
+    "unbestaetigt": "Démarré – la voiture ne l’a pas encore confirmé.",
+    "fern_laeuft": "Climatisation à distance en cours (démarrée à {von}, jusqu’à environ {bis}{art}) – selon la commande, non confirmée par la voiture",
+    "fern_beendet": "Climatisation à distance terminée ({um})",
+    "zuendung_aus": "Climatisation : état inconnu (contact coupé)",
+    "art_heizen": ", chauffage niveau {n}",
+    "art_kuehlen": ", refroidissement niveau {n}",
+    "art_neutral": ", neutre"
   },
   "abfahrt_klima": {
     "title": "Au chaud au départ",
@@ -7073,6 +7093,23 @@
     "nicht_aufloesbar": "Le lien court n’a pas pu être résolu. Partagez le lien long."
   },
   "display": {
+    "befehle_titel": "Vue des commandes",
+    "befehle_hilfe": "Sur la page Commandes : Automatique suit la largeur de l'écran. Voiture montre la voiture, Tuiles montre de grandes tuiles.",
+    "befehle_automatisch": "Automatique",
+    "befehle_auto": "Montrer la voiture",
+    "befehle_kacheln": "Tuiles",
+    "fahrzeug_titel": "Page du véhicule",
+    "fahrzeug_hilfe": "Simple n'affiche que les commandes. 3D charge la vue 3D et coûte de la performance à l'écran.",
+    "fahrzeug_lite": "Simple",
+    "fahrzeug_immersive": "3D",
+    "fuer_auto_titel": "Pour l'écran de la voiture",
+    "fuer_auto_hilfe": "C'est enregistré dans la voiture. Vous pouvez aussi le modifier depuis un PC ou un téléphone. La voiture le reprend en quelques secondes.",
+    "nur_geraet_titel": "Seulement pour cet appareil",
+    "nur_geraet_hilfe": "Cela reste uniquement dans ce navigateur. Rien ne change dans la voiture.",
+    "nur_geraet_sprache": "La langue et les vues mémorisées (onglets, groupes, périodes, avis masqués) ne valent que pour cet appareil. Elles ne sont pas transmises à la voiture.",
+    "thema_auto_titel": "Clair ou sombre dans la voiture",
+    "thema_auto_hilfe": "Automatique reprend le choix des réglages Android de l'app.",
+    "thema_fehler": "L'enregistrement a échoué. Clair ou sombre dans la voiture est inchangé.",
     "apps_titel": "Désactiver des apps",
     "apps_an": "Réactiver",
     "apps_aus": "Désactiver",

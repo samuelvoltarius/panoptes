@@ -23,10 +23,18 @@
 
     function px(v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; }
 
+    // 0.1.38.7: Text direkt im Flex-Container ist auch ein Flex-Element (z. B. Symbol + „22 km“). Er kann keinen
+    // Rand tragen, deshalb bekommt ihn das Nachbar-Element; reine Leerzeichen zählen nicht.
     function sichtbareKinder(el) {
         var k = [];
-        for (var i = 0; i < el.children.length; i++) {
-            var c = el.children[i], cs = getComputedStyle(c);
+        for (var i = 0; i < el.childNodes.length; i++) {
+            var c = el.childNodes[i];
+            if (c.nodeType === 3) {
+                if (/\S/.test(c.nodeValue)) k.push(c);
+                continue;
+            }
+            if (c.nodeType !== 1) continue;
+            var cs = getComputedStyle(c);
             if (cs.display === 'none' || cs.position === 'absolute' || cs.position === 'fixed') continue;
             k.push(c);
         }
@@ -50,15 +58,20 @@
         var kinder = sichtbareKinder(el);
         if (kinder.length < 2) return;
         var dir = cs.flexDirection, wrap = cs.flexWrap !== 'nowrap';
+        var spalte = dir === 'column' || dir === 'column-reverse';
+        var vor = spalte ? (dir === 'column' ? 'Top' : 'Bottom') : (dir === 'row' ? 'Left' : 'Right');
+        var nach = vor === 'Top' ? 'Bottom' : vor === 'Bottom' ? 'Top' : vor === 'Left' ? 'Right' : 'Left';
+        var abstand = spalte ? rg : cg;
         for (var i = 0; i < kinder.length; i++) {
-            var c = kinder[i];
-            if (dir === 'column' || dir === 'column-reverse') {
-                if (i > 0 && rg) addRand(c, dir === 'column' ? 'Top' : 'Bottom', rg);
-            } else if (wrap) {
+            var c = kinder[i], text = c.nodeType === 3;
+            if (wrap && !spalte) {
+                if (text) continue;
                 if (cg && i < kinder.length - 1) addRand(c, dir === 'row' ? 'Right' : 'Left', cg);
                 if (rg) addRand(c, 'Bottom', rg);
-            } else if (i > 0 && cg) {
-                addRand(c, dir === 'row' ? 'Left' : 'Right', cg);
+            } else if (i > 0 && abstand) {
+                // Abstand vor diesem Element; ist es Text, trägt das Element davor den Rand auf der anderen Seite
+                if (!text) addRand(c, vor, abstand);
+                else if (kinder[i - 1].nodeType === 1) addRand(kinder[i - 1], nach, abstand);
             }
         }
     }

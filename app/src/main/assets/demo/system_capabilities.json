@@ -1,0 +1,15 @@
+{
+  "success": true,
+  "klima": {
+    "stufe": 1,
+    "anzeige": "grad"
+  },
+  "update": {
+    "fern": 1
+  },
+  "bruecke": {
+    "live": 0
+  },
+  "push": {},
+  "demo": true
+}

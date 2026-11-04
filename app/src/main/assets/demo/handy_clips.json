@@ -1,0 +1,51 @@
+{
+  "ok": true,
+  "v": 1,
+  "seite": 0,
+  "mehr": false,
+  "clips": [
+    {
+      "id": "de30a0000000000000000000000000a2",
+      "typ": "aufnahme",
+      "art": "sentry",
+      "zeit": 1792555925000,
+      "groesse": 41943040,
+      "behalten": false,
+      "weg": "direkt",
+      "videoUrl": "/video/id/de30a0000000000000000000000000a2",
+      "vorschauUrl": "/thumb/id/de30a0000000000000000000000000a2"
+    },
+    {
+      "id": "de30a0000000000000000000000000a1",
+      "typ": "aufnahme",
+      "art": "sentry",
+      "zeit": 1792528520000,
+      "groesse": 52428800,
+      "behalten": false,
+      "weg": "direkt",
+      "videoUrl": "/video/id/de30a0000000000000000000000000a1",
+      "vorschauUrl": "/thumb/id/de30a0000000000000000000000000a1"
+    },
+    {
+      "id": "de30a0000000000000000000000000b1",
+      "typ": "aufnahme",
+      "art": "ereignis",
+      "zeit": 1792476250000,
+      "groesse": 31457280,
+      "behalten": false,
+      "weg": "direkt",
+      "videoUrl": "/video/id/de30a0000000000000000000000000b1",
+      "vorschauUrl": "/thumb/id/de30a0000000000000000000000000b1",
+      "ausloeser": {
+        "v": 1,
+        "zeit": 1792476250000,
+        "art": "bremsen",
+        "quelle": "tempo+sensor",
+        "gang": "D",
+        "kmh": 48.0
+      }
+    }
+  ],
+  "scheinMinuten": 30,
+  "ereignisErlaubt": true
+}

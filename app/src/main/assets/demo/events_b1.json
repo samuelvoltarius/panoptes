@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "events": [
+    {
+      "t": 2100,
+      "art": "bremsen"
+    }
+  ],
+  "durationMs": 6000
+}

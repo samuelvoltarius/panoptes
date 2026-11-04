@@ -95,7 +95,10 @@ class LauncherKomfortTest {
             namen.forEach { assertTrue("$sprache $it", s.contains("name=\"$it\"")) }
         }
         val gradle = File("build.gradle.kts").readText()
-        assertTrue(gradle.contains("versionCode = 6") && gradle.contains("versionName = \"0.1.38.6\""))
+        // Komfort kam mit vC 6 / 0.1.38.6; spätere Versionen dürfen nur höher zählen (0.1.38.7: vC 7).
+        val vc = Regex("versionCode = (\\d+)").find(gradle)!!.groupValues[1].toInt()
+        assertTrue("versionCode $vc", vc >= 6)
+        assertTrue(Regex("versionName = \"0\\.1\\.38\\.\\d+\"").containsMatchIn(gradle))
     }
 
     @Test

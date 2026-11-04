@@ -182,4 +182,16 @@
     <string name="komfort_neu">%1$s: %2$s</string>
     <string name="komfort_nichts_lesbar">Noch nichts lesbar. Auto einschalten; Funktionen ohne Anzeige stehen darunter.</string>
     <string name="klima_temp_unbekannt">Die Temperatur-Bedienung ist für dieses Automodell noch nicht bestätigt. Gebläse und An/Aus gehen weiter.</string>
+    <string name="home_frage_titel">Panoptes Launcher als Startbildschirm?</string>
+    <string name="home_frage_text">Mit „Home“ kommst du dann hierher. Zurück zum BYD-Startbildschirm geht jederzeit mit dem Haus-Knopf ganz links im Dock.</string>
+    <string name="home_behalten">Ja, behalten</string>
+    <string name="home_nein">Nein, zurück zu BYD</string>
+    <string name="home_ok">Fertig. „Home“ öffnet jetzt diesen Launcher.</string>
+    <string name="home_fehler">Das hat nicht geklappt. Der BYD-Startbildschirm bleibt.</string>
+    <!-- 0.1.38.7 Fernklima laut Befehl -->
+    <string name="fern_laeuft">Fernklima läuft (gestartet %1$s, bis ca. %2$s%3$s) – laut Befehl, vom Auto nicht bestätigt</string>
+    <string name="fern_beendet">Fernklima beendet (%1$s)</string>
+    <string name="fern_art_heizen">, Heizen Stufe %1$d</string>
+    <string name="fern_art_kuehlen">, Kühlen Stufe %1$d</string>
+    <string name="fern_art_neutral">, Neutral</string>
 </resources>

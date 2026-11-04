@@ -1,0 +1,100 @@
+{
+  "aktiv": true,
+  "stufe": "passt",
+  "prognoseProzent": 33,
+  "istProzent": 55,
+  "sollProzent": 53.4,
+  "delta": 1.6,
+  "faktor": 0.97,
+  "reserve": 10,
+  "naechsterStopp": {
+    "name": "Wien",
+    "km": 40.0,
+    "istZiel": true
+  },
+  "verlauf": [
+    {
+      "km": 0.0,
+      "soll": 52.0,
+      "ist": 52.6
+    },
+    {
+      "km": 10.8,
+      "soll": 48.4,
+      "ist": 49.0
+    },
+    {
+      "km": 21.7,
+      "soll": 44.7,
+      "ist": 45.3
+    },
+    {
+      "km": 32.5,
+      "soll": 41.1,
+      "ist": 41.7
+    },
+    {
+      "km": 43.4,
+      "soll": 37.4,
+      "ist": 38.0
+    },
+    {
+      "km": 54.2,
+      "soll": 33.8,
+      "ist": 34.4
+    },
+    {
+      "km": 65.1,
+      "soll": 30.1,
+      "ist": 31.3
+    },
+    {
+      "km": 75.9,
+      "soll": 26.5,
+      "ist": 27.7
+    },
+    {
+      "km": 86.8,
+      "soll": 22.9,
+      "ist": 24.1
+    },
+    {
+      "km": 97.6,
+      "soll": 19.2,
+      "ist": 20.4
+    },
+    {
+      "km": 108.4,
+      "soll": 15.6,
+      "ist": 16.8
+    },
+    {
+      "km": 119.3,
+      "soll": 55.2,
+      "ist": 56.8
+    },
+    {
+      "km": 130.1,
+      "soll": 50.4,
+      "ist": 52.0
+    },
+    {
+      "km": 141.0,
+      "soll": 45.5
+    },
+    {
+      "km": 151.8,
+      "soll": 40.7
+    },
+    {
+      "km": 162.7,
+      "soll": 35.8
+    },
+    {
+      "km": 173.5,
+      "soll": 31.0
+    }
+  ],
+  "neuPlanen": null,
+  "demo": true
+}

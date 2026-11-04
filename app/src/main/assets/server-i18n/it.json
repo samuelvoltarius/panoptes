@@ -30,6 +30,7 @@
     "standbild_recht_fehlt": "Manca il permesso immagine – attivalo in Panoptes in Dispositivi collegati.",
     "launcher_recht_fehlt": "Manca il permesso launcher – attivalo in Panoptes in Dispositivi collegati.",
     "route_recht_fehlt": "Manca il permesso percorso – attivalo in Panoptes in Dispositivi collegati.",
+    "geraete_recht_fehlt": "Manca il permesso dispositivi – attivalo in Panoptes in Dispositivi collegati.",
     "web_link_expired": "Il link è scaduto. Aprilo di nuovo nell'app.",
     "invalid_request_with_detail": "La richiesta non è valida: {0}",
     "bydcloud_not_configured": "L'account BYD non è configurato",
@@ -497,11 +498,11 @@
       "paired": "👋 *Ciao, sono Panoptes.*\nTi avviso quando succede qualcosa all’auto. Il pulsante *☰ Menu* ora è sempre in basso."
     },
     "pair": {
-      "no_owner": "🔐 *Questo bot non ha ancora un proprietario.*\nIn Panoptes apri *Sistema → Avvisi Telegram* e tocca «Abbina». Poi apri il link, oppure invia qui `/pair 123456` con il tuo PIN.",
+      "no_owner": "🔐 *Questo bot non ha ancora un proprietario.*\nIn Panoptes apri *Regole → Avvisi → Avvisi Telegram* e tocca «Avvia abbinamento». Poi apri il link, oppure invia qui `/pair 123456` con il tuo PIN.",
       "already_paired": "🔒 Questo bot è già abbinato a qualcun altro.",
       "invalid_format": "🔢 Il PIN ha 6 cifre, ad esempio `/pair 123456`.",
-      "no_pin": "🔢 Al momento non c'è nessun PIN. Chiedine uno nuovo in Panoptes in *Sistema → Avvisi Telegram*.",
-      "expired": "⌛ Quel PIN è scaduto (dura 10 minuti). Chiedine uno nuovo in Panoptes.",
+      "no_pin": "🔢 Al momento non c'è nessun PIN. Chiedine uno nuovo in Panoptes in *Regole → Avvisi → Avvisi Telegram*.",
+      "expired": "⌛ Quel PIN è scaduto (dura 10 minuti). Chiedine uno nuovo in Panoptes in *Regole → Avvisi → Avvisi Telegram*.",
       "invalid": "❌ Questo PIN non corrisponde. Ricontrollalo in Panoptes.",
       "storage_error": "⚠️ L'auto non è riuscita a salvare l'abbinamento. Riprova subito; se non funziona di nuovo, riavvia Panoptes sull'auto.",
       "success": "✅ *Abbinato, {0}!*\nD’ora in poi gli avvisi della tua auto arriveranno qui. /help mostra cosa puoi fare.",
@@ -512,7 +513,7 @@
     },
     "router": {
       "unknown_command": "🤔 Non conosco questo comando. Tocca *☰ Menu* in basso per vedere tutto.",
-      "not_allowed": "🔒 Questo comando è disattivato. Puoi consentirlo in Panoptes in *Sistema → Avvisi Telegram → Comandi remoti*."
+      "not_allowed": "🔒 Questo comando è disattivato. Puoi consentirlo in Panoptes in *Regole → Avvisi → Avvisi Telegram → Comandi remoti*."
     },
     "help": {
       "title": "🧭 *Cosa puoi inviarmi*",
@@ -530,7 +531,7 @@
       "services": "/services – Quali servizi sono attivi, avviali/fermali",
       "backup": "/backup – Invia le tue impostazioni come file (`/backup trips` aggiunge il diario di viaggio)",
       "help": "/help – Questo elenco",
-      "some_locked": "🔒 Alcuni comandi sono disattivati. Puoi consentirli in Panoptes in *Sistema → Avvisi Telegram*.",
+      "some_locked": "🔒 Alcuni comandi sono disattivati. Puoi consentirli in Panoptes in *Regole → Avvisi → Avvisi Telegram*.",
       "footer": "_Panoptes {0}_",
       "menu": "/menue – Tutti i pulsanti a colpo d’occhio",
       "updates": "/updates – Aggiornare Panoptes e il launcher"
@@ -558,7 +559,20 @@
       "v12_low": "🪫 Batteria da 12 V: {0} V – *debole*",
       "temp": "🌡 Unità centrale: {0} °C",
       "temp_hot": "🔥 Unità centrale: {0} °C – molto calda",
-      "quiet": "🌙 Ore di silenzio {0}–{1}: di notte solo allarmi"
+      "quiet": "🌙 Ore di silenzio {0}–{1}: di notte solo allarmi",
+      "fernklima_laeuft": "🌡 Clima da remoto in corso (avviato alle {0}, fino alle {1} circa{2}) – secondo il comando, non confermato dall’auto",
+      "fernklima_beendet": "🌡 Clima da remoto terminato ({0})",
+      "fern_heizen": ", riscaldamento livello {0}",
+      "fern_kuehlen": ", raffreddamento livello {0}",
+      "fern_neutral": ", neutro"
+    },
+    "home": {
+      "original_ok": "🏠 *Fatto.* La schermata iniziale BYD è di nuovo quella predefinita. Il Panoptes Launcher resta nell'auto come app normale.",
+      "original_fehler": "⚠️ Non ha funzionato. Tocca il tasto casa del launcher sul display o disattiva l'interruttore sotto Display.",
+      "status_an": "Il Panoptes Launcher è attivo come schermata iniziale. `/startbildschirm original` ripristina la schermata iniziale BYD.",
+      "status_aus": "La schermata iniziale BYD è attiva. Puoi attivare il Panoptes Launcher sul display sotto Display.",
+      "paket_an_ok": "✅ Il Panoptes Launcher è di nuovo attivo. La schermata iniziale BYD resta quella predefinita finché non la cambi tu stesso sul display.",
+      "paket_an_fehler": "⚠️ Non è stato possibile attivare il Panoptes Launcher. Sul display si fa sotto Display → Panoptes Launcher."
     },
     "guard": {
       "title": "🛡 *Guardiano*",
@@ -980,7 +994,7 @@
     },
     "menu": {
       "title": "🧭 *Cosa vuoi fare?*\nTocca semplicemente un pulsante.",
-      "locked": "🔒 Puoi attivare altri pulsanti in Panoptes in *Sistema → Messaggi Telegram → Comandi a distanza*.",
+      "locked": "🔒 Puoi attivare altri pulsanti in Panoptes in *Regole → Avvisi → Avvisi Telegram → Comandi a distanza*.",
       "more_title": "⋯ *Altro*\nTocca semplicemente un pulsante.",
       "btn_menu": "☰ Menu",
       "btn_status": "🚗 Come sta l’auto?",
@@ -2263,7 +2277,7 @@
     "telegram": {
       "parkingMessages": {
         "title": "Messaggio di parcheggio su Telegram",
-        "help": "Dopo il parcheggio invia un messaggio Telegram con la posizione dell’auto. Disattivato nelle nuove configurazioni; quelle esistenti mantengono l’impostazione precedente."
+        "help": "Dopo il parcheggio invia un messaggio Telegram con la posizione dell’auto. È attivo non appena configuri Telegram; qui puoi disattivarlo."
       },
       "zurueckAmAuto": {
         "title": "Messaggio “di nuovo all’auto”",
@@ -2295,6 +2309,26 @@
         "leicht": "Leggera",
         "voll": "Completa"
       },
+      "thema": {
+        "title": "Chiaro o scuro in auto",
+        "help": "Vale per lo schermo in auto e per il launcher. Automatico usa la scelta delle impostazioni Android dell'app.",
+        "auto": "Automatico",
+        "dark": "Scuro",
+        "light": "Chiaro"
+      },
+      "befehleAnsicht": {
+        "title": "Vista dei comandi",
+        "help": "Nella pagina Comandi: Automatico segue la larghezza dello schermo. Auto mostra l'auto, Riquadri mostra grandi riquadri.",
+        "automatisch": "Automatico",
+        "auto": "Mostra l'auto",
+        "kacheln": "Riquadri"
+      },
+      "fahrzeugAnsicht": {
+        "title": "Pagina del veicolo",
+        "help": "Semplice mostra solo i comandi. 3D carica la vista 3D e costa prestazioni sul display.",
+        "lite": "Semplice",
+        "immersive": "3D"
+      },
       "bandGroesse": {
         "title": "Dimensione degli avvisi sullo schermo",
         "help": "Vale per gli avvisi autovelox e «Basta ancora?». Grande si legge bene anche tramite CarPlay o Android Auto.",
@@ -2306,6 +2340,12 @@
         "help": "Dove compare l’avviso in alto sullo schermo.",
         "oben_rechts": "Angolo superiore destro",
         "oben_mitte": "Centro superiore"
+      }
+    },
+    "launcher": {
+      "startbildschirm": {
+        "title": "Panoptes Launcher come schermata iniziale",
+        "help": "Con Home si arriva poi al Panoptes Launcher invece che alla schermata iniziale BYD. Dopo l'attivazione il launcher chiede se deve restare. Se non tocchi Mantieni entro 5 minuti, tutto torna da solo. Si può tornare indietro in ogni momento: tasto casa nel launcher, questo interruttore o Telegram \"/startbildschirm original\". La schermata iniziale BYD resta nell'auto e non viene mai cancellata."
       }
     },
     "kamera": {

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "events": [
+    {
+      "t": 1500,
+      "class": "person",
+      "trend": "approaching"
+    },
+    {
+      "t": 4200,
+      "class": "person",
+      "trend": "leaving"
+    }
+  ],
+  "durationMs": 8000
+}

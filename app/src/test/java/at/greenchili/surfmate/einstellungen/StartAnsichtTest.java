@@ -32,7 +32,7 @@ public class StartAnsichtTest {
                 new JSONObject(), new Katalog.Kontext(), TEXTE), "anzeige.startAnsicht");
         assertEquals("auswahl", f.getString("typ"));
         assertEquals("panoptes", f.getString("standard"));
-        assertTrue(f.getBoolean("nurLesendExtern"));
+        assertFalse("0.1.38.7: Fernzugriff erlaubt", f.getBoolean("nurLesendExtern"));
         JSONArray optionen = f.getJSONArray("optionen");
         assertEquals(5, optionen.length());
         assertEquals("panoptes", optionen.getJSONObject(0).getString("wert"));
@@ -43,7 +43,7 @@ public class StartAnsichtTest {
     }
 
     @Test
-    public void localWriteRoundTripsUnknownIsRejectedAndExternalIsReadOnly() throws Exception {
+    public void localWriteRoundTripsUnknownIsRejectedAndExternalMayWrite() throws Exception {
         Katalog.Kontext k = new Katalog.Kontext();
         Merker lokal = new Merker();
         Einstellungen.Ergebnis ok = aendern(k, "cockpit", false, lokal);
@@ -54,10 +54,11 @@ public class StartAnsichtTest {
         assertFalse(falsch.ok());
         assertTrue(falsch.fehler.has("anzeige.startAnsicht"));
 
+        // 0.1.38.7: vom PC/Handy aus (extern) darf die Startansicht des Auto-Displays gesetzt werden
         Merker extern = new Merker();
-        Einstellungen.Ergebnis gesperrt = aendern(k, "kompakt", true, extern);
-        assertEquals("nurLesendExtern", gesperrt.fehler.getString("anzeige.startAnsicht"));
-        assertTrue(extern.werte.isEmpty());
+        Einstellungen.Ergebnis erlaubt = aendern(k, "kompakt", true, extern);
+        assertTrue(erlaubt.ok());
+        assertEquals("kompakt", extern.werte.get("anzeige").get("startAnsicht"));
     }
 
     private static Einstellungen.Ergebnis aendern(Katalog.Kontext k, String wert,
