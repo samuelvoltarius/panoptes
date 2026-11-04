@@ -98,6 +98,20 @@ public final class LauncherApiHandler {
                 return AppsApiHandler.handle("GET", "/api/apps/list", body, out);
             }
             // Apps launch — proxy with {package, mode:full|split|pip} → {package, split}.
+            // 0.1.38.5: welche Apps können neben dem Launcher laufen? (nur lesen, höchstens 64 Pakete)
+            if (cleanPath.equals("/api/launcher/v1/apps/teilbar") && "GET".equals(method)) {
+                JSONObject r = new JSONObject();
+                String q = path.contains("pakete=") ? path.substring(path.indexOf("pakete=") + 7) : "";
+                if (q.contains("&")) q = q.substring(0, q.indexOf('&'));
+                int n = 0;
+                for (String p : java.net.URLDecoder.decode(q, "UTF-8").split(",")) {
+                    if (p.isEmpty() || n++ >= 64) continue;
+                    r.put(p, at.greenchili.surfmate.launcher.SplitFaehigkeit.fuer(p));
+                }
+                HttpResponse.sendJson(out, new JSONObject().put("pakete", r)
+                        .put("erzwungen", at.greenchili.surfmate.launcher.SplitFaehigkeit.erzwungen()).toString());
+                return true;
+            }
             if (cleanPath.equals("/api/launcher/v1/apps/launch") && "POST".equals(method)) {
                 sendAppLaunch(out, body);
                 return true;
@@ -335,6 +349,23 @@ public final class LauncherApiHandler {
         HttpResponse.sendJson(out, r.toString());
     }
 
+    /**
+     * 0.1.38.5: Navi-Kachel und Reiter „Karte“ starten direkt eine Navi-App statt Panoptes. {@code gewaehlt} = die am
+     * Tacho gewählte Navi-App (oder null), {@code bekannt} = bekannte Navi-Pakete als Rückfall (der Launcher nimmt das
+     * erste installierte). Nur Paketnamen, keine Daten.
+     */
+    static Object buildNaviApp() {
+        try {
+            JSONObject o = new JSONObject();
+            String g = at.greenchili.surfmate.tacho.TachoNaviApp.gewaehlteNaviApp();
+            o.put("gewaehlt", g == null ? JSONObject.NULL : g);
+            o.put("bekannt", new JSONArray(at.greenchili.surfmate.tacho.TachoNaviApp.naviPakete()));
+            return o;
+        } catch (Throwable t) {
+            return JSONObject.NULL;
+        }
+    }
+
     // ==================== §2.1 SUMMARY ====================
 
     /** Nur lesend: läuft gerade etwas am Fahrerdisplay? Dann zeigt der Launcher „Tacho wieder normal“. */
@@ -374,6 +405,7 @@ public final class LauncherApiHandler {
         root.put("waechter",  buildWaechter());
         root.put("klima",     buildKlima());
         root.put("tacho",     buildTacho());
+        root.put("naviApp",   buildNaviApp());
         root.put("launcherLayout", buildLauncherLayout());
         HttpResponse.sendJson(out, root.toString());
     }
@@ -1192,10 +1224,30 @@ public final class LauncherApiHandler {
                 HttpResponse.sendJson(out, 400, "{\"success\":false,\"error\":\"package\"}");
                 return;
             }
+            // 0.1.38.5: vorher ehrlich prüfen (resizeMode / force_resizable_activities), statt still zu scheitern
+            String teilbar = at.greenchili.surfmate.launcher.SplitFaehigkeit.fuer(pkg);
+            String logName = "launcher.neben." + pkg.replaceAll("[^A-Za-z0-9._]", "");
+            if (at.greenchili.surfmate.launcher.SplitFaehigkeit.NEIN.equals(teilbar)) {
+                BefehlsLog.ereignis(logName, "abgelehnt", null, null);
+                BefehlsLog.grund("nicht_teilbar");
+                HttpResponse.sendJson(out, 409, "{\"success\":false,\"error\":\"nicht_teilbar\"}");
+                return;
+            }
             fwd.put("package", LAUNCHER_PAKET);
             fwd.put("secondaryPackage", pkg);
             fwd.put("split", true);
-            AppsApiHandler.handle("POST", "/api/apps/launch", fwd.toString(), out);
+            java.io.ByteArrayOutputStream puffer = new java.io.ByteArrayOutputStream();
+            AppsApiHandler.handle("POST", "/api/apps/launch", fwd.toString(), puffer);
+            String antwort = new String(puffer.toByteArray(), java.nio.charset.StandardCharsets.UTF_8);
+            boolean ok = antwort.contains("\"success\":true");
+            BefehlsLog.ereignis(logName, ok ? "ok" : "fehler", null, null);
+            // Player-/Video-Activities in neuen Tasks (YouTube, Netflix, CarPlay) in den Secondary-Stack nachführen
+            if (ok) at.greenchili.surfmate.launcher.AppLauncher.haltePaarImSplit(pkg,
+                    n -> { if (n > 0) BefehlsLog.ereignis(logName + ".nachgefuehrt", "ok", null, null); });
+            if (!ok) BefehlsLog.grund(at.greenchili.surfmate.launcher.SplitFaehigkeit.UNBEKANNT.equals(teilbar)
+                    ? "split_unbekannt" : "split_fehlgeschlagen");
+            out.write(puffer.toByteArray());
+            out.flush();
             return;
         }
         fwd.put("package", pkg == null ? "" : pkg);
@@ -1396,14 +1448,19 @@ public final class LauncherApiHandler {
             try { an = at.greenchili.surfmate.monitor.AccMonitor.isAccOn(); } catch (Throwable ignored) {}
             int u = at.greenchili.surfmate.byd.BydVehicleData.UNAVAILABLE;
             JSONObject o = new JSONObject();
-            o.put("sollC", an && vd.acSetpointDriver != u
+            // 0.1.38.5: Stufen-Modelle (Surf) stellen keine Grad ein – dann keine Gradzahl, sondern die Stufe 1..17
+            boolean stufen = at.greenchili.surfmate.byd.KlimaStufe.stufenModell();
+            int tempStufe = an && vd.acSetpointDriver != u ? at.greenchili.surfmate.byd.KlimaStufe.ausSdk(vd.acSetpointDriver) : -1;
+            o.put("stufenModell", stufen);
+            o.put("tempStufe", stufen && tempStufe > 0 ? (Object) tempStufe : JSONObject.NULL);
+            o.put("sollC", !stufen && an && vd.acSetpointDriver != u
                     ? (Object) VehicleControlApiHandler.climateSetpointToCelsius(vd.acSetpointDriver) : JSONObject.NULL);
             o.put("stufe", an && vd.acFanLevel != u ? (Object) vd.acFanLevel : JSONObject.NULL);
             o.put("innenC", vd.hasFreshCabinTemperature() && !Double.isNaN(vd.insideTempC)
                     ? (Object) round1(vd.insideTempC) : JSONObject.NULL);
             // 0.1.37 Stufe 4: läuft die Klimaanlage? (für den An/Aus-Knopf im Dock; gleiche Regel wie acOn)
             o.put("an", an && vd.acStartState != u ? (Object) (vd.acStartState == 1) : JSONObject.NULL);
-            if (o.isNull("sollC") && o.isNull("stufe") && o.isNull("innenC")) return JSONObject.NULL;
+            if (o.isNull("sollC") && o.isNull("tempStufe") && o.isNull("stufe") && o.isNull("innenC")) return JSONObject.NULL;
             return o;
         } catch (Throwable t) {
             return JSONObject.NULL;

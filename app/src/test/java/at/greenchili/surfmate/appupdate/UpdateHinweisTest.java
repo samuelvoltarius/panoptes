@@ -619,6 +619,264 @@ public class UpdateHinweisTest {
         assertFalse(guard.contains("/api/appupdate/hinweis"));
     }
 
+    // ------------------------------------------------------------- 0.1.38.5 Tipp bei eingeschaltetem Auto
+
+    /** Der Tipp startet in einem eigenen Faden; bis zu 5 s auf den ersten APK-Abruf warten. */
+    long apkAbrufeNachStart() throws Exception {
+        for (int i = 0; i < 250 && apkAbrufe() == 0; i++) Thread.sleep(20);
+        Thread.sleep(50);
+        return apkAbrufe();
+    }
+
+    @Test
+    public void a_inPMitZuendungAnUndStillstandInstalliert() throws Exception {
+        gefunden();
+        gang = true;
+        kmh = 0;
+        JSONObject r = d.hinweisInstallieren(fern(null), "0.1.8", "de");
+        assertTrue(r.toString(), r.getBoolean("ok"));
+        assertFalse("nicht nur vorgemerkt", r.getBoolean("vorgemerkt"));
+        assertEquals("Download lief an, auch die Prüfung im Download ließ ihn durch", 1, apkAbrufeNachStart());
+        assertFalse(d.status("de").getBoolean("vorgemerkt"));
+    }
+
+    @Test
+    public void a_kmhHalbZaehltNochAlsStillstand() {
+        assertTrue(UpdateHinweis.standSicher(null, true, 0.5));
+        assertTrue(UpdateHinweis.standSicher(null, true, -0.3));
+        assertFalse(UpdateHinweis.standSicher(null, true, 0.6));
+        assertFalse("km/h unbekannt", UpdateHinweis.standSicher(null, true, Double.NaN));
+    }
+
+    @Test
+    public void b_fahrendBlockiert() throws Exception {
+        gefunden();
+        gang = true;
+        kmh = 20;
+        JSONObject r = d.hinweisInstallieren(fern("moving"), "0.1.8", "de");
+        assertFalse(r.getBoolean("ok"));
+        assertEquals("faehrt", r.getString("grund"));
+        assertFalse(r.getBoolean("vorgemerkt"));
+        // auch ohne Fahrsperre: die km/h allein reichen
+        r = d.hinweisInstallieren(fern(null), "0.1.8", "de");
+        assertEquals("faehrt", r.getString("grund"));
+        assertFalse(r.getBoolean("vorgemerkt"));
+        assertEquals("faehrt", d.installieren(9));
+        assertEquals(0, apkAbrufeNachStart());
+        assertFalse(d.status("de").getBoolean("vorgemerkt"));
+    }
+
+    @Test
+    public void c_gangUnbekanntOderNichtPMerktNurVor() throws Exception {
+        gefunden();
+        kmh = 0;
+        gang = null;
+        JSONObject r = d.hinweisInstallieren(fern(null), "0.1.8", "de");
+        assertTrue(r.getBoolean("vorgemerkt"));
+        d.hinweisZuruecknehmen();
+        gang = false;
+        r = d.hinweisInstallieren(fern(null), "0.1.8", "de");
+        assertTrue(r.getBoolean("vorgemerkt"));
+        d.hinweisZuruecknehmen();
+        // Fahrsperre sagt „nicht in P“ (steht in D/R/N)
+        gang = true;
+        r = d.hinweisInstallieren(fern("not_park"), "0.1.8", "de");
+        assertTrue(r.getBoolean("vorgemerkt"));
+        d.hinweisZuruecknehmen();
+        r = d.hinweisInstallieren(fern("gear_unknown"), "0.1.8", "de");
+        assertTrue(r.getBoolean("vorgemerkt"));
+        assertEquals(0, apkAbrufeNachStart());
+        // vorgemerkt heißt weiter: erst bei Auto aus
+        gang = null;
+        assertEquals("zuendung_an", d.installieren(9));
+    }
+
+    @Test
+    public void d_waechterOderAufnahmeBlockiert() throws Exception {
+        gefunden();
+        gang = true;
+        kmh = 0;
+        ereignis = true;
+        JSONObject r = d.hinweisInstallieren(fern(null), "0.1.8", "de");
+        assertFalse(r.getBoolean("ok"));
+        assertEquals(UpdateRegel.WAECHTER_AKTIV, r.getString("grund"));
+        assertFalse(r.getBoolean("vorgemerkt"));
+        assertTrue(r.getString("text").contains("Wächter"));
+        ereignis = false;
+        aufnahme = true;
+        r = d.hinweisInstallieren(fern(null), "0.1.8", "de");
+        assertEquals(UpdateRegel.WAECHTER_AKTIV, r.getString("grund"));
+        assertFalse(r.getBoolean("vorgemerkt"));
+        assertEquals(0, apkAbrufeNachStart());
+    }
+
+    @Test
+    public void vonSelbstWeiterNurBeiAutoAus() throws Exception {
+        cfg.put("modus", "automatisch");
+        gefunden();
+        gang = true;
+        kmh = 0;
+        for (int i = 0; i < 4; i++) {
+            d.takt();
+            jetzt += UpdateRegel.AUTOMATISCH_NACH_MS;
+        }
+        assertEquals(0, apkAbrufe());
+        assertTrue("der Tipp ginge", d.status("de").getBoolean("installierbar"));
+    }
+
+    @Test
+    public void getipptRegelRein() throws Exception {
+        UpdateRegel.Lage l = new UpdateRegel.Lage();
+        l.installiert = 8;
+        l.verfuegbar = Freigabe.lies(AppUpdateTest.vj(9, "0.1.8", "stabil", "v0.1.8", AppUpdateTest.SHA0));
+        l.gateGrund = "cloud_gate_car_on";
+        assertEquals("zuendung_an", UpdateRegel.nichtWeil(l));
+        assertNull(UpdateRegel.nichtWeilGetippt(l, null, true, false, false));
+        assertEquals("zuendung_an", UpdateRegel.nichtWeilGetippt(l, null, null, false, false));
+        assertEquals("zuendung_an", UpdateRegel.nichtWeilGetippt(l, "state_unknown", true, false, false));
+        assertEquals(UpdateRegel.WAECHTER_AKTIV, UpdateRegel.nichtWeilGetippt(l, null, true, true, false));
+        assertEquals(UpdateRegel.WAECHTER_AKTIV, UpdateRegel.nichtWeilGetippt(l, null, true, false, true));
+        l.nurWlan = true;
+        assertEquals(UpdateRegel.WARTET_WLAN, UpdateRegel.nichtWeilGetippt(l, null, true, false, false));
+        l.nurWlan = false;
+        l.kmh = 3;
+        assertEquals("faehrt", UpdateRegel.nichtWeilGetippt(l, null, true, false, false));
+        l.kmh = 0;
+        l.laeuftSchon = true;
+        assertEquals("laeuft_schon", UpdateRegel.nichtWeilGetippt(l, null, true, false, false));
+        l.laeuftSchon = false;
+        l.gateGrund = null;
+        l.autoAus = true;
+        assertNull("Auto aus: wie bisher", UpdateRegel.nichtWeilGetippt(l, null, null, false, false));
+        assertFalse(UpdateHinweis.vormerkbar("faehrt"));
+        assertFalse(UpdateHinweis.vormerkbar(UpdateRegel.WAECHTER_AKTIV));
+        assertTrue(UpdateHinweis.vormerkbar("nicht_in_p"));
+    }
+
+    @Test
+    public void klartextVorDemTipp() throws Exception {
+        assertTrue(UpdateHinweis.frage().contains(UpdateHinweis.textNeustart()));
+        for (String sp : new String[]{"de", "en", "fr", "it", "nl"}) {
+            JSONObject j = new JSONObject(lies("src/main/assets/server-i18n/" + sp + ".json"));
+            assertTrue(sp, j.getJSONObject("update_hinweis").getString("neustart").length() > 20);
+            assertTrue(sp, j.getJSONObject("update_fern").getString("waechter_aktiv").length() > 20);
+            assertTrue(sp, j.getJSONObject("update_fern").getString("bereit").length()
+                    > j.getJSONObject("update_fern").getString("laeuft_schon").length());
+            JSONObject w = new JSONObject(lies("src/main/assets/web/i18n/" + sp + ".json")).getJSONObject("system");
+            assertTrue(sp, w.has("upd_why_guard") && w.has("upd_why_not_p"));
+        }
+        assertTrue(FernUpdate.DEUTSCH.get("bereit").contains("flackern"));
+        assertTrue(FernUpdate.DEUTSCH.get("bereit").contains("Nur im Stand"));
+    }
+
+    // ------------------------------------------------------------- 0.1.38.5 Art + „was neu“ in der Meldung
+
+    static final String NOTIZEN = ",\"notizen\":{\"de\":[\"Update geht jetzt auch bei Zündung an\","
+            + "\"Wächter startet schneller\",\"Fahrtenbuch zeigt Kosten\",\"vierte Zeile bleibt hinter Was ist neu\"],"
+            + "\"en\":[\"Update works with the car on\"]}";
+
+    static Freigabe mitArt(int vc, String name, String art) throws Exception {
+        String j = AppUpdateTest.vj(vc, name, "stabil", "v" + name, AppUpdateTest.SHA0);
+        j = j.substring(0, j.length() - 1) + NOTIZEN + (art == null ? "" : ",\"art\":\"" + art + "\"") + "}";
+        return Freigabe.lies(j);
+    }
+
+    @Test
+    public void artAusVersionJson() throws Exception {
+        assertEquals(UpdateHinweis.ART_FIX, UpdateHinweis.art(mitArt(70, "0.1.39", "fix"), "0.1.38.4"));
+        assertEquals(UpdateHinweis.ART_FUNKTION, UpdateHinweis.art(mitArt(70, "0.1.38.5", "funktion"), "0.1.38.4"));
+        assertEquals(UpdateHinweis.ART_BEIDES, UpdateHinweis.art(mitArt(70, "0.1.38.5", "beides"), "0.1.38.4"));
+        // unbekannter Wert zählt wie fehlend → Schätzung
+        assertNull(mitArt(70, "0.1.38.5", "sonstwas").art);
+        assertEquals(UpdateHinweis.ART_FIX, UpdateHinweis.art(mitArt(70, "0.1.38.5", "sonstwas"), "0.1.38.4"));
+        // bleibt über die gespeicherte Freigabe erhalten
+        assertEquals("beides", Freigabe.lies(mitArt(70, "0.1.38.5", "beides").alsJson().toString()).art);
+    }
+
+    @Test
+    public void artFehltSchaetzungKorrektur() throws Exception {
+        assertEquals(UpdateHinweis.ART_FIX, UpdateHinweis.art(mitArt(70, "0.1.38.5", null), "0.1.38.4"));
+        assertEquals(UpdateHinweis.ART_FIX, UpdateHinweis.art(mitArt(70, "0.1.38.1", null), "0.1.38"));
+        assertEquals("ohne installierte Version: vierte Stelle", UpdateHinweis.ART_FIX,
+                UpdateHinweis.art(mitArt(70, "0.1.38.5", null), null));
+        assertEquals(UpdateHinweis.ART_FIX, UpdateHinweis.art(mitArt(70, "0.1.38.5", null), "0.1.38.4-test.2"));
+    }
+
+    @Test
+    public void artFehltSchaetzungNeueFunktion() throws Exception {
+        assertEquals(UpdateHinweis.ART_FUNKTION, UpdateHinweis.art(mitArt(70, "0.1.39", null), "0.1.38.4"));
+        assertEquals("bringt 0.1.38 mit", UpdateHinweis.ART_FUNKTION,
+                UpdateHinweis.art(mitArt(70, "0.1.38.4", null), "0.1.37"));
+        assertEquals(UpdateHinweis.ART_FUNKTION, UpdateHinweis.art(mitArt(70, "0.2.0", null), "0.1.38.4"));
+        assertEquals(UpdateHinweis.ART_FUNKTION, UpdateHinweis.art(mitArt(70, "0.1.39", null), null));
+    }
+
+    @Test
+    public void kurzfassungHoechstensDreiZeilen() throws Exception {
+        Freigabe f = mitArt(70, "0.1.38.5", null);
+        String k = UpdateHinweis.kurz(f.notizen("de"));
+        assertEquals(3, k.split("\n").length);
+        assertTrue(k.startsWith("• Update geht jetzt auch bei Zündung an"));
+        assertFalse(k.contains("vierte Zeile"));
+        JSONArray lang = new JSONArray().put(new String(new char[200]).replace('\0', 'x'));
+        assertTrue(UpdateHinweis.kurz(lang).length() <= UpdateHinweis.KURZ_ZEICHEN + 2);
+        assertEquals("", UpdateHinweis.kurz(new JSONArray()));
+    }
+
+    @Test
+    public void meldungEnthaeltArtUndKurztext() throws Exception {
+        Freigabe fix = mitArt(70, "0.1.38.5", null);
+        Freigabe neu = mitArt(70, "0.1.39", null);
+        Freigabe beides = mitArt(70, "0.1.39", "beides");
+        String a = at.greenchili.surfmate.server.Messages.withLocale("de", () -> UpdateHinweis.wasNeu(fix, "0.1.38.4", "de"));
+        String b = at.greenchili.surfmate.server.Messages.withLocale("de", () -> UpdateHinweis.wasNeu(neu, "0.1.38.4", "de"));
+        String c = at.greenchili.surfmate.server.Messages.withLocale("de", () -> UpdateHinweis.wasNeu(beides, "0.1.38.4", "de"));
+        assertEquals(UpdateHinweis.artText(UpdateHinweis.ART_FIX), a.split("\n")[0]);
+        assertEquals(UpdateHinweis.artText(UpdateHinweis.ART_FUNKTION), b.split("\n")[0]);
+        assertEquals(UpdateHinweis.artText(UpdateHinweis.ART_BEIDES), c.split("\n")[0]);
+        assertTrue(a.contains("• Update geht jetzt auch bei Zündung an"));
+        assertTrue("Sprache ohne Notizen: Englisch",
+                UpdateHinweis.wasNeu(fix, "0.1.38.4", "fr").contains("Update works with the car on"));
+        // Texte in allen Sprachen, drei verschiedene
+        for (String sp : new String[]{"de", "en", "fr", "it", "nl"}) {
+            JSONObject u = new JSONObject(lies("src/main/assets/server-i18n/" + sp + ".json")).getJSONObject("update_art");
+            assertEquals(sp, 3, new java.util.HashSet<>(java.util.Arrays.asList(
+                    u.getString("fix"), u.getString("funktion"), u.getString("beides"))).size());
+        }
+        JSONObject de = new JSONObject(lies("src/main/assets/server-i18n/de.json")).getJSONObject("update_art");
+        assertEquals("Korrektur", de.getString("fix"));
+        assertEquals("Neue Funktion", de.getString("funktion"));
+        assertEquals("Korrektur + neue Funktion", de.getString("beides"));
+    }
+
+    @Test
+    public void statusUndHandyTextTragenArtUndKurztext() throws Exception {
+        String j = AppUpdateTest.vj(9, "0.1.8", "stabil", "v0.1.8", AppUpdateTest.SHA0);
+        texte.put(LATEST, j.substring(0, j.length() - 1) + NOTIZEN + ",\"art\":\"fix\"}");
+        d.pruefen();
+        JSONObject v = d.status("de").getJSONObject("verfuegbar");
+        assertEquals("fix", v.getString("art"));
+        assertEquals(at.greenchili.surfmate.server.Messages.withLocale("de",
+                () -> UpdateHinweis.artText("fix")), v.getString("artText"));
+        assertTrue(v.getString("kurz").startsWith("• Update geht jetzt"));
+        JSONObject s = fern(null).stand("de", true);
+        assertEquals("fix", s.getJSONObject("neueste").getString("art"));
+        assertTrue(s.getString("text"), s.getString("text").contains(v.getString("artText")));
+        assertTrue(s.getString("text").contains("• Update geht jetzt auch bei Zündung an"));
+    }
+
+    @Test
+    public void telegramUndKarteNutzenDieKurzfassung() throws Exception {
+        String dienst = lies("src/main/java/at/greenchili/surfmate/appupdate/AppUpdateDienst.java");
+        assertTrue(dienst.contains("notifyUpdateNeu(\"panoptes\", f.versionName,"));
+        assertTrue(dienst.contains("UpdateHinweis.wasNeu(f, installierteVersion(), sprache)"));
+        assertTrue(dienst.contains("String neu = UpdateHinweis.wasNeu(f, installierteVersion(),"));
+        String bot = lies("src/main/java/at/greenchili/surfmate/daemon/TelegramBotDaemon.java");
+        assertTrue(bot.contains("cmd.optString(\"neu\", \"\")"));
+        String js = lies("src/main/assets/web/shared/app-updates.js");
+        assertTrue(js.contains("v.artText"));
+    }
+
     static String lies(String pfad) throws Exception {
         File f = new File(pfad);
         if (!f.isFile()) f = new File("app/" + pfad);

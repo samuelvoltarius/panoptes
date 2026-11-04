@@ -583,7 +583,7 @@ public class AppUpdater {
                 callback.onError("Exit " + exit + ": " + combined);
             }
         } catch (Exception e) {
-            callback.onError("Execution failed: " + e.getMessage());
+            callback.onError("Execution failed: " + at.greenchili.surfmate.launcher.AdbShellExecutor.fehlerText(e));
         } finally {
             // The kill script also rm's it on the timeout path; the success
             // path of a core install kills this process before reaching here

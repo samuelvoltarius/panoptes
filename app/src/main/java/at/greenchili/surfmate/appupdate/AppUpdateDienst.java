@@ -269,12 +269,21 @@ public final class AppUpdateDienst {
                     v.put("veroeffentlicht", JSONObject.NULL);
                     v.put("notizen", verfuegbar.notizen(sprache));
                     v.put("kanal", verfuegbar.kanal);
+                    // 0.1.38.5: Art und Kurzfassung direkt in der Meldung (Handy, Cockpit, System-Seite)
+                    final Freigabe vf = verfuegbar;
+                    final String inst = env.installierteVersion();
+                    String art = UpdateHinweis.art(vf, inst);
+                    v.put("art", art);
+                    v.put("artText", at.greenchili.surfmate.server.Messages.withLocale(sprache,
+                            () -> UpdateHinweis.artText(art)));
+                    v.put("kurz", UpdateHinweis.kurz(vf.notizen(sprache)));
                     v.put("zurueckgerollt", verfuegbar.versionCode == l.rueckfallVc);
                     o.put("verfuegbar", v);
                 } else {
                     o.put("verfuegbar", JSONObject.NULL);
                 }
-                String nicht = nichtWeil(l);
+                // 0.1.38.5: wie ein Tipp (Knopf, Handy, Telegram), also auch bei eingeschaltetem Auto in P
+                String nicht = nichtWeilGetippt(l);
                 o.put("installierbar", nicht == null);
                 // 0.1.32.1: ohne WLAN fragen wie die Karte (nur neue Einrichtungen, Größe, nur diese Version)
                 o.put("mobilFrage", UpdateRegel.WARTET_WLAN.equals(nicht) && mobilMerker());
@@ -314,7 +323,7 @@ public final class AppUpdateDienst {
             boolean einmal = mobil && mobilMerker() && verfuegbar != null && verfuegbar.versionCode == versionCode;
             if (einmal) UpdateHinweis.mobilErlauben(hinweis, versionCode, env.jetzt());
             UpdateRegel.Lage l = lage();
-            String nicht = nichtWeil(l);
+            String nicht = nichtWeilGetippt(l);
             if (nicht != null) {
                 if (einmal) UpdateHinweis.mobilErlauben(hinweis, 0, 0);
                 return nicht;
@@ -322,13 +331,17 @@ public final class AppUpdateDienst {
             if (verfuegbar.versionCode != versionCode) return "anderer_stand";
             if (einmal) speichern();
             installiertGerade = true;
+            laufGetippt = true;
         }
         final Freigabe f = verfuegbar;
         Thread t = new Thread(() -> {
             try {
                 ausfuehren(f);
             } finally {
-                synchronized (lock) { installiertGerade = false; }
+                synchronized (lock) {
+                    installiertGerade = false;
+                    laufGetippt = false;
+                }
             }
         }, "AppUpdate-Install");
         t.setDaemon(true);
@@ -492,6 +505,7 @@ public final class AppUpdateDienst {
             if (ab < 0 || now < ab || installiertGerade) return;
             installiertGerade = true;
             laufVorgemerkt = alsVorgemerkt;
+            laufGetippt = false;
             laufGescheitert = false;
             f = verfuegbar;
         }
@@ -513,6 +527,8 @@ public final class AppUpdateDienst {
     /** Dieser Lauf kommt aus einer Vormerkung: Vor dem Start gilt zusätzlich {@link #vorgemerktFrei()}. */
     private boolean laufVorgemerkt;
     private boolean laufGescheitert;
+    /** 0.1.38.5: Dieser Lauf kommt aus einem Tipp: Bis zum Start gilt {@link #nichtWeilGetippt} statt „Auto aus“. */
+    private boolean laufGetippt;
 
     private volatile long groesseCache = -1;
 
@@ -787,9 +803,9 @@ public final class AppUpdateDienst {
                 scheitern("nicht_erreichbar", "Umbenennen fehlgeschlagen", teil);
                 return;
             }
-            // Letzte Prüfung direkt vor dem Start: noch immer aus, keine Sperre
+            // Letzte Prüfung direkt vor dem Start: noch immer aus (nach einem Tipp: noch immer sicher in P), keine Sperre
             synchronized (lock) {
-                String nicht = nichtWeil(lage());
+                String nicht = laufNichtWeil(lage());
                 if (nicht != null) {
                     phase = null; prozent = null;
                     fehler = null;
@@ -880,7 +896,7 @@ public final class AppUpdateDienst {
                 ab = 0;
             }
             String nicht;
-            synchronized (lock) { nicht = nichtWeil(lage()); }
+            synchronized (lock) { nicht = laufNichtWeil(lage()); }
             if (nicht != null) {
                 synchronized (lock) { phase = null; prozent = null; }
                 logger.info("Download pausiert bei " + ab + " B: " + nicht);
@@ -1134,6 +1150,17 @@ public final class AppUpdateDienst {
 
     private static String nichtWeil(UpdateRegel.Lage l) {
         return UpdateRegel.nichtWeil(l);
+    }
+
+    /** 0.1.38.5: Regel für einen ausdrücklichen Tipp ({@link UpdateRegel#nichtWeilGetippt}). */
+    private String nichtWeilGetippt(UpdateRegel.Lage l) {
+        return UpdateRegel.nichtWeilGetippt(l, env.fahrsperre(), env.gangP(), env.waechterEreignis(),
+                env.aufnahmeLaeuft());
+    }
+
+    /** Regel für den laufenden Download und den Start: nach einem Tipp die des Tipps, sonst „Auto aus“. */
+    private String laufNichtWeil(UpdateRegel.Lage l) {
+        return laufGetippt ? nichtWeilGetippt(l) : nichtWeil(l);
     }
 
     /** Phase für die Anzeige; nach dem Neustart aus Sperre/Rückfall-Marke abgeleitet. */
@@ -1546,8 +1573,11 @@ public final class AppUpdateDienst {
         @Override
         public void melde(Freigabe f, long groesseBytes) {
             // 0.1.38.2: mit Knopf „Jetzt installieren“ (Rückfrage im Bot, dann derselbe Weg wie die Karte)
+            // 0.1.38.5: Art und Kurzfassung gleich mit (Sprache wie der Bot)
+            String sprache = at.greenchili.surfmate.server.LocaleManager.get();
             at.greenchili.surfmate.telegram.TelegramNotifier.notifyUpdateNeu("panoptes", f.versionName,
-                    UpdateRegel.groesseText(groesseBytes));
+                    UpdateRegel.groesseText(groesseBytes), at.greenchili.surfmate.server.Messages.withLocale(sprache,
+                            () -> UpdateHinweis.wasNeu(f, installierteVersion(), sprache)));
         }
 
         @Override
@@ -1617,9 +1647,11 @@ public final class AppUpdateDienst {
 
         @Override
         public boolean zeigeHinweis(String griff, Freigabe f, String notizen, String zusatz) {
+            // 0.1.38.5: Art und Kurzfassung über der Frage, der volle Text bleibt hinter „Was ist neu?“
+            String neu = UpdateHinweis.wasNeu(f, installierteVersion(), at.greenchili.surfmate.server.LocaleManager.get());
+            String text = neu + "\n\n" + UpdateHinweis.frage() + (zusatz.isEmpty() ? "" : "\n\n" + zusatz);
             return at.greenchili.surfmate.byd.MessageOverlayController.showUpdateHinweis(griff, f.versionName,
-                    UpdateHinweis.titel(f.versionName),
-                    zusatz.isEmpty() ? UpdateHinweis.frage() : UpdateHinweis.frage() + "\n\n" + zusatz, notizen,
+                    UpdateHinweis.titel(f.versionName), text, notizen,
                     UpdateHinweis.knopfInstallieren(), UpdateHinweis.knopfSpaeter(), UpdateHinweis.knopfWasNeu(),
                     UpdateHinweis.knopfSchliessen(), UpdateHinweis.knopfZuruecknehmen(), UpdateHinweis.textFehler(),
                     UpdateHinweis.SICHTBAR_SEK);

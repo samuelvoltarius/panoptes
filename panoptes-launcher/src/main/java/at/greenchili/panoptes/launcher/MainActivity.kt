@@ -221,6 +221,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun zeigeHinweis(text: String) {
         hinweis.text = text; hinweis.visibility = View.VISIBLE
+        hinweis.bringToFront()   // auch über Klima-/Info-Feld sichtbar (Befund Emulator 04.11.)
         main.removeCallbacks(hinweisWeg); main.postDelayed(hinweisWeg, 4_000)
     }
     private val hinweisWeg = Runnable { if (::hinweis.isInitialized) hinweis.visibility = View.GONE }
@@ -310,8 +311,8 @@ class MainActivity : AppCompatActivity() {
             isClickable = true; foreground = ui.welle(); setOnClickListener { f() }
         }
         z.addView(reiter(R.drawable.ic_pn_status, R.string.reiter_status, true) { seite = 0; zeichneSeite() }, ui.lp(ui.dp(104), -1, rechts = 6))
-        z.addView(reiter(R.drawable.ic_pn_map, R.string.reiter_karte, false) { oeffnePanoptes("navi") }, ui.lp(ui.dp(104), -1, rechts = 6))
-        z.addView(reiter(R.drawable.ic_pn_car, R.string.reiter_steuerung, false) { oeffnePanoptes("vehicle") }, ui.lp(ui.dp(104), -1, rechts = 6))
+        z.addView(reiter(R.drawable.ic_pn_map, R.string.reiter_karte, false) { starteNavi() }, ui.lp(ui.dp(104), -1, rechts = 6))
+        z.addView(reiter(R.drawable.ic_pn_car, R.string.reiter_steuerung, false) { klimaFeld() }, ui.lp(ui.dp(104), -1, rechts = 6))
         z.addView(reiter(R.drawable.ic_pn_apps, R.string.reiter_apps, false) { schublade(null) }, ui.lp(ui.dp(104), -1, rechts = 6))
         z.addView(reiter(R.drawable.ic_pn_settings, R.string.reiter_einstellungen, false) { einstellungen() }, ui.lp(ui.dp(120), -1, rechts = 6))
         // 0.1.37 „Tacho wieder normal“: groß und rot, nur wenn am Fahrerdisplay gerade etwas läuft; ohne Rückfrage.
@@ -362,7 +363,7 @@ class MainActivity : AppCompatActivity() {
     /**
      * Klima im Dock (Stufe 4): Temperatur −/+, Gebläse −/+, an/aus über den eng begrenzten Kern-Weg `klima`.
      * Der Kern prüft, dass die Anfrage von dieser APK kommt, und führt nur über die Panoptes-Klimabefehle mit allen
-     * Sperren aus. Tipp auf die Werte öffnet weiter die volle Steuerung in Panoptes.
+     * Sperren aus. Tipp auf die Werte öffnet das große Klima-Feld im Launcher (0.1.38.5), nicht Panoptes.
      */
     private fun klimaBedienung(): View {
         val z = LinearLayout(this).apply {
@@ -379,17 +380,17 @@ class MainActivity : AppCompatActivity() {
             gravity = Gravity.CENTER; setPadding(ui.dp(4), 0, ui.dp(4), 0)
             addView(ui.icon(icon, ui.p.aqua, 22))
             addView(text, ui.lp().apply { marginStart = ui.dp(4) })
-            isClickable = true; foreground = ui.welle(); setOnClickListener { oeffnePanoptes("vehicle") }
+            isClickable = true; foreground = ui.welle(); setOnClickListener { klimaFeld() }
         }
-        val soll = ui.zahl("—", 21f).apply { minWidth = ui.dp(52); gravity = Gravity.CENTER }
+        val soll = ui.zahl("—", 21f).apply { minWidth = ui.dp(52); gravity = Gravity.CENTER; maxLines = 1 }
         val stufe = ui.zahl("—", 21f).apply { minWidth = ui.dp(20); gravity = Gravity.CENTER }
         val power = ui.icon(R.drawable.ic_pn_power, ui.p.onSurfaceVariant, 26)
-        z.addView(knopf(R.drawable.ic_pn_minus, R.string.klima_temp_runter) { "temp_runter" }, ui.lp(ui.dp(48), -1))
+        z.addView(knopf(R.drawable.ic_pn_minus, R.string.klima_temp_runter) { "temp_runter" }, ui.lp(ui.dp(DOCK_KNOPF), -1))
         z.addView(wert(R.drawable.ic_pn_thermo, soll), ui.lp(h = -1))
-        z.addView(knopf(R.drawable.ic_pn_plus, R.string.klima_temp_hoch) { "temp_hoch" }, ui.lp(ui.dp(48), -1, rechts = 6))
-        z.addView(knopf(R.drawable.ic_pn_minus, R.string.klima_luft_runter) { "luft_runter" }, ui.lp(ui.dp(48), -1))
+        z.addView(knopf(R.drawable.ic_pn_plus, R.string.klima_temp_hoch) { "temp_hoch" }, ui.lp(ui.dp(DOCK_KNOPF), -1, rechts = 6))
+        z.addView(knopf(R.drawable.ic_pn_minus, R.string.klima_luft_runter) { "luft_runter" }, ui.lp(ui.dp(DOCK_KNOPF), -1))
         z.addView(wert(R.drawable.ic_pn_fan, stufe), ui.lp(h = -1))
-        z.addView(knopf(R.drawable.ic_pn_plus, R.string.klima_luft_hoch) { "luft_hoch" }, ui.lp(ui.dp(48), -1, rechts = 6))
+        z.addView(knopf(R.drawable.ic_pn_plus, R.string.klima_luft_hoch) { "luft_hoch" }, ui.lp(ui.dp(DOCK_KNOPF), -1, rechts = 6))
         z.addView(FrameLayout(this).apply {
             addView(power, FrameLayout.LayoutParams(ui.dp(26), ui.dp(26), Gravity.CENTER))
             contentDescription = getString(R.string.klima_an_aus); isClickable = true; foreground = ui.welle()
@@ -398,7 +399,7 @@ class MainActivity : AppCompatActivity() {
         }, ui.lp(ui.dp(52), -1))
         aktualisierer += {
             val k = summary?.klima
-            soll.text = k?.sollC?.let { "${nf1.format(it)}°" } ?: (k?.innenC?.let { "${nf1.format(it)}°" } ?: "—")
+            soll.text = sollText(k) ?: "—"
             stufe.text = k?.stufe?.toString() ?: "—"
             power.setColorFilter(if (k?.an == true) ui.p.lime else ui.p.onSurfaceVariant)
         }
@@ -419,7 +420,11 @@ class MainActivity : AppCompatActivity() {
             main.post {
                 when {
                     antwort == null -> zeigeHinweis(getString(R.string.offline))
-                    antwort.ok -> antwort.klima?.let { k -> summary = summary?.copy(klima = k); aktualisierer.forEach { it() } }
+                    antwort.ok -> {
+                        antwort.klima?.let { k -> summary = summary?.copy(klima = k); aktualisierer.forEach { it() } }
+                        klimaFeldZeichnen?.invoke()
+                        klimaRueckmeldung(aktion, antwort.klima)
+                    }
                     else -> klimaGrund(antwort.grund)?.let { zeigeHinweis(it) }
                 }
             }
@@ -723,8 +728,14 @@ class MainActivity : AppCompatActivity() {
             Kachel.WAECHTER -> waechter(gross)
             Kachel.UHR -> uhrKachel(gross)
         }
-        val ziel = when (k) { Kachel.FAHRZEUG -> "vehicle"; Kachel.AKKU -> "charging"; Kachel.NAVI -> "navi"; Kachel.WAECHTER -> "waechter"; else -> null }
-        if (ziel != null) v.setOnClickListener { oeffnePanoptes(ziel) }
+        // 0.1.38.5: direkt im Launcher; Panoptes nur über „Mehr in Panoptes“ im jeweiligen Feld
+        when (k) {
+            Kachel.FAHRZEUG -> v.setOnClickListener { fahrzeugInfo() }
+            Kachel.AKKU -> v.setOnClickListener { akkuInfo() }
+            Kachel.NAVI -> v.setOnClickListener { starteNavi() }
+            Kachel.WAECHTER -> v.setOnClickListener { waechterInfo() }
+            else -> {}
+        }
         v.setOnLongClickListener { langerDruck(e); true }
         return v
     }
@@ -1032,7 +1043,7 @@ class MainActivity : AppCompatActivity() {
         overlay = o
     }
 
-    private fun schliesseOverlay() { overlay?.let { root.removeView(it) }; overlay = null }
+    private fun schliesseOverlay() { overlay?.let { root.removeView(it) }; overlay = null; klimaFeldZeichnen = null }
 
     private fun kopf(titel: String, rechts: View? = null) = LinearLayout(this).apply {
         gravity = Gravity.CENTER_VERTICAL
@@ -1043,6 +1054,7 @@ class MainActivity : AppCompatActivity() {
 
     /** App-Schublade: alle startbaren Apps mit Suche, Icons und Namen. [ziel] = Auswahl für Dock/Leiste/Startseite. */
     private fun schublade(ziel: Ziel?) {
+        teilbarLaden(apps.map { it.paket })
         val c = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(ui.dp(24), ui.dp(18), ui.dp(24), ui.dp(18)) }
         val suche = EditText(this).apply {
             hint = getString(if (darfBedienen(still = true)) R.string.suche else R.string.suche_nur_stand)
@@ -1084,6 +1096,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun schubladenMenue(p: String) {
         val punkte = mutableListOf<Pair<String, () -> Unit>>(getString(R.string.app_info) to { appInfo(p) })
+        if (p != Raster.PANOPTES) punkte += nebenPunkt(p)
         if (darfBedienen()) {
             punkte += (if (p in layout.dock) getString(R.string.aus_dock) else getString(R.string.zum_dock)) to {
                 aendern(if (p in layout.dock) Raster.dockEntfernen(layout, p) else Raster.dockHinzufuegen(layout, p)); schliesseOverlay(); baueAlles()
@@ -1102,6 +1115,7 @@ class MainActivity : AppCompatActivity() {
     /** Langer Druck in Dock oder Reiterleiste: App-Info, entfernen, sortieren. Der BYD-Rückweg ist nie dabei. */
     private fun leistenMenue(p: String, schnell: Boolean) {
         val punkte = mutableListOf<Pair<String, () -> Unit>>(getString(R.string.app_info) to { appInfo(p) })
+        if (p != Raster.PANOPTES) punkte += nebenPunkt(p)
         if (darfBedienen()) {
             punkte += getString(if (schnell) R.string.aus_schnell else R.string.aus_dock) to {
                 aendern(if (schnell) Raster.schnellEntfernen(layout, p) else Raster.dockEntfernen(layout, p)); baueAlles()
@@ -1151,6 +1165,7 @@ class MainActivity : AppCompatActivity() {
         zeile(R.drawable.ic_pn_status, schalter(R.string.zeige_status, layout.zeigeStatus)) { if (darfBedienen()) { aendern(layout.copy(zeigeStatus = !layout.zeigeStatus)); baueAlles(); einstellungen() } }
         zeile(R.drawable.ic_pn_apps, schalter(R.string.zeige_reiter, layout.zeigeReiter)) { if (darfBedienen()) { aendern(layout.copy(zeigeReiter = !layout.zeigeReiter)); baueAlles(); einstellungen() } }
         zeile(R.drawable.ic_pn_thermo, schalter(R.string.zeige_klima, layout.zeigeKlima)) { if (darfBedienen()) { aendern(layout.copy(zeigeKlima = !layout.zeigeKlima)); baueAlles(); einstellungen() } }
+        zeile(R.drawable.ic_pn_nav, getString(R.string.navi_app) + ": " + (naviWahl()?.let { appName(it) } ?: getString(R.string.navi_app_auto))) { naviWaehlen() }
         zeile(R.drawable.ic_pn_apps, schalter(R.string.neben_alle, layout.nebeneinander)) { if (darfBedienen()) { aendern(layout.copy(nebeneinander = !layout.nebeneinander)); baueAlles(); einstellungen() } }
         zeile(R.drawable.ic_pn_car, schalter(R.string.zeige_3d, layout.zeige3d)) { if (darfBedienen()) { aendern(layout.copy(zeige3d = !layout.zeige3d)); baueAlles(); einstellungen() } }
         zeile(R.drawable.ic_pn_music, getString(R.string.medien_zugriff)) { zugriffErklaeren() }
@@ -1358,6 +1373,7 @@ class MainActivity : AppCompatActivity() {
         if (alt?.hintergrundBild != a?.hintergrundBild || alt?.hintergrundVideo != a?.hintergrundVideo) bildGeladen = false
         hintergrundAnwenden()
         aktualisierer.forEach { it() }
+        klimaFeldZeichnen?.invoke()
     }
 
     // ---------- Hintergrund ----------
@@ -1413,21 +1429,193 @@ class MainActivity : AppCompatActivity() {
 
     private fun appName(p: String) = appsNachPaket[p]?.name ?: p
 
+    // ---------- Direkt im Launcher (0.1.38.5): Klima-Feld, Info-Felder, Navi ----------
+
+    /**
+     * Klima-Feld im Launcher: große −/+ für Temperatur und Gebläse, An/Aus, aktueller Stand und Rückmeldung nach jedem
+     * Tipp. Nur der Kern-Weg `klima` (dieselben sechs Aktionen wie im Dock). Panoptes nur über „Mehr in Panoptes“.
+     */
+    private fun klimaFeld() {
+        val c = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(ui.dp(28), ui.dp(20), ui.dp(28), ui.dp(24)) }
+        c.addView(kopf(getString(R.string.klima_feld_titel)))
+        fun reihe(titel: Int, icon: Int, runter: String, hoch: String, wert: TextView) = LinearLayout(this).apply {
+            gravity = Gravity.CENTER_VERTICAL
+            addView(ui.icon(icon, ui.p.aqua, 32), ui.lp(rechts = 14))
+            addView(ui.text(getString(titel), 20f, 600), ui.lp(0, -2, 1f))
+            addView(ui.act(R.drawable.ic_pn_minus, null) { klimaSenden(runter) }.apply { contentDescription = getString(R.string.klima_runter) },
+                ui.lp(ui.dp(GROSS_KNOPF), ui.dp(GROSS_KNOPF)))
+            addView(wert.apply { gravity = Gravity.CENTER; minWidth = ui.dp(120) }, ui.lp())
+            addView(ui.act(R.drawable.ic_pn_plus, null) { klimaSenden(hoch) }.apply { contentDescription = getString(R.string.klima_hoch) },
+                ui.lp(ui.dp(GROSS_KNOPF), ui.dp(GROSS_KNOPF)))
+        }
+        val soll = ui.zahl("—", 34f); val luft = ui.zahl("—", 34f)
+        c.addView(reihe(R.string.klima_temp, R.drawable.ic_pn_thermo, "temp_runter", "temp_hoch", soll), ui.lp(-1, -2, oben = 18))
+        c.addView(reihe(R.string.klima_luft, R.drawable.ic_pn_fan, "luft_runter", "luft_hoch", luft), ui.lp(-1, -2, oben = 14))
+        val anAus = ui.act(R.drawable.ic_pn_power, getString(R.string.klima_einschalten), primary = true) {
+            klimaSenden(if (summary?.klima?.an == true) "aus" else "an")
+        }.apply { orientation = LinearLayout.HORIZONTAL; (getChildAt(1) as? TextView)?.apply { textSize = 18f; setPadding(ui.dp(12), 0, 0, 0) } }
+        c.addView(anAus, ui.lp(-1, ui.dp(GROSS_KNOPF), oben = 20))
+        val stand = ui.leise("", 16f); c.addView(stand, ui.lp(oben = 14))
+        c.addView(ui.act(R.drawable.ic_pn_car, getString(R.string.mehr_in_panoptes)) { schliesseOverlay(); oeffnePanoptes("vehicle") }
+            .apply { orientation = LinearLayout.HORIZONTAL; (getChildAt(1) as? TextView)?.setPadding(ui.dp(12), 0, 0, 0) },
+            ui.lp(-1, ui.dp(64), oben = 14))
+        val zeichnen = {
+            val k = summary?.klima
+            soll.text = sollText(k) ?: "—"
+            luft.text = k?.stufe?.toString() ?: "—"
+            (anAus.getChildAt(1) as? TextView)?.text = getString(if (k?.an == true) R.string.klima_ausschalten else R.string.klima_einschalten)
+            stand.text = listOfNotNull(k?.innenC?.let { getString(R.string.klima_innen, nf1.format(it)) },
+                when (k?.an) { true -> getString(R.string.klima_an_ok); false -> getString(R.string.klima_aus_ok); null -> null }).joinToString(" · ")
+        }
+        zeichnen(); klimaFeldZeichnen = zeichnen
+        zeigeOverlay(c, breit = false)
+        (c.parent as? View)?.layoutParams = FrameLayout.LayoutParams(ui.dp(640), -2, Gravity.CENTER)
+    }
+
+    private var klimaFeldZeichnen: (() -> Unit)? = null
+
+    /**
+     * Sollwert für die Anzeige: beim Surf die Stufe wie im Display („Heizen 2“, „Neutral“, „Kühlen 1“), sonst °C.
+     * null = unbekannt (dann „—“). Nie eine erfundene Gradzahl.
+     */
+    private fun sollText(k: LauncherKlima?): String? {
+        if (k == null) return null
+        if (k.stufenModell) {
+            val (art, zahl) = Fahrsicherheit.klimaStufe(k.tempStufe) ?: return null
+            return when (art) { 1 -> getString(R.string.stufe_heizen, zahl); -1 -> getString(R.string.stufe_kuehlen, zahl); else -> getString(R.string.stufe_neutral) }
+        }
+        return k.sollC?.let { "${nf1.format(it)}°" }
+    }
+
+    /** Rückmeldung nach einem Klima-Tipp: neuer Wert in Klartext (REGEL 50+). */
+    private fun klimaRueckmeldung(aktion: String, k: LauncherKlima?) {
+        val text = when (aktion) {
+            "temp_hoch", "temp_runter" -> sollText(k)?.let { getString(R.string.klima_neu_soll, it) }
+            "luft_hoch", "luft_runter" -> k?.stufe?.let { getString(R.string.klima_neu_luft, it.toString()) }
+            "an" -> getString(R.string.klima_an_ok)
+            else -> getString(R.string.klima_aus_ok)
+        } ?: getString(R.string.klima_gesendet)
+        zeigeHinweis(text)
+    }
+
+    /** Info-Feld im Launcher (Fahrzeug, Akku, Wächter): Zeilen in Klartext, Panoptes nur über „Mehr in Panoptes“. */
+    private fun infoFeld(titel: String, ziel: String, zeilen: () -> List<String>) {
+        val c = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(ui.dp(28), ui.dp(20), ui.dp(28), ui.dp(24)) }
+        c.addView(kopf(titel))
+        val liste = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        c.addView(liste, ui.lp(-1, -2, oben = 12))
+        c.addView(ui.act(R.drawable.ic_pn_car, getString(R.string.mehr_in_panoptes)) { schliesseOverlay(); oeffnePanoptes(ziel) }
+            .apply { orientation = LinearLayout.HORIZONTAL; (getChildAt(1) as? TextView)?.setPadding(ui.dp(12), 0, 0, 0) },
+            ui.lp(-1, ui.dp(64), oben = 18))
+        val zeichnen = {
+            liste.removeAllViews()
+            zeilen().ifEmpty { listOf(getString(R.string.unknown)) }.forEach { liste.addView(ui.text(it, 20f, 600), ui.lp(oben = 10)) }
+        }
+        zeichnen(); klimaFeldZeichnen = zeichnen
+        zeigeOverlay(c, breit = false)
+        (c.parent as? View)?.layoutParams = FrameLayout.LayoutParams(ui.dp(640), -2, Gravity.CENTER)
+    }
+
+    private fun fahrzeugInfo() = infoFeld(summary?.vehicleName ?: getString(R.string.widget_fahrzeug), "vehicle") {
+        val s = summary
+        listOfNotNull(
+            getString(R.string.range_format, s?.rangeKm?.let { nf.format(it) } ?: u),
+            s?.socPct?.let { getString(R.string.info_akku, nf.format(it)) },
+            s?.klima?.innenC?.let { getString(R.string.klima_innen, nf1.format(it)) },
+            s?.reifen?.let { r -> listOf(r.vl, r.vr, r.hl, r.hr).takeIf { l -> l.any { it != null } }
+                ?.joinToString(" · ") { it?.let { b -> nf1.format(b) } ?: "—" }?.let { getString(R.string.info_reifen, it) } },
+            s?.gear?.let { getString(R.string.info_gang, it) })
+    }
+
+    private fun akkuInfo() = infoFeld(getString(R.string.widget_akku), "charging") {
+        val s = summary; val ch = s?.charging
+        listOfNotNull(
+            s?.socPct?.let { getString(R.string.info_akku, nf.format(it)) },
+            s?.rangeKm?.let { getString(R.string.range_format, nf.format(it)) },
+            when {
+                ch == null -> null
+                ch.active -> listOfNotNull(getString(R.string.akku_laedt, ch.kw?.let { nf1.format(it) } ?: u),
+                    ch.targetPct?.let { getString(R.string.akku_ziel, nf.format(it)) }, ch.etaMin?.let { getString(R.string.akku_eta, nf.format(it)) }).joinToString(" · ")
+                else -> getString(R.string.akku_laedt_nicht)
+            },
+            s?.healthPct?.let { getString(R.string.akku_gesundheit, nf.format(it)) })
+    }
+
+    private fun waechterInfo() = infoFeld(getString(R.string.widget_waechter), "waechter") {
+        val w = summary?.waechter
+        listOfNotNull(
+            when (w?.an) { true -> getString(R.string.waechter_an); false -> getString(R.string.waechter_aus); null -> null },
+            if (w?.scharf == true) getString(R.string.waechter_scharf) else null,
+            if (w?.aufnahme == true) getString(R.string.waechter_aufnahme) else null)
+    }
+
+    /**
+     * Navi direkt starten: eigene Wahl im Launcher, sonst die am Tacho gewählte Navi-App, sonst die erste installierte
+     * bekannte Navi-App. Erst wenn es keine gibt, öffnet sich die Karte in Panoptes (mit Hinweis).
+     */
+    private fun starteNavi() {
+        val p = Fahrsicherheit.naviZiel(naviWahl(), summary?.naviGewaehlt, summary?.naviBekannt.orEmpty()) { startbar(it) }
+        if (p != null) { starteApp(p); return }
+        zeigeHinweis(getString(R.string.navi_keine_app)); oeffnePanoptes("navi")
+    }
+
+    private fun naviWahl(): String? = getSharedPreferences(PREFS, MODE_PRIVATE).getString(KEY_NAVI, null)
+
+    /** Einstellung „Navi-App“: Automatisch (Tacho-Wahl) oder eine der installierten Navi-Apps. */
+    private fun naviWaehlen() {
+        val kandidaten = (listOfNotNull(summary?.naviGewaehlt) + summary?.naviBekannt.orEmpty()).distinct().filter { startbar(it) }
+        val punkte = mutableListOf<Pair<String, () -> Unit>>(getString(R.string.navi_app_auto) to {
+            getSharedPreferences(PREFS, MODE_PRIVATE).edit().remove(KEY_NAVI).apply(); einstellungen()
+        })
+        kandidaten.forEach { p -> punkte += ((if (p == naviWahl()) "✓ " else "") + appName(p)) to {
+            getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString(KEY_NAVI, p).apply(); einstellungen()
+        } }
+        auswahl(getString(R.string.navi_app), punkte, fuss = if (kandidaten.isEmpty()) getString(R.string.navi_keine_app) else null)
+    }
+
     private fun startbar(p: String) = appsNachPaket.containsKey(p) ||
         runCatching { packageManager.getLaunchIntentForPackage(p) != null }.getOrDefault(false)
 
     private fun starteApp(p: String) {
         val a = appsNachPaket[p]
         if (a != null && !Fahrsicherheit.appStartErlaubt(a.video, summary?.gear, summary?.fahrtHinweis == true)) { zeigeHinweis(getString(R.string.video_nur_p)); return }
-        if (Raster.oeffnetNeben(layout, p) && p != Raster.PANOPTES) {
-            // Neben dem Launcher, wenn Auto und App es können; sonst normal im Vollbild mit kurzem Hinweis
-            io.execute {
-                val ok = client.nebenOeffnen(p)
-                main.post { if (!ok) { zeigeHinweis(getString(R.string.neben_geht_nicht)); starteVollbild(p) } }
-            }
-            return
-        }
+        if (Raster.oeffnetNeben(layout, p) && p != Raster.PANOPTES) { nebenStarten(p); return }
         starteVollbild(p)
+    }
+
+    /**
+     * 0.1.38.5: neben dem Launcher öffnen. Kann die App das nicht (Kern prüft vorher) oder klappt es nicht, kommt eine
+     * ehrliche Frage mit großem „Im Vollbild öffnen“ – nie mehr stilles Vollbild.
+     */
+    private fun nebenStarten(p: String) {
+        if (teilbarCache[p] == "nein") { nichtTeilbarFragen(p, NebenErgebnis.NICHT_TEILBAR); return }
+        io.execute {
+            val r = client.nebenOeffnen(p)
+            if (r == NebenErgebnis.NICHT_TEILBAR) teilbarCache[p] = "nein"
+            main.post { if (r != NebenErgebnis.OK) nichtTeilbarFragen(p, r) }
+        }
+    }
+
+    private val teilbarCache = java.util.concurrent.ConcurrentHashMap<String, String>()
+
+
+
+    private fun nichtTeilbarFragen(p: String, r: NebenErgebnis) {
+        AlertDialog.Builder(this).setTitle(appName(p))
+            .setMessage(if (r == NebenErgebnis.NICHT_TEILBAR) R.string.neben_nicht_teilbar else R.string.neben_fehlgeschlagen)
+            .setPositiveButton(R.string.im_vollbild_oeffnen) { _, _ -> starteVollbild(p) }
+            .setNegativeButton(R.string.abbrechen, null).show()
+            .getButton(AlertDialog.BUTTON_POSITIVE)?.apply { textSize = 20f; minHeight = ui.dp(64) }
+    }
+
+    /** Langdruck-Menüpunkt „Neben dem Launcher öffnen“, mit ehrlichem Vermerk, wenn die App es nicht kann. */
+    private fun nebenPunkt(p: String): Pair<String, () -> Unit> =
+        (getString(R.string.neben_jetzt) + if (teilbarCache[p] == "nein") " – " + getString(R.string.neben_kurz_nein) else "") to { nebenStarten(p) }
+
+    private fun teilbarLaden(pakete: List<String>) {
+        val offen = pakete.filter { !teilbarCache.containsKey(it) }
+        if (offen.isEmpty()) return
+        io.execute { client.teilbar(offen).forEach { (k, v) -> teilbarCache[k] = v } }
     }
 
     private fun starteVollbild(p: String) {
@@ -1505,6 +1693,10 @@ class MainActivity : AppCompatActivity() {
         const val REQ_EXPORT = 41
         const val REQ_IMPORT = 42
         const val KEY_SPAETER = "update_spaeter"
+        const val KEY_NAVI = "navi_app"
+        /** REGEL 50+: Klima-Knöpfe im Dock mindestens 64 dp, im Klima-Feld 96 dp. */
+        const val DOCK_KNOPF = 64
+        const val GROSS_KNOPF = 96
         const val UPDATE_TAKT_MS = 5 * 60_000L
     }
 }

@@ -2,6 +2,7 @@ package at.greenchili.surfmate.server;
 
 import at.greenchili.surfmate.byd.BydDataCollector;
 import at.greenchili.surfmate.byd.BydVehicleData;
+import at.greenchili.surfmate.byd.KlimaStufe;
 import at.greenchili.surfmate.byd.routing.VehicleCommandRouter;
 import at.greenchili.surfmate.byd.routing.VehicleCommandRouter.VehicleCommand;
 
@@ -54,6 +55,10 @@ final class LauncherKlimaBefehl {
         Integer luft();
         /** Fahrer-Sollwert in °C oder null. */
         Double sollC();
+        /** 0.1.38.5: roher Fahrer-Sollwert des SDK (beim Surf die Stufe + 16, 17..33) oder null. */
+        default Integer sollRoh() { return null; }
+        /** 0.1.38.5: Klima in festen Stufen statt Grad (Dolphin Surf, {@link KlimaStufe#stufenModell()}). */
+        default boolean stufenModell() { return false; }
         Ergebnis ausfuehren(VehicleCommand c);
     }
 
@@ -68,7 +73,23 @@ final class LauncherKlimaBefehl {
      * {@code stufe_unbekannt}, {@code grenze}).
      */
     static VehicleCommand befehl(String aktion, Integer luft, Double sollC, String[] grund) {
+        return befehl(aktion, luft, sollC, null, false, grund);
+    }
+
+    /**
+     * Wie oben. {@code stufen} = das Auto stellt die Temperatur in festen Stufen (Surf): dann setzt {@code temp_*} die
+     * Stufe ± 1 absolut über {@code ClimateSetTempCommand(1, …)} – genau der Weg, den Panoptes selbst nutzt
+     * (vehicle-control {@code set_temp}, Zone 1, Wert = Stufe + 16). Der relative Dreh-Befehl verweigert am Surf still.
+     */
+    static VehicleCommand befehl(String aktion, Integer luft, Double sollC, Integer sollRoh, boolean stufen, String[] grund) {
         if (aktion == null || !AKTIONEN.contains(aktion)) { grund[0] = "aktion"; return null; }
+        if (stufen && ("temp_hoch".equals(aktion) || "temp_runter".equals(aktion))) {
+            int stufe = sollRoh == null ? -1 : KlimaStufe.ausSdk(sollRoh);
+            if (!KlimaStufe.gueltig(stufe)) { grund[0] = "stufe_unbekannt"; return null; }
+            int ziel = stufe + ("temp_hoch".equals(aktion) ? 1 : -1);
+            if (!KlimaStufe.gueltig(ziel)) { grund[0] = "grenze"; return null; }
+            return new VehicleCommandRouter.ClimateSetTempCommand(1, KlimaStufe.zuSdk(ziel));
+        }
         switch (aktion) {
             case "an":
                 return new VehicleCommandRouter.ClimateOnCommand(sollC != null ? sollC : SOLL_STANDARD_C, 20);
@@ -126,7 +147,7 @@ final class LauncherKlimaBefehl {
         }
         Auto a = auto;
         String[] grund = {null};
-        VehicleCommand c = befehl(aktion, a.luft(), a.sollC(), grund);
+        VehicleCommand c = befehl(aktion, a.luft(), a.sollC(), a.sollRoh(), a.stufenModell(), grund);
         if (c == null) {
             BefehlsLog.grund(grund[0]);
             BefehlsLog.ereignis("launcher.klima." + aktion, "abgelehnt", null, null);
@@ -161,6 +182,21 @@ final class LauncherKlimaBefehl {
             } catch (Throwable t) {
                 return null;
             }
+        }
+
+        @Override
+        public Integer sollRoh() {
+            try {
+                BydVehicleData d = BydDataCollector.getInstance().getData();
+                return d == null || d.acSetpointDriver == BydVehicleData.UNAVAILABLE ? null : d.acSetpointDriver;
+            } catch (Throwable t) {
+                return null;
+            }
+        }
+
+        @Override
+        public boolean stufenModell() {
+            return KlimaStufe.stufenModell();
         }
 
         @Override

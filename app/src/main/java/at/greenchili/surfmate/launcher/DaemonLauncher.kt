@@ -131,6 +131,39 @@ class DaemonLauncher(
         @Volatile
         private var telegramLaunchStartedAt = 0L
 
+        private val GUARD_SPERRE = Any()
+
+        /**
+         * 0.1.38.3 (fix-waechter-skript): Prüfen und Setzen in einem Schritt. Bis 0.1.38.3 getrennt; am Auto
+         * (04.11. 12:15:35) liefen so zwei Wächter-Starts in derselben Sekunde und schrieben gleichzeitig.
+         */
+        @JvmStatic
+        internal fun guardNehmen(lesen: () -> Long, setzen: (Long) -> Unit): Boolean = synchronized(GUARD_SPERRE) {
+            if (guardHeld(lesen())) false else { setzen(System.currentTimeMillis()); true }
+        }
+
+        /**
+         * 0.1.38.3 (fix-waechter-skript, Auto 04.11. 12:15:37): Ein hängender anderer adb-Befehl riss seine Deadline,
+         * die gemeinsame Verbindung wurde geschlossen und der gerade laufende Wächter-Schreiber riss mit ab
+         * („Execution failed: null“). Das Skript blieb alt, der Daemon lief ohne Watchdog. Das Schreiben ist atomar
+         * (Temp-Datei, sh -n, mv), darum einmal wiederholen; nur ein echter Skriptfehler (SKRIPT_FEHLER) nicht.
+         */
+        @JvmStatic
+        fun skriptSchreibenMitWiederholung(
+            art: String,
+            versuch: (AdbShellExecutor.ShellCallback) -> Unit,
+            ziel: AdbShellExecutor.ShellCallback
+        ) {
+            versuch(object : AdbShellExecutor.ShellCallback {
+                override fun onSuccess(output: String) = ziel.onSuccess(output)
+                override fun onError(error: String) {
+                    if (error.contains("SKRIPT_FEHLER")) { ziel.onError(error); return }
+                    LauncherEreignisse.merken("SKRIPT_WIEDERHOLT", "art=$art ${error.take(100)}")
+                    versuch(ziel)
+                }
+            })
+        }
+
         /** True if a launch guard set at [startedAt] is still active (held + unexpired). */
         private fun guardHeld(startedAt: Long): Boolean {
             if (startedAt == 0L) return false
@@ -984,13 +1017,12 @@ class DaemonLauncher(
         // Prevent concurrent launch attempts (self-healing: a stale guard from a
         // dropped callback expires after LAUNCH_GUARD_TIMEOUT_MS instead of
         // wedging every future launch).
-        if (guardHeld(cameraLaunchStartedAt)) {
+        if (!guardNehmen({ cameraLaunchStartedAt }, { cameraLaunchStartedAt = it })) {
             logManager.info(TAG, "CameraDaemon launch already in progress, skipping")
             callback.onLog("Launch already in progress")
             callback.onLaunched()
             return
         }
-        cameraLaunchStartedAt = System.currentTimeMillis()
         
         logManager.info(TAG, "Launching CameraDaemon...")
         callback.onLog("Launching CameraDaemon...")
@@ -1131,9 +1163,9 @@ class DaemonLauncher(
         // 0.1.38.1: über eine Skriptdatei (argv `sh …/.adb_script_<id>.sh`), nicht `sh -c "<Befehl>"`.
         // So trifft kein Kill-Muster den Schreiber; stirbt er doch, bleibt das alte Skript stehen.
         LauncherEreignisse.merken("SKRIPT_SCHREIBEN", "art=$ART_KAMERA")
-        adbShellExecutor.executeScript(
-            scriptBody = writeCmd,
-            callback = object : AdbShellExecutor.ShellCallback {
+        // 0.1.38.3 (fix-waechter-skript): bei Abbruch einmal neu schreiben (atomar per mv, also sicher)
+        skriptSchreibenMitWiederholung(ART_KAMERA, { cb -> adbShellExecutor.executeScript(scriptBody = writeCmd, callback = cb) },
+            object : AdbShellExecutor.ShellCallback {
                 override fun onSuccess(output: String) {
                     LauncherEreignisse.merken("SKRIPT_OK", "art=$ART_KAMERA")
                     logManager.info(TAG, "CameraDaemon script written successfully")
@@ -1452,13 +1484,12 @@ class DaemonLauncher(
     fun launchAccSentryDaemon(callback: LaunchCallback) {
         // Prevent concurrent launch attempts (self-healing timestamped guard;
         // see launchCameraDaemon for the dropped-callback rationale).
-        if (guardHeld(accSentryLaunchStartedAt)) {
+        if (!guardNehmen({ accSentryLaunchStartedAt }, { accSentryLaunchStartedAt = it })) {
             logManager.info(TAG, "AccSentryDaemon launch already in progress, skipping")
             callback.onLog("Launch already in progress")
             callback.onLaunched()
             return
         }
-        accSentryLaunchStartedAt = System.currentTimeMillis()
         
         logManager.info(TAG, "Launching AccSentryDaemon (UID 2000)...")
         callback.onLog("Launching AccSentryDaemon (UID 2000 for screen control)...")
@@ -1564,9 +1595,9 @@ class DaemonLauncher(
         val writeCmd = buildWatchdogScriptWriteCommand(scriptPath, scriptLines)
         // 0.1.38.1: über eine Skriptdatei wie bei der Kamera (writeCamDaemonScript).
         LauncherEreignisse.merken("SKRIPT_SCHREIBEN", "art=$ART_WAECHTER")
-        adbShellExecutor.executeScript(
-            scriptBody = writeCmd,
-            callback = object : AdbShellExecutor.ShellCallback {
+        // 0.1.38.3 (fix-waechter-skript): bei Abbruch einmal neu schreiben (atomar per mv, also sicher)
+        skriptSchreibenMitWiederholung(ART_WAECHTER, { cb -> adbShellExecutor.executeScript(scriptBody = writeCmd, callback = cb) },
+            object : AdbShellExecutor.ShellCallback {
                 override fun onSuccess(output: String) {
                     LauncherEreignisse.merken("SKRIPT_OK", "art=$ART_WAECHTER")
                     logManager.info(TAG, "Watchdog script written successfully")
@@ -1757,13 +1788,12 @@ class DaemonLauncher(
         // user tap can otherwise each deploy their own watchdog concurrently
         // (see telegramLaunchStartedAt) and produce a respawn loop that
         // re-announces "bot ready" every cycle.
-        if (guardHeld(telegramLaunchStartedAt)) {
+        if (!guardNehmen({ telegramLaunchStartedAt }, { telegramLaunchStartedAt = it })) {
             logManager.info(TAG, "TelegramBotDaemon launch already in progress, skipping")
             callback.onLog("Launch already in progress")
             callback.onLaunched()
             return
         }
-        telegramLaunchStartedAt = System.currentTimeMillis()
 
         logManager.info(TAG, "Launching TelegramBotDaemon...")
         callback.onLog("Launching TelegramBotDaemon...")
@@ -1885,9 +1915,9 @@ class DaemonLauncher(
         val writeCmd = buildWatchdogScriptWriteCommand(scriptPath, scriptLines)
         // 0.1.38.1: über eine Skriptdatei wie bei der Kamera (writeCamDaemonScript).
         LauncherEreignisse.merken("SKRIPT_SCHREIBEN", "art=$ART_TELEGRAM")
-        adbShellExecutor.executeScript(
-            scriptBody = writeCmd,
-            callback = object : AdbShellExecutor.ShellCallback {
+        // 0.1.38.3 (fix-waechter-skript): bei Abbruch einmal neu schreiben (atomar per mv, also sicher)
+        skriptSchreibenMitWiederholung(ART_TELEGRAM, { cb -> adbShellExecutor.executeScript(scriptBody = writeCmd, callback = cb) },
+            object : AdbShellExecutor.ShellCallback {
                 override fun onSuccess(output: String) {
                     LauncherEreignisse.merken("SKRIPT_OK", "art=$ART_TELEGRAM")
                     logManager.info(TAG, "Telegram watchdog script written")

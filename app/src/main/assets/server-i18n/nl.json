@@ -1019,7 +1019,7 @@
       "btn_jetzt": "⬆️ Nu installeren",
       "btn_ja": "✅ Ja, installeren",
       "btn_nein": "✖️ Nee",
-      "frage_panoptes": "❓ *Panoptes {0} nu installeren?*\nDat duurt ongeveer 3–8 minuten. In die tijd staat de bewaker uit.\nStaat de auto nu aan, dan installeert Panoptes na het parkeren.",
+      "frage_panoptes": "❓ *Panoptes {0} nu installeren?*\nDat duurt ongeveer 3–8 minuten. In die tijd staat de bewaker uit.\nStaat de auto in P, dan begint het meteen. Panoptes start kort opnieuw, het scherm kan flikkeren. Anders installeert Panoptes na het parkeren.",
       "frage_launcher": "❓ *Launcher {0} nu installeren?*\nDat duurt ongeveer een minuut. Niet tijdens het rijden.",
       "frage_mobil": "📶 De auto heeft nu geen wifi. De update heeft ongeveer {0} mobiele data nodig.",
       "abgebrochen": "Goed, geen update.",
@@ -2656,16 +2656,17 @@
     }
   },
   "update_fern": {
-    "bereit": "Nieuwe versie {0} is beschikbaar. De update duurt ongeveer 3–8 minuten.",
+    "bereit": "Nieuwe versie {0} is beschikbaar. De update duurt ongeveer 3–8 minuten. Panoptes start kort opnieuw, het scherm kan flikkeren. Alleen bij stilstand.",
     "kein_update": "Panoptes is up-to-date ({1}).",
     "laeuft": "Panoptes wordt bijgewerkt en is zo terug. Dat duurt ongeveer 3–8 minuten.",
     "laeuft_schon": "Panoptes wordt al bijgewerkt.",
     "fertig": "Klaar. Panoptes draait nu met {1}.",
     "fehler": "De update is niet gelukt. Panoptes draait verder met de vorige versie.",
     "nicht_erlaubt": "Dit apparaat mag geen updates starten. Inschakelen in de auto onder „Gekoppelde apparaten”.",
-    "faehrt": "Geen update tijdens het rijden. Parkeer en zet de auto uit.",
-    "nicht_in_p": "Bijwerken kan alleen als de auto in P staat en uit is.",
-    "zuendung_an": "Bijwerken kan alleen als de auto uit is. Zet hem uit en probeer het opnieuw.",
+    "faehrt": "Geen update tijdens het rijden. Stop en zet de auto in P.",
+    "nicht_in_p": "Bijwerken kan alleen als de auto in P staat. Zet hem in P en probeer het opnieuw.",
+    "zuendung_an": "Panoptes weet niet zeker of de auto in P staat. Zet hem in P en probeer het opnieuw.",
+    "waechter_aktiv": "De bewaker neemt nu op. Wacht tot hij klaar is en probeer het opnieuw.",
     "zustand_unbekannt": "Panoptes weet nu niet zeker of de auto stilstaat. Probeer het zo opnieuw.",
     "wartet_wlan": "Updates staan op „alleen wifi”, en de auto heeft nu geen wifi.",
     "mobil_frage": "De auto heeft nu geen wifi. De update heeft ongeveer {0} mobiele data nodig. Alleen voor deze versie laden?",
@@ -2711,6 +2712,7 @@
     "mobil": "Ongeveer {0} via mobiele data.",
     "titel": "Nieuwe versie {0}",
     "frage": "Panoptes nu bijwerken?",
+    "neustart": "Panoptes start kort opnieuw, het scherm kan flikkeren. Alleen bij stilstand.",
     "installieren": "Nu installeren",
     "spaeter": "Later",
     "was_neu": "Wat is er nieuw?",
@@ -2720,6 +2722,11 @@
     "vorgemerkt_wlan": "Panoptes installeert de update ongeveer 10 minuten nadat je de auto hebt geparkeerd, zodra die wifi heeft. De bewaker staat dan een paar minuten uit.",
     "zuruecknehmen": "Ongedaan maken",
     "geraet": "autoscherm"
+  },
+  "update_art": {
+    "fix": "Correctie",
+    "funktion": "Nieuwe functie",
+    "beides": "Correctie + nieuwe functie"
   },
   "rueckkehr": {
     "titel_aufnahmen": "Terwijl je weg was",

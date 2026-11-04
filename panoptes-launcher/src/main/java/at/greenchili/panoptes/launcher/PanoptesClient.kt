@@ -19,11 +19,19 @@ class PanoptesClient(private val baseUrl: String = "http://127.0.0.1:8180") {
      * App neben dem Launcher (geteilter Bildschirm, Launcher links) über den Kern-Weg `launchSplitPair`.
      * false = geht hier nicht (Auto, App oder Kern), dann öffnet der Launcher sie normal.
      */
-    fun nebenOeffnen(packageName: String): Boolean = try {
-        LauncherContract.launchSucceeded(request("POST", "/api/launcher/v1/apps/launch",
+    fun nebenOeffnen(packageName: String): NebenErgebnis = try {
+        LauncherContract.parseNeben(requestMitFehler("POST", "/api/launcher/v1/apps/launch",
             LauncherContract.launchBody(packageName, "neben"), 15_000))
     } catch (_: Exception) {
-        false
+        NebenErgebnis.FEHLER
+    }
+
+    /** 0.1.38.5: welche Apps können neben dem Launcher laufen (Kern prüft resizeMode, nur lesen)? */
+    fun teilbar(pakete: List<String>): Map<String, String> = try {
+        LauncherContract.parseTeilbar(get("/api/launcher/v1/apps/teilbar?pakete=" +
+            java.net.URLEncoder.encode(pakete.take(64).joinToString(","), "UTF-8")))
+    } catch (_: Exception) {
+        emptyMap()
     }
 
     /** Klima über den eng begrenzten Kern-Weg (nur die sechs Aktionen); Ablehnungen kommen mit Grund zurück. */

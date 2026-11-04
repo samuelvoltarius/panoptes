@@ -1820,6 +1820,9 @@ public class TelegramBotDaemon {
                     String nText = nLauncher
                             ? tr(nGroesse.isEmpty() ? "update.launcher_available" : "update.launcher_available_size", nVersion, nGroesse)
                             : tr(nGroesse.isEmpty() ? "update.available" : "update.available_size", nVersion, nGroesse);
+                    // 0.1.38.5: Art und Kurzfassung direkt in der Meldung (voller Text bleibt in /update)
+                    String nNeu = cmd.optString("neu", "").trim();
+                    if (!nLauncher && !nNeu.isEmpty()) nText = nText + "\n\n" + mdEscape(nNeu);
                     boolean nOk = sendMessageWithButtons(ownerChatId, nText, new String[][][]{{
                             {tr("updates.btn_jetzt"), at.greenchili.surfmate.daemon.telegram.UpdateCommandHandler.PREFIX
                                     + (nLauncher ? "l" : "p")}}});

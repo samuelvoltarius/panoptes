@@ -12,7 +12,8 @@ import java.nio.file.Files;
  * <p>Es gibt keinen eigenen Installationsweg: gestartet wird nur {@link AppUpdateDienst#installieren} mit genau der
  * Version, die der Updater selbst als freigegeben kennt (Quelle, sha256, Signatur und Lineage wie immer, danach
  * Selbstbestätigung oder Rückfall). Keine APK und keine Adresse vom Gerät. Zusätzlich zu den Regeln des Updaters
- * (nie in Fahrt, nur bei Zündung aus): Gang P bzw. Auto aus laut Fahrsperre und eine ausdrückliche Bestätigung
+ * (nie in Fahrt; bei Zündung an seit 0.1.38.5 nur sicher in P, {@link UpdateRegel#nichtWeilGetippt}): Gang P bzw. Auto
+ * aus laut Fahrsperre und eine ausdrückliche Bestätigung
  * ({@code bestaetigt:true}). Jeder Start meldet Telegram mit dem Gerätenamen.
  *
  * <p>Fortschritt: {@code zustand} = {@code laeuft} | {@code fertig} | {@code fehler} (oder null). Weil der Daemon
@@ -85,6 +86,8 @@ public final class FernUpdate {
                     .put("versionCode", v.optInt("versionCode"))
                     .put("groesseBytes", v.opt("groesseBytes") == null ? JSONObject.NULL : v.opt("groesseBytes"));
             if (v.has("notizen")) n.put("notizen", v.get("notizen"));
+            // 0.1.38.5: Art ("fix" | "funktion" | "beides"), ihr Text und die Kurzfassung (≤ 3 Stichpunkte)
+            for (String k : new String[]{"art", "artText", "kurz"}) if (v.has(k)) n.put(k, v.get(k));
             r.put("neueste", n);
         } else {
             r.put("neueste", JSONObject.NULL);
@@ -99,9 +102,21 @@ public final class FernUpdate {
         r.put("mobilFrage", UpdateRegel.WARTET_WLAN.equals(grund) && s.optBoolean("mobilFrage", false));
         String ziel = zielVersion();
         String fuerText = zustand != null ? zustand : grund != null ? grund : "bereit";
-        r.put("text", text(sprache, fuerText, v != null ? v.optString("version") : null,
-                "fertig".equals(zustand) && ziel != null ? ziel : installiert));
+        String t = text(sprache, fuerText, v != null ? v.optString("version") : null,
+                "fertig".equals(zustand) && ziel != null ? ziel : installiert);
+        if (v != null && zustand == null) t = mitWasNeu(t, v);   // Handy, Web, Cockpit sehen es ohne extra Tipp
+        r.put("text", t);
         return r;
+    }
+
+    /** 0.1.38.5: Satz plus Zeile Art plus Kurzfassung aus dem Status des Updaters (schon in der Sprache). */
+    static String mitWasNeu(String satz, JSONObject v) {
+        String a = v.optString("artText", "").trim();
+        String k = v.optString("kurz", "").trim();
+        StringBuilder b = new StringBuilder(satz);
+        if (!a.isEmpty()) b.append("\n").append(a);
+        if (!k.isEmpty()) b.append("\n").append(k);
+        return b.toString();
     }
 
     /**
@@ -348,16 +363,17 @@ public final class FernUpdate {
 
     static final java.util.Map<String, String> DEUTSCH = new java.util.HashMap<>();
     static {
-        DEUTSCH.put("bereit", "Neue Version {0} ist da. Das Update dauert etwa 3–8 Minuten.");
+        DEUTSCH.put("bereit", "Neue Version {0} ist da. Das Update dauert etwa 3–8 Minuten. Panoptes startet dabei kurz neu, das Display kann flackern. Nur im Stand.");
         DEUTSCH.put("kein_update", "Panoptes ist auf dem neuesten Stand ({1}).");
         DEUTSCH.put("laeuft", "Panoptes wird aktualisiert und kommt gleich wieder. Das dauert etwa 3–8 Minuten.");
         DEUTSCH.put("laeuft_schon", "Panoptes wird gerade schon aktualisiert.");
         DEUTSCH.put("fertig", "Fertig. Panoptes läuft jetzt mit {1}.");
         DEUTSCH.put("fehler", "Das Update hat nicht geklappt. Panoptes läuft weiter mit der bisherigen Version.");
         DEUTSCH.put("nicht_erlaubt", "Dieses Gerät darf keine Updates starten. Einschalten am Auto unter „Gekoppelte Geräte“.");
-        DEUTSCH.put("faehrt", "Während der Fahrt geht kein Update. Bitte parken und das Auto ausschalten.");
-        DEUTSCH.put("nicht_in_p", "Update geht nur, wenn das Auto in P steht und aus ist.");
-        DEUTSCH.put("zuendung_an", "Update geht nur, wenn das Auto aus ist. Bitte ausschalten und noch einmal versuchen.");
+        DEUTSCH.put("faehrt", "Während der Fahrt geht kein Update. Bitte anhalten und in P stellen.");
+        DEUTSCH.put("nicht_in_p", "Update geht nur, wenn das Auto in P steht. Bitte in P stellen und noch einmal versuchen.");
+        DEUTSCH.put("zuendung_an", "Panoptes weiß gerade nicht sicher, ob das Auto in P steht. Bitte in P stellen und noch einmal versuchen.");
+        DEUTSCH.put("waechter_aktiv", "Der Wächter nimmt gerade etwas auf. Bitte warten, bis er fertig ist, und noch einmal versuchen.");
         DEUTSCH.put("zustand_unbekannt", "Panoptes weiß gerade nicht sicher, ob das Auto steht. Bitte gleich noch einmal versuchen.");
         DEUTSCH.put("wartet_wlan", "Updates sind auf „nur WLAN“ eingestellt, und das Auto hat gerade kein WLAN.");
         DEUTSCH.put("mobil_frage", "Das Auto hat gerade kein WLAN. Das Update braucht etwa {0} mobile Daten. Nur für diese Version laden?");

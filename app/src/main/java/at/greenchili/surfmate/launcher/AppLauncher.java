@@ -767,6 +767,89 @@ public final class AppLauncher {
         return -1;
     }
 
+
+    // ------------------------------------------------------------------ 0.1.38.5: Paar im Split halten
+
+    /** So lange nach dem Split-Start werden neue Tasks der zweiten App nachgeführt. */
+    static final long HALTEN_MS = 20_000L;
+    static final long HALTEN_TAKT_MS = 500L;
+
+    /**
+     * 0.1.38.5 (Firmware-Befund 04.11., FIRMWARE_SPLIT_FORSCHUNG_20261104): YouTube, Netflix und CarPlay sind teilbar,
+     * öffnen ihre Player-/Video-Activity aber in einem NEUEN Task ohne Split-Optionen – der landet im Vollbild und
+     * sprengt das Paar. Darum nach einem gelungenen {@link #launchSplitPair} {@value #HALTEN_MS} ms lang jeden neuen
+     * Task dieses Pakets, der nicht im Secondary-Stack liegt, mit {@code am stack move-task} dorthin verschieben –
+     * derselbe Weg, den {@link #dockSplitScreenSecondary} schon nutzt. Keine Systemeinstellung, keine neuen Rechte.
+     * Läuft im Hintergrund; endet früher, wenn es keinen Secondary-Stack mehr gibt (Nutzer hat getrennt).
+     *
+     * @param zaehler bekommt die Zahl der nachgeführten Tasks am Ende (für das Befehls-Log), darf null sein
+     */
+    public static void haltePaarImSplit(String pkg, java.util.function.IntConsumer zaehler) {
+        if (!isValidPackageName(pkg)) return;
+        Thread t = new Thread(() -> {
+            int verschoben = 0;
+            java.util.Set<Integer> schonVersucht = new java.util.HashSet<>();
+            long bis = System.currentTimeMillis() + HALTEN_MS;
+            while (System.currentTimeMillis() < bis) {
+                sleepQuietly(HALTEN_TAKT_MS);
+                String liste = runShellCapture("am stack list");
+                if (liste == null) continue;
+                int sekundaer = secondaryStackAusListe(liste);
+                if (sekundaer < 0) break;   // Split ist weg (getrennt) – nichts mehr festhalten
+                for (int task : fremdeTasksAusListe(liste, pkg)) {
+                    if (!schonVersucht.add(task)) continue;
+                    synchronized (APP_LAUNCH_LOCK) {
+                        if (runShell("am stack move-task " + task + " " + sekundaer + " true")) {
+                            verschoben++;
+                            logger.info("haltePaarImSplit: Task " + task + " von " + pkg
+                                    + " in den Secondary-Stack " + sekundaer + " verschoben");
+                        }
+                    }
+                }
+            }
+            if (zaehler != null) zaehler.accept(verschoben);
+        }, "SplitHalten");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    /** Rein: Stack-Id des Split-Secondary-Stacks aus {@code am stack list}, sonst -1. */
+    static int secondaryStackAusListe(String liste) {
+        int stack = -1;
+        for (String roh : liste.split("\\r?\\n")) {
+            String z = roh.trim();
+            java.util.regex.Matcher m = STACK_ZEILE.matcher(z);
+            if (m.find()) { stack = Integer.parseInt(m.group(1)); continue; }
+            if (stack >= 0 && z.contains("mWindowingMode=split-screen-secondary")) return stack;
+        }
+        return -1;
+    }
+
+    /**
+     * Rein: Task-Ids von {@code pkg} (Basis-Komponente des Tasks), die NICHT in einem Split-Stack liegen.
+     * {@code topActivity} wird bewusst nicht gelesen (in {@code am stack list} zeigt sie oft die globale Spitze).
+     */
+    static java.util.List<Integer> fremdeTasksAusListe(String liste, String pkg) {
+        java.util.List<Integer> l = new java.util.ArrayList<>();
+        String modus = "";
+        for (String roh : liste.split("\\r?\\n")) {
+            String z = roh.trim();
+            if (STACK_ZEILE.matcher(z).find()) { modus = ""; continue; }
+            java.util.regex.Matcher w = MODUS.matcher(z);
+            if (modus.isEmpty() && w.find()) { modus = w.group(1); continue; }
+            java.util.regex.Matcher t = TASK_ZEILE.matcher(z);
+            if (t.find() && t.group(2).equals(pkg) && !modus.startsWith("split-screen")) {
+                l.add(Integer.parseInt(t.group(1)));
+            }
+        }
+        return l;
+    }
+
+    private static final java.util.regex.Pattern STACK_ZEILE = java.util.regex.Pattern.compile("^Stack id=(\\d+)\\b");
+    private static final java.util.regex.Pattern MODUS = java.util.regex.Pattern.compile("mWindowingMode=([a-z-]+)");
+    private static final java.util.regex.Pattern TASK_ZEILE =
+            java.util.regex.Pattern.compile("^taskId=(\\d+): ([A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z0-9_]+)+)/");
+
     private static void sleepQuietly(long ms) {
         try {
             Thread.sleep(ms);

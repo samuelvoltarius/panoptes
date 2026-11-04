@@ -1013,7 +1013,7 @@
       "btn_jetzt": "⬆️ Install now",
       "btn_ja": "✅ Yes, install",
       "btn_nein": "✖️ No",
-      "frage_panoptes": "❓ *Install Panoptes {0} now?*\nIt takes about 3–8 minutes. The guard is off during that time.\nIf the car is on right now, Panoptes installs after you park it.",
+      "frage_panoptes": "❓ *Install Panoptes {0} now?*\nIt takes about 3–8 minutes. The guard is off during that time.\nIf the car is in P, it starts right away. Panoptes restarts briefly, the display may flicker. Otherwise Panoptes installs after you park it.",
       "frage_launcher": "❓ *Install launcher {0} now?*\nIt takes about one minute. Not possible while driving.",
       "frage_mobil": "📶 The car has no Wi-Fi right now. The update needs about {0} of mobile data.",
       "abgebrochen": "Okay, no update.",
@@ -2650,16 +2650,17 @@
     }
   },
   "update_fern": {
-    "bereit": "New version {0} is available. The update takes about 3–8 minutes.",
+    "bereit": "New version {0} is available. The update takes about 3–8 minutes. Panoptes restarts briefly, the display may flicker. Only while parked.",
     "kein_update": "Panoptes is up to date ({1}).",
     "laeuft": "Panoptes is updating and will be back shortly. This takes about 3–8 minutes.",
     "laeuft_schon": "Panoptes is already being updated.",
     "fertig": "Done. Panoptes now runs {1}.",
     "fehler": "The update did not work. Panoptes keeps running the previous version.",
     "nicht_erlaubt": "This device may not start updates. Switch it on in the car under “Paired devices”.",
-    "faehrt": "No update while driving. Please park and switch the car off.",
-    "nicht_in_p": "Updates only work when the car is in P and switched off.",
-    "zuendung_an": "Updates only work when the car is switched off. Please switch it off and try again.",
+    "faehrt": "No update while driving. Please stop and shift to P.",
+    "nicht_in_p": "Updates only work when the car is in P. Please shift to P and try again.",
+    "zuendung_an": "Panoptes cannot tell for sure whether the car is in P. Please shift to P and try again.",
+    "waechter_aktiv": "The guard is recording right now. Please wait until it is done and try again.",
     "zustand_unbekannt": "Panoptes cannot tell for sure right now whether the car is parked. Please try again in a moment.",
     "wartet_wlan": "Updates are set to “Wi-Fi only”, and the car has no Wi-Fi right now.",
     "mobil_frage": "The car has no Wi-Fi right now. The update needs about {0} of mobile data. Load for this version only?",
@@ -2705,6 +2706,7 @@
     "mobil": "About {0} over mobile data.",
     "titel": "New version {0}",
     "frage": "Update Panoptes now?",
+    "neustart": "Panoptes restarts briefly, the display may flicker. Only while parked.",
     "installieren": "Install now",
     "spaeter": "Later",
     "was_neu": "What's new?",
@@ -2714,6 +2716,11 @@
     "vorgemerkt_wlan": "Panoptes installs the update about 10 minutes after you park the car, as soon as it has Wi-Fi. The guard is off for a few minutes while it does.",
     "zuruecknehmen": "Undo",
     "geraet": "car display"
+  },
+  "update_art": {
+    "fix": "Bug fix",
+    "funktion": "New feature",
+    "beides": "Bug fix + new feature"
   },
   "rueckkehr": {
     "titel_aufnahmen": "While you were away",

@@ -3,7 +3,7 @@
  *
  *   GET  /api/appupdate/status          Stand: Kanal, Modus, installiert, verfügbar, letzte Suche, installierbar
  *   POST /api/appupdate/suchen          sofort suchen (Server begrenzt auf 1× je 60 s)
- *   POST /api/appupdate/installieren    {versionCode} – nur mit vollem Login, Server prüft „geparkt + Zündung aus“
+ *   POST /api/appupdate/installieren    {versionCode} – nur mit vollem Login, Server prüft „steht in P“ (0.1.38.5: auch bei Zündung an)
  *   POST /api/appupdate/hinweis         {aktion:"zuruecknehmen"} – vorgemerktes Update (Karte am Display) doch nicht
  *
  * Kanal und Modus kommen aus dem Einstellungs-Schema (Gruppe „update“) und werden mit einstellungen.js
@@ -11,7 +11,7 @@
  * (gekoppeltes Gerät ohne Recht), bleibt die Karte unsichtbar.
  *
  * Regeln: Beim Öffnen wird nichts gesucht und nichts installiert. Installieren nur nach Rückfrage.
- * Der Knopf erscheint nur, wenn der Server „installierbar“ meldet (Auto steht, Zündung aus).
+ * Der Knopf erscheint nur, wenn der Server „installierbar“ meldet (Auto steht sicher in P oder ist aus).
  * Es geht nie ein Befehl ans Auto, nur an die App selbst. ES5, deutscher Rückfall eingebaut.
  */
 (function () {
@@ -50,8 +50,10 @@
         },
 
         grundText: function (g) {
-            return g === 'faehrt' ? t('system.upd_why_driving', 'Installieren geht erst, wenn das Auto steht und die Zündung aus ist.')
-                : g === 'zuendung_an' ? t('system.upd_why_ignition', 'Installieren geht erst, wenn die Zündung aus ist.')
+            return g === 'faehrt' ? t('system.upd_why_driving', 'Während der Fahrt geht kein Update. Bitte anhalten und in P stellen.')
+                : g === 'zuendung_an' ? t('system.upd_why_ignition', 'Installieren geht erst, wenn das Auto sicher in P steht.')
+                : g === 'nicht_in_p' ? t('system.upd_why_not_p', 'Installieren geht nur, wenn das Auto in P steht.')
+                : g === 'waechter_aktiv' ? t('system.upd_why_guard', 'Der Wächter nimmt gerade etwas auf. Bitte warten, bis er fertig ist.')
                 : g === 'laeuft_schon' ? t('system.upd_why_running', 'Ein Update läuft gerade.')
                 : g === 'anderer_stand' ? t('system.upd_why_changed', 'Inzwischen gibt es einen anderen Stand. Die Karte zeigt jetzt den neuen.')
                 : g === 'ratenlimit' ? t('system.upd_why_rate', 'Gerade erst gesucht. Bitte in einer Minute noch einmal.')
@@ -94,12 +96,14 @@
                 : d.ergebnis === 'nie' ? '--' : t('system.upd_badge_current', 'Aktuell');
 
             var notes = $('updNotes');
-            if (v && v.notizen && v.notizen.length) {
+            // 0.1.38.5: Art (Korrektur / neue Funktion) gleich im Titel, Text kommt fertig übersetzt vom Server
+            if (v && ((v.notizen && v.notizen.length) || v.artText)) {
                 notes.style.display = '';
-                $('updNotesTitle').textContent = t('system.upd_notes', 'Neu in {v}', { v: v.version }) + (v.groesseBytes ? ' · ' + mb(v.groesseBytes) : '');
+                $('updNotesTitle').textContent = t('system.upd_notes', 'Neu in {v}', { v: v.version })
+                    + (v.artText ? ' · ' + v.artText : '') + (v.groesseBytes ? ' · ' + mb(v.groesseBytes) : '');
                 var ul = $('updNotesList');
                 ul.innerHTML = '';
-                v.notizen.forEach(function (z) { var li = document.createElement('li'); li.textContent = z; ul.appendChild(li); });
+                (v.notizen || []).forEach(function (z) { var li = document.createElement('li'); li.textContent = z; ul.appendChild(li); });
             } else notes.style.display = 'none';
 
             var st = $('updState'), txt = '';
@@ -124,7 +128,7 @@
                 txt = this.grundText(d.nichtWeil);
             } else if (v) {
                 txt = d.modus === 'automatisch' ? t('system.upd_auto_soon', 'Wird gleich automatisch installiert. Du kannst auch selbst auf Installieren tippen.')
-                    : t('system.upd_ready', 'Bereit. Panoptes ist während der Installation etwa eine Minute nicht erreichbar.');
+                    : t('system.upd_ready', 'Bereit. Panoptes startet dabei kurz neu, das Display kann flackern. Nur im Stand.');
             } else if (d.pruefen === false) {
                 txt = t('system.upd_why_check_off', 'Die automatische Suche nach Updates ist ausgeschaltet.');
             } else if (d.kanal === 'test') {

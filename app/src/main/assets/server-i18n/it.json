@@ -1019,7 +1019,7 @@
       "btn_jetzt": "⬆️ Installa ora",
       "btn_ja": "✅ Sì, installa",
       "btn_nein": "✖️ No",
-      "frage_panoptes": "❓ *Installare Panoptes {0} adesso?*\nCi vogliono circa 3–8 minuti. In quel tempo il guardiano è spento.\nSe l’auto è accesa, Panoptes installa dopo il parcheggio.",
+      "frage_panoptes": "❓ *Installare Panoptes {0} adesso?*\nCi vogliono circa 3–8 minuti. In quel tempo il guardiano è spento.\nSe l’auto è in P, parte subito. Panoptes si riavvia brevemente, il display può sfarfallare. Altrimenti Panoptes installa dopo il parcheggio.",
       "frage_launcher": "❓ *Installare il launcher {0} adesso?*\nCi vuole circa un minuto. Non durante la guida.",
       "frage_mobil": "📶 L’auto non ha Wi-Fi in questo momento. L’aggiornamento richiede circa {0} di dati mobili.",
       "abgebrochen": "Va bene, nessun aggiornamento.",
@@ -2656,16 +2656,17 @@
     }
   },
   "update_fern": {
-    "bereit": "È disponibile la nuova versione {0}. L’aggiornamento dura circa 3–8 minuti.",
+    "bereit": "È disponibile la nuova versione {0}. L’aggiornamento dura circa 3–8 minuti. Panoptes si riavvia brevemente, il display può sfarfallare. Solo da fermi.",
     "kein_update": "Panoptes è aggiornato ({1}).",
     "laeuft": "Panoptes si sta aggiornando e torna subito. Ci vogliono circa 3–8 minuti.",
     "laeuft_schon": "Panoptes è già in aggiornamento.",
     "fertig": "Fatto. Panoptes ora funziona con {1}.",
     "fehler": "L’aggiornamento non è riuscito. Panoptes continua con la versione precedente.",
     "nicht_erlaubt": "Questo dispositivo non può avviare aggiornamenti. Attivalo in auto in «Dispositivi associati».",
-    "faehrt": "Nessun aggiornamento durante la guida. Parcheggia e spegni l’auto.",
-    "nicht_in_p": "L’aggiornamento funziona solo con l’auto in P e spenta.",
-    "zuendung_an": "L’aggiornamento funziona solo con l’auto spenta. Spegnila e riprova.",
+    "faehrt": "Nessun aggiornamento durante la guida. Fermati e metti in P.",
+    "nicht_in_p": "L’aggiornamento funziona solo con l’auto in P. Metti in P e riprova.",
+    "zuendung_an": "Panoptes non sa con certezza se l’auto è in P. Metti in P e riprova.",
+    "waechter_aktiv": "Il guardiano sta registrando. Attendi che finisca e riprova.",
     "zustand_unbekannt": "Panoptes ora non sa con certezza se l’auto è ferma. Riprova tra un momento.",
     "wartet_wlan": "Gli aggiornamenti sono impostati su «solo Wi-Fi» e l’auto ora non ha Wi-Fi.",
     "mobil_frage": "L’auto ora non ha Wi-Fi. L’aggiornamento richiede circa {0} di dati mobili. Scaricare solo per questa versione?",
@@ -2711,6 +2712,7 @@
     "mobil": "Circa {0} con i dati mobili.",
     "titel": "Nuova versione {0}",
     "frage": "Aggiornare Panoptes adesso?",
+    "neustart": "Panoptes si riavvia brevemente, il display può sfarfallare. Solo da fermi.",
     "installieren": "Installa ora",
     "spaeter": "Più tardi",
     "was_neu": "Novità",
@@ -2720,6 +2722,11 @@
     "vorgemerkt_wlan": "Panoptes installa l’aggiornamento circa 10 minuti dopo che hai parcheggiato l’auto, appena ha il Wi-Fi. Il guardiano resta spento per qualche minuto.",
     "zuruecknehmen": "Annulla",
     "geraet": "display dell’auto"
+  },
+  "update_art": {
+    "fix": "Correzione",
+    "funktion": "Nuova funzione",
+    "beides": "Correzione + nuova funzione"
   },
   "rueckkehr": {
     "titel_aufnahmen": "Mentre eri via",

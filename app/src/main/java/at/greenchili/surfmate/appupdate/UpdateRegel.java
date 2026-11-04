@@ -75,6 +75,26 @@ public final class UpdateRegel {
         return null;
     }
 
+    /** 0.1.38.5: Wächter-Ereignis oder Aufnahme läuft – ein Tipp startet dann nicht und wird auch nicht vorgemerkt. */
+    public static final String WAECHTER_AKTIV = "waechter_aktiv";
+
+    /**
+     * 0.1.38.5 (04.11.: „man muss es auch installieren können, wenn es an ist“): Grund für einen ausdrücklichen
+     * Tipp (Display, Telegram, Handy, System-Seite), oder null = jetzt installieren. Bei Auto aus wie {@link #nichtWeil}.
+     * Ist das Auto an (oder sein Zustand aus der Stromlesung unbekannt), geht es nur im sicheren Stand
+     * ({@link UpdateHinweis#standSicher}), sonst bleibt der Grund wie bisher und der Tipp merkt vor; im sicheren Stand
+     * zusätzlich nie bei Wächter-Ereignis oder Aufnahme. Von selbst installiert der Updater weiter nur bei Auto aus.
+     */
+    public static String nichtWeilGetippt(Lage l, String fahrsperre, Boolean gangP, boolean waechterEreignis,
+                                          boolean aufnahme) {
+        String n = nichtWeil(l);
+        if (!"zuendung_an".equals(n) && !"zustand_unbekannt".equals(n)) return n;
+        if (!UpdateHinweis.standSicher(fahrsperre, gangP, l.kmh)) return n;
+        if (waechterEreignis || aufnahme) return WAECHTER_AKTIV;
+        if (l.nurWlan && !l.mobilEinmal && !NETZ_WLAN.equals(l.netz)) return WARTET_WLAN;
+        return null;
+    }
+
     /** Netzart aus NetworkMonitor ("wifi" | "cellular" | "ethernet" | …) für die Anzeige und „nur WLAN“. */
     public static String netz(String typ) {
         if ("wifi".equals(typ)) return NETZ_WLAN;

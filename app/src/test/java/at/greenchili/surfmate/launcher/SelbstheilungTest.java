@@ -82,7 +82,9 @@ public class SelbstheilungTest {
                 "private fun writeTelegramWatchdogScript("}) {
             String teil = src.substring(src.indexOf(fn));
             teil = teil.substring(0, teil.indexOf("\n    }\n") > 0 ? teil.indexOf("\n    }\n") : teil.length());
-            assertTrue(fn, teil.contains("adbShellExecutor.executeScript(\n            scriptBody = writeCmd,"));
+            // 0.1.38.3 (fix-waechter-skript): über skriptSchreibenMitWiederholung, weiter als Skriptdatei
+            assertTrue(fn, teil.contains("skriptSchreibenMitWiederholung("));
+            assertTrue(fn, teil.contains("adbShellExecutor.executeScript(scriptBody = writeCmd, callback = cb)"));
             assertFalse(fn, teil.contains("command = writeCmd"));
         }
     }

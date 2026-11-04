@@ -30,8 +30,8 @@ BYD.pip = {
     isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent) || 
            (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.userAgent)),
 
+    // 0.1.38.5 (Alfred am Auto: „Es soll in den Wächter rein, sonst nirgends.“): nur noch die Wächter-Seite
     allowedPages: {
-        'system.html': true,
         'surveillance.html': true
     },
 

@@ -24,12 +24,23 @@ data class LauncherSummary(
     /** 0.1.38: Zeitstempel des Layouts im Kern; ändert er sich, holt der Launcher das Layout neu. */
     val layoutGeaendert: Long? = null,
     /** 0.1.38.1: Haftungshinweis „Verstanden, ich entscheide selbst“ in Panoptes bestätigt (fehlt = nein). */
-    val fahrtHinweis: Boolean = false
+    val fahrtHinweis: Boolean = false,
+    /** 0.1.38.5: am Tacho gewählte Navi-App (oder null) und bekannte Navi-Pakete als Rückfall. */
+    val naviGewaehlt: String? = null,
+    val naviBekannt: List<String> = emptyList()
 )
 
 data class LauncherReifen(val vl: Double?, val vr: Double?, val hl: Double?, val hr: Double?, val unten: Double?, val oben: Double?)
 data class LauncherLuft(val innen: Double?, val aussen: Double?)
-data class LauncherKlima(val sollC: Double?, val stufe: Int?, val innenC: Double?, val an: Boolean? = null)
+data class LauncherKlima(
+    val sollC: Double?, val stufe: Int?, val innenC: Double?, val an: Boolean? = null,
+    /** 0.1.38.5: Auto stellt die Temperatur in festen Stufen (Surf); dann gilt [tempStufe] 1..17 statt [sollC]. */
+    val stufenModell: Boolean = false,
+    val tempStufe: Int? = null
+)
+
+/** 0.1.38.5: Ausgang von „neben dem Launcher öffnen“. */
+enum class NebenErgebnis { OK, NICHT_TEILBAR, FEHLER }
 
 /** Antwort von `POST klima`: ok, Grund bei Ablehnung, neuer Klima-Stand (falls mitgeschickt). */
 data class KlimaAntwort(val ok: Boolean, val grund: String?, val klima: LauncherKlima?)
@@ -121,12 +132,19 @@ object LauncherContract {
             root.optJSONObject("klima")?.let { klima(it) },
             root.optJSONObject("tacho")?.optBoolean("aktiv", false) == true,
             root.optJSONObject("launcherLayout")?.takeIf { it.has("geaendert") && !it.isNull("geaendert") }?.optLong("geaendert"),
-            root.optJSONObject("tacho")?.optBoolean("fahrtHinweis", false) == true
+            root.optJSONObject("tacho")?.optBoolean("fahrtHinweis", false) == true,
+            root.optJSONObject("naviApp")?.nullableString("gewaehlt")?.takeIf { PAKET.matches(it) },
+            root.optJSONObject("naviApp")?.optJSONArray("bekannt")?.let { a ->
+                (0 until minOf(a.length(), 32)).mapNotNull { a.optString(it).takeIf { p -> PAKET.matches(p) } }
+            } ?: emptyList()
         )
     }
 
+    private val PAKET = Regex("^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)+$")
+
     private fun klima(it: JSONObject) =
-        LauncherKlima(it.nullableDouble("sollC"), it.nullableDouble("stufe")?.toInt(), it.nullableDouble("innenC"), it.nullableBoolean("an"))
+        LauncherKlima(it.nullableDouble("sollC"), it.nullableDouble("stufe")?.toInt(), it.nullableDouble("innenC"), it.nullableBoolean("an"),
+            it.optBoolean("stufenModell", false), it.nullableDouble("tempStufe")?.toInt()?.takeIf { s -> s in 1..17 })
 
     /** Die sechs Aktionen des Kern-Klimawegs; nichts anderes wird je gesendet. */
     val KLIMA_AKTIONEN = setOf("an", "aus", "temp_hoch", "temp_runter", "luft_hoch", "luft_runter")
@@ -229,6 +247,23 @@ object LauncherContract {
         .put("package", packageName)
         .put("mode", mode)
         .toString()
+
+    fun parseNeben(json: String?): NebenErgebnis = try {
+        val r = JSONObject(json ?: "")
+        when {
+            r.optBoolean("success", false) -> NebenErgebnis.OK
+            r.optString("error") == "nicht_teilbar" -> NebenErgebnis.NICHT_TEILBAR
+            else -> NebenErgebnis.FEHLER
+        }
+    } catch (_: Exception) {
+        NebenErgebnis.FEHLER
+    }
+
+    /** `{pakete:{paket:"ja"|"nein"|"unbekannt"}}`; unbekannte Werte fallen weg. */
+    fun parseTeilbar(json: String): Map<String, String> {
+        val o = JSONObject(json).optJSONObject("pakete") ?: return emptyMap()
+        return o.keys().asSequence().mapNotNull { k -> o.optString(k).takeIf { it == "ja" || it == "nein" || it == "unbekannt" }?.let { k to it } }.toMap()
+    }
 
     fun launchSucceeded(json: String): Boolean {
         val root = JSONObject(json)

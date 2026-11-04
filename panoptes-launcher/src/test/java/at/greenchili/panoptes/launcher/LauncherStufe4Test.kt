@@ -93,7 +93,10 @@ class LauncherStufe4Test {
         val knoepfe = Regex("\\{ \"([a-z_]+)\" \\}").findAll(main).map { it.groupValues[1] }.toSet()
         assertEquals(setOf("temp_hoch", "temp_runter", "luft_hoch", "luft_runter"), knoepfe)
         assertTrue(main.contains("klimaSenden(if (summary?.klima?.an == true) \"aus\" else \"an\")"))
-        assertEquals("nur zwei Aufrufer: Knöpfe und an/aus", 2, Regex("klimaSenden\\(").findAll(main).count() - 1)
+        // 0.1.38.5: Aufrufer = Dock (Knöpfe, an/aus) und Klima-Feld (−/+ je Reihe, an/aus); nur Aktionen der festen Liste
+        val aufrufe = Regex("klimaSenden\\(([^)]*)\\)").findAll(main).map { it.groupValues[1] }.toList()
+        assertEquals(listOf("aktion(", "if (summary?.klima?.an == true", "aktion: String", "runter", "hoch",
+            "if (summary?.klima?.an == true"), aufrufe)
     }
 
     @Test
@@ -122,7 +125,9 @@ class LauncherStufe4Test {
         assertEquals("com.waze", body.getString("package"))
         assertEquals("neben", body.getString("mode"))
         val main = quelle("MainActivity.kt")
-        assertTrue("Rückfall Vollbild mit Hinweis", main.contains("if (!ok) { zeigeHinweis(getString(R.string.neben_geht_nicht)); starteVollbild(p) }"))
+        // 0.1.38.5: kein stilles Vollbild mehr – ehrliche Frage, Vollbild nur auf „Im Vollbild öffnen“
+        assertTrue(main.contains("main.post { if (r != NebenErgebnis.OK) nichtTeilbarFragen(p, r) }"))
+        assertTrue(main.contains(".setPositiveButton(R.string.im_vollbild_oeffnen) { _, _ -> starteVollbild(p) }"))
         // Video-Sperre greift vor dem Nebeneinander
         assertTrue(main.indexOf("appStartErlaubt") < main.indexOf("if (Raster.oeffnetNeben(layout, p) && p != Raster.PANOPTES)"))
     }

@@ -1019,7 +1019,7 @@
       "btn_jetzt": "⬆️ Installer maintenant",
       "btn_ja": "✅ Oui, installer",
       "btn_nein": "✖️ Non",
-      "frage_panoptes": "❓ *Installer Panoptes {0} maintenant ?*\nCela prend environ 3 à 8 minutes. Le gardien est éteint pendant ce temps.\nSi la voiture est allumée, Panoptes installe après l’arrêt.",
+      "frage_panoptes": "❓ *Installer Panoptes {0} maintenant ?*\nCela prend environ 3 à 8 minutes. Le gardien est éteint pendant ce temps.\nSi la voiture est sur P, cela démarre tout de suite. Panoptes redémarre brièvement, l’écran peut clignoter. Sinon, Panoptes installe après l’arrêt.",
       "frage_launcher": "❓ *Installer le lanceur {0} maintenant ?*\nCela prend environ une minute. Impossible en roulant.",
       "frage_mobil": "📶 La voiture n’a pas de Wi-Fi en ce moment. La mise à jour a besoin d’environ {0} de données mobiles.",
       "abgebrochen": "D’accord, pas de mise à jour.",
@@ -2656,16 +2656,17 @@
     }
   },
   "update_fern": {
-    "bereit": "La nouvelle version {0} est disponible. La mise à jour dure environ 3 à 8 minutes.",
+    "bereit": "La nouvelle version {0} est disponible. La mise à jour dure environ 3 à 8 minutes. Panoptes redémarre brièvement, l’écran peut clignoter. Uniquement à l’arrêt.",
     "kein_update": "Panoptes est à jour ({1}).",
     "laeuft": "Panoptes se met à jour et revient bientôt. Cela dure environ 3 à 8 minutes.",
     "laeuft_schon": "Panoptes est déjà en cours de mise à jour.",
     "fertig": "Terminé. Panoptes fonctionne maintenant avec {1}.",
     "fehler": "La mise à jour n’a pas fonctionné. Panoptes continue avec la version précédente.",
     "nicht_erlaubt": "Cet appareil ne peut pas lancer de mises à jour. À activer dans la voiture sous « Appareils couplés ».",
-    "faehrt": "Pas de mise à jour pendant la conduite. Veuillez vous garer et éteindre la voiture.",
-    "nicht_in_p": "La mise à jour ne fonctionne que si la voiture est sur P et éteinte.",
-    "zuendung_an": "La mise à jour ne fonctionne que si la voiture est éteinte. Veuillez l’éteindre et réessayer.",
+    "faehrt": "Pas de mise à jour pendant la conduite. Veuillez vous arrêter et passer sur P.",
+    "nicht_in_p": "La mise à jour ne fonctionne que si la voiture est sur P. Veuillez passer sur P et réessayer.",
+    "zuendung_an": "Panoptes ne sait pas avec certitude si la voiture est sur P. Veuillez passer sur P et réessayer.",
+    "waechter_aktiv": "Le gardien enregistre en ce moment. Veuillez attendre la fin et réessayer.",
     "zustand_unbekannt": "Panoptes ne sait pas avec certitude si la voiture est à l’arrêt. Veuillez réessayer dans un instant.",
     "wartet_wlan": "Les mises à jour sont réglées sur « Wi-Fi uniquement » et la voiture n’a pas de Wi-Fi pour l’instant.",
     "mobil_frage": "La voiture n’a pas de Wi-Fi pour le moment. La mise à jour demande environ {0} de données mobiles. Charger pour cette version seulement ?",
@@ -2711,6 +2712,7 @@
     "mobil": "Environ {0} via les données mobiles.",
     "titel": "Nouvelle version {0}",
     "frage": "Mettre à jour Panoptes maintenant ?",
+    "neustart": "Panoptes redémarre brièvement, l’écran peut clignoter. Uniquement à l’arrêt.",
     "installieren": "Installer maintenant",
     "spaeter": "Plus tard",
     "was_neu": "Quoi de neuf ?",
@@ -2720,6 +2722,11 @@
     "vorgemerkt_wlan": "Panoptes installe la mise à jour environ 10 minutes après que vous avez garé la voiture, dès qu’elle a le Wi-Fi. Le gardien est alors coupé quelques minutes.",
     "zuruecknehmen": "Annuler",
     "geraet": "écran de la voiture"
+  },
+  "update_art": {
+    "fix": "Correction",
+    "funktion": "Nouvelle fonction",
+    "beides": "Correction + nouvelle fonction"
   },
   "rueckkehr": {
     "titel_aufnahmen": "Pendant votre absence",

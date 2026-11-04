@@ -23,13 +23,14 @@ public class CameraPipAssetTest {
         List<String> pages = new ArrayList<>();
         try (java.nio.file.DirectoryStream<Path> files = Files.newDirectoryStream(local, "*.html")) {
             for (Path page : files) {
-                if (read(page).contains("../shared/pip.js?v=2")) {
+                if (read(page).contains("../shared/pip.js")) {
                     pages.add(page.getFileName().toString());
                 }
             }
         }
         Collections.sort(pages);
-        assertEquals(java.util.Arrays.asList("surveillance.html", "system.html"), pages);
+        // 0.1.38.5: nur noch im Wächter („Es soll in den Wächter rein, sonst nirgends.“)
+        assertEquals(java.util.Arrays.asList("surveillance.html"), pages);
         for (String forbidden : new String[] {
                 "index.html", "login.html", "testfunktionen.html",
                 "remote-dev-view.html", "vehicle-control-3d-test.html"}) {
@@ -40,7 +41,7 @@ public class CameraPipAssetTest {
     @Test
     public void hostCameraAndParkedGatesAreFailClosed() throws Exception {
         String pip = read(locate("app/src/main/assets/web/shared/pip.js"));
-        assertTrue(pip.contains("'system.html': true"));
+        assertFalse("nicht mehr auf der Einstellungsseite", pip.contains("'system.html': true"));
         assertTrue(pip.contains("'surveillance.html': true"));
         assertTrue(pip.contains("root.getAttribute('data-einbettung') === 'handy'"));
         assertTrue(pip.contains("root.hasAttribute('data-android-app')"));

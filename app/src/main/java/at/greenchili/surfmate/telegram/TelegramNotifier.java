@@ -622,6 +622,11 @@ public class TelegramNotifier {
      * launcher, {@code groesse} schon als Text („12 MB“) oder leer. Der Knopf fragt zuerst nach, nie direkt.
      */
     public static void notifyUpdateNeu(String art, String version, String groesse) {
+        notifyUpdateNeu(art, version, groesse, "");
+    }
+
+    /** 0.1.38.5: {@code neu} = Zeile Art plus Kurzfassung (schon in der Sprache des Bots), leer = ohne. */
+    public static void notifyUpdateNeu(String art, String version, String groesse, String neu) {
         executor.execute(() -> {
             try {
                 if (!isEnabled(Category.UPDATE)) return;
@@ -630,6 +635,7 @@ public class TelegramNotifier {
                 cmd.put("art", "launcher".equals(art) ? "launcher" : "panoptes");
                 cmd.put("version", version == null ? "" : version);
                 cmd.put("groesse", groesse == null ? "" : groesse);
+                cmd.put("neu", neu == null ? "" : neu);
                 sendIpc(cmd, /*spoolOnDaemonDown=*/false);
             } catch (Exception e) {
                 Log.e(TAG, "notifyUpdateNeu IPC error", e);

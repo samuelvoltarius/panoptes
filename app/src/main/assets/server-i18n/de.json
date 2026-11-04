@@ -1013,7 +1013,7 @@
       "btn_jetzt": "⬆️ Jetzt installieren",
       "btn_ja": "✅ Ja, installieren",
       "btn_nein": "✖️ Nein",
-      "frage_panoptes": "❓ *Panoptes {0} jetzt installieren?*\nDas dauert etwa 3–8 Minuten. In der Zeit ist der Wächter aus.\nIst das Auto gerade an, installiert Panoptes nach dem Abstellen.",
+      "frage_panoptes": "❓ *Panoptes {0} jetzt installieren?*\nDas dauert etwa 3–8 Minuten. In der Zeit ist der Wächter aus.\nSteht das Auto in P, geht es sofort. Panoptes startet dabei kurz neu, das Display kann flackern. Sonst installiert Panoptes nach dem Abstellen.",
       "frage_launcher": "❓ *Launcher {0} jetzt installieren?*\nDas dauert etwa eine Minute. Während der Fahrt geht es nicht.",
       "frage_mobil": "📶 Das Auto hat gerade kein WLAN. Das Update braucht etwa {0} mobile Daten.",
       "abgebrochen": "Gut, kein Update.",
@@ -2650,16 +2650,17 @@
     }
   },
   "update_fern": {
-    "bereit": "Neue Version {0} ist da. Das Update dauert etwa 3–8 Minuten.",
+    "bereit": "Neue Version {0} ist da. Das Update dauert etwa 3–8 Minuten. Panoptes startet dabei kurz neu, das Display kann flackern. Nur im Stand.",
     "kein_update": "Panoptes ist auf dem neuesten Stand ({1}).",
     "laeuft": "Panoptes wird aktualisiert und kommt gleich wieder. Das dauert etwa 3–8 Minuten.",
     "laeuft_schon": "Panoptes wird gerade schon aktualisiert.",
     "fertig": "Fertig. Panoptes läuft jetzt mit {1}.",
     "fehler": "Das Update hat nicht geklappt. Panoptes läuft weiter mit der bisherigen Version.",
     "nicht_erlaubt": "Dieses Gerät darf keine Updates starten. Einschalten am Auto unter „Gekoppelte Geräte“.",
-    "faehrt": "Während der Fahrt geht kein Update. Bitte parken und das Auto ausschalten.",
-    "nicht_in_p": "Update geht nur, wenn das Auto in P steht und aus ist.",
-    "zuendung_an": "Update geht nur, wenn das Auto aus ist. Bitte ausschalten und noch einmal versuchen.",
+    "faehrt": "Während der Fahrt geht kein Update. Bitte anhalten und in P stellen.",
+    "nicht_in_p": "Update geht nur, wenn das Auto in P steht. Bitte in P stellen und noch einmal versuchen.",
+    "zuendung_an": "Panoptes weiß gerade nicht sicher, ob das Auto in P steht. Bitte in P stellen und noch einmal versuchen.",
+    "waechter_aktiv": "Der Wächter nimmt gerade etwas auf. Bitte warten, bis er fertig ist, und noch einmal versuchen.",
     "zustand_unbekannt": "Panoptes weiß gerade nicht sicher, ob das Auto steht. Bitte gleich noch einmal versuchen.",
     "wartet_wlan": "Updates sind auf „nur WLAN“ eingestellt, und das Auto hat gerade kein WLAN.",
     "mobil_frage": "Das Auto hat gerade kein WLAN. Das Update braucht etwa {0} mobile Daten. Nur für diese Version laden?",
@@ -2705,6 +2706,7 @@
     "mobil": "Etwa {0} über mobile Daten.",
     "titel": "Neue Version {0}",
     "frage": "Panoptes jetzt aktualisieren?",
+    "neustart": "Panoptes startet dabei kurz neu, das Display kann flackern. Nur im Stand.",
     "installieren": "Jetzt installieren",
     "spaeter": "Später",
     "was_neu": "Was ist neu?",
@@ -2714,6 +2716,11 @@
     "vorgemerkt_wlan": "Panoptes installiert das Update etwa 10 Minuten, nachdem du das Auto abgestellt hast, sobald es WLAN hat. Der Wächter ist dabei ein paar Minuten aus.",
     "zuruecknehmen": "Zurücknehmen",
     "geraet": "Auto-Display"
+  },
+  "update_art": {
+    "fix": "Korrektur",
+    "funktion": "Neue Funktion",
+    "beides": "Korrektur + neue Funktion"
   },
   "rueckkehr": {
     "titel_aufnahmen": "Während du weg warst",

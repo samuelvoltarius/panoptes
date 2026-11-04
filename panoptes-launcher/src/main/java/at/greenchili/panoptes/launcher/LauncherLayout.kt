@@ -24,4 +24,20 @@ object Fahrsicherheit {
      */
     fun appStartErlaubt(istVideo: Boolean, gear: String?, fahrtHinweis: Boolean = false): Boolean =
         !istVideo || gear == "P" || fahrtHinweis
+
+    /**
+     * 0.1.38.5: Klima-Stufe des Surf (1..17, Mitte 9) als (Art, Zahl): Art 1 = Heizen, -1 = Kühlen, 0 = Neutral;
+     * Zahl 1..8. null außerhalb. Wie KlimaStufe im Kern, damit der Launcher nie eine Gradzahl erfindet.
+     */
+    fun klimaStufe(stufe: Int?): Pair<Int, Int>? {
+        if (stufe == null || stufe !in 1..17) return null
+        return when { stufe > 9 -> 1 to (stufe - 9); stufe < 9 -> -1 to (9 - stufe); else -> 0 to 0 }
+    }
+
+    /**
+     * 0.1.38.5: welche Navi-App der Launcher direkt startet: eigene Wahl, sonst die am Tacho gewählte, sonst die erste
+     * startbare bekannte; null = keine (dann Karte in Panoptes). Nur startbare Pakete.
+     */
+    fun naviZiel(eigen: String?, tacho: String?, bekannt: List<String>, startbar: (String) -> Boolean): String? =
+        listOfNotNull(eigen, tacho).plus(bekannt).firstOrNull { startbar(it) }
 }

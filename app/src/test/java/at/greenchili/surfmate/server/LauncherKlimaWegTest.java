@@ -62,11 +62,15 @@ public class LauncherKlimaWegTest {
     static final class Auto implements LauncherKlimaBefehl.Auto {
         Integer luft = 3;
         Double soll = 21.0;
+        Integer roh = 26;          // Surf: Stufe 10 = Heizen 1
+        boolean stufen = false;
         String ausgang = "success";
         final List<VehicleCommand> befehle = new ArrayList<>();
 
         @Override public Integer luft() { return luft; }
         @Override public Double sollC() { return soll; }
+        @Override public Integer sollRoh() { return roh; }
+        @Override public boolean stufenModell() { return stufen; }
         @Override public LauncherKlimaBefehl.Ergebnis ausfuehren(VehicleCommand c) {
             befehle.add(c);
             return new LauncherKlimaBefehl.Ergebnis(ausgang, "sdk");
@@ -250,6 +254,35 @@ public class LauncherKlimaWegTest {
         assertTrue(r, r.contains("\"ok\":false") && r.contains("blocked_driving"));
     }
 
+    /** 0.1.38.5, Befund am Auto: der Surf stellt die Temperatur in Stufen; der Dreh-Befehl wirkt dort nicht. */
+    @Test
+    public void surfTemperaturInStufenWiePanoptes() throws Exception {
+        auto.stufen = true;
+        auto.roh = 26;                                       // Stufe 10
+        assertTrue(klima("temp_hoch").contains("\"ok\":true"));
+        klima("temp_runter");
+        assertEquals(2, auto.befehle.size());
+        for (VehicleCommand c : auto.befehle) {
+            assertTrue("kein Dreh-/Grad-Schritt am Surf", c instanceof VehicleCommandRouter.ClimateSetTempCommand);
+            assertEquals("Zone 1 wie vehicle-control set_temp", 1, ((VehicleCommandRouter.ClimateSetTempCommand) c).zone);
+        }
+        assertEquals(27.0, ((VehicleCommandRouter.ClimateSetTempCommand) auto.befehle.get(0)).tempCelsius, 1e-9);
+        assertEquals(25.0, ((VehicleCommandRouter.ClimateSetTempCommand) auto.befehle.get(1)).tempCelsius, 1e-9);
+        auto.roh = 33;                                       // Stufe 17 = Heizen 8
+        assertTrue(klima("temp_hoch").contains("grenze"));
+        auto.roh = 17;                                       // Stufe 1 = Kühlen 8
+        assertTrue(klima("temp_runter").contains("grenze"));
+        auto.roh = null;
+        assertTrue(klima("temp_hoch").contains("stufe_unbekannt"));
+        auto.roh = 12;                                       // außerhalb der Skala
+        assertTrue(klima("temp_hoch").contains("stufe_unbekannt"));
+        assertEquals(2, auto.befehle.size());
+        // andere Modelle unverändert: relativer Schritt
+        auto.stufen = false; auto.roh = 22;
+        klima("temp_hoch");
+        assertTrue(auto.befehle.get(2) instanceof VehicleCommandRouter.ClimateStepTempCommand);
+    }
+
     @Test
     public void ratenlimit() throws Exception {
         long t = 1_000_000L;
@@ -271,7 +304,7 @@ public class LauncherKlimaWegTest {
         String src = lies("app/src/main/java/at/greenchili/surfmate/server/LauncherKlimaBefehl.java");
         java.util.regex.Matcher m = java.util.regex.Pattern.compile("VehicleCommandRouter\\.(\\w+Command)\\b").matcher(src);
         List<String> erlaubt = Arrays.asList("ClimateOnCommand", "ClimateOffCommand", "ClimateStepTempCommand",
-                "ClimateSetFanCommand");
+                "ClimateSetFanCommand", "ClimateSetTempCommand");
         int n = 0;
         while (m.find()) {
             if (m.group(1).equals("VehicleCommand")) continue;   // Import des Typs

@@ -339,6 +339,40 @@
         "Gekoppelde apparaten zie je als grote tegels met een symbool. Een tik toont alleen dat apparaat, „Terug naar alle apparaten” brengt je terug.",
         "Licht of donker, weergave in de auto en startweergave vind je nu onder Apps & scherm → Scherm → Weergave."
       ]
+    },
+    {
+      "version": "0.1.38.5",
+      "versionCode": 69,
+      "de": [
+        "Ein Update kannst du jetzt auch bei eingeschaltetem Auto starten – aber nur im sicheren Stand (Gang P). Fährst du, wird es wie bisher vorgemerkt.",
+        "Die Update-Meldung sagt dir jetzt, ob es eine Korrektur oder eine neue Funktion ist, und zeigt kurz, was neu ist.",
+        "Im Launcher stellst du die Klimaanlage direkt ein, beim Surf in Stufen (Heizen, Neutral, Kühlen). Kacheln und Reiter wirken sofort, ohne Umweg über Panoptes.",
+        "Apps lassen sich ehrlich neben dem Launcher öffnen, und Panoptes repariert sich zuverlässiger, wenn die Verbindung zum Auto kurz abreißt."
+      ],
+      "en": [
+        "You can now start an update with the car switched on, too – but only when safely parked (gear P). While driving it is queued as before.",
+        "The update message now tells you whether it is a correction or a new feature, and shows briefly what is new.",
+        "In the launcher you set the climate directly, on the Surf in steps (heat, neutral, cool). Tiles and tabs now act at once, without the detour through Panoptes.",
+        "Apps can be opened honestly next to the launcher, and Panoptes repairs itself more reliably when the connection to the car briefly drops."
+      ],
+      "fr": [
+        "Tu peux maintenant lancer une mise à jour aussi quand la voiture est allumée – mais seulement à l’arrêt en sécurité (vitesse P). En roulant, elle est mise en attente comme avant.",
+        "Le message de mise à jour t’indique maintenant s’il s’agit d’une correction ou d’une nouvelle fonction, et montre brièvement ce qui est nouveau.",
+        "Dans le launcher tu règles la climatisation directement, sur la Surf par paliers (chauffer, neutre, refroidir). Les tuiles et les onglets agissent tout de suite, sans passer par Panoptes.",
+        "Les applis s’ouvrent franchement à côté du launcher, et Panoptes se répare plus sûrement quand la liaison avec la voiture se coupe brièvement."
+      ],
+      "it": [
+        "Ora puoi avviare un aggiornamento anche con l’auto accesa – ma solo da fermo in sicurezza (marcia P). Mentre guidi viene messo in attesa come prima.",
+        "Il messaggio di aggiornamento ora ti dice se è una correzione o una nuova funzione, e mostra in breve cosa è nuovo.",
+        "Nel launcher imposti il clima direttamente, sulla Surf a gradini (riscaldare, neutro, raffreddare). Riquadri e schede agiscono subito, senza passare da Panoptes.",
+        "Le app si aprono in modo chiaro accanto al launcher, e Panoptes si ripara in modo più affidabile quando il collegamento con l’auto si interrompe un attimo."
+      ],
+      "nl": [
+        "Je kunt een update nu ook starten met de auto aan – maar alleen veilig stil (versnelling P). Tijdens het rijden wordt hij zoals eerder in de wachtrij gezet.",
+        "De updatemelding vertelt je nu of het een correctie of een nieuwe functie is, en toont kort wat nieuw is.",
+        "In de launcher stel je de airco direct in, op de Surf in stappen (verwarmen, neutraal, koelen). Tegels en tabbladen werken nu meteen, zonder omweg via Panoptes.",
+        "Apps kun je eerlijk naast de launcher openen, en Panoptes herstelt zichzelf betrouwbaarder als de verbinding met de auto even wegvalt."
+      ]
     }
   ]
 }

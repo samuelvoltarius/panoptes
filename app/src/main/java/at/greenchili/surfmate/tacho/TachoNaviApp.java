@@ -426,6 +426,20 @@ public final class TachoNaviApp {
     }
 
     public static boolean istAn() { return sektion().optBoolean("an", false); }
+
+    /** 0.1.38.5 Launcher: bekannte Navigations-Apps ohne Panoptes selbst (Reihenfolge fest, für den Rückfall). */
+    public static java.util.List<String> naviPakete() {
+        java.util.List<String> l = new java.util.ArrayList<>(NAVI_PAKETE);
+        l.remove(SELF_PACKAGE);
+        java.util.Collections.sort(l);
+        return l;
+    }
+
+    /** Die am Tacho gewählte App, wenn sie eine Navigations-App ist (nicht Panoptes selbst), sonst null. */
+    public static String gewaehlteNaviApp() {
+        String p = paket();
+        return p != null && NAVI_PAKETE.contains(p) && !SELF_PACKAGE.equals(p) ? p : null;
+    }
     public static String paket() { return sektion().optString("paket", ""); }
     /** Kompatibilitaetswert: ja nur fuer das aktuell gewaehlte, freigegebene Paket. */
     public static String warnleuchtenFrei() {

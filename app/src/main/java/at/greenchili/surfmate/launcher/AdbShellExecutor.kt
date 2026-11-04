@@ -85,6 +85,24 @@ class AdbShellExecutor(private val context: Context) {
         /** Default deadline for the run-phase of [executeScript] payloads. */
         const val SCRIPT_RUN_DEADLINE_MS = 120_000L
 
+        /**
+         * 0.1.38.3 (fix-waechter-skript): Fehlertext mit Klasse, Text und Ursache, nie „null“. Reißt die
+         * gemeinsame Verbindung ab (ADB_ABBRUCH), wirft der laufende Befehl oft eine Ausnahme ohne Text;
+         * am Auto stand dann nur „Execution failed: null“.
+         */
+        @JvmStatic
+        fun fehlerText(e: Throwable): String = buildString {
+            var t: Throwable? = e
+            var tiefe = 0
+            while (t != null && tiefe < 3) {
+                if (tiefe > 0) append(" ← ")
+                append(t.javaClass.simpleName).append(": ").append(t.message ?: "ohne Text")
+                val c = t.cause
+                t = if (c === t) null else c
+                tiefe++
+            }
+        }
+
         /** SO_TIMEOUT for the bulk lane's throwaway HANDSHAKE PROBE. Auth is
          *  already granted when this runs (the control lane connected with
          *  the same key first), so a healthy CNXN/AUTH completes in
@@ -337,7 +355,7 @@ class AdbShellExecutor(private val context: Context) {
                 }
             } catch (e: Exception) {
                 logger.error(TAG, "adb#$seq FAILED after ${System.currentTimeMillis() - t0}ms: $commandForLog", e)
-                callback.onError("Execution failed: ${e.message}")
+                callback.onError("Execution failed: ${fehlerText(e)}")
             }
         }
     }
@@ -450,7 +468,7 @@ class AdbShellExecutor(private val context: Context) {
             } catch (e: Exception) {
                 logger.error(TAG, "Script execution failed", e)
                 if (!ereignisseGeschrieben) at.greenchili.surfmate.logging.LauncherEreignisse.zuruecklegen(ereignisse)
-                callback.onError("Execution failed: ${e.message}")
+                callback.onError("Execution failed: ${fehlerText(e)}")
                 // Best-effort cleanup if a connection is still obtainable.
                 tryCleanupScript(scriptPath)
             }
@@ -571,7 +589,7 @@ class AdbShellExecutor(private val context: Context) {
                     cmdWatchdog.cancel(false)
                     if (settled.compareAndSet(false, true)) {
                         logger.error(TAG, "adb#$seq FAILED-BULK after ${System.currentTimeMillis() - t0}ms: ${e.message}", e)
-                        callback.onError("Execution failed: ${e.message}")
+                        callback.onError("Execution failed: ${fehlerText(e)}")
                     } else if (timedOut.get()) {
                         // Expected: our own deadline close unblocked the read.
                         logger.debug(TAG, "adb#$seq bulk command unblocked by deadline close: ${e.message}")
@@ -582,7 +600,7 @@ class AdbShellExecutor(private val context: Context) {
                 setupWatchdog.cancel(false)
                 if (settled.compareAndSet(false, true)) {
                     logger.error(TAG, "adb#$seq FAILED-BULK after ${System.currentTimeMillis() - t0}ms: ${e.message}", e)
-                    callback.onError("Execution failed: ${e.message}")
+                    callback.onError("Execution failed: ${fehlerText(e)}")
                 }
             } finally {
                 bulk?.closeQuietly()
@@ -859,7 +877,7 @@ class AdbShellExecutor(private val context: Context) {
             if (genuineFailure) {
                 // Transport failure on a live watchdog: invalidate (no-op if
                 // another thread's failure got there first).
-                invalidateConnection(conn, "transport failure on adb#$seq: ${e.message}")
+                invalidateConnection(conn, "transport failure on adb#$seq: ${fehlerText(e)}")
                 throw e
             }
             // The exception is the consequence of our own deadline close.

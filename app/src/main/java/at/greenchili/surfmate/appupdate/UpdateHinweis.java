@@ -189,9 +189,21 @@ public final class UpdateHinweis {
         return fahrsperre == null && !Boolean.FALSE.equals(gangP) && !waechterEreignis && !aufnahme;
     }
 
-    /** Darf nach diesem Grund aus {@link FernUpdate#starten} vorgemerkt werden (das Auto muss nur noch aus sein)? */
+    /**
+     * 0.1.38.5: sicherer Stand für einen Tipp bei eingeschaltetem Auto: keine Fahrsperre, Gang sicher P (unbekannt zählt
+     * hier nicht), 0 km/h bekannt.
+     */
+    public static boolean standSicher(String fahrsperre, Boolean gangP, double kmh) {
+        return fahrsperre == null && Boolean.TRUE.equals(gangP) && !Double.isNaN(kmh) && Math.abs(kmh) <= 0.5;
+    }
+
+    /**
+     * Darf nach diesem Grund aus {@link FernUpdate#starten} vorgemerkt werden (das Auto muss nur noch aus sein)?
+     * 0.1.38.5: auch „nicht in P“ (steht, Gang nicht P oder unbekannt); nie „fährt“, nie „Wächter aktiv“.
+     */
     public static boolean vormerkbar(String grund) {
-        return "zuendung_an".equals(grund) || "zustand_unbekannt".equals(grund) || "wartet_wlan".equals(grund);
+        return "zuendung_an".equals(grund) || "zustand_unbekannt".equals(grund) || "wartet_wlan".equals(grund)
+                || "nicht_in_p".equals(grund);
     }
 
     /** Stichpunkte für die Karte, gekürzt. */
@@ -207,6 +219,75 @@ public final class UpdateHinweis {
         return b.toString();
     }
 
+    // ------------------------------------------------------------------ 0.1.38.5 „Was ist neu“ direkt in der Meldung
+
+    public static final String ART_FIX = "fix";
+    public static final String ART_FUNKTION = "funktion";
+    public static final String ART_BEIDES = "beides";
+    /** So viele Stichpunkte stehen direkt in der Meldung (REGEL DAU); der volle Text bleibt hinter „Was ist neu?“. */
+    public static final int KURZ_ZEILEN = 3;
+    public static final int KURZ_ZEICHEN = 90;
+
+    /**
+     * Art des Updates: {@code art} aus version.json, sonst geschätzt aus den Versionsnamen. Gleiche ersten drei Stellen
+     * wie die installierte Version und eine vierte Stelle (0.1.38.4 → 0.1.38.5) = Korrektur; sonst (0.1.38 → 0.1.39,
+     * auch 0.1.37 → 0.1.38.4, das 0.1.38 mitbringt) = neue Funktion. Ohne installierte Version zählt nur die vierte Stelle.
+     */
+    public static String art(Freigabe f, String installiert) {
+        if (f.art != null) return f.art;
+        int[] neu = stellen(f.versionName);
+        if (neu == null) return ART_FUNKTION;
+        int[] alt = stellen(installiert);
+        boolean vierte = neu.length >= 4;
+        if (alt == null || alt.length < 3 || neu.length < 3) return vierte ? ART_FIX : ART_FUNKTION;
+        boolean gleich = neu[0] == alt[0] && neu[1] == alt[1] && neu[2] == alt[2];
+        return gleich && vierte ? ART_FIX : ART_FUNKTION;
+    }
+
+    /** „0.1.38.4“ (auch mit „-test.2“) → {0,1,38,4}; null, wenn nicht lesbar. */
+    static int[] stellen(String name) {
+        if (name == null) return null;
+        String s = name.trim();
+        int strich = s.indexOf('-');
+        if (strich >= 0) s = s.substring(0, strich);
+        if (!s.matches("[0-9]{1,6}(\\.[0-9]{1,6}){0,4}")) return null;
+        String[] t = s.split("\\.");
+        int[] r = new int[t.length];
+        for (int i = 0; i < t.length; i++) r[i] = Integer.parseInt(t[i]);
+        return r;
+    }
+
+    public static String artText(String art) {
+        if (ART_FIX.equals(art)) return Messages.text("update_art.fix", "Bug fix");
+        if (ART_BEIDES.equals(art)) return Messages.text("update_art.beides", "Bug fix + new feature");
+        return Messages.text("update_art.funktion", "New feature");
+    }
+
+    /** Höchstens {@link #KURZ_ZEILEN} Stichpunkte, je höchstens {@link #KURZ_ZEICHEN} Zeichen. */
+    public static String kurz(JSONArray notizen) {
+        StringBuilder b = new StringBuilder();
+        int n = 0;
+        for (int i = 0; notizen != null && i < notizen.length() && n < KURZ_ZEILEN; i++) {
+            String z = notizen.optString(i, "").trim();
+            if (z.isEmpty()) continue;
+            if (z.length() > KURZ_ZEICHEN) z = z.substring(0, KURZ_ZEICHEN - 1).trim() + "…";
+            if (b.length() > 0) b.append('\n');
+            b.append("• ").append(z);
+            n++;
+        }
+        return b.toString();
+    }
+
+    /**
+     * Zeile Art plus Kurzfassung in der aktuellen Sprache von {@link Messages}, z. B. „Korrektur\n• …“. Notizen in
+     * {@code sprache} (Rückfall Englisch); ohne Notizen nur die Art.
+     */
+    public static String wasNeu(Freigabe f, String installiert, String sprache) {
+        String k = kurz(f.notizen(sprache));
+        String a = artText(art(f, installiert));
+        return k.isEmpty() ? a : a + "\n" + k;
+    }
+
     // ------------------------------------------------------------------ Texte (Nutzersprache, Rückfall Englisch)
 
     public static String titel(String version) {
@@ -214,7 +295,13 @@ public final class UpdateHinweis {
     }
 
     public static String frage() {
-        return Messages.text("update_hinweis.frage", "Update Panoptes now?");
+        return Messages.text("update_hinweis.frage", "Update Panoptes now?") + " " + textNeustart();
+    }
+
+    /** 0.1.38.5: vor dem Tipp sagen, was passiert (REGEL 50+). */
+    public static String textNeustart() {
+        return Messages.text("update_hinweis.neustart",
+                "Panoptes restarts briefly, the display may flicker. Only while parked.");
     }
 
     public static String knopfInstallieren() {
