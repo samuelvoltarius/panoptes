@@ -6,7 +6,7 @@ Panoptes is a free community app for BYD cars with DiLink 3, 4 and 5. It runs ri
 
 This is the source code. Ready-made versions are available under **[Releases](https://github.com/samuelvoltarius/panoptes/releases/latest)**. More about the project and the installation guide: **[byd.serveone.at/panoptes/](https://byd.serveone.at/panoptes/en/)**.
 
-This tree corresponds exactly to release **v0.1.38.9** (internal commit `80a5b30`).
+This tree corresponds exactly to release **v0.1.38.10** (internal commit `deabb40`).
 
 <p>
   <img src="screenshots/start-display-dunkel.webp" alt="Home on the car screen" width="66%">
@@ -21,8 +21,8 @@ The app is available in English, German, French, Italian and Dutch. The screensh
 
 ## What Panoptes does
 
-- **On the car screen.** Panoptes runs as its own full-screen app, with large buttons and a back button. While driving, settings are locked; home, map and guard stay available. The interface adapts to different screen sizes, including portrait.
-- **Guard with AI detection.** While your car is parked, the cameras watch its surroundings. During setup you decide when it records: only on impact, with AI detection everywhere, or with AI detection only at your own private places such as your garage or driveway. To protect the batteries, the guard can go to sleep, for example when the charge level is low or the starter battery is weak.
+- **On the car screen.** Panoptes runs as its own full-screen app, with large buttons and a back button. While driving, settings are locked; home, navigation, map and guard stay available. While starting, Panoptes shows for each service (access, interface, guard, Telegram and bridge) whether it is ready yet. The interface adapts to different screen sizes, including portrait.
+- **Guard with AI detection.** While your car is parked, the cameras watch its surroundings. The guard is on by default and then records only on impact. It only runs once you have confirmed the legal note. You can change this at any time: only on impact, with AI detection everywhere, or with AI detection only at your own private places such as your garage or driveway. To protect the batteries, the guard can go to sleep, for example when the charge level is low or the starter battery is weak.
 - **Remote access.** Reach your car from anywhere via Tailscale. Setup uses a QR code on the car screen; you link it to your own Tailscale account. If Panoptes cannot set the protection rule for remote access, it turns remote access off instead of leaving it open unprotected.
 - **Telegram notifications.** Your own bot tells you what happens at the car: guard events, charging, weak starter battery, tyre pressure, updates. Each kind can be switched on or off. There are quiet hours for the night. The bot only sends pictures and videos if you explicitly turn that on.
 - **Phone notifications without Telegram.** Notifications straight to your phone need an HTTPS address. With Tailscale, Panoptes can turn on HTTPS in your own tailnet for this: your car gets an address under ts.net that is not public. Without Tailscale you need your own fixed HTTPS address; Telegram always works.
@@ -33,10 +33,12 @@ The app is available in English, German, French, Italian and Dutch. The screensh
 - **Route planner link.** You can connect Panoptes to your account on [byd.serveone.at/ev/](https://byd.serveone.at/ev/). Show a code in the car and confirm it on your phone. You can disconnect at any time.
 - **EV Cockpit on your PC.** The [EV Cockpit](https://byd.serveone.at/ev-cockpit/) is a PC program. It shows data from Panoptes and can change its settings. You confirm the pairing with one tap and a four-digit check number.
 - **Honest connection status.** For MQTT / smart home you see whether the connection is up, is being re-established (with the approximate time to the next attempt) or is off.
-- **Updates in the app.** If you like, Panoptes looks for new versions itself. Installing only happens while the car is parked with the ignition off.
+- **Navigation.** Under **Navigation & trips** (second place in the bar) you plan right in the car: search a destination, up to 5 stops with a stay and “Charge here”, order with ↑ and ↓. Panoptes adds the charging stops you need and shows every leg with the battery level on arrival. While driving you add stops only from favourites or “Chargers nearby”; searching only works while standing. On the car screen “Start” opens the Panoptes map with a preview, and Panoptes then guides you itself (new, its first trial in the car is just starting). “Open in car navigation” stays as a second button; the BYD navigation knows only one destination and gets the legs one after another. The Panoptes map only speaks if you turn on **Navigation: voice guidance** (off by default).
+- **Updates in the app.** If you like, Panoptes looks for new versions itself. It installs by itself only when the car has been off for at least 10 minutes. An update you start yourself also works with the ignition on, but only in P and never while driving.
 - **Five languages.** German, English, French, Italian and Dutch.
-- **Log.** Under **System → Connections** you can see which paired device did what and when. A paired phone sees its own entries.
+- **Log.** Under **Settings → All settings → Log** you can see which paired device did what and when. A paired phone sees its own entries.
 - **Home Assistant.** Home Assistant can be paired as a device of its own. You confirm it on the car's screen with a four-digit check number.
+- **Owner phone and permissions.** A paired phone can become the owner phone: it may change all Panoptes settings, pair new devices and switch the guard, but cannot reach remote access. If Panoptes picked an owner phone itself during an update, it asks once whether that is right. Actions that can be seen or heard outside the car (horn, lights, hazard lights, find my car) as well as locking and unlocking, climate and wallbox are off by default. You grant these permissions only directly on the car screen, never remotely. Removing them works anywhere.
 
 ## Screenshots
 
@@ -77,21 +79,23 @@ All pictures show sample data, not real vehicle data.
 1. **Download the app.** Get the latest `panoptes-….apk` under **[Releases](https://github.com/samuelvoltarius/panoptes/releases/latest)** and compare the sha256 checksum.
 2. **Get it onto the car and install it.** How (USB stick, allow unknown sources) is explained on the [project page](https://byd.serveone.at/panoptes/en/#install).
 3. **Go through the first start.** Panoptes guides you through setup:
-   - **Autostart:** so Panoptes starts by itself when you get in, it has to be allowed in BYD's app management. Panoptes opens the right page for you. BYD resets this switch after every update; Panoptes then reminds you. Not needed on DiLink 5.
+   - **Autostart:** so Panoptes starts by itself when you get in, it has to be allowed in BYD's app management. Panoptes opens the right page for you. BYD resets this switch on every installation. After an update Panoptes turns it back on by itself; the BYD page shows briefly on the screen for that. If this fails, the home page shows the button “Turn autostart back on” and you get one message. Not needed on DiLink 5.
    - **Display over other apps:** needed for notices on the screen.
    - **Permission for Panoptes:** Android asks once "Allow USB debugging?". Choose **"Always allow from this computer"**. This lets Panoptes work in the background.
    - **Remote access:** scan the QR code on the car screen with your phone and sign in to Tailscale.
    - **Vehicle and cameras:** choose your model and battery size, then check the cameras.
-   - **Confirm the notes** and **choose yourself** when the guard records. There is no preselection.
-4. **Open it on your phone or PC.** Open your car's address in the browser (via Tailscale). To sign in you need the **access code**, which you find in the app in the car under **Home → Access code**.
-5. **Pair other devices (optional).** Under **System → Pair a device** you can allow the EV Cockpit, for example. Paired devices cannot reach remote access, the password or ports, and you can remove them at any time.
+   - **Confirm the notes.** The guard is suggested: on, recording only on impact. One tap confirms the legal note. You add AI detection yourself.
+4. **Open it on your phone or PC.** Open your car's address in the browser (via Tailscale). To sign in you need the **access code**. You find it on the car screen under **Settings → Advanced (old) → Your access code**. If Telegram is set up, you can also sign in via Telegram with a check number.
+5. **Pair other devices (optional).** Under **Settings → All settings → Pair a device** you can allow the EV Cockpit, for example. Paired devices cannot reach remote access, the password or ports, and you can remove them at any time.
 
 ## Updates
 
-> **If you have 0.1.14.1:** install the current version (0.1.38.9) **once by hand**, just like the first time (your data is kept). 0.1.14.1 cannot update itself to 0.1.15 because from 0.1.15 on Panoptes is signed with a new, permanent key (APK signature scheme v3 with proof of origin from the old key). From 0.1.15 on, updates come automatically from this repository.
+> **If you have 0.1.14.1:** install the current version (0.1.38.10) **once by hand**, just like the first time (your data is kept). 0.1.14.1 cannot update itself to 0.1.15 because from 0.1.15 on Panoptes is signed with a new, permanent key (APK signature scheme v3 with proof of origin from the old key). From 0.1.15 on, updates come automatically from this repository.
 
 - New versions appear under **[Releases](https://github.com/samuelvoltarius/panoptes/releases)**, with a short list of what's new.
-- Under **System → App updates** you can look for new versions and choose whether Panoptes only tells you or installs by itself. Installing only happens while the car is parked with the ignition off. If a new version does not run properly, Panoptes goes back to the previous one by itself.
+- Under **Settings → All settings → App updates** you can look for new versions and choose whether Panoptes only tells you or installs by itself.
+- **When it installs:** never while driving. By itself only when the car has been off for at least 10 minutes. If you start an update yourself (there, on the car screen, in Telegram or on your phone), it runs right away when the car is in P and the guard is not recording, even with the ignition on. Otherwise Panoptes remembers it and installs about 10 minutes after you switch off. During the update the guard is off for a few minutes. If a new version does not run properly, Panoptes goes back to the previous one by itself.
+- **Mobile data:** by default updates may also download over mobile data, because many cars only have the SIM. If you turn that off, Panoptes downloads only on Wi-Fi or asks you before that one download. The Panoptes Launcher follows the same rule.
 - After an update Panoptes shows once what's new. If your car's software changes (BYD update), you get a notice.
 
 ## Privacy: what goes where
@@ -101,7 +105,7 @@ Principle: your recordings, trips and positions stay in the car. Panoptes does n
 | Where | What | When |
 |---|---|---|
 | **In the car** (USB stick, app) | guard recordings, trip log, charging history, monthly report, settings | always. On a new setup Panoptes deletes recordings after 72 hours; you can keep individual ones. |
-| **Map source** (community server byd.serveone.at or OpenStreetMap Germany) | your IP address and the map area, so roughly where your car is. With the community server also the query for free charging spots in that area. | only once you choose a source under **System → Map source**. On the car screen the choice applies to the whole car; phone and PC ask separately. |
+| **Map source** (community server byd.serveone.at or OpenStreetMap Germany) | your IP address and the map area, so roughly where your car is. With the community server also the query for free charging spots in that area. | only once you choose a source under **Settings → All settings → Map source**. On the car screen the choice applies to the whole car; phone and PC ask separately. |
 | **Telegram** | message texts; pictures and videos only if you turn that on (they are then stored on Telegram's servers) | only if you set up a bot |
 | **Tailscale** | connection for remote access | only if you set up remote access |
 | **Certificate for HTTPS in the tailnet** (Let’s Encrypt) | the device name and tailnet name become visible in public certificate logs | only if you turn on HTTPS in the tailnet for phone notifications |

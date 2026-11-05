@@ -2151,6 +2151,12 @@
         "help": "Connects to the Panoptes community server (byd.serveone.at). Needs the member key. Off = no calls at all. Road reports are only sent if you also turn them on under road conditions."
       }
     },
+    "navi": {
+      "sprachansagen": {
+        "title": "Navigation: voice guidance",
+        "help": "While guiding, the Panoptes map reads out the turn instructions. Volume follows the media volume, no other sounds. Off by default."
+      }
+    },
     "speedcam": {
       "enabled": {
         "title": "Speed camera warning",
@@ -2192,7 +2198,7 @@
       },
       "mobilfunk": {
         "title": "Download updates over mobile data too",
-        "help": "Off after a new setup: you then allow each download on the update notice. An update is usually 70 to 120 MB; the size is shown in the notice beforehand. Off = Panoptes only downloads while the car is on Wi-Fi. The download only runs while the car is parked and resumes where it stopped after an interruption."
+        "help": "Off after a new setup: you then allow each download on the update notice. An update is usually 70 to 120 MB; the size is shown in the notice beforehand. Off = Panoptes only downloads while the car is on Wi-Fi. The download only runs while the car is parked and resumes where it stopped after an interruption. The Panoptes launcher follows the same setting and comes along in the same update run."
       },
       "quelle": {
         "title": "Update source",
@@ -2347,7 +2353,7 @@
     "karte": {
       "sucheInternet": {
         "title": "Map: search on the internet",
-        "help": "When you search on the map, your search text and your approximate location (rounded to about 1 km) go to Photon, Nominatim and Overpass, without any ID. Off: nothing is sent, you only find saved places and coordinates."
+        "help": "When you search on the map, only your search text goes to the Panoptes route planner (our server), without your location and without any ID. Off: nothing is sent, you only find saved places and coordinates."
       },
       "quelle": {
         "help": "Where Panoptes loads map images from. The chosen source sees your IP address and the map area, so roughly where your car is. “None”: no maps are loaded. Factory default: None. Panoptes never switches to another source by itself."
@@ -2696,9 +2702,12 @@
       "antwortet_nicht": "The route planner is not answering (HTTP {0}). For long routes, please try again.",
       "nicht_erreichbar": "Route planner not reachable",
       "offline": "Route planner not reachable right now (no connection) – next try in {0} s",
+      "fuehrung_schluessel": "Guidance needs the connection to the route planner (member key).",
+      "fuehrung_vertrag": "The route planner answered in an unknown format – please update Panoptes.",
       "fahrzeug_fehlt": "Please choose your vehicle model first (Charging → Vehicle model) so the route planner uses the right values.",
       "planer_fehler": "The route planner could not plan this route ({0}).",
-      "planer_fehler_allgemein": "The route planner could not plan this route."
+      "planer_fehler_allgemein": "The route planner could not plan this route.",
+      "keine_position": "The car has no current position right now."
     },
     "vorliebenEinwilligung": {
       "title": "Send charging preferences to the route planner?",
@@ -3002,9 +3011,10 @@
     "waechter_an": "Guard switched on by phone {0}.",
     "waechter_aus": "Guard switched off by phone {0}.",
     "rechte_selbst": "Owner phone {0} changed its rights: {1}.",
-    "frage_telegram": "Which device is your phone? Please choose it in the car under System → Paired devices – only then is there an owner phone.",
-    "frage_telegram_bestaetigen": "An owner phone was chosen automatically during the update. Please check in the car under System → Paired devices that it really is your phone.",
-    "telegram_gewaehlt": "{0} is now your owner phone."
+    "frage_telegram": "Which device is your phone? Please choose it in the car under Settings → All settings → Paired devices – only then is there an owner phone.",
+    "frage_telegram_bestaetigen": "An owner phone was chosen automatically during the update. Please check in the car under Settings → All settings → Paired devices that it really is your phone.",
+    "telegram_gewaehlt": "{0} is now your owner phone.",
+    "signatur_abgelehnt": "Owner action from phone {0} rejected ({1})."
   },
   "update_klein": {
     "titel": "Updates",
@@ -3017,5 +3027,20 @@
     "push_neu": "New PC signed in: {0}",
     "push_neu_text": "Wasn’t you? Sign it out under Paired devices.",
     "handshakes": "{0} unknown connection attempts via the bridge were rejected in the last hour. If this was not your PC: check Paired devices and, if needed, turn off “Sign in on a PC” in the car."
+  },
+  "websitzung": {
+    "nie_web": "This only works on the car screen or with a login, not in the web interface of the app.",
+    "passkey_noetig": "The web interface only opens the boot with the “Unlock” permission and a fresh fingerprint or Face ID confirmation.",
+    "rueckfrage": "This can be seen or heard outside the car. Trigger it now?",
+    "recht_fehlt": "This phone lacks the permission “{0}”. Switch it on in the car under Paired devices.",
+    "recht_wort": {
+      "zusperren": "Lock",
+      "klima": "Climate",
+      "aufsperren": "Unlock",
+      "signal": "Horn & lights",
+      "laden": "Charging in the car",
+      "tacho": "Cluster",
+      "route": "Route"
+    }
   }
 }

@@ -29,7 +29,7 @@ public class SurveillanceAiTriggerPolicyContractTest {
         // 0.1.38.8 (Wächter-KI B1): the stamp is gated by trigger evidence AND the
         // multi-batch verdict (fail-open on a counting error).
         int stampGate = source.indexOf(
-                "if (triggerEvidenceFound && (mehrbildBestaetigt || mehrbildFehler))");
+                "if (triggerEvidenceFound && (!MultiBatchConfirmationShadow.SCHARF");
         int stamp = source.indexOf(
                 "lastAiConfirmationElapsedMs = detectionObservationElapsedMs", stampGate);
         assertTrue(stampGate >= 0);

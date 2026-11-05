@@ -84,9 +84,22 @@ public final class FehlerMelden {
         return koerper(text, version, dilink, modell, sprache, diagnose, null);
     }
 
-    /** Der ganze Körper. Mehr Felder gibt es nicht. Null bei ungültigem Text. */
     public static JSONObject koerper(String text, String version, Integer dilink, String modell, String sprache,
                                      String diagnose, String art) throws org.json.JSONException {
+        return koerper(text, version, dilink, modell, sprache, diagnose, art, false, null);
+    }
+
+    /**
+     * Der ganze Körper. Mehr Felder gibt es nicht. Null bei ungültigem Text.
+     *
+     * <p>0.1.38.10 (Modellabdeckung): {@code abdeckung} = der Nutzer hat das Häkchen „Modell und Firmware für die Liste ‚Was
+     * geht bei welchem Auto‘ mitschicken“ gesetzt (Standard aus). Nur dann gehen {@code abdeckung:true} und, wenn bekannt,
+     * {@code firmware} mit; das Modell steht wie bisher immer im Körper, darf die Gegenstelle aber nur mit
+     * {@code abdeckung:true} für die öffentliche Tabelle nutzen. Ein Server, der das Feld nicht kennt, ignoriert es.
+     */
+    public static JSONObject koerper(String text, String version, Integer dilink, String modell, String sprache,
+                                     String diagnose, String art, boolean abdeckung, String firmware)
+            throws org.json.JSONException {
         boolean tacho = ART_TACHO.equals(art);
         if (tacho ? (text == null || text.trim().isEmpty() || text.trim().length() > TEXT_MAX_TACHO) : !textOk(text)) return null;
         JSONObject k = new JSONObject().put("text", text.trim())
@@ -95,6 +108,10 @@ public final class FehlerMelden {
         if (version != null && VERSION.matcher(version).matches()) k.put("version", version);
         if (dilink != null) k.put("dilink", (int) dilink);
         if (tacho) k.put("art", ART_TACHO);
+        if (abdeckung && !tacho) {
+            k.put("abdeckung", true);
+            if (firmware != null && !firmware.isEmpty()) k.put("firmware", firmware);
+        }
         if (diagnose != null && !diagnose.isEmpty()) {
             k.put("diagnose", kuerzen(diagnose, DIAGNOSE_MAX));
             // Escapes können den Text aufblähen: lieber weniger Diagnose als eine abgelehnte Meldung

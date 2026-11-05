@@ -80,7 +80,9 @@ public class BesitzerHandyTest {
     }
 
     private JSONObject post(String pfad, String kid, JSONObject body) throws Exception {
-        return BesitzerApiHandler.antwort("POST", pfad, body.toString(), kid, 10_000L);
+        // 0.1.39: heikle Pfade signiert (BesitzerSignaturTest prüft die Signatur selbst)
+        return BesitzerApiHandler.antwort("POST", pfad,
+                BesitzerSignaturHilfe.signiert(k, kid, pfad, body, 10_000L).toString(), kid, 10_000L);
     }
 
     // ------------------------------------------------------------------ Einstellungen

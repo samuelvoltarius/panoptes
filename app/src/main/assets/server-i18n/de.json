@@ -2151,6 +2151,12 @@
         "help": "Verbindet mit dem Panoptes-Community-Server (byd.serveone.at). Braucht den Mitglieds-Schlüssel. Aus = kein einziger Aufruf. Straßenmeldungen gehen nur, wenn du sie zusätzlich bei Straßenzustand einschaltest."
       }
     },
+    "navi": {
+      "sprachansagen": {
+        "title": "Navi: Sprachansagen",
+        "help": "Die Panoptes-Karte liest beim Führen die Abbiegehinweise vor. Lautstärke wie Musik (Medien-Lautstärke), keine anderen Töne. Standard aus."
+      }
+    },
     "speedcam": {
       "enabled": {
         "title": "Blitzer-Warnung",
@@ -2192,7 +2198,7 @@
       },
       "mobilfunk": {
         "title": "Updates auch über Mobilfunk laden",
-        "help": "Bei neuer Einrichtung aus: Dann erlaubst du am Update-Hinweis jeden Download einzeln. Ein Update hat meist 70 bis 120 MB; die Größe steht vorher in der Meldung. Aus = Panoptes lädt nur, wenn das Auto im WLAN ist. Der Download läuft nur bei geparktem Auto und setzt nach einer Unterbrechung dort fort, wo er war."
+        "help": "Bei neuer Einrichtung aus: Dann erlaubst du am Update-Hinweis jeden Download einzeln. Ein Update hat meist 70 bis 120 MB; die Größe steht vorher in der Meldung. Aus = Panoptes lädt nur, wenn das Auto im WLAN ist. Der Download läuft nur bei geparktem Auto und setzt nach einer Unterbrechung dort fort, wo er war. Der Panoptes Launcher folgt derselben Einstellung und kommt beim Update im selben Lauf mit."
       },
       "quelle": {
         "title": "Update-Quelle",
@@ -2347,7 +2353,7 @@
     "karte": {
       "sucheInternet": {
         "title": "Karte: Suche im Internet",
-        "help": "Beim Suchen in der Karte gehen dein Suchtext und der ungefähre Ort (auf etwa 1 km gerundet) an Photon, Nominatim und Overpass, ohne Kennung. Aus: Es wird nichts gesendet, du findest nur gespeicherte Orte und Koordinaten."
+        "help": "Beim Suchen in der Karte geht nur dein Suchtext an den Panoptes-Routenplaner (unser Server), ohne deinen Ort und ohne Kennung. Aus: Es wird nichts gesendet, du findest nur gespeicherte Orte und Koordinaten."
       },
       "quelle": {
         "help": "Woher Panoptes die Kartenbilder lädt. Die gewählte Quelle sieht deine IP-Adresse und den Kartenausschnitt, also ungefähr, wo dein Auto steht. „Keine“: Es werden keine Karten geladen. Ab Werk: Keine. Panoptes wechselt nie von selbst auf eine andere Quelle."
@@ -2696,9 +2702,12 @@
       "antwortet_nicht": "Der Routenplaner antwortet nicht (HTTP {0}). Bei langen Strecken bitte nochmal versuchen.",
       "nicht_erreichbar": "Routenplaner nicht erreichbar",
       "offline": "Routenplaner gerade nicht erreichbar (keine Verbindung) – neuer Versuch in {0} s",
+      "fuehrung_schluessel": "Die Führung braucht die Verbindung zum Routenplaner (Mitglieds-Schlüssel).",
+      "fuehrung_vertrag": "Der Routenplaner antwortet in einem unbekannten Format – bitte Panoptes aktualisieren.",
       "fahrzeug_fehlt": "Bitte zuerst dein Fahrzeugmodell wählen (Laden → Fahrzeugmodell), dann plant der Routenplaner mit den richtigen Werten.",
       "planer_fehler": "Der Routenplaner konnte diese Route nicht planen ({0}).",
-      "planer_fehler_allgemein": "Der Routenplaner konnte diese Route nicht planen."
+      "planer_fehler_allgemein": "Der Routenplaner konnte diese Route nicht planen.",
+      "keine_position": "Das Auto hat gerade keine aktuelle Position."
     },
     "vorliebenEinwilligung": {
       "title": "Lade-Vorlieben an den Routenplaner senden?",
@@ -3002,9 +3011,10 @@
     "waechter_an": "Wächter eingeschaltet vom Handy {0}.",
     "waechter_aus": "Wächter ausgeschaltet vom Handy {0}.",
     "rechte_selbst": "Besitzer-Handy {0} hat seine Rechte geändert: {1}.",
-    "frage_telegram": "Welches Gerät ist dein Handy? Bitte am Auto unter System → Gekoppelte Geräte auswählen – erst dann gibt es ein Besitzer-Handy.",
-    "frage_telegram_bestaetigen": "Beim Update wurde automatisch ein Besitzer-Handy gewählt. Bitte am Auto unter System → Gekoppelte Geräte prüfen, ob es wirklich dein Handy ist.",
-    "telegram_gewaehlt": "{0} ist jetzt dein Besitzer-Handy."
+    "frage_telegram": "Welches Gerät ist dein Handy? Bitte am Auto unter Einstellungen → Alle Einstellungen → Gekoppelte Geräte auswählen – erst dann gibt es ein Besitzer-Handy.",
+    "frage_telegram_bestaetigen": "Beim Update wurde automatisch ein Besitzer-Handy gewählt. Bitte am Auto unter Einstellungen → Alle Einstellungen → Gekoppelte Geräte prüfen, ob es wirklich dein Handy ist.",
+    "telegram_gewaehlt": "{0} ist jetzt dein Besitzer-Handy.",
+    "signatur_abgelehnt": "Besitzer-Aktion vom Handy {0} abgelehnt ({1})."
   },
   "update_klein": {
     "titel": "Updates",
@@ -3017,5 +3027,20 @@
     "push_neu": "Neuer PC angemeldet: {0}",
     "push_neu_text": "Warst du das nicht? Unter Gekoppelte Geräte abmelden.",
     "handshakes": "{0} fremde Verbindungsversuche über die Brücke in der letzten Stunde abgelehnt. Wenn das nicht dein PC war: Unter Gekoppelte Geräte nachsehen, „Am PC anmelden“ notfalls am Auto ausschalten."
+  },
+  "websitzung": {
+    "nie_web": "Das geht nur am Autobildschirm oder mit Login, nicht in der Weboberfläche der App.",
+    "passkey_noetig": "Den Kofferraum öffnet die Weboberfläche nur mit dem Recht „Aufsperren“ und einer frischen Bestätigung mit Fingerabdruck oder Face ID.",
+    "rueckfrage": "Das ist außen am Auto zu sehen oder zu hören. Jetzt auslösen?",
+    "recht_fehlt": "Dafür fehlt diesem Handy das Recht „{0}“. Einschalten: am Auto unter Gekoppelte Geräte.",
+    "recht_wort": {
+      "zusperren": "Zusperren",
+      "klima": "Klima",
+      "aufsperren": "Aufsperren",
+      "signal": "Hupe & Licht",
+      "laden": "Laden im Auto",
+      "tacho": "Tacho",
+      "route": "Route"
+    }
   }
 }

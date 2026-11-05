@@ -53,6 +53,7 @@ BYD.surveillance = {
         filterDebugLog: false,
         discardEmptyBrightMotionEvents: false,
         discardEmptyMotionAtNight: false,
+        vorbeigehenLeise: true,
         motionSalienceEnabled: false,
         // Per-quadrant sensitivity / zone overrides. Keys: Q0=front, Q1=right,
         // Q2=rear, Q3=left. Absent key = inherit global. The "Side-cam Boost"
@@ -2787,6 +2788,13 @@ BYD.surveillance = {
         this.markChanged();
     },
 
+    // 0.1.38.10 Wächter-KI B2
+    updateVorbeigehenLeise() {
+        var el = document.getElementById('v2VorbeigehenLeise');
+        this.config.vorbeigehenLeise = !!(el && el.checked);
+        this.markChanged();
+    },
+
     _syncNightDiscardEnabled() {
         var parentOn = !!this.config.discardEmptyBrightMotionEvents;
         var row = document.getElementById('discardEmptyMotionNightRow');
@@ -3592,6 +3600,9 @@ BYD.surveillance = {
                   !!this.config.discardEmptyBrightMotionEvents);
         setToggle(document.getElementById('v2DiscardEmptyMotionNight'),
                   !!this.config.discardEmptyMotionAtNight);
+        // Standard an: ein alter Stand ohne Feld zeigt den Schalter an.
+        setToggle(document.getElementById('v2VorbeigehenLeise'),
+                  this.config.vorbeigehenLeise !== false);
         this._syncNightDiscardEnabled();
 
         // Telegram start-ping opt-in
@@ -3667,6 +3678,7 @@ BYD.surveillance = {
             // detection diagnostics belong with detection.
             'motionHeatmap', 'filterDebugLog',
             'discardEmptyBrightMotionEvents', 'discardEmptyMotionAtNight',
+            'vorbeigehenLeise',
             'motionSalienceEnabled'
         ],
         recording: [

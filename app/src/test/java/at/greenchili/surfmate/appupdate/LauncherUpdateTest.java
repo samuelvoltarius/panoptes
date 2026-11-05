@@ -98,6 +98,8 @@ public class LauncherUpdateTest {
         l.fahrsperre = "state_unknown";   // ohne Bewegungshinweis: ACC nicht lesbar sperrt nicht
         assertNull(LauncherRegel.nichtWeil(l, false));
         l.netz = UpdateRegel.NETZ_MOBIL;
+        assertNull("0.1.38.10: update.mobilfunk an = auch über Mobilnetz, wie Panoptes", LauncherRegel.nichtWeil(l, false));
+        l.nurWlan = true;
         assertEquals(LauncherRegel.WARTET_WLAN, LauncherRegel.nichtWeil(l, false));
         assertNull("Einwilligung für genau diesen Download", LauncherRegel.nichtWeil(l, true));
         l.netz = UpdateRegel.NETZ_UNBEKANNT;
@@ -221,6 +223,9 @@ public class LauncherUpdateTest {
         AppUpdateDienst d = dienst(new AppUpdateTest.RangeNetz(new byte[]{1}, texte));
         d.pruefen();
         netzArt = UpdateRegel.NETZ_MOBIL;
+        // 0.1.38.10: gefragt wird wie bei Panoptes nur bei „nur WLAN“ und neuer Einrichtung (Merker)
+        cfg.put("mobilfunk", "false");
+        cfg.put("mobilfunkEinmal", "true");
         JSONObject s = d.launcherStatus();
         assertTrue(s.getBoolean("mobilFrage"));
         assertEquals("wartet_wlan", d.launcherInstallieren(3, false));

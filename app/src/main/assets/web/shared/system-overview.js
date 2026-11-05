@@ -9,11 +9,37 @@
 
     var GROUPS = {
         connections: ['tailscaleKarte', 'wireguardSetupCard', 'kopplung', 'protokoll', 'homeassistant', 'planerKarte'],
-        vehicle: ['manualVehicleCard', 'nativeVehicleTools', 'anzeige', 'displayLink', 'kartenquelle', 'blitzer'],
+        vehicle: ['manualVehicleCard', 'nativeVehicleTools', 'anzeige', 'displayLink', 'kartenquelle', 'blitzer', 'navigation'],
         privacy: ['datenschutz', 'energie', 'updates'],
-        advanced: ['einrichtung', 'notzugang', 'eingriffe', 'umzug', 'tunnelKarte', 'coreServicesCard']
+        advanced: ['einrichtung', 'notzugang', 'eingriffe', 'umzug', 'tunnelKarte', 'coreServicesCard', 'weitereEinstellungen']
     };
     var STORAGE_KEY = 'pn.system.group';
+    // 0.1.38.10: Navi-Schalter der Gruppe „system“ – EINE Liste für die Karte „Navigation“ (system.html) und die Suche
+    var NAVI_FELDER = ['navi.sprachansagen', 'planner.ansage', 'planner.band'];
+    // 0.1.38.10: weitere Felder der Gruppe „system“ – EINE Liste Karte → Felder für system.html (store.zeichne nur:[…])
+    // und das Sprungziel der Suche. Eine Karte ohne passendes Thema: „Weitere Einstellungen“.
+    var KARTEN_FELDER = {
+        homeassistant: ['ha.positionTeilen', 'ha.mdns'],
+        planerKarte: ['planner.autoId', 'fahrtenbuch.planer'],
+        datenschutz: ['wetter.online', 'community.enabled', 'gewohnheiten.an', 'gewohnheiten.aufbewahrungTage',
+            'gewohnheiten.vergessen'],
+        weitereEinstellungen: ['autostart.beiZuendung', 'telegram.zurueckAmAuto', 'logs.tage', 'logs.mb']
+    };
+    // Felder, die fachlich auf eine andere Seite gehören (dort mit nur:[…] gezeichnet)
+    var SEITEN_FELDER = { 'display.html#launcher': ['anzeige.launcherVideo'] };
+
+    /** Sprungziel eines Felds aus den Listen oben, sonst null. */
+    function feldZiel(key) {
+        if (NAVI_FELDER.indexOf(key) >= 0) return 'system.html#navigation';
+        var k;
+        for (k in KARTEN_FELDER) {
+            if (Object.prototype.hasOwnProperty.call(KARTEN_FELDER, k) && KARTEN_FELDER[k].indexOf(key) >= 0) return 'system.html#' + k;
+        }
+        for (k in SEITEN_FELDER) {
+            if (Object.prototype.hasOwnProperty.call(SEITEN_FELDER, k) && SEITEN_FELDER[k].indexOf(key) >= 0) return k;
+        }
+        return null;
+    }
 
     function t(key, fallback) {
         try {
@@ -113,7 +139,7 @@
                     for (var j = 0; j < fs.length; j++) {
                         var f = fs[j];
                         if (f.sichtbar === false || !f.titel) continue;
-                        var ziel = SCHEMA_SEITE[gs[i].id] || 'system.html';
+                        var ziel = feldZiel(f.key) || SCHEMA_SEITE[gs[i].id] || 'system.html';
                         schemaTreffer.push({ titel: f.titel, text: norm(f.titel + ' ' + (f.hilfe || '')),
                             ziel: ziel, ort: ziel.indexOf('system.html') === 0 ? '' : seitenOrt(ziel.split('#')[0]) });
                     }
@@ -297,5 +323,6 @@
         }
     }
 
-    global.PanoptesSystemOverview = { init: init, setGroup: setGroup, groups: GROUPS, suchen: suchen };
+    global.PanoptesSystemOverview = { init: init, setGroup: setGroup, groups: GROUPS, suchen: suchen, naviFelder: NAVI_FELDER,
+        kartenFelder: KARTEN_FELDER, seitenFelder: SEITEN_FELDER, feldZiel: feldZiel };
 })(window);

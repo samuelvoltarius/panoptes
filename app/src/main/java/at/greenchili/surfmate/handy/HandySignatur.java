@@ -105,11 +105,24 @@ public final class HandySignatur {
      * zuerst. Signiert ist {@code authenticatorData ‖ SHA-256(clientDataJSON)}, die Challenge rechnet das Auto selbst
      * nach. Die Nonce wird erst verbraucht, wenn alles andere bestanden ist.
      */
-    public synchronized Ergebnis pruefeAufsperrenWebauthn(String schluesselBase64, String gespeicherteId,
-                                                          long gespeicherterZaehler, String kopplungId, long zeitMs,
-                                                          String nonce, String credentialId, String clientDataB64,
-                                                          String authDatenB64, String signaturB64, String geraet,
-                                                          long jetztMs) {
+    public Ergebnis pruefeAufsperrenWebauthn(String schluesselBase64, String gespeicherteId,
+                                             long gespeicherterZaehler, String kopplungId, long zeitMs,
+                                             String nonce, String credentialId, String clientDataB64,
+                                             String authDatenB64, String signaturB64, String geraet,
+                                             long jetztMs) {
+        return pruefeWebauthn(AUFSPERREN, schluesselBase64, gespeicherteId, gespeicherterZaehler, kopplungId, zeitMs,
+                nonce, credentialId, clientDataB64, authDatenB64, signaturB64, geraet, jetztMs);
+    }
+
+    /**
+     * 0.1.38.10: wie {@link #pruefeAufsperrenWebauthn}, mit eigenem signierten Zweck {@code aktion} (z. B. Kofferraum
+     * aus der Web-Sitzung). Eine Bestätigung für einen Zweck gilt nie für einen anderen; Nonce und Zähler sind dieselben.
+     */
+    public synchronized Ergebnis pruefeWebauthn(String aktion, String schluesselBase64, String gespeicherteId,
+                                                long gespeicherterZaehler, String kopplungId, long zeitMs,
+                                                String nonce, String credentialId, String clientDataB64,
+                                                String authDatenB64, String signaturB64, String geraet,
+                                                long jetztMs) {
         PublicKey k = schluessel(schluesselBase64);
         if (k == null || gespeicherteId == null || gespeicherteId.isEmpty()) return new Ergebnis(GRUND_KEIN_GERAET, null);
         if (nonce == null || !NONCE.matcher(nonce).matches() || credentialId == null || clientDataB64 == null
@@ -133,7 +146,7 @@ public final class HandySignatur {
         } catch (Exception e) {
             return new Ergebnis(GRUND_SIGNATUR, null);
         }
-        if (!WebAuthn.clientDataGueltig(clientData, "webauthn.get", WebAuthn.aufsperrChallenge(kopplungId, zeitMs, nonce))) {
+        if (!WebAuthn.clientDataGueltig(clientData, "webauthn.get", WebAuthn.challenge(aktion, kopplungId, zeitMs, nonce))) {
             return new Ergebnis(GRUND_SIGNATUR, null);
         }
         String kopf = WebAuthn.kopfGrund(auth);

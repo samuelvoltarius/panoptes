@@ -777,6 +777,20 @@ public class HttpServer {
                 client.close();
                 return;
             }
+            // 0.1.38.10 Web-Sitzung = Rechte der Kopplung dahinter (WebSitzungRechte): Fahrzeug-Wege nur mit dem Recht, das
+            // die Handy-App für denselben Knopf braucht; Fenster/Fahrzeug-Einstellungen/System nie; außen Sicht-/Hörbares
+            // mit Rückfrage; Kofferraum nur mit Passkey. Login am Display oder im Browser bleibt voll (kein handyweb).
+            if (AuthMiddleware.isHandyWebRequest()) {
+                org.json.JSONObject abgelehnt = WebSitzungRechte.pruefe(method, pathOnly, body,
+                        AuthMiddleware.requestWebKopplungsId(), at.greenchili.surfmate.auth.Kopplungen.get(),
+                        System.currentTimeMillis());
+                if (abgelehnt != null) {
+                    BefehlsLog.grund(abgelehnt.optString("grund", "web_gesperrt"));
+                    WebSitzungRechte.sende(out, abgelehnt);
+                    client.close();
+                    return;
+                }
+            }
             SchreibProtokoll.melde(method, path, AuthMiddleware.isExternRequest(), client.getInetAddress() != null && client.getInetAddress().isLoopbackAddress(),
                     AuthMiddleware.isExternRequest() ? AuthMiddleware.requestKopplungsId() : AuthMiddleware.requestWebKopplungsId(),
                     BefehlsLog.aktion());
@@ -971,6 +985,11 @@ public class HttpServer {
             } else if (path.equals("/fehler-melden.html")) {
                 if (!serveStaticFile(out, "local/fehler-melden.html")) {
                     HttpResponse.sendError(out, 404, "fehler-melden.html not found");
+                }
+            } else if (path.equals("/auto-funktionen.html")) {
+                // 0.1.38.10 Hilfe „Was geht bei meinem Auto“ (nur Anzeige, Modell und Firmware kommen aus /api/rueckmeldung/fehler)
+                if (!serveStaticFile(out, "local/auto-funktionen.html")) {
+                    HttpResponse.sendError(out, 404, "auto-funktionen.html not found");
                 }
             } else if (path.equals("/about.html") || path.equals("/about")) {
                 if (!serveStaticFile(out, "local/about.html")) {

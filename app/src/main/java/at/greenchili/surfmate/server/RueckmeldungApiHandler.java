@@ -96,6 +96,10 @@ public final class RueckmeldungApiHandler {
                 .put("modell", AutoAngaben.modell(root)).put("sprache", sprache);
         Integer d = AutoAngaben.dilink();
         if (d != null) a.put("dilink", (int) d);
+        // 0.1.38.10: was das Häkchen „Modell und Firmware mitschicken“ sendet (nur zur Anzeige; gesendet wird nur mit Häkchen)
+        String fw = AutoAngaben.firmware();
+        a.put("abdeckung", new JSONObject().put("modell", AutoAngaben.modell(root))
+                .put("firmware", fw == null ? JSONObject.NULL : fw));
         return a;
     }
 
@@ -122,8 +126,11 @@ public final class RueckmeldungApiHandler {
         }
         String l = req.optString("sprache", "");
         String sprache = LocaleManager.isSupported(l) ? l : LocaleManager.get();
+        // 0.1.38.10: Modell und Firmware für die Abdeckungs-Liste nur mit dem Häkchen (Standard aus), sonst ohne
+        boolean abdeckung = req.optBoolean("abdeckung", false);
         JSONObject k = FehlerMelden.koerper(req.optString("text", ""), BuildConfig.VERSION_NAME, AutoAngaben.dilink(),
-                AutoAngaben.modell(UnifiedConfigManager.loadConfig()), sprache, diagnose, req.optString("art", ""));
+                AutoAngaben.modell(UnifiedConfigManager.loadConfig()), sprache, diagnose, req.optString("art", ""),
+                abdeckung, abdeckung ? AutoAngaben.firmware() : null);
         FehlerMelden.Ergebnis e = FehlerMelden.absenden(jetzt, k, FehlerMelden.DATEI_SPEICHER, FehlerMelden.NETZ);
         JSONObject res = new JSONObject().put("ok", e.stand == FehlerMelden.Stand.GESENDET
                 || e.stand == FehlerMelden.Stand.GEMERKT).put("stand", e.stand.name().toLowerCase(java.util.Locale.ROOT));

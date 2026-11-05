@@ -181,6 +181,7 @@ public class PcBrueckeTest {
         }
         // Fahrzeug-Aktionen vergibt nur das Display (Kopplungen.NUR_DISPLAY_RECHTE, 0.1.38.8)
         for (String recht : Kopplungen.NUR_DISPLAY_RECHTE) {
+            BesitzerApiHandler.ratenlimitLeeren();   // je Recht eine Anfrage, nicht das Ratenlimit prüfen
             JSONObject r = post(BesitzerApiHandler.CODE, besitzer, new JSONObject().put("art", "pc").put("bestaetigt", true)
                     .put("rechte", new JSONArray().put("web").put(recht)));
             assertEquals(recht, "recht_nur_display", r.optString("grund"));
@@ -203,7 +204,9 @@ public class PcBrueckeTest {
     @Test
     public void besitzerMeldetPcAuchAltAb() throws Exception {
         JSONObject r = BesitzerApiHandler.antwort("POST", BesitzerApiHandler.ENTFERNEN,
-                new JSONObject().put("id", pc).put("bestaetigt", true).toString(), besitzer, 999_000_000_000L);
+                BesitzerSignaturHilfe.signiert(k, besitzer, BesitzerApiHandler.ENTFERNEN,
+                        new JSONObject().put("id", pc).put("bestaetigt", true), 999_000_000_000L).toString(),
+                besitzer, 999_000_000_000L);
         assertTrue(r.toString(), r.optBoolean("ok"));
         assertFalse(k.pruefe(pc, 999_000_000_001L - 1));
         assertEquals(1, w.meldungen.size());
@@ -289,7 +292,8 @@ public class PcBrueckeTest {
     }
 
     private JSONObject post(String pfad, String kid, JSONObject body) throws Exception {
-        return BesitzerApiHandler.antwort("POST", pfad, body.toString(), kid, 10_000L);
+        return BesitzerApiHandler.antwort("POST", pfad,
+                BesitzerSignaturHilfe.signiert(k, kid, pfad, body, 10_000L).toString(), kid, 10_000L);
     }
 
     private static String hex(byte[] b) {

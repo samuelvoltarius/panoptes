@@ -14,6 +14,8 @@ public final class PlanerBackoff {
 
     /** Gemeinsam für {@code umkreis} (Karte im Web und Belegung unterwegs). */
     public static final PlanerBackoff UMKREIS = new PlanerBackoff();
+    /** 0.1.39 G2: Panoptes-Führung ({@code /api/navi/fuehrung}), getrennt vom Umkreis. */
+    public static final PlanerBackoff FUEHRUNG = new PlanerBackoff();
 
     private int fehler;
     private long gesperrtBis;
@@ -29,6 +31,11 @@ public final class PlanerBackoff {
         long warte = Math.min(MAX_MS, START_MS << Math.min(fehler - 1, 5));
         gesperrtBis = now + warte;
         return fehler == 1;
+    }
+
+    /** Pause, die der Planer selbst verlangt (Retry-After bei 429/503); verkürzt nie eine laufende Sperre. */
+    public synchronized void pause(long now, long ms) {
+        gesperrtBis = Math.max(gesperrtBis, now + Math.max(0L, ms));
     }
 
     /** Erfolg; true = vorher gab es Fehler (einmal „wieder erreichbar“ loggen). */

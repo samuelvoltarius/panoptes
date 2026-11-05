@@ -23,7 +23,7 @@ import java.util.List;
  * 0.1.36.1: Skripte am Auto werden nur noch über eine eigene Temp-Datei geschrieben, dann
  * {@code sh -n} + Zeilenzahl, dann {@code mv}. Befund am Auto (0.1.36, vC 61): start_telegram.sh
  * hatte 334 statt 220 Zeilen, {@code sh -n} meldete „[221]: unexpected 'fi'“. Ursache: zwei Schreiber
- * zugleich (UI-Weg in einem Zug, AccSentry zeilenweise mit {@code >>}) – die restlichen Zeilen 107..220
+ * zugleich (UI-Weg in einem Zug, AccSentry zeilenweise mit {@code >>}) – die restlichen Zeilen 110..223
  * des langsameren Schreibers landeten hinter dem fertigen Skript.
  */
 public class SkriptAtomarSchreibenTest {
@@ -77,11 +77,11 @@ public class SkriptAtomarSchreibenTest {
         try {
             File ziel = new File(dir, "start_telegram.sh");
             List<String> zeilen = telegram();
-            // Altes, längeres und kaputtes Skript wie am Auto: volles Skript + Zeilen 107..220 noch einmal.
+            // Altes, längeres und kaputtes Skript wie am Auto: volles Skript + Zeilen 110..223 noch einmal.
             List<String> alt = new ArrayList<>(zeilen);
-            alt.addAll(zeilen.subList(106, zeilen.size()));
+            alt.addAll(zeilen.subList(109, zeilen.size()));
             Files.write(ziel.toPath(), (String.join("\n", alt) + "\n").getBytes(StandardCharsets.UTF_8));
-            assertEquals(zeilen.size() + zeilen.size() - 106, alt.size());   // am Auto: 334
+            assertEquals(zeilen.size() + zeilen.size() - 109, alt.size());   // am Auto: 334
             assertNotEquals("Vorbedingung: altes Skript ist syntaktisch kaputt", 0, shN(ziel));
 
             LogArchivShellTest.fuehreAus(DaemonLauncher.Companion.buildWatchdogScriptWriteCommand(
@@ -105,11 +105,11 @@ public class SkriptAtomarSchreibenTest {
             List<String> zeilen = telegram();
             // Am Auto 220 Zeilen; seit 0.1.38.1 21 Zeilen mehr (Anhänge-Modus), Befund-Logik unverändert.
             int n = zeilen.size();
-            assertEquals(241, n);
+            assertEquals(244, n);
             StringBuilder sk = new StringBuilder();
-            // AccSentry (alt): rm, Zeilen 1..106 einzeln ins Ziel
+            // AccSentry (alt): rm, Zeilen 1..109 einzeln ins Ziel
             sk.append("rm -f ").append(z).append('\n');
-            for (int i = 0; i < 106; i++) {
+            for (int i = 0; i < 109; i++) {
                 sk.append(DaemonLauncher.buildScriptLineWriteCommand(zeilen.get(i), i == 0, z)).append('\n');
             }
             // UI-Weg (alt) dazwischen: rm + ganzes Skript in einem Zug
@@ -118,12 +118,12 @@ public class SkriptAtomarSchreibenTest {
                 sk.append(DaemonLauncher.buildScriptLineWriteCommand(zeilen.get(i), i == 0, z)).append('\n');
             }
             // AccSentry macht mit >> weiter
-            for (int i = 106; i < zeilen.size(); i++) {
+            for (int i = 109; i < zeilen.size(); i++) {
                 sk.append(DaemonLauncher.buildScriptLineWriteCommand(zeilen.get(i), false, z)).append('\n');
             }
             LogArchivShellTest.fuehreAus(sk.toString());
             List<String> ergebnis = Arrays.asList(lies(ziel).split("\n", -1));
-            assertEquals("am Auto 334 Zeilen + leeres Ende", n + (n - 106) + 1, ergebnis.size());
+            assertEquals("am Auto 334 Zeilen + leeres Ende", n + (n - 109) + 1, ergebnis.size());
             assertEquals("Zeile n+1 (am Auto 221) = '  fi' aus acquire_watchdog_lock", "  fi", ergebnis.get(n));
             assertTrue(ergebnis.get(n + 2).contains("watchdog_pid_matches"));
             assertNotEquals(0, shN(ziel));
@@ -143,11 +143,11 @@ public class SkriptAtomarSchreibenTest {
             List<String> zeilen = telegram();
             String accTmp = DaemonLauncher.skriptTempPfad(z, "acc1");
             StringBuilder sk = new StringBuilder();
-            for (int i = 0; i < 106; i++) {
+            for (int i = 0; i < 109; i++) {
                 sk.append(DaemonLauncher.buildScriptLineWriteCommand(zeilen.get(i), i == 0, accTmp)).append('\n');
             }
             sk.append(DaemonLauncher.Companion.buildWatchdogScriptWriteCommand(z, zeilen)).append('\n');
-            for (int i = 106; i < zeilen.size(); i++) {
+            for (int i = 109; i < zeilen.size(); i++) {
                 sk.append(DaemonLauncher.buildScriptLineWriteCommand(zeilen.get(i), false, accTmp)).append('\n');
             }
             sk.append(DaemonLauncher.buildSkriptEinsetzenCommand(accTmp, z, zeilen.size(), "755"));

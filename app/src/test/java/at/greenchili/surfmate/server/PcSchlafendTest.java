@@ -67,8 +67,9 @@ public class PcSchlafendTest {
     }
 
     private JSONObject pcCode() throws Exception {
-        return BesitzerApiHandler.antwort("POST", BesitzerApiHandler.CODE, new JSONObject().put("art", "pc")
-                .put("bestaetigt", true).put("rechte", new org.json.JSONArray().put("web")).toString(), besitzer, 10_000L);
+        return BesitzerApiHandler.antwort("POST", BesitzerApiHandler.CODE, BesitzerSignaturHilfe.signiert(k, besitzer,
+                BesitzerApiHandler.CODE, new JSONObject().put("art", "pc").put("bestaetigt", true)
+                        .put("rechte", new org.json.JSONArray().put("web")), 10_000L).toString(), besitzer, 10_000L);
     }
 
     @Test

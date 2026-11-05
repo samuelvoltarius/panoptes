@@ -17,6 +17,15 @@ public class WaechterMehrbildTest {
 
     private static final long T0 = 1_000_000L;
 
+    // ---------- 0.1.38.10: nur messen ----------
+
+    @Test
+    public void mehrbildRegelNurMessen() {
+        // Alfreds Einordnung 05.11.: 18 von 45 echten Fällen beruhen auf einer einzigen Erkennung.
+        // Scharf schalten erst, wenn ein Test-Satz zeigt, dass kein echter Fall verloren geht.
+        assertFalse(MultiBatchConfirmationShadow.SCHARF);
+    }
+
     // ---------- B1: Klassenregel ----------
 
     @Test

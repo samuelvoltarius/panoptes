@@ -55,7 +55,7 @@
 
         grundText: function (g) {
             return g === 'faehrt' || g === 'nicht_in_p' ? t('system.lnc_why_driving', 'Geht nur im Stand (Gang P).')
-                : g === 'wartet_wlan' ? t('system.lnc_why_wlan', 'Kein WLAN. Panoptes fragt vorher, ob über mobile Daten geladen werden darf.')
+                : g === 'wartet_wlan' ? t('system.lnc_why_wlan', 'Lädt erst im WLAN, weil Updates über Mobilfunk ausgeschaltet sind (gilt für Panoptes und Launcher).')
                 : g === 'kein_launcher' ? t('system.lnc_why_none', 'Im Panoptes-Release ist gerade kein Launcher zu finden. Bitte später noch einmal.')
                 : g === 'laeuft_schon' ? t('system.lnc_why_running', 'Wird gerade geladen oder installiert.')
                 : g === 'pruefsumme' || g === 'signatur' ? t('system.lnc_err_check', 'Die Launcher-Datei hat die Prüfung nicht bestanden und wird nicht installiert.')

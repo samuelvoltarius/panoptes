@@ -44,6 +44,7 @@ public final class Kopplungen {
             geraete = l == null ? new JSONArray() : l;
             rechteStandHeben();
             besitzerStandHeben();
+            signaturStandHeben();
         }
         return geraete;
     }
@@ -236,6 +237,7 @@ public final class Kopplungen {
                 g.put("rechte", new JSONArray(HANDY_STANDARD)).put("rechteStand", RECHTE_STAND);
             }
             g.put(MARKE_01388, 1).put(MARKE_01389, 1);   // 0.1.38.8: neue Kopplungen ohne Bestandsschutz für Einstellungen
+            g.put(MARKE_0139SIG, 1);   // 0.1.39: ein später gemeldeter Schlüssel ist kein Bestand
         } catch (Exception ignored) { }
         boolean besitzer = darfBesitzerWerden && ART_HANDY.equals(art) && besitzerIds().isEmpty();
         if (besitzer) {
@@ -519,6 +521,10 @@ public final class Kopplungen {
                     if (g.optBoolean("synchronisiert", false)) o.put("synchronisiert", true);
                     // 0.1.38.8 Annäherung: nur ob ein Nähe-Schlüssel gilt, nie Schlüssel oder Bake-Geheimnis
                     o.put("naehe", g.optLong("naeheBis", 0) > nowMs && !g.optString("naeheSchluessel", "").isEmpty());
+                    // 0.1.39 Besitzer-Signatur: nur Zustand und Fingerabdruck (öffentlich), nie der Schlüssel
+                    o.put("besitzerSignatur", besitzerSignaturVon(g));
+                    String fp = fingerabdruck(g.optString("geraeteSchluessel", ""));
+                    if (fp != null) o.put("schluesselFingerabdruck", fp);
                     JSONObject f = at.greenchili.surfmate.handy.PasskeyFenster.get().zustand(g.optString("id"), nowMs);
                     if (f != null) o.put("passkeyFenster", f);
                 }
@@ -556,6 +562,9 @@ public final class Kopplungen {
             RECHT_WEB = "web",   // 0.1.20 Web-Sitzung (Weboberfläche in der Handy-App, Stufe B)
             RECHT_KAMERA = "kamera",   // 0.1.25 Kamerabilder/Aufnahmen übers Internet (Brücke); Standard AUS (Passanten)
             RECHT_WALLBOX = "wallbox",   // 0.1.25 Wallbox starten/stoppen/Ladestrom vom Handy; Standard AUS
+            // 0.1.38.10 Laden im Auto aus der Web-Sitzung (Laden starten, Ladeplan, Ladegrenze, AC-Ladestrom), getrennt von
+            // „wallbox“. Standard AUS, nur das Display vergibt es; Bestand mit „web“ behält es einmalig (RECHTE_STAND 4)
+            RECHT_LADEN = "laden",
             RECHT_ROUTE = "route",       // 0.1.25 Route ins Auto schicken (nur Anzeige, nichts startet von selbst); Standard AN
             // 0.1.26.1 Panoptes aktualisieren (nur freigegebene Version des Updaters, nur geparkt). Standard AUS
             // (0.1.32.1), nur der Besitzer schaltet es ein; Bestand behält, was er hat. 0.1.38.2: auch den Launcher,
@@ -597,8 +606,9 @@ public final class Kopplungen {
             RECHT_EINSTELLUNGEN = "einstellungen";
     public static final java.util.List<String> RECHTE = java.util.Collections.unmodifiableList(
             java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_AUFSPERREN, RECHT_PUSH, RECHT_WEB, RECHT_KAMERA,
-                    RECHT_WALLBOX, RECHT_ROUTE, RECHT_UPDATE, RECHT_EREIGNISCLIP, RECHT_STANDBILD, RECHT_PROTOKOLL,
-                    RECHT_DATEIEN, RECHT_TACHO, RECHT_LAUNCHER, RECHT_SIGNAL, RECHT_BESITZER, RECHT_EINSTELLUNGEN));
+                    RECHT_WALLBOX, RECHT_LADEN, RECHT_ROUTE, RECHT_UPDATE, RECHT_EREIGNISCLIP, RECHT_STANDBILD,
+                    RECHT_PROTOKOLL, RECHT_DATEIEN, RECHT_TACHO, RECHT_LAUNCHER, RECHT_SIGNAL, RECHT_BESITZER,
+                    RECHT_EINSTELLUNGEN));
     /**
      * 0.1.38.8: Rechte, die {@code besitzer} mit einschließt. Nie Fahrzeug-Aktionen (klima, zusperren, aufsperren,
      * wallbox und die Aktionen aus Paket B) und nie die Rechte, die nie automatisch kommen dürfen
@@ -614,8 +624,8 @@ public final class Kopplungen {
      * Login aus der Ferne (Brücke, Tailscale); Fehler {@code recht_nur_display}. Entziehen geht überall.
      */
     public static final java.util.List<String> NUR_DISPLAY_RECHTE = java.util.Collections.unmodifiableList(
-            java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_AUFSPERREN, RECHT_WALLBOX, RECHT_SIGNAL,
-                    RECHT_GERAETE_STEUERN));
+            java.util.Arrays.asList(RECHT_KLIMA, RECHT_ZUSPERREN, RECHT_AUFSPERREN, RECHT_WALLBOX, RECHT_LADEN,
+                    RECHT_SIGNAL, RECHT_GERAETE_STEUERN));
 
     /** Die Rechte aus {@code neu}, die nur das Display vergibt und die {@code id} noch nicht hat (leer = nichts dergleichen). */
     public synchronized java.util.List<String> neueDisplayRechte(String id, java.util.Collection<String> neu) {
@@ -694,9 +704,11 @@ public final class Kopplungen {
     /**
      * Stand der Rechte-Liste: ab 2 (0.1.25) kennt die gespeicherte Liste „route“. Ältere Kopplungen bekommen das neue
      * Standard-AN-Recht „route“ beim Lesen dazu, bis der Besitzer die Rechte selbst setzt. Ab 3 (0.1.26.1) kennt sie
-     * „update“: Bestand bekommt es beim Lesen nur für die älteste Handy-Kopplung (die erste des Besitzers).
+     * „update“: Bestand bekommt es beim Lesen nur für die älteste Handy-Kopplung (die erste des Besitzers). Ab 4
+     * (0.1.38.10) kennt sie „laden“: Bestand mit „web“ konnte das Laden in der Weboberfläche bisher ohne eigenes Recht
+     * starten und behält es (kein stiller Verlust); neue Kopplungen nie.
      */
-    static final int RECHTE_STAND = 3;
+    static final int RECHTE_STAND = 4;
 
     public static final int SCHLUESSEL_GESPEICHERT = 1, SCHLUESSEL_SCHON = 2, SCHLUESSEL_FEHLER = 0,
             SCHLUESSEL_KEINE_HANDY_KOPPLUNG = 3, SCHLUESSEL_NUR_PASSKEY = 4;
@@ -734,8 +746,11 @@ public final class Kopplungen {
             for (int i = 0; i < r.length(); i++) mit.put(r.opt(i));
             if (stand < 2 && !enthaelt(mit, RECHT_ROUTE)) mit.put(RECHT_ROUTE);   // 0.1.25: neues Standard-AN-Recht für Bestand
         }
-        // 0.1.26.1: „update“ für Bestand nur an der ältesten Handy-Kopplung
-        if (!enthaelt(mit, RECHT_UPDATE) && g.optString("id").equals(aeltesteHandyId(null))) mit.put(RECHT_UPDATE);
+        // 0.1.26.1: „update“ für Bestand nur an der ältesten Handy-Kopplung (nur beim Heben von vor Stand 3: wer es danach
+        // abgeschaltet hat, bekommt es nicht wieder)
+        if (stand < 3 && !enthaelt(mit, RECHT_UPDATE) && g.optString("id").equals(aeltesteHandyId(null))) mit.put(RECHT_UPDATE);
+        // 0.1.38.10: Laden im Auto behält, wer die Weboberfläche hatte
+        if (stand < 4 && enthaelt(mit, RECHT_WEB) && !enthaelt(mit, RECHT_LADEN)) mit.put(RECHT_LADEN);
         return mit;
     }
 
@@ -875,6 +890,15 @@ public final class Kopplungen {
      */
     public synchronized int schluesselMelden(String id, String oeffentlicherSchluessel, String plattform,
                                              String geraeteName) {
+        return schluesselMelden(id, oeffentlicherSchluessel, plattform, geraeteName, System.currentTimeMillis());
+    }
+
+    /**
+     * Wie oben. 0.1.39: Kommt der Schlüssel innerhalb von {@link #KOPPEL_FENSTER_MS} nach dem Koppeln, darf er auch
+     * Besitzer-Aktionen signieren ({@code schluesselBesitzer}); später gemeldet nur nach Bestätigung am Display/Login.
+     */
+    public synchronized int schluesselMelden(String id, String oeffentlicherSchluessel, String plattform,
+                                             String geraeteName, long nowMs) {
         JSONObject g = finde(id);
         if (g == null || !ART_HANDY.equals(g.optString("art"))) return SCHLUESSEL_KEINE_HANDY_KOPPLUNG;
         if (!g.optString("geraeteSchluessel", "").isEmpty()) return SCHLUESSEL_SCHON;
@@ -884,6 +908,8 @@ public final class Kopplungen {
             g.put("geraeteSchluessel", oeffentlicherSchluessel);
             g.put("plattform", "ios".equals(plattform) ? "ios" : "android");
             g.put("geraeteName", bereinigeName(geraeteName));
+            long seit = nowMs - g.optLong("angelegt", Long.MIN_VALUE / 2);
+            if (seit >= 0 && seit <= KOPPEL_FENSTER_MS) g.put(SCHLUESSEL_BESITZER, true);
         } catch (Exception e) {
             return SCHLUESSEL_FEHLER;
         }
@@ -909,6 +935,7 @@ public final class Kopplungen {
         JSONObject g = finde(id);
         if (g == null) return false;
         g.remove("geraeteSchluessel");
+        g.remove(SCHLUESSEL_BESITZER);   // 0.1.39: ein neuer Schlüssel braucht wieder Koppeln bzw. Bestätigung
         g.remove("credentialId");
         g.remove("rpId");
         g.remove("zaehler");
@@ -1000,6 +1027,86 @@ public final class Kopplungen {
         return speichernSofort();
     }
 
+    // ---------------------------------------------------------------- 0.1.39 Besitzer-Signatur
+
+    /**
+     * Feld je Kopplung: dieser Geräteschlüssel darf heikle Besitzer-Aktionen signieren (BesitzerSignatur). Gesetzt nur
+     * beim Koppeln ({@link #KOPPEL_FENSTER_MS}), beim Passkey am Auto, für den Bestand ({@link #MARKE_0139SIG}) oder per
+     * {@link #schluesselBesitzerBestaetigen} am Display/Login. Nie über eine Kopplung oder die Brücke.
+     */
+    public static final String SCHLUESSEL_BESITZER = "schluesselBesitzer";
+    /** Ein Schlüssel, der so bald nach dem Koppeln kommt, gehört zum Koppeln selbst (= Gültigkeit des Codes). */
+    public static final long KOPPEL_FENSTER_MS = 10L * 60 * 1000;
+    static final String MARKE_0139SIG = "stand0139sig";
+    public static final String SIGNATUR_BEREIT = "bereit", SIGNATUR_FEHLT = "fehlt", SIGNATUR_UNBESTAETIGT = "unbestaetigt";
+
+    /**
+     * Einmal beim Laden: Kopplungen, die vor 0.1.39 schon einen Geräteschlüssel hatten, behalten ihn auch für
+     * Besitzer-Aktionen (der Schlüssel entstand, bevor es diesen Angriffsweg gab). Sonst sperrt sich der Bestand aus.
+     */
+    private void signaturStandHeben() {
+        boolean geaendert = false;
+        for (int i = 0; i < geraete.length(); i++) {
+            JSONObject g = geraete.optJSONObject(i);
+            if (g == null || g.has(MARKE_0139SIG)) continue;
+            try {
+                g.put(MARKE_0139SIG, 1);
+                if (!g.optString("geraeteSchluessel", "").isEmpty()) g.put(SCHLUESSEL_BESITZER, true);
+                geaendert = true;
+            } catch (Exception ignored) { }
+        }
+        if (geaendert) {
+            try { speicher.speichere(geraete); } catch (Throwable ignored) { }
+        }
+    }
+
+    /** true, wenn der Geräteschlüssel dieser Kopplung Besitzer-Aktionen signieren darf. */
+    public synchronized boolean schluesselBesitzer(String id) {
+        JSONObject g = finde(id);
+        return g != null && SIGNATUR_BEREIT.equals(besitzerSignaturVon(g));
+    }
+
+    /** {@link #SIGNATUR_BEREIT} | {@link #SIGNATUR_FEHLT} | {@link #SIGNATUR_UNBESTAETIGT}. */
+    public synchronized String besitzerSignatur(String id) {
+        JSONObject g = finde(id);
+        return g == null ? SIGNATUR_FEHLT : besitzerSignaturVon(g);
+    }
+
+    private static String besitzerSignaturVon(JSONObject g) {
+        if (g.optString("geraeteSchluessel", "").isEmpty()) return SIGNATUR_FEHLT;
+        return g.optBoolean(SCHLUESSEL_BESITZER, false) ? SIGNATUR_BEREIT : SIGNATUR_UNBESTAETIGT;
+    }
+
+    /**
+     * Schlüssel für Besitzer-Aktionen bestätigen. NUR Display/Login (EinstellungenApiHandler), nie Kopplung/Brücke.
+     * {@code fingerabdruck} muss zum hinterlegten Schlüssel passen, damit kein inzwischen getauschter bestätigt wird.
+     */
+    public synchronized boolean schluesselBesitzerBestaetigen(String id, String fingerabdruck) {
+        JSONObject g = finde(id);
+        if (g == null || !ART_HANDY.equals(g.optString("art"))) return false;
+        String fp = fingerabdruck(g.optString("geraeteSchluessel", ""));
+        if (fp == null || !fp.equals(fingerabdruck)) return false;
+        try { g.put(SCHLUESSEL_BESITZER, true); } catch (Exception e) { return false; }
+        boolean ok = speichernSofort();
+        at.greenchili.surfmate.server.BefehlsLog.ereignis("kopplung.schluessel.besitzer", ok ? "bestaetigt" : "fehler", id,
+                anzeigeName(id));
+        return ok;
+    }
+
+    /** 16 Hex von SHA-256 des öffentlichen Schlüssels (base64-DER); null ohne Schlüssel. */
+    public static String fingerabdruck(String schluesselBase64) {
+        if (schluesselBase64 == null || schluesselBase64.isEmpty()) return null;
+        try {
+            byte[] der = java.util.Base64.getDecoder().decode(schluesselBase64.trim());
+            byte[] h = java.security.MessageDigest.getInstance("SHA-256").digest(der);
+            StringBuilder b = new StringBuilder();
+            for (int i = 0; i < 8; i++) b.append(String.format("%02x", h[i] & 0xFF));
+            return b.toString();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     // ---------------------------------------------------------------- 0.1.33 Web-Aufsperren
 
     /** Bestätigten Passkey hinterlegen, first write wins. Nur nach „Stimmt“ am Auto. */
@@ -1017,6 +1124,7 @@ public final class Kopplungen {
             g.put("nurPasskey", true);
             if (a.synchronisiert) g.put("synchronisiert", true);
             g.put("geraeteName", bereinigeName(geraeteName));
+            g.put(SCHLUESSEL_BESITZER, true);   // 0.1.39: am Autobildschirm mit Prüfzahl bestätigt
         } catch (Exception e) {
             return SCHLUESSEL_FEHLER;
         }
@@ -1126,7 +1234,7 @@ public final class Kopplungen {
     static void besitzerFrageTelegram(boolean bestaetigen) {
         String text = at.greenchili.surfmate.server.Messages.text(
                 bestaetigen ? "besitzer.frage_telegram_bestaetigen" : "besitzer.frage_telegram",
-                "Welches Gerät ist dein Handy? Bitte am Auto unter System → Gekoppelte Geräte auswählen.");
+                "Welches Gerät ist dein Handy? Bitte am Auto unter Einstellungen → Alle Einstellungen → Gekoppelte Geräte auswählen.");
         at.greenchili.surfmate.telegram.TelegramNotifier.sendMessage("📱 " + text, "CRITICAL");
     }
 

@@ -64,10 +64,11 @@ public class DaemonManualStopContractTest {
                 "vm.startDaemon(DaemonType.ACC_SENTRY_DAEMON, userInitiated = false)"));
         assertTrue(count(startup,
                 "ifNotUserStopped(DaemonType.CAMERA_DAEMON)") >= 2);
+        // 0.1.38.10: Wächter-Stufe = EIN geschützter Pfad für ViewModel- und ADB-Weg (vorher zwei Kopien)
         assertTrue(count(startup,
-                "ifNotUserStopped(DaemonType.SENTRY_DAEMON)") >= 2);
+                "ifNotUserStopped(DaemonType.SENTRY_DAEMON)") >= 1);
         assertTrue(count(startup,
-                "ifNotUserStopped(DaemonType.ACC_SENTRY_DAEMON)") >= 2);
+                "ifNotUserStopped(DaemonType.ACC_SENTRY_DAEMON)") >= 1);
         assertTrue(startup.contains("leaving it stopped this tick"));
 
         int clear = startup.indexOf("fun clearStaleSentinels()");

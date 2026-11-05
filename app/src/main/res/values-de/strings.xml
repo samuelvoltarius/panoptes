@@ -210,7 +210,7 @@
     <string name="onboarding_mode_on_off_button">Immer an</string>
     <string name="onboarding_mode_on_only_button">Nur Fahrt</string>
     <string name="onboarding_update_title">Nach Updates suchen?</string>
-    <string name="onboarding_update_body">Panoptes kann alle 6 Stunden bei GitHub nachsehen, ob es eine neue Version gibt. Dabei sieht GitHub die IP-Adresse des Autos und die Uhrzeit, sonst wird nichts gesendet. Installiert wird nichts ohne dich: In den Einstellungen legst du fest, ob Updates nur gemeldet oder bei geparktem Auto automatisch installiert werden.\n\nDu kannst das jederzeit unter System → App-Updates ändern.</string>
+    <string name="onboarding_update_body">Panoptes kann alle 6 Stunden bei GitHub nachsehen, ob es eine neue Version gibt. Dabei sieht GitHub die IP-Adresse des Autos und die Uhrzeit, sonst wird nichts gesendet. Installiert wird nichts ohne dich: In den Einstellungen legst du fest, ob Updates nur gemeldet oder bei geparktem Auto automatisch installiert werden.\n\nDu kannst das jederzeit unter Einstellungen → Alle Einstellungen → App-Updates ändern.</string>
     <string name="onboarding_update_ja">Ja, suchen</string>
     <string name="onboarding_update_nein">Nein, nicht suchen</string>
     <string name="onboarding_update_speichert">Deine Wahl wird gespeichert …</string>
@@ -342,6 +342,13 @@
     <string name="webview_loading">Einen Moment…</string>
     <string name="webview_camera_daemon_not_running">Kameradienst ist aus</string>
     <string name="panoptes_startet">Panoptes startet …</string>
+    <string name="start_dienst_zugang">Zugang (Tailscale)</string>
+    <string name="start_dienst_oberflaeche">Oberfläche</string>
+    <string name="start_dienst_waechter">Wächter</string>
+    <string name="start_dienst_rest">Telegram und Brücke</string>
+    <string name="start_zustand_startet">startet …</string>
+    <string name="start_zustand_bereit">bereit</string>
+    <string name="start_zustand_startet_nicht">startet nicht</string>
     <string name="panoptes_startet_hinweis">Die Seite lädt von selbst, sobald Panoptes bereit ist.</string>
     <string name="panoptes_fremd_app">Eine andere BYD-Werkzeug-App läuft offenbar (%1$s). Zwei solche Apps stören sich gegenseitig, vor allem bei der Kamera. Beende oder deaktiviere sie, dann startet Panoptes.</string>
     <string name="panoptes_startet_zu_lange">Panoptes antwortet noch nicht.</string>
@@ -1212,8 +1219,8 @@
     <string name="roadsense_map_deleted_toast">Gefahrenstelle entfernt</string>
     <string name="roadsense_map_action_failed">Straßenzustand antwortet nicht. Versuche es noch einmal.</string>
     <string name="roadsense_map_no_location">Suche GPS-Signal…</string>
-    <string name="karte_keine_quelle">Keine Kartenquelle gewählt. Auswahl unter System → Kartenquelle.</string>
-    <string name="karte_suche_hinweis">Die Kartensuche fragt Photon, Nominatim und Overpass mit deinem Suchtext und dem ungefähren Ort, ohne Kennung. Abschalten unter Einstellungen → Datenschutz.</string>
+    <string name="karte_keine_quelle">Keine Kartenquelle gewählt. Auswahl unter Einstellungen → Alle Einstellungen → Kartenquelle.</string>
+    <string name="karte_suche_hinweis">Die Kartensuche schickt nur deinen Suchtext an den Panoptes-Routenplaner (unser Server). Eine Kennung wird nicht gesendet. Abschalten unter Einstellungen → Datenschutz.</string>
     <string name="karte_suche_aus">Die Suche im Internet ist aus. Einschalten unter Einstellungen → Datenschutz.</string>
     <!-- Navigation: search + routing + turn-by-turn -->
     <string name="roadsense_map_search_hint">Wohin?</string>
@@ -1224,8 +1231,11 @@
     <string name="roadsense_map_pick_destination">Ziel wählen</string>
     <string name="roadsense_map_routing">Suche Route…</string>
     <string name="roadsense_map_route_failed">Keine Route gefunden. Versuche es noch einmal.</string>
-    <string name="roadsense_map_need_key">Zum Navigieren trage in den Einstellungen von Straßenzustand einen Routing-Schlüssel ein.</string>
-    <string name="roadsense_map_route_key_rejected">Der Routing-Schlüssel wurde abgelehnt. Prüfe ihn in den Einstellungen von Straßenzustand.</string>
+    <string name="roadsense_map_route_planer_verbinden">Zum Navigieren verbinde Panoptes mit dem Routenplaner: Einstellungen → Alle Einstellungen → Routenplaner-Konto → „Mit Routenplaner verbinden“.</string>
+    <string name="roadsense_map_route_zu_oft">Zu viele Routenberechnungen kurz hintereinander. Bitte kurz warten.</string>
+    <string name="roadsense_map_fuehrung_keine_karte">Die Karte konnte nicht laden, die Führung kann nicht starten. Bitte das Werksnavi nutzen.</string>
+    <string name="roadsense_map_fuehrung_kein_standort">Kein Standort – die Führung kann noch nicht starten. Bitte warten, bis das Auto seine Position kennt.</string>
+    <string name="roadsense_map_suche_fahrt">Suchen geht nur im Stand. Während der Fahrt einen gespeicherten oder zuletzt gesuchten Ort wählen.</string>
     <string name="roadsense_map_route_network">Die Verbindung ist zu langsam, um eine Route zu finden. Prüfe dein Internet und versuche es noch einmal.</string>
     <string name="roadsense_map_route_http">Der Routendienst hat einen Fehler gemeldet (%1$d). Versuche es bald noch einmal.</string>
     <string name="roadsense_map_rerouting">Du bist von der Route abgekommen. Berechne neu…</string>
@@ -1248,6 +1258,7 @@
     <string name="roadsense_map_3d_on">3D-Gebäude an</string>
     <string name="roadsense_map_3d_off">Gebäude in 3D aus</string>
     <string name="roadsense_map_poi_loading">Suche Ladesäulen und Tankstellen…</string>
+    <string name="roadsense_map_poi_kommt">Punkte an der Route kommen bald über unseren eigenen Dienst. Bis dahin fragt die Karte keinen fremden Dienst.</string>
     <string name="roadsense_map_poi_none">Keine Stationen in der Nähe gefunden</string>
     <string name="roadsense_map_poi_need_route">Wähle zuerst ein Ziel</string>
     <!-- POI tap action sheet -->

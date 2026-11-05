@@ -156,6 +156,18 @@
             android:layout_marginTop="24dp"
             android:indeterminateTint="#FFF2F4F7" />
 
+        <!-- 0.1.38.10: eine Zeile je Dienst („startet …“ / „bereit“ / „startet nicht“), aus StartStatus -->
+        <TextView
+            android:id="@+id/startDienste"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:gravity="start"
+            android:lineSpacingExtra="8dp"
+            android:textColor="#FFF2F4F7"
+            android:textSize="22sp"
+            android:visibility="gone" />
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnStartRetry"
             style="@style/Widget.SurfMate.M3.Button.Tonal"

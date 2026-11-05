@@ -351,7 +351,7 @@
         modal.innerHTML =
             '<h2>' + escapeHtml(t('backup.restored', 'Einstellungen sind zurück')) + '</h2>' +
             '<div class="bk-sub">' + escapeHtml(t('backup.restart_hint',
-                'Starte den Kamera-Dienst neu (Dienste → Kamera → Neustart), damit wirklich alle Einstellungen gelten.')) + '</div>' +
+                'Manche Einstellungen gelten erst nach einem Neustart von Panoptes.')) + '</div>' +
             warnHtml +
             '<div class="bk-actions">' +
               '<button class="bk-btn bk-btn-primary" id="bkDone">' + escapeHtml(t('common.ok', 'OK')) + '</button>' +

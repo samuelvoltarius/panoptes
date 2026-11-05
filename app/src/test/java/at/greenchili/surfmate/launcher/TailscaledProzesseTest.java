@@ -69,6 +69,14 @@ public class TailscaledProzesseTest {
     }
 
     @Test
+    public void laeuftSkriptMeldetNurDenEigenenUndBeendetNichts() throws Exception {
+        assumeTrue("sh nicht vorhanden", shDa());
+        // im Fake-/proc gibt es kein exe: readlink leer -> "nein"
+        assertEquals("HR_TS laeuft 101 nein|", lauf(TailscaledProzesse.laeuftSkript(UNSER)));
+        assertEquals("HR_TS laeuft 202 nein|", lauf(TailscaledProzesse.laeuftSkript(NOT)));
+    }
+
+    @Test
     public void unsichereEingabenAbgelehnt() {
         for (String s : new String[] {"", "/a$(x)", "/a'b", "/a\"b", "/a`b`"}) {
             try {

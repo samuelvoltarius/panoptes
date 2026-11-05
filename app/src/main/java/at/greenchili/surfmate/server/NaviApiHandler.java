@@ -25,6 +25,11 @@ import java.nio.charset.StandardCharsets;
  *   <li>{@code POST /api/navi/orte}    — {@code {"q":"Salzburg","limit":6}}</li>
  *   <li>{@code POST /api/navi/plan}    — {@code {"start":[lat,lon],"ziel":[lat,lon],"soc_start":50,…}}</li>
  *   <li>{@code POST /api/navi/umkreis} — {@code {"lat":…,"lon":…,"radius":10,"kwh":20}}</li>
+ *   <li>{@code POST /api/navi/fuehrung} — {@code {"start":[lat,lon],"ziel":[lat,lon],"via":[…],"sprache":"de",…}}
+ *       (0.1.39 G2, Vertrag {@code fuehrung/1}): abbiegegenaue Route für die Panoptes-Führung. Gleicher Weg wie
+ *       {@code plan} (Schlüssel aus {@link at.greenchili.surfmate.planer.PlanerSchluessel#kopf()}, {@code laden} wie
+ *       ein Plan-Body aufbereitet). Ohne Schlüssel geht nichts hinaus. Die Punkte gehen genau hinaus (zum Routen
+ *       nötig), nur im Body, und werden hier nicht protokolliert.</li>
  * </ul>
  *
  * <p>Die Basisadresse steht in der Config unter {@code planner.baseUrl}
@@ -102,6 +107,7 @@ public class NaviApiHandler {
         if (path.equals("/api/navi/orte")) op = "orte";
         else if (path.equals("/api/navi/plan")) op = "plan";
         else if (path.equals("/api/navi/umkreis")) op = "umkreis";
+        else if (path.equals("/api/navi/fuehrung")) op = "fuehrung";
         else return false;
 
         if (!"POST".equals(method)) {
@@ -123,12 +129,33 @@ public class NaviApiHandler {
         // Backoff „umkreis“ (0.1.9): Planer gerade nicht erreichbar → nicht bei jedem Kartenschwenk erneut ins
         // Netz und nicht jedes Mal loggen; ehrlich sagen, wann wieder gefragt wird.
         final boolean umkreis = "umkreis".equals(op);
-        if (umkreis) {
-            long warte = at.greenchili.surfmate.planer.PlanerBackoff.UMKREIS.warteMs(System.currentTimeMillis());
-            if (warte > 0) {
-                HttpResponse.sendJson(out, 503, offline(warte).toString());
+        final boolean fuehrung = "fuehrung".equals(op);
+        // 0.1.38.10 Handy (Kopplung, Recht „route“ prüft ExternGuard): die Position setzt das Auto selbst ein, eine
+        // Position des Handys zählt nie; danach wie immer gerundet (umkreisBody)
+        if (umkreis && AuthMiddleware.isExternRequest()) {
+            body = mitAutoPosition(body, autoPosition());
+            if (body == null) {
+                HttpResponse.sendJson(out, 409, new JSONObject().put("ok", false).put("grund", "keine_position")
+                        .put("error", Messages.text("planer.navi.keine_position", "The car has no current position.")).toString());
                 return true;
             }
+        }
+        if (umkreis || fuehrung) {
+            long warte = umkreis ? at.greenchili.surfmate.planer.PlanerBackoff.UMKREIS.warteMs(System.currentTimeMillis())
+                    : at.greenchili.surfmate.planer.PlanerBackoff.FUEHRUNG.warteMs(System.currentTimeMillis());
+            if (warte > 0) {
+                HttpResponse.sendJson(out, 503, (fuehrung ? offlineFuehrung(warte) : offline(warte)).toString());
+                return true;
+            }
+        }
+        // 0.1.39 G2: Führung (fuehrung/1) nur mit Schlüssel – ohne ihn bleibt die Position im Auto.
+        final String[] kopf = "plan".equals(op) || fuehrung ? kopfQuelle.get() : null;
+        if (fuehrung && kopf == null) {
+            JSONObject o = error(Messages.text("planer.navi.fuehrung_schluessel",
+                    "Guidance needs the connection to the route planner (member key)."));
+            o.put("code", "nur_mitglieder");
+            HttpResponse.sendJson(out, 401, o.toString());
+            return true;
         }
 
         HttpURLConnection c = null;
@@ -138,15 +165,19 @@ public class NaviApiHandler {
             // damit der Planer die Vorlieben selbst aus dem Konto nimmt. Lehnt er den Schlüssel ab (401, z. B.
             // Geräte-Typ ohne plan-Recht), einmal ohne Schlüssel planen – wie bisher, nur ohne Vorlieben.
             String sendBody = "plan".equals(op) ? at.greenchili.surfmate.planer.FahrzeugWahl.einsetzen(planBody(body))
+                    : fuehrung ? fuehrungBody(body)
                     : umkreis ? umkreisBody(body) : body;   // Kern 5: fahrzeug immer; umkreis nur gerundet
-            String[] kopf = "plan".equals(op) ? at.greenchili.surfmate.planer.PlanerSchluessel.kopf() : null;
             c = verbinde(op, sendBody, kopf);
             int code = c.getResponseCode();
-            at.greenchili.surfmate.einrichtung.Selbsttest.planerAntwort(kopf != null, code, System.currentTimeMillis());
+            if (!fuehrung) {
+                at.greenchili.surfmate.einrichtung.Selbsttest.planerAntwort(kopf != null, code, System.currentTimeMillis());
+            }
             if (code == 401 && kopf != null) {
-                c.disconnect();
-                c = verbinde(op, sendBody, null);
-                code = c.getResponseCode();
+                if (!fuehrung) {   // Führung ohne Schlüssel gibt es nicht: kein zweiter Versuch
+                    c.disconnect();
+                    c = verbinde(op, sendBody, null);
+                    code = c.getResponseCode();
+                }
             }
             InputStream in = code >= 400 ? c.getErrorStream() : c.getInputStream();
             String text = in == null ? "" : readLimited(in);
@@ -162,11 +193,38 @@ public class NaviApiHandler {
             if (umkreis && at.greenchili.surfmate.planer.PlanerBackoff.UMKREIS.erfolg()) {
                 logger.info("Planer wieder erreichbar (umkreis)");
             }
+            if (fuehrung) {
+                if (code == 429 || code == 503) {
+                    // Vertrag fuehrung/1 §9: Retry-After beachten, bei 503 nicht schneller als 30 s neu fragen.
+                    at.greenchili.surfmate.planer.PlanerBackoff.FUEHRUNG.pause(System.currentTimeMillis(),
+                            fuehrungPauseMs(code, c.getHeaderField("Retry-After")));
+                } else if (code < 500) {
+                    at.greenchili.surfmate.planer.PlanerBackoff.FUEHRUNG.erfolg();
+                }
+                if (code == 200 && !FUEHRUNG_VERTRAG.equals(vertragVon(text))) {
+                    logger.warn("Planer: Führung mit unbekanntem Vertrag");
+                    HttpResponse.sendJson(out, 502, error(Messages.text("planer.navi.fuehrung_vertrag",
+                            "The route planner answered in an unknown format – please update Panoptes.")).toString());
+                    return true;
+                }
+                HttpResponse.sendJson(out, fuehrungStatus(code), mitFuehrungCode(code, text));
+                return true;
+            }
             if (umkreis && code == 200 && guenstigsteWunsch(body) && !AuthMiddleware.isExternRequest()) {
                 text = mitEigenenPreisen(text);
             }
             HttpResponse.sendJson(out, code == 200 ? 200 : (code == 429 ? 429 : 502), text);
         } catch (Exception e) {
+            if (fuehrung && at.greenchili.surfmate.planer.PlanerBackoff.istNetzfehler(e)) {
+                long now = System.currentTimeMillis();
+                if (at.greenchili.surfmate.planer.PlanerBackoff.FUEHRUNG.fehler(now)) {
+                    logger.warn("Planer nicht erreichbar (fuehrung): " + e.getClass().getSimpleName()
+                            + " – neue Versuche mit Pause");
+                }
+                HttpResponse.sendJson(out, 503,
+                        offlineFuehrung(at.greenchili.surfmate.planer.PlanerBackoff.FUEHRUNG.warteMs(now)).toString());
+                return true;
+            }
             if (umkreis && at.greenchili.surfmate.planer.PlanerBackoff.istNetzfehler(e)) {
                 long now = System.currentTimeMillis();
                 boolean erster = at.greenchili.surfmate.planer.PlanerBackoff.UMKREIS.fehler(now);
@@ -192,7 +250,90 @@ public class NaviApiHandler {
         return baseUrl();
     }
 
+    /** Vertragskennung der Führungs-Antwort (FUEHRUNG_VERTRAG.md). */
+    static final String FUEHRUNG_VERTRAG = "fuehrung/1";
+    /** Pause nach 503 ohne bzw. mit zu kurzem Retry-After (Vertrag §9: nicht schneller als 30 s). */
+    static final long FUEHRUNG_PAUSE_503_MS = 30_000L;
+    /** Pause nach 429 ohne Retry-After (nginx je Adresse, Vertrag §5: 10 s). */
+    static final long FUEHRUNG_PAUSE_429_MS = 10_000L;
+    /** Obergrenze für ein Retry-After des Planers. */
+    static final long FUEHRUNG_PAUSE_MAX_MS = 10 * 60_000L;
+
+    /** Schlüssel-Kopf für plan/fuehrung (eine Quelle: PlanerSchluessel); im Test austauschbar. */
+    static java.util.function.Supplier<String[]> kopfQuelle = at.greenchili.surfmate.planer.PlanerSchluessel::kopf;
+    /** Basisadresse; im Test austauschbar (lokaler Prüfserver). */
+    static java.util.function.Supplier<String> basisQuelle = NaviApiHandler::baseUrlAusConfig;
+
+    /**
+     * Body für {@code /ev/api/fuehrung}: Route und Punkte unverändert (die Führung braucht die genaue Position);
+     * nur ein {@code laden}-Objekt wird genau wie ein Plan-Body aufbereitet (Vorlieben aus dem Auto, Fahrzeug).
+     */
+    static String fuehrungBody(String body) {
+        try {
+            JSONObject b = new JSONObject(body);
+            JSONObject laden = b.optJSONObject("laden");
+            if (laden == null) return body;
+            b.put("laden", new JSONObject(at.greenchili.surfmate.planer.FahrzeugWahl.einsetzen(planBody(laden.toString()))));
+            return b.toString();
+        } catch (Exception e) {
+            return body;
+        }
+    }
+
+    /** Pause nach 429/503 aus {@code Retry-After} (Sekunden); ohne: 429 10 s; 503 mindestens 30 s; höchstens 10 min. */
+    static long fuehrungPauseMs(int code, String retryAfter) {
+        long ms = 0;
+        try {
+            if (retryAfter != null) ms = Long.parseLong(retryAfter.trim()) * 1000L;
+        } catch (NumberFormatException ignored) { }
+        if (ms <= 0) ms = FUEHRUNG_PAUSE_429_MS;
+        if (code == 503) ms = Math.max(ms, FUEHRUNG_PAUSE_503_MS);
+        return Math.min(ms, FUEHRUNG_PAUSE_MAX_MS);
+    }
+
+    /** HTTP-Code an navmap: Antworten des Planers mit Bedeutung bleiben, alles andere ist 502. */
+    static int fuehrungStatus(int code) {
+        switch (code) {
+            case 200: case 400: case 401: case 422: case 429: case 503: return code;
+            default: return 502;
+        }
+    }
+
+    /**
+     * Fehlerantworten der Führung tragen immer einen {@code code} (Vertrag §5), auch wenn nginx HTML lieferte oder der
+     * Körper fehlte – damit navmap 401/429/503 sicher unterscheidet.
+     */
+    static String mitFuehrungCode(int httpCode, String text) {
+        if (httpCode == 200) return text;
+        try {
+            JSONObject o = new JSONObject(text);
+            if (o.optString("code", "").isEmpty()) {
+                String c = httpCode == 401 ? "nur_mitglieder" : httpCode == 429 ? "zu_viele"
+                        : httpCode == 503 ? "routing_weg" : httpCode == 422 ? "kein_weg" : httpCode == 400 ? "werte"
+                        : "planer";
+                o.put("code", c);
+                if (httpCode == 401) o.put("fehler", Messages.text("planer.navi.fuehrung_schluessel",
+                        "Guidance needs the connection to the route planner (member key)."));
+            }
+            return o.toString();
+        } catch (Exception e) {
+            return text;
+        }
+    }
+
+    static String vertragVon(String text) {
+        try {
+            return new JSONObject(text).optString("vertrag", "");
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
     private static String baseUrl() {
+        return basisQuelle.get();
+    }
+
+    private static String baseUrlAusConfig() {
         try {
             JSONObject p = UnifiedConfigManager.loadConfig().optJSONObject("planner");
             String b = p != null ? p.optString("baseUrl", "") : "";
@@ -216,7 +357,7 @@ public class NaviApiHandler {
         HttpURLConnection c = (HttpURLConnection) new URL(baseUrl() + op).openConnection();
         c.setRequestMethod("POST");
         c.setConnectTimeout(10_000);
-        c.setReadTimeout("plan".equals(op) ? 150_000 : 20_000); // lange Strecken rechnet der Planer > 1 min
+        c.setReadTimeout(lesezeitMs(op, body)); // lange Strecken rechnet der Planer > 1 min
         c.setDoOutput(true);
         c.setRequestProperty("Content-Type", "application/json; charset=utf-8");
         c.setRequestProperty("Accept", "application/json");
@@ -226,6 +367,19 @@ public class NaviApiHandler {
         c.setFixedLengthStreamingMode(payload.length);
         try (OutputStream os = c.getOutputStream()) { os.write(payload); }
         return c;
+    }
+
+    /** Lesezeit je Abfrage: Plan und Führung mit Laden wie der Planer (> 1 min), Führung ohne Laden 40 s. */
+    static int lesezeitMs(String op, String body) {
+        if ("plan".equals(op)) return 150_000;
+        if ("fuehrung".equals(op)) {
+            try {
+                return new JSONObject(body).optJSONObject("laden") != null ? 150_000 : 40_000;
+            } catch (Exception e) {
+                return 40_000;
+            }
+        }
+        return 20_000;
     }
 
     /** 0.1.25 Handy-Route: dieselbe Aufbereitung des Plan-Bodys wie beim Planen im Auto (Vorlieben). */
@@ -263,6 +417,30 @@ public class NaviApiHandler {
      * vergrößert, damit keine nahe Säule wegfällt; die Feinsortierung macht das Gerät. Schon grob gerundete Anfragen
      * (Karte 0,05°, Navi 0,01°, StoppBelegung) bleiben unverändert.
      */
+    /** Eigene Position des Autos (höchstens 10 min alt) oder null. */
+    static double[] autoPosition() {
+        try {
+            at.greenchili.surfmate.monitor.GpsMonitor g = at.greenchili.surfmate.monitor.GpsMonitor.getInstance();
+            long age = System.currentTimeMillis() - g.getLastUpdate();
+            if (g.getLastUpdate() <= 0 || age < 0 || age > 10 * 60_000L) return null;
+            return new double[] {g.getLatitude(), g.getLongitude()};
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /** Anfrage einer Kopplung: lat/lon (und lng) des Handys verwerfen, die des Autos einsetzen; null ohne Position. */
+    static String mitAutoPosition(String body, double[] pos) {
+        if (pos == null) return null;
+        try {
+            JSONObject b = new JSONObject(body);
+            b.remove("lng");
+            return b.put("lat", pos[0]).put("lon", pos[1]).toString();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     static String umkreisBody(String body) {
         try {
             JSONObject b = new JSONObject(body);
@@ -350,6 +528,16 @@ public class NaviApiHandler {
         try {
             o.put("grund", "netz");
             o.put("wiederInS", s);
+        } catch (Exception ignored) { }
+        return o;
+    }
+
+    /** Wie {@link #offline}, dazu {@code code: routing_weg} und {@code warte_ms} (Vertrag fuehrung/1 §5). */
+    static JSONObject offlineFuehrung(long warteMs) {
+        JSONObject o = offline(warteMs);
+        try {
+            o.put("code", "routing_weg");
+            o.put("warte_ms", Math.max(0L, warteMs));
         } catch (Exception ignored) { }
         return o;
     }

@@ -288,6 +288,20 @@ public final class EinstellungenApiHandler {
             HttpResponse.sendJson(out, ok ? 200 : 404, new JSONObject().put("ok", ok).toString());
             return true;
         }
+        // 0.1.39 Besitzer-Signatur: später gemeldeten Schlüssel für Besitzer-Aktionen bestätigen – nur Display/Login
+        if (pathOnly.equals("/api/kopplung/schluessel-besitzer") && method.equals("POST")) {
+            if (AuthMiddleware.isExternRequest() || AuthMiddleware.isHandyWebRequest()) return verboten(out);
+            String id = "", fp = "";
+            try {
+                JSONObject b = new JSONObject(body == null || body.isEmpty() ? "{}" : body);
+                id = b.optString("id", "");
+                fp = b.optString("fingerabdruck", "");
+            } catch (Exception ignored) {
+            }
+            boolean ok = Kopplungen.get().schluesselBesitzerBestaetigen(id, fp);
+            HttpResponse.sendJson(out, ok ? 200 : 409, new JSONObject().put("ok", ok).toString());
+            return true;
+        }
         if (pathOnly.equals("/api/kopplung/schluessel-loeschen") && method.equals("POST")) {
             if (AuthMiddleware.isExternRequest()) return verboten(out);
             String id = "";
@@ -327,6 +341,13 @@ public final class EinstellungenApiHandler {
                     r = HandyApiHandler.fehler("unbekannt");
             }
             HttpResponse.sendJson(out, r.toString());
+            return true;
+        }
+        // 0.1.38.10: Was darf diese Sitzung an Fahrzeug-Wegen? Login → {web:false}; Web-Sitzung → Rechte der Kopplung und
+        // die gesperrten Pfade (WebSitzungRechte). Nur zum Ausblenden; der Kern prüft jede Anfrage selbst.
+        if (pathOnly.equals("/api/sitzung/rechte") && method.equals("GET")) {
+            HttpResponse.sendJson(out, WebSitzungRechte.stand(AuthMiddleware.isHandyWebRequest(),
+                    AuthMiddleware.requestWebKopplungsId(), Kopplungen.get()).toString());
             return true;
         }
         // Gekoppeltes Gerät meldet sich selbst ab (z. B. HA-Integration wird entfernt): widerruft nur die

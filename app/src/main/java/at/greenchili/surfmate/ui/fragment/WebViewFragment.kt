@@ -26,6 +26,9 @@ import com.google.android.material.button.MaterialButton
 import at.greenchili.surfmate.R
 import at.greenchili.surfmate.ui.util.navigateDrillDown
 import at.greenchili.surfmate.daemon.CameraDaemon
+import at.greenchili.surfmate.ui.daemon.StartStatus
+import at.greenchili.surfmate.ui.daemon.StartStufe
+import at.greenchili.surfmate.ui.daemon.StufeZustand
 
 /**
  * WebView fragment that loads pages from the daemon's HTTP server.
@@ -451,6 +454,7 @@ class WebViewFragment : Fragment() {
     private var startTitel: android.widget.TextView? = null
     private var startHinweis: android.widget.TextView? = null
     private var startFremd: android.widget.TextView? = null
+    private var startDienste: android.widget.TextView? = null
     /** 0.1.38.9: Erkennung "andere Werkzeug-App" einmal je Wartephase (und einmal nach 20 s). */
     @Volatile private var fremdProbeRunde = -1
     private var startSpinner: View? = null
@@ -582,6 +586,7 @@ class WebViewFragment : Fragment() {
         startTitel = view.findViewById(R.id.startTitel)
         startHinweis = view.findViewById(R.id.startHinweis)
         startFremd = view.findViewById(R.id.startFremd)
+        startDienste = view.findViewById(R.id.startDienste)
         startSpinner = view.findViewById(R.id.startSpinner)
         btnStartRetry = view.findViewById(R.id.btnStartRetry)
         btnStartRetry?.setOnClickListener { retryLoad() }
@@ -688,6 +693,7 @@ class WebViewFragment : Fragment() {
 
                     if (isLocalServer) {
                         interceptI18nCatalog(url)?.let { return it }
+                        interceptStartStatus(url)?.let { return it }
                         // 0.1.20 (b2): statische /shared/-Dateien lädt die WebView selbst – dann wirken ihr HTTP-Cache
                         // und der JS-Code-Cache (abgefangene Antworten cached sie nie). Nur ab M72 und ohne Proxy.
                         if (at.greenchili.surfmate.ui.AssetSpeicher.direkt(request?.method, request?.url?.path,
@@ -1629,6 +1635,60 @@ class WebViewFragment : Fragment() {
             }
         }
 
+        /**
+         * 0.1.38.10 (G4): Panoptes-Führung aus navi.html. [json] = Auftrag `{plan_id?, ziel, etappen}` ohne Route und
+         * ohne Position (siehe [at.greenchili.surfmate.navmap.Fuehrung]); leer = zur laufenden Führung zurück. Die
+         * Activity zeigt die Vorschau, geführt wird erst nach dem Tipp auf Start. Rückgabe "ok", "nicht_verfuegbar",
+         * "ungueltig", "no_context" oder "error"; bei allem außer "ok" nimmt navi.html das Werksnavi.
+         */
+        @android.webkit.JavascriptInterface
+        fun openNavigation(json: String?): String {
+            return try {
+                val act = activity ?: return "no_context"
+                val F = at.greenchili.surfmate.navmap.Fuehrung
+                val auftrag = if (json.isNullOrBlank()) null else (F.auftragLesen(json) ?: return "ungueltig")
+                if (!F.verfuegbar()) return "nicht_verfuegbar"
+                if (auftrag != null) F.ablegen(act.applicationContext, auftrag)
+                act.runOnUiThread {
+                    try {
+                        act.startActivity(
+                            android.content.Intent(act, at.greenchili.surfmate.navmap.RoadSenseMapActivity::class.java)
+                                .putExtra(F.EXTRA_NEU, auftrag != null)
+                        )
+                    } catch (e: Exception) {
+                        android.util.Log.w("WebViewFragment", "openNavigation launch failed: ${e.message}")
+                    }
+                }
+                "ok"
+            } catch (e: Exception) {
+                android.util.Log.w("WebViewFragment", "openNavigation bridge failed: ${e.message}")
+                "error"
+            }
+        }
+
+        /** G4: Stand für das Band „Führung läuft“ in navi.html: {verfuegbar, aktiv, ziel_name, stopps}, keine Koordinaten. */
+        @android.webkit.JavascriptInterface
+        fun fuehrungStand(): String {
+            return try {
+                val ctx = context?.applicationContext ?: return "{}"
+                at.greenchili.surfmate.navmap.Fuehrung.stand(ctx).toString()
+            } catch (e: Exception) {
+                "{}"
+            }
+        }
+
+        /** G4: „Beenden“ im Band: gemerkte Führung verwerfen. */
+        @android.webkit.JavascriptInterface
+        fun fuehrungBeenden(): String {
+            return try {
+                val ctx = context?.applicationContext ?: return "no_context"
+                at.greenchili.surfmate.navmap.Fuehrung.beenden(ctx)
+                "ok"
+            } catch (e: Exception) {
+                "error"
+            }
+        }
+
         /** Opens Android's own notification-listener consent page; no permission is granted by Panoptes. */
         @android.webkit.JavascriptInterface
         fun openNotificationAccessSettings(): String {
@@ -2151,6 +2211,7 @@ class WebViewFragment : Fragment() {
         startHinweis?.visibility = View.VISIBLE
         startSpinner?.visibility = View.VISIBLE
         btnStartRetry?.visibility = View.GONE
+        startDiensteZeigen()
         startWarten = at.greenchili.surfmate.ui.StartWarten(android.os.SystemClock.elapsedRealtime())
         val runde = ++startRunde
         startFremd?.visibility = View.GONE
@@ -2226,6 +2287,8 @@ class WebViewFragment : Fragment() {
     private fun nachStartAbfrage(runde: Int, antwortet: Boolean) {
         val w = startWarten
         if (runde != startRunde || w == null || view == null) return
+        if (antwortet) StartStatus.melde(StartStufe.OBERFLAECHE, StufeZustand.BEREIT, android.os.SystemClock.elapsedRealtime())
+        startDiensteZeigen()
         when (w.nachAbfrage(android.os.SystemClock.elapsedRealtime(), antwortet)) {
             at.greenchili.surfmate.ui.StartWarten.Schritt.NEU_LADEN -> retryLoad()
             at.greenchili.surfmate.ui.StartWarten.Schritt.WEITER_WARTEN ->
@@ -2245,6 +2308,7 @@ class WebViewFragment : Fragment() {
     private fun beendeStart() {
         startRunde++
         startFremd?.visibility = View.GONE
+        startDienste?.visibility = View.GONE
         startWarten = null
         startHandler.removeCallbacksAndMessages(null)
         startOverlay?.visibility = View.GONE
@@ -2424,6 +2488,46 @@ class WebViewFragment : Fragment() {
      * Serve catalog requests straight from the installed APK in the embedded
      * WebView. External clients still use the daemon HTTP path.
      */
+    /**
+     * 0.1.38.10: `GET /api/start/status` beantwortet die App selbst aus [StartStatus] (eine Stelle, im App-Prozess),
+     * damit die Startseite die Karte „Start“ zeigen kann, auch wenn Wächter oder Telegram noch nicht laufen. Kommt die
+     * Anfrage an, antwortet die Oberfläche also schon. Am Handy/PC gibt es den Weg nicht (404, keine Karte).
+     */
+    private fun interceptStartStatus(url: String): WebResourceResponse? {
+        if (Uri.parse(url).path != "/api/start/status") return null
+        val jetzt = android.os.SystemClock.elapsedRealtime()
+        StartStatus.melde(StartStufe.OBERFLAECHE, StufeZustand.BEREIT, jetzt)
+        val bytes = StartStatus.json(jetzt).toString().toByteArray(Charsets.UTF_8)
+        return WebResourceResponse("application/json", "utf-8", java.io.ByteArrayInputStream(bytes)).apply {
+            setStatusCodeAndReasonPhrase(200, "OK")
+            responseHeaders = mapOf("Cache-Control" to "no-store", "Content-Length" to bytes.size.toString())
+        }
+    }
+
+    private fun startDiensteZeigen() {
+        val tv = startDienste ?: return
+        val stand = StartStatus.stand(android.os.SystemClock.elapsedRealtime())
+        if (stand.isEmpty()) {
+            tv.visibility = View.GONE
+            return
+        }
+        tv.text = at.greenchili.surfmate.ui.StartAnzeige.text(stand, { s ->
+            getString(when (s) {
+                StartStufe.ZUGANG -> R.string.start_dienst_zugang
+                StartStufe.OBERFLAECHE -> R.string.start_dienst_oberflaeche
+                StartStufe.WAECHTER -> R.string.start_dienst_waechter
+                StartStufe.REST -> R.string.start_dienst_rest
+            })
+        }, { z ->
+            getString(when (z) {
+                StufeZustand.STARTET -> R.string.start_zustand_startet
+                StufeZustand.BEREIT -> R.string.start_zustand_bereit
+                StufeZustand.STARTET_NICHT -> R.string.start_zustand_startet_nicht
+            })
+        })
+        tv.visibility = View.VISIBLE
+    }
+
     private fun interceptI18nCatalog(url: String): WebResourceResponse? {
         val path = Uri.parse(url).path ?: return null
         if (!path.startsWith("/i18n/") || !path.endsWith(".json")) return null
@@ -2536,6 +2640,7 @@ class WebViewFragment : Fragment() {
         startTitel = null
         startHinweis = null
         startFremd = null
+        startDienste = null
         startSpinner = null
         btnStartRetry = null
         // Drop the capture-bridge ref if it points at this (now-destroyed) view.

@@ -785,6 +785,7 @@ public class SurveillanceApiHandler {
             config.put("motionSalienceEnabled", sentryConfig.isMotionSalienceEnabled());
             config.put("postParkVigilanceEnabled", sentryConfig.isPostParkVigilanceEnabled());
             config.put("telegramSendStartPing", sentryConfig.isTelegramSendStartPing());
+            config.put("vorbeigehenLeise", sentryConfig.isVorbeigehenLeise());
             // Per-tier filter now lives in the telegram unified-config section
             // (see UnifiedTelegramConfig.K_TIER_*). Wire format on
             // /api/surveillance/config keeps the legacy key names so the web
@@ -931,6 +932,7 @@ public class SurveillanceApiHandler {
             config.put("motionSalienceEnabled", false);
             config.put("postParkVigilanceEnabled", true);
             config.put("telegramSendStartPing", false);
+            config.put("vorbeigehenLeise", true);
             // Tier toggles live on the telegram unified-config section, so
             // they're available even when SurveillanceConfig isn't loaded.
             config.put("telegramNotices",
@@ -1927,6 +1929,10 @@ public class SurveillanceApiHandler {
             if (configJson.has("telegramSendStartPing")) {
                 sentryConfig.setTelegramSendStartPing(
                         configJson.optBoolean("telegramSendStartPing", false));
+                configChanged = true;
+            }
+            if (configJson.has("vorbeigehenLeise")) {
+                sentryConfig.setVorbeigehenLeise(configJson.optBoolean("vorbeigehenLeise", true));
                 configChanged = true;
             }
             // Per-tier Telegram filter — persisted in the telegram section

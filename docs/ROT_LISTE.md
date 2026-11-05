@@ -3,7 +3,7 @@
 Diese Liste gehört zu den Release-Notizen („So wurde geprüft“). Sie nennt die Tests, die beim Freigabestand
 fehlschlagen, und warum. Maßstab für eine Freigabe ist: kein Test ist neu rot gegenüber dem Vorgänger.
 
-## Stand 0.1.38.9
+## Stand 0.1.38.10
 
 | Bereich | Rot | Übersprungen |
 |---|---:|---:|
@@ -15,5 +15,7 @@ unter Windows), und meldet sich deshalb ab statt rot zu werden. Auf Linux und An
 
 ## Verlauf
 
+- 0.1.38.10: 5322 Tests in der App und 83 im Launcher, keiner rot, unter Windows und Linux. Ein Prozess-Test des Launchers
+  (`SelbstheilungTest`) kann auf einem stark ausgelasteten Windows-Rechner wegen Zeitlimits scheitern; er ist im Freigabelauf grün.
 - 0.1.38.9: Die 17 Tests, die bis 0.1.38.8 dauerhaft rot waren, waren reine Windows-Fälle (Verzeichnis-fsync,
   Pfadtrenner, Git-Symlink, Shell). Unter Linux waren sie grün. Sie sind repariert, auf allen Plattformen grün.

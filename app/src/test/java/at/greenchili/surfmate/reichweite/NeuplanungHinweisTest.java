@@ -65,7 +65,9 @@ public class NeuplanungHinweisTest {
         assertTrue(teil.contains("data-uw=\"neu\""));
         assertTrue(teil.contains("/api/navi/unterwegs/ablehnen") || navi.contains("post('/api/navi/unterwegs/ablehnen'"));
         assertFalse("kein Ton", teil.contains("speak") || teil.contains("Audio"));
-        assertTrue("Zwischenziele gehen mit", navi.contains("if (dest.via && dest.via.length) body.via = dest.via;"));
+        // 0.1.38.10 (N1): die mitgebrachten Zwischenziele landen in der Zwischenstopp-Liste, die Liste geht als via mit
+        assertTrue("Zwischenziele gehen mit", navi.contains("if (Array.isArray(dest.via)) { this.via = PE.ausListe(dest.via);")
+                && navi.contains("var via = PE.viaBody(this.via);") && navi.contains("if (via.length) body.via = via;"));
         String dienst = lies("app/src/main/java/at/greenchili/surfmate/reichweite/RangeWatchDienst.java");
         assertTrue(dienst.contains("bandZeigen(now, planner, l, Neuplanung.fuersBand(vs));"));
         for (String l : new String[] {"de", "en", "fr", "it", "nl"}) {

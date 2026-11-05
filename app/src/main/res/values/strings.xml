@@ -338,7 +338,7 @@
     <string name="onboarding_mode_on_off_button">Always on</string>
     <string name="onboarding_mode_on_only_button">Drive only</string>
     <string name="onboarding_update_title">Look for updates?</string>
-    <string name="onboarding_update_body">Panoptes can check GitHub every 6 hours for a new version. GitHub then sees the car\'s IP address and the time; nothing else is sent. Nothing is installed without you: you decide in Settings whether updates are only shown or installed automatically while parked.\n\nYou can change this any time under System → App updates.</string>
+    <string name="onboarding_update_body">Panoptes can check GitHub every 6 hours for a new version. GitHub then sees the car\'s IP address and the time; nothing else is sent. Nothing is installed without you: you decide in Settings whether updates are only shown or installed automatically while parked.\n\nYou can change this any time under Settings → All settings → App updates.</string>
     <string name="onboarding_update_ja">Yes, check</string>
     <string name="onboarding_update_nein">No, don\'t check</string>
     <string name="onboarding_update_speichert">Saving your choice …</string>
@@ -492,6 +492,13 @@
     <string name="webview_loading">Just a moment…</string>
     <string name="webview_camera_daemon_not_running">Camera service is off</string>
     <string name="panoptes_startet">Panoptes is starting …</string>
+    <string name="start_dienst_zugang">Access (Tailscale)</string>
+    <string name="start_dienst_oberflaeche">Interface</string>
+    <string name="start_dienst_waechter">Guard</string>
+    <string name="start_dienst_rest">Telegram and bridge</string>
+    <string name="start_zustand_startet">starting …</string>
+    <string name="start_zustand_bereit">ready</string>
+    <string name="start_zustand_startet_nicht">not starting</string>
     <string name="panoptes_startet_hinweis">This page loads by itself as soon as Panoptes is ready.</string>
     <string name="panoptes_fremd_app">Another BYD tool app seems to be running (%1$s). Two such apps get in each other’s way, above all at the camera. Close or disable it, then Panoptes starts.</string>
     <string name="panoptes_startet_zu_lange">Panoptes is not responding yet.</string>
@@ -1681,8 +1688,8 @@
     <string name="roadsense_map_deleted_toast">Danger removed</string>
     <string name="roadsense_map_action_failed">Road watch didn\'t respond. Try again.</string>
     <string name="roadsense_map_no_location">Looking for a GPS signal…</string>
-    <string name="karte_keine_quelle">No map source chosen. Pick one under System → Map source.</string>
-    <string name="karte_suche_hinweis">Map search asks Photon, Nominatim and Overpass with your search text and approximate location, without any ID. Turn off under Settings → Privacy.</string>
+    <string name="karte_keine_quelle">No map source chosen. Pick one under Settings → All settings → Map source.</string>
+    <string name="karte_suche_hinweis">Map search sends only your search text to the Panoptes route planner (our server). No ID is sent. Turn off under Settings → Privacy.</string>
     <string name="karte_suche_aus">Internet search is off. Turn it on under Settings → Privacy.</string>
     <!-- Navigation: search + routing + turn-by-turn -->
     <string name="roadsense_map_search_hint">Where to?</string>
@@ -1693,8 +1700,11 @@
     <string name="roadsense_map_pick_destination">Pick a destination</string>
     <string name="roadsense_map_routing">Looking for a route…</string>
     <string name="roadsense_map_route_failed">No route found. Try again.</string>
-    <string name="roadsense_map_need_key">To navigate, add a routing key in the Road watch settings.</string>
-    <string name="roadsense_map_route_key_rejected">The routing key was refused. Check it in the Road watch settings.</string>
+    <string name="roadsense_map_route_planer_verbinden">To navigate, connect Panoptes with the route planner: Settings → All settings → Route planner account → “Connect to route planner”.</string>
+    <string name="roadsense_map_route_zu_oft">Too many route calculations in a row. Please wait a moment.</string>
+    <string name="roadsense_map_fuehrung_keine_karte">The map could not load, so guidance cannot start. Please use the car’s own navigation.</string>
+    <string name="roadsense_map_fuehrung_kein_standort">No location – guidance cannot start yet. Please wait until the car knows its position.</string>
+    <string name="roadsense_map_suche_fahrt">Searching is only possible when stopped. While driving, pick a saved or recent place.</string>
     <string name="roadsense_map_route_network">The connection is too slow to find a route. Check your internet and try again.</string>
     <string name="roadsense_map_route_http">The route service had a problem (%1$d). Try again soon.</string>
     <string name="roadsense_map_rerouting">You left the route. Finding a new one…</string>
@@ -1717,6 +1727,7 @@
     <string name="roadsense_map_3d_on">3D buildings shown</string>
     <string name="roadsense_map_3d_off">3D buildings hidden</string>
     <string name="roadsense_map_poi_loading">Looking for chargers and fuel stops…</string>
+    <string name="roadsense_map_poi_kommt">Points along the route are coming soon via our own service. Until then the map asks no third-party service.</string>
     <string name="roadsense_map_poi_none">No stops found close by</string>
     <string name="roadsense_map_poi_need_route">Pick a destination first</string>
     <!-- POI tap action sheet -->

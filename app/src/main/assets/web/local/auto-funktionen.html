@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0A2238">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="../shared/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-title" content="Panoptes">
+    <title data-i18n="rueckmeldung.af_titel">Was geht bei meinem Auto</title>
+    <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
+    <script src="../shared/theme.js?v=13"></script>
+    <script src="../shared/app-shell.js?v=pn34"></script>
+    <link rel="stylesheet" href="../shared/styles.css?v=pn14">
+    <link rel="manifest" href="/manifest.json">
+    <style>
+        .af-body { max-width: 720px; margin: 0 auto; }
+        .af-karte { background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 18px; margin-bottom: 16px; }
+        .af-label { display: block; font-size: 20px; font-weight: 600; margin-bottom: 10px; color: var(--text-primary); }
+        .af-text { font-size: 17px; line-height: 1.5; margin: 0 0 8px; color: var(--text-primary); }
+        .af-zeile { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-subtle); font-size: 16px; }
+        .af-zeile:last-of-type { border-bottom: 0; }
+        .af-zeile span:first-child { color: var(--text-secondary); }
+        .af-knopf { display: flex; align-items: center; justify-content: center; min-height: 56px; border-radius: 12px; font-size: 18px; font-weight: 700;
+                    text-decoration: none; color: #06202f; background: var(--brand-primary); margin-top: 12px; }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <div id="app-shell-mount"></div>
+        <main class="main-content">
+            <div class="mobile-header">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+                </button>
+                <span style="font-weight:600;" data-i18n="rueckmeldung.af_titel">Was geht bei meinem Auto</span>
+                <div style="width:40px;"></div>
+            </div>
+            <header class="page-header">
+                <h1 class="page-title" data-i18n="rueckmeldung.af_titel">Was geht bei meinem Auto</h1>
+            </header>
+            <div class="page-body">
+                <div class="af-body">
+                    <div class="af-karte">
+                        <p class="af-text" data-i18n="rueckmeldung.af_intro">Nicht jede Funktion läuft bei jedem BYD gleich.</p>
+                        <p class="af-text" data-i18n="rueckmeldung.af_stufen">belegt, gemeldet, unbekannt.</p>
+                    </div>
+                    <div class="af-karte">
+                        <div class="af-label" data-i18n="rueckmeldung.af_dein">Dein Auto</div>
+                        <div class="af-zeile"><span data-i18n="rueckmeldung.af_modell">Modell</span><span id="afModell">—</span></div>
+                        <div class="af-zeile"><span data-i18n="rueckmeldung.af_firmware">Firmware</span><span id="afFirmware">—</span></div>
+                    </div>
+                    <div class="af-karte">
+                        <p class="af-text" data-i18n="rueckmeldung.af_mach">So hilfst du mit.</p>
+                        <a class="af-knopf" href="fehler-melden.html" data-i18n="rueckmeldung.af_knopf">Zu „Fehler melden“</a>
+                    </div>
+                    <div class="af-karte">
+                        <p class="af-text" data-i18n="rueckmeldung.af_homepage">Die ganze Tabelle steht bald auf der Panoptes-Homepage.</p>
+                        <!-- Die genaue Seite steht erst, wenn es sie gibt: bis dahin die Homepage selbst (eine Stelle zum Ändern: href) -->
+                        <a class="af-knopf" id="afHomepage" href="https://byd.serveone.at/" target="_blank" rel="noopener" data-i18n="rueckmeldung.af_homepage_knopf">Zur Homepage</a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="../shared/auth.js"></script>
+    <script src="../shared/pwa-init.js?v=index2"></script>
+    <script src="../shared/core.js?v=pn6"></script>
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+
+        (function () {
+            'use strict';
+            function $(id) { return document.getElementById(id); }
+            function tx(key, fb) {
+                try {
+                    if (window.BYD && BYD.i18n && typeof BYD.i18n.t === 'function') {
+                        var v = BYD.i18n.t(key);
+                        if (v && v !== key) return v;
+                    }
+                } catch (e) { /* Rückfall */ }
+                return fb;
+            }
+            // Modell und Firmware kommen aus derselben Quelle wie im Dialog „Fehler melden“; es wird nichts gesendet
+            fetch('/api/rueckmeldung/fehler', { credentials: 'same-origin', cache: 'no-store' })
+                .then(function (r) { if (!r.ok) throw new Error('status'); return r.json(); })
+                .then(function (d) {
+                    var a = d.abdeckung || {};
+                    $('afModell').textContent = !a.modell || a.modell === 'unbekannt' ? tx('rueckmeldung.af_unbekannt', 'unbekannt') : a.modell;
+                    $('afFirmware').textContent = a.firmware || tx('rueckmeldung.af_unbekannt', 'unbekannt');
+                })
+                .catch(function () {
+                    $('afModell').textContent = tx('rueckmeldung.af_unbekannt', 'unbekannt');
+                    $('afFirmware').textContent = tx('rueckmeldung.af_unbekannt', 'unbekannt');
+                });
+        })();
+    </script>
+</body>
+</html>

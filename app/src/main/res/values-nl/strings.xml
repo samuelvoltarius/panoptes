@@ -221,7 +221,7 @@
     <string name="onboarding_mode_on_off_button">Altijd aan</string>
     <string name="onboarding_mode_on_only_button">Alleen rijden</string>
     <string name="onboarding_update_title">Naar updates zoeken?</string>
-    <string name="onboarding_update_body">Panoptes kan elke 6 uur bij GitHub kijken of er een nieuwe versie is. GitHub ziet daarbij het IP-adres van de auto en het tijdstip; verder wordt niets verstuurd. Er wordt niets geïnstalleerd zonder jou: in de instellingen kies je of updates alleen gemeld of automatisch geïnstalleerd worden als de auto geparkeerd staat.\n\nJe kunt dit altijd wijzigen onder Systeem → App-updates.</string>
+    <string name="onboarding_update_body">Panoptes kan elke 6 uur bij GitHub kijken of er een nieuwe versie is. GitHub ziet daarbij het IP-adres van de auto en het tijdstip; verder wordt niets verstuurd. Er wordt niets geïnstalleerd zonder jou: in de instellingen kies je of updates alleen gemeld of automatisch geïnstalleerd worden als de auto geparkeerd staat.\n\nJe kunt dit altijd wijzigen onder Instellingen → Alle instellingen → App-updates.</string>
     <string name="onboarding_update_ja">Ja, zoeken</string>
     <string name="onboarding_update_nein">Nee, niet zoeken</string>
     <string name="onboarding_update_speichert">Je keuze wordt opgeslagen …</string>
@@ -339,6 +339,13 @@
     <string name="webview_loading">Een ogenblik…</string>
     <string name="webview_camera_daemon_not_running">Cameradienst staat uit</string>
     <string name="panoptes_startet">Panoptes wordt gestart …</string>
+    <string name="start_dienst_zugang">Toegang (Tailscale)</string>
+    <string name="start_dienst_oberflaeche">Interface</string>
+    <string name="start_dienst_waechter">Bewaker</string>
+    <string name="start_dienst_rest">Telegram en brug</string>
+    <string name="start_zustand_startet">start …</string>
+    <string name="start_zustand_bereit">klaar</string>
+    <string name="start_zustand_startet_nicht">start niet</string>
     <string name="panoptes_startet_hinweis">De pagina laadt vanzelf zodra Panoptes klaar is.</string>
     <string name="panoptes_fremd_app">Er lijkt een andere BYD-gereedschapsapp te draaien (%1$s). Twee van zulke apps hinderen elkaar, vooral bij de camera. Sluit of deactiveer die app, dan start Panoptes.</string>
     <string name="panoptes_startet_zu_lange">Panoptes reageert nog niet.</string>
@@ -1131,8 +1138,8 @@
     <string name="roadsense_map_deleted_toast">Gevaar verwijderd</string>
     <string name="roadsense_map_action_failed">Wegconditie reageert niet. Probeer het opnieuw.</string>
     <string name="roadsense_map_no_location">Zoeken naar gps-signaal…</string>
-    <string name="karte_keine_quelle">Geen kaartbron gekozen. Kies er een onder Systeem → Kaartbron.</string>
-    <string name="karte_suche_hinweis">Zoeken op de kaart vraagt Photon, Nominatim en Overpass met je zoektekst en geschatte locatie, zonder kenmerk. Uitschakelen onder Instellingen → Privacy.</string>
+    <string name="karte_keine_quelle">Geen kaartbron gekozen. Kies er een onder Instellingen → Alle instellingen → Kaartbron.</string>
+    <string name="karte_suche_hinweis">Zoeken op de kaart stuurt alleen je zoektekst naar de Panoptes-routeplanner (onze server). Er wordt geen kenmerk verzonden. Uitschakelen onder Instellingen → Privacy.</string>
     <string name="karte_suche_aus">Zoeken op internet staat uit. Inschakelen onder Instellingen → Privacy.</string>
     <string name="roadsense_map_search_hint">Waarheen?</string>
     <string name="roadsense_map_search_action">Zoeken</string>
@@ -1142,8 +1149,11 @@
     <string name="roadsense_map_pick_destination">Kies een bestemming</string>
     <string name="roadsense_map_routing">Route zoeken…</string>
     <string name="roadsense_map_route_failed">Geen route gevonden. Probeer het opnieuw.</string>
-    <string name="roadsense_map_need_key">Voeg om te navigeren een routesleutel toe in de instellingen van Wegconditie.</string>
-    <string name="roadsense_map_route_key_rejected">De routesleutel is geweigerd. Controleer hem in de instellingen van Wegconditie.</string>
+    <string name="roadsense_map_route_planer_verbinden">Verbind Panoptes om te navigeren met de routeplanner: Instellingen → Alle instellingen → Routeplanner-account → ‘Met routeplanner verbinden’.</string>
+    <string name="roadsense_map_route_zu_oft">Te veel routeberekeningen na elkaar. Wacht even.</string>
+    <string name="roadsense_map_fuehrung_keine_karte">De kaart kon niet laden, de navigatie kan niet starten. Gebruik de navigatie van de auto.</string>
+    <string name="roadsense_map_fuehrung_kein_standort">Geen locatie – de navigatie kan nog niet starten. Wacht tot de auto zijn positie kent.</string>
+    <string name="roadsense_map_suche_fahrt">Zoeken kan alleen als je stilstaat. Kies tijdens het rijden een opgeslagen of recente plek.</string>
     <string name="roadsense_map_route_network">De verbinding is te traag om een route te vinden. Controleer je internet en probeer het opnieuw.</string>
     <string name="roadsense_map_route_http">De routedienst had een probleem (%1$d). Probeer het straks opnieuw.</string>
     <string name="roadsense_map_rerouting">Je bent van de route af. Een nieuwe wordt gezocht…</string>
@@ -1163,6 +1173,7 @@
     <string name="roadsense_map_3d_on">3D-gebouwen getoond</string>
     <string name="roadsense_map_3d_off">3D-gebouwen verborgen</string>
     <string name="roadsense_map_poi_loading">Zoeken naar laders en tankstations…</string>
+    <string name="roadsense_map_poi_kommt">Punten langs de route komen binnenkort via onze eigen dienst. Tot die tijd vraagt de kaart geen externe dienst.</string>
     <string name="roadsense_map_poi_none">Geen stops in de buurt gevonden</string>
     <string name="roadsense_map_poi_need_route">Selecteer eerst een bestemming</string>
     <string name="roadsense_map_stop_added">Stop toegevoegd</string>

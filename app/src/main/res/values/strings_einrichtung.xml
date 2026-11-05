@@ -63,7 +63,7 @@
     <string name="einr_fehler_speichern">Saving did not work. Please try again.</string>
     <string name="einr_fehler_verbindung">Panoptes is not running yet. Please wait a moment and try again.</string>
     <string name="einr_unbekannter_schritt_titel">Setup cannot continue</string>
-    <string name="einr_unbekannter_schritt_text">This Panoptes version does not yet know the setup step “%1$s”. Install the latest update under System → App updates, then start setup again. Nothing has been marked as complete.</string>
+    <string name="einr_unbekannter_schritt_text">This Panoptes version does not yet know the setup step “%1$s”. Install the latest update under Settings → All settings → App updates, then start setup again. Nothing has been marked as complete.</string>
     <string name="einr_unbekannter_schritt_schliessen">Close setup</string>
     <string name="einr_sprache_titel">Language</string>
     <string name="einr_sprache_text">Which language should Panoptes use?</string>
@@ -107,12 +107,12 @@
     <string name="einr_stopp_stunden" formatted="true">after %1$s hours parked</string>
     <string name="einr_karte_internet">The map needs internet.</string>
     <string name="einr_daten_titel">Data sharing</string>
-    <string name="einr_daten_text">Everything is off. Only turn on what you want to share – you can turn it off any time under System → Data sharing.</string>
+    <string name="einr_daten_text">Everything is off. Only turn on what you want to share – you can turn it off any time under Settings → All settings → Data sharing.</string>
     <string name="einr_daten_keine">Panoptes does not know any data sharing options here yet.</string>
     <string name="einr_blitzer_aus">Leave off</string>
     <string name="einr_blitzer_an">Read – turn on</string>
     <string name="einr_updates_frage_pruefen">Should Panoptes look for updates?</string>
-    <string name="einr_updates_pruefen_nein">You check yourself under System → App updates.</string>
+    <string name="einr_updates_pruefen_nein">You check yourself under Settings → All settings → App updates.</string>
     <string name="einr_extra_telegram_titel">Telegram</string>
     <string name="einr_extra_telegram_text">Messages from the Guardian and the car to your phone, via your own Telegram bot. Works over the internet, no extra program needed.</string>
     <string name="einr_extra_planer_titel">Connect the route planner</string>
@@ -133,7 +133,7 @@
     <string name="einr_rundgang_frage">Short tour of Panoptes?</string>
     <string name="einr_rundgang_ja">Yes, show me Panoptes</string>
     <string name="einr_extra_notzugang_titel">Emergency access for remote maintenance</string>
-    <string name="einr_extra_notzugang_text">A second, separate way into the car for maintenance, in case the normal remote access ever stops working. It runs through your own Tailscale network: only devices in your tailnet can reach it, and only for maintenance, not the Panoptes interface. Off by default. You can switch it off at any time under System → Emergency access.</string>
+    <string name="einr_extra_notzugang_text">A second, separate way into the car for maintenance, in case the normal remote access ever stops working. It runs through your own Tailscale network: only devices in your tailnet can reach it, and only for maintenance, not the Panoptes interface. Off by default. You can switch it off at any time under Settings → All settings → Emergency access.</string>
     <!-- 0.1.22 Gewohnheiten (GEWOHNHEITEN_KONZEPT §2, Regel 2) -->
     <string name="einr_gewohnheiten_titel">Remember habits?</string>
     <string name="einr_gewohnheiten_text">Panoptes notices what you often do the same way, e.g. preheating every morning, and asks whether it should do it for you in future. It stays only in the car. You can switch it off or delete everything at any time under System.</string>

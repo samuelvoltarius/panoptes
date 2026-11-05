@@ -112,6 +112,110 @@
         else los();
     })();
 
+    // 0.1.38.10 Web-Sitzung der Handy-App = Rechte der Kopplung dahinter (Kern: WebSitzungRechte). Eine Quelle zum
+    // Ausblenden: GET /api/sitzung/rechte liefert die gesperrten Fahrzeug-Pfade. Der Kern prüft trotzdem jede Anfrage;
+    // fragt er zurück (409 aktion_bestaetigen, außen Sicht-/Hörbares), fragt die Seite und schickt mit bestaetigt:true.
+    (function () {
+        var de = document.documentElement;
+        if (de.getAttribute('data-einbettung') !== 'handy' || !window.fetch) return;
+        function tx(k, f) {
+            try { if (window.BYD && BYD.i18n && BYD.i18n.t) { var x = BYD.i18n.t(k); if (x && x !== k) return x; } } catch (e) { /* Rückfall */ }
+            return f;
+        }
+        var band = null;
+        function hinweis(text) {
+            if (!text || !document.body) return;
+            if (!band) {
+                band = document.createElement('div');
+                band.setAttribute('role', 'status');
+                band.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;padding:12px 14px;border-radius:10px;'
+                    + 'background:#2b2f36;color:#fff;font:15px/1.35 sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.35)';
+                band.addEventListener('click', function () { band.style.display = 'none'; });
+                document.body.appendChild(band);
+            }
+            band.textContent = text;
+            band.style.display = 'block';
+            clearTimeout(band._t);
+            band._t = setTimeout(function () { band.style.display = 'none'; }, 7000);
+        }
+        var echt = window.fetch;
+        window.fetch = function (url, opt) {
+            return echt.apply(this, arguments).then(function (r) {
+                if (!r || (r.status !== 409 && r.status !== 403)) return r;
+                return r.clone().json().then(function (d) {
+                    if (r.status === 409 && d && d.grund === 'aktion_bestaetigen' && opt && (opt.body == null || typeof opt.body === 'string')) {
+                        if (!d.frage || !window.confirm(d.frage)) return r;
+                        var b;
+                        try { b = JSON.parse(opt.body || '{}'); } catch (e) { return r; }
+                        b.bestaetigt = true;
+                        var o2 = {};
+                        for (var k in opt) if (Object.prototype.hasOwnProperty.call(opt, k)) o2[k] = opt[k];
+                        o2.body = JSON.stringify(b);
+                        return echt.call(window, url, o2);
+                    }
+                    if (r.status === 403 && d && d.text && (d.grund === 'recht_fehlt' || d.grund === 'nie_web' || d.grund === 'passkey_noetig')) hinweis(d.text);
+                    return r;
+                }, function () { return r; });
+            });
+        };
+        // Reiter der Fahrzeug-Seite: weg, wenn alle ihre Befehle gesperrt sind (lesen allein lohnt den Reiter nicht)
+        var REITER = {
+            panelSecurity: ['lock', 'flash', 'find-car', 'warnblinker'], panelTrunk: ['trunk'],
+            panelClimate: ['climate', 'climate-schedule', 'battery-heat'], panelSeats: ['seat'], panelWindows: ['window'],
+            panelLights: ['lights'], panelAdas: ['adas', 'setting'],
+            panelCharging: ['start-charging', 'charging-schedule', 'charge-cap', 'ac-charge-current-limit'],
+            panelSound: ['media', 'play-audio', 'speak', 'message', '/api/audio/engine-sound', '/api/audio/avas-tone'],
+            panelSystem: ['system', '/api/system/ivi-reboot']
+        };
+        var zu = null, gemeldet = false;
+        function pfad(p) { return p.charAt(0) === '/' ? p : '/api/vehicle/' + p; }
+        function markieren(wurzel) {
+            if (!zu) return;
+            var n = 0, w = wurzel || document;
+            var b = w.querySelectorAll ? w.querySelectorAll('[onclick]') : [];
+            for (var i = 0; i < b.length; i++) {
+                var oc = b[i].getAttribute('onclick') || '';
+                for (var j = 0; j < zu.length; j++) {
+                    if (oc.indexOf("'" + zu[j] + "'") >= 0 || oc.indexOf('"' + zu[j] + '"') >= 0) { b[i].setAttribute('data-recht-fehlt', '1'); n++; break; }
+                }
+            }
+            Object.keys(REITER).forEach(function (id) {
+                var alle = REITER[id].every(function (p) { return zu.indexOf(pfad(p)) >= 0; });
+                if (!alle) return;
+                var tab = document.querySelector('[data-panel="' + id + '"]'), panel = document.getElementById(id);
+                if (tab && !tab.hasAttribute('data-recht-fehlt')) { tab.setAttribute('data-recht-fehlt', '1'); n++; }
+                if (panel) panel.setAttribute('data-recht-fehlt', '1');
+            });
+            if (n && !gemeldet) {
+                gemeldet = true;
+                var schon = false;
+                try { schon = window.sessionStorage.getItem('pn_recht_hinweis') === '1'; window.sessionStorage.setItem('pn_recht_hinweis', '1'); } catch (e) { /* ohne Speicher: zeigen */ }
+                if (!schon) hinweis(tx('system.websitzung_ausgeblendet', 'Manche Knöpfe sind ausgeblendet, weil diesem Handy das Recht dafür fehlt. Rechte vergibst du am Auto unter Gekoppelte Geräte.'));
+            }
+        }
+        var st = document.createElement('style');
+        st.textContent = '[data-recht-fehlt]{display:none!important}';
+        (document.head || de).appendChild(st);
+        echt.call(window, '/api/sitzung/rechte', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (d) {
+            if (!d || !d.web || !d.gesperrt) return;
+            zu = d.gesperrt;
+            function los() {
+                markieren(document);
+                if (window.MutationObserver) {
+                    new MutationObserver(function (m) {
+                        for (var i = 0; i < m.length; i++) {
+                            for (var j = 0; j < m[i].addedNodes.length; j++) {
+                                if (m[i].addedNodes[j].nodeType === 1) markieren(m[i].addedNodes[j].parentNode || m[i].addedNodes[j]);
+                            }
+                        }
+                    }).observe(de, { childList: true, subtree: true });
+                }
+            }
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', los);
+            else los();
+        }).catch(function () { /* ohne Antwort: der Kern sperrt trotzdem */ });
+    })();
+
     // The Android app supplies its own navigation rail and injects
     // AndroidBridge before the page starts loading. Its post-load CSS hides
     // this web sidebar, so rendering the sidebar's 3D vehicle there wastes a
@@ -617,6 +721,16 @@
             { href: 'index.html',           label: 'Übersicht',          i18n: 'shell.page_overview' },
             { href: 'assistant.html',       label: 'Frag Panoptes',      i18n: 'shell.page_ask' }
         ] },
+        { id: 'drive', label: 'Navi & Fahrten', i18n: 'shell.sec_fahrten', kurz: 'shell.kurz_fahrten', icon: 'route', pages: [
+            // 0.1.38.10: Navigation zuerst – ein Tipp auf den Bereich öffnet sie (Wunsch Alfred am Auto-Display, 04.11.)
+            { href: 'navi.html',            label: 'Navigation',         i18n: 'shell.page_navi' },
+            { href: 'trips.html',           label: 'Fahrten',            i18n: 'nav.trips' },
+            { href: 'charging.html',        label: 'Unterwegs',          i18n: 'shell.page_laden_unterwegs', teil: 'laden' },
+            { href: 'wallbox.html',         label: 'Wallbox',            i18n: 'shell.page_wallbox', teil: 'laden' },
+            { href: 'ladeplan.html',        label: 'Zu Hause laden',     i18n: 'shell.page_ladeplan', teil: 'laden' },
+            { href: 'bericht.html',         label: 'Monatsbericht',      i18n: 'shell.page_report' },
+            { href: 'road-sense.html',      label: 'Straßenzustand',     i18n: 'shell.page_road' }
+        ] },
         { id: 'car', label: 'Steuerung', i18n: 'shell.sec_steuerung', kurz: 'shell.kurz_steuerung', icon: 'car', pages: [
             { href: 'vehicle-control.html', label: 'Befehle',            i18n: 'shell.page_befehle' },
             { href: 'seat-positions.html',  label: 'Sitze',              i18n: 'shell.page_seats' },
@@ -634,15 +748,6 @@
             { href: 'recording.html',       label: 'Aufnahmequalität',   i18n: 'shell.page_recording_quality', teil: 'waechter' },
             { href: 'parking.html',         label: 'Parken',             i18n: 'nav.parking' },
             { href: 'communicate.html',     label: 'Durchsage',          i18n: 'shell.page_durchsage' }
-        ] },
-        { id: 'drive', label: 'Fahrten & Laden', i18n: 'shell.sec_fahrten', kurz: 'shell.kurz_fahrten', icon: 'route', pages: [
-            { href: 'trips.html',           label: 'Fahrten',            i18n: 'nav.trips' },
-            { href: 'navi.html',            label: 'Navigation',         i18n: 'shell.page_navi' },
-            { href: 'charging.html',        label: 'Unterwegs',          i18n: 'shell.page_laden_unterwegs', teil: 'laden' },
-            { href: 'wallbox.html',         label: 'Wallbox',            i18n: 'shell.page_wallbox', teil: 'laden' },
-            { href: 'ladeplan.html',        label: 'Zu Hause laden',     i18n: 'shell.page_ladeplan', teil: 'laden' },
-            { href: 'bericht.html',         label: 'Monatsbericht',      i18n: 'shell.page_report' },
-            { href: 'road-sense.html',      label: 'Straßenzustand',     i18n: 'shell.page_road' }
         ] },
         { id: 'auto', label: 'Regeln', i18n: 'shell.sec_automationen', kurz: 'shell.kurz_automationen', icon: 'bolt', pages: [
             { href: 'automations.html',     label: 'Wenn-dann-Regeln',   i18n: 'shell.page_wenn_dann' },
@@ -670,6 +775,8 @@
             { href: 'wireguard.html',       label: 'Heimnetz',           i18n: 'shell.page_heimnetz', teil: 'verbindungen', hidden: true },
             // 0.1.31 „Fehler melden“: zuerst unter „Hilfe & Info“, damit ihn jeder findet (REGEL DAU)
             { href: 'fehler-melden.html',   label: 'Fehler melden',      i18n: 'shell.page_fehler', teil: 'hilfe' },
+            // 0.1.38.10 Modellabdeckung: was bei welchem Modell und welcher Firmware geht (Hilfe, nur Anzeige)
+            { href: 'auto-funktionen.html', label: 'Was geht bei meinem Auto', i18n: 'shell.page_auto_funktionen', teil: 'hilfe' },
             { href: 'performance.html',     label: 'Gerätezustand',      i18n: 'shell.page_geraet', teil: 'hilfe' },
             { href: 'about.html',           label: 'Über',               i18n: 'shell.page_about', teil: 'hilfe' }
         ] }
@@ -954,6 +1061,8 @@
     window.PanoptesShell = {
         profile: function () { return profileState; },
         sections: SECTIONS,
+        // 0.1.38.10: dieselbe Display-Erkennung für alle Seiten (navi.html: „Im Navi starten“ statt „Ziel ins Auto“)
+        istDisplay: dstDisplay,
         teile: TEILE,
         versteckt: VERSTECKT,
         modelName: function (id) { return MODEL_NAMES[id] || ''; },

@@ -2157,6 +2157,12 @@
         "help": "Se connecte au serveur communautaire de Panoptes (byd.serveone.at). Nécessite la clé de membre. Désactivé = aucun appel du tout. Les signalements routiers ne sont envoyés que si vous les activez en plus sous État de la route."
       }
     },
+    "navi": {
+      "sprachansagen": {
+        "title": "Navigation : guidage vocal",
+        "help": "Pendant le guidage, la carte Panoptes lit les indications de direction. Le volume suit celui des médias, aucun autre son. Désactivé par défaut."
+      }
+    },
     "speedcam": {
       "enabled": {
         "title": "Avertissement de radar",
@@ -2198,7 +2204,7 @@
       },
       "mobilfunk": {
         "title": "Télécharger aussi via le réseau mobile",
-        "help": "Désactivé après une nouvelle configuration : vous autorisez alors chaque téléchargement sur le message de mise à jour. Une mise à jour fait en général 70 à 120 Mo ; la taille est indiquée à l'avance. Désactivé = Panoptes ne télécharge que lorsque la voiture est en Wi-Fi. Le téléchargement n'a lieu que voiture garée et reprend là où il s'était arrêté."
+        "help": "Désactivé après une nouvelle configuration : vous autorisez alors chaque téléchargement sur le message de mise à jour. Une mise à jour fait en général 70 à 120 Mo ; la taille est indiquée à l'avance. Désactivé = Panoptes ne télécharge que lorsque la voiture est en Wi-Fi. Le téléchargement n'a lieu que voiture garée et reprend là où il s'était arrêté. Le lanceur Panoptes suit le même réglage et arrive avec la même mise à jour."
       },
       "quelle": {
         "title": "Source des mises à jour",
@@ -2353,7 +2359,7 @@
     "karte": {
       "sucheInternet": {
         "title": "Carte : recherche sur Internet",
-        "help": "Quand tu cherches sur la carte, ton texte et ton lieu approximatif (arrondi à environ 1 km) vont à Photon, Nominatim et Overpass, sans identifiant. Désactivé : rien n’est envoyé, tu trouves seulement les lieux enregistrés et les coordonnées."
+        "help": "Quand tu cherches sur la carte, seul ton texte va au planificateur d’itinéraire Panoptes (notre serveur), sans ton lieu et sans identifiant. Désactivé : rien n’est envoyé, tu trouves seulement les lieux enregistrés et les coordonnées."
       },
       "quelle": {
         "help": "D’où Panoptes charge les images de carte. La source choisie voit votre adresse IP et la zone de carte, donc à peu près où se trouve votre voiture. « Aucune » : aucune carte n’est chargée. Réglage d’usine : Aucune. Panoptes ne passe jamais de lui-même à une autre source."
@@ -2702,9 +2708,12 @@
       "antwortet_nicht": "Le planificateur d’itinéraire ne répond pas (HTTP {0}). Pour les longs trajets, réessayez.",
       "nicht_erreichbar": "Planificateur d'itinéraire injoignable",
       "offline": "Planificateur d’itinéraire injoignable pour le moment (pas de connexion) – nouvel essai dans {0} s",
+      "fuehrung_schluessel": "Le guidage a besoin de la connexion au planificateur d'itinéraire (clé de membre).",
+      "fuehrung_vertrag": "Le planificateur d'itinéraire répond dans un format inconnu – veuillez mettre Panoptes à jour.",
       "fahrzeug_fehlt": "Choisis d'abord le modèle de ton véhicule (Recharge → Modèle du véhicule), le planificateur utilisera alors les bonnes valeurs.",
       "planer_fehler": "Le planificateur n'a pas pu calculer cet itinéraire ({0}).",
-      "planer_fehler_allgemein": "Le planificateur n'a pas pu calculer cet itinéraire."
+      "planer_fehler_allgemein": "Le planificateur n'a pas pu calculer cet itinéraire.",
+      "keine_position": "La voiture n’a pas de position actuelle pour le moment."
     },
     "vorliebenEinwilligung": {
       "title": "Envoyer les préférences de recharge au planificateur ?",
@@ -3008,9 +3017,10 @@
     "waechter_an": "Gardien activé par le téléphone {0}.",
     "waechter_aus": "Gardien désactivé par le téléphone {0}.",
     "rechte_selbst": "Le téléphone propriétaire {0} a modifié ses droits : {1}.",
-    "frage_telegram": "Quel appareil est ton téléphone ? Choisis-le dans la voiture sous Système → Appareils appairés – c’est seulement alors qu’il y a un téléphone propriétaire.",
-    "frage_telegram_bestaetigen": "Un téléphone propriétaire a été choisi automatiquement lors de la mise à jour. Vérifie dans la voiture sous Système → Appareils appairés que c’est bien ton téléphone.",
-    "telegram_gewaehlt": "{0} est maintenant ton téléphone propriétaire."
+    "frage_telegram": "Quel appareil est ton téléphone ? Choisis-le dans la voiture sous Réglages → Tous les réglages → Appareils associés – c’est seulement alors qu’il y a un téléphone propriétaire.",
+    "frage_telegram_bestaetigen": "Un téléphone propriétaire a été choisi automatiquement lors de la mise à jour. Vérifie dans la voiture sous Réglages → Tous les réglages → Appareils associés que c’est bien ton téléphone.",
+    "telegram_gewaehlt": "{0} est maintenant ton téléphone propriétaire.",
+    "signatur_abgelehnt": "Action de propriétaire du téléphone {0} refusée ({1})."
   },
   "update_klein": {
     "titel": "Mises à jour",
@@ -3023,5 +3033,20 @@
     "push_neu": "Nouveau PC connecté : {0}",
     "push_neu_text": "Ce n’était pas toi ? Déconnecte-le sous Appareils associés.",
     "handshakes": "{0} tentatives de connexion inconnues via le pont ont été refusées au cours de la dernière heure. Si ce n’était pas ton PC : vérifie Appareils associés et, si besoin, désactive « Se connecter sur un PC » dans la voiture."
+  },
+  "websitzung": {
+    "nie_web": "Possible uniquement sur l’écran de la voiture ou avec connexion, pas dans l’interface web de l’appli.",
+    "passkey_noetig": "L’interface web n’ouvre le coffre qu’avec l’autorisation « Déverrouiller » et une confirmation récente par empreinte ou Face ID.",
+    "rueckfrage": "Cela se voit ou s’entend à l’extérieur de la voiture. Déclencher maintenant ?",
+    "recht_fehlt": "Ce téléphone n’a pas l’autorisation « {0} ». À activer dans la voiture sous Appareils associés.",
+    "recht_wort": {
+      "zusperren": "Verrouiller",
+      "klima": "Climatisation",
+      "aufsperren": "Déverrouiller",
+      "signal": "Klaxon et feux",
+      "laden": "Recharge dans la voiture",
+      "tacho": "Tableau de bord",
+      "route": "Itinéraire"
+    }
   }
 }

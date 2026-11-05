@@ -70,9 +70,17 @@ public final class UpdateRegel {
             if (l.zweiterNachweis) return null;
             return "zustand_unbekannt";
         }
-        // „nur WLAN“: nur ein eindeutig erkanntes WLAN zählt (Ethernet/unbekannt kann die SIM der T-Box sein)
-        if (l.nurWlan && !l.mobilEinmal && !NETZ_WLAN.equals(l.netz)) return WARTET_WLAN;
+        if (wartetWlan(l.nurWlan, l.mobilEinmal, l.netz)) return WARTET_WLAN;
         return null;
+    }
+
+    /**
+     * 0.1.38.10: DIE Mobilfunk-Regel für Panoptes und Launcher (eine Quelle): {@code update.mobilfunk} aus
+     * ({@code nurWlan}) und keine Einwilligung für diesen Download, dann nur im WLAN. Nur ein eindeutig erkanntes WLAN
+     * zählt (Ethernet/unbekannt kann die SIM der T-Box sein).
+     */
+    public static boolean wartetWlan(boolean nurWlan, boolean einwilligung, String netz) {
+        return nurWlan && !einwilligung && !NETZ_WLAN.equals(netz);
     }
 
     /** 0.1.38.5: Wächter-Ereignis oder Aufnahme läuft – ein Tipp startet dann nicht und wird auch nicht vorgemerkt. */
@@ -91,7 +99,7 @@ public final class UpdateRegel {
         if (!"zuendung_an".equals(n) && !"zustand_unbekannt".equals(n)) return n;
         if (!UpdateHinweis.standSicher(fahrsperre, gangP, l.kmh)) return n;
         if (waechterEreignis || aufnahme) return WAECHTER_AKTIV;
-        if (l.nurWlan && !l.mobilEinmal && !NETZ_WLAN.equals(l.netz)) return WARTET_WLAN;
+        if (wartetWlan(l.nurWlan, l.mobilEinmal, l.netz)) return WARTET_WLAN;
         return null;
     }
 

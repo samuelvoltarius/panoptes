@@ -469,10 +469,8 @@ class DaemonStartupManager(
         // only machine-written markers immediately before starting a daemon.
         clearStaleSentinels()
 
-        // Kamera-Daemon (Webserver :8180) so früh wie vertretbar; Sentry/ACC-Sentry folgen in startCoreDaemons nach
-        // 5/10 s, optionale Daemons und Health-Check bleiben später (relativ zum Kamera-Start wie bisher).
-        handler.postDelayed({ startCoreDaemons() }, kameraWarteMs)
-        handler.postDelayed({ startOptionalDaemonsFromPreferences() }, kameraWarteMs + DaemonStartPlan.OPTIONAL_NACH_KAMERA_MS)
+        // Gestaffelter Start (DaemonStartPlan): Zugang (nur mit Tailscale) -> Web -> Wächter -> Rest, ohne feste Pausen.
+        starteStufen(kameraWarteMs)
 
         // Start periodic health check after initial daemons have had time to start
         handler.postDelayed({ startDaemonHealthCheck() }, kameraWarteMs + DaemonStartPlan.HEALTH_NACH_KAMERA_MS)
@@ -525,8 +523,7 @@ class DaemonStartupManager(
         // Keep manual-stop sentinels; see initializeOnAppLaunch.
         clearStaleSentinels()
 
-        handler.postDelayed({ startCoreDaemonsViaAdb() }, kameraWarteMs)
-        handler.postDelayed({ startOptionalDaemonsViaAdb() }, kameraWarteMs + DaemonStartPlan.OPTIONAL_NACH_KAMERA_MS)
+        starteStufen(kameraWarteMs)
 
         // Start periodic health check after initial daemons have had time to start
         handler.postDelayed({ startDaemonHealthCheck() }, kameraWarteMs + DaemonStartPlan.HEALTH_NACH_KAMERA_MS)
@@ -544,47 +541,114 @@ class DaemonStartupManager(
         }
     }
 
-    private fun startCoreDaemons() {
-        val vm = daemonsViewModel ?: run {
-            log.warn(TAG, "ViewModel not available, using ADB launcher")
-            startCoreDaemonsViaAdb()
-            return
-        }
-        log.info(TAG, "Starting core daemons (Camera first, then Sentry daemons)...")
-        
-        // Start Camera Daemon FIRST
-        ifNotUserStopped(DaemonType.CAMERA_DAEMON) {
-            log.info(TAG, "Starting Camera Daemon...")
-            vm.startDaemon(DaemonType.CAMERA_DAEMON, userInitiated = false)
-        }
-        
-        // Start Sentry Daemon after Camera Daemon has time to initialize
-        handler.postDelayed({
-            ifNotUserStopped(DaemonType.SENTRY_DAEMON) {
-                log.info(TAG, "Starting Sentry Daemon...")
-                vm.startDaemon(DaemonType.SENTRY_DAEMON, userInitiated = false)
-            }
-        }, 5000)
-        
-        // Start ACC Sentry Daemon last
-        handler.postDelayed({
-            ifNotUserStopped(DaemonType.ACC_SENTRY_DAEMON) {
-                log.info(TAG, "Starting ACC Sentry Daemon...")
-                vm.startDaemon(DaemonType.ACC_SENTRY_DAEMON, userInitiated = false)
-            }
-        }, 10000)
+    // ======================= Stufen (0.1.38.10) =======================
+
+    /** Nach cleanup() läuft kein Ablauf mehr weiter (auch keine späten Rückrufe der Prüfungen). */
+    @Volatile private var startAbgebrochen = false
+
+    /**
+     * Gestaffelter Start nach [DaemonStartPlan]: Zugang (nur mit Tailscale) → Web → Wächter → Rest. Jede StartStufe wartet
+     * auf das Ende eines Hard-Resets ([at.greenchili.surfmate.updater.HardResetTor]) und den Boot-Schutz, danach nur
+     * auf die Bereitschaft der vorigen StartStufe (mit Zeitlimit), nie mit fester Pause.
+     */
+    private fun starteStufen(kameraWarteMs: Long) {
+        val stufen = DaemonStartPlan.stufen(
+            DaemonStartPlan.Einstellungen(
+                tailscaleAn = PreferencesManager.isDaemonEnabled(DaemonType.TAILSCALE_TUNNEL),
+                restAn = PreferencesManager.isDaemonEnabled(DaemonType.TELEGRAM_DAEMON) ||
+                    PreferencesManager.isDaemonEnabled(DaemonType.WIREGUARD_TUNNEL)
+            )
+        )
+        log.info(TAG, "Start-Stufen: $stufen (Boot-Schutz ${kameraWarteMs} ms)")
+        startAbgebrochen = false
+        // EINE Stelle für den Zustand je Stufe (Ladebildschirm, GET /api/start/status)
+        StartStatus.beginne(stufen, android.os.SystemClock.elapsedRealtime())
+        StartAblauf(
+            stufen = stufen,
+            bootSchutzMs = kameraWarteMs,
+            plane = { ms, r -> handler.postDelayed({ r() }, ms) },
+            jetzt = { android.os.SystemClock.elapsedRealtime() },
+            toroffen = { at.greenchili.surfmate.updater.HardResetTor.frei(android.os.SystemClock.elapsedRealtime()) },
+            aktion = { s -> stufeAusloesen(s) },
+            pruefen = { s, rueck -> stufeBereit(s, rueck) },
+            abbruch = { startAbgebrochen },
+            fertig = { log.info(TAG, "Start-Stufen durchlaufen") },
+            melde = { s, z -> StartStatus.melde(s, z) }
+        ).starten()
     }
 
-    private fun startCoreDaemonsViaAdb() {
-        log.info(TAG, "Starting core daemons via ADB (Camera first, then Sentry daemons)...")
+    private fun stufeAusloesen(s: StartStufe) {
+        log.info(TAG, "StartStufe $s")
+        at.greenchili.surfmate.logging.LauncherEreignisse.merken("START_STUFE", "stufe=$s")
+        when (s) {
+            StartStufe.ZUGANG -> zugangAusloesen()
+            StartStufe.OBERFLAECHE -> kameraAusloesen()
+            StartStufe.WAECHTER -> waechterAusloesen()
+            StartStufe.REST -> restAusloesen()
+        }
+    }
 
-        // Start Camera Daemon FIRST. Probe the actual --nice-name (`byd_cam_daemon`)
-        // not the legacy "camera_daemon" string — `ps -A` on stock Android shows
-        // the nice-name, and "camera_daemon" is not a substring of "byd_cam_daemon".
-        // The previous literal always reported false → one redundant launch+
-        // cleanup ADB round-trip on every boot (the inner `launchDaemon` does
-        // its own correct probe at DaemonLauncher.kt:328 and short-circuits, so
-        // this was cosmetic, but kept boot ~1-2 s slower than necessary).
+    /** Bereitschaft der StartStufe; der Rückruf kommt immer auf dem Haupt-Thread. */
+    private fun stufeBereit(s: StartStufe, rueck: (Boolean) -> Unit) {
+        when (s) {
+            StartStufe.OBERFLAECHE -> Thread({
+                val ok = try {
+                    // direkt, nie über einen System-Proxy (wie StartWarten in der WebView)
+                    val c = java.net.URL("http://127.0.0.1:8180/").openConnection(java.net.Proxy.NO_PROXY)
+                        as java.net.HttpURLConnection
+                    c.connectTimeout = 1500
+                    c.readTimeout = 1500
+                    c.instanceFollowRedirects = false
+                    try { at.greenchili.surfmate.ui.StartWarten.antwortet(c.responseCode) } finally { c.disconnect() }
+                } catch (_: Exception) {
+                    false
+                }
+                handler.post { rueck(ok) }
+            }, "StartStufeWeb").apply { isDaemon = true; start() }
+            StartStufe.WAECHTER ->
+                // der ACC-Sentry ist der Richter; läuft er, ist der Wächter-Stapel oben
+                adbLauncher.isDaemonRunning("acc_sentry_daemon") { laeuft -> handler.post { rueck(laeuft) } }
+            StartStufe.ZUGANG ->
+                // eigenes tailscaled (nur lesen; Anzeige, hält den Start nie auf)
+                adbLauncher.isDaemonRunning("tailscaled") { laeuft -> handler.post { rueck(laeuft) } }
+            StartStufe.REST ->
+                // Telegram, falls an (WireGuard und Brücke haben keinen eigenen Prozess-Test)
+                if (PreferencesManager.isDaemonEnabled(DaemonType.TELEGRAM_DAEMON)) {
+                    adbLauncher.isDaemonRunning("telegram_bot_daemon") { laeuft -> handler.post { rueck(laeuft) } }
+                } else {
+                    handler.post { rueck(true) }
+                }
+        }
+    }
+
+    /** StartStufe ZUGANG: eigenes tailscaled (nur wenn `daemons.tailscale` an; die StartStufe gibt es sonst nicht). Nur auslösen. */
+    private fun zugangAusloesen() {
+        val vm = daemonsViewModel
+        if (vm != null) {
+            startTailscaleFromPreferences(vm)
+        } else {
+            if (PreferencesManager.isDaemonEnabled(DaemonType.TAILSCALE_TUNNEL)) {
+                ifNotUserStopped(DaemonType.TAILSCALE_TUNNEL) {
+                    log.info(TAG, "Boot: Starting Tailscale...")
+                    startTailscaleOnBoot()
+                }
+            }
+        }
+    }
+
+    /** StartStufe WEB: Kamera-Daemon (bedient den Webserver :8180). */
+    private fun kameraAusloesen() {
+        val vm = daemonsViewModel
+        if (vm != null) {
+            log.info(TAG, "Starting camera daemon (Camera first)...")
+            ifNotUserStopped(DaemonType.CAMERA_DAEMON) {
+                log.info(TAG, "Starting Camera Daemon...")
+                vm.startDaemon(DaemonType.CAMERA_DAEMON, userInitiated = false)
+            }
+            return
+        }
+        // Probe the actual --nice-name (`byd_cam_daemon`) not the legacy "camera_daemon" string; `ps -A` on stock
+        // Android shows the nice-name. (Boot-Manager ohne ViewModel.)
         ifNotUserStopped(DaemonType.CAMERA_DAEMON) {
             adbLauncher.isDaemonRunning(DaemonType.CAMERA_DAEMON.processName) { running ->
                 if (!running) {
@@ -597,10 +661,16 @@ class DaemonStartupManager(
                 }
             }
         }
-        
-        // Start Sentry Daemon after Camera Daemon has time to initialize
-        handler.postDelayed({
-            ifNotUserStopped(DaemonType.SENTRY_DAEMON) {
+    }
+
+    /** StartStufe WAECHTER: Sentry und ACC-Sentry gleich nacheinander ausgelöst (früher +5 s / +10 s). */
+    private fun waechterAusloesen() {
+        val vm = daemonsViewModel
+        ifNotUserStopped(DaemonType.SENTRY_DAEMON) {
+            if (vm != null) {
+                log.info(TAG, "Starting Sentry Daemon...")
+                vm.startDaemon(DaemonType.SENTRY_DAEMON, userInitiated = false)
+            } else {
                 adbLauncher.isSentryDaemonRunning { running ->
                     if (!running) {
                         log.info(TAG, "Boot: Starting Sentry Daemon...")
@@ -610,11 +680,12 @@ class DaemonStartupManager(
                     }
                 }
             }
-        }, 5000)
-        
-        // Start ACC Sentry Daemon last
-        handler.postDelayed({
-            ifNotUserStopped(DaemonType.ACC_SENTRY_DAEMON) {
+        }
+        ifNotUserStopped(DaemonType.ACC_SENTRY_DAEMON) {
+            if (vm != null) {
+                log.info(TAG, "Starting ACC Sentry Daemon...")
+                vm.startDaemon(DaemonType.ACC_SENTRY_DAEMON, userInitiated = false)
+            } else {
                 adbLauncher.isDaemonRunning("acc_sentry_daemon") { running ->
                     if (!running) {
                         log.info(TAG, "Boot: Starting ACC Sentry Daemon...")
@@ -627,9 +698,37 @@ class DaemonStartupManager(
                     }
                 }
             }
-        }, 10000)
+        }
     }
 
+    /** StartStufe REST: WireGuard, Telegram (und was später dazukommt). Nur auslösen. */
+    private fun restAusloesen() {
+        proxyAltlastAufraeumen()
+        val vm = daemonsViewModel
+        if (vm != null) {
+            startWireGuardFromPreferences(vm)
+        } else if (PreferencesManager.isDaemonEnabled(DaemonType.WIREGUARD_TUNNEL)) {
+            ifWireGuardConfigured {
+                ifNotUserStopped(DaemonType.WIREGUARD_TUNNEL) {
+                    log.info(TAG, "Boot: Starting WireGuard...")
+                    startWireGuardOnBoot()
+                }
+            }
+        }
+        // Start Telegram Bot daemon if user enabled it and hasn't stopped it.
+        if (PreferencesManager.isDaemonEnabled(DaemonType.TELEGRAM_DAEMON)) {
+            syncTelegramEnabledToUnifiedConfig(true)
+            ifNotUserStopped(DaemonType.TELEGRAM_DAEMON) {
+                if (vm != null) {
+                    log.info(TAG, "Starting Telegram Bot daemon (user enabled)...")
+                    vm.startDaemon(DaemonType.TELEGRAM_DAEMON, userInitiated = false)
+                } else {
+                    log.info(TAG, "Boot: Starting Telegram Bot daemon...")
+                    adbLauncher.launchTelegramDaemon(createLogCallback("TelegramBot"))
+                }
+            }
+        }
+    }
 
     /**
      * Run [onAllowed] only when [type] has no durable manual-stop sentinel.
@@ -718,31 +817,6 @@ class DaemonStartupManager(
         }
     }
 
-    private fun startOptionalDaemonsFromPreferences() {
-        proxyAltlastAufraeumen()
-        val vm = daemonsViewModel ?: run {
-            log.warn(TAG, "ViewModel not available, using ADB launcher")
-            startOptionalDaemonsViaAdb()
-            return
-        }
-        log.info(TAG, "Starting optional daemons from preferences...")
-
-        // Tunnels are independent toggles. (sing-box-Proxy mit festverdrahtetem Fremdserver
-        // ist seit 0.1.8 entfernt – Koordination 21.10., Datenschutz/Sicherheit.)
-        startTunnelFromPreferences(vm)
-
-        // Start Telegram Bot daemon if user enabled it and hasn't stopped it.
-        if (PreferencesManager.isDaemonEnabled(DaemonType.TELEGRAM_DAEMON)) {
-            syncTelegramEnabledToUnifiedConfig(true)
-            handler.postDelayed({
-                ifNotUserStopped(DaemonType.TELEGRAM_DAEMON) {
-                    log.info(TAG, "Starting Telegram Bot daemon (user enabled)...")
-                    vm.startDaemon(DaemonType.TELEGRAM_DAEMON, userInitiated = false)
-                }
-            }, 15000)
-        }
-    }
-
     /**
      * Mirror the app-private "Telegram enabled" preference into the world-readable
      * unified config so AccSentryDaemon (shell UID 2000) can see it on the
@@ -774,16 +848,9 @@ class DaemonStartupManager(
         }
     }
 
-    private fun startTunnelFromPreferences(vm: DaemonsViewModel) {
-        val tailscaleEnabled = PreferencesManager.isDaemonEnabled(DaemonType.TAILSCALE_TUNNEL)
-        val wireguardEnabled = PreferencesManager.isDaemonEnabled(DaemonType.WIREGUARD_TUNNEL)
-
-        if (!tailscaleEnabled && !wireguardEnabled) {
-            log.info(TAG, "No tunnel enabled by user")
-        }
-
+    private fun startTailscaleFromPreferences(vm: DaemonsViewModel) {
         // Tailscale runs independently — it's private access
-        if (tailscaleEnabled) {
+        if (PreferencesManager.isDaemonEnabled(DaemonType.TAILSCALE_TUNNEL)) {
             vm.tailscaleController.isRunning { isRunning ->
                 if (isRunning) {
                     log.info(TAG, "Tailscale already running, skipping start")
@@ -795,9 +862,11 @@ class DaemonStartupManager(
                 }
             }
         }
+    }
 
+    private fun startWireGuardFromPreferences(vm: DaemonsViewModel) {
         // WireGuard also runs independently, but only once a config is stored
-        if (wireguardEnabled) {
+        if (PreferencesManager.isDaemonEnabled(DaemonType.WIREGUARD_TUNNEL)) {
             vm.wireguardController.isRunning { isRunning ->
                 if (isRunning) {
                     log.info(TAG, "WireGuard already running, skipping start")
@@ -813,44 +882,6 @@ class DaemonStartupManager(
         }
     }
 
-    private fun startOptionalDaemonsViaAdb() {
-        log.info(TAG, "Starting optional daemons via ADB...")
-        try {
-            val tunnelDelay = 0L
-
-            handler.postDelayed({
-                if (PreferencesManager.isDaemonEnabled(DaemonType.TAILSCALE_TUNNEL)) {
-                    ifNotUserStopped(DaemonType.TAILSCALE_TUNNEL) {
-                        log.info(TAG, "Boot: Starting Tailscale...")
-                        startTailscaleOnBoot()
-                    }
-                }
-
-                if (PreferencesManager.isDaemonEnabled(DaemonType.WIREGUARD_TUNNEL)) {
-                    ifWireGuardConfigured {
-                        ifNotUserStopped(DaemonType.WIREGUARD_TUNNEL) {
-                            log.info(TAG, "Boot: Starting WireGuard...")
-                            startWireGuardOnBoot()
-                        }
-                    }
-                }
-            }, tunnelDelay)
-
-            // Start Telegram Bot daemon if user enabled it and hasn't stopped it.
-            if (PreferencesManager.isDaemonEnabled(DaemonType.TELEGRAM_DAEMON)) {
-                syncTelegramEnabledToUnifiedConfig(true)
-                handler.postDelayed({
-                    ifNotUserStopped(DaemonType.TELEGRAM_DAEMON) {
-                        log.info(TAG, "Boot: Starting Telegram Bot daemon...")
-                        adbLauncher.launchTelegramDaemon(createLogCallback("TelegramBot"))
-                    }
-                }, 15000) // Start after core daemons are up
-            }
-        } catch (e: Exception) {
-            log.error(TAG, "Error starting optional daemons: ${e.message}")
-        }
-    }
-    
     /**
      * Start Tailscale tunnel on boot using TailscaleLauncher directly.
      */
@@ -1159,14 +1190,14 @@ class DaemonStartupManager(
         if (candidates.isEmpty()) return
 
         adbLauncher.snapshotProcessTable { snapshot ->
-            // Gesundheitswächter Stufe 3: Ausführer antwortet wiederholt nicht → Verbindung neu aufbauen.
+            // Gesundheitswächter StartStufe 3: Ausführer antwortet wiederholt nicht → Verbindung neu aufbauen.
             val deployLock = java.io.File(
                 at.greenchili.surfmate.util.DaemonStorage.rebase("/data/user_de/0/com.android.shell/surfmate/.deploy.lock")
             ).exists()
             if (ausfuehrerWaechter.ergebnis(snapshot != null, deployLock, System.currentTimeMillis())) {
-                log.warn(TAG, "Gesundheit Stufe 3: Shell-Ausführer antwortet seit 2 min nicht — Verbindung wird neu aufgebaut")
+                log.warn(TAG, "Gesundheit StartStufe 3: Shell-Ausführer antwortet seit 2 min nicht — Verbindung wird neu aufgebaut")
                 try { adbLauncher.adbShellExecutor.closeConnection() } catch (t: Throwable) {
-                    log.warn(TAG, "Gesundheit Stufe 3: closeConnection fehlgeschlagen: ${t.message}")
+                    log.warn(TAG, "Gesundheit StartStufe 3: closeConnection fehlgeschlagen: ${t.message}")
                 }
             }
             if (snapshot == null) {
@@ -1330,6 +1361,7 @@ class DaemonStartupManager(
     }
 
     fun cleanup() {
+        startAbgebrochen = true   // 0.1.38.10: laufender Stufen-Ablauf endet (auch späte Rückrufe der Prüfungen)
         healthCheckRunning.set(false)
         handler.removeCallbacksAndMessages(null)
         // The health-check loop now lives on its own looper, so clearing the main

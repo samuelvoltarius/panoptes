@@ -183,6 +183,13 @@ final class MultiBatchConfirmationShadow {
      *  unberührt bleibt. */
     static final float PERSON_EINZELBILD_KONF = 0.50f;
 
+    /** 0.1.38.10: Mehrbild-Regel wieder NUR MESSEN. Alfreds Einordnung (52 Fälle, 05.11.2026):
+     *  18 von 45 echten Fällen stützen sich auf genau eine Erkennung (13 Fahrzeuge, 5 Personen
+     *  unter 0,5) – die scharfe Regel hätte sie im KI-Modus nicht aufgenommen. Verhindert hätte
+     *  sie nur 2 Phantom-Starts, die in den Metadaten nicht von echten Fällen zu trennen sind.
+     *  Das Urteil wird weiter je Bild geloggt („AI-confirm … wouldBe=…“). true = scharf. */
+    static final boolean SCHARF = false;
+
     /** 0.1.38.8 (B4): Nachts zählen Fahrzeug/Rad-Bilder unter dieser Konfidenz nicht mit
      *  (Scheinwerfer). Personen nachts unverändert – echte Fälle liegen dort bei 0,36–0,38. */
     static final float FAHRZEUG_NACHT_MIN_KONF = 0.50f;

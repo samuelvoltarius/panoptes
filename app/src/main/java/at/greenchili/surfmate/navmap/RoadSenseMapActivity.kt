@@ -51,6 +51,7 @@ import at.greenchili.surfmate.navmap.nav.ForwardGeocoder
 import at.greenchili.surfmate.navmap.nav.NavGuidanceEngine
 import at.greenchili.surfmate.navmap.nav.NavRoute
 import at.greenchili.surfmate.navmap.nav.NavVoice
+import at.greenchili.surfmate.navmap.nav.NaviAnsagen
 import at.greenchili.surfmate.navmap.nav.SearchResult
 import at.greenchili.surfmate.navmap.nav.ValhallaRouteClient
 import java.util.concurrent.ExecutorService
@@ -109,6 +110,14 @@ open class RoadSenseMapActivity : AppCompatActivity() {
 
     /** Most recent GPS fix (for the puck + prefetch); null until first fix. */
     @Volatile private var lastFix: RoadSenseHazardApiClient.LatLngFix? = null
+    // Fahrsperre Suchfeld (Kandidat B): letzte Geschwindigkeit + Zeitpunkt (nur frisch zaehlt)
+    @Volatile private var sperrTempoMps: Double = 0.0
+    @Volatile private var sperrTempoMono: Long = 0L
+
+    /** Waehrend der Fahrt keine Texteingabe (6e): > [FAHRT_SPERRE_MPS] bei Position juenger als 10 s. */
+    private fun fahrsperre(): Boolean =
+        sperrTempoMps > FAHRT_SPERRE_MPS &&
+            android.os.SystemClock.elapsedRealtime() - sperrTempoMono < FAHRT_SPERRE_FRISCH_MS
 
     /** True until the first successful auto-recenter, so we only auto-jump once. */
     private var didInitialRecenter = false
@@ -492,7 +501,7 @@ open class RoadSenseMapActivity : AppCompatActivity() {
         }
 
         // Destination search — Gmap-style: type-ahead autocomplete (debounced
-        // Photon) drives the dropdown; submit (IME / glyph) is the on-submit
+        // Kern /api/navi/orte) drives the dropdown; submit (IME / glyph) is the on-submit
         // fallback. Wired in setupSearch().
         setupSearch()
         findViewById<FloatingActionButton>(R.id.fabEndNav)?.setOnClickListener {
@@ -524,6 +533,15 @@ open class RoadSenseMapActivity : AppCompatActivity() {
         mapView = findViewById(R.id.mapView)
         mapView.onCreate(savedInstanceState)
         mapView.getMapAsync { mlMap -> onMapReady(mlMap) }
+        // Kandidat B (E2E 05.11.): Die Fuehrung startet erst, wenn die Karte geladen ist (restoreTripIfAny in
+        // onStyleLoaded). Kommt sie nicht (kein GL-Kontext), passierte bisher still nichts -> ehrlicher Hinweis.
+        if (!clusterMode) mainHandler.postDelayed(karteFehltPruefung, KARTE_WARTE_MS)
+    }
+
+    private val karteFehltPruefung = Runnable {
+        if (isFinishing || isDestroyed || clusterMode || didRestoreTrip) return@Runnable
+        val stopps = try { NavTripStore.load(applicationContext)?.stops?.size ?: 0 } catch (_: Throwable) { 0 }
+        if (stopps > 0) showSnackbar(getString(R.string.roadsense_map_fuehrung_keine_karte))
     }
 
     /**
@@ -2702,6 +2720,11 @@ open class RoadSenseMapActivity : AppCompatActivity() {
 
     /** Toggle the POI overlay; when turning on with an active route, load POIs along it. */
     private fun togglePoi() {
+        // G3: „Punkte an der Route“ vorerst aus (kein Fremddienst aus dem Auto, eigener Dienst kommt)
+        if (!at.greenchili.surfmate.navmap.nav.OverpassPoiClient.AKTIV) {
+            showSnackbar(getString(R.string.roadsense_map_poi_kommt))
+            return
+        }
         poiEnabled = !poiEnabled
         findViewById<FloatingActionButton>(R.id.fabPoi)?.let { fab ->
             // Resolve via theme attrs (not fixed _light colors) so the active/idle
@@ -3141,6 +3164,13 @@ open class RoadSenseMapActivity : AppCompatActivity() {
             mainHandler.post {
                 if (isFinishing || isDestroyed) return@post
                 if (fix != null) lastFix = fix
+                // Kandidat B: ohne Standort keine Routenanfrage, sondern ein klarer Hinweis (Stopps bleiben).
+                if (lastFix == null) {
+                    routeStops.clear()
+                    routeStops.addAll(trip.stops)
+                    showSnackbar(getString(R.string.roadsense_map_fuehrung_kein_standort))
+                    return@post
+                }
                 resume()
             }
         }
@@ -3151,7 +3181,7 @@ open class RoadSenseMapActivity : AppCompatActivity() {
     // ---------------------------------------------------------------------
 
     /**
-     * Wire the search field: type-ahead autocomplete (debounced Photon) into the
+     * Wire the search field: type-ahead autocomplete (debounced, Kern /api/navi/orte) into the
      * dropdown RecyclerView, a clear (X) button, IME-submit fallback, and the
      * leading glyph as a submit affordance.
      */
@@ -3173,15 +3203,25 @@ open class RoadSenseMapActivity : AppCompatActivity() {
         })
         input?.setOnEditorActionListener { v, _, _ ->
             // Submit fallback: take the first autocomplete row if present, else
-            // do a full (Photon→Nominatim) search and route to the top hit.
+            // do a full (Kern-Ortssuche) search and route to the top hit.
             submitSearch(v.text?.toString().orEmpty())
             hideKeyboard(v)
             true
         }
         // Gmaps-style: focusing the empty field reveals recent destinations;
         // losing focus hides the dropdown so it doesn't linger on top of the map.
+        // Fahrsperre (wie anzeige.js: > 1,5 m/s bei frischer Position): keine Tastatur, nur Favoriten/Zuletzt.
+        input?.setOnTouchListener { _, _ ->
+            input.showSoftInputOnFocus = !fahrsperre()
+            false
+        }
         input?.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus) {
+                if (fahrsperre()) {
+                    input.showSoftInputOnFocus = false
+                    hideKeyboard(input)
+                    showSnackbar(getString(R.string.roadsense_map_suche_fahrt))
+                }
                 if (input.text.isNullOrEmpty()) showRecentSearches()
             } else {
                 hideSearchDropdown()
@@ -3224,7 +3264,7 @@ open class RoadSenseMapActivity : AppCompatActivity() {
         mainHandler.postDelayed(r, AUTOCOMPLETE_DEBOUNCE_MS)
     }
 
-    /** Photon typeahead off the looper; a monotonic token discards stale results. */
+    /** Ortssuche-Vorschlaege (Kern) off the looper; a monotonic token discards stale results. */
     /** 0.1.32.1 Regel Nr. 2: beim ersten Suchen einmal sagen, was wohin geht. */
     private fun sucheHinweisEinmal() {
         val prefs = getSharedPreferences(PREFS_NAVMAP, MODE_PRIVATE)
@@ -3565,8 +3605,10 @@ open class RoadSenseMapActivity : AppCompatActivity() {
         )
         findViewById<android.widget.EditText>(R.id.navSearchInput)?.let { input ->
             input.setText("")
+            val gesperrt = fahrsperre()   // Fahrsperre: waehrend der Fahrt keine Tastatur
+            input.showSoftInputOnFocus = !gesperrt
             input.requestFocus()
-            try {
+            if (gesperrt) showSnackbar(getString(R.string.roadsense_map_suche_fahrt)) else try {
                 val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
                     as android.view.inputmethod.InputMethodManager
                 imm.showSoftInput(input, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
@@ -3741,8 +3783,9 @@ open class RoadSenseMapActivity : AppCompatActivity() {
      * returned empty (single foreground routing call at a time).
      */
     private fun routeFailureMessage(): String = when (ValhallaRouteClient.lastError) {
-        ValhallaRouteClient.RouteError.NO_KEY -> getString(R.string.roadsense_map_need_key)
-        ValhallaRouteClient.RouteError.AUTH -> getString(R.string.roadsense_map_route_key_rejected)
+        // G3: Routing ueber den eigenen Kern/Planer - kein Schluessel im Auto. 401 = Panoptes nicht mit dem Planer verbunden.
+        ValhallaRouteClient.RouteError.AUTH -> getString(R.string.roadsense_map_route_planer_verbinden)
+        ValhallaRouteClient.RouteError.LIMIT -> getString(R.string.roadsense_map_route_zu_oft)
         ValhallaRouteClient.RouteError.TIMEOUT,
         ValhallaRouteClient.RouteError.NETWORK -> getString(R.string.roadsense_map_route_network)
         ValhallaRouteClient.RouteError.HTTP -> {
@@ -3766,6 +3809,12 @@ open class RoadSenseMapActivity : AppCompatActivity() {
         val origin = lastFix
         if (origin == null) {
             showSnackbar(getString(R.string.roadsense_map_no_location))
+            return
+        }
+        // fuehrung/1 kennt hoechstens MAX_STOPS Zwischenstopps. Eine aeltere gespeicherte Fahrt (bis 0.1.38.x: 8) bleibt
+        // unveraendert gespeichert - der Fahrer entfernt selbst, was zu viel ist, statt dass still Stopps wegfallen.
+        if (routeStops.size - 1 > MAX_STOPS) {
+            showSnackbar(getString(R.string.roadsense_map_max_stops, MAX_STOPS))
             return
         }
         val destination = routeStops.last()
@@ -4332,8 +4381,10 @@ open class RoadSenseMapActivity : AppCompatActivity() {
         findViewById<View>(R.id.navSearchColumn)?.visibility = View.VISIBLE
         findViewById<android.widget.EditText>(R.id.navSearchInput)?.let { input ->
             input.setText("")
+            val gesperrt = fahrsperre()   // Fahrsperre: waehrend der Fahrt keine Tastatur
+            input.showSoftInputOnFocus = !gesperrt
             input.requestFocus()
-            try {
+            if (gesperrt) showSnackbar(getString(R.string.roadsense_map_suche_fahrt)) else try {
                 val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
                     as android.view.inputmethod.InputMethodManager
                 imm.showSoftInput(input, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
@@ -4480,7 +4531,8 @@ open class RoadSenseMapActivity : AppCompatActivity() {
         // view-only cluster mirror renders it in real time. The cluster instance
         // itself never publishes (it's the consumer).
         if (!clusterMode) NavSession.publishRoute(route, destLabel)
-        if (navVoice == null) navVoice = NavVoice(applicationContext)
+        // Regel A+ (G5): die Sprach-Engine entsteht nur, wenn der Nutzer Sprachansagen eingeschaltet hat.
+        if (navVoice == null && NaviAnsagen.aktuell()) navVoice = NavVoice(applicationContext)
         enterImmersive()
         // Snap the camera into the immersive follow view IMMEDIATELY — do NOT wait
         // for the first GPS tick. The route-options preview left the camera at a
@@ -5085,6 +5137,8 @@ open class RoadSenseMapActivity : AppCompatActivity() {
             // the noisy GPS speed; fall back to the fix's own speed, else 0.
             val canMps = lastFix?.canSpeedKmh?.let { it / 3.6 }
             val speedMps = canMps ?: (if (loc.hasSpeed()) loc.speed.toDouble() else 0.0)
+            sperrTempoMps = speedMps
+            sperrTempoMono = android.os.SystemClock.elapsedRealtime()
             val result = motionEstimator.onTruthPoint(
                 lat = loc.latitude, lng = loc.longitude,
                 speedMps = speedMps,
@@ -5353,7 +5407,7 @@ open class RoadSenseMapActivity : AppCompatActivity() {
                 val pts = ArrayList<at.greenchili.surfmate.navmap.nav.GeoPoint>(remainingStops.size + 1)
                 pts.add(at.greenchili.surfmate.navmap.nav.GeoPoint(fromLat, fromLng))
                 remainingStops.forEach { pts.add(at.greenchili.surfmate.navmap.nav.GeoPoint(it.lat, it.lng)) }
-                ValhallaRouteClient.routeVia(pts)
+                ValhallaRouteClient.routeVia(pts, fromHeading)   // kurs: auch mit Zwischenstopps nicht wenden
             } else {
                 ValhallaRouteClient.routesWithAlternates(
                     fromLat, fromLng, dLat, dLng, ROUTE_ALTERNATES, fromHeading
@@ -5453,6 +5507,10 @@ open class RoadSenseMapActivity : AppCompatActivity() {
     }
 
     private fun speakOnce(text: String) {
+        // Regel A+ (G5): nur mit navi.sprachansagen = an. Unterwegs eingeschaltet → Engine jetzt anlegen
+        // (die erste Ansage fällt dann aus, weil die Engine erst startet); NavVoice prüft selbst noch einmal.
+        if (!NaviAnsagen.aktuell()) return
+        if (navVoice == null) navVoice = NavVoice(applicationContext)
         try { navVoice?.speak(text) } catch (_: Throwable) {}
     }
 
@@ -5879,6 +5937,22 @@ open class RoadSenseMapActivity : AppCompatActivity() {
         super.onPause()
     }
 
+    /**
+     * 0.1.38.10 (G4): neuer Auftrag aus navi.html, während die Karte schon offen ist (singleTop). Die Bridge hat die
+     * Stopps in [NavTripStore] gelegt ([Fuehrung.EXTRA_NEU]); eine laufende Führung endet (stopGuidance leert den
+     * Store, darum vorher lesen), dann wie beim Öffnen die Vorschau – geführt wird erst nach dem Tipp auf Start.
+     */
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (clusterMode || !intent.getBooleanExtra(Fuehrung.EXTRA_NEU, false)) return
+        val neu = NavTripStore.load(applicationContext) ?: return
+        if (navigating) stopGuidance()
+        NavTripStore.save(applicationContext, neu.stops, false)
+        didRestoreTrip = false
+        restoreTripIfAny()
+    }
+
     override fun onStop() {
         // Suspend the 1s guidance + cluster-follow loops while backgrounded — the
         // SurfaceView render is paused here, so continuing to fire network GETs +
@@ -6078,7 +6152,7 @@ open class RoadSenseMapActivity : AppCompatActivity() {
         // Max INTERMEDIATE stops (via-points) the itinerary allows; the trip then
         // holds up to MAX_STOPS stops + 1 destination. Capped so the via route
         // request + the rebuilt LinearLayout stay small.
-        const val MAX_STOPS = 8
+        const val MAX_STOPS = ValhallaRouteClient.MAX_VIA   // fuehrung/1: hoechstens 5 Zwischenstopps (Planer)
 
         // Corridor (m) within which a hazard counts as "on this route".
         const val HAZARD_CORRIDOR_M = 40.0
@@ -6249,6 +6323,11 @@ open class RoadSenseMapActivity : AppCompatActivity() {
         // cross-UID UCM forceReload kept off the looper. Mirrors CLUSTER_FINISH_POLL_MS's
         // role on the cluster side.
         const val PROJECTION_POLL_MS = 1000L
+        // Kandidat B: so lange darf die Karte zum Laden brauchen, bevor die Fuehrung „Karte fehlt“ meldet
+        const val KARTE_WARTE_MS = 10_000L
+        // Fahrsperre wie web/shared/anzeige.js (1,5 m/s ≈ 5 km/h), nur bei frischer Geschwindigkeit
+        const val FAHRT_SPERRE_MPS = 1.5
+        const val FAHRT_SPERRE_FRISCH_MS = 10_000L
 
         // Speed-adaptive zoom (km/h → zoom): open the view out at speed (see further
         // ahead on the highway), close in around town. EMA-smoothed across thresholds

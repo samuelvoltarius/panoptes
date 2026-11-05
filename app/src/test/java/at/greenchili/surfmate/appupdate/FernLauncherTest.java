@@ -26,6 +26,7 @@ public class FernLauncherTest {
     boolean verfuegbar = true;
     boolean neuer = true;
     String nichtWeil;
+    boolean mobilFrage = true;
     String phase;
     String fehler;
     String installierenGrund;
@@ -53,6 +54,7 @@ public class FernLauncherTest {
                                     .put("groesseBytes", 9_000_000L) : JSONObject.NULL)
                             .put("neuer", neuer)
                             .put("nichtWeil", nichtWeil == null ? JSONObject.NULL : nichtWeil)
+                            .put("mobilFrage", LauncherRegel.WARTET_WLAN.equals(nichtWeil) && mobilFrage)
                             .put("phase", phase == null ? JSONObject.NULL : phase)
                             .put("fehler", fehler == null ? JSONObject.NULL : fehler);
                 } catch (Exception e) {
@@ -144,6 +146,21 @@ public class FernLauncherTest {
         assertEquals("faehrt", r.getString("grund"));
         assertTrue(installiert.isEmpty());
         assertFalse(f.launcherStand("de", true).getBoolean("moeglich"));
+    }
+
+    /** 0.1.38.10: „nur WLAN“ ohne Merker wie bei Panoptes: keine Frage, kein Start, der Launcher wartet aufs WLAN. */
+    @Test
+    public void nurWlanOhneFrageWartetAufsWlan() throws Exception {
+        nichtWeil = LauncherRegel.WARTET_WLAN;
+        mobilFrage = false;
+        JSONObject s = f.launcherStand("de", true);
+        assertFalse(s.getBoolean("mobilFrage"));
+        assertFalse(s.getBoolean("moeglich"));
+        JSONObject r = f.launcherStarten("0.1.38.2", true, true, "Pixel", "de");
+        assertFalse(r.getBoolean("ok"));
+        assertEquals("wartet_wlan", r.getString("grund"));
+        assertFalse(r.optBoolean("mobilFrage", false));
+        assertTrue("nie über Mobilnetz gestartet", installiert.isEmpty());
     }
 
     @Test

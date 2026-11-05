@@ -102,8 +102,12 @@ public final class WebAuthn {
 
     /** Challenge beim Aufsperren: base64url von SHA-256 des signierten Textes, das Auto rechnet sie selbst nach. */
     public static String aufsperrChallenge(String kopplungId, long zeitMs, String nonce) {
-        return kodiere(sha256(HandySignatur.nachricht(HandySignatur.AUFSPERREN, kopplungId, zeitMs, nonce)
-                .getBytes(StandardCharsets.UTF_8)));
+        return challenge(HandySignatur.AUFSPERREN, kopplungId, zeitMs, nonce);
+    }
+
+    /** 0.1.38.10: Challenge für einen signierten Zweck ({@code aufsperren}, {@code kofferraum}). */
+    public static String challenge(String aktion, String kopplungId, long zeitMs, String nonce) {
+        return kodiere(sha256(HandySignatur.nachricht(aktion, kopplungId, zeitMs, nonce).getBytes(StandardCharsets.UTF_8)));
     }
 
     /** {@code type}, {@code challenge}, {@code origin} exakt, {@code crossOrigin} nicht gesetzt. true = gültig. */

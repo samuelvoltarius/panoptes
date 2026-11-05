@@ -50,14 +50,19 @@ public final class HandyPlanVorschau {
 
     /** Prüft die Anfrage und startet das Planen im Hintergrund. Antwort sofort. */
     public JSONObject starten(String kid, JSONObject req, long jetzt) throws Exception {
-        JSONObject ziel = req.optJSONObject("ziel");
+        // 0.1.38.10: Ziel/Zwischenziele auch als {ort_id} eines Favoriten (das Auto löst auf, HandyRoute.aufloesen)
+        final java.util.List<double[]> ausOrt = new java.util.ArrayList<>();
+        JSONObject ziel = HandyRoute.aufloesen(req.optJSONObject("ziel"), ausOrt);
+        if (ziel == HandyRoute.UNBEKANNT) return fehler("ort_unbekannt");
         if (!HandyRoute.ort(ziel)) return fehler("werte");
         JSONArray zz = req.optJSONArray("zwischenziele");
         if (zz != null && zz.length() > MAX_ZWISCHEN) return fehler("zu_viele_zwischenziele");
         JSONArray via = new JSONArray();
         for (int i = 0; zz != null && i < zz.length(); i++) {
-            if (!HandyRoute.ort(zz.optJSONObject(i))) return fehler("werte");
-            via.put(HandyRoute.ortKurz(zz.getJSONObject(i)));
+            JSONObject x = HandyRoute.aufloesen(zz.optJSONObject(i), ausOrt);
+            if (x == HandyRoute.UNBEKANNT) return fehler("ort_unbekannt");
+            if (!HandyRoute.ort(x)) return fehler("werte");
+            via.put(HandyRoute.ortKurz(x));
         }
         String[] token = env.token();
         String auto = env.autoId();
@@ -80,6 +85,8 @@ public final class HandyPlanVorschau {
             JSONObject e;
             try {
                 e = ausfuehren(kid, token, auto, pos, zielKurz, via, mitGeometrie, jetzt);
+                // Koordinaten aus einem Favoriten gehen nur zum Planer, nie zurück ans Handy
+                if (!ausOrt.isEmpty()) ohneOrtKoordinaten(e.optJSONObject("ergebnis"), ausOrt);
             } catch (Throwable t) {
                 e = stand("fehler", "intern");
             }
@@ -90,6 +97,38 @@ public final class HandyPlanVorschau {
             }
         });
         return new JSONObject().put("ok", true).put("status", "plant");
+    }
+
+    /** Gleiche Stelle (bis etwa 100 m, der Planer rundet bzw. rastet ein). */
+    static final double GLEICH_GRAD = 0.001;
+
+    /**
+     * 0.1.38.10: Antwort ohne die Koordinaten der per {@code ort_id} aufgelösten Favoriten: Geometrie weg, und jedes
+     * Objekt mit lat/lon an einer dieser Stellen verliert lat/lon/lng (Name und Rest bleiben).
+     */
+    static void ohneOrtKoordinaten(Object j, java.util.List<double[]> punkte) {
+        if (j instanceof JSONArray) {
+            JSONArray a = (JSONArray) j;
+            for (int i = 0; i < a.length(); i++) ohneOrtKoordinaten(a.opt(i), punkte);
+            return;
+        }
+        if (!(j instanceof JSONObject)) return;
+        JSONObject o = (JSONObject) j;
+        o.remove("geometrie");
+        double lat = o.optDouble("lat", Double.NaN), lon = o.optDouble("lon", o.optDouble("lng", Double.NaN));
+        if (!Double.isNaN(lat) && !Double.isNaN(lon)) {
+            for (double[] p : punkte) {
+                if (Math.abs(p[0] - lat) <= GLEICH_GRAD && Math.abs(p[1] - lon) <= GLEICH_GRAD) {
+                    o.remove("lat");
+                    o.remove("lon");
+                    o.remove("lng");
+                    break;
+                }
+            }
+        }
+        java.util.List<String> keys = new java.util.ArrayList<>();
+        for (java.util.Iterator<String> it = o.keys(); it.hasNext(); ) keys.add(it.next());
+        for (String k : keys) ohneOrtKoordinaten(o.opt(k), punkte);
     }
 
     /** Planen (blockiert; im Hintergrund) und das Ergebnis unverändert als Stand ablegen. */

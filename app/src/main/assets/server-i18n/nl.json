@@ -2157,6 +2157,12 @@
         "help": "Maakt verbinding met de Panoptes-communityserver (byd.serveone.at). Vereist de lidsleutel. Uit = geen enkele aanroep. Wegmeldingen worden alleen verstuurd als je ze bij wegconditie ook inschakelt."
       }
     },
+    "navi": {
+      "sprachansagen": {
+        "title": "Navigatie: gesproken aanwijzingen",
+        "help": "Tijdens het navigeren leest de Panoptes-kaart de afslaginstructies voor. Het volume volgt het mediavolume, geen andere geluiden. Standaard uit."
+      }
+    },
     "speedcam": {
       "enabled": {
         "title": "Waarschuwing voor flitspalen",
@@ -2198,7 +2204,7 @@
       },
       "mobilfunk": {
         "title": "Updates ook via mobiel internet downloaden",
-        "help": "Uit na een nieuwe installatie: je staat dan elke download toe op de updatemelding. Een update is meestal 70 tot 120 MB; de grootte staat vooraf in de melding. Uit = Panoptes downloadt alleen als de auto op wifi zit. Het downloaden gebeurt alleen als de auto geparkeerd staat en gaat na een onderbreking verder waar het was."
+        "help": "Uit na een nieuwe installatie: je staat dan elke download toe op de updatemelding. Een update is meestal 70 tot 120 MB; de grootte staat vooraf in de melding. Uit = Panoptes downloadt alleen als de auto op wifi zit. Het downloaden gebeurt alleen als de auto geparkeerd staat en gaat na een onderbreking verder waar het was. De Panoptes-launcher volgt dezelfde instelling en komt mee in dezelfde update."
       },
       "quelle": {
         "title": "Updatebron",
@@ -2353,7 +2359,7 @@
     "karte": {
       "sucheInternet": {
         "title": "Kaart: zoeken op internet",
-        "help": "Als je op de kaart zoekt, gaan je zoektekst en je geschatte locatie (afgerond op ongeveer 1 km) naar Photon, Nominatim en Overpass, zonder kenmerk. Uit: er wordt niets verzonden, je vindt alleen opgeslagen plaatsen en coördinaten."
+        "help": "Als je op de kaart zoekt, gaat alleen je zoektekst naar de Panoptes-routeplanner (onze server), zonder je locatie en zonder kenmerk. Uit: er wordt niets verzonden, je vindt alleen opgeslagen plaatsen en coördinaten."
       },
       "quelle": {
         "help": "Waar Panoptes de kaartbeelden vandaan haalt. De gekozen bron ziet je IP-adres en het kaartgebied, dus ongeveer waar je auto staat. „Geen”: er worden geen kaarten geladen. Fabrieksinstelling: Geen. Panoptes schakelt nooit uit zichzelf over naar een andere bron."
@@ -2702,9 +2708,12 @@
       "antwortet_nicht": "De routeplanner antwoordt niet (HTTP {0}). Probeer het bij lange routes opnieuw.",
       "nicht_erreichbar": "Routeplanner niet bereikbaar",
       "offline": "Routeplanner nu niet bereikbaar (geen verbinding) – nieuwe poging over {0} s",
+      "fuehrung_schluessel": "De navigatie heeft de verbinding met de routeplanner nodig (ledensleutel).",
+      "fuehrung_vertrag": "De routeplanner antwoordt in een onbekend formaat – werk Panoptes bij.",
       "fahrzeug_fehlt": "Kies eerst je voertuigmodel (Laden → Voertuigmodel), dan rekent de routeplanner met de juiste waarden.",
       "planer_fehler": "De routeplanner kon deze route niet plannen ({0}).",
-      "planer_fehler_allgemein": "De routeplanner kon deze route niet plannen."
+      "planer_fehler_allgemein": "De routeplanner kon deze route niet plannen.",
+      "keine_position": "De auto heeft op dit moment geen actuele positie."
     },
     "vorliebenEinwilligung": {
       "title": "Laadvoorkeuren naar de routeplanner sturen?",
@@ -3008,9 +3017,10 @@
     "waechter_an": "Bewaker ingeschakeld door telefoon {0}.",
     "waechter_aus": "Bewaker uitgeschakeld door telefoon {0}.",
     "rechte_selbst": "Eigenaar-telefoon {0} heeft zijn rechten gewijzigd: {1}.",
-    "frage_telegram": "Welk apparaat is je telefoon? Kies het in de auto onder Systeem → Gekoppelde apparaten – pas dan is er een eigenaar-telefoon.",
-    "frage_telegram_bestaetigen": "Bij de update is automatisch een eigenaar-telefoon gekozen. Controleer in de auto onder Systeem → Gekoppelde apparaten of het echt je telefoon is.",
-    "telegram_gewaehlt": "{0} is nu je eigenaar-telefoon."
+    "frage_telegram": "Welk apparaat is je telefoon? Kies het in de auto onder Instellingen → Alle instellingen → Gekoppelde apparaten – pas dan is er een eigenaar-telefoon.",
+    "frage_telegram_bestaetigen": "Bij de update is automatisch een eigenaar-telefoon gekozen. Controleer in de auto onder Instellingen → Alle instellingen → Gekoppelde apparaten of het echt je telefoon is.",
+    "telegram_gewaehlt": "{0} is nu je eigenaar-telefoon.",
+    "signatur_abgelehnt": "Eigenaarsactie van telefoon {0} geweigerd ({1})."
   },
   "update_klein": {
     "titel": "Updates",
@@ -3023,5 +3033,20 @@
     "push_neu": "Nieuwe pc aangemeld: {0}",
     "push_neu_text": "Was jij dit niet? Meld hem af onder Gekoppelde apparaten.",
     "handshakes": "{0} onbekende verbindingspogingen via de brug zijn het afgelopen uur geweigerd. Was dit niet jouw pc: controleer Gekoppelde apparaten en zet zo nodig „Aanmelden op een pc” in de auto uit."
+  },
+  "websitzung": {
+    "nie_web": "Dit kan alleen op het autoscherm of met inloggen, niet in de webinterface van de app.",
+    "passkey_noetig": "De webinterface opent de kofferbak alleen met het recht „Ontgrendelen” en een verse bevestiging met vingerafdruk of Face ID.",
+    "rueckfrage": "Dit is buiten de auto te zien of te horen. Nu uitvoeren?",
+    "recht_fehlt": "Deze telefoon mist het recht „{0}”. Zet het aan in de auto onder Gekoppelde apparaten.",
+    "recht_wort": {
+      "zusperren": "Vergrendelen",
+      "klima": "Klimaat",
+      "aufsperren": "Ontgrendelen",
+      "signal": "Claxon & licht",
+      "laden": "Laden in de auto",
+      "tacho": "Dashboard",
+      "route": "Route"
+    }
   }
 }

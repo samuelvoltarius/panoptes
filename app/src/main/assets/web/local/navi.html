@@ -70,6 +70,31 @@
         .n-stops small.n-occ.ok { color: var(--sm-lime); }
         .n-stops small.n-occ.warn { color: #FFB86B; }
         .n-occ-q { color: var(--outline); font-size: 11px; margin-top: 6px; }
+        /* 0.1.38.10 (N1): Zwischenstopps Start → Z1…Z5 → Ziel, Bedienung nur über Knöpfe (kein Ziehen) */
+        .n-via { margin-top: 10px; }
+        .n-via-kopf { display: flex; align-items: center; font-size: 13px; font-weight: 600; color: var(--on-surface-variant); }
+        .n-via-kopf .grow { flex: 1; }
+        .n-via ol { list-style: none; margin: 6px 0 0; padding: 0; }
+        .n-via li { padding: 8px 0; border-top: 1px solid var(--sm-line); font-size: 13px; color: var(--on-surface); }
+        .n-via li.fest { color: var(--on-surface-variant); }
+        .n-via .zeile { display: flex; align-items: center; }
+        .n-via .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .n-via .no, .n-etappen .no.z { width: 26px; height: 24px; border-radius: 12px; background: var(--sm-aqua); color: #04101b; flex: none;
+                       display: flex; align-items: center; justify-content: center; font: 700 11px var(--family-display); margin-right: 10px; }
+        .n-via li.fest .no { background: rgba(255, 255, 255, .12); color: var(--on-surface); }
+        .n-via .ctl { display: flex; flex-wrap: wrap; align-items: center; margin: 6px 0 0 36px; }
+        .n-via .ctl > * { margin: 0 6px 6px 0; }
+        .n-via .zeile .mini { margin-left: 6px; }
+        .n-via .mini { border: 1px solid var(--sm-line); background: rgba(255, 255, 255, .06); color: var(--on-surface); border-radius: 10px;
+                       min-width: 40px; height: 40px; padding: 0 10px; font: 700 14px var(--family-body, sans-serif); cursor: pointer; }
+        .n-via .mini.on { background: var(--sm-lime); color: #1d2a00; border-color: transparent; }
+        .n-via .mini:disabled { opacity: .35; cursor: default; }
+        .n-via-hint { margin-top: 6px; font-size: 12.5px; color: var(--sm-aqua); }
+        .n-via-hilfe { margin-top: 6px; font-size: 11.5px; color: var(--outline); line-height: 1.4; }
+        .n-et-kopf { margin-top: 12px; font-size: 13px; font-weight: 600; color: var(--on-surface-variant); }
+        .n-etappen .no.ziel { background: #FF8A6B; }
+        .n-etappen small.warn { color: var(--status-warning); }
+        .pn-marker-via { border-color: var(--sm-aqua); color: #04101b; background: var(--sm-aqua); border-radius: 50%; }
         .n-nah { margin-top: 10px; }
         .n-tabs { display: flex; gap: 6px; }
         .n-tabs button { border: 1px solid var(--sm-line); background: rgba(255,255,255,.06); color: var(--on-surface); border-radius: 999px;
@@ -134,6 +159,7 @@
         <div class="navi">
             <div id="nMap"></div>
             <section class="n-panel" aria-label="Navigation">
+                <div class="n-uw n-fue" id="nFue" hidden></div>
                 <div class="n-fg" id="nFg" hidden></div>
                 <div class="n-uw" id="nPr" hidden></div>
                 <div class="n-uw" id="nUw" hidden></div>
@@ -144,6 +170,7 @@
                 </div>
                 <div class="n-fav" id="nFav" hidden></div>
                 <ul class="n-results" id="nResults"></ul>
+                <div class="n-via" id="nVia"></div>
                 <div class="n-row">
                     <label for="nArrive" data-i18n="navi.arrive_min">Ankommen mit mind.</label>
                     <select id="nArrive"><option value="5">5 %</option><option value="10" selected>10 %</option><option value="20">20 %</option><option value="30">30 %</option></select>
@@ -163,6 +190,7 @@
 <script src="../shared/pwa-init.js?v=index2"></script>
 <script src="../shared/core.js?v=pn6"></script>
 <script src="../shared/belegung.js?v=2"></script>
+<script src="../shared/navi-etappen.js?v=1"></script>
 <script src="../shared/panoptes-map.js?v=12"></script>
 <script src="../shared/einstellungen.js?v=pn8"></script>
 <script>
@@ -178,6 +206,26 @@
     var PB = window.PanoptesBelegung;
     function standHtml(ms) {
         return ms == null ? '' : ' · <span data-stand="' + ms + '">' + esc(PB.standText(ms, t)) + '</span>';
+    }
+    // 0.1.38.10: am Auto-Display heißt es „Im Navi starten“ statt „Ziel ins Auto“ (eine Erkennung: PanoptesShell.istDisplay)
+    function imAuto() { return !!(window.PanoptesShell && PanoptesShell.istDisplay && PanoptesShell.istDisplay()); }
+    // Fahr-Modus am Display (anzeige.js setzt html[data-fahrt]); dort keine Suche und kein Kartentipp für Zwischenstopps
+    function fahrt() { return document.documentElement.getAttribute('data-fahrt') === '1'; }
+    var PE = window.PanoptesEtappen;
+    // 0.1.38.10: eigene Rückfrage der Web-UI (BYD.utils.confirmDialog, core.js) statt des rohen confirm() mit
+    // „Auf der Seite http://127.0.0.1 steht:“; Promise<boolean>. Rückfall nur, falls core.js fehlt.
+    function frage(titel, text, ja, gefahr) {
+        if (window.BYD && BYD.utils && typeof BYD.utils.confirmDialog === 'function') {
+            return BYD.utils.confirmDialog({ title: titel, body: text, confirmLabel: ja,
+                                             cancelLabel: t('common.cancel', 'Abbrechen'), danger: !!gefahr });
+        }
+        return Promise.resolve(window.confirm(text));
+    }
+    // 0.1.38.10 (G4): Panoptes-Führung nur am Auto-Display mit der App-Brücke (Fuehrung.kt); Handy/PC unverändert
+    function fuehrungBruecke() { return imAuto() && !!window.AndroidBridge && typeof window.AndroidBridge.openNavigation === 'function'; }
+    function fuehrungStand() {
+        if (!fuehrungBruecke()) return {};
+        try { return JSON.parse(window.AndroidBridge.fuehrungStand() || '{}') || {}; } catch (e) { return {}; }
     }
     function toast(msg, ok) { if (window.BYD && BYD.utils && BYD.utils.toast) BYD.utils.toast(msg, ok ? 'success' : 'error'); }
     function post(url, body) {
@@ -210,7 +258,8 @@
             var box = $('nFg');
             box.innerHTML = '<h3>' + esc(t('navi.fg_titel', 'Ortssuche und Routen')) + '</h3>'
                 + '<p>' + esc(t('navi.fg_text', 'Für Suche, Route und Säulen in der Nähe fragt Panoptes den Routenplaner (byd.serveone.at). Dabei gehen hinaus: dein Suchtext, der Standort des Autos, das Ziel und der Akkustand.')) + '</p>'
-                + '<p>' + esc(t('navi.fg_text2', 'Ohne Freigabe geht nichts hinaus. „Ins Auto senden“ braucht sie nicht. Die Freigabe gilt für dieses Gerät bzw. diesen Browser und lässt sich unten auf dieser Seite zurücknehmen.')) + '</p>'
+                + '<p>' + esc(imAuto() ? t('navi.fg_text2_display', 'Ohne Freigabe geht nichts hinaus. „Starten“ braucht sie nicht. Die Freigabe gilt für dieses Display und lässt sich unten auf dieser Seite zurücknehmen.')
+                                       : t('navi.fg_text2', 'Ohne Freigabe geht nichts hinaus. „Ins Auto senden“ braucht sie nicht. Die Freigabe gilt für dieses Gerät bzw. diesen Browser und lässt sich unten auf dieser Seite zurücknehmen.')) + '</p>'
                 + '<div class="pr-act"><button class="nbtn" type="button" id="nFgJa">' + esc(t('navi.fg_ja', 'Erlauben')) + '</button>'
                 + '<button class="nbtn ghost" type="button" id="nFgNein">' + esc(t('navi.fg_nein', 'Nicht jetzt')) + '</button></div>';
             box.hidden = false;
@@ -226,7 +275,9 @@
             var self = this;
             $('nFgWeg').hidden = !this.an();
             $('nFgWeg').firstElementChild.onclick = function () {
-                if (window.confirm(t('navi.fg_weg_frage', 'Freigabe zurücknehmen? Danach fragt Panoptes den Routenplaner erst wieder, wenn du es erlaubst.'))) self.setzen(false);
+                frage(t('navi.fg_weg_titel', 'Freigabe zurücknehmen'),
+                      t('navi.fg_weg_frage', 'Freigabe zurücknehmen? Danach fragt Panoptes den Routenplaner erst wieder, wenn du es erlaubst.'),
+                      t('navi.fg_weg_ja', 'Zurücknehmen'), false).then(function (ok) { if (ok) self.setzen(false); });
             };
         }
     };
@@ -427,7 +478,8 @@
                 return (w.art === 'zwischenziel' ? t('navi.pr_zwischenziel', 'Zwischenziel') : t('navi.pr_ladestopp', 'Laden')) + ' ' + (w.name || w.nr || '?');
             }).join(' → ')) + '</div>';
             else if (stopps.length) h += '<div class="ln">' + esc(stopps.map(function (s) { return s.name || '?'; }).join(' → ')) + '</div>';
-            h += '<div class="ln">' + esc(t('navi.pr_explain', 'Übernehmen heißt: Panoptes prüft unterwegs, ob der Akku bis zum Ziel reicht. Ans Navi im Auto geht dabei nichts.')) + '</div>'
+            h += '<div class="ln">' + esc(imAuto() ? t('navi.pr_explain_display', 'Übernehmen heißt: Panoptes prüft unterwegs, ob der Akku bis zum Ziel reicht. Die Navigation startet dabei nicht.')
+                                                  : t('navi.pr_explain', 'Übernehmen heißt: Panoptes prüft unterwegs, ob der Akku bis zum Ziel reicht. Ans Navi im Auto geht dabei nichts.')) + '</div>'
                 + '<div class="pr-act"><button class="nbtn lime" type="button" data-pr="annehmen">' + esc(t('navi.pr_accept', 'Übernehmen')) + '</button>'
                 + '<button class="nbtn" type="button" data-pr="ablehnen">' + esc(t('navi.pr_reject', 'Ablehnen')) + '</button></div>'
                 + '<div class="ln" id="nPrMsg">' + esc(this.meldung || '') + '</div>';
@@ -481,8 +533,48 @@
         }
     };
 
+    // ---------------- Band „Führung läuft“ (G4): Stand lokal über die App-Brücke, nichts übers Netz, keine Position.
+    var FU = {
+        zuletzt: null,
+        laden: function () {
+            if (document.hidden || window.pnPausiert) return;
+            var st = fuehrungStand(), box = $('nFue');
+            var key = st.aktiv ? (st.ziel_name || '') + '|' + (st.stopps || 0) : '';
+            if (key === this.zuletzt) return;
+            this.zuletzt = key;
+            if (!st.aktiv) { box.hidden = true; box.innerHTML = ''; return; }
+            box.innerHTML = '<div class="hd"><span>' + esc(t('navi.fue_band', 'Führung läuft')) + '</span></div>'
+                + '<div class="big">' + esc(t('navi.fue_ziel', 'Ziel: {name}', { name: st.ziel_name || '–' })) + '</div>'
+                + '<div class="pr-act"><button class="nbtn lime" type="button" data-fu="zur">' + esc(t('navi.fue_zur', 'Zur Führung')) + '</button>'
+                + '<button class="nbtn" type="button" data-fu="ende">' + esc(t('navi.fue_beenden', 'Beenden')) + '</button></div>';
+            box.hidden = false;
+            var self = this;
+            box.querySelector('[data-fu="zur"]').onclick = function () {
+                var r = 'error';
+                try { r = window.AndroidBridge.openNavigation(''); } catch (e) {}
+                if (r !== 'ok') toast(t('navi.fue_nicht', 'Die Panoptes-Führung ist gerade nicht verfügbar.'), false);
+            };
+            box.querySelector('[data-fu="ende"]').onclick = function () {
+                frage(t('navi.fue_beenden_titel', 'Führung beenden'), t('navi.fue_beenden_frage', 'Führung beenden? Die Route wird verworfen.'),
+                      t('navi.fue_beenden', 'Beenden'), true).then(function (ok) {
+                    if (!ok) return;
+                    try { window.AndroidBridge.fuehrungBeenden(); } catch (e) {}
+                    self.zuletzt = null; self.laden();
+                });
+            };
+        },
+        start: function () {
+            var self = this;
+            if (!fuehrungBruecke()) return;
+            this.laden();
+            setInterval(function () { self.laden(); }, 5000);
+            document.addEventListener('visibilitychange', function () { if (!document.hidden) { self.zuletzt = null; self.laden(); } });
+        }
+    };
+
     var N = window.Navi = {
         status: null, map: null, dest: null, plan: null, searchTimer: null, searchGen: 0,
+        via: [], viaNeu: false, planGen: 0,
 
         car: function () {
             var g = this.status && this.status.gps;
@@ -515,7 +607,7 @@
                     li.innerHTML = esc(o.kurz || o.name) + '<small>' + esc(o.name) + '</small>';
                     li.onclick = li.onkeydown = function (e) {
                         if (e.type === 'keydown' && e.key !== 'Enter') return;
-                        self.choose({ name: o.kurz || o.name, full: o.name, lat: o.lat, lng: o.lon });
+                        self.pick({ name: o.kurz || o.name, full: o.name, lat: o.lat, lng: o.lon }, 'suche');
                     };
                     list.appendChild(li);
                 });
@@ -536,7 +628,7 @@
             post('/api/navi/link', { link: q, aufloesen: !!aufloesen }).then(function (d) {
                 if (gen !== self.searchGen) return;
                 if (d && d.ok) {
-                    self.choose({ name: d.name || t('ziellink.ziel', 'Ziel aus dem Link'), full: (+d.lat).toFixed(5) + ', ' + (+d.lng).toFixed(5), lat: +d.lat, lng: +d.lng });
+                    self.pick({ name: d.name || t('ziellink.ziel', 'Ziel aus dem Link'), full: (+d.lat).toFixed(5) + ', ' + (+d.lng).toFixed(5), lat: +d.lat, lng: +d.lng }, 'suche');
                     return;
                 }
                 var g = (d && d.grund) || '';
@@ -559,18 +651,93 @@
 
         choose: function (dest) {
             this.dest = dest;
+            // „Neu planen“ bringt die noch offenen Zwischenziele mit; sonst bleibt die eigene Liste
+            if (Array.isArray(dest.via)) { this.via = PE.ausListe(dest.via); this.viaNeu = false; }
             $('nResults').innerHTML = '';
             $('nQuery').value = dest.name;
             $('nClear').hidden = false;
-            this.map.setMarkers([{ lat: dest.lat, lng: dest.lng, kind: 'dest', label: '◎', title: dest.full || dest.name }]);
+            this.viaZeigen();
+            this.map.setMarkers(this.grundMarker());
             this.route();
         },
 
         clear: function () {
             this.dest = null; this.plan = null;
             $('nQuery').value = ''; $('nClear').hidden = true; $('nResults').innerHTML = ''; $('nOut').innerHTML = '';
-            this.map.setLines([]); this.map.setMarkers([]);
+            this.map.setLines([]); this.map.setMarkers(this.grundMarker());
+            this.viaZeigen();
             this.map.flyToCar();
+        },
+
+        // ---------- Zwischenstopps (0.1.38.10, N1): Start → Z1…Z5 → Ziel. Ein ausgewählter Ort wird Ziel, nach
+        // „+ Zwischenstopp“ einmal Zwischenstopp. Während der Fahrt nur aus Favoriten und „Säulen in der Nähe“.
+        pick: function (o, quelle) {
+            if (!this.viaNeu) { this.choose(o); return; }
+            if ((quelle === 'suche' || quelle === 'karte') && fahrt()) {
+                toast(t('navi.via_fahrt', 'Suche und Karte gehen während der Fahrt nicht. Nimm einen ★-Favoriten oder eine Säule in der Nähe.'), false);
+                return;
+            }
+            if (quelle === 'saeule') o = { name: o.name, lat: o.lat, lng: o.lng, laden: true };
+            if (!PE.hinzu(this.via, o)) { toast(t('navi.via_max', 'Höchstens {n} Zwischenstopps.', { n: PE.MAX }), false); return; }
+            this.viaNeu = false;
+            $('nResults').innerHTML = '';
+            $('nQuery').value = this.dest ? this.dest.name : '';
+            $('nClear').hidden = !this.dest;
+            toast(t('navi.via_hinzu', '„{name}“ ist Zwischenstopp {n}.', { name: o.name, n: this.via.length }), true);
+            this.viaGeaendert();
+        },
+        viaGeaendert: function () {
+            this.viaZeigen();
+            if (this.dest) this.route();
+            else this.map.setMarkers(this.grundMarker());
+        },
+        grundMarker: function () {
+            var ms = [];
+            this.via.forEach(function (s, i) { ms.push({ lat: s.lat, lng: s.lng, kind: 'via', label: 'Z' + (i + 1), title: s.name }); });
+            if (this.dest) ms.push({ lat: this.dest.lat, lng: this.dest.lng, kind: 'dest', label: '◎', title: this.dest.full || this.dest.name });
+            return ms;
+        },
+        viaZeigen: function () {
+            var self = this, box = $('nVia'), L = this.via;
+            var h = '<div class="n-via-kopf"><span>' + (L.length ? esc(t('navi.via_titel', 'Zwischenstopps')) + ' (' + L.length + '/' + PE.MAX + ')' : '') + '</span><span class="grow"></span>';
+            if (this.viaNeu) h += '<button class="nbtn" type="button" data-v="abbruch">' + esc(t('navi.via_abbruch', 'Abbrechen')) + '</button>';
+            else if (L.length < PE.MAX) h += '<button class="nbtn" type="button" data-v="neu">+ ' + esc(t('navi.via_neu', 'Zwischenstopp')) + '</button>';
+            h += '</div>';
+            if (this.viaNeu) h += '<div class="n-via-hint">' + esc(fahrt()
+                ? t('navi.via_wie_fahrt', 'Tipp auf einen ★-Favoriten oder unter „Säulen in der Nähe“ auf eine Säule. Suchen geht nur im Stand.')
+                : t('navi.via_wie', 'Such einen Ort oder tipp auf einen ★-Favoriten, eine Säule in der Nähe oder die Karte. Das wird der nächste Zwischenstopp.')) + '</div>';
+            if (L.length) {
+                h += '<ol><li class="fest"><div class="zeile"><span class="no">●</span><span class="nm">' + esc(t('navi.via_start', 'Start: Standort des Autos')) + '</span></div></li>';
+                L.forEach(function (s, i) {
+                    h += '<li><div class="zeile"><span class="no">Z' + (i + 1) + '</span><span class="nm">' + esc(s.name) + '</span>'
+                        + '<button class="mini" type="button" data-v="hoch" data-i="' + i + '"' + (i === 0 ? ' disabled' : '') + ' aria-label="' + esc(t('navi.via_hoch', 'Nach vorne')) + '">↑</button>'
+                        + '<button class="mini" type="button" data-v="runter" data-i="' + i + '"' + (i === L.length - 1 ? ' disabled' : '') + ' aria-label="' + esc(t('navi.via_runter', 'Nach hinten')) + '">↓</button>'
+                        + '<button class="mini" type="button" data-v="weg" data-i="' + i + '" aria-label="' + esc(t('navi.via_weg', 'Entfernen')) + '">×</button>'
+                        + '</div><div class="ctl">'
+                        + '<button class="mini" type="button" data-v="halt" data-i="' + i + '" title="' + esc(t('navi.via_halt_titel', 'Aufenthalt ändern')) + '">'
+                        + esc(s.aufenthalt_min ? t('navi.via_halt', '{m} min Halt', { m: s.aufenthalt_min }) : t('navi.via_halt0', 'Kein Halt')) + '</button>'
+                        + '<button class="mini' + (s.laden ? ' on' : '') + '" type="button" data-v="laden" data-i="' + i + '" aria-pressed="' + (s.laden ? 'true' : 'false') + '">'
+                        + esc(t('navi.via_laden', 'Hier laden')) + '</button>'
+                        + '</div></li>';
+                });
+                h += '<li class="fest"><div class="zeile"><span class="no">◎</span><span class="nm">'
+                    + esc(this.dest ? t('navi.via_ziel', 'Ziel: {name}', { name: this.dest.name }) : t('navi.via_kein_ziel', 'Ziel: noch nicht gewählt')) + '</span></div></li></ol>'
+                    + '<div class="n-via-hilfe">' + esc(t('navi.via_hilfe', 'Panoptes plant in dieser Reihenfolge und rechnet nötige Ladestopps dazu. ↑ und ↓ ändern die Reihenfolge. „Hier laden“ heißt: Du lädst dort selbst (ohne Angabe 11 kW Wechselstrom). Die Liste wird nicht gespeichert.')) + '</div>';
+            }
+            box.innerHTML = h;
+            Array.prototype.forEach.call(box.querySelectorAll('[data-v]'), function (b) {
+                b.onclick = function () {
+                    var was = b.getAttribute('data-v'), i = +b.getAttribute('data-i'), s = self.via[i];
+                    if (was === 'neu') { self.viaNeu = true; self.viaZeigen(); if (!fahrt()) { $('nQuery').value = ''; $('nQuery').focus(); } return; }
+                    if (was === 'abbruch') { self.viaNeu = false; $('nResults').innerHTML = ''; $('nQuery').value = self.dest ? self.dest.name : ''; self.viaZeigen(); return; }
+                    if (was === 'halt' && s) s.aufenthalt_min = PE.naechsterAufenthalt(s.aufenthalt_min);
+                    else if (was === 'laden' && s) s.laden = !s.laden;
+                    else if (was === 'hoch') PE.schieben(self.via, i, -1);
+                    else if (was === 'runter') PE.schieben(self.via, i, 1);
+                    else if (was === 'weg') PE.weg(self.via, i);
+                    self.viaGeaendert();
+                };
+            });
         },
 
         // ---------- Route (Planer: Route, Ladestopps, Ankunfts-Akku)
@@ -579,7 +746,8 @@
             var out = $('nOut');
             if (!dest) return;
             if (!car) {
-                out.innerHTML = this.destHtml() + '<div class="n-msg err">' + esc(t('navi.no_car', 'Kein Standort vom Auto – nur „Ins Auto senden“ möglich.')) + '</div>' + this.sendHtml(false);
+                out.innerHTML = this.destHtml() + '<div class="n-msg err">' + esc(imAuto() ? t('navi.no_car_display', 'Kein Standort vom Auto – nur „Starten“ möglich.')
+                                                       : t('navi.no_car', 'Kein Standort vom Auto – nur „Ins Auto senden“ möglich.')) + '</div>' + this.sendHtml(false);
                 this.wireSend();
                 this.map.fit([[dest.lng, dest.lat]]);
                 return;
@@ -590,16 +758,20 @@
                 start: [+car.lat.toFixed(5), +car.lng.toFixed(5)], ziel: [+dest.lat.toFixed(5), +dest.lng.toFixed(5)],
                 soc_start: soc !== null ? Math.round(soc) : 80, soc_ziel_min: +$('nArrive').value, fahrzeug: null
             };
-            // 0.1.19: „Neu planen“ aus der Plan-Abweichung behält die noch vor uns liegenden Zwischenziele (Planer §17)
-            if (dest.via && dest.via.length) body.via = dest.via;
+            // 0.1.19: „Neu planen“ aus der Plan-Abweichung behält die noch vor uns liegenden Zwischenziele (Planer §17);
+            // 0.1.38.10: sie stehen in der Zwischenstopp-Liste (choose), die Liste geht als via mit
+            var via = PE.viaBody(this.via);
+            if (via.length) body.via = via;
+            var gen = ++this.planGen;   // Liste geändert, während noch gerechnet wird: nur die neueste Antwort zählt
             planer('/api/navi/plan', body).then(function (d) {
-                if (self.dest !== dest) return;
+                if (self.dest !== dest || gen !== self.planGen) return;
                 if (!d || d.fehler || !d.route) throw new Error((d && d.fehler) || t('navi.offline', 'Planer nicht erreichbar'));
                 self.plan = d;
                 self.planEmpfangen = Date.now();
                 self.draw(d);
             }).catch(function (e) {
-                if (self.dest !== dest) return;
+                if (self.dest !== dest || gen !== self.planGen) return;
+                self.plan = null;
                 out.innerHTML = self.destHtml() + '<div class="n-msg err">' + esc(e.message) + '</div>' + self.sendHtml(false);
                 self.wireSend();
             });
@@ -609,20 +781,97 @@
             var d = this.dest;
             return '<div class="n-dest"><h3>' + esc(d.name) + '</h3>' + (d.full && d.full !== d.name ? '<p>' + esc(d.full) + '</p>' : '') + '</div>';
         },
+        // withStop: true = erster Ladestopp, 'etappe' = erste Etappe (mit Zwischenstopps; das Navi im Auto kennt nur ein Ziel).
+        // G4: Ist die Panoptes-Führung da, startet „Starten“ sie mit allen Zwischenstopps; der zweite Knopf öffnet das Werksnavi.
         sendHtml: function (withStop) {
+            if (this.fuehrungAn()) {
+                return '<div class="n-btns"><button class="nbtn lime" type="button" id="nSend"><svg><use href="#i-send"/></svg>'
+                    + esc(t('navi.send_display', 'Starten')) + '</button>'
+                    + '<button class="nbtn" type="button" id="nSendStop">' + esc(t('navi.send_werk_display', 'Im Werksnavi öffnen')) + '</button></div>'
+                    + '<div class="n-msg">' + esc(t('navi.fue_hinweis', '„Starten“ öffnet die Panoptes-Führung mit allen Zwischenstopps. Los geht es erst mit dem Tipp auf Start in der Karte.')) + '</div>';
+            }
+            var zweit = withStop === 'etappe'
+                ? (imAuto() ? t('navi.send_first_display', 'Erste Etappe starten') : t('navi.send_first', 'Erste Etappe ins Auto'))
+                : (imAuto() ? t('navi.send_stop_display', 'Mit Ladestopp starten') : t('navi.send_stop', 'Ersten Ladestopp ins Auto'));
             return '<div class="n-btns"><button class="nbtn lime" type="button" id="nSend"><svg><use href="#i-send"/></svg>'
-                + esc(t('navi.send', 'Ziel ins Auto')) + '</button>'
-                + (withStop ? '<button class="nbtn" type="button" id="nSendStop"><svg><use href="#i-flash"/></svg>' + esc(t('navi.send_stop', 'Ersten Ladestopp ins Auto')) + '</button>' : '')
+                + esc(imAuto() ? t('navi.send_display', 'Starten') : t('navi.send', 'Ziel ins Auto')) + '</button>'
+                + (withStop ? '<button class="nbtn" type="button" id="nSendStop"><svg><use href="#i-flash"/></svg>' + esc(zweit) + '</button>' : '')
                 + '</div>';
+        },
+        // G4: Führung nur am Display mit Brücke und wenn sie eine Route rechnen kann (Fuehrung.verfuegbar)
+        fuehrungAn: function () { return fuehrungBruecke() && fuehrungStand().verfuegbar === true; },
+        // Auftrag ohne Route und ohne Position: Ziel und Zwischenstopps (Ladestopps erst mit G6), plan_id wenn da
+        fuehre: function (btn) {
+            var d = this.dest, a = { ziel: { name: d.name, lat: d.lat, lon: d.lng }, etappen: [] };
+            if (this.plan && this.plan.plan_id) a.plan_id = String(this.plan.plan_id);
+            this.via.forEach(function (s) { a.etappen.push({ art: 'zwischenziel', name: s.name, lat: s.lat, lon: s.lng }); });
+            var r = 'error';
+            try { r = window.AndroidBridge.openNavigation(JSON.stringify(a)); } catch (e) {}
+            if (r === 'ok') return;
+            // Rückfall: kein toter Knopf – kurzer Hinweis, dann wie bisher das Werksnavi (mit Rückfrage)
+            toast(t('navi.fue_rueckfall', 'Die Panoptes-Führung ist gerade nicht verfügbar. Es geht über das Werksnavi.'), false);
+            var e0 = this.ersteEtappe();
+            this.send(e0.name, e0.lat, e0.lng, btn);
+        },
+        // Nächstes Ziel fürs Werksnavi: erste Etappe laut Planer (Zwischenstopp oder Ladestopp); ohne Plan bzw. ohne
+        // Zwischenziele in der Antwort der erste eigene Zwischenstopp (E2E B: sonst ging das Endziel hinaus), erst dann das Ziel
+        ersteEtappe: function () {
+            var et = this.plan ? PE.etappen(this.plan) : [];
+            if (et.length && et[0].art !== 'ziel') return { name: et[0].name || this.dest.name, lat: et[0].lat, lng: et[0].lon };
+            if (this.via.length) return { name: this.via[0].name, lat: this.via[0].lat, lng: this.via[0].lng };
+            return { name: this.dest.name, lat: this.dest.lat, lng: this.dest.lng };
         },
         wireSend: function () {
             var self = this;
-            var b = $('nSend'); if (b) b.onclick = function () { self.send(self.dest.name, self.dest.lat, self.dest.lng, b); };
-            var s = $('nSendStop');
-            if (s && this.plan && this.plan.stopps && this.plan.stopps.length) {
+            var b = $('nSend'), s = $('nSendStop');
+            if (this.fuehrungAn()) {
+                if (b) b.onclick = function () { self.fuehre(b); };
+                if (s) s.onclick = function () { var e0 = self.ersteEtappe(); self.send(e0.name, e0.lat, e0.lng, s); };
+                return;
+            }
+            if (b) b.onclick = function () { self.send(self.dest.name, self.dest.lat, self.dest.lng, b); };
+            var et = this.plan ? PE.etappen(this.plan) : [];
+            if (s && et.length && et[0].art !== 'ziel') {
+                var e0 = et[0];
+                s.onclick = function () { self.send(e0.name || self.dest.name, e0.lat, e0.lon, s); };
+            } else if (s && this.plan && this.plan.stopps && this.plan.stopps.length) {
                 var st = this.plan.stopps[0].saeule;
                 s.onclick = function () { self.send(st.name, st.lat, st.lon, s); };
             }
+        },
+        // Eine Ladestopp-Zeile (bisherige Liste und Etappen); vor = Zusatz vorne in der kleinen Zeile
+        stopLi: function (st, label, vor) {
+            var self = this, s = st.saeule;
+            var bl = PB.belegung(s);
+            return '<li><span class="no">' + esc(label) + '</span><span>' + esc(s.name) + ' · ' + esc(s.kw || '?') + ' kW'
+                + '<small>' + (vor ? esc(vor) + ' · ' : '') + 'km ' + fmt(s.km_auf_route) + ' · ' + fmt(st.soc_vorher) + ' → ' + fmt(st.soc_nachher) + ' % · ~' + fmt(st.ladedauer_min) + ' min'
+                + (s.preis_live_ct_kwh ? ' · ' + fmt(s.preis_live_ct_kwh) + ' ct/kWh' : '') + '</small>'
+                + (bl ? '<small class="n-occ ' + (bl.frei > 0 ? 'ok' : 'warn') + '">'
+                    + esc(t('navi.stop_frei', '{f} von {p} Ladepunkten frei', { f: bl.frei, p: bl.ladepunkte }))
+                    + standHtml(PB.standMs(s.frei_stand_min == null ? null : s.frei_stand_min * 60, self.planEmpfangen))
+                    + '</small>' : '')
+                + '</span></li>';
+        },
+        // Etappen (Z und L in Fahrreihenfolge, wie die PR-Karte), je Etappe Länge und Akku bei der Ankunft
+        etappenHtml: function (et) {
+            var self = this, min = +$('nArrive').value || 0, nL = 0;
+            var h = '<div class="n-et-kopf">' + esc(t('navi.et_titel', 'Etappen')) + '</div><ul class="n-stops n-etappen">';
+            et.forEach(function (p) {
+                var km = t('navi.et_km', '{km} km', { km: fmt(p.etappe_km, p.etappe_km < 20 ? 1 : 0) });
+                if (p.art === 'l') { nL += 1; h += self.stopLi(p.stopp, 'L' + nL, km); return; }
+                var info = [km];
+                if (p.akku != null) info.push(t('navi.et_an', 'Ankunft mit {p} %', { p: fmt(p.akku) }));
+                if (p.art === 'z' && p.aufenthalt_min) info.push(t('navi.et_halt', '{m} min Halt', { m: p.aufenthalt_min }));
+                if (p.art === 'z' && p.weiter != null) info.push(t('navi.et_weiter', 'weiter mit {p} %', { p: fmt(p.weiter) }));
+                h += '<li><span class="no z' + (p.art === 'ziel' ? ' ziel' : '') + '">' + (p.art === 'ziel' ? '◎' : 'Z' + p.nr) + '</span><span>'
+                    + esc(p.art === 'ziel' ? self.dest.name : p.name)
+                    + '<small' + (p.akku != null && p.akku < min ? ' class="warn"' : '') + '>' + esc(info.join(' · ')) + '</small>'
+                    + (p.art === 'z' && p.laden && p.laden.hinweis ? '<small class="warn">' + esc(p.laden.hinweis) + '</small>' : '')
+                    + '</span></li>';
+            });
+            // mit Panoptes-Führung fährt sie alle Zwischenstopps ab; nur das Werksnavi kennt ein einziges Ziel
+            return h + '</ul>' + (this.fuehrungAn() ? ''
+                : '<div class="n-warn">' + esc(t('navi.et_ein_ziel', 'Das Navi im Auto kennt nur ein Ziel. Starte die Etappen nacheinander.')) + '</div>');
         },
 
         draw: function (d) {
@@ -634,9 +883,9 @@
                 ? { top: 50, right: 60, bottom: 40, left: panel.offsetWidth + 50 }
                 : { top: 40, right: 50, bottom: Math.min(panel.offsetHeight, document.getElementById('nMap').offsetHeight * 0.55) + 20, left: 30 };
             this.map.setLines([{ coords: geo, color: '#5FD6E6' }], { fit: true, padding: pad });
-            var ms = [{ lat: this.dest.lat, lng: this.dest.lng, kind: 'dest', label: '◎', title: this.dest.name }];
+            var ms = this.grundMarker(), et = PE.etappen(d);
             (d.stopps || []).forEach(function (st, i) {
-                ms.push({ lat: st.saeule.lat, lng: st.saeule.lon, kind: 'stop', label: String(i + 1), title: st.saeule.name });
+                ms.push({ lat: st.saeule.lat, lng: st.saeule.lon, kind: 'stop', label: (et.length ? 'L' : '') + (i + 1), title: st.saeule.name });
             });
             this.map.setMarkers(ms);
 
@@ -648,21 +897,13 @@
                 + '<div class="n-tile"><div class="k">' + esc(t('navi.arrive', 'Ankunft mit')) + '</div><div class="v ' + (arrive >= 20 ? 'ok' : 'warn') + '">' + fmt(arrive) + '<small>%</small></div></div>'
                 + '<div class="n-tile"><div class="k">' + esc(t('navi.stops', 'Ladestopps')) + '</div><div class="v">' + (d.stopps || []).length
                 + (cost ? '<small> · ' + fmt(cost, 2) + ' €</small>' : '') + '</div></div></div>';
+            if (et.length) h += this.etappenHtml(et);
             if (d.stopps && d.stopps.length) {
-                h += '<ul class="n-stops">';
-                d.stopps.forEach(function (st, i) {
-                    var s = st.saeule;
-                    var bl = PB.belegung(s);
-                    h += '<li><span class="no">' + (i + 1) + '</span><span>' + esc(s.name) + ' · ' + esc(s.kw || '?') + ' kW'
-                        + '<small>km ' + fmt(s.km_auf_route) + ' · ' + fmt(st.soc_vorher) + ' → ' + fmt(st.soc_nachher) + ' % · ~' + fmt(st.ladedauer_min) + ' min'
-                        + (s.preis_live_ct_kwh ? ' · ' + fmt(s.preis_live_ct_kwh) + ' ct/kWh' : '') + '</small>'
-                        + (bl ? '<small class="n-occ ' + (bl.frei > 0 ? 'ok' : 'warn') + '">'
-                            + esc(t('navi.stop_frei', '{f} von {p} Ladepunkten frei', { f: bl.frei, p: bl.ladepunkte }))
-                            + standHtml(PB.standMs(s.frei_stand_min == null ? null : s.frei_stand_min * 60, self.planEmpfangen))
-                            + '</small>' : '')
-                        + '</span></li>';
-                });
-                h += '</ul>';
+                if (!et.length) {
+                    h += '<ul class="n-stops">';
+                    d.stopps.forEach(function (st, i) { h += self.stopLi(st, String(i + 1)); });
+                    h += '</ul>';
+                }
                 // Pflicht-Namensnennung der Live-Quellen, nur wenn eine Belegung angezeigt wird
                 var lq = (d.live_quellen || []).filter(function (q) { return typeof q === 'string' && q; });
                 if (lq.length && d.stopps.some(function (st) { return PB.belegung(st.saeule); })) {
@@ -672,7 +913,7 @@
             (d.warnungen || []).filter(function (w) { return w.indexOf('deckt nicht alle') < 0; }).slice(0, 2).forEach(function (w) {
                 h += '<div class="n-warn">' + esc(w) + '</div>';
             });
-            h += this.sendHtml(d.stopps && d.stopps.length);
+            h += this.sendHtml(et.length > 1 ? 'etappe' : (d.stopps && d.stopps.length));
             var turns = d.route.manoever || [];
             if (turns.length) {
                 h += '<details class="n-turns"><summary>' + esc(t('navi.turns', 'Abbiegehinweise ({n})', { n: turns.length })) + '</summary><ol>';
@@ -686,14 +927,20 @@
         // ---------- Ziel ans Navi im Auto (BYD-Navi über /api/telenav/navigate;
         // ist das Auto aus, wird es beim nächsten Start angeboten)
         send: function (name, lat, lng, btn) {
-            if (!window.confirm(t('navi.confirm_send', '„{name}“ ans Navi im Auto schicken?', { name: name }))) return;
+            var imNavi = imAuto();   // am Auto-Display wird im Navi gestartet, nichts ans Auto geschickt
+            frage(imNavi ? t('navi.frage_werk_titel', 'Im Werksnavi starten') : t('navi.frage_send_titel', 'Ziel ins Auto'),
+                  imNavi ? t('navi.confirm_send_display', 'Navigation zu „{name}“ starten?', { name: name })
+                         : t('navi.confirm_send', '„{name}“ ans Navi im Auto schicken?', { name: name }),
+                  imNavi ? t('navi.send_display', 'Starten') : t('navi.frage_send_ja', 'Schicken'), false).then(function (ja) {
+            if (!ja) return;
             if (btn) btn.disabled = true;
             post('/api/telenav/navigate', { name: name, lat: lat, lng: lng, replace: true }).then(function (d) {
                 var ok = !!(d && d.success);
-                toast(ok ? (d.queued ? t('navi.queued', 'Auto ist aus – das Ziel wird beim nächsten Start angeboten.') : t('navi.sent', 'Ziel ist im Navi des Autos.'))
-                         : ((d && (d.error || d.message)) || t('navi.send_fail', 'Konnte das Ziel nicht ans Auto schicken.')), ok);
-            }).catch(function () { toast(t('navi.send_fail', 'Konnte das Ziel nicht ans Auto schicken.'), false); })
+                toast(ok ? (d.queued ? t('navi.queued', 'Auto ist aus – das Ziel wird beim nächsten Start angeboten.') : (imNavi ? t('navi.sent_display', 'Navigation läuft.') : t('navi.sent', 'Ziel ist im Navi des Autos.')))
+                         : ((d && (d.error || d.message)) || (imNavi ? t('navi.send_fail_display', 'Konnte die Navigation nicht starten.') : t('navi.send_fail', 'Konnte das Ziel nicht ans Auto schicken.'))), ok);
+            }).catch(function () { toast(imNavi ? t('navi.send_fail_display', 'Konnte die Navigation nicht starten.') : t('navi.send_fail', 'Konnte das Ziel nicht ans Auto schicken.'), false); })
               .then(function () { if (btn) btn.disabled = false; });
+            });
         },
 
         // ---------- Ladesäulen rund ums Auto (live belegt/frei, wo der Planer Live-Daten hat)
@@ -779,7 +1026,7 @@
             Array.prototype.forEach.call(box.querySelectorAll('li[data-i]'), function (li) {
                 li.onclick = function () {
                     var s = ziele[+li.getAttribute('data-i')];
-                    if (s) self.choose({ name: s.name, full: s.adresse || s.name, lat: s.lat, lng: s.lon });
+                    if (s) self.pick({ name: s.name, full: s.adresse || s.name, lat: s.lat, lng: s.lon }, 'saeule');
                 };
             });
         },
@@ -794,7 +1041,7 @@
             });
             // Tippen auf die Karte setzt das Ziel dorthin.
             this.map.onClick(function (ll) {
-                self.choose({ name: t('navi.pin', 'Punkt auf der Karte'), full: ll.lat.toFixed(5) + ', ' + ll.lng.toFixed(5), lat: ll.lat, lng: ll.lng });
+                self.pick({ name: t('navi.pin', 'Punkt auf der Karte'), full: ll.lat.toFixed(5) + ', ' + ll.lng.toFixed(5), lat: ll.lat, lng: ll.lng }, 'karte');
             });
             $('nQuery').addEventListener('input', function () {
                 var q = this.value.trim();
@@ -804,7 +1051,12 @@
                 if (self.istLink(q)) { self.searchGen++; self.linkZiel(q, false); return; }
                 self.searchTimer = setTimeout(function () { self.search(q); }, 350);
             });
-            $('nClear').onclick = function () { self.clear(); };
+            // × leert beim Hinzufügen nur die Suche (Ziel und Liste bleiben), sonst wie bisher das Ziel
+            $('nClear').onclick = function () {
+                if (!self.viaNeu) { self.clear(); return; }
+                self.searchGen++; $('nResults').innerHTML = ''; $('nQuery').value = ''; $('nClear').hidden = true;
+            };
+            this.viaZeigen();
             $('nArrive').onchange = function () { if (self.dest) self.route(); };
             // „Ankommen mit mind.“ aus laden.ankunftSocMin vorbelegen (vom Auto; null = Standard des Planers)
             if (window.PanoptesEinstellungen) PanoptesEinstellungen.laden().then(function (st) {
@@ -835,7 +1087,7 @@
             if (!fav.length) return;
             fav.forEach(function (o) {
                 var b = document.createElement('button'); b.type = 'button'; b.textContent = '★ ' + o.name;
-                b.onclick = function () { N.choose({ name: o.name, full: o.name, lat: o.lat, lng: o.lon }); };
+                b.onclick = function () { N.pick({ name: o.name, full: o.name, lat: o.lat, lng: o.lon }, 'fav'); };
                 box.appendChild(b);
             });
             box.hidden = false;
@@ -844,6 +1096,7 @@
         $('nQuery').placeholder = t('navi.where', 'Wohin?');
         UW.start();
         PR.start();
+        FU.start();
         setInterval(function () { PB.auffrischen(document, t); }, 30000);   // „Stand vor x min“ mitlaufen lassen
     });
 })();

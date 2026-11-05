@@ -6,7 +6,7 @@ Panoptes ist eine kostenlose Community-App für BYD-Autos mit DiLink 3, 4 und 5.
 
 Hier liegt der Quellcode. Fertige Versionen zum Herunterladen gibt es unter **[Releases](https://github.com/samuelvoltarius/panoptes/releases/latest)**. Mehr zum Projekt und die Installationsanleitung: **[byd.serveone.at/panoptes/](https://byd.serveone.at/panoptes/)**.
 
-Dieser Stand entspricht genau dem Release **v0.1.38.9** (interner Commit `80a5b30`).
+Dieser Stand entspricht genau dem Release **v0.1.38.10** (interner Commit `deabb40`).
 
 <p>
   <img src="screenshots/start-display-dunkel.webp" alt="Startseite am Bildschirm im Auto" width="66%">
@@ -19,22 +19,24 @@ Dieser Stand entspricht genau dem Release **v0.1.38.9** (interner Commit `80a5b3
 
 ## Was Panoptes kann
 
-- **Am Bildschirm im Auto.** Panoptes läuft als eigene App im Vollbild, mit großen Tasten und einer Zurück-Taste. Während der Fahrt sind Einstellungen gesperrt; Start, Karte und Wächter bleiben erreichbar. Die Oberfläche passt sich an verschiedene Bildschirmgrößen an, auch im Hochformat.
-- **Wächter mit KI-Erkennung.** Wenn dein Auto geparkt ist, achten die Kameras auf das Umfeld. Bei der Einrichtung wählst du selbst, wann aufgenommen wird: nur bei Erschütterung, mit KI-Erkennung überall oder mit KI-Erkennung nur an deinen privaten Orten wie Garage oder Einfahrt. Damit die Batterien geschont werden, legt sich der Wächter auf Wunsch schlafen, zum Beispiel bei wenig Ladestand oder schwacher Starterbatterie.
+- **Am Bildschirm im Auto.** Panoptes läuft als eigene App im Vollbild, mit großen Tasten und einer Zurück-Taste. Während der Fahrt sind Einstellungen gesperrt; Start, Navigation, Karte und Wächter bleiben erreichbar. Beim Start zeigt Panoptes je Dienst (Zugang, Oberfläche, Wächter, Telegram und Brücke), ob er schon bereit ist. Die Oberfläche passt sich an verschiedene Bildschirmgrößen an, auch im Hochformat.
+- **Wächter mit KI-Erkennung.** Wenn dein Auto geparkt ist, achten die Kameras auf das Umfeld. Der Wächter ist standardmäßig an und nimmt dann nur bei Erschütterung auf. Er läuft erst, wenn du den Rechtshinweis einmal bestätigt hast. Umstellen kannst du jederzeit: nur bei Erschütterung, mit KI-Erkennung überall oder mit KI-Erkennung nur an deinen privaten Orten wie Garage oder Einfahrt. Damit die Batterien geschont werden, legt sich der Wächter auf Wunsch schlafen, zum Beispiel bei wenig Ladestand oder schwacher Starterbatterie.
 - **Fernzugang.** Über Tailscale erreichst du dein Auto von überall. Die Einrichtung läuft über einen QR-Code am Bildschirm im Auto, du verbindest es mit deinem eigenen Tailscale-Konto. Kann Panoptes die Schutzregel für den Fernzugang nicht setzen, schaltet es den Fernzugang ab, statt ihn ungesichert offen zu lassen.
 - **Telegram-Meldungen.** Ein eigener Bot meldet dir, was am Auto passiert: Wächter-Ereignisse, Laden, schwache Starterbatterie, Reifendruck, Updates. Jede Meldungsart lässt sich einzeln ein- und ausschalten. Für die Nacht gibt es eine Ruhezeit. Bilder und Videos schickt der Bot nur, wenn du das ausdrücklich einschaltest.
 - **Handy-Meldungen ohne Telegram.** Meldungen direkt aufs Handy brauchen eine HTTPS-Adresse. Mit Tailscale schaltet Panoptes dafür auf Wunsch HTTPS in deinem eigenen Tailnet ein: Dein Auto bekommt eine Adresse unter ts.net, die nicht öffentlich ist. Ohne Tailscale brauchst du eine eigene feste HTTPS-Adresse; Telegram geht immer.
 - **Karte mit Ladesäulen.** Du wählst selbst, woher die Karte kommt: vom Community-Server des Projekts (mit Gelände und freien Ladeplätzen, wo Betreiber Daten liefern), von OpenStreetMap oder gar nicht. Solange du nichts wählst, bleibt die Karte leer.
+- **Navigation.** Unter **Navi & Fahrten** (Platz 2 in der Leiste) planst du direkt im Auto: Ziel suchen, bis zu 5 Zwischenstopps mit Aufenthalt und „Hier laden“, Reihenfolge mit ↑ und ↓. Panoptes rechnet nötige Ladestopps dazu und zeigt jede Etappe mit dem Akku bei Ankunft. Während der Fahrt nimmst du Stopps nur aus Favoriten oder „Säulen in der Nähe“, gesucht wird nur im Stand. Am Bildschirm im Auto öffnet „Starten“ die Panoptes-Karte mit Vorschau, Panoptes führt dich dann selbst (neu, wird im Auto gerade erst erprobt). „Im Werksnavi öffnen“ bleibt als zweiter Knopf; das BYD-Navi kennt nur ein Ziel und bekommt die Etappen nacheinander. Die Panoptes-Karte spricht nur, wenn du **Navi: Sprachansagen** einschaltest (Standard aus).
 - **„Reicht es noch?“** Wenn du eine Route aus dem Routenplaner geladen hast, sagt dir Panoptes unterwegs, ob der Akku bis zum nächsten Stopp reicht. Bei Bedarf schlägt es einen Ladestopp vor.
 - **Monatsbericht.** Gefahrene Kilometer, Verbrauch, Laden und Kosten, Standverlust und Wächter-Ereignisse eines Monats auf einen Blick, auch zum Drucken. Gerechnet wird im Auto.
 - **Fahrten und Laden.** Fahrten, Verbrauch und Ladekosten werden im Auto mitgeschrieben und übersichtlich angezeigt.
 - **Verbindung zum Routenplaner.** Panoptes lässt sich mit deinem Konto auf [byd.serveone.at/ev/](https://byd.serveone.at/ev/) verbinden. Du lässt dir am Auto einen Code anzeigen und bestätigst ihn am Handy. Die Verbindung lässt sich jederzeit trennen.
 - **EV-Cockpit am PC.** Das [EV-Cockpit](https://byd.serveone.at/ev-cockpit/) ist ein PC-Programm. Es zeigt Daten von Panoptes an und kann die Einstellungen von dort aus ändern. Das Koppeln bestätigst du mit einem Tipp und einer vierstelligen Prüfzahl.
 - **Ehrlicher Verbindungsstatus.** Bei MQTT bzw. Smart Home siehst du, ob die Verbindung steht, gerade neu aufgebaut wird (mit ungefährer Zeit bis zum nächsten Versuch) oder aus ist.
-- **Updates in der App.** Panoptes sucht auf Wunsch selbst nach neuen Versionen. Installiert wird nur, wenn das Auto steht und die Zündung aus ist.
+- **Updates in der App.** Panoptes sucht auf Wunsch selbst nach neuen Versionen. Von selbst installiert es nur, wenn das Auto mindestens 10 Minuten aus ist. Ein Update, das du selbst startest, geht auch mit Zündung an, aber nur in P und nie während der Fahrt.
 - **Fünf Sprachen.** Deutsch, Englisch, Französisch, Italienisch und Niederländisch.
-- **Protokoll.** Unter **System → Verbindungen** steht, welches gekoppelte Gerät wann was gemacht hat. Ein gekoppeltes Handy sieht seine eigenen Einträge.
+- **Protokoll.** Unter **Einstellungen → Alle Einstellungen → Protokoll** steht, welches gekoppelte Gerät wann was gemacht hat. Ein gekoppeltes Handy sieht seine eigenen Einträge.
 - **Home Assistant.** Home Assistant lässt sich als eigenes Gerät koppeln. Du bestätigst es am Bildschirm im Auto mit einer vierstelligen Prüfzahl.
+- **Besitzer-Handy und Rechte.** Ein gekoppeltes Handy kann Besitzer-Handy werden: Es darf Panoptes ganz einstellen, neue Geräte koppeln und den Wächter schalten, aber nicht an den Fernzugang. Hat Panoptes beim Update selbst ein Besitzer-Handy gewählt, fragt es einmal nach, ob das stimmt. Aktionen, die man außen am Auto sieht oder hört (Hupe, Licht, Warnblinker, Auto finden), sowie Auf- und Zusperren, Klima und Wallbox sind standardmäßig aus. Diese Rechte vergibst du nur direkt am Bildschirm im Auto, nie aus der Ferne. Wegnehmen geht überall.
 
 ## Screenshots
 
@@ -75,21 +77,23 @@ Alle Bilder zeigen Musterdaten, keine echten Fahrzeugdaten.
 1. **App herunterladen.** Unter **[Releases](https://github.com/samuelvoltarius/panoptes/releases/latest)** die neueste Datei `panoptes-….apk` laden und die sha256-Prüfsumme vergleichen.
 2. **Auf das Auto bringen und installieren.** Wie das geht (USB-Stick, unbekannte Quellen erlauben), steht auf der [Projektseite](https://byd.serveone.at/panoptes/#installieren).
 3. **Ersten Start durchgehen.** Panoptes führt dich durch die Einrichtung:
-   - **Autostart:** Damit Panoptes nach dem Einsteigen von selbst läuft, muss es in der BYD-App-Verwaltung erlaubt sein. Panoptes öffnet die richtige Seite für dich. BYD setzt diesen Schalter nach jedem Update zurück, Panoptes erinnert dich dann. Auf DiLink 5 entfällt der Schritt.
+   - **Autostart:** Damit Panoptes nach dem Einsteigen von selbst läuft, muss es in der BYD-App-Verwaltung erlaubt sein. Panoptes öffnet die richtige Seite für dich. BYD setzt diesen Schalter bei jeder Installation zurück. Nach einem Update schaltet Panoptes ihn selbst wieder ein; dafür erscheint die BYD-Seite kurz am Bildschirm. Klappt das nicht, zeigt die Startseite den Knopf „Autostart wieder einschalten“, und du bekommst einmal eine Nachricht. Auf DiLink 5 entfällt der Schritt.
    - **Über anderen Apps anzeigen:** nötig für Hinweise am Bildschirm.
    - **Freigabe für Panoptes:** Android fragt einmal „USB-Debugging zulassen?“. Wähle **„Immer von diesem Gerät zulassen“**. Damit kann Panoptes im Hintergrund arbeiten.
    - **Fernzugang:** QR-Code am Bildschirm im Auto mit dem Handy scannen und bei Tailscale anmelden.
    - **Fahrzeug und Kameras:** Modell und Akkugröße auswählen, dann die Kameras prüfen.
-   - **Hinweise bestätigen** und beim Wächter **selbst wählen**, wann aufgenommen wird. Hier gibt es keine Vorauswahl.
-4. **Am Handy oder PC öffnen.** Rufe die Adresse deines Autos im Browser auf (über Tailscale). Zum Anmelden brauchst du den **Zugangscode**, den du in der App am Auto unter **Start → Zugangscode** findest.
-5. **Andere Geräte koppeln (optional).** Unter **System → Gerät koppeln** erlaubst du zum Beispiel dem EV-Cockpit den Zugriff. Gekoppelte Geräte kommen nicht an Fernzugang, Passwort oder Anschlüsse und lassen sich jederzeit wieder entfernen.
+   - **Hinweise bestätigen.** Der Wächter ist vorgeschlagen: an, Aufnahme nur bei Erschütterung. Mit einem Tipp bestätigst du den Rechtshinweis. KI-Erkennung schaltest du selbst dazu.
+4. **Am Handy oder PC öffnen.** Rufe die Adresse deines Autos im Browser auf (über Tailscale). Zum Anmelden brauchst du den **Zugangscode**. Du findest ihn am Bildschirm im Auto unter **Einstellungen → Erweitert (alt) → Dein Zugangscode**. Ist Telegram eingerichtet, geht die Anmeldung auch per Telegram mit einer Prüfzahl.
+5. **Andere Geräte koppeln (optional).** Unter **Einstellungen → Alle Einstellungen → Gerät koppeln** erlaubst du zum Beispiel dem EV-Cockpit den Zugriff. Gekoppelte Geräte kommen nicht an Fernzugang, Passwort oder Anschlüsse und lassen sich jederzeit wieder entfernen.
 
 ## Updates
 
-> **Wer 0.1.14.1 hat:** Installiere die aktuelle Version (0.1.38.9) **einmal von Hand**, genau wie beim ersten Mal (deine Daten bleiben erhalten). 0.1.14.1 kann sich nicht selbst auf 0.1.15 bringen, weil Panoptes ab 0.1.15 mit einem neuen, dauerhaften Schlüssel signiert ist (APK-Signaturschema v3 mit Herkunftsnachweis vom alten Schlüssel). Ab 0.1.15 kommen Updates automatisch aus diesem Repository.
+> **Wer 0.1.14.1 hat:** Installiere die aktuelle Version (0.1.38.10) **einmal von Hand**, genau wie beim ersten Mal (deine Daten bleiben erhalten). 0.1.14.1 kann sich nicht selbst auf 0.1.15 bringen, weil Panoptes ab 0.1.15 mit einem neuen, dauerhaften Schlüssel signiert ist (APK-Signaturschema v3 mit Herkunftsnachweis vom alten Schlüssel). Ab 0.1.15 kommen Updates automatisch aus diesem Repository.
 
 - Neue Versionen erscheinen unter **[Releases](https://github.com/samuelvoltarius/panoptes/releases)**, mit einer kurzen Liste, was neu ist.
-- Unter **System → App-Updates** kannst du direkt nach neuen Versionen suchen und wählen, ob Panoptes nur meldet oder selbst installiert. Installiert wird nur, wenn das Auto steht und die Zündung aus ist. Läuft eine neue Version nicht sauber, kehrt Panoptes von selbst zur vorigen zurück.
+- Unter **Einstellungen → Alle Einstellungen → App-Updates** kannst du direkt nach neuen Versionen suchen und wählen, ob Panoptes nur meldet oder selbst installiert.
+- **Wann installiert wird:** nie während der Fahrt. Von selbst nur, wenn das Auto mindestens 10 Minuten aus ist. Startest du ein Update selbst (dort, am Bildschirm im Auto, in Telegram oder am Handy), geht es sofort, wenn das Auto in P steht und der Wächter gerade nicht aufnimmt, auch mit Zündung an. Sonst merkt Panoptes es vor und installiert etwa 10 Minuten nach dem Abstellen. Während des Updates ist der Wächter ein paar Minuten aus. Läuft eine neue Version nicht sauber, kehrt Panoptes von selbst zur vorigen zurück.
+- **Mobilfunk:** Updates dürfen standardmäßig auch über Mobilfunk laden, weil viele Autos nur die SIM haben. Schaltest du das aus, lädt Panoptes nur im WLAN oder fragt dich vor diesem einen Download. Der Panoptes Launcher folgt derselben Regel.
 - Nach einem Update zeigt Panoptes einmal an, was neu ist. Ändert sich die Software deines Autos (BYD-Update), gibt es einen Hinweis.
 
 ## Datenschutz: was wohin geht
@@ -99,7 +103,7 @@ Grundsatz: Deine Aufnahmen, Fahrten und Positionen bleiben im Auto. Panoptes sch
 | Wohin | Was | Wann |
 |---|---|---|
 | **Im Auto** (USB-Stick, App) | Wächter-Aufnahmen, Fahrtenbuch, Ladeverlauf, Monatsbericht, Einstellungen | immer. Bei neuer Einrichtung löscht Panoptes Aufnahmen nach 72 Stunden, einzelne kannst du behalten. |
-| **Kartenquelle** (Community-Server byd.serveone.at oder OpenStreetMap Deutschland) | Deine IP-Adresse und der Kartenausschnitt, also ungefähr, wo dein Auto steht. Beim Community-Server zusätzlich die Abfrage freier Ladeplätze für den Ausschnitt. | erst, wenn du unter **System → Kartenquelle** eine Quelle wählst. Am Bildschirm im Auto gilt die Wahl fürs ganze Auto; Handy und PC fragen getrennt. |
+| **Kartenquelle** (Community-Server byd.serveone.at oder OpenStreetMap Deutschland) | Deine IP-Adresse und der Kartenausschnitt, also ungefähr, wo dein Auto steht. Beim Community-Server zusätzlich die Abfrage freier Ladeplätze für den Ausschnitt. | erst, wenn du unter **Einstellungen → Alle Einstellungen → Kartenquelle** eine Quelle wählst. Am Bildschirm im Auto gilt die Wahl fürs ganze Auto; Handy und PC fragen getrennt. |
 | **Telegram** | Meldungstexte; Bilder und Videos nur, wenn du das einschaltest (dann liegen sie auf den Servern von Telegram) | nur, wenn du einen Bot einrichtest |
 | **Tailscale** | Verbindung für den Fernzugang | nur, wenn du den Fernzugang einrichtest |
 | **Zertifikat für HTTPS im Tailnet** (Let’s Encrypt) | Gerätename und Tailnet-Name werden in öffentlichen Zertifikats-Verzeichnissen sichtbar | nur, wenn du für Handy-Meldungen HTTPS im Tailnet einschaltest |

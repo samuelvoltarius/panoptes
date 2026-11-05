@@ -1,15 +1,26 @@
 package at.greenchili.surfmate.ui.daemon
 
 /**
- * 0.1.38.8 Schnellstart: wann der Kamera-Daemon (er bedient den Webserver :8180) gestartet wird.
+ * Wann und in welcher Reihenfolge der Daemon-Stapel startet. EINE Quelle (0.1.38.10: ersetzt auch die alte, nur vom
+ * Test benutzte DaemonBootSchedule). Den Zustand je Stufe hält [StartStatus] (EINE Stelle, Leser: Ladebildschirm und
+ * `GET /api/start/status`).
  *
+ * <h3>Boot-Schutz (0.1.38.8)</h3>
  * Die 45 s "System stabilisieren" stammen aus dem Ursprungsprojekt (Overdrive, 04/2026): zuerst eine Verzögerung der
  * GPU-Pipeline im Daemon, "damit BYD-Kamera-Apps ihre EGL-Flächen zuerst bekommen", dann als fester Aufschub des
  * ganzen Daemon-Starts. Der Grund gilt für den Boot des Kopfgeräts. Deshalb zählen die 45 s ab Boot
  * (SystemClock.elapsedRealtime = Zeit seit dem Boot): Läuft das Gerät schon länger, startet der Kamera-Daemon sofort
- * (nach [MIN_MS]); nach dem Boot wird nur der Rest abgewartet. Die Übergabe Boot-Manager → MainActivity startet damit
- * keine neue Uhr: wer 30 s nach dem Boot öffnet, wartet noch 15 s statt 45 s.
- * Sentry und ACC-Sentry folgen weiter 5/10 s nach der Kamera, optionale Daemons und Health-Check später.
+ * (nach [MIN_MS]); nach dem Boot wird nur der Rest abgewartet.
+ *
+ * <h3>Stufen (0.1.38.10, Projektinhaber: Oberfläche zuerst, dann Schritt für Schritt)</h3>
+ * 1. [StartStufe.ZUGANG] eigenes tailscaled, NUR wenn `daemons.tailscale` an ist (sonst gibt es die Stufe nicht). Nie
+ *    hinter etwas anderes gestellt, sonst sperren wir uns aus. Es wird nur ausgelöst, die Bereitschaft nicht abgewartet.
+ * 2. [StartStufe.OBERFLAECHE] Kamera-Daemon = Webserver :8180 und Oberfläche. Wartet auf die Antwort von :8180.
+ * 3. [StartStufe.WAECHTER] Sentry und ACC-Sentry, wartet auf deren Prozesse.
+ * 4. [StartStufe.REST] Telegram, WireGuard, Rest (Brücke/MQTT stecken im Kamera-Daemon). Nur ausgelöst, und nur wenn
+ *    mindestens einer davon an ist.
+ * Kein Schritt wartet mit einer festen Pause auf den vorigen, nur auf dessen Bereitschaftsprüfung (mit Zeitlimit).
+ * Alle Stufen warten, bis ein laufender Hard-Reset durch ist (Stufe −1, [at.greenchili.surfmate.updater.HardResetTor]).
  * Reine Funktionen, ohne Android – JVM-testbar.
  */
 object DaemonStartPlan {
@@ -19,9 +30,51 @@ object DaemonStartPlan {
     /** Kürzeste Verzögerung (Daemon-Prozess und Hauptschleife dürfen sich setzen). */
     const val MIN_MS = 1_000L
 
-    /** Optionale Daemons und Health-Check bleiben so viel nach dem Kamera-Start wie bisher (60 s / 90 s minus 45 s). */
-    const val OPTIONAL_NACH_KAMERA_MS = 15_000L
+    /** Health-Check bleibt so viel nach dem Kamera-Start wie bisher (90 s minus 45 s). */
     const val HEALTH_NACH_KAMERA_MS = 45_000L
+
+    /** Abstand der Bereitschaftsprüfungen, die den Ablauf aufhalten. */
+    const val PRUEF_TAKT_MS = 500L
+
+    /** Abstand der Beobachtung bei Stufen, die den Ablauf nicht aufhalten (nur für die Anzeige). */
+    const val BEOBACHT_TAKT_MS = 2_000L
+
+    /** Einstellungen, aus denen die Reihenfolge folgt. */
+    class Einstellungen(@JvmField val tailscaleAn: Boolean, @JvmField val restAn: Boolean = true)
+
+    /**
+     * Reihenfolge aus den Einstellungen: Zugang nur mit eingeschaltetem Tailscale, sonst beginnt die Oberfläche; Rest
+     * nur, wenn Telegram oder WireGuard an ist.
+     */
+    @JvmStatic
+    fun stufen(e: Einstellungen): List<StartStufe> {
+        val l = ArrayList<StartStufe>()
+        if (e.tailscaleAn) l.add(StartStufe.ZUGANG)
+        l.add(StartStufe.OBERFLAECHE)
+        l.add(StartStufe.WAECHTER)
+        if (e.restAn) l.add(StartStufe.REST)
+        return l
+    }
+
+    /**
+     * Wie lange der Ablauf auf die Bereitschaft dieser Stufe wartet, bevor er mit der nächsten weitermacht; 0 = nur
+     * auslösen, nie abwarten (Zugang: 10–40 s Startzeit von tailscaled sollen die Oberfläche nicht aufhalten).
+     */
+    @JvmStatic
+    fun zeitlimitMs(s: StartStufe): Long = when (s) {
+        StartStufe.ZUGANG -> 0L
+        StartStufe.OBERFLAECHE -> 60_000L
+        StartStufe.WAECHTER -> 20_000L
+        StartStufe.REST -> 0L
+    }
+
+    /** Wie lange eine nicht aufhaltende Stufe nur beobachtet wird (danach „startet nicht“ in der Anzeige). */
+    @JvmStatic
+    fun beobachtungMs(s: StartStufe): Long = when (s) {
+        StartStufe.ZUGANG -> 60_000L
+        StartStufe.REST -> 30_000L
+        else -> 0L
+    }
 
     /** @param geraeteLaufzeitMs Zeit seit dem Boot des Geräts (SystemClock.elapsedRealtime) */
     @JvmStatic

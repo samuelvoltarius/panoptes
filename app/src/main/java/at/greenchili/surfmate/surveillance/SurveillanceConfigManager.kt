@@ -56,6 +56,7 @@ class SurveillanceConfigManager(
         private const val KEY_PRE_RECORD_SECONDS = "preRecordSeconds"
         private const val KEY_POST_RECORD_SECONDS = "postRecordSeconds"
         private const val KEY_TG_SEND_START_PING = "telegramSendStartPing"
+        private const val KEY_VORBEIGEHEN_LEISE = "vorbeigehenLeise"
         // KEY_TG_NOTICES / KEY_TG_ALERTS / KEY_TG_CRITICAL moved to the
         // telegram section as tier{Notices,Alerts,Critical} — see
         // UnifiedTelegramConfig. Kept out of this section so a stale write
@@ -195,6 +196,7 @@ class SurveillanceConfigManager(
             put(KEY_PRE_RECORD_SECONDS, config.preRecordSeconds)
             put(KEY_POST_RECORD_SECONDS, config.postRecordSeconds)
             put(KEY_TG_SEND_START_PING, config.isTelegramSendStartPing)
+            put(KEY_VORBEIGEHEN_LEISE, config.isVorbeigehenLeise)
             // tierNotices/tierAlerts/tierCritical now live on the telegram
             // section (see UnifiedTelegramConfig). Skipped here.
             
@@ -292,6 +294,8 @@ class SurveillanceConfigManager(
         if (json.has(KEY_POST_RECORD_SECONDS)) config.setPostRecordSeconds(json.optInt(KEY_POST_RECORD_SECONDS, 10))
         if (json.has(KEY_TG_SEND_START_PING))
             config.setTelegramSendStartPing(json.optBoolean(KEY_TG_SEND_START_PING, false))
+        if (json.has(KEY_VORBEIGEHEN_LEISE))
+            config.setVorbeigehenLeise(json.optBoolean(KEY_VORBEIGEHEN_LEISE, true))
         // tierNotices/tierAlerts/tierCritical now live on the telegram
         // section (UnifiedTelegramConfig). UnifiedTelegramConfig.load() runs
         // a one-shot migration that copies the old surveillance.telegram*

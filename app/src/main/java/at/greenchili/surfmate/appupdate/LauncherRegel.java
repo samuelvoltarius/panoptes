@@ -6,8 +6,9 @@ package at.greenchili.surfmate.appupdate;
  * <p>Anders als das Panoptes-Update stoppt eine Launcher-Installation keine Daemons, darum braucht sie nicht „Auto
  * aus“. Es gilt dasselbe wie für jedes Bedienen im Launcher: nicht während der Fahrt (Tempo &gt; 0, Gang bekannt und
  * nicht P, oder eine Fahrsperre mit belegtem Grund). Ein unbekannter Zustand ohne Bewegungshinweis sperrt nicht,
- * sonst ginge es auf Autos ohne lesbares ACC nie. Ohne WLAN nur mit Einwilligung für genau diesen Download
- * (Rückfrage mit Größe, auch wenn {@code update.mobilfunk} an ist). Installiert wird nur auf Tipp, nie von selbst.
+ * sonst ginge es auf Autos ohne lesbares ACC nie. Mobilfunk wie beim Panoptes-Update ({@link UpdateRegel#wartetWlan},
+ * 0.1.38.10): {@code update.mobilfunk} an = auch über Mobilnetz, aus = nur im WLAN oder mit Einwilligung für genau
+ * diesen Download. Installiert wird nur auf Tipp, nie von selbst.
  */
 public final class LauncherRegel {
 
@@ -25,6 +26,8 @@ public final class LauncherRegel {
         public Boolean gangP;
         public double kmh = Double.NaN;
         public String netz = UpdateRegel.NETZ_UNBEKANNT;
+        /** {@code update.mobilfunk} aus (dieselbe Quelle wie {@link UpdateRegel.Lage#nurWlan}). */
+        public boolean nurWlan;
         public boolean laeuft;
     }
 
@@ -44,7 +47,7 @@ public final class LauncherRegel {
         if (l.laeuft) return LAEUFT_SCHON;
         String f = fahrt(l.fahrsperre, l.gangP, l.kmh);
         if (f != null) return f;
-        if (!mobil && !UpdateRegel.NETZ_WLAN.equals(l.netz)) return WARTET_WLAN;
+        if (UpdateRegel.wartetWlan(l.nurWlan, mobil, l.netz)) return WARTET_WLAN;
         return null;
     }
 

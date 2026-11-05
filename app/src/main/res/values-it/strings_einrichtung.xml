@@ -63,7 +63,7 @@
     <string name="einr_fehler_speichern">Salvataggio non riuscito. Riprova.</string>
     <string name="einr_fehler_verbindung">Panoptes non è ancora in esecuzione. Attendi un momento e riprova.</string>
     <string name="einr_unbekannter_schritt_titel">La configurazione non può continuare</string>
-    <string name="einr_unbekannter_schritt_text">Questa versione di Panoptes non conosce ancora il passaggio di configurazione «%1$s». Installa la versione più recente in Sistema → Aggiornamenti app, quindi riavvia la configurazione. Nulla è stato contrassegnato come completato.</string>
+    <string name="einr_unbekannter_schritt_text">Questa versione di Panoptes non conosce ancora il passaggio di configurazione «%1$s». Installa la versione più recente in Impostazioni → Tutte le impostazioni → Aggiornamenti dell’app, quindi riavvia la configurazione. Nulla è stato contrassegnato come completato.</string>
     <string name="einr_unbekannter_schritt_schliessen">Chiudi configurazione</string>
     <string name="einr_sprache_titel">Lingua</string>
     <string name="einr_sprache_text">Quale lingua deve usare Panoptes?</string>
@@ -107,12 +107,12 @@
     <string name="einr_stopp_stunden" formatted="true">dopo %1$s ore di sosta</string>
     <string name="einr_karte_internet">La mappa richiede internet.</string>
     <string name="einr_daten_titel">Condivisione dati</string>
-    <string name="einr_daten_text">Tutto è disattivato. Attiva solo ciò che vuoi condividere – puoi disattivarlo quando vuoi in Sistema → Condivisione dati.</string>
+    <string name="einr_daten_text">Tutto è disattivato. Attiva solo ciò che vuoi condividere – puoi disattivarlo quando vuoi in Impostazioni → Tutte le impostazioni → Condivisione dati.</string>
     <string name="einr_daten_keine">Panoptes non conosce ancora opzioni di condivisione dati qui.</string>
     <string name="einr_blitzer_aus">Lascia disattivato</string>
     <string name="einr_blitzer_an">Letto – attiva</string>
     <string name="einr_updates_frage_pruefen">Panoptes deve cercare gli aggiornamenti?</string>
-    <string name="einr_updates_pruefen_nein">Cerchi tu stesso in Sistema → Aggiornamenti app.</string>
+    <string name="einr_updates_pruefen_nein">Cerchi tu stesso in Impostazioni → Tutte le impostazioni → Aggiornamenti dell’app.</string>
     <string name="einr_extra_telegram_titel">Telegram</string>
     <string name="einr_extra_telegram_text">Messaggi dalla Sentinella e dall\'auto sul telefono, tramite il tuo bot Telegram. Funziona via Internet, senza programmi in più.</string>
     <string name="einr_extra_planer_titel">Collega il pianificatore di percorso</string>
@@ -133,7 +133,7 @@
     <string name="einr_rundgang_frage">Un breve tour di Panoptes?</string>
     <string name="einr_rundgang_ja">Sì, mostrami Panoptes</string>
     <string name="einr_extra_notzugang_titel">Accesso di emergenza per la manutenzione</string>
-    <string name="einr_extra_notzugang_text">Una seconda via separata nell’auto per la manutenzione, nel caso in cui l’accesso remoto normale smetta di funzionare. Passa dalla tua rete Tailscale: solo i dispositivi del tuo tailnet possono raggiungerla, e solo per la manutenzione, non l’interfaccia di Panoptes. Spento per impostazione predefinita. Puoi spegnerlo in qualsiasi momento in Sistema → Accesso di emergenza.</string>
+    <string name="einr_extra_notzugang_text">Una seconda via separata nell’auto per la manutenzione, nel caso in cui l’accesso remoto normale smetta di funzionare. Passa dalla tua rete Tailscale: solo i dispositivi del tuo tailnet possono raggiungerla, e solo per la manutenzione, non l’interfaccia di Panoptes. Spento per impostazione predefinita. Puoi spegnerlo in qualsiasi momento in Impostazioni → Tutte le impostazioni → Accesso di emergenza.</string>
     <!-- 0.1.22 Gewohnheiten (GEWOHNHEITEN_KONZEPT §2, Regel 2) -->
     <string name="einr_gewohnheiten_titel">Ricordare le abitudini?</string>
     <string name="einr_gewohnheiten_text">Panoptes nota ciò che fai spesso allo stesso modo, es. preriscaldare ogni mattina, e ti chiede se d’ora in poi deve farlo da solo. Resta solo nell’auto. Puoi spegnerlo o cancellare tutto in qualsiasi momento in Sistema.</string>

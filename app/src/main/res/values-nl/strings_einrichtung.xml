@@ -63,7 +63,7 @@
     <string name="einr_fehler_speichern">Opslaan is niet gelukt. Probeer het opnieuw.</string>
     <string name="einr_fehler_verbindung">Panoptes draait nog niet. Wacht even en probeer het opnieuw.</string>
     <string name="einr_unbekannter_schritt_titel">De configuratie kan niet doorgaan</string>
-    <string name="einr_unbekannter_schritt_text">Deze Panoptes-versie kent de configuratiestap ‘%1$s’ nog niet. Installeer onder Systeem → App-updates de nieuwste versie en start de configuratie daarna opnieuw. Er is niets als voltooid gemarkeerd.</string>
+    <string name="einr_unbekannter_schritt_text">Deze Panoptes-versie kent de configuratiestap ‘%1$s’ nog niet. Installeer onder Instellingen → Alle instellingen → App-updates de nieuwste versie en start de configuratie daarna opnieuw. Er is niets als voltooid gemarkeerd.</string>
     <string name="einr_unbekannter_schritt_schliessen">Configuratie sluiten</string>
     <string name="einr_sprache_titel">Taal</string>
     <string name="einr_sprache_text">Welke taal moet Panoptes gebruiken?</string>
@@ -107,12 +107,12 @@
     <string name="einr_stopp_stunden" formatted="true">na %1$s uur geparkeerd</string>
     <string name="einr_karte_internet">De kaart heeft internet nodig.</string>
     <string name="einr_daten_titel">Gegevens delen</string>
-    <string name="einr_daten_text">Alles staat uit. Zet alleen aan wat je wilt delen – je kunt het altijd weer uitzetten onder Systeem → Gegevens delen.</string>
+    <string name="einr_daten_text">Alles staat uit. Zet alleen aan wat je wilt delen – je kunt het altijd weer uitzetten onder Instellingen → Alle instellingen → Gegevens delen.</string>
     <string name="einr_daten_keine">Panoptes kent hier nog geen opties voor gegevens delen.</string>
     <string name="einr_blitzer_aus">Uit laten</string>
     <string name="einr_blitzer_an">Gelezen – aanzetten</string>
     <string name="einr_updates_frage_pruefen">Moet Panoptes naar updates zoeken?</string>
-    <string name="einr_updates_pruefen_nein">Je zoekt zelf onder Systeem → App-updates.</string>
+    <string name="einr_updates_pruefen_nein">Je zoekt zelf onder Instellingen → Alle instellingen → App-updates.</string>
     <string name="einr_extra_telegram_titel">Telegram</string>
     <string name="einr_extra_telegram_text">Meldingen van de Bewaker en de auto op je telefoon, via je eigen Telegram-bot. Werkt via internet, zonder extra programma.</string>
     <string name="einr_extra_planer_titel">Routeplanner koppelen</string>
@@ -133,7 +133,7 @@
     <string name="einr_rundgang_frage">Korte rondleiding door Panoptes?</string>
     <string name="einr_rundgang_ja">Ja, laat me Panoptes zien</string>
     <string name="einr_extra_notzugang_titel">Noodtoegang voor onderhoud op afstand</string>
-    <string name="einr_extra_notzugang_text">Een tweede, aparte weg in de auto voor onderhoud, voor het geval de normale toegang op afstand ooit niet meer werkt. Hij loopt via je eigen Tailscale-netwerk: alleen apparaten in je tailnet bereiken hem, en alleen voor onderhoud, niet de Panoptes-interface. Standaard uit. Je kunt hem altijd uitzetten onder Systeem → Noodtoegang.</string>
+    <string name="einr_extra_notzugang_text">Een tweede, aparte weg in de auto voor onderhoud, voor het geval de normale toegang op afstand ooit niet meer werkt. Hij loopt via je eigen Tailscale-netwerk: alleen apparaten in je tailnet bereiken hem, en alleen voor onderhoud, niet de Panoptes-interface. Standaard uit. Je kunt hem altijd uitzetten onder Instellingen → Alle instellingen → Noodtoegang.</string>
     <!-- 0.1.22 Gewohnheiten (GEWOHNHEITEN_KONZEPT §2, Regel 2) -->
     <string name="einr_gewohnheiten_titel">Gewoonten onthouden?</string>
     <string name="einr_gewohnheiten_text">Panoptes merkt wat je vaak op dezelfde manier doet, bv. elke ochtend voorverwarmen, en vraagt of het dat voortaan zelf moet doen. Het blijft alleen in de auto. Je kunt het altijd uitzetten of alles wissen onder Systeem.</string>

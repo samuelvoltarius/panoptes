@@ -242,6 +242,13 @@ public final class Katalog {
         Feld ansage = new Feld("planner.ansage", Feld.Typ.BOOL);
         ansage.gruppe = "system"; ansage.reihenfolge = 17; ansage.standard = false;
         l.add(ansage);
+        // 0.1.39 G5 (Regel A+): Sprachansagen der Panoptes-Führung nur auf Wunsch, Standard aus (Quelle NaviAnsagen).
+        // Hörbar im Auto → über Kopplungen nur lesen.
+        Feld naviSprache = new Feld(at.greenchili.surfmate.navmap.nav.NaviAnsagen.SCHLUESSEL, Feld.Typ.BOOL);
+        naviSprache.gruppe = "system"; naviSprache.reihenfolge = 18;
+        naviSprache.standard = at.greenchili.surfmate.navmap.nav.NaviAnsagen.STANDARD;
+        naviSprache.nurLesendExtern = true;
+        l.add(naviSprache);
         Feld member = new Feld("planner.memberToken", Feld.Typ.GEHEIM);
         member.nieExtern = true;   // 0.1.38.8 harte Ausnahme: nie über eine Kopplung
         member.gruppe = "system"; member.reihenfolge = 20; member.nurLesendExtern = true;

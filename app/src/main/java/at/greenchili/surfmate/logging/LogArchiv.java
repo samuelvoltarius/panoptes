@@ -276,9 +276,11 @@ public final class LogArchiv {
                         + "LA_N=${LA_F##*/}; echo \"${LA_N%%.*}\"; done | sort -u); do",
                 "    case \"$LA_ART\" in \"\"|*[!A-Za-z0-9_-]*) continue ;; esac",
                 "    LA_SUMME=0; LA_ANZ=0",
-                "    for LA_F in $(ls -t \"$LOGARCHIV\"/\"$LA_ART\".*.log 2>/dev/null); do",
-                "      LA_SZ=$(stat -c %s \"$LA_F\" 2>/dev/null || echo 0)",
-                "      LA_MT=$(stat -c %Y \"$LA_F\" 2>/dev/null || echo \"$LA_JETZT\")",
+                // 0.1.38.10 (HARDRESET 41 s am Auto): EIN stat für alle Dateien der Art (neueste zuerst) statt zwei
+                // Prozesse je Archivdatei; bei hunderten Dateien und einem Aufruf je Logdatei waren das tausende Forks.
+                "    LA_L=$(ls -t \"$LOGARCHIV\"/\"$LA_ART\".*.log 2>/dev/null)",
+                "    [ -n \"$LA_L\" ] || continue",
+                "    stat -c \"%s %Y %n\" $LA_L 2>/dev/null | while read LA_SZ LA_MT LA_F; do",
                 "      LA_SUMME=$((LA_SUMME + LA_SZ)); LA_ANZ=$((LA_ANZ + 1))",
                 "      if [ $((LA_JETZT - LA_MT)) -gt $((LA_TAGE * 86400)) ] || "
                         + "[ \"$LA_SUMME\" -gt $((LA_MB * 1048576)) ] || [ \"$LA_ANZ\" -gt " + MAX_DATEIEN + " ]; then",
@@ -295,11 +297,15 @@ public final class LogArchiv {
                 "  LA_ZIEL=\"$LOGARCHIV/$LA_ART.$LA_STEMPEL-$$-$LA_Z.log\"",
                 "  while [ -e \"$LA_ZIEL\" ]; do LA_Z=$((LA_Z + 1)); LA_ZIEL=\"$LOGARCHIV/$LA_ART.$LA_STEMPEL-$$-$LA_Z.log\"; done",
                 "}",
-                "log_archivieren() {",
+                // nur verschieben, ohne Aufräumen: viele Dateien nacheinander (Hard-Reset), danach EIN Aufräumen
+                "log_archivieren_nur() {",
                 "  [ -s \"$1\" ] || return 0",
                 "  mkdir -p \"$LOGARCHIV\" 2>/dev/null",
                 "  log_archiv_ziel \"$1\"",
                 "  mv -f \"$1\" \"$LA_ZIEL\" 2>/dev/null",
+                "}",
+                "log_archivieren() {",
+                "  log_archivieren_nur \"$1\"",
                 "  log_archiv_aufraeumen",
                 "}",
                 "log_kopieren_kuerzen() {",

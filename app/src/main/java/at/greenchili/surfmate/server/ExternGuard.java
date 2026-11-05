@@ -141,8 +141,16 @@ public final class ExternGuard {
             "/api/handy/v1/bruecke/aus",
             "/api/handy/v1/websitzung",   // 0.1.20 Weboberfläche in der Handy-App (HANDY_WEB_SITZUNG_VERTRAG)
             "/api/handy/v1/clips/behalten",   // 0.1.28 P5: im Auto behalten / Frist (Recht „kamera“ prüft der Handler)
-            "/api/navi/unterwegs/ablehnen"   // 0.1.38.6 (= UNTERWEGS_ABLEHNEN): Neuplanungs-Vorschlag verwerfen, nur mit Recht „route“ (noetigesRecht)
+            "/api/navi/unterwegs/ablehnen",   // 0.1.38.6 (= UNTERWEGS_ABLEHNEN): Neuplanungs-Vorschlag verwerfen, nur mit Recht „route“ (noetigesRecht)
+            "/api/navi/umkreis"   // 0.1.38.10 (= NAVI_UMKREIS): Säulen in der Nähe, Position setzt das Auto, nur mit Recht „route“
     )));
+
+    /**
+     * 0.1.38.10 (Koordination 05.11., handy-048): Favoriten des Autos ohne Koordinaten ({@code GET}, Art {@code handy},
+     * Recht {@code route}) und Säulen im Umkreis der eigenen, gerundeten Auto-Position ({@code POST}, das Handy schickt
+     * keine Position). Beide nur mit Recht „route“ ({@link #noetigesRecht}).
+     */
+    static final String ORTE = "/api/orte", NAVI_UMKREIS = "/api/navi/umkreis";
 
     /**
      * 0.1.38.6 „Reicht es noch?“: Der Fahrer (auch in der Handy-App) verwirft den Neuplanungs-Vorschlag. Nur für
@@ -155,7 +163,8 @@ public final class ExternGuard {
     static final Set<String> HANDY_LESEN = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             "/api/handy/v1/update",
             "/api/handy/v1/clips",
-            "/api/handy/v1/protokoll"   // 0.1.34 Befehls-Log: eigene Einträge, alle nur mit Recht „protokoll“
+            "/api/handy/v1/protokoll",   // 0.1.34 Befehls-Log: eigene Einträge, alle nur mit Recht „protokoll“
+            "/api/orte"   // 0.1.38.10 (= ORTE): nur Favoriten, ohne Koordinaten (OrteApiHandler), nur mit Recht „route“
     )));
 
     /**
@@ -300,7 +309,9 @@ public final class ExternGuard {
             return at.greenchili.surfmate.auth.Kopplungen.RECHT_DATEIEN;
         }
         if (p.equals(TACHO_AUSWAHL) || p.equals(TACHO_NORMAL)) return at.greenchili.surfmate.auth.Kopplungen.RECHT_TACHO;
-        if (p.equals(UNTERWEGS_ABLEHNEN)) return at.greenchili.surfmate.auth.Kopplungen.RECHT_ROUTE;
+        if (p.equals(UNTERWEGS_ABLEHNEN) || p.equals(ORTE) || p.equals(NAVI_UMKREIS)) {
+            return at.greenchili.surfmate.auth.Kopplungen.RECHT_ROUTE;
+        }
         if (p.equals(HA_GERAETE_PFAD)) return at.greenchili.surfmate.auth.Kopplungen.RECHT_GERAETE;
         if (p.equals(HA_GERAETE_ECHO_PFAD)) return at.greenchili.surfmate.auth.Kopplungen.RECHT_GERAETE_STEUERN;
         if (p.equals(LAUNCHER_LAYOUT_PFAD) || p.startsWith(LAUNCHER_LAYOUT_PFAD + "/") || p.equals(LAUNCHER_STAND_PFAD)) {

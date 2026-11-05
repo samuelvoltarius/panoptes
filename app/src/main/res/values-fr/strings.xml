@@ -221,7 +221,7 @@
     <string name="onboarding_mode_on_off_button">Toujours actif</string>
     <string name="onboarding_mode_on_only_button">Conduite uniquement</string>
     <string name="onboarding_update_title">Rechercher des mises à jour ?</string>
-    <string name="onboarding_update_body">Panoptes peut vérifier sur GitHub toutes les 6 heures s\'il existe une nouvelle version. GitHub voit alors l\'adresse IP de la voiture et l\'heure ; rien d\'autre n\'est envoyé. Rien n\'est installé sans vous : dans les réglages, vous choisissez si les mises à jour sont seulement signalées ou installées automatiquement voiture garée.\n\nVous pouvez changer cela à tout moment sous Système → Mises à jour.</string>
+    <string name="onboarding_update_body">Panoptes peut vérifier sur GitHub toutes les 6 heures s\'il existe une nouvelle version. GitHub voit alors l\'adresse IP de la voiture et l\'heure ; rien d\'autre n\'est envoyé. Rien n\'est installé sans vous : dans les réglages, vous choisissez si les mises à jour sont seulement signalées ou installées automatiquement voiture garée.\n\nVous pouvez changer cela à tout moment sous Réglages → Tous les réglages → Mises à jour de l’app.</string>
     <string name="onboarding_update_ja">Oui, rechercher</string>
     <string name="onboarding_update_nein">Non, ne pas rechercher</string>
     <string name="onboarding_update_speichert">Enregistrement de votre choix …</string>
@@ -339,6 +339,13 @@
     <string name="webview_loading">Un instant…</string>
     <string name="webview_camera_daemon_not_running">Le service caméra est arrêté</string>
     <string name="panoptes_startet">Panoptes démarre …</string>
+    <string name="start_dienst_zugang">Accès (Tailscale)</string>
+    <string name="start_dienst_oberflaeche">Interface</string>
+    <string name="start_dienst_waechter">Gardien</string>
+    <string name="start_dienst_rest">Telegram et pont</string>
+    <string name="start_zustand_startet">démarre …</string>
+    <string name="start_zustand_bereit">prêt</string>
+    <string name="start_zustand_startet_nicht">ne démarre pas</string>
     <string name="panoptes_startet_hinweis">La page se charge d\'elle-même dès que Panoptes est prêt.</string>
     <string name="panoptes_fremd_app">Une autre application d’outils BYD semble être active (%1$s). Deux telles applications se gênent, surtout pour la caméra. Ferme-la ou désactive-la, puis Panoptes démarre.</string>
     <string name="panoptes_startet_zu_lange">Panoptes ne répond pas encore.</string>
@@ -1131,8 +1138,8 @@
     <string name="roadsense_map_deleted_toast">Danger supprimé</string>
     <string name="roadsense_map_action_failed">État de la route ne répond pas. Réessayez.</string>
     <string name="roadsense_map_no_location">Recherche d\'un signal GPS…</string>
-    <string name="karte_keine_quelle">Aucune source de carte choisie. Sélectionnez-en une sous Système → Source de carte.</string>
-    <string name="karte_suche_hinweis">La recherche sur la carte interroge Photon, Nominatim et Overpass avec ton texte et ton lieu approximatif, sans identifiant. Désactiver sous Réglages → Confidentialité.</string>
+    <string name="karte_keine_quelle">Aucune source de carte choisie. Sélectionnez-en une sous Réglages → Tous les réglages → Source de carte.</string>
+    <string name="karte_suche_hinweis">La recherche sur la carte envoie seulement ton texte au planificateur d\'itinéraire Panoptes (notre serveur). Aucun identifiant n\'est envoyé. Désactiver sous Réglages → Confidentialité.</string>
     <string name="karte_suche_aus">La recherche sur Internet est désactivée. L\'activer sous Réglages → Confidentialité.</string>
     <string name="roadsense_map_search_hint">Où allez-vous ?</string>
     <string name="roadsense_map_search_action">Chercher</string>
@@ -1142,8 +1149,11 @@
     <string name="roadsense_map_pick_destination">Choisir une destination</string>
     <string name="roadsense_map_routing">Recherche d\'un itinéraire…</string>
     <string name="roadsense_map_route_failed">Aucun itinéraire trouvé. Réessayez.</string>
-    <string name="roadsense_map_need_key">Pour naviguer, ajoutez une clé de calcul d\'itinéraire dans les paramètres d\'État de la route.</string>
-    <string name="roadsense_map_route_key_rejected">La clé de calcul d\'itinéraire a été refusée. Vérifiez-la dans les paramètres d\'État de la route.</string>
+    <string name="roadsense_map_route_planer_verbinden">Pour naviguer, connectez Panoptes au planificateur d\'itinéraire : Réglages → Tous les réglages → Compte du planificateur d\'itinéraire → « Se connecter au planificateur d\'itinéraire ».</string>
+    <string name="roadsense_map_route_zu_oft">Trop de calculs d\'itinéraire d\'affilée. Veuillez patienter un instant.</string>
+    <string name="roadsense_map_fuehrung_keine_karte">La carte n\'a pas pu se charger, le guidage ne peut pas démarrer. Utilise la navigation de la voiture.</string>
+    <string name="roadsense_map_fuehrung_kein_standort">Pas de position – le guidage ne peut pas encore démarrer. Attends que la voiture connaisse sa position.</string>
+    <string name="roadsense_map_suche_fahrt">La recherche n\'est possible qu\'à l\'arrêt. En roulant, choisis un lieu enregistré ou récent.</string>
     <string name="roadsense_map_route_network">La connexion est trop lente pour trouver un itinéraire. Vérifiez votre internet et réessayez.</string>
     <string name="roadsense_map_route_http">Le service d\'itinéraire a rencontré un problème (%1$d). Réessayez bientôt.</string>
     <string name="roadsense_map_rerouting">Vous avez quitté l\'itinéraire. Recherche d\'un nouveau…</string>
@@ -1163,6 +1173,7 @@
     <string name="roadsense_map_3d_on">Bâtiments 3D affichés</string>
     <string name="roadsense_map_3d_off">Bâtiments 3D masqués</string>
     <string name="roadsense_map_poi_loading">Recherche de bornes de recharge et de stations-service…</string>
+    <string name="roadsense_map_poi_kommt">Les points le long de l\'itinéraire arrivent bientôt via notre propre service. D\'ici là, la carte n\'interroge aucun service tiers.</string>
     <string name="roadsense_map_poi_none">Aucun arrêt trouvé à proximité</string>
     <string name="roadsense_map_poi_need_route">Commencez par choisir une destination</string>
     <string name="roadsense_map_stop_added">Arrêt ajouté</string>

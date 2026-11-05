@@ -229,7 +229,7 @@ public class SelbstheilungTest {
             assertTrue(namen[i] + ": erst anhängen, dann das alte Log archivieren", archiv > marke);
             assertTrue(String.join("\n", z).contains("= \"" + namen[i] + "\""));
         }
-        assertEquals("Kamera-Skript (am Auto 227 Zeilen) + Anhänge-Modus", 248, kamera().size());
+        assertEquals("Kamera-Skript (am Auto 227 Zeilen) + Anhänge-Modus", 251, kamera().size());
     }
 
     /**

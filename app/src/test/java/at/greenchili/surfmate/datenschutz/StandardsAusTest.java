@@ -57,6 +57,7 @@ public class StandardsAusTest {
     public void proxyAltlastNurAlterWert() throws Exception {
         String d = Quelltext.lies(Paths.get("src/main/java/at/greenchili/surfmate/ui/daemon/DaemonStartupManager.kt"));
         assertTrue(d.contains("127.0.0.1:8219|localhost:8219) settings delete global http_proxy;; esac"));
-        assertTrue(d.contains("private fun startOptionalDaemonsFromPreferences() {\n        proxyAltlastAufraeumen()"));
+        // 0.1.38.10: der Start der übrigen Dienste heißt Stufe REST und räumt zuerst die Proxy-Altlast auf
+        assertTrue(d.contains("private fun restAusloesen() {\n        proxyAltlastAufraeumen()"));
     }
 }

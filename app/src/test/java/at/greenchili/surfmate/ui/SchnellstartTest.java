@@ -51,7 +51,6 @@ public class SchnellstartTest {
 
     @Test
     public void optionaleDienstePlanenSichRelativZurKamera() {
-        assertEquals(60_000L, DaemonStartPlan.BOOT_STABIL_MS + DaemonStartPlan.OPTIONAL_NACH_KAMERA_MS);
         assertEquals(90_000L, DaemonStartPlan.BOOT_STABIL_MS + DaemonStartPlan.HEALTH_NACH_KAMERA_MS);
     }
 
@@ -61,8 +60,7 @@ public class SchnellstartTest {
         assertFalse("keine feste 45-s-Verzögerung mehr", m.contains("}, 45000)"));
         assertFalse(m.contains("}, 60000)\n"));
         assertEquals("App-Start und Boot rechnen beide mit der Geräte-Laufzeit", 2, count(m, "DaemonStartPlan.kameraVerzoegerungMs(android.os.SystemClock.elapsedRealtime())"));
-        assertTrue(m.contains("postDelayed({ startCoreDaemons() }, kameraWarteMs)"));
-        assertTrue(m.contains("postDelayed({ startCoreDaemonsViaAdb() }, kameraWarteMs)"));
+        assertEquals("App-Start und Boot starten über denselben Stufen-Ablauf (0.1.38.10)", 2, count(m, "starteStufen(kameraWarteMs)"));
     }
 
     // ------------------------------------------------------------- V3

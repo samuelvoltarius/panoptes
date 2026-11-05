@@ -78,6 +78,53 @@ public final class NotificationGate {
         return shouldTelegram(maxSeverity(actors), cfg);
     }
 
+    /** 0.1.38.10 (Wächter-KI B2): unter dieser Sichtdauer gilt eine Person auf CLOSE als
+     *  „geht nah vorbei“. Feld 02.–04.11.: Vorbeigehende 0–4 s, Verweilende ≥ 8 s. */
+    public static final long VORBEIGEHEN_MAX_MS = 6_000L;
+
+    /**
+     * B2: Ob eine Person nur nah am Auto vorbeiging. Dann meldet der Wächter sie als NOTICE
+     * statt ALERT — Aufnahme, Ereignis und angezeigte Stufe bleiben unverändert.
+     * Nur ALERT auf CLOSE ohne Annäherung und kürzer als {@link #VORBEIGEHEN_MAX_MS};
+     * VERY_CLOSE/CRITICAL, Annäherung und Verweilen bleiben laut.
+     *
+     * @param sichtbarMs Sichtdauer über das GANZE Ereignis (erstes bis letztes Sehen). Die
+     *                   gemerkte Spitzen-Kopie eines Akteurs friert lastSeen beim Spitzenmoment
+     *                   ein und würde einen Verweilenden kurz aussehen lassen — darum liefert der
+     *                   Aufrufer die Dauer separat. {@code < 0} = unbekannt → nie dämpfen.
+     */
+    public static boolean istVorbeigehen(Actor a, long sichtbarMs) {
+        if (a == null || sichtbarMs < 0) return false;
+        return a.classGroup == Actor.ClassGroup.PERSON
+                && a.peakSeverity == Actor.Severity.ALERT
+                && a.peakProximity == Actor.Proximity.CLOSE
+                && a.trend != Actor.Trend.APPROACHING
+                && sichtbarMs < VORBEIGEHEN_MAX_MS;
+    }
+
+    /**
+     * B2: höchste Stufe für die MELDUNG. Wie {@link #maxSeverity}, aber ein nur nah
+     * vorbeigehender Mensch zählt als NOTICE. {@code sichtbarMs} liefert je Akteur die
+     * Sichtdauer über das Ereignis (oder -1, wenn unbekannt). Senkt nur ALERT auf NOTICE.
+     */
+    public static Actor.Severity maxSeverityGedaempft(java.util.List<Actor> actors,
+                                                      java.util.function.ToLongFunction<Actor> sichtbarMs) {
+        if (actors == null || actors.isEmpty()) return Actor.Severity.NOTICE;
+        Actor.Severity max = Actor.Severity.NOTICE;
+        for (Actor a : actors) {
+            if (a.peakSeverity == null) continue;
+            long dauer;
+            try {
+                dauer = sichtbarMs != null ? sichtbarMs.applyAsLong(a) : -1L;
+            } catch (RuntimeException e) {
+                dauer = -1L;  // im Zweifel laut lassen
+            }
+            Actor.Severity s = istVorbeigehen(a, dauer) ? Actor.Severity.NOTICE : a.peakSeverity;
+            if (s.ordinal() > max.ordinal()) max = s;
+        }
+        return max;
+    }
+
     public static Actor.Severity maxSeverity(java.util.List<Actor> actors) {
         if (actors == null || actors.isEmpty()) return Actor.Severity.NOTICE;
         Actor.Severity max = Actor.Severity.NOTICE;

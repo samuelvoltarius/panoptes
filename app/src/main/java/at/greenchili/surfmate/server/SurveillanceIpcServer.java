@@ -1737,6 +1737,10 @@ public class SurveillanceIpcServer implements Runnable {
                         config.optBoolean("telegramSendStartPing", false));
                 configChanged = true;
             }
+            if (config.has("vorbeigehenLeise")) {
+                sentryConfig.setVorbeigehenLeise(config.optBoolean("vorbeigehenLeise", true));
+                configChanged = true;
+            }
             // Per-tier filter is persisted on the telegram section now — see
             // UnifiedTelegramConfig.K_TIER_*. Don't flip configChanged: the
             // surveillance config is unaffected, and writing through

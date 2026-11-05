@@ -544,6 +544,60 @@
         "Het scherm loopt niet meer vast als je iets opslaat. Zonder netwerk toont de kaart meteen de reserveweergave.",
         "Menupaden in de app en Telegram kloppen weer (Instellingen in plaats van „Systeem”). De opmerking over de rijcamera bij DiLink 5 is rechtgezet."
       ]
+    },
+    {
+      "version": "0.1.38.10",
+      "versionCode": 74,
+      "de": [
+        "Navi & Fahrten steht im Menü jetzt an zweiter Stelle und öffnet gleich die Navigation. Am Bildschirm im Auto heißt der Knopf einfach „Starten“.",
+        "Die Navigation spricht nur noch, wenn du das willst. Die Sprachansagen sind ab Werk aus, du schaltest sie unter Einstellungen → Alle Einstellungen → Auto & Anzeige → Navigation ein.",
+        "Panoptes startet schneller und Schritt für Schritt, du siehst für jeden Dienst, ob er bereit ist. Der Launcher holt sein Update auch übers Mobilnetz, wenn du das erlaubt hast.",
+        "In der Navigation kannst du bis zu fünf Zwischenstopps eintragen. Für jede Etappe siehst du, wie viel Akku bei der Ankunft bleibt.",
+        "Die Weboberfläche in der Handy-App zeigt nur, was das Handy darf; Laden braucht das neue Recht „Laden im Auto“. Wichtige Besitzer-Aktionen vom Handy brauchen Fingerabdruck oder Face ID.",
+        "Wer nur nah am Auto vorbeigeht, kommt in Telegram als Hinweis statt als Alarm (nur mit „Wächter: Hinweise“). Abschalten: Wächter → Erweitert → Erkennung einstellen.",
+        "Der Wächter nimmt wieder jedes erkannte Fahrzeug und jede Person auf, auch nach nur einem Bild. Seit 0.1.38.8 fielen manche vorbeifahrende Autos weg.",
+        "Panoptes führt jetzt selbst: „Starten“ öffnet die Panoptes-Karte mit Vorschau, los geht es mit Start. „Im Werksnavi öffnen“ bleibt als zweiter Knopf."
+      ],
+      "en": [
+        "Navigation & trips is now second in the menu and opens the navigation right away. On the car screen the button is simply called “Start”.",
+        "Navigation only speaks if you want it to. Voice prompts are off by default; switch them on under Settings → All settings → Car & display → Navigation.",
+        "Panoptes starts faster and step by step, and you see for each service whether it is ready. The launcher also updates over mobile data if you allowed that.",
+        "In navigation you can add up to five stops. For each leg you see how much battery is left when you arrive.",
+        "The web interface in the phone app only shows what the phone may do; charging needs the new “Charging in the car” permission. Key owner actions from the phone need fingerprint or Face ID.",
+        "Someone who only walks past the car now arrives in Telegram as a notice, not an alert (only with “Guard: notices” on). Switch off: Guardian → More → Spotting settings.",
+        "The guard again records every detected vehicle and person, even after a single frame. Since 0.1.38.8 some passing cars were missed.",
+        "Panoptes now guides you itself: “Start” opens the Panoptes map with a preview, tap Start to go. “Open in car navigation” stays as a second button."
+      ],
+      "fr": [
+        "Navigation & trajets est maintenant en deuxième place et ouvre tout de suite la navigation. Sur l’écran de la voiture, le bouton s’appelle simplement « Démarrer ».",
+        "La navigation ne parle plus que si tu le veux. Les annonces vocales sont désactivées au départ et s’activent sous Réglages → Tous les réglages → Voiture et affichage → Navigation.",
+        "Panoptes démarre plus vite et étape par étape, tu vois pour chaque service s’il est prêt. Le launcher se met aussi à jour par le réseau mobile si tu l’as permis.",
+        "Dans la navigation, tu peux ajouter jusqu’à cinq arrêts. Pour chaque étape, tu vois combien de batterie il reste à l’arrivée.",
+        "L’interface web de l’appli n’affiche que ce que le téléphone peut faire. Les actions importantes du propriétaire depuis le téléphone demandent empreinte ou Face ID.",
+        "Une personne qui passe seulement près de la voiture arrive dans Telegram comme information, pas comme alerte. Désactiver : Gardien → Avancé → Réglages de détection.",
+        "La surveillance enregistre de nouveau chaque véhicule et chaque personne détectés, même après une seule image. Depuis 0.1.38.8, certaines voitures qui passaient manquaient.",
+        "Panoptes te guide maintenant lui-même : « Démarrer » ouvre la carte Panoptes avec un aperçu, puis Start pour partir. « Ouvrir dans la navigation de la voiture » reste en second bouton."
+      ],
+      "it": [
+        "Navigazione & viaggi ora è al secondo posto e apre subito la navigazione. Sullo schermo dell’auto il pulsante si chiama semplicemente «Avvia».",
+        "La navigazione parla solo se lo vuoi. Gli annunci vocali sono spenti di serie e si accendono in Impostazioni → Tutte le impostazioni → Auto e display → Navigazione.",
+        "Panoptes si avvia più in fretta e passo dopo passo, vedi per ogni servizio se è pronto. Il launcher si aggiorna anche tramite rete mobile, se l’hai permesso.",
+        "Nella navigazione puoi aggiungere fino a cinque soste. Per ogni tappa vedi quanta batteria resta all’arrivo.",
+        "L’interfaccia web nell’app mostra solo ciò che il telefono può fare. Le azioni importanti del proprietario dal telefono richiedono impronta o Face ID.",
+        "Chi passa solo vicino all’auto arriva su Telegram come avviso, non come allarme (solo con «Sorveglianza: avvisi»). Disattivare: Guardiano → Altro → Impostazioni di rilevamento.",
+        "La sorveglianza registra di nuovo ogni veicolo e ogni persona rilevati, anche dopo una sola immagine. Dalla 0.1.38.8 alcune auto di passaggio mancavano.",
+        "Ora Panoptes ti guida da solo: «Avvia» apre la mappa Panoptes con un’anteprima, si parte con Start. «Apri nel navigatore dell’auto» resta come secondo pulsante."
+      ],
+      "nl": [
+        "Navigatie & ritten staat nu op de tweede plaats en opent meteen de navigatie. Op het scherm in de auto heet de knop gewoon „Starten”.",
+        "De navigatie praat alleen nog als jij dat wilt. Gesproken aanwijzingen staan standaard uit en zet je aan via Instellingen → Alle instellingen → Auto en scherm → Navigatie.",
+        "Panoptes start sneller en stap voor stap, je ziet per dienst of hij klaar is. De launcher haalt zijn update ook via het mobiele netwerk als je dat hebt toegestaan.",
+        "In de navigatie kun je tot vijf tussenstops toevoegen. Per etappe zie je hoeveel accu er bij aankomst over is.",
+        "De webinterface in de app toont alleen wat de telefoon mag. Belangrijke eigenaar-acties vanaf de telefoon vragen een vingerafdruk of Face ID.",
+        "Wie alleen langs de auto loopt, komt in Telegram als melding binnen, niet als alarm (alleen met „Bewaking: meldingen”). Uitzetten: Bewaker → Meer → Herkenningsinstellingen.",
+        "De bewaking neemt weer elk herkend voertuig en elke persoon op, ook na één beeld. Sinds 0.1.38.8 vielen sommige voorbijrijdende auto’s weg.",
+        "Panoptes navigeert nu zelf: „Starten” opent de Panoptes-kaart met een voorbeeld, met Start ga je op weg. „Openen in de autonavigatie” blijft als tweede knop."
+      ]
     }
   ]
 }

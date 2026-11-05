@@ -504,6 +504,21 @@
                         </div>
                         <div class="setting-hint" id="motionSalienceHint" data-i18n="surveillance.motion_salience_hint">Fängt, was die Objekterkennung übersieht: jemand, der bei schlechtem Licht direkt zum Auto geht, oder ein großes Fahrzeug, das nah heranfährt, ohne dass die Kamera es benennen kann. Es startet nur, wenn die Bewegung groß und nah ist und etwa eine Sekunde lang gleichmäßig durchs Bild zieht – Äste im Wind, Schatten, Regen und streifende Scheinwerfer werden also weiter ignoriert. Rechne mit ein paar zusätzlichen Aufnahmen, auf denen keine Person oder kein Fahrzeug benannt ist. Sie bleiben erhalten, auch wenn „Aufnahmen ohne erkanntes Objekt verwerfen“ an ist, denn eine Aufnahme, die die Kamera nicht einordnen konnte, löscht man am wenigsten von selbst.</div>
 
+                        <!-- 0.1.38.10 Wächter-KI B2: nah Vorbeigehende leise melden -->
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-name" data-i18n="surveillance.vorbeigehen_leise">Vorbeigehende leise melden</div>
+                                <div class="setting-desc" data-i18n="surveillance.vorbeigehen_leise_desc">Wer nur kurz nah am Auto vorbeigeht, kommt im Telegram als Hinweis statt als Alarm</div>
+                            </div>
+                            <div class="setting-control">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="v2VorbeigehenLeise" onchange="SurvSettings.updateVorbeigehenLeise()">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="setting-hint" id="vorbeigehenLeiseHint" data-i18n="surveillance.vorbeigehen_leise_hint">Gilt für eine Person, die weniger als 6 Sekunden in der Nähe ist und nicht auf das Auto zugeht, und nur, wenn unter Telegram → Meldungen „Wächter: Hinweise“ eingeschaltet ist. Sonst bleibt es ein Alarm, damit keine Meldung wegfällt. Die Aufnahme bleibt wie bisher. Bleibt jemand stehen, kommt näher oder steht direkt am Auto, gibt es weiter einen Alarm.</div>
+
                         <!-- Aggressively discard non-actor recordings -->
                         <div class="setting-row">
                             <div class="setting-info">
@@ -1446,7 +1461,7 @@
     <script src="../shared/pip.js?v=3"></script>
     <script src="../shared/storage-budget.js?v=8"></script>
     <script src="../shared/settings-hydration.js?v=1"></script>
-    <script src="../shared/surveillance.js?v=survtoggle12"></script>
+    <script src="../shared/surveillance.js?v=survtoggle13"></script>
     <script src="../shared/safe-locations.js?v=ml4"></script>
     <script src="../shared/roi-schedule.js?v=3"></script>
     <script src="../shared/parking-settings.js?v=3"></script>

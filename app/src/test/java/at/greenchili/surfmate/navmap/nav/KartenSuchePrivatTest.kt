@@ -30,7 +30,8 @@ class KartenSuchePrivatTest {
     @Test
     fun alleWegeHaengenAmSchalterUndSendenGrob() {
         val g = quelle("ForwardGeocoder.kt")
-        assertEquals("search, autocomplete, reverse", 3, Regex("KartenSuchePrivat\\.erlaubt\\(\\)").findAll(g).count())
+        // G3: reverse fragt niemanden mehr (gibt null), darum nur noch search und autocomplete
+        assertEquals("search, autocomplete", 2, Regex("KartenSuchePrivat\\.erlaubt\\(\\)").findAll(g).count())
         assertFalse(g.contains(".append(focusLat)"))
         assertFalse(g.contains(".append(focusLng)"))
         val o = quelle("OverpassPoiClient.kt")

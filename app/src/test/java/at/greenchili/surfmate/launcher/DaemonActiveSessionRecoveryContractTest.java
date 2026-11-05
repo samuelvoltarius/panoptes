@@ -59,7 +59,7 @@ public class DaemonActiveSessionRecoveryContractTest {
 
         int automatic = startup.indexOf("private fun ifNotUserStopped(");
         int optional = startup.indexOf(
-                "private fun startOptionalDaemonsFromPreferences()", automatic);
+                "private fun syncTelegramEnabledToUnifiedConfig(", automatic);
         assertTrue(automatic >= 0 && optional > automatic);
         String automaticBody = startup.substring(automatic, optional);
         assertTrue(automaticBody.contains("PARKED_BLOCKED"));

@@ -1,7 +1,6 @@
 package at.greenchili.surfmate.navmap.nav
 
 import android.util.Log
-import at.greenchili.surfmate.navmap.NavMapConfig
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -11,17 +10,17 @@ import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
 /**
- * Fetches a driving route from the BYOK (bring-your-own-key) Valhalla endpoint
- * configured in [NavMapConfig].
+ * Fahrroute fuer die Panoptes-Fuehrung (G3, NAVI_ABGLEICH_0139 6b): ueber den eigenen Kern
+ * `POST 127.0.0.1:8180/api/navi/fuehrung`, der an den Panoptes-Planer (`/ev/api/fuehrung`, Vertrag fuehrung/1)
+ * weiterreicht. Der Planer fragt Valhalla auf dem eigenen Server - im Auto liegt kein Routing-Schluessel mehr,
+ * Stadia/BYOK ist ausgebaut. Die Antwort traegt den Valhalla-`trip` unveraendert, darum bleibt der Parser unten
+ * wie er war.
  *
- * <p>Style mirrors [at.greenchili.surfmate.navmap.RoadSenseHazardApiClient]: lazy
- * OkHttp client, SYNC method (the Activity runs it off the UI thread), and
- * NEVER throwing — any failure (no key, transport error, malformed response)
- * returns `null`. The caller treats `null` as "no route" and, when the key is
- * blank, prompts the user to add a routing key.
+ * <p>Datenschutz: Position und Ziel gehen nur im Body an den eigenen Kern (Loopback), nie in eine URL; hier wird
+ * keine Koordinate geloggt (nur HTTP-Code bzw. Fehlerklasse).
  *
- * <p>Routing can be slower than the hazard surface, so the read timeout is
- * raised to 10s (connect stays at 4s).
+ * <p>Wie bisher: SYNC (die Activity ruft im Hintergrund), wirft nie, Fehler = leere Liste + [lastError].
+ * fuehrung/1 kennt keine Alternativrouten - [routesWithAlternates] liefert hoechstens eine Route.
  */
 object ValhallaRouteClient {
 
@@ -29,171 +28,101 @@ object ValhallaRouteClient {
 
     private val JSON = "application/json; charset=utf-8".toMediaType()
 
-    // Lazy so the OkHttpClient isn't built until the first route request.
-    // Proxy-aware via MapNetworking (the BYOK endpoint is on the public internet,
-    // so it must follow sing-box / Tailscale when present).
-    // connectTimeout widened 4s→8s for the PROXIED path (the sing-box CONNECT handshake
-    // on in-car mobile data needs more than 4s; the old budget tipped route requests
-    // into a connect timeout while the proxy was actually fine — part of the "can't
-    // search routes while sing-box on" report). readTimeout stays 10s (Valhalla compute
-    // round-trip); bounded so a hung endpoint still fails gracefully to an empty route.
+    /** Eigener Kern (gleiche Adresse wie OrteFavoritenSync / RoadSenseHazardApiClient), ohne Proxy. */
+    internal const val FUEHRUNG_URL = "http://127.0.0.1:8180/api/navi/fuehrung"
+
+    /** fuehrung/1: hoechstens 5 Zwischenstopps (Planer MAX_VIA). */
+    const val MAX_VIA = 5
+
+    /** Sprachen, die der Planer fuer die Manoever-Texte kennt; sonst Englisch. */
+    private val SPRACHEN = setOf("de", "en", "fr", "it", "nl")
+
+    // Kern -> Planer -> Valhalla: lange Routen ueber LTE brauchen Zeit, Kern und Planer begrenzen selbst.
     private val http: OkHttpClient by lazy {
-        MapNetworking.builder()
-            .connectTimeout(8, TimeUnit.SECONDS)
-            // readTimeout matched to the geocoder's 12s: a Valhalla compute round-trip
-            // THROUGH the sing-box proxy on in-car mobile data can exceed 10s for a
-            // long/alternates route; the old 10s tipped those into a read timeout that
-            // surfaced as the generic "route_failed" (now logged as TIMEOUT). Still
-            // bounded so a hung endpoint fails gracefully.
-            .readTimeout(12, TimeUnit.SECONDS)
-            .writeTimeout(8, TimeUnit.SECONDS)
+        OkHttpClient.Builder()
+            .connectTimeout(3, TimeUnit.SECONDS)
+            .readTimeout(45, TimeUnit.SECONDS)
+            .writeTimeout(5, TimeUnit.SECONDS)
             .retryOnConnectionFailure(false)
             .build()
     }
 
-    /**
-     * Compute an `auto` (driving) route from the start to the end coordinate.
-     *
-     * <p>Reads [NavMapConfig.fromUnifiedConfig] for the endpoint + BYOK key.
-     * If the key is blank, returns `null` immediately (the caller should ask
-     * the user to add a routing key). Otherwise POSTs a Valhalla `/route`
-     * request and parses the first leg.
-     *
-     * @param startLat origin latitude in decimal degrees
-     * @param startLng origin longitude in decimal degrees
-     * @param endLat destination latitude in decimal degrees
-     * @param endLng destination longitude in decimal degrees
-     * @return a decoded [NavRoute] (polyline, maneuvers, totals), or `null` on
-     *   any failure / missing key
-     */
+    /** Erste Route von Start zu Ziel, oder `null`. */
     fun route(startLat: Double, startLng: Double, endLat: Double, endLng: Double): NavRoute? =
         routesWithAlternates(startLat, startLng, endLat, endLng, 0).firstOrNull()
 
     /**
-     * Why the LAST route attempt failed, so the caller can show a SPECIFIC message
-     * instead of the catch-all "Could not find a route." Set on every routing path
-     * (route / routeVia / routesWithAlternates) before it returns, read by the
-     * Activity right after an empty result. Volatile + a single foreground routing
-     * call at a time, so a plain field is sufficient (no per-call token needed).
-     *
-     *   NONE        — never attempted / last attempt SUCCEEDED
-     *   NO_KEY      — no BYOK routing key configured
-     *   AUTH        — provider rejected the key (HTTP 401/403) → the key is wrong/expired
-     *   HTTP        — provider returned another non-2xx (4xx request / 5xx provider)
-     *   TIMEOUT     — connect/read timed out (slow network or proxy CONNECT handshake)
-     *   NETWORK     — other transport failure (DNS / connection reset / proxy down)
-     *   EMPTY       — HTTP 200 but no usable route in the body (no path between points)
+     * Warum der LETZTE Versuch scheiterte (die Activity zeigt dazu eine passende Meldung).
+     *   NONE     — noch nicht versucht / zuletzt erfolgreich
+     *   AUTH     — 401: Panoptes ist nicht mit dem Planer verbunden (kein Geraete-/Mitglieds-Schluessel)
+     *   LIMIT    — 429: zu viele Neuberechnungen, [lastRetryAfterS] sagt, wann wieder
+     *   HTTP     — anderer Fehlercode (z. B. 400 Werte)
+     *   TIMEOUT  — Kern antwortet nicht rechtzeitig
+     *   NETWORK  — Kern oder Planer nicht erreichbar (503/502/504, Verbindung)
+     *   EMPTY    — kein befahrbarer Weg (422) bzw. Antwort ohne Route
      */
-    enum class RouteError { NONE, NO_KEY, AUTH, HTTP, TIMEOUT, NETWORK, EMPTY }
+    enum class RouteError { NONE, AUTH, LIMIT, HTTP, TIMEOUT, NETWORK, EMPTY }
 
     @Volatile
     var lastError: RouteError = RouteError.NONE
         private set
 
-    /** HTTP status of the last non-2xx routing response (0 if the failure wasn't an
-     *  HTTP error). Surfaced in the snackbar so a 401 vs 404 vs 503 is distinguishable. */
+    /** HTTP-Code der letzten Fehlantwort (0 = kein HTTP-Fehler). */
     @Volatile
     var lastHttpCode: Int = 0
         private set
 
-    /** Classify a caught transport throwable into TIMEOUT vs NETWORK for [lastError]. */
+    /** Retry-After der letzten 429/503-Antwort in Sekunden (0 = keine Angabe). */
+    @Volatile
+    var lastRetryAfterS: Int = 0
+        private set
+
     private fun classify(t: Throwable): RouteError =
         if (t is java.net.SocketTimeoutException ||
             (t.message?.contains("timeout", ignoreCase = true) == true)
         ) RouteError.TIMEOUT else RouteError.NETWORK
 
     /**
-     * Compute a route through an ORDERED list of locations: origin, optional
-     * intermediate stops (waypoints), then destination. The first point is the
-     * start and the last is the final destination; everything between is a
-     * via-stop the route must pass through in order.
-     *
-     * Valhalla does NOT support `alternates` on multipoint routes, so this always
-     * returns a single route (wrapped in a list for caller symmetry). Empty list
-     * on failure / missing key / fewer than 2 points.
-     *
-     * @param points ordered [origin, stop1, stop2, …, destination]; ≥2 required
+     * Route durch eine GEORDNETE Punktliste: Start, Zwischenstopps, Ziel (mindestens 2 Punkte, hoechstens
+     * [MAX_VIA] Zwischenstopps). [startHeading] = Fahrtrichtung am Start (Neuberechnung unterwegs, `kurs`).
      */
-    fun routeVia(points: List<GeoPoint>): List<NavRoute> {
+    fun routeVia(points: List<GeoPoint>, startHeading: Double? = null): List<NavRoute> {
         if (points.size < 2) return emptyList()
-        return try {
-            val cfg = NavMapConfig.fromUnifiedConfig()
-            val key = cfg.routingApiKey
-            if (key.isEmpty()) {
-                Log.w(TAG, "routeVia skipped: no routing API key configured")
-                fail(RouteError.NO_KEY)
-                return emptyList()
-            }
-            val url = buildRouteUrl(cfg.routingEndpoint, key)
-            val body = buildRequestBodyVia(points)
-            val req = Request.Builder().url(url).post(body.toRequestBody(JSON)).build()
-            http.newCall(req).execute().use { resp ->
-                if (!resp.isSuccessful) {
-                    logHttpFailure("routeVia", resp)
-                    return emptyList()
-                }
-                val bodyStr = resp.body?.string() ?: run { fail(RouteError.EMPTY); return emptyList() }
-                finish(parseRoutes(bodyStr))
-            }
-        } catch (t: Throwable) {
-            logThrowable("routeVia", t)
-            emptyList()
-        }
+        if (points.size - 2 > MAX_VIA) return fail(RouteError.HTTP, 400)   // die Activity begrenzt schon auf MAX_STOPS
+        return fuehrung(buildFuehrungBody(points, startHeading, MapNetworking.valhallaLanguage), "routeVia")
     }
 
     /**
-     * Compute the primary `auto` route PLUS up to [alternates] alternate routes
-     * between the start and end coordinate. The returned list is ordered
-     * [primary, alt1, alt2, …]; it is empty on any failure / missing key.
-     * Valhalla may return fewer alternates than requested (or none) — that's
-     * normal, the caller just gets what's available.
-     *
-     * @param alternates how many ALTERNATE routes to request (0 = primary only)
-     * @return ordered routes (primary first), or empty list on failure
+     * Route von Start zu Ziel. [alternates] bleibt fuer die Aufrufer erhalten, fuehrung/1 liefert aber nur die
+     * Hauptroute (Alternativen kommen hoechstens mit fuehrung/2).
      */
+    @Suppress("UNUSED_PARAMETER")
     fun routesWithAlternates(
         startLat: Double, startLng: Double, endLat: Double, endLng: Double, alternates: Int,
         startHeading: Double? = null
-    ): List<NavRoute> {
+    ): List<NavRoute> = fuehrung(
+        buildFuehrungBody(listOf(GeoPoint(startLat, startLng), GeoPoint(endLat, endLng)), startHeading,
+            MapNetworking.valhallaLanguage), "route")
+
+    private fun fuehrung(body: String, tag: String): List<NavRoute> {
         return try {
-            val cfg = NavMapConfig.fromUnifiedConfig()
-            val key = cfg.routingApiKey
-            if (key.isEmpty()) {
-                Log.w(TAG, "route skipped: no routing API key configured")
-                fail(RouteError.NO_KEY)
-                return emptyList()
-            }
-
-            val url = buildRouteUrl(cfg.routingEndpoint, key)
-            val body = buildRequestBody(startLat, startLng, endLat, endLng, alternates, startHeading)
-
-            val req = Request.Builder()
-                .url(url)
-                .post(body.toRequestBody(JSON))
-                .build()
-
+            val req = Request.Builder().url(FUEHRUNG_URL).post(body.toRequestBody(JSON)).build()
             http.newCall(req).execute().use { resp ->
+                val text = try { resp.body?.string() } catch (_: Throwable) { null }
                 if (!resp.isSuccessful) {
-                    logHttpFailure("route", resp)
+                    httpFehler(tag, resp.code, resp.header("Retry-After"), text)
                     return emptyList()
                 }
-                val bodyStr = resp.body?.string() ?: run { fail(RouteError.EMPTY); return emptyList() }
-                finish(parseRoutes(bodyStr))
+                if (text == null) return fail(RouteError.EMPTY, 200)
+                finish(parseRoutes(text))
             }
         } catch (t: Throwable) {
-            logThrowable("route", t)
+            Log.w(TAG, "$tag failed: ${t.javaClass.simpleName}")
+            lastError = classify(t)
+            lastHttpCode = 0
             emptyList()
         }
     }
-
-    // ── Error-state bookkeeping + diagnostic logging ─────────────────────────────
-    // The old client swallowed every failure into an empty list and logged only
-    // "HTTP <code>", so a wrong key (401), a malformed request (4xx), a provider
-    // outage (5xx), and a proxy/network timeout were INDISTINGUISHABLE — both in the
-    // log and to the user (always "Could not find a route"). These helpers (a) record
-    // a typed [lastError] + [lastHttpCode] the Activity reads to show a SPECIFIC
-    // message, and (b) log the response body / throwable class so the next on-car
-    // session is a definitive diagnosis, not another guessing round.
 
     private fun fail(err: RouteError, httpCode: Int = 0): List<NavRoute> {
         lastError = err
@@ -201,105 +130,73 @@ object ValhallaRouteClient {
         return emptyList()
     }
 
-    /** Record success / empty-but-200 from a parsed result list, then return it. */
     private fun finish(routes: List<NavRoute>): List<NavRoute> {
-        if (routes.isEmpty()) { lastError = RouteError.EMPTY; lastHttpCode = 200 }
-        else { lastError = RouteError.NONE; lastHttpCode = 200 }
+        lastError = if (routes.isEmpty()) RouteError.EMPTY else RouteError.NONE
+        lastHttpCode = 200
+        lastRetryAfterS = 0
         return routes
     }
 
-    /** Log + classify a non-2xx routing response: 401/403 → AUTH (bad/expired key),
-     *  anything else → HTTP. Logs the first ~300 chars of the body (the provider's
-     *  error message — e.g. Stadia's "Invalid API key") which the old code discarded. */
-    private fun logHttpFailure(tag: String, resp: okhttp3.Response) {
-        val code = resp.code
-        val snippet = try { resp.body?.string()?.take(300) } catch (_: Throwable) { null }
-        Log.w(TAG, "POST $tag -> HTTP $code; body=${snippet ?: "<none>"}")
-        when (code) {
-            401, 403 -> fail(RouteError.AUTH, code)
-            else -> fail(RouteError.HTTP, code)
-        }
+    /** Fehlantwort einordnen. Geloggt werden nur Code und `code`-Feld, nie der Body (kein Ort im Log). */
+    private fun httpFehler(tag: String, code: Int, retryAfter: String?, body: String?) {
+        val feld = try { JSONObject(body ?: "").optString("code", "") } catch (_: Throwable) { "" }
+        Log.w(TAG, "POST $tag -> HTTP $code ${feld.ifEmpty { "-" }}")
+        lastRetryAfterS = retryAfterS(retryAfter, body)
+        fail(fehlerArt(code), code)
     }
 
-    /** Log + classify a caught transport throwable (TIMEOUT vs NETWORK), including the
-     *  exception CLASS so a SocketTimeoutException is distinguishable from a connect
-     *  failure / reset in the log. */
-    private fun logThrowable(tag: String, t: Throwable) {
-        Log.w(TAG, "$tag failed: ${t.javaClass.simpleName}: ${t.message}")
-        lastError = classify(t)
-        lastHttpCode = 0
+    /** HTTP-Code der Kern-Antwort -> [RouteError] (fuehrung/1 §5, Kern reicht den Code durch). */
+    internal fun fehlerArt(code: Int): RouteError = when (code) {
+        401, 403 -> RouteError.AUTH
+        429 -> RouteError.LIMIT
+        422 -> RouteError.EMPTY
+        502, 503, 504 -> RouteError.NETWORK
+        else -> RouteError.HTTP
     }
 
     /**
-     * Append the BYOK key to the endpoint as a query param per the Valhalla
-     * cloud-provider convention (`?api_key=<key>`). Preserves any existing
-     * query string on the endpoint. Pure function — exposed for unit testing.
-     *
-     * @param endpoint the configured routing endpoint (already includes the
-     *   `/route` path per [NavMapConfig.DEFAULT_ROUTING_ENDPOINT])
-     * @param apiKey the decrypted BYOK key
+     * Wartezeit in s (hoechstens 1 h): Der Kern (G2) schickt keinen Retry-After-Kopf, sondern im Body `warte_ms`
+     * (Kern-Pause), `warte_s` (429 vom Planer) oder `wiederInS`; der Kopf zaehlt nur als Rueckfall. Sonst 0.
      */
-    internal fun buildRouteUrl(endpoint: String, apiKey: String): String {
-        val sep = if (endpoint.contains('?')) '&' else '?'
-        return "$endpoint${sep}api_key=$apiKey"
+    internal fun retryAfterS(header: String?, body: String?): Int {
+        val j = try { JSONObject(body ?: "") } catch (_: Throwable) { null }
+        val s = when {
+            j == null -> -1L
+            j.has("warte_ms") -> j.optLong("warte_ms", 0L) / 1000L
+            j.has("warte_s") -> j.optLong("warte_s", 0L)
+            j.has("wiederInS") -> j.optLong("wiederInS", 0L)
+            else -> -1L
+        }
+        if (s >= 0) return s.coerceIn(0L, 3600L).toInt()
+        return header?.trim()?.toIntOrNull()?.coerceIn(0, 3600) ?: 0
+    }
+
+    /** "de-DE"/"de" -> "de"; unbekannt -> "en" (fuehrung/1 `sprache`). */
+    internal fun sprache(tag: String?): String {
+        val s = (tag ?: "").substringBefore('-').substringBefore('_').lowercase()
+        return if (s in SPRACHEN) s else "en"
     }
 
     /**
-     * Build the Valhalla `/route` request body JSON. Pure function — exposed
-     * for unit testing.
-     *
-     * @param startLat origin latitude (decimal degrees)
-     * @param startLng origin longitude (decimal degrees)
-     * @param endLat destination latitude (decimal degrees)
-     * @param endLng destination longitude (decimal degrees)
+     * Anfrage fuer fuehrung/1: `{start, ziel, via?, sprache, kurs?}` mit `[lat, lon]`. Einheiten sind immer km
+     * (der Planer fragt Valhalla in Kilometern; der Parser rechnet km -> m, die Anzeige formatiert selbst).
      */
-    internal fun buildRequestBody(
-        startLat: Double, startLng: Double, endLat: Double, endLng: Double, alternates: Int = 0,
-        startHeading: Double? = null
-    ): String {
-        val locations = JSONArray()
-        val start = JSONObject().put("lat", startLat).put("lon", startLng)
-        // Origin heading: on a reroute the car is already moving in a direction —
-        // pass it (+tolerance) so Valhalla starts the new route IN that direction
-        // instead of demanding an immediate U-turn back onto the old path.
-        if (startHeading != null && !startHeading.isNaN()) {
-            start.put("heading", ((startHeading % 360.0) + 360.0) % 360.0)
-            start.put("heading_tolerance", 45)
-        }
-        locations.put(start)
-        locations.put(JSONObject().put("lat", endLat).put("lon", endLng))
+    internal fun buildFuehrungBody(points: List<GeoPoint>, startHeading: Double?, languageTag: String?): String {
+        fun pkt(p: GeoPoint) = JSONArray().put(p.lat).put(p.lng)
         val body = JSONObject()
-            .put("locations", locations)
-            .put("costing", "auto")
-            // Language- + unit-aware: maneuver instructions in the user's app
-            // language (Valhalla falls back to English for unsupported tags) and
-            // distances in the user's Trips km/miles preference.
-            .put("directions_options", JSONObject()
-                .put("units", MapNetworking.valhallaUnits)
-                .put("language", MapNetworking.valhallaLanguage))
-        // "alternates" = how many ALTERNATE routes to also return (primary is
-        // always returned separately). Only set when > 0.
-        if (alternates > 0) body.put("alternates", alternates)
+            .put("start", pkt(points.first()))
+            .put("ziel", pkt(points.last()))
+            .put("sprache", sprache(languageTag))
+        if (points.size > 2) {
+            val via = JSONArray()
+            for (i in 1 until points.size - 1) via.put(pkt(points[i]))
+            body.put("via", via)
+        }
+        // Neuberechnung unterwegs: Fahrtrichtung mitgeben, damit die neue Route nicht "bitte wenden" verlangt.
+        if (startHeading != null && !startHeading.isNaN()) {
+            body.put("kurs", (((startHeading % 360.0) + 360.0) % 360.0).toInt() % 360)
+        }
         return body.toString()
-    }
-
-    /**
-     * Build a multipoint Valhalla `/route` body from an ordered point list
-     * (origin … via-stops … destination). Intermediate stops use
-     * `type:"through"`-style break points (Valhalla defaults each location to a
-     * break, which is what we want — the route stops/continues at each). Pure
-     * function — exposed for unit testing.
-     */
-    internal fun buildRequestBodyVia(points: List<GeoPoint>): String {
-        val locations = JSONArray()
-        points.forEach { p -> locations.put(JSONObject().put("lat", p.lat).put("lon", p.lng)) }
-        return JSONObject()
-            .put("locations", locations)
-            .put("costing", "auto")
-            .put("directions_options", JSONObject()
-                .put("units", MapNetworking.valhallaUnits)
-                .put("language", MapNetworking.valhallaLanguage))
-            .toString()
     }
 
     /**

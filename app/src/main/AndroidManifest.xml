@@ -337,6 +337,7 @@
         <activity
             android:name="at.greenchili.surfmate.navmap.RoadSenseMapActivity"
             android:exported="false"
+            android:windowSoftInputMode="stateHidden"
             android:launchMode="singleTop"
             android:screenOrientation="unspecified"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|uiMode|density|fontScale"

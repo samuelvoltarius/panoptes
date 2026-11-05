@@ -663,7 +663,7 @@ public final class AppUpdateDienst {
             if (UpdateHinweis.nichtWeil(l, hinweis) != null) return;
             f = verfuegbar;
             zusatz = UpdateHinweis.mobilSatz(UpdateHinweis.mobilFragen(mobilMerker(),
-                    !UpdateRegel.an(env.config("mobilfunk")), env.netz()), groesseCache);
+                    nurWlan(), env.netz()), groesseCache);
         }
         String neuerGriff = String.format("%016x", new SecureRandom().nextLong());
         boolean gezeigt = false;
@@ -763,7 +763,7 @@ public final class AppUpdateDienst {
         boolean mobil;
         synchronized (lock) {
             UpdateRegel.Lage l = lage();
-            mobil = !l.nurWlan || l.mobilEinmal;   // Panoptes darf über dieses Netz laden, dann auch der Launcher
+            mobil = l.mobilEinmal;   // dieselbe Einwilligung wie Panoptes; update.mobilfunk liest LauncherRegel selbst
             if (launcherLaeuft) return;
             launcherLaeuft = true;
             launcherFehler = null;
@@ -1246,6 +1246,7 @@ public final class AppUpdateDienst {
         l.gangP = env.gangP();
         l.kmh = env.kmh();
         l.netz = env.netz();
+        l.nurWlan = nurWlan();
         l.laeuft = launcherLaeuft;
         return l;
     }
@@ -1277,7 +1278,8 @@ public final class AppUpdateDienst {
                 o.put("neuer", neuer);
                 String nicht = LauncherRegel.nichtWeil(l, false);
                 o.put("installierbar", nicht == null && neuer);
-                o.put("mobilFrage", LauncherRegel.WARTET_WLAN.equals(nicht));
+                // wie bei Panoptes: fragen nur bei neuen Einrichtungen (Merker), sonst wartet er aufs WLAN
+                o.put("mobilFrage", LauncherRegel.WARTET_WLAN.equals(nicht) && mobilMerker());
                 o.put("nichtWeil", nicht == null ? JSONObject.NULL : nicht);
                 o.put("phase", launcherPhase == null ? JSONObject.NULL : launcherPhase);
                 o.put("prozent", launcherProzent == null ? JSONObject.NULL : launcherProzent);
@@ -1291,8 +1293,9 @@ public final class AppUpdateDienst {
      * Launcher installieren oder aktualisieren, nur auf Tipp. {@code versionCode} muss der bekannten Freigabe
      * entsprechen; {@code mobil} = Einwilligung für genau diesen Download. null = gestartet, sonst Grund.
      */
-    public String launcherInstallieren(int versionCode, boolean mobil) {
+    public String launcherInstallieren(int versionCode, boolean mobilGetippt) {
         final Freigabe.Launcher f;
+        final boolean mobil = mobilGetippt && mobilMerker();   // Einwilligung zählt nur nach der Frage, wie bei Panoptes
         synchronized (lock) {
             LauncherRegel.Lage l = launcherLage();
             String nicht = LauncherRegel.nichtWeil(l, mobil);
@@ -1444,11 +1447,16 @@ public final class AppUpdateDienst {
         l.zweiterNachweis = UpdateRegel.zweiterNachweisGilt(zweiterSeit, jetzt);
         l.laeuftSchon = new File(env.basis(), ".deploy.lock").exists();   // eigener Ablauf: installiertGerade
         l.rueckfallVc = rueckfallVc();
-        l.nurWlan = !UpdateRegel.an(env.config("mobilfunk"));
+        l.nurWlan = nurWlan();
         l.mobilEinmal = verfuegbar != null && mobilMerker()
                 && UpdateHinweis.mobilGilt(hinweis, verfuegbar.versionCode, jetzt);
         l.netz = env.netz();
         return l;
+    }
+
+    /** {@code update.mobilfunk} aus: Panoptes UND Launcher nur im WLAN (0.1.38.10: eine Quelle für beide). */
+    private boolean nurWlan() {
+        return !UpdateRegel.an(env.config("mobilfunk"));
     }
 
     /** {@code update.mobilfunkEinmal}: nur neue Einrichtungen, siehe {@link UpdateHinweis}. */

@@ -285,6 +285,8 @@
     <div id="app-shell-mount"></div>
 
     <main class="main-content">
+        <!-- 0.1.38.10: Karte „Start“ mit Häkchen je Stufe, nur am Display, solange nicht alles bereit ist -->
+        <div class="hc" id="hStart" style="display:none;margin:0 0 14px;padding:18px 20px;"></div>
         <!-- 0.1.10: ruhige Karte „Wo hast du geladen?“ nur bei jetztZeigen (Auto in P); kein Ton, kein Popup -->
         <div class="hc" id="hNachfrage" style="display:none;margin:0 0 14px;padding:16px 18px;"></div>
         <!-- 0.1.21 Autostart nach Update: nur am Display, nur wenn die automatische Freigabe nicht geklappt hat -->
@@ -415,9 +417,11 @@
 <script src="../shared/panoptes-map.js?v=12"></script>
 <script src="../shared/laden-nachfrage.js?v=1"></script>
 <script src="../shared/gewohnheit-karte.js?v=1"></script>
+<script src="../shared/start-karte.js?v=1"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         var go = function () {
+            if (window.PanoptesStart) PanoptesStart.init(document.getElementById('hStart'));
             if (window.PanoptesNachfrage) PanoptesNachfrage.init(document.getElementById('hNachfrage'), { nurJetzt: true });
             // 0.1.23 Gewohnheiten: die eine Vorschlags-/Probelauf-Karte (nur im Stand)
             if (window.PanoptesGewohnheit) PanoptesGewohnheit.init();

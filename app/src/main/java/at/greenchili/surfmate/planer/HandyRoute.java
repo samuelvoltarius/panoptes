@@ -79,6 +79,50 @@ public final class HandyRoute {
                 && !(lat == 0 && lon == 0);
     }
 
+    /**
+     * 0.1.38.10 (Koordination 05.11., handy-048): Favorit des Autos per Ort-ID → {@code {lat, lon, name}}; null = keine
+     * gültige ID, unbekannt oder kein Favorit. Das Handy sieht nur die ID (GET /api/orte ohne Koordinaten), die
+     * Koordinaten löst das Auto selbst auf und gibt sie nur Richtung Planer.
+     */
+    static java.util.function.Function<String, JSONObject> favorit = HandyRoute::favoritAusOrten;
+
+    static JSONObject favoritAusOrten(String id) {
+        try {
+            JSONArray l = at.greenchili.surfmate.orte.OrteDaemon.dienst().abgleichen(System.currentTimeMillis());
+            for (int i = 0; l != null && i < l.length(); i++) {
+                JSONObject o = l.optJSONObject(i);
+                if (o != null && id.equals(o.optString("id")) && istFavorit(o)) {
+                    return new JSONObject().put("lat", o.optDouble("lat")).put("lon", o.optDouble("lon"))
+                            .put("name", o.optString("name", ""));
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return null;
+    }
+
+    /** Ort mit {@code eigenschaften.favorit}. */
+    public static boolean istFavorit(JSONObject ort) {
+        JSONObject e = ort == null ? null : ort.optJSONObject("eigenschaften");
+        return e != null && e.optBoolean("favorit", false);
+    }
+
+    /** Fehler-Merker von {@link #aufloesen}: {@code ort_id} angegeben, aber kein Favorit dazu. */
+    static final JSONObject UNBEKANNT = new JSONObject();
+
+    /**
+     * {@code {ort_id}} → Koordinaten aus dem Auto (Koordinaten des Handys daneben zählen nicht); ohne {@code ort_id}
+     * unverändert. Aufgelöste Punkte landen in {@code ausOrt}. {@link #UNBEKANNT}, wenn die ID nicht passt.
+     */
+    static JSONObject aufloesen(JSONObject o, java.util.List<double[]> ausOrt) {
+        if (o == null || !o.has("ort_id")) return o;
+        String id = o.optString("ort_id", "");
+        JSONObject f = id.matches("o_[a-z0-9]{1,32}") ? favorit.apply(id) : null;
+        if (f == null) return UNBEKANNT;
+        ausOrt.add(new double[]{f.optDouble("lat"), f.optDouble("lon")});
+        return f;
+    }
+
     static JSONObject ortKurz(JSONObject o) throws Exception {
         JSONObject r = new JSONObject().put("lat", o.optDouble("lat"))
                 .put("lon", o.has("lon") ? o.optDouble("lon") : o.optDouble("lng"));
@@ -91,14 +135,18 @@ public final class HandyRoute {
     public JSONObject starten(String kid, JSONObject req, long jetzt) throws Exception {
         // 0.1.38.6: „Ins Auto“ mit plan_id = GENAU den Plan der Vorschau übernehmen, nicht neu planen
         if (req.has("plan_id")) return insAuto(kid, req.optString("plan_id", ""), jetzt);
-        JSONObject ziel = req.optJSONObject("ziel");
+        java.util.List<double[]> ausOrt = new java.util.ArrayList<>();
+        JSONObject ziel = aufloesen(req.optJSONObject("ziel"), ausOrt);
+        if (ziel == UNBEKANNT) return fehler("ort_unbekannt");
         if (!ort(ziel)) return fehler("werte");
         JSONArray zz = req.optJSONArray("zwischenziele");
         if (zz != null && zz.length() > MAX_ZWISCHEN) return fehler("zu_viele_zwischenziele");
         JSONArray via = new JSONArray();
         for (int i = 0; zz != null && i < zz.length(); i++) {
-            if (!ort(zz.optJSONObject(i))) return fehler("werte");
-            via.put(ortKurz(zz.getJSONObject(i)));
+            JSONObject x = aufloesen(zz.optJSONObject(i), ausOrt);
+            if (x == UNBEKANNT) return fehler("ort_unbekannt");
+            if (!ort(x)) return fehler("werte");
+            via.put(ortKurz(x));
         }
         String[] token = env.token();
         String auto = env.autoId();

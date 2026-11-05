@@ -696,8 +696,10 @@ open class MainActivity : AppCompatActivity() {
                             if (callbackFired.compareAndSet(false, true)) {
                                 android.util.Log.w("MainActivity",
                                     "runDaemonStartup: hardResetDaemons callback never fired " +
-                                    "within 30s — proceeding with daemon startup anyway")
-                                at.greenchili.surfmate.logging.LauncherEreignisse.merken("HARDRESET_ZEITABLAUF", "s=30")
+                                    "within 20s — proceeding with daemon startup anyway")
+                                at.greenchili.surfmate.logging.LauncherEreignisse.merken("HARDRESET_ZEITABLAUF", "s=20")
+                                // 0.1.38.10: das Tor der Start-Stufen öffnet auch beim Zeitablauf
+                                at.greenchili.surfmate.updater.HardResetTor.beenden()
                                 try { showPostUpdateToasts() } catch (_: Exception) {}
                                 startDaemons.run()
                                 synchronized (daemonStartupCoordinator) {
@@ -710,7 +712,7 @@ open class MainActivity : AppCompatActivity() {
                             daemonStartupCoordinator.pendingWatchdog = watchdog
                             daemonStartupCoordinator.watchdogHandler = mainHandler
                         }
-                        mainHandler.postDelayed(watchdog, 30_000)
+                        mainHandler.postDelayed(watchdog, 20_000)   // 0.1.38.10: wie HardResetTor.ZEITLIMIT_MS
                         at.greenchili.surfmate.updater.UpdateLifecycle.hardResetDaemons(this) {
                             if (callbackFired.compareAndSet(false, true)) {
                                 synchronized (daemonStartupCoordinator) {

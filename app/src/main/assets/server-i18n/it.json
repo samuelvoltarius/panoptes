@@ -2157,6 +2157,12 @@
         "help": "Si collega al server della community di Panoptes (byd.serveone.at). Richiede la chiave di membro. Disattivato = nessuna chiamata. Le segnalazioni sulla strada vengono inviate solo se le attivi anche in Stato della strada."
       }
     },
+    "navi": {
+      "sprachansagen": {
+        "title": "Navigazione: indicazioni vocali",
+        "help": "Durante la guida la mappa Panoptes legge ad alta voce le indicazioni di svolta. Il volume segue quello dei media, nessun altro suono. Disattivato per impostazione predefinita."
+      }
+    },
     "speedcam": {
       "enabled": {
         "title": "Avviso autovelox",
@@ -2198,7 +2204,7 @@
       },
       "mobilfunk": {
         "title": "Scarica gli aggiornamenti anche con la rete mobile",
-        "help": "Disattivato dopo una nuova configurazione: consenti ogni download sul messaggio di aggiornamento. Un aggiornamento pesa di solito da 70 a 120 MB; la dimensione viene mostrata prima. Disattivato = Panoptes scarica solo quando l'auto è in Wi-Fi. Il download avviene solo ad auto parcheggiata e riprende da dove si era interrotto."
+        "help": "Disattivato dopo una nuova configurazione: consenti ogni download sul messaggio di aggiornamento. Un aggiornamento pesa di solito da 70 a 120 MB; la dimensione viene mostrata prima. Disattivato = Panoptes scarica solo quando l'auto è in Wi-Fi. Il download avviene solo ad auto parcheggiata e riprende da dove si era interrotto. Il launcher Panoptes segue la stessa impostazione e arriva con lo stesso aggiornamento."
       },
       "quelle": {
         "title": "Fonte degli aggiornamenti",
@@ -2353,7 +2359,7 @@
     "karte": {
       "sucheInternet": {
         "title": "Mappa: ricerca su Internet",
-        "help": "Quando cerchi sulla mappa, il testo e la posizione approssimativa (arrotondata a circa 1 km) vanno a Photon, Nominatim e Overpass, senza identificativo. Spento: non viene inviato nulla, trovi solo luoghi salvati e coordinate."
+        "help": "Quando cerchi sulla mappa, solo il testo della ricerca va al pianificatore di percorsi Panoptes (il nostro server), senza la tua posizione e senza identificativo. Spento: non viene inviato nulla, trovi solo luoghi salvati e coordinate."
       },
       "quelle": {
         "help": "Da dove Panoptes carica le immagini della mappa. La fonte scelta vede il tuo indirizzo IP e l’area della mappa, quindi più o meno dove si trova la tua auto. «Nessuna»: non viene caricata alcuna mappa. Impostazione di fabbrica: Nessuna. Panoptes non passa mai da solo a un’altra fonte."
@@ -2702,9 +2708,12 @@
       "antwortet_nicht": "Il pianificatore di percorso non risponde (HTTP {0}). Per percorsi lunghi riprova.",
       "nicht_erreichbar": "Pianificatore di percorso non raggiungibile",
       "offline": "Pianificatore di percorso al momento non raggiungibile (nessuna connessione) – nuovo tentativo tra {0} s",
+      "fuehrung_schluessel": "La guida ha bisogno del collegamento al pianificatore di percorso (chiave membro).",
+      "fuehrung_vertrag": "Il pianificatore di percorso risponde in un formato sconosciuto – aggiorna Panoptes.",
       "fahrzeug_fehlt": "Scegli prima il modello del tuo veicolo (Ricarica → Modello del veicolo), così il pianificatore usa i valori giusti.",
       "planer_fehler": "Il pianificatore non è riuscito a calcolare questo percorso ({0}).",
-      "planer_fehler_allgemein": "Il pianificatore non è riuscito a calcolare questo percorso."
+      "planer_fehler_allgemein": "Il pianificatore non è riuscito a calcolare questo percorso.",
+      "keine_position": "L’auto non ha al momento una posizione attuale."
     },
     "vorliebenEinwilligung": {
       "title": "Inviare le preferenze di ricarica al pianificatore?",
@@ -3008,9 +3017,10 @@
     "waechter_an": "Guardiano attivato dal telefono {0}.",
     "waechter_aus": "Guardiano disattivato dal telefono {0}.",
     "rechte_selbst": "Il telefono proprietario {0} ha modificato i suoi diritti: {1}.",
-    "frage_telegram": "Quale dispositivo è il tuo telefono? Sceglilo in auto in Sistema → Dispositivi associati – solo allora c’è un telefono proprietario.",
-    "frage_telegram_bestaetigen": "Durante l’aggiornamento è stato scelto automaticamente un telefono proprietario. Controlla in auto in Sistema → Dispositivi associati che sia davvero il tuo telefono.",
-    "telegram_gewaehlt": "{0} ora è il tuo telefono proprietario."
+    "frage_telegram": "Quale dispositivo è il tuo telefono? Sceglilo in auto in Impostazioni → Tutte le impostazioni → Dispositivi collegati – solo allora c’è un telefono proprietario.",
+    "frage_telegram_bestaetigen": "Durante l’aggiornamento è stato scelto automaticamente un telefono proprietario. Controlla in auto in Impostazioni → Tutte le impostazioni → Dispositivi collegati che sia davvero il tuo telefono.",
+    "telegram_gewaehlt": "{0} ora è il tuo telefono proprietario.",
+    "signatur_abgelehnt": "Azione del proprietario dal telefono {0} rifiutata ({1})."
   },
   "update_klein": {
     "titel": "Aggiornamenti",
@@ -3023,5 +3033,20 @@
     "push_neu": "Nuovo PC collegato: {0}",
     "push_neu_text": "Non sei stato tu? Disconnettilo in Dispositivi associati.",
     "handshakes": "{0} tentativi di connessione sconosciuti tramite il ponte sono stati rifiutati nell’ultima ora. Se non era il tuo PC: controlla Dispositivi associati e, se serve, disattiva «Accedere da PC» nell’auto."
+  },
+  "websitzung": {
+    "nie_web": "Funziona solo sullo schermo dell’auto o con accesso, non nell’interfaccia web dell’app.",
+    "passkey_noetig": "L’interfaccia web apre il bagagliaio solo con il permesso «Aprire» e una conferma recente con impronta o Face ID.",
+    "rueckfrage": "Si vede o si sente fuori dall’auto. Attivare ora?",
+    "recht_fehlt": "A questo telefono manca il permesso «{0}». Attivalo in auto in Dispositivi collegati.",
+    "recht_wort": {
+      "zusperren": "Chiudere",
+      "klima": "Clima",
+      "aufsperren": "Aprire",
+      "signal": "Clacson e luci",
+      "laden": "Ricarica in auto",
+      "tacho": "Quadro",
+      "route": "Percorso"
+    }
   }
 }

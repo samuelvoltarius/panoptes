@@ -349,6 +349,7 @@
                             <button class="btn" id="haCopy" type="button" data-i18n="system.ha_copy">Kopieren</button>
                         </div>
                         <div class="sys-note" data-i18n="system.ha_reach">Home Assistant muss Panoptes erreichen: gleiches WLAN oder Tailscale.</div>
+                        <div data-karten-felder="homeassistant" style="margin-top:12px;"></div>
                     </div>
                 </div>
 
@@ -372,6 +373,7 @@
                         <div class="sys-actions">
                             <button class="btn btn-primary" id="planerBtn" type="button"></button>
                         </div>
+                        <div data-karten-felder="planerKarte" style="margin-top:12px;"></div>
                     </div>
                 </div>
 
@@ -453,6 +455,7 @@
                         <div class="sys-note" style="margin-top:0;" data-i18n="datenfreigaben.lead">Was Daten nach außen schickt, ist standardmäßig aus. Jede Freigabe schaltest du hier einzeln ein und jederzeit wieder aus.</div>
                         <div id="datenschutzFelder" style="margin-top:10px;"></div>
                         <div id="datenschutzEinwilligungen"></div>
+                        <div data-karten-felder="datenschutz" style="margin-top:10px;"></div>
                     </div>
                 </div>
 
@@ -480,6 +483,20 @@
                         </div>
                     </div>
                     <div class="card-body" id="blitzerInhalt"></div>
+                </div>
+
+                <!-- ===== Navigation (0.1.38.10): Navi-Schalter der Gruppe „system“, Liste in system-overview.js ===== -->
+                <div class="card" id="navigation" style="display:none;">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+                            <span data-i18n="system.navigation_title">Navigation</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="sys-note" style="margin-top:0;" data-i18n="system.navigation_lead">Was Panoptes während der Fahrt sagt und zeigt.</div>
+                        <div id="navigationFelder" style="margin-top:10px;"></div>
+                    </div>
                 </div>
 
                 <!-- ===== Energie (Kern-Schema-Gruppe „energie“, ab 0.1.8): wie sparsam Panoptes im Stand arbeitet ===== -->
@@ -556,6 +573,18 @@
                     </div>
                 </div>
 
+                <!-- 0.1.38.10: Schalter der Gruppe „system“ ohne eigene Karte (Liste in system-overview.js) -->
+                <div class="card" id="weitereEinstellungen" style="display:none;">
+                    <div class="card-header"><div class="card-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+                        <span data-i18n="system.weitere_title">Weitere Einstellungen</span>
+                    </div></div>
+                    <div class="card-body">
+                        <div class="sys-note" style="margin-top:0;" data-i18n="system.weitere_lead">Start bei Zündung, Telegram-Hinweis und wie lange Panoptes Protokolle aufhebt.</div>
+                        <div data-karten-felder="weitereEinstellungen" style="margin-top:10px;"></div>
+                    </div>
+                </div>
+
                 <!-- ===== Core services (read-only) ===== -->
                 <div class="card" id="coreServicesCard">
                     <div class="card-header">
@@ -580,7 +609,7 @@
     <script src="../shared/auth.js"></script>
     <script src="../shared/core.js?v=pn6"></script>
     <script src="../shared/system.js?v=4"></script>
-    <script src="../shared/system-overview.js?v=5"></script>
+    <script src="../shared/system-overview.js?v=7"></script>
     <script src="../shared/vendor/qrcode-generator-1.4.4.js"></script>
     <script src="../shared/einstellungen.js?v=pn8"></script>
     <script src="../shared/home-layout.js?v=2"></script>
@@ -665,6 +694,25 @@
                     PanoptesBlitzer.zeichne(document.getElementById('blitzerInhalt'), store);
                     if (location.hash === '#blitzer') document.getElementById('blitzer').scrollIntoView();
                 }
+                // 0.1.38.10: Navi-Schalter (Sprachansagen, „Reicht es noch?“) – eine Stelle, die Suche führt hierher
+                var naviKeys = (store && window.PanoptesSystemOverview && PanoptesSystemOverview.naviFelder || [])
+                    .filter(function (k) { return !!store.feld(k); });
+                if (naviKeys.length) {
+                    document.getElementById('navigation').style.display = '';
+                    store.zeichne(document.getElementById('navigationFelder'), { gruppe: 'system', nur: naviKeys });
+                    if (location.hash === '#navigation') document.getElementById('navigation').scrollIntoView();
+                }
+                // 0.1.38.10: übrige Felder der Gruppe „system“ in ihre Karte (eine Liste: PanoptesSystemOverview.kartenFelder)
+                var kf = (window.PanoptesSystemOverview && PanoptesSystemOverview.kartenFelder) || {};
+                Object.keys(kf).forEach(function (karte) {
+                    var keys = store ? kf[karte].filter(function (k) { return !!store.feld(k); }) : [];
+                    var box = document.querySelector('[data-karten-felder="' + karte + '"]');
+                    if (!keys.length || !box) return;
+                    store.zeichne(box, { gruppe: 'system', nur: keys });
+                    // Datenschutz und „Weitere“ sind sonst zu; Planer und HA zeigen sich selbst (Planer nur mit Konto)
+                    if (karte === 'datenschutz' || karte === 'weitereEinstellungen') document.getElementById(karte).style.display = '';
+                    if (location.hash === '#' + karte) document.getElementById(karte).scrollIntoView();
+                });
                 if (!store || !store.feld('energie.profil')) return;
                 document.getElementById('energie').style.display = '';
                 store.zeichne(document.getElementById('energieFelder'), { gruppe: 'energie' });
@@ -995,6 +1043,9 @@
                         Array.prototype.forEach.call(rows.querySelectorAll('button[data-handy-schluessel]'), function (b) {
                             b.onclick = function () { self.handySchluesselWeg(b); };
                         });
+                        Array.prototype.forEach.call(rows.querySelectorAll('button[data-schluessel-besitzer]'), function (b) {
+                            b.onclick = function () { self.schluesselBesitzer(b); };
+                        });
                         // 0.1.33 Web-Aufsperren: Einrichten, Prüfzahl, Zurücknehmen
                         Array.prototype.forEach.call(rows.querySelectorAll('button[data-passkey]'), function (b) {
                             b.onclick = function () { self.passkey(b); };
@@ -1020,7 +1071,7 @@
                 var wort = { klima: self.t('system.handy_wort_klima', 'Klima'), zusperren: self.t('system.handy_wort_zusperren', 'Zusperren'),
                     aufsperren: self.t('system.handy_wort_aufsperren', 'Aufsperren'), push: self.t('system.handy_wort_push', 'Mitteilungen'),
                     web: self.t('system.handy_wort_web', 'Weboberfläche'), kamera: self.t('system.handy_wort_kamera', 'Kamera'),
-                    wallbox: self.t('system.handy_wort_wallbox', 'Wallbox'), route: self.t('system.handy_wort_route', 'Route'),
+                    wallbox: self.t('system.handy_wort_wallbox', 'Wallbox'), laden: self.t('system.handy_wort_laden', 'Laden im Auto'), route: self.t('system.handy_wort_route', 'Route'),
                     update: self.t('system.handy_wort_update', 'Update'),
                     ereignisclip: self.t('system.handy_wort_ereignisclip', 'Unfall-Clips'),
                     protokoll: self.t('system.handy_wort_protokoll', 'Protokoll'),
@@ -1035,6 +1086,8 @@
                     web: self.t('system.handy_recht_web', 'Weboberfläche in der App (ohne PIN, Kopplungen, Netz, Updates)'),
                     kamera: self.t('system.handy_recht_kamera', 'Kamerabilder und Aufnahmen unterwegs'),
                     wallbox: self.t('system.handy_recht_wallbox', 'Wallbox starten, stoppen, Ladestrom'),
+                    // 0.1.38.10 Laden im Auto aus der Weboberfläche (getrennt von der Wallbox), Standard aus
+                    laden: self.t('system.handy_recht_laden', 'Laden starten, Ladeplan, Ladegrenze und Ladestrom im Auto (Weboberfläche)'),
                     route: self.t('system.handy_recht_route', 'Route ins Auto schicken (startet nichts von selbst)'),
                     update: self.t('system.handy_recht_update', 'Panoptes und Launcher aktualisieren (nur geparkt)'),
                     ereignisclip: self.t('system.handy_recht_ereignisclip', 'Unfall-Clips aufs Handy erlauben (nur auf Knopfdruck am Handy)'),
@@ -1052,7 +1105,7 @@
                         + '<span class="toggle-switch"><input type="checkbox" data-handy-recht="' + k + '" data-id="' + self.esc(g.id) + '"'
                         + (an ? ' checked' : '') + ' aria-label="' + self.esc(wort[k]) + '"><span class="toggle-slider"></span></span></label>';
                 }
-                var alle = ['besitzer', 'einstellungen', 'klima', 'zusperren', 'aufsperren', 'push', 'web', 'kamera', 'wallbox', 'route', 'update', 'ereignisclip', 'signal', 'launcher', 'protokoll', 'dateien', 'tacho'];
+                var alle = ['besitzer', 'einstellungen', 'klima', 'zusperren', 'aufsperren', 'push', 'web', 'kamera', 'wallbox', 'laden', 'route', 'update', 'ereignisclip', 'signal', 'launcher', 'protokoll', 'dateien', 'tacho'];
                 var hat = alle.filter(function (k) { return r.indexOf(k) >= 0; });
                 var fehlt = alle.filter(function (k) { return r.indexOf(k) < 0; });
                 var html = '<div class="pn-rechte">';
@@ -1068,6 +1121,12 @@
                     : self.t('system.handy_schluessel_fehlt', 'Noch kein Aufsperr-Schlüssel hinterlegt.'));
                 if (g.schluessel) html += ' <button class="btn" type="button" data-handy-schluessel="' + self.esc(g.id) + '">'
                     + self.esc(self.t('system.handy_schluessel_weg', 'Schlüssel entfernen')) + '</button>';
+                // 0.1.39 Besitzer-Signatur: später gemeldeter Schlüssel gilt für Besitzer-Aktionen erst nach Bestätigung hier
+                if (g.besitzerSignatur === 'unbestaetigt' && g.schluesselFingerabdruck) {
+                    html += '<div class="sys-meta">' + self.esc(self.t('system.schluessel_besitzer_offen', 'Dieser Schlüssel darf noch keine Besitzer-Aktionen (koppeln, Rechte, Besitzer wechseln) signieren.'))
+                        + ' <button class="btn" type="button" data-schluessel-besitzer="' + self.esc(g.id) + '" data-fp="' + self.esc(g.schluesselFingerabdruck) + '">'
+                        + self.esc(self.t('system.schluessel_besitzer_knopf', 'Für Besitzer-Aktionen bestätigen')) + '</button></div>';
+                }
                 return html + '</div>' + self.passkeyBlock(g);
             },
             // 0.1.33 Web-Aufsperren: Standard aus, nur der Autobildschirm kann es einrichten (Server: nur_am_auto).
@@ -1199,7 +1258,7 @@
                 var a = d.automatik || {}, zonen = Array.isArray(d.zonen) ? d.zonen : [];
                 var html = '<div class="pn-recht-wort">' + self.esc(self.t('system.ha_auto_titel', 'Tor beim Heimkommen öffnen')) + '</div>'
                     + '<div class="pn-recht-info">' + self.esc(self.t('system.ha_auto_info', 'Öffnet das gewählte Tor, wenn du langsam auf deine Zone „Zuhause“ zufährst – höchstens einmal je Ankunft, nie bei unklarer Lage. Jede Auslösung wird gemeldet.')) + '</div>';
-                if (!zonen.length) return html + '<div class="pn-recht-info">' + self.esc(self.t('system.ha_auto_keine_zone', 'Erst unter Wächter → Sichere Orte eine Zone für Zuhause anlegen.')) + '</div>';
+                if (!zonen.length) return html + '<div class="pn-recht-info">' + self.esc(self.t('system.ha_auto_keine_zone', 'Erst unter Regeln → Orte deinen Ort für Zuhause anlegen und „Ruhezone“ ankreuzen.')) + '</div>';
                 html += '<label class="pn-recht-info">' + self.esc(self.t('system.ha_auto_tor', 'Tor')) + ' <select data-ha-auto data-ha-auto-tor>'
                     + '<option value="">' + self.esc(self.t('system.ha_auto_aus', 'Aus')) + '</option>'
                     + tore.map(function (x) { return '<option value="' + self.esc(x.entity) + '"' + (a.tor === x.entity ? ' selected' : '') + '>' + self.esc(x.titel || x.entity) + '</option>'; }).join('')
@@ -1348,6 +1407,12 @@
                     return;
                 }
                 // 0.1.25 Wallbox vom Handy: eigene Rückfrage, Standard aus
+                // 0.1.38.10 Laden im Auto aus der Weboberfläche: eigene Rückfrage, Standard aus
+                if (cb.getAttribute('data-handy-recht') === 'laden' && cb.checked
+                    && !window.confirm(self.t('system.handy_laden_confirm', 'Dieses Handy darf dann in der Weboberfläche das Laden im Auto starten und Ladeplan, Ladegrenze und Ladestrom ändern. Einschalten?'))) {
+                    cb.checked = false;
+                    return;
+                }
                 if (cb.getAttribute('data-handy-recht') === 'wallbox' && cb.checked
                     && !window.confirm(self.t('system.handy_wallbox_confirm', 'Dieses Handy darf dann von überall das Laden starten und stoppen und den Ladestrom ändern – nur an der freigegebenen Wallbox, nie während der Fahrt. Du bekommst bei jeder Änderung eine Telegram-Nachricht. Einschalten?'))) {
                     cb.checked = false;
@@ -1388,6 +1453,13 @@
                 if (!window.confirm(self.t('system.handy_schluessel_confirm', 'Aufsperr-Schlüssel entfernen? Das Handy kann danach erst wieder aufsperren, wenn es einen neuen Schlüssel meldet (z. B. nach neuem Fingerabdruck).'))) return;
                 b.disabled = true;
                 fetch('/api/kopplung/schluessel-loeschen', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: b.getAttribute('data-handy-schluessel') }) })
+                    .catch(function () {}).then(function () { self.liste(); });
+            },
+            schluesselBesitzer: function (b) {
+                var self = this, fp = b.getAttribute('data-fp');
+                if (!window.confirm(self.t('system.schluessel_besitzer_confirm', 'Nur bestätigen, wenn du den Schlüssel gerade selbst in der App eingerichtet hast. Die App zeigt denselben Fingerabdruck: {fp}', { fp: fp }))) return;
+                b.disabled = true;
+                fetch('/api/kopplung/schluessel-besitzer', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: b.getAttribute('data-schluessel-besitzer'), fingerabdruck: fp }) })
                     .catch(function () {}).then(function () { self.liste(); });
             },
             widerrufen: function (id, name, btn) {
@@ -1447,11 +1519,11 @@
                         + '<div class="sys-note" style="margin-top:4px;">' + self.esc(self.t('system.req_check', 'Stimmt die Zahl mit der auf dem Gerät überein?')) + '</div>'
                         + '<div style="font:700 40px/1.2 var(--family-display, monospace);letter-spacing:.25em;margin:8px 0;">' + self.esc(a.pruefzahl) + '</div>'
                         + (a.art === 'handy' ? '<label class="sys-note" style="display:flex;gap:10px;align-items:center;margin:4px 0 10px;"><input type="checkbox" data-auf="' + self.esc(a.ref) + '" style="width:22px;height:22px;"> '
-                            + self.esc(self.t('system.req_unlock', 'Auch Aufsperren erlauben (mit Fingerabdruck am Handy, später unter Kopplungen änderbar)')) + '</label>'
+                            + self.esc(self.t('system.req_unlock', 'Auch Aufsperren erlauben (mit Fingerabdruck am Handy; erlauben geht nur am Bildschirm im Auto, wegnehmen überall)')) + '</label>'
                             + '<label class="sys-note" style="display:flex;gap:10px;align-items:center;margin:4px 0 10px;"><input type="checkbox" data-wb="' + self.esc(a.ref) + '" style="width:22px;height:22px;"> '
-                            + self.esc(self.t('system.req_wallbox', 'Auch die Wallbox steuern (Laden starten/stoppen, Ladestrom; später änderbar)')) + '</label>'
+                            + self.esc(self.t('system.req_wallbox', 'Auch die Wallbox steuern (Laden starten/stoppen, Ladestrom; erlauben geht nur am Bildschirm im Auto, wegnehmen überall)')) + '</label>'
                             + '<label class="sys-note" style="display:flex;gap:10px;align-items:center;margin:4px 0 10px;"><input type="checkbox" data-upd="' + self.esc(a.ref) + '" style="width:22px;height:22px;"> '
-                            + self.esc(self.t('system.req_update', 'Darf Panoptes aktualisieren (nur geparkt; später änderbar)')) + '</label>' : '')
+                            + self.esc(self.t('system.req_update', 'Darf Panoptes aktualisieren (nie während der Fahrt, nur in P; später änderbar)')) + '</label>' : '')
                         + '<div class="sys-actions">'
                         + '<button class="btn btn-primary" type="button" style="min-width:140px;min-height:48px;font-size:16px;" data-req="' + self.esc(a.ref) + '" data-art="' + self.esc(a.art || '') + '" data-was="erlauben">' + self.esc(self.t('system.req_allow', 'Erlauben')) + '</button> '
                         + '<button class="btn" type="button" style="min-width:140px;min-height:48px;font-size:16px;" data-req="' + self.esc(a.ref) + '" data-art="' + self.esc(a.art || '') + '" data-was="ablehnen">' + self.esc(self.t('system.req_deny', 'Ablehnen')) + '</button>'

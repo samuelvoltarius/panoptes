@@ -72,6 +72,13 @@ class SurfMateApplication : Application() {
         // - PARTIAL_WAKE_LOCK to prevent CPU sleep
         // - SCREEN_OFF receiver registration
         // - Daemon startup
+        // 0.1.38.10 Stufe −1: Steht ein Hard-Reset nach einem Update an (Marker), hält das Tor jeden Daemon-Start an,
+        // auch den über Bedienungshilfe oder Boot-Weg, bis der Hard-Reset durch ist. Muss VOR allen Startwegen stehen.
+        try {
+            if (at.greenchili.surfmate.updater.UpdateLifecycle.isPostUpdateLaunch(this, null)) {
+                at.greenchili.surfmate.updater.HardResetTor.erwarten(android.os.SystemClock.elapsedRealtime())
+            }
+        } catch (_: Throwable) { /* ohne Tor wie bisher */ }
         DaemonKeepaliveService.start(this)
         // Non-blocking and a no-op in steady state. If a language pick was
         // saved app-private while daemon IPC was unavailable, replay it once

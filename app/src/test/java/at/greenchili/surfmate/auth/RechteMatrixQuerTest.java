@@ -91,4 +91,25 @@ public class RechteMatrixQuerTest {
         assertTrue(k2.istBesitzer("h1"));
         assertFalse(k2.istBesitzer(pc));
     }
+
+    @Test
+    public void naviSprachansagenNurDisplayLoginOderBesitzer() {
+        // 0.1.38.10 Integration: neues Feld navi.sprachansagen (G5, hörbar im Auto) × Stufen. Kopplungen und PC
+        // (nie Besitzer-Stufe) nur lesen, ohne Recht einstellungen gar nicht; Display/Login und Besitzer-Handy schalten.
+        at.greenchili.surfmate.einstellungen.Feld f = null;
+        for (at.greenchili.surfmate.einstellungen.Feld x : at.greenchili.surfmate.einstellungen.Katalog.felder(
+                new at.greenchili.surfmate.einstellungen.Katalog.Kontext())) {
+            if (at.greenchili.surfmate.navmap.nav.NaviAnsagen.SCHLUESSEL.equals(x.key)) f = x;
+        }
+        assertNotNull(f);
+        assertFalse("nie über eine Kopplung ganz geheim", f.nieExtern);
+        assertEquals("nurLesendExtern", at.greenchili.surfmate.einstellungen.Einstellungen.sperre(f,
+                at.greenchili.surfmate.einstellungen.Einstellungen.Stufe.KOPPLUNG));
+        assertEquals("rechtFehlt", at.greenchili.surfmate.einstellungen.Einstellungen.sperre(f,
+                at.greenchili.surfmate.einstellungen.Einstellungen.Stufe.KEIN_RECHT));
+        assertEquals(null, at.greenchili.surfmate.einstellungen.Einstellungen.sperre(f,
+                at.greenchili.surfmate.einstellungen.Einstellungen.Stufe.BESITZER));
+        assertEquals(null, at.greenchili.surfmate.einstellungen.Einstellungen.sperre(f,
+                at.greenchili.surfmate.einstellungen.Einstellungen.Stufe.LOGIN));
+    }
 }

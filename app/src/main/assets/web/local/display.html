@@ -322,7 +322,7 @@
         if (window.PanoptesLauncherKarte) PanoptesLauncherKarte.init();
         // 0.1.38.7: Launcher als Startbildschirm (Opt-in, Standard aus)
         if (window.PanoptesEinstellungen) PanoptesEinstellungen.laden().then(function (store) {
-            if (store && store.feld('launcher.startbildschirm')) store.zeichne(document.getElementById('lncStartFelder'), { gruppe: store.feld('launcher.startbildschirm').gruppe, nur: ['launcher.startbildschirm'] });
+            if (store && store.feld('launcher.startbildschirm')) store.zeichne(document.getElementById('lncStartFelder'), { gruppe: store.feld('launcher.startbildschirm').gruppe, nur: ['launcher.startbildschirm', 'anzeige.launcherVideo'] });
         });
         // „Launcher einrichten“ nur zeigen, wenn die Seite im Auto vorhanden ist
         fetch('launcher.html', { cache: 'no-store' }).then(function (r) {

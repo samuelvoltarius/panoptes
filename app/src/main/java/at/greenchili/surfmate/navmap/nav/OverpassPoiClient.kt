@@ -48,6 +48,13 @@ object OverpassPoiClient {
     /** Public Overpass instance — free OSM data, no key required. */
     private const val OVERPASS_ENDPOINT = "https://overpass-api.de/api/interpreter"
 
+    /**
+     * G3 (Koordination 05.11.2026, Alfreds Linie): kein Fremddienst direkt aus dem Auto. Einen Weg zum eigenen Overpass
+     * ueber Planer oder Kern gibt es noch nicht, darum ist „Punkte an der Route“ vorerst aus - es geht nichts hinaus.
+     * Kommt mit einem eigenen Endpunkt (grober Ausschnitt, ohne Log) wieder.
+     */
+    const val AKTIV = false
+
     /** Required by OSM/Overpass usage policy (identifies the client). */
     private val USER_AGENT = MapNetworking.USER_AGENT   // Panoptes/<version>
 
@@ -110,7 +117,7 @@ object OverpassPoiClient {
         maxLng: Double,
         kinds: Set<PoiKind>
     ): List<RoutePoi> {
-        if (kinds.isEmpty()) return emptyList()
+        if (kinds.isEmpty() || !AKTIV) return emptyList()
         // Normalize so a caller passing edges in either order still works.
         val south = minOf(minLat, maxLat)
         val north = maxOf(minLat, maxLat)

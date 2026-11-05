@@ -136,8 +136,16 @@ public final class BesitzerApiHandler {
             return fehler(400, "json");
         }
         if (!req.optBoolean("bestaetigt", false)) return fehler(400, "bestaetigung");
-        if (zuOft(now)) return fehler(429, "zu_oft");
         String ich = k.anzeigeName(kid);
+        // 0.1.39 Besitzer-Signatur (heikle Pfade): vor dem Ratenlimit, damit Fehlversuche das des Besitzers nicht verbrauchen
+        String sg = BesitzerSignatur.pruefe(k, kid, p, req, now);
+        if (sg != null) {
+            BefehlsLog.ereignis("besitzer.signatur", sg, kid, ich);
+            if (!"zu_oft".equals(sg)) wirkung.melde(Messages.text("besitzer.signatur_abgelehnt",
+                    "Besitzer-Aktion vom Handy {0} abgelehnt ({1}).", ich, sg));
+            return fehler("zu_oft".equals(sg) ? 429 : 403, sg);
+        }
+        if (zuOft(now)) return fehler(429, "zu_oft");
         switch (p) {
             case CODE: {
                 String art = req.optString("art", "");
@@ -251,6 +259,7 @@ public final class BesitzerApiHandler {
 
     /** Nur Tests. */
     static synchronized void ratenlimitLeeren() {
+        BesitzerSignatur.fehlLeeren();
         LETZTE.clear();
     }
 

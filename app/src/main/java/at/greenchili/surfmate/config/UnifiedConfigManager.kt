@@ -1078,9 +1078,9 @@ object UnifiedConfigManager {
         if (!genAi.has("insightDashboard")) genAi.put("insightDashboard", false)
         if (!genAi.has("insightNotifications")) genAi.put("insightNotifications", false)
 
-        // RoadSense Map (navMap) — routing BYOK credential section. Basemap (OpenFreeMap)
-        // needs no key; only the routing provider is bring-your-own-key, stored encrypted
-        // via CredentialCipher (see NavMapConfig). Default disabled until the user adds a key.
+        // RoadSense Map (navMap) — Karten-/Kombiinstrument-Schalter. Seit G3 (05.11.2026) routet die Karte ueber den
+        // eigenen Kern/Planer; die frueheren BYOK-Felder (enabled, routingEndpoint, routingApiKey verschluesselt) werden
+        // nicht mehr gelesen, bleiben aber unveraendert stehen (kein Datenverlust, Sicherung nimmt sie weiter mit).
         val navMap = config.optJSONObject("navMap") ?: JSONObject().also {
             config.put("navMap", it)
         }

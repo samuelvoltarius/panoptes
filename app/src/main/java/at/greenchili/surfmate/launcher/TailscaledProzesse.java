@@ -30,6 +30,15 @@ public final class TailscaledProzesse {
                 + statedir + "\" && printf '%s ' \"$p\"; done";
     }
 
+    /**
+     * Shell: nur LESEN, welche tailscaled mit diesem statedir laufen. Je Prozess eine Zeile
+     * {@code HR_TS laeuft <pid> <ja|nein>} (3. Feld: Programmdatei seit dem Start ersetzt/gelöscht). Nichts wird beendet.
+     */
+    public static String laeuftSkript(String statedir) {
+        return "for p in $(" + pidsSkript(statedir) + "); do e=$(readlink \"${PROC_ROOT:-/proc}/$p/exe\" 2>/dev/null); "
+                + "case \"$e\" in *deleted*) g=ja;; *) g=nein;; esac; echo \"HR_TS laeuft $p $g\"; done";
+    }
+
     /** Shell: nur die tailscaled mit diesem statedir beenden ({@code signal} z. B. "-9" oder ""). */
     public static String beendenSkript(String statedir, String signal) {
         String sig = signal == null ? "" : signal.trim();

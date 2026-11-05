@@ -176,7 +176,7 @@ BYD.roadSense = {
     async init() {
         await this.loadConfig();
         this.updateUI(false);
-        await Promise.all([this.loadRoutingStatus(), this.loadClusterStatus()]);
+        await this.loadClusterStatus();
         this._hydrated = true;
         if (BYD.utils && BYD.utils.unlockSettingsHydration) {
             BYD.utils.unlockSettingsHydration();
@@ -438,14 +438,9 @@ BYD.roadSense = {
             hazardMapCard.style.display = inAppMap ? '' : 'none';
         }
 
-        // Routing (BYOK) config is pure daemon HTTP (/api/navmap/routing/*), which
-        // works over a tunnel/browser too — so show it ALWAYS and load its status.
-        // (Previously in-app-gated, which left it blank when developing locally.)
+        // Routenberechnung (G3): nur ein Hinweis (eigener Planer, kein Schluessel) - immer sichtbar, nichts zu laden.
         var routingCard = document.getElementById('rsRoutingCard');
-        if (routingCard) {
-            routingCard.style.display = '';
-            if (loadLiveStatus) this.loadRoutingStatus();
-        }
+        if (routingCard) routingCard.style.display = '';
 
         // Cluster projection drives an on-car native projection via daemon HTTP.
         // The toggle/status only DO something on-car, but showing the card off-car
@@ -1132,169 +1127,6 @@ BYD.roadSense = {
         const ok = await this._save({ syncWorkerUrl: url });
         if (ok) { this.config.syncWorkerUrl = url; this._toastSaved(); }
         else { this._toastFailed(); }
-    },
-
-    // ==================== Routing (BYOK) ====================
-    //
-    // The basemap + hazards are free; only turn-by-turn routing needs a personal
-    // Valhalla key. The key is the SECRET — NavMapConfig stores it encrypted
-    // on-device (same CredentialCipher scheme as BYD Cloud's password) and the
-    // daemon NEVER returns it (status reports only `hasKey`). Backed by:
-    //   GET  /api/navmap/routing/status  — { configured, enabled, endpoint, hasKey }
-    //   POST /api/navmap/routing/setup   — { endpoint, apiKey }
-    //   POST /api/navmap/routing/clear
-    // All POSTs use fetch() (never XHR — the WebView drops XHR POST bodies).
-
-    async _postRouting(url, body) {
-        this._routingWriteVersion++;
-        this._routingWritesPending++;
-        try {
-            return await this._enqueueWrite(async () => {
-                try {
-                    const resp = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(body || {})
-                    });
-                    const data = await resp.json();
-                    return resp.ok && data ? data : null;
-                } catch (e) {
-                    console.warn('RoadSense: routing write failed:', e);
-                    return null;
-                }
-            });
-        } finally {
-            this._routingWritesPending--;
-        }
-    },
-
-    async loadRoutingStatus() {
-        if (this._routingWritesPending > 0) return;
-        const writeVersion = this._routingWriteVersion;
-        try {
-            const resp = await fetch('/api/navmap/routing/status');
-            const data = await resp.json();
-            if (this._routingWritesPending > 0
-                    || writeVersion !== this._routingWriteVersion) return;
-            if (!data || !data.success) { this._setRoutingBadge(false); return; }
-            const endpointInput = document.getElementById('rsRoutingEndpoint');
-            if (endpointInput && !endpointInput.value) {
-                endpointInput.value = data.endpoint || '';
-            }
-            // The key is write-only — never echoed back. When one is set, hint that
-            // in the (empty) password placeholder instead of exposing the secret.
-            const keyInput = document.getElementById('rsRoutingKey');
-            if (keyInput) {
-                keyInput.value = '';
-                if (data.hasKey) {
-                    const set = BYD.i18n.t('road_sense.routing_key_set_ph');
-                    keyInput.placeholder = (set && set !== 'road_sense.routing_key_set_ph')
-                        ? set : 'A key is saved — paste a new one to replace it';
-                }
-            }
-            this._setRoutingBadge(!!data.hasKey);
-        } catch (e) {
-            console.warn('RoadSense: routing status failed:', e);
-            if (writeVersion === this._routingWriteVersion
-                    && this._routingWritesPending === 0) {
-                this._setRoutingBadge(false);
-            }
-        }
-    },
-
-    /** Routing badge swaps between "configured" / "not configured" copy + tone. */
-    // Open an external signup/docs URL in the DEVICE'S DEFAULT BROWSER.
-    //  - In-app WebView (no real popup support): navigate the WebView to the URL;
-    //    WebViewFragment.shouldOverrideUrlLoading intercepts the non-loopback URL
-    //    and hands it to ACTION_VIEW → the default browser opens it (the WebView
-    //    itself does not leave the settings page).
-    //  - Tunnel/desktop browser: open a new tab (window.open _blank).
-    openExternal(url) {
-        try {
-            var inApp = (typeof window.AndroidBridge !== 'undefined');
-            if (inApp) {
-                // The override fires on a top-level navigation to an external URL.
-                window.location.href = url;
-            } else {
-                window.open(url, '_blank', 'noopener');
-            }
-        } catch (e) {
-            try { window.open(url, '_blank'); } catch (_) {}
-        }
-    },
-
-    // Stadia Maps free signup (the default Valhalla routing provider). Opens in the
-    // default browser per openExternal().
-    openRoutingSignup() {
-        this.openExternal('https://client.stadiamaps.com/signup/');
-    },
-
-    _setRoutingBadge(hasKey) {
-        const badge = document.getElementById('rsRoutingBadge');
-        if (!badge) return;
-        const key = hasKey ? 'road_sense.routing_status_set' : 'road_sense.routing_status_unset';
-        const fallback = hasKey ? 'Routing key configured' : 'No routing key';
-        const t = BYD.i18n.t(key);
-        badge.textContent = (t && t !== key) ? t : fallback;
-        badge.className = 'status-badge ' + (hasKey ? 'active' : 'inactive');
-    },
-
-    async saveRouting() {
-        const endpointInput = document.getElementById('rsRoutingEndpoint');
-        const keyInput = document.getElementById('rsRoutingKey');
-        const endpoint = endpointInput ? (endpointInput.value || '').trim() : '';
-        const apiKey = keyInput ? (keyInput.value || '').trim() : '';
-        if (!apiKey) {
-            this._toast('road_sense.routing_key_required', 'Enter a routing API key', 'error');
-            return;
-        }
-        const btn = document.getElementById('rsRoutingSaveBtn');
-        if (btn) btn.disabled = true;
-        try {
-            const data = await this._postRouting(
-                '/api/navmap/routing/setup',
-                { endpoint: endpoint, apiKey: apiKey }
-            );
-            if (data && data.success) {
-                // Don't keep the secret in the DOM after a successful save.
-                if (keyInput) keyInput.value = '';
-                this._toastSaved();
-                await this.loadRoutingStatus();
-            } else {
-                this._toastFailed();
-            }
-        } catch (e) {
-            console.warn('RoadSense: routing save failed:', e);
-            this._toastFailed();
-        } finally {
-            if (btn) btn.disabled = false;
-        }
-    },
-
-    async clearRouting() {
-        const btn = document.getElementById('rsRoutingClearBtn');
-        if (btn) btn.disabled = true;
-        try {
-            const data = await this._postRouting('/api/navmap/routing/clear', {});
-            if (data && data.success) {
-                const keyInput = document.getElementById('rsRoutingKey');
-                if (keyInput) {
-                    keyInput.value = '';
-                    const ph = BYD.i18n.t('road_sense.routing_key_ph');
-                    keyInput.placeholder = (ph && ph !== 'road_sense.routing_key_ph')
-                        ? ph : 'Paste your routing API key';
-                }
-                this._toast('road_sense.routing_cleared', 'Routing key cleared', 'success');
-                await this.loadRoutingStatus();
-            } else {
-                this._toastFailed();
-            }
-        } catch (e) {
-            console.warn('RoadSense: routing clear failed:', e);
-            this._toastFailed();
-        } finally {
-            if (btn) btn.disabled = false;
-        }
     },
 
     // ==================== Cluster projection ====================

@@ -100,7 +100,7 @@ public class HandyUpdateTest {
         assertTrue("Stand 1 bekommt route weiter dazu", k.hatRecht("alt", Kopplungen.RECHT_ROUTE));
         assertFalse(k.hatRecht("jung", Kopplungen.RECHT_UPDATE));
         // festgeschrieben: nach Widerruf der ältesten wandert „update“ nicht zum jüngeren
-        assertEquals(3, gespeichert[0].getJSONObject(0).getInt("rechteStand"));
+        assertEquals(4, gespeichert[0].getJSONObject(0).getInt("rechteStand"));   // 0.1.38.10: Stand 4 (laden)
         k.widerrufen("alt");
         assertFalse(neu().hatRecht("jung", Kopplungen.RECHT_UPDATE));
     }

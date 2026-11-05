@@ -5,8 +5,9 @@ import kotlin.math.floor
 import kotlin.math.round
 
 /**
- * 0.1.32.1 Regel Nr. 2: Was die Kartensuche an fremde Dienste (Photon, Nominatim, Stadia, Overpass) schickt.
- * Position nur auf 2 Nachkommastellen, keine Kennung, Schalter {@code karte.sucheInternet} (Standard an wie bisher).
+ * 0.1.32.1 Regel Nr. 2: Was die Karte fuer die Suche hinausschickt. Seit G3 (05.11.2026) geht die Ortssuche nur an den
+ * eigenen Planer (ueber den Kern, nur der Suchtext); fremd bleibt nur Overpass (Punkte an der Route) mit grobem
+ * Ausschnitt. Position nur auf 2 Nachkommastellen, keine Kennung, Schalter {@code karte.sucheInternet} (Standard an).
  */
 object KartenSuchePrivat {
 

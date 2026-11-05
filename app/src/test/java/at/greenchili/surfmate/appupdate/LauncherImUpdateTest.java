@@ -172,6 +172,15 @@ public class LauncherImUpdateTest {
         assertTrue("Telegram + Push", dienst.contains("String mit = UpdateHinweis.launcherSatz(f, installierterVc(), launcherStand());"));
         assertTrue("von selbst nie: nur Tipp oder Vormerkung",
                 dienst.contains("laufMitLauncher = alsVorgemerkt && launcherKommtMit("));
+        // 0.1.38.10: eine Mobilfunk-Quelle für Panoptes und Launcher, im Lauf dieselbe Einwilligung wie Panoptes
+        assertTrue(dienst.contains("mobil = l.mobilEinmal;"));
+        assertTrue(dienst.contains("l.nurWlan = nurWlan();\n        l.laeuft = launcherLaeuft;")
+                || dienst.contains("l.nurWlan = nurWlan();\r\n        l.laeuft = launcherLaeuft;"));
+        assertFalse("keine zweite Lesung von update.mobilfunk", dienst.replace("return !UpdateRegel.an(env.config(\"mobilfunk\"));", "")
+                .contains("env.config(\"mobilfunk\")"));
+        String regel = UpdateHinweisTest.lies("src/main/java/at/greenchili/surfmate/appupdate/LauncherRegel.java");
+        assertTrue(regel.contains("UpdateRegel.wartetWlan(l.nurWlan, mobil, l.netz)"));
+        assertFalse("keine eigene WLAN-Prüfung", regel.contains("UpdateRegel.NETZ_WLAN.equals"));
         int mit = dienst.indexOf("launcherMitnehmen(f);");
         int letzte = dienst.indexOf("// Letzte Prüfung direkt vor dem Start");
         assertTrue("Launcher vor der letzten Prüfung und dem Skriptstart", mit > 0 && mit < letzte);

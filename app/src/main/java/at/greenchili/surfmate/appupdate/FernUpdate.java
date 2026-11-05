@@ -196,7 +196,7 @@ public final class FernUpdate {
                 : !s.isNull("fehler") && s.has("fehler") && neuer ? "fehler" : null;
         r.put("zustand", zustand == null ? JSONObject.NULL : zustand);
         String grund = "laeuft".equals(zustand) ? null : launcherHindernis(s, installiert, neuer, darf);
-        boolean frage = LauncherRegel.WARTET_WLAN.equals(grund);
+        boolean frage = LauncherRegel.WARTET_WLAN.equals(grund) && s.optBoolean("mobilFrage", false);
         r.put("moeglich", !"laeuft".equals(zustand) && (grund == null || frage));
         r.put("grund", grund == null ? JSONObject.NULL : grund);
         r.put("mobilFrage", frage);
@@ -220,13 +220,15 @@ public final class FernUpdate {
         boolean neuer = installiert && v != null && s.optBoolean("neuer", false);
         if (!s.isNull("phase") && s.has("phase")) return fehler("launcher_laeuft_schon", sprache, null);
         String grund = launcherHindernis(s, installiert, neuer, true);
-        if (grund != null && !LauncherRegel.WARTET_WLAN.equals(grund)) {
+        // 0.1.38.10: gefragt wird wie bei Panoptes nur, wenn der Status es sagt; sonst wartet der Launcher aufs WLAN
+        boolean frage = LauncherRegel.WARTET_WLAN.equals(grund) && s.optBoolean("mobilFrage", false);
+        if (grund != null && !frage) {
             return fehlerText(grund, launcherFall(grund), sprache, null);
         }
         if (version == null || !version.equals(v.optString("version"))) {
             return fehler("andere_version", sprache, v.optString("version"));
         }
-        if (LauncherRegel.WARTET_WLAN.equals(grund) && !mobil) {
+        if (frage && !mobil) {
             long g = v.optLong("groesseBytes", 0);
             return new JSONObject().put("ok", false).put("grund", grund).put("mobilFrage", true)
                     .put("groesseBytes", g > 0 ? g : JSONObject.NULL)

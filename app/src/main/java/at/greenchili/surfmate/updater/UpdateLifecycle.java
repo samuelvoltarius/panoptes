@@ -102,19 +102,51 @@ public final class UpdateLifecycle {
     }
 
     /**
-     * 0.1.36: Daemon-Logs beim Update ins Archiv verschieben statt löschen (gleiche Dateien wie vorher:
-     * {@code *.log} und {@code *.log.N} im Daemon-Ordner, außer {@code surfmate_install.log}).
+     * 0.1.38.10: Zeitmarke je Schritt des Hard-Resets. Das Skript gibt {@code HR_T <Schritt> <Sekunden seit Beginn>} aus,
+     * der Rückruf schreibt sie als {@code HARDRESET_SCHRITTE} ins daemon_launcher.log (so zeigt das nächste Update, wo
+     * die Zeit hängt).
      */
-    static final String LOG_ARCHIV_SKRIPT = logArchivSkript("/data/user_de/0/com.android.shell/surfmate");
+    private static String hrMarke(String name) {
+        return "echo \"HR_T " + name + " $(( $(date +%s) - HR_T0 ))\"\n";
+    }
 
-    static String logArchivSkript(String ordner) {
+    /**
+     * Läuft der tailscaled von Weg 1 nach dem Hard-Reset weiter (er wird nicht mehr beendet)? Aus den Zeilen
+     * {@code HR_TS laeuft <pid> <ja|nein>} wird {@code anzahl=N;exe_geloescht=ja|nein}; leer = läuft keiner.
+     * Eine mit dem Update gelieferte neue Version wird dann erst nach dem nächsten Gerätestart wirksam.
+     */
+    static String tailscaledAusAusgabe(String ausgabe) {
+        if (ausgabe == null) return "";
+        int n = 0;
+        boolean geloescht = false;
+        for (String z : ausgabe.split("\n")) {
+            String[] t = z.trim().split(" ");
+            if (t.length == 4 && t[0].equals("HR_TS") && t[1].equals("laeuft") && t[2].matches("[0-9]{1,9}")) {
+                n++;
+                if (t[3].equals("ja")) geloescht = true;
+            }
+        }
+        return n == 0 ? "" : "anzahl=" + n + ";exe_geloescht=" + (geloescht ? "ja" : "nein");
+    }
+
+    /** Aus der Ausgabe des Hard-Reset-Skripts die Schritt-Zeiten als {@code name=Sekunden;…} (leer = keine Marken). */
+    static String schritteAusAusgabe(String ausgabe, long javaStartSek) {
+        if (ausgabe == null) return "";
         StringBuilder sb = new StringBuilder();
-        sb.append("LOGARCHIV=\"").append(ordner).append('/')
-                .append(at.greenchili.surfmate.logging.LogArchiv.ORDNER).append("\"\n");
-        for (String zeile : at.greenchili.surfmate.logging.LogArchiv.shellFunktionen()) sb.append(zeile).append('\n');
-        sb.append("for lf in ").append(ordner).append("/*.log ").append(ordner).append("/*.log.[0-9]*; do\n")
-                .append("  case \"$lf\" in *surfmate_install.log) ;; *) [ -f \"$lf\" ] && log_archivieren \"$lf\";; esac\n")
-                .append("done\n");
+        for (String z : ausgabe.split("\n")) {
+            z = z.trim();
+            if (z.startsWith("HR_BEGIN ")) {
+                try {
+                    long skript = Long.parseLong(z.substring(9).trim());
+                    sb.append("vorlauf=").append(Math.max(0, skript - javaStartSek)).append(';');
+                } catch (NumberFormatException ignored) { }
+            } else if (z.startsWith("HR_T ")) {
+                String[] t = z.split(" ");
+                if (t.length == 3 && t[1].matches("[a-z_]{1,20}") && t[2].matches("-?[0-9]{1,6}")) {
+                    sb.append(t[1]).append('=').append(t[2]).append(';');
+                }
+            }
+        }
         return sb.toString();
     }
 
@@ -127,6 +159,8 @@ public final class UpdateLifecycle {
         Log.i(TAG, "post-update detected — hard-resetting daemons");
         at.greenchili.surfmate.logging.LauncherEreignisse.merken("HARDRESET_BEGINN", "");
         long start = System.currentTimeMillis();
+        // 0.1.38.10 Stufe −1: ab hier startet kein Daemon, bis der Hard-Reset durch ist (HardResetTor, ZEITLIMIT_MS).
+        HardResetTor.erwarten(android.os.SystemClock.elapsedRealtime());
         String diLink5CaptureCleanup = diLink5CaptureKillScript();
         // We allocate a fresh AdbDaemonLauncher here because hardResetDaemons
         // is static and runs early in MainActivity.runDaemonStartup, before
@@ -149,7 +183,7 @@ public final class UpdateLifecycle {
         //      loop catches them on the next iteration).
         //   2. (bis 0.1.38: Watchdog-Skripte löschen; seit 0.1.38.1 bleiben sie stehen, siehe unten.)
         //   3. pkill / killall cascade — daemon binaries first, then
-        //      ancillary binaries (cloudflared/zrok/sing-box/tailscaled/wgproxy).
+        //      ancillary binaries (cloudflared/zrok/sing-box/wgproxy; tailscaled von Weg 1 bleibt).
         //      No self-match risk now.
         //   4. Wait briefly for processes to settle, THEN remove lock files.
         //      Doing this AFTER the kills (rather than before) prevents the
@@ -174,6 +208,7 @@ public final class UpdateLifecycle {
         // record of a UI stop that AccSentryDaemon's ACC-on auto-start gate
         // relies on. Write-if-absent also preserves a manual CORE-daemon stop.
         String script =
+                "echo \"HR_BEGIN $(date +%s)\"\nHR_T0=$(date +%s)\n" +
                 "[ -f /data/user_de/0/com.android.shell/surfmate/camera_daemon.disabled ] || " +
                 "echo \"disabled by post-update reset at $(date)\" > /data/user_de/0/com.android.shell/surfmate/camera_daemon.disabled\n" +
                 "chmod 666 /data/user_de/0/com.android.shell/surfmate/camera_daemon.disabled 2>/dev/null\n" +
@@ -190,6 +225,7 @@ public final class UpdateLifecycle {
                 // oben und die Kill-Kaskade halten alte Watchdogs auf, das Neuschreiben ersetzt die Skripte
                 // atomar per mv. start_zrok.sh ist eine Altlast und darf weiter weg.
                 "rm -f /data/user_de/0/com.android.shell/surfmate/start_zrok.sh 2>/dev/null\n" +
+                hrMarke("sentinels") +
                 // ps+awk+kill cascade — single-source-of-truth process
                 // names below. Each pattern walks /proc and SIGKILLs the
                 // matching PIDs except the calling shell's own PID.
@@ -199,21 +235,26 @@ public final class UpdateLifecycle {
                 EIGENE_PROZESSE_KILL + "\n" +
                 diLink5CaptureCleanup +
                 at.greenchili.surfmate.launcher.DaemonLauncher.Companion.psAwkKillMehrereLine(
-                        java.util.Arrays.asList("cloudflared", "zrok", "sing-box")) +
-                // 0.1.14: nur den Panoptes-tailscaled (eigener --statedir), nie einen zweiten (Notzugang, Regel 1)
-                at.greenchili.surfmate.launcher.TailscaledProzesse.beendenSkript(
-                        at.greenchili.surfmate.launcher.TailscaledProzesse.PANOPTES_STATEDIR, "-9") + "\n" +
+                        java.util.Arrays.asList("cloudflared", "zrok", "sing-box", "wgproxy")) +
+                // 0.1.38.10 (der Zugang darf nie vom Update abhängen): der Hard-Reset beendet den tailscaled
+                // von Weg 1 NICHT mehr (bis 0.1.38.9 mit -9, 0.1.14: nur unser --statedir, nie der Notzugang). Er läuft über
+                // das Update weiter (deploy/update-on-car.sh: "tailscaled bleibt"); der Start prüft isRunning und startet nur,
+                // wenn er fehlt. Preis: eine mit dem Update gelieferte neue tailscaled-Version wird erst nach dem nächsten
+                // Gerätestart wirksam. Nur lesen und protokollieren (TAILSCALED_ALT_LAEUFT):
+                at.greenchili.surfmate.launcher.TailscaledProzesse.laeuftSkript(
+                        at.greenchili.surfmate.launcher.TailscaledProzesse.PANOPTES_STATEDIR) + "\n" +
                 "killall -9 cloudflared 2>/dev/null\n" +
                 "killall -9 zrok 2>/dev/null\n" +
-                psAwkKillLine("wgproxy") +
                 "killall -9 wgproxy 2>/dev/null\n" +
                 "killall -9 sing-box 2>/dev/null\n" +
+                hrMarke("kill") +
                 // Brief settle so SIGKILL'd daemons release their lockfiles
                 // before we rm the lock files. Without this delay, a daemon
                 // mid-shutdown could still rewrite the lock between our
                 // pkill and our rm.
                 "sleep 1\n" +
                 EIGENE_PROZESSE_KILL + "\n" +
+                hrMarke("settle") +
                 // Watchdog ownership locks intentionally do not match
                 // *_daemon.lock. SIGKILL bypasses the watchdog EXIT trap, so
                 // these must be removed explicitly after the old wrappers are
@@ -225,6 +266,7 @@ public final class UpdateLifecycle {
                 // doesn't linger in /data/user_de/0/com.android.shell/surfmate (hygiene; it's rewritten via
                 // atomic tmp+rename each install so it never blocks recovery).
                 "rm -f /data/user_de/0/com.android.shell/surfmate/surfmate_install.sh 2>/dev/null\n" +
+                hrMarke("sperren") +
                 // Clear only known machine-written CORE markers. A pre-existing
                 // "disabled by ui/telegram" sentinel is durable manual intent
                 // and must survive the update.
@@ -239,19 +281,27 @@ public final class UpdateLifecycle {
                 "'disabled by stopAllDaemons sweep'*|'disabled by killDaemon'*) " +
                 "rm -f \"$S\" 2>/dev/null;; esac\n" +
                 "done\n" +
-                // 0.1.36 (03.11.: „logs dürfen bitte auch bei updates nicht
-                // überschrieben werden“): bisher löschte dieser Schritt nach JEDEM
-                // Update alle Daemon-Logs, denn die Auto-Builds haben LOG_CAPTURE=false.
-                // Deshalb fehlte z. B. der Auslöser der Ereignis-Clips vom 31.10./01.11.
-                // Jetzt wandern dieselben Dateien ins Log-Archiv (LogArchiv): je Art
-                // höchstens 7 Tage / 50 MB (einstellbar), bei wenig Platz enger.
-                // Die Daemons sind oben bereits beendet, niemand hält die Dateien offen.
-                LOG_ARCHIV_SKRIPT +
+                hrMarke("marker") +
+                // 0.1.38.10: kein Log-Archiv-Schritt mehr im Hard-Reset (am Auto 14 s und mehr, Deploy 3, 87 Archivdateien).
+                // Logs gehen auch ohne ihn nie verloren (0.1.36, Projektinhaber 03.11.): nichts wird gelöscht, jeder Wächter
+                // archiviert sein Log beim eigenen Start (log_archivieren im Start-Skript) und räumt dabei EINMAL auf,
+                // im Betrieb kürzt der Beobachter die Logs mit Archivkopie (log_kopieren_kuerzen).
                 "rm -f " + UPDATE_IN_PROGRESS_FILE + " " + POST_UPDATE_FILE + " 2>/dev/null\n" +
+                hrMarke("gesamt") +
                 "echo done\n";
 
         launcher.executeShellScript(script, new AdbDaemonLauncher.LaunchCallback() {
-            @Override public void onLog(String m) {}
+            @Override public void onLog(String m) {
+                // 0.1.38.10: Zeit je Schritt (vorlauf = ADB-Verbindung + Skript schreiben, dann die Schritte des Skripts)
+                String schritte = schritteAusAusgabe(m, start / 1000L);
+                if (!schritte.isEmpty()) {
+                    at.greenchili.surfmate.logging.LauncherEreignisse.merken("HARDRESET_SCHRITTE", schritte);
+                }
+                String ts = tailscaledAusAusgabe(m);
+                if (!ts.isEmpty()) {
+                    at.greenchili.surfmate.logging.LauncherEreignisse.merken("TAILSCALED_ALT_LAEUFT", ts);
+                }
+            }
             @Override public void onLaunched() {
                 // releasePerInstanceResources() — NOT closePersistentConnection.
                 // The latter closes the process-wide shared Dadb that the
@@ -275,7 +325,9 @@ public final class UpdateLifecycle {
         Log.i(TAG, "hard reset complete in " + ms + "ms" + (withError ? " (with warning)" : ""));
         at.greenchili.surfmate.logging.LauncherEreignisse.merken(withError ? "HARDRESET_FEHLER" : "HARDRESET_ENDE",
                 "ms=" + ms);
-        try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
+        // 0.1.38.10: kein fester Settle mehr (vorher 1 s); das Skript wartet selbst auf das Ende der Prozesse
+        // ("sleep 1" + zweiter Durchgang), und das Tor gibt die Stufen frei.
+        HardResetTor.beenden();
         if (onComplete != null) onComplete.run();
     }
 }

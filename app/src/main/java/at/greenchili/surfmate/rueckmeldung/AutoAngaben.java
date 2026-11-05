@@ -64,6 +64,33 @@ public final class AutoAngaben {
                 VehicleModelSelection.normalizeSource(v.optString("modelSource", ""), raw)) ? raw : null;
     }
 
+    /** Längste Firmware-Angabe, die mitgeht. */
+    static final int FIRMWARE_MAX = 64;
+    /** Eine Fahrgestellnummer (17 Zeichen, ohne I, O, Q) darf nie als „Firmware“ durchgehen. */
+    private static final java.util.regex.Pattern FIN = java.util.regex.Pattern.compile("[A-HJ-NPR-Z0-9]{17}");
+
+    /**
+     * Rein: Firmware des Head-Units als kurzer Text aus der Build-Anzeige (zuerst {@code display}, sonst {@code incremental}).
+     * Nur Buchstaben, Ziffern und „._+-“ und Leerzeichen, höchstens {@link #FIRMWARE_MAX} Zeichen; alles andere fällt weg.
+     * Sieht der Rest wie eine Fahrgestellnummer aus oder ist er leer/zu kurz, gibt es null (nichts raten, nichts Persönliches).
+     */
+    static String firmware(String display, String incremental) {
+        String roh = display != null && !display.trim().isEmpty() ? display : incremental;
+        if (roh == null) return null;
+        String s = roh.replaceAll("[^A-Za-z0-9._+ -]", "").replaceAll(" {2,}", " ").trim();
+        if (s.length() > FIRMWARE_MAX) s = s.substring(0, FIRMWARE_MAX).trim();
+        if (s.length() < 3 || FIN.matcher(s.toUpperCase(java.util.Locale.ROOT)).matches()) return null;
+        return s;
+    }
+
+    public static String firmware() {
+        try {
+            return firmware(android.os.Build.DISPLAY, android.os.Build.VERSION.INCREMENTAL);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
     /** Rein: 5 und 4 aus der gewählten Plattform; bis Android 10 ist es DiLink 3; sonst nicht sicher bekannt. */
     static Integer dilink(boolean fuenf, boolean vier, int sdk) {
         if (fuenf) return 5;

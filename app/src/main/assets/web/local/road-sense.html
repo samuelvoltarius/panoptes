@@ -130,7 +130,7 @@
                         <div class="setting-row" style="border-bottom:none;">
                             <div class="setting-info">
                                 <div class="setting-name" data-i18n="road_sense.map_open">Karte öffnen</div>
-                                <div class="setting-desc" data-i18n="road_sense.map_open_desc">Öffnet die Karte im Vollbild. Such Routen, navigiere und sieh Gefahrenstellen auf dem Weg. Tipp auf eine Stelle, um sie zu bestätigen oder zu entfernen.</div>
+                                <div class="setting-desc" data-i18n="road_sense.map_open_desc">Öffnet die Karte im Vollbild. Such Routen, navigiere und sieh Gefahrenstellen auf dem Weg. Tipp auf eine Stelle, um sie zu bestätigen oder zu entfernen. Sprachansagen sind aus, du schaltest sie unter Einstellungen → Alle Einstellungen → Auto &amp; Anzeige → Navigation ein.</div>
                             </div>
                             <div class="setting-control">
                                 <button type="button" id="rsOpenMapBtn" class="btn btn-primary" onclick="RoadSenseSettings.openHazardMap()" data-i18n="road_sense.map_open_btn">Karte öffnen</button>
@@ -139,61 +139,18 @@
                     </div>
                 </div>
 
-                <!-- Routing (BYOK). The basemap + hazards work without a key; only
-                     turn-by-turn routing needs a personal Valhalla key. The key is the
-                     secret here — stored encrypted on-device by NavMapConfig, never
-                     returned to the UI (status reports only whether one is set). -->
+                <!-- Routenberechnung (G3, 05.11.2026): ueber den eigenen Kern -> Panoptes-Planer, kein Schluessel im Auto.
+                     Die fruehere Eingabe eines eigenen Routing-Schluessels ist entfernt; ein alter gespeicherter Schluessel bleibt unberuehrt. -->
                 <div class="card" data-tab="map" id="rsRoutingCard">
                     <div class="card-header">
                         <div class="card-title">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>
                             <span data-i18n="road_sense.routing_title">Routenberechnung</span>
                         </div>
-                        <span class="status-badge inactive" id="rsRoutingBadge" data-i18n="road_sense.routing_status_unset">Noch kein Schlüssel</span>
+                        <span class="status-badge active" id="rsRoutingBadge" data-i18n="road_sense.routing_status_eigen">Eigener Dienst</span>
                     </div>
                     <div class="card-body">
-                        <div class="setting-hint" data-i18n="road_sense.routing_help">Die Karte selbst ist gratis. Für die Wegbeschreibung brauchst du einen kostenlosen, persönlichen Schlüssel von einem Valhalla-Anbieter. Füg deinen hier ein. Er ist freiwillig: Karte und Gefahrenstellen gehen auch ohne. Der Schlüssel wird verschlüsselt im Auto gespeichert.</div>
-
-                        <!-- BYOK guide: a "Get a free key" CTA (opens the Stadia Maps
-                             signup in the default browser via openExternal) + numbered
-                             steps. Styled as a tonal info block so it reads as guidance,
-                             not another setting row. -->
-                        <div class="routing-guide" style="margin:4px 0 12px;padding:14px 16px;border-radius:14px;background:var(--md-sys-color-surface-container-high,rgba(127,127,127,0.10));">
-                            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;flex-wrap:wrap;">
-                                <div class="setting-name" data-i18n="road_sense.routing_guide_title">So kommst du zu einem kostenlosen Schlüssel</div>
-                                <button type="button" class="btn btn-primary" onclick="RoadSenseSettings.openRoutingSignup()" data-i18n="road_sense.routing_get_key">Gratis-Schlüssel (Stadia Maps)</button>
-                            </div>
-                            <ol class="routing-steps" style="margin:0;padding-left:20px;line-height:1.6;font-size:13px;color:var(--md-sys-color-on-surface-variant,#666);">
-                                <li data-i18n="road_sense.routing_step1">Tipp auf „Gratis-Schlüssel (Stadia Maps)“. Die Anmeldung bei Stadia Maps öffnet sich. Leg ein kostenloses Konto an (der Gratis-Tarif braucht keine Kreditkarte).</li>
-                                <li data-i18n="road_sense.routing_step2">Öffne im Dashboard „Properties“ und lege eine Property an. Geh dann zu „Authentication“ und „API Keys“.</li>
-                                <li data-i18n="road_sense.routing_step3">Klick auf „Create API key“ und kopier den Schlüssel, der erscheint.</li>
-                                <li data-i18n="road_sense.routing_step4">Füg ihn unten ins Feld „Routing-API-Schlüssel“ ein und tipp auf Speichern. Lass die Webadresse, wie sie ist.</li>
-                            </ol>
-                        </div>
-
-                        <!-- Endpoint: long URL → label/desc on top, full-width input below. -->
-                        <div class="setting-stack">
-                            <div class="setting-info">
-                                <div class="setting-name" data-i18n="road_sense.routing_endpoint">Webadresse des Dienstes</div>
-                                <div class="setting-desc" data-i18n="road_sense.routing_endpoint_desc">Die Adresse des Valhalla-kompatiblen Dienstes. Lass sie so, außer dein Anbieter nennt dir eine andere.</div>
-                            </div>
-                            <input type="url" id="rsRoutingEndpoint" class="text-input" inputmode="url" placeholder="https://api.stadiamaps.com/route/v1" />
-                        </div>
-                        <!-- API key: secret → password input. -->
-                        <div class="setting-stack">
-                            <div class="setting-info">
-                                <div class="setting-name" data-i18n="road_sense.routing_key">Routing-API-Schlüssel</div>
-                                <div class="setting-desc" data-i18n="road_sense.routing_key_desc">Dein eigener Schlüssel. Er wird verschlüsselt im Auto gespeichert und nach dem Speichern nicht mehr angezeigt.</div>
-                            </div>
-                            <input type="password" id="rsRoutingKey" class="text-input" autocomplete="off" placeholder="Schlüssel hier einfügen" data-i18n-attr="placeholder:road_sense.routing_key_ph" />
-                            <div class="setting-desc" id="rsRoutingZiel" style="margin-top:6px;font-weight:600;"></div>
-                        </div>
-                        <div class="setting-row" style="border-bottom:none;justify-content:flex-end;gap:8px;">
-                            <div class="setting-control" style="display:flex;gap:8px;">
-                                <button type="button" class="btn btn-secondary" id="rsRoutingClearBtn" onclick="RoadSenseSettings.clearRouting()" data-i18n="road_sense.routing_clear">Entfernen</button>
-                                <button type="button" class="btn btn-primary" id="rsRoutingSaveBtn" onclick="RoadSenseSettings.saveRouting()" data-i18n="road_sense.routing_save">Speichern</button>
-                            </div>
-                        </div>
+                        <div class="setting-hint" data-i18n="road_sense.routing_help">Die Route berechnet der Panoptes-Routenplaner auf unserem eigenen Server. Du brauchst keinen Schlüssel und kein fremdes Konto. Für die Berechnung gehen Start, Ziel und Zwischenstopps an den Planer. Er speichert sie nicht und protokolliert sie nicht. Voraussetzung: Panoptes ist mit dem Routenplaner verbunden (Einstellungen → Alle Einstellungen → Routenplaner-Konto → „Mit Routenplaner verbinden“).</div>
                     </div>
                 </div>
 
@@ -967,26 +924,6 @@
     <script src="../shared/settings-hydration.js?v=1"></script>
     <script src="../shared/road-sense.js?v=chimevolume8"></script>
     <script>
-        // Datenschutz (0.1.8): an der Schlüssel-Eingabe klar sagen, wohin die Anfragen gehen.
-        (function () {
-            function host(u) { var m = /^[a-z]+:\/\/([^\/:?#]+)/i.exec(String(u || '').trim()); return m ? m[1] : ''; }
-            function T(k, v, fb) {
-                var r = (window.BYD && BYD.i18n && BYD.i18n.t) ? BYD.i18n.t(k, v) : null;
-                return (r && r !== k) ? r : fb.replace('{dienst}', v.dienst);
-            }
-            function zeige() {
-                var el = document.getElementById('rsRoutingZiel');
-                if (!el) return;
-                var inp = document.getElementById('rsRoutingEndpoint');
-                var h = host(inp && (inp.value || inp.getAttribute('placeholder')));
-                el.textContent = T('road_sense.routing_ziel', { dienst: h || '?' }, 'Deine Anfragen gehen an {dienst}.');
-            }
-            function spaeter() { setTimeout(zeige, 0); }   // nach den Feld-Handlern der Seite
-            document.addEventListener('input', spaeter, true);
-            document.addEventListener('change', spaeter, true);
-            if (window.BYD && BYD.i18n && BYD.i18n.onChange) BYD.i18n.onChange(zeige);
-            zeige(); setTimeout(zeige, 800); setTimeout(zeige, 2500);
-        })();
     </script>
     <script>
         function toggleSidebar() {

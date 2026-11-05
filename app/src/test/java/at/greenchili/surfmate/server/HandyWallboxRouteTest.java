@@ -152,7 +152,7 @@ public class HandyWallboxRouteTest {
         String w = WebHandyGuardTest.quelle("java/at/greenchili/surfmate/wallbox/WallboxDienst.java");
         assertTrue("begrenzter Weg mit Herkunft handy", w.contains("return steuernBegrenzt(b, HERKUNFT_HANDY);"));
         String sys = WebHandyGuardTest.quelle("assets/web/local/system.html");
-        assertTrue(sys.contains("'kamera', 'wallbox', 'route'"));
+        assertTrue(sys.contains("'kamera', 'wallbox', 'laden', 'route'"));
         assertTrue("Rückfrage beim Einschalten", sys.contains("system.handy_wallbox_confirm"));
         assertTrue("Häkchen beim Koppeln, Standard aus", sys.contains("<input type=\"checkbox\" data-wb=") && !sys.contains("data-wb=\"' + self.esc(a.ref) + '\" checked"));
         for (String l : new String[]{"de", "en", "fr", "it", "nl"}) {

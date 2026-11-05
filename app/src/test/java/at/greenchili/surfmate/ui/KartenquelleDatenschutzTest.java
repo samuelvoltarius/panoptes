@@ -103,7 +103,11 @@ public class KartenquelleDatenschutzTest {
     @Test
     public void schluesselFelderNennenDasZiel() throws Exception {
         assertTrue(read(WEB + "local/assistant.html").contains("id=\"genAiZiel\""));
-        assertTrue(read(WEB + "local/road-sense.html").contains("id=\"rsRoutingZiel\""));
+        // G3 (05.11.2026): Routing ohne eigenen Schluessel ueber den Panoptes-Planer - kein Schluesselfeld mehr, statt
+        // dessen nennt die Karte das Ziel der Anfragen (eigener Planer).
+        String rs = read(WEB + "local/road-sense.html");
+        assertFalse(rs.contains("id=\"rsRoutingKey\""));
+        assertTrue(rs.contains("data-i18n=\"road_sense.routing_help\"") && rs.contains("Panoptes-Routenplaner"));
     }
 
     private static String read(String relativePath) throws Exception {

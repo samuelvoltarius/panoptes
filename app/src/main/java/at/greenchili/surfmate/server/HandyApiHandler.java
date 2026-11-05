@@ -476,43 +476,10 @@ public final class HandyApiHandler {
         if ("annaeherung_stand".equals(aktion)) return at.greenchili.surfmate.handy.Annaeherung.stand(kid);
         if ("annaeherung".equals(aktion)) return at.greenchili.surfmate.handy.Annaeherung.melden(req, kid, k(), annaeherung());
         if ("naehe_anmelden".equals(aktion)) return naeheAnmelden(req, kid, u, jetzt);
-        String recht;
-        switch (aktion) {
-            case "klima_an":
-            case "klima_aus":
-            case "sitzheizung":   // 0.1.21: gleiches Recht wie das Klima
-            case "akku_heizen":   // 0.1.26: Akku vorheizen, gleiches Recht wie das Klima
-            case "heizen_stoppen":   // 0.1.26: Klima UND Akku aus, ohne Rückfrage (Stoppen ist sicher)
-            case "tiermodus":        // 03.11.2026: Tiermodus an/aus/gesehen, gleiches Recht wie das Klima
-            case "tiermodus_stand":
-                recht = Kopplungen.RECHT_KLIMA;
-                break;
-            case "zusperren":
-                recht = Kopplungen.RECHT_ZUSPERREN;
-                break;
-            case "aufsperren":
-                recht = Kopplungen.RECHT_AUFSPERREN;
-                break;
-            case "auto_finden":   // 0.1.38.8: Hupe + Licht, Lichthupe, Warnblinker – Standard AUS (Recht und Schalter)
-            case "licht":
-            case "warnblinker":
-                recht = Kopplungen.RECHT_SIGNAL;
-                break;
-            case "wallbox":   // 0.1.25: Start/Stop/Ladestrom, Standard AUS
-                recht = Kopplungen.RECHT_WALLBOX;
-                break;
-            case "route":     // 0.1.25: Ziel ins Auto schicken (nur Anzeige), Standard AN
-            case "route_stand":
-            case "plan_vorschau":         // 0.1.38.6: Handy plant über Panoptes, gleiches Recht wie die Route
-            case "plan_vorschau_stand":
-                recht = Kopplungen.RECHT_ROUTE;
-                break;
-            case "update_starten":   // 0.1.26.1: nur die vom Updater freigegebene Version, nur geparkt, Standard AUS
-                recht = Kopplungen.RECHT_UPDATE;
-                break;
-            default:
-                return fehler("aktion");
-        }
+        // 0.1.38.10: Aktion → Recht steht in WebSitzungRechte (eine Quelle mit der Web-Sitzung). Klima schließt
+        // Sitzheizung, Akku heizen, Heizen stoppen und den Tiermodus ein; Route die Plan-Vorschau.
+        String recht = WebSitzungRechte.fuerHandyAktion(aktion);
+        if (recht == null) return fehler("aktion");
         if (!k().hatRecht(kid, recht)) {
             if (aufsperren) u.telegram("handy.aufsperren_abgelehnt", k().anzeigeName(kid), "nicht_erlaubt");
             return fehler("nicht_erlaubt");

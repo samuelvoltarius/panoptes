@@ -1290,6 +1290,13 @@ public class SurveillanceEngineGpu {
     private final java.util.Map<Long, Actor> eventPeakActors =
             new java.util.concurrent.ConcurrentHashMap<>();
 
+    // 0.1.38.10 (Wächter-KI B2): Sichtdauer je Akteur über das GANZE Ereignis {erstes, letztes
+    // Sehen}. eventPeakActors friert die Kopie am Spitzenmoment ein (lastSeen bleibt stehen), so
+    // dass ein Verweilender dort kurz aussähe. Nur für die Melde-Dämpfung "geht nah vorbei";
+    // selbe Update-Stelle und derselbe Reset wie eventPeakActors.
+    private final java.util.Map<Long, long[]> eventSichtbar =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
     // Event-level latches for the "empty bright motion event" discard (the
     // shadow-over-parked-car false positive: a sunlit surface, a sweeping shadow
     // classed MEDIUM(approach) or coherent HIGH(loiter), parked-car YOLO boxes
@@ -1406,6 +1413,10 @@ public class SurveillanceEngineGpu {
         if (recordingGeneration.get() != gen) return;
         Actor.Severity max = eventPeakSeverity;
         for (Actor a : snapshot) {
+            if (a.firstSeenWallMs > 0 && a.lastSeenWallMs >= a.firstSeenWallMs) {
+                eventSichtbar.merge(a.actorId, new long[]{a.firstSeenWallMs, a.lastSeenWallMs},
+                        (alt, neu) -> new long[]{Math.min(alt[0], neu[0]), Math.max(alt[1], neu[1])});
+            }
             // Latch that a PERSON was YOLO-classified at all this event — a hard
             // KEEP for the discard (clause: eventEverSawPerson). Done BEFORE the
             // static-skip below and independent of confirmed/severity so a real
@@ -6517,6 +6528,7 @@ public class SurveillanceEngineGpu {
                             if (triggerEvidenceFound && shadowSb != null) {
                                 // I7: every deferred frame is attributable in the field log.
                                 logger.info("AI-confirm Q" + qIdx + ": "
+                                        + (MultiBatchConfirmationShadow.SCHARF ? "" : "gemessen, wouldBe=")
                                         + (shadowWouldConfirm ? "CONFIRM" : "DEFER")
                                         + (nachtStreng ? " (Nacht)" : "")
                                         + " | " + shadowSb);
@@ -6526,7 +6538,9 @@ public class SurveillanceEngineGpu {
                             logger.warn("AI-confirm Mehrbild-Zählung fehlgeschlagen, Einzelbild wie bisher: "
                                     + shadowT);
                         }
-                        if (triggerEvidenceFound && (mehrbildBestaetigt || mehrbildFehler)) {
+                        // 0.1.38.10: SCHARF=false → Einzelbild bestätigt wieder wie vor 0.1.38.8.
+                        if (triggerEvidenceFound && (!MultiBatchConfirmationShadow.SCHARF
+                                || mehrbildBestaetigt || mehrbildFehler)) {
                             lastAiConfirmationElapsedMs = detectionObservationElapsedMs;
                         }
 
@@ -8236,6 +8250,52 @@ public class SurveillanceEngineGpu {
      * known yet (e.g. recording started purely on motion before YOLO ran).
      * Honours the user's notification tier toggles (item 8).
      */
+    /**
+     * B2: Sichtdauer eines Akteurs über das ganze Ereignis, -1 wenn unbekannt. Ohne Eintrag in
+     * {@link #eventSichtbar} (z. B. schon vom nächsten Ereignis geleert, bevor die Schlussmeldung
+     * rausging) NICHT auf die eigenen Zeiten der Kopie zurückfallen — die sind bei einer
+     * Spitzen-Kopie eingefroren und würden einen Verweilenden kurz aussehen lassen.
+     */
+    private long sichtbarImEreignis(Actor a) {
+        long[] s = eventSichtbar.get(a.actorId);
+        if (s == null) return -1L;
+        long first = a.firstSeenWallMs > 0 ? Math.min(s[0], a.firstSeenWallMs) : s[0];
+        long last = Math.max(s[1], a.lastSeenWallMs);
+        if (first <= 0 || last < first) return -1L;
+        return last - first;
+    }
+
+    /**
+     * B2: Stufe für TELEGRAM-Meldungen. Mit {@code vorbeigehenLeise} (Standard an) zählt eine
+     * Person, die nur nah vorbeiging, als NOTICE — siehe NotificationGate.istVorbeigehen. Nur wenn
+     * die Telegram-Notice-Stufe AN ist: Alfreds Einordnung (05.11.2026) zählt auch Vorbeigehende
+     * als echt, also darf die Dämpfung eine Meldung nur leiser machen, nie verschlucken. Web-Push,
+     * Aufnahme, Sidecar, Hero und Stufen-Anzeige lesen weiter die ungedämpften Werte.
+     */
+    private Actor.Severity meldeStufe(java.util.List<Actor> actors) {
+        if (config == null || !config.isVorbeigehenLeise()
+                || !at.greenchili.surfmate.notifications.NotificationGate.shouldTelegram(Actor.Severity.NOTICE, config)) {
+            return at.greenchili.surfmate.notifications.NotificationGate.maxSeverity(actors);
+        }
+        return at.greenchili.surfmate.notifications.NotificationGate.maxSeverityGedaempft(actors, this::sichtbarImEreignis);
+    }
+
+    /**
+     * B2: Ereignis-Spitze für die Meldung. Ein ALERT-Latch wird nur dann zu NOTICE, wenn die
+     * Dämpfung an ist und weder die Ereignis-Spitzen-Akteure (sie behalten jeden Akteur über
+     * NOTICE, also auch den Auslöser des Latches) noch die Live-Akteure gedämpft ALERT ergeben.
+     * CRITICAL und null bleiben unverändert.
+     */
+    private Actor.Severity meldeLatch(Actor.Severity latch, java.util.List<Actor> snap,
+                                      java.util.List<Actor> live) {
+        if (latch != Actor.Severity.ALERT || config == null || !config.isVorbeigehenLeise()) return latch;
+        if (snap == null || snap.isEmpty()) return latch;
+        Actor.Severity a = meldeStufe(snap);
+        Actor.Severity b = live != null ? meldeStufe(live) : Actor.Severity.NOTICE;
+        return (a.ordinal() < Actor.Severity.ALERT.ordinal() && b.ordinal() < Actor.Severity.ALERT.ordinal())
+                ? Actor.Severity.NOTICE : latch;
+    }
+
     private void sendRichMotionNotifications(String videoFilename) {
         // User opt-out: by default, Telegram only gets the recording-CLOSE
         // photo (sendFinalTelegramNotification, fired from stopRecording). The
@@ -8251,7 +8311,7 @@ public class SurveillanceEngineGpu {
             return;
         }
         java.util.List<Actor> snap = lastActors;
-        Actor.Severity peakSev = at.greenchili.surfmate.notifications.NotificationGate.maxSeverity(snap);
+        Actor.Severity peakSev = meldeStufe(snap);
         // Per-tier muting for the web push system happens device-side via
         // muted-categories. Telegram has its own subscription model; we still
         // pass severity so the daemon can format the message accordingly.
@@ -8470,7 +8530,10 @@ public class SurveillanceEngineGpu {
         // the same actor the hero shows — see finalNotificationActors().
         java.util.List<Actor> snap = snapIn != null
                 ? snapIn : java.util.Collections.<Actor>emptyList();
-        Actor.Severity peakSev = at.greenchili.surfmate.notifications.NotificationGate.maxSeverity(snap);
+        Actor.Severity peakSev = meldeStufe(snap);
+        // B2: the event-level latch may stem from a person who only walked past — demote it
+        // exactly when every actor that could have produced it reads as walking past.
+        final Actor.Severity latchSev = meldeLatch(eventPeakSeverity, snap, liveActors);
         // MOTION-EVIDENCE SEVERITY FLOOR (notification fix) — mirror of
         // publishMotionFinal. A YOLO-less event (0 actors) collapses to the
         // NOTICE floor, so a trusted-HIGH / NEAR / approaching trigger the engine
@@ -8545,8 +8608,8 @@ public class SurveillanceEngineGpu {
         // shouldTelegram(null)=true — that would force-send actor-less events
         // and break the default NOTICE-suppression. Snapshot remains the
         // baseline; the latch only ever ADDS a reason to send.
-        boolean peakOk = eventPeakSeverity != null
-                && at.greenchili.surfmate.notifications.NotificationGate.shouldTelegram(eventPeakSeverity, config);
+        boolean peakOk = latchSev != null
+                && at.greenchili.surfmate.notifications.NotificationGate.shouldTelegram(latchSev, config);
         // LIVE disjunct (mirrors publishMotionFinal). `snap` is the event-peak
         // UNION, so peakSev=maxSeverity(snap) reflects the MAX — which, with the
         // INDEPENDENT (non-ordinal) tier toggles, can MASK a still-present lower
@@ -8557,7 +8620,7 @@ public class SurveillanceEngineGpu {
         // (audit R8-2 / ExtC-3) liveActors is the caller's stop-time snapshot
         // of lastActors — the field is cleared before this runs.
         boolean liveOk = at.greenchili.surfmate.notifications.NotificationGate.shouldTelegram(
-                at.greenchili.surfmate.notifications.NotificationGate.maxSeverity(liveActors), config);
+                meldeStufe(liveActors), config);
         if (!liveOk && !snapOk && !peakOk) {
             logger.debug("Telegram final-stage suppressed by per-tier toggle (eventPeak="
                     + eventPeakSeverity + ", snapshot=" + peakSev + ")");
@@ -8565,7 +8628,7 @@ public class SurveillanceEngineGpu {
         }
         // Report the higher of the two as the header severity so a receded
         // CRITICAL still reads CRITICAL when that's why we're sending.
-        Actor.Severity gateSev = maxOf(eventPeakSeverity, peakSev);
+        Actor.Severity gateSev = maxOf(latchSev, peakSev);
         try {
             TelegramNotifier.notifyMotionFinalized(
                     videoFilename,
@@ -10406,6 +10469,7 @@ public class SurveillanceEngineGpu {
         eventPeakSeverity = null;
         // Fresh event → clear the retained event-peak actors (see field comment).
         eventPeakActors.clear();
+        eventSichtbar.clear();
         // Fresh event → reset the empty-bright-motion discard latches.
         eventTriggerWasMotionOnly = false;
         eventEverApproaching = false;

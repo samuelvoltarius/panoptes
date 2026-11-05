@@ -88,7 +88,7 @@ public class MenueEineQuelleTest {
             ids.add(m.group(1));
             assertTrue("Icon " + m.group(2), icons.contains(m.group(2) + ":"));
         }
-        assertEquals(Arrays.asList("start", "car", "guard", "drive", "auto", "apps", "system"), ids);
+        assertEquals(Arrays.asList("start", "drive", "car", "guard", "auto", "apps", "system"), ids);
     }
 
     @Test

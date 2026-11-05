@@ -42,9 +42,15 @@ public final class OrteApiHandler {
                 double[] pos = position();
                 JSONObject r = new JSONObject().put("success", true).put("version", Orte.VERSION).put("max", Orte.MAX_ORTE);
                 if (kopplung) {
+                    // 0.1.38.10 Handy mit Recht „route“ (ExternGuard): nur Favoriten, ohne Koordinaten und ohne imKreis
+                    // (sonst verrät die Liste, wo das Auto steht); als Ziel per {ort_id} (HandyRoute.aufloesen)
+                    boolean handy = at.greenchili.surfmate.auth.Kopplungen.get().istHandy(AuthMiddleware.requestKopplungsId());
                     JSONArray a = new JSONArray();
                     for (int i = 0; i < liste.length(); i++) {
-                        a.put(Orte.ohneKoordinaten(liste.getJSONObject(i), pos == null ? null : pos[0], pos == null ? null : pos[1]));
+                        JSONObject o = liste.getJSONObject(i);
+                        if (handy && !at.greenchili.surfmate.planer.HandyRoute.istFavorit(o)) continue;
+                        a.put(handy ? Orte.ohneKoordinaten(o, null, null)
+                                : Orte.ohneKoordinaten(o, pos == null ? null : pos[0], pos == null ? null : pos[1]));
                     }
                     r.put("liste", a);
                 } else {

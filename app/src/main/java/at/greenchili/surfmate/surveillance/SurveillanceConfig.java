@@ -179,6 +179,10 @@ public class SurveillanceConfig {
      */
     private boolean telegramSendStartPing = false;
 
+    /** 0.1.38.10 (Wächter-KI B2): Person geht nur nah vorbei (CLOSE, < 6 s, keine Annäherung)
+     *  → Meldung als NOTICE statt ALERT. Aufnahme und Anzeige unverändert. Standard an. */
+    private boolean vorbeigehenLeise = true;
+
     // Per-tier Telegram filter (tierNotices/tierAlerts/tierCritical) moved
     // to the telegram section of unified config — see
     // UnifiedTelegramConfig.K_TIER_*. Lives there so the daemon process and
@@ -703,6 +707,9 @@ public class SurveillanceConfig {
 
     public boolean isTelegramSendStartPing() { return telegramSendStartPing; }
     public void setTelegramSendStartPing(boolean v) { this.telegramSendStartPing = v; }
+
+    public boolean isVorbeigehenLeise() { return vorbeigehenLeise; }
+    public void setVorbeigehenLeise(boolean v) { this.vorbeigehenLeise = v; }
 
     // Per-tier Telegram getters/setters moved to UnifiedTelegramConfig.
     
