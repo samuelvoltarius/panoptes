@@ -5828,7 +5828,7 @@
     "alerts_title": "Meldungen",
     "always_on": "Der Bot ist in der App unter „Dienste“ dauerhaft eingeschaltet – er läuft also immer, egal wie dieser Schalter steht.",
     "autostart": "Auch bei abgestelltem Auto erreichbar",
-    "autostart_hint": "Der Bot startet von selbst, wenn du das Auto abstellst. Ohne das kommen Befehle nur an, solange das Auto an ist.",
+    "autostart_hint": "Der Bot startet von selbst, wenn du das Auto abstellst. Ohne das kommen Befehle nur an, solange das Auto an ist. Standard an, sobald Telegram gekoppelt ist. Kostet etwas Strom der 12-V-Batterie; ist die Starterbatterie schwach, schläft der Bot bis zur nächsten Fahrt.",
     "reach_on": "Ja, einschalten",
     "reach_hint": "Sonst antwortet er nur, solange das Auto an ist. Kostet etwas Strom der 12-V-Batterie.",
     "reach_q": "Soll dich der Bot auch erreichen, wenn das Auto abgestellt ist?",

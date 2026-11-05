@@ -394,6 +394,20 @@ public final class GuardStopMonitor {
         schreibeV12Stand(st);
     }
 
+    /**
+     * 0.1.38.12: der gespeicherte 12-V-Stand roh ({zyklusMs, letzteMessungMs, low}) für andere Prozesse, z. B. den
+     * Telegram-Bot ({@link at.greenchili.surfmate.telegram.config.BotSchlaf12v}); null, wenn nicht lesbar. Nur lesen.
+     */
+    public static JSONObject v12StandRoh() {
+        try {
+            File f = new File(V12_STAND_FILE);
+            if (!f.isFile()) return null;
+            return new JSONObject(new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8));
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
     /** null, wenn nichts da ist oder der Stand aus einem früheren Parken stammt. */
     private static Battery12vEvaluator.Stand leseV12Stand(long parkedSince) {
         try {

@@ -5828,7 +5828,7 @@
     "alerts_title": "Alerts",
     "always_on": "The bot is switched on permanently under “Services” in the app, so it always runs, whatever this switch says.",
     "autostart": "Reachable while the car is off",
-    "autostart_hint": "The bot starts by itself when you switch the car off. Without this, commands only arrive while the car is on.",
+    "autostart_hint": "The bot starts by itself when you switch the car off. Without this, commands only arrive while the car is on. On by default once Telegram is paired. Costs a little 12 V battery power; if the starter battery is weak, the bot sleeps until the next drive.",
     "reach_on": "Yes, switch on",
     "reach_hint": "Otherwise it only answers while the car is on. Uses a little power from the 12 V battery.",
     "reach_q": "Should the bot reach you even when the car is parked and off?",

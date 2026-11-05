@@ -5828,7 +5828,7 @@
     "alerts_title": "Avvisi",
     "always_on": "Il bot è attivo in modo permanente in «Servizi» nell'app, quindi funziona sempre, qualunque sia la posizione di questo interruttore.",
     "autostart": "Raggiungibile anche con l'auto spenta",
-    "autostart_hint": "Il bot si avvia da solo quando spegni l'auto. Senza questa opzione, i comandi arrivano solo finché l'auto è accesa.",
+    "autostart_hint": "Il bot si avvia da solo quando spegni l'auto. Senza questa opzione, i comandi arrivano solo finché l'auto è accesa. Attivo di default appena Telegram è collegato. Consuma un po’ della batteria a 12 V; se la batteria di avviamento è debole, il bot dorme fino al prossimo viaggio.",
     "reach_on": "Sì, attiva",
     "reach_hint": "Altrimenti risponde solo mentre l’auto è accesa. Consuma un po’ di corrente della batteria a 12 V.",
     "reach_q": "Il bot deve raggiungerti anche quando l’auto è parcheggiata e spenta?",

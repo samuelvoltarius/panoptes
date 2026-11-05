@@ -5828,7 +5828,7 @@
     "alerts_title": "Meldingen",
     "always_on": "De bot staat in de app onder “Diensten” permanent aan, dus hij draait altijd, wat deze schakelaar ook zegt.",
     "autostart": "Bereikbaar terwijl de auto uit is",
-    "autostart_hint": "De bot start vanzelf als je de auto uitzet. Zonder dit komen commando's alleen aan terwijl de auto aan is.",
+    "autostart_hint": "De bot start vanzelf als je de auto uitzet. Zonder dit komen commando's alleen aan terwijl de auto aan is. Standaard aan zodra Telegram gekoppeld is. Kost wat stroom van de 12V-accu; is de startaccu zwak, dan slaapt de bot tot de volgende rit.",
     "reach_on": "Ja, aanzetten",
     "reach_hint": "Anders antwoordt hij alleen zolang de auto aan is. Kost wat stroom van de 12V-accu.",
     "reach_q": "Moet de bot je ook bereiken als de auto geparkeerd en uit is?",

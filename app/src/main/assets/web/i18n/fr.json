@@ -5828,7 +5828,7 @@
     "alerts_title": "Alertes",
     "always_on": "Le bot est activé en permanence sous « Services » dans l'application : il fonctionne donc toujours, quelle que soit la position de ce bouton.",
     "autostart": "Joignable même voiture éteinte",
-    "autostart_hint": "Le bot démarre tout seul quand vous éteignez la voiture. Sans cela, les commandes n'arrivent que tant que la voiture est allumée.",
+    "autostart_hint": "Le bot démarre tout seul quand vous éteignez la voiture. Sans cela, les commandes n'arrivent que tant que la voiture est allumée. Activé par défaut dès que Telegram est appairé. Consomme un peu de la batterie 12 V ; si la batterie de démarrage est faible, le bot dort jusqu’au prochain trajet.",
     "reach_on": "Oui, activer",
     "reach_hint": "Sinon il ne répond que lorsque la voiture est allumée. Consomme un peu de courant de la batterie 12 V.",
     "reach_q": "Le bot doit-il te joindre aussi quand la voiture est garée et éteinte ?",

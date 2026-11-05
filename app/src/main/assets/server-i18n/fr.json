@@ -1117,7 +1117,11 @@
       "aus": "Le bot dort de nouveau avec la voiture. Activer : /erreichbar an",
       "nein": "D’accord, le bot ne répond que lorsque la voiture est allumée. Activer plus tard : /erreichbar an",
       "stand_an": "✅ Le bot est joignable voiture éteinte. Désactiver : /erreichbar aus",
-      "fehler": "⚠️ Je n’ai pas pu l’enregistrer dans la voiture. Réessaie dans un instant."
+      "fehler": "⚠️ Je n’ai pas pu l’enregistrer dans la voiture. Réessaie dans un instant.",
+      "schlaf_12v": "🔋 Batterie de démarrage faible – le bot dort jusqu’au prochain trajet. Ensuite, il est de nouveau joignable.",
+      "standard_an": "🅿️ *Nouveau : le bot est maintenant joignable aussi voiture à l’arrêt.*\nTu reçois les alertes et peux lui écrire même quand la voiture est éteinte. Cela consomme un peu de la batterie 12 V. Si la batterie de démarrage est faible, le bot dort jusqu’au prochain trajet.\n\nDésactiver : bouton ci-dessous ou /erreichbar aus",
+      "hinweis_kopplung": "🅿️ Par défaut, le bot est joignable aussi voiture à l’arrêt. Cela consomme un peu de la batterie 12 V ; si la batterie de démarrage est faible, il dort jusqu’au prochain trajet. Désactiver : /erreichbar aus",
+      "btn_aus": "🌙 Seulement voiture allumée"
     },
     "kopplungen": {
       "titel": "📱 *Appareils appairés*",

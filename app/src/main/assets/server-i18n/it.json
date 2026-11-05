@@ -1117,7 +1117,11 @@
       "aus": "Il bot ora dorme di nuovo con l’auto. Attivare: /erreichbar an",
       "nein": "Va bene, il bot risponde solo mentre l’auto è accesa. Attivare più tardi: /erreichbar an",
       "stand_an": "✅ Il bot è raggiungibile ad auto spenta. Disattivare: /erreichbar aus",
-      "fehler": "⚠️ Non sono riuscito a salvarlo nell’auto. Riprova tra un momento."
+      "fehler": "⚠️ Non sono riuscito a salvarlo nell’auto. Riprova tra un momento.",
+      "schlaf_12v": "🔋 Batteria di avviamento debole – il bot dorme fino al prossimo viaggio. Poi è di nuovo raggiungibile.",
+      "standard_an": "🅿️ *Novità: il bot ora è raggiungibile anche ad auto spenta.*\nRicevi gli avvisi e puoi scrivergli anche quando l’auto è ferma. Consuma un po’ della batteria a 12 V. Se la batteria di avviamento è debole, il bot dorme fino al prossimo viaggio.\n\nDisattivare: pulsante qui sotto o /erreichbar aus",
+      "hinweis_kopplung": "🅿️ Di serie il bot è raggiungibile anche ad auto spenta. Consuma un po’ della batteria a 12 V; se la batteria di avviamento è debole, dorme fino al prossimo viaggio. Disattivare: /erreichbar aus",
+      "btn_aus": "🌙 Solo ad auto accesa"
     },
     "kopplungen": {
       "titel": "📱 *Dispositivi associati*",

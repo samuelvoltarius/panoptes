@@ -1111,7 +1111,11 @@
       "aus": "The bot now sleeps with the car again. Switch on: /erreichbar an",
       "nein": "All right, the bot only answers while the car is on. Switch on later: /erreichbar an",
       "stand_an": "✅ The bot is reachable while the car is off. Switch off: /erreichbar aus",
-      "fehler": "⚠️ I could not save that in the car. Please try again in a moment."
+      "fehler": "⚠️ I could not save that in the car. Please try again in a moment.",
+      "schlaf_12v": "🔋 Starter battery weak – the bot sleeps until the next drive. After that it is reachable again.",
+      "standard_an": "🅿️ *New: the bot is now reachable while the car is parked, too.*\nYou get alerts and can write to it even when the car is off. This costs a little 12 V battery power. If the starter battery is weak, the bot sleeps until the next drive.\n\nTurn off: button below or /erreichbar aus",
+      "hinweis_kopplung": "🅿️ By default the bot is reachable while the car is parked, too. This costs a little 12 V battery power; if the starter battery is weak, it sleeps until the next drive. Turn off: /erreichbar aus",
+      "btn_aus": "🌙 Only while the car is on"
     },
     "kopplungen": {
       "titel": "📱 *Paired devices*",

@@ -33,7 +33,7 @@ import java.util.Properties;
  *     "pairPin":         "",                // 6-digit, short-lived
  *     "pairPinExpiry":   0,                 // ms epoch
  *     "videoUploads":    true,            // fehlt = Standard an (0.1.38.11, MedienStandard)
- *     "autoStartAccOff": false,
+ *     "autoStartAccOff": false,         // fehlt = an, sobald gekoppelt (0.1.38.12, ErreichbarStandard)
  *     "criticalAlerts":  true,
  *     "connectivity":    false,
  *     "motionText":      true,
@@ -269,8 +269,9 @@ public final class UnifiedTelegramConfig {
         return MedienStandard.an(load());
     }
 
+    /** 0.1.38.12: Standard an, sobald gekoppelt ({@link ErreichbarStandard}); bewusst aus bleibt aus. */
     public static boolean isAutoStartAccOff() {
-        return load().optBoolean(K_AUTO_START, false);
+        return ErreichbarStandard.an(load());
     }
 
     /**
@@ -289,7 +290,7 @@ public final class UnifiedTelegramConfig {
      */
     public static boolean shouldStartOnAccOff() {
         JSONObject c = load();
-        return c.optBoolean(K_AUTO_START, false) || c.optBoolean(K_DAEMON_ENABLED, false);
+        return ErreichbarStandard.an(c) || c.optBoolean(K_DAEMON_ENABLED, false);
     }
 
     public static boolean isCriticalAlerts() {

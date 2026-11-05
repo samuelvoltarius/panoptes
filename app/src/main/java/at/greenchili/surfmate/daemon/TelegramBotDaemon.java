@@ -686,10 +686,74 @@ public class TelegramBotDaemon {
                 motionTextEnabled = newMotionText;
             }
             medienStandardHinweis(section, System.currentTimeMillis());
+            erreichbarStandardHinweis(section, System.currentTimeMillis());
+            botSchlaf12v(System.currentTimeMillis());
         } catch (Exception e) {
             // Don't kill the poll loop on a config read blip.
             log("refreshConfigFromUnified error: " + e.getMessage());
         }
+    }
+
+    /** 0.1.38.12 T2: einmalige Nachricht an den Bestand, wenn „auch abgestellt erreichbar“ dadurch neu an ist. */
+    private static volatile boolean erreichbarHinweisErledigt = false;
+    private static volatile long erreichbarHinweisVersuchMs = 0L;
+
+    private static void erreichbarStandardHinweis(org.json.JSONObject section, long now) {
+        if (erreichbarHinweisErledigt) return;
+        String was = at.greenchili.surfmate.telegram.config.ErreichbarStandard.entscheide(section);
+        if (at.greenchili.surfmate.telegram.config.MedienStandard.NICHTS.equals(was)) {
+            erreichbarHinweisErledigt = true;
+            return;
+        }
+        if (at.greenchili.surfmate.telegram.config.MedienStandard.HINWEIS.equals(was)) {
+            if (now - erreichbarHinweisVersuchMs < MEDIEN_HINWEIS_WIEDER_MS) return;
+            erreichbarHinweisVersuchMs = now;
+            if (ownerChatId <= 0 || !sendMessageWithButtons(ownerChatId, tr("erreichbar.standard_an"),
+                    new String[][][]{{{tr("erreichbar.btn_aus"), "cmd:/erreichbar aus"}}})) {
+                log("Erreichbar-Standard: Hinweis nicht gesendet, neuer Versuch später");
+                return;
+            }
+            log("Erreichbar-Standard: einmaliger Hinweis gesendet (auch abgestellt erreichbar jetzt an)");
+            erreichbarHinweisErledigt = true;   // in diesem Prozess nie ein zweites Mal
+        }
+        if (at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.setBoolean(
+                at.greenchili.surfmate.telegram.config.ErreichbarStandard.K_HINWEIS, true)) {
+            erreichbarHinweisErledigt = true;
+        }
+    }
+
+    /** 0.1.38.12 „Bot schläft bei 12-V-Stopp“ (BotSchlaf12v): höchstens einmal je Minute prüfen. */
+    private static volatile long botSchlafGeprueftMs = 0L;
+    static final String TELEGRAM_SPERRE =
+            "/data/user_de/0/com.android.shell/surfmate/telegram_bot_daemon.disabled";
+    static final String TELEGRAM_WACHHUND = "/data/user_de/0/com.android.shell/surfmate/start_telegram.sh";
+
+    private static void botSchlaf12v(long now) {
+        if (now - botSchlafGeprueftMs < 60_000L) return;
+        botSchlafGeprueftMs = now;
+        if (!at.greenchili.surfmate.telegram.config.BotSchlaf12v.sollSchlafen(
+                at.greenchili.surfmate.surveillance.GuardStopMonitor.v12StandRoh(), now,
+                at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.isAutoStartAccOff(),
+                at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.isDaemonEnabled())) {
+            return;
+        }
+        log("12-V-Schlaf: Starterbatterie schwach – Bot schläft bis zur nächsten Fahrt");
+        // EINE Nachricht vor dem Schlafen; der Bot startet erst beim nächsten Abstellen wieder
+        if (ownerChatId > 0) sendMessage(ownerChatId, tr("erreichbar.schlaf_12v"));
+        try {
+            // Sperrmarke zuerst (Maschinen-Stopp, der Start nach dem Abstellen räumt sie), dann Wachhund-Skript weg,
+            // sonst startet start_telegram.sh den Bot nach dem Beenden gleich wieder
+            java.io.File sperre = new java.io.File(at.greenchili.surfmate.util.DaemonStorage.rebase(TELEGRAM_SPERRE));
+            java.nio.file.Files.write(sperre.toPath(), (at.greenchili.surfmate.telegram.config.BotSchlaf12v.SPERR_GRUND
+                    + " at " + new java.util.Date() + "\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            sperre.setReadable(true, false);
+            sperre.setWritable(true, false);
+            new java.io.File(at.greenchili.surfmate.util.DaemonStorage.rebase(TELEGRAM_WACHHUND)).delete();
+        } catch (Throwable t) {
+            log("12-V-Schlaf: Sperrmarke nicht geschrieben (" + t.getMessage() + "), Bot läuft weiter");
+            return;
+        }
+        System.exit(0);
     }
 
     /** 0.1.38.11 Bilder an Telegram Standard an: einmalige Nachricht an den Bestand (MedienStandard). */
@@ -3149,8 +3213,15 @@ public class TelegramBotDaemon {
         }
         at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.setBoolean(
                 at.greenchili.surfmate.telegram.config.MedienStandard.K_HINWEIS, true);
+        // 0.1.38.12 T2: „Auch abgestellt erreichbar“ ist ab Werk an (ErreichbarStandard) – Hinweis mit 12-V-Kosten und
+        // Abschaltweg gleich hier; Merker setzen, damit nicht noch die einmalige Bestands-Nachricht kommt.
+        boolean erreichbarStandard = at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.isAutoStartAccOff()
+                && !at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.isDaemonEnabled();
+        if (erreichbarStandard) erfolg = erfolg + "\n\n" + tr("erreichbar.hinweis_kopplung");
+        at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.setBoolean(
+                at.greenchili.surfmate.telegram.config.ErreichbarStandard.K_HINWEIS, true);
         // 0.1.38.8: Ohne „Auch bei abgestelltem Auto erreichbar“ schläft der Bot nach dem Abstellen. Einmal fragen,
-        // mit einem Tipp einschalten; Standard bleibt aus.
+        // mit einem Tipp einschalten (nur noch, wenn jemand es bewusst ausgeschaltet hatte).
         if (!at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.shouldStartOnAccOff()) {
             sendMessageWithButtons(chatId, erfolg + "\n\n" + tr("erreichbar.frage"),
                     at.greenchili.surfmate.daemon.telegram.ErreichbarCommandHandler.knoepfe(TelegramBotDaemon::tr));

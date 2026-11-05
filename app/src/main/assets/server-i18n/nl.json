@@ -1117,7 +1117,11 @@
       "aus": "De bot slaapt nu weer met de auto. Aanzetten: /erreichbar an",
       "nein": "Prima, de bot antwoordt alleen zolang de auto aan is. Later aanzetten: /erreichbar an",
       "stand_an": "✅ De bot is bereikbaar als de auto uit is. Uitzetten: /erreichbar aus",
-      "fehler": "⚠️ Ik kon dat niet in de auto opslaan. Probeer het zo opnieuw."
+      "fehler": "⚠️ Ik kon dat niet in de auto opslaan. Probeer het zo opnieuw.",
+      "schlaf_12v": "🔋 Startaccu zwak – de bot slaapt tot de volgende rit. Daarna is hij weer bereikbaar.",
+      "standard_an": "🅿️ *Nieuw: de bot is nu ook bereikbaar als de auto geparkeerd staat.*\nJe krijgt meldingen en kunt hem schrijven, ook als de auto uit staat. Dat kost wat stroom van de 12V-accu. Is de startaccu zwak, dan slaapt de bot tot de volgende rit.\n\nUitzetten: knop hieronder of /erreichbar aus",
+      "hinweis_kopplung": "🅿️ Standaard is de bot ook bereikbaar als de auto geparkeerd staat. Dat kost wat stroom van de 12V-accu; is de startaccu zwak, dan slaapt hij tot de volgende rit. Uitzetten: /erreichbar aus",
+      "btn_aus": "🌙 Alleen als de auto aan is"
     },
     "kopplungen": {
       "titel": "📱 *Gekoppelde apparaten*",

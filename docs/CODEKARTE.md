@@ -1,6 +1,6 @@
 # Codekarte Panoptes
 
-**Stand: Version 0.1.38.11, Commit deabb40c**
+**Stand: Version 0.1.38.12, Commit 5d020e7d**
 
 Wegweiser durch den Code. Zuerst hier suchen, dann gezielt die genannte Datei öffnen.
 Die Karte nennt Dateien und Klassen, keine Zeilennummern. Kurze Pfade gelten ab

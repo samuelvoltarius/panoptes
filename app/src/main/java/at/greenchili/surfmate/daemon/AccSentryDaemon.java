@@ -8634,8 +8634,8 @@ public class AccSentryDaemon {
                 log("Telegram disable sentinel could not be read; retrying reconciliation");
                 return false;
             }
-            boolean machineStop = reason != null
-                    && (reason.contains("ACC-on") || reason.contains("stopAllDaemons"));
+            // 0.1.38.12: auch „12-V-Schlaf“ (der Bot hat sich bei schwacher Starterbatterie selbst schlafen gelegt)
+            boolean machineStop = at.greenchili.surfmate.telegram.config.BotSchlaf12v.maschinenStopp(reason);
             if (machineStop) {
                 log("Telegram disable sentinel is a machine stop (" + reason
                     + "), not a user stop; proceeding to auto-start");

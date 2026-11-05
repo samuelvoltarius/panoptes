@@ -1111,7 +1111,11 @@
       "aus": "Der Bot schläft jetzt wieder mit dem Auto. Einschalten: /erreichbar an",
       "nein": "Gut, der Bot antwortet nur, solange das Auto an ist. Später einschalten: /erreichbar an",
       "stand_an": "✅ Der Bot ist auch bei abgestelltem Auto erreichbar. Ausschalten: /erreichbar aus",
-      "fehler": "⚠️ Das konnte ich am Auto nicht speichern. Bitte gleich noch einmal versuchen."
+      "fehler": "⚠️ Das konnte ich am Auto nicht speichern. Bitte gleich noch einmal versuchen.",
+      "schlaf_12v": "🔋 Starterbatterie schwach – der Bot schläft bis zur nächsten Fahrt. Danach ist er wieder erreichbar.",
+      "standard_an": "🅿️ *Neu: Der Bot ist jetzt auch bei abgestelltem Auto erreichbar.*\nDu bekommst Meldungen und kannst ihm schreiben, auch wenn das Auto steht. Das kostet etwas Strom der 12-V-Batterie. Ist die Starterbatterie schwach, schläft der Bot bis zur nächsten Fahrt.\n\nAbschalten: Knopf unten oder /erreichbar aus",
+      "hinweis_kopplung": "🅿️ Der Bot ist ab Werk auch bei abgestelltem Auto erreichbar. Das kostet etwas Strom der 12-V-Batterie; ist die Starterbatterie schwach, schläft er bis zur nächsten Fahrt. Abschalten: /erreichbar aus",
+      "btn_aus": "🌙 Nur bei laufendem Auto"
     },
     "kopplungen": {
       "titel": "📱 *Gekoppelte Geräte*",

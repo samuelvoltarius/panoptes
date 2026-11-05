@@ -647,6 +647,30 @@
         "Bewakingsbeelden gaan nu standaard naar Telegram. Had je dit uitgezet, dan blijft het uit. Uitzetten met /bilder aus.",
         "Panoptes stuurt geen geraden formaat meer naar het bestuurdersscherm. Je stelt het formaat zelf in en bevestigt het."
       ]
+    },
+    {
+      "version": "0.1.38.12",
+      "versionCode": 76,
+      "de": [
+        "Der Telegram-Bot ist ab Werk auch bei abgestelltem Auto erreichbar. Das kostet etwas Strom aus der Starterbatterie. Abschalten mit /erreichbar aus.",
+        "Wird die Starterbatterie schwach, schläft der Bot von selbst. Wer die Erreichbarkeit ausgeschaltet hatte, behält das."
+      ],
+      "en": [
+        "The Telegram bot can now be reached by default even when the car is parked. This uses a little power from the starter battery. Turn off with /erreichbar aus.",
+        "If the starter battery gets weak, the bot goes to sleep by itself. If you had turned reachability off, it stays off."
+      ],
+      "fr": [
+        "Le bot Telegram est désormais joignable par défaut même voiture arrêtée. Cela consomme un peu la batterie de démarrage. Désactiver avec /erreichbar aus.",
+        "Si la batterie de démarrage faiblit, le bot se met en veille tout seul. Si tu l’avais désactivé, cela reste ainsi."
+      ],
+      "it": [
+        "Il bot Telegram ora è raggiungibile di serie anche ad auto parcheggiata. Consuma un po’ la batteria di avviamento. Disattivare con /erreichbar aus.",
+        "Se la batteria di avviamento si indebolisce, il bot va a riposo da solo. Chi l’aveva spento, lo mantiene spento."
+      ],
+      "nl": [
+        "De Telegram-bot is nu standaard ook bereikbaar als de auto geparkeerd staat. Dat kost wat stroom van de startaccu. Uitzetten met /erreichbar aus.",
+        "Wordt de startaccu zwak, dan gaat de bot vanzelf slapen. Had je de bereikbaarheid uitgezet, dan blijft het uit."
+      ]
     }
   ]
 }
