@@ -161,6 +161,15 @@
     <string name="camera_mode_current_dilink4">Now: DiLink 4</string>
     <string name="camera_mode_current_dilink5">Now: DiLink 5</string>
     <string name="camera_mode_save">Save and restart</string>
+    <string name="camera_mode_erkannt_hinweis">Panoptes detects %1$s here (%2$s), but a different camera input is saved. That is why the camera images may stay black.</string>
+    <string name="camera_mode_vorschlag_knopf">Switch to %1$s now</string>
+    <string name="camera_mode_sicher">certain</string>
+    <string name="camera_mode_vermutlich">likely</string>
+    <string name="camera_mode_kurz_default">Standard (DiLink 3)</string>
+    <string name="camera_mode_kurz_dilink4">DiLink 4</string>
+    <string name="camera_mode_kurz_dilink5">DiLink 5</string>
+    <string name="camera_mode_umstellen_frage">Switch the camera input to %1$s? Panoptes saves and restarts the camera (about 10 s). You can switch back at any time under Camera assignment → Camera input.</string>
+    <string name="camera_mode_umstellen_ja">Switch</string>
     <string name="camera_mode_hint">Switching the mode restarts the camera service. If the picture looks wrong (squashed, missing corners, red overlay), try the other mode.</string>
 
     <!-- DiLink 5 native camera order (only visible in DiLink 5 mode) -->
@@ -495,7 +504,7 @@
     <string name="start_dienst_zugang">Access (Tailscale)</string>
     <string name="start_dienst_oberflaeche">Interface</string>
     <string name="start_dienst_waechter">Guard</string>
-    <string name="start_dienst_rest">Telegram and bridge</string>
+    <string name="start_dienst_rest">Telegram</string>
     <string name="start_zustand_startet">starting …</string>
     <string name="start_zustand_bereit">ready</string>
     <string name="start_zustand_startet_nicht">not starting</string>

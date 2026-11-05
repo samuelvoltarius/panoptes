@@ -546,6 +546,12 @@ class DaemonStartupManager(
     /** Nach cleanup() läuft kein Ablauf mehr weiter (auch keine späten Rückrufe der Prüfungen). */
     @Volatile private var startAbgebrochen = false
 
+    init {
+        // 0.1.38.11: Abrufe (Startkarte, Ladebildschirm) prüfen mit denselben Prüfungen nach, ob ein Dienst läuft – auch
+        // wenn ihn ein anderer Weg gestartet hat oder der Ablauf dieses bzw. eines früheren Managers abgebrochen wurde
+        StartStatus.nachprueferSetzen(this) { s, rueck -> stufeBereit(s, rueck) }
+    }
+
     /**
      * Gestaffelter Start nach [DaemonStartPlan]: Zugang (nur mit Tailscale) → Web → Wächter → Rest. Jede StartStufe wartet
      * auf das Ende eines Hard-Resets ([at.greenchili.surfmate.updater.HardResetTor]) und den Boot-Schutz, danach nur
@@ -562,7 +568,9 @@ class DaemonStartupManager(
         log.info(TAG, "Start-Stufen: $stufen (Boot-Schutz ${kameraWarteMs} ms)")
         startAbgebrochen = false
         // EINE Stelle für den Zustand je Stufe (Ladebildschirm, GET /api/start/status)
-        StartStatus.beginne(stufen, android.os.SystemClock.elapsedRealtime())
+        // REST nur anzeigen, wenn es eine Prüfung gibt (Telegram an); sonst stünde dort ein ungeprüftes „✓“
+        val anzeige = stufen.filter { it != StartStufe.REST || PreferencesManager.isDaemonEnabled(DaemonType.TELEGRAM_DAEMON) }
+        StartStatus.beginne(anzeige, android.os.SystemClock.elapsedRealtime())
         StartAblauf(
             stufen = stufen,
             bootSchutzMs = kameraWarteMs,
@@ -1362,6 +1370,7 @@ class DaemonStartupManager(
 
     fun cleanup() {
         startAbgebrochen = true   // 0.1.38.10: laufender Stufen-Ablauf endet (auch späte Rückrufe der Prüfungen)
+        StartStatus.nachprueferEntfernen(this)   // 0.1.38.11: nur den eigenen Eintrag (ein neuerer Manager bleibt)
         healthCheckRunning.set(false)
         handler.removeCallbacksAndMessages(null)
         // The health-check loop now lives on its own looper, so clearing the main

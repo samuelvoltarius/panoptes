@@ -96,6 +96,15 @@
     <string name="camera_mode_current_dilink4">Nu: DiLink 4</string>
     <string name="camera_mode_current_dilink5">Nu: DiLink 5</string>
     <string name="camera_mode_save">Opslaan en herstarten</string>
+    <string name="camera_mode_erkannt_hinweis">Panoptes herkent hier %1$s (%2$s), maar er is een andere camera-invoer opgeslagen. Daarom blijven de camerabeelden misschien zwart.</string>
+    <string name="camera_mode_vorschlag_knopf">Nu overschakelen naar %1$s</string>
+    <string name="camera_mode_sicher">zeker</string>
+    <string name="camera_mode_vermutlich">waarschijnlijk</string>
+    <string name="camera_mode_kurz_default">Standaard (DiLink 3)</string>
+    <string name="camera_mode_kurz_dilink4">DiLink 4</string>
+    <string name="camera_mode_kurz_dilink5">DiLink 5</string>
+    <string name="camera_mode_umstellen_frage">Camera-invoer overschakelen naar %1$s? Panoptes slaat op en start de camera opnieuw (ongeveer 10 s). Terugzetten kan altijd via Cameratoewijzing → Camera-invoer.</string>
+    <string name="camera_mode_umstellen_ja">Overschakelen</string>
     <string name="camera_mode_hint">Bij het wisselen van modus start de cameradienst opnieuw. Ziet het beeld er verkeerd uit (platgedrukt, ontbrekende hoeken, rood vlak), probeer dan de andere modus.</string>
     <string name="camera_dilink5_mapping_title">Cameravolgorde voor DiLink 5</string>
     <string name="camera_dilink5_mapping_subtitle">De camera-ID\'s staan in de volgorde voor, rechts, achter, links. Laat het op Auto staan, tenzij de ruwe voorbeeldbeelden duidelijk een andere volgorde voor deze auto laten zien.</string>
@@ -342,7 +351,7 @@
     <string name="start_dienst_zugang">Toegang (Tailscale)</string>
     <string name="start_dienst_oberflaeche">Interface</string>
     <string name="start_dienst_waechter">Bewaker</string>
-    <string name="start_dienst_rest">Telegram en brug</string>
+    <string name="start_dienst_rest">Telegram</string>
     <string name="start_zustand_startet">start …</string>
     <string name="start_zustand_bereit">klaar</string>
     <string name="start_zustand_startet_nicht">start niet</string>

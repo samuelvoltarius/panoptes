@@ -100,6 +100,39 @@ public final class FehlerMelden {
     public static JSONObject koerper(String text, String version, Integer dilink, String modell, String sprache,
                                      String diagnose, String art, boolean abdeckung, String firmware)
             throws org.json.JSONException {
+        return koerper(text, version, dilink, modell, sprache, diagnose, art, abdeckung, firmware, null, null);
+    }
+
+    /** K2 (0.1.38.11): erkannter Kamera-Eingang, nur in der Form „modus/sicherheit“ (AutoArtErkennung.kurz). */
+    static final java.util.regex.Pattern ERKANNT =
+            java.util.regex.Pattern.compile("(default|dilink4|dilink5|unbekannt)/(sicher|vermutlich|unbekannt)");
+
+    /** Hängt {@code erkannt} an, nur in der erlaubten Form; null-sicher (ungültiger Körper bleibt null). */
+    public static JSONObject mitErkannt(JSONObject k, String erkannt) throws org.json.JSONException {
+        if (k != null && erkannt != null && ERKANNT.matcher(erkannt).matches()) k.put("erkannt", erkannt);
+        return k;
+    }
+
+    public static JSONObject koerper(String text, String version, Integer dilink, String modell, String sprache,
+                                     String diagnose, String art, boolean abdeckung, String firmware, String erkannt)
+            throws org.json.JSONException {
+        return koerper(text, version, dilink, modell, sprache, diagnose, art, abdeckung, firmware, erkannt, null);
+    }
+
+    /**
+     * 0.1.38.11 (M1, „Menüleiste fehlt“): zusätzlich {@code anzeige} = WebView-Hauptversion, CSS-Breite und Pixeldichte der
+     * Seite, auf der gemeldet wird (nur das, schon geprüft von {@link #anzeige}). Keine Kennung, kein Ort.
+     */
+    public static JSONObject koerper(String text, String version, Integer dilink, String modell, String sprache,
+                                     String diagnose, String art, boolean abdeckung, String firmware, JSONObject anzeige)
+            throws org.json.JSONException {
+        return koerper(text, version, dilink, modell, sprache, diagnose, art, abdeckung, firmware, null, anzeige);
+    }
+
+    /** 0.1.38.11 Integration: ein Kern für K2 ({@code erkannt}) und M1 ({@code anzeige}). */
+    static JSONObject koerper(String text, String version, Integer dilink, String modell, String sprache,
+                              String diagnose, String art, boolean abdeckung, String firmware, String erkannt,
+                              JSONObject anzeige) throws org.json.JSONException {
         boolean tacho = ART_TACHO.equals(art);
         if (tacho ? (text == null || text.trim().isEmpty() || text.trim().length() > TEXT_MAX_TACHO) : !textOk(text)) return null;
         JSONObject k = new JSONObject().put("text", text.trim())
@@ -107,11 +140,13 @@ public final class FehlerMelden {
                 .put("sprache", sprache == null ? "de" : sprache);
         if (version != null && VERSION.matcher(version).matches()) k.put("version", version);
         if (dilink != null) k.put("dilink", (int) dilink);
+        mitErkannt(k, erkannt);
         if (tacho) k.put("art", ART_TACHO);
         if (abdeckung && !tacho) {
             k.put("abdeckung", true);
             if (firmware != null && !firmware.isEmpty()) k.put("firmware", firmware);
         }
+        if (anzeige != null && anzeige.length() > 0 && !tacho) k.put("anzeige", anzeige);
         if (diagnose != null && !diagnose.isEmpty()) {
             k.put("diagnose", kuerzen(diagnose, DIAGNOSE_MAX));
             // Escapes können den Text aufblähen: lieber weniger Diagnose als eine abgelehnte Meldung
@@ -124,6 +159,35 @@ public final class FehlerMelden {
     }
 
     /** Behält das Ende (die neuesten Zeilen), höchstens {@code max} Bytes. */
+    /**
+     * 0.1.38.11: Angaben der Seite prüfen und auf feste Felder kürzen: {@code webview} (Hauptversion 1–999),
+     * {@code breite} (CSS-px 100–20000), {@code dpr} (0,5–10, zwei Stellen). Alles andere fällt weg; null, wenn nichts gilt.
+     */
+    public static JSONObject anzeige(JSONObject roh) {
+        if (roh == null) return null;
+        JSONObject a = new JSONObject();
+        try {
+            int w = roh.optInt("webview", 0);
+            if (w >= 1 && w <= 999) a.put("webview", w);
+            int b = roh.optInt("breite", 0);
+            if (b >= 100 && b <= 20000) a.put("breite", b);
+            double d = roh.optDouble("dpr", 0);
+            if (d >= 0.5 && d <= 10) a.put("dpr", Math.round(d * 100) / 100.0);
+        } catch (Exception e) {
+            return null;
+        }
+        return a.length() == 0 ? null : a;
+    }
+
+    /** Hängt geprüfte {@link #anzeige}-Angaben an einen fertigen Körper (nicht beim Tacho-Test, nie über KOERPER_MAX). */
+    public static void mitAnzeige(JSONObject k, JSONObject anzeige) {
+        if (k == null || anzeige == null || anzeige.length() == 0 || ART_TACHO.equals(k.optString("art"))) return;
+        try {
+            k.put("anzeige", anzeige);
+            if (bytes(k.toString()) > KOERPER_MAX) k.remove("anzeige");
+        } catch (Exception ignored) { }
+    }
+
     static String kuerzen(String s, int max) {
         if (bytes(s) <= max) return s;
         byte[] b = s.getBytes(StandardCharsets.UTF_8);

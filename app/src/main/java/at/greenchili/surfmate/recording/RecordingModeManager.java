@@ -946,6 +946,18 @@ public class RecordingModeManager {
             acc = accIsOn;
         }
         if (!acc || mode == Mode.NONE) {
+            if (pipeline.isRunning() && !acc && KameraParkRegel.ohneVerbraucherBeiAccAus(parkLage())) {
+                // 0.1.38.11 (K1): niemand braucht die Kamera – schließen statt den ganzen Daemon neu zu starten
+                logger.warn("forceWarmupRestart(" + reason + ") — Zündung aus, kein Verbraucher: Pipeline wird"
+                    + " geschlossen statt Prozess-Neustart");
+                try {
+                    pipeline.stop();
+                    CameraDaemon.stopAvcKeepAlive();
+                } catch (Throwable t) {
+                    logger.warn("forceWarmupRestart: Schließen fehlgeschlagen: " + t.getMessage());
+                }
+                return;
+            }
             if (pipeline.isRunning()) {
                 logger.error("forceWarmupRestart(" + reason + ") — persistent camera"
                     + " has no recording mode to reactivate (accIsOn=" + acc
@@ -2760,6 +2772,14 @@ public class RecordingModeManager {
         return l;
     }
 
+    /**
+     * 0.1.38.11 (K1): Zündung aus und seit {@link KameraParkRegel#KARENZ_ACC_AUS_MS} kein Verbraucher (gleiche Lage wie
+     * die Park-Freigabe, eine Regel in {@link KameraParkRegel}) → die Pipeline wird geschlossen.
+     */
+    public boolean accAusOhneVerbraucher() {
+        return parkRegel.schliessenBeiAccAus(parkLage(), android.os.SystemClock.elapsedRealtime());
+    }
+
     /** true = die Kamera darf im Stand geschlossen bleiben (Karenz abgelaufen). */
     public boolean parkFreigabeAktiv() {
         return parkRegel.freigeben(parkLage(), android.os.SystemClock.elapsedRealtime());
@@ -2772,14 +2792,25 @@ public class RecordingModeManager {
      */
     private void parkFreigabePruefen() {
         try {
-            if (shuttingDown || !pipeline.isRunning() || !parkFreigabeAktiv()) return;
+            if (shuttingDown || !pipeline.isRunning()) return;
+            // beide Regeln jedes Mal auswerten (eigene Karenz), keine verkürzte Auswertung
+            boolean park = parkFreigabeAktiv();
+            boolean accAus = accAusOhneVerbraucher();
+            if (!park && !accAus) return;
             if (!parkSchliessenLaeuft.compareAndSet(false, true)) return;
             Thread t = new Thread(() -> {
                 try {
                     synchronized (activationLock) {
-                        if (shuttingDown || !pipeline.isRunning() || !parkFreigabeAktiv()) return;
-                        logger.info("Kamera-Park-Freigabe: P, Zündung an, kein Wächter/Stream/Aufnahme, Totwinkel-Ansicht"
-                                + " versteckt seit " + (KameraParkRegel.KARENZ_MS / 1000) + " s - Pipeline wird geschlossen");
+                        if (shuttingDown || !pipeline.isRunning()) return;
+                        if (park && parkFreigabeAktiv()) {
+                            logger.info("Kamera-Park-Freigabe: P, Zündung an, kein Wächter/Stream/Aufnahme, Totwinkel-Ansicht"
+                                    + " versteckt seit " + (KameraParkRegel.KARENZ_MS / 1000) + " s - Pipeline wird geschlossen");
+                        } else if (accAus && KameraParkRegel.ohneVerbraucherBeiAccAus(parkLage())) {
+                            logger.info("Kamera-Leerlauf: Zündung aus, kein Wächter/Stream/Aufnahme seit "
+                                    + (KameraParkRegel.KARENZ_ACC_AUS_MS / 1000) + " s - Pipeline wird geschlossen");
+                        } else {
+                            return;
+                        }
                         pipeline.stop();
                         CameraDaemon.stopAvcKeepAlive();
                     }
@@ -2971,9 +3002,15 @@ public class RecordingModeManager {
                                          // false = leave them to whoever owns them
                                          // (ProximityGuardController, or nobody for BS-only)
         final String why;            // for the log line
+        /** 0.1.38.11 (K1): Stufe 4 der Leiter – niemand braucht die Kamera (Stall-Wächter öffnet dann nicht neu). */
+        final boolean ohneVerbraucher;
         CameraIntent(boolean laneEnabled, int fps, boolean ownStrideBitrate, String why) {
+            this(laneEnabled, fps, ownStrideBitrate, why, false);
+        }
+        CameraIntent(boolean laneEnabled, int fps, boolean ownStrideBitrate, String why, boolean ohneVerbraucher) {
             this.laneEnabled = laneEnabled; this.fps = fps;
             this.ownStrideBitrate = ownStrideBitrate; this.why = why;
+            this.ohneVerbraucher = ohneVerbraucher;
         }
     }
 
@@ -3192,7 +3229,7 @@ public class RecordingModeManager {
         // appropriate higher rung re-profiles the camera. Idle = cheapest safe
         // state for "nobody needs it."
         return new CameraIntent(false, UnifiedConfigManager.getBlindSpotIdleFps(), false,
-                "no active consumer (idle)");
+                "no active consumer (idle)", true);
     }
 
     /** The ONLY writer of the camera profile. Always run under {@link #reconcileLock}.
@@ -3206,6 +3243,8 @@ public class RecordingModeManager {
                     || bsViewShown()
                     || camViewKeepWarmActive();
             pipeline.setCameraFrameDemand(freshFrameDemand, want.why);
+            // 0.1.38.11 (K1): im Leerlauf ohne Verbraucher keine Stall-Neustarts (der Takt erneuert das alle 30 s)
+            pipeline.setCameraOhneVerbraucher(want.ohneVerbraucher);
             // fps change detection for the proximity stride re-derive (below).
             int prevFps = pipeline.getCameraTargetFps();
             pipeline.setRecorderLaneEnabled(want.laneEnabled);

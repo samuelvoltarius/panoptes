@@ -516,7 +516,8 @@
       "invalid": "❌ Die pincode klopt niet. Controleer hem nog eens in Panoptes.",
       "storage_error": "⚠️ De auto kon de koppeling niet opslaan. Probeer het nog eens; lukt het weer niet, start dan Panoptes in de auto opnieuw.",
       "success": "✅ *Gekoppeld, {0}!*\nVanaf nu komen de meldingen van je auto hier binnen. /help laat zien wat je kunt doen.",
-      "success_no_name": "✅ *Gekoppeld!*\nVanaf nu komen de meldingen van je auto hier binnen. /help laat zien wat je kunt doen."
+      "success_no_name": "✅ *Gekoppeld!*\nVanaf nu komen de meldingen van je auto hier binnen. /help laat zien wat je kunt doen.",
+      "medien_hinweis": "📷 Foto's en opnames van de bewaking worden standaard meegestuurd. Ze staan dan op de servers van Telegram en er kunnen andere mensen op staan. De bewaking is alleen bedoeld voor je eigen privéterrein. Uitzetten: /bilder aus"
     },
     "test": {
       "message": "✅ *Test van Panoptes*\nAls je dit leest, komen de meldingen van je auto hier aan."
@@ -545,7 +546,8 @@
       "footer": "_Panoptes {0}_",
       "menu": "/menue – Alle knoppen in één oogopslag",
       "updates": "/updates – Panoptes en launcher bijwerken",
-      "kopplungen": "/kopplungen – Gekoppelde apparaten tonen en verwijderen (telefoon kwijt)"
+      "kopplungen": "/kopplungen – Gekoppelde apparaten tonen en verwijderen (telefoon kwijt)",
+      "bilder": "/bilder – Foto's en video's naar Telegram (`/bilder aus` zet ze uit)"
     },
     "buttons": {
       "status": "📊 Status",
@@ -751,7 +753,8 @@
     },
     "media": {
       "video_too_large": "🎞 *Te groot om te sturen*\n`{0}` · {1} MB\nTelegram neemt maximaal 50 MB aan – bekijk hem in Panoptes.",
-      "document_too_large": "📄 *Te groot om te sturen*\n`{0}` · {1} MB – Telegram neemt maximaal 50 MB aan."
+      "document_too_large": "📄 *Te groot om te sturen*\n`{0}` · {1} MB – Telegram neemt maximaal 50 MB aan.",
+      "standard_an": "📷 *Nieuw: de bewaking stuurt nu foto's mee.*\nBij een gebeurtenis komt de foto direct in deze chat, de opname ook (tot 50 MB), en bij het parkeren de rondomfoto. Daarop staan vaak andere mensen. De bestanden staan dan op de servers van Telegram. De bewaking is bedoeld voor je eigen privéterrein.\n\nUitzetten: knop hieronder, /bilder aus of in Panoptes onder *Regels → Meldingen → Telegram-meldingen*."
     },
     "daemons": {
       "title": "⚙️ *Diensten*\n\n"
@@ -1096,6 +1099,15 @@
       "startet": "⏳ Panoptes in de auto is nog aan het opstarten. Probeer het over een minuut of twee opnieuw.",
       "aus": "ℹ️ Panoptes staat uit in de auto. Je kunt het op het autoscherm in Panoptes onder *Diensten* aanzetten.",
       "antwortet_nicht": "⚠️ Panoptes in de auto reageert nu niet. Tik op /dienste om het opnieuw te starten, of open Panoptes op het autoscherm."
+    },
+    "bilder": {
+      "stand_an": "📷 Foto's en video's naar Telegram staan *aan*. Uitzetten: /bilder aus",
+      "stand_aus": "Foto's en video's naar Telegram staan *uit*. Aanzetten: /bilder an",
+      "aus": "✅ Klaar: de bot stuurt geen foto's en video's meer mee. Meldingen blijven komen; een opname haal je met /aufnahme. Aanzetten: /bilder an",
+      "an": "✅ Klaar: de bot stuurt weer foto's en video's mee. Uitzetten: /bilder aus",
+      "an_in_panoptes": "De eerste keer zet je dit aan in Panoptes onder *Regels → Meldingen → Telegram-meldingen*. Daar staat eerst wat dat betekent.",
+      "fehler": "⚠️ Ik kon dat niet in de auto opslaan. Probeer het zo opnieuw.",
+      "btn_aus": "🚫 Foto's uitzetten"
     },
     "erreichbar": {
       "frage": "🅿️ Moet de bot je ook bereiken als de auto geparkeerd en uit is? Anders antwoordt hij alleen zolang de auto aan is. Kost wat stroom van de 12V-accu.",

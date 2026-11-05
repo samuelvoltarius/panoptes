@@ -6,7 +6,7 @@ Panoptes is a free community app for BYD cars with DiLink 3, 4 and 5. It runs ri
 
 This is the source code. Ready-made versions are available under **[Releases](https://github.com/samuelvoltarius/panoptes/releases/latest)**. More about the project and the installation guide: **[byd.serveone.at/panoptes/](https://byd.serveone.at/panoptes/en/)**.
 
-This tree corresponds exactly to release **v0.1.38.10** (internal commit `deabb40`).
+This tree corresponds exactly to release **v0.1.38.11** (internal commit `5d020e7`).
 
 <p>
   <img src="screenshots/start-display-dunkel.webp" alt="Home on the car screen" width="66%">
@@ -21,10 +21,10 @@ The app is available in English, German, French, Italian and Dutch. The screensh
 
 ## What Panoptes does
 
-- **On the car screen.** Panoptes runs as its own full-screen app, with large buttons and a back button. While driving, settings are locked; home, navigation, map and guard stay available. While starting, Panoptes shows for each service (access, interface, guard, Telegram and bridge) whether it is ready yet. The interface adapts to different screen sizes, including portrait.
+- **On the car screen.** Panoptes runs as its own full-screen app, with large buttons and a back button. While driving, settings are locked; home, navigation, map and guard stay available. While starting, Panoptes shows for each service (access, interface, guard, Telegram) whether it is running yet – also when it was started another way. The interface adapts to different screen sizes, including portrait.
 - **Guard with AI detection.** While your car is parked, the cameras watch its surroundings. The guard is on by default and then records only on impact. It only runs once you have confirmed the legal note. You can change this at any time: only on impact, with AI detection everywhere, or with AI detection only at your own private places such as your garage or driveway. To protect the batteries, the guard can go to sleep, for example when the charge level is low or the starter battery is weak.
 - **Remote access.** Reach your car from anywhere via Tailscale. Setup uses a QR code on the car screen; you link it to your own Tailscale account. If Panoptes cannot set the protection rule for remote access, it turns remote access off instead of leaving it open unprotected.
-- **Telegram notifications.** Your own bot tells you what happens at the car: guard events, charging, weak starter battery, tyre pressure, updates. Each kind can be switched on or off. There are quiet hours for the night. The bot only sends pictures and videos if you explicitly turn that on.
+- **Telegram notifications.** Your own bot tells you what happens at the car: guard events, charging, weak starter battery, tyre pressure, updates. Each kind can be switched on or off. There are quiet hours for the night. The bot sends guard pictures and clips along by itself; turn it off with /bilder aus or in Panoptes. They are then stored on Telegram's servers.
 - **Phone notifications without Telegram.** Notifications straight to your phone need an HTTPS address. With Tailscale, Panoptes can turn on HTTPS in your own tailnet for this: your car gets an address under ts.net that is not public. Without Tailscale you need your own fixed HTTPS address; Telegram always works.
 - **Map with chargers.** You choose where the map comes from: the project's community server (with terrain and free charging spots where operators provide the data), OpenStreetMap, or none. Until you choose, the map stays empty.
 - **"Will it make it?"** When you have loaded a route from the route planner, Panoptes tells you on the road whether the battery will last to the next stop. If needed, it suggests a charging stop.
@@ -90,7 +90,7 @@ All pictures show sample data, not real vehicle data.
 
 ## Updates
 
-> **If you have 0.1.14.1:** install the current version (0.1.38.10) **once by hand**, just like the first time (your data is kept). 0.1.14.1 cannot update itself to 0.1.15 because from 0.1.15 on Panoptes is signed with a new, permanent key (APK signature scheme v3 with proof of origin from the old key). From 0.1.15 on, updates come automatically from this repository.
+> **If you have 0.1.14.1:** install the current version (0.1.38.11) **once by hand**, just like the first time (your data is kept). 0.1.14.1 cannot update itself to 0.1.15 because from 0.1.15 on Panoptes is signed with a new, permanent key (APK signature scheme v3 with proof of origin from the old key). From 0.1.15 on, updates come automatically from this repository.
 
 - New versions appear under **[Releases](https://github.com/samuelvoltarius/panoptes/releases)**, with a short list of what's new.
 - Under **Settings → All settings → App updates** you can look for new versions and choose whether Panoptes only tells you or installs by itself.
@@ -100,13 +100,13 @@ All pictures show sample data, not real vehicle data.
 
 ## Privacy: what goes where
 
-Principle: your recordings, trips and positions stay in the car. Panoptes does not send camera recordings to the project's servers. Anything that sends data out is off by default. You turn each item on separately, and Panoptes tells you beforehand where the data goes. You can turn it off at any time.
+Principle: your recordings, trips and positions stay in the car. Panoptes does not send camera recordings to the project's servers. Anything that sends data out is off by default. Exception: if you set up Telegram, the guard sends its pictures along (can be turned off). You turn each item on separately, and Panoptes tells you beforehand where the data goes. You can turn it off at any time.
 
 | Where | What | When |
 |---|---|---|
 | **In the car** (USB stick, app) | guard recordings, trip log, charging history, monthly report, settings | always. On a new setup Panoptes deletes recordings after 72 hours; you can keep individual ones. |
 | **Map source** (community server byd.serveone.at or OpenStreetMap Germany) | your IP address and the map area, so roughly where your car is. With the community server also the query for free charging spots in that area. | only once you choose a source under **Settings → All settings → Map source**. On the car screen the choice applies to the whole car; phone and PC ask separately. |
-| **Telegram** | message texts; pictures and videos only if you turn that on (they are then stored on Telegram's servers) | only if you set up a bot |
+| **Telegram** | message texts; guard pictures and clips (on by default, can be turned off; they are then stored on Telegram's servers) | only if you set up a bot |
 | **Tailscale** | connection for remote access | only if you set up remote access |
 | **Certificate for HTTPS in the tailnet** (Let’s Encrypt) | the device name and tailnet name become visible in public certificate logs | only if you turn on HTTPS in the tailnet for phone notifications |
 | **Route planner** (byd.serveone.at/ev) | charge level, consumption factor, driving status; your approximate position only for a newly suggested charging stop. The trip log only when you request it yourself on /ev/, and only end-to-end encrypted: the planner only sees encrypted data. | only after linking, can be disconnected at any time; the trip log additionally only if you turn it on (off by default) |

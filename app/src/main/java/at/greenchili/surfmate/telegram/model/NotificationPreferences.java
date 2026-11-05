@@ -7,7 +7,7 @@ public class NotificationPreferences {
     private boolean criticalAlerts = true;
     private boolean connectivityUpdates = true;  // Tunnel URL changes
     private boolean motionText = true;
-    private boolean videoUploads = false;  // Off by default (data usage)
+    private boolean videoUploads = at.greenchili.surfmate.telegram.config.MedienStandard.STANDARD;  // 0.1.38.11 Standard an
     
     public NotificationPreferences() {}
     

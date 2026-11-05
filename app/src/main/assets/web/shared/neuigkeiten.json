@@ -598,6 +598,55 @@
         "De bewaking neemt weer elk herkend voertuig en elke persoon op, ook na één beeld. Sinds 0.1.38.8 vielen sommige voorbijrijdende auto’s weg.",
         "Panoptes navigeert nu zelf: „Starten” opent de Panoptes-kaart met een voorbeeld, met Start ga je op weg. „Openen in de autonavigatie” blijft als tweede knop."
       ]
+    },
+    {
+      "version": "0.1.38.11",
+      "versionCode": 75,
+      "de": [
+        "Die Startanzeige zeigt nur noch, was wirklich geprüft ist. Läuft ein Dienst schon, steht er gleich auf bereit.",
+        "Bei ausgeschalteter Zündung schließt Panoptes die Kamera, wenn sie gerade niemand braucht. Das spart Strom.",
+        "Panoptes erkennt, welcher Kamera-Eingang zu deinem Auto passt, und schlägt die Umstellung mit einem Tipp vor. Von selbst stellt es nichts um.",
+        "Der Wächter zeigt in einer Zeile, was er gerade tut und warum, zum Beispiel „Zündung an“.",
+        "Die Einrichtung kannst du jetzt jederzeit unterbrechen. Die Menüleiste ist dann sofort wieder da.",
+        "Wächter-Bilder gehen ab Werk an Telegram. Wer das ausgeschaltet hatte, behält das. Abschalten mit /bilder aus.",
+        "Panoptes schickt keine geratene Tacho-Größe mehr ans Fahrerdisplay. Die Größe stellst du selbst ein und bestätigst sie."
+      ],
+      "en": [
+        "The start screen only shows what has really been checked. If a service is already running, it shows as ready right away.",
+        "With the ignition off, Panoptes closes the camera when nothing needs it. This saves power.",
+        "Panoptes detects which camera input fits your car and offers to switch with one tap. It never switches on its own.",
+        "The guard shows in one line what it is doing right now and why, for example “ignition on”.",
+        "You can now interrupt the setup at any time. The menu bar is then back right away.",
+        "Guard pictures now go to Telegram by default. If you had turned this off, it stays off. Turn off with /bilder aus.",
+        "Panoptes no longer sends a guessed size to the driver display. You set the size yourself and confirm it."
+      ],
+      "fr": [
+        "L’écran de démarrage n’affiche plus que ce qui a vraiment été vérifié. Si un service tourne déjà, il est tout de suite prêt.",
+        "Contact coupé, Panoptes ferme la caméra quand personne n’en a besoin. Cela économise de l’énergie.",
+        "Panoptes reconnaît l’entrée caméra adaptée à ta voiture et propose de changer d’un geste. Il ne change jamais tout seul.",
+        "La surveillance indique en une ligne ce qu’elle fait et pourquoi, par exemple « contact mis ».",
+        "Tu peux maintenant interrompre la configuration à tout moment. La barre de menu revient alors tout de suite.",
+        "Les images de surveillance partent désormais par défaut vers Telegram. Si tu l’avais désactivé, cela reste ainsi. Désactiver avec /bilder aus.",
+        "Panoptes n’envoie plus de taille devinée à l’écran conducteur. Tu règles la taille toi-même et tu la confirmes."
+      ],
+      "it": [
+        "La schermata di avvio mostra solo ciò che è stato davvero verificato. Se un servizio è già attivo, risulta subito pronto.",
+        "A quadro spento, Panoptes chiude la telecamera quando nessuno la usa. Così si risparmia energia.",
+        "Panoptes riconosce quale ingresso telecamera è adatto alla tua auto e propone il cambio con un tocco. Da solo non cambia nulla.",
+        "La sorveglianza mostra in una riga cosa sta facendo e perché, per esempio «quadro acceso».",
+        "Ora puoi interrompere la configurazione in qualsiasi momento. La barra dei menu torna subito.",
+        "Le immagini della sorveglianza ora vanno di serie su Telegram. Chi l’aveva spento, lo mantiene spento. Disattivare con /bilder aus.",
+        "Panoptes non invia più una dimensione indovinata al display del conducente. La imposti tu e la confermi."
+      ],
+      "nl": [
+        "Het startscherm toont alleen nog wat echt gecontroleerd is. Draait een dienst al, dan staat hij meteen op klaar.",
+        "Met het contact uit sluit Panoptes de camera als niemand hem nodig heeft. Dat bespaart stroom.",
+        "Panoptes herkent welke camera-ingang bij je auto past en stelt de omschakeling met één tik voor. Vanzelf wijzigt het niets.",
+        "De bewaking toont in één regel wat hij nu doet en waarom, bijvoorbeeld „contact aan”.",
+        "Je kunt de inrichting nu altijd onderbreken. De menubalk is dan meteen terug.",
+        "Bewakingsbeelden gaan nu standaard naar Telegram. Had je dit uitgezet, dan blijft het uit. Uitzetten met /bilder aus.",
+        "Panoptes stuurt geen geraden formaat meer naar het bestuurdersscherm. Je stelt het formaat zelf in en bevestigt het."
+      ]
     }
   ]
 }

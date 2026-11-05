@@ -96,6 +96,15 @@
     <string name="camera_mode_current_dilink4">Actuellement : DiLink 4</string>
     <string name="camera_mode_current_dilink5">Actuellement : DiLink 5</string>
     <string name="camera_mode_save">Enregistrer et redémarrer</string>
+    <string name="camera_mode_erkannt_hinweis">Panoptes détecte ici %1$s (%2$s), mais une autre entrée caméra est enregistrée. C\'est pourquoi les images des caméras restent peut-être noires.</string>
+    <string name="camera_mode_vorschlag_knopf">Passer à %1$s maintenant</string>
+    <string name="camera_mode_sicher">certain</string>
+    <string name="camera_mode_vermutlich">probable</string>
+    <string name="camera_mode_kurz_default">Standard (DiLink 3)</string>
+    <string name="camera_mode_kurz_dilink4">DiLink 4</string>
+    <string name="camera_mode_kurz_dilink5">DiLink 5</string>
+    <string name="camera_mode_umstellen_frage">Passer l\'entrée caméra à %1$s ? Panoptes enregistre et redémarre la caméra (environ 10 s). Tu peux revenir en arrière à tout moment dans Attribution des caméras → Entrée caméra.</string>
+    <string name="camera_mode_umstellen_ja">Changer</string>
     <string name="camera_mode_hint">Changer de mode redémarre le service caméra. Si l\'image paraît incorrecte (écrasée, coins manquants, voile rouge), essayez l\'autre mode.</string>
     <string name="camera_dilink5_mapping_title">Ordre des caméras pour DiLink 5</string>
     <string name="camera_dilink5_mapping_subtitle">Les ID de caméra sont listés dans l\'ordre avant, droite, arrière, gauche. Laissez sur Auto, sauf si les aperçus bruts montrent clairement un autre ordre pour cette voiture.</string>
@@ -342,7 +351,7 @@
     <string name="start_dienst_zugang">Accès (Tailscale)</string>
     <string name="start_dienst_oberflaeche">Interface</string>
     <string name="start_dienst_waechter">Gardien</string>
-    <string name="start_dienst_rest">Telegram et pont</string>
+    <string name="start_dienst_rest">Telegram</string>
     <string name="start_zustand_startet">démarre …</string>
     <string name="start_zustand_bereit">prêt</string>
     <string name="start_zustand_startet_nicht">ne démarre pas</string>

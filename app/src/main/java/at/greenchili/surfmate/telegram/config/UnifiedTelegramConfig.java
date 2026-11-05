@@ -32,7 +32,7 @@ import java.util.Properties;
  *     "ownerPairedAt":   0,
  *     "pairPin":         "",                // 6-digit, short-lived
  *     "pairPinExpiry":   0,                 // ms epoch
- *     "videoUploads":    false,
+ *     "videoUploads":    true,            // fehlt = Standard an (0.1.38.11, MedienStandard)
  *     "autoStartAccOff": false,
  *     "criticalAlerts":  true,
  *     "connectivity":    false,
@@ -264,8 +264,9 @@ public final class UnifiedTelegramConfig {
         return load().optLong(K_PAIR_PIN_EXPIRY, 0);
     }
 
+    /** 0.1.38.11: Standard an ({@link MedienStandard}); bewusst ausgeschaltet ({@code false} gespeichert) bleibt aus. */
     public static boolean isVideoUploads() {
-        return load().optBoolean(K_VIDEO_UPLOADS, false);
+        return MedienStandard.an(load());
     }
 
     public static boolean isAutoStartAccOff() {

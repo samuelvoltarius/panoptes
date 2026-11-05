@@ -510,7 +510,8 @@
       "invalid": "❌ That PIN doesn't match. Check it again in Panoptes.",
       "storage_error": "⚠️ The car couldn't save the pairing. Please try once more; if it fails again, restart Panoptes on the car.",
       "success": "✅ *Paired, {0}!*\nFrom now on your car's alerts arrive here. /help shows what you can do.",
-      "success_no_name": "✅ *Paired!*\nFrom now on your car's alerts arrive here. /help shows what you can do."
+      "success_no_name": "✅ *Paired!*\nFrom now on your car's alerts arrive here. /help shows what you can do.",
+      "medien_hinweis": "📷 Guard pictures and clips are sent along by default. They are then stored on Telegram's servers and may show other people. The guard is meant for your own private property only. Turn off: /bilder aus"
     },
     "test": {
       "message": "✅ *Test from Panoptes*\nIf you can read this, your car's alerts will arrive here."
@@ -539,7 +540,8 @@
       "footer": "_Panoptes {0}_",
       "menu": "/menue – All buttons at a glance",
       "updates": "/updates – Update Panoptes and the launcher",
-      "kopplungen": "/kopplungen – Show and remove paired devices (lost phone)"
+      "kopplungen": "/kopplungen – Show and remove paired devices (lost phone)",
+      "bilder": "/bilder – Pictures and videos to Telegram (`/bilder aus` turns them off)"
     },
     "buttons": {
       "status": "📊 Status",
@@ -745,7 +747,8 @@
     },
     "media": {
       "video_too_large": "🎞 *Too big to send*\n`{0}` · {1} MB\nTelegram takes 50 MB at most – watch it in Panoptes.",
-      "document_too_large": "📄 *Too big to send*\n`{0}` · {1} MB – Telegram takes 50 MB at most."
+      "document_too_large": "📄 *Too big to send*\n`{0}` · {1} MB – Telegram takes 50 MB at most.",
+      "standard_an": "📷 *New: the guard now sends pictures along.*\nOn a guard event the picture comes straight into this chat, the clip too (up to 50 MB), and the all-round picture when you park. They often show other people. The files then sit on Telegram's servers. The guard is meant for your own private property.\n\nTurn it off: button below, /bilder aus or in Panoptes under *Rules → Alerts → Telegram alerts*."
     },
     "daemons": {
       "title": "⚙️ *Services*\n\n"
@@ -1090,6 +1093,15 @@
       "startet": "⏳ Panoptes in the car is still starting. Please try again in a minute or two.",
       "aus": "ℹ️ Panoptes is switched off in the car. You can switch it on on the car screen in Panoptes under *Services*.",
       "antwortet_nicht": "⚠️ Panoptes in the car is not responding right now. Tap /dienste to restart it, or open Panoptes on the car screen."
+    },
+    "bilder": {
+      "stand_an": "📷 Pictures and videos to Telegram are *on*. Turn off: /bilder aus",
+      "stand_aus": "Pictures and videos to Telegram are *off*. Turn on: /bilder an",
+      "aus": "✅ Done: the bot no longer sends pictures and videos along. Alerts keep coming; fetch a clip with /aufnahme. Turn on: /bilder an",
+      "an": "✅ Done: the bot sends pictures and videos along again. Turn off: /bilder aus",
+      "an_in_panoptes": "The first time, you turn this on in Panoptes under *Rules → Alerts → Telegram alerts*. It explains beforehand what that means.",
+      "fehler": "⚠️ I could not save that in the car. Please try again in a moment.",
+      "btn_aus": "🚫 Turn pictures off"
     },
     "erreichbar": {
       "frage": "🅿️ Should the bot reach you even when the car is parked and switched off? Otherwise it only answers while the car is on. Uses a little power from the 12 V battery.",

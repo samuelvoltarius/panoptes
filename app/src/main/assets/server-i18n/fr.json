@@ -516,7 +516,8 @@
       "invalid": "❌ Ce code PIN ne correspond pas. Vérifiez-le de nouveau dans Panoptes.",
       "storage_error": "⚠️ La voiture n'a pas pu enregistrer l'association. Veuillez réessayer ; si cela échoue encore, redémarrez Panoptes sur la voiture.",
       "success": "✅ *Associé, {0} !*\nDésormais, les alertes de votre voiture arrivent ici. /help montre ce que vous pouvez faire.",
-      "success_no_name": "✅ *Associé !*\nDésormais, les alertes de votre voiture arrivent ici. /help montre ce que vous pouvez faire."
+      "success_no_name": "✅ *Associé !*\nDésormais, les alertes de votre voiture arrivent ici. /help montre ce que vous pouvez faire.",
+      "medien_hinweis": "📷 Les photos et enregistrements de la surveillance sont envoyés par défaut. Ils se trouvent alors sur les serveurs de Telegram et peuvent montrer des inconnus. La surveillance est prévue uniquement pour ton propre terrain privé. Désactiver : /bilder aus"
     },
     "test": {
       "message": "✅ *Test de Panoptes*\nSi vous lisez ceci, les alertes de votre voiture arriveront ici."
@@ -545,7 +546,8 @@
       "footer": "_Panoptes {0}_",
       "menu": "/menue – Tous les boutons d’un coup d’œil",
       "updates": "/updates – Mettre à jour Panoptes et le lanceur",
-      "kopplungen": "/kopplungen – Voir et retirer les appareils appairés (téléphone perdu)"
+      "kopplungen": "/kopplungen – Voir et retirer les appareils appairés (téléphone perdu)",
+      "bilder": "/bilder – Photos et vidéos vers Telegram (`/bilder aus` désactive)"
     },
     "buttons": {
       "status": "📊 État",
@@ -751,7 +753,8 @@
     },
     "media": {
       "video_too_large": "🎞 *Trop volumineux pour l’envoi*\n`{0}` · {1} Mo\nTelegram accepte 50 Mo au maximum – regardez-le dans Panoptes.",
-      "document_too_large": "📄 *Trop volumineux pour l’envoi*\n`{0}` · {1} Mo – Telegram accepte 50 Mo au maximum."
+      "document_too_large": "📄 *Trop volumineux pour l’envoi*\n`{0}` · {1} Mo – Telegram accepte 50 Mo au maximum.",
+      "standard_an": "📷 *Nouveau : la surveillance envoie maintenant des photos.*\nLors d’un événement, la photo arrive directement dans ce chat, l’enregistrement aussi (jusqu’à 50 Mo), et la photo panoramique au stationnement. On y voit souvent des inconnus. Les fichiers se trouvent alors sur les serveurs de Telegram. La surveillance est prévue pour ton propre terrain privé.\n\nDésactiver : bouton ci-dessous, /bilder aus ou dans Panoptes sous *Règles → Alertes → Alertes Telegram*."
     },
     "daemons": {
       "title": "⚙️ *Services*\n\n"
@@ -1096,6 +1099,15 @@
       "startet": "⏳ Panoptes démarre encore dans la voiture. Réessaie dans une ou deux minutes.",
       "aus": "ℹ️ Panoptes est désactivé dans la voiture. Tu peux l’activer sur l’écran de la voiture dans Panoptes sous *Services*.",
       "antwortet_nicht": "⚠️ Panoptes ne répond pas dans la voiture pour le moment. Touche /dienste pour le redémarrer, ou ouvre Panoptes sur l’écran de la voiture."
+    },
+    "bilder": {
+      "stand_an": "📷 Photos et vidéos vers Telegram : *activé*. Désactiver : /bilder aus",
+      "stand_aus": "Photos et vidéos vers Telegram : *désactivé*. Activer : /bilder an",
+      "aus": "✅ C’est fait : le bot n’envoie plus de photos ni de vidéos. Les alertes continuent ; un enregistrement s’obtient avec /aufnahme. Activer : /bilder an",
+      "an": "✅ C’est fait : le bot envoie de nouveau photos et vidéos. Désactiver : /bilder aus",
+      "an_in_panoptes": "La première fois, tu l’actives dans Panoptes sous *Règles → Alertes → Alertes Telegram*. Ce que cela implique y est expliqué avant.",
+      "fehler": "⚠️ Je n’ai pas pu l’enregistrer dans la voiture. Réessaie dans un instant.",
+      "btn_aus": "🚫 Désactiver les photos"
     },
     "erreichbar": {
       "frage": "🅿️ Le bot doit-il te joindre aussi quand la voiture est garée et éteinte ? Sinon il ne répond que lorsque la voiture est allumée. Consomme un peu de courant de la batterie 12 V.",

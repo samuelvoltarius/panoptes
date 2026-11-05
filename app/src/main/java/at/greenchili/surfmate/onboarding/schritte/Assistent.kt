@@ -240,8 +240,13 @@ class Assistent(
             orientation = LinearLayout.VERTICAL
             setPadding(px(40f), px(20f), px(40f), px(20f))
         }
-        // Kopf: Fortschritt
+        // Kopf: Fortschritt; rechts daneben 0.1.38.11 (M1) immer „Einrichtung unterbrechen“ – auch bei Pflicht-Schritten,
+        // markiert nichts als erledigt (der Assistent kommt beim nächsten Start wieder bzw. über Einstellungen → Einrichtung)
+        val kopfZeile = LinearLayout(activity).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         val kopf = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL }
+        kopfZeile.addView(kopf, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        kopfZeile.addView(knopf(texte.res(R.string.einr_unterbrechen)) { host.unterbrechen() },
+            LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { leftMargin = px(16f) })
         fortschrittText = text("", 16f, leise = true)
         fortschrittBalken = ProgressBar(activity, null, android.R.attr.progressBarStyleHorizontal).apply {
             isIndeterminate = false
@@ -249,7 +254,7 @@ class Assistent(
         }
         kopf.addView(fortschrittText)
         kopf.addView(fortschrittBalken, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, px(8f)).apply { topMargin = px(6f) })
-        spalte.addView(kopf)
+        spalte.addView(kopfZeile)
         // Inhalt
         inhalt = FrameLayout(activity)
         spalte.addView(inhalt, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f).apply { topMargin = px(16f); bottomMargin = px(12f) })

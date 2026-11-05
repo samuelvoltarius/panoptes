@@ -10,6 +10,10 @@ package at.greenchili.surfmate.recording;
  * Kamera-Ansicht, Totwinkel-Ansicht versteckt und keine Totwinkel-Kalibrierung, und zwar seit {@link #KARENZ_MS}
  * (gegen Rangieren P ↔ R). DiLink 4/5 halten die Kamera ohnehin dauerhaft offen und sind ausgenommen. Sobald nur
  * eine Bedingung fällt, ist die Freigabe sofort weg (Gangwechsel, Stream, Wächter, Aufnahme).
+ *
+ * <p>0.1.38.11 (K1, ANALYSE_KAMERA_STALL_013810): Bei Zündung AUS gilt dieselbe Verbraucher-Liste ohne Schalter und
+ * Gang ({@link #schliessenBeiAccAus}): Nach dem Entschärfen (Entriegeln) blieb die Pipeline im Leerlauf offen, niemand
+ * schloss sie, und der Stall-Wächter öffnete die Kamera alle 10–15 s neu.
  */
 public final class KameraParkRegel {
 
@@ -31,13 +35,40 @@ public final class KameraParkRegel {
         public boolean totwinkelKalibrierung;
     }
 
+    /** 0.1.38.11 (K1): So lange ohne Verbraucher bei Zündung aus, bevor die Pipeline geschlossen wird. */
+    public static final long KARENZ_ACC_AUS_MS = 60_000L;
+
     private long seitMs = -1;
+    private long seitAccAusMs = -1;
+
+    /** EINE Liste: Niemand braucht die Kamera (keine Aufnahme/Wächter, kein Stream, keine Ansicht, kein Totwinkel). */
+    static boolean keinVerbraucher(Lage l) {
+        return l != null && !l.dauerhafteKamera
+                && !l.aufnahmeOderWaechter && !l.streamAktiv && !l.kameraAnsichtAktiv
+                && !l.totwinkelAnsichtSichtbar && !l.totwinkelKalibrierung;
+    }
 
     /** Gelten alle Bedingungen jetzt (ohne Karenz)? */
     static boolean bedingungenErfuellt(Lage l) {
-        return l != null && l.schalterAn && l.zuendungAn && l.gangP && !l.dauerhafteKamera
-                && !l.aufnahmeOderWaechter && !l.streamAktiv && !l.kameraAnsichtAktiv
-                && !l.totwinkelAnsichtSichtbar && !l.totwinkelKalibrierung;
+        return l != null && l.schalterAn && l.zuendungAn && l.gangP && keinVerbraucher(l);
+    }
+
+    /** 0.1.38.11 (K1): Zündung aus und kein Verbraucher (ohne Karenz)? DiLink 4/5 bleiben ausgenommen. */
+    public static boolean ohneVerbraucherBeiAccAus(Lage l) {
+        return l != null && !l.zuendungAn && keinVerbraucher(l);
+    }
+
+    /**
+     * 0.1.38.11 (K1): true = bei Zündung aus seit {@link #KARENZ_ACC_AUS_MS} kein Verbraucher → Pipeline schließen.
+     * Kein Schalter: eine offene Kamera ohne Verbraucher bei Zündung aus hat keinen Nutzen.
+     */
+    public synchronized boolean schliessenBeiAccAus(Lage l, long jetztMs) {
+        if (!ohneVerbraucherBeiAccAus(l)) {
+            seitAccAusMs = -1;
+            return false;
+        }
+        if (seitAccAusMs < 0) seitAccAusMs = jetztMs;
+        return jetztMs - seitAccAusMs >= KARENZ_ACC_AUS_MS;
     }
 
     /**
@@ -56,5 +87,6 @@ public final class KameraParkRegel {
     /** Karenz verwerfen (z. B. Zündung aus/an). */
     public synchronized void zuruecksetzen() {
         seitMs = -1;
+        seitAccAusMs = -1;
     }
 }

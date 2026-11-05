@@ -284,7 +284,8 @@ public final class ClusterProjectionController {
     // stretched cluster projection. UCM-tunable (surveillance.clusterSizeProfile) so
     // the correct profile for this cluster can be dialled in live without a rebuild;
     // 0 = skip the size-profile step entirely (just 16→35).
-    private int sizeProfileOpcode = OP_SIZE_PROFILE;   // default 31=10.25" (OP_SIZE_PROFILE)
+    // 0.1.38.11: nur ein BESTÄTIGTES Profil (bestaetigtesProfil), sonst 0 = kein Größenschritt und beim Schließen nur 18→0.
+    private int sizeProfileOpcode = 0;
     // Optional OVERRIDE for the on-close restore profile. Normally close re-sends
     // sizeProfileOpcode (the user's "Cluster layout" choice = the car's native size),
     // which automatically returns the gauges to the model's original layout. This
@@ -1027,6 +1028,8 @@ public final class ClusterProjectionController {
     private void doCloseSequence(int epoch) {
         try {
             if (!isCurrentCloseEpoch(epoch)) return;
+            // 0.1.38.11: die Größe frisch lesen – eine eben auf der Tacho-Seite gewählte gilt sofort auch fürs Restore
+            loadTuning();
             final int restoreProfile =
                     restoreProfileOpcode != 0
                             ? restoreProfileOpcode
@@ -1874,26 +1877,12 @@ public final class ClusterProjectionController {
                 long mx = s.optLong("clusterMaxProjectionMs", DEFAULT_MAX_PROJECTION_MS);
                 lingerCloseMs = Math.max(2000, Math.min(l, 60000));
                 maxProjectionMs = Math.max(10000, Math.min(mx, 300000));
-                // Size-profile opcode (29=8.8" / 30=12.3" / 31=10.25" / 0=skip).
-                // Primary source is the blindspot section (where the web UI writes it
-                // via the layout dropdown, alongside target); fall back to the
-                // surveillance key (live-tuning) then a MODEL-FINGERPRINT default seed
-                // (so a fresh install on a non-Seal trim gets the right aspect without
-                // the user touching the dropdown — the dropdown still overrides).
-                int seedDefault = fingerprintSizeProfile();
-                int sizeFromSurv = s.optInt("clusterSizeProfile", seedDefault);
+                // Size-profile opcode (29=8.8" / 30=12.3" / 31=10.25" / 0=skip). 0.1.38.11: only a
+                // CONFIRMED value (saved by the user under „Größe des Fahrerdisplays“: blindspot,
+                // else surveillance) is ever sent; no model-fingerprint guess any more (Seal U:
+                // the guessed 30 resized the gauges and was „restored“ on every close).
                 org.json.JSONObject bs = UnifiedConfigManager.getBlindSpot();
-                sizeProfileOpcode = (bs != null) ? bs.optInt("clusterSizeProfile", sizeFromSurv) : sizeFromSurv;
-                // Safe-range guard: only 0 (skip) or the known size opcodes 29/30/31
-                // are valid here. A bad value (typo / stale config / out-of-range) would
-                // send a wrong opcode into the OEM container — clamp to the seed default.
-                // (NEVER opcode 1, and never outside the documented size set.)
-                if (sizeProfileOpcode != 0
-                        && !isKnownLegacySizeProfile(sizeProfileOpcode)) {
-                    logger.warn("clusterSizeProfile " + sizeProfileOpcode
-                            + " out of range — using fingerprint default " + seedDefault);
-                    sizeProfileOpcode = seedDefault;
-                }
+                sizeProfileOpcode = bestaetigtesProfil(s, bs);
                 // Native profile to restore on close (29/30/31), for models whose
                 // native cluster size differs from the projection profile. 0 = none.
                 int rpSurv = s.optInt("clusterRestoreProfile", 0);
@@ -1916,8 +1905,11 @@ public final class ClusterProjectionController {
         } catch (Throwable ignored) {}
     }
 
+    /**
+     * Profil für die Boot-Wiederherstellung und „Tacho wieder normal“: ein bestätigtes Wiederherstellungsprofil
+     * (clusterRestoreProfile), sonst das bestätigte Größenprofil, sonst 0 = nur 18→0 (0.1.38.11: nie geraten).
+     */
     private static int readLegacyRestoreProfileOpcode() {
-        int seedDefault = fingerprintSizeProfile();
         try {
             org.json.JSONObject root =
                     UnifiedConfigManager.readDurableConfigStrict();
@@ -1925,18 +1917,7 @@ public final class ClusterProjectionController {
                     root.optJSONObject("surveillance");
             org.json.JSONObject blindspot =
                     root.optJSONObject("blindspot");
-            int sizeProfile = surveillance != null
-                    ? surveillance.optInt(
-                            "clusterSizeProfile", seedDefault)
-                    : seedDefault;
-            if (blindspot != null) {
-                sizeProfile = blindspot.optInt(
-                        "clusterSizeProfile", sizeProfile);
-            }
-            if (sizeProfile != 0
-                    && !isKnownLegacySizeProfile(sizeProfile)) {
-                sizeProfile = seedDefault;
-            }
+            int sizeProfile = bestaetigtesProfil(surveillance, blindspot);
             int restoreProfile = surveillance != null
                     ? surveillance.optInt(
                             "clusterRestoreProfile", 0)
@@ -1954,9 +1935,30 @@ public final class ClusterProjectionController {
                     : sizeProfile;
         } catch (Throwable failure) {
             logger.warn("legacy restore profile read failed: "
-                    + failure.getMessage());
-            return seedDefault;
+                    + failure.getMessage() + " — restoring with 18→0 only");
+            return 0;
         }
+    }
+
+    /**
+     * 0.1.38.11: Das Größenprofil, das gesendet werden darf – nur ein ausdrücklich gespeicherter Wert 29/30/31
+     * (blindspot.clusterSizeProfile, sonst surveillance.clusterSizeProfile). Fehlt er, ist er 0 (= „Automatisch“) oder
+     * ungültig, ist das Ergebnis 0: kein Größenschritt beim Öffnen, beim Schließen nur 18→0. Nie geraten.
+     */
+    static int bestaetigtesProfil(org.json.JSONObject surveillance, org.json.JSONObject blindspot) {
+        int p;
+        if (blindspot != null && blindspot.has("clusterSizeProfile")) {
+            p = blindspot.optInt("clusterSizeProfile", 0);
+        } else if (surveillance != null && surveillance.has("clusterSizeProfile")) {
+            p = surveillance.optInt("clusterSizeProfile", 0);
+        } else {
+            return 0;
+        }
+        if (p != 0 && !isKnownLegacySizeProfile(p)) {
+            logger.warn("clusterSizeProfile " + p + " out of range — no size profile is sent");
+            return 0;
+        }
+        return p;
     }
 
     private static boolean isKnownLegacySizeProfile(int opcode) {
@@ -1964,28 +1966,84 @@ public final class ClusterProjectionController {
     }
 
     /**
-     * Default size-profile opcode seeded from the vehicle model fingerprint, so a
-     * fresh install picks the right cluster aspect without the user touching the
-     * layout dropdown. Only a SEED — the UCM/web value always overrides. Conservative
-     * mapping (ro.product.model substrings): Atto/Yuan-class small cluster → 29 (8.8"),
-     * larger Han/Tang/Song/Seal-U/DM-i → 30 (12.3"), else the Seal 10.25" native → 31.
-     * Resolution-bucket guessing is deliberately NOT used (it mis-maps the 1920×720
-     * fission panel). Unknown → OP_SIZE_PROFILE (31, the verified-good Seal default).
+     * 0.1.38.11: nur noch ein VORSCHLAG fürs „Fehler melden“, nie gesendet. Ganze Wörter statt Teilstrings („han“
+     * traf sonst z. B. „Shanghai“), Seal U / DM-i ohne Vorschlag: 30 war dort falsch, 31 ist nicht belegt.
+     * 0 = kein Vorschlag.
      */
-    private static int fingerprintSizeProfile() {
-        String m;
+    static int modellVorschlag(String modell) {
+        String lo = modell == null ? "" : modell.toLowerCase(java.util.Locale.US);
+        if (lo.contains("seal u") || lo.contains("seal-u") || lo.contains("sealu")
+                || wort(lo, "dm-i") || wort(lo, "dmi")) return 0;
+        if (wort(lo, "atto") || wort(lo, "yuan")) return 29;                    // 8.8"
+        if (wort(lo, "han") || wort(lo, "tang") || wort(lo, "song")) return 30; // 12.3"
+        if (wort(lo, "seal")) return 31;                                        // 10.25" (am Seal belegt)
+        return 0;
+    }
+
+    private static boolean wort(String text, String w) {
+        return java.util.regex.Pattern.compile("(^|[^a-z0-9])" + java.util.regex.Pattern.quote(w) + "([^a-z0-9]|$)")
+                .matcher(text).find();
+    }
+
+    static String produktModell() {
         try {
-            m = (String) Class.forName("android.os.SystemProperties")
+            Object m = Class.forName("android.os.SystemProperties")
                     .getMethod("get", String.class, String.class)
                     .invoke(null, "ro.product.model", "");
-        } catch (Throwable t) { m = ""; }
-        if (m == null) m = "";
-        String lo = m.toLowerCase(java.util.Locale.US);
-        if (lo.contains("atto") || lo.contains("yuan")) return 29;       // 8.8"
-        if (lo.contains("han") || lo.contains("tang") || lo.contains("song")
-                || lo.contains("seal-u") || lo.contains("seal u") || lo.contains("dm-i")
-                || lo.contains("dmi")) return 30;                         // 12.3"
-        return OP_SIZE_PROFILE;                                          // 31 (10.25" Seal native)
+            return m == null ? "" : String.valueOf(m);
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    /** Für „Fehler melden“ (0.1.38.11): {profil, bestaetigt, vorschlag, geraet} – keine Position, keine Kennung. */
+    public static org.json.JSONObject profilStand() {
+        org.json.JSONObject o = new org.json.JSONObject();
+        try {
+            int p = bestaetigtesProfil(UnifiedConfigManager.getSurveillance(), UnifiedConfigManager.getBlindSpot());
+            String g = produktModell();
+            o.put("profil", p).put("bestaetigt", p != 0).put("vorschlag", modellVorschlag(g))
+                    .put("geraet", g.length() > 40 ? g.substring(0, 40) : g);
+        } catch (Throwable ignored) { }
+        return o;
+    }
+
+    /**
+     * „Tacho wieder normal“ (0.1.38.11), wenn KEINE Projektion offen ist: dieselbe Folge wie beim Schließen
+     * (18 → 0 → bestätigtes Profil) auf dem Projektions-Thread, damit ein früher gesendetes falsches Profil
+     * zurückgeht. Ohne bestätigtes Profil wird nichts gesendet. Rückgabe: "gesendet", "projektion" (das Schließen
+     * stellt selbst wieder her), "kein_profil" oder "nicht_moeglich" (DiLink 5, Wiederherstellung läuft).
+     */
+    public static String profilZuruecksetzen() {
+        if (at.greenchili.surfmate.camera.dilink5.DiLink5Platform.isSelected()
+                || isLegacyProjectionAdmissionBlocked()) return "nicht_moeglich";
+        final ClusterProjectionController c = getInstance();
+        if (c.projState != ST_CLOSED) return "projektion";
+        final int profil = readLegacyRestoreProfileOpcode();
+        if (profil == 0) return "kein_profil";
+        c.projHandler.post(() -> {
+            if (c.projState != ST_CLOSED) return;
+            if (sendInfoStaticResult(OP_CLOSE) != LegacyCommandResult.ACCEPTED
+                    || !sleepForLegacyRestore(CLOSE_STEP_DELAY_MS) || c.projState != ST_CLOSED) return;
+            if (sendInfoStaticResult(OP_REFRESH) != LegacyCommandResult.ACCEPTED
+                    || !sleepForLegacyRestore(CLOSE_STEP_DELAY_MS) || c.projState != ST_CLOSED) return;
+            logger.info("Tacho wieder normal: 18→0→" + profil + " " + sendInfoStaticResult(profil));
+        });
+        return "gesendet";
+    }
+
+    /**
+     * Tacho-Seite „Größe im Fahrerdisplay“ (0.1.38.11): die eben gespeicherte Größe sofort zeigen. Offene Projektion →
+     * schließen (das Schließen liest die Größe neu und stellt damit her), sonst wie „Tacho wieder normal“.
+     */
+    public static String groesseAnwenden() {
+        if (at.greenchili.surfmate.camera.dilink5.DiLink5Platform.isSelected()) return "nicht_moeglich";
+        ClusterProjectionController c = getInstance();
+        if (c.projState == ST_OPEN || c.projState == ST_OPENING) {
+            c.forceClose("tacho-groesse");
+            return "projektion";
+        }
+        return profilZuruecksetzen();
     }
 
     // ── Cluster display presence ────────────────────────────────────────────────

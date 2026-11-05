@@ -10,14 +10,14 @@
  * persists it, so the automation + key-mapping pages don't each re-implement the fetch.
  *
  * Option values are the OEM size opcodes (31=10.25" / 30=12.3" / 29=8.8"), matching the
- * road-sense.html dropdown. i18n reuses the existing road_sense.* keys (already
- * translated in all locales) so this adds no new strings.
+ * road-sense.html dropdown, plus 0 = „Automatisch“ (0.1.38.11: nothing is sent; only a size the
+ * user picked goes to the car). i18n reuses the road_sense.* keys.
  *
  * ES5 / Chrome-58 safe (the in-app WebView): no arrow functions, no fetch-body via XHR
  * (we use fetch(), which this WebView handles for POST bodies).
  */
 window.ClusterProjection = (function () {
-  var VALID = [29, 30, 31];
+  var VALID = [0, 29, 30, 31];
 
   // Render the shared selector into the container with id `containerId`. `selectId` is
   // the <select> element id (unique per page). Safe to call before or after i18n applies
@@ -37,6 +37,7 @@ window.ClusterProjection = (function () {
       '</div>' +
       '<div class="setting-control">' +
         '<select id="' + selectId + '" class="select-control">' +
+          '<option value="0" data-i18n="road_sense.bs_layout_auto">Automatisch (nichts senden)</option>' +
           '<option value="31" data-i18n="road_sense.bs_layout_1025">10.25&quot; cluster</option>' +
           '<option value="30" data-i18n="road_sense.bs_layout_123">12.3&quot; cluster</option>' +
           '<option value="29" data-i18n="road_sense.bs_layout_88">8.8&quot; cluster</option>' +
@@ -62,7 +63,7 @@ window.ClusterProjection = (function () {
       // Same shape road-sense.js reads: data.config.blindspot.clusterSizeProfile.
       var bs = data && data.config && data.config.blindspot;
       var n = bs ? parseInt(bs.clusterSizeProfile, 10) : NaN;
-      if (VALID.indexOf(n) === -1) n = 31; // default 10.25" (matches daemon seed default)
+      if (VALID.indexOf(n) === -1) n = 0; // nichts gespeichert = Automatisch (der Daemon sendet dann kein Profil)
       var sel = document.getElementById(selectId);
       if (sel) sel.value = String(n);
     }).catch(function () { /* leave the default selected */ });

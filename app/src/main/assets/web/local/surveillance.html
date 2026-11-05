@@ -99,9 +99,12 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                             <span data-i18n="surveillance.mode">Wächter-Modus</span>
                         </div>
-                        <span class="status-badge inactive" id="survStatusBadge" data-i18n="status.off">Aus</span>
+                        <span class="status-badge inactive" id="survStatusBadge">…</span>
                     </div>
                     <div class="card-body">
+                        <!-- 0.1.38.11: EINE ehrliche Zustandszeile (waechter-zustand.js); das Abzeichen oben zeigt dasselbe kurz -->
+                        <div class="setting-hint" id="survZustand" style="margin-top:0;font-size:1.05em;font-weight:600;" aria-live="polite"></div>
+                        <div class="setting-hint" id="survZustandHinweis" hidden></div>
                         <!-- Operating mode: ON+OFF (keep working while parked) vs ON only (sleep after car off) -->
                         <div class="setting-row">
                             <div class="setting-info">
@@ -1461,7 +1464,8 @@
     <script src="../shared/pip.js?v=3"></script>
     <script src="../shared/storage-budget.js?v=8"></script>
     <script src="../shared/settings-hydration.js?v=1"></script>
-    <script src="../shared/surveillance.js?v=survtoggle13"></script>
+    <script src="../shared/waechter-zustand.js?v=1"></script>
+    <script src="../shared/surveillance.js?v=survtoggle14"></script>
     <script src="../shared/safe-locations.js?v=ml4"></script>
     <script src="../shared/roi-schedule.js?v=3"></script>
     <script src="../shared/parking-settings.js?v=3"></script>

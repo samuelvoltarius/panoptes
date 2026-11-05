@@ -516,7 +516,8 @@
       "invalid": "❌ Questo PIN non corrisponde. Ricontrollalo in Panoptes.",
       "storage_error": "⚠️ L'auto non è riuscita a salvare l'abbinamento. Riprova subito; se non funziona di nuovo, riavvia Panoptes sull'auto.",
       "success": "✅ *Abbinato, {0}!*\nD’ora in poi gli avvisi della tua auto arriveranno qui. /help mostra cosa puoi fare.",
-      "success_no_name": "✅ *Abbinato!*\nD'ora in poi gli avvisi della tua auto arriveranno qui. /help mostra cosa puoi fare."
+      "success_no_name": "✅ *Abbinato!*\nD'ora in poi gli avvisi della tua auto arriveranno qui. /help mostra cosa puoi fare.",
+      "medien_hinweis": "📷 Foto e registrazioni della sorveglianza vengono inviate di serie. Restano poi sui server di Telegram e possono mostrare altre persone. La sorveglianza è pensata solo per il tuo terreno privato. Disattivare: /bilder aus"
     },
     "test": {
       "message": "✅ *Prova da Panoptes*\nSe leggi questo, gli avvisi della tua auto arriveranno qui."
@@ -545,7 +546,8 @@
       "footer": "_Panoptes {0}_",
       "menu": "/menue – Tutti i pulsanti a colpo d’occhio",
       "updates": "/updates – Aggiornare Panoptes e il launcher",
-      "kopplungen": "/kopplungen – Mostra e rimuovi i dispositivi associati (telefono perso)"
+      "kopplungen": "/kopplungen – Mostra e rimuovi i dispositivi associati (telefono perso)",
+      "bilder": "/bilder – Foto e video a Telegram (`/bilder aus` disattiva)"
     },
     "buttons": {
       "status": "📊 Stato",
@@ -751,7 +753,8 @@
     },
     "media": {
       "video_too_large": "🎞 *Troppo grande per essere inviata*\n`{0}` · {1} MB\nTelegram accetta al massimo 50 MB – guardala in Panoptes.",
-      "document_too_large": "📄 *Troppo grande per essere inviato*\n`{0}` · {1} MB – Telegram accetta al massimo 50 MB."
+      "document_too_large": "📄 *Troppo grande per essere inviato*\n`{0}` · {1} MB – Telegram accetta al massimo 50 MB.",
+      "standard_an": "📷 *Novità: la sorveglianza ora invia anche le foto.*\nA un evento la foto arriva direttamente in questa chat, anche la registrazione (fino a 50 MB) e la foto panoramica quando parcheggi. Spesso si vedono altre persone. I file restano poi sui server di Telegram. La sorveglianza è pensata per il tuo terreno privato.\n\nDisattivare: pulsante qui sotto, /bilder aus o in Panoptes in *Regole → Avvisi → Avvisi Telegram*."
     },
     "daemons": {
       "title": "⚙️ *Servizi*\n\n"
@@ -1096,6 +1099,15 @@
       "startet": "⏳ Panoptes nell’auto si sta ancora avviando. Riprova tra un paio di minuti.",
       "aus": "ℹ️ Panoptes è spento nell’auto. Puoi accenderlo sullo schermo dell’auto in Panoptes sotto *Servizi*.",
       "antwortet_nicht": "⚠️ Panoptes nell’auto non risponde in questo momento. Tocca /dienste per riavviarlo, oppure apri Panoptes sullo schermo dell’auto."
+    },
+    "bilder": {
+      "stand_an": "📷 Foto e video a Telegram: *attivo*. Disattivare: /bilder aus",
+      "stand_aus": "Foto e video a Telegram: *disattivato*. Attivare: /bilder an",
+      "aus": "✅ Fatto: il bot non invia più foto e video. Gli avvisi continuano; una registrazione la prendi con /aufnahme. Attivare: /bilder an",
+      "an": "✅ Fatto: il bot invia di nuovo foto e video. Disattivare: /bilder aus",
+      "an_in_panoptes": "La prima volta lo attivi in Panoptes in *Regole → Avvisi → Avvisi Telegram*. Lì è spiegato prima cosa significa.",
+      "fehler": "⚠️ Non sono riuscito a salvarlo nell’auto. Riprova tra un momento.",
+      "btn_aus": "🚫 Disattiva le foto"
     },
     "erreichbar": {
       "frage": "🅿️ Il bot deve raggiungerti anche quando l’auto è parcheggiata e spenta? Altrimenti risponde solo mentre l’auto è accesa. Consuma un po’ di corrente della batteria a 12 V.",

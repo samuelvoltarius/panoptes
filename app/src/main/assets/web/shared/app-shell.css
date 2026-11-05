@@ -182,6 +182,13 @@ html[data-cap-hud="0"] [data-needs~="hud"] { display: none !important; }
     .pn-top[data-conn="lost"] .pn-pills::before { margin: 0 6px 6px 0; }
 }
 
+/* 0.1.38.11 (M1): Zwischen 721 und 768 px nimmt styles.css (alte Handy-Regel) dem Inhalt den linken Rand, die Leiste
+   steht hier aber noch links – ohne diese Regel läge der Inhalt 100 px unter der Leiste (z. B. geteilter Bildschirm). */
+@media (min-width: 721px) and (max-width: 768px) {
+    html[data-pn-shell] .main-content { margin-left: var(--sidebar-width); }
+    html[data-pn-shell][dir="rtl"] .main-content { margin-left: 0; margin-right: var(--sidebar-width); }
+}
+
 /* === ANDROID-APP: eigene Leiste + Kopfzeile ====================== */
 [data-android-embed="1"] .pn-head { display: none !important; }
 [data-android-embed="1"] .sidebar.pn-rail { display: none !important; }

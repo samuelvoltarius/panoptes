@@ -296,6 +296,15 @@ open class MainActivity : AppCompatActivity() {
         initViews()
         screenshotPrivacyController = ScreenshotPrivacyController(this).also { it.start() }
         setupNavigation(savedInstanceState)
+        // 0.1.38.11 (M1, Surf 05.11. 15:23 nach Zündung aus/an): Beim Neuaufbau stellt der NavController den gespeicherten
+        // Stapel wieder her – lag dort die alte Oberfläche („Erweitert (alt)“, dashboardFragment), kam sie statt der
+        // Web-Oberfläche. Nach jedem Neuaufbau gilt wieder das Startziel (Web, mit Menüleiste).
+        if (NeuaufbauZiel.zurWeb(savedInstanceState != null, alteOberflaecheImStapel())) navigateToWebSeite("/")
+        // 0.1.38.11 (M1, Emulator-Beleg): die Seiten-Ebene des Assistenten lebt nur im Speicher; ihr Fragment käme nach dem
+        // Neuaufbau verwaist zurück (ohne Ebene, lädt die Seite unsichtbar nach)
+        if (savedInstanceState != null) {
+            at.greenchili.surfmate.onboarding.schritte.AssistentAnbindung.verwaisteEbeneEntfernen(this)
+        }
         handleNavigateExtra(intent)
         setupCopyButton()
         if (!remoteDevSession) setupLogListener()
@@ -1287,6 +1296,19 @@ open class MainActivity : AppCompatActivity() {
         screenshotPrivacyController?.setEnabled(enabled)
     }
     
+    /** 0.1.38.11 (M1): Web-Seite als Startziel zeigen (z. B. nach „Einrichtung unterbrechen“). */
+    fun zeigeWebSeite(pfad: String) = navigateToWebSeite(pfad)
+
+    /** Liegt die alte native Oberfläche (dashboardFragment, „Erweitert (alt)“) im Nav-Stapel? */
+    private fun alteOberflaecheImStapel(): Boolean = try {
+        navController.currentDestination?.id == R.id.dashboardFragment ||
+            navController.getBackStackEntry(R.id.dashboardFragment) != null
+    } catch (_: IllegalArgumentException) {
+        false   // nicht im Stapel
+    } catch (_: Throwable) {
+        false
+    }
+
     private fun setupNavigation(savedInstanceState: Bundle?) {
         setSupportActionBar(toolbar)
 
@@ -2109,6 +2131,9 @@ open class MainActivity : AppCompatActivity() {
         // "dilink4" = OEM SurfaceTexture, "dilink5" = native QCarCam.
         // Absent in older config → "default".
         val cameraMode: String,
+        // K2: erkannter Kamera-Eingang, der nicht zum gespeicherten passt (null = passt / nichts erkannt)
+        val autoartVorschlag: String? = null,
+        val autoartSicherheit: String = "unbekannt",
         // Optional native camera-ID order in front,right,rear,left order.
         // Empty keeps the model/property auto-detection path.
         val dilink5CameraMapping: String,
@@ -2272,6 +2297,12 @@ open class MainActivity : AppCompatActivity() {
                 manualCameraId = manualCameraId,
                 isManualOverride = manualOverride,
                 cameraMode = cameraMode,
+                autoartVorschlag = config.optJSONObject("autoart")?.let { aa ->
+                    if (aa.isNull("vorschlag")) null else aa.optString("vorschlag", "")
+                        .takeIf { it == "default" || it == "dilink4" || it == "dilink5" }
+                },
+                autoartSicherheit = config.optJSONObject("autoart")?.optString("sicherheit", "unbekannt")
+                    ?: "unbekannt",
                 dilink5CameraMapping = config.optString(
                     "dilink5CameraMapping", ""),
                 dilink4PassiveApaMode = config.optBoolean(
@@ -2729,6 +2760,31 @@ open class MainActivity : AppCompatActivity() {
             else -> R.id.rbCameraModeDefault
         }
         cameraModeGroup.check(initialModeRadioId)
+        // K2: Erkennung passt nicht zum gespeicherten Modus → Hinweis + Ein-Tipp-Knopf. Der Knopf wählt nur den
+        // Vorschlag und löst denselben „Speichern und neu starten“ aus; zurück geht jederzeit über die Auswahl.
+        dialogView.findViewById<TextView>(R.id.tvCameraModeErkannt)?.let { hinweis ->
+            val knopf = dialogView.findViewById<android.widget.Button>(R.id.btnCameraModeVorschlag)
+            val vorschlag = state.autoartVorschlag
+            if (vorschlag == null || knopf == null) {
+                hinweis.visibility = View.GONE
+                knopf?.visibility = View.GONE
+            } else {
+                hinweis.text = getString(R.string.camera_mode_erkannt_hinweis, kameraModusName(vorschlag),
+                    getString(if (state.autoartSicherheit == "sicher") R.string.camera_mode_sicher
+                              else R.string.camera_mode_vermutlich))
+                hinweis.visibility = View.VISIBLE
+                knopf.text = getString(R.string.camera_mode_vorschlag_knopf, kameraModusName(vorschlag))
+                knopf.visibility = View.VISIBLE
+                knopf.setOnClickListener {
+                    cameraModeGroup.check(when (vorschlag) {
+                        "dilink4" -> R.id.rbCameraModeDilink4
+                        "dilink5" -> R.id.rbCameraModeDilink5
+                        else -> R.id.rbCameraModeDefault
+                    })
+                    dialogView.findViewById<View>(R.id.btnSaveCameraMode)?.performClick()
+                }
+            }
+        }
         currentCameraModeView.text = when (state.cameraMode) {
             "dilink4" -> getString(R.string.camera_mode_current_dilink4)
             "dilink5" -> getString(R.string.camera_mode_current_dilink5)
@@ -4504,6 +4560,38 @@ open class MainActivity : AppCompatActivity() {
      * the private restartCameraDaemonForCameraSettings.
      */
     fun restartCameraDaemonForOnboarding() = restartCameraDaemonForCameraSettings()
+
+    /** Kurzer Name eines Kamera-Eingangs für Hinweise (K2). */
+    fun kameraModusName(modus: String): String = getString(when (modus) {
+        "dilink4" -> R.string.camera_mode_kurz_dilink4
+        "dilink5" -> R.string.camera_mode_kurz_dilink5
+        else -> R.string.camera_mode_kurz_default
+    })
+
+    /**
+     * K2 (0.1.38.11): Ein-Tipp-Umstellung von der Wächter-Seite. Fragt erst nach (A+: nur auf Tipp), dann derselbe Weg
+     * wie „Speichern und neu starten“ im Kamera-Dialog. Nie still: ohne „Umstellen“ passiert nichts.
+     */
+    fun kameraModusVorschlagUmstellen(modus: String) {
+        if (modus != "default" && modus != "dilink4" && modus != "dilink5") return
+        if (isFinishing || isDestroyed) return
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setMessage(getString(R.string.camera_mode_umstellen_frage, kameraModusName(modus)))
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.camera_mode_umstellen_ja) { _, _ ->
+                val payload = org.json.JSONObject().put("cameraMode", modus).toString()
+                postSurveillanceConfig(payload) { success, message ->
+                    if (success) {
+                        Toast.makeText(this, getString(R.string.camera_mapping_saved), Toast.LENGTH_SHORT).show()
+                        restartCameraDaemonForCameraSettings()
+                    } else {
+                        Toast.makeText(this, message ?: getString(R.string.toast_failed_to_save_short),
+                            Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .show()
+    }
 
     /**
      * Open the real vehicle capacity/model dialog for the vehicle chapter.

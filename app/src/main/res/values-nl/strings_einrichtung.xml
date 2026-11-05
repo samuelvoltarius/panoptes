@@ -59,6 +59,11 @@
     <string name="einr_od_lade">Panoptes leest de Overdrive-gegevens …</string>
     <string name="einr_od_nichts">Geen Overdrive-gegevens gevonden.</string>
     <string name="einr_zurueck_zur_einrichtung">Terug naar installatie</string>
+    <string name="einr_ebene_titel" formatted="true">Installatie · %1$s</string>
+    <string name="einr_ebene_titel_ohne">Installatie</string>
+    <string name="einr_ebene_menue">De menubalk komt terug zodra je de installatie afrondt of onderbreekt.</string>
+    <string name="einr_unterbrechen">Installatie onderbreken, naar menu</string>
+    <string name="einr_unterbrochen">Installatie onderbroken. Ze komt terug bij de volgende start – of onder Instellingen → Installatie.</string>
     <string name="einr_fehler_pflicht">Maak eerst een keuze.</string>
     <string name="einr_fehler_speichern">Opslaan is niet gelukt. Probeer het opnieuw.</string>
     <string name="einr_fehler_verbindung">Panoptes draait nog niet. Wacht even en probeer het opnieuw.</string>

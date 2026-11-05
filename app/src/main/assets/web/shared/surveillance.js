@@ -278,6 +278,8 @@ BYD.surveillance = {
         // this page take seconds to become usable, with Apply disabled, the OEM
         // picker dimmed and the Detection tab inert the whole time.
         // Same fix recording.js already carries (see its init()): ~11 RTTs → ~3.
+        // 0.1.38.11: Zustand zuerst und unabhängig von der Konfiguration – fehlt der Dienst, steht das sofort da
+        this.zustandZeigen();
         const configLoaded = await this.loadConfig();
         if (!configLoaded) {
             throw new Error('Failed to load surveillance configuration');
@@ -1459,6 +1461,33 @@ BYD.surveillance = {
         }
     },
 
+    /** 0.1.38.11: EIN Zustand mit Grund aus /api/surveillance/status (waechter-zustand.js), Abzeichen kurz, Zeile lang. */
+    zustandZeigen() {
+        var badge = document.getElementById('survStatusBadge');
+        var zeile = document.getElementById('survZustand');
+        if ((!badge && !zeile) || !window.PanoptesWaechterZustand) return;
+        var t = function (k, f, v) {
+            var s = (BYD.i18n && BYD.i18n.t) ? BYD.i18n.t(k, v) : null;
+            if (!s || s === k) {
+                s = f || k;
+                if (v) Object.keys(v).forEach(function (n) { s = s.split('{' + n + '}').join(v[n]); });
+            }
+            return s;
+        };
+        PanoptesWaechterZustand.laden(t, function (z) {
+            if (badge) {
+                badge.textContent = z.kurz;
+                badge.className = 'status-badge ' + (z.grund === 'passt_auf' ? 'active' : 'inactive');
+            }
+            if (zeile) zeile.textContent = z.txt;
+            var h = document.getElementById('survZustandHinweis');
+            if (h) { h.textContent = z.hinweis; h.hidden = !z.hinweis; }
+        });
+        clearTimeout(this._zustandTimer);
+        var self = this;
+        this._zustandTimer = setTimeout(function () { self.zustandZeigen(); }, 15000);
+    },
+
     updateUI() {
         // Null-guard every top-level DOM read. updateUI is reused on
         // notifications.html (via initTelegramOnly) which only mounts the
@@ -1469,11 +1498,9 @@ BYD.surveillance = {
         const survEnabled = document.getElementById('survEnabled');
         if (survEnabled) survEnabled.checked = this.config.enabled;
 
-        const badge = document.getElementById('survStatusBadge');
-        if (badge) {
-            badge.textContent = this.config.enabled ? BYD.i18n.t('surveillance.badge_on') : BYD.i18n.t('surveillance.badge_off');
-            badge.className = 'status-badge ' + (this.config.enabled ? 'active' : 'inactive');
-        }
+        // 0.1.38.11: Abzeichen + Zeile zeigen den ECHTEN Zustand (scharf / bereit, Zündung an / gestoppt / Dienst
+        // antwortet nicht), nicht nur den Schalter – sonst stand „AN“, obwohl der Wächter nicht scharf war.
+        this.zustandZeigen();
 
         const preRecSlider = document.getElementById('preRecSlider');
         if (preRecSlider) preRecSlider.value = this.config.preRecordSeconds;

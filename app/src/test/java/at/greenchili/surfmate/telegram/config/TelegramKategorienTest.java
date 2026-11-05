@@ -49,7 +49,7 @@ public class TelegramKategorienTest {
         erwartet.put("waechter.kritisch", true);
         erwartet.put("waechter.alarm", true);
         erwartet.put("waechter.hinweis", false);
-        erwartet.put("waechter.medien", false);
+        erwartet.put("waechter.medien", true);    // 0.1.38.11 Standard an (MedienStandard)
         erwartet.put("system.verbindung", false);
         erwartet.put("fahrzeug.kritisch", true);
         for (int i = 0; i < s.length(); i++) {

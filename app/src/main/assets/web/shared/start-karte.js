@@ -17,7 +17,7 @@
         zugang: 'Zugang (Tailscale)',
         oberflaeche: 'Oberfläche',
         waechter: 'Wächter',
-        rest: 'Telegram und Brücke',
+        rest: 'Telegram',   // 0.1.38.11: nur Telegram wird geprüft; ohne Telegram zeigt der Start die Zeile nicht
         startet: 'startet …',
         bereit: 'bereit',
         startet_nicht: 'startet nicht',
@@ -25,6 +25,8 @@
         ausblenden: 'Ausblenden'
     };
     var TAKT_MS = 2000;
+    // „startet nicht“: weiter nachlesen, aber langsam – meldet der Dienst sich später (anderer Weg), wird daraus ✓
+    var NACH_MS = 10000;
     var ZEICHEN = { startet: '…', bereit: '✓', startet_nicht: '✗' };
     var FARBE = { startet: '#c9d1d9', bereit: '#3fb950', startet_nicht: '#ffc857' };
 
@@ -92,7 +94,7 @@
             for (var i = 0; i < d.stufen.length; i++) if (d.stufen[i].zustand === 'startet_nicht') nicht = true;
             if (d.fertig && !nicht) { verstecken(); return; }
             zeichne(d);
-            if (!d.fertig) timer = setTimeout(lesen, TAKT_MS);
+            timer = setTimeout(lesen, d.fertig ? NACH_MS : TAKT_MS);
         }, function () { verstecken(); });
     }
 

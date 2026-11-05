@@ -1717,6 +1717,26 @@ class WebViewFragment : Fragment() {
         @android.webkit.JavascriptInterface
         fun openLegacy(): String = navigate("erweitert")
 
+        /**
+         * K2 (0.1.38.11): „Jetzt auf DiLink X umstellen“ von der Wächter-Seite. Nur die drei bekannten Modi; die
+         * App fragt nativ nach und nutzt dann denselben Speichern-und-Neustart-Weg wie der Kamera-Dialog.
+         */
+        @android.webkit.JavascriptInterface
+        fun kameraModusUmstellen(modus: String?): String {
+            val m = modus?.trim()?.lowercase(java.util.Locale.ROOT) ?: return "ungueltig"
+            if (m != "default" && m != "dilink4" && m != "dilink5") return "ungueltig"
+            return try {
+                val act = activity as? at.greenchili.surfmate.ui.MainActivity ?: return "no_context"
+                act.runOnUiThread {
+                    if (isAdded && !isDetached && view != null) act.kameraModusVorschlagUmstellen(m)
+                }
+                "ok"
+            } catch (e: Exception) {
+                android.util.Log.w("WebViewFragment", "kameraModusUmstellen bridge failed: ${e.message}")
+                "error"
+            }
+        }
+
         /** Direkter, absichtlich enger Weg aus System → Kameras zuordnen. */
         @android.webkit.JavascriptInterface
         fun openCameraMapping(): String {
@@ -2496,7 +2516,9 @@ class WebViewFragment : Fragment() {
     private fun interceptStartStatus(url: String): WebResourceResponse? {
         if (Uri.parse(url).path != "/api/start/status") return null
         val jetzt = android.os.SystemClock.elapsedRealtime()
-        StartStatus.melde(StartStufe.OBERFLAECHE, StufeZustand.BEREIT, jetzt)
+        // 0.1.38.11: der Abruf selbst beweist nichts (die WebView beantwortet ihn ohne Webserver). „Bereit“ setzen nur
+        // die echten Prüfungen; hier nur nachprüfen lassen, ob noch offene Dienste inzwischen laufen.
+        StartStatus.nachpruefen(jetzt)
         val bytes = StartStatus.json(jetzt).toString().toByteArray(Charsets.UTF_8)
         return WebResourceResponse("application/json", "utf-8", java.io.ByteArrayInputStream(bytes)).apply {
             setStatusCodeAndReasonPhrase(200, "OK")
@@ -2506,6 +2528,7 @@ class WebViewFragment : Fragment() {
 
     private fun startDiensteZeigen() {
         val tv = startDienste ?: return
+        StartStatus.nachpruefen(android.os.SystemClock.elapsedRealtime())
         val stand = StartStatus.stand(android.os.SystemClock.elapsedRealtime())
         if (stand.isEmpty()) {
             tv.visibility = View.GONE

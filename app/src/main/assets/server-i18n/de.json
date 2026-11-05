@@ -592,7 +592,8 @@
       "footer": "_Panoptes {0}_",
       "menu": "/menue – Alle Knöpfe auf einen Blick",
       "updates": "/updates – Panoptes und Launcher aktualisieren",
-      "kopplungen": "/kopplungen – Gekoppelte Geräte zeigen und entfernen (Handy verloren)"
+      "kopplungen": "/kopplungen – Gekoppelte Geräte zeigen und entfernen (Handy verloren)",
+      "bilder": "/bilder – Bilder und Videos an Telegram (`/bilder aus` schaltet ab)"
     },
     "parking": {
       "where": {
@@ -700,7 +701,8 @@
       "invalid": "❌ Diese PIN passt nicht. Schau noch einmal in Panoptes nach.",
       "storage_error": "⚠️ Die Kopplung konnte am Auto nicht gespeichert werden. Bitte gleich noch einmal versuchen; klappt es wieder nicht, Panoptes am Auto neu starten.",
       "success": "✅ *Gekoppelt, {0}!*\nAb jetzt bekommst du hier die Meldungen deines Autos. /hilfe zeigt, was geht.",
-      "success_no_name": "✅ *Gekoppelt!*\nAb jetzt bekommst du hier die Meldungen deines Autos. /hilfe zeigt, was geht."
+      "success_no_name": "✅ *Gekoppelt!*\nAb jetzt bekommst du hier die Meldungen deines Autos. /hilfe zeigt, was geht.",
+      "medien_hinweis": "📷 Bilder und Aufnahmen vom Wächter gehen ab Werk mit. Sie liegen dann auf den Servern von Telegram, darauf können fremde Menschen zu sehen sein. Der Wächter ist nur für deinen eigenen Privatgrund gedacht. Abschalten: /bilder aus"
     },
     "tunnel": {
       "notification_url": "🌐 *Fernzugang ist da*\n{0}",
@@ -768,7 +770,8 @@
     },
     "media": {
       "video_too_large": "🎞 *Zu groß zum Schicken*\n`{0}` · {1} MB\nTelegram nimmt höchstens 50 MB – ansehen geht in Panoptes.",
-      "document_too_large": "📄 *Zu groß zum Schicken*\n`{0}` · {1} MB – Telegram nimmt höchstens 50 MB."
+      "document_too_large": "📄 *Zu groß zum Schicken*\n`{0}` · {1} MB – Telegram nimmt höchstens 50 MB.",
+      "standard_an": "📷 *Neu: Der Wächter schickt jetzt Bilder mit.*\nBei einem Wächter-Ereignis kommt das Bild direkt hier in den Chat, die Aufnahme auch (bis 50 MB), beim Abstellen das Rundum-Bild. Darauf sind oft fremde Menschen zu sehen. Die Dateien liegen dann auf den Servern von Telegram. Der Wächter ist für deinen eigenen Privatgrund gedacht.\n\nAbschalten: Knopf unten, /bilder aus oder in Panoptes unter *Regeln → Meldungen → Telegram-Meldungen*."
     },
     "legacy": {
       "connectivity": {
@@ -1090,6 +1093,15 @@
       "startet": "⏳ Panoptes im Auto startet gerade noch. Bitte in ein, zwei Minuten noch einmal versuchen.",
       "aus": "ℹ️ Panoptes ist im Auto ausgeschaltet. Einschalten kannst du es am Autobildschirm in Panoptes unter *Dienste*.",
       "antwortet_nicht": "⚠️ Panoptes im Auto antwortet gerade nicht. Tippe auf /dienste, um es neu zu starten, oder öffne Panoptes am Autobildschirm."
+    },
+    "bilder": {
+      "stand_an": "📷 Bilder und Videos an Telegram sind *an*. Abschalten: /bilder aus",
+      "stand_aus": "Bilder und Videos an Telegram sind *aus*. Einschalten: /bilder an",
+      "aus": "✅ Erledigt: Der Bot schickt keine Bilder und Videos mehr mit. Die Meldungen kommen weiter, eine Aufnahme holst du mit /aufnahme. Einschalten: /bilder an",
+      "an": "✅ Erledigt: Der Bot schickt Bilder und Videos wieder mit. Abschalten: /bilder aus",
+      "an_in_panoptes": "Beim ersten Mal schaltest du das in Panoptes ein, unter *Regeln → Meldungen → Telegram-Meldungen*. Dort steht vorher, was das bedeutet.",
+      "fehler": "⚠️ Das konnte ich am Auto nicht speichern. Bitte gleich noch einmal versuchen.",
+      "btn_aus": "🚫 Bilder abschalten"
     },
     "erreichbar": {
       "frage": "🅿️ Soll dich der Bot auch erreichen, wenn das Auto abgestellt ist? Sonst antwortet er nur, solange das Auto an ist. Kostet etwas Strom der 12-V-Batterie.",

@@ -40,6 +40,7 @@ public final class WebHandyGuard {
             "/api/display",   // 0.1.37 Hintergrundbild und Display-Sperre: nur am Auto oder mit vollem Login
             "/api/apps/verwaltung",   // 0.1.37 Apps deaktivieren/aktivieren: nur am Auto oder mit vollem Login
             "/api/tacho/navi/fahrt",   // 0.1.37 „auch beim Fahren“: nur am Auto oder mit vollem Login
+            "/api/tacho/groesse",   // 0.1.38.11 „Größe im Fahrerdisplay“ sendet sofort ans Fahrerdisplay: nur am Auto oder mit vollem Login
             "/api/tacho/auswahl",   // 0.1.37 „Was zeigt der Tacho?“: nur mit Recht „tacho“ der Kopplung (tachoErlaubt)
             "/api/launcher/v1/layout",   // 0.1.38 Launcher-Layout: nur mit Recht „launcher“ (launcherErlaubt)
             "/api/ha/geraete",   // 0.1.39 HA-Geräte (Namen, Räume privat): nur am Auto oder mit vollem Login

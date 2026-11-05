@@ -1218,7 +1218,9 @@ public final class GenAiContext {
                 || lower.contains("selbstheilung")
                 || lower.contains("adb_abbruch")
                 || lower.contains("hardreset_")
-                || lower.contains("wrapper_beendet");
+                || lower.contains("wrapper_beendet")
+                // 0.1.38.11: gestaffelter Start (StartAblauf) für „Fehler melden“
+                || lower.contains("start_stufe");
     }
 
     private static String redactDiagnosticLine(String line) {

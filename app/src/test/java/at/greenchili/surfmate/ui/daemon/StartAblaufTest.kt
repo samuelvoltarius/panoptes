@@ -237,6 +237,6 @@ class StartAblaufTest {
         assertTrue(m.contains("toroffen = { at.greenchili.surfmate.updater.HardResetTor.frei("))
         assertTrue(m.contains("DaemonStartPlan.stufen("))
         assertTrue("Zustand je Stufe geht an die EINE Stelle StartStatus",
-            m.contains("StartStatus.beginne(stufen,") && m.contains("melde = { s, z -> StartStatus.melde(s, z) }"))
+            m.contains("StartStatus.beginne(anzeige,") && m.contains("melde = { s, z -> StartStatus.melde(s, z) }"))
     }
 }

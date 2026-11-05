@@ -888,6 +888,11 @@ public class PanoramicCameraGpu {
     private final AtomicInteger dilink4DeferredReopenEpoch =
         new AtomicInteger(0);
     private volatile boolean dilink4FrameDemanded = false;
+    // 0.1.38.11 (K1): Leerlauf ohne Verbraucher (RecordingModeManager, Leiter-Stufe 4). Gilt nur, solange der 30-s-Takt
+    // es erneuert (OHNE_VERBRAUCHER_GUELTIG_MS); jede eingeschaltete Aufnahmespur löscht es sofort.
+    static final long OHNE_VERBRAUCHER_GUELTIG_MS = 45_000L;
+    private volatile long ohneVerbraucherSeitMs = 0L;
+    private volatile boolean leerlaufStallGemeldet = false;
     private volatile String dilink4FrameDemandReason = "none";
     private volatile long dilink4LastSoftRecoveryAttemptMs = 0L;
     private volatile int dilink4SoftRecoveryCycles = 0;
@@ -3138,6 +3143,17 @@ public class PanoramicCameraGpu {
         } finally {
             previewKickArming.set(false);
         }
+    }
+
+    /** 0.1.38.11 (K1): true = niemand braucht die Kamera; der Stall-Wächter öffnet sie dann nicht neu. */
+    public void setOhneVerbraucher(boolean ohne) {
+        ohneVerbraucherSeitMs = ohne ? android.os.SystemClock.elapsedRealtime() : 0L;
+        if (!ohne) leerlaufStallGemeldet = false;
+    }
+
+    /** Rein (JVM-testbar): Leerlauf-Markierung gesetzt und noch nicht verfallen? */
+    static boolean leerlaufGueltig(long seitMs, long jetztMs) {
+        return seitMs > 0L && jetztMs - seitMs < OHNE_VERBRAUCHER_GUELTIG_MS;
     }
 
     /**
@@ -7397,7 +7413,10 @@ public class PanoramicCameraGpu {
                             // diagnosable.
                             boolean relogDue = usesRealArrivalStallClock
                                 && stallEpisodeNextLogMs > 0 && now >= stallEpisodeNextLogMs;
-                            if (firstOfEpisode || !usesRealArrivalStallClock || relogDue) {
+                            // 0.1.38.11 (K1): im Leerlauf ohne Verbraucher nach der ersten Meldung still (keine Log-Flut)
+                            boolean leerlaufStill = leerlaufStallGemeldet
+                                && leerlaufGueltig(ohneVerbraucherSeitMs, android.os.SystemClock.elapsedRealtime());
+                            if ((firstOfEpisode || !usesRealArrivalStallClock || relogDue) && !leerlaufStill) {
                                 logger.warn("FRAME STALL: No frames for " + timeSinceFrame + "ms" +
                                     (nativeActive ? " (native app active)" : "")
                                     + (USE_DILINK4_AVM_PATH
@@ -7451,6 +7470,15 @@ public class PanoramicCameraGpu {
                                         logger.info("Contention stall " + consecutiveContentionStalls +
                                             "/" + CONTENTION_STALL_COUNT_TO_YIELD +
                                             " — waiting for more evidence before yielding");
+                                    }
+                                } else if (leerlaufGueltig(ohneVerbraucherSeitMs,
+                                        android.os.SystemClock.elapsedRealtime())) {
+                                    // 0.1.38.11 (K1): Leerlauf ohne Verbraucher – niemand braucht Bilder, nicht neu
+                                    // öffnen (sonst Schleife alle 10–15 s); bei Zündung aus schließt der Takt.
+                                    consecutiveContentionStalls = 0;
+                                    if (!leerlaufStallGemeldet) {
+                                        leerlaufStallGemeldet = true;
+                                        logger.info("Frame stall im Leerlauf ohne Verbraucher — kein Neustart");
                                     }
                                 } else {
                                     // No native app — this is a HAL issue, restart camera
@@ -9716,6 +9744,7 @@ public class PanoramicCameraGpu {
      * <p>Thread-safe: writes a volatile read by the GL render thread.
      */
     public void setRecorderLaneEnabled(boolean enabled) {
+        if (enabled) setOhneVerbraucher(false);   // 0.1.38.11 (K1): Aufnahmespur an = es gibt einen Verbraucher
         if (enabled != recorderLaneEnabled) {
             recorderLaneEnabled = enabled;
             // Reset the stride phase so re-enabling starts on a drawn frame

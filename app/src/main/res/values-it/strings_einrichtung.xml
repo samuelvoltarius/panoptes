@@ -59,6 +59,11 @@
     <string name="einr_od_lade">Panoptes sta leggendo i dati di Overdrive …</string>
     <string name="einr_od_nichts">Nessun dato di Overdrive trovato.</string>
     <string name="einr_zurueck_zur_einrichtung">Torna alla configurazione</string>
+    <string name="einr_ebene_titel" formatted="true">Configurazione · %1$s</string>
+    <string name="einr_ebene_titel_ohne">Configurazione</string>
+    <string name="einr_ebene_menue">La barra dei menu torna appena termini o interrompi la configurazione.</string>
+    <string name="einr_unterbrechen">Interrompi la configurazione, vai al menu</string>
+    <string name="einr_unterbrochen">Configurazione interrotta. Torna al prossimo avvio – oppure in Impostazioni → Configurazione.</string>
     <string name="einr_fehler_pflicht">Prima fai una scelta.</string>
     <string name="einr_fehler_speichern">Salvataggio non riuscito. Riprova.</string>
     <string name="einr_fehler_verbindung">Panoptes non è ancora in esecuzione. Attendi un momento e riprova.</string>

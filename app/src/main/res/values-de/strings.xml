@@ -111,6 +111,15 @@
     <string name="camera_mode_current_default">Aktuell: Standard</string>
     <string name="camera_mode_current_dilink4">Aktuell: DiLink 4</string>
     <string name="camera_mode_save">Speichern und neu starten</string>
+    <string name="camera_mode_erkannt_hinweis">Panoptes erkennt hier %1$s (%2$s), gespeichert ist aber ein anderer Kamera-Eingang. Deshalb bleiben die Kamerabilder vielleicht schwarz.</string>
+    <string name="camera_mode_vorschlag_knopf">Jetzt auf %1$s umstellen</string>
+    <string name="camera_mode_sicher">sicher</string>
+    <string name="camera_mode_vermutlich">vermutlich</string>
+    <string name="camera_mode_kurz_default">Standard (DiLink 3)</string>
+    <string name="camera_mode_kurz_dilink4">DiLink 4</string>
+    <string name="camera_mode_kurz_dilink5">DiLink 5</string>
+    <string name="camera_mode_umstellen_frage">Kamera-Eingang auf %1$s umstellen? Panoptes speichert und startet die Kamera neu (etwa 10 s). Zurück geht es jederzeit unter Kamera-Zuordnung → Kamera-Eingang.</string>
+    <string name="camera_mode_umstellen_ja">Umstellen</string>
     <string name="camera_mode_hint">Beim Wechsel startet der Kameradienst neu. Wenn das Bild falsch aussieht (gequetscht, fehlende Ecken, rote Fläche), probiere den anderen Modus.</string>
     <!-- DiLink 4 quadrant tweaks (only effective when cameraMode = DiLink 4) -->
     <string name="camera_dilink4_tweaks_title">Anpassungen für DiLink 4</string>
@@ -345,7 +354,7 @@
     <string name="start_dienst_zugang">Zugang (Tailscale)</string>
     <string name="start_dienst_oberflaeche">Oberfläche</string>
     <string name="start_dienst_waechter">Wächter</string>
-    <string name="start_dienst_rest">Telegram und Brücke</string>
+    <string name="start_dienst_rest">Telegram</string>
     <string name="start_zustand_startet">startet …</string>
     <string name="start_zustand_bereit">bereit</string>
     <string name="start_zustand_startet_nicht">startet nicht</string>

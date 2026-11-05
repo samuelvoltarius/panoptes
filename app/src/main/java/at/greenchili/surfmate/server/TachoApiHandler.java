@@ -28,6 +28,8 @@ import java.net.URLDecoder;
  *   <li>{@code PUT  /api/tacho/navi/hinweis} {@code {verstanden: true}} – einmaliger Hinweis vor der
  *       ersten Probe bzw. dem ersten Start.</li>
  *   <li>{@code PUT  /api/tacho/ansicht} {@code {design}} – Design der Panoptes-Tacho-Ansicht.</li>
+ *   <li>{@code GET/PUT /api/tacho/groesse} {@code {profil: 0|29|31|30}} – „Größe im Fahrerdisplay“ (0.1.38.11),
+ *       setzen nur im Stand, zeigt die Größe sofort ({@link at.greenchili.surfmate.tacho.TachoGroesse}).</li>
  *   <li>{@code GET  /api/tacho/auswahl}, {@code POST /api/tacho/auswahl} {@code {id}} – „Was zeigt der
  *       Tacho?“: Designs, Navi- und freigegebene Apps, {@code normal} ({@link TachoAuswahl}).</li>
  *   <li>{@code PUT  /api/tacho/navi/warnleuchten} {@code {frei: ja|nein, paket}} – Antwort nach
@@ -87,6 +89,22 @@ public final class TachoApiHandler {
             JSONObject r = TachoAuswahl.waehle(in.optString("id", ""));
             HttpResponse.sendJson(out, r.optBoolean("ok") ? 200
                     : "ungueltige_auswahl".equals(r.optString("grund")) ? 400 : 409, r.toString());
+            return true;
+        }
+        // 0.1.38.11 „Größe im Fahrerdisplay“: lesen jederzeit, setzen nur im Stand (sendet sofort ans Fahrerdisplay)
+        if (p.equals("/api/tacho/groesse") && method.equals("GET")) {
+            HttpResponse.sendJson(out, at.greenchili.surfmate.tacho.TachoGroesse.stand().toString());
+            return true;
+        }
+        if (p.equals("/api/tacho/groesse") && (method.equals("PUT") || method.equals("POST"))) {
+            String bewegung = bewegungsGrund();
+            if (bewegung != null) {
+                HttpResponse.sendJson(out, 409, new JSONObject().put("ok", false)
+                        .put("grund", "nur_im_stand").put("detail", bewegung).toString());
+                return true;
+            }
+            JSONObject r = at.greenchili.surfmate.tacho.TachoGroesse.setze(in.optInt("profil", -1));
+            HttpResponse.sendJson(out, r.optBoolean("ok") ? 200 : 400, r.toString());
             return true;
         }
         // 0.1.37 „Tacho wieder normal“: stoppt jede Projektion (App, Spiegel, Karte), Instrumentenanzeige zurueck.

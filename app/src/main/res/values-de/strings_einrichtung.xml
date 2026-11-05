@@ -59,6 +59,11 @@
     <string name="einr_od_lade">Panoptes liest die Overdrive-Daten …</string>
     <string name="einr_od_nichts">Keine Overdrive-Daten gefunden.</string>
     <string name="einr_zurueck_zur_einrichtung">Zurück zur Einrichtung</string>
+    <string name="einr_ebene_titel" formatted="true">Einrichtung · %1$s</string>
+    <string name="einr_ebene_titel_ohne">Einrichtung</string>
+    <string name="einr_ebene_menue">Die Menüleiste ist wieder da, sobald du die Einrichtung beendest oder unterbrichst.</string>
+    <string name="einr_unterbrechen">Einrichtung unterbrechen, zum Menü</string>
+    <string name="einr_unterbrochen">Einrichtung unterbrochen. Sie kommt beim nächsten Start wieder – oder unter Einstellungen → Einrichtung.</string>
     <string name="einr_fehler_pflicht">Bitte triff zuerst eine Wahl.</string>
     <string name="einr_fehler_speichern">Speichern hat nicht geklappt. Bitte nochmal versuchen.</string>
     <string name="einr_fehler_verbindung">Panoptes läuft noch nicht. Bitte einen Moment warten und nochmal versuchen.</string>

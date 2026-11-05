@@ -10114,6 +10114,14 @@ public class GpuSurveillancePipeline {
         }
     }
 
+    /** 0.1.38.11 (K1): Leiter-Stufe „kein Verbraucher“ an die Kamera (Stall-Wächter öffnet dann nicht neu). */
+    public void setCameraOhneVerbraucher(boolean ohne) {
+        PanoramicCameraGpu current = camera;
+        if (current != null) {
+            current.setOhneVerbraucher(ohne);
+        }
+    }
+
     /** Lifecycle-edge kick for a persistent DI4 handle (ACC ON, UI reveal). */
     public void requestDiLink4ProducerRecovery(String reason) {
         PanoramicCameraGpu current = camera;

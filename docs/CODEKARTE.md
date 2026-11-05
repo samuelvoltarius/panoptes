@@ -1,6 +1,6 @@
 # Codekarte Panoptes
 
-**Stand: Version 0.1.38.10, Commit 80a5b30c**
+**Stand: Version 0.1.38.11, Commit deabb40c**
 
 Wegweiser durch den Code. Zuerst hier suchen, dann gezielt die genannte Datei öffnen.
 Die Karte nennt Dateien und Klassen, keine Zeilennummern. Kurze Pfade gelten ab
@@ -67,7 +67,7 @@ Jedes Paket steht hier, auch Unterpakete. Pfade ab dem Wurzelpaket. Lose Dateien
 | `bridge/` | Fahrzeugdaten für App-Oberfläche (nicht die Handy-Brücke) |
 | `bruecke/` | Panoptes-Brücke zum Handy |
 | `byd/`, `byd/bodywork/`, `byd/cloud/`, `byd/cloud/crypto/`, `byd/dilink5/`, `byd/light/`, `byd/radar/`, `byd/routing/` | BYD-Zugriff: Daten lesen, Befehle, Cloud, DiLink 5. `byd/cloud/crypto/`: Zugangsdaten über `CredentialCipher`; 0.1.38.6 legt neben dem Klartext (bleibt für den Rückfall auf 0.1.38.5) eine geprüfte Schattenkopie `enc_<feld>` an (`ZugangsMigration.schatten`, Abgleich beim Daemon-Start), 0.1.38.8 auch `auth.deviceSecret`, `hotspot.password`, Brücken-Datei (a, g); Klartext erst nach 0.1.38.8 löschen; Fernklima: `KlimaZustand` ist die eine Bewertung (frischer Cloud-`airRunState` > Befehl > unbekannt, `KlimaLaeuft`), `FernKlima` (rein) hält den erfolgreichen Cloud-Start als Sitzung „laut Befehl“ (Router `fernKlimaSitzung()`, `climate.fern` in `/api/vehicle/state`, Telegram `GET_FERNKLIMA`); `climate.acOn` fehlt bei Zündung aus, nie „Klima aus“ ohne Beleg; `StoppKnopf` (rein) entscheidet den roten Stopp-Knopf (`climate.stopp {zeigen,grund,weg}`, nur bei Beleg, Fern-Sitzung → Stopp über die Cloud), Web und Handy-App `heizen_stoppen` lesen ihn |
-| `camera/`, `camera/dilink5/` | Kamera-Zugriff, Panorama, Dashcam-Pipeline |
+| `camera/`, `camera/dilink5/` | Kamera-Zugriff, Panorama, Dashcam-Pipeline; Kamera-Eingang erkennen `AutoArtErkennung` (K2: libais/Android/Modell, nur Vorschlag, `GET /api/surveillance/autoart`) |
 | `camping/` | Camping-Modus |
 | `charging/` | Ladesitzungen, Tarife |
 | `client/` | IPC-Klienten zum Daemon |
@@ -98,7 +98,7 @@ Jedes Paket steht hier, auch Unterpakete. Pfade ab dem Wurzelpaket. Lose Dateien
 | `notifications/`, `notifications/push/`, `notifications/sinks/` | Meldungen und Zustellwege |
 | `notzugang/` | Notzugang |
 | `od/` | Binding an `libod.so` |
-| `onboarding/`, `onboarding/schritte/` | Einrichtungs-Assistent (nativ) |
+| `onboarding/`, `onboarding/schritte/` | Einrichtungs-Assistent (nativ); 0.1.38.11 „Einrichtung unterbrechen“ immer sichtbar (`AssistentHost.unterbrechen` → `system.html#einrichtung`), Seiten-Ebene mit Kopfzeile + Zurück-Taste, verwaistes Ebenen-Fragment nach Neuaufbau weg; `ui/NeuaufbauZiel`: nach Neuaufbau nie die alte Oberfläche |
 | `orte/` | Gespeicherte Orte |
 | `overlay/` | Status-Band, Meldungs-Overlay, Einrichtungs-Dialog |
 | `parking/`, `parking/signage/` | Parken, Schilder lesen |
@@ -106,7 +106,7 @@ Jedes Paket steht hier, auch Unterpakete. Pfade ab dem Wurzelpaket. Lose Dateien
 | `power/` | 12-V-Spannung, Standby, Warmhalten |
 | `proximity/` | Annäherung per Radar |
 | `receiver/` | Broadcast-Empfänger |
-| `recording/` | Aufnahmemodus, Ereignis-Clips, Kamera im Stand schließen (`KameraParkRegel`: P + Zündung an + nichts sonst, 120 s; Opt-in-Schalter `kamera.parkFreigeben`, Standard aus, auf DiLink 4/5 verborgen; Haken `RecordingModeManager.parkFreigabePruefen`, `StreamingApiHandler.resolveBlindSpotLifecycle`) |
+| `recording/` | Aufnahmemodus, Ereignis-Clips, Kamera im Stand schließen (`KameraParkRegel`: P + Zündung an + nichts sonst, 120 s; Opt-in-Schalter `kamera.parkFreigeben`, Standard aus, auf DiLink 4/5 verborgen; Haken `RecordingModeManager.parkFreigabePruefen`, `StreamingApiHandler.resolveBlindSpotLifecycle`; 0.1.38.11: Zündung aus + kein Verbraucher 60 s → zu, ohne Schalter, Leerlauf ohne Stall-Neustart) |
 | `reichweite/` | Reichweiten-Wacht |
 | `remote/` | Fernansicht |
 | `rueckmeldung/` | Fehler melden, Auto-Angaben fürs Mitzählen |
@@ -232,7 +232,7 @@ Extern, ist die Route für Kopplungen gesperrt.
 | `/api/tyres/` | `TyreLimitsApiHandler` | Login |
 | `/api/bydcloud` | `BydCloudApiHandler` | Login; Einrichten für Handy-Web gesperrt |
 | `/api/gps` | `GpsApiHandler` | Login; Extern lesen, siehe `GpsFreigabe` |
-| `/api/tacho/` | `TachoApiHandler` | Login; `navi/fahrt` auch für Handy-Web gesperrt; `/api/tacho/auswahl` und `/api/tacho/normal` auch für Kopplungen der Art `handy`/`cockpit` mit Recht `tacho`, Handy-Web nur `auswahl` mit Recht `tacho` |
+| `/api/tacho/` | `TachoApiHandler` | Login; `navi/fahrt` und `groesse` (Größe im Fahrerdisplay, nur im Stand, eine Quelle `blindspot.clusterSizeProfile`, nie geraten) auch für Handy-Web gesperrt; `/api/tacho/auswahl` und `/api/tacho/normal` auch für Kopplungen der Art `handy`/`cockpit` mit Recht `tacho`, Handy-Web nur `auswahl` mit Recht `tacho` |
 | `/api/positions` | `PositionsApiHandler` | Login |
 | `/api/apps/` | `AppsApiHandler` | Login; `/api/apps/verwaltung` für Handy-Web gesperrt |
 | `/api/display/` | `DisplayApiHandler` | Login; für Handy-Web gesperrt; `sperre/aus` am Display nur mit PIN |

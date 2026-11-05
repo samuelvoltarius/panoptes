@@ -65,6 +65,7 @@ public final class BefehlsLog {
             "/api/tacho/navi/fahrt", "/api/tacho/normal",   // 0.1.37 Tacho: auch beim Fahren, wieder normal
             "/api/launcher/v1/klima", "/api/launcher/v1/update", "/api/launcher/v1/tacho/",   // 0.1.37: Launcher-Klima und -Updates
             "/api/tacho/auswahl",   // 0.1.37 „Was zeigt der Tacho?“
+            "/api/tacho/groesse",   // 0.1.38.11 Größe im Fahrerdisplay
             "/api/launcher/v1/layout"};   // 0.1.38: Launcher-Layout (ohne Inhalt)
 
     /** Gründe, die ein technischer Fehler sind (sonst gilt ok:false als Ablehnung). */

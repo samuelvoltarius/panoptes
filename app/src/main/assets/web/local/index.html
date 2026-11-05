@@ -1000,7 +1000,10 @@
                 .then(function (r) { return r.json(); })
                 .then(function (d) {
                     var ok = !!(d && d.success);
-                    toast(ok ? t('home.tacho_normal_ok', 'Der Tacho zeigt wieder die normale Anzeige.') : t('home.failed', 'Hat nicht geklappt'), ok);
+                    // 0.1.38.11: ohne gewählte Größe zusätzlich der Weg zur „Größe des Fahrerdisplays“
+                    var mehr = ok && d.profil === 'kein_profil'
+                        ? ' ' + t('vehicle_control.cluster_tacho_profil_hinweis', 'Ist der Tacho noch zu groß oder abgeschnitten? Wähle unter Apps & Display → Display bei „Größe im Fahrerdisplay“ die passende Größe.') : '';
+                    toast(ok ? t('home.tacho_normal_ok', 'Der Tacho zeigt wieder die normale Anzeige.') + mehr : t('home.failed', 'Hat nicht geklappt'), ok);
                 })
                 .catch(function () { toast(t('home.failed', 'Hat nicht geklappt'), false); })
                 .then(function () { btn.classList.remove('pending'); });

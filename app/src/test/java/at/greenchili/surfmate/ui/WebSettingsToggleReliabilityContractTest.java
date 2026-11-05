@@ -19,12 +19,12 @@ public class WebSettingsToggleReliabilityContractTest {
         assertPageLock("road-sense.html", "road-sense.js?v=chimevolume8");
         assertPageLock("trips.html", "trips.js?v=panoptes9");
         assertPageLock("abrp.html", "abrp.js?v=apikey1");
-        assertPageLock("surveillance.html", "surveillance.js?v=survtoggle13");
-        assertPageLock("byd-cloud.html", "surveillance.js?v=survtoggle13");
+        assertPageLock("surveillance.html", "surveillance.js?v=survtoggle14");
+        assertPageLock("byd-cloud.html", "surveillance.js?v=survtoggle14");
         assertTrue(read("app/src/main/assets/web/local/live-view.html").contains(
-                "surveillance.js?v=survtoggle13"));
+                "surveillance.js?v=survtoggle14"));
         assertTrue(read("app/src/main/assets/web/local/notifications.html").contains(
-                "surveillance.js?v=survtoggle13"));
+                "surveillance.js?v=survtoggle14"));
 
         String hydration = read("app/src/main/assets/web/shared/settings-hydration.js");
         assertTrue(hydration.contains("event.stopImmediatePropagation();"));

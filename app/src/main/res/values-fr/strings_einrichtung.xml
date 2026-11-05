@@ -59,6 +59,11 @@
     <string name="einr_od_lade">Panoptes lit les données d’Overdrive …</string>
     <string name="einr_od_nichts">Aucune donnée Overdrive trouvée.</string>
     <string name="einr_zurueck_zur_einrichtung">Retour à l’installation</string>
+    <string name="einr_ebene_titel" formatted="true">Installation · %1$s</string>
+    <string name="einr_ebene_titel_ohne">Installation</string>
+    <string name="einr_ebene_menue">La barre de menu revient dès que tu termines ou interromps l’installation.</string>
+    <string name="einr_unterbrechen">Interrompre l’installation, aller au menu</string>
+    <string name="einr_unterbrochen">Installation interrompue. Elle revient au prochain démarrage – ou sous Réglages → Installation.</string>
     <string name="einr_fehler_pflicht">Veuillez d’abord faire un choix.</string>
     <string name="einr_fehler_speichern">L’enregistrement a échoué. Veuillez réessayer.</string>
     <string name="einr_fehler_verbindung">Panoptes n’est pas encore démarré. Patientez un instant, puis réessayez.</string>

@@ -84,7 +84,7 @@ public class TelegramBotDaemon {
     // could observe a stale value beyond the intended one-cycle window.
     private static volatile String botToken;
     private static volatile long ownerChatId = -1;
-    private static volatile boolean videoUploadsEnabled = false;  // Default to OFF - user must enable
+    private static volatile boolean videoUploadsEnabled = false;  // bis zur ersten Konfig-Lesung aus; Standard: MedienStandard
     // Notification-category gates. Defaults match UnifiedTelegramConfig getters
     // (criticalAlerts/motionText default ON, connectivity default OFF) so a
     // fresh install behaves the way the UI's checked-by-default toggles imply.
@@ -685,9 +685,41 @@ public class TelegramBotDaemon {
                 log("Motion text alerts changed: " + motionTextEnabled + " → " + newMotionText);
                 motionTextEnabled = newMotionText;
             }
+            medienStandardHinweis(section, System.currentTimeMillis());
         } catch (Exception e) {
             // Don't kill the poll loop on a config read blip.
             log("refreshConfigFromUnified error: " + e.getMessage());
+        }
+    }
+
+    /** 0.1.38.11 Bilder an Telegram Standard an: einmalige Nachricht an den Bestand (MedienStandard). */
+    private static volatile boolean medienHinweisErledigt = false;
+    private static volatile long medienHinweisVersuchMs = 0L;
+    static final long MEDIEN_HINWEIS_WIEDER_MS = 10 * 60_000L;
+
+    private static void medienStandardHinweis(org.json.JSONObject section, long now) {
+        if (medienHinweisErledigt) return;
+        String was = at.greenchili.surfmate.telegram.config.MedienStandard.entscheide(section);
+        if (at.greenchili.surfmate.telegram.config.MedienStandard.NICHTS.equals(was)) {
+            medienHinweisErledigt = true;
+            return;
+        }
+        if (at.greenchili.surfmate.telegram.config.MedienStandard.HINWEIS.equals(was)) {
+            // nach einem Fehlschlag (kein Netz) nicht jeden Poll erneut, sondern alle 10 min
+            if (now - medienHinweisVersuchMs < MEDIEN_HINWEIS_WIEDER_MS) return;
+            medienHinweisVersuchMs = now;
+            if (ownerChatId <= 0 || !sendMessageWithButtons(ownerChatId, tr("media.standard_an"),
+                    at.greenchili.surfmate.daemon.telegram.BilderCommandHandler.knoepfe(k -> tr(k)))) {
+                log("Medien-Standard: Hinweis nicht gesendet, neuer Versuch später");
+                return;
+            }
+            log("Medien-Standard: einmaliger Hinweis gesendet (Bilder an Telegram jetzt an)");
+            medienHinweisErledigt = true;   // in diesem Prozess nie ein zweites Mal, auch wenn der Merker scheitert
+        }
+        // Merker erst nach erfolgreichem Versand bzw. bei „still“, damit der Hinweis nicht verloren geht
+        if (at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.setBoolean(
+                at.greenchili.surfmate.telegram.config.MedienStandard.K_HINWEIS, true)) {
+            medienHinweisErledigt = true;
         }
     }
 
@@ -3110,6 +3142,13 @@ public class TelegramBotDaemon {
         String erfolg = firstName == null || firstName.isEmpty()
                 ? tr("pair.success_no_name")
                 : tr("pair.success", mdEscape(firstName));
+        // 0.1.38.11: Bilder gehen ab Werk mit (MedienStandard) – der Hinweis steht gleich in der Kopplungsnachricht.
+        // Merker setzen, damit nach der Kopplung nicht noch die einmalige „Ab jetzt“-Nachricht für den Bestand kommt.
+        if (at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.isVideoUploads()) {
+            erfolg = erfolg + "\n\n" + tr("pair.medien_hinweis");
+        }
+        at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.setBoolean(
+                at.greenchili.surfmate.telegram.config.MedienStandard.K_HINWEIS, true);
         // 0.1.38.8: Ohne „Auch bei abgestelltem Auto erreichbar“ schläft der Bot nach dem Abstellen. Einmal fragen,
         // mit einem Tipp einschalten; Standard bleibt aus.
         if (!at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.shouldStartOnAccOff()) {

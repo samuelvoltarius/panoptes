@@ -106,8 +106,10 @@
                             <div class="fm-label" data-i18n="rueckmeldung.auto_titel">Das geht automatisch mit</div>
                             <div class="fm-zeile"><span data-i18n="rueckmeldung.auto_version">Panoptes-Version</span><span id="fmVersion">—</span></div>
                             <div class="fm-zeile"><span>DiLink</span><span id="fmDilink">—</span></div>
+                            <div class="fm-zeile"><span data-i18n="rueckmeldung.auto_erkannt">Erkannt (Kamera-Eingang)</span><span id="fmErkannt">—</span></div>
                             <div class="fm-zeile"><span data-i18n="rueckmeldung.auto_modell">Modell</span><span id="fmModell">—</span></div>
                             <div class="fm-zeile"><span data-i18n="rueckmeldung.auto_sprache">Sprache</span><span id="fmSprache">—</span></div>
+                            <div class="fm-zeile"><span data-i18n="rueckmeldung.auto_anzeige">Anzeige</span><span id="fmAnzeige">—</span></div>
                             <p class="fm-leise" data-i18n="rueckmeldung.auto_nicht">Keine Kennung, kein Ort, keine Fahrgestellnummer, kein Telegram- oder Konto-Name.</p>
                         </div>
 
@@ -177,8 +179,10 @@
             function anzeigen(d) {
                 $('fmVersion').textContent = d.version || '—';
                 $('fmDilink').textContent = d.dilink || tx('rueckmeldung.unbekannt', 'unbekannt');
+                $('fmErkannt').textContent = d.erkannt || tx('rueckmeldung.unbekannt', 'unbekannt');
                 $('fmModell').textContent = !d.modell || d.modell === 'unbekannt' ? tx('rueckmeldung.unbekannt', 'unbekannt') : d.modell;
                 $('fmSprache').textContent = SPRACHEN[d.sprache] || d.sprache || '—';
+                $('fmAnzeige').textContent = anzeigeText(anzeigeAngaben());
                 var abd = d.abdeckung || {};
                 $('fmAbdModell').textContent = !abd.modell || abd.modell === 'unbekannt' ? tx('rueckmeldung.unbekannt', 'unbekannt') : abd.modell;
                 $('fmAbdFirmware').textContent = abd.firmware || tx('rueckmeldung.unbekannt', 'unbekannt');
@@ -232,10 +236,18 @@
                 $('fmCodeHilfe').hidden = !r.code;
                 holen(false).then(anzeigen).catch(function () {});
             }
+            // 0.1.38.11 (M1): WebView-Hauptversion, CSS-Breite und Pixeldichte – hilft bei „Menüleiste fehlt“ & Co.
+            function anzeigeAngaben() {
+                var m = /Chrome\/(\d+)/.exec(navigator.userAgent || '');
+                return { webview: m ? parseInt(m[1], 10) : 0, breite: window.innerWidth || 0, dpr: window.devicePixelRatio || 0 };
+            }
+            function anzeigeText(a) {
+                return (a.webview ? 'WebView ' + a.webview : 'WebView ?') + ' · ' + a.breite + ' px · ' + (Math.round(a.dpr * 100) / 100);
+            }
             function senden() {
                 var text = $('fmText').value.trim();
                 if (!text) { meldung(tx('rueckmeldung.text_fehlt', 'Bitte schreib kurz, was passiert ist.')); $('fmText').focus(); return; }
-                var body = { text: text };
+                var body = { text: text, anzeige: anzeigeAngaben() };
                 if ($('fmDiagnose').checked && vorschauId) body.vorschauId = vorschauId;
                 // nur mit Häkchen gehen Modell und Firmware für die Abdeckungs-Liste mit (Standard aus)
                 if ($('fmAbdeckung').checked) body.abdeckung = true;

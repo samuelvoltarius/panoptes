@@ -123,6 +123,14 @@
                 <p class="lead" data-i18n="guard.kameras_lead">Panoptes zeigt dir die Bilder der Kameras. Du tippst an, welches Bild vorne, hinten, links und rechts ist.</p>
                 <button class="gschalter" type="button" id="kamerasKnopf" aria-pressed="false" data-i18n="guard.kameras_knopf">Kameras einrichten</button>
                 <p class="sub" id="kamerasHinweis" role="status" aria-live="polite"></p>
+                <!-- K2 (0.1.38.11): erkannter Kamera-Eingang passt nicht zum gespeicherten. Nie still umschalten:
+                     Hinweis + Ein-Tipp-Knopf (fragt in der App nach), zurück jederzeit über Kameras einrichten. -->
+                <div id="autoartBox" hidden>
+                    <p class="sub" id="autoartText"></p>
+                    <button class="gschalter" type="button" id="autoartKnopf"></button>
+                    <p class="sub" data-i18n="guard.autoart_zurueck">Zurück geht es jederzeit: Kameras einrichten → Kamera-Eingang.</p>
+                    <p class="sub" id="autoartStatus" role="status" aria-live="polite"></p>
+                </div>
             </article>
 
             <!-- 0.1.38.8 („Bericht beim Abstellen kann ich nicht drauf drücken und einstellen?“):
@@ -172,6 +180,7 @@
 <script src="../shared/pwa-init.js?v=index2"></script>
 <script src="../shared/core.js?v=pn6"></script>
 <script src="../shared/guard-trigger.js?v=pn9"></script>
+<script src="../shared/waechter-zustand.js?v=1"></script>
 <script src="../shared/einstellungen.js?v=pn8"></script>
 <script>
 (function () {
@@ -179,22 +188,16 @@
     function $(id) { return document.getElementById(id); }
     function t(k, f, v) { return window.PanoptesShell ? PanoptesShell.tr(k, f, v) : f; }
     function toast(m, ok) { if (window.BYD && BYD.utils && BYD.utils.toast) BYD.utils.toast(m, ok ? 'success' : 'error'); }
-    var REASONS = { soc: 'guard.reason_soc', v12: 'guard.reason_v12', park: 'guard.reason_park', window: 'guard.reason_window', quietzone: 'guard.reason_quiet' };
-    var REASON_DE = { soc: 'Fahrakku zu leer', v12: 'Starterbatterie zu schwach', park: 'lange geparkt', window: 'Ruhezeit', quietzone: 'Ruhezone' };
 
     // ---------------- Zustand
     function loadState() {
         fetch('/api/surveillance/status', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
-            var s = d && d.status || {};
-            var dot = '', txt;
-            if (s.safeZoneSuppressed || s.inSafeZone) { txt = t('guard.st_quiet', 'Ruhezone – Wächter pausiert'); dot = 'aq'; }
-            else if (s.zustand === 'startet') { txt = t('guard.st_starting', 'Wächter startet gerade …'); dot = 'warn'; }
-            else if (s.zustand === 'unterdrueckt' && !s.guardStopActive) { txt = t('guard.st_paused', 'Wächter pausiert'); dot = 'aq'; }
-            else if (s.enabled && s.active) { txt = t('guard.st_active', 'Wächter passt auf'); dot = 'ok'; }
-            else if (s.enabled) { txt = t('guard.st_ready', 'Bereit – startet beim Abstellen'); dot = 'aq'; }
-            else { txt = t('guard.st_off', 'Wächter ist aus'); }
-            $('gState').textContent = txt;
-            $('gDot').className = 'pn-dot' + (dot ? ' ' + dot : '');
+            var s = d && d.status;
+            if (!s) { zustandUnbekannt(); return; }
+            // 0.1.38.11: EINE Zeile mit Grund (Kern status.grund = WaechterGrund, Texte in waechter-zustand.js)
+            var z = PanoptesWaechterZustand.zeile(s, t);
+            $('gState').textContent = z.txt;
+            $('gDot').className = 'pn-dot' + (z.dot ? ' ' + z.dot : '');
             schalterZeigen(!!s.enabled);
             // 0.1.38.8: die einmalige Frage „Wächter einschalten?“ nur zeigen, solange sie offen ist
             rechtshinweis = s.rechtshinweis || '';
@@ -204,13 +207,21 @@
             // 0.1.9.1: ohne gespeicherte Wahl nimmt der Wächter nur bei Erschütterung auf (Kern status.waechterAusloeser)
             if (s.waechterAusloeser === 'nicht_gewaehlt') $('gSub').textContent += ($('gSub').textContent ? ' · ' : '')
                 + t('guard.trigger_unset', 'Noch nicht gewählt, wann er aufnehmen soll – bis dahin nur bei Erschütterung.');
+            // Zusatz unter der Zeile: nur ein Hinweis, nie ein zweiter An/Aus-Zustand (der Stopp steht schon oben)
             var st = $('gStop');
-            if (s.guardStopActive) {
-                st.textContent = t('guard.stopped_because', 'Gestoppt: {r}', { r: t(REASONS[s.guardStopReason] || 'x', REASON_DE[s.guardStopReason] || s.guardStopReason || '') });
-                st.hidden = false;
-            } else st.hidden = true;
+            st.textContent = z.hinweis;
+            st.hidden = !z.hinweis;
             kameraFps(s.kameraFps);
-        }).catch(function () {});
+        }).catch(function () { zustandUnbekannt(); });
+    }
+
+    /** Kein Status (Dienst fehlt oder antwortet nicht): klarer Text statt „…“. */
+    function zustandUnbekannt() {
+        var z = PanoptesWaechterZustand.unbekannt(t);
+        $('gState').textContent = z.txt;
+        $('gDot').className = 'pn-dot ' + z.dot;
+        $('gStop').textContent = z.hinweis;
+        $('gStop').hidden = false;
     }
 
     // ---------------- 0.1.38.8 Wächter Standard an: „Verstanden – Wächter einschalten“ (der Rechtshinweis steht darüber)
@@ -266,6 +277,36 @@
                 schalterZeigen(an);
                 loadState();
             }, function () { schaltet = false; toast(t('guard.schalter_fehler', 'Das hat nicht geklappt. Bitte nochmal versuchen.'), false); schalterZeigen(istAn); });
+    }
+
+    // ---------------- K2 (0.1.38.11) Kamera-Eingang erkannt: Hinweis, wenn er nicht zum gespeicherten passt
+    var autoartVorschlag = null;
+    function autoartName(m) {
+        return t('guard.autoart_name_' + m, m === 'dilink4' ? 'DiLink 4' : m === 'dilink5' ? 'DiLink 5' : 'Standard (DiLink 3)');
+    }
+    function autoartLaden() {
+        fetch('/api/surveillance/autoart', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (a) {
+            var box = $('autoartBox');
+            if (!a || a.passt !== false || !a.vorschlag) { box.hidden = true; autoartVorschlag = null; return; }
+            autoartVorschlag = a.vorschlag;
+            var sicher = a.sicherheit === 'sicher' ? t('guard.autoart_sicher', 'sicher') : t('guard.autoart_vermutlich', 'vermutlich');
+            $('autoartText').textContent = t('guard.autoart_hinweis',
+                'Panoptes erkennt hier {erkannt} ({sicherheit}), gespeichert ist {gespeichert}. Passt das nicht, bleiben die Kamerabilder schwarz.',
+                { erkannt: autoartName(a.vorschlag), sicherheit: sicher, gespeichert: autoartName(a.gespeichert) });
+            $('autoartKnopf').textContent = t('guard.autoart_knopf', 'Jetzt auf {erkannt} umstellen', { erkannt: autoartName(a.vorschlag) });
+            box.hidden = false;
+        }).catch(function () { $('autoartBox').hidden = true; });
+    }
+    function autoartUmstellen() {
+        var h = $('autoartStatus');
+        if (!autoartVorschlag) return;
+        var bruecke = window.AndroidBridge && typeof window.AndroidBridge.kameraModusUmstellen === 'function';
+        if (!bruecke) { h.textContent = t('guard.autoart_nur_auto', 'Umstellen geht nur am Bildschirm im Auto: dort Panoptes öffnen, dann Kameras & Wächter.'); return; }
+        var r = '';
+        try { r = window.AndroidBridge.kameraModusUmstellen(autoartVorschlag); } catch (e) { r = 'error'; }
+        h.textContent = r === 'ok'
+            ? t('guard.autoart_frage', 'Bitte am Bildschirm bestätigen. Danach startet die Kamera neu.')
+            : t('guard.kameras_fehler', 'Die Kamera-Zuordnung ließ sich nicht öffnen. Bitte Panoptes einmal schließen und neu öffnen. Klappt es dann nicht: Hilfe & Info → Fehler melden.');
     }
 
     // ---------------- 0.1.38.3 Kameras einrichten (immer nachholbar)
@@ -484,6 +525,8 @@
         $('gSchalter').onclick = schalten;
         $('sAn').onclick = standardAn;
         $('kamerasKnopf').onclick = kamerasEinrichten;
+        $('autoartKnopf').onclick = autoartUmstellen;
+        autoartLaden();
         $('eBehalten').onclick = function () { ereignisAntwort(true); };
         $('eNein').onclick = function () { ereignisAntwort(false); };
         $('tRetBtn').onclick = setze72;

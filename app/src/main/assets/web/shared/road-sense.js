@@ -115,7 +115,7 @@ BYD.roadSense = {
         bsCornerRightCluster: 'tr',
         // Cluster projection layout = OEM size profile (29=8.8", 30=12.3", 31=10.25").
         // 31 is the confirmed-correct default for this cluster.
-        bsClusterLayout: 31,
+        bsClusterLayout: 0,   // 0.1.38.11: „Automatisch“ – nur eine gewählte Größe (29/30/31) geht ans Auto
         // Map → cluster projection. autoProjectCluster lives in the UCM `navMap`
         // section (read by the daemon on ACC-on); the live projecting state is NOT
         // a config value — it comes from GET /api/navmap/cluster/status.
@@ -353,7 +353,7 @@ BYD.roadSense = {
                 // Display target ('head_unit' default | 'cluster').
                 if (bs.target === 'cluster' || bs.target === 'head_unit') c.bsTarget = bs.target;
                 // Cluster layout (size profile opcode 29/30/31).
-                if (bs.clusterSizeProfile === 29 || bs.clusterSizeProfile === 30 || bs.clusterSizeProfile === 31) {
+                if (bs.clusterSizeProfile === 0 || bs.clusterSizeProfile === 29 || bs.clusterSizeProfile === 30 || bs.clusterSizeProfile === 31) {
                     c.bsClusterLayout = bs.clusterSizeProfile;
                 }
                 // On-screen size/position preset (orientation-safe — daemon
@@ -1145,7 +1145,7 @@ BYD.roadSense = {
         // Reflect the SHARED cluster size profile (blindspot.clusterSizeProfile,
         // mirrored into config.bsClusterLayout on load) into the map-tab selector.
         var layoutSel = document.getElementById('rsClusterLayout');
-        if (layoutSel) layoutSel.value = String(this.config.bsClusterLayout || 31);
+        if (layoutSel) layoutSel.value = String(this.config.bsClusterLayout || 0);
         if (this._clusterProjectPending) return;
         const writeVersion = this._clusterProjectVersion;
         try {
@@ -1173,7 +1173,7 @@ BYD.roadSense = {
     // projection re-lays-out immediately. Saved immediately (no staged Apply here).
     async mapSetClusterLayout(v) {
         var n = parseInt(v, 10);
-        if (!this._hydrated || (n !== 29 && n !== 30 && n !== 31)) return;
+        if (!this._hydrated || (n !== 0 && n !== 29 && n !== 30 && n !== 31)) return;
         var mapSel = document.getElementById('rsClusterLayout');
         var previous = this.config.bsClusterLayout;
         this.config.bsClusterLayout = n;
@@ -2007,7 +2007,7 @@ BYD.roadSense = {
         var row = document.getElementById('bsClusterLayoutRow');
         if (row) row.style.display = cluster ? '' : 'none';
         var sel = document.getElementById('bsClusterLayout');
-        if (sel) sel.value = String(this.config.bsClusterLayout || 31);
+        if (sel) sel.value = String(this.config.bsClusterLayout || 0);
     },
 
     // ── Display & placement group: STAGED edits + Apply (mirrors recording/
@@ -2019,7 +2019,7 @@ BYD.roadSense = {
     /** STAGE the cluster projection layout (size profile 29/30/31). */
     bsSetClusterLayout(v) {
         var n = parseInt(v, 10);
-        if (n !== 29 && n !== 30 && n !== 31) return;
+        if (n !== 0 && n !== 29 && n !== 30 && n !== 31) return;
         this.config.bsClusterLayout = n;
         this._bsMarkDirty();
     },

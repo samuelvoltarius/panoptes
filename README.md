@@ -6,7 +6,7 @@ Panoptes ist eine kostenlose Community-App für BYD-Autos mit DiLink 3, 4 und 5.
 
 Hier liegt der Quellcode. Fertige Versionen zum Herunterladen gibt es unter **[Releases](https://github.com/samuelvoltarius/panoptes/releases/latest)**. Mehr zum Projekt und die Installationsanleitung: **[byd.serveone.at/panoptes/](https://byd.serveone.at/panoptes/)**.
 
-Dieser Stand entspricht genau dem Release **v0.1.38.10** (interner Commit `deabb40`).
+Dieser Stand entspricht genau dem Release **v0.1.38.11** (interner Commit `5d020e7`).
 
 <p>
   <img src="screenshots/start-display-dunkel.webp" alt="Startseite am Bildschirm im Auto" width="66%">
@@ -19,10 +19,10 @@ Dieser Stand entspricht genau dem Release **v0.1.38.10** (interner Commit `deabb
 
 ## Was Panoptes kann
 
-- **Am Bildschirm im Auto.** Panoptes läuft als eigene App im Vollbild, mit großen Tasten und einer Zurück-Taste. Während der Fahrt sind Einstellungen gesperrt; Start, Navigation, Karte und Wächter bleiben erreichbar. Beim Start zeigt Panoptes je Dienst (Zugang, Oberfläche, Wächter, Telegram und Brücke), ob er schon bereit ist. Die Oberfläche passt sich an verschiedene Bildschirmgrößen an, auch im Hochformat.
+- **Am Bildschirm im Auto.** Panoptes läuft als eigene App im Vollbild, mit großen Tasten und einer Zurück-Taste. Während der Fahrt sind Einstellungen gesperrt; Start, Navigation, Karte und Wächter bleiben erreichbar. Beim Start zeigt Panoptes je Dienst (Zugang, Oberfläche, Wächter, Telegram), ob er schon läuft – auch wenn er auf anderem Weg gestartet wurde. Die Oberfläche passt sich an verschiedene Bildschirmgrößen an, auch im Hochformat.
 - **Wächter mit KI-Erkennung.** Wenn dein Auto geparkt ist, achten die Kameras auf das Umfeld. Der Wächter ist standardmäßig an und nimmt dann nur bei Erschütterung auf. Er läuft erst, wenn du den Rechtshinweis einmal bestätigt hast. Umstellen kannst du jederzeit: nur bei Erschütterung, mit KI-Erkennung überall oder mit KI-Erkennung nur an deinen privaten Orten wie Garage oder Einfahrt. Damit die Batterien geschont werden, legt sich der Wächter auf Wunsch schlafen, zum Beispiel bei wenig Ladestand oder schwacher Starterbatterie.
 - **Fernzugang.** Über Tailscale erreichst du dein Auto von überall. Die Einrichtung läuft über einen QR-Code am Bildschirm im Auto, du verbindest es mit deinem eigenen Tailscale-Konto. Kann Panoptes die Schutzregel für den Fernzugang nicht setzen, schaltet es den Fernzugang ab, statt ihn ungesichert offen zu lassen.
-- **Telegram-Meldungen.** Ein eigener Bot meldet dir, was am Auto passiert: Wächter-Ereignisse, Laden, schwache Starterbatterie, Reifendruck, Updates. Jede Meldungsart lässt sich einzeln ein- und ausschalten. Für die Nacht gibt es eine Ruhezeit. Bilder und Videos schickt der Bot nur, wenn du das ausdrücklich einschaltest.
+- **Telegram-Meldungen.** Ein eigener Bot meldet dir, was am Auto passiert: Wächter-Ereignisse, Laden, schwache Starterbatterie, Reifendruck, Updates. Jede Meldungsart lässt sich einzeln ein- und ausschalten. Für die Nacht gibt es eine Ruhezeit. Bilder und Aufnahmen vom Wächter schickt der Bot von selbst mit; abschalten mit /bilder aus oder in Panoptes. Sie liegen dann auf den Servern von Telegram.
 - **Handy-Meldungen ohne Telegram.** Meldungen direkt aufs Handy brauchen eine HTTPS-Adresse. Mit Tailscale schaltet Panoptes dafür auf Wunsch HTTPS in deinem eigenen Tailnet ein: Dein Auto bekommt eine Adresse unter ts.net, die nicht öffentlich ist. Ohne Tailscale brauchst du eine eigene feste HTTPS-Adresse; Telegram geht immer.
 - **Karte mit Ladesäulen.** Du wählst selbst, woher die Karte kommt: vom Community-Server des Projekts (mit Gelände und freien Ladeplätzen, wo Betreiber Daten liefern), von OpenStreetMap oder gar nicht. Solange du nichts wählst, bleibt die Karte leer.
 - **Navigation.** Unter **Navi & Fahrten** (Platz 2 in der Leiste) planst du direkt im Auto: Ziel suchen, bis zu 5 Zwischenstopps mit Aufenthalt und „Hier laden“, Reihenfolge mit ↑ und ↓. Panoptes rechnet nötige Ladestopps dazu und zeigt jede Etappe mit dem Akku bei Ankunft. Während der Fahrt nimmst du Stopps nur aus Favoriten oder „Säulen in der Nähe“, gesucht wird nur im Stand. Am Bildschirm im Auto öffnet „Starten“ die Panoptes-Karte mit Vorschau, Panoptes führt dich dann selbst (neu, wird im Auto gerade erst erprobt). „Im Werksnavi öffnen“ bleibt als zweiter Knopf; das BYD-Navi kennt nur ein Ziel und bekommt die Etappen nacheinander. Die Panoptes-Karte spricht nur, wenn du **Navi: Sprachansagen** einschaltest (Standard aus).
@@ -88,7 +88,7 @@ Alle Bilder zeigen Musterdaten, keine echten Fahrzeugdaten.
 
 ## Updates
 
-> **Wer 0.1.14.1 hat:** Installiere die aktuelle Version (0.1.38.10) **einmal von Hand**, genau wie beim ersten Mal (deine Daten bleiben erhalten). 0.1.14.1 kann sich nicht selbst auf 0.1.15 bringen, weil Panoptes ab 0.1.15 mit einem neuen, dauerhaften Schlüssel signiert ist (APK-Signaturschema v3 mit Herkunftsnachweis vom alten Schlüssel). Ab 0.1.15 kommen Updates automatisch aus diesem Repository.
+> **Wer 0.1.14.1 hat:** Installiere die aktuelle Version (0.1.38.11) **einmal von Hand**, genau wie beim ersten Mal (deine Daten bleiben erhalten). 0.1.14.1 kann sich nicht selbst auf 0.1.15 bringen, weil Panoptes ab 0.1.15 mit einem neuen, dauerhaften Schlüssel signiert ist (APK-Signaturschema v3 mit Herkunftsnachweis vom alten Schlüssel). Ab 0.1.15 kommen Updates automatisch aus diesem Repository.
 
 - Neue Versionen erscheinen unter **[Releases](https://github.com/samuelvoltarius/panoptes/releases)**, mit einer kurzen Liste, was neu ist.
 - Unter **Einstellungen → Alle Einstellungen → App-Updates** kannst du direkt nach neuen Versionen suchen und wählen, ob Panoptes nur meldet oder selbst installiert.
@@ -98,13 +98,13 @@ Alle Bilder zeigen Musterdaten, keine echten Fahrzeugdaten.
 
 ## Datenschutz: was wohin geht
 
-Grundsatz: Deine Aufnahmen, Fahrten und Positionen bleiben im Auto. Panoptes schickt keine Kamera-Aufnahmen an die Server des Projekts. Was Daten nach außen schickt, ist standardmäßig aus. Du schaltest es einzeln ein, und Panoptes sagt dir vorher, wohin die Daten gehen. Ausschalten geht jederzeit.
+Grundsatz: Deine Aufnahmen, Fahrten und Positionen bleiben im Auto. Panoptes schickt keine Kamera-Aufnahmen an die Server des Projekts. Was Daten nach außen schickt, ist standardmäßig aus. Ausnahme: Hast du Telegram eingerichtet, schickt der Wächter seine Bilder mit (abschaltbar). Du schaltest es einzeln ein, und Panoptes sagt dir vorher, wohin die Daten gehen. Ausschalten geht jederzeit.
 
 | Wohin | Was | Wann |
 |---|---|---|
 | **Im Auto** (USB-Stick, App) | Wächter-Aufnahmen, Fahrtenbuch, Ladeverlauf, Monatsbericht, Einstellungen | immer. Bei neuer Einrichtung löscht Panoptes Aufnahmen nach 72 Stunden, einzelne kannst du behalten. |
 | **Kartenquelle** (Community-Server byd.serveone.at oder OpenStreetMap Deutschland) | Deine IP-Adresse und der Kartenausschnitt, also ungefähr, wo dein Auto steht. Beim Community-Server zusätzlich die Abfrage freier Ladeplätze für den Ausschnitt. | erst, wenn du unter **Einstellungen → Alle Einstellungen → Kartenquelle** eine Quelle wählst. Am Bildschirm im Auto gilt die Wahl fürs ganze Auto; Handy und PC fragen getrennt. |
-| **Telegram** | Meldungstexte; Bilder und Videos nur, wenn du das einschaltest (dann liegen sie auf den Servern von Telegram) | nur, wenn du einen Bot einrichtest |
+| **Telegram** | Meldungstexte; Bilder und Aufnahmen vom Wächter (Standard an, abschaltbar; sie liegen dann auf den Servern von Telegram) | nur, wenn du einen Bot einrichtest |
 | **Tailscale** | Verbindung für den Fernzugang | nur, wenn du den Fernzugang einrichtest |
 | **Zertifikat für HTTPS im Tailnet** (Let’s Encrypt) | Gerätename und Tailnet-Name werden in öffentlichen Zertifikats-Verzeichnissen sichtbar | nur, wenn du für Handy-Meldungen HTTPS im Tailnet einschaltest |
 | **Routenplaner** (byd.serveone.at/ev) | Ladestand, Verbrauchsfaktor, Fahrstatus; die ungefähre Position nur für einen neu vorgeschlagenen Ladestopp. Das Fahrtenbuch nur, wenn du es auf /ev/ selbst abrufst, und nur Ende-zu-Ende verschlüsselt: Der Planer sieht davon nur verschlüsselte Daten. | nur nach dem Verbinden, jederzeit trennbar; das Fahrtenbuch zusätzlich nur, wenn du es einschaltest (standardmäßig aus) |

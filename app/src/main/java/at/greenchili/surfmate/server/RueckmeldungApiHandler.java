@@ -78,7 +78,8 @@ public final class RueckmeldungApiHandler {
                 .put("textMax", FehlerMelden.TEXT_MAX)
                 .put("fahrt", faehrt());
         if (("&" + query + "&").contains("&diagnose=1&")) {
-            String text = FehlerMelden.diagnoseText(at.greenchili.surfmate.genai.GenAiContext.diagnosticLogs());
+            String text = waechterZeile()
+                    + FehlerMelden.diagnoseText(at.greenchili.surfmate.genai.GenAiContext.diagnosticLogs());
             String id = UUID.randomUUID().toString();
             synchronized (RueckmeldungApiHandler.class) {
                 vorschauId = id;
@@ -90,17 +91,42 @@ public final class RueckmeldungApiHandler {
         return res;
     }
 
+    /** 0.1.38.11: eine Zeile Wächter-Zustand + Grund (WaechterGrund, ohne Ort/Kennung) vor den Log-Zeilen. */
+    static String waechterZeile() {
+        try {
+            return "[waechter]\n" + FehlerMelden.nachschwaerzen(at.greenchili.surfmate.surveillance.WaechterGrund.zeile(
+                    at.greenchili.surfmate.daemon.CameraDaemon.getSurveillanceStatus(),
+                    SurveillanceApiHandler.zuendungAn(), SurveillanceApiHandler.verriegelt())) + "\n";
+        } catch (Throwable t) {
+            return "[waechter]\nWAECHTER_ZUSTAND nicht_lesbar\n";
+        }
+    }
+
     /** Was automatisch mitgeht: genau das zeigt die Seite an. */
     static JSONObject auto(JSONObject root, String sprache) throws Exception {
         JSONObject a = new JSONObject().put("version", BuildConfig.VERSION_NAME)
                 .put("modell", AutoAngaben.modell(root)).put("sprache", sprache);
         Integer d = AutoAngaben.dilink();
         if (d != null) a.put("dilink", (int) d);
+        // K2: was Panoptes am Gerät erkennt (Kamera-Eingang + Sicherheit), unabhängig vom gespeicherten Modus
+        a.put("erkannt", at.greenchili.surfmate.camera.dilink5.AutoArtErkennung.kurz(
+                at.greenchili.surfmate.camera.dilink5.AutoArtErkennung.jetzt()));
         // 0.1.38.10: was das Häkchen „Modell und Firmware mitschicken“ sendet (nur zur Anzeige; gesendet wird nur mit Häkchen)
         String fw = AutoAngaben.firmware();
         a.put("abdeckung", new JSONObject().put("modell", AutoAngaben.modell(root))
                 .put("firmware", fw == null ? JSONObject.NULL : fw));
+        // 0.1.38.11: Größenprofil des Fahrerdisplays (Tacho zu groß/abgeschnitten): {profil, bestaetigt, vorschlag, geraet}
+        a.put("tacho", tachoProfil());
         return a;
+    }
+
+    /** Größenprofil fürs Fahrerdisplay; im JVM-Test ohne Daemon leer. */
+    static JSONObject tachoProfil() {
+        try {
+            return at.greenchili.surfmate.surveillance.ClusterProjectionController.profilStand();
+        } catch (Throwable t) {
+            return new JSONObject();
+        }
     }
 
     private static void absenden(String body, OutputStream out) throws Exception {
@@ -131,6 +157,12 @@ public final class RueckmeldungApiHandler {
         JSONObject k = FehlerMelden.koerper(req.optString("text", ""), BuildConfig.VERSION_NAME, AutoAngaben.dilink(),
                 AutoAngaben.modell(UnifiedConfigManager.loadConfig()), sprache, diagnose, req.optString("art", ""),
                 abdeckung, abdeckung ? AutoAngaben.firmware() : null);
+        // K2: erkannter Kamera-Eingang (nur „modus/sicherheit“) zusätzlich, wie auf der Seite angezeigt
+        k = FehlerMelden.mitErkannt(k, at.greenchili.surfmate.camera.dilink5.AutoArtErkennung.kurz(
+                at.greenchili.surfmate.camera.dilink5.AutoArtErkennung.jetzt()));
+        if (k != null) k.put("tacho", tachoProfil());   // 0.1.38.11: Größenprofil + Modellname des Geräts
+        // 0.1.38.11 (M1): WebView-Hauptversion, CSS-Breite und Pixeldichte der meldenden Seite (geprüft, feste Felder)
+        FehlerMelden.mitAnzeige(k, FehlerMelden.anzeige(req.optJSONObject("anzeige")));
         FehlerMelden.Ergebnis e = FehlerMelden.absenden(jetzt, k, FehlerMelden.DATEI_SPEICHER, FehlerMelden.NETZ);
         JSONObject res = new JSONObject().put("ok", e.stand == FehlerMelden.Stand.GESENDET
                 || e.stand == FehlerMelden.Stand.GEMERKT).put("stand", e.stand.name().toLowerCase(java.util.Locale.ROOT));
@@ -147,6 +179,7 @@ public final class RueckmeldungApiHandler {
         JSONObject k = FehlerMelden.koerper(text, BuildConfig.VERSION_NAME, AutoAngaben.dilink(),
                 AutoAngaben.modell(UnifiedConfigManager.loadConfig()), LocaleManager.get(), null,
                 FehlerMelden.ART_TACHO);
+        if (k != null) k.put("tacho", tachoProfil());
         FehlerMelden.Ergebnis e = FehlerMelden.absenden(System.currentTimeMillis(), k,
                 FehlerMelden.DATEI_SPEICHER, FehlerMelden.NETZ);
         JSONObject res = new JSONObject().put("ok", e.stand == FehlerMelden.Stand.GESENDET

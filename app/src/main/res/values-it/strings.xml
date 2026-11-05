@@ -96,6 +96,15 @@
     <string name="camera_mode_current_dilink4">Ora: DiLink 4</string>
     <string name="camera_mode_current_dilink5">Ora: DiLink 5</string>
     <string name="camera_mode_save">Salva e riavvia</string>
+    <string name="camera_mode_erkannt_hinweis">Panoptes rileva qui %1$s (%2$s), ma è salvato un altro ingresso telecamera. Per questo le immagini delle telecamere forse restano nere.</string>
+    <string name="camera_mode_vorschlag_knopf">Passa ora a %1$s</string>
+    <string name="camera_mode_sicher">certo</string>
+    <string name="camera_mode_vermutlich">probabile</string>
+    <string name="camera_mode_kurz_default">Standard (DiLink 3)</string>
+    <string name="camera_mode_kurz_dilink4">DiLink 4</string>
+    <string name="camera_mode_kurz_dilink5">DiLink 5</string>
+    <string name="camera_mode_umstellen_frage">Passare l\'ingresso telecamera a %1$s? Panoptes salva e riavvia la telecamera (circa 10 s). Puoi tornare indietro in qualsiasi momento da Assegnazione delle telecamere → Ingresso telecamera.</string>
+    <string name="camera_mode_umstellen_ja">Cambia</string>
     <string name="camera_mode_hint">Cambiando modalità il servizio della telecamera si riavvia. Se l\'immagine sembra sbagliata (schiacciata, angoli mancanti, sovrapposizione rossa), prova l\'altra modalità.</string>
     <string name="camera_dilink5_mapping_title">Ordine delle telecamere per DiLink 5</string>
     <string name="camera_dilink5_mapping_subtitle">Gli ID delle telecamere sono elencati come anteriore, destra, posteriore, sinistra. Lascia su Auto, a meno che le anteprime grezze mostrino chiaramente un altro ordine per questa auto.</string>
@@ -342,7 +351,7 @@
     <string name="start_dienst_zugang">Accesso (Tailscale)</string>
     <string name="start_dienst_oberflaeche">Interfaccia</string>
     <string name="start_dienst_waechter">Guardiano</string>
-    <string name="start_dienst_rest">Telegram e ponte</string>
+    <string name="start_dienst_rest">Telegram</string>
     <string name="start_zustand_startet">si avvia …</string>
     <string name="start_zustand_bereit">pronto</string>
     <string name="start_zustand_startet_nicht">non si avvia</string>

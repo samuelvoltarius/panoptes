@@ -47,6 +47,8 @@ public class CommandRouter {
         alias("/aktionen", "/actions", "/notaus");
         // 0.1.38.8 Bot auch bei abgestelltem Auto erreichbar (Frage nach der Kopplung)
         alias("/erreichbar", "/reachable");
+        // 0.1.38.11 Bilder und Videos an Telegram (Standard an): Stand, ausschalten, nach Hinweis einschalten
+        alias("/bilder", "/medien", "/pictures");
         // 0.1.38.2 Hauptmenü und Updates (Knöpfe statt Abtippen)
         alias("/menue", "/menü", "/menu", "/m");
         alias("/mehr", "/more");
@@ -90,6 +92,7 @@ public class CommandRouter {
         handlers.add(new TierCommandHandler());
         handlers.add(new AktionenCommandHandler());
         handlers.add(new ErreichbarCommandHandler());
+        handlers.add(new BilderCommandHandler());
         handlers.add(new UpdateCommandHandler());
         handlers.add(new HomeCommandHandler());
         handlers.add(new KopplungenCommandHandler());

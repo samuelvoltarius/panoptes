@@ -24,9 +24,17 @@ interface AssistentHost {
     fun fahrzeugWaehlen(fertig: (Boolean) -> Unit)
     fun kamerasZuordnen(fertig: (Boolean) -> Unit)
     fun fernzugang(fertig: (Boolean) -> Unit)
-    /** Web-Seite in der App öffnen (z. B. „telegram.html“, „system.html#planerKarte“). */
-    fun seiteOeffnen(pfad: String)
+    /**
+     * Web-Seite in der App öffnen (z. B. „telegram.html“, „system.html#planerKarte“). 0.1.38.11: [titel] = Name des
+     * Schritts für die Kopfzeile der Ebene („Einrichtung · Tacho“).
+     */
+    fun seiteOeffnen(pfad: String, titel: CharSequence? = null)
     fun rundgang()
+    /**
+     * 0.1.38.11 (M1): Einrichtung unterbrechen und zur Oberfläche mit Menüleiste zurück. Markiert nichts als erledigt –
+     * der Assistent kommt beim nächsten Start wieder bzw. über Einstellungen → Einrichtung.
+     */
+    fun unterbrechen() {}
 }
 
 // ================================================================ Teil D: Rechte
@@ -341,10 +349,10 @@ class ExtraSchritt(id: String, a: Assistent, private val host: AssistentHost) : 
         dazu(a.text(t.res(textId)))
         dazu(a.knopf(t.res(R.string.einr_jetzt_einrichten)) {
             when (sid) {
-                "extra_telegram" -> host.seiteOeffnen("/telegram")
-                "extra_planer" -> host.seiteOeffnen("/system#planerKarte")
-                "extra_cockpit" -> host.seiteOeffnen("/system#kopplung")
-                "extra_notzugang" -> host.seiteOeffnen("/system#notzugang")
+                "extra_telegram" -> host.seiteOeffnen("/telegram", t.res(titelId))
+                "extra_planer" -> host.seiteOeffnen("/system#planerKarte", t.res(titelId))
+                "extra_cockpit" -> host.seiteOeffnen("/system#kopplung", t.res(titelId))
+                "extra_notzugang" -> host.seiteOeffnen("/system#notzugang", t.res(titelId))
                 else -> host.fernzugang { ok -> erledigt = ok; a.geaendert() }
             }
         }, 18f)

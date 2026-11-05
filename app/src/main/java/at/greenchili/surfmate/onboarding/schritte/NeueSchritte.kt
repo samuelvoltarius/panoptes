@@ -18,7 +18,7 @@ class NeuHinweisSchritt(id: String, a: Assistent, private val host: AssistentHos
         dazu(titel(t.web("einr.schritt.$sid")), 0f)
         dazu(a.text(t.web("einr.neu.${sid}_text"), 18f))
         ZIEL[sid]?.let { ziel ->
-            dazu(a.knopf(t.res(R.string.einr_jetzt_einrichten)) { host.seiteOeffnen(ziel) }, 18f)
+            dazu(a.knopf(t.res(R.string.einr_jetzt_einrichten)) { host.seiteOeffnen(ziel, t.web("einr.schritt.$sid")) }, 18f)
         }
     }
 

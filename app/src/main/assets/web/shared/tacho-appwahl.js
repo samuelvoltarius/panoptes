@@ -137,8 +137,11 @@
         };
         // Sicherheitsknopf: ohne Rückfrage, stoppt jede Projektion.
         $('clusterTachoNormal').onclick = function () {
-            send('/api/tacho/normal', 'POST', {}, function () {
-                message(t('vehicle_control.cluster_tacho_normal_ok', 'Der Tacho zeigt wieder die normale Anzeige.'));
+            send('/api/tacho/normal', 'POST', {}, function (j) {
+                // 0.1.38.11: ohne gewählte Größe kann Panoptes ein falsches Größenprofil nicht zurückstellen
+                var mehr = j && j.profil === 'kein_profil'
+                    ? ' ' + t('vehicle_control.cluster_tacho_profil_hinweis', 'Ist der Tacho noch zu groß oder abgeschnitten? Wähle unter Apps & Display → Display bei „Größe im Fahrerdisplay“ die passende Größe.') : '';
+                message(t('vehicle_control.cluster_tacho_normal_ok', 'Der Tacho zeigt wieder die normale Anzeige.') + mehr);
             });
         };
         load();

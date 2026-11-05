@@ -39,6 +39,12 @@ public class SurveillanceApiHandler {
             handleConfigPost(out, body);
             return true;
         }
+        // K2 (0.1.38.11): erkannter Kamera-Eingang + ob er zum gespeicherten passt - nur lesen, schaltet nie um
+        if (cleanPath.equals("/api/surveillance/autoart") && method.equals("GET")) {
+            HttpResponse.sendJson(out,
+                    at.greenchili.surfmate.camera.dilink5.AutoArtErkennung.statusJetzt().toString());
+            return true;
+        }
         if (cleanPath.equals("/api/surveillance/status")) {
             sendStatus(out);
             return true;
@@ -880,6 +886,12 @@ public class SurveillanceApiHandler {
                     // the radio group; absence falls back to default.
                     String cameraMode = camCfg.optString("cameraMode", "default");
                     config.put("cameraMode", cameraMode);
+                    // K2: Erkennung für den Hinweis im Kamera-Dialog (nur Anzeige, kein Umschalten)
+                    try {
+                        config.put("autoart", at.greenchili.surfmate.camera.dilink5.AutoArtErkennung.status(
+                                at.greenchili.surfmate.camera.dilink5.AutoArtErkennung.jetzt(), cameraMode));
+                    } catch (Exception ignored) {
+                    }
                     if ("dilink5".equalsIgnoreCase(cameraMode)) {
                         config.put(
                             at.greenchili.surfmate.camera.dilink5.DiLink5QCarCamBackend
@@ -987,8 +999,35 @@ public class SurveillanceApiHandler {
             if (frage) statusJson.put("rechtshinweis", at.greenchili.surfmate.einstellungen.Katalog.GUARD_LEGAL_VERSION);
         } catch (Throwable ignored) {
         }
+        // 0.1.38.11: EIN Zustand mit Grund (WaechterGrund) – die Wächter-Seite zeigt genau eine Zeile daraus
+        Boolean zuendung = zuendungAn();
+        Boolean zu = verriegelt();
+        statusJson.put("grund", at.greenchili.surfmate.surveillance.WaechterGrund.grund(statusMap, zuendung));
+        statusJson.put("zuendungAn", zuendung == null ? JSONObject.NULL : zuendung);
+        statusJson.put("verriegelt", zu == null ? JSONObject.NULL : zu);
         response.put("status", statusJson);
         HttpResponse.sendJson(out, response.toString());
+    }
+
+    /** Zündung an (ACC) aus AccMonitor; null, solange kein verlässlicher Wert vom ACC-Wächter kam. */
+    public static Boolean zuendungAn() {
+        try {
+            if (!at.greenchili.surfmate.monitor.AccMonitor.isAccStateAuthoritative()) return null;
+            return at.greenchili.surfmate.monitor.AccMonitor.isAccOn();
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /** Fahrertür verriegelt (nur lesen); null = unbekannt. */
+    public static Boolean verriegelt() {
+        try {
+            int st = at.greenchili.surfmate.byd.BydDataCollector.getInstance().readDoorLockState();
+            if (st == at.greenchili.surfmate.byd.BydDataCollector.DOOR_STATE_LOCK) return Boolean.TRUE;
+            if (st == at.greenchili.surfmate.byd.BydDataCollector.DOOR_STATE_UNLOCK) return Boolean.FALSE;
+        } catch (Throwable ignored) {
+        }
+        return null;
     }
     
     private static void handleConfigPost(OutputStream out, String body) throws Exception {

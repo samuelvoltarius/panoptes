@@ -325,9 +325,9 @@
       "key": "videoUploads",
       "gruppe": "waechter",
       "stufe": "info",
-      "standard": false,
+      "standard": true,
       "label": "Guard: photos and videos",
-      "note": "Sends recordings to Telegram. Needs the media notice to be confirmed first.",
+      "note": "Sends pictures and recordings to Telegram. On by default (0.1.38.11); turning it back on after switching it off needs the media notice.",
       "bestaetigung": "telegramMedien"
     },
     {

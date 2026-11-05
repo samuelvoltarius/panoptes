@@ -59,6 +59,11 @@
     <string name="einr_od_lade">Panoptes is reading the Overdrive data …</string>
     <string name="einr_od_nichts">No Overdrive data found.</string>
     <string name="einr_zurueck_zur_einrichtung">Back to setup</string>
+    <string name="einr_ebene_titel" formatted="true">Setup · %1$s</string>
+    <string name="einr_ebene_titel_ohne">Setup</string>
+    <string name="einr_ebene_menue">The menu bar comes back as soon as you finish or pause the setup.</string>
+    <string name="einr_unterbrechen">Pause setup, go to menu</string>
+    <string name="einr_unterbrochen">Setup paused. It comes back the next time you start Panoptes – or under Settings → Setup.</string>
     <string name="einr_fehler_pflicht">Please make a choice first.</string>
     <string name="einr_fehler_speichern">Saving did not work. Please try again.</string>
     <string name="einr_fehler_verbindung">Panoptes is not running yet. Please wait a moment and try again.</string>

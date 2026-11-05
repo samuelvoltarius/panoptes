@@ -247,6 +247,16 @@ public final class TachoNaviApp {
     };
 
     /**
+     * 0.1.38.11: danach das Größenprofil zurück (ClusterProjectionController.profilZuruecksetzen): ohne offene
+     * Projektion 18 → 0 → bestätigtes Profil, damit ein früher gesendetes falsches Profil (Seal U: 30) zurückgeht.
+     * Tests ersetzen den Schritt.
+     */
+    interface ProfilZurueck { String setze() throws Exception; }
+
+    static volatile ProfilZurueck profilZurueck =
+            () -> at.greenchili.surfmate.surveillance.ClusterProjectionController.profilZuruecksetzen();
+
+    /**
      * „Tacho wieder normal“: stoppt jede Projektion und kehrt zur Instrumentenanzeige zurueck; der ACC-Autostart
      * der gewaehlten App ist danach aus. Freigaben bleiben. Jede Stufe laeuft, auch wenn eine vorige scheitert.
      */
@@ -260,11 +270,15 @@ public final class TachoNaviApp {
             try { alle &= s.stoppe(); }
             catch (Throwable t) { alle = false; logger.warn("Tacho wieder normal: " + t.getMessage()); }
         }
+        // „gesendet“, „projektion“ (das Schließen stellt selbst her), „kein_profil“ (Größe noch nicht gewählt) …
+        String profil;
+        try { profil = profilZurueck.setze(); }
+        catch (Throwable t) { profil = "fehler"; logger.warn("Tacho wieder normal, Profil: " + t.getMessage()); }
         try {
             at.greenchili.surfmate.server.BefehlsLog.ereignis("tacho.normal", alle ? "ok" : "unvollstaendig", null, null);
         } catch (Throwable ignored) { }
-        logger.info("Tacho wieder normal (" + (alle ? "ok" : "unvollstaendig") + ")");
-        return new JSONObject().put("ok", alle).put("success", alle).put("gespeichert", gespeichert);
+        logger.info("Tacho wieder normal (" + (alle ? "ok" : "unvollstaendig") + ", Profil " + profil + ")");
+        return new JSONObject().put("ok", alle).put("success", alle).put("gespeichert", gespeichert).put("profil", profil);
     }
 
     /** Gilt dieses Paket als Navigation (darf auch ausserhalb von P laufen)? */
