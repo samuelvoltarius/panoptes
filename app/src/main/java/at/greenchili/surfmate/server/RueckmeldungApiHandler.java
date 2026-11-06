@@ -106,6 +106,7 @@ public final class RueckmeldungApiHandler {
     static JSONObject auto(JSONObject root, String sprache) throws Exception {
         JSONObject a = new JSONObject().put("version", BuildConfig.VERSION_NAME)
                 .put("modell", AutoAngaben.modell(root)).put("sprache", sprache);
+        a.put("gang", gangAngaben());   // 0.1.38.13: Gang-Rohwert, frisch, Zündung, Gerätemodell (wird angezeigt)
         Integer d = AutoAngaben.dilink();
         if (d != null) a.put("dilink", (int) d);
         // K2: was Panoptes am Gerät erkennt (Kamera-Eingang + Sicherheit), unabhängig vom gespeicherten Modus
@@ -124,6 +125,15 @@ public final class RueckmeldungApiHandler {
     static JSONObject tachoProfil() {
         try {
             return at.greenchili.surfmate.surveillance.ClusterProjectionController.profilStand();
+        } catch (Throwable t) {
+            return new JSONObject();
+        }
+    }
+
+    /** Gang für „Fehler melden“; ohne Daemon (JVM-Test) leer. */
+    static JSONObject gangAngaben() {
+        try {
+            return at.greenchili.surfmate.monitor.GearMonitor.fehlerAngaben();
         } catch (Throwable t) {
             return new JSONObject();
         }
@@ -163,6 +173,7 @@ public final class RueckmeldungApiHandler {
         if (k != null) k.put("tacho", tachoProfil());   // 0.1.38.11: Größenprofil + Modellname des Geräts
         // 0.1.38.11 (M1): WebView-Hauptversion, CSS-Breite und Pixeldichte der meldenden Seite (geprüft, feste Felder)
         FehlerMelden.mitAnzeige(k, FehlerMelden.anzeige(req.optJSONObject("anzeige")));
+        if (k != null) k.put("gang", gangAngaben());   // 0.1.38.13: wie in der Vorschau
         FehlerMelden.Ergebnis e = FehlerMelden.absenden(jetzt, k, FehlerMelden.DATEI_SPEICHER, FehlerMelden.NETZ);
         JSONObject res = new JSONObject().put("ok", e.stand == FehlerMelden.Stand.GESENDET
                 || e.stand == FehlerMelden.Stand.GEMERKT).put("stand", e.stand.name().toLowerCase(java.util.Locale.ROOT));

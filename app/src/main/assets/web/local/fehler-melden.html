@@ -108,6 +108,7 @@
                             <div class="fm-zeile"><span>DiLink</span><span id="fmDilink">—</span></div>
                             <div class="fm-zeile"><span data-i18n="rueckmeldung.auto_erkannt">Erkannt (Kamera-Eingang)</span><span id="fmErkannt">—</span></div>
                             <div class="fm-zeile"><span data-i18n="rueckmeldung.auto_modell">Modell</span><span id="fmModell">—</span></div>
+                            <div class="fm-zeile"><span data-i18n="rueckmeldung.auto_gang">Gang (Rohwert)</span><span id="fmGang">—</span></div>
                             <div class="fm-zeile"><span data-i18n="rueckmeldung.auto_sprache">Sprache</span><span id="fmSprache">—</span></div>
                             <div class="fm-zeile"><span data-i18n="rueckmeldung.auto_anzeige">Anzeige</span><span id="fmAnzeige">—</span></div>
                             <p class="fm-leise" data-i18n="rueckmeldung.auto_nicht">Keine Kennung, kein Ort, keine Fahrgestellnummer, kein Telegram- oder Konto-Name.</p>
@@ -182,6 +183,11 @@
                 $('fmErkannt').textContent = d.erkannt || tx('rueckmeldung.unbekannt', 'unbekannt');
                 $('fmModell').textContent = !d.modell || d.modell === 'unbekannt' ? tx('rueckmeldung.unbekannt', 'unbekannt') : d.modell;
                 $('fmSprache').textContent = SPRACHEN[d.sprache] || d.sprache || '—';
+                // 0.1.38.13: Gang wie er mitgeht (Rohwert des Pollers, frisch mit Zündung an, Gerätemodell)
+                var gg = d.gang || {};
+                $('fmGang').textContent = (gg.roh == null ? '—' : String(gg.roh))
+                    + ' · ' + (gg.frisch || tx('rueckmeldung.gang_alt', 'nicht frisch'))
+                    + (gg.modell ? ' · ' + gg.modell : '');
                 $('fmAnzeige').textContent = anzeigeText(anzeigeAngaben());
                 var abd = d.abdeckung || {};
                 $('fmAbdModell').textContent = !abd.modell || abd.modell === 'unbekannt' ? tx('rueckmeldung.unbekannt', 'unbekannt') : abd.modell;

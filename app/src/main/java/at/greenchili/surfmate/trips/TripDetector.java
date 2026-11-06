@@ -795,6 +795,8 @@ public class TripDetector {
      * Check if a gear value represents a driving gear (not Park).
      */
     private static boolean isDrivingGear(int gear) {
+        // 0.1.38.13: alter Wert (Zündung aus) ist keine Fahrt (keine Phantomfahrten aus einem stehen gebliebenen R)
+        if (GearMonitor.gangVeraltet()) return false;
         return gear == GearMonitor.GEAR_D
                 || gear == GearMonitor.GEAR_R
                 || gear == GearMonitor.GEAR_N

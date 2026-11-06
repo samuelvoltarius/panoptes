@@ -1934,7 +1934,9 @@ public class HttpServer {
                 recordingStatus.put("configuredMode", rmm.getCurrentMode().name());
                 recordingStatus.put("isRecording", pipeline != null && pipeline.isRecording());
                 recordingStatus.put("pipelineRunning", pipeline != null && pipeline.isRunning());
-                recordingStatus.put("gear", at.greenchili.surfmate.recording.RecordingModeManager.gearToString(rmm.getCurrentGear()));
+                // 0.1.38.13: alter Wert (Zündung aus) nicht als Gang zeigen
+                recordingStatus.put("gear", at.greenchili.surfmate.monitor.GearMonitor.gangVeraltet() ? "UNKNOWN"
+                        : at.greenchili.surfmate.recording.RecordingModeManager.gearToString(rmm.getCurrentGear()));
                 recordingStatus.put("accOn", rmm.isAccOn());
                 // modeActive distinguishes "user picked CONTINUOUS, recording
                 // IS happening" from "user picked CONTINUOUS but activation

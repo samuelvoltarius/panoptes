@@ -40,6 +40,12 @@ public class GearMonitor {
             CACHED_GEAR_MAX_AGE_MS;
     
     private static GearMonitor instance;
+
+    /** 0.1.38.13: der Poller lief in diesem Prozess schon einmal (danach gilt ein alter Wert als veraltet). */
+    private static volatile boolean jeGestartet = false;
+    /** Zündung an? Tests ersetzen die Quelle. */
+    static volatile java.util.function.BooleanSupplier zuendungAn =
+            () -> at.greenchili.surfmate.monitor.AccMonitor.isAccOn();
     
     private Context context;
     // Volatile because the poll thread reads these without holding the
@@ -153,6 +159,7 @@ public class GearMonitor {
             logger.info("Initial gear: " + gearToString(currentGear));
             
             isRunning = true;
+            jeGestartet = true;
             
             // Build the poller first, but publish the hardware state before it
             // can run. Starting the thread first allowed a fast P -> D shift to
@@ -211,7 +218,8 @@ public class GearMonitor {
                         lastUpdateTime =
                                 gearObservedAtElapsedRealtimeMs;
                         if (gear != previousGear) {
-                            logger.info("Gear changed: " + gearToString(previousGear) + " -> " + gearToString(gear));
+                            logger.info("Gear changed: " + gearToString(previousGear) + " -> " + gearToString(gear)
+                                    + " (roh " + gear + ", Modell " + modell() + ")");
                             CameraDaemon.onGearChanged(gear);
                         }
                     } catch (InterruptedException e) {
@@ -250,6 +258,7 @@ public class GearMonitor {
         cachedDiLink5ProbeObservedAt = 0L;
         cachedDiLink5ProbeMaxAgeMs = CACHED_GEAR_MAX_AGE_MS;
         isRunning = true;
+        jeGestartet = true;
 
         pollThread = new Thread(() -> {
             while (isRunning) {
@@ -488,6 +497,57 @@ public class GearMonitor {
             default: return "UNKNOWN(" + gear + ")";
         }
     }
+
+    /**
+     * 0.1.38.13 (Seal U DM-i: „Gang R“ bei P, Auto aus): DIE Quelle für Anzeige und „fährt?“-Entscheidungen. Den Gang
+     * gibt es nur mit Zündung an UND frischem Wert vom laufenden Poller, sonst {@link BydVehicleData#UNAVAILABLE}.
+     * Bei Zündung aus stoppt der Poller und der letzte Wert (oft R vom Einparken) wäre sonst stehen geblieben.
+     * Die Sperren „nur im Stand“ lesen das hier NICHT (sie bleiben fail-closed: unbekannt = nicht P).
+     */
+    public static int gangFrisch() {
+        try {
+            if (!zuendungAn.getAsBoolean()) return BydVehicleData.UNAVAILABLE;
+            GearMonitor gm = instance;
+            return gm == null ? BydVehicleData.UNAVAILABLE : gm.getCurrentGearIfFresh();
+        } catch (Throwable t) {
+            return BydVehicleData.UNAVAILABLE;
+        }
+    }
+
+    /** Lief der Poller schon einmal und liefert jetzt keinen frischen Gang (Zündung aus, gestoppt, alt)? */
+    public static boolean gangVeraltet() {
+        return jeGestartet && gangFrisch() == BydVehicleData.UNAVAILABLE;
+    }
+
+    /** Fahrzeugmodell (ro.product.model) für Log und „Fehler melden“, höchstens 40 Zeichen. */
+    public static String modell() {
+        try {
+            Object m = Class.forName("android.os.SystemProperties")
+                    .getMethod("get", String.class, String.class).invoke(null, "ro.product.model", "");
+            String s = m == null ? "" : String.valueOf(m);
+            return s.length() > 40 ? s.substring(0, 40) : s;
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    /** Für „Fehler melden“: {roh, frisch, zuendung, modell} – roh ist der letzte gültige Wert des Pollers. */
+    public static org.json.JSONObject fehlerAngaben() {
+        org.json.JSONObject o = new org.json.JSONObject();
+        try {
+            GearMonitor gm = instance;
+            boolean an = false;
+            try { an = zuendungAn.getAsBoolean(); } catch (Throwable ignored) { }
+            int f = gangFrisch();
+            o.put("roh", gm == null ? org.json.JSONObject.NULL : gm.currentGear)
+                    .put("frisch", f == BydVehicleData.UNAVAILABLE ? org.json.JSONObject.NULL : gearToString(f))
+                    .put("zuendung", an).put("modell", modell());
+        } catch (Throwable ignored) { }
+        return o;
+    }
+
+    /** Nur Tests. */
+    static void testZustand(boolean gestartet) { jeGestartet = gestartet; }
 
     public static boolean isValidGearMode(int gear) {
         return gear >= GEAR_P && gear <= GEAR_S;

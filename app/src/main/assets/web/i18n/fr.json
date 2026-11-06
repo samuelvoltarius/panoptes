@@ -7072,6 +7072,8 @@
     "stopp_12v": "Panoptes protège toujours aussi la batterie 12 volts."
   },
   "rueckmeldung": {
+    "auto_gang": "Rapport (valeur brute)",
+    "gang_alt": "pas à jour",
     "titel": "Signaler un problème",
     "about_text": "Quelque chose ne marche pas ? Dites-le-nous.",
     "frage": "Que s'est-il passé ?",

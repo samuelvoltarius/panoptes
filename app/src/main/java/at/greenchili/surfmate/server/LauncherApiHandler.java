@@ -514,16 +514,22 @@ public final class LauncherApiHandler {
             try { accOn = at.greenchili.surfmate.monitor.AccMonitor.isAccOn(); } catch (Throwable ignored) {}
             o.put("acc", charging ? "charging" : (accOn ? "on" : "off"));
 
-            // gear: prefer the live GearMonitor when its poll thread is running,
-            // else the last BydVehicleData snapshot, else null.
+            // gear (0.1.38.13): nur mit Zündung an. Läuft der Poller, nur sein frischer Wert (GearMonitor.gangFrisch,
+            // eine Quelle); sonst der BydVehicleData-Schnappschuss. Zündung aus → null (die Handy-App blendet den
+            // Chip aus) – vorher blieb hier der letzte Wert stehen („Gang R“ im geparkten Seal U).
             String gear = null;
+            boolean gangPoller = false;
             try {
                 at.greenchili.surfmate.monitor.GearMonitor gm = at.greenchili.surfmate.monitor.GearMonitor.getInstance();
-                if (gm != null && gm.isRunning()) {
-                    gear = at.greenchili.surfmate.monitor.GearMonitor.gearToString(gm.getCurrentGear());
+                if (accOn && gm != null && gm.isRunning()) {
+                    gangPoller = true;
+                    int g = at.greenchili.surfmate.monitor.GearMonitor.gangFrisch();
+                    if (g != at.greenchili.surfmate.byd.BydVehicleData.UNAVAILABLE) {
+                        gear = at.greenchili.surfmate.monitor.GearMonitor.gearToString(g);
+                    }
                 }
             } catch (Throwable ignored) {}
-            if (gear == null) {
+            if (gear == null && accOn && !gangPoller) {
                 try {
                     at.greenchili.surfmate.byd.BydVehicleData vd =
                             at.greenchili.surfmate.byd.BydDataCollector.getInstance().getData();

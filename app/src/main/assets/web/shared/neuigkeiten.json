@@ -671,6 +671,25 @@
         "De Telegram-bot is nu standaard ook bereikbaar als de auto geparkeerd staat. Dat kost wat stroom van de startaccu. Uitzetten met /erreichbar aus.",
         "Wordt de startaccu zwak, dan gaat de bot vanzelf slapen. Had je de bereikbaarheid uitgezet, dan blijft het uit."
       ]
+    },
+    {
+      "version": "0.1.38.13",
+      "versionCode": 77,
+      "de": [
+        "Bei abgestelltem Auto zeigt Panoptes keinen veralteten Gang mehr an. Ein alter Gang-Wert gilt nicht mehr als Fahrt."
+      ],
+      "en": [
+        "With the car parked, Panoptes no longer shows an outdated gear. An old gear value no longer counts as a trip."
+      ],
+      "fr": [
+        "Voiture arrêtée, Panoptes n’affiche plus de rapport périmé. Une ancienne valeur de rapport ne compte plus comme trajet."
+      ],
+      "it": [
+        "Ad auto parcheggiata, Panoptes non mostra più una marcia vecchia. Un valore di marcia vecchio non conta più come viaggio."
+      ],
+      "nl": [
+        "Met de auto geparkeerd toont Panoptes geen verouderde versnelling meer. Een oude versnellingswaarde telt niet meer als rit."
+      ]
     }
   ]
 }

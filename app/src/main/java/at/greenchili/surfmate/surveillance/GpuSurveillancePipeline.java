@@ -7191,7 +7191,7 @@ public class GpuSurveillancePipeline {
             }
             if (bs.optBoolean("suppressInReverse", false)) {
                 at.greenchili.surfmate.monitor.GearMonitor gm = at.greenchili.surfmate.monitor.GearMonitor.getInstance();
-                if (gm.isActive() && gm.getCurrentGear() == at.greenchili.surfmate.monitor.GearMonitor.GEAR_R) {
+                if (gm.isActive() && at.greenchili.surfmate.monitor.GearMonitor.gangFrisch() == at.greenchili.surfmate.monitor.GearMonitor.GEAR_R) {
                     return "reverse";
                 }
             }

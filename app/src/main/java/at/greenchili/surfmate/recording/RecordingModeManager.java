@@ -2268,6 +2268,9 @@ public class RecordingModeManager {
      * This matches TripDetector.isDrivingGear which also includes N.
      */
     public static boolean isDrivingGear(int gear) {
+        // 0.1.38.13: ein alter Wert (Zündung aus, Poller gestoppt) ist keine Fahrt – sonst hielt ein stehen gebliebenes
+        // R den Park-Wächter für „fährt“. Lief der Poller nie (Tests, andere Quelle), bleibt es wie bisher.
+        if (at.greenchili.surfmate.monitor.GearMonitor.gangVeraltet()) return false;
         return gear == GEAR_D || gear == GEAR_R || gear == GEAR_N || gear == GEAR_S || gear == GEAR_M;
     }
     

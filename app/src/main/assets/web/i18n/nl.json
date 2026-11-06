@@ -7072,6 +7072,8 @@
     "stopp_12v": "Panoptes beschermt de 12-voltaccu altijd extra."
   },
   "rueckmeldung": {
+    "auto_gang": "Versnelling (ruwe waarde)",
+    "gang_alt": "niet actueel",
     "titel": "Probleem melden",
     "about_text": "Werkt er iets niet? Laat het ons weten.",
     "frage": "Wat is er gebeurd?",

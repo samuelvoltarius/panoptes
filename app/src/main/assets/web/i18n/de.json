@@ -7072,6 +7072,8 @@
     "stopp_12v": "Die 12-Volt-Batterie schützt Panoptes immer zusätzlich."
   },
   "rueckmeldung": {
+    "auto_gang": "Gang (Rohwert)",
+    "gang_alt": "nicht frisch",
     "titel": "Fehler melden",
     "about_text": "Etwas funktioniert nicht? Sag es uns.",
     "frage": "Was ist passiert?",

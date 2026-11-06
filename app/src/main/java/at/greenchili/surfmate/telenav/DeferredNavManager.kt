@@ -78,13 +78,13 @@ object DeferredNavManager {
 
                 // Don't pop over the reversing camera — wait until out of R (brief cap).
                 var waited = 0L
-                while (GearMonitor.getInstance().currentGear == GearMonitor.GEAR_R &&
+                while (GearMonitor.gangFrisch() == GearMonitor.GEAR_R &&
                     waited < REVERSE_WAIT_MAX_MS
                 ) {
                     Thread.sleep(REVERSE_POLL_MS)
                     waited += REVERSE_POLL_MS
                 }
-                if (GearMonitor.getInstance().currentGear == GearMonitor.GEAR_R) {
+                if (GearMonitor.gangFrisch() == GearMonitor.GEAR_R) {
                     Log.i(TAG, "still in reverse after ${REVERSE_WAIT_MAX_MS / 1000}s — keeping pending")
                     return@Thread
                 }

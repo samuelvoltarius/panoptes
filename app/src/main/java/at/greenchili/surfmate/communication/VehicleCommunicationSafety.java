@@ -85,7 +85,8 @@ public final class VehicleCommunicationSafety {
         try {
             GearMonitor monitor = GearMonitor.getInstance();
             if (monitor != null && monitor.isRunning()) {
-                return monitor.getCurrentGear();
+                int g = GearMonitor.gangFrisch();   // 0.1.38.13: nur frisch mit Zündung an
+                return g == at.greenchili.surfmate.byd.BydVehicleData.UNAVAILABLE ? null : g;
             }
         } catch (Throwable ignored) {}
         try {
