@@ -4395,10 +4395,15 @@ object UnifiedConfigManager {
                     // sub-ms writes) and a brief block is preferable to a dropped
                     // write. lock() releases on channel/raf close in finally.
                     lock = channel.lock()
-                    try {
-                        lockFile.setReadable(true, false)
-                        lockFile.setWritable(true, false)
-                    } catch (_: Exception) {}
+                    // 0.1.38.14 (P3): Rechte nur als Daemon (UID 2000, Eigentümer) nachziehen. Der App-Prozess darf die
+                    // Datei im Shell-Ordner nicht ändern: jeder Versuch war ein SELinux-„avc: denied { setattr }“, bei
+                    // jedem Konfig-Zugriff der Karte (RoadSenseMapIo) – Log-Flut ohne Wirkung.
+                    if (android.os.Process.myUid() == SHELL_DAEMON_UID) {
+                        try {
+                            lockFile.setReadable(true, false)
+                            lockFile.setWritable(true, false)
+                        } catch (_: Exception) {}
+                    }
                 } catch (e: Exception) {
                     throw ConfigLockUnavailableException(
                         "Stable config lock $LOCK_PATH could not be acquired: " +

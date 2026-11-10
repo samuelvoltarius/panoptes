@@ -3,8 +3,8 @@ package at.greenchili.surfmate.telegram.config;
 import org.json.JSONObject;
 
 /**
- * 0.1.38.12 „Bot schläft bei 12-V-Stopp“: Läuft der Telegram-Bot nur fürs abgestellte Auto ({@code autoStartAccOff},
- * nicht {@code daemonEnabled}) und urteilt die 12-V-Auswertung des Wächters LOW, schickt der Bot EINE Nachricht und
+ * 0.1.38.12 „Bot schläft bei 12-V-Stopp“: Läuft der Telegram-Bot beim abgestellten Auto ({@code autoStartAccOff},
+ * seit 0.1.38.14 auch {@code daemonEnabled}) und urteilt die 12-V-Auswertung des Wächters LOW, schickt der Bot EINE Nachricht und
  * beendet sich bis zur nächsten Fahrt. Keine eigene Schwelle: Quelle ist der Stand, den
  * {@link at.greenchili.surfmate.surveillance.GuardStopMonitor} je Parken schreibt (bei ACC an zurückgesetzt).
  *
@@ -28,9 +28,13 @@ public final class BotSchlaf12v {
         return letzte > 0L && now - letzte >= 0L && now - letzte <= FRISCH_MS;
     }
 
-    /** Schlafen legen? Nur der fürs Abstellen gestartete Bot, nie ein dauerhaft eingeschalteter. */
+    /**
+     * Schlafen legen? 0.1.38.14: jeder Bot, der beim abgestellten Auto läuft – fürs Abstellen gestartet
+     * ({@code autoStartAccOff}) ODER dauerhaft eingeschaltet ({@code daemonEnabled}). Bei laufendem Auto gibt es kein
+     * LOW (der Stand wird bei ACC an zurückgesetzt).
+     */
     public static boolean sollSchlafen(JSONObject stand, long now, boolean autoStartAccOff, boolean daemonEnabled) {
-        return autoStartAccOff && !daemonEnabled && low(stand, now);
+        return (autoStartAccOff || daemonEnabled) && low(stand, now);
     }
 
     /** Sperrmarke, die Panoptes selbst gesetzt hat (kein Nutzer-Stopp): Der Start nach dem Abstellen darf sie räumen. */

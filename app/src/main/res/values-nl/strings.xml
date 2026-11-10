@@ -1568,4 +1568,6 @@
     </plurals>
     <!-- 0.1.38.3: Kamera-Einstellungen nicht erreichbar (statt „Speichern hat nicht geklappt“) -->
     <string name="camera_mapping_unreachable">Panoptes bereikt de camera\'s nu niet. Wacht even en tik opnieuw. Lukt het dan nog niet: Hulp &amp; info → Probleem melden.</string>
+    <!-- 0.1.38.14 (P3): Telegram-Notiz bei eingefrorener Oberfläche (UiHaengerWaechter) -->
+    <string name="ui_haenger_telegram">⚠️ Panoptes op het autoscherm reageert al %1$d s niet. Stuur /fehler, dan gaat er een foutmelding weg – ook als het scherm vastzit.</string>
 </resources>

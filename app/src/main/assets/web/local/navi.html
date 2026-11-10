@@ -10,8 +10,8 @@
     <meta name="apple-mobile-web-app-title" content="Panoptes">
     <meta name="theme-color" content="#0A2238">
     <script src="../shared/theme.js?v=13"></script>
-    <script src="../shared/kartenquelle.js?v=5"></script>
-    <script src="../shared/app-shell.js?v=pn34"></script>
+    <script src="../shared/kartenquelle.js?v=6"></script>
+    <script src="../shared/app-shell.js?v=pn35"></script>
     <link rel="stylesheet" href="../shared/styles.css?v=pn14">
     <style>
         .navi-page .main-content { padding: 0; }
@@ -62,6 +62,12 @@
         .nbtn svg { width: 16px; height: 16px; margin-right: 8px; }
         .nbtn.lime { background: var(--sm-lime); color: #1d2a00; border-color: transparent; }
         .nbtn:disabled { opacity: .5; cursor: default; }
+        /* 0.1.38.14 (P4, Navi leichter): am Auto-Display große Knöpfe; Hinweis „Karte aus“; Zwischenstopps hinter „Mehr“ */
+        .n-gross .nbtn { min-height: 56px; font-size: 16px; padding: 14px 18px; }
+        /* zweiter Knopf (Im Werksnavi öffnen / Erste Etappe) gut sichtbar: Rahmen und Schrift in Aqua */
+        .n-gross #nSendStop { border: 2px solid var(--sm-aqua); color: var(--sm-aqua); }
+        .n-karte-aus { margin-bottom: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--sm-line); font-size: 13px; color: var(--on-surface-variant); }
+        .n-mehr { background: transparent; border: 0; color: var(--sm-aqua); font: 600 13px var(--family-body, sans-serif); padding: 8px 0; cursor: pointer; }
         .n-stops { list-style: none; margin: 10px 0 0; padding: 0; }
         .n-stops li { display: flex; align-items: flex-start; padding: 9px 0; border-top: 1px solid var(--sm-line); font-size: 13px; color: var(--on-surface); }
         .n-stops .no { width: 24px; height: 24px; border-radius: 50%; background: var(--sm-lime); color: #1d2a00; flex: none;
@@ -159,6 +165,7 @@
         <div class="navi">
             <div id="nMap"></div>
             <section class="n-panel" aria-label="Navigation">
+                <div class="n-karte-aus" id="nKarteAus" hidden></div>
                 <div class="n-uw n-fue" id="nFue" hidden></div>
                 <div class="n-fg" id="nFg" hidden></div>
                 <div class="n-uw" id="nPr" hidden></div>
@@ -574,7 +581,7 @@
 
     var N = window.Navi = {
         status: null, map: null, dest: null, plan: null, searchTimer: null, searchGen: 0,
-        via: [], viaNeu: false, planGen: 0,
+        via: [], viaNeu: false, planGen: 0, viaMehr: false,
 
         car: function () {
             var g = this.status && this.status.gps;
@@ -699,6 +706,12 @@
         },
         viaZeigen: function () {
             var self = this, box = $('nVia'), L = this.via;
+            // 0.1.38.14: ohne Zwischenstopps nur ein kleines „Mehr: Zwischenstopps“ – der Weg Ziel → Vorschau → Start bleibt frei
+            if (!L.length && !this.viaNeu && !this.viaMehr) {
+                box.innerHTML = '<button class="n-mehr" type="button" data-v="mehr">' + esc(t('navi.via_mehr', 'Mehr: Zwischenstopps')) + '</button>';
+                box.querySelector('[data-v="mehr"]').onclick = function () { self.viaMehr = true; self.viaZeigen(); };
+                return;
+            }
             var h = '<div class="n-via-kopf"><span>' + (L.length ? esc(t('navi.via_titel', 'Zwischenstopps')) + ' (' + L.length + '/' + PE.MAX + ')' : '') + '</span><span class="grow"></span>';
             if (this.viaNeu) h += '<button class="nbtn" type="button" data-v="abbruch">' + esc(t('navi.via_abbruch', 'Abbrechen')) + '</button>';
             else if (L.length < PE.MAX) h += '<button class="nbtn" type="button" data-v="neu">+ ' + esc(t('navi.via_neu', 'Zwischenstopp')) + '</button>';
@@ -1097,6 +1110,14 @@
         UW.start();
         PR.start();
         FU.start();
+        if (imAuto()) document.body.className += ' n-gross';
+        // 0.1.38.14: Kartenquelle „keine“ → kurzer Hinweis mit dem Weg zum Einschalten (kartenquelle.js bleibt unverändert)
+        try {
+            if (window.PanoptesKartenquelle && PanoptesKartenquelle.get() === 'keine') {
+                $('nKarteAus').textContent = t('navi.karte_aus', 'Die Karte ist aus. Einschalten: Einstellungen → Alle Einstellungen → Kartenquelle.');
+                $('nKarteAus').hidden = false;
+            }
+        } catch (e) {}
         setInterval(function () { PB.auffrischen(document, t); }, 30000);   // „Stand vor x min“ mitlaufen lassen
     });
 })();

@@ -102,6 +102,26 @@ open class RoadSenseMapActivity : AppCompatActivity() {
     /** Background executor for the daemon HTTP calls — never on the looper. */
     @Volatile private var ioExecutor: ExecutorService? = null
 
+    /**
+     * 0.1.38.14 (P3): zuletzt gelesene Kartenquelle. Die Einstellung liegt in der Konfigurationsdatei; lesen darf
+     * nie im UI-Thread passieren (Seal U: Panoptes hing beim Umschalten). null = noch nicht gelesen.
+     */
+    @Volatile private var kartenquelleStand: String? = null
+
+    /**
+     * 0.1.38.14 (P3): Kartenquelle in einem eigenen kurzen Faden lesen (nicht im UI-Thread, nicht hinter den
+     * Netzabrufen von RoadSenseMapIo), dann [weiter] im UI-Thread. Wechsel → kein Prefetch direkt danach.
+     */
+    private fun kartenquelleLesen(weiter: (String) -> Unit) {
+        Thread({
+            val q = try { at.greenchili.surfmate.einstellungen.Kartenquelle.aktuell() } catch (_: Throwable) { at.greenchili.surfmate.einstellungen.Kartenquelle.KEINE }
+            val vorher = kartenquelleStand
+            kartenquelleStand = q
+            if (vorher != null && vorher != q) MapTilePrefetcher.quelleGewechselt()
+            mainHandler.post { if (!isFinishing && !isDestroyed) weiter(q) }
+        }, "KartenquelleLesen").apply { isDaemon = true }.start()
+    }
+
     /** Monotonic token so a stale in-flight fetch result is discarded. */
     @Volatile private var fetchToken: Long = 0L
 
@@ -1201,8 +1221,11 @@ open class RoadSenseMapActivity : AppCompatActivity() {
         // map matches the rest of the app shell. Loaded from the BUNDLED style asset
         // (instant, no network round-trip; hosted-URL fallback) — re-add all our
         // sources/layers in the onStyleLoaded callback (setStyle wipes them).
-        mlMap.setStyle(styleBuilderForTheme()) { style ->
-            onStyleLoaded(style)
+        // 0.1.38.14 (P3): Kartenquelle erst im Hintergrund lesen, dann den Stil setzen (kein Datei-Lesen im UI-Thread).
+        kartenquelleLesen { q ->
+            mlMap.setStyle(styleBuilderForTheme(q)) { style ->
+                onStyleLoaded(style)
+            }
         }
     }
 
@@ -1239,9 +1262,11 @@ open class RoadSenseMapActivity : AppCompatActivity() {
      * ohne Netzzugriff mit Hinweis. Nicht gesetzt = keine. Kein stiller Rückfall auf einen anderen
      * Anbieter (früher immer OpenFreeMap, ungefragt).
      */
-    private fun styleBuilderForTheme(): Style.Builder {
+    private fun styleBuilderForTheme(
+        quelle: String = kartenquelleStand ?: at.greenchili.surfmate.einstellungen.Kartenquelle.KEINE
+    ): Style.Builder {
         val nacht = isNightTheme()
-        return when (at.greenchili.surfmate.einstellungen.Kartenquelle.aktuell()) {
+        return when (quelle) {
             at.greenchili.surfmate.einstellungen.Kartenquelle.COMMUNITY ->
                 Style.Builder().fromUri(at.greenchili.surfmate.einstellungen.Kartenquelle.COMMUNITY_STIL)
             at.greenchili.surfmate.einstellungen.Kartenquelle.OSM ->
@@ -3146,11 +3171,30 @@ open class RoadSenseMapActivity : AppCompatActivity() {
      * preview. Runs once per Activity launch (guarded by [didRestoreTrip]); needs a
      * GPS fix, which it fetches itself. No-op on the cluster (it mirrors NavSession).
      */
+    /**
+     * 0.1.38.14 (P3, Projektinhaber „Navi leichter“): Suchfeld nicht fokussieren, Tastatur zu. Am Display ohne Touch-Modus
+     * bekam das erste fokussierbare Feld (die Suche) beim Öffnen den Fokus; der Fokus geht an die Karte.
+     */
+    private fun sucheOhneFokus() {
+        mainHandler.post {
+            try {
+                val input = findViewById<android.widget.EditText>(R.id.navSearchInput) ?: return@post
+                val root = findViewById<View>(R.id.mapRoot)
+                root?.isFocusableInTouchMode = true
+                root?.requestFocus()
+                input.clearFocus()
+                hideKeyboard(input)
+            } catch (_: Throwable) {}
+        }
+    }
+
     private fun restoreTripIfAny() {
         if (didRestoreTrip || clusterMode) return
         didRestoreTrip = true
         val trip = NavTripStore.load(applicationContext) ?: return
         if (trip.stops.isEmpty()) return
+        // 0.1.38.14 (P3): Auftrag aus navi.html → gleich die Vorschau mit Start, nie die Suche mit Tastatur
+        sucheOhneFokus()
         // Need an origin to recompute. Use the last fix if we have one, else fetch.
         val resume = {
             routeStops.clear()
@@ -5608,7 +5652,7 @@ open class RoadSenseMapActivity : AppCompatActivity() {
                         CameraUpdateFactory.newCameraPosition(pos), RECENTER_ANIM_MS
                     )
                     updateLocationPuck(fix)
-                    if (at.greenchili.surfmate.einstellungen.Kartenquelle.aktuell() ==
+                    if (kartenquelleStand ==
                         at.greenchili.surfmate.einstellungen.Kartenquelle.COMMUNITY) {
                         MapTilePrefetcher.schedulePrefetch(
                             applicationContext, at.greenchili.surfmate.einstellungen.Kartenquelle.COMMUNITY_STIL,
@@ -5864,6 +5908,8 @@ open class RoadSenseMapActivity : AppCompatActivity() {
         super.onResume()
         if (!::mapView.isInitialized) return
         mapView.onResume()
+        // 0.1.38.14 (P3): Kartenquelle im Hintergrund nachlesen (Wechsel sperrt den Prefetch kurz).
+        kartenquelleLesen { }
         // RESUME-SNAP: while backgrounded the render tick was suspended, so the estimator's
         // filtered state + the painted puck (renderedPuckLat) are frozen at the position
         // from when we left. On return, resuming the loops would EMA-glide the estimator

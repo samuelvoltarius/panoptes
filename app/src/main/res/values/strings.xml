@@ -1965,4 +1965,6 @@
     <string name="remote_setup_start">Set up</string>
     <!-- 0.1.38.3: Kamera-Einstellungen nicht erreichbar (statt „Speichern hat nicht geklappt“) -->
     <string name="camera_mapping_unreachable">Panoptes cannot reach the cameras right now. Wait a moment and tap again. If it still does not work: Help &amp; info → Report a problem.</string>
+    <!-- 0.1.38.14 (P3): Telegram-Notiz bei eingefrorener Oberfläche (UiHaengerWaechter) -->
+    <string name="ui_haenger_telegram">⚠️ Panoptes on the car screen has not responded for %1$d s. Send /fehler and a bug report goes out – even while the screen is frozen.</string>
 </resources>

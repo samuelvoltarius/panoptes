@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0A2238">
     <script src="../shared/theme.js?v=13"></script>
-    <script src="../shared/app-shell.js?v=pn34"></script>
+    <script src="../shared/app-shell.js?v=pn35"></script>
     <link rel="stylesheet" href="../shared/styles.css?v=pn14">
     <style>
         /* Events Page Specific Styles */
@@ -1377,6 +1377,11 @@
             color: white;
         }
         
+        /* 0.1.38.14: Aufnahme fehlt -> Satz über dem schwarzen Bild */
+        .aufnahme-fehlt-hinweis { margin: 0 0 12px; padding: 12px 16px; border-radius: 12px; font-size: 16px; font-weight: 600;
+            border: 1px solid var(--status-warning, #f5b942); color: var(--on-surface, #fff); background: rgba(245, 185, 66, .12); }
+        .aufnahme-fehlt { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); padding: 0 24px;
+            text-align: center; color: #fff; font-size: 18px; font-weight: 600; z-index: 5; pointer-events: none; }
         .video-player {
             width: 100%;
             /* Chrome 58 has no aspect-ratio support. This percentage-height
@@ -2343,7 +2348,7 @@
     <script src="../shared/auth.js"></script>
     <script src="../shared/pwa-init.js?v=index2"></script>
     <script src="../shared/core.js?v=pn6"></script>
-    <script src="../shared/events.js?v=incidentpack2"></script>
+    <script src="../shared/events.js?v=zurueck14c"></script>
     <script src="../shared/clip-keep.js?v=pn7"></script>
     <script>
         function toggleSidebar() {

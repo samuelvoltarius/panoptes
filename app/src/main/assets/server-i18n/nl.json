@@ -547,7 +547,8 @@
       "menu": "/menue – Alle knoppen in één oogopslag",
       "updates": "/updates – Panoptes en launcher bijwerken",
       "kopplungen": "/kopplungen – Gekoppelde apparaten tonen en verwijderen (telefoon kwijt)",
-      "bilder": "/bilder – Foto's en video's naar Telegram (`/bilder aus` zet ze uit)"
+      "bilder": "/bilder – Foto's en video's naar Telegram (`/bilder aus` zet ze uit)",
+      "fehler": "/fehler – Foutmelding sturen, ook als het scherm vastloopt (`/fehler kaart hangt`)"
     },
     "buttons": {
       "status": "📊 Status",
@@ -1133,6 +1134,14 @@
       "frage": "Apparaat nr. {0} echt verwijderen? Het kan niets meer met de auto tot het opnieuw gekoppeld is.",
       "btn_ja": "Ja, verwijderen",
       "btn_nein": "Annuleren"
+    },
+    "fehler": {
+      "laeuft": "📝 Ik verzamel de foutmelding …",
+      "gesendet": "✅ Foutmelding verstuurd. Code: {0}",
+      "gesendet_ohne": "✅ Foutmelding verstuurd.",
+      "gemerkt": "📥 Geen internet: de melding is bewaard en gaat weg zodra de auto online is.",
+      "zuviel": "⏳ Vandaag zijn al genoeg meldingen verstuurd. Probeer het morgen opnieuw.",
+      "nicht": "⚠️ De foutmelding is niet verstuurd. Panoptes reageert nu niet – probeer /fehler zo nog eens."
     }
   },
   "vehicle_control": {

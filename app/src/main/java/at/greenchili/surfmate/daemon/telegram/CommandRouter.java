@@ -57,6 +57,8 @@ public class CommandRouter {
         alias("/startbildschirm", "/homescreen", "/home");
         // 0.1.38.8 verlorenes Handy: gekoppelte Geräte anzeigen und entfernen (nur Besitzer-Chat, mit Rückfrage)
         alias("/kopplungen", "/geraete", "/geräte", "/devices");
+        // 0.1.38.14 Fehlerbericht auch bei eingefrorener Anzeige (nur Besitzer-Chat)
+        alias("/fehler", "/fehlerbericht", "/bug", "/report");
 
         PERMISSION.put("/kamera", UnifiedTelegramConfig.REMOTE_CAMERA);
         PERMISSION.put("/aufnahmen", UnifiedTelegramConfig.REMOTE_CAMERA);
@@ -96,6 +98,7 @@ public class CommandRouter {
         handlers.add(new UpdateCommandHandler());
         handlers.add(new HomeCommandHandler());
         handlers.add(new KopplungenCommandHandler());
+        handlers.add(new FehlerCommandHandler());
     }
 
     /**

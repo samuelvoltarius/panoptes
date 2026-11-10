@@ -138,7 +138,40 @@ public class TripDetector {
     private void handleIdleGearChange(int newGear) {
         if (isDrivingGear(newGear)) {
             startTrip();
+        } else if (istFahrgang(newGear) && GearMonitor.gangVeraltet()) {
+            // 0.1.38.14: D/R kam, bevor der Gang als frisch gilt (Zündung-an-Flag noch aus, Poller-Lücke) –
+            // die Flanke kommt nicht wieder, also kurz nachprüfen statt die Fahrt zu verlieren.
+            logger.info("Gang " + GearMonitor.gearToString(newGear) + " noch nicht frisch (Zuendung?) → Fahrtstart wird nachgeprueft");
+            startNachholen();
         }
+    }
+
+    /** 0.1.38.14: so lange wird nach einer verworfenen Fahrgang-Flanke nachgeprüft, je {@link #NACHHOLEN_TAKT_MS}. */
+    static final long NACHHOLEN_FENSTER_MS = 30_000L;
+    static final long NACHHOLEN_TAKT_MS = 1_000L;
+    private java.util.concurrent.ScheduledFuture<?> nachholenTask;
+
+    /** Fahrt jetzt nachholen? Nur im Leerlauf und nur mit frischem Fahrgang ({@link GearMonitor#gangFrisch}). */
+    static boolean nachholen(State s, int frischerGang) {
+        return s == State.IDLE && istFahrgang(frischerGang);
+    }
+
+    private void startNachholen() {
+        if (nachholenTask != null && !nachholenTask.isDone()) return;
+        final long bis = System.currentTimeMillis() + NACHHOLEN_FENSTER_MS;
+        nachholenTask = scheduler.scheduleWithFixedDelay(() -> {
+            synchronized (TripDetector.this) {
+                int g = GearMonitor.gangFrisch();
+                if (nachholen(state, g)) {
+                    logger.info("Fahrtstart nachgeholt: Gang " + GearMonitor.gearToString(g) + " jetzt frisch");
+                    startTrip();
+                }
+                if (state != State.IDLE || System.currentTimeMillis() > bis) {
+                    if (state == State.IDLE) logger.info("Fahrtstart nicht nachgeholt: kein frischer Fahrgang in 30 s");
+                    if (nachholenTask != null) nachholenTask.cancel(false);
+                }
+            }
+        }, NACHHOLEN_TAKT_MS, NACHHOLEN_TAKT_MS, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -797,6 +830,11 @@ public class TripDetector {
     private static boolean isDrivingGear(int gear) {
         // 0.1.38.13: alter Wert (Zündung aus) ist keine Fahrt (keine Phantomfahrten aus einem stehen gebliebenen R)
         if (GearMonitor.gangVeraltet()) return false;
+        return istFahrgang(gear);
+    }
+
+    /** Fahrgang ohne Frische-Prüfung (D, R, N, M, S). */
+    static boolean istFahrgang(int gear) {
         return gear == GearMonitor.GEAR_D
                 || gear == GearMonitor.GEAR_R
                 || gear == GearMonitor.GEAR_N

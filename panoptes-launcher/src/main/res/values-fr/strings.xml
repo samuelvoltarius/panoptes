@@ -201,4 +201,11 @@
     <string name="fern_art_heizen">, chauffage niveau %1$d</string>
     <string name="fern_art_kuehlen">, refroidissement niveau %1$d</string>
     <string name="fern_art_neutral">, neutre</string>
+    <string name="launcher_groesse">Taille</string>
+    <string name="groesse_auto">Automatique (adaptée à l’écran)</string>
+    <string name="groesse_kleiner">Plus petit</string>
+    <string name="groesse_groesser">Plus grand</string>
+    <string name="groesse_hinweis">Automatique adapte le launcher à votre écran. Si tout paraît encore trop grand ou trop petit, choisissez Plus petit ou Plus grand.</string>
+    <string name="erweitert">Avancé</string>
+    <string name="zurueck">Retour</string>
 </resources>

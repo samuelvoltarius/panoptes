@@ -144,6 +144,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // 0.1.38.14 (P4): Größe nach Bildschirm + Nutzerwahl, eine Stelle (LauncherGroesse)
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(LauncherGroesse.anwenden(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         layout = ladeLayout()
@@ -805,7 +810,7 @@ class MainActivity : AppCompatActivity() {
             setImageDrawable(ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_pn_auto_seite)?.mutate()?.also { it.setTint(ui.p.outline) })
             scaleType = ImageView.ScaleType.FIT_CENTER; alpha = 0.8f
         }
-        mitte.addView(ersatz, FrameLayout.LayoutParams(ui.dp(360), ui.dp(144), Gravity.CENTER))
+        mitte.addView(ersatz, FrameLayout.LayoutParams(-1, -1, Gravity.CENTER))   // 0.1.38.14: eingepasst statt fest 360×144 dp
         // oben links: Datum, Uhr, Luft (nur mit echtem Wert)
         val links = spalte(18)
         val datum = ui.text("", 17f, 600, ui.p.onSurfaceVariant); val uhr = ui.zahl("", 34f)
@@ -1211,32 +1216,56 @@ class MainActivity : AppCompatActivity() {
         zeigeOverlay(c, breit = false)
     }
 
-    private fun einstellungen() {
+    private fun einstellungen(erweitert: Boolean = false) {
         val c = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(ui.dp(24), ui.dp(18), ui.dp(24), ui.dp(24)) }
-        c.addView(kopf(getString(R.string.reiter_einstellungen)))
+        c.addView(kopf(getString(if (erweitert) R.string.erweitert else R.string.reiter_einstellungen)))
         val liste = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         fun zeile(res: Int, text: String, f: () -> Unit) = liste.addView(ui.act(res, text) { f() }.apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL or Gravity.START
             (getChildAt(1) as? TextView)?.apply { setPadding(ui.dp(14), 0, 0, 0); textSize = 16f; gravity = Gravity.START or Gravity.CENTER_VERTICAL }
         }, ui.lp(-1, ui.dp(64), oben = 8))
         fun schalter(text: Int, an: Boolean) = getString(text) + ": " + getString(if (an) R.string.an else R.string.aus)
-        zeile(R.drawable.ic_pn_edit, getString(R.string.bearbeiten)) { if (darfBedienen()) { bearbeiten = true; baueAlles() } }
-        zeile(R.drawable.ic_pn_map, getString(R.string.hintergrund)) { if (darfBedienen()) hintergrundWaehlen() }
-        zeile(R.drawable.ic_pn_status, schalter(R.string.zeige_status, layout.zeigeStatus)) { if (darfBedienen()) { aendern(layout.copy(zeigeStatus = !layout.zeigeStatus)); baueAlles(); einstellungen() } }
-        zeile(R.drawable.ic_pn_apps, schalter(R.string.zeige_reiter, layout.zeigeReiter)) { if (darfBedienen()) { aendern(layout.copy(zeigeReiter = !layout.zeigeReiter)); baueAlles(); einstellungen() } }
-        zeile(R.drawable.ic_pn_thermo, schalter(R.string.zeige_klima, layout.zeigeKlima)) { if (darfBedienen()) { aendern(layout.copy(zeigeKlima = !layout.zeigeKlima)); baueAlles(); einstellungen() } }
-        zeile(R.drawable.ic_pn_nav, getString(R.string.navi_app) + ": " + (naviWahl()?.let { appName(it) } ?: getString(R.string.navi_app_auto))) { naviWaehlen() }
-        zeile(R.drawable.ic_pn_apps, schalter(R.string.neben_alle, layout.nebeneinander)) { if (darfBedienen()) { aendern(layout.copy(nebeneinander = !layout.nebeneinander)); baueAlles(); einstellungen() } }
-        zeile(R.drawable.ic_pn_car, schalter(R.string.zeige_3d, layout.zeige3d)) { if (darfBedienen()) { aendern(layout.copy(zeige3d = !layout.zeige3d)); baueAlles(); einstellungen() } }
-        zeile(R.drawable.ic_pn_music, getString(R.string.medien_zugriff)) { zugriffErklaeren() }
-        zeile(R.drawable.ic_pn_route, getString(R.string.exportieren)) { exportieren() }
-        zeile(R.drawable.ic_pn_plus, getString(R.string.importieren)) { if (darfBedienen()) importieren() }
-        zeile(R.drawable.ic_pn_close, getString(R.string.zuruecksetzen)) { if (darfBedienen()) zuruecksetzenFragen() }
-        zeile(R.drawable.ic_pn_info, getString(R.string.app_info)) { appInfo(packageName) }
+        // 0.1.38.14 (P4, Zielgruppe 50+): oben nur, was man im Alltag braucht; Seltenes unter „Erweitert“ (nichts fällt weg)
+        if (!erweitert) {
+            zeile(R.drawable.ic_pn_edit, getString(R.string.bearbeiten)) { if (darfBedienen()) { bearbeiten = true; baueAlles() } }
+            zeile(R.drawable.ic_pn_apps, getString(R.string.launcher_groesse) + ": " + groesseName(LauncherGroesse.wahl(this))) { if (darfBedienen()) groesseWaehlen() }
+            zeile(R.drawable.ic_pn_map, getString(R.string.hintergrund)) { if (darfBedienen()) hintergrundWaehlen() }
+            zeile(R.drawable.ic_pn_nav, getString(R.string.navi_app) + ": " + (naviWahl()?.let { appName(it) } ?: getString(R.string.navi_app_auto))) { naviWaehlen() }
+            zeile(R.drawable.ic_pn_thermo, schalter(R.string.zeige_klima, layout.zeigeKlima)) { if (darfBedienen()) { aendern(layout.copy(zeigeKlima = !layout.zeigeKlima)); baueAlles(); einstellungen() } }
+            zeile(R.drawable.ic_pn_car, schalter(R.string.zeige_3d, layout.zeige3d)) { if (darfBedienen()) { aendern(layout.copy(zeige3d = !layout.zeige3d)); baueAlles(); einstellungen() } }
+            zeile(R.drawable.ic_pn_settings, getString(R.string.erweitert)) { einstellungen(erweitert = true) }
+        } else {
+            zeile(R.drawable.ic_pn_close, getString(R.string.zurueck)) { einstellungen() }
+            zeile(R.drawable.ic_pn_status, schalter(R.string.zeige_status, layout.zeigeStatus)) { if (darfBedienen()) { aendern(layout.copy(zeigeStatus = !layout.zeigeStatus)); baueAlles(); einstellungen(erweitert = true) } }
+            zeile(R.drawable.ic_pn_apps, schalter(R.string.zeige_reiter, layout.zeigeReiter)) { if (darfBedienen()) { aendern(layout.copy(zeigeReiter = !layout.zeigeReiter)); baueAlles(); einstellungen(erweitert = true) } }
+            zeile(R.drawable.ic_pn_apps, schalter(R.string.neben_alle, layout.nebeneinander)) { if (darfBedienen()) { aendern(layout.copy(nebeneinander = !layout.nebeneinander)); baueAlles(); einstellungen(erweitert = true) } }
+            zeile(R.drawable.ic_pn_music, getString(R.string.medien_zugriff)) { zugriffErklaeren() }
+            zeile(R.drawable.ic_pn_route, getString(R.string.exportieren)) { exportieren() }
+            zeile(R.drawable.ic_pn_plus, getString(R.string.importieren)) { if (darfBedienen()) importieren() }
+            zeile(R.drawable.ic_pn_close, getString(R.string.zuruecksetzen)) { if (darfBedienen()) zuruecksetzenFragen() }
+            zeile(R.drawable.ic_pn_info, getString(R.string.app_info)) { appInfo(packageName) }
+        }
         liste.addView(ui.leise(getString(R.string.rueckweg_hinweis), 14f), ui.lp(oben = 14))
         c.addView(ScrollView(this).apply { addView(liste) }, ui.lp(-1, 0, 1f, oben = 8))
         zeigeOverlay(c, breit = false)
         (c.parent as? View)?.layoutParams = FrameLayout.LayoutParams(ui.dp(620), -1, Gravity.CENTER).apply { setMargins(0, ui.dp(30), 0, ui.dp(30)) }
+    }
+
+    private fun groesseName(w: String) = getString(when (w) {
+        LauncherGroesse.KLEINER -> R.string.groesse_kleiner
+        LauncherGroesse.GROESSER -> R.string.groesse_groesser
+        else -> R.string.groesse_auto
+    })
+
+    /** 0.1.38.14: Größe wie beim Tacho; der Launcher baut sich danach neu auf (gleich sichtbar), nichts sonst ändert sich. */
+    private fun groesseWaehlen() {
+        val jetzt = LauncherGroesse.wahl(this)
+        auswahl(getString(R.string.launcher_groesse), LauncherGroesse.WAHL.map { w ->
+            (if (w == jetzt) "✓ " + groesseName(w) else groesseName(w)) to {
+                schliesseOverlay()
+                if (w != jetzt) { LauncherGroesse.speichern(this, w); recreate() }
+            }
+        }, fuss = getString(R.string.groesse_hinweis))
     }
 
     private fun hintergrundWaehlen() {

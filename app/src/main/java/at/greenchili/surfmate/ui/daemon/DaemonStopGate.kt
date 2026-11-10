@@ -73,9 +73,9 @@ object DaemonStopGate {
 
     /** Machine-stop markers in a content-aware sentinel's first line: the ACC-off sweep and the
      *  update sweep's write-if-absent `stopAllDaemons`. Neither is a user stop. */
-    // 0.1.38.12: auch „12-V-Schlaf“ (Bot hat sich bei schwacher Starterbatterie selbst gelegt), gleiche Liste wie
-    // BotSchlaf12v.maschinenStopp im Daemon
-    private val MACHINE_STOP = Regex("ACC-on|stopAllDaemons|12-V-Schlaf")
+    // 0.1.38.14: „12-V-Schlaf“ ist hier KEIN Maschinen-Stopp – die App belebt den Bot im Stand nicht wieder;
+    // die Marke räumt AccSentry bei Zündung an (bzw. der Start beim nächsten Abstellen)
+    private val MACHINE_STOP = Regex("ACC-on|stopAllDaemons")
 
     /**
      * Startup policy for a **content-aware** sentinel (Telegram): block on the user-stop sentinel

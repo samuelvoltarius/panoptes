@@ -248,7 +248,7 @@
         var ac = document.createElement('link');
         ac.id = 'pnAnzeigeCss';
         ac.rel = 'stylesheet';
-        ac.href = '../shared/anzeige.css?v=5';
+        ac.href = '../shared/anzeige.css?v=6';
         document.head.appendChild(ac);
     }
     var anzeigeJs = false;
@@ -260,7 +260,7 @@
         document.documentElement.setAttribute('data-anzeige', 'auto');
         anzeigeCss();
         var sa = document.createElement('script');
-        sa.src = '../shared/anzeige.js?v=4';
+        sa.src = '../shared/anzeige.js?v=5';
         document.head.appendChild(sa);
         // Display spät erkannt: Darstellung (Standard leicht) und Kern-Wert nachziehen
         dstAnwenden();
@@ -1241,7 +1241,7 @@
             if (!sitzungMerker('pn.hinweise.ok')) baustein('../shared/hinweise.js?v=pn10', function () {
                 if (window.PanoptesHinweise) window.PanoptesHinweise.pruefen();
             });
-            if (!sitzungMerker('pn.neu.ok')) baustein('../shared/neuigkeiten.js?v=3', function () {
+            if (!sitzungMerker('pn.neu.ok')) baustein('../shared/neuigkeiten.js?v=4', function () {
                 if (window.PanoptesNeu) window.PanoptesNeu.pruefen();
             });
             // 0.1.31 Regel 2: einmalige Frage zu Modell und DiLink, nur im Stand

@@ -553,17 +553,29 @@ BYD.events = {
         //   - If it's neither finalized nor in flight (older notification, file
         //     was deleted, etc.): silently no-op so we don't yank the user
         //     around.
+        // 0.1.38.14: Direktaufruf (Benachrichtigung): erst die Liste als eigene Seite im Verlauf ablegen, damit
+        // „Zurück“ aus dem Player zur Aufnahmen-Liste führt statt die App zu verlassen.
+        if (idParam || fileParam) this.listeImVerlauf();
         if (idParam) {
             const found = this.findRecording(idParam);
             if (found) this.playVideo(idParam);
+            else this.aufnahmeFehlt();
         } else if (fileParam) {
             const found = this.recordings.find(r => r.filename === fileParam);
             if (found) {
                 this.playVideo(fileParam);
             } else {
-                this.checkAndPollInflight(fileParam);
+                this.checkAndPollInflight(fileParam, true);
             }
         }
+        // 0.1.38.14: „Zurück“ (Android, Browser) schließt den Player, statt die Seite zu verlassen.
+        const selfPop = this;
+        window.addEventListener('popstate', function () {
+            if (document.getElementById('videoModal').classList.contains('active')) {
+                selfPop._playerImVerlauf = false;
+                selfPop.closeVideo();
+            }
+        });
         
         // Wire the quadrant zoom selector once. The buttons are static in
         // events.html; we install delegated click handlers + restore the
@@ -1331,11 +1343,15 @@ BYD.events = {
      * filename. If it's there, set state and start polling so the placeholder
      * card upgrades to a normal entry the moment the post-record window ends.
      */
-    async checkAndPollInflight(filename) {
+    async checkAndPollInflight(filename, ausLink) {
         try {
             const res = await fetch('/api/recordings/inflight/' + encodeURIComponent(filename));
-            const data = await res.json();
+            let data = null;
+            try { data = res.ok ? await res.json() : null; } catch (e) { data = null; }
             if (!data || !data.inflight) {
+                // 0.1.38.14: aus einem Link (Benachrichtigung), nicht in der geladenen Liste und nicht in Arbeit:
+                // nur wenn die Datei wirklich fehlt (404), sonst liegt sie bloß auf einer späteren Seite
+                if (ausLink && await this.dateiFehlt(filename)) this.aufnahmeFehlt();
                 // File isn't in flight — no placeholder, no polling. The
                 // recording either finished and was paginated past the first
                 // page, or it never existed.
@@ -1772,8 +1788,15 @@ BYD.events = {
         const player = document.getElementById('videoPlayer');
         player.setAttribute('playsinline', '');
         player.setAttribute('webkit-playsinline', '');
+        // 0.1.38.14: Datei weg oder nicht lesbar -> Satz statt schwarzem Bild
+        const selfErr = this;
+        player.onerror = function () { if (player.getAttribute('src')) selfErr.aufnahmeFehlt(); };
         player.src = rec.videoUrl;
         document.getElementById('videoModal').classList.add('active');
+        // 0.1.38.14: Player als Verlaufseintrag, damit „Zurück“ ihn schließt (popstate in init)
+        if (!this._playerImVerlauf) {
+            try { window.history.pushState({ player: 1 }, '', window.location.href); this._playerImVerlauf = true; } catch (e) { /* alt */ }
+        }
         player.load();
 
         // Bind the external transport (play/pause, mute, time, scrubber)
@@ -1827,8 +1850,63 @@ BYD.events = {
         this.loadTimeline(rec, player);
     },
     
+    /** 0.1.38.14: Gibt es die Datei wirklich nicht? 1 Byte anfragen; nur 404/400 zählt als „fehlt“. */
+    async dateiFehlt(filename) {
+        try {
+            const r = await fetch('/video/' + encodeURIComponent(filename), { headers: { Range: 'bytes=0-0' }, cache: 'no-store' });
+            try { if (r.body && r.body.cancel) r.body.cancel(); } catch (e) { /* egal */ }
+            return r.status === 404 || r.status === 400;
+        } catch (e) {
+            return false;
+        }
+    },
+
+    /** 0.1.38.14: Liste ohne ?id/?file als Verlaufseintrag unter den Player legen (Direktaufruf). */
+    listeImVerlauf() {
+        try {
+            const u = new URL(window.location.href);
+            u.searchParams.delete('id');
+            u.searchParams.delete('file');
+            window.history.replaceState({}, '', u.toString());
+        } catch (e) { /* alte WebViews: dann bleibt es wie bisher */ }
+    },
+
+    /** 0.1.38.14: Aufnahme fehlt oder lässt sich nicht laden – Satz statt schwarzem Bild. */
+    aufnahmeFehlt() {
+        const satz = (BYD.i18n && BYD.i18n.t && BYD.i18n.t('events.aufnahme_fehlt')) || 'Diese Aufnahme gibt es nicht mehr.';
+        const modal = document.getElementById('videoModal');
+        if (modal && modal.classList.contains('active')) {
+            const wrap = document.getElementById('videoPlayerWrap');
+            if (wrap && !document.getElementById('aufnahmeFehlt')) {
+                const d = document.createElement('div');
+                d.id = 'aufnahmeFehlt';
+                d.className = 'aufnahme-fehlt';
+                d.textContent = satz;
+                wrap.appendChild(d);
+            }
+        } else {
+            const list = document.getElementById('recordingsList');
+            if (list && list.parentNode && !document.getElementById('aufnahmeFehltHinweis')) {
+                const h = document.createElement('div');
+                h.id = 'aufnahmeFehltHinweis';
+                h.className = 'aufnahme-fehlt-hinweis';
+                h.setAttribute('role', 'status');
+                h.textContent = satz;
+                list.parentNode.insertBefore(h, list);
+            }
+        }
+    },
+
     closeVideo() {
         const player = document.getElementById('videoPlayer');
+        player.onerror = null;
+        const fehlt = document.getElementById('aufnahmeFehlt');
+        if (fehlt) fehlt.remove();
+        // 0.1.38.14: per Knopf geschlossen -> den eigenen Verlaufseintrag wieder abbauen
+        if (this._playerImVerlauf) {
+            this._playerImVerlauf = false;
+            try { window.history.back(); } catch (e) { /* alt */ }
+        }
         player.pause();
         player.src = '';
         document.getElementById('videoModal').classList.remove('active');

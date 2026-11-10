@@ -495,8 +495,7 @@ public class TelegramNotifier {
                 // install-failure) are worth delivering late if the daemon was
                 // down (ACC ON); so are charging/12 V. MOTION/CONNECTIVITY/VIDEO
                 // ad-hoc text is not spooled — low-value-if-late or rotates.
-                sendIpc(cmd, /*spoolOnDaemonDown=*/cat == Category.CRITICAL
-                        || cat == Category.CHARGING || cat == Category.BATTERY || cat == Category.EREIGNIS);
+                sendIpc(cmd, /*spoolOnDaemonDown=*/spoolbar(cat));
             } catch (Exception e) {
                 Log.e(TAG, "sendMessage IPC error", e);
             }
@@ -860,10 +859,58 @@ public class TelegramNotifier {
         }
     }
 
+    /**
+     * Welche Text-Kategorien bei abgeschaltetem Bot gepuffert werden (Wiedergabe beim nächsten Bot-Start).
+     * 0.1.38.14: auch PARKING (Abstell-Meldung), damit sie nicht verloren geht, wenn der Bot noch nicht läuft.
+     */
+    static boolean spoolbar(Category cat) {
+        return cat == Category.CRITICAL || cat == Category.CHARGING || cat == Category.BATTERY
+                || cat == Category.EREIGNIS || cat == Category.PARKING;
+    }
+
+    /** 0.1.38.14: Ergebnis von {@link #sendMessageJetzt}. */
+    public enum Versand { GESENDET, GEPUFFERT, AUSGELASSEN, FEHLER }
+
+    /** true, wenn der letzte {@link #spoolOrLog} dieses Threads gepuffert hat. */
+    private static final ThreadLocal<Boolean> letztGepuffert = ThreadLocal.withInitial(() -> Boolean.FALSE);
+
+    /**
+     * 0.1.38.14: wie {@link #sendMessage(String, String)}, aber auf dem aufrufenden Thread und mit Ergebnis, damit der
+     * Aufrufer (Abschaltbericht) erst nach erfolgreichem Senden oder Puffern „gemeldet“ vermerkt.
+     */
+    public static Versand sendMessageJetzt(String text, String category) {
+        Category cat;
+        try { cat = (category != null) ? Category.valueOf(category) : Category.CRITICAL; }
+        catch (IllegalArgumentException iae) { cat = Category.CRITICAL; }
+        try {
+            if (!isEnabled(cat)) return Versand.AUSGELASSEN;
+            JSONObject cmd = new JSONObject();
+            cmd.put("cmd", "sendMessage");
+            cmd.put("text", text);
+            cmd.put("category", cat.name());
+            letztGepuffert.set(Boolean.FALSE);
+            JSONObject r = sendIpc(cmd, spoolbar(cat));
+            return versand(r, letztGepuffert.get());
+        } catch (Exception e) {
+            Log.e(TAG, "sendMessageJetzt IPC error", e);
+            return Versand.FEHLER;
+        }
+    }
+
+    /** Antwort des Bots (null = keine) → Ergebnis. */
+    static Versand versand(JSONObject antwort, boolean gepuffert) {
+        if (antwort == null) return gepuffert ? Versand.GEPUFFERT : Versand.FEHLER;
+        String st = antwort.optString("status", "");
+        if ("ok".equals(st)) return Versand.GESENDET;
+        if ("skipped".equals(st)) return Versand.AUSGELASSEN;
+        return Versand.FEHLER;
+    }
+
     /** Spool the command if the caller opted in, else just log the daemon-down drop. */
     private static void spoolOrLog(JSONObject command, boolean spoolOnDaemonDown) {
         if (spoolOnDaemonDown) {
             boolean ok = TelegramSpool.offer(command);
+            letztGepuffert.set(ok);
             Log.w(TAG, "Telegram daemon unreachable; "
                     + (ok ? "spooled for later delivery: " : "spool failed, dropped: ")
                     + command.optString("cmd", "?"));

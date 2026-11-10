@@ -1299,9 +1299,13 @@ open class MainActivity : AppCompatActivity() {
     /** 0.1.38.11 (M1): Web-Seite als Startziel zeigen (z. B. nach „Einrichtung unterbrechen“). */
     fun zeigeWebSeite(pfad: String) = navigateToWebSeite(pfad)
 
-    /** Liegt die alte native Oberfläche (dashboardFragment, „Erweitert (alt)“) im Nav-Stapel? */
+    /**
+     * Liegt eine alte native Oberfläche (dashboardFragment, Aufnahmen-Liste, Player, Einstellungen …) oben bzw. im
+     * Nav-Stapel? 0.1.38.14 P1: jedes Ziel außer dem Web-Startziel und den Funktionsflächen ([NeuaufbauZiel.NATIV]).
+     */
     private fun alteOberflaecheImStapel(): Boolean = try {
-        navController.currentDestination?.id == R.id.dashboardFragment ||
+        NeuaufbauZiel.altesZiel(navController.currentDestination?.id, R.id.panoptesStartFragment,
+            setOf(R.id.projectionFragment)) ||
             navController.getBackStackEntry(R.id.dashboardFragment) != null
     } catch (_: IllegalArgumentException) {
         false   // nicht im Stapel
@@ -1350,10 +1354,11 @@ open class MainActivity : AppCompatActivity() {
         // Settings is a top-level rail destination, so NavigationUI hides the
         // up caret; it has to be restored when Recordings opens it as a child.
         // Eine Oberfläche (0.1.7.1): Auf der Panoptes-Startseite navigiert die Web-Oberfläche selbst –
-        // native Leiste und Kopfzeile weg. Überall sonst (alte Oberfläche „Erweitert“) wie bisher.
+        // native Kopfzeile weg. 0.1.38.14 P1: die alte native Leiste (rail_menu) erscheint nie mehr, auch nicht auf
+        // nativen Funktionsflächen (Projektion); dort führt die Kopfzeile zurück.
         navController.addOnDestinationChangedListener { _, destination, _ ->
             val voll = destination.id == R.id.panoptesStartFragment
-            findViewById<View>(R.id.navigationRailContainer)?.visibility = if (voll) View.GONE else View.VISIBLE
+            findViewById<View>(R.id.navigationRailContainer)?.visibility = View.GONE
             findViewById<View>(R.id.appBarLayout)?.visibility = if (voll) View.GONE else View.VISIBLE
         }
         navController.addOnDestinationChangedListener { _, destination, arguments ->

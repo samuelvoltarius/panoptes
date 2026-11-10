@@ -11,7 +11,7 @@
     <title data-i18n="rueckmeldung.titel">Fehler melden</title>
     <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
     <script src="../shared/theme.js?v=13"></script>
-    <script src="../shared/app-shell.js?v=pn34"></script>
+    <script src="../shared/app-shell.js?v=pn35"></script>
     <link rel="stylesheet" href="../shared/styles.css?v=pn14">
     <link rel="manifest" href="/manifest.json">
     <style>
@@ -111,7 +111,11 @@
                             <div class="fm-zeile"><span data-i18n="rueckmeldung.auto_gang">Gang (Rohwert)</span><span id="fmGang">—</span></div>
                             <div class="fm-zeile"><span data-i18n="rueckmeldung.auto_sprache">Sprache</span><span id="fmSprache">—</span></div>
                             <div class="fm-zeile"><span data-i18n="rueckmeldung.auto_anzeige">Anzeige</span><span id="fmAnzeige">—</span></div>
+                            <div class="fm-zeile"><span data-i18n="rueckmeldung.auto_bildschirm">Bildschirm</span><span id="fmBildschirm">—</span></div>
+                            <div class="fm-zeile"><span data-i18n="rueckmeldung.auto_tacho">Fahrerdisplay (Tacho)</span><span id="fmTacho">—</span></div>
+                            <div class="fm-zeile"><span data-i18n="rueckmeldung.auto_karte">Kartenquelle</span><span id="fmKarte">—</span></div>
                             <p class="fm-leise" data-i18n="rueckmeldung.auto_nicht">Keine Kennung, kein Ort, keine Fahrgestellnummer, kein Telegram- oder Konto-Name.</p>
+                            <p class="fm-leise" data-i18n="rueckmeldung.telegram_hinweis">Hängt die Anzeige im Auto? Schreib dem Panoptes-Bot /fehler – dann geht derselbe Bericht raus.</p>
                         </div>
 
                         <button class="fm-knopf" type="button" id="fmSenden" data-i18n="rueckmeldung.absenden">Absenden</button>
@@ -189,6 +193,12 @@
                     + ' · ' + (gg.frisch || tx('rueckmeldung.gang_alt', 'nicht frisch'))
                     + (gg.modell ? ' · ' + gg.modell : '');
                 $('fmAnzeige').textContent = anzeigeText(anzeigeAngaben());
+                // 0.1.38.14 (P3): Bildschirm des Geräts, Tacho-Größenprofil und Kartenquelle – so wie sie mitgehen
+                var bs = d.bildschirm || {};
+                $('fmBildschirm').textContent = bs.breite ? bs.breite + ' × ' + bs.hoehe + ' px · ' + bs.dpi + ' dpi'
+                    : tx('rueckmeldung.unbekannt', 'unbekannt');
+                $('fmTacho').textContent = tachoText(d.tacho || {});
+                $('fmKarte').textContent = d.karte ? tx('kartenquelle.q_' + d.karte, d.karte) : tx('rueckmeldung.unbekannt', 'unbekannt');
                 var abd = d.abdeckung || {};
                 $('fmAbdModell').textContent = !abd.modell || abd.modell === 'unbekannt' ? tx('rueckmeldung.unbekannt', 'unbekannt') : abd.modell;
                 $('fmAbdFirmware').textContent = abd.firmware || tx('rueckmeldung.unbekannt', 'unbekannt');
@@ -246,6 +256,14 @@
             function anzeigeAngaben() {
                 var m = /Chrome\/(\d+)/.exec(navigator.userAgent || '');
                 return { webview: m ? parseInt(m[1], 10) : 0, breite: window.innerWidth || 0, dpr: window.devicePixelRatio || 0 };
+            }
+            function tachoText(t) {
+                if (t.profil == null) return tx('rueckmeldung.unbekannt', 'unbekannt');
+                var s = tx('rueckmeldung.tacho_profil', 'Profil') + ' ' + t.profil + ' · '
+                    + (t.bestaetigt ? tx('rueckmeldung.tacho_bestaetigt', 'bestätigt') : tx('rueckmeldung.tacho_offen', 'nicht bestätigt'));
+                if (!t.bestaetigt && t.vorschlag != null) s += ' (' + tx('rueckmeldung.tacho_vorschlag', 'Vorschlag') + ' ' + t.vorschlag + ')';
+                if (t.geraet) s += ' · ' + t.geraet;
+                return s;
             }
             function anzeigeText(a) {
                 return (a.webview ? 'WebView ' + a.webview : 'WebView ?') + ' · ' + a.breite + ' px · ' + (Math.round(a.dpr * 100) / 100);

@@ -227,6 +227,35 @@ public final class FehlerMelden {
         return sb.toString();
     }
 
+    /** 0.1.38.14 (P3): so viele START_STUFE-Zeilen gehen höchstens mit. */
+    public static final int START_MAX = 8;
+
+    /**
+     * 0.1.38.14 (P3): die letzten START_STUFE-Zeilen aus dem Launcher-Ereignisprotokoll (gestaffelter Start). Die
+     * Diagnose-Auswahl nimmt nur Warn- und Fehlerzeilen, darum fehlten sie im Auszug. Geschwärzt, gekürzt.
+     */
+    public static String startStufen(String roh, int max) {
+        if (roh == null || roh.isEmpty() || max <= 0) return "";
+        java.util.ArrayList<String> z = new java.util.ArrayList<>();
+        for (String l : roh.split("\\r?\\n")) {
+            if (l.contains("START_STUFE")) z.add(kuerzen(nachschwaerzen(l.trim()), 200));
+        }
+        if (z.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder("[start]\n");
+        for (int i = Math.max(0, z.size() - max); i < z.size(); i++) sb.append(z.get(i)).append('\n');
+        return sb.toString();
+    }
+
+    /** 0.1.38.14 (P3): Bildschirm in Pixeln und dpi (Seal U ≠ Surf); unplausible Werte → null. */
+    public static JSONObject bildschirm(int breite, int hoehe, int dpi) {
+        if (breite < 100 || breite > 10000 || hoehe < 100 || hoehe > 10000 || dpi < 50 || dpi > 1000) return null;
+        try {
+            return new JSONObject().put("breite", breite).put("hoehe", hoehe).put("dpi", dpi);
+        } catch (org.json.JSONException e) {
+            return null;
+        }
+    }
+
     static String tag(long ms) {
         SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd", Locale.ROOT);
         f.setTimeZone(TimeZone.getTimeZone("UTC"));

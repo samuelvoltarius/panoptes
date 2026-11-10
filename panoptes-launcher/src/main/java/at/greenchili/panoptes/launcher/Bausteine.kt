@@ -70,6 +70,7 @@ class Ui(val ctx: Context, val p: Palette, val cockpit: Boolean) {
     fun titel(text: String) = TextView(ctx).apply {
         this.text = text.uppercase(); textSize = 13f; typeface = sora(600); letterSpacing = 0.08f
         setTextColor(titelFarbe); maxLines = 1
+        ellipsize = android.text.TextUtils.TruncateAt.END   // 0.1.38.14: lange Titel überlappen nicht, sie enden mit „…“
     }
 
     /** Große Zahl wie `.big`/`.h-range` (Sora 700). */

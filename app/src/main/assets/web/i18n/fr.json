@@ -700,7 +700,7 @@
   "login": {
     "subtitle": "Saisissez la clé de votre voiture pour entrer",
     "device_id": "ID de la voiture",
-    "find_hint": "Vous le trouverez sur l’écran de la voiture sous Réglages → Avancé (ancien) → « Votre code d’accès ».",
+    "find_hint": "Vous le trouverez sur l’écran de la voiture sous Réglages → Tous les réglages → Connexions → « Votre code d’accès ».",
     "login_btn": "Se connecter",
     "privacy": "Tout reste sur votre propre appareil.",
     "unknown_device": "Cet appareil nous est inconnu",
@@ -2092,6 +2092,7 @@
     "dauer_hinweis": "Remarque : filmer en continu est juridiquement délicat en Allemagne, en Autriche et en Suisse. Conseillé : laisser l’enregistrement sur « Désactivé » et activer « Sauvegarder les événements automatiquement » dans les réglages du gardien. Panoptes ne sauvegarde alors qu’en cas de freinage d’urgence ou de choc."
   },
   "events": {
+    "aufnahme_fehlt": "Cet enregistrement n’existe plus.",
     "select_date": "Choisir une date",
     "all": "Tout",
     "title_recordings": "{prefix} Enregistrements",
@@ -5068,6 +5069,8 @@
     "page_display": "Écran"
   },
   "navi": {
+    "via_mehr": "Plus : arrêts",
+    "karte_aus": "La carte est désactivée. Pour l’activer : Réglages → Tous les réglages → Source de carte.",
     "rate": "Trop de requêtes – veuillez patienter 2 minutes.",
     "slow": "Le planificateur n'a pas répondu à temps. Veuillez réessayer.",
     "nothing": "Rien trouvé",
@@ -5343,6 +5346,13 @@
     "projektion_note": "Ouvre l'appli de la voiture pour Android Auto ou CarPlay."
   },
   "system": {
+    "zugang_titel": "Votre code d’accès",
+    "zugang_text": "Avec ce code, tu te connectes à Panoptes dans un navigateur ou sur ton téléphone. Ne le partage pas.",
+    "zugang_zeigen": "Afficher",
+    "zugang_verdecken": "Masquer",
+    "zugang_frage": "Afficher le code d’accès maintenant ? Vérifie que personne ne regarde.",
+    "zugang_nur_display": "Le code d’accès n’est affiché que sur l’écran de la voiture.",
+    "zugang_fehler": "Le code d’accès n’est pas lisible pour le moment.",
     "weitere_title": "Autres réglages",
     "weitere_lead": "Démarrage au contact, avis Telegram et durée de conservation des journaux.",
     "overview_title": "Que souhaitez-vous régler ?",
@@ -6109,8 +6119,7 @@
     "fahrt_titel": "Indisponible pendant la conduite",
     "fahrt_text": "Cette page ne fonctionne qu’à l’arrêt. En route, vous avez Accueil, Navigation et le Gardien.",
     "zur_start": "Accueil",
-    "zur_navi": "Navigation",
-    "erweitert": "Avancé (ancien)"
+    "zur_navi": "Navigation"
   },
   "kartenquelle": {
     "titel": "Choisir la source de carte",
@@ -6130,7 +6139,8 @@
     "geraet": "Ce choix vaut pour cet appareil ou ce navigateur.",
     "kurz": "Aucune source de carte choisie",
     "geraet_auto": "Ce choix vaut pour toute la voiture, y compris la carte sur l’écran.",
-    "fehler": "L’enregistrement a échoué. La source de carte n’a pas changé."
+    "fehler": "L’enregistrement a échoué. La source de carte n’a pas changé.",
+    "zeit": "La voiture ne répond pas pour le moment. La source de carte n’a pas changé – réessayez dans un instant."
   },
   "speedcam": {
     "karte_titel": "Radars sur la carte",
@@ -7126,7 +7136,15 @@
       "text": "Vous comptez déjà de façon anonyme. Nouveau : Panoptes peut aussi envoyer le modèle de votre voiture (par exemple Seal) et le niveau DiLink. Aucun numéro de châssis, aucune plaque, aucun lieu, aucun kilométrage. Nous voyons ainsi quelles voitures utilisent Panoptes. Vous pouvez désactiver cela à tout moment, ce qui le supprime aussi sur le serveur.",
       "ja": "Oui, envoyer le modèle",
       "nein": "Non, laisser ainsi"
-    }
+    },
+    "auto_bildschirm": "Écran",
+    "auto_tacho": "Écran conducteur (compteur)",
+    "auto_karte": "Source de carte",
+    "tacho_profil": "Profil",
+    "tacho_bestaetigt": "confirmé",
+    "tacho_offen": "non confirmé",
+    "tacho_vorschlag": "proposition",
+    "telegram_hinweis": "L’écran de la voiture est figé ? Envoyez /fehler au bot Panoptes – le même rapport part."
   },
   "assistenz": {
     "hinweis_titel": "Désactiver un système de sécurité",

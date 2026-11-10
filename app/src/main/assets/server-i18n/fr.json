@@ -547,7 +547,8 @@
       "menu": "/menue – Tous les boutons d’un coup d’œil",
       "updates": "/updates – Mettre à jour Panoptes et le lanceur",
       "kopplungen": "/kopplungen – Voir et retirer les appareils appairés (téléphone perdu)",
-      "bilder": "/bilder – Photos et vidéos vers Telegram (`/bilder aus` désactive)"
+      "bilder": "/bilder – Photos et vidéos vers Telegram (`/bilder aus` désactive)",
+      "fehler": "/fehler – Envoyer un rapport d’erreur, même si l’écran est figé (`/fehler carte figée`)"
     },
     "buttons": {
       "status": "📊 État",
@@ -1133,6 +1134,14 @@
       "frage": "Vraiment retirer l’appareil n° {0} ? Il ne pourra plus rien faire avec la voiture avant un nouvel appairage.",
       "btn_ja": "Oui, retirer",
       "btn_nein": "Annuler"
+    },
+    "fehler": {
+      "laeuft": "📝 Je prépare le rapport d’erreur …",
+      "gesendet": "✅ Rapport d’erreur envoyé. Code : {0}",
+      "gesendet_ohne": "✅ Rapport d’erreur envoyé.",
+      "gemerkt": "📥 Pas d’internet : le rapport est gardé et partira dès que la voiture sera en ligne.",
+      "zuviel": "⏳ Assez de rapports envoyés aujourd’hui. Réessayez demain.",
+      "nicht": "⚠️ Le rapport n’est pas parti. Panoptes ne répond pas pour le moment – réessayez /fehler dans un instant."
     }
   },
   "vehicle_control": {

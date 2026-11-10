@@ -690,6 +690,55 @@
       "nl": [
         "Met de auto geparkeerd toont Panoptes geen verouderde versnelling meer. Een oude versnellingswaarde telt niet meer als rit."
       ]
+    },
+    {
+      "version": "0.1.38.14",
+      "versionCode": 78,
+      "de": [
+        "Das alte Design ist ganz weg: Aufnahmen und alle Seiten öffnen sich jetzt immer in der neuen Oberfläche.",
+        "Die Meldung beim Abstellen kommt zuverlässig an, auch wenn der Bot gerade erst startet. Fahrten werden sicherer erkannt.",
+        "Die Karte hängt beim Umschalten der Kartenquelle nicht mehr. Hängt die Anzeige doch, schickst du mit /fehler einen Fehlerbericht über Telegram.",
+        "Der Launcher passt sich dem Bildschirm an. Die Größe wählst du selbst: Automatisch, Kleiner oder Größer.",
+        "Launcher-Einstellungen und Navi sind einfacher: Seltenes steht unter „Erweitert“, im Navi geht es von Ziel über Vorschau zu Start.",
+        "Neue Karte „Dein Zugangscode“ unter Einstellungen → Alle Einstellungen → Verbindungen: verdeckt, „Zeigen“ fragt erst und verdeckt nach 60 Sekunden wieder. Nur am Bildschirm im Auto.",
+        "Aufnahmen: „Zurück“ führt aus dem Video zur Liste, die App bleibt offen. Fehlt eine Aufnahme, steht das jetzt da. Während der Fahrt bleiben Videos gesperrt."
+      ],
+      "en": [
+        "The old design is gone: recordings and all pages now always open in the new interface.",
+        "The message when you park now arrives reliably, even if the bot is just starting. Trips are detected more reliably.",
+        "The map no longer freezes when you switch the map source. If the screen does hang, send an error report via Telegram with /fehler.",
+        "The launcher adapts to your screen. You choose the size yourself: Automatic, Smaller or Larger.",
+        "Launcher settings and navigation are simpler: rarely used items are under “Advanced”, and navigation goes from destination to preview to start.",
+        "New card “Your access code” under Settings → All settings → Connections: hidden, “Show” asks first and hides it again after 60 seconds. Only on the car screen.",
+        "Recordings: “Back” takes you from the video to the list, the app stays open. If a recording is missing, it now says so. Videos stay blocked while driving."
+      ],
+      "fr": [
+        "L’ancien design a disparu : les enregistrements et toutes les pages s’ouvrent désormais dans la nouvelle interface.",
+        "Le message à l’arrêt arrive de façon fiable, même si le bot vient de démarrer. Les trajets sont mieux reconnus.",
+        "La carte ne se bloque plus en changeant de source. Si l’affichage se fige quand même, envoie un rapport d’erreur par Telegram avec /fehler.",
+        "Le launcher s’adapte à l’écran. Tu choisis la taille toi-même : Automatique, Plus petit ou Plus grand.",
+        "Les réglages du launcher et la navigation sont plus simples : le rare est sous « Avancé », la navigation va de la destination à l’aperçu puis au départ.",
+        "Nouvelle carte « Votre code d’accès » sous Réglages → Tous les réglages → Connexions : masqué, « Afficher » demande d’abord et le masque après 60 secondes. Seulement sur l’écran de la voiture.",
+        "Enregistrements : « Retour » ramène de la vidéo à la liste, l’app reste ouverte. Si un enregistrement manque, c’est indiqué. Pendant la conduite, les vidéos restent bloquées."
+      ],
+      "it": [
+        "Il vecchio design non c’è più: registrazioni e pagine si aprono ora sempre nella nuova interfaccia.",
+        "Il messaggio quando parcheggi arriva in modo affidabile, anche se il bot sta appena partendo. I viaggi vengono riconosciuti meglio.",
+        "La mappa non si blocca più cambiando sorgente. Se lo schermo si blocca comunque, invia una segnalazione via Telegram con /fehler.",
+        "Il launcher si adatta allo schermo. La dimensione la scegli tu: Automatica, Più piccolo o Più grande.",
+        "Impostazioni del launcher e navigazione sono più semplici: il raro sta in «Avanzate», la navigazione va da meta ad anteprima ad avvio.",
+        "Nuova scheda “Il tuo codice di accesso” in Impostazioni → Tutte le impostazioni → Connessioni: nascosto, “Mostra” chiede prima e lo nasconde dopo 60 secondi. Solo sullo schermo dell’auto.",
+        "Registrazioni: “Indietro” porta dal video all’elenco, l’app resta aperta. Se manca una registrazione, ora lo dice. Durante la guida i video restano bloccati."
+      ],
+      "nl": [
+        "Het oude ontwerp is weg: opnames en alle pagina’s openen nu altijd in de nieuwe interface.",
+        "Het bericht bij het parkeren komt betrouwbaar aan, ook als de bot net start. Ritten worden beter herkend.",
+        "De kaart loopt niet meer vast bij het wisselen van kaartbron. Hangt het scherm toch, stuur dan met /fehler een foutmelding via Telegram.",
+        "De launcher past zich aan het scherm aan. Je kiest het formaat zelf: Automatisch, Kleiner of Groter.",
+        "Launcher-instellingen en navigatie zijn eenvoudiger: zeldzame zaken staan onder „Geavanceerd”, navigatie gaat van bestemming via voorbeeld naar start.",
+        "Nieuwe kaart ‘Je toegangscode’ onder Instellingen → Alle instellingen → Verbindingen: verborgen, ‘Tonen’ vraagt eerst en verbergt hem na 60 seconden weer. Alleen op het scherm in de auto.",
+        "Opnames: ‘Terug’ brengt je van de video naar de lijst, de app blijft open. Ontbreekt een opname, dan staat dat er nu. Tijdens het rijden blijven video’s geblokkeerd."
+      ]
     }
   ]
 }

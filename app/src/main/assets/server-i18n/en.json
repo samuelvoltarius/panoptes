@@ -541,7 +541,8 @@
       "menu": "/menue – All buttons at a glance",
       "updates": "/updates – Update Panoptes and the launcher",
       "kopplungen": "/kopplungen – Show and remove paired devices (lost phone)",
-      "bilder": "/bilder – Pictures and videos to Telegram (`/bilder aus` turns them off)"
+      "bilder": "/bilder – Pictures and videos to Telegram (`/bilder aus` turns them off)",
+      "fehler": "/fehler – Send a bug report, even when the screen is frozen (`/fehler map frozen`)"
     },
     "buttons": {
       "status": "📊 Status",
@@ -1127,6 +1128,14 @@
       "frage": "Really remove device no. {0}? It can do nothing with the car until it is paired again.",
       "btn_ja": "Yes, remove",
       "btn_nein": "Cancel"
+    },
+    "fehler": {
+      "laeuft": "📝 Collecting the bug report …",
+      "gesendet": "✅ Bug report sent. Code: {0}",
+      "gesendet_ohne": "✅ Bug report sent.",
+      "gemerkt": "📥 No internet: the report is saved and will be sent once the car is online.",
+      "zuviel": "⏳ Enough reports have been sent today. Please try again tomorrow.",
+      "nicht": "⚠️ The bug report was not sent. Panoptes is not responding right now – please try /fehler again in a moment."
     }
   },
   "vehicle_control": {

@@ -9,8 +9,7 @@
  *  - Offline-Hinweis, wenn /status zweimal hintereinander nicht antwortet.
  *  - Fahr-Modus (Zündung an und Gang D/R/M/S, oder GPS-Tempo > 1,5 m/s ≈ 5 km/h): keine Eingabefelder;
  *    Seiten außerhalb von Start, Navigation und Wächter-Übersicht werden durch einen Hinweis ersetzt.
- *  - „Erweitert (alt)“: öffnet die alten Bildschirme der App, falls die Hülle das anbietet
- *    (PanoptesHuelle.erweitert() oder AndroidBridge.openLegacy()); sonst unsichtbar.
+ *  - 0.1.38.14: kein „Erweitert (alt)“ mehr (die alte native Oberfläche ist raus).
  *
  * Nur lesen: /status wird abgefragt, es geht nie ein Befehl ans Auto. ES5 (Chrome-58-Untergrenze).
  */
@@ -26,8 +25,7 @@
         'anzeige.fahrt_titel': 'Während der Fahrt nicht verfügbar',
         'anzeige.fahrt_text': 'Diese Seite geht nur im Stand. Unterwegs gibt es Start, Navigation und den Wächter.',
         'anzeige.zur_start': 'Start',
-        'anzeige.zur_navi': 'Navigation',
-        'anzeige.erweitert': 'Erweitert (alt)'
+        'anzeige.zur_navi': 'Navigation'
     };
     function t(k) {
         try { if (window.BYD && BYD.i18n && BYD.i18n.t) { var v = BYD.i18n.t(k); if (v && v !== k) return v; } } catch (e) {}
@@ -96,30 +94,8 @@
         top.insertBefore(b, top.firstChild);
     }
 
-    // ---- „Erweitert (alt)“: nur, wenn die Hülle die alten Bildschirme öffnen kann
-    // Hülle ab kern 0.1.7.1: html[data-android-app] + Link panoptes-app://erweitert (Rückweg: Zurück-Taste).
-    // Nur in der Vollflächen-Hülle (AndroidBridge allein gibt es auch in alten eingebetteten Seiten).
-    function erweitertMoeglich() {
-        return document.documentElement.hasAttribute('data-android-app') || /PanoptesDisplay/.test(navigator.userAgent || '');
-    }
-    function erweitertOeffnen() {
-        var b = window.AndroidBridge;
-        if (b && typeof b.openLegacy === 'function') b.openLegacy();             // ab 0.1.8
-        else if (b && typeof b.navigate === 'function') b.navigate('erweitert'); // 0.1.7.2
-        else location.href = 'panoptes-app://erweitert';
-    }
-    function erweitertEinbauen() {
-        if (!erweitertMoeglich() || seite() !== 'system.html') return;   // Menüpunkt unter System
-        var sub = document.querySelector('.pn-subnav');
-        if (!sub || sub.querySelector('.pn-erweitert')) return;
-        var a = el('a', 'pn-erweitert', t('anzeige.erweitert'));
-        a.href = 'panoptes-app://erweitert';
-        a.onclick = function (e) {
-            var b = window.AndroidBridge;
-            if (b && (typeof b.openLegacy === 'function' || typeof b.navigate === 'function')) { e.preventDefault(); erweitertOeffnen(); }
-        };
-        sub.appendChild(a);
-    }
+    // 0.1.38.14 P1 (Alfred 06.11. „das Design von Overdrive muss raus“): kein Menüpunkt „Erweitert (alt)“ mehr –
+    // die alte native Oberfläche ist aus der Web-Oberfläche nicht mehr erreichbar.
 
     // ---- Fahrt und Erreichbarkeit aus /status (nur lesen)
     var fehler = 0;
@@ -143,10 +119,16 @@
             if (fehler >= 2) setzen(true, fahrt);
         });
     }
+    function videosAnhalten() {
+        var v = document.getElementsByTagName('video');
+        for (var i = 0; i < v.length; i++) { try { if (!v[i].paused) v[i].pause(); } catch (e) {} }
+    }
     function setzen(off, f) {
         var aenderung = off !== offline || f !== fahrt;
         offline = off; fahrt = f;
         if (fahrt) document.documentElement.setAttribute('data-fahrt', '1');
+        // 0.1.38.14: auf gesperrten Seiten (z. B. Aufnahmen-Player) beim Fahren kein Bild und kein Ton weiterlaufen lassen
+        if (fahrt && !FAHRT_SEITEN[seite()]) videosAnhalten();
         else document.documentElement.removeAttribute('data-fahrt');
         if (aenderung) bandZeigen();
     }
@@ -157,7 +139,6 @@
         sperreBauen();
         document.body.appendChild(sperre);
         zurueckEinbauen();
-        erweitertEinbauen();
         // Seitenwechsel über Links: Ladebalken zeigen
         document.addEventListener('click', function (e) {
             var a = e.target;
@@ -173,7 +154,7 @@
         if (window.BYD && BYD.i18n && typeof BYD.i18n.onChange === 'function') {
             BYD.i18n.onChange(function () { sperreBauen(); bandZeigen(); });
         }
-        setTimeout(function () { sperreBauen(); zurueckEinbauen(); erweitertEinbauen(); }, 1500);
+        setTimeout(function () { sperreBauen(); zurueckEinbauen(); }, 1500);
     }
 
     window.PanoptesAnzeige = { pruefen: pruefen, fahrt: function () { return fahrt; } };

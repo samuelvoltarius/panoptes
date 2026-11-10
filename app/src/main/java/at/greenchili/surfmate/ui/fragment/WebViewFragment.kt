@@ -144,6 +144,18 @@ class WebViewFragment : Fragment() {
         /** User-Agent-Zusatz der vollflächigen Hülle am Auto-Display. */
         const val DISPLAY_UA = "PanoptesDisplay/1"
 
+        /**
+         * 0.1.38.14: Ist diese Anfrage ein Video? Nur der PFAD zählt, nie Query oder Fragment:
+         * `events.html?file=x.mp4` ist eine Seite (früher als video/mp4 ausgeliefert → schwarzes Bild),
+         * `/video/x.mp4` ist ein Video.
+         */
+        @JvmStatic
+        fun istVideoUrl(url: String?): Boolean {
+            if (url == null) return false
+            val pfad = url.substringBefore('#').substringBefore('?')
+            return pfad.endsWith(".mp4")
+        }
+
         /** Wie [spliceEmbedChrome], aber ohne die Web-Navigation auszublenden. */
         @JvmStatic
         fun spliceAppChrome(html: String): String {
@@ -490,15 +502,6 @@ class WebViewFragment : Fragment() {
     // with either the selected URIs or null on cancel.
     private var pendingFileCallback: ValueCallback<Array<Uri>>? = null
 
-    // Single-flight guard for openEventByFilename: a deep-link tap that resolves
-    // slowly (the scan is a sync HTTP round-trip to a warming daemon) invites a
-    // second tap; without this each tap spawns a thread that navigates, pushing
-    // two player fragments or firing navigate() after the destination already
-    // moved. Set true on entry, cleared once navigation resolves. @Volatile:
-    // set on the worker's UI post, read on the UI thread in shouldOverride.
-    @Volatile
-    private var deepLinkInFlight = false
-
     // Picker launcher — registered in onCreate so it survives config changes.
     //
     // We use ACTION_GET_CONTENT (via ActivityResultContracts.GetContent) instead
@@ -559,17 +562,6 @@ class WebViewFragment : Fragment() {
     private val vollbild: Boolean
         get() = arguments?.getBoolean(ARG_VOLLBILD, false) == true
 
-    /** Alte native Oberfläche (Dashboard + Leiste), „Erweitert (alt)“. */
-    private fun oeffneErweitert() {
-        try {
-            if (!isAdded) return
-            androidx.navigation.fragment.NavHostFragment.findNavController(this)
-                .navigate(R.id.dashboardFragment)
-        } catch (e: Exception) {
-            android.util.Log.w("WebViewFragment", "Erweitert (alt) nicht erreichbar: ${e.message}")
-        }
-    }
-
     @SuppressLint("SetJavaScriptEnabled")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -595,7 +587,7 @@ class WebViewFragment : Fragment() {
         injectAuthCookie()
         if (vollbild) {
             // Zurück = Web-Zurück; auf der Startseite App minimieren (Android-Standard, Koordination 21.10.).
-            // Die alte Oberfläche gibt es nur noch über System → „Erweitert (alt)“ (openLegacy).
+            // 0.1.38.14 P1: Die alte Oberfläche ist nicht mehr erreichbar.
             requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner,
                 object : androidx.activity.OnBackPressedCallback(true) {
                     override fun handleOnBackPressed() {
@@ -848,8 +840,10 @@ class WebViewFragment : Fragment() {
                         return synthesize504("CDN unreachable")
                     }
 
+                    // 0.1.38.14: nur der PFAD zählt – events.html?file=….mp4 ist eine Seite, kein Video
+                    val istVideo = istVideoUrl(url)
                     // LOGGING: Check if we are seeing the video request
-                    if (url.endsWith(".mp4")) {
+                    if (istVideo) {
                         android.util.Log.d("WebViewProxy", "Intercepting Video: $url")
                     }
 
@@ -959,7 +953,7 @@ class WebViewFragment : Fragment() {
                             isTextMime -> "utf-8"
                             else -> null
                         }
-                        if (url.endsWith(".mp4")) mime = "video/mp4"
+                        if (istVideo) mime = "video/mp4"
 
                         // Only the app's WebView reaches this intercept, so the
                         // embed chrome never lands on the tunnel / PWA clients.
@@ -1037,7 +1031,7 @@ class WebViewFragment : Fragment() {
                             if (it.size == length) at.greenchili.surfmate.ui.AssetSpeicher.merken(url, mime, encoding, headers, it)
                         }
 
-                        if (url.endsWith(".mp4")) {
+                        if (istVideo) {
                             android.util.Log.d("WebViewProxy", "Serving Video: ${connection.responseCode} len=$length mime=$mime")
                             // Log all response headers for debugging
                             headers.forEach { (k, v) ->
@@ -1220,46 +1214,12 @@ class WebViewFragment : Fragment() {
                     view: WebView?, request: WebResourceRequest?
                 ): Boolean {
                     val url = request?.url?.toString() ?: return false
-                    if (url.startsWith(ERWEITERT_URL)) {
-                        oeffneErweitert()
-                        return true
-                    }
-                    
-                    // Intercept events page links — use native RecordingLibraryFragment
-                    // which has reliable video playback via VideoView
-                    if (url.contains("/events.html") || url.endsWith("/events")) {
-                        try {
-                            // Extract filter / file params if present
-                            // (e.g., events.html?filter=sentry&file=event_20260512_143022.mp4)
-                            val uri = android.net.Uri.parse(url)
-                            val filter = uri.getQueryParameter("filter")
-                            val file = uri.getQueryParameter("file")
-                            // Parking page → "Open events": the native list narrows
-                            // to that park's clips (RecordingsFragment shows a
-                            // dismissible chip for it).
-                            val parkingSessionId = uri.getQueryParameter("parkingSessionId")
-                            // A `file=` deep link (from a notification or the Log tab)
-                            // means "open THIS clip", not "show the list". The native
-                            // recordings fragment ignores the file arg, so resolve the
-                            // filename to its path and jump straight to the player.
-                            // Falls back to the recordings list if it can't be resolved
-                            // (deleted, still recording, or the daemon is warming up).
-                            if (!file.isNullOrBlank()) {
-                                openEventByFilename(file, filter)
-                            } else {
-                                val bundle = android.os.Bundle().apply {
-                                    if (filter != null) putString("filter", filter)
-                                    if (!parkingSessionId.isNullOrBlank()) putString("parkingSessionId", parkingSessionId)
-                                }
-                                androidx.navigation.fragment.NavHostFragment.findNavController(this@WebViewFragment)
-                                    .navigate(R.id.recordingsFragment, bundle)
-                            }
-                        } catch (e: Exception) {
-                            android.util.Log.e("WebView", "Failed to navigate to events: ${e.message}")
-                        }
-                        return true
-                    }
-                    
+                    // 0.1.38.14 P1: der alte Link „Erweitert (alt)“ führt nirgends mehr hin (alte Oberfläche raus).
+                    if (url.startsWith(ERWEITERT_URL)) return true
+                    // 0.1.38.14 P1: events.html (auch ?id=/?file=/?filter=) bleibt in der Web-Oberfläche – events.js
+                    // wertet die Parameter aus, anzeige.js sperrt die Seite während der Fahrt. Früher ging es hier
+                    // in die alte native Aufnahmenliste bzw. den Player ohne Fahrsperre.
+
                     if (url.startsWith("http://127.0.0.1:") || url.startsWith("http://localhost:")) {
                         return false
                     }
@@ -1393,82 +1353,6 @@ class WebViewFragment : Fragment() {
                 || page.host == "localhost")
                 && (page.path == "/assistant"
                 || page.path == "/assistant.html")
-    }
-
-    /**
-     * Resolve a recording filename (from a notification / Log-tab deep link) to
-     * its on-disk path and open it directly in the native video player. The
-     * scan does a synchronous HTTP fetch to the daemon, so it runs off the UI
-     * thread; navigation is posted back to the main thread.
-     *
-     * Falls back to the recordings LIST (pre-selecting the type tab via
-     * `filter`) when the clip can't be resolved — deleted, still being written
-     * (`.mp4.tmp`), or the daemon index is still warming up. This preserves the
-     * old behavior for those edge cases instead of dead-ending on a black
-     * player.
-     */
-    private fun openEventByFilename(filename: String, filter: String?) {
-        // Single-flight: ignore re-taps while a resolve is already running.
-        if (deepLinkInFlight) return
-        // Capture the activity ON THE UI THREAD (shouldOverrideUrlLoading runs
-        // here) — never read the Fragment.activity field from the worker.
-        val act = activity ?: return
-        val appCtx = act.applicationContext
-        deepLinkInFlight = true
-        Thread({
-            var match: at.greenchili.surfmate.ui.model.RecordingFile? = null
-            try {
-                // One bounded re-scan: a freshly-fired notification can arrive
-                // before the daemon has indexed the clip (scan returns empty
-                // during warmup). Retry a couple of times before falling back,
-                // mirroring how events.js polls inflight.
-                var attempts = 0
-                while (attempts < 3) {
-                    val all = at.greenchili.surfmate.ui.util.RecordingScanner.scanRecordings(appCtx)
-                    match = all.firstOrNull { it.file.name == filename }
-                    if (match != null || attempts == 2) break
-                    attempts++
-                    try { Thread.sleep(1200) } catch (ie: InterruptedException) {
-                        Thread.currentThread().interrupt(); break
-                    }
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("WebView", "openEventByFilename scan failed: ${e.message}")
-            }
-            val resolved = match
-            act.runOnUiThread {
-                try {
-                    // Guard against the fragment being torn down while we scanned.
-                    if (!isAdded || isDetached || view == null) return@runOnUiThread
-                    val nav = androidx.navigation.fragment.NavHostFragment
-                        .findNavController(this@WebViewFragment)
-                    if (resolved != null) {
-                        val bundle = android.os.Bundle().apply {
-                            putString(
-                                at.greenchili.surfmate.ui.fragment.VideoPlayerFragment.ARG_VIDEO_PATH,
-                                resolved.file.absolutePath
-                            )
-                            putString(
-                                at.greenchili.surfmate.ui.fragment.VideoPlayerFragment.ARG_VIDEO_TITLE,
-                                resolved.file.name
-                            )
-                        }
-                        nav.navigate(R.id.action_global_videoPlayer, bundle)
-                    } else {
-                        // Unresolved (deleted / still recording / daemon warming)
-                        // — open the list, pre-selecting the type tab via `filter`.
-                        val bundle = android.os.Bundle().apply {
-                            if (filter != null) putString("filter", filter)
-                        }
-                        nav.navigate(R.id.recordingsFragment, bundle)
-                    }
-                } catch (e: Exception) {
-                    android.util.Log.e("WebView", "openEventByFilename navigate failed: ${e.message}")
-                } finally {
-                    deepLinkInFlight = false
-                }
-            }
-        }, "OpenEventDeepLink").start()
     }
 
     /**
@@ -1715,7 +1599,7 @@ class WebViewFragment : Fragment() {
          */
         /** „Erweitert (alt)“ aus der Web-Oberfläche (Neubau 2 prüft auf AndroidBridge.openLegacy). */
         @android.webkit.JavascriptInterface
-        fun openLegacy(): String = navigate("erweitert")
+        fun openLegacy(): String = "entfernt"   // 0.1.38.14 P1: alte Oberfläche raus
 
         /**
          * K2 (0.1.38.11): „Jetzt auf DiLink X umstellen“ von der Wächter-Seite. Nur die drei bekannten Modi; die
@@ -1819,7 +1703,7 @@ class WebViewFragment : Fragment() {
         fun navigate(dest: String): String {
             val destinationId = when (dest) {
                 "bydCloud" -> R.id.bydCloudFragment
-                "erweitert" -> R.id.dashboardFragment
+                // 0.1.38.14 P1: "erweitert" (alte Oberfläche) gibt es nicht mehr
                 else -> return "unknown_destination"
             }
             return try {

@@ -141,8 +141,8 @@
             // 0.1.20 Tempo: nichts Neues → in dieser Sitzung nicht mehr laden (app-shell liest den Merker)
             if (!s.versionen.length && !s.firmware) { try { window.sessionStorage.setItem('pn.neu.ok', '1'); } catch (e) {} return; }
             var versuche = 0;
-            (function warte() {   // erst nach dem Haftungs-Dialog
-                if (document.getElementById('pnHinweise') && versuche++ < 120) { setTimeout(warte, 1000); return; }
+            (function warte() {   // erst nach dem Haftungs-Dialog und nach einem offenen Fenster (z. B. Ladekosten), 0.1.38.14
+                if ((document.getElementById('pnHinweise') || document.querySelector('.modal-backdrop')) && versuche++ < 120) { setTimeout(warte, 1000); return; }
                 dialog(s);
             })();
         }, function () {});

@@ -241,6 +241,7 @@ public final class AbschaltBericht {
         letztesAus = 0;
         letztesAn = 0;
         gemeldetImSpeicher = -1;
+        offen = null;
     }
 
     /** Zündung aus: Nachlauf planen (blockiert den Übergang nie). */
@@ -265,9 +266,47 @@ public final class AbschaltBericht {
                 }
                 e = exec;
             }
-            e.schedule(() -> nachlauf(jetzt, bericht), VERZOEGERUNG_MS, TimeUnit.MILLISECONDS);
+            offen = new long[] {jetzt, bericht ? 1 : 0};
+            e.schedule(() -> nachlaufEinmal(jetzt, bericht), VERZOEGERUNG_MS, TimeUnit.MILLISECONDS);
         } catch (Throwable ignored) {
         }
+    }
+
+    /** 0.1.38.14: noch offener Nachlauf {ausMs, bericht 0/1} oder null; je Abstellen läuft er genau einmal. */
+    private static volatile long[] offen;
+    private static final Object EINMAL = new Object();
+
+    /** Den Nachlauf für {@code ausMs} genau einmal ausführen (geplanter Lauf oder vorParkEnde). */
+    static void nachlaufEinmal(long ausMs, boolean bericht) {
+        synchronized (EINMAL) {
+            long[] o = offen;
+            if (o == null || o[0] != ausMs) return;   // schon gelaufen (z. B. vor dem Beenden im onOnly-Modus)
+            offen = null;
+            nachlauf(ausMs, bericht);
+        }
+    }
+
+    /** Wie lange vor dem Beenden noch gewartet werden muss, damit die Fahrt gespeichert und der Bericht fällig ist. */
+    static long restWarteMs(long ausMs, long jetzt) {
+        return Math.max(0L, Math.min(VERZOEGERUNG_MS, ausMs + VERZOEGERUNG_MS - jetzt));
+    }
+
+    /**
+     * 0.1.38.14: Betriebsart „nur bei Fahrzeug an“ beendet den Kamera-Dienst beim Abstellen (parkTerminate). Vorher den
+     * fälligen Bericht senden: Rest der üblichen Wartezeit abwarten, dann einmal ausführen. Blockiert höchstens
+     * {@link #VERZOEGERUNG_MS} plus Nachfassen.
+     */
+    public static void vorParkEnde() {
+        long[] o = offen;
+        if (o == null) return;
+        log("vor dem Beenden (nur bei Fahrzeug an): Bericht wird zuerst gesendet");
+        try {
+            Thread.sleep(restWarteMs(o[0], System.currentTimeMillis()));
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            return;
+        }
+        nachlaufEinmal(o[0], o[1] == 1);
     }
 
     /** Zündung an: ein noch wartender Nachlauf entfällt. */
@@ -291,34 +330,67 @@ public final class AbschaltBericht {
         return id;
     }
 
+    /** 0.1.38.14: jede Entscheidung im Nachlauf sichtbar (vorher stille returns, Befund ABSTELL_MELDUNG_CODE_013813). */
+    static void log(String text) {
+        try {
+            at.greenchili.surfmate.daemon.CameraDaemon.log("Abschaltbericht: " + text);
+        } catch (Throwable ignored) {
+        }
+    }
+
+    /** Darf die Fahrt nach diesem Versand-Ergebnis als gemeldet gelten? Nur gesendet, gepuffert oder bewusst still. */
+    static boolean alsGemeldet(TelegramNotifier.Versand v) {
+        return v == TelegramNotifier.Versand.GESENDET || v == TelegramNotifier.Versand.GEPUFFERT
+                || v == TelegramNotifier.Versand.AUSGELASSEN;
+    }
+
     private static void nachlauf(long ausMs, boolean bericht) {
         try {
-            if (letztesAus != ausMs || letztesAn > ausMs) return;
+            if (letztesAus != ausMs || letztesAn > ausMs) {
+                log("kein Bericht: Zuendung inzwischen wieder an oder neues Abstellen");
+                return;
+            }
             Boolean scharf = at.greenchili.surfmate.daemon.CameraDaemon.waechterZustandBelegt();
             at.greenchili.surfmate.monitor.SocHistoryDatabase db =
                     at.greenchili.surfmate.monitor.SocHistoryDatabase.getInstance();
             if (scharf != null) db.markiereLetztesAusWaechter(scharf, ausMs - 60_000L);
 
             JSONObject root = at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig();
-            if (!schalter(root)) return;
-            if (!at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.hasBotToken()) return;
+            if (!schalter(root)) {
+                log("kein Bericht: Schalter telegram.abschaltBericht aus");
+                return;
+            }
+            if (!at.greenchili.surfmate.telegram.config.UnifiedTelegramConfig.hasBotToken()) {
+                log("kein Bericht: kein Telegram-Bot eingerichtet");
+                return;
+            }
 
             at.greenchili.surfmate.trips.TripAnalyticsManager tam =
                     at.greenchili.surfmate.daemon.CameraDaemon.getTripAnalyticsManager();
-            if (tam == null || tam.getDatabase() == null) return;
+            if (tam == null || tam.getDatabase() == null) {
+                log("kein Bericht: Fahrten-Datenbank nicht bereit");
+                return;
+            }
             long gemeldet = Math.max(gemeldetBis(), gemeldetImSpeicher);
             List<TripRecord> kandidaten = tam.getDatabase().getTrips(2, 30);
             long anVor = db.letztesAccAnVor(ausMs);
             if (!bericht) {
                 // Start/Neustart/Update: nichts senden, aber diese Fahrten als gemeldet merken.
                 merkeGemeldet(hoechsteId(auswahl(kandidaten, ausMs, anVor, gemeldet)));
+                log("kein Bericht: kein Zuendung-an in diesem Prozess (Start/Neustart/Update), Fahrten still vermerkt");
                 return;
             }
             List<TripRecord> fahrten = zuMelden(kandidaten, ausMs, anVor, gemeldet, true);
-            if (fahrten.isEmpty()) return;
+            if (fahrten.isEmpty()) {
+                log("kein Bericht: keine ungemeldete Fahrt seit dem letzten Zuendung-an (" + anVor + ")");
+                return;
+            }
             Daten d = zusammenfassen(fahrten);
-            merkeGemeldet(d.letzteFahrtId);
-            if (zuKurz(d.km, d.sekunden, minMeter(root), minMinuten(root))) return;
+            if (zuKurz(d.km, d.sekunden, minMeter(root), minMinuten(root))) {
+                merkeGemeldet(d.letzteFahrtId);   // kurze Fahrt: bewusst nicht melden, nicht beim nächsten Mal nachholen
+                log("kein Bericht: Fahrt zu kurz (" + Math.round(d.km * 1000) + " m, " + d.sekunden + " s)");
+                return;
+            }
 
             d.scharf = scharf;
             try {
@@ -335,11 +407,18 @@ public final class AbschaltBericht {
             }
             d.verriegelt = mitNachfassen(AbschaltBericht::schlossJetzt, NACHFASSEN_VERSUCHE, NACHFASSEN_MS,
                     () -> letztesAus != ausMs || letztesAn > ausMs);
-            if (letztesAus != ausMs || letztesAn > ausMs) return;
+            if (letztesAus != ausMs || letztesAn > ausMs) {
+                log("kein Bericht: Zuendung waehrend des Nachfassens wieder an");
+                return;
+            }
             Locale sprache = Locale.forLanguageTag(String.valueOf(at.greenchili.surfmate.server.LocaleManager.get()));
             String text = text(zeilen(d, sprache), TelegramMessages::get);
-            TelegramNotifier.sendMessage(text, KATEGORIE);
-        } catch (Throwable ignored) {
+            // 0.1.38.14: erst nach erfolgreichem Senden (oder Puffern bis der Bot läuft) als gemeldet vermerken
+            TelegramNotifier.Versand v = TelegramNotifier.sendMessageJetzt(text, KATEGORIE);
+            if (alsGemeldet(v)) merkeGemeldet(d.letzteFahrtId);
+            log("Bericht " + v + " (Fahrt bis Id " + d.letzteFahrtId + (alsGemeldet(v) ? ", vermerkt)" : ", nicht vermerkt)"));
+        } catch (Throwable t) {
+            log("Fehler im Nachlauf: " + t);
         }
     }
 

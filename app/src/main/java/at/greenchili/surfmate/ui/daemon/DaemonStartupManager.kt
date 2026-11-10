@@ -775,6 +775,8 @@ class DaemonStartupManager(
             "else R=\$(head -1 \"\$S\" 2>/dev/null); " +
             "case \"\$R\" in " +
             "'disabled by ui'*|'disabled by telegram'*|'disabled by user'*) echo STOPPED;; " +
+            // 0.1.38.14: 12-V-Schlaf des Bots bleibt bis Zündung an (AccSentry räumt die Marke), nie im Stand wiederbeleben
+            "'disabled by 12-V-Schlaf'*) echo STOPPED;; " +
             "'') echo STOPPED;; " +
             "*) rm -f \"\$S\" 2>/dev/null && echo MACHINE || echo STOPPED;; " +
             "esac; fi"

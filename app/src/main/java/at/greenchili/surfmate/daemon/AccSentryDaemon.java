@@ -8972,12 +8972,31 @@ public class AccSentryDaemon {
     /**
      * Stop Telegram daemon if it was auto-started.
      */
+    /**
+     * 0.1.38.14: Zündung an beendet den 12-V-Schlaf des Bots (BotSchlaf12v). Die App behandelt die Marke als Stopp
+     * (kein Wiederbeleben im Stand); deshalb räumt sie hier der ACC-Richter, dann starten App und Abstellen normal.
+     */
+    private static void raeumeTelegram12vSchlaf() {
+        try {
+            java.io.File s = new java.io.File(at.greenchili.surfmate.util.DaemonStorage.rebase(
+                    "/data/user_de/0/com.android.shell/surfmate/telegram_bot_daemon.disabled"));
+            if (!s.isFile()) return;
+            String r = readSentinelReason(s);
+            if (r != null && r.startsWith(at.greenchili.surfmate.telegram.config.BotSchlaf12v.SPERR_GRUND)) {
+                log("Telegram 12-V-Schlaf endet mit Zuendung an: Sperrmarke " + (s.delete() ? "entfernt" : "NICHT entfernt"));
+            }
+        } catch (Throwable t) {
+            log("Telegram 12-V-Schlaf aufraeumen: " + t.getMessage());
+        }
+    }
+
     private static boolean stopTelegramDaemonIfAutoStarted(
             long transitionGeneration) {
         if (shouldAbortTelegramReconciliation(
                 transitionGeneration, false, "parked-only check")) {
             return true;
         }
+        raeumeTelegram12vSchlaf();
         Boolean parkedOnlyMode = isTelegramParkedOnlyMode();
         if (parkedOnlyMode == null) {
             return false;

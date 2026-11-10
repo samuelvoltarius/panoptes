@@ -45,7 +45,8 @@
         kurz: 'Keine Kartenquelle gewählt',
         geraet: 'Die Wahl gilt für dieses Gerät bzw. diesen Browser.',
         geraet_auto: 'Die Wahl gilt für das ganze Auto, auch für die Karte am Display.',
-        fehler: 'Speichern hat nicht geklappt. Die Kartenquelle ist unverändert.'
+        fehler: 'Speichern hat nicht geklappt. Die Kartenquelle ist unverändert.',
+        zeit: 'Das Auto antwortet gerade nicht. Die Kartenquelle ist unverändert – bitte gleich noch einmal versuchen.'
     };
 
     function T(k) {
@@ -83,9 +84,35 @@
     var kern = null;          // null = unbekannt, false = Kern ohne Feld, true = Kern führt
     var kernPromise = null;
 
+    // 0.1.38.14 (P3): jeder Abruf hat eine Frist. Ohne Antwort (Seal U: Kern hing) wird abgebrochen, statt dass
+    // der Knopf grau stehen bleibt. Fehler mit .zeit = true bei Fristablauf.
+    var FRIST_MS = 6000;
+    function holeMitFrist(url, opt) {
+        var ctl = null;
+        try { if (window.AbortController) ctl = new AbortController(); } catch (e) { ctl = null; }
+        if (ctl) { opt = opt || {}; opt.signal = ctl.signal; }
+        return new Promise(function (ok, nein) {
+            var fertig = false;
+            var t = setTimeout(function () {
+                if (fertig) return;
+                fertig = true;
+                try { if (ctl) ctl.abort(); } catch (e) {}
+                var f = new Error('frist'); f.zeit = true; nein(f);
+            }, FRIST_MS);
+            fetch(url, opt).then(function (r) {
+                if (fertig) return;
+                fertig = true; clearTimeout(t); ok(r);
+            }, function (e) {
+                if (fertig) return;
+                fertig = true; clearTimeout(t); nein(e);
+            });
+        });
+    }
+    var letzterFehlerZeit = false;
+
     function leseKern() {
         if (!window.fetch || !istDisplay()) return Promise.resolve(null);
-        return fetch('/api/einstellungen', { cache: 'no-store', credentials: 'same-origin' })
+        return holeMitFrist('/api/einstellungen', { cache: 'no-store', credentials: 'same-origin' })
             .then(function (r) { return r.ok ? r.json() : null; })
             .then(function (d) {
                 if (!d || !d.werte) return null;
@@ -94,7 +121,7 @@
                 var w = d.werte[SCHLUESSEL].wert;
                 return { etag: d.etag, wert: QUELLEN.indexOf(w) >= 0 ? w : 'keine' };
             })
-            .catch(function () { return null; });
+            .catch(function (e) { if (e && e.zeit) letzterFehlerZeit = true; return null; });
     }
 
     // Beim Laden einmal abgleichen; Karten warten darauf (bereit()). Kern-Wert gewinnt.
@@ -119,9 +146,12 @@
     // Speichern: im Kern (PUT mit etag, danach zurücklesen), sonst nur im Spiegel.
     function set(q) {
         if (QUELLEN.indexOf(q) < 0) return Promise.resolve(false);
+        letzterFehlerZeit = false;
         return leseKern().then(function (r) {
+            // Kern antwortet nicht (Frist) → nicht still nur im Spiegel speichern, sondern ehrlich scheitern
+            if (!r && letzterFehlerZeit) return false;
             if (!r || r.wert === null) return spiegel(q) && get() === q;
-            return fetch('/api/einstellungen', {
+            return holeMitFrist('/api/einstellungen', {
                 method: 'PUT', credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ etag: r.etag, werte: (function () { var w = {}; w[SCHLUESSEL] = q; return w; })() })
@@ -130,7 +160,7 @@
                 spiegel(q);
                 return true;
             });
-        }).catch(function () { return false; });
+        }).catch(function (e) { if (e && e.zeit) letzterFehlerZeit = true; return false; });
     }
 
     function el(tag, cls, key, txt) {
@@ -199,7 +229,7 @@
                 b.disabled = true;
                 set(q).then(function (ok) {
                     waehler(box, fn, true);
-                    if (!ok) { box.appendChild(el('p', 'pn-kq-klein', 'fehler')); return; }
+                    if (!ok) { box.appendChild(el('p', 'pn-kq-klein', letzterFehlerZeit ? 'zeit' : 'fehler')); return; }
                     if (typeof fn === 'function') fn(q);
                 });
             };

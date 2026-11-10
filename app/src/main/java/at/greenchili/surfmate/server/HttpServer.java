@@ -1549,6 +1549,8 @@ public class HttpServer {
         if (path.startsWith(ExternGuard.STANDBILD_PFAD) && WaechterStandbild.handle(method, path, out)) return true;
         // 0.1.11 ORTE_VERTRAG: eine Ortsliste (Kreis + Eigenschaften), verlässt das Auto nie
         if (path.startsWith("/api/orte") && OrteApiHandler.handle(method, path, body, out)) return true;
+        // 0.1.38.14: Zugangscode fuer die Karte in system.html - nur Display-WebView der Panoptes-App (UID-Pruefung)
+        if (path.startsWith(ZugangCodeApiHandler.PFAD) && ZugangCodeApiHandler.handle(method, path, out)) return true;
         // 0.1.14 Notzugang (zweiter, eigener tailscaled für die Fernwartung, optional)
         if (path.startsWith("/api/notzugang") && NotzugangApiHandler.handle(method, path, body, out)) return true;
         // 0.1.20 Panoptes-Brücke: Opt-in-Schalter und Status (nur Login/lokal)

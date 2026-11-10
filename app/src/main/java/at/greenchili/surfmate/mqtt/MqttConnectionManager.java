@@ -36,6 +36,9 @@ import java.util.concurrent.TimeUnit;
  * Lifecycle: init() → startAll() → [runtime add/remove/update] → stopAll()
  */
 public class MqttConnectionManager {
+    /** 0.1.38.14: Gang bei Zündung aus, gleich wie /status (HttpServer recordingStatus.gear). */
+    static final String GEAR_UNBEKANNT = "UNKNOWN";
+
 
     private static final String TAG = "MqttConnectionManager";
     private static final DaemonLogger logger = DaemonLogger.getInstance(TAG);
@@ -1177,8 +1180,10 @@ public class MqttConnectionManager {
             } else {
                 boolean accOnGear = false;
                 try { accOnGear = at.greenchili.surfmate.monitor.AccMonitor.isAccOn(); } catch (Throwable ignored) {}
-                if (!accOnGear) {
-                    payload.put("gear", GearMonitor.gearToString(GearMonitor.GEAR_P));
+                if (!accOnGear || GearMonitor.gangVeraltet()) {
+                    // 0.1.38.14: wie /status – bei Zündung aus (oder altem Wert) kein Gang, sonst meldete HA „P“
+                    // obwohl der letzte Wert z. B. R vom Einparken war. Heimkommen braucht ohnehin Zündung an + D/R.
+                    payload.put("gear", GEAR_UNBEKANNT);
                 } else if (gearMonitor.isActive()) {
                     payload.put("gear", GearMonitor.gearToString(gearMonitor.getCurrentGear()));
                 } else if (vd != null && vd.gearMode != BydVehicleData.UNAVAILABLE) {

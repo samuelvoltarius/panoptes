@@ -34,10 +34,12 @@ public class BotSchlaf12vTest {
     }
 
     @Test
-    public void nurDerAbgestelltGestarteteBotSchlaeft() throws Exception {
+    public void jederAbgestelltLaufendeBotSchlaeft() throws Exception {
         assertTrue(BotSchlaf12v.sollSchlafen(stand(true, 0L), JETZT, true, false));
-        assertFalse("dauerhaft eingeschaltet", BotSchlaf12v.sollSchlafen(stand(true, 0L), JETZT, true, true));
-        assertFalse("nicht fürs Abstellen", BotSchlaf12v.sollSchlafen(stand(true, 0L), JETZT, false, false));
+        // 0.1.38.14: auch der dauerhaft eingeschaltete Bot schläft
+        assertTrue("dauerhaft eingeschaltet", BotSchlaf12v.sollSchlafen(stand(true, 0L), JETZT, true, true));
+        assertTrue("nur dauerhaft", BotSchlaf12v.sollSchlafen(stand(true, 0L), JETZT, false, true));
+        assertFalse("läuft abgestellt gar nicht", BotSchlaf12v.sollSchlafen(stand(true, 0L), JETZT, false, false));
         assertFalse("12 V gut", BotSchlaf12v.sollSchlafen(stand(false, 0L), JETZT, true, false));
     }
 
@@ -74,7 +76,7 @@ public class BotSchlaf12vTest {
         assertTrue(lies("src/main/java/at/greenchili/surfmate/daemon/AccSentryDaemon.java")
                 .contains("boolean machineStop = at.greenchili.surfmate.telegram.config.BotSchlaf12v.maschinenStopp(reason);"));
         assertTrue(lies("src/main/java/at/greenchili/surfmate/ui/daemon/DaemonStopGate.kt")
-                .contains("Regex(\"ACC-on|stopAllDaemons|12-V-Schlaf\")"));
+                .contains("Regex(\"ACC-on|stopAllDaemons\")"));   // 0.1.38.14: in der App Stopp bis Zündung an
     }
 
     @Test

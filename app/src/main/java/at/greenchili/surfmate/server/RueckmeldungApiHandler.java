@@ -26,6 +26,8 @@ public final class RueckmeldungApiHandler {
     private RueckmeldungApiHandler() {}
 
     static final long VORSCHAU_MS = 15 * 60_000L;
+    /** 0.1.38.14 (P3): Fehlerbericht ohne Oberfläche (Telegram /fehler, eingefrorene Anzeige). */
+    public static final String TELEGRAM_PFAD = "/api/rueckmeldung/fehler-telegram";
     /** Darüber gilt das Auto als fahrend: Am Display nicht tippen. */
     static final double FAHRT_KMH = 3.0;
 
@@ -38,7 +40,9 @@ public final class RueckmeldungApiHandler {
         String query = path.contains("?") ? path.substring(path.indexOf('?') + 1) : "";
         boolean fehler = pathOnly.equals("/api/rueckmeldung/fehler");
         boolean zaehlen = pathOnly.equals("/api/rueckmeldung/zaehlen");
-        if (!fehler && !zaehlen) return false;
+        // 0.1.38.14 (P3): Telegram /fehler – nur lokal (Bot-Daemon), der Bot prüft vorher den Besitzer-Chat
+        boolean telegram = pathOnly.equals(TELEGRAM_PFAD);
+        if (!fehler && !zaehlen && !telegram) return false;
         if (AuthMiddleware.isExternRequest()) {
             HttpResponse.sendJson(out, 403, "{\"ok\":false,\"grund\":\"verboten\"}");
             return true;
@@ -49,6 +53,17 @@ public final class RueckmeldungApiHandler {
         }
         if (fehler && method.equals("POST")) {
             absenden(body, out);
+            return true;
+        }
+        if (telegram && method.equals("POST")) {
+            JSONObject req;
+            try {
+                req = new JSONObject(body == null || body.isEmpty() ? "{}" : body);
+            } catch (Exception e) {
+                req = new JSONObject();
+            }
+            JSONObject res = berichtOhneSeite(req.optString("text", ""));
+            HttpResponse.sendJson(out, res.toString());
             return true;
         }
         if (zaehlen && method.equals("GET")) {
@@ -78,7 +93,8 @@ public final class RueckmeldungApiHandler {
                 .put("textMax", FehlerMelden.TEXT_MAX)
                 .put("fahrt", faehrt());
         if (("&" + query + "&").contains("&diagnose=1&")) {
-            String text = waechterZeile()
+            // gleiche Teile wie diagnoseGesamt() (Telegram /fehler); 0.1.38.14: START_STUFE dazu
+            String text = waechterZeile() + startZeilen()
                     + FehlerMelden.diagnoseText(at.greenchili.surfmate.genai.GenAiContext.diagnosticLogs());
             String id = UUID.randomUUID().toString();
             synchronized (RueckmeldungApiHandler.class) {
@@ -89,6 +105,83 @@ public final class RueckmeldungApiHandler {
             res.put("diagnose", text).put("vorschauId", id);
         }
         return res;
+    }
+
+    /** Wächter-Zeile, START_STUFE (0.1.38.14) und Log-Auszug: genau das zeigt die Vorschau, genau das geht mit. */
+    static String diagnoseGesamt() {
+        return waechterZeile() + startZeilen()
+                + FehlerMelden.diagnoseText(at.greenchili.surfmate.genai.GenAiContext.diagnosticLogs());
+    }
+
+    /** 0.1.38.14 (P3): letzte START_STUFE-Zeilen aus dem Launcher-Ereignisprotokoll (Ende der Datei). */
+    static String startZeilen() {
+        try {
+            java.io.File f = new java.io.File(at.greenchili.surfmate.logging.LauncherEreignisse.DATEI);
+            if (!f.isFile()) return "";
+            long n = f.length();
+            int lies = (int) Math.min(n, 32 * 1024L);
+            byte[] b = new byte[lies];
+            try (java.io.RandomAccessFile r = new java.io.RandomAccessFile(f, "r")) {
+                r.seek(n - lies);
+                r.readFully(b);
+            }
+            return FehlerMelden.startStufen(new String(b, java.nio.charset.StandardCharsets.UTF_8), FehlerMelden.START_MAX);
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    /** 0.1.38.14 (P3): Bildschirmgröße und -dichte des Geräts (Seal U ≠ Surf); im JVM-Test leer. */
+    static Object bildschirmAngaben() {
+        try {
+            android.util.DisplayMetrics m = android.content.res.Resources.getSystem().getDisplayMetrics();
+            JSONObject b = FehlerMelden.bildschirm(m.widthPixels, m.heightPixels, m.densityDpi);
+            return b == null ? new JSONObject() : b;
+        } catch (Throwable t) {
+            return new JSONObject();
+        }
+    }
+
+    /** 0.1.38.14 (P3): gewählte Kartenquelle (community/osm/keine) – Hänger beim Umschalten. */
+    static String karteQuelle(JSONObject root) {
+        try {
+            return at.greenchili.surfmate.einstellungen.Kartenquelle.aus(root);
+        } catch (Throwable t) {
+            return "unbekannt";
+        }
+    }
+
+    /**
+     * 0.1.38.14 (P3): derselbe Bericht wie „Fehler melden“, aber ohne Seite (Anzeige eingefroren): Telegram
+     * {@code /fehler [Text]}. Diagnose-Auszug wie in der Vorschau, Anzeige-Felder fehlen (keine Seite).
+     */
+    static JSONObject berichtOhneSeite(String text) {
+        try {
+            String t = text == null ? "" : text.trim();
+            if (t.isEmpty()) t = "Telegram /fehler";
+            if (!FehlerMelden.textOk(t)) t = t.substring(0, Math.min(t.length(), FehlerMelden.TEXT_MAX));
+            JSONObject root = UnifiedConfigManager.loadConfig();
+            JSONObject k = FehlerMelden.koerper(t, BuildConfig.VERSION_NAME, AutoAngaben.dilink(),
+                    AutoAngaben.modell(root), LocaleManager.get(), diagnoseGesamt(), "", false, null);
+            k = FehlerMelden.mitErkannt(k, at.greenchili.surfmate.camera.dilink5.AutoArtErkennung.kurz(
+                    at.greenchili.surfmate.camera.dilink5.AutoArtErkennung.jetzt()));
+            if (k != null) {
+                k.put("tacho", tachoProfil()).put("gang", gangAngaben())
+                        .put("bildschirm", bildschirmAngaben()).put("karte", karteQuelle(root));
+            }
+            FehlerMelden.Ergebnis e = FehlerMelden.absenden(System.currentTimeMillis(), k,
+                    FehlerMelden.DATEI_SPEICHER, FehlerMelden.NETZ);
+            JSONObject res = new JSONObject().put("ok", e.stand == FehlerMelden.Stand.GESENDET
+                    || e.stand == FehlerMelden.Stand.GEMERKT).put("stand", e.stand.name().toLowerCase(java.util.Locale.ROOT));
+            if (e.code != null) res.put("code", e.code);
+            return res;
+        } catch (Throwable t) {
+            try {
+                return new JSONObject().put("ok", false).put("stand", "fehler");
+            } catch (org.json.JSONException j) {
+                return new JSONObject();
+            }
+        }
     }
 
     /** 0.1.38.11: eine Zeile Wächter-Zustand + Grund (WaechterGrund, ohne Ort/Kennung) vor den Log-Zeilen. */
@@ -118,6 +211,8 @@ public final class RueckmeldungApiHandler {
                 .put("firmware", fw == null ? JSONObject.NULL : fw));
         // 0.1.38.11: Größenprofil des Fahrerdisplays (Tacho zu groß/abgeschnitten): {profil, bestaetigt, vorschlag, geraet}
         a.put("tacho", tachoProfil());
+        // 0.1.38.14 (P3): Bildschirm (Pixel, dpi) und Kartenquelle – werden angezeigt und gehen mit
+        a.put("bildschirm", bildschirmAngaben()).put("karte", karteQuelle(root));
         return a;
     }
 
@@ -174,6 +269,9 @@ public final class RueckmeldungApiHandler {
         // 0.1.38.11 (M1): WebView-Hauptversion, CSS-Breite und Pixeldichte der meldenden Seite (geprüft, feste Felder)
         FehlerMelden.mitAnzeige(k, FehlerMelden.anzeige(req.optJSONObject("anzeige")));
         if (k != null) k.put("gang", gangAngaben());   // 0.1.38.13: wie in der Vorschau
+        if (k != null) {   // 0.1.38.14 (P3): wie in der Vorschau
+            k.put("bildschirm", bildschirmAngaben()).put("karte", karteQuelle(UnifiedConfigManager.loadConfig()));
+        }
         FehlerMelden.Ergebnis e = FehlerMelden.absenden(jetzt, k, FehlerMelden.DATEI_SPEICHER, FehlerMelden.NETZ);
         JSONObject res = new JSONObject().put("ok", e.stand == FehlerMelden.Stand.GESENDET
                 || e.stand == FehlerMelden.Stand.GEMERKT).put("stand", e.stand.name().toLowerCase(java.util.Locale.ROOT));

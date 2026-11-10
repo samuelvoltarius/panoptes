@@ -86,7 +86,7 @@ html[data-fahrt="1"] .sys-field,
 html[data-fahrt="1"] [data-nur-stand] { display: none !important; }
 
 .pn-fahrt-sperre {
-    position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 9998; display: none; align-items: center; justify-content: center;
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 10050; display: none; /* 0.1.38.14: über dem Aufnahmen-Player (10000) */ align-items: center; justify-content: center;
     background: var(--bg-base, #0a2238); padding: 24px; box-sizing: border-box; text-align: center;
 }
 html[data-fahrt="1"] .pn-fahrt-sperre.aktiv { display: flex; }

@@ -38,7 +38,7 @@ public class NaviSchalterSystemTest {
         assertTrue(sys.contains("id=\"navigationFelder\""));
         assertTrue(sys.contains("PanoptesSystemOverview.naviFelder"));
         assertTrue(sys.contains("store.zeichne(document.getElementById('navigationFelder'), { gruppe: 'system', nur: naviKeys });"));
-        assertTrue("Zwischenspeicher neu", sys.contains("system-overview.js?v=7"));
+        assertTrue("Zwischenspeicher neu", sys.contains("system-overview.js?v=8"));
         for (String k : KEYS) {
             assertFalse("keine Kopie der Liste in system.html: " + k, sys.contains("'" + k + "'"));
         }

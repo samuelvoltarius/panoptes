@@ -282,7 +282,8 @@ public class AbschaltBerichtTest {
         assertEquals("PARKING", AbschaltBericht.KATEGORIE);
         assertEquals(TelegramNotifier.Category.PARKING, TelegramNotifier.Category.valueOf(AbschaltBericht.KATEGORIE));
         String src = lies("app/src/main/java/at/greenchili/surfmate/telegram/AbschaltBericht.java");
-        assertTrue(src.contains("TelegramNotifier.sendMessage(text, KATEGORIE)"));
+        // 0.1.38.14: synchron mit Ergebnis (erst nach Senden/Puffern als gemeldet)
+        assertTrue(src.contains("TelegramNotifier.sendMessageJetzt(text, KATEGORIE)"));
         assertFalse("keine Warnstufe mehr", src.contains("sendMessage(text, \"CRITICAL\")"));
         // Ruhezeit gilt für PARKING (nur Alarm-Kategorien kommen nachts durch)
         String tg = lies("app/src/main/java/at/greenchili/surfmate/daemon/TelegramBotDaemon.java");

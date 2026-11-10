@@ -98,6 +98,28 @@ object MapTilePrefetcher {
     /** Token for the currently-scheduled (debounced) prefetch, so we can cancel it. */
     private var pendingPrefetch: Runnable? = null
 
+    /**
+     * 0.1.38.14 (P3): nach einem Wechsel der Kartenquelle kein Prefetch für [SPERRE_NACH_WECHSEL_MS] (Seal U:
+     * Hänger beim Umschalten; Stil-Laden und Kachel-Download sollen sich nicht überlagern). elapsedRealtime-Zeit.
+     */
+    @Volatile
+    private var gesperrtBisMs: Long = 0L
+
+    /** 0.1.38.14 (P3): Sperre nach dem Umschalten der Kartenquelle. */
+    const val SPERRE_NACH_WECHSEL_MS = 120_000L
+
+    /** 0.1.38.14 (P3): rein – ist der Prefetch zur Zeit [jetztMs] gesperrt? */
+    @JvmStatic
+    fun gesperrt(gesperrtBis: Long, jetztMs: Long): Boolean = jetztMs < gesperrtBis
+
+    /** 0.1.38.14 (P3): Kartenquelle wurde gewechselt → wartenden Prefetch verwerfen, kurz keinen neuen. */
+    @JvmStatic
+    fun quelleGewechselt() {
+        gesperrtBisMs = android.os.SystemClock.elapsedRealtime() + SPERRE_NACH_WECHSEL_MS
+        mainHandler.post { cancelPending() }
+        Log.i(TAG, "Kartenquelle gewechselt: Prefetch ${SPERRE_NACH_WECHSEL_MS / 1000} s gesperrt")
+    }
+
     /** True while an offline-region download is in flight; gates against overlapping downloads. */
     @Volatile
     private var inFlight: Boolean = false
@@ -155,6 +177,10 @@ object MapTilePrefetcher {
         pixelRatio: Float
     ) {
         try {
+            if (gesperrt(gesperrtBisMs, android.os.SystemClock.elapsedRealtime())) {
+                Log.d(TAG, "schedulePrefetch: nach Quellenwechsel gesperrt")
+                return
+            }
             if (isWithinDedup(lat, lng)) {
                 Log.d(TAG, "schedulePrefetch: center within ${DEDUP_METERS}m of last; skipping")
                 return
@@ -163,6 +189,7 @@ object MapTilePrefetcher {
             pendingPrefetch?.let { mainHandler.removeCallbacks(it) }
             val task = Runnable {
                 pendingPrefetch = null
+                if (gesperrt(gesperrtBisMs, android.os.SystemClock.elapsedRealtime())) return@Runnable
                 prefetchAround(appCtx, styleUrl, lat, lng, pixelRatio)
             }
             pendingPrefetch = task

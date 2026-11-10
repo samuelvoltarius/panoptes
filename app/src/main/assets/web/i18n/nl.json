@@ -700,7 +700,7 @@
   "login": {
     "subtitle": "Voer de sleutel van je auto in om binnen te komen",
     "device_id": "Auto-ID",
-    "find_hint": "Je vindt hem op het scherm in de auto onder Instellingen → Geavanceerd (oud) → ‘Je toegangscode’.",
+    "find_hint": "Je vindt hem op het scherm in de auto onder Instellingen → Alle instellingen → Verbindingen → ‘Je toegangscode’.",
     "login_btn": "Inloggen",
     "privacy": "Alles blijft op je eigen apparaat.",
     "unknown_device": "We kennen dit apparaat niet",
@@ -2092,6 +2092,7 @@
     "dauer_hinweis": "Let op: altijd filmen is juridisch gevoelig in Duitsland, Oostenrijk en Zwitserland. Aanbevolen: opname op „Uit” laten en in de bewaker-instellingen „Gebeurtenissen automatisch opslaan” aanzetten. Dan slaat Panoptes alleen iets op na hard remmen of een stoot."
   },
   "events": {
+    "aufnahme_fehlt": "Deze opname bestaat niet meer.",
     "select_date": "Kies een datum",
     "all": "Alles",
     "title_recordings": "{prefix} Opnames",
@@ -5068,6 +5069,8 @@
     "page_display": "Scherm"
   },
   "navi": {
+    "via_mehr": "Meer: tussenstops",
+    "karte_aus": "De kaart staat uit. Aanzetten: Instellingen → Alle instellingen → Kaartbron.",
     "rate": "Te veel verzoeken – wacht even 2 minuten.",
     "slow": "De planner antwoordde niet op tijd. Probeer het opnieuw.",
     "nothing": "Niets gevonden",
@@ -5343,6 +5346,13 @@
     "projektion_note": "Opent de app van de auto voor Android Auto of CarPlay."
   },
   "system": {
+    "zugang_titel": "Je toegangscode",
+    "zugang_text": "Met deze code meld je je in de browser of op je telefoon aan bij Panoptes. Deel hem niet.",
+    "zugang_zeigen": "Tonen",
+    "zugang_verdecken": "Verbergen",
+    "zugang_frage": "Toegangscode nu tonen? Let op dat niemand meekijkt.",
+    "zugang_nur_display": "De toegangscode zie je alleen op het scherm in de auto.",
+    "zugang_fehler": "De toegangscode is nu niet leesbaar.",
     "weitere_title": "Meer instellingen",
     "weitere_lead": "Starten bij contact aan, Telegram-melding en hoe lang Panoptes logboeken bewaart.",
     "overview_title": "Wat wil je instellen?",
@@ -6109,8 +6119,7 @@
     "fahrt_titel": "Niet beschikbaar tijdens het rijden",
     "fahrt_text": "Deze pagina werkt alleen als de auto stilstaat. Onderweg heb je Start, Navigatie en de Bewaker.",
     "zur_start": "Start",
-    "zur_navi": "Navigatie",
-    "erweitert": "Geavanceerd (oud)"
+    "zur_navi": "Navigatie"
   },
   "kartenquelle": {
     "titel": "Kaartbron kiezen",
@@ -6130,7 +6139,8 @@
     "geraet": "De keuze geldt voor dit apparaat of deze browser.",
     "kurz": "Geen kaartbron gekozen",
     "geraet_auto": "De keuze geldt voor de hele auto, ook voor de kaart op het display.",
-    "fehler": "Opslaan is niet gelukt. De kaartbron is ongewijzigd."
+    "fehler": "Opslaan is niet gelukt. De kaartbron is ongewijzigd.",
+    "zeit": "De auto reageert nu niet. De kaartbron is ongewijzigd – probeer het zo nog eens."
   },
   "speedcam": {
     "karte_titel": "Flitspalen op de kaart",
@@ -7126,7 +7136,15 @@
       "text": "Je telt al anoniem mee. Nieuw: Panoptes kan ook je automodel (bijvoorbeeld Seal) en het DiLink-niveau meesturen. Geen chassisnummer, geen kenteken, geen locatie, geen kilometers. Zo zien we welke auto's Panoptes gebruiken. Je kunt dit altijd uitzetten, dan wordt het ook op de server gewist.",
       "ja": "Ja, model meesturen",
       "nein": "Nee, zo laten"
-    }
+    },
+    "auto_bildschirm": "Scherm",
+    "auto_tacho": "Bestuurdersdisplay (dashboard)",
+    "auto_karte": "Kaartbron",
+    "tacho_profil": "Profiel",
+    "tacho_bestaetigt": "bevestigd",
+    "tacho_offen": "niet bevestigd",
+    "tacho_vorschlag": "voorstel",
+    "telegram_hinweis": "Zit het autoscherm vast? Stuur /fehler naar de Panoptes-bot – dan gaat dezelfde melding weg."
   },
   "assistenz": {
     "hinweis_titel": "Een veiligheidssysteem uitschakelen",

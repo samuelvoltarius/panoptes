@@ -201,4 +201,11 @@
     <string name="fern_art_heizen">, verwarmen stand %1$d</string>
     <string name="fern_art_kuehlen">, koelen stand %1$d</string>
     <string name="fern_art_neutral">, neutraal</string>
+    <string name="launcher_groesse">Grootte</string>
+    <string name="groesse_auto">Automatisch (passend bij het scherm)</string>
+    <string name="groesse_kleiner">Kleiner</string>
+    <string name="groesse_groesser">Groter</string>
+    <string name="groesse_hinweis">Automatisch past de launcher aan je scherm aan. Lijkt alles nog te groot of te klein, kies dan Kleiner of Groter.</string>
+    <string name="erweitert">Geavanceerd</string>
+    <string name="zurueck">Terug</string>
 </resources>

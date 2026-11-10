@@ -201,4 +201,11 @@
     <string name="fern_art_heizen">, Heizen Stufe %1$d</string>
     <string name="fern_art_kuehlen">, Kühlen Stufe %1$d</string>
     <string name="fern_art_neutral">, Neutral</string>
+    <string name="launcher_groesse">Größe</string>
+    <string name="groesse_auto">Automatisch (passend zum Bildschirm)</string>
+    <string name="groesse_kleiner">Kleiner</string>
+    <string name="groesse_groesser">Größer</string>
+    <string name="groesse_hinweis">Automatisch passt den Launcher an deinen Bildschirm an. Wirkt trotzdem alles zu groß oder zu klein, wähl Kleiner oder Größer.</string>
+    <string name="erweitert">Erweitert</string>
+    <string name="zurueck">Zurück</string>
 </resources>

@@ -1,6 +1,6 @@
 # Codekarte Panoptes
 
-**Stand: Version 0.1.38.13, Commit 2eb84cf3**
+**Stand: Version 0.1.38.14, Commit 3fe06d9e**
 
 Wegweiser durch den Code. Zuerst hier suchen, dann gezielt die genannte Datei öffnen.
 Die Karte nennt Dateien und Klassen, keine Zeilennummern. Kurze Pfade gelten ab
@@ -123,7 +123,7 @@ Jedes Paket steht hier, auch Unterpakete. Pfade ab dem Wurzelpaket. Lose Dateien
 | `telenav/` | Telenav-Anbindung |
 | `trips/` | Fahrten, Fahrtenbuch-Daten |
 | `uebernahme/` | Overdrive-Übernahme |
-| `ui/`, `ui/about/`, `ui/adapter/`, `ui/daemon/`, `ui/dashboard/`, `ui/dialog/`, `ui/fragment/`, `ui/fragment/settings/`, `ui/model/`, `ui/navigation/`, `ui/privacy/`, `ui/setup/`, `ui/util/`, `ui/vehicle/`, `ui/view/`, `ui/viewmodel/`, `ui/widget/` | Native Oberfläche, vieles davon WebView-Hülle |
+| `ui/`, `ui/about/`, `ui/adapter/`, `ui/daemon/`, `ui/dashboard/`, `ui/dialog/`, `ui/fragment/`, `ui/fragment/settings/`, `ui/model/`, `ui/navigation/`, `ui/privacy/`, `ui/setup/`, `ui/util/`, `ui/vehicle/`, `ui/view/`, `ui/viewmodel/`, `ui/widget/` | Native Oberfläche, vieles davon WebView-Hülle; 0.1.38.14: die alte native Oberfläche (Dashboard, Aufnahmen-Liste, Player, alte Leiste) ist unerreichbar – kein „Erweitert (alt)“, events.html bleibt im Web, nach Neuaufbau zurück ins Web (`NeuaufbauZiel.altesZiel`, nur Projektion bleibt nativ) |
 | `updater/` | Installationsablauf nach Update |
 | `util/` | Hilfen, `DaemonStorage` |
 | `wallbox/` | Wallbox-Anbindung |
@@ -302,13 +302,13 @@ Extern, ist die Route für Kopplungen gesperrt.
 | `/api/weckwort-messung` | `WeckwortMessApiHandler` | nur direkt am Autobildschirm, nur lesen |
 | `/api/appupdate/` | `AppUpdateApiHandler` | Login; Extern `status` lesen; Handy-Web nur mit Recht `update`; 0.1.38.2 `/api/appupdate/fern` (GET Stand, POST Panoptes/Launcher starten bzw. vormerken) für Art `handy`/`cockpit` und Handy-Web, Starten nur mit Recht `update` und `bestaetigt`; `/api/appupdate/hinweis` und `/api/appupdate/launcher` (schreibend) nur am Auto oder voller Login; `/api/appupdate/launcher` lesen und nur `oeffnen` auch für Kopplung `handy`/`cockpit` bzw. Handy-Web mit Recht `launcher` |
 | `/api/update/` | `HttpServer` selbst | stillgelegt, antwortet 410 |
-| `/api/rueckmeldung/` | `RueckmeldungApiHandler` | Login; für Kopplungen doppelt gesperrt |
+| `/api/rueckmeldung/` | `RueckmeldungApiHandler` | Login; für Kopplungen doppelt gesperrt; 0.1.38.14 `fehler-telegram` (POST, nur lokal) für Telegram `/fehler` (`FehlerCommandHandler`); UI-Hänger: `ui/UiHaengerWaechter` |
 | `/api/neuigkeiten` | `NeuigkeitenApiHandler` | Login; Extern lesen |
 | `/api/bericht/` | `BerichtApiHandler` | Login; Extern `monat` lesen |
 | `/api/hotspot` | `HotspotApiHandler` | Login; für Handy-Web gesperrt |
 | `/api/wireguard` | `WireGuardApiHandler` | Login; für Handy-Web gesperrt |
 | `/api/tailscale/https` | `TailscaleHttpsApiHandler` | Login; für Handy-Web gesperrt |
-| `/api/notzugang` | `NotzugangApiHandler` | Login; für Handy-Web gesperrt |
+| `/api/notzugang`, `/api/zugang/code` | `NotzugangApiHandler`, `ZugangCodeApiHandler` | Login; für Handy-Web gesperrt; `zugang/code` (0.1.38.14, Karte „Dein Zugangscode“ in `system.html`) nur Display-WebView der App (App-UID), no-store |
 | `/api/storage/external` | `ExternalStorageApiHandler` | Login |
 | `/api/models/` | `ModelsApiHandler` | Login |
 | `/api/audio/`, `/api/audio/library/raw` | `AudioApiHandler` | Login |

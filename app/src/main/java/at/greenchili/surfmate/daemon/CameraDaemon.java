@@ -2737,6 +2737,12 @@ public class CameraDaemon {
             return false;
         }
 
+        // 0.1.38.14: den fälligen Abschaltbericht vor dem Beenden senden (sonst endet der Prozess vor den 90 s)
+        try {
+            at.greenchili.surfmate.telegram.AbschaltBericht.vorParkEnde();
+        } catch (Throwable t) {
+            log("Abschaltbericht vor parkTerminate: " + t.getMessage());
+        }
         final boolean supersededAfterDrain;
         synchronized (parkTerminateLock) {
             supersededAfterDrain = expectedGeneration != accTransitionGeneration

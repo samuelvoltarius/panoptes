@@ -700,7 +700,7 @@
   "login": {
     "subtitle": "Gib den Schlüssel deines Autos ein, um hineinzukommen",
     "device_id": "Geräte-ID",
-    "find_hint": "Du findest ihn am Bildschirm im Auto unter Einstellungen → Erweitert (alt) → „Dein Zugangscode“.",
+    "find_hint": "Du findest ihn am Bildschirm im Auto unter Einstellungen → Alle Einstellungen → Verbindungen → „Dein Zugangscode“.",
     "login_btn": "Anmelden",
     "privacy": "Alles bleibt auf deinem Gerät.",
     "unknown_device": "Gerät unbekannt",
@@ -2092,6 +2092,7 @@
     "dauer_hinweis": "Hinweis: Dauernd filmen ist in Deutschland, Österreich und der Schweiz rechtlich heikel. Empfohlen: Aufnahme auf „Aus“ lassen und in den Wächter-Einstellungen „Ereignisse automatisch sichern“ einschalten. Dann sichert Panoptes nur bei einer Vollbremsung oder einem Stoß."
   },
   "events": {
+    "aufnahme_fehlt": "Diese Aufnahme gibt es nicht mehr.",
     "select_date": "Tag wählen",
     "all": "Alle",
     "title_recordings": "{prefix} Aufnahmen",
@@ -5068,6 +5069,8 @@
     "page_display": "Display"
   },
   "navi": {
+    "via_mehr": "Mehr: Zwischenstopps",
+    "karte_aus": "Die Karte ist aus. Einschalten: Einstellungen → Alle Einstellungen → Kartenquelle.",
     "rate": "Zu viele Anfragen – bitte 2 Minuten warten.",
     "slow": "Der Planer hat nicht rechtzeitig geantwortet. Bitte nochmal versuchen.",
     "nothing": "Nichts gefunden",
@@ -5343,6 +5346,13 @@
     "projektion_note": "Öffnet die App des Autos für Android Auto bzw. CarPlay."
   },
   "system": {
+    "zugang_titel": "Dein Zugangscode",
+    "zugang_text": "Mit diesem Code meldest du dich im Browser oder am Handy bei Panoptes an. Gib ihn nicht weiter.",
+    "zugang_zeigen": "Zeigen",
+    "zugang_verdecken": "Verdecken",
+    "zugang_frage": "Zugangscode jetzt zeigen? Achte darauf, dass niemand mitliest.",
+    "zugang_nur_display": "Den Zugangscode siehst du nur am Bildschirm im Auto.",
+    "zugang_fehler": "Der Zugangscode ist gerade nicht lesbar.",
     "weitere_title": "Weitere Einstellungen",
     "weitere_lead": "Start bei Zündung, Telegram-Hinweis und wie lange Panoptes Protokolle aufhebt.",
     "overview_title": "Was möchtest du einstellen?",
@@ -6109,8 +6119,7 @@
     "fahrt_titel": "Während der Fahrt nicht verfügbar",
     "fahrt_text": "Diese Seite geht nur im Stand. Unterwegs gibt es Start, Navigation und den Wächter.",
     "zur_start": "Start",
-    "zur_navi": "Navigation",
-    "erweitert": "Erweitert (alt)"
+    "zur_navi": "Navigation"
   },
   "kartenquelle": {
     "titel": "Kartenquelle wählen",
@@ -6130,7 +6139,8 @@
     "geraet": "Die Wahl gilt für dieses Gerät bzw. diesen Browser.",
     "kurz": "Keine Kartenquelle gewählt",
     "geraet_auto": "Die Wahl gilt für das ganze Auto, auch für die Karte am Display.",
-    "fehler": "Speichern hat nicht geklappt. Die Kartenquelle ist unverändert."
+    "fehler": "Speichern hat nicht geklappt. Die Kartenquelle ist unverändert.",
+    "zeit": "Das Auto antwortet gerade nicht. Die Kartenquelle ist unverändert – bitte gleich noch einmal versuchen."
   },
   "speedcam": {
     "karte_titel": "Blitzer auf der Karte",
@@ -7126,7 +7136,15 @@
       "text": "Du zählst schon anonym mit. Neu: Panoptes kann auch dein Automodell (zum Beispiel Seal) und die DiLink-Stufe mitschicken. Keine Fahrgestellnummer, kein Kennzeichen, kein Ort, keine Kilometer. So sehen wir, welche Autos Panoptes nutzen. Ausschalten geht jederzeit und löscht es auch am Server.",
       "ja": "Ja, Modell mitschicken",
       "nein": "Nein, so lassen"
-    }
+    },
+    "auto_bildschirm": "Bildschirm",
+    "auto_tacho": "Fahrerdisplay (Tacho)",
+    "auto_karte": "Kartenquelle",
+    "tacho_profil": "Profil",
+    "tacho_bestaetigt": "bestätigt",
+    "tacho_offen": "nicht bestätigt",
+    "tacho_vorschlag": "Vorschlag",
+    "telegram_hinweis": "Hängt die Anzeige im Auto? Schreib dem Panoptes-Bot /fehler – dann geht derselbe Bericht raus."
   },
   "assistenz": {
     "hinweis_titel": "Sicherheitssystem ausschalten",

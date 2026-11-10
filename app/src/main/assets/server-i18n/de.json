@@ -593,7 +593,8 @@
       "menu": "/menue – Alle Knöpfe auf einen Blick",
       "updates": "/updates – Panoptes und Launcher aktualisieren",
       "kopplungen": "/kopplungen – Gekoppelte Geräte zeigen und entfernen (Handy verloren)",
-      "bilder": "/bilder – Bilder und Videos an Telegram (`/bilder aus` schaltet ab)"
+      "bilder": "/bilder – Bilder und Videos an Telegram (`/bilder aus` schaltet ab)",
+      "fehler": "/fehler – Fehlerbericht schicken, auch wenn die Anzeige hängt (`/fehler Karte hängt`)"
     },
     "parking": {
       "where": {
@@ -1127,6 +1128,14 @@
       "frage": "Gerät Nr. {0} wirklich entfernen? Es kann danach nichts mehr am Auto, bis es neu gekoppelt wird.",
       "btn_ja": "Ja, entfernen",
       "btn_nein": "Abbrechen"
+    },
+    "fehler": {
+      "laeuft": "📝 Ich sammle den Fehlerbericht …",
+      "gesendet": "✅ Fehlerbericht gesendet. Code: {0}",
+      "gesendet_ohne": "✅ Fehlerbericht gesendet.",
+      "gemerkt": "📥 Kein Internet: Der Bericht ist gemerkt und geht raus, sobald das Auto online ist.",
+      "zuviel": "⏳ Heute sind schon genug Berichte unterwegs. Bitte morgen noch einmal.",
+      "nicht": "⚠️ Der Fehlerbericht ging nicht raus. Panoptes antwortet gerade nicht – bitte gleich noch einmal /fehler."
     }
   },
   "vehicle_control": {

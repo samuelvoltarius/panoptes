@@ -276,6 +276,7 @@ public class SystemCommandHandler implements TelegramCommandHandler {
         sb.append(ctx.tr("help.updates")).append("\n");
         sb.append(ctx.tr("help.kopplungen")).append("\n");   // 0.1.38.8 verlorenes Handy
         sb.append(ctx.tr("help.bilder")).append("\n");       // 0.1.38.11 Bilder an Telegram
+        sb.append(ctx.tr("help.fehler")).append("\n");       // 0.1.38.14 Fehlerbericht ohne Anzeige
         sb.append(ctx.tr("help.help")).append("\n");
         if (hidden) sb.append("\n").append(ctx.tr("help.some_locked"));
         sb.append("\n").append(ctx.tr("help.footer", version == null ? "" : version));

@@ -547,7 +547,8 @@
       "menu": "/menue – Tutti i pulsanti a colpo d’occhio",
       "updates": "/updates – Aggiornare Panoptes e il launcher",
       "kopplungen": "/kopplungen – Mostra e rimuovi i dispositivi associati (telefono perso)",
-      "bilder": "/bilder – Foto e video a Telegram (`/bilder aus` disattiva)"
+      "bilder": "/bilder – Foto e video a Telegram (`/bilder aus` disattiva)",
+      "fehler": "/fehler – Invia una segnalazione di errore, anche se lo schermo è bloccato (`/fehler mappa bloccata`)"
     },
     "buttons": {
       "status": "📊 Stato",
@@ -1133,6 +1134,14 @@
       "frage": "Rimuovere davvero il dispositivo n. {0}? Non potrà fare più nulla con l’auto finché non verrà associato di nuovo.",
       "btn_ja": "Sì, rimuovi",
       "btn_nein": "Annulla"
+    },
+    "fehler": {
+      "laeuft": "📝 Preparo la segnalazione di errore …",
+      "gesendet": "✅ Segnalazione inviata. Codice: {0}",
+      "gesendet_ohne": "✅ Segnalazione inviata.",
+      "gemerkt": "📥 Niente internet: la segnalazione è salvata e partirà appena l’auto sarà online.",
+      "zuviel": "⏳ Oggi sono già state inviate abbastanza segnalazioni. Riprova domani.",
+      "nicht": "⚠️ La segnalazione non è partita. Panoptes non risponde in questo momento – riprova /fehler tra poco."
     }
   },
   "vehicle_control": {

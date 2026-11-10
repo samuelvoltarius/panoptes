@@ -700,7 +700,7 @@
   "login": {
     "subtitle": "Inserisci la chiave della tua auto per entrare",
     "device_id": "ID auto",
-    "find_hint": "Lo trovi sullo schermo dell’auto in Impostazioni → Avanzate (vecchio) → “Il tuo codice di accesso”.",
+    "find_hint": "Lo trovi sullo schermo dell’auto in Impostazioni → Tutte le impostazioni → Connessioni → “Il tuo codice di accesso”.",
     "login_btn": "Accedi",
     "privacy": "Tutto resta sul tuo dispositivo.",
     "unknown_device": "Dispositivo sconosciuto",
@@ -2092,6 +2092,7 @@
     "dauer_hinweis": "Nota: filmare sempre è giuridicamente delicato in Germania, Austria e Svizzera. Consigliato: lasciare la registrazione su “Spento” e attivare “Salva eventi automaticamente” nelle impostazioni del guardiano. Così Panoptes salva solo dopo una frenata brusca o un urto."
   },
   "events": {
+    "aufnahme_fehlt": "Questa registrazione non esiste più.",
     "select_date": "Scegli una data",
     "all": "Tutte",
     "title_recordings": "{prefix} Registrazioni",
@@ -5068,6 +5069,8 @@
     "page_display": "Display"
   },
   "navi": {
+    "via_mehr": "Altro: tappe",
+    "karte_aus": "La mappa è spenta. Per attivarla: Impostazioni → Tutte le impostazioni → Fonte mappa.",
     "rate": "Troppe richieste – attendi 2 minuti.",
     "slow": "Il pianificatore non ha risposto in tempo. Riprova.",
     "nothing": "Nessun risultato",
@@ -5343,6 +5346,13 @@
     "projektion_note": "Apre l'app dell'auto per Android Auto o CarPlay."
   },
   "system": {
+    "zugang_titel": "Il tuo codice di accesso",
+    "zugang_text": "Con questo codice accedi a Panoptes dal browser o dal telefono. Non condividerlo.",
+    "zugang_zeigen": "Mostra",
+    "zugang_verdecken": "Nascondi",
+    "zugang_frage": "Mostrare ora il codice di accesso? Assicurati che nessuno stia guardando.",
+    "zugang_nur_display": "Il codice di accesso si vede solo sullo schermo dell’auto.",
+    "zugang_fehler": "Il codice di accesso al momento non è leggibile.",
     "weitere_title": "Altre impostazioni",
     "weitere_lead": "Avvio con il quadro, avviso Telegram e per quanto Panoptes conserva i registri.",
     "overview_title": "Cosa vuoi configurare?",
@@ -6109,8 +6119,7 @@
     "fahrt_titel": "Non disponibile durante la guida",
     "fahrt_text": "Questa pagina funziona solo a veicolo fermo. In viaggio ci sono Home, Navigazione e il Guardiano.",
     "zur_start": "Home",
-    "zur_navi": "Navigazione",
-    "erweitert": "Avanzate (vecchio)"
+    "zur_navi": "Navigazione"
   },
   "kartenquelle": {
     "titel": "Scegli la fonte della mappa",
@@ -6130,7 +6139,8 @@
     "geraet": "La scelta vale per questo dispositivo o browser.",
     "kurz": "Nessuna fonte della mappa scelta",
     "geraet_auto": "La scelta vale per tutta l’auto, anche per la mappa sul display.",
-    "fehler": "Salvataggio non riuscito. La fonte della mappa non è cambiata."
+    "fehler": "Salvataggio non riuscito. La fonte della mappa non è cambiata.",
+    "zeit": "L’auto non risponde in questo momento. La fonte della mappa è invariata – riprova tra poco."
   },
   "speedcam": {
     "karte_titel": "Autovelox sulla mappa",
@@ -7126,7 +7136,15 @@
       "text": "Stai già contando in modo anonimo. Novità: Panoptes può inviare anche il modello della tua auto (per esempio Seal) e il livello DiLink. Nessun numero di telaio, nessuna targa, nessun luogo, nessun chilometraggio. Così vediamo quali auto usano Panoptes. Puoi disattivarlo in qualsiasi momento: verrà cancellato anche sul server.",
       "ja": "Sì, invia il modello",
       "nein": "No, lascia così"
-    }
+    },
+    "auto_bildschirm": "Schermo",
+    "auto_tacho": "Display conducente (quadro)",
+    "auto_karte": "Fonte della mappa",
+    "tacho_profil": "Profilo",
+    "tacho_bestaetigt": "confermato",
+    "tacho_offen": "non confermato",
+    "tacho_vorschlag": "proposta",
+    "telegram_hinweis": "Lo schermo dell’auto è bloccato? Scrivi /fehler al bot Panoptes – parte la stessa segnalazione."
   },
   "assistenz": {
     "hinweis_titel": "Disattivare un sistema di sicurezza",

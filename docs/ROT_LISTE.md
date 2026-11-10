@@ -3,7 +3,7 @@
 Diese Liste gehört zu den Release-Notizen („So wurde geprüft“). Sie nennt die Tests, die beim Freigabestand
 fehlschlagen, und warum. Maßstab für eine Freigabe ist: kein Test ist neu rot gegenüber dem Vorgänger.
 
-## Stand 0.1.38.13
+## Stand 0.1.38.14
 
 | Bereich | Rot | Übersprungen |
 |---|---:|---:|

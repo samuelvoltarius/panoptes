@@ -1568,4 +1568,6 @@
     </plurals>
     <!-- 0.1.38.3: Kamera-Einstellungen nicht erreichbar (statt „Speichern hat nicht geklappt“) -->
     <string name="camera_mapping_unreachable">Panoptes n\'atteint pas les caméras pour le moment. Attends un peu et touche à nouveau. Si cela ne marche toujours pas : Aide &amp; infos → Signaler un problème.</string>
+    <!-- 0.1.38.14 (P3): Telegram-Notiz bei eingefrorener Oberfläche (UiHaengerWaechter) -->
+    <string name="ui_haenger_telegram">⚠️ Panoptes sur l’écran de la voiture ne répond plus depuis %1$d s. Envoyez /fehler et un rapport d’erreur part – même si l’écran est figé.</string>
 </resources>

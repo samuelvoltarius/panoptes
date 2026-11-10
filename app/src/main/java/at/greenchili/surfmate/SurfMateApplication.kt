@@ -47,6 +47,13 @@ class SurfMateApplication : Application() {
         // Initialize LogConfig with app's cache directory for file logging
         LogConfig.init(this)
 
+        // 0.1.38.14 (P3): eingefrorene Oberfläche erkennen (Log + Telegram-Notiz mit Hinweis auf /fehler)
+        try {
+            at.greenchili.surfmate.ui.UiHaengerWaechter.starten(this)
+        } catch (error: Throwable) {
+            Log.w("SurfMateApplication", "UI-Hänger-Wächter nicht gestartet: ${error.message}")
+        }
+
         // Initialize LogManager seeded from the PERSISTED logging config, and
         // wire live updates + the cleanup worker. Previously LogManager was
         // built with LogConfig.default() and the user's size/retention values

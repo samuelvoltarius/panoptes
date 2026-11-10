@@ -89,7 +89,7 @@ public class PanoptesMenueTest {
         assertTrue(block.contains("ui.fragment.WebViewFragment"));
         assertTrue(block.contains("android:defaultValue=\"/\""));
         assertTrue(block.contains("android:name=\"vollbild\""));
-        assertTrue(nav.contains("android:id=\"@+id/dashboardFragment\""));   // alte Oberfläche bleibt
+        // 0.1.38.14 P1: das Ziel gibt es noch (unerreichbar), siehe AltDesignRausTest
         String w = lies("src/main/java/at/greenchili/surfmate/ui/fragment/WebViewFragment.kt");
         assertTrue(w.contains("if (vollbild) spliceAppChrome(roh) else spliceEmbedChrome(roh)"));
         assertTrue(w.contains("settings.setSupportZoom(false)"));
@@ -97,7 +97,7 @@ public class PanoptesMenueTest {
         assertFalse(w.contains("w.goBack() else oeffneErweitert()"));
         assertTrue(w.contains("const val ERWEITERT_URL = \"panoptes-app://erweitert\""));
         assertTrue(w.contains("const val DISPLAY_UA = \"PanoptesDisplay/1\""));
-        assertTrue(w.contains("fun openLegacy(): String = navigate(\"erweitert\")"));
+        assertTrue("0.1.38.14 P1: alte Oberfläche raus", w.contains("fun openLegacy(): String = \"entfernt\""));
         // Web-Navigation darf in der Vollflächen-Hülle nie versteckt werden (sonst gefangen auf „/“)
         assertTrue(w.contains("if (!vollbild) view?.evaluateJavascript(INJECT_JS, null)"));
         assertFalse(w.replace("if (!vollbild) view?.evaluateJavascript(INJECT_JS, null)", "")

@@ -30,8 +30,8 @@
     }
 
     function zeigen(versuch) {
-        // Erst der Haftungshinweis, dann dieser – nie zwei Fenster übereinander
-        if (document.getElementById('pnHinweise') || document.querySelector('.modal-backdrop')) {
+        // Erst der Haftungshinweis und „Neu in“ (0.1.38.14), dann dieser – nie zwei Fenster übereinander
+        if (document.getElementById('pnHinweise') || document.getElementById('pnNeu') || document.querySelector('.modal-backdrop')) {
             if (versuch < 20) setTimeout(function () { zeigen(versuch + 1); }, 3000);
             return;
         }

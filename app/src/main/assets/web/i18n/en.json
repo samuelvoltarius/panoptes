@@ -700,7 +700,7 @@
   "login": {
     "subtitle": "Type in the key of your car to get in",
     "device_id": "Car ID",
-    "find_hint": "You’ll find it on the car screen under Settings → Advanced (old) → “Your access code”.",
+    "find_hint": "You’ll find it on the car screen under Settings → All settings → Connections → “Your access code”.",
     "login_btn": "Sign in",
     "privacy": "Everything stays on your own device.",
     "unknown_device": "We don't know this device",
@@ -2092,6 +2092,7 @@
     "dauer_hinweis": "Note: Filming all the time is legally risky in Germany, Austria and Switzerland. Recommended: leave recording “Off” and turn on “Save events automatically” in the guard settings. Then Panoptes only saves a clip after hard braking or a bump."
   },
   "events": {
+    "aufnahme_fehlt": "This recording no longer exists.",
     "select_date": "Pick a date",
     "all": "Everything",
     "title_recordings": "{prefix} Clips",
@@ -5068,6 +5069,8 @@
     "page_display": "Display"
   },
   "navi": {
+    "via_mehr": "More: stops",
+    "karte_aus": "The map is off. To turn it on: Settings → All settings → Map source.",
     "rate": "Too many requests – please wait 2 minutes.",
     "slow": "The planner did not answer in time. Please try again.",
     "nothing": "Nothing found",
@@ -5343,6 +5346,13 @@
     "projektion_note": "Opens the car's app for Android Auto or CarPlay."
   },
   "system": {
+    "zugang_titel": "Your access code",
+    "zugang_text": "Use this code to sign in to Panoptes in a browser or on your phone. Do not share it.",
+    "zugang_zeigen": "Show",
+    "zugang_verdecken": "Hide",
+    "zugang_frage": "Show the access code now? Make sure nobody is reading along.",
+    "zugang_nur_display": "The access code is only shown on the car screen.",
+    "zugang_fehler": "The access code cannot be read right now.",
     "weitere_title": "More settings",
     "weitere_lead": "Start with the ignition, Telegram notice and how long Panoptes keeps logs.",
     "overview_title": "What would you like to set up?",
@@ -6109,8 +6119,7 @@
     "fahrt_titel": "Not available while driving",
     "fahrt_text": "This page only works while parked. On the road you have Home, Navigation and the guard.",
     "zur_start": "Home",
-    "zur_navi": "Navigation",
-    "erweitert": "Advanced (old)"
+    "zur_navi": "Navigation"
   },
   "kartenquelle": {
     "titel": "Choose a map source",
@@ -6130,7 +6139,8 @@
     "geraet": "Your choice applies to this device or browser.",
     "kurz": "No map source chosen",
     "geraet_auto": "Your choice applies to the whole car, including the map on the display.",
-    "fehler": "Saving did not work. The map source is unchanged."
+    "fehler": "Saving did not work. The map source is unchanged.",
+    "zeit": "The car is not responding right now. The map source is unchanged – please try again in a moment."
   },
   "speedcam": {
     "karte_titel": "Speed cameras on the map",
@@ -7126,7 +7136,15 @@
       "text": "You already count anonymously. New: Panoptes can also send your car model (for example Seal) and the DiLink level. No VIN, no number plate, no location, no mileage. This shows us which cars use Panoptes. You can switch it off at any time, which also deletes it on the server.",
       "ja": "Yes, include the model",
       "nein": "No, leave it as it is"
-    }
+    },
+    "auto_bildschirm": "Screen",
+    "auto_tacho": "Driver display (cluster)",
+    "auto_karte": "Map source",
+    "tacho_profil": "Profile",
+    "tacho_bestaetigt": "confirmed",
+    "tacho_offen": "not confirmed",
+    "tacho_vorschlag": "suggestion",
+    "telegram_hinweis": "Is the car screen frozen? Send /fehler to the Panoptes bot – the same report goes out."
   },
   "assistenz": {
     "hinweis_titel": "Switch off a safety system",

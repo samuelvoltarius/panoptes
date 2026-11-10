@@ -8,7 +8,7 @@
     'use strict';
 
     var GROUPS = {
-        connections: ['tailscaleKarte', 'wireguardSetupCard', 'kopplung', 'protokoll', 'homeassistant', 'planerKarte'],
+        connections: ['zugangscode', 'tailscaleKarte', 'wireguardSetupCard', 'kopplung', 'protokoll', 'homeassistant', 'planerKarte'],
         vehicle: ['manualVehicleCard', 'nativeVehicleTools', 'anzeige', 'displayLink', 'kartenquelle', 'blitzer', 'navigation'],
         privacy: ['datenschutz', 'energie', 'updates'],
         advanced: ['einrichtung', 'notzugang', 'eingriffe', 'umzug', 'tunnelKarte', 'coreServicesCard', 'weitereEinstellungen']
