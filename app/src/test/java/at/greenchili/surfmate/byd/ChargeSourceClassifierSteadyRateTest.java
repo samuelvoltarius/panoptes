@@ -11,6 +11,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class ChargeSourceClassifierSteadyRateTest {
+    @org.junit.Rule
+    public final org.junit.rules.TestRule ladequellen =
+            new at.greenchili.surfmate.testutil.LadequellenZuruecksetzen();
+
 
     private DaemonLogger.Config previousLogConfig;
 

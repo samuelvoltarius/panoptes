@@ -778,6 +778,40 @@
         "De terugtoets van de auto gaat nu één pagina terug. Pas op de startpagina zet hij Panoptes op de achtergrond.",
         "De titel bovenaan blijft bij het scrollen goed leesbaar."
       ]
+    },
+    {
+      "version": "0.1.40",
+      "versionCode": 80,
+      "de": [
+        "Launcher selbst gestalten: Unter Einstellungen → Erweitert wählst du ein Design (auch Kontrast und Nacht), eine Akzentfarbe und ein eigenes Hintergrundbild.",
+        "Kachelgröße und Kachelabstand stellst du selbst ein, die Statusspalte bei „Karte“ stellst du dir selbst zusammen.",
+        "Neue Launcher-Kacheln: Schloss, Laden und Live-Kamera. „Größe“ und „Hintergrund“ lassen sich wieder auswählen.",
+        "Kamera- und Telegram-Dienst starten beim Hochfahren nicht mehr doppelt."
+      ],
+      "en": [
+        "Design the launcher yourself: under Settings → Advanced you choose a theme (including High contrast and Night), an accent colour and your own background picture.",
+        "You set tile size and tile spacing yourself and put together the status column next to the “Map” yourself.",
+        "New launcher tiles: Lock, Charging and Live camera. “Size” and “Background” can be selected again.",
+        "The camera and Telegram services no longer start twice at boot."
+      ],
+      "fr": [
+        "Personnalisez le launcher : sous Réglages → Avancé, vous choisissez un thème (aussi Contraste élevé et Nuit), une couleur d’accent et votre propre image de fond.",
+        "Vous réglez vous-même la taille et l’espacement des tuiles et composez la colonne d’état à côté de la « Carte ».",
+        "Nouvelles tuiles du launcher : Verrou, Charge et Caméra en direct. « Taille » et « Fond » peuvent de nouveau être choisis.",
+        "Les services caméra et Telegram ne démarrent plus en double au démarrage."
+      ],
+      "it": [
+        "Personalizza il launcher: in Impostazioni → Avanzate scegli un tema (anche Contrasto e Notte), un colore di accento e la tua immagine di sfondo.",
+        "Imposti tu la dimensione e la spaziatura dei riquadri e componi la colonna di stato accanto alla “Mappa”.",
+        "Nuovi riquadri del launcher: Serratura, Ricarica e Camera dal vivo. “Dimensione” e “Sfondo” si possono di nuovo scegliere.",
+        "I servizi camera e Telegram non partono più due volte all’avvio."
+      ],
+      "nl": [
+        "Ontwerp de launcher zelf: onder Instellingen → Geavanceerd kies je een thema (ook Hoog contrast en Nacht), een accentkleur en een eigen achtergrondafbeelding.",
+        "Tegelgrootte en tegelafstand stel je zelf in, en de statuskolom naast de ‘Kaart’ stel je zelf samen.",
+        "Nieuwe launchertegels: Slot, Laden en Live-camera. ‘Grootte’ en ‘Achtergrond’ zijn weer te kiezen.",
+        "De camera- en Telegram-dienst starten bij het opstarten niet meer dubbel."
+      ]
     }
   ]
 }

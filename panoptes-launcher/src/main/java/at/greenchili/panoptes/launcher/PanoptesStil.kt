@@ -80,6 +80,44 @@ object PanoptesStil {
         heroBis = rgba(255, 255, 255, 0.60)
     )
 
+    /** 0.1.40 (L2) eigenes Design „Kontrast“: Schwarz/Weiß, gelber Akzent, kräftige Linien (gut lesbar bei Sonne). */
+    val KONTRAST = Palette(
+        hell = false,
+        background = hex(0x000000), surface = hex(0x0A0A0A), onSurface = hex(0xFFFFFF), onSurfaceVariant = hex(0xE6E6E6),
+        outline = hex(0xBDBDBD), aqua = hex(0xFFD400), lime = hex(0x00E676), onPrimary = hex(0x000000),
+        warning = hex(0xFFC400), danger = hex(0xFF5252),
+        line = rgba(255, 255, 255, 0.45), card = rgba(255, 255, 255, 0.08), act = rgba(255, 255, 255, 0.14),
+        seiteVon = hex(0x000000), seiteBis = hex(0x000000), glowA = 0, glowB = 0,
+        heroVon = rgba(255, 255, 255, 0.06), heroBis = rgba(0, 0, 0, 0.0)
+    )
+
+    /** 0.1.40 (L2) „Nacht“: sehr dunkel, warme gedämpfte Schrift und Bernstein-Akzent (blendet nachts nicht). */
+    val NACHT = Palette(
+        hell = false,
+        background = hex(0x05080B), surface = hex(0x0B0F14), onSurface = hex(0xC9B8A6), onSurfaceVariant = hex(0x8C7E70),
+        outline = hex(0x6B6055), aqua = hex(0xD9822B), lime = hex(0xB5652A), onPrimary = hex(0x1A0E05),
+        warning = hex(0xC98A3A), danger = hex(0xC0503A),
+        line = rgba(217, 130, 43, 0.14), card = rgba(255, 255, 255, 0.03), act = rgba(255, 255, 255, 0.05),
+        seiteVon = hex(0x070A0E), seiteBis = hex(0x030507), glowA = 0, glowB = 0,
+        heroVon = rgba(217, 130, 43, 0.10), heroBis = rgba(5, 8, 11, 0.40)
+    )
+
+    /**
+     * 0.1.40: Palette nach eigenem Design ("auto" = wie bisher aus Panoptes appearance.modus) plus optionaler
+     * Akzentfarbe "#RRGGBB" (ersetzt den Aqua-Ton: Symbole, Rahmen, Hinweise).
+     */
+    fun gestaltet(design: String?, modus: String?, systemHell: Boolean, akzent: String?): Palette {
+        val basis = when (design) {
+            "dunkel" -> DUNKEL; "hell" -> HELL; "kontrast" -> KONTRAST; "nacht" -> NACHT
+            else -> palette(modus, systemHell)
+        }
+        val a = akzentFarbe(akzent) ?: return basis
+        return basis.copy(aqua = a)
+    }
+
+    fun akzentFarbe(wert: String?): Int? =
+        if (wert != null && wert.matches(Regex("^#[0-9A-Fa-f]{6}$"))) hex(wert.substring(1).toLong(16)) else null
+
     /** Cockpit-Ansicht (index.html `data-home-layout="cockpit"`): eigene dichte Kacheloptik, nur dunkel. */
     val COCKPIT_KARTE_VON = rgba(35, 50, 67, 0.92)
     val COCKPIT_KARTE_BIS = rgba(18, 29, 42, 0.88)

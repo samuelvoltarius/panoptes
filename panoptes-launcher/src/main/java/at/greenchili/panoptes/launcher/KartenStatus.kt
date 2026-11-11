@@ -36,6 +36,16 @@ object KartenStatus {
                          ruheMs: Long = 5_000L): Boolean =
         abbruchBeiR && !schonVersucht && gang != "R" && ruheSeitMs != null && jetztMs - ruheSeitMs >= ruheMs
 
+    /** 0.1.40 (E2E 240 dpi): Beschriftung angeschnitten (braucht mehr Pixel als da sind) → Knöpfe nur mit Symbol. */
+    fun nurSymbole(textPx: Float, platzPx: Int): Boolean = textPx > platzPx + 0.5f
+
+    /** 0.1.40 (E2E G4): Zeile der Rückfall-Leiste nach der Auswahl der Statusspalte (Akku, Reichweite, Gang, Uhr). */
+    fun leistenZeile(spalte: List<String>, socPct: Double?, rangeKm: Double?, gang: String?, uhr: String?): String {
+        val z = zeile(socPct.takeIf { "akku" in spalte }, rangeKm.takeIf { "reichweite" in spalte }, gang.takeIf { "gang" in spalte })
+        val u = uhr?.takeIf { "uhr" in spalte } ?: return z
+        return if (z == "—") u else "$z · $u"
+    }
+
     /** Statuszeile „78 % · 312 km · D“; fehlende Werte fallen weg, der Gang nur, wenn er frisch gemeldet ist. */
     fun zeile(socPct: Double?, rangeKm: Double?, gang: String?): String {
         val t = mutableListOf<String>()

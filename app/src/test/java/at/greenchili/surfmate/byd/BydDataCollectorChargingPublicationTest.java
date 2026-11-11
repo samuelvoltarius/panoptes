@@ -41,6 +41,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class BydDataCollectorChargingPublicationTest {
+    @org.junit.Rule
+    public final org.junit.rules.TestRule ladequellen =
+            new at.greenchili.surfmate.testutil.LadequellenZuruecksetzen();
+
 
     @Test
     public void bmsFallbackRejectsUnavailableAndOutOfRangeValues() {

@@ -105,11 +105,23 @@ public class SkriptAtomarSchreibenTest {
             List<String> zeilen = telegram();
             // Am Auto 220 Zeilen; seit 0.1.38.1 21 Zeilen mehr (Anhänge-Modus), Befund-Logik unverändert.
             int n = zeilen.size();
-            assertEquals(244, n);
+            // 0.1.40 W1: +61 Zeilen Lock-Übernahme (Alter, Übernahme-Sperre, Log), Befund-Logik unverändert.
+            assertEquals(305, n);
+            // Abbruchstelle am Auto: nach dem "  fi" vor "OLD_WPID=…" (damals Zeile 110). Seit W1 liegt sie
+            // weiter hinten; sie wird aus dem Inhalt bestimmt, damit der Befund derselbe bleibt.
+            int schnitt = -1;
+            for (int i = 0; i + 2 < n; i++) {
+                if ("  fi".equals(zeilen.get(i))
+                        && zeilen.get(i + 2).contains("if watchdog_pid_matches \"$OLD_WPID\"")) {
+                    schnitt = i;
+                    break;
+                }
+            }
+            assertTrue(schnitt > 0);
             StringBuilder sk = new StringBuilder();
             // AccSentry (alt): rm, Zeilen 1..109 einzeln ins Ziel
             sk.append("rm -f ").append(z).append('\n');
-            for (int i = 0; i < 109; i++) {
+            for (int i = 0; i < schnitt; i++) {
                 sk.append(DaemonLauncher.buildScriptLineWriteCommand(zeilen.get(i), i == 0, z)).append('\n');
             }
             // UI-Weg (alt) dazwischen: rm + ganzes Skript in einem Zug
@@ -118,12 +130,12 @@ public class SkriptAtomarSchreibenTest {
                 sk.append(DaemonLauncher.buildScriptLineWriteCommand(zeilen.get(i), i == 0, z)).append('\n');
             }
             // AccSentry macht mit >> weiter
-            for (int i = 109; i < zeilen.size(); i++) {
+            for (int i = schnitt; i < zeilen.size(); i++) {
                 sk.append(DaemonLauncher.buildScriptLineWriteCommand(zeilen.get(i), false, z)).append('\n');
             }
             LogArchivShellTest.fuehreAus(sk.toString());
             List<String> ergebnis = Arrays.asList(lies(ziel).split("\n", -1));
-            assertEquals("am Auto 334 Zeilen + leeres Ende", n + (n - 109) + 1, ergebnis.size());
+            assertEquals("am Auto 334 Zeilen + leeres Ende", n + (n - schnitt) + 1, ergebnis.size());
             assertEquals("Zeile n+1 (am Auto 221) = '  fi' aus acquire_watchdog_lock", "  fi", ergebnis.get(n));
             assertTrue(ergebnis.get(n + 2).contains("watchdog_pid_matches"));
             assertNotEquals(0, shN(ziel));

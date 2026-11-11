@@ -20,6 +20,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class ChargingDetectorTest {
+    @org.junit.Rule
+    public final org.junit.rules.TestRule ladequellen =
+            new at.greenchili.surfmate.testutil.LadequellenZuruecksetzen();
+
 
     private DaemonLogger.Config previousLogConfig;
 
@@ -1185,7 +1189,8 @@ public class ChargingDetectorTest {
                 .socPercent(51)
                 .build(), 4, 4);
         detector.observeRawChargingSignal(source, 3.2); // Fresh SoC rise: L3 credit 1.
-        assertEquals(at.greenchili.surfmate.byd.ChargeSourceClassifier.Kind.RATE,
+        assertEquals(klassifiziererBefund(source),
+                at.greenchili.surfmate.byd.ChargeSourceClassifier.Kind.RATE,
                 at.greenchili.surfmate.byd.ChargeSourceClassifier.kindOf(source));
         assertFalse(detector.isCharging());
 
@@ -1452,6 +1457,20 @@ public class ChargingDetectorTest {
 
         assertEquals(before.generation, after.generation);
         assertTrue(ChargingDetector.isPublicationWindowStable(before, after));
+    }
+
+    /**
+     * 0.1.40 T1: CI 42979087331 (Versuch 2) sah hier einmal UNKNOWN; lokal und mit Pausen bis 65 s
+     * bleibt es RATE. Fällt es wieder, nennt die Meldung den Zustand des Klassifizierers und die
+     * lebenden Threads, damit der fremde Eingriff (z. B. ein übrig gebliebener Thread) sichtbar wird.
+     */
+    private static String klassifiziererBefund(String source) {
+        org.json.JSONObject alle = at.greenchili.surfmate.byd.ChargeSourceClassifier.describe();
+        java.util.List<String> threads = new java.util.ArrayList<>();
+        for (Thread t : Thread.getAllStackTraces().keySet()) threads.add(t.getName());
+        java.util.Collections.sort(threads);
+        return "quelle=" + alle.optJSONObject(source) + " quellen=" + alle.length()
+                + " threads=" + threads;
     }
 
     private static String prepareRampThenPlateauSource(

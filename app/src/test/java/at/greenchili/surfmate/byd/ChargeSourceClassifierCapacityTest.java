@@ -6,6 +6,10 @@ import static org.junit.Assert.assertFalse;
 import org.junit.Test;
 
 public class ChargeSourceClassifierCapacityTest {
+    @org.junit.Rule
+    public final org.junit.rules.TestRule ladequellen =
+            new at.greenchili.surfmate.testutil.LadequellenZuruecksetzen();
+
 
     @Test
     public void documentedCapacityCounterCanNeverBecomeRate() {

@@ -496,6 +496,18 @@ public final class ChargeSourceClassifier {
         }
     }
 
+    /**
+     * Tests only (0.1.40 T1): forget every verdict, run and the persistence target. The verdicts live
+     * in static state for the whole JVM, so without this a test's fixed source names
+     * ({@link #SRC_CLUSTER}, {@link #SRC_EXTERNAL}) inherited whatever an earlier test class had
+     * latched, depending on the order Gradle happened to run the classes in.
+     */
+    public static synchronized void resetForTests() {
+        observations.clear();
+        stateFile = null;
+        loaded = false;
+    }
+
     /** Diagnostic snapshot for the telemetry surface. */
     public static synchronized JSONObject describe() {
         loadIfNeeded();

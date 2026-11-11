@@ -30,7 +30,9 @@ data class LauncherSummary(
     val naviBekannt: List<String> = emptyList(),
     /** 0.1.38.8: Akku-Gesundheit laut Auto (BYD-Index) und Panoptes-Schätzung, je null = nicht vorhanden. */
     val sohAutoPct: Double? = null,
-    val sohSchaetzungPct: Double? = null
+    val sohSchaetzungPct: Double? = null,
+    /** 0.1.40: Türschloss laut Kern state.locked (true/false), null = unbekannt. Nur lesen. */
+    val locked: Boolean? = null
 )
 
 data class LauncherReifen(val vl: Double?, val vr: Double?, val hl: Double?, val hr: Double?, val unten: Double?, val oben: Double?)
@@ -151,7 +153,8 @@ object LauncherContract {
                 (0 until minOf(a.length(), 32)).mapNotNull { a.optString(it).takeIf { p -> PAKET.matches(p) } }
             } ?: emptyList(),
             battery?.nullableDouble("sohAutoPct")?.takeIf { it > 0 && it <= 110 },
-            battery?.nullableDouble("sohSchaetzungPct")?.takeIf { it > 0 && it <= 110 }
+            battery?.nullableDouble("sohSchaetzungPct")?.takeIf { it > 0 && it <= 110 },
+            locked = state?.takeIf { it.has("locked") && !it.isNull("locked") }?.optBoolean("locked")
         )
     }
 

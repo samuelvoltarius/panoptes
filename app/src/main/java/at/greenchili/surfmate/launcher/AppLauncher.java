@@ -585,7 +585,7 @@ public final class AppLauncher {
         // package. (`.` in pkg is a regex any-char here but charset-limited so the
         // over-match is benign; attribution below re-checks with a literal "<pkg>/".)
         String out = runShellCapture(
-                "dumpsys activity activities | grep -E 'TaskRecord\\{|Task\\{|" + pkg + "/'");
+                "dumpsys activity activities | grep -E 'TaskRecord\\{|Task\\{|realActivity=|" + pkg + "/'");
         return taskIdInDump(out, pkg);
     }
 
@@ -611,6 +611,15 @@ public final class AppLauncher {
             if (hashTask >= 0) {
                 sawTaskHeader = true;
                 pendingTaskId = hashTask;          // remember the task we're inside
+                continue;
+            }
+            // 0.1.40 (E2E 0.1.39 B): the task's BASE component decides. A task whose realActivity is another
+            // package (e.g. the Ghost activity carrying the target in its intent) never counts for pkg, even if
+            // a later line of that block mentions "<pkg>/". Blocks without a realActivity line keep the old rule.
+            int ra = line.indexOf("realActivity=");
+            if (pendingTaskId >= 0 && ra >= 0) {
+                if (lineContainsComponentToken(line.substring(ra + "realActivity=".length()), pkg + "/")) return pendingTaskId;
+                pendingTaskId = -1;                // base component is someone else: skip the rest of this block
                 continue;
             }
             // A component line "<pkg>/<activity>" inside the current task block.

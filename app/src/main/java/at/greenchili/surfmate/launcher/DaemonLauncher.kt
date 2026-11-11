@@ -77,6 +77,11 @@ class DaemonLauncher(
         private val TELEGRAM_WATCHDOG_LOCK_PATH =
             at.greenchili.surfmate.util.DaemonStorage.rebase("/data/user_de/0/com.android.shell/surfmate/telegram_watchdog.lock")
 
+        /** 0.1.40 W1: Ein Watchdog-Lock OHNE eingetragene PID gilt erst ab diesem Alter als verwaist. */
+        const val WATCHDOG_LOCK_VERWAIST_SEKUNDEN = 10
+        /** 0.1.40 W1: Eine hängengebliebene Übernahme-Sperre (`<lock>.steal`) wird ab diesem Alter entfernt. */
+        const val WATCHDOG_STEAL_VERWAIST_SEKUNDEN = 60
+
         /**
          * Test one `ps -A -o S,ARGS` snapshot for a live daemon process.
          * A SIGKILL can leave a short-lived zombie row; it is not a running daemon.
@@ -459,9 +464,24 @@ class DaemonLauncher(
          *
          * A pre-existing owner is recognized only when its PID is numeric
          * and `/proc/<pid>/cmdline` still names this exact watchdog script.
-         * An invalid lock is deliberately not stolen here: deleting a lock
-         * after a stale read can race a newer owner. Relaunch/deployment
-         * cleanup removes stale lock files only after killing old wrappers.
+         * 0.1.40 W1 (Wettlauf behoben): Ein Lock ohne lebenden Eigentümer wird nur noch
+         * übernommen ("gestohlen"), wenn er wirklich verwaist ist:
+         *  - Eigentümer-PID ist eine Zahl, aber kein lebender Watchdog dieses Skripts
+         *    (z. B. Lock aus dem letzten Boot) → sofort verwaist, Selbstheilung bleibt;
+         *  - Eigentümer-Datei fehlt/leer → NUR wenn das Lock älter als
+         *    [WATCHDOG_LOCK_VERWAIST_SEKUNDEN] ist. Ein frisches Lock ohne PID gehört einem
+         *    Mitbewerber, der zwischen `mkdir` und `echo $$` steht – früher wurde genau
+         *    dieses Lock gelöscht und neu belegt, und zwei Watchdogs liefen gleichzeitig
+         *    (DaemonWatchdogOwnershipContractTest, CI 42976248463 / 42979087331).
+         * Die Übernahme selbst läuft unter einer zweiten mkdir-Sperre (`<lock>.steal`), und
+         * dort wird alles neu gelesen, damit zwei Übernehmer nicht nacheinander dasselbe
+         * Lock wegräumen. Jeder Lockwechsel (belegt, übernommen, freigegeben, nicht
+         * übernommen) schreibt eine Zeile `Watchdog-Sperre: …` in `$LOG_FILE`.
+         * Die Eigentümer-Datei wird nach `mkdir` exklusiv angelegt (`set -C`, O_EXCL): `mkdir` allein
+         * war in der Linux-CI (Ubuntu 26.04, uutils-mkdir) nicht atomar – zwei Bewerber bekamen beide
+         * Erfolg (CI 43052239331, 8 von 400 Runden). Wer die Datei nicht anlegen kann, tritt zurück;
+         * sein `rmdir` scheitert am nicht leeren Ordner des Gewinners.
+         * Relaunch/deployment cleanup removes stale lock files after killing old wrappers.
          *
          * Cleanup is owner-only. The EXIT trap compares the owner and legacy
          * PID files with `$$` before removing the lock directory.
@@ -477,6 +497,24 @@ class DaemonLauncher(
             "WATCHDOG_LOCK_DIR=\"$lockPath\"",
             "WATCHDOG_LOCK_OWNER=\"\$WATCHDOG_LOCK_DIR/pid\"",
             "WATCHDOG_LOCK_OWNED=0",
+            "WATCHDOG_STEAL_DIR=\"\$WATCHDOG_LOCK_DIR.steal\"",
+            "WATCHDOG_LOCK_STALE_S=$WATCHDOG_LOCK_VERWAIST_SEKUNDEN",
+            "WATCHDOG_STEAL_STALE_S=$WATCHDOG_STEAL_VERWAIST_SEKUNDEN",
+            "",
+            "watchdog_lock_log() {",
+            "  [ -n \"\$LOG_FILE\" ] || return 0",
+            "  { echo \"[\$(date)] Watchdog-Sperre: \$1 (pid \$\$)\"; } 2>/dev/null >> \"\$LOG_FILE\"",
+            "  return 0",
+            "}",
+            "",
+            "watchdog_lock_age() {",
+            "  WL_MTIME=\$(stat -c %Y \"\$1\" 2>/dev/null)",
+            "  WL_NOW=\$(date +%s 2>/dev/null)",
+            "  case \"\$WL_MTIME\" in ''|*[!0-9]*) return 1 ;; esac",
+            "  case \"\$WL_NOW\" in ''|*[!0-9]*) return 1 ;; esac",
+            "  WATCHDOG_LOCK_AGE=\$((WL_NOW - WL_MTIME))",
+            "  return 0",
+            "}",
             "",
             "watchdog_pid_matches() {",
             "  CANDIDATE_PID=\"\$1\"",
@@ -488,7 +526,7 @@ class DaemonLauncher(
             "",
             "acquire_watchdog_lock() {",
             "  if mkdir \"\$WATCHDOG_LOCK_DIR\" 2>/dev/null; then",
-            "    if ! echo \$\$ > \"\$WATCHDOG_LOCK_OWNER\" 2>/dev/null; then",
+            "    if ! (set -C; echo \$\$ > \"\$WATCHDOG_LOCK_OWNER\") 2>/dev/null; then",
             "      rmdir \"\$WATCHDOG_LOCK_DIR\" 2>/dev/null",
             "      return 1",
             "    fi",
@@ -498,22 +536,62 @@ class DaemonLauncher(
             "      return 1",
             "    fi",
             "    WATCHDOG_LOCK_OWNED=1",
+            "    watchdog_lock_log \"belegt\"",
             "    return 0",
             "  fi",
             "  OLD_WPID=\$(cat \"\$WATCHDOG_LOCK_OWNER\" 2>/dev/null)",
             "  if watchdog_pid_matches \"\$OLD_WPID\"; then",
             "    return 1",
             "  fi",
-            "  # Stale lock: the owner PID is dead or not this watchdog (typically a",
-            "  # lock dir left on persistent storage by a previous boot, which no",
-            "  # launcher cleanup runs to clear after a cold start). Steal it: drop",
-            "  # the stale lock and re-acquire so the watchdog self-heals instead of",
-            "  # looping forever on a lock nobody owns.",
-            "  rm -f \"\$WATCHDOG_LOCK_OWNER\" 2>/dev/null",
-            "  rm -f \"\$WATCHDOG_PID_FILE\" 2>/dev/null",
-            "  rmdir \"\$WATCHDOG_LOCK_DIR\" 2>/dev/null",
+            "  # Possibly stale. Only one launcher may judge and clear it at a time:",
+            "  # the steal itself is guarded by a second atomic mkdir.",
+            "  if ! mkdir \"\$WATCHDOG_STEAL_DIR\" 2>/dev/null; then",
+            "    if watchdog_lock_age \"\$WATCHDOG_STEAL_DIR\" && [ \"\$WATCHDOG_LOCK_AGE\" -ge \"\$WATCHDOG_STEAL_STALE_S\" ]; then",
+            "      rmdir \"\$WATCHDOG_STEAL_DIR\" 2>/dev/null",
+            "      watchdog_lock_log \"alte Uebernahme-Sperre entfernt\"",
+            "    fi",
+            "    return 1",
+            "  fi",
+            "  steal_stale_watchdog_lock",
+            "  WATCHDOG_STEAL_RC=\$?",
+            "  rmdir \"\$WATCHDOG_STEAL_DIR\" 2>/dev/null",
+            "  return \$WATCHDOG_STEAL_RC",
+            "}",
+            "",
+            "steal_stale_watchdog_lock() {",
+            "  # Runs only while holding WATCHDOG_STEAL_DIR. Re-read everything: the",
+            "  # owner may have finished acquiring or exited since the first look.",
+            "  STALE_WPID=\$(cat \"\$WATCHDOG_LOCK_OWNER\" 2>/dev/null)",
+            "  if [ ! -d \"\$WATCHDOG_LOCK_DIR\" ]; then",
+            "    STALE_WPID=frei",
+            "  elif watchdog_pid_matches \"\$STALE_WPID\"; then",
+            "    return 1",
+            "  else",
+            "    case \"\$STALE_WPID\" in",
+            "      ''|*[!0-9]*)",
+            "        # No owner PID yet: a competing launcher may sit between its mkdir",
+            "        # and writing its PID. Never steal a fresh lock in that state.",
+            "        if ! watchdog_lock_age \"\$WATCHDOG_LOCK_DIR\"; then",
+            "          watchdog_lock_log \"nicht uebernommen: ohne Eigentuemer, Alter unbekannt\"",
+            "          return 1",
+            "        fi",
+            "        if [ \"\$WATCHDOG_LOCK_AGE\" -ge 0 ] && [ \"\$WATCHDOG_LOCK_AGE\" -lt \"\$WATCHDOG_LOCK_STALE_S\" ]; then",
+            "          watchdog_lock_log \"nicht uebernommen: frisch (\${WATCHDOG_LOCK_AGE}s), Eigentuemer noch nicht eingetragen\"",
+            "          return 1",
+            "        fi",
+            "        STALE_WPID=\"leer, \${WATCHDOG_LOCK_AGE}s alt\"",
+            "        ;;",
+            "    esac",
+            "    # Stale lock: dead owner PID / not this watchdog (typically left on",
+            "    # persistent storage by a previous boot) or an owner-less lock that",
+            "    # is old. Drop it and re-acquire so the watchdog self-heals.",
+            "    watchdog_lock_log \"verwaist, wird geraeumt (vorher: \$STALE_WPID)\"",
+            "    rm -f \"\$WATCHDOG_LOCK_OWNER\" 2>/dev/null",
+            "    rm -f \"\$WATCHDOG_PID_FILE\" 2>/dev/null",
+            "    rmdir \"\$WATCHDOG_LOCK_DIR\" 2>/dev/null",
+            "  fi",
             "  if mkdir \"\$WATCHDOG_LOCK_DIR\" 2>/dev/null; then",
-            "    if ! echo \$\$ > \"\$WATCHDOG_LOCK_OWNER\" 2>/dev/null; then",
+            "    if ! (set -C; echo \$\$ > \"\$WATCHDOG_LOCK_OWNER\") 2>/dev/null; then",
             "      rmdir \"\$WATCHDOG_LOCK_DIR\" 2>/dev/null",
             "      return 1",
             "    fi",
@@ -523,9 +601,11 @@ class DaemonLauncher(
             "      return 1",
             "    fi",
             "    WATCHDOG_LOCK_OWNED=1",
+            "    watchdog_lock_log \"uebernommen (vorher: \$STALE_WPID)\"",
             "    return 0",
             "  fi",
-            "  # Another watchdog won the race to re-acquire; stand down.",
+            "  # A fast-path launcher took the freed lock first; stand down.",
+            "  watchdog_lock_log \"nicht uebernommen: ein anderer war schneller\"",
             "  return 1",
             "}",
             "",
@@ -535,6 +615,7 @@ class DaemonLauncher(
             "  if [ \"\$CURRENT_WPID\" = \"\$\$\" ]; then",
             "    rm -f \"\$WATCHDOG_LOCK_OWNER\" 2>/dev/null",
             "    rmdir \"\$WATCHDOG_LOCK_DIR\" 2>/dev/null",
+            "    watchdog_lock_log \"freigegeben\"",
             "  fi",
             "  LEGACY_WPID=\$(cat \"\$WATCHDOG_PID_FILE\" 2>/dev/null)",
             "  if [ \"\$LEGACY_WPID\" = \"\$\$\" ]; then",

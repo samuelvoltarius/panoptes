@@ -3,8 +3,8 @@ package at.greenchili.surfmate.community
 import org.json.JSONObject
 
 /**
- * Gemeinsamer Zugang zum eigenen Community-Server (Projekt-Server `/community/api`, Server-Vertrag)
- *  für „Regeln teilen“ und „Straßenzustand gemeinsam“.
+ * Gemeinsamer Zugang zum eigenen Community-Server (Projekt-Server `/community/api`, Vertrag im
+ * README des Community-Servers) für „Regeln teilen“ und „Straßenzustand gemeinsam“.
  *
  * - **Standard aus:** ohne `community.enabled = true` geht kein einziger Aufruf hinaus,
  *   auch wenn eine URL oder RoadSense-Crowd-Schalter gesetzt sind (Koordination 21.10.).

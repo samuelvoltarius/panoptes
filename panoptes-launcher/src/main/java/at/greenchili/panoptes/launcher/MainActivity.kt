@@ -90,6 +90,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var root: FrameLayout
     private lateinit var bild: ImageView
     private lateinit var video: VideoView
+    /** 0.1.40 (E2E M1): Schleier über dem eigenen Bild, damit Dock und Texte lesbar bleiben. */
+    private lateinit var schleier: View
     private lateinit var seitenHost: Wischer
     private lateinit var punkte: LinearLayout
     private lateinit var hinweis: TextView
@@ -257,13 +259,17 @@ class MainActivity : AppCompatActivity() {
 
     // ==================== Aufbau ====================
 
+    /** 0.1.40 (L2): eigenes Design + Akzent; „Wie Panoptes“ (ab Werk) = bisheriges Verhalten. Cockpit bleibt dunkel. */
+    private fun stilPalette(cockpit: Boolean, modus: String?): Palette =
+        if (cockpit) PanoptesStil.DUNKEL else PanoptesStil.gestaltet(layout.design, modus, systemHell(), layout.akzent)
+
     private fun systemHell() = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) != Configuration.UI_MODE_NIGHT_YES
 
     private fun baueAlles() {
         val cockpit = layout.hintergrund == "cockpit"
-        val pal = if (cockpit) PanoptesStil.DUNKEL else PanoptesStil.palette(appearance?.modus, systemHell())
+        val pal = stilPalette(cockpit, appearance?.modus)
         ui = Ui(this, pal, cockpit)
-        stilSchluessel = "${pal.hell}:$cockpit"
+        stilSchluessel = "${pal.hell}:$cockpit:${pal.aqua}:${pal.background}"
         aktualisierer.clear(); statusAktualisierer.clear()
         overlay = null
         window.statusBarColor = if (cockpit) PanoptesStil.COCKPIT_SEITE[0] else pal.seiteVon
@@ -274,6 +280,8 @@ class MainActivity : AppCompatActivity() {
         root = FrameLayout(this).apply { background = SeitenHintergrund(pal, cockpit) }
         bild = ImageView(this).apply { scaleType = ImageView.ScaleType.CENTER_CROP; visibility = View.GONE }
         root.addView(bild, FrameLayout.LayoutParams(-1, -1))
+        schleier = View(this).apply { visibility = View.GONE }
+        root.addView(schleier, FrameLayout.LayoutParams(-1, -1))
         video = VideoView(this).apply { visibility = View.GONE }
         root.addView(video, FrameLayout.LayoutParams(-1, -1, Gravity.CENTER))
         bildGeladen = false; videoLaeuft = false
@@ -674,7 +682,7 @@ class MainActivity : AppCompatActivity() {
     private fun zeichneSeite(richtung: Int = 0) {
         aktualisierer.removeAll { it is KachelAktualisierer }
         seitenHost.removeAllViews()
-        val r = RasterLayout(this, Raster.SPALTEN, Raster.ZEILEN, ui.dp(14))
+        val r = RasterLayout(this, Raster.SPALTEN, Raster.ZEILEN, ui.dp(Raster.abstandDp(layout.abstand)))
         raster = r
         layout.seiten[seite].forEach { e -> r.addView(baueElement(e), RasterLayout.Zelle(e.x, e.y, e.b, e.h)) }
         if (bearbeiten) {
@@ -764,7 +772,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun kachelMenue(e: Element) {
         val punkte = mutableListOf<Pair<String, () -> Unit>>()
-        if (e.typ == ElementTyp.WIDGET) punkte += getString(R.string.groesse) to { aendern(Raster.groesseWechseln(layout, e.id)); zeichneSeite() }
+        if (e.typ == ElementTyp.WIDGET) {
+            // 0.1.40 (L2): Größe je Kachel in drei Stufen statt Durchschalten
+            val jetzt = Raster.stufeVon(e)
+            Raster.STUFEN.keys.forEach { st ->
+                punkte += ((if (st == jetzt) "✓ " else "") + getString(R.string.groesse) + ": " + stufeName(st)) to {
+                    val neu = Raster.kachelStufe(layout, e.id, st)
+                    if (neu === layout) zeigeHinweis(getString(R.string.kein_platz)); aendern(neu); zeichneSeite()
+                }
+            }
+        }
         if (e.typ == ElementTyp.APP) {
             layout.seiten.flatten().filter { it.typ == ElementTyp.ORDNER }.forEach { o ->
                 punkte += getString(R.string.in_ordner, o.name) to { aendern(Raster.inOrdner(layout, e.id, o.id)); zeichneSeite() }
@@ -783,6 +800,8 @@ class MainActivity : AppCompatActivity() {
         auswahl(titelVon(e), punkte)
     }
 
+    private fun stufeName(st: String) = getString(when (st) { "klein" -> R.string.stufe_klein; "gross" -> R.string.stufe_gross; else -> R.string.stufe_mittel })
+
     private fun titelVon(e: Element) = when (e.typ) {
         ElementTyp.WIDGET -> kachelName(e.kachel!!)
         ElementTyp.APP -> appName(e.paket!!)
@@ -792,6 +811,7 @@ class MainActivity : AppCompatActivity() {
     private fun kachelName(k: Kachel) = getString(when (k) {
         Kachel.FAHRZEUG -> R.string.widget_fahrzeug; Kachel.AKKU -> R.string.widget_akku; Kachel.NAVI -> R.string.widget_navi
         Kachel.MUSIK -> R.string.widget_musik; Kachel.WAECHTER -> R.string.widget_waechter; Kachel.UHR -> R.string.widget_uhr
+        Kachel.SCHLOSS -> R.string.widget_schloss; Kachel.LADEN -> R.string.widget_laden; Kachel.KAMERA -> R.string.widget_kamera
     })
 
     private fun kachelHinzufuegen() {
@@ -800,7 +820,12 @@ class MainActivity : AppCompatActivity() {
         auswahl(getString(R.string.kachel_hinzu), fehlend.map { k ->
             kachelName(k) to {
                 val neu = Raster.widgetHinzufuegen(layout, seite, k)
-                if (neu === layout) zeigeHinweis(getString(R.string.kein_platz)); aendern(neu); zeichneSeite()
+                // 0.1.40 (E2E G2): Seite voll → Kachel auf einer neuen Seite anlegen und dorthin wechseln (statt still nichts)
+                val mitSeite = if (neu === layout) Raster.seiteHinzufuegen(layout) else layout
+                val aufNeuer = if (mitSeite !== layout) Raster.widgetHinzufuegen(mitSeite, mitSeite.seiten.size - 1, k) else neu
+                if (neu !== layout) { aendern(neu); zeichneSeite() }
+                else if (aufNeuer !== mitSeite) { aendern(aufNeuer); seite = aufNeuer.seiten.size - 1; baueAlles(); zeigeHinweis(getString(R.string.kachel_neue_seite)) }
+                else zeigeHinweis(getString(R.string.kein_platz))
             }
         })
     }
@@ -824,6 +849,9 @@ class MainActivity : AppCompatActivity() {
             Kachel.MUSIK -> medienKarte(e)
             Kachel.WAECHTER -> waechter(gross)
             Kachel.UHR -> uhrKachel(gross)
+            Kachel.SCHLOSS -> schlossKachel(gross)
+            Kachel.LADEN -> ladenKachel(gross)
+            Kachel.KAMERA -> kameraKachel(gross)
         }
         // 0.1.38.5: direkt im Launcher; Panoptes nur über „Mehr in Panoptes“ im jeweiligen Feld
         when (k) {
@@ -831,6 +859,10 @@ class MainActivity : AppCompatActivity() {
             Kachel.AKKU -> v.setOnClickListener { akkuInfo() }
             Kachel.NAVI -> v.setOnClickListener { starteNavi() }
             Kachel.WAECHTER -> v.setOnClickListener { waechterInfo() }
+            // 0.1.40: Befehle nie aus dem Launcher (Regel A+); nur auf Tipp, im Stand, mit Rückfrage nach Panoptes
+            Kachel.SCHLOSS -> v.setOnClickListener { schlossFrage() }
+            Kachel.LADEN -> v.setOnClickListener { akkuInfo() }
+            Kachel.KAMERA -> v.setOnClickListener { liveAnsicht() }
             else -> {}
         }
         v.setOnLongClickListener { langerDruck(e); true }
@@ -1048,6 +1080,56 @@ class MainActivity : AppCompatActivity() {
             info.text = listOfNotNull(if (w?.scharf == true) getString(R.string.waechter_scharf) else null,
                 if (w?.aufnahme == true) getString(R.string.waechter_aufnahme) else null).joinToString(" · ")
         }
+        return c
+    }
+
+    /** 0.1.40 (L2) Schloss: Zustand aus dem Kern (state.locked, nur lesen). */
+    private fun schlossKachel(gross: Boolean): View {
+        val c = spalte()
+        c.addView(LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL; addView(ui.icon(R.drawable.ic_pn_lock, ui.p.aqua, 20)); addView(ui.titel(getString(R.string.widget_schloss)).apply { setPadding(ui.dp(8), 0, 0, 0) }) })
+        val wert = ui.zahl("—", if (gross) 34f else 24f); c.addView(wert, ui.lp(oben = 8))
+        reg {
+            val zu = summary?.locked
+            wert.text = when (zu) { true -> getString(R.string.schloss_zu); false -> getString(R.string.schloss_offen); null -> "—" }
+            wert.setTextColor(when (zu) { true -> ui.p.lime; false -> ui.p.warning; null -> ui.p.onSurface })
+        }
+        return c
+    }
+
+    /** Ver-/Entriegeln nur in Panoptes (Launcher-Weg für Fahrzeugbefehle gesperrt): im Stand, nach Rückfrage. */
+    private fun schlossFrage() {
+        if (!darfBedienen()) return
+        AlertDialog.Builder(this).setTitle(R.string.widget_schloss).setMessage(R.string.schloss_frage)
+            .setPositiveButton(R.string.in_panoptes) { _, _ -> oeffnePanoptes("vehicle") }
+            .setNegativeButton(R.string.abbrechen, null).show()
+    }
+
+    /** 0.1.40 (L2) Laden: Ladezustand aus dem Kern (charging, nur lesen). */
+    private fun ladenKachel(gross: Boolean): View {
+        val c = spalte()
+        c.addView(LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL; addView(ui.icon(R.drawable.ic_pn_plug, ui.p.aqua, 20)); addView(ui.titel(getString(R.string.widget_laden)).apply { setPadding(ui.dp(8), 0, 0, 0) }) })
+        val wert = ui.zahl("—", if (gross) 34f else 24f); c.addView(wert, ui.lp(oben = 8))
+        val info = ui.leise(""); c.addView(info, ui.lp(oben = 4))
+        reg {
+            val l = summary?.charging
+            val soc = summary?.socPct?.let { "${Math.round(it)} %" }
+            wert.text = if (l?.active == true) listOfNotNull(soc, l.kw?.let { String.format(Locale.getDefault(), "%.1f kW", it) }).joinToString(" · ").ifEmpty { getString(R.string.laden_aktiv) }
+                else getString(R.string.laden_nicht)
+            wert.setTextColor(if (l?.active == true) ui.p.lime else ui.p.onSurface)
+            info.text = if (l?.active == true) listOfNotNull(l.targetPct?.let { getString(R.string.laden_ziel, Math.round(it).toInt()) },
+                l.etaMin?.let { getString(R.string.laden_rest, Math.round(it).toInt()) }).joinToString(" · ") else soc ?: ""
+        }
+        return c
+    }
+
+    /** Live-Bild gibt es nur in Panoptes (Kamera-Daemon); dort gelten dessen Regeln. */
+    private fun liveAnsicht() = oeffnePanoptes("live")
+
+    /** 0.1.40 (L2) Live-Kamera: öffnet die Panoptes-Liveansicht (dort gelten deren Regeln). */
+    private fun kameraKachel(gross: Boolean): View {
+        val c = spalte()   // 0.1.40 (E2E G3): Beschriftung oben wie bei den anderen Kacheln
+        c.addView(LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL; addView(ui.icon(R.drawable.ic_pn_camera, ui.p.aqua, if (gross) 30 else 22)); addView(ui.titel(getString(R.string.widget_kamera)).apply { setPadding(ui.dp(8), 0, 0, 0) }) })
+        c.addView(ui.leise(getString(R.string.kamera_tipp), 15f), ui.lp(oben = 8))
         return c
     }
 
@@ -1277,6 +1359,18 @@ class MainActivity : AppCompatActivity() {
             zeile(R.drawable.ic_pn_settings, getString(R.string.erweitert)) { einstellungen(erweitert = true) }
         } else {
             zeile(R.drawable.ic_pn_close, getString(R.string.zurueck)) { einstellungen() }
+            // 0.1.40 (L2) „Selbst gestalten“: alles hier unter „Erweitert“, oben bleibt es einfach
+            // 0.1.40 (E2E M2): Beim Hintergrund „Cockpit“ gilt immer das dunkle Cockpit-Design → gesperrt mit Hinweis statt wirkungslos
+            val cockpit = layout.hintergrund == "cockpit"
+            zeile(R.drawable.ic_pn_star, getString(R.string.design) + ": " + (if (cockpit) getString(R.string.design_cockpit) else designName(layout.design))) {
+                if (cockpit) zeigeHinweis(getString(R.string.design_cockpit_hinweis)) else if (darfBedienen()) designWaehlen() }
+            zeile(R.drawable.ic_pn_star, getString(R.string.akzent) + ": " + (if (cockpit) getString(R.string.design_cockpit) else akzentName(layout.akzent))) {
+                if (cockpit) zeigeHinweis(getString(R.string.design_cockpit_hinweis)) else if (darfBedienen()) akzentWaehlen() }
+            zeile(R.drawable.ic_pn_map, getString(R.string.bild_waehlen)) { if (darfBedienen()) bildWaehlen() }
+            if (layout.hintergrund == "eigen")
+                zeile(R.drawable.ic_pn_map, getString(R.string.abdunkelung) + ": " + schleierName(Schleier.wahl(this))) { if (darfBedienen()) schleierWaehlen() }
+            zeile(R.drawable.ic_pn_apps, getString(R.string.abstand) + ": " + abstandName(layout.abstand)) { if (darfBedienen()) abstandWaehlen() }
+            zeile(R.drawable.ic_pn_nav, getString(R.string.spalte_titel)) { if (darfBedienen()) spalteWaehlen() }
             zeile(R.drawable.ic_pn_status, schalter(R.string.zeige_status, layout.zeigeStatus)) { if (darfBedienen()) { aendern(layout.copy(zeigeStatus = !layout.zeigeStatus)); baueAlles(); einstellungen(erweitert = true) } }
             zeile(R.drawable.ic_pn_apps, schalter(R.string.zeige_reiter, layout.zeigeReiter)) { if (darfBedienen()) { aendern(layout.copy(zeigeReiter = !layout.zeigeReiter)); baueAlles(); einstellungen(erweitert = true) } }
             zeile(R.drawable.ic_pn_apps, schalter(R.string.neben_alle, layout.nebeneinander)) { if (darfBedienen()) { aendern(layout.copy(nebeneinander = !layout.nebeneinander)); baueAlles(); einstellungen(erweitert = true) } }
@@ -1311,11 +1405,76 @@ class MainActivity : AppCompatActivity() {
 
     private fun hintergrundWaehlen() {
         val a = appearance
-        val optionen = mutableListOf("panoptes" to getString(R.string.hg_panoptes), "cockpit" to getString(R.string.hg_cockpit))
-        if (a?.hintergrundBild == true) optionen += "bild" to getString(R.string.hg_bild)
-        if (a?.hintergrundVideo == true) optionen += "video" to getString(R.string.hg_video)
+        val optionen = Raster.hintergrundWahl(a?.hintergrundBild == true, a?.hintergrundVideo == true, EigenesBild.da(filesDir)).map { it to hgName(it) }
         auswahl(getString(R.string.hintergrund), optionen.map { (w, t) -> (if (w == layout.hintergrund) "✓ $t" else t) to { schliesseOverlay(); aendern(Raster.hintergrund(layout, w)); baueAlles() } },
             fuss = getString(R.string.hg_hinweis))
+    }
+
+    private fun hgName(w: String) = getString(when (w) {
+        "cockpit" -> R.string.hg_cockpit; "bild" -> R.string.hg_bild; "video" -> R.string.hg_video; "eigen" -> R.string.hg_eigen
+        else -> R.string.hg_panoptes
+    })
+
+    private fun designName(d: String) = getString(when (d) {
+        "dunkel" -> R.string.design_dunkel; "hell" -> R.string.design_hell; "kontrast" -> R.string.design_kontrast
+        "nacht" -> R.string.design_nacht; else -> R.string.design_auto
+    })
+
+    private val akzentNamen = intArrayOf(R.string.akzent_tuerkis, R.string.akzent_gruen, R.string.akzent_orange, R.string.akzent_koralle,
+        R.string.akzent_violett, R.string.akzent_blau, R.string.akzent_gelb, R.string.akzent_weiss)
+
+    private fun akzentName(a: String?): String {
+        val i = Raster.AKZENTE.indexOf(a)
+        return if (i >= 0) getString(akzentNamen[i]) else getString(R.string.akzent_standard)
+    }
+
+    private fun schleierName(w: String) = getString(when (w) {
+        Schleier.SCHWACH -> R.string.abdunkelung_schwach; Schleier.STARK -> R.string.abdunkelung_stark; else -> R.string.abdunkelung_auto
+    })
+
+    /** 0.1.40 (E2E M1): Stärke des Schleiers über dem eigenen Bild; nur im Launcher gespeichert, nie exportiert. */
+    private fun schleierWaehlen() = auswahl(getString(R.string.abdunkelung), Schleier.WAHL.map { w ->
+        ((if (w == Schleier.wahl(this)) "✓ " else "") + schleierName(w)) to {
+            Schleier.speichern(this, w); schliesseOverlay(); baueAlles(); einstellungen(erweitert = true)
+        }
+    }, fuss = getString(R.string.abdunkelung_hinweis))
+
+    private fun abstandName(a: String) = getString(when (a) { "eng" -> R.string.abstand_eng; "weit" -> R.string.abstand_weit; else -> R.string.abstand_normal })
+
+    /** Nach einer Design-Wahl: speichern, neu aufbauen, „Erweitert“ wieder zeigen (gleich sichtbar). */
+    private fun gestaltet(neu: StartLayout) { schliesseOverlay(); aendern(neu); baueAlles(); einstellungen(erweitert = true) }
+
+    private fun designWaehlen() = auswahl(getString(R.string.design), Raster.DESIGNS.map { d ->
+        ((if (d == layout.design) "✓ " else "") + designName(d)) to { gestaltet(Raster.design(layout, d)) }
+    })
+
+    private fun akzentWaehlen() = auswahl(getString(R.string.akzent),
+        listOf(((if (layout.akzent == null) "✓ " else "") + getString(R.string.akzent_standard)) to { gestaltet(Raster.akzent(layout, null)) }) +
+            Raster.AKZENTE.map { h -> ((if (h == layout.akzent) "✓ " else "● ") + akzentName(h)) to { gestaltet(Raster.akzent(layout, h)) } })
+
+    private fun abstandWaehlen() = auswahl(getString(R.string.abstand), Raster.ABSTAENDE.map { a ->
+        ((if (a == layout.abstand) "✓ " else "") + abstandName(a)) to { gestaltet(Raster.abstand(layout, a)) }
+    })
+
+    private fun spalteWaehlen() {
+        val teile = Raster.SPALTE_TEILE
+        val namen = intArrayOf(R.string.spalte_akku, R.string.spalte_reichweite, R.string.spalte_gang, R.string.spalte_waechter,
+            R.string.spalte_musik, R.string.spalte_uhr, R.string.spalte_kamera).map { getString(it) }.toTypedArray()
+        val an = BooleanArray(teile.size) { teile[it] in layout.spalte }
+        AlertDialog.Builder(this).setTitle(R.string.spalte_titel)
+            .setMultiChoiceItems(namen, an) { _, i, ja -> an[i] = ja }
+            .setPositiveButton(android.R.string.ok) { _, _ -> if (darfBedienen()) gestaltet(Raster.spalte(layout, teile.filterIndexed { i, _ -> an[i] })) }
+            .setNegativeButton(R.string.abbrechen, null).show()
+    }
+
+    /** Eigenes Hintergrundbild: Datei oder USB-Stick über die Android-Dateiauswahl; wird verkleinert gespeichert. */
+    private fun bildWaehlen() {
+        val wege = listOf(Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("image/*"),
+            Intent(Intent.ACTION_GET_CONTENT).addCategory(Intent.CATEGORY_OPENABLE).setType("image/*"))
+        for (w in wege) {
+            try { @Suppress("DEPRECATION") startActivityForResult(w, REQ_BILD); return } catch (_: Exception) {}
+        }
+        zeigeHinweis(getString(R.string.keine_dateiwahl))
     }
 
     private fun zuruecksetzenFragen() {
@@ -1324,10 +1483,21 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton(R.string.abbrechen, null).show()
     }
 
+    /**
+     * Liste zum Antippen. 0.1.40 (L2-Fix): KEIN setMessage – bei AlertDialog verdrängt eine Nachricht die Liste aus
+     * setItems (darum zeigten „Größe“ und „Hintergrund“ keine Auswahl). Der Hinweis steht jetzt im Kopf über der Liste.
+     */
     private fun auswahl(titel: String, punkte: List<Pair<String, () -> Unit>>, fuss: String? = null) {
-        AlertDialog.Builder(this).setTitle(titel).apply { fuss?.let { setMessage(it) } }
-            .setItems(punkte.map { it.first }.toTypedArray()) { _, i -> punkte[i].second() }
+        val b = AlertDialog.Builder(this)
+        if (fuss == null) b.setTitle(titel) else b.setCustomTitle(auswahlKopf(titel, fuss))
+        b.setItems(Auswahl.eintraege(punkte)) { _, i -> punkte[i].second() }
             .setNegativeButton(R.string.abbrechen, null).show()
+    }
+
+    private fun auswahlKopf(titel: String, hinweis: String): View = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL; setPadding(ui.dp(24), ui.dp(20), ui.dp(24), ui.dp(4))
+        addView(TextView(context).apply { setTextAppearance(android.R.style.TextAppearance_DeviceDefault_DialogWindowTitle); text = titel })
+        addView(TextView(context).apply { setTextAppearance(android.R.style.TextAppearance_DeviceDefault_Small); text = hinweis; setPadding(0, ui.dp(6), 0, 0) })
     }
 
     private fun nameFragen(titel: String, vorgabe: String, ok: (String) -> Unit) {
@@ -1436,6 +1606,17 @@ class MainActivity : AppCompatActivity() {
         if (resultCode != RESULT_OK) return
         try {
             when (requestCode) {
+                REQ_BILD -> {
+                    zeigeHinweis(getString(R.string.bild_laeuft))
+                    io.execute {
+                        val ok = EigenesBild.uebernehmen(contentResolver, uri, filesDir)
+                        main.post {
+                            if (!ok) { zeigeHinweis(getString(R.string.bild_fehler)); return@post }
+                            schliesseOverlay(); aendern(Raster.hintergrund(layout, "eigen")); bildGeladen = false; baueAlles()
+                            zeigeHinweis(getString(R.string.bild_ok))
+                        }
+                    }
+                }
                 REQ_EXPORT -> { contentResolver.openOutputStream(uri, "wt")?.use { it.write(Raster.toJson(layout).toByteArray(Charsets.UTF_8)) }; zeigeHinweis(getString(R.string.export_ok)) }
                 REQ_IMPORT -> {
                     val text = contentResolver.openInputStream(uri)?.use { s -> String(s.readBytes().let { b -> if (b.size > 256 * 1024) ByteArray(0) else b }, Charsets.UTF_8) }
@@ -1529,8 +1710,8 @@ class MainActivity : AppCompatActivity() {
         if (!ok && warOnline) zeigeHinweis(getString(R.string.offline))
         val alt = appearance; appearance = a
         val cockpit = layout.hintergrund == "cockpit"
-        val pal = if (cockpit) PanoptesStil.DUNKEL else PanoptesStil.palette(a?.modus, systemHell())
-        if ("${pal.hell}:$cockpit" != stilSchluessel && overlay == null) { baueAlles(); return }
+        val pal = stilPalette(cockpit, a?.modus)
+        if ("${pal.hell}:$cockpit:${pal.aqua}:${pal.background}" != stilSchluessel && overlay == null) { baueAlles(); return }
         if (alt?.hintergrundBild != a?.hintergrundBild || alt?.hintergrundVideo != a?.hintergrundVideo) bildGeladen = false
         hintergrundAnwenden()
         aktualisierer.forEach { it() }
@@ -1543,6 +1724,24 @@ class MainActivity : AppCompatActivity() {
     // ---------- Hintergrund ----------
 
     private fun hintergrundAnwenden() {
+        if (layout.hintergrund == "eigen") {
+            // 0.1.40: eigenes Bild aus dem Launcher (fehlt es, bleibt der Panoptes-Look)
+            videoStopp()
+            if (!bildGeladen) {
+                bildGeladen = true
+                io.execute {
+                    val bmp = EigenesBild.laden(filesDir)
+                    val hell = bmp?.let { Schleier.bildHelligkeit(it) } ?: 0.5f
+                    main.post {
+                        if (bmp != null) { bild.setImageBitmap(bmp); bild.visibility = View.VISIBLE }
+                        schleier.setBackgroundColor(Schleier.farbe(ui.p.seiteBis, Schleier.deckung(hell, ui.p.seiteBis, Schleier.wahl(this))))
+                        schleier.visibility = if (bmp != null) View.VISIBLE else View.GONE
+                    }
+                }
+            }
+            return
+        }
+        schleier.visibility = View.GONE
         val a = appearance
         val willBild = (layout.hintergrund == "bild" || layout.hintergrund == "video") && a?.hintergrundBild == true
         if (willBild && !bildGeladen) {
@@ -1871,7 +2070,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
-        }).also { leiste = it }
+        }, layout.spalte).also { leiste = it }
         l.abbruchBeiR = nachR
         if (!nachR) starteVollbild(p)   // nach R läuft die Navi schon (das System hat nur die Teilung beendet)
         l.an()
@@ -1907,23 +2106,28 @@ class MainActivity : AppCompatActivity() {
 
     /** 0.1.39 (L1): schmale Statusspalte neben der Karte – große Werte, große Knöpfe, keine Texteingabe. */
     private fun statusSpalte(): View {
+        // 0.1.40 (L2): Teile selbst zusammengestellt (Einstellungen → Erweitert → Statusspalte), „Start“ ist immer da
+        val t = layout.spalte
         val c = spalte(18)
-        val zeile = ui.zahl("—", 30f); c.addView(zeile)
-        val waechter = ui.text("", 17f, 600, ui.p.onSurfaceVariant); c.addView(waechter, ui.lp(oben = 8))
-        val titel = ui.text("", 16f, 600).apply { maxLines = 2 }; c.addView(titel, ui.lp(oben = 18))
+        val zeile = ui.zahl("—", 30f); if (t.any { it == "akku" || it == "reichweite" || it == "gang" }) c.addView(zeile)
+        val uhr = ui.zahl("", 30f); if ("uhr" in t) c.addView(uhr, ui.lp(oben = 8))
+        val waechter = ui.text("", 17f, 600, ui.p.onSurfaceVariant); if ("waechter" in t) c.addView(waechter, ui.lp(oben = 8))
+        val titel = ui.text("", 16f, 600).apply { maxLines = 2 }; if ("musik" in t) c.addView(titel, ui.lp(oben = 18))
         val tasten = LinearLayout(this)
         listOf(R.drawable.ic_pn_music to KeyEvent.KEYCODE_MEDIA_PREVIOUS, R.drawable.ic_pn_music to KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
             R.drawable.ic_pn_music to KeyEvent.KEYCODE_MEDIA_NEXT).forEachIndexed { i, (res, code) ->
             tasten.addView(ui.act(res, getString(arrayOf(R.string.leiste_zurueck, R.string.leiste_musik, R.string.leiste_weiter)[i])) { medienTaste(code) },
                 ui.lp(0, ui.dp(64), 1f, rechts = 6))
         }
-        c.addView(tasten, ui.lp(-1, -2, oben = 6))
-        c.addView(ui.act(R.drawable.ic_pn_car, getString(R.string.leiste_kamera)) { oeffnePanoptes("live") }, ui.lp(-1, ui.dp(64), oben = 18))
+        if ("musik" in t) c.addView(tasten, ui.lp(-1, -2, oben = 6))
+        if ("kamera" in t) c.addView(ui.act(R.drawable.ic_pn_camera, getString(R.string.leiste_kamera)) { oeffnePanoptes("live") }, ui.lp(-1, ui.dp(64), oben = 18))
         c.addView(ui.act(R.drawable.ic_pn_status, getString(R.string.leiste_start)) { splitVerlassen() }, ui.lp(-1, ui.dp(64), oben = 10))
         // nicht reg{}: zeichneSeite() räumt KachelAktualisierer weg; die Spalte lebt bis zum nächsten baueAlles()
         aktualisierer += {
             val s = summary
-            zeile.text = KartenStatus.zeile(s?.socPct, s?.rangeKm, s?.gear)
+            zeile.text = KartenStatus.zeile(if ("akku" in t) s?.socPct else null, if ("reichweite" in t) s?.rangeKm else null,
+                if ("gang" in t) s?.gear else null)
+            uhr.text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
             waechter.text = getString(if (s?.waechter?.an == true) R.string.leiste_waechter_an else R.string.leiste_waechter_aus)
             titel.text = medien?.titel ?: s?.media?.title ?: ""
         }
@@ -2069,6 +2273,7 @@ class MainActivity : AppCompatActivity() {
         const val KEY_KENNT_KERN = "layout_kennt_kern"
         const val REQ_EXPORT = 41
         const val REQ_IMPORT = 42
+        const val REQ_BILD = 43
         const val KEY_SPAETER = "update_spaeter"
         const val KEY_NAVI = "navi_app"
         const val ZUSTAND_KARTE_SPLIT = "karte_im_split"

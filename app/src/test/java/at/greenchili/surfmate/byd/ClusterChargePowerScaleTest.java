@@ -20,6 +20,10 @@ import org.junit.Test;
  * cannot tell a scaled value from an unscaled one and would silently price the difference.
  */
 public class ClusterChargePowerScaleTest {
+    @org.junit.Rule
+    public final org.junit.rules.TestRule ladequellen =
+            new at.greenchili.surfmate.testutil.LadequellenZuruecksetzen();
+
 
     private static double kw(double raw) {
         return BydDataCollector.scaleClusterChargePowerKw(raw);

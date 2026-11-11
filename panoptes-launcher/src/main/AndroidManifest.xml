@@ -40,7 +40,7 @@
             android:exported="true"
             android:launchMode="singleTask"
             android:screenOrientation="landscape"
-            android:configChanges="uiMode|orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden">
+            android:configChanges="uiMode|orientation|screenSize|smallestScreenSize|screenLayout|density|keyboardHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

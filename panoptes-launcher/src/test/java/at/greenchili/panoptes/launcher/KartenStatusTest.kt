@@ -64,7 +64,7 @@ class KartenStatusTest {
         // (a) Statusspalte tickt: kein reg{} (zeichneSeite räumt KachelAktualisierer gleich wieder weg)
         val sp = m.substring(m.indexOf("private fun statusSpalte()"), m.indexOf("private fun naviWahl()"))
         assertFalse("Spalte nicht über reg{}", sp.contains("reg {"))
-        assertTrue(sp.contains("aktualisierer += {") && sp.contains("KartenStatus.zeile(s?.socPct, s?.rangeKm, s?.gear)"))
+        assertTrue(sp.contains("aktualisierer += {") && sp.contains("KartenStatus.zeile(if (\"akku\" in t) s?.socPct else null"))
         assertTrue(m.contains("aktualisierer.removeAll { it is KachelAktualisierer }"))
         // (b) Split-Wechsel ohne Neustart; Zustand übersteht trotzdem einen Neustart; Split-Ende auch nach Neustart erkannt
         val manifest = lies("src/main/AndroidManifest.xml")

@@ -43,12 +43,15 @@ public class UpdateHinweisTest {
     Object[] autoAus = {false, "cloud_gate_car_on"};
     final Map<String, String> cfg = new HashMap<>();
     final Map<String, String> texte = new HashMap<>();
-    final List<String> abrufe = new ArrayList<>();
-    final List<String> gezeigt = new ArrayList<>();
-    final List<String> notizen = new ArrayList<>();
-    final List<String> weg = new ArrayList<>();
-    final List<String> gestartet = new ArrayList<>();
-    final List<String> gemeldet = new ArrayList<>();
+    // 0.1.40 T1: AppUpdateDienst ruft Netz/Umgebung auch vom Download-Thread auf, während der Test
+    // die Listen liest (CI 42976248463: ConcurrentModificationException in apkAbrufe()). Darum
+    // thread-sichere Listen; ihr Stream ist eine Momentaufnahme.
+    final List<String> abrufe = new java.util.concurrent.CopyOnWriteArrayList<>();
+    final List<String> gezeigt = new java.util.concurrent.CopyOnWriteArrayList<>();
+    final List<String> notizen = new java.util.concurrent.CopyOnWriteArrayList<>();
+    final List<String> weg = new java.util.concurrent.CopyOnWriteArrayList<>();
+    final List<String> gestartet = new java.util.concurrent.CopyOnWriteArrayList<>();
+    final List<String> gemeldet = new java.util.concurrent.CopyOnWriteArrayList<>();
     File basis;
     File dd;
     AppUpdateDienst d;

@@ -32,9 +32,18 @@ public final class LauncherLayoutPruefung {
     public static final List<String> PROJEKTION = Collections.unmodifiableList(
             Arrays.asList("com.byd.androidauto", "com.byd.carplay.ui"));
     public static final List<String> HINTERGRUENDE = Collections.unmodifiableList(
-            Arrays.asList("panoptes", "cockpit", "bild", "video"));
+            Arrays.asList("panoptes", "cockpit", "bild", "video", "eigen"));
+    /** 0.1.40 (L2) eigenes Design wie {@code Raster.DESIGNS}/{@code ABSTAENDE}/{@code SPALTE_TEILE} im Launcher. */
+    public static final List<String> DESIGNS = Collections.unmodifiableList(
+            Arrays.asList("auto", "dunkel", "hell", "kontrast", "nacht"));
+    public static final List<String> ABSTAENDE = Collections.unmodifiableList(Arrays.asList("eng", "normal", "weit"));
+    public static final List<String> SPALTE_TEILE = Collections.unmodifiableList(
+            Arrays.asList("akku", "reichweite", "gang", "waechter", "musik", "uhr", "kamera"));
+    public static final List<String> SPALTE_STANDARD = Collections.unmodifiableList(
+            Arrays.asList("akku", "reichweite", "gang", "waechter", "musik", "kamera"));
+    private static final Pattern AKZENT = Pattern.compile("^#[0-9A-Fa-f]{6}$");
     public static final List<String> KACHELN = Collections.unmodifiableList(
-            Arrays.asList("fahrzeug", "akku", "navi", "musik", "waechter", "uhr"));
+            Arrays.asList("fahrzeug", "akku", "navi", "musik", "waechter", "uhr", "schloss", "laden", "kamera"));
     /** Widget-Größen (Breite × Höhe in Zellen) wie {@code Raster.GROESSEN}. */
     static final int[][] GROESSEN = {{1, 1}, {2, 1}, {2, 2}, {2, 3}, {3, 2}, {3, 3}, {4, 2}, {4, 3}, {6, 3}};
 
@@ -130,6 +139,20 @@ public final class LauncherLayoutPruefung {
                     .put("zeige3d", root.optBoolean("zeige3d", true))
                     .put("nebeneinander", root.optBoolean("nebeneinander", false))
                     .put("nebenAnders", neben);
+            // 0.1.40 (L2): Design durchreichen (geprüft), sonst ginge es beim Abgleich mit dem Kern verloren
+            String design = root.optString("design", "auto");
+            String akzent = root.optString("akzent", "");
+            String abstand = root.optString("abstand", "normal");
+            o.put("design", DESIGNS.contains(design) ? design : "auto")
+                    .put("akzent", AKZENT.matcher(akzent).matches() ? akzent.toUpperCase(java.util.Locale.ROOT) : "")
+                    .put("abstand", ABSTAENDE.contains(abstand) ? abstand : "normal");
+            JSONArray sp = root.optJSONArray("spalte");
+            JSONArray spalte = new JSONArray();
+            for (String t : (sp == null ? SPALTE_STANDARD : SPALTE_TEILE)) {
+                if (sp == null) { spalte.put(t); continue; }
+                for (int i = 0; i < sp.length(); i++) if (t.equals(sp.optString(i))) { spalte.put(t); break; }
+            }
+            o.put("spalte", spalte);
             return new Ergebnis(o, weg[0]);
         } catch (Exception e) {
             return null;

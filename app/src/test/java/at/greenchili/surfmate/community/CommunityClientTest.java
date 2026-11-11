@@ -30,7 +30,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Community-Client gegen den eigenen Server (Server-Vertrag,
+ * Community-Client gegen den eigenen Server (README des Community-Servers,
  * COMMUNITY_CLIENT_AENDERUNGEN.md): Standard aus, Mitglieds-Schlüssel nur im Header,
  * Kacheln per POST, nie Overdrive-Worker, Hinweise für 401/422/429.
  */

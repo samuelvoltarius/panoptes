@@ -15,6 +15,10 @@ import java.lang.reflect.Method;
 
 /** Regression coverage for rejecting the observed AC power-source faults. */
 public class VehicleDataMonitorChargingPowerTest {
+    @org.junit.Rule
+    public final org.junit.rules.TestRule ladequellen =
+            new at.greenchili.surfmate.testutil.LadequellenZuruecksetzen();
+
 
     private DaemonLogger.Config previousLogConfig;
 

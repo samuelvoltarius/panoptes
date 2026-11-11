@@ -1,7 +1,8 @@
 package at.greenchili.panoptes.launcher
 
 /** Widgets der Startseite. Daten nur aus der Launcher-API (v1) bzw. der Android-Mediensitzung. */
-enum class Kachel { FAHRZEUG, AKKU, NAVI, MUSIK, WAECHTER, UHR }
+/** 0.1.40 (L2): SCHLOSS, LADEN, KAMERA neu – zeigen nur Panoptes-Daten; Befehle bleiben in Panoptes (Regel A+). */
+enum class Kachel { FAHRZEUG, AKKU, NAVI, MUSIK, WAECHTER, UHR, SCHLOSS, LADEN, KAMERA }
 
 /** Fahrsicherheit: reine Regeln, im Unit-Test belegt. Starten und Ansehen geht immer. */
 object Fahrsicherheit {

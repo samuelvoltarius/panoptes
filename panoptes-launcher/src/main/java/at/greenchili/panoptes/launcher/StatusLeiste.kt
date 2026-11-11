@@ -20,7 +20,8 @@ import java.util.concurrent.Executors
  * (Rückfahrkamera) verschwindet sie sofort und kommt danach wieder. Aktualisiert sich selbst alle 2 s, weil die
  * Launcher-Seite im Hintergrund nicht tickt.
  */
-class StatusLeiste(private val ctx: Context, private val ui: Ui, private val aktionen: Aktionen) {
+class StatusLeiste(private val ctx: Context, private val ui: Ui, private val aktionen: Aktionen,
+                   private val spalte: List<String> = Raster.SPALTE_STANDARD) {
 
     interface Aktionen { fun musik(); fun kamera(); fun start(); fun splitNochmal() }
 
@@ -35,6 +36,7 @@ class StatusLeiste(private val ctx: Context, private val ui: Ui, private val akt
     private val client = PanoptesClient()
     private var ansicht: View? = null
     private var text: TextView? = null
+    private val beschriftungen = mutableListOf<TextView>()
     @Volatile private var aktiv = false
 
     private val takt = object : Runnable {
@@ -67,7 +69,8 @@ class StatusLeiste(private val ctx: Context, private val ui: Ui, private val akt
         val darf = KartenStatus.leisteZeigen(aktiv, Settings.canDrawOverlays(ctx), s?.gear)
         if (!darf) { entfernen(); return }
         if (ansicht == null) bauen()
-        text?.text = KartenStatus.zeile(s?.socPct, s?.rangeKm, s?.gear)
+        text?.text = KartenStatus.leistenZeile(spalte, s?.socPct, s?.rangeKm, s?.gear,
+            android.text.format.DateFormat.getTimeFormat(ctx).format(java.util.Date()))
     }
 
     private fun bauen() {
@@ -77,11 +80,28 @@ class StatusLeiste(private val ctx: Context, private val ui: Ui, private val akt
         }
         val t = ui.text("—", 18f, 700)
         z.addView(t, ui.lp(0, -2, 1f))
+        // 0.1.40: waagrechter Knopf – Text neben dem Symbol ohne Abstand oben. E2E 240 dpi: „Kamera“ und
+        // „Pause/Weiter“ waren trotzdem angeschnitten → Beschriftung mit eigener wrap-Breite (vorher match_parent aus
+        // dem senkrechten Aufbau), und passt sie nach dem Layout nicht, zeigen alle Knöpfe nur das Symbol.
         fun knopf(res: Int, label: Int, f: () -> Unit) =
-            z.addView(ui.act(res, ctx.getString(label)) { f() }.apply { orientation = LinearLayout.HORIZONTAL }, ui.lp(h = ui.dp(48), rechts = 8))
-        knopf(R.drawable.ic_pn_music, R.string.leiste_musik) { aktionen.musik() }
-        knopf(R.drawable.ic_pn_car, R.string.leiste_kamera) { aktionen.kamera() }
+            z.addView(ui.act(res, ctx.getString(label)) { f() }.apply {
+                orientation = LinearLayout.HORIZONTAL; minimumHeight = ui.dp(48); minimumWidth = ui.dp(48)
+                setPadding(ui.dp(10), 0, ui.dp(14), 0); contentDescription = ctx.getString(label)
+                (getChildAt(1) as? TextView)?.apply {
+                    layoutParams = LinearLayout.LayoutParams(-2, -2); setPadding(ui.dp(6), 0, 0, 0); setSingleLine(); ellipsize = null
+                    beschriftungen += this
+                }
+            }, ui.lp(-2, ui.dp(48), rechts = 8))
+        // 0.1.40 (E2E G4): Knöpfe nach der Auswahl der Statusspalte; „Start“ ist immer da
+        if ("musik" in spalte) knopf(R.drawable.ic_pn_music, R.string.leiste_musik) { aktionen.musik() }
+        if ("kamera" in spalte) knopf(R.drawable.ic_pn_camera, R.string.leiste_kamera) { aktionen.kamera() }
         knopf(R.drawable.ic_pn_status, R.string.leiste_start) { aktionen.start() }
+        z.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            val zuEng = beschriftungen.any { it.visibility == View.VISIBLE &&
+                KartenStatus.nurSymbole(it.paint.measureText(it.text.toString()), it.width - it.paddingLeft - it.paddingRight) } ||
+                (z.childCount > 0 && z.getChildAt(z.childCount - 1).right > z.width - z.paddingRight && beschriftungen.any { it.visibility == View.VISIBLE })
+            if (zuEng) z.post { beschriftungen.forEach { it.visibility = View.GONE } }
+        }
         val lp = WindowManager.LayoutParams(-1, ui.dp(56), WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP; y = statusLeistenHoehe() }   // unter Uhr/Akku der Android-Leiste
@@ -96,6 +116,6 @@ class StatusLeiste(private val ctx: Context, private val ui: Ui, private val akt
 
     private fun entfernen() {
         ansicht?.let { runCatching { wm.removeView(it) } }
-        ansicht = null; text = null
+        ansicht = null; text = null; beschriftungen.clear()
     }
 }

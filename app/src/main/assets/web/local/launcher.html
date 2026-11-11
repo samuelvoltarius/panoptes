@@ -105,7 +105,7 @@
     // Gleiche Regeln wie Raster in der Launcher-APK und LauncherLayoutPruefung im Kern (LAUNCHER_LAYOUT_API.md).
     var SPALTEN = 6, ZEILEN = 3, MAX_SEITEN = 5, MAX_DOCK = 8;
     var GROESSEN = [[1, 1], [2, 1], [2, 2], [2, 3], [3, 2], [3, 3], [4, 2], [4, 3], [6, 3]];
-    var KACHELN = ['fahrzeug', 'akku', 'navi', 'musik', 'waechter', 'uhr'];
+    var KACHELN = ['fahrzeug', 'akku', 'navi', 'musik', 'waechter', 'uhr', 'schloss', 'laden', 'kamera'];
     var PROJEKTION = ['com.byd.androidauto', 'com.byd.carplay.ui'];
     var API = '/api/launcher/v1/layout';
 
@@ -128,7 +128,8 @@
         });
     }
     function kachelName(k) {
-        var f = { fahrzeug: 'Fahrzeug', akku: 'Akku', navi: 'Navigation', musik: 'Musik', waechter: 'Wächter', uhr: 'Uhr' };
+        var f = { fahrzeug: 'Fahrzeug', akku: 'Akku', navi: 'Navigation', musik: 'Musik', waechter: 'Wächter', uhr: 'Uhr',
+            schloss: 'Schloss', laden: 'Laden', kamera: 'Live-Kamera' };
         return t('k_' + k, f[k] || k);
     }
     function appName(p) {

@@ -7257,6 +7257,9 @@
     "k_navi": "Navigation",
     "k_musik": "Musique",
     "k_waechter": "Gardien",
+    "k_schloss": "Verrou",
+    "k_laden": "Recharge",
+    "k_kamera": "Caméra en direct",
     "k_uhr": "Horloge"
   },
   "dateien": {

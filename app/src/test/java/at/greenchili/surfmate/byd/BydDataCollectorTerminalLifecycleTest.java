@@ -10,6 +10,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 public class BydDataCollectorTerminalLifecycleTest {
+    @org.junit.Rule
+    public final org.junit.rules.TestRule ladequellen =
+            new at.greenchili.surfmate.testutil.LadequellenZuruecksetzen();
+
 
     @Test
     public void terminalBarrierRejectsCallbackOnlyLifecycleEpochs() {

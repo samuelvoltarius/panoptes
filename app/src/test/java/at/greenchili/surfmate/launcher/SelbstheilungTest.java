@@ -229,7 +229,8 @@ public class SelbstheilungTest {
             assertTrue(namen[i] + ": erst anhängen, dann das alte Log archivieren", archiv > marke);
             assertTrue(String.join("\n", z).contains("= \"" + namen[i] + "\""));
         }
-        assertEquals("Kamera-Skript (am Auto 227 Zeilen) + Anhänge-Modus", 251, kamera().size());
+        // 0.1.40 W1: +61 Zeilen Lock-Übernahme mit Alter, Übernahme-Sperre, exklusiver Eigentümer-Datei und Log-Zeilen.
+        assertEquals("Kamera-Skript (am Auto 227 Zeilen) + Anhänge-Modus + W1-Sperre", 312, kamera().size());
     }
 
     /**

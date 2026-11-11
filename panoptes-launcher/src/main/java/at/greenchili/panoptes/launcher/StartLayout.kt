@@ -42,7 +42,15 @@ data class StartLayout(
     /** Apps neben dem Launcher öffnen (geteilter Bildschirm), Standard aus. */
     val nebeneinander: Boolean = false,
     /** Apps, für die das Gegenteil von [nebeneinander] gilt (pro App überschreibbar). */
-    val nebenAnders: List<String> = emptyList()
+    val nebenAnders: List<String> = emptyList(),
+    /** 0.1.40 (L2) eigenes Design: "auto" (wie Panoptes, ab Werk) | dunkel | hell | kontrast | nacht. */
+    val design: String = "auto",
+    /** Akzentfarbe "#RRGGBB"; null = Farbe des Designs. */
+    val akzent: String? = null,
+    /** Rasterdichte: Abstand zwischen den Kacheln (eng | normal | weit). */
+    val abstand: String = "normal",
+    /** Statusspalte im Reiter „Karte“: gewählte Teile in fester Reihenfolge ([Raster.SPALTE_TEILE]). */
+    val spalte: List<String> = Raster.SPALTE_STANDARD
 )
 
 object Raster {
@@ -60,7 +68,18 @@ object Raster {
     const val ANDROID_AUTO = "com.byd.androidauto"
     const val CARPLAY = "com.byd.carplay.ui"
     val PROJEKTION = listOf(ANDROID_AUTO, CARPLAY)
-    val HINTERGRUENDE = listOf("panoptes", "cockpit", "bild", "video")
+    /** „eigen“ = Bild, das der Nutzer im Launcher gewählt hat (liegt nur auf dem Gerät, nie in der Datei). */
+    val HINTERGRUENDE = listOf("panoptes", "cockpit", "bild", "video", "eigen")
+    val DESIGNS = listOf("auto", "dunkel", "hell", "kontrast", "nacht")
+    val ABSTAENDE = listOf("eng", "normal", "weit")
+    val SPALTE_TEILE = listOf("akku", "reichweite", "gang", "waechter", "musik", "uhr", "kamera")
+    val SPALTE_STANDARD = listOf("akku", "reichweite", "gang", "waechter", "musik", "kamera")
+    /** Vorgeschlagene Akzentfarben (eigene Auswahl, Panoptes-Töne zuerst). */
+    val AKZENTE = listOf("#5FD6E6", "#B5F23D", "#FFC266", "#FF8A6B", "#C792EA", "#4DA3FF", "#FFD400", "#FFFFFF")
+    private val HEX = Regex("^#[0-9A-Fa-f]{6}$")
+    /** Kachelgröße in drei Stufen; je Stufe die erlaubten Größen, die erste passende gewinnt. */
+    val STUFEN = linkedMapOf("klein" to listOf(2 to 1, 1 to 1), "mittel" to listOf(2 to 2, 3 to 2, 2 to 3, 2 to 1),
+        "gross" to listOf(3 to 3, 4 to 3, 4 to 2, 3 to 2))
 
     /** Größen für Widgets (Breite × Höhe in Zellen), in dieser Reihenfolge durchgeschaltet. */
     val GROESSEN = listOf(1 to 1, 2 to 1, 2 to 2, 2 to 3, 3 to 2, 3 to 3, 4 to 2, 4 to 3, 6 to 3)
@@ -119,6 +138,38 @@ object Raster {
         }
         return l
     }
+
+    /** Stufe einer Kachel aus ihrer Fläche: bis 2 Zellen klein, bis 6 mittel, sonst groß. */
+    fun stufeVon(e: Element): String = when { e.b * e.h <= 2 -> "klein"; e.b * e.h <= 6 -> "mittel"; else -> "gross" }
+
+    /** 0.1.40: Kachel auf Stufe klein/mittel/groß; erst am alten Platz, sonst am ersten freien Platz der Seite. */
+    fun kachelStufe(l: StartLayout, id: String, stufe: String): StartLayout {
+        val (i, e) = finde(l, id) ?: return l
+        if (e.typ != ElementTyp.WIDGET) return l
+        val groessen = STUFEN[stufe] ?: return l
+        for ((b, h) in groessen) if (passt(l.seiten[i], e.x, e.y, b, h, ohne = id)) return ersetze(l, e.copy(b = b, h = h))
+        val rest = l.seiten[i].filter { it.id != id }
+        for ((b, h) in groessen) {
+            val p = freierPlatz(rest, b, h) ?: continue
+            return ersetze(l, e.copy(x = p.first, y = p.second, b = b, h = h))
+        }
+        return l
+    }
+
+    // ---------- Design (0.1.40) ----------
+
+    fun design(l: StartLayout, d: String): StartLayout = if (d in DESIGNS) l.copy(design = d) else l
+    fun akzentGueltig(hex: String?): String? = hex?.takeIf { HEX.matches(it) }?.uppercase()
+    fun akzent(l: StartLayout, hex: String?): StartLayout =
+        if (hex == null) l.copy(akzent = null) else akzentGueltig(hex)?.let { l.copy(akzent = it) } ?: l
+    fun abstand(l: StartLayout, a: String): StartLayout = if (a in ABSTAENDE) l.copy(abstand = a) else l
+    fun abstandDp(a: String): Int = when (a) { "eng" -> 6; "weit" -> 24; else -> 14 }
+    /** Nur bekannte Teile, in der festen Reihenfolge; „Start“ ist immer da und nicht Teil der Liste. */
+    fun spalte(l: StartLayout, teile: Collection<String>): StartLayout = l.copy(spalte = SPALTE_TEILE.filter { it in teile })
+
+    /** Wahl im Menü „Hintergrund“: Bild/Video nur mit Kern-Schalter, „eigen“ nur, wenn ein eigenes Bild da ist. */
+    fun hintergrundWahl(bild: Boolean, video: Boolean, eigen: Boolean): List<String> =
+        listOf("panoptes", "cockpit") + listOfNotNull(if (bild) "bild" else null, if (video) "video" else null, if (eigen) "eigen" else null)
 
     fun entfernen(l: StartLayout, id: String): StartLayout {
         val (i, _) = finde(l, id) ?: return l
@@ -294,7 +345,10 @@ object Raster {
             .put("zaehler", l.zaehler).put("schnell", JSONArray(l.schnell))
             .put("zeigeStatus", l.zeigeStatus).put("zeigeReiter", l.zeigeReiter)
             .put("zeigeKlima", l.zeigeKlima).put("zeige3d", l.zeige3d)
-            .put("nebeneinander", l.nebeneinander).put("nebenAnders", JSONArray(l.nebenAnders)).toString(2)
+            .put("nebeneinander", l.nebeneinander).put("nebenAnders", JSONArray(l.nebenAnders))
+            // 0.1.40: Design (nur Farben/Layout, keine Geheimnisse, keine Orte; das eigene Bild bleibt auf dem Gerät)
+            .put("design", l.design).put("akzent", l.akzent ?: "").put("abstand", l.abstand).put("spalte", JSONArray(l.spalte))
+            .toString(2)
     }
 
     /**
@@ -341,7 +395,12 @@ object Raster {
             StartLayout(seiten, dock, hg, maxOf(root.optInt("zaehler", 0), maxId), schnell,
                 root.optBoolean("zeigeStatus", true), root.optBoolean("zeigeReiter", true),
                 root.optBoolean("zeigeKlima", true), root.optBoolean("zeige3d", true),
-                root.optBoolean("nebeneinander", false), pakete(root.optJSONArray("nebenAnders"), MAX_NEBEN_ANDERS))
+                root.optBoolean("nebeneinander", false), pakete(root.optJSONArray("nebenAnders"), MAX_NEBEN_ANDERS),
+                design = root.optString("design", "auto").takeIf { it in DESIGNS } ?: "auto",
+                akzent = akzentGueltig(root.optString("akzent", "")),
+                abstand = root.optString("abstand", "normal").takeIf { it in ABSTAENDE } ?: "normal",
+                spalte = root.optJSONArray("spalte")?.let { a -> SPALTE_TEILE.filter { t -> (0 until a.length()).any { a.optString(it) == t } } }
+                    ?: SPALTE_STANDARD)
         }
     } catch (_: Exception) {
         null

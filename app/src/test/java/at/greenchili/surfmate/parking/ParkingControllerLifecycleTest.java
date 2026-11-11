@@ -62,7 +62,7 @@ public class ParkingControllerLifecycleTest {
         final List<NotificationEvent> published = new CopyOnWriteArrayList<>();
         final List<String> logs = new CopyOnWriteArrayList<>();
         volatile DoorListener doorListener;
-        DetectionBaseline.Listener baselineListener;
+        volatile DetectionBaseline.Listener baselineListener;
         int captures;
         final File base;
 
@@ -168,6 +168,16 @@ public class ParkingControllerLifecycleTest {
         return false;
     }
 
+    /**
+     * 0.1.40 T1: start() runs on the controller's toggle thread and publishes isStarted() before it
+     * installs the baseline and door hooks. Waiting for isStarted() alone let the test read the hooks
+     * in that gap (CI 42906705597: baselineListener null). Wait until the hooks are live as well.
+     */
+    private void awaitLive() throws Exception {
+        await(() -> controller.isStarted() && env.baselineListener != null
+                && env.doorListener != null, 3000);
+    }
+
     private static void await(java.util.function.BooleanSupplier cond, long timeoutMs) throws Exception {
         long end = System.currentTimeMillis() + timeoutMs;
         while (!cond.getAsBoolean()) {
@@ -199,7 +209,7 @@ public class ParkingControllerLifecycleTest {
     public void toggleStartsAndStopsLive() throws Exception {
         controller.attach();
         source.set("enabled", true);
-        await(controller::isStarted, 3000);
+        awaitLive();
         assertTrue(ParkingHooks.isActive());
         assertNotNull(env.baselineListener);
         assertNotNull(env.doorListener);
@@ -223,7 +233,7 @@ public class ParkingControllerLifecycleTest {
     private void startEnabled() throws Exception {
         source.set("enabled", true);
         controller.attach();
-        await(controller::isStarted, 3000);
+        awaitLive();
     }
 
     @Test
@@ -369,7 +379,7 @@ public class ParkingControllerLifecycleTest {
         assertFalse(controller.isStarted());
         assertNull(ParkingHooks.currentSessionId());
         controller.attach();
-        await(controller::isStarted, 3000);
+        awaitLive();
     }
 
     @Test
@@ -486,7 +496,7 @@ public class ParkingControllerLifecycleTest {
         source.set("enabled", false);
         await(() -> !controller.isStarted(), 3000);
         source.set("enabled", true);
-        await(controller::isStarted, 3000);
+        awaitLive();
         ParkingSession s = controller.store().getSession(sid);
         assertFalse("closed when the user switched the feature off", s.isOpen());
         assertEquals(ParkingSession.END_DISABLED, s.endTrigger);
