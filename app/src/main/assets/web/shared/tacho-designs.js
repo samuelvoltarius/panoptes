@@ -9,6 +9,8 @@
  *   t.design('sport');  t.stop();
  *   PanoptesTacho.demo(sekunden) → Beispieldaten (Vorschau, Browser-Test)
  *   PanoptesTacho.DESIGNS → ['klar','sport','nacht','horizont','route']
+ *   0.1.41: Design 'eigen' mit d.eigen (Farben, Schrift, Zeigerform, feste Plätze), t.eigen(obj) für die
+ *   Live-Vorschau, PanoptesTacho.pruefeEigen/vorlage/kontrast (Regeln wie TachoEigen.java).
  *
  * Werte gleiten pro Bild zum Ziel (Daten kommen alle 250 ms, 0.1.38). Es wird nur
  * gezeichnet, solange sich etwas bewegt (höchstens ~30 Bilder/s); sonst einmal pro Minute für die Uhr.
@@ -20,6 +22,7 @@
     'use strict';
 
     var DESIGNS = ['klar', 'sport', 'nacht', 'horizont', 'route'];
+    var EIGEN = 'eigen';   // 0.1.41 „Tacho gestalten“, Daten in d.eigen (geprüft wie TachoEigen.java)
     var TAU = Math.PI * 2;
     var COND = "'Roboto Condensed','sans-serif-condensed','Arial Narrow','Helvetica Neue',sans-serif";
     var SANS = "'Roboto','sans-serif',Arial,sans-serif";
@@ -59,7 +62,7 @@
         var s = String(Math.round(n));
         return s.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
     }
-    function design(d) { return DESIGNS.indexOf(d) >= 0 ? d : 'klar'; }
+    function design(d) { return DESIGNS.indexOf(d) >= 0 || d === EIGEN ? d : 'klar'; }
 
     // ------------------------------------------------------------ Manöver
 
@@ -611,12 +614,232 @@
         }
     }
 
+    // ------------------------------------------------------------ Eigenes Design (0.1.41 „Tacho gestalten“)
+    // Gleiche Regeln wie TachoEigen.java: feste Erlaubnislisten, Tempo Pflicht auf großem Platz,
+    // Ziffern (Tempo, Gang) mit mindestens 4,5:1 Kontrast, sonst Standardfarben.
+
+    var E = {
+        FORMAT: 'panoptes-tacho-design',
+        VERSION: 1,
+        MIN_KONTRAST: 4.5,
+        MAX_ZEICHEN: 4096,
+        FARBEN: ['hintergrund', 'ziffern', 'zeiger', 'akzent'],
+        SCHRIFTEN: ['schmal', 'normal', 'breit'],
+        ZEIGER: ['nadel', 'balken', 'zahl'],
+        GROSS: ['links', 'mitte', 'rechts'],
+        KLEIN: ['oben_links', 'oben_mitte', 'oben_rechts', 'unten_links', 'unten_mitte', 'unten_rechts'],
+        ANZEIGEN: ['tempo', 'akku', 'reichweite', 'leistung', 'gang', 'uhr', 'aussen', 'navi', 'kmstand', 'leer'],
+        NUR_GROSS: ['tempo', 'navi']
+    };
+    var FAMILIEN = {
+        schmal: COND,
+        normal: SANS,
+        breit: "Verdana,'DejaVu Sans','Roboto',sans-serif"
+    };
+    var HEXFARBE = /^#[0-9A-Fa-f]{6}$/;
+
+    function standardPlaetze() {
+        return {
+            links: 'leistung', mitte: 'navi', rechts: 'tempo',
+            oben_links: 'uhr', oben_mitte: 'gang', oben_rechts: 'aussen',
+            unten_links: 'akku', unten_mitte: 'reichweite', unten_rechts: 'kmstand'
+        };
+    }
+
+    /** Ausgangspunkt „Kopie bearbeiten“: Farben eines fertigen Designs, Standard-Anordnung. */
+    function vorlage(dsg) {
+        var n = DESIGNS.indexOf(dsg) >= 0 ? dsg : 'klar', th = THEMEN[n];
+        return {
+            format: E.FORMAT, version: E.VERSION, basis: n,
+            farben: { hintergrund: th.bg0, ziffern: th.fg, zeiger: th.ring, akzent: th.ring2 === th.ring ? th.reku : th.ring2 },
+            schrift: n === 'horizont' ? 'normal' : 'schmal',
+            zeiger: n === 'nacht' ? 'nadel' : 'balken',
+            plaetze: standardPlaetze()
+        };
+    }
+
+    function standardEigen() { return vorlage('klar'); }
+
+    function helligkeit(h) {
+        var x = hex(h), s = 0, gew = [0.2126, 0.7152, 0.0722];
+        for (var i = 0; i < 3; i++) {
+            var k = x[i] / 255;
+            s += gew[i] * (k <= 0.03928 ? k / 12.92 : Math.pow((k + 0.055) / 1.055, 2.4));
+        }
+        return s;
+    }
+
+    /** WCAG-Kontrast zweier Farben #RRGGBB (1..21). */
+    function kontrast(a, b) {
+        if (!HEXFARBE.test(a || '') || !HEXFARBE.test(b || '')) return 1;
+        var la = helligkeit(a), lb = helligkeit(b);
+        return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+    }
+
+    function wahl(v, liste, sonst) {
+        var s = typeof v === 'string' ? v.trim().toLowerCase() : '';
+        return liste.indexOf(s) >= 0 ? s : sonst;
+    }
+
+    /**
+     * Prüft ein Design gegen die Erlaubnislisten. null = kein Design (falsches Format/Version).
+     * Sonst { eigen, warnungen } mit vollständigem, sicherem Design.
+     */
+    function pruefeEigen(roh) {
+        if (!roh || typeof roh !== 'object') return null;
+        if (roh.format !== undefined && roh.format !== E.FORMAT) return null;
+        if (roh.version !== undefined && roh.version !== E.VERSION) return null;
+        var std = standardEigen(), warn = [], i;
+        var f = {}, rf = roh.farben && typeof roh.farben === 'object' ? roh.farben : null, falsch = false;
+        for (i = 0; i < E.FARBEN.length; i++) {
+            var k = E.FARBEN[i], v = rf ? rf[k] : undefined;
+            if (typeof v === 'string' && HEXFARBE.test(v)) f[k] = v.toUpperCase();
+            else { f[k] = std.farben[k]; if (rf && v !== undefined) falsch = true; }
+        }
+        if (falsch) warn.push('farbe_ungueltig');
+        if (kontrast(f.ziffern, f.hintergrund) < E.MIN_KONTRAST) {
+            f = {};
+            for (i = 0; i < E.FARBEN.length; i++) f[E.FARBEN[i]] = std.farben[E.FARBEN[i]];
+            warn.push('kontrast');
+        }
+        var rp = roh.plaetze && typeof roh.plaetze === 'object' ? roh.plaetze : {};
+        var plaetze = {}, belegt = {}, alle = E.GROSS.concat(E.KLEIN);
+        for (i = 0; i < alle.length; i++) {
+            var p = alle[i], a = wahl(rp[p], E.ANZEIGEN, 'leer');
+            if (E.KLEIN.indexOf(p) >= 0 && E.NUR_GROSS.indexOf(a) >= 0) a = 'leer';
+            if (a !== 'leer' && belegt[a]) a = 'leer';
+            belegt[a] = true;
+            plaetze[p] = a;
+        }
+        if (!belegt.tempo) { plaetze.rechts = 'tempo'; warn.push('tempo_pflicht'); }
+        return {
+            eigen: {
+                format: E.FORMAT, version: E.VERSION, basis: wahl(roh.basis, DESIGNS, 'klar'), farben: f,
+                schrift: wahl(roh.schrift, E.SCHRIFTEN, std.schrift), zeiger: wahl(roh.zeiger, E.ZEIGER, std.zeiger),
+                plaetze: plaetze
+            },
+            warnungen: warn
+        };
+    }
+
+    /** Farbsatz für den Renderer aus den vier gewählten Farben. */
+    function eigenThema(e) {
+        var f = e.farben;
+        return {
+            bg0: f.hintergrund, bg1: f.hintergrund, fg: f.ziffern,
+            dim: mische(f.ziffern, f.hintergrund, 0.42), leise: mische(f.ziffern, f.hintergrund, 0.72),
+            spur: mische(f.ziffern, f.hintergrund, 0.86), ring: f.zeiger, ring2: f.zeiger, reku: f.akzent,
+            warn: '#FFB547', glanz: 0, ziffer: e.schrift === 'breit' ? '700' : '600', kursiv: false,
+            stil: 'glatt', familie: FAMILIEN[e.schrift] || COND
+        };
+    }
+
+    /** Wert, Einheit und Anteil (0..1, null = ohne Skala) einer Anzeige. */
+    function anzeigeWert(a, d, st, jetzt) {
+        switch (a) {
+            case 'tempo': return { t: zahl(d.kmh) ? String(Math.round(d.kmh)) : '–', e: 'km/h', anteil: (zahl(d.kmh) ? d.kmh : 0) / 200, nullA: 0 };
+            case 'akku': return { t: zahl(d.soc) ? String(Math.round(d.soc)) : '–', e: '%', anteil: (zahl(d.soc) ? d.soc : 0) / 100, nullA: 0 };
+            case 'leistung': {
+                var max = kwSkala(st, d.kw), reg = max / 3, kw = zahl(d.kw) ? d.kw : 0;
+                return { t: zahl(d.kw) ? String(Math.round(Math.abs(kw))) : '–', e: kw < -0.5 ? 'kW  ↺' : 'kW',
+                    anteil: kw / (max + reg), nullA: reg / (max + reg), reku: kw < 0 };
+            }
+            case 'reichweite': return { t: zahl(d.reichweiteKm) ? String(Math.round(d.reichweiteKm)) : '–', e: 'km', anteil: null };
+            case 'gang': return { t: d.gang || '–', e: '', anteil: null, gang: true };
+            case 'uhr': return { t: uhr(jetzt), e: '', anteil: null };
+            case 'aussen': return { t: zahl(d.aussenC) ? d.aussenC + '°' : '–', e: 'C', anteil: null };
+            case 'kmstand': return { t: zahl(d.kmStand) ? tausender(d.kmStand) : '–', e: 'km', anteil: null };
+            default: return null;
+        }
+    }
+
+    function nadel(c, x, y, r, th, anteil, nullA) {
+        var von = Math.PI * 0.75, spanne = Math.PI * 1.5;
+        c.save();
+        c.lineCap = 'round';
+        c.strokeStyle = th.spur;
+        c.lineWidth = Math.max(2, r * 0.035);
+        c.beginPath();
+        c.arc(x, y, r, von, von + spanne);
+        c.stroke();
+        c.strokeStyle = th.leise;
+        c.lineWidth = Math.max(1, r * 0.02);
+        for (var i = 0; i <= 10; i++) {
+            var a = von + spanne * i / 10, r2 = r - r * (i % 2 === 0 ? 0.14 : 0.08);
+            c.beginPath();
+            c.moveTo(x + Math.cos(a) * r, y + Math.sin(a) * r);
+            c.lineTo(x + Math.cos(a) * r2, y + Math.sin(a) * r2);
+            c.stroke();
+        }
+        var w = von + spanne * clamp(nullA + anteil, 0, 1);
+        c.strokeStyle = th.ring;
+        c.lineWidth = Math.max(3, r * 0.05);
+        c.beginPath();
+        c.moveTo(x + Math.cos(w) * r * 0.12, y + Math.sin(w) * r * 0.12);
+        c.lineTo(x + Math.cos(w) * r * 0.92, y + Math.sin(w) * r * 0.92);
+        c.stroke();
+        c.fillStyle = th.ring;
+        c.beginPath();
+        c.arc(x, y, r * 0.07, 0, TAU);
+        c.fill();
+        c.restore();
+    }
+
+    function grossPlatz(c, a, x, y, r, bw, bh, u, th, d, st, jetzt, zeiger) {
+        if (a === 'leer') return;
+        if (a === 'navi') { mitte(c, x, y, bw, bh, u, th, d); return; }
+        var v = anzeigeWert(a, d, st, jetzt);
+        if (!v) return;
+        var opt = { gewicht: th.ziffer, familie: th.familie };
+        var skala = v.anteil !== null && zeiger !== 'zahl';
+        if (skala && zeiger === 'nadel') {
+            nadel(c, x, y, r, th, v.anteil, v.nullA || 0);
+            text(c, v.t, x, y + r * 0.42, r * 0.42, th.fg, opt);
+            text(c, v.e, x, y + r * 0.72, r * 0.17, v.reku ? th.reku : th.dim, { familie: th.familie });
+            return;
+        }
+        if (skala) ring(c, x, y, r, th, v.anteil, v.nullA || 0, { reku: v.reku, striche: 10 });
+        text(c, v.t, x, y - r * 0.05, r * (v.gang ? 0.9 : v.t.length > 4 ? 0.48 : 0.74), th.fg, opt);
+        if (v.e) text(c, v.e, x, y + r * 0.45, r * 0.2, v.reku ? th.reku : th.dim, { familie: th.familie });
+    }
+
+    function kleinPlatz(c, a, x, y, aus, u, th, d, st, jetzt) {
+        if (a === 'leer') return;
+        var v = anzeigeWert(a, d, st, jetzt);
+        if (!v) return;
+        var s = v.e ? v.t + (v.e === 'C' ? 'C' : ' ' + v.e) : v.t;
+        // Gang in Ziffernfarbe (Kontrast geprüft), alles andere ruhiger.
+        text(c, s, x, y, u * (v.gang ? 7 : 6), v.gang || a === 'uhr' ? th.fg : th.dim,
+            { ausrichtung: aus, gewicht: v.gang ? '700' : '600', familie: th.familie });
+    }
+
+    function zeichneEigen(c, w, h, u, roh, d, st, jetzt) {
+        // roh ist schon in setze()/eigen() geprüft; ohne Design gilt der Standard.
+        var e = roh && roh.farben && roh.plaetze ? roh : standardEigen(), th = eigenThema(e), p = e.plaetze;
+        c.fillStyle = th.bg0;
+        c.fillRect(0, 0, w, h);
+        var oben = u * 7, unten = h - u * 8, rand = u * 4;
+        var xs = [rand, w / 2, w - rand], aus = ['left', 'center', 'right'];
+        for (var i = 0; i < 3; i++) {
+            kleinPlatz(c, p[E.KLEIN[i]], xs[i], oben, aus[i], u, th, d, st, jetzt);
+            kleinPlatz(c, p[E.KLEIN[i + 3]], xs[i], unten, aus[i], u, th, d, st, jetzt);
+        }
+        var cy = h * 0.53, r = Math.min(h * 0.31, w * 0.135);
+        var lx = Math.max(r * 1.25, w * 0.17), rx = w - lx;
+        var mittelBreite = (rx - lx) - r * 2.6;
+        grossPlatz(c, p.links, lx, cy, r, r * 2.4, h * 0.62, u, th, d, st, jetzt, e.zeiger);
+        grossPlatz(c, p.mitte, w / 2, cy, Math.min(r, mittelBreite / 2.2), mittelBreite, h * 0.62, u, th, d, st, jetzt, e.zeiger);
+        grossPlatz(c, p.rechts, rx, cy, r, r * 2.4, h * 0.62, u, th, d, st, jetzt, e.zeiger);
+    }
+
     // ------------------------------------------------------------ Gesamtbild
 
     function zeichne(c, w, h, d, st, jetzt) {
-        var dsg = design(d.design), th = THEMEN[dsg];
+        var dsg = design(d.design);
         // Einheit: 1 u = 1 % der Höhe, aber nie breiter als das Bild bei 2,2:1 trägt.
         var u = Math.min(h, w / 2.2) / 100;
+        if (dsg === EIGEN) { zeichneEigen(c, w, h, u, d.eigen, d, st, jetzt); return; }
+        var th = THEMEN[dsg];
         hintergrund(c, w, h, th, dsg);
         kopfzeile(c, w, h, u, th, d, jetzt);
         if (dsg === 'horizont') {
@@ -645,11 +868,16 @@
     var GLEITEN = 9;   // 1/s
     var MIN_BILD_MS = 32;   // Obergrenze ~30 Bilder/s, schont schwache Head-Units
 
+    function geprueft(e) {
+        var g = e ? pruefeEigen(e) : null;
+        return g ? g.eigen : null;
+    }
+
     function create(canvas, opt) {
         opt = opt || {};
         var c = canvas.getContext('2d');
         var ziel = { design: design(opt.design) };
-        var anz = { design: ziel.design };
+        var anz = { design: ziel.design, eigen: geprueft(opt.eigen) };
         var st = { kwMax: 150 };
         var lauf = true, letzt = 0, letztesBild = 0, letzteUhr = '', dpr = 1, w = 0, h = 0, neu = true;
 
@@ -701,6 +929,7 @@
                 if (GLEITEND.indexOf(n) < 0) anz[n] = d[n];
             }
             if (d.design) anz.design = ziel.design = design(d.design);
+            if (d.eigen !== undefined) anz.eigen = geprueft(d.eigen);
             neu = true;
         }
 
@@ -709,6 +938,8 @@
         return {
             setze: setze,
             design: function (dsg) { anz.design = ziel.design = design(dsg); neu = true; },
+            /** 0.1.41 Live-Vorschau beim Gestalten: eigenes Design setzen (wird geprüft). */
+            eigen: function (e) { anz.eigen = geprueft(e); anz.design = ziel.design = EIGEN; neu = true; },
             jetztZeichnen: function () {
                 for (var i = 0; i < GLEITEND.length; i++) anz[GLEITEND[i]] = ziel[GLEITEND[i]];
                 groesse();
@@ -741,6 +972,13 @@
         create: create,
         demo: demo,
         manoeverArt: manoeverArt,
-        entfernung: entfernung
+        entfernung: entfernung,
+        // 0.1.41 „Tacho gestalten“
+        EIGEN: EIGEN,
+        REGELN: E,
+        vorlage: vorlage,
+        standardEigen: standardEigen,
+        pruefeEigen: pruefeEigen,
+        kontrast: kontrast
     };
 })();

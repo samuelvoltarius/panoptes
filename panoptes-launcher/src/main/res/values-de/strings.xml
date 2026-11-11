@@ -62,6 +62,9 @@
     <string name="musik_pause">Wiedergabe/Pause</string>
     <string name="musik_weiter">Weiter</string>
     <string name="musik_zurueck">Zurück</string>
+    <string name="medien_zugriff_hinweis">Zum Steuern der Musik (auch CarPlay) den Benachrichtigungszugriff erlauben</string>
+    <string name="medien_zugriff_erlauben">Zugriff erlauben</string>
+    <string name="musik_weiterspielen">Musik beim Start weiterspielen</string>
     <string name="nach_links">Nach links</string>
     <string name="nach_rechts">Nach rechts</string>
     <string name="navi_keine">Keine aktive Route</string>
@@ -268,6 +271,11 @@
     <string name="laden_ziel">Ziel %1$d %%</string>
     <string name="laden_rest">noch %1$d min</string>
     <string name="kamera_tipp">Antippen für die Live-Ansicht</string>
+    <!-- 0.1.41 (CP): Kachel CarPlay / Android Auto (Werks-Apps, Start im Vollbild) -->
+    <string name="widget_projektion">CarPlay / Android Auto</string>
+    <string name="projektion_carplay">CarPlay</string>
+    <string name="projektion_android_auto">Android Auto</string>
+    <string name="projektion_tipp">Startet die App des Autos im Vollbild. Vorher das Handy verbinden.</string>
     <!-- 0.1.40 E2E: Abdunkelung eigenes Bild (M1), Design bei Cockpit (M2) -->
     <string name="abdunkelung">Abdunkelung des Bildes</string>
     <string name="abdunkelung_auto">Automatisch (nach Bildhelligkeit)</string>
@@ -277,4 +285,69 @@
     <string name="design_cockpit">Cockpit (immer dunkel)</string>
     <string name="design_cockpit_hinweis">Beim Hintergrund „Cockpit“ gilt immer das dunkle Cockpit-Design. Für Design und Akzentfarbe einen anderen Hintergrund wählen.</string>
     <string name="kachel_neue_seite">Seite voll – die Kachel liegt auf einer neuen Seite.</string>
+    <!-- 0.1.41 (LK): Kacheln Reifen, letzte Fahrt, Tempo -->
+    <string name="widget_reifendruck">Reifen</string>
+    <string name="widget_fahrt">Letzte Fahrt</string>
+    <string name="widget_tempo">Tempo</string>
+    <string name="reifen_ok">Alles in Ordnung</string>
+    <string name="warn_leck_schnell">schnelles Leck</string>
+    <string name="warn_leck_langsam">langsames Leck</string>
+    <string name="warn_unterdruck">Unterdruck</string>
+    <string name="warn_ueberdruck">Überdruck</string>
+    <string name="warn_signal">kein Sensorsignal</string>
+    <string name="rad_vl">VL</string>
+    <string name="rad_vr">VR</string>
+    <string name="rad_hl">HL</string>
+    <string name="rad_hr">HR</string>
+    <string name="widget_geraet">Android-Widget</string>
+    <string name="widget_geraet_hinzu">Android-Widget (Wetter, Kalender …)</string>
+    <string name="widget_geraet_keine">Es sind keine Android-Widgets installiert.</string>
+    <string name="widget_geraet_fehlt">Dieses Widget gibt es nicht mehr. Lange drücken zum Entfernen.</string>
+    <string name="schnell_titel">Leiste über allen Apps</string>
+    <string name="schnell_oben">oben (kann App-Reiter verdecken)</string>
+    <string name="schnell_links">links</string>
+    <string name="schnell_rechts">rechts</string>
+    <string name="schnell_haus">Startbildschirm</string>
+    <string name="schnell_leiser">Leiser</string>
+    <string name="schnell_lauter">Lauter</string>
+    <string name="schnell_hinweis">Eine kleine Leiste mit Startbildschirm und Lautstärke bleibt über anderen Apps. Im Rückwärtsgang und über dem Launcher ist sie weg.</string>
+    <string name="schnell_recht_text">Damit die Leiste über anderen Apps erscheint, braucht Android deine Erlaubnis „Über anderen Apps einblenden“. Android öffnet jetzt die Einstellung – dort Panoptes Launcher erlauben.</string>
+    <!-- 0.1.41 (LA) Layout-Vorlagen, Tag/Nacht -->
+    <string name="tagnacht">Tag/Nacht automatisch</string>
+    <string name="tagnacht_hinweis">Nachts gilt das Design „Nacht“. Der Zeitpunkt kommt aus dem Sonnenstand am Auto, sonst aus der Uhrzeit.</string>
+    <string name="vorlage">Layout-Vorlage</string>
+    <string name="vorlage_hinweis">Ersetzt Startseiten und Aussehen. „Einfach“ stellt die Größe auf „Größer“, die anderen zurück auf „Automatisch“. Dock und Apps bleiben.</string>
+    <string name="vorlage_frage">Wie soll der Launcher aussehen?</string>
+    <string name="vorlage_spaeter">Später änderbar unter Einstellungen → Erweitert → Layout-Vorlage.</string>
+    <string name="vorlage_einfach">Einfach</string>
+    <string name="vorlage_einfach_text">wenige große Kacheln, große Schrift</string>
+    <string name="vorlage_standard">Standard</string>
+    <string name="vorlage_standard_text">Fahrzeug, Musik und mehr</string>
+    <string name="vorlage_cockpit">Cockpit</string>
+    <string name="vorlage_cockpit_text">dunkel, viele Werte auf einen Blick</string>
+    <string name="vorlage_ersetzen_frage">Deine Startseiten und das Aussehen werden ersetzt. Dock und Apps bleiben. Das jetzige Layout vorher als Datei sichern?</string>
+    <string name="vorlage_ersetzen">Ersetzen</string>
+    <string name="vorlage_erst_sichern">Erst sichern</string>
+    <string name="vorlage_ok">Vorlage „%1$s“ übernommen.</string>
+    <!-- 0.1.41 (LC): Navi aufs Kombi, Seitenblick beim Blinken -->
+    <string name="verstanden">Verstanden</string>
+    <string name="kombi_einstellung">Navi aufs Kombi (Knopf bei der Karte)</string>
+    <string name="kombi_knopf">Navi aufs Kombi</string>
+    <string name="kombi_normal">Kombi wieder normal</string>
+    <string name="kombi_info">Der Knopf erscheint neben der Karte. Er zeigt deine Navi-App im Kombi vor dir. Er startet nur im Stand und nur für eine App, die du einmal in Panoptes geprüft und freigegeben hast (Anzeige → Tacho). Nochmal tippen bringt die normale Instrumentenanzeige zurück.</string>
+    <string name="kombi_geht_nicht">Dieses Auto kann im Kombi keine fremden Bilder zeigen (beim Dolphin Surf ist der Tacho ein eigenes kleines System ohne Fläche dafür). Der Knopf bleibt deshalb aus.</string>
+    <string name="kombi_freigeben">Prüfe diese App zuerst einmal im Stand in Panoptes und gib sie frei (Anzeige → Tacho). Erst dann darf der Launcher sie aufs Kombi legen.</string>
+    <string name="kombi_nur_stand">Nur im Stand. Eine schon gezeigte Navi läuft beim Fahren weiter.</string>
+    <string name="kombi_laeuft">Die Navi ist jetzt im Kombi.</string>
+    <string name="kombi_zurueck">Kombi wieder normal.</string>
+    <string name="seitenblick_titel">Seitenblick beim Blinken</string>
+    <string name="seitenblick_regel">Solange du links oder rechts blinkst, zeigt der Bildschirm das Kamerabild dieser Seite (mit dem Blick nach hinten). Kurz nach dem Blinken verschwindet es von selbst. Es erscheint auch während der Fahrt, weil es eine Fahrhilfe ist; es braucht keine Berührung und macht keinen Ton. Beim Warnblinker erscheint nichts. Im Rückwärtsgang hat die Rückfahrkamera des Autos immer Vorrang. Panoptes liest den Blinker nur, es bedient ihn nie. Den Schulterblick ersetzt es nicht.</string>
+    <string name="seitenblick_blinker_fehlt">Auf diesem Auto kann Panoptes den Blinker gerade nicht lesen – das Bild kann deshalb nicht erscheinen.</string>
+    <string name="seitenblick_ist">Zurzeit:</string>
+    <string name="seitenblick_an">Einschalten</string>
+    <string name="seitenblick_aus">Ausschalten</string>
+    <string name="seitenblick_ist_an">Seitenblick beim Blinken ist an.</string>
+    <string name="seitenblick_ist_aus">Seitenblick beim Blinken ist aus.</string>
+    <string name="seitenblick_fehler">Seitenblick ließ sich nicht umschalten. Es wurde nichts geändert. Bitte später nochmal versuchen oder in Panoptes prüfen.</string>
+    <string name="seitenblick_nicht_erreichbar">Panoptes antwortet gerade nicht, darum lässt sich der Seitenblick jetzt nicht anzeigen. Bitte gleich nochmal versuchen.</string>
 </resources>

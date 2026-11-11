@@ -17,7 +17,6 @@ import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
-import android.os.Looper
 import android.os.SystemClock
 import android.provider.Settings
 import android.text.Editable
@@ -46,14 +45,14 @@ import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
 
 class MainActivity : AppCompatActivity() {
     private val client = PanoptesClient()
-    private val io = Executors.newSingleThreadExecutor()
-    private val main = Handler(Looper.getMainLooper())
+    // 0.1.41 (Nachtest F1): nach dem Beenden keine Arbeit mehr annehmen, Rückrufe nur in einer lebenden Activity
+    private val io = SichererIo()
+    private val main: Handler = LebensHandler { !isFinishing && !isDestroyed }
     private var stopped = false
     private var cachedHistory = LauncherHistory(null, null)
     private var lastHistoryFetch = 0L
@@ -64,7 +63,7 @@ class MainActivity : AppCompatActivity() {
     private val refreshInFlight = AtomicBoolean(false)
 
     // Klima läuft getrennt: „an“ wartet im Kern einige Sekunden auf das Echo und darf die Anzeige nicht aufhalten.
-    private val klimaIo = Executors.newSingleThreadExecutor()
+    private val klimaIo = SichererIo()
     private val klimaLaeuft = AtomicBoolean(false)
 
     // Update-Karte (Stufe 4): Stand höchstens alle 5 min lesen, „Später“ gilt je Version.
@@ -74,6 +73,7 @@ class MainActivity : AppCompatActivity() {
 
     // ---------- Zustand ----------
     private lateinit var ui: Ui
+    private var dichteDpi = 0
     private lateinit var layout: StartLayout
     private var apps: List<InstallierteApp> = emptyList()
     private var appsNachPaket: Map<String, InstallierteApp> = emptyMap()
@@ -84,6 +84,8 @@ class MainActivity : AppCompatActivity() {
     private var bearbeiten = false
     private var seite = 0
     private var medien: Wiedergabe? = null
+    /** 0.1.41 (E2E M1/G4): Android meldet Medienänderungen selbst, die Kachel zeichnet sofort neu. */
+    private val medienBeobachter by lazy { MedienBeobachter(this, main) { medienNeu() } }
     private var stilSchluessel = ""
 
     // ---------- Ansichten ----------
@@ -133,8 +135,9 @@ class MainActivity : AppCompatActivity() {
     /** Medien und Uhr laufen flüssiger als die Fahrzeugdaten, aber nur im Vordergrund und nur bei Änderung. */
     private val takt = object : Runnable {
         override fun run() {
-            val m = MedienQuelle.aktuell(this@MainActivity)
+            val m = MedienQuelle.aktuell(this@MainActivity, MusikStart.letztes(this@MainActivity))
             medien = m
+            MusikStart.gesehen(this@MainActivity, m?.paket, m?.spielt == true)   // 0.1.41 (LM)
             val stand = Ruhe.taktSchluessel(m?.paket, m?.titel, m?.kuenstler, m?.spielt, m?.positionMs, m?.dauerMs,
                 m?.cover?.generationId, System.currentTimeMillis())
             if (stand != taktStand) {
@@ -156,12 +159,18 @@ class MainActivity : AppCompatActivity() {
         // 0.1.39 (L1-Nachbesserung): Karten-Split übersteht einen Neustart der Activity (Konfigwechsel)
         karteImSplit = savedInstanceState?.getString(ZUSTAND_KARTE_SPLIT)
         splitGewolltBeendet = savedInstanceState?.getBoolean(ZUSTAND_SPLIT_GEWOLLT) ?: false
+        val vorlageFragen = getSharedPreferences(PREFS, MODE_PRIVATE).let {
+            Vorlagen.fragen(it.contains(KEY_LAYOUT), it.getBoolean(KEY_VORLAGE_GEFRAGT, false), launcherLief())
+        }
         layout = ladeLayout()
         baueAlles()
         kernAbgleich()
+        if (vorlageFragen) main.post { vorlageErstFrage() }
         displayAn = Ruhe.displayAn(displayZustand())
         runCatching { getSystemService(DisplayManager::class.java)?.registerDisplayListener(displayHoerer, main) }
         if (!isInMultiWindowMode) splitEndeGesehen()   // Split endete, während die Activity neu startete
+        // 0.1.41 (LM): letzte Musik weiterspielen, nur wenn eingeschaltet (ab Werk aus), einmal je Start
+        MusikStart.beimStart(this, main, { startbar(it) || rueckfallIntent(it) != null }) { starteVollbild(it) }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -173,13 +182,34 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         stopped = false
+        geraeteWidgets.start()                  // 0.1.41 (LO)
+        schnellleiste.launcherVorn(true)        // 0.1.41 (LO): nie über dem Launcher selbst
         leiste?.aus()   // 0.1.39: Launcher wieder vorn → keine Leiste über ihm
         zustandAnwenden()
         ladeApps()
     }
 
+    override fun onResume() {
+        super.onResume()
+        // 0.1.41 (E2E G4): Zugriff bei jeder Rückkehr neu prüfen (z. B. von der Android-Seite „Benachrichtigungszugriff“)
+        medienBeobachter.start()
+        medienNeu()
+    }
+
+    /** Mediensitzung neu lesen und Musik-Kachel + Statusleiste zeichnen (Meldung von Android oder Rückkehr). */
+    private fun medienNeu() {
+        val m = MedienQuelle.aktuell(this, MusikStart.letztes(this))
+        medien = m
+        MusikStart.gesehen(this, m?.paket, m?.spielt == true)
+        aktualisierer.forEach { it() }
+        statusAktualisierer.forEach { it() }
+    }
+
     override fun onStop() {
+        medienBeobachter.stop()
         stopped = true
+        geraeteWidgets.stop()
+        schnellleiste.launcherVorn(false)
         zustandAnwenden()
         super.onStop()
     }
@@ -234,6 +264,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         leiste?.aus()
+        schnellleiste.aus()
         runCatching { getSystemService(DisplayManager::class.java)?.unregisterDisplayListener(displayHoerer) }
         io.shutdownNow()
         klimaIo.shutdownNow()
@@ -245,6 +276,8 @@ class MainActivity : AppCompatActivity() {
     /** Hell/Dunkel des Systems (Modus „auto“ wie theme.js) ohne Neustart der Ansicht übernehmen. */
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
+        // 0.1.41 G5: Dichtewechsel zur Laufzeit (im Auto nicht vorgesehen) → Activity sauber neu, statt halb alter Ansichten
+        if (dichteDpi > 0 && newConfig.densityDpi != dichteDpi) { recreate(); return }
         if (overlay == null) baueAlles()
     }
 
@@ -261,7 +294,17 @@ class MainActivity : AppCompatActivity() {
 
     /** 0.1.40 (L2): eigenes Design + Akzent; „Wie Panoptes“ (ab Werk) = bisheriges Verhalten. Cockpit bleibt dunkel. */
     private fun stilPalette(cockpit: Boolean, modus: String?): Palette =
-        if (cockpit) PanoptesStil.DUNKEL else PanoptesStil.gestaltet(layout.design, modus, systemHell(), layout.akzent)
+        if (cockpit) PanoptesStil.DUNKEL else PanoptesStil.gestaltet(designJetzt(), modus, systemHell(), layout.akzent)
+
+    /** 0.1.41 (LA): Design, das gerade gilt; mit „Tag/Nacht automatisch“ nachts „Nacht“ ([TagNacht]). */
+    private fun designJetzt(): String {
+        val an = TagNacht.an(this)
+        if (!an) return layout.design
+        val c = java.util.Calendar.getInstance()
+        val nacht = TagNacht.istNacht(summary?.istNacht, c.get(java.util.Calendar.MONTH) + 1,
+            c.get(java.util.Calendar.HOUR_OF_DAY), c.get(java.util.Calendar.MINUTE))
+        return TagNacht.design(layout.design, an, nacht)
+    }
 
     private fun systemHell() = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) != Configuration.UI_MODE_NIGHT_YES
 
@@ -269,8 +312,11 @@ class MainActivity : AppCompatActivity() {
         val cockpit = layout.hintergrund == "cockpit"
         val pal = stilPalette(cockpit, appearance?.modus)
         ui = Ui(this, pal, cockpit)
+        dichteDpi = resources.configuration.densityDpi
         stilSchluessel = "${pal.hell}:$cockpit:${pal.aqua}:${pal.background}"
         aktualisierer.clear(); statusAktualisierer.clear()
+        // 0.1.41 (Nachtest N2): der Takt vergleicht minutengenau; nach dem Neuaufbau beim nächsten Schlag sicher aktualisieren
+        taktStand = ""
         overlay = null
         window.statusBarColor = if (cockpit) PanoptesStil.COCKPIT_SEITE[0] else pal.seiteVon
         window.navigationBarColor = window.statusBarColor
@@ -339,10 +385,13 @@ class MainActivity : AppCompatActivity() {
             setOnClickListener { if (!MedienQuelle.zugriffErlaubt(this@MainActivity)) zugriffErklaeren() }
         }
         listOf(glockeBox, wlan, bt, ort).forEach { z.addView(it, ui.lp(ui.dp(44), ui.dp(44), rechts = 14)) }
-        z.addView(View(this), ui.lp(0, 1, 1f))
+        // 0.1.41 (G5): Musik steht in einer dehnbaren Box. Ein langer Titel wird gekürzt, statt Uhr und Logo
+        // aus der Zeile zu drücken (vorher blieb nach der Musik-Umstellung nur ♫ statt der Uhr).
+        val musikBox = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL or Gravity.END }
         val musikIcon = ui.icon(R.drawable.ic_pn_music, ui.p.onSurfaceVariant, 22)
-        val musik = ui.text("", 16f, 600, ui.p.onSurfaceVariant).apply { maxLines = 1; maxWidth = ui.dp(380) }
-        z.addView(musikIcon, ui.lp(ui.dp(22), ui.dp(22), rechts = 8)); z.addView(musik, ui.lp(rechts = 22))
+        val musik = ui.text("", 16f, 600, ui.p.onSurfaceVariant).apply { maxLines = 1; maxWidth = ui.dp(380); ellipsize = android.text.TextUtils.TruncateAt.END }
+        musikBox.addView(musikIcon, ui.lp(ui.dp(22), ui.dp(22), rechts = 8)); musikBox.addView(musik, ui.lp())
+        z.addView(musikBox, ui.lp(0, -2, 1f, rechts = 22))
         val uhr = ui.zahl("", 22f)
         z.addView(uhr, ui.lp(rechts = 16))
         z.addView(ImageView(this).apply {
@@ -351,7 +400,9 @@ class MainActivity : AppCompatActivity() {
             background = GradientDrawable().apply { cornerRadius = ui.dpf(10f); setColor(Color.TRANSPARENT) }
             contentDescription = getString(R.string.app_name)
         }, ui.lp(ui.dp(36), ui.dp(36)))
-        statusAktualisierer += {
+        // 0.1.41 (Nachtest N2): sofort einmal füllen. Vorher blieb die neu gebaute Leiste leer (keine Uhr, nur ♫),
+        // bis sich Minute oder Musik änderten – bei pausierter Musik bis zu 60 s.
+        val fuellen: () -> Unit = {
             val an = ui.p.onSurface; val aus = Color.argb(110, Color.red(ui.p.outline), Color.green(ui.p.outline), Color.blue(ui.p.outline))
             val n = MedienDienst.hatBenachrichtigungen()
             glocke.setColorFilter(if (n == null) aus else an); punkt.visibility = if (n == true) View.VISIBLE else View.GONE
@@ -364,6 +415,8 @@ class MainActivity : AppCompatActivity() {
             musik.text = if (zeigen) listOfNotNull(appName(m!!.paket), m.titel).joinToString(" · ") else ""
             uhr.text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
         }
+        statusAktualisierer += fuellen
+        fuellen()
         return z
     }
 
@@ -796,8 +849,63 @@ class MainActivity : AppCompatActivity() {
                 if (neu === layout) zeigeHinweis(getString(R.string.kein_platz)); aendern(neu); zeichneSeite()
             }
         }
-        punkte += getString(R.string.entfernen) to { aendern(Raster.entfernen(layout, e.id)); zeichneSeite() }
+        punkte += getString(R.string.entfernen) to {
+            if (e.kachel == Kachel.GERAETEWIDGET) geraeteWidgets.freigeben(e.wid)   // 0.1.41 (LO): Bindung freigeben
+            aendern(Raster.entfernen(layout, e.id)); zeichneSeite()
+        }
         auswahl(titelVon(e), punkte)
+    }
+
+    // ---------- 0.1.41 (LO): Leiste über allen Apps und Android-Widgets (Logik in Schnellleiste.kt / GeraeteWidgets.kt)
+
+    private val schnellleiste by lazy { Schnellleiste(applicationContext, ui) }
+    private val geraeteWidgets by lazy { GeraeteWidgets(this) }
+
+    private fun schnellName(w: String) = getString(when (w) {
+        Schnellleiste.OBEN -> R.string.schnell_oben; Schnellleiste.LINKS -> R.string.schnell_links
+        Schnellleiste.RECHTS -> R.string.schnell_rechts; else -> R.string.aus })
+
+    private fun schnellleisteWaehlen() {
+        auswahl(getString(R.string.schnell_titel), Schnellleiste.WAHL.map { w ->
+            ((if (w == Schnellleiste.wahl(this)) "✓ " else "") + schnellName(w)) to {
+                Schnellleiste.setzen(this, w)
+                if (w != Schnellleiste.AUS && !Settings.canDrawOverlays(this)) schnellRechtFragen()
+                schnellleiste.launcherVorn(true)
+                einstellungen(erweitert = true)
+            }
+        }, getString(R.string.schnell_hinweis))
+    }
+
+    /** Recht nur über die Android-Einstellungsseite, vom Nutzer selbst erteilt (nie über den Daemon). */
+    private fun schnellRechtFragen() {
+        AlertDialog.Builder(this).setTitle(R.string.schnell_titel).setMessage(R.string.schnell_recht_text)
+            .setPositiveButton(R.string.oeffnen) { _, _ ->
+                try { startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                catch (_: Exception) { zeigeHinweis(getString(R.string.launch_failed)) }
+            }
+            .setNegativeButton(R.string.abbrechen, null).show()
+    }
+
+    private fun geraeteWidgetWaehlen() {
+        val liste = geraeteWidgets.anbieter()
+        if (liste.isEmpty()) { zeigeHinweis(getString(R.string.widget_geraet_keine)); return }
+        auswahl(getString(R.string.widget_geraet_hinzu), liste.map { (name, info) ->
+            name to {
+                geraeteWidgets.hinzufuegen(info) { wid, i ->
+                    val dm = resources.displayMetrics.density
+                    val g = GeraeteWidgets.groesse((i.minWidth / dm).toInt(), (i.minHeight / dm).toInt())
+                    val neu = Raster.geraeteWidgetHinzufuegen(layout, seite, wid, g)
+                    if (neu === layout) { geraeteWidgets.freigeben(wid); zeigeHinweis(getString(R.string.kein_platz)) }
+                    else { aendern(neu); zeichneSeite() }
+                }
+            }
+        })
+    }
+
+    private fun geraeteWidgetKachel(e: Element): View {
+        val v = e.wid?.let { geraeteWidgets.ansicht(this, it) }
+        if (v != null) return v
+        return spalte().apply { addView(ui.leise(getString(R.string.widget_geraet_fehlt), 14f)) }
     }
 
     private fun stufeName(st: String) = getString(when (st) { "klein" -> R.string.stufe_klein; "gross" -> R.string.stufe_gross; else -> R.string.stufe_mittel })
@@ -812,17 +920,21 @@ class MainActivity : AppCompatActivity() {
         Kachel.FAHRZEUG -> R.string.widget_fahrzeug; Kachel.AKKU -> R.string.widget_akku; Kachel.NAVI -> R.string.widget_navi
         Kachel.MUSIK -> R.string.widget_musik; Kachel.WAECHTER -> R.string.widget_waechter; Kachel.UHR -> R.string.widget_uhr
         Kachel.SCHLOSS -> R.string.widget_schloss; Kachel.LADEN -> R.string.widget_laden; Kachel.KAMERA -> R.string.widget_kamera
+        Kachel.PROJEKTION -> R.string.widget_projektion
+        Kachel.REIFEN -> R.string.widget_reifendruck; Kachel.FAHRT -> R.string.widget_fahrt; Kachel.TEMPO -> R.string.widget_tempo; Kachel.GERAETEWIDGET -> R.string.widget_geraet
     })
 
     private fun kachelHinzufuegen() {
-        val fehlend = Kachel.values().filter { !Raster.hatWidget(layout, it) }
-        if (fehlend.isEmpty()) { zeigeHinweis(getString(R.string.alle_kacheln_da)); return }
-        auswahl(getString(R.string.kachel_hinzu), fehlend.map { k ->
+        // 0.1.41 (CP): CarPlay / Android Auto nur anbieten, wenn eine Werks-App da ist
+        val fehlend = Kachel.values().filter { it != Kachel.GERAETEWIDGET && !Raster.hatWidget(layout, it) && (it != Kachel.PROJEKTION || projektionSichtbar().isNotEmpty()) }
+        // 0.1.41 (LO): Android-Widgets immer anbietbar (mehrere erlaubt), Auswahl in eigener Liste
+        auswahl(getString(R.string.kachel_hinzu), listOf(getString(R.string.widget_geraet_hinzu) to { geraeteWidgetWaehlen() }) + fehlend.map { k ->
             kachelName(k) to {
-                val neu = Raster.widgetHinzufuegen(layout, seite, k)
+                val g = if (k == Kachel.PROJEKTION) Projektion.GROESSEN else listOf(2 to 1, 1 to 1)
+                val neu = Raster.widgetHinzufuegen(layout, seite, k, g)
                 // 0.1.40 (E2E G2): Seite voll → Kachel auf einer neuen Seite anlegen und dorthin wechseln (statt still nichts)
                 val mitSeite = if (neu === layout) Raster.seiteHinzufuegen(layout) else layout
-                val aufNeuer = if (mitSeite !== layout) Raster.widgetHinzufuegen(mitSeite, mitSeite.seiten.size - 1, k) else neu
+                val aufNeuer = if (mitSeite !== layout) Raster.widgetHinzufuegen(mitSeite, mitSeite.seiten.size - 1, k, g) else neu
                 if (neu !== layout) { aendern(neu); zeichneSeite() }
                 else if (aufNeuer !== mitSeite) { aendern(aufNeuer); seite = aufNeuer.seiten.size - 1; baueAlles(); zeigeHinweis(getString(R.string.kachel_neue_seite)) }
                 else zeigeHinweis(getString(R.string.kein_platz))
@@ -852,6 +964,11 @@ class MainActivity : AppCompatActivity() {
             Kachel.SCHLOSS -> schlossKachel(gross)
             Kachel.LADEN -> ladenKachel(gross)
             Kachel.KAMERA -> kameraKachel(gross)
+            Kachel.PROJEKTION -> projektionKachel(gross)
+            Kachel.REIFEN -> zusatz.reifen(gross, e.h)
+            Kachel.FAHRT -> zusatz.fahrt(gross)
+            Kachel.TEMPO -> zusatz.tempo(gross, e.h)
+            Kachel.GERAETEWIDGET -> geraeteWidgetKachel(e)
         }
         // 0.1.38.5: direkt im Launcher; Panoptes nur über „Mehr in Panoptes“ im jeweiligen Feld
         when (k) {
@@ -871,6 +988,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun spalte(pad: Int = 20) = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(ui.dp(pad), ui.dp(pad - 2), ui.dp(pad), ui.dp(pad - 2)) }
     private fun reg(f: () -> Unit) { aktualisierer += KachelAktualisierer(f) }
+    /** 0.1.41 (LK): Reifen, letzte Fahrt, Tempo – eigene Datei, hier nur eingehängt. */
+    private val zusatz get() = ZusatzKacheln(this, ui, { reg(it) }, { summary }, { cachedHistory })
     private val u get() = getString(R.string.unknown)
 
     /** Großes Fahrzeug-Feld: 3D-Modell aus dem Katalog, Datum/Uhr, Reifen, Gang, Tempo, Akku. */
@@ -975,7 +1094,9 @@ class MainActivity : AppCompatActivity() {
             }
         }
         autoErsatz = ersatz
-        if (w.parent !== mitte) { (w.parent as? ViewGroup)?.removeView(w); mitte.addView(w, FrameLayout.LayoutParams(-1, -1)) }
+        // 0.1.41 (G1): nach einem Neuaufbau (Design-Wechsel) hängt das WebView in einer neuen Fläche → neu laden,
+        // damit die Seite wieder „bereit“ meldet; bis dahin zeigt das Ersatzbild das gemerkte Standbild.
+        if (w.parent !== mitte) { (w.parent as? ViewGroup)?.removeView(w); mitte.addView(w, FrameLayout.LayoutParams(-1, -1)); webAutoUrl = null }
         if (url != webAutoUrl) { webAutoUrl = url; autoGezeichnet = false; w.visibility = View.INVISIBLE; w.loadUrl(url) }
         ersatz.visibility = if (autoGezeichnet) View.GONE else View.VISIBLE
     }
@@ -985,15 +1106,23 @@ class MainActivity : AppCompatActivity() {
 
     /** Standbild aus Panoptes (`/api/models/art`) einmal je Modell holen; ohne Antwort bleibt die Silhouette. */
     private fun standbildLaden(bildView: ImageView?, modell: String?) {
-        if (bildView == null || modell == null || !online || modell == standbildFuer) return
+        if (bildView == null || modell == null) return
+        // 0.1.41 (G1): Das Standbild bleibt gemerkt. Nach einem Neuaufbau bekommt das NEUE Ersatzbild es sofort,
+        // statt der flachen Silhouette (vorher wurde es je Modell nur einmal geholt und nur ins alte Bild gelegt).
+        standbild?.takeIf { it.first == modell }?.let { (_, bmp) ->
+            if (bildView.tag !== bmp) { bildView.setImageBitmap(bmp); bildView.alpha = 1f; bildView.tag = bmp }
+            return
+        }
+        if (!online || modell == standbildFuer) return
         standbildFuer = modell
         io.execute {
             val bmp = runCatching { client.fahrzeugBild(modell) }.getOrNull()?.let { dekodieren(it) }
             main.post {
-                if (bmp != null) { bildView.setImageBitmap(bmp); bildView.alpha = 1f } else standbildFuer = null
+                if (bmp != null) { standbild = modell to bmp; bildView.setImageBitmap(bmp); bildView.alpha = 1f; bildView.tag = bmp } else standbildFuer = null
             }
         }
     }
+    private var standbild: Pair<String, android.graphics.Bitmap>? = null
     private var autoErsatz: View? = null
 
     private fun fahrzeugKlein(gross: Boolean): View {
@@ -1133,6 +1262,36 @@ class MainActivity : AppCompatActivity() {
         return c
     }
 
+    /**
+     * 0.1.41 (CP): CarPlay / Android Auto. Je Werks-App ein großer Knopf, Start im Vollbild (am Surf nicht teilbar).
+     * Zustand („verbunden“) ist nicht ermittelbar und wird deshalb nicht gezeigt.
+     */
+    private fun projektionKachel(gross: Boolean): View {
+        val c = spalte()
+        c.addView(ui.titel(getString(R.string.widget_projektion)))
+        val knoepfe = LinearLayout(this).apply { orientation = if (gross) LinearLayout.VERTICAL else LinearLayout.HORIZONTAL }
+        projektionSichtbar().forEach { p ->
+            val name = getString(if (p == Raster.CARPLAY) R.string.projektion_carplay else R.string.projektion_android_auto)
+            knoepfe.addView(ui.act(R.drawable.ic_pn_play, name, primary = true) { starteProjektion(p) },
+                if (gross) ui.lp(-1, ui.dp(64), oben = 8) else ui.lp(0, ui.dp(64), 1f, rechts = 6))
+        }
+        c.addView(knoepfe, ui.lp(-1, -2, oben = 4))
+        if (gross) c.addView(ui.leise(getString(R.string.projektion_tipp), 15f), ui.lp(oben = 8))
+        return c
+    }
+
+    /** Startbare Werks-Apps für CarPlay / Android Auto (auch über die belegte Rückfall-Activity). */
+    private fun projektionSichtbar(): List<String> = Projektion.sichtbar { startbar(it) || rueckfallIntent(it) != null }
+
+    private fun rueckfallIntent(p: String): Intent? {
+        val a = Projektion.RUECKFALL[p] ?: return null
+        val i = Intent(Intent.ACTION_MAIN).setComponent(android.content.ComponentName(p, a))
+        return if (runCatching { packageManager.resolveActivity(i, 0) != null }.getOrDefault(false)) i else null
+    }
+
+    /** Immer Vollbild, nie geteilt (resizeableActivity=false, kein force_resizable). */
+    private fun starteProjektion(p: String) = starteVollbild(p)
+
     private fun uhrKachel(gross: Boolean): View {
         val c = spalte().apply { gravity = Gravity.CENTER_VERTICAL }
         c.addView(ui.titel(getString(R.string.widget_uhr)))
@@ -1151,15 +1310,22 @@ class MainActivity : AppCompatActivity() {
         val c = spalte(20)
         val quelle = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
         val qIcon = ImageView(this); val qName = ui.text("", 18f, 700)
-        quelle.addView(qIcon, ui.lp(ui.dp(30), ui.dp(30), rechts = 10)); quelle.addView(qName)
+        quelle.addView(qIcon, ui.lp(ui.dp(30), ui.dp(30), rechts = 10)); quelle.addView(qName, ui.lp(0, -2, 1f))
         c.addView(ui.titel(getString(R.string.widget_musik)))
         c.addView(quelle, ui.lp(oben = 10))
+        // 0.1.41 (LM, E2E M3): ohne Zugriff Hinweis + Knopf direkt unter dem Titel, damit er bei jeder Größe und
+        // Dichte sichtbar bleibt (vorher ganz unten, bei „Größer“ abgeschnitten); auch der Hinweistext öffnet die Seite.
+        // Erteilt wird der Zugriff nur dort vom Nutzer, nie per Befehl.
+        qName.maxLines = 2
+        val zugriff = ui.act(R.drawable.ic_pn_settings, getString(R.string.medien_zugriff_erlauben)) { zugriffSeite() }
+        c.addView(zugriff, ui.lp(-1, -2, oben = 8))
         val cover = ImageView(this).apply {
             scaleType = ImageView.ScaleType.CENTER_CROP; clipToOutline = true
             background = GradientDrawable().apply { cornerRadius = ui.dpf(16f); setColor(ui.p.act) }
         }
         val coverGross = e.h >= 3
-        if (e.h >= 2) c.addView(FrameLayout(this).apply { addView(cover, FrameLayout.LayoutParams(ui.dp(if (coverGross) 170 else 96), ui.dp(if (coverGross) 170 else 96), Gravity.CENTER)) }, ui.lp(-1, 0, 1f, oben = 10))
+        val coverRahmen = FrameLayout(this).apply { addView(cover, FrameLayout.LayoutParams(ui.dp(if (coverGross) 170 else 96), ui.dp(if (coverGross) 170 else 96), Gravity.CENTER)) }
+        if (e.h >= 2) c.addView(coverRahmen, ui.lp(-1, 0, 1f, oben = 10))
         val titel = ui.zahl("—", 22f).apply { ellipsize = android.text.TextUtils.TruncateAt.END }
         val kuenstler = ui.leise("", 15f).apply { maxLines = 1 }
         c.addView(titel, ui.lp(oben = 10)); c.addView(kuenstler, ui.lp(oben = 2))
@@ -1174,17 +1340,21 @@ class MainActivity : AppCompatActivity() {
         tasten.addView(playPause.apply { contentDescription = getString(R.string.musik_pause) }, ui.lp(ui.dp(84), ui.dp(72), rechts = 12))
         tasten.addView(ui.act(R.drawable.ic_pn_next, null) { medienTaste(KeyEvent.KEYCODE_MEDIA_NEXT) }.apply { contentDescription = getString(R.string.musik_weiter) }, ui.lp(ui.dp(72), ui.dp(64)))
         c.addView(tasten, ui.lp(-1, -2, oben = 12))
-        val zugriff = ui.act(null, getString(R.string.medien_zugriff)) { zugriffErklaeren() }
-        c.addView(zugriff, ui.lp(-1, ui.dp(56), oben = 8))
         reg {
             val m = medien
             val erlaubt = MedienQuelle.zugriffErlaubt(this)
+            val ohne = if (erlaubt) View.VISIBLE else View.GONE
             zugriff.visibility = if (erlaubt) View.GONE else View.VISIBLE
+            coverRahmen.visibility = ohne; titel.visibility = ohne; kuenstler.visibility = ohne; balken.visibility = ohne
+            quelle.setOnClickListener(if (erlaubt) null else View.OnClickListener { zugriffSeite() })
             if (m == null) {
-                qIcon.setImageDrawable(null); qName.text = getString(if (erlaubt) R.string.medien_nichts else R.string.medien_ohne_zugriff)
+                qIcon.setImageDrawable(null); qName.text = getString(if (erlaubt) R.string.medien_nichts else R.string.medien_zugriff_hinweis)
+                // 0.1.41 (Nachtest N1): der Hinweis ist ein ganzer Satz; bis 4 Zeilen statt nach 2 Zeilen abgeschnitten
+                qName.maxLines = if (erlaubt) 2 else 4; qName.textSize = if (erlaubt) 18f else 16f
                 titel.text = "—"; kuenstler.text = ""; balken.progress = 0; cover.setImageDrawable(null)
             } else {
                 qIcon.setImageDrawable(appsNachPaket[m.paket]?.icon); qName.text = appName(m.paket)
+                qName.maxLines = 2; qName.textSize = 18f
                 titel.text = m.titel ?: "—"; kuenstler.text = m.kuenstler ?: ""
                 balken.progress = MedienQuelle.fortschritt(m.positionMs, m.dauerMs) ?: 0
                 if (m.cover != null) cover.setImageBitmap(m.cover) else cover.setImageDrawable(appsNachPaket[m.paket]?.icon)
@@ -1366,6 +1536,10 @@ class MainActivity : AppCompatActivity() {
                 if (cockpit) zeigeHinweis(getString(R.string.design_cockpit_hinweis)) else if (darfBedienen()) designWaehlen() }
             zeile(R.drawable.ic_pn_star, getString(R.string.akzent) + ": " + (if (cockpit) getString(R.string.design_cockpit) else akzentName(layout.akzent))) {
                 if (cockpit) zeigeHinweis(getString(R.string.design_cockpit_hinweis)) else if (darfBedienen()) akzentWaehlen() }
+            // 0.1.41 (LA): Tag/Nacht automatisch (Standard aus) und Layout-Vorlagen
+            zeile(R.drawable.ic_pn_star, if (cockpit) getString(R.string.tagnacht) + ": " + getString(R.string.design_cockpit) else schalter(R.string.tagnacht, TagNacht.an(this))) {
+                if (cockpit) zeigeHinweis(getString(R.string.design_cockpit_hinweis)) else if (darfBedienen()) tagNachtUmschalten() }
+            zeile(R.drawable.ic_pn_apps, getString(R.string.vorlage)) { if (darfBedienen()) vorlageWaehlen() }
             zeile(R.drawable.ic_pn_map, getString(R.string.bild_waehlen)) { if (darfBedienen()) bildWaehlen() }
             if (layout.hintergrund == "eigen")
                 zeile(R.drawable.ic_pn_map, getString(R.string.abdunkelung) + ": " + schleierName(Schleier.wahl(this))) { if (darfBedienen()) schleierWaehlen() }
@@ -1374,7 +1548,13 @@ class MainActivity : AppCompatActivity() {
             zeile(R.drawable.ic_pn_status, schalter(R.string.zeige_status, layout.zeigeStatus)) { if (darfBedienen()) { aendern(layout.copy(zeigeStatus = !layout.zeigeStatus)); baueAlles(); einstellungen(erweitert = true) } }
             zeile(R.drawable.ic_pn_apps, schalter(R.string.zeige_reiter, layout.zeigeReiter)) { if (darfBedienen()) { aendern(layout.copy(zeigeReiter = !layout.zeigeReiter)); baueAlles(); einstellungen(erweitert = true) } }
             zeile(R.drawable.ic_pn_apps, schalter(R.string.neben_alle, layout.nebeneinander)) { if (darfBedienen()) { aendern(layout.copy(nebeneinander = !layout.nebeneinander)); baueAlles(); einstellungen(erweitert = true) } }
+            // 0.1.41 (LC): Kombi-Knopf und Seitenblick (KombiSeitenblick.kt), beide ab Werk aus
+            zeile(R.drawable.ic_pn_nav, schalter(R.string.kombi_einstellung, kombiKnopfAn())) { if (darfBedienen()) kombiEinstellung() }
+            zeile(R.drawable.ic_pn_camera, getString(R.string.seitenblick_titel)) { if (darfBedienen()) seitenblickFragen() }
             zeile(R.drawable.ic_pn_music, getString(R.string.medien_zugriff)) { zugriffErklaeren() }
+            zeile(R.drawable.ic_pn_play, schalter(R.string.musik_weiterspielen, MusikStart.an(this))) { MusikStart.umschalten(this); einstellungen(erweitert = true) }
+            // 0.1.41 (LO): Leiste über allen Apps (Haus, Lautstärke), Standard aus
+            zeile(R.drawable.ic_pn_home, getString(R.string.schnell_titel) + ": " + schnellName(Schnellleiste.wahl(this))) { if (darfBedienen()) schnellleisteWaehlen() }
             zeile(R.drawable.ic_pn_route, getString(R.string.exportieren)) { exportieren() }
             zeile(R.drawable.ic_pn_plus, getString(R.string.importieren)) { if (darfBedienen()) importieren() }
             zeile(R.drawable.ic_pn_close, getString(R.string.zuruecksetzen)) { if (darfBedienen()) zuruecksetzenFragen() }
@@ -1508,6 +1688,77 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton(R.string.abbrechen, null).show()
     }
 
+    // ==================== 0.1.41 (LA) Vorlagen, Tag/Nacht ====================
+
+    private var vorlageDialog: AlertDialog? = null
+
+    private fun vorlageName(v: String) = getString(when (v) {
+        Vorlagen.EINFACH -> R.string.vorlage_einfach; Vorlagen.COCKPIT -> R.string.vorlage_cockpit; else -> R.string.vorlage_standard
+    })
+
+    private fun vorlageText(v: String) = getString(when (v) {
+        Vorlagen.EINFACH -> R.string.vorlage_einfach_text; Vorlagen.COCKPIT -> R.string.vorlage_cockpit_text; else -> R.string.vorlage_standard_text
+    })
+
+    /** Beim ersten Start einmal fragen; große Einträge (Zielgruppe 50+). Abbrechen = Standard bleibt. */
+    private fun vorlageErstFrage() {
+        if (isFinishing || overlay != null) return
+        getSharedPreferences(PREFS, MODE_PRIVATE).edit().putBoolean(KEY_VORLAGE_GEFRAGT, true).apply()
+        // 0.1.41 (E2E G1): alle drei Einträge gleich groß. Der Adapter setzt Größe und Höhe für jede Zeile beim Zeichnen
+        // (vorher wurden nur die beim ersten Bild sichtbaren Zeilen umgestellt, „Cockpit“ blieb klein).
+        val eintraege = Vorlagen.WAHL.map { vorlageName(it) + " – " + vorlageText(it) }
+        val adapter = object : android.widget.ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, eintraege) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View =
+                super.getView(position, convertView, parent).also { v ->
+                    (v as? TextView)?.apply { textSize = 20f; minHeight = ui.dp(72); gravity = Gravity.CENTER_VERTICAL }
+                }
+        }
+        val d = AlertDialog.Builder(this).setCustomTitle(auswahlKopf(getString(R.string.vorlage_frage), getString(R.string.vorlage_spaeter)))
+            .setAdapter(adapter) { _, i -> if (darfBedienen()) vorlageSetzen(Vorlagen.WAHL[i]) }
+            .setNegativeButton(R.string.abbrechen, null).create()
+        d.setOnDismissListener { if (vorlageDialog === d) vorlageDialog = null }
+        vorlageDialog = d
+        d.show()
+    }
+
+    /** 0.1.41 (E2E M2): Update statt Neuinstallation? Dann keine Erst-Frage, auch ohne gespeichertes Layout. */
+    private fun launcherLief(): Boolean {
+        val pi = runCatching { packageManager.getPackageInfo(packageName, 0) }.getOrNull()
+        return Vorlagen.lief(pi?.firstInstallTime ?: 0L, pi?.lastUpdateTime ?: 0L, kernPrefs.getBoolean(KEY_KENNT_KERN, false))
+    }
+
+    /** 0.1.41 (E2E G2): Vorlage, die nach „Erst sichern“ gesetzt wird, sobald der Export geschrieben ist. */
+    private var vorlageNachExport: String? = null
+
+    /** Unter „Erweitert“: Vorlage wählen, vor dem Ersetzen fragen (mit Weg „erst als Datei sichern“). */
+    private fun vorlageWaehlen() = auswahl(getString(R.string.vorlage), Vorlagen.WAHL.map { v ->
+        (vorlageName(v) + " – " + vorlageText(v)) to {
+            AlertDialog.Builder(this).setTitle(getString(R.string.vorlage) + ": " + vorlageName(v)).setMessage(R.string.vorlage_ersetzen_frage)
+                .setPositiveButton(R.string.vorlage_ersetzen) { _, _ -> if (darfBedienen()) vorlageSetzen(v) }
+                .setNeutralButton(R.string.vorlage_erst_sichern) { _, _ -> vorlageNachExport = v; exportieren() }
+                .setNegativeButton(R.string.abbrechen, null).show()
+        }
+    }, fuss = getString(R.string.vorlage_hinweis))
+
+    private fun vorlageSetzen(v: String) {
+        val text = runCatching { assets.open(Vorlagen.datei(v)).use { String(it.readBytes(), Charsets.UTF_8) } }.getOrNull()
+        val neu = Vorlagen.lesen(v, text)
+        if (neu == null) { zeigeHinweis(getString(R.string.import_fehler)); return }
+        schliesseOverlay(); bearbeiten = false
+        aendern(Vorlagen.anwenden(layout, neu)); seite = 0
+        val g = Vorlagen.groesse(v)
+        if (g != null && g != LauncherGroesse.wahl(this)) { LauncherGroesse.speichern(this, g); recreate(); return }
+        baueAlles()
+        zeigeHinweis(getString(R.string.vorlage_ok, vorlageName(v)))
+    }
+
+    private fun tagNachtUmschalten() {
+        val an = !TagNacht.an(this)
+        TagNacht.speichern(this, an)
+        schliesseOverlay(); baueAlles(); einstellungen(erweitert = true)
+        if (an) zeigeHinweis(getString(R.string.tagnacht_hinweis))
+    }
+
     // ==================== Layout speichern, Export/Import ====================
 
     private fun ladeLayout(): StartLayout {
@@ -1527,7 +1778,7 @@ class MainActivity : AppCompatActivity() {
 
     // ==================== 0.1.38 Layout im Panoptes-Kern ====================
 
-    private val layoutIo = Executors.newSingleThreadExecutor()
+    private val layoutIo = SichererIo()
     private val kernPrefs get() = getSharedPreferences(PREFS, MODE_PRIVATE)
 
     /** Kern-Stand holen und nach [LayoutAbgleich.beimHolen] übernehmen oder die lokale Änderung hochladen. */
@@ -1553,6 +1804,7 @@ class MainActivity : AppCompatActivity() {
         if (anders) e.putString(KEY_LAYOUT, Raster.toJson(kern.layout))
         e.apply()
         if (!anders) return
+        vorlageDialog?.dismiss(); vorlageDialog = null
         layout = kern.layout
         if (!bearbeiten && overlay == null) { seite = seite.coerceIn(0, layout.seiten.size - 1); baueAlles() }
         if (hinweis) zeigeHinweis(getString(R.string.layout_neuer_stand))
@@ -1602,6 +1854,9 @@ class MainActivity : AppCompatActivity() {
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         @Suppress("DEPRECATION") super.onActivityResult(requestCode, resultCode, data)
+        if (geraeteWidgets.ergebnis(requestCode, resultCode)) return   // 0.1.41 (LO): Android-Widget binden/einrichten
+        // 0.1.41 (E2E G2): Export abgebrochen = Vorlage wird nicht gesetzt; nur nach geschriebener Datei weiter
+        val nachExport = if (requestCode == REQ_EXPORT) vorlageNachExport.also { vorlageNachExport = null } else null
         val uri = data?.data ?: return
         if (resultCode != RESULT_OK) return
         try {
@@ -1617,7 +1872,11 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
-                REQ_EXPORT -> { contentResolver.openOutputStream(uri, "wt")?.use { it.write(Raster.toJson(layout).toByteArray(Charsets.UTF_8)) }; zeigeHinweis(getString(R.string.export_ok)) }
+                REQ_EXPORT -> {
+                    val ok = contentResolver.openOutputStream(uri, "wt")?.use { it.write(Raster.toJson(layout).toByteArray(Charsets.UTF_8)); true } ?: false
+                    if (ok) zeigeHinweis(getString(R.string.export_ok))
+                    if (ok && nachExport != null && darfBedienen()) vorlageSetzen(nachExport)
+                }
                 REQ_IMPORT -> {
                     val text = contentResolver.openInputStream(uri)?.use { s -> String(s.readBytes().let { b -> if (b.size > 256 * 1024) ByteArray(0) else b }, Charsets.UTF_8) }
                     val neu = Raster.fromJson(text)
@@ -1636,9 +1895,22 @@ class MainActivity : AppCompatActivity() {
             val liste = runCatching { AppQuelle.laden(this) }.getOrDefault(emptyList())
             main.post {
                 apps = liste; appsNachPaket = liste.associateBy { it.paket }
+                projektionAbgleichen(liste.isNotEmpty())
                 if (overlay == null) baueAlles()
             }
         }
+    }
+
+    /**
+     * 0.1.41 (CP): Kachel CarPlay / Android Auto höchstens EINMAL auf freien Platz ergänzen (Merker; wer sie entfernt,
+     * behält sie weg), nie verschieben, Dock unberührt. Ohne Werks-App fällt sie weg (kein leerer Platz).
+     */
+    private fun projektionAbgleichen(appsBekannt: Boolean) {
+        if (bearbeiten) return
+        val p = getSharedPreferences(PREFS, MODE_PRIVATE)
+        val a = Projektion.abgleichen(layout, projektionSichtbar(), p.getBoolean(KEY_PROJEKTION_ERGAENZT, false), appsBekannt)
+        if (a.merken) p.edit().putBoolean(KEY_PROJEKTION_ERGAENZT, true).apply()
+        if (a.layout !== layout) { aendern(a.layout); seite = seite.coerceIn(0, layout.seiten.size - 1) }
     }
 
     private fun refresh() {
@@ -1714,6 +1986,8 @@ class MainActivity : AppCompatActivity() {
         if ("${pal.hell}:$cockpit:${pal.aqua}:${pal.background}" != stilSchluessel && overlay == null) { baueAlles(); return }
         if (alt?.hintergrundBild != a?.hintergrundBild || alt?.hintergrundVideo != a?.hintergrundVideo) bildGeladen = false
         hintergrundAnwenden()
+        // 0.1.41 (E2E M1): ruht der Sekundentakt, hält die Abfrage auch die Medien aktuell
+        if (!Ruhe.taktLaeuft(stopped, bildAn, fokus)) medien = MedienQuelle.aktuell(this, MusikStart.letztes(this))
         aktualisierer.forEach { it() }
         // ohne Sekundentakt (Ruhe, kein Fokus) hält die Abfrage Uhr und Statusleiste aktuell
         if (!Ruhe.taktLaeuft(stopped, bildAn, fokus)) statusAktualisierer.forEach { it() }
@@ -1734,7 +2008,7 @@ class MainActivity : AppCompatActivity() {
                     val hell = bmp?.let { Schleier.bildHelligkeit(it) } ?: 0.5f
                     main.post {
                         if (bmp != null) { bild.setImageBitmap(bmp); bild.visibility = View.VISIBLE }
-                        schleier.setBackgroundColor(Schleier.farbe(ui.p.seiteBis, Schleier.deckung(hell, ui.p.seiteBis, Schleier.wahl(this))))
+                        schleier.setBackgroundColor(Schleier.farbe(ui.p.seiteBis, Schleier.deckung(hell, ui.p.seiteBis, Schleier.wahl(this), ui.p.onSurfaceVariant)))
                         schleier.visibility = if (bmp != null) View.VISIBLE else View.GONE
                     }
                 }
@@ -2121,6 +2395,9 @@ class MainActivity : AppCompatActivity() {
         }
         if ("musik" in t) c.addView(tasten, ui.lp(-1, -2, oben = 6))
         if ("kamera" in t) c.addView(ui.act(R.drawable.ic_pn_camera, getString(R.string.leiste_kamera)) { oeffnePanoptes("live") }, ui.lp(-1, ui.dp(64), oben = 18))
+        // 0.1.41 (LC): „Navi aufs Kombi“ – nur mit Einstellung und solange der Kern nicht „geht nicht“ gesagt hat
+        val kombi = ui.act(R.drawable.ic_pn_nav, getString(R.string.kombi_knopf)) { kombiTipp() }
+        if (Kombi.knopfZeigen(kombiKnopfAn(), kombiAngeboten)) c.addView(kombi.also { kombiKnopf = it }, ui.lp(-1, ui.dp(64), oben = 10))
         c.addView(ui.act(R.drawable.ic_pn_status, getString(R.string.leiste_start)) { splitVerlassen() }, ui.lp(-1, ui.dp(64), oben = 10))
         // nicht reg{}: zeichneSeite() räumt KachelAktualisierer weg; die Spalte lebt bis zum nächsten baueAlles()
         aktualisierer += {
@@ -2130,8 +2407,98 @@ class MainActivity : AppCompatActivity() {
             uhr.text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
             waechter.text = getString(if (s?.waechter?.an == true) R.string.leiste_waechter_an else R.string.leiste_waechter_aus)
             titel.text = medien?.titel ?: s?.media?.title ?: ""
+            (kombi.getChildAt(1) as? TextView)?.text = getString(if (s?.tachoAktiv == true) R.string.kombi_normal else R.string.kombi_knopf)
         }
         return ScrollView(this).apply { addView(c) }
+    }
+
+    // ---------- 0.1.41 (LC): Navi aufs Kombi, Seitenblick beim Blinken (Regeln in KombiSeitenblick.kt) ----------
+    /** Antwort des Kerns zum Kombi: null = unbekannt, false = dieses Auto kann es nicht (Knopf weg). */
+    private var kombiAngeboten: Boolean? = null
+    private var kombiKnopf: View? = null
+
+    private fun kombiKnopfAn() = getSharedPreferences(PREFS, MODE_PRIVATE).getBoolean(Kombi.KEY_KNOPF, false)
+
+    private fun kombiZiel() = Kombi.ziel(karteImSplit,
+        Fahrsicherheit.naviZiel(naviWahl(), summary?.naviGewaehlt, summary?.naviBekannt.orEmpty()) { startbar(it) })
+
+    /** Einstellung: erst den Kern fragen (nur lesen); sagt er „nein“, bleibt der Knopf aus und der Grund wird genannt. */
+    private fun kombiEinstellung() {
+        val an = kombiKnopfAn()
+        if (an) { kombiSetzen(false); return }
+        val p = kombiZiel() ?: KartenStatus.GOOGLE_MAPS
+        io.execute {
+            val st = client.kombiStand(p)
+            main.post {
+                if (isFinishing) return@post
+                kombiAngeboten = st?.angeboten
+                if (st != null && !st.angeboten) { kombiDialog(R.string.kombi_geht_nicht, false); return@post }
+                kombiSetzen(true)
+                kombiDialog(R.string.kombi_info, false)
+            }
+        }
+    }
+
+    private fun kombiSetzen(an: Boolean) {
+        getSharedPreferences(PREFS, MODE_PRIVATE).edit().putBoolean(Kombi.KEY_KNOPF, an).apply()
+        baueAlles(); einstellungen(erweitert = true)
+    }
+
+    private fun kombiDialog(text: Int, panoptesOeffnen: Boolean) {
+        val d = AlertDialog.Builder(this).setTitle(R.string.kombi_einstellung).setMessage(text)
+        if (panoptesOeffnen) d.setPositiveButton(R.string.oeffnen) { _, _ -> oeffnePanoptes("display") }.setNegativeButton(R.string.zurueck, null)
+        else d.setPositiveButton(R.string.verstanden, null)
+        d.show().getButton(AlertDialog.BUTTON_POSITIVE)?.apply { textSize = 20f; minHeight = ui.dp(64) }
+    }
+
+    /** Tipp auf den Knopf: läuft schon etwas am Kombi → zurück zum normalen Tacho, sonst die Navi aufs Kombi. */
+    private fun kombiTipp() {
+        if (summary?.tachoAktiv == true) {
+            io.execute { val ok = client.tachoNormal(); main.post { zeigeHinweis(getString(if (ok) R.string.kombi_zurueck else R.string.launch_failed)) } }
+            return
+        }
+        val p = kombiZiel() ?: run { zeigeHinweis(getString(R.string.navi_keine_app)); return }
+        io.execute {
+            val grund = client.kombiStarten(p)
+            main.post { if (!isFinishing) kombiErgebnis(grund) }
+        }
+    }
+
+    private fun kombiErgebnis(grund: String?) {
+        if (grund == null) { zeigeHinweis(getString(R.string.kombi_laeuft)); return }
+        android.util.Log.i("PanoptesLauncher", "KOMBI abgelehnt: $grund")
+        when (Kombi.hinweis(grund)) {
+            Kombi.Hinweis.GEHT_NICHT -> { kombiAngeboten = false; kombiKnopf?.visibility = View.GONE; kombiDialog(R.string.kombi_geht_nicht, false) }
+            Kombi.Hinweis.FREIGEBEN -> kombiDialog(R.string.kombi_freigeben, true)
+            Kombi.Hinweis.NUR_STAND -> zeigeHinweis(getString(R.string.kombi_nur_stand))
+            Kombi.Hinweis.KEINE_NAVI -> zeigeHinweis(getString(R.string.navi_keine_app))
+            Kombi.Hinweis.FEHLER -> zeigeHinweis(getString(R.string.launch_failed))
+        }
+    }
+
+    /** Seitenblick: Stand vom Kern lesen, Regel erklären, dann ein- bzw. ausschalten (nur über den Kern). */
+    private fun seitenblickFragen() {
+        io.execute {
+            val st = client.seitenblickStand()
+            main.post {
+                if (isFinishing) return@post
+                if (st == null) { zeigeHinweis(getString(R.string.seitenblick_nicht_erreichbar)); return@post }   // G8 E2E 0.1.41
+                val text = getString(R.string.seitenblick_regel) +
+                    (if (st.blinker == "nicht_lesbar") "\n\n" + getString(R.string.seitenblick_blinker_fehlt) else "") +
+                    "\n\n" + getString(R.string.seitenblick_ist) + " " + getString(if (st.an) R.string.an else R.string.aus)
+                AlertDialog.Builder(this).setTitle(R.string.seitenblick_titel).setMessage(text)
+                    .setPositiveButton(if (st.an) R.string.seitenblick_aus else R.string.seitenblick_an) { _, _ -> seitenblickSchalten(!st.an) }
+                    .setNegativeButton(R.string.zurueck, null).show()
+                    .getButton(AlertDialog.BUTTON_POSITIVE)?.apply { textSize = 20f; minHeight = ui.dp(64) }
+            }
+        }
+    }
+
+    private fun seitenblickSchalten(an: Boolean) {
+        io.execute {
+            val ok = client.seitenblickSchalten(an)
+            main.post { zeigeHinweis(getString(if (!ok) R.string.seitenblick_fehler else if (an) R.string.seitenblick_ist_an else R.string.seitenblick_ist_aus)) }   // G8 E2E 0.1.41
+        }
     }
 
     private fun naviWahl(): String? = getSharedPreferences(PREFS, MODE_PRIVATE).getString(KEY_NAVI, null)
@@ -2200,7 +2567,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun starteVollbild(p: String) {
-        val i = packageManager.getLaunchIntentForPackage(p)
+        // 0.1.41 (CP): CarPlay/AA ohne Start-Intent über die am Surf belegte Activity
+        val i = packageManager.getLaunchIntentForPackage(p) ?: rueckfallIntent(p)
         if (i == null) { zeigeHinweis(getString(R.string.app_fehlt)); return }
         try { startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (_: Exception) { zeigeHinweis(getString(R.string.launch_failed)) }
     }
@@ -2212,9 +2580,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun zugriffErklaeren() {
         AlertDialog.Builder(this).setTitle(R.string.medien_zugriff).setMessage(R.string.medien_zugriff_text)
-            .setPositiveButton(R.string.oeffnen) { _, _ ->
-                try { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) } catch (_: Exception) { zeigeHinweis(getString(R.string.launch_failed)) }
-            }.setNegativeButton(R.string.abbrechen, null).show()
+            .setPositiveButton(R.string.oeffnen) { _, _ -> zugriffSeite() }.setNegativeButton(R.string.abbrechen, null).show()
+    }
+
+    /** Android-Seite „Benachrichtigungszugriff“; erlauben muss der Nutzer dort selbst. */
+    private fun zugriffSeite() {
+        try { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) } catch (_: Exception) { zeigeHinweis(getString(R.string.launch_failed)) }
     }
 
     /** Medientaste: an die Sitzung (mit Zugriff), sonst als Android-Medientaste. Kein Fahrzeugbefehl. */
@@ -2276,6 +2647,9 @@ class MainActivity : AppCompatActivity() {
         const val REQ_BILD = 43
         const val KEY_SPAETER = "update_spaeter"
         const val KEY_NAVI = "navi_app"
+        const val KEY_PROJEKTION_ERGAENZT = "projektion_ergaenzt"
+        /** 0.1.41 (LA): Vorlagen-Frage beim ersten Einrichten schon gestellt. */
+        const val KEY_VORLAGE_GEFRAGT = "vorlage_gefragt"
         const val ZUSTAND_KARTE_SPLIT = "karte_im_split"
         const val ZUSTAND_SPLIT_GEWOLLT = "split_gewollt_beendet"
         /** REGEL 50+: Klima-Knöpfe im Dock mindestens 64 dp, im Klima-Feld 96 dp. */

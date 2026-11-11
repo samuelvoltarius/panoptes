@@ -66,7 +66,9 @@ public final class BefehlsLog {
             "/api/launcher/v1/klima", "/api/launcher/v1/update", "/api/launcher/v1/tacho/",   // 0.1.37: Launcher-Klima und -Updates
             "/api/tacho/auswahl",   // 0.1.37 „Was zeigt der Tacho?“
             "/api/tacho/groesse",   // 0.1.38.11 Größe im Fahrerdisplay
-            "/api/launcher/v1/layout"};   // 0.1.38: Launcher-Layout (ohne Inhalt)
+            "/api/tacho/eigen",   // 0.1.41 Tacho gestalten (ohne Inhalt)
+            "/api/launcher/v1/layout",   // 0.1.38: Launcher-Layout (ohne Inhalt)
+            "/api/launcher/v1/seitenblick"};   // 0.1.41 LC: Seitenblick beim Blinken ein/aus
 
     /** Gründe, die ein technischer Fehler sind (sonst gilt ok:false als Ablehnung). */
     static final Set<String> FEHLER_GRUENDE = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(

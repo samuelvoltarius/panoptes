@@ -11,7 +11,7 @@ public final class NavigateZiel {
     /** Bekannte Ziele, auch für den Test. */
     public static final String[] ZIELE = {
             "trips", "charging", "roadsense", "recordings", "parking", "live", "vehicle",
-            "dashboard", "assistant", "waechter", "navi", "system"};
+            "dashboard", "assistant", "waechter", "navi", "system", "display"};
 
     /** 0.1.28 Rückkehr-Karte: Ziel „eine Wächter-Aufnahme abspielen“, Kennung im Extra {@link #EXTRA_AUFNAHME}. */
     public static final String ZIEL_AUFNAHME = "aufnahme";
@@ -44,6 +44,8 @@ public final class NavigateZiel {
             case "waechter": return "/waechter";
             case "navi": return "/navi";
             case "system": return "/system";
+            // 0.1.41 (LC): Launcher „Navi aufs Kombi“ → Freigabe/Probe der App am Tacho (nur in Panoptes, im Stand)
+            case "display": return "/display.html";
             default: return null;
         }
     }

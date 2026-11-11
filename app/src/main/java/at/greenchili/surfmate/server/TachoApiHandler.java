@@ -3,6 +3,7 @@ package at.greenchili.surfmate.server;
 import at.greenchili.surfmate.tacho.DiLink5TachoAbnahme;
 import at.greenchili.surfmate.tacho.TachoAnsicht;
 import at.greenchili.surfmate.tacho.TachoAuswahl;
+import at.greenchili.surfmate.tacho.TachoEigen;
 import at.greenchili.surfmate.tacho.TachoRueckmeldung;
 import at.greenchili.surfmate.tacho.TachoFaehigkeit;
 import at.greenchili.surfmate.tacho.TachoNaviApp;
@@ -28,6 +29,8 @@ import java.net.URLDecoder;
  *   <li>{@code PUT  /api/tacho/navi/hinweis} {@code {verstanden: true}} – einmaliger Hinweis vor der
  *       ersten Probe bzw. dem ersten Start.</li>
  *   <li>{@code PUT  /api/tacho/ansicht} {@code {design}} – Design der Panoptes-Tacho-Ansicht.</li>
+ *   <li>{@code GET/PUT /api/tacho/eigen} {@code {eigen, waehlen}}, {@code POST /api/tacho/eigen/pruefen}
+ *       {@code {text}} – 0.1.41 „Tacho gestalten“ ({@link TachoEigen}); speichern nur im Stand.</li>
  *   <li>{@code GET/PUT /api/tacho/groesse} {@code {profil: 0|29|31|30}} – „Größe im Fahrerdisplay“ (0.1.38.11),
  *       setzen nur im Stand, zeigt die Größe sofort ({@link at.greenchili.surfmate.tacho.TachoGroesse}).</li>
  *   <li>{@code GET  /api/tacho/auswahl}, {@code POST /api/tacho/auswahl} {@code {id}} – „Was zeigt der
@@ -136,6 +139,45 @@ public final class TachoApiHandler {
             boolean ok = TachoAnsicht.setzeDesign(in.optString("design", ""));
             HttpResponse.sendJson(out, ok ? 200 : 400, new JSONObject().put("ok", ok)
                     .put("design", TachoAnsicht.design()).toString());
+            return true;
+        }
+        // 0.1.41 „Tacho gestalten“: lesen jederzeit; speichern nur im Stand und nur geprueft (TachoEigen.pruefen).
+        if (p.equals("/api/tacho/eigen") && method.equals("GET")) {
+            JSONObject e = TachoEigen.gespeichert();
+            HttpResponse.sendJson(out, new JSONObject().put("ok", true).put("gespeichert", e != null)
+                    .put("eigen", e != null ? e : TachoEigen.standard())
+                    .put("standard", TachoEigen.standard())
+                    .put("imStand", bewegungsGrund() == null).toString());
+            return true;
+        }
+        if (p.equals("/api/tacho/eigen/pruefen") && method.equals("POST")) {
+            // Nur pruefen (Datei-Import), nichts speichern: geht auch in Fahrt, aendert nichts.
+            TachoEigen.Ergebnis e = TachoEigen.pruefenText(in.optString("text", ""));
+            if (e == null) {
+                HttpResponse.sendJson(out, 400, "{\"ok\":false,\"grund\":\"datei_ungueltig\"}");
+                return true;
+            }
+            HttpResponse.sendJson(out, new JSONObject().put("ok", true).put("eigen", e.eigen)
+                    .put("warnungen", new org.json.JSONArray(e.warnungen)).toString());
+            return true;
+        }
+        if (p.equals("/api/tacho/eigen") && (method.equals("PUT") || method.equals("POST"))) {
+            String bewegung = bewegungsGrund();
+            if (bewegung != null) {
+                HttpResponse.sendJson(out, 409, new JSONObject().put("ok", false)
+                        .put("grund", "nur_im_stand").put("detail", bewegung).toString());
+                return true;
+            }
+            TachoEigen.Ergebnis e = TachoEigen.pruefen(in.optJSONObject("eigen"));
+            if (e == null) {
+                HttpResponse.sendJson(out, 400, "{\"ok\":false,\"grund\":\"datei_ungueltig\"}");
+                return true;
+            }
+            boolean ok = TachoEigen.speichern(e.eigen);
+            if (ok && in.optBoolean("waehlen", false)) ok = TachoAnsicht.setzeDesign(TachoEigen.NAME);
+            HttpResponse.sendJson(out, ok ? 200 : 500, new JSONObject().put("ok", ok)
+                    .put("grund", ok ? "" : "nicht_gespeichert").put("eigen", e.eigen)
+                    .put("warnungen", new org.json.JSONArray(e.warnungen)).toString());
             return true;
         }
         if (p.equals("/api/tacho/dilink5-abnahme") && method.equals("GET")) {

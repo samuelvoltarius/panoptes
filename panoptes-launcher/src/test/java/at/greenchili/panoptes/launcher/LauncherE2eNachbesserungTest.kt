@@ -34,7 +34,8 @@ class LauncherE2eNachbesserungTest {
         assertTrue("helles Bild bei dunklem Design → dichter", weiss > 0.7f && weiss <= Schleier.MAX)
         assertTrue("passendes Bild → nie unter MIN", schwarz >= Schleier.MIN && schwarz < weiss)
         assertTrue("Hell-Design: dunkles Bild → dichter", Schleier.deckung(0f, hell, null) > Schleier.deckung(1f, hell, null))
-        assertEquals(Schleier.MIN, Schleier.deckung(1f, dunkel, Schleier.SCHWACH), 0.001f)
+        // 0.1.41 (N1): „Schwach“ bei hellem Bild auf dunklem Design nicht mehr nur MIN, sondern mindestens SCHWACH_MIN_HELL
+        assertEquals(Schleier.SCHWACH_MIN_HELL, Schleier.deckung(1f, dunkel, Schleier.SCHWACH), 0.001f)
         assertTrue(Schleier.deckung(0f, dunkel, Schleier.STARK) >= Schleier.STARK_DECKUNG)
         val f = Schleier.farbe(dunkel, 0.5f)
         assertEquals("Seitenfarbe bleibt", dunkel and 0xFFFFFF, f and 0xFFFFFF)
@@ -48,7 +49,7 @@ class LauncherE2eNachbesserungTest {
         assertTrue(a.indexOf("root.addView(schleier") < a.indexOf("root.addView(video"))
         val h = block("private fun hintergrundAnwenden()", "private fun dekodieren(")
         assertTrue(h.contains("Schleier.bildHelligkeit(it)"))
-        assertTrue(h.contains("Schleier.deckung(hell, ui.p.seiteBis, Schleier.wahl(this))"))
+        assertTrue(h.contains("Schleier.deckung(hell, ui.p.seiteBis, Schleier.wahl(this), ui.p.onSurfaceVariant)"))
         assertTrue("ohne eigenes Bild kein Schleier", h.contains("schleier.visibility = View.GONE"))
         val e = block("private fun einstellungen(", "private fun groesseName(")
         assertTrue("Wahl nur bei eigenem Bild, unter Erweitert", e.contains("if (layout.hintergrund == \"eigen\")") && e.contains("schleierWaehlen()"))
@@ -62,7 +63,7 @@ class LauncherE2eNachbesserungTest {
     fun designBeiCockpitGesperrtMitHinweis() {
         val e = block("private fun einstellungen(", "private fun groesseName(")
         assertTrue(e.contains("val cockpit = layout.hintergrund == \"cockpit\""))
-        assertEquals("Design und Akzent zeigen den Hinweis", 2, Regex("if \\(cockpit\\) zeigeHinweis\\(getString\\(R.string.design_cockpit_hinweis\\)\\)").findAll(e).count())
+        assertEquals("Design, Akzent und (0.1.41) Tag/Nacht zeigen den Hinweis", 3, Regex("if \\(cockpit\\) zeigeHinweis\\(getString\\(R.string.design_cockpit_hinweis\\)\\)").findAll(e).count())
         assertTrue("Palette bleibt bei Cockpit dunkel", m.contains("if (cockpit) PanoptesStil.DUNKEL else"))
     }
 

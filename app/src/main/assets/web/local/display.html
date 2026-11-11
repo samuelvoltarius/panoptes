@@ -141,6 +141,12 @@
                             <button class="btn" id="tachoGroesseZurueck" type="button" style="min-height:56px;font-size:16px;margin:0 8px 8px 0;" data-i18n="vehicle_control.tacho_groesse_zurueck">Zurück zum vorherigen</button>
                         </div>
                     </section>
+                    <!-- 0.1.41 „Tacho gestalten“ (tacho-gestalten.js): eigenes Design unter „Erweitert“, speichern nur im Stand -->
+                    <details id="tachoErweitert" style="margin-top:14px;">
+                        <summary class="dp-titel" style="cursor:pointer;min-height:48px;line-height:48px;font-size:18px;" data-i18n="tacho_gestalten.erweitert">Erweitert</summary>
+                        <p class="dp-note" data-i18n="tacho_gestalten.erweitert_hilfe">Eigene Farben, Schrift, Zeiger und Anordnung für den Panoptes-Tacho.</p>
+                        <div id="tachoGestalten"></div>
+                    </details>
                     <!-- 0.1.38.1 „Was kann mein Tacho?“: lesender Fähigkeitstest, Rückmeldung nur mit Vorschau + Einwilligung -->
                     <section id="tachoFaehigkeit" style="margin-top:14px;"></section>
                     <section id="clusterAppApproval">
@@ -230,11 +236,12 @@
 <div id="toastContainer" class="toast-container"></div>
 <script src="../shared/auth.js"></script>
 <script src="../shared/core.js?v=pn6"></script>
-<script src="../shared/tacho-designs.js?v=1"></script>
+<script src="../shared/tacho-designs.js?v=2"></script>
 <script src="../shared/tacho-appwahl.js?v=5"></script>
 <script src="../shared/tacho-groesse.js?v=1"></script>
 <script src="../shared/tacho-auswahl.js?v=1"></script>
 <script src="../shared/tacho-faehigkeit.js?v=1"></script>
+<script src="../shared/tacho-gestalten.js?v=1"></script>
 <script src="../shared/display-werkzeuge.js?v=1"></script>
 <script src="../shared/launcher-karte.js?v=3"></script>
 <script src="../shared/einstellungen.js?v=pn8"></script>

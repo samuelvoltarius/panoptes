@@ -29,6 +29,7 @@ public final class TachoAuswahl {
             case TachoAnsicht.NACHT: return "Nacht";
             case TachoAnsicht.HORIZONT: return "Horizont";
             case TachoAnsicht.ROUTE: return "Route";
+            case TachoEigen.NAME: return "Eigenes";
             default: return "Klar";
         }
     }
@@ -37,14 +38,18 @@ public final class TachoAuswahl {
 
     /** Aktuelle Auswahl. Nur lesend. */
     public static JSONObject liste() throws Exception {
-        return liste(TachoNaviApp.status(), TachoAnsicht.design());
+        return liste(TachoNaviApp.status(), TachoAnsicht.design(), TachoEigen.gespeichert() != null);
+    }
+
+    static JSONObject liste(JSONObject status, String design) throws Exception {
+        return liste(status, design, false);
     }
 
     /**
      * Baut die Liste aus dem Status der Appwahl (rein, testbar). Apps erscheinen, wenn sie Navigation
      * sind oder freigegeben wurden; alle anderen bleiben in der Freigabe-Verwaltung.
      */
-    static JSONObject liste(JSONObject status, String design) throws Exception {
+    static JSONObject liste(JSONObject status, String design, boolean eigenDa) throws Exception {
         String aktiv = status.isNull("aktiv") ? "" : status.optString("aktiv", "");
         boolean angeboten = status.optBoolean("angeboten", false);
         JSONArray apps = status.optJSONArray("apps");
@@ -60,7 +65,10 @@ public final class TachoAuswahl {
         String dsg = TachoAnsicht.design(design);
 
         JSONArray eintraege = new JSONArray();
-        for (String d : TachoAnsicht.DESIGNS) {
+        // 0.1.41: das eigene Design steht als sechste Kachel da, sobald eines gespeichert ist.
+        java.util.List<String> designs = new java.util.ArrayList<>(TachoAnsicht.DESIGNS);
+        if (eigenDa || TachoEigen.NAME.equals(dsg)) designs.add(TachoEigen.NAME);
+        for (String d : designs) {
             JSONObject e = new JSONObject()
                     .put("id", DESIGN + d).put("art", "design").put("design", d).put("name", designName(d))
                     .put("fahrt", true).put("video", false)
@@ -118,7 +126,7 @@ public final class TachoAuswahl {
         if (s.equals(NORMAL)) return new String[] {NORMAL, ""};
         if (s.startsWith(DESIGN)) {
             String d = s.substring(DESIGN.length()).toLowerCase(Locale.ROOT);
-            return TachoAnsicht.DESIGNS.contains(d) ? new String[] {"design", d} : null;
+            return TachoAnsicht.DESIGNS.contains(d) || TachoEigen.NAME.equals(d) ? new String[] {"design", d} : null;
         }
         if (s.startsWith(APP)) {
             String p = s.substring(APP.length());

@@ -79,7 +79,20 @@
     "aktiv": false,
     "fahrtHinweis": false
   },
-  "naviApp": null,
+  "naviApp": {
+    "gewaehlt": null,
+    "bekannt": [
+      "com.generalmagic.magicearth",
+      "com.google.android.apps.maps",
+      "com.google.android.apps.mapslite",
+      "com.here.app.maps",
+      "com.iternio.abrpapp",
+      "com.sygic.aura",
+      "com.waze",
+      "net.osmand",
+      "net.osmand.plus"
+    ]
+  },
   "launcherLayout": null,
   "demo": true
 }

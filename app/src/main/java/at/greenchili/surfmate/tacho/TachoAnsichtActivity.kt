@@ -139,7 +139,7 @@ class TachoAnsichtActivity : Activity() {
             if (!a.optBoolean("aktiv", false)) { beenden(); return }
             // Nur bekannte Felder weiter an die Seite, dazu das Manoever aus der Navigation.
             val d = org.json.JSONObject()
-            for (k in arrayOf("kmh", "kw", "soc", "reichweiteKm", "gang", "aussenC", "kmStand", "design")) {
+            for (k in arrayOf("kmh", "kw", "soc", "reichweiteKm", "gang", "aussenC", "kmStand", "design", "eigen")) {
                 if (a.has(k)) d.put(k, a.opt(k))
             }
             TachoAnsichtManoever.json(TachoAnsichtManoever.aktuell())?.let { d.put("navi", it) }

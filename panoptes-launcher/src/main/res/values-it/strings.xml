@@ -62,6 +62,9 @@
     <string name="musik_pause">Riproduci/Pausa</string>
     <string name="musik_weiter">Successivo</string>
     <string name="musik_zurueck">Precedente</string>
+    <string name="medien_zugriff_hinweis">Per controllare la musica (anche CarPlay), consenti l’accesso alle notifiche</string>
+    <string name="medien_zugriff_erlauben">Consenti accesso</string>
+    <string name="musik_weiterspielen">Riprendi la musica all’avvio</string>
     <string name="nach_links">A sinistra</string>
     <string name="nach_rechts">A destra</string>
     <string name="navi_keine">Nessun percorso attivo</string>
@@ -268,6 +271,11 @@
     <string name="laden_ziel">Obiettivo %1$d %%</string>
     <string name="laden_rest">ancora %1$d min</string>
     <string name="kamera_tipp">Tocca per la vista dal vivo</string>
+    <!-- 0.1.41 (CP): Kachel CarPlay / Android Auto (Werks-Apps, Start im Vollbild) -->
+    <string name="widget_projektion">CarPlay / Android Auto</string>
+    <string name="projektion_carplay">CarPlay</string>
+    <string name="projektion_android_auto">Android Auto</string>
+    <string name="projektion_tipp">Apre l’app dell’auto a schermo intero. Prima collega il telefono.</string>
     <!-- 0.1.40 E2E: Abdunkelung eigenes Bild (M1), Design bei Cockpit (M2) -->
     <string name="abdunkelung">Oscuramento dell’immagine</string>
     <string name="abdunkelung_auto">Automatico (in base alla luminosità)</string>
@@ -277,4 +285,69 @@
     <string name="design_cockpit">Cockpit (sempre scuro)</string>
     <string name="design_cockpit_hinweis">Con lo sfondo «Cockpit» vale sempre il design scuro del cockpit. Per design e colore d’accento scegli un altro sfondo.</string>
     <string name="kachel_neue_seite">Pagina piena – il riquadro è su una nuova pagina.</string>
+    <!-- 0.1.41 (LK): Kacheln Reifen, letzte Fahrt, Tempo -->
+    <string name="widget_reifendruck">Pneumatici</string>
+    <string name="widget_fahrt">Ultimo viaggio</string>
+    <string name="widget_tempo">Velocità</string>
+    <string name="reifen_ok">Tutto a posto</string>
+    <string name="warn_leck_schnell">perdita rapida</string>
+    <string name="warn_leck_langsam">perdita lenta</string>
+    <string name="warn_unterdruck">pressione bassa</string>
+    <string name="warn_ueberdruck">pressione alta</string>
+    <string name="warn_signal">nessun segnale dal sensore</string>
+    <string name="rad_vl">AS</string>
+    <string name="rad_vr">AD</string>
+    <string name="rad_hl">PS</string>
+    <string name="rad_hr">PD</string>
+    <string name="widget_geraet">Widget Android</string>
+    <string name="widget_geraet_hinzu">Widget Android (meteo, calendario …)</string>
+    <string name="widget_geraet_keine">Non sono installati widget Android.</string>
+    <string name="widget_geraet_fehlt">Questo widget non c\'è più. Tieni premuto per rimuoverlo.</string>
+    <string name="schnell_titel">Barra sopra tutte le app</string>
+    <string name="schnell_oben">in alto (può coprire le schede delle app)</string>
+    <string name="schnell_links">a sinistra</string>
+    <string name="schnell_rechts">a destra</string>
+    <string name="schnell_haus">Schermata iniziale</string>
+    <string name="schnell_leiser">Volume giù</string>
+    <string name="schnell_lauter">Volume su</string>
+    <string name="schnell_hinweis">Una piccola barra con schermata iniziale e volume resta sopra le altre app. In retromarcia e sopra il launcher sparisce.</string>
+    <string name="schnell_recht_text">Perché la barra appaia sopra le altre app, Android ha bisogno del tuo permesso «Mostra sopra altre app». Android apre ora l\'impostazione: consenti lì Panoptes Launcher.</string>
+    <!-- 0.1.41 (LA) Layout-Vorlagen, Tag/Nacht -->
+    <string name="tagnacht">Giorno/notte automatico</string>
+    <string name="tagnacht_hinweis">Di notte vale il design «Notte». L\'ora viene dalla posizione del sole presso l\'auto, altrimenti dall\'orologio.</string>
+    <string name="vorlage">Modello di layout</string>
+    <string name="vorlage_hinweis">Sostituisce le pagine iniziali e l\'aspetto. «Semplice» imposta la dimensione «Più grande», gli altri la riportano su «Automatica». Dock e app restano.</string>
+    <string name="vorlage_frage">Che aspetto deve avere il launcher?</string>
+    <string name="vorlage_spaeter">Modificabile più tardi in Impostazioni → Avanzate → Modello di layout.</string>
+    <string name="vorlage_einfach">Semplice</string>
+    <string name="vorlage_einfach_text">poche tessere grandi, testo grande</string>
+    <string name="vorlage_standard">Standard</string>
+    <string name="vorlage_standard_text">veicolo, musica e altro</string>
+    <string name="vorlage_cockpit">Cockpit</string>
+    <string name="vorlage_cockpit_text">scuro, molti valori a colpo d\'occhio</string>
+    <string name="vorlage_ersetzen_frage">Le pagine iniziali e l\'aspetto verranno sostituiti. Dock e app restano. Salvare prima il layout attuale come file?</string>
+    <string name="vorlage_ersetzen">Sostituisci</string>
+    <string name="vorlage_erst_sichern">Salva prima</string>
+    <string name="vorlage_ok">Modello «%1$s» applicato.</string>
+    <!-- 0.1.41 (LC): Navi aufs Kombi, Seitenblick beim Blinken -->
+    <string name="verstanden">Ho capito</string>
+    <string name="kombi_einstellung">Navigatore sul quadro strumenti (pulsante sulla mappa)</string>
+    <string name="kombi_knopf">Mappa sul quadro</string>
+    <string name="kombi_normal">Quadro normale</string>
+    <string name="kombi_info">Il pulsante appare accanto alla mappa. Mostra la tua app di navigazione sul quadro strumenti davanti a te. Parte solo da fermo e solo per un’app che hai provato e approvato una volta in Panoptes (Display → Quadro). Toccalo di nuovo per tornare alla visualizzazione normale.</string>
+    <string name="kombi_geht_nicht">Quest’auto non può mostrare altre immagini sul quadro strumenti (sulla Dolphin Surf il quadro è un piccolo sistema a sé senza superficie per questo). Il pulsante resta quindi spento.</string>
+    <string name="kombi_freigeben">Prova prima questa app una volta da fermo in Panoptes e approvala (Display → Quadro). Solo dopo il launcher può mostrarla sul quadro.</string>
+    <string name="kombi_nur_stand">Solo da fermo. Un navigatore già mostrato continua durante la guida.</string>
+    <string name="kombi_laeuft">Il navigatore ora è sul quadro.</string>
+    <string name="kombi_zurueck">Quadro di nuovo normale.</string>
+    <string name="seitenblick_titel">Vista laterale con la freccia</string>
+    <string name="seitenblick_regel">Finché metti la freccia a sinistra o a destra, lo schermo mostra l’immagine della telecamera di quel lato (con la vista posteriore). Sparisce da sola poco dopo la fine della freccia. Appare anche durante la guida, perché è un aiuto alla guida; non serve toccarla e non fa suoni. Con le luci di emergenza non appare nulla. In retromarcia ha sempre la precedenza la telecamera posteriore dell’auto. Panoptes legge soltanto la freccia, non la aziona mai. Non sostituisce lo sguardo oltre la spalla.</string>
+    <string name="seitenblick_blinker_fehlt">Su quest’auto Panoptes al momento non riesce a leggere la freccia, quindi l’immagine non può apparire.</string>
+    <string name="seitenblick_ist">Ora:</string>
+    <string name="seitenblick_an">Attiva</string>
+    <string name="seitenblick_aus">Disattiva</string>
+    <string name="seitenblick_ist_an">La vista laterale con la freccia è attiva.</string>
+    <string name="seitenblick_ist_aus">La vista laterale con la freccia è disattivata.</string>
+    <string name="seitenblick_fehler">Non è stato possibile cambiare la vista laterale. Non è cambiato nulla. Riprova più tardi o controlla in Panoptes.</string>
+    <string name="seitenblick_nicht_erreichbar">Panoptes al momento non risponde, quindi l’impostazione della vista laterale non può essere mostrata. Riprova tra poco.</string>
 </resources>

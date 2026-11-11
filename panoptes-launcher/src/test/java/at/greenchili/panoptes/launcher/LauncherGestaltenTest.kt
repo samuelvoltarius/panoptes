@@ -57,7 +57,8 @@ class LauncherGestaltenTest {
         assertSame("unbekanntes Design ändert nichts", l, Raster.design(l, "fremd"))
         assertEquals("#C792EA", Raster.akzent(l, "#c792ea").akzent)
         assertSame(l, Raster.akzent(l, "lila"))
-        assertTrue(m.contains("PanoptesStil.gestaltet(layout.design, modus, systemHell(), layout.akzent)"))
+        assertTrue(m.contains("PanoptesStil.gestaltet(designJetzt(), modus, systemHell(), layout.akzent)"))   // 0.1.41: Tag/Nacht
+        assertTrue("ohne Tag/Nacht das gewählte Design", m.contains("if (!an) return layout.design"))
     }
 
     // ---------- 3 eigenes Hintergrundbild ----------

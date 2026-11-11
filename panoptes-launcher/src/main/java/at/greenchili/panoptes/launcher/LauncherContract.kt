@@ -32,10 +32,14 @@ data class LauncherSummary(
     val sohAutoPct: Double? = null,
     val sohSchaetzungPct: Double? = null,
     /** 0.1.40: Türschloss laut Kern state.locked (true/false), null = unbekannt. Nur lesen. */
-    val locked: Boolean? = null
+    val locked: Boolean? = null,
+    /** 0.1.41 (LA): Nacht laut Sonnenstand am Auto-Standort (Kern env.isNight), null = kein Wert (dann Uhrzeit). */
+    val istNacht: Boolean? = null
 )
 
-data class LauncherReifen(val vl: Double?, val vr: Double?, val hl: Double?, val hr: Double?, val unten: Double?, val oben: Double?)
+data class LauncherReifen(val vl: Double?, val vr: Double?, val hl: Double?, val hr: Double?, val unten: Double?, val oben: Double?,
+                          /** 0.1.41 (LK): Kern-Warnung je Rad [VL, VR, HL, HR] (ReifenWarnung), null = keine/unbekannt. */
+                          val warn: List<String?> = listOf(null, null, null, null))
 data class LauncherLuft(val innen: Double?, val aussen: Double?)
 data class LauncherKlima(
     val sollC: Double?, val stufe: Int?, val innenC: Double?, val an: Boolean? = null,
@@ -88,7 +92,9 @@ data class LauncherMedia(val title: String?, val artist: String?)
 
 data class LaunchableApp(val packageName: String, val label: String)
 data class LauncherTraffic(val nearby: Int, val approaching: Int)
-data class LauncherHistory(val lastTripKm: Double?, val lastChargeKwh: Double?)
+data class LauncherHistory(val lastTripKm: Double?, val lastChargeKwh: Double?,
+                           /** 0.1.41 (LK): letzte Fahrt aus Kern-history: Dauer in min und Verbrauch in Wh/km, null = fehlt. */
+                           val lastTripMin: Double? = null, val lastTripWhPerKm: Double? = null)
 data class LauncherAppearance(
     val theme: String,
     val material: String,
@@ -140,7 +146,9 @@ object LauncherContract {
             state?.nullableDouble("speedKmh"),
             root.optJSONObject("tyres")?.let {
                 LauncherReifen(it.nullableDouble("flBar"), it.nullableDouble("frBar"), it.nullableDouble("rlBar"),
-                    it.nullableDouble("rrBar"), it.nullableDouble("loBar"), it.nullableDouble("hiBar"))
+                    it.nullableDouble("rrBar"), it.nullableDouble("loBar"), it.nullableDouble("hiBar"),
+                    it.optJSONObject("warn")?.let { w -> listOf("fl", "fr", "rl", "rr").map { r -> w.nullableString(r)?.takeIf { x -> x in ZusatzKacheln.WARNUNGEN } } }
+                        ?: listOf(null, null, null, null))
             },
             root.optJSONObject("air")?.let { LauncherLuft(it.nullableDouble("pm25Inside"), it.nullableDouble("pm25Outside")) }
                 ?.takeIf { it.innen != null || it.aussen != null },
@@ -154,7 +162,8 @@ object LauncherContract {
             } ?: emptyList(),
             battery?.nullableDouble("sohAutoPct")?.takeIf { it > 0 && it <= 110 },
             battery?.nullableDouble("sohSchaetzungPct")?.takeIf { it > 0 && it <= 110 },
-            locked = state?.takeIf { it.has("locked") && !it.isNull("locked") }?.optBoolean("locked")
+            locked = state?.takeIf { it.has("locked") && !it.isNull("locked") }?.optBoolean("locked"),
+            istNacht = root.optJSONObject("env")?.let { e -> if (e.has("isNight") && !e.isNull("isNight")) e.optBoolean("isNight") else null }
         )
     }
 
@@ -275,7 +284,9 @@ object LauncherContract {
         val charge = root.optJSONArray("charging")?.optJSONObject(0)
         return LauncherHistory(
             trip?.nullableDouble("distanceKm"),
-            charge?.nullableDouble("kwh")
+            charge?.nullableDouble("kwh"),
+            trip?.nullableDouble("durationMin"),
+            trip?.nullableDouble("whPerKm")
         )
     }
 

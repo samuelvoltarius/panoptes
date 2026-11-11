@@ -47,11 +47,31 @@ object MedienQuelle {
         return liste.split(':').any { ComponentName.unflattenFromString(it) == ich }
     }
 
-    /** Aktive Sitzung: bevorzugt die gerade spielende. null ohne Zugriff oder ohne Sitzung. */
-    fun aktuell(ctx: Context): Wiedergabe? = try {
-        val msm = ctx.getSystemService(MediaSessionManager::class.java)
-        val liste = msm.getActiveSessions(ComponentName(ctx, MedienDienst::class.java))
-        val c = liste.firstOrNull { it.playbackState?.state == PlaybackState.STATE_PLAYING } ?: liste.firstOrNull()
+    /** Alle aktiven Sitzungen; leer ohne Zugriff. */
+    private fun sitzungen(ctx: Context): List<MediaController> = try {
+        ctx.getSystemService(MediaSessionManager::class.java)
+            .getActiveSessions(ComponentName(ctx, MedienDienst::class.java)) ?: emptyList()
+    } catch (_: Throwable) { emptyList() }
+
+    /** 0.1.41 (LM): Paket → spielt gerade? (ohne Telecom). null ohne Zugriff. */
+    fun ueberblick(ctx: Context): Map<String, Boolean>? {
+        if (!zugriffErlaubt(ctx)) return null
+        return sitzungen(ctx).filter { it.packageName !in MedienWahl.AUSGESCHLOSSEN }
+            .groupBy { it.packageName }.mapValues { (_, l) -> l.any { it.playbackState?.state == PlaybackState.STATE_PLAYING } }
+    }
+
+    /** 0.1.41 (LM): play() auf der Sitzung des Pakets (TransportControls). false, wenn es keine gibt. */
+    fun spielen(ctx: Context, paket: String): Boolean = try {
+        val c = sitzungen(ctx).firstOrNull { it.packageName == paket }
+        c?.transportControls?.play(); c != null
+    } catch (_: Throwable) { false }
+
+    /**
+     * Aktive Sitzung nach [MedienWahl]: spielend > CarPlay/Android Auto > Paket mit Audiofokus (hier: zuletzt
+     * spielend gesehen, [fokusPaket]) > Rest; nie die Telecom-Sitzung. null ohne Zugriff oder ohne Sitzung.
+     */
+    fun aktuell(ctx: Context, fokusPaket: String? = null): Wiedergabe? = try {
+        val c = MedienWahl.waehle(sitzungen(ctx), { it.packageName }, { it.playbackState?.state }, fokusPaket)
         c?.let { m ->
             val md = m.metadata
             val st = m.playbackState

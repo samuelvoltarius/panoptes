@@ -62,6 +62,9 @@
     <string name="musik_pause">Play/Pause</string>
     <string name="musik_weiter">Next</string>
     <string name="musik_zurueck">Previous</string>
+    <string name="medien_zugriff_hinweis">To control music (also CarPlay), allow notification access</string>
+    <string name="medien_zugriff_erlauben">Allow access</string>
+    <string name="musik_weiterspielen">Resume music at start</string>
     <string name="nach_links">Move left</string>
     <string name="nach_rechts">Move right</string>
     <string name="navi_keine">No active route</string>
@@ -268,6 +271,11 @@
     <string name="laden_ziel">Target %1$d %%</string>
     <string name="laden_rest">%1$d min left</string>
     <string name="kamera_tipp">Tap for the live view</string>
+    <!-- 0.1.41 (CP): Kachel CarPlay / Android Auto (Werks-Apps, Start im Vollbild) -->
+    <string name="widget_projektion">CarPlay / Android Auto</string>
+    <string name="projektion_carplay">CarPlay</string>
+    <string name="projektion_android_auto">Android Auto</string>
+    <string name="projektion_tipp">Starts the car’s app full screen. Connect your phone first.</string>
     <!-- 0.1.40 E2E: Abdunkelung eigenes Bild (M1), Design bei Cockpit (M2) -->
     <string name="abdunkelung">Image dimming</string>
     <string name="abdunkelung_auto">Automatic (by image brightness)</string>
@@ -277,4 +285,69 @@
     <string name="design_cockpit">Cockpit (always dark)</string>
     <string name="design_cockpit_hinweis">With the “Cockpit” background the dark cockpit design always applies. Choose another background for design and accent colour.</string>
     <string name="kachel_neue_seite">Page full – the tile is on a new page.</string>
+    <!-- 0.1.41 (LK): Kacheln Reifen, letzte Fahrt, Tempo -->
+    <string name="widget_reifendruck">Tyres</string>
+    <string name="widget_fahrt">Last trip</string>
+    <string name="widget_tempo">Speed</string>
+    <string name="reifen_ok">All OK</string>
+    <string name="warn_leck_schnell">fast leak</string>
+    <string name="warn_leck_langsam">slow leak</string>
+    <string name="warn_unterdruck">low pressure</string>
+    <string name="warn_ueberdruck">high pressure</string>
+    <string name="warn_signal">no sensor signal</string>
+    <string name="rad_vl">FL</string>
+    <string name="rad_vr">FR</string>
+    <string name="rad_hl">RL</string>
+    <string name="rad_hr">RR</string>
+    <string name="widget_geraet">Android widget</string>
+    <string name="widget_geraet_hinzu">Android widget (weather, calendar …)</string>
+    <string name="widget_geraet_keine">No Android widgets are installed.</string>
+    <string name="widget_geraet_fehlt">This widget is no longer available. Press and hold to remove.</string>
+    <string name="schnell_titel">Bar over all apps</string>
+    <string name="schnell_oben">top (may cover app tabs)</string>
+    <string name="schnell_links">left</string>
+    <string name="schnell_rechts">right</string>
+    <string name="schnell_haus">Home screen</string>
+    <string name="schnell_leiser">Volume down</string>
+    <string name="schnell_lauter">Volume up</string>
+    <string name="schnell_hinweis">A small bar with Home and volume stays on top of other apps. It disappears in reverse gear and over the launcher.</string>
+    <string name="schnell_recht_text">For the bar to appear over other apps, Android needs your permission “Display over other apps”. Android now opens the setting – allow Panoptes Launcher there.</string>
+    <!-- 0.1.41 (LA) Layout-Vorlagen, Tag/Nacht -->
+    <string name="tagnacht">Day/night automatic</string>
+    <string name="tagnacht_hinweis">At night the \"Night\" design applies. The time comes from the sun position at the car, otherwise from the clock.</string>
+    <string name="vorlage">Layout template</string>
+    <string name="vorlage_hinweis">Replaces the start pages and the look. “Simple” sets the size to “Larger”, the others set it back to “Automatic”. Dock and apps stay.</string>
+    <string name="vorlage_frage">How should the launcher look?</string>
+    <string name="vorlage_spaeter">You can change this later under Settings → Advanced → Layout template.</string>
+    <string name="vorlage_einfach">Simple</string>
+    <string name="vorlage_einfach_text">few large tiles, large text</string>
+    <string name="vorlage_standard">Standard</string>
+    <string name="vorlage_standard_text">vehicle, music and more</string>
+    <string name="vorlage_cockpit">Cockpit</string>
+    <string name="vorlage_cockpit_text">dark, many values at a glance</string>
+    <string name="vorlage_ersetzen_frage">Your start pages and the look will be replaced. Dock and apps stay. Save the current layout as a file first?</string>
+    <string name="vorlage_ersetzen">Replace</string>
+    <string name="vorlage_erst_sichern">Save first</string>
+    <string name="vorlage_ok">Template \"%1$s\" applied.</string>
+    <!-- 0.1.41 (LC): Navi aufs Kombi, Seitenblick beim Blinken -->
+    <string name="verstanden">Understood</string>
+    <string name="kombi_einstellung">Navigation in the instrument cluster (button on the map)</string>
+    <string name="kombi_knopf">Map to cluster</string>
+    <string name="kombi_normal">Cluster back to normal</string>
+    <string name="kombi_info">The button appears next to the map. It shows your navigation app in the instrument cluster in front of you. It starts only while parked, and only for an app you have tested and released once in Panoptes (Display → Instrument cluster). Tap it again to return to the normal instrument display.</string>
+    <string name="kombi_geht_nicht">This car cannot show other pictures in the instrument cluster (on the Dolphin Surf the cluster is a separate small system without a surface for this). The button therefore stays off.</string>
+    <string name="kombi_freigeben">First test this app once in Panoptes while parked and release it (Display → Instrument cluster). Only then may the launcher put it in the cluster.</string>
+    <string name="kombi_nur_stand">Only while parked. A navigation already shown keeps running while driving.</string>
+    <string name="kombi_laeuft">Navigation is now in the instrument cluster.</string>
+    <string name="kombi_zurueck">Instrument cluster back to normal.</string>
+    <string name="seitenblick_titel">Side view when indicating</string>
+    <string name="seitenblick_regel">While you indicate left or right, the screen shows the camera image of that side (with the rear view). It disappears by itself shortly after the indicator stops. It also appears while driving, because it is a driving aid; it needs no touch and makes no sound. With hazard lights nothing is shown. In reverse the car’s own reversing camera always has priority. Panoptes only reads the indicator, it never operates it. It does not replace looking over your shoulder.</string>
+    <string name="seitenblick_blinker_fehlt">On this car Panoptes cannot read the indicator right now, so the picture cannot appear.</string>
+    <string name="seitenblick_ist">Currently:</string>
+    <string name="seitenblick_an">Switch on</string>
+    <string name="seitenblick_aus">Switch off</string>
+    <string name="seitenblick_ist_an">Side view when indicating is on.</string>
+    <string name="seitenblick_ist_aus">Side view when indicating is off.</string>
+    <string name="seitenblick_fehler">Side view could not be switched. Nothing was changed. Please try again later or check it in Panoptes.</string>
+    <string name="seitenblick_nicht_erreichbar">Panoptes is not answering right now, so the side view setting cannot be shown. Please try again in a moment.</string>
 </resources>

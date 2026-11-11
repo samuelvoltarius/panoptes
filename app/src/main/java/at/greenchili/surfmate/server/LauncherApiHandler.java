@@ -133,6 +133,42 @@ public final class LauncherApiHandler {
                 HttpResponse.sendJson(out, at.greenchili.surfmate.tacho.TachoNaviApp.tachoNormal().toString());
                 return true;
             }
+            // 0.1.41 (LC) „Navi aufs Kombi“: nur der vorhandene Kern-Weg TachoNaviApp.setze mit allen Sperren
+            // (LauncherKombi), nur von der Launcher-APK mit Panoptes-Signatur.
+            if (cleanPath.equals(LauncherKombi.PFAD)) {
+                if (!launcherDarf(out)) return true;
+                if ("GET".equals(method)) {
+                    String q = path.contains("paket=") ? path.substring(path.indexOf("paket=") + 6) : "";
+                    if (q.contains("&")) q = q.substring(0, q.indexOf('&'));
+                    HttpResponse.sendJson(out, LauncherKombi.lesen(java.net.URLDecoder.decode(q, "UTF-8")).toString());
+                    return true;
+                }
+                if ("POST".equals(method)) {
+                    JSONObject in = body == null || body.trim().isEmpty() ? new JSONObject() : new JSONObject(body);
+                    JSONObject r = LauncherKombi.starten(in.optString("paket", ""));
+                    HttpResponse.sendJson(out, r.optBoolean("ok") ? 200 : 409, r.toString());
+                    return true;
+                }
+            }
+            // 0.1.41 (LC) „Seitenblick beim Blinken“: nur der Schalter der vorhandenen Kern-Funktion blindspot.enabled
+            // (LauncherSeitenblick); den Blinker liest der Kern nur, nie wird er bedient (REGEL A+).
+            if (cleanPath.equals(LauncherSeitenblick.PFAD)) {
+                if (!launcherDarf(out)) return true;
+                if ("GET".equals(method)) {
+                    HttpResponse.sendJson(out, LauncherSeitenblick.lesen().toString());
+                    return true;
+                }
+                if ("POST".equals(method)) {
+                    JSONObject in = body == null || body.trim().isEmpty() ? new JSONObject() : new JSONObject(body);
+                    if (!in.has("an")) {
+                        HttpResponse.sendJson(out, 400, "{\"ok\":false,\"grund\":\"an_fehlt\"}");
+                        return true;
+                    }
+                    JSONObject r = LauncherSeitenblick.schalten(in.optBoolean("an", false));
+                    HttpResponse.sendJson(out, r.optBoolean("ok") ? 200 : 409, r.toString());
+                    return true;
+                }
+            }
             // 0.1.38 Launcher-Layout im Kern (LAUNCHER_LAYOUT_API.md): eine Quelle für Launcher, Web, Handy, Cockpit.
             // Kopplungen nur mit Recht „launcher“ (ExternGuard/WebHandyGuard), Automationen und damit KI nie.
             if (cleanPath.startsWith(LAYOUT_PFAD)) {
@@ -924,6 +960,14 @@ public final class LauncherApiHandler {
             }
             o.put("loBar", loBar);
             o.put("hiBar", hiBar);
+            // 0.1.41 (LK): Warnung je Rad aus den TPMS-Zuständen (nur lesen); null = keine oder unbekannt
+            JSONObject warn = new JSONObject();
+            String[] rad = {"fl", "fr", "rl", "rr"};
+            for (int i = 0; i < 4; i++) {
+                String w = ReifenWarnung.rad(vd.tyrePressureState, vd.tyreAirLeakState, vd.tyreSignalState, i);
+                warn.put(rad[i], w != null ? w : JSONObject.NULL);
+            }
+            o.put("warn", warn);
             return o;
         } catch (Throwable t) {
             return JSONObject.NULL;

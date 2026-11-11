@@ -53,6 +53,28 @@ class PanoptesClient(private val baseUrl: String = "http://127.0.0.1:8180") {
         false
     }
 
+    /** 0.1.41 (LC): bietet dieses Auto „Navi aufs Kombi“ an, ist die App freigegeben? Nur lesen; null = unbekannt. */
+    fun kombiStand(paket: String): Kombi.Stand? = try {
+        Kombi.parse(requestMitFehler("GET", "/api/launcher/v1/tacho/kombi?paket=" + java.net.URLEncoder.encode(paket, "UTF-8"), null, 8_000))
+    } catch (_: Exception) { null }
+
+    /** 0.1.41 (LC): Navi-App aufs Kombi über den Kern-Weg. null = läuft, sonst Grund des Kerns. */
+    fun kombiStarten(paket: String): String? = try {
+        Kombi.startGrund(requestMitFehler("POST", "/api/launcher/v1/tacho/kombi",
+            org.json.JSONObject().put("paket", paket).toString(), 20_000))
+    } catch (_: Exception) { "fehler" }
+
+    /** 0.1.41 (LC): Seitenblick beim Blinken – Stand der Kern-Funktion; null = nicht erreichbar. */
+    fun seitenblickStand(): Seitenblick.Stand? = try {
+        Seitenblick.parse(requestMitFehler("GET", "/api/launcher/v1/seitenblick", null, 5_000))
+    } catch (_: Exception) { null }
+
+    /** 0.1.41 (LC): Seitenblick ein/aus; true nur, wenn der Kern ok meldet. */
+    fun seitenblickSchalten(an: Boolean): Boolean = try {
+        Seitenblick.geschaltet(requestMitFehler("POST", "/api/launcher/v1/seitenblick",
+            org.json.JSONObject().put("an", an).toString(), 15_000))
+    } catch (_: Exception) { false }
+
     fun update(): UpdateStand = LauncherContract.parseUpdate(get("/api/launcher/v1/update"))
 
     /** 0.1.38.7: Wunsch „Launcher als Startbildschirm“ aus dem Kern; null = nicht erreichbar. */

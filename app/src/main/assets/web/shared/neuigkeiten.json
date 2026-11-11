@@ -812,6 +812,45 @@
         "Nieuwe launchertegels: Slot, Laden en Live-camera. ‘Grootte’ en ‘Achtergrond’ zijn weer te kiezen.",
         "De camera- en Telegram-dienst starten bij het opstarten niet meer dubbel."
       ]
+    },
+    {
+      "version": "0.1.41",
+      "versionCode": 81,
+      "de": [
+        "Tacho selbst gestalten: Farben, Schrift, Zeigerform und welche Werte wo stehen (Display → Tacho → Erweitert).",
+        "Launcher: Layout-Vorlagen „Einfach“, „Standard“ und „Cockpit“, „Tag/Nacht automatisch“, und ein helles eigenes Hintergrundbild wird auch bei „Schwach“ genug abgedunkelt.",
+        "Neue Launcher-Kacheln: CarPlay / Android Auto, Reifen, Letzte Fahrt, Tempo und Android-Widgets. Die Musik-Kachel steuert jetzt auch CarPlay.",
+        "Auf Wunsch eine kleine Leiste über allen Apps (Startbildschirm, Lautstärke) und „Musik beim Start weiterspielen“ – beides ist zuerst aus.",
+        "„Seitenblick beim Blinken“ schaltest du jetzt im Launcher ein und aus. „Navi aufs Kombi“ gibt es nur bei Autos, deren Kombi das kann – der Dolphin Surf kann es nicht."
+      ],
+      "en": [
+        "“Design the cluster”: colours, font, pointer style and which values go where (Instrument cluster → Advanced).",
+        "Launcher: layout templates “Simple”, “Standard” and “Cockpit”, “Day/night automatic”, and a bright background picture of your own is now dimmed enough even with “Light”.",
+        "New launcher tiles: CarPlay / Android Auto, Tyres, Last trip, Speed and Android widgets. The Music tile now also controls CarPlay.",
+        "If you want: a small bar over all apps (Home screen, volume) and “Resume music at start” – both are off at first.",
+        "You now switch “Side view when indicating” on and off in the launcher. “Map to cluster” only appears on cars whose instrument cluster can do it – the Dolphin Surf cannot."
+      ],
+      "fr": [
+        "« Créer mon compteur » : couleurs, police, forme de l’aiguille et quelles valeurs vont où (Compteur → Avancé).",
+        "Launcher : modèles de disposition « Simple », « Standard » et « Cockpit », « Jour/nuit automatique », et une image de fond claire est désormais assez assombrie même avec « Faible ».",
+        "Nouvelles tuiles du launcher : CarPlay / Android Auto, Pneus, Dernier trajet, Vitesse et widgets Android. La tuile Musique pilote désormais aussi CarPlay.",
+        "Au choix : une petite barre au-dessus de toutes les apps (écran d’accueil, volume) et « Reprendre la musique au démarrage » – les deux sont d’abord désactivés.",
+        "Vous activez et désactivez désormais « Vue latérale au clignotant » dans le launcher. « Carte au combiné » n’apparaît que sur les voitures dont le combiné le permet – la Dolphin Surf ne le peut pas."
+      ],
+      "it": [
+        "“Crea il tuo quadro”: colori, carattere, forma della lancetta e quali valori stanno dove (Quadro strumenti → Avanzate).",
+        "Launcher: modelli di layout “Semplice”, “Standard” e “Cockpit”, “Giorno/notte automatico”, e un’immagine di sfondo chiara ora viene scurita abbastanza anche con “Leggero”.",
+        "Nuovi riquadri del launcher: CarPlay / Android Auto, Pneumatici, Ultimo viaggio, Velocità e widget Android. Il riquadro Musica ora controlla anche CarPlay.",
+        "A scelta: una piccola barra sopra tutte le app (schermata iniziale, volume) e “Riprendi la musica all’avvio” – entrambe all’inizio sono spente.",
+        "Ora attivi e disattivi “Vista laterale con la freccia” nel launcher. “Mappa sul quadro” compare solo sulle auto il cui quadro strumenti lo permette – la Dolphin Surf no."
+      ],
+      "nl": [
+        "‘Teller zelf ontwerpen’: kleuren, lettertype, wijzervorm en welke waarden waar staan (Dashboard → Geavanceerd).",
+        "Launcher: lay-outsjablonen ‘Eenvoudig’, ‘Standaard’ en ‘Cockpit’, ‘Dag/nacht automatisch’, en een lichte eigen achtergrondafbeelding wordt nu ook bij ‘Licht’ genoeg gedimd.",
+        "Nieuwe launchertegels: CarPlay / Android Auto, Banden, Laatste rit, Snelheid en Android-widgets. De muziektegel bedient nu ook CarPlay.",
+        "Desgewenst een kleine balk boven alle apps (startscherm, volume) en ‘Muziek hervatten bij start’ – beide staan eerst uit.",
+        "‘Zijzicht bij knipperen’ zet je nu in de launcher aan en uit. ‘Kaart naar paneel’ verschijnt alleen bij auto’s waarvan het instrumentenpaneel dat kan – de Dolphin Surf kan het niet."
+      ]
     }
   ]
 }

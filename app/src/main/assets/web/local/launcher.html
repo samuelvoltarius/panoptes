@@ -105,7 +105,7 @@
     // Gleiche Regeln wie Raster in der Launcher-APK und LauncherLayoutPruefung im Kern (LAUNCHER_LAYOUT_API.md).
     var SPALTEN = 6, ZEILEN = 3, MAX_SEITEN = 5, MAX_DOCK = 8;
     var GROESSEN = [[1, 1], [2, 1], [2, 2], [2, 3], [3, 2], [3, 3], [4, 2], [4, 3], [6, 3]];
-    var KACHELN = ['fahrzeug', 'akku', 'navi', 'musik', 'waechter', 'uhr', 'schloss', 'laden', 'kamera'];
+    var KACHELN = ['fahrzeug', 'akku', 'navi', 'musik', 'waechter', 'uhr', 'schloss', 'laden', 'kamera', 'projektion', 'reifen', 'fahrt', 'tempo', 'geraetewidget'];
     var PROJEKTION = ['com.byd.androidauto', 'com.byd.carplay.ui'];
     var API = '/api/launcher/v1/layout';
 
@@ -129,7 +129,9 @@
     }
     function kachelName(k) {
         var f = { fahrzeug: 'Fahrzeug', akku: 'Akku', navi: 'Navigation', musik: 'Musik', waechter: 'Wächter', uhr: 'Uhr',
-            schloss: 'Schloss', laden: 'Laden', kamera: 'Live-Kamera' };
+            schloss: 'Schloss', laden: 'Laden', kamera: 'Live-Kamera', projektion: 'CarPlay / Android Auto',
+            reifen: 'Reifen', fahrt: 'Letzte Fahrt', tempo: 'Tempo',
+            geraetewidget: 'Android-Widget' };
         return t('k_' + k, f[k] || k);
     }
     function appName(p) {
@@ -157,6 +159,7 @@
         return null;
     }
     function neueId(vor) { stand.zaehler = (stand.zaehler || 0) + 1; return vor + stand.zaehler; }
+    function projektionDa() { return apps.some(function (a) { return PROJEKTION.indexOf(a.paket) >= 0; }); }
     function hatWidget(k) { return stand.seiten.some(function (s) { return s.some(function (e) { return e.typ === 'widget' && e.kachel === k; }); }); }
 
     function verschieben(id, x, y) {
@@ -329,7 +332,9 @@
             w.appendChild(knopf(t('fertig', 'Fertig'), function () { gewaehlt = null; zeichne(); }, 'btn-primary'));
             return;
         }
-        KACHELN.filter(function (k) { return !hatWidget(k); }).forEach(function (k) {
+        // 0.1.41 (CP): CarPlay / Android Auto nur, wenn eine Werks-App installiert ist (wie im Launcher)
+        // 0.1.41 (LO): Android-Widgets legt nur der Launcher im Auto an (Android fragt dort nach der Erlaubnis)
+        KACHELN.filter(function (k) { return k !== 'geraetewidget' && !hatWidget(k) && (k !== 'projektion' || projektionDa()); }).forEach(function (k) {
             w.appendChild(knopf('+ ' + kachelName(k), function () {
                 if (widgetDazu(k)) geaendert(); else zeige(t('kein_platz', 'Auf dieser Seite ist kein Platz mehr.'), 'error');
             }));

@@ -43,7 +43,10 @@ public final class LauncherLayoutPruefung {
             Arrays.asList("akku", "reichweite", "gang", "waechter", "musik", "kamera"));
     private static final Pattern AKZENT = Pattern.compile("^#[0-9A-Fa-f]{6}$");
     public static final List<String> KACHELN = Collections.unmodifiableList(
-            Arrays.asList("fahrzeug", "akku", "navi", "musik", "waechter", "uhr", "schloss", "laden", "kamera"));
+            Arrays.asList("fahrzeug", "akku", "navi", "musik", "waechter", "uhr", "schloss", "laden", "kamera",
+                    "projektion",     // 0.1.41 (CP): CarPlay / Android Auto
+                    "reifen", "fahrt", "tempo",   // 0.1.41 (LK): Reifen, letzte Fahrt, Tempo (nur Kern-Daten)
+                    "geraetewidget")); // 0.1.41 (LO): Android-Widget (wid = gebundene Nummer), mehrfach erlaubt
     /** Widget-Größen (Breite × Höhe in Zellen) wie {@code Raster.GROESSEN}. */
     static final int[][] GROESSEN = {{1, 1}, {2, 1}, {2, 2}, {2, 3}, {3, 2}, {3, 3}, {4, 2}, {4, 3}, {6, 3}};
 
@@ -110,6 +113,8 @@ public final class LauncherLayoutPruefung {
                     if (e == null) { weg[0]++; continue; }
                     String id = e.getString("id");
                     String kachel = e.optString("kachel", null);
+                    // Android-Widgets dürfen mehrfach vorkommen, je gebundener Nummer einmal
+                    if ("geraetewidget".equals(kachel)) kachel = kachel + ":" + e.optInt("wid", 0);
                     int[] r = {e.getInt("x"), e.getInt("y"), e.getInt("b"), e.getInt("h")};
                     if (ids.contains(id) || (kachel != null && widgets.contains(kachel)) || !passt(belegt, r)) {
                         weg[0]++;
@@ -197,6 +202,11 @@ public final class LauncherLayoutPruefung {
             case "widget": {
                 String k = o.optString("kachel", "");
                 if (!KACHELN.contains(k) || !groesse(b, h)) return null;
+                if ("geraetewidget".equals(k)) {
+                    int wid = o.optInt("wid", 0);
+                    if (wid <= 0) return null;
+                    return e.put("b", b).put("h", h).put("kachel", k).put("wid", wid);
+                }
                 return e.put("b", b).put("h", h).put("kachel", k);
             }
             case "app": {

@@ -1,0 +1,118 @@
+{
+  "format": "panoptes-launcher-layout",
+  "version": 1,
+  "vorlage": "cockpit",
+  "seiten": [
+    [
+      {
+        "id": "w1",
+        "typ": "widget",
+        "x": 0,
+        "y": 0,
+        "b": 4,
+        "h": 3,
+        "kachel": "fahrzeug"
+      },
+      {
+        "id": "w2",
+        "typ": "widget",
+        "x": 4,
+        "y": 0,
+        "b": 2,
+        "h": 2,
+        "kachel": "akku"
+      },
+      {
+        "id": "w3",
+        "typ": "widget",
+        "x": 4,
+        "y": 2,
+        "b": 2,
+        "h": 1,
+        "kachel": "uhr"
+      }
+    ],
+    [
+      {
+        "id": "w4",
+        "typ": "widget",
+        "x": 0,
+        "y": 0,
+        "b": 2,
+        "h": 2,
+        "kachel": "navi"
+      },
+      {
+        "id": "w5",
+        "typ": "widget",
+        "x": 2,
+        "y": 0,
+        "b": 2,
+        "h": 2,
+        "kachel": "musik"
+      },
+      {
+        "id": "w6",
+        "typ": "widget",
+        "x": 4,
+        "y": 0,
+        "b": 2,
+        "h": 1,
+        "kachel": "waechter"
+      },
+      {
+        "id": "w7",
+        "typ": "widget",
+        "x": 4,
+        "y": 1,
+        "b": 2,
+        "h": 1,
+        "kachel": "schloss"
+      },
+      {
+        "id": "w8",
+        "typ": "widget",
+        "x": 0,
+        "y": 2,
+        "b": 2,
+        "h": 1,
+        "kachel": "laden"
+      },
+      {
+        "id": "w9",
+        "typ": "widget",
+        "x": 2,
+        "y": 2,
+        "b": 2,
+        "h": 1,
+        "kachel": "kamera"
+      }
+    ]
+  ],
+  "dock": [
+    "at.greenchili.surfmate",
+    "com.byd.androidauto",
+    "com.byd.carplay.ui"
+  ],
+  "hintergrund": "cockpit",
+  "zaehler": 20,
+  "schnell": [],
+  "zeigeStatus": true,
+  "zeigeReiter": true,
+  "zeigeKlima": true,
+  "zeige3d": true,
+  "nebeneinander": false,
+  "nebenAnders": [],
+  "design": "auto",
+  "akzent": "",
+  "abstand": "eng",
+  "spalte": [
+    "akku",
+    "reichweite",
+    "gang",
+    "waechter",
+    "musik",
+    "uhr",
+    "kamera"
+  ]
+}

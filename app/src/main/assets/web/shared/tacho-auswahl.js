@@ -98,7 +98,15 @@
             var d = window.PanoptesTacho.demo(8);
             d.design = v.design;
             v.tacho.setze(d);
+            if (v.design === 'eigen') eigenVorschau(v.tacho);
         }
+    }
+
+    /** 0.1.41: Kachel „Eigenes“ zeigt das gespeicherte eigene Design. */
+    function eigenVorschau(tacho) {
+        fetch('/api/tacho/eigen', { cache: 'no-store' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (j) { if (j && j.eigen) tacho.eigen(j.eigen); }, function () { });
     }
 
     function laden() {

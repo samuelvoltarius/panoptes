@@ -179,6 +179,7 @@ public final class DemoProfil {
     static final String[] AKTIONS_ANFAENGE = {
             "/api/start/", "/api/view/", "/api/stop/", "/api/stopall", "/api/vehicle/", "/api/vehicle?",
             "/api/quick-controls/", "/api/launcher/v1/vehicle/", "/api/tacho/normal", "/api/tacho/navi",
+            "/api/launcher/v1/tacho/", "/api/launcher/v1/seitenblick",   // 0.1.41 LC: Kombi, Seitenblick
             "/api/system/ivi-reboot", "/api/audio/", "/api/stream", "/api/bs/", "/api/camview/", "/h264/", "/view/",
             "/api/communicate/", "/api/dev-view/", "/api/recording/mode",
     };

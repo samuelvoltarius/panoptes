@@ -24,7 +24,9 @@ data class Element(
     val kachel: Kachel? = null,
     val paket: String? = null,
     val name: String? = null,
-    val apps: List<String> = emptyList()
+    val apps: List<String> = emptyList(),
+    /** 0.1.41 (LO): Nummer des gebundenen Android-Widgets (nur bei Kachel.GERAETEWIDGET). */
+    val wid: Int? = null
 )
 
 data class StartLayout(
@@ -183,10 +185,23 @@ object Raster {
 
     fun hatWidget(l: StartLayout, k: Kachel) = l.seiten.flatten().any { it.typ == ElementTyp.WIDGET && it.kachel == k }
 
+    /** 0.1.41 (LO): Android-Widget mit gebundener Nummer anlegen (mehrere erlaubt, je Nummer einmal). */
+    fun geraeteWidgetHinzufuegen(l: StartLayout, seite: Int, wid: Int, groessen: List<Pair<Int, Int>>): StartLayout {
+        if (seite !in l.seiten.indices || wid <= 0 || l.seiten.flatten().any { it.wid == wid }) return l
+        for ((b, h) in groessen) {
+            if ((b to h) !in GROESSEN) continue
+            val p = freierPlatz(l.seiten[seite], b, h) ?: continue
+            val (l2, id) = neueId(l, "w")
+            return mitSeite(l2, seite, l2.seiten[seite] + Element(id, ElementTyp.WIDGET, p.first, p.second, b, h,
+                kachel = Kachel.GERAETEWIDGET, wid = wid))
+        }
+        return l
+    }
+
     /** Jedes Widget höchstens einmal. Größe 2×1, sonst 1×1. */
-    fun widgetHinzufuegen(l: StartLayout, seite: Int, k: Kachel): StartLayout {
+    fun widgetHinzufuegen(l: StartLayout, seite: Int, k: Kachel, groessen: List<Pair<Int, Int>> = listOf(2 to 1, 1 to 1)): StartLayout {
         if (seite !in l.seiten.indices || hatWidget(l, k)) return l
-        for ((b, h) in listOf(2 to 1, 1 to 1)) {
+        for ((b, h) in groessen) {
             val p = freierPlatz(l.seiten[seite], b, h) ?: continue
             val (l2, id) = neueId(l, "w")
             return mitSeite(l2, seite, l2.seiten[seite] + Element(id, ElementTyp.WIDGET, p.first, p.second, b, h, kachel = k))
@@ -333,6 +348,7 @@ object Raster {
                 val o = JSONObject().put("id", e.id).put("typ", e.typ.name.lowercase())
                     .put("x", e.x).put("y", e.y).put("b", e.b).put("h", e.h)
                 e.kachel?.let { o.put("kachel", it.name.lowercase()) }
+                e.wid?.let { o.put("wid", it) }
                 e.paket?.let { o.put("paket", it) }
                 e.name?.let { o.put("name", it) }
                 if (e.typ == ElementTyp.ORDNER) o.put("apps", JSONArray(e.apps))
@@ -369,8 +385,9 @@ object Raster {
                 for (k in 0 until a.length()) {
                     val e = element(a.optJSONObject(k) ?: continue) ?: continue
                     if (!ids.add(e.id)) continue
-                    if (e.typ == ElementTyp.WIDGET && s.any { it.kachel == e.kachel }) continue
-                    if (seiten.flatten().any { it.typ == ElementTyp.WIDGET && it.kachel == e.kachel && e.typ == ElementTyp.WIDGET }) continue
+                    // 0.1.41 (LO): Android-Widgets je gebundener Nummer einmal, sonst jede Kachel einmal
+                    if (e.typ == ElementTyp.WIDGET && s.any { it.kachel == e.kachel && it.wid == e.wid }) continue
+                    if (seiten.flatten().any { it.typ == ElementTyp.WIDGET && it.kachel == e.kachel && it.wid == e.wid && e.typ == ElementTyp.WIDGET }) continue
                     if (passt(s, e.x, e.y, e.b, e.h)) s += e
                 }
                 seiten += s
@@ -421,6 +438,10 @@ object Raster {
             ElementTyp.WIDGET -> {
                 val k = Kachel.values().firstOrNull { it.name.lowercase() == o.optString("kachel") } ?: return null
                 if ((b to h) !in GROESSEN) return null
+                if (k == Kachel.GERAETEWIDGET) {
+                    val wid = o.optInt("wid", 0).takeIf { it > 0 } ?: return null
+                    return Element(id, typ, x, y, b, h, kachel = k, wid = wid)
+                }
                 Element(id, typ, x, y, b, h, kachel = k)
             }
             ElementTyp.APP -> {

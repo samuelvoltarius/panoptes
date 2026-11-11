@@ -62,6 +62,9 @@
     <string name="musik_pause">Afspelen/Pauze</string>
     <string name="musik_weiter">Volgende</string>
     <string name="musik_zurueck">Vorige</string>
+    <string name="medien_zugriff_hinweis">Sta meldingstoegang toe om muziek te bedienen (ook CarPlay)</string>
+    <string name="medien_zugriff_erlauben">Toegang toestaan</string>
+    <string name="musik_weiterspielen">Muziek hervatten bij start</string>
     <string name="nach_links">Naar links</string>
     <string name="nach_rechts">Naar rechts</string>
     <string name="navi_keine">Geen actieve route</string>
@@ -268,6 +271,11 @@
     <string name="laden_ziel">Doel %1$d %%</string>
     <string name="laden_rest">nog %1$d min</string>
     <string name="kamera_tipp">Tik voor het live-beeld</string>
+    <!-- 0.1.41 (CP): Kachel CarPlay / Android Auto (Werks-Apps, Start im Vollbild) -->
+    <string name="widget_projektion">CarPlay / Android Auto</string>
+    <string name="projektion_carplay">CarPlay</string>
+    <string name="projektion_android_auto">Android Auto</string>
+    <string name="projektion_tipp">Opent de app van de auto op volledig scherm. Verbind eerst je telefoon.</string>
     <!-- 0.1.40 E2E: Abdunkelung eigenes Bild (M1), Design bei Cockpit (M2) -->
     <string name="abdunkelung">Verdonkering van de afbeelding</string>
     <string name="abdunkelung_auto">Automatisch (naar helderheid)</string>
@@ -277,4 +285,69 @@
     <string name="design_cockpit">Cockpit (altijd donker)</string>
     <string name="design_cockpit_hinweis">Bij de achtergrond „Cockpit” geldt altijd het donkere cockpitdesign. Kies een andere achtergrond voor design en accentkleur.</string>
     <string name="kachel_neue_seite">Pagina vol – de tegel staat op een nieuwe pagina.</string>
+    <!-- 0.1.41 (LK): Kacheln Reifen, letzte Fahrt, Tempo -->
+    <string name="widget_reifendruck">Banden</string>
+    <string name="widget_fahrt">Laatste rit</string>
+    <string name="widget_tempo">Snelheid</string>
+    <string name="reifen_ok">Alles in orde</string>
+    <string name="warn_leck_schnell">snel lek</string>
+    <string name="warn_leck_langsam">langzaam lek</string>
+    <string name="warn_unterdruck">te lage druk</string>
+    <string name="warn_ueberdruck">te hoge druk</string>
+    <string name="warn_signal">geen sensorsignaal</string>
+    <string name="rad_vl">LV</string>
+    <string name="rad_vr">RV</string>
+    <string name="rad_hl">LA</string>
+    <string name="rad_hr">RA</string>
+    <string name="widget_geraet">Android-widget</string>
+    <string name="widget_geraet_hinzu">Android-widget (weer, agenda …)</string>
+    <string name="widget_geraet_keine">Er zijn geen Android-widgets geïnstalleerd.</string>
+    <string name="widget_geraet_fehlt">Deze widget bestaat niet meer. Lang drukken om te verwijderen.</string>
+    <string name="schnell_titel">Balk boven alle apps</string>
+    <string name="schnell_oben">boven (kan tabbladen van apps bedekken)</string>
+    <string name="schnell_links">links</string>
+    <string name="schnell_rechts">rechts</string>
+    <string name="schnell_haus">Startscherm</string>
+    <string name="schnell_leiser">Zachter</string>
+    <string name="schnell_lauter">Harder</string>
+    <string name="schnell_hinweis">Een kleine balk met startscherm en volume blijft boven andere apps. In de achteruit en boven de launcher verdwijnt hij.</string>
+    <string name="schnell_recht_text">Om de balk boven andere apps te tonen, heeft Android je toestemming „Weergeven boven andere apps” nodig. Android opent nu de instelling – sta daar Panoptes Launcher toe.</string>
+    <!-- 0.1.41 (LA) Layout-Vorlagen, Tag/Nacht -->
+    <string name="tagnacht">Dag/nacht automatisch</string>
+    <string name="tagnacht_hinweis">\'s Nachts geldt het ontwerp \"Nacht\". Het tijdstip komt van de zonnestand bij de auto, anders van de klok.</string>
+    <string name="vorlage">Lay-outsjabloon</string>
+    <string name="vorlage_hinweis">Vervangt startpagina\'s en uiterlijk. „Eenvoudig” zet de grootte op „Groter”, de andere terug op „Automatisch”. Dock en apps blijven.</string>
+    <string name="vorlage_frage">Hoe moet de launcher eruitzien?</string>
+    <string name="vorlage_spaeter">Later te wijzigen onder Instellingen → Geavanceerd → Lay-outsjabloon.</string>
+    <string name="vorlage_einfach">Eenvoudig</string>
+    <string name="vorlage_einfach_text">weinig grote tegels, grote tekst</string>
+    <string name="vorlage_standard">Standaard</string>
+    <string name="vorlage_standard_text">voertuig, muziek en meer</string>
+    <string name="vorlage_cockpit">Cockpit</string>
+    <string name="vorlage_cockpit_text">donker, veel waarden in één oogopslag</string>
+    <string name="vorlage_ersetzen_frage">Je startpagina\'s en het uiterlijk worden vervangen. Dock en apps blijven. Eerst de huidige lay-out als bestand opslaan?</string>
+    <string name="vorlage_ersetzen">Vervangen</string>
+    <string name="vorlage_erst_sichern">Eerst opslaan</string>
+    <string name="vorlage_ok">Sjabloon \"%1$s\" toegepast.</string>
+    <!-- 0.1.41 (LC): Navi aufs Kombi, Seitenblick beim Blinken -->
+    <string name="verstanden">Begrepen</string>
+    <string name="kombi_einstellung">Navigatie op het instrumentenpaneel (knop bij de kaart)</string>
+    <string name="kombi_knopf">Kaart naar paneel</string>
+    <string name="kombi_normal">Paneel weer normaal</string>
+    <string name="kombi_info">De knop verschijnt naast de kaart. Hij toont je navigatie-app op het instrumentenpaneel voor je. Hij start alleen als je stilstaat en alleen voor een app die je één keer in Panoptes hebt getest en vrijgegeven (Weergave → Instrumentenpaneel). Nog eens tikken brengt de normale weergave terug.</string>
+    <string name="kombi_geht_nicht">Deze auto kan geen andere beelden op het instrumentenpaneel tonen (bij de Dolphin Surf is het paneel een eigen klein systeem zonder vlak daarvoor). De knop blijft daarom uit.</string>
+    <string name="kombi_freigeben">Test deze app eerst één keer stilstaand in Panoptes en geef haar vrij (Weergave → Instrumentenpaneel). Pas daarna mag de launcher haar op het paneel zetten.</string>
+    <string name="kombi_nur_stand">Alleen stilstaand. Een navigatie die al wordt getoond, loopt tijdens het rijden door.</string>
+    <string name="kombi_laeuft">De navigatie staat nu op het paneel.</string>
+    <string name="kombi_zurueck">Paneel weer normaal.</string>
+    <string name="seitenblick_titel">Zijzicht bij knipperen</string>
+    <string name="seitenblick_regel">Zolang je links of rechts knippert, toont het scherm het camerabeeld van die kant (met het zicht naar achteren). Kort na het knipperen verdwijnt het vanzelf. Het verschijnt ook tijdens het rijden, omdat het een rijhulp is; het hoeft niet aangeraakt te worden en maakt geen geluid. Met de alarmlichten verschijnt niets. In de achteruitversnelling heeft de achteruitrijcamera van de auto altijd voorrang. Panoptes leest de richtingaanwijzer alleen, het bedient hem nooit. Over je schouder kijken blijft nodig.</string>
+    <string name="seitenblick_blinker_fehlt">Op deze auto kan Panoptes de richtingaanwijzer nu niet lezen, dus het beeld kan niet verschijnen.</string>
+    <string name="seitenblick_ist">Nu:</string>
+    <string name="seitenblick_an">Aanzetten</string>
+    <string name="seitenblick_aus">Uitzetten</string>
+    <string name="seitenblick_ist_an">Zijzicht bij knipperen staat aan.</string>
+    <string name="seitenblick_ist_aus">Zijzicht bij knipperen staat uit.</string>
+    <string name="seitenblick_fehler">Zijzicht kon niet worden omgeschakeld. Er is niets veranderd. Probeer het later opnieuw of controleer het in Panoptes.</string>
+    <string name="seitenblick_nicht_erreichbar">Panoptes antwoordt nu niet, daarom kan de instelling voor zijzicht niet worden getoond. Probeer het zo meteen opnieuw.</string>
 </resources>

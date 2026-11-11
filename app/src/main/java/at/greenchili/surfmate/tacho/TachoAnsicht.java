@@ -53,10 +53,10 @@ public final class TachoAnsicht {
         return paket != null && PAKET.equals(paket.trim());
     }
 
-    /** Gueltiges Design, sonst {@link #KLAR}. */
+    /** Gueltiges Design (die fuenf oder 0.1.41 {@link TachoEigen#NAME}), sonst {@link #KLAR}. */
     public static String design(String wert) {
         String d = wert == null ? "" : wert.trim().toLowerCase(Locale.ROOT);
-        return DESIGNS.contains(d) ? d : KLAR;
+        return DESIGNS.contains(d) || TachoEigen.NAME.equals(d) ? d : KLAR;
     }
 
     public static String design() {
@@ -65,7 +65,7 @@ public final class TachoAnsicht {
 
     public static boolean setzeDesign(String wert) {
         String d = wert == null ? "" : wert.trim().toLowerCase(Locale.ROOT);
-        if (!DESIGNS.contains(d)) return false;
+        if (!DESIGNS.contains(d) && !TachoEigen.NAME.equals(d)) return false;
         java.util.Map<String, Object> w = new java.util.HashMap<>();
         w.put(DESIGN_KEY, d);
         try {
@@ -151,6 +151,12 @@ public final class TachoAnsicht {
                     km = v.totalMileageKm;
             }
         } catch (Throwable ignored) { }
-        return antwort(aktiv, kmh, soc, rw, design(), kw, gang, aussen, km);
+        JSONObject r = antwort(aktiv, kmh, soc, rw, design(), kw, gang, aussen, km);
+        // 0.1.41: Eigenes Design (geprueft, nur Farben und Anordnung) geht mit, wenn es gewaehlt ist.
+        if (TachoEigen.NAME.equals(r.optString("design"))) {
+            JSONObject e = TachoEigen.gespeichert();
+            r.put("eigen", e != null ? e : TachoEigen.standard());
+        }
+        return r;
     }
 }

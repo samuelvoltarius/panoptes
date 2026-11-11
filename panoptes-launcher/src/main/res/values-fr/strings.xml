@@ -62,6 +62,9 @@
     <string name="musik_pause">Lecture/Pause</string>
     <string name="musik_weiter">Suivant</string>
     <string name="musik_zurueck">Précédent</string>
+    <string name="medien_zugriff_hinweis">Pour piloter la musique (aussi CarPlay), autorisez l’accès aux notifications</string>
+    <string name="medien_zugriff_erlauben">Autoriser l’accès</string>
+    <string name="musik_weiterspielen">Reprendre la musique au démarrage</string>
     <string name="nach_links">Vers la gauche</string>
     <string name="nach_rechts">Vers la droite</string>
     <string name="navi_keine">Aucun itinéraire actif</string>
@@ -268,6 +271,11 @@
     <string name="laden_ziel">Cible %1$d %%</string>
     <string name="laden_rest">encore %1$d min</string>
     <string name="kamera_tipp">Touchez pour la vue en direct</string>
+    <!-- 0.1.41 (CP): Kachel CarPlay / Android Auto (Werks-Apps, Start im Vollbild) -->
+    <string name="widget_projektion">CarPlay / Android Auto</string>
+    <string name="projektion_carplay">CarPlay</string>
+    <string name="projektion_android_auto">Android Auto</string>
+    <string name="projektion_tipp">Ouvre l’app de la voiture en plein écran. Connecte d’abord ton téléphone.</string>
     <!-- 0.1.40 E2E: Abdunkelung eigenes Bild (M1), Design bei Cockpit (M2) -->
     <string name="abdunkelung">Assombrissement de l’image</string>
     <string name="abdunkelung_auto">Automatique (selon la luminosité)</string>
@@ -277,4 +285,69 @@
     <string name="design_cockpit">Cockpit (toujours sombre)</string>
     <string name="design_cockpit_hinweis">Avec le fond « Cockpit », le design sombre du cockpit s’applique toujours. Choisissez un autre fond pour le design et la couleur d’accent.</string>
     <string name="kachel_neue_seite">Page pleine – la tuile se trouve sur une nouvelle page.</string>
+    <!-- 0.1.41 (LK): Kacheln Reifen, letzte Fahrt, Tempo -->
+    <string name="widget_reifendruck">Pneus</string>
+    <string name="widget_fahrt">Dernier trajet</string>
+    <string name="widget_tempo">Vitesse</string>
+    <string name="reifen_ok">Tout est en ordre</string>
+    <string name="warn_leck_schnell">fuite rapide</string>
+    <string name="warn_leck_langsam">fuite lente</string>
+    <string name="warn_unterdruck">pression basse</string>
+    <string name="warn_ueberdruck">pression élevée</string>
+    <string name="warn_signal">pas de signal du capteur</string>
+    <string name="rad_vl">AVG</string>
+    <string name="rad_vr">AVD</string>
+    <string name="rad_hl">ARG</string>
+    <string name="rad_hr">ARD</string>
+    <string name="widget_geraet">Widget Android</string>
+    <string name="widget_geraet_hinzu">Widget Android (météo, agenda …)</string>
+    <string name="widget_geraet_keine">Aucun widget Android n\'est installé.</string>
+    <string name="widget_geraet_fehlt">Ce widget n\'existe plus. Appuie longuement pour le retirer.</string>
+    <string name="schnell_titel">Barre au-dessus des apps</string>
+    <string name="schnell_oben">en haut (peut masquer les onglets des apps)</string>
+    <string name="schnell_links">à gauche</string>
+    <string name="schnell_rechts">à droite</string>
+    <string name="schnell_haus">Écran d\'accueil</string>
+    <string name="schnell_leiser">Moins fort</string>
+    <string name="schnell_lauter">Plus fort</string>
+    <string name="schnell_hinweis">Une petite barre avec l\'écran d\'accueil et le volume reste au-dessus des autres apps. En marche arrière et au-dessus du launcher, elle disparaît.</string>
+    <string name="schnell_recht_text">Pour que la barre apparaisse au-dessus des autres apps, Android a besoin de ton autorisation « Afficher par-dessus les autres applis ». Android ouvre maintenant le réglage – autorise Panoptes Launcher.</string>
+    <!-- 0.1.41 (LA) Layout-Vorlagen, Tag/Nacht -->
+    <string name="tagnacht">Jour/nuit automatique</string>
+    <string name="tagnacht_hinweis">La nuit, le design « Nuit » s\'applique. L\'heure vient de la position du soleil à la voiture, sinon de l\'horloge.</string>
+    <string name="vorlage">Modèle de disposition</string>
+    <string name="vorlage_hinweis">Remplace les pages d\'accueil et l\'apparence. « Simple » passe la taille à « Plus grand », les autres la remettent sur « Automatique ». Le dock et les apps restent.</string>
+    <string name="vorlage_frage">Quelle apparence pour le launcher ?</string>
+    <string name="vorlage_spaeter">Modifiable plus tard sous Réglages → Avancé → Modèle de disposition.</string>
+    <string name="vorlage_einfach">Simple</string>
+    <string name="vorlage_einfach_text">peu de grandes tuiles, grand texte</string>
+    <string name="vorlage_standard">Standard</string>
+    <string name="vorlage_standard_text">véhicule, musique et plus</string>
+    <string name="vorlage_cockpit">Cockpit</string>
+    <string name="vorlage_cockpit_text">sombre, beaucoup de valeurs d\'un coup d\'œil</string>
+    <string name="vorlage_ersetzen_frage">Vos pages d\'accueil et l\'apparence seront remplacées. Le dock et les apps restent. Enregistrer d\'abord la disposition actuelle dans un fichier ?</string>
+    <string name="vorlage_ersetzen">Remplacer</string>
+    <string name="vorlage_erst_sichern">Enregistrer d\'abord</string>
+    <string name="vorlage_ok">Modèle « %1$s » appliqué.</string>
+    <!-- 0.1.41 (LC): Navi aufs Kombi, Seitenblick beim Blinken -->
+    <string name="verstanden">Compris</string>
+    <string name="kombi_einstellung">Navigation au combiné (bouton sur la carte)</string>
+    <string name="kombi_knopf">Carte au combiné</string>
+    <string name="kombi_normal">Combiné normal</string>
+    <string name="kombi_info">Le bouton apparaît à côté de la carte. Il affiche votre application de navigation dans le combiné devant vous. Il ne démarre qu’à l’arrêt et seulement pour une application que vous avez testée et autorisée une fois dans Panoptes (Affichage → Combiné). Touchez à nouveau pour retrouver l’affichage normal.</string>
+    <string name="kombi_geht_nicht">Cette voiture ne peut pas afficher d’autres images dans le combiné (sur la Dolphin Surf, le combiné est un petit système à part sans surface pour cela). Le bouton reste donc désactivé.</string>
+    <string name="kombi_freigeben">Testez d’abord cette application une fois à l’arrêt dans Panoptes et autorisez-la (Affichage → Combiné). Ce n’est qu’ensuite que le launcher peut l’afficher au combiné.</string>
+    <string name="kombi_nur_stand">Seulement à l’arrêt. Une navigation déjà affichée continue pendant la conduite.</string>
+    <string name="kombi_laeuft">La navigation est maintenant au combiné.</string>
+    <string name="kombi_zurueck">Combiné revenu à la normale.</string>
+    <string name="seitenblick_titel">Vue latérale au clignotant</string>
+    <string name="seitenblick_regel">Tant que vous clignotez à gauche ou à droite, l’écran montre l’image de la caméra de ce côté (avec la vue arrière). Elle disparaît d’elle-même peu après la fin du clignotant. Elle apparaît aussi en roulant, car c’est une aide à la conduite ; elle ne demande aucun toucher et ne fait aucun son. Avec les feux de détresse, rien ne s’affiche. En marche arrière, la caméra de recul de la voiture a toujours la priorité. Panoptes lit seulement le clignotant, il ne l’actionne jamais. Cela ne remplace pas le contrôle par-dessus l’épaule.</string>
+    <string name="seitenblick_blinker_fehlt">Sur cette voiture, Panoptes ne peut pas lire le clignotant pour le moment ; l’image ne peut donc pas apparaître.</string>
+    <string name="seitenblick_ist">Actuellement :</string>
+    <string name="seitenblick_an">Activer</string>
+    <string name="seitenblick_aus">Désactiver</string>
+    <string name="seitenblick_ist_an">La vue latérale au clignotant est activée.</string>
+    <string name="seitenblick_ist_aus">La vue latérale au clignotant est désactivée.</string>
+    <string name="seitenblick_fehler">La vue latérale n’a pas pu être modifiée. Rien n’a changé. Réessayez plus tard ou vérifiez dans Panoptes.</string>
+    <string name="seitenblick_nicht_erreichbar">Panoptes ne répond pas pour le moment ; le réglage de la vue latérale ne peut pas s’afficher. Réessayez dans un instant.</string>
 </resources>
