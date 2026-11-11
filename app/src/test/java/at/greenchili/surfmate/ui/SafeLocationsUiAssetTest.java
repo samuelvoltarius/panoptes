@@ -45,7 +45,7 @@ public class SafeLocationsUiAssetTest {
         assertTrue(styles.contains(".safe-zone-icon-btn"));
         assertTrue(styles.contains(".safe-zone-dialog"));
         assertTrue(html.contains("safe-locations.js?v=ml4"));
-        assertTrue(html.contains("styles.css?v=pn14"));
+        assertTrue(html.contains("styles.css?v=pn16"));
         assertTrue(html.contains("data-i18n=\"safe_loc.saved_zones\""));
 
         assertTrue(english.contains("\"edit_title\": \"Change quiet zone\""));
@@ -96,7 +96,7 @@ public class SafeLocationsUiAssetTest {
 
             Path fromModule = current.resolve(relativePath.replaceFirst("^app/", ""));
             if (Files.exists(fromModule)) return fromModule;
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError("Could not locate repository path: " + relativePath);
     }

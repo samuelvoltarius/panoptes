@@ -208,4 +208,14 @@
     <string name="groesse_hinweis">Automatica adatta il launcher al tuo schermo. Se tutto sembra ancora troppo grande o troppo piccolo, scegli Più piccolo o Più grande.</string>
     <string name="erweitert">Avanzate</string>
     <string name="zurueck">Indietro</string>
+    <string name="leiste_musik">Pausa/Play</string>
+    <string name="leiste_zurueck">Indietro</string>
+    <string name="leiste_weiter">Avanti</string>
+    <string name="leiste_kamera">Telecamera</string>
+    <string name="leiste_start">Home</string>
+    <string name="leiste_waechter_an">Sorveglianza attiva</string>
+    <string name="leiste_waechter_aus">Sorveglianza spenta</string>
+    <string name="leiste_recht_titel">Barra di stato sulla mappa</string>
+    <string name="leiste_recht_text">Questa app di navigazione non può essere mostrata accanto al launcher. Per una sottile barra di stato sopra la mappa, Android deve consentire al launcher di «mostrare sopra altre app». Senza, la mappa si apre a schermo intero senza barra.</string>
+    <string name="leiste_ohne">Senza barra</string>
 </resources>

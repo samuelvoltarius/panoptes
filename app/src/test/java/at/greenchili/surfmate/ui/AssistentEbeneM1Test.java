@@ -32,7 +32,7 @@ public class AssistentEbeneM1Test {
         if (nav < 0) nav = a.indexOf("setupNavigation(savedInstanceState)\r\n");
         int ziel = a.indexOf("NeuaufbauZiel.zurWeb(savedInstanceState != null, alteOberflaecheImStapel())");
         assertTrue("direkt nach dem Aufbau der Navigation", nav > 0 && ziel > nav && ziel - nav < 600);
-        assertTrue(a.contains("navController.getBackStackEntry(R.id.dashboardFragment)"));
+        // 0.1.39 A1: dashboardFragment ist gelöscht, der Neuaufbau prüft jedes Ziel (AltDesignRausTest)
         assertTrue("verwaiste Ebene nach Neuaufbau weg", a.contains("AssistentAnbindung.verwaisteEbeneEntfernen(this)"));
     }
 

@@ -146,7 +146,7 @@ public class SprachUndUebersichtAssetTest {
                     return new String(Files.readAllBytes(candidate), "UTF-8");
                 }
             }
-            p = p.getParent();
+            p = at.greenchili.surfmate.testutil.RepoWurzel.hoch(p);
         }
         throw new java.io.FileNotFoundException(rel);
     }

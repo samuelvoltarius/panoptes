@@ -82,7 +82,7 @@ public class InfotainmentAutomationActionTest {
     private static String readRepositoryFile(String relativePath) throws Exception {
         Path current = Paths.get(System.getProperty("user.dir")).toAbsolutePath();
         for (int depth = 0; depth < 6 && current != null;
-                depth++, current = current.getParent()) {
+                depth++, current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current)) {
             Path candidate = current.resolve(relativePath);
             if (Files.isRegularFile(candidate)) {
                 return new String(Files.readAllBytes(candidate), StandardCharsets.UTF_8);

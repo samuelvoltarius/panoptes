@@ -1147,7 +1147,7 @@
     <string name="roadsense_map_deleted_toast">Danger supprimé</string>
     <string name="roadsense_map_action_failed">État de la route ne répond pas. Réessayez.</string>
     <string name="roadsense_map_no_location">Recherche d\'un signal GPS…</string>
-    <string name="karte_keine_quelle">Aucune source de carte choisie. Sélectionnez-en une sous Réglages → Tous les réglages → Source de carte.</string>
+    <string name="karte_keine_quelle">Aucune source de carte choisie. Sélectionnez-en une sous Réglages → Tous les réglages → Voiture et affichage → Source de carte.</string>
     <string name="karte_suche_hinweis">La recherche sur la carte envoie seulement ton texte au planificateur d\'itinéraire Panoptes (notre serveur). Aucun identifiant n\'est envoyé. Désactiver sous Réglages → Confidentialité.</string>
     <string name="karte_suche_aus">La recherche sur Internet est désactivée. L\'activer sous Réglages → Confidentialité.</string>
     <string name="roadsense_map_search_hint">Où allez-vous ?</string>

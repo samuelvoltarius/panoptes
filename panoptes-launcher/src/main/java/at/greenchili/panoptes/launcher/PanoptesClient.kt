@@ -26,6 +26,14 @@ class PanoptesClient(private val baseUrl: String = "http://127.0.0.1:8180") {
         NebenErgebnis.FEHLER
     }
 
+    /** 0.1.39 (L1): geteilten Bildschirm verlassen, Launcher im Vollbild (Kern-Weg `splitBeenden`). false = ging nicht. */
+    fun splitBeenden(): Boolean = try {
+        org.json.JSONObject(requestMitFehler("POST", "/api/launcher/v1/apps/launch", LauncherContract.launchBody("", "split_ende"), 8_000))
+            .optBoolean("success", false)
+    } catch (_: Exception) {
+        false
+    }
+
     /** 0.1.38.5: welche Apps können neben dem Launcher laufen (Kern prüft resizeMode, nur lesen)? */
     fun teilbar(pakete: List<String>): Map<String, String> = try {
         LauncherContract.parseTeilbar(get("/api/launcher/v1/apps/teilbar?pakete=" +

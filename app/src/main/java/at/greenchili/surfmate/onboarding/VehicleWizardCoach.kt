@@ -1,7 +1,6 @@
 package at.greenchili.surfmate.onboarding
 
 import android.app.Activity
-import android.util.Log
 import at.greenchili.surfmate.R
 
 /**
@@ -25,21 +24,10 @@ class VehicleWizardCoach(
             body = activity.getString(R.string.onboarding_vehicle_body),
             primaryText = activity.getString(R.string.onboarding_vehicle_primary),
             onPrimary = {
-                try {
-                    val opened = (activity as? at.greenchili.surfmate.ui.MainActivity)
-                        ?.openVehicleProfileForOnboarding {
-                            state.vehicleStepDone = true
-                            onFinished()
-                        } == true
-                    if (!opened) {
-                        state.vehicleStepDone = true
-                        onFinished()
-                    }
-                } catch (t: Throwable) {
-                    Log.w("VehicleWizardCoach", "open vehicle dialog failed: ${t.message}")
-                    state.vehicleStepDone = true
-                    onFinished()
-                }
+                // 0.1.39 A1: der Fahrzeug-Dialog lag im gelöschten Dashboard – Schritt gilt als erledigt
+                // (Modell liest Panoptes aus dem Auto, sonst Einstellungen → Fahrzeug manuell hinzufügen)
+                state.vehicleStepDone = true
+                onFinished()
             },
             secondaryText = activity.getString(R.string.onboarding_skip),
             onSecondary = { state.vehicleStepDone = true; onFinished() },

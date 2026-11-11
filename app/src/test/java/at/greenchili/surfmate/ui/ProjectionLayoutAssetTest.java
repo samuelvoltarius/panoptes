@@ -216,7 +216,7 @@ public class ProjectionLayoutAssetTest {
             if (Files.isRegularFile(fromModule)) {
                 return new String(Files.readAllBytes(fromModule), StandardCharsets.UTF_8);
             }
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError("Could not locate repository file: " + relativePath);
     }

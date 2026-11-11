@@ -58,21 +58,9 @@ public class NoDataConventionAssetTest {
         assertTrue(strings.contains(
                 "<string name=\"recordings_summary_pending\">…</string>"));
 
-        // The storage line is a value slot, so its unanswered state is the dash, not prose.
-        for (String path : new String[]{
-                "app/src/main/res/layout/fragment_dashboard.xml",
-                "app/src/main/res/layout-land/fragment_dashboard.xml"}) {
-            String layout = readRepositoryFile(path);
-            assertTrue(path, layout.contains("android:id=\"@+id/metricStorageValue\""));
-            assertFalse(path, layout.contains("@string/dashboard_modern_updating\"\n"
-                    + "                        android:textAppearance"));
-        }
+        // 0.1.39 A1: fragment_dashboard (alte Oberfläche) ist gelöscht
 
-        // A clip with no readable duration or storage type reads as unknown, not as 0:00.
-        String recordings = readRepositoryFile(
-                "app/src/main/java/at/greenchili/surfmate/ui/fragment/RecordingsFragment.kt");
-        assertFalse(recordings.contains("R.string.player_time_zero"));
-        assertFalse(recordings.contains("R.string.recording_preview_storage_unknown"));
+        // 0.1.39 A1: RecordingsFragment (alte Aufnahmen-Liste) ist gelöscht – die Web-Liste events.html gilt
     }
 
     /**
@@ -112,7 +100,7 @@ public class NoDataConventionAssetTest {
         Path current = Paths.get(System.getProperty("user.dir")).toAbsolutePath().normalize();
         while (current != null) {
             if (Files.isDirectory(current.resolve("app/src/main/res"))) return current;
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError("Could not locate the repository root");
     }

@@ -31,7 +31,8 @@ public class AufnahmenPlayerZurueckTest {
         assertTrue("Schließen per Knopf baut den Eintrag ab", c.contains("window.history.back();"));
         // Android: WebView geht zurück, solange es Verlauf gibt; sonst erst moveTaskToBack
         String w = lies("src/main/java/at/greenchili/surfmate/ui/fragment/WebViewFragment.kt");
-        assertTrue(w.contains("if (w != null && w.canGoBack()) w.goBack() else activity?.moveTaskToBack(true)"));
+        assertTrue("0.1.39 Z1: Zurück über WebZurueck", w.contains("override fun handleOnBackPressed() { webZurueck() }")
+                && w.contains("WebZurueck.Schritt.HINTERGRUND -> activity?.moveTaskToBack(true)"));
     }
 
     @Test

@@ -349,7 +349,7 @@ public class LauncherKlimaWegTest {
             for (Path p : new Path[]{cur.resolve(rel), cur.resolve(rel.replaceFirst("^app/", ""))}) {
                 if (Files.isRegularFile(p)) return new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
             }
-            cur = cur.getParent();
+            cur = at.greenchili.surfmate.testutil.RepoWurzel.hoch(cur);
         }
         throw new AssertionError("Nicht gefunden: " + rel);
     }

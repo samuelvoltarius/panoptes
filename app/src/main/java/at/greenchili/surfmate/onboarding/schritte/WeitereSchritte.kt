@@ -21,7 +21,6 @@ interface AssistentHost {
     /** Nur das BYD-Infotainment stellt den lokalen ADB-Dienst bereit; ein normales Android-Handy nicht. */
     fun istBydInfotainment(): Boolean
     fun daemonLaeuft(ergebnis: (Boolean) -> Unit)
-    fun fahrzeugWaehlen(fertig: (Boolean) -> Unit)
     fun kamerasZuordnen(fertig: (Boolean) -> Unit)
     fun fernzugang(fertig: (Boolean) -> Unit)
     /**
@@ -29,7 +28,6 @@ interface AssistentHost {
      * Schritts für die Kopfzeile der Ebene („Einrichtung · Tacho“).
      */
     fun seiteOeffnen(pfad: String, titel: CharSequence? = null)
-    fun rundgang()
     /**
      * 0.1.38.11 (M1): Einrichtung unterbrechen und zur Oberfläche mit Menüleiste zurück. Markiert nichts als erledigt –
      * der Assistent kommt beim nächsten Start wieder bzw. über Einstellungen → Einrichtung.
@@ -197,16 +195,14 @@ class AutoSchritt(a: Assistent, private val host: AssistentHost) : SchrittAnsich
             dazu(a.text(t.res(R.string.einr_auto_ausblenden), 17f, leise = true))
         }
         dazu(a.text(t.res(R.string.einr_auto_modell), 20f, fett = true), 20f)
+        // 0.1.39 A1: kein Knopf „Modell und Akku wählen“ mehr (öffnete den Dialog im gelöschten Dashboard, tat nichts) –
+        // Panoptes liest das Modell aus dem Auto, sonst der Menüweg in der Web-Oberfläche
+        dazu(a.text(t.res(R.string.einr_auto_menueweg), 17f, leise = true), 4f)
         modellText = a.text("", 18f, leise = true)
         dazu(modellText, 4f)
-        val zeile = LinearLayout(a.activity).apply { orientation = LinearLayout.HORIZONTAL }
-        zeile.addView(a.knopf(t.res(R.string.einr_auto_waehlen)) {
-            host.fahrzeugWaehlen { ok -> if (ok) { modell = gewaehltesModell(); modellText.text = "✓ " + t.res(R.string.einr_auto_gewaehlt); a.geaendert() } }
-        })
-        zeile.addView(a.knopf(t.res(R.string.einr_weiss_nicht)) {
+        dazu(a.knopf(t.res(R.string.einr_weiss_nicht)) {
             modell = "unbekannt"; modellText.text = t.res(R.string.einr_auto_weiss_nicht_satz); a.geaendert()
-        }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { leftMargin = a.px(16f) })
-        dazu(zeile, 8f)
+        }, 8f)
     }
 
     /** faehigkeiten → (Name, ja|nein|unbekannt). Unbekanntes bleibt „unbekannt“, nie „ja“. */
@@ -229,11 +225,6 @@ class AutoSchritt(a: Assistent, private val host: AssistentHost) : SchrittAnsich
         }
         return l
     }
-
-    /** Modell-ID aus der Fahrzeug-Config nach dem vorhandenen Dialog; ohne Eintrag „unbekannt“. */
-    private fun gewaehltesModell(): String = try {
-        at.greenchili.surfmate.config.UnifiedConfigManager.getVehicle().optString("modelId", "").ifEmpty { "unbekannt" }
-    } catch (_: Throwable) { "unbekannt" }
 
     override fun weiterMoeglich(): Boolean = modell != null
     override fun antwort(): JSONObject = JSONObject().put("modell", modell ?: "unbekannt")
@@ -390,7 +381,6 @@ class UnbekannterSchritt(private val unbekannteId: String, a: Assistent) : Schri
 class FertigSchritt(a: Assistent, private val host: AssistentHost) : SchrittAnsicht("fertig", a) {
     override val spaeterZeigen = false
     private lateinit var liste: LinearLayout
-    private var rundgangFrage = false
 
     override fun ansicht(): View = spalte().apply {
         dazu(titel(t.res(R.string.einr_fertig_titel)), 0f)
@@ -491,20 +481,14 @@ class FertigSchritt(a: Assistent, private val host: AssistentHost) : SchrittAnsi
         }
     }
 
-    override fun weiterText(): String = if (rundgangFrage) t.res(R.string.einr_fertig_schliessen) else t.res(R.string.einr_fertig_knopf)
+    override fun weiterText(): String = t.res(R.string.einr_fertig_knopf)
 
+    // 0.1.39 A1 (Koordination 10.11.): kein Angebot „Kurze Führung durch Panoptes?“ mehr – die Führung zeigte das alte
+    // native Dashboard (gelöscht), eine Web-Führung gibt es nicht. Abschluss melden, dann fertig.
     override fun weiter(fertig: (Boolean, String?) -> Unit) {
-        if (!rundgangFrage) {
-            // Abschluss melden, dann Angebot „Kurze Führung durch Panoptes?“
-            a.speichereAntwort(id, JSONObject().put("ok", true)) { ok, text ->
-                if (!ok) { fertig(false, text); return@speichereAntwort }
-                rundgangFrage = true
-                liste.dazu(a.text(t.res(R.string.einr_rundgang_frage), 20f, fett = true), 24f)
-                liste.dazu(a.knopf(t.res(R.string.einr_rundgang_ja), primaer = true) { a.beenden(true); host.rundgang() }, 10f)
-                a.geaendert()
-            }
-            return
+        a.speichereAntwort(id, JSONObject().put("ok", true)) { ok, text ->
+            if (!ok) { fertig(false, text); return@speichereAntwort }
+            a.beenden(true)
         }
-        a.beenden(true)
     }
 }

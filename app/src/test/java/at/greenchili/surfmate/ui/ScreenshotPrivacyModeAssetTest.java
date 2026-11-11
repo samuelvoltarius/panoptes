@@ -14,17 +14,12 @@ public class ScreenshotPrivacyModeAssetTest {
 
     @Test
     public void settingPersistsInUnifiedNativeShellConfig() throws IOException {
+        // 0.1.39 A1: Prüfungen gelöschter Dateien (alte Oberfläche) entfernt
         String config = readRepositoryFile(
                 "app/src/main/java/at/greenchili/surfmate/config/UnifiedConfigManager.kt");
-        String fragment = readRepositoryFile(
-                "app/src/main/java/at/greenchili/surfmate/ui/fragment/settings/SettingsPrivacyFragment.kt");
-        String layout = readRepositoryFile(
-                "app/src/main/res/layout/fragment_settings_privacy.xml");
 
         assertTrue(config.contains("setScreenshotPrivacyModeEnabled"));
         assertTrue(config.contains("\"screenshotPrivacyMode\""));
-        assertTrue(fragment.contains("applyScreenshotPrivacyMode(enabled)"));
-        assertTrue(layout.contains("@+id/switchScreenshotPrivacy"));
     }
 
     @Test
@@ -88,7 +83,7 @@ public class ScreenshotPrivacyModeAssetTest {
             if (Files.isRegularFile(fromModule)) {
                 return at.greenchili.surfmate.testutil.Quelltext.lies(fromModule);
             }
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError("Could not locate repository file: " + relativePath);
     }

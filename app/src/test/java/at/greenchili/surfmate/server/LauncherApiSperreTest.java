@@ -46,6 +46,32 @@ public class LauncherApiSperreTest {
         assertTrue(anfrage("POST", "/api/launcher/v1/vehicle").startsWith("HTTP/1.1 404"));
     }
 
+    /**
+     * 0.1.39 L1: apps/launch mode=split_ende verschiebt nur den eigenen Launcher-Task (am stack move-task, nichts
+     * gestoppt oder entfernt) und nur auf Aufruf der Launcher-APK; von außen (Kopplung/Brücke/Extern) nie erreichbar.
+     */
+    @Test
+    public void splitEndeNurVomLauncherUndNieVonAussen() throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        assertTrue(LauncherApiHandler.handle("POST", "/api/launcher/v1/apps/launch", "{\"mode\":\"split_ende\"}", out));
+        String r = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        assertTrue(r, r.startsWith("HTTP/1.1 403"));
+        assertFalse(r.contains("\"success\":true"));
+        assertFalse(ExternGuard.erlaubt("POST", "/api/launcher/v1/apps/launch"));
+        assertFalse(ExternGuard.erlaubt("PUT", "/api/launcher/v1/apps/launch"));
+        String src = lies("app/src/main/java/at/greenchili/surfmate/server/LauncherApiHandler.java");
+        int weg = src.indexOf("\"split_ende\".equals(mode)");
+        assertTrue(weg > 0 && src.indexOf("launcherDarf(out)", weg) < src.indexOf("AppLauncher.splitBeenden(", weg));
+        assertTrue("nur das feste Launcher-Paket", src.contains("AppLauncher.splitBeenden(LAUNCHER_PAKET)"));
+        String al = lies("app/src/main/java/at/greenchili/surfmate/launcher/AppLauncher.java");
+        int a = al.indexOf("public static boolean splitBeenden(");
+        String rumpf = al.substring(a, al.indexOf("static int primaryTaskAusListe(", a));
+        assertTrue(rumpf.contains("am stack move-task "));
+        for (String verboten : new String[] {"force-stop", "remove-task", "am kill", "stack remove", "pm "}) {
+            assertFalse(verboten, rumpf.contains(verboten));
+        }
+    }
+
     /** 0.1.37: „Tacho wieder normal“ nur von der Launcher-APK; sonst 403, nichts gestoppt. Pflicht im Befehls-Log. */
     @Test
     public void tachoNormalNurVomLauncher() throws Exception {
@@ -163,7 +189,7 @@ public class LauncherApiSperreTest {
             for (Path p : new Path[] {cur.resolve(rel), cur.resolve(rel.replaceFirst("^app/", ""))}) {
                 if (Files.isRegularFile(p)) return new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
             }
-            cur = cur.getParent();
+            cur = at.greenchili.surfmate.testutil.RepoWurzel.hoch(cur);
         }
         throw new AssertionError("Nicht gefunden: " + rel);
     }

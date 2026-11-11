@@ -804,6 +804,17 @@ public final class AppLauncher {
     /** So lange nach dem Split-Start werden neue Tasks der zweiten App nachgeführt. */
     static final long HALTEN_MS = 20_000L;
     static final long HALTEN_TAKT_MS = 500L;
+    /**
+     * 0.1.39 (E2E R2-1): Jede neue Halte-Runde und {@link #splitBeenden} zählen hoch; ein Halte-Thread mit älterer
+     * Generation hört sofort auf. Sonst holte er nach „Start“ die Navi binnen {@value #HALTEN_MS} ms in den alten
+     * Secondary-Stack zurück, und das nächste „Karte“ dockte einen Geister-Task an.
+     */
+    static final java.util.concurrent.atomic.AtomicInteger HALTEN_GENERATION = new java.util.concurrent.atomic.AtomicInteger();
+
+    /** Rein: darf ein Halte-Thread der Generation {@code gen} noch verschieben? */
+    static boolean halteNoch(int gen) {
+        return HALTEN_GENERATION.get() == gen;
+    }
 
     /**
      * 0.1.38.5 (Firmware-Befund 04.11., FIRMWARE_SPLIT_FORSCHUNG_20261104): YouTube, Netflix und CarPlay sind teilbar,
@@ -817,12 +828,14 @@ public final class AppLauncher {
      */
     public static void haltePaarImSplit(String pkg, java.util.function.IntConsumer zaehler) {
         if (!isValidPackageName(pkg)) return;
+        final int gen = HALTEN_GENERATION.incrementAndGet();
         Thread t = new Thread(() -> {
             int verschoben = 0;
             java.util.Set<Integer> schonVersucht = new java.util.HashSet<>();
             long bis = System.currentTimeMillis() + HALTEN_MS;
             while (System.currentTimeMillis() < bis) {
                 sleepQuietly(HALTEN_TAKT_MS);
+                if (!halteNoch(gen)) break;   // „Start“ (splitBeenden) oder ein neuer Split hat übernommen
                 String liste = runShellCapture("am stack list");
                 if (liste == null) continue;
                 int sekundaer = secondaryStackAusListe(liste);
@@ -830,6 +843,7 @@ public final class AppLauncher {
                 for (int task : fremdeTasksAusListe(liste, pkg)) {
                     if (!schonVersucht.add(task)) continue;
                     synchronized (APP_LAUNCH_LOCK) {
+                        if (!halteNoch(gen)) break;
                         if (runShell("am stack move-task " + task + " " + sekundaer + " true")) {
                             verschoben++;
                             logger.info("haltePaarImSplit: Task " + task + " von " + pkg
@@ -842,6 +856,44 @@ public final class AppLauncher {
         }, "SplitHalten");
         t.setDaemon(true);
         t.start();
+    }
+
+    /**
+     * 0.1.39 (L1-Nachbesserung, E2E backup-6): „Start“ in der Statusspalte verlässt den geteilten Bildschirm. Der
+     * Launcher liegt im Primary-Stack (links); sein Task wird in den Secondary-Stack (Navi) nach oben verschoben. Damit
+     * ist der Primary-Stack leer, Android hebt die Teilung auf, und der Launcher steht im Vollbild vorn; die Navi läuft
+     * dahinter weiter (kein Beenden, kein force-stop). Best effort: ohne Split oder ohne Launcher-Task nur false.
+     */
+    public static boolean splitBeenden(String launcherPkg) {
+        if (!isValidPackageName(launcherPkg)) return false;
+        synchronized (APP_LAUNCH_LOCK) {
+            HALTEN_GENERATION.incrementAndGet();   // 0.1.39 R2-1: laufendes haltePaarImSplit sofort beenden
+            String liste = runShellCapture("am stack list");
+            if (liste == null) return false;
+            int sekundaer = secondaryStackAusListe(liste);
+            int task = primaryTaskAusListe(liste, launcherPkg);
+            if (sekundaer < 0 || task < 0) {
+                logger.info("splitBeenden: kein Split mit dem Launcher links (sek=" + sekundaer + " task=" + task + ")");
+                return false;
+            }
+            boolean ok = runShell("am stack move-task " + task + " " + sekundaer + " true");
+            logger.info("splitBeenden: Launcher-Task " + task + " → Secondary-Stack " + sekundaer + " ok=" + ok);
+            return ok;
+        }
+    }
+
+    /** Rein: Task-Id von {@code pkg} im Split-Primary-Stack aus {@code am stack list}, sonst -1. */
+    static int primaryTaskAusListe(String liste, String pkg) {
+        String modus = "";
+        for (String roh : liste.split("\\r?\\n")) {
+            String z = roh.trim();
+            if (STACK_ZEILE.matcher(z).find()) { modus = ""; continue; }
+            java.util.regex.Matcher w = MODUS.matcher(z);
+            if (modus.isEmpty() && w.find()) { modus = w.group(1); continue; }
+            java.util.regex.Matcher t = TASK_ZEILE.matcher(z);
+            if (t.find() && t.group(2).equals(pkg) && modus.equals("split-screen-primary")) return Integer.parseInt(t.group(1));
+        }
+        return -1;
     }
 
     /** Rein: Stack-Id des Split-Secondary-Stacks aus {@code am stack list}, sonst -1. */

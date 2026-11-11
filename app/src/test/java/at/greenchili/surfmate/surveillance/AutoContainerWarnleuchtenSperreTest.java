@@ -90,7 +90,7 @@ public class AutoContainerWarnleuchtenSperreTest {
             if (Files.exists(c)) return c;
             Path m = cur.resolve(relativ.replaceFirst("^app/", ""));
             if (Files.exists(m)) return m;
-            cur = cur.getParent();
+            cur = at.greenchili.surfmate.testutil.RepoWurzel.hoch(cur);
         }
         throw new AssertionError("nicht gefunden: " + relativ);
     }

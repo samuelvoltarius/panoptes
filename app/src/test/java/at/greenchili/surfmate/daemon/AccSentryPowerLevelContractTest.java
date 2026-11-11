@@ -72,7 +72,7 @@ public class AccSentryPowerLevelContractTest {
                         Files.readAllBytes(candidate),
                         StandardCharsets.UTF_8);
             }
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new IOException("Repository file not found: " + relativePath);
     }

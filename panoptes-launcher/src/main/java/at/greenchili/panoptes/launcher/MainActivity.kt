@@ -151,16 +151,27 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // 0.1.39 (L1-Nachbesserung): Karten-Split übersteht einen Neustart der Activity (Konfigwechsel)
+        karteImSplit = savedInstanceState?.getString(ZUSTAND_KARTE_SPLIT)
+        splitGewolltBeendet = savedInstanceState?.getBoolean(ZUSTAND_SPLIT_GEWOLLT) ?: false
         layout = ladeLayout()
         baueAlles()
         kernAbgleich()
         displayAn = Ruhe.displayAn(displayZustand())
         runCatching { getSystemService(DisplayManager::class.java)?.registerDisplayListener(displayHoerer, main) }
+        if (!isInMultiWindowMode) splitEndeGesehen()   // Split endete, während die Activity neu startete
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(ZUSTAND_KARTE_SPLIT, karteImSplit)
+        outState.putBoolean(ZUSTAND_SPLIT_GEWOLLT, splitGewolltBeendet)
     }
 
     override fun onStart() {
         super.onStart()
         stopped = false
+        leiste?.aus()   // 0.1.39: Launcher wieder vorn → keine Leiste über ihm
         zustandAnwenden()
         ladeApps()
     }
@@ -195,7 +206,32 @@ class MainActivity : AppCompatActivity() {
         if (Ruhe.taktLaeuft(stopped, bildAn, fokus)) { taktStand = ""; main.post(takt) }
     }
 
+    override fun onMultiWindowModeChanged(isInMultiWindowMode: Boolean, newConfig: Configuration) {
+        super.onMultiWindowModeChanged(isInMultiWindowMode, newConfig)
+        if (!isInMultiWindowMode) splitEndeGesehen()
+        baueAlles()
+    }
+
+    /** Karten-Split ist zu Ende: gewollt („Start“) still, sonst loggen (grund=system/system_r) und bei R auf den Rückfall. */
+    private fun splitEndeGesehen() {
+        val p = karteImSplit
+        if (p != null) {
+            karteImSplit = null
+            if (splitGewolltBeendet) { splitGewolltBeendet = false }
+            else {
+                // vom System beendet (z. B. Rückwärtsgang/Rückfahrkamera): loggen; bei R sicher auf den Rückfall
+                val grund = KartenStatus.abbruchGrund(null, summary?.gear)
+                splitAbbruchLoggen(p, grund)
+                if (grund == "system_r") karteVollbildMitLeiste(p, nachR = true)
+            }
+        }
+    }
+
+    private fun splitAbbruchLoggen(p: String, grund: String) =
+        android.util.Log.w("PanoptesLauncher", "SPLIT_ABBRUCH paket=$p grund=$grund gang=${summary?.gear}")
+
     override fun onDestroy() {
+        leiste?.aus()
         runCatching { getSystemService(DisplayManager::class.java)?.unregisterDisplayListener(displayHoerer) }
         io.shutdownNow()
         klimaIo.shutdownNow()
@@ -263,6 +299,11 @@ class MainActivity : AppCompatActivity() {
             background = GradientDrawable().apply { cornerRadius = ui.dpf(16f); setColor(ui.p.surface); setStroke(ui.dp(1), ui.p.aqua) }
         }
         root.addView(hinweis, FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL).apply { bottomMargin = ui.dp(110) })
+        // 0.1.39 (L1): neben der Karte (geteilter Bildschirm) statt der Startseite die schmale Statusspalte
+        if (isInMultiWindowMode) {
+            spalte.visibility = View.GONE
+            root.addView(statusSpalte(), root.indexOfChild(hinweis), FrameLayout.LayoutParams(-1, -1))
+        }
         setContentView(root)
         seite = seite.coerceIn(0, layout.seiten.size - 1)
         zeichneSeite()
@@ -361,7 +402,7 @@ class MainActivity : AppCompatActivity() {
             isClickable = true; foreground = ui.welle(); setOnClickListener { f() }
         }
         z.addView(reiter(R.drawable.ic_pn_status, R.string.reiter_status, true) { seite = 0; zeichneSeite() }, ui.lp(ui.dp(104), -1, rechts = 6))
-        z.addView(reiter(R.drawable.ic_pn_map, R.string.reiter_karte, false) { starteNavi() }, ui.lp(ui.dp(104), -1, rechts = 6))
+        z.addView(reiter(R.drawable.ic_pn_map, R.string.reiter_karte, false) { karteMitStatus() }, ui.lp(ui.dp(104), -1, rechts = 6))
         z.addView(reiter(R.drawable.ic_pn_car, R.string.reiter_steuerung, false) { klimaFeld() }, ui.lp(ui.dp(104), -1, rechts = 6))
         z.addView(reiter(R.drawable.ic_pn_apps, R.string.reiter_apps, false) { schublade(null) }, ui.lp(ui.dp(104), -1, rechts = 6))
         z.addView(reiter(R.drawable.ic_pn_settings, R.string.reiter_einstellungen, false) { einstellungen() }, ui.lp(ui.dp(120), -1, rechts = 6))
@@ -1792,6 +1833,103 @@ class MainActivity : AppCompatActivity() {
         zeigeHinweis(getString(R.string.navi_keine_app)); oeffnePanoptes("navi")
     }
 
+    private var leiste: StatusLeiste? = null
+    /** Navi-App, die gerade geteilt neben dem Launcher läuft (null = kein Karten-Split). */
+    private var karteImSplit: String? = null
+    private var splitGewolltBeendet = false
+
+    /**
+     * 0.1.39 (L1) „Karte“: die gewählte Navi-App geteilt neben dem Launcher (der zeigt dann die Statusspalte). Geht das
+     * nicht (nicht teilbar / Fehler), sicher auf den Rückfall: Navi im Vollbild + Statusleiste oben (mit Overlay-Recht).
+     */
+    private fun karteMitStatus() {
+        val p = Fahrsicherheit.naviZiel(naviWahl(), summary?.naviGewaehlt, summary?.naviBekannt.orEmpty()) { startbar(it) }
+        if (p == null) { zeigeHinweis(getString(R.string.navi_keine_app)); oeffnePanoptes("navi"); return }
+        if (p == Raster.PANOPTES) { starteVollbild(p); return }
+        io.execute {
+            val r = client.nebenOeffnen(p)
+            main.post {
+                if (r == NebenErgebnis.OK) karteImSplit = p
+                else { splitAbbruchLoggen(p, KartenStatus.abbruchGrund(r, summary?.gear)); karteVollbildMitLeiste(p) }
+            }
+        }
+    }
+
+    private fun karteVollbildMitLeiste(p: String, nachR: Boolean = false) {
+        if (!Settings.canDrawOverlays(this)) { leisteErlaubenFragen(p); return }
+        leiste?.aus()   // je Karten-Start eine neue Leiste (eigener Einmal-Versuch, richtiges Paket)
+        val l = StatusLeiste(applicationContext, ui, object : StatusLeiste.Aktionen {
+            override fun musik() = medienTaste(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE)
+            override fun kamera() = oeffnePanoptes("live")
+            override fun start() { leiste?.aus(); startActivity(Intent(this@MainActivity, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) }
+            override fun splitNochmal() {
+                io.execute {
+                    val r = client.nebenOeffnen(p)
+                    main.post {
+                        if (r == NebenErgebnis.OK) { karteImSplit = p; leiste?.aus() }
+                        else splitAbbruchLoggen(p, "nochmal_" + KartenStatus.abbruchGrund(r, summary?.gear))
+                    }
+                }
+            }
+        }).also { leiste = it }
+        l.abbruchBeiR = nachR
+        if (!nachR) starteVollbild(p)   // nach R läuft die Navi schon (das System hat nur die Teilung beendet)
+        l.an()
+    }
+
+    /** Einmalige, ehrliche Frage: ohne das Recht öffnet die Karte im Vollbild ohne Leiste. */
+    private fun leisteErlaubenFragen(p: String) {
+        AlertDialog.Builder(this).setTitle(R.string.leiste_recht_titel).setMessage(R.string.leiste_recht_text)
+            .setPositiveButton(R.string.oeffnen) { _, _ ->
+                try { startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                catch (_: Exception) { zeigeHinweis(getString(R.string.launch_failed)) }
+            }
+            .setNegativeButton(R.string.leiste_ohne) { _, _ -> starteVollbild(p) }.show()
+            .getButton(AlertDialog.BUTTON_POSITIVE)?.apply { textSize = 20f; minHeight = ui.dp(64) }
+    }
+
+    /**
+     * „Start“ neben der Karte: geteilten Bildschirm verlassen, Launcher im Vollbild (Kern verschiebt den Launcher-Task),
+     * die Navi läuft dahinter weiter. Geht das nicht, wenigstens den Launcher nach vorn holen (bisheriges Verhalten).
+     */
+    private fun splitVerlassen() {
+        splitGewolltBeendet = true
+        io.execute {
+            val ok = client.splitBeenden()
+            main.post {
+                if (!ok) {
+                    android.util.Log.w("PanoptesLauncher", "SPLIT_ENDE fehlgeschlagen, nur nach vorn")
+                    startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
+                }
+            }
+        }
+    }
+
+    /** 0.1.39 (L1): schmale Statusspalte neben der Karte – große Werte, große Knöpfe, keine Texteingabe. */
+    private fun statusSpalte(): View {
+        val c = spalte(18)
+        val zeile = ui.zahl("—", 30f); c.addView(zeile)
+        val waechter = ui.text("", 17f, 600, ui.p.onSurfaceVariant); c.addView(waechter, ui.lp(oben = 8))
+        val titel = ui.text("", 16f, 600).apply { maxLines = 2 }; c.addView(titel, ui.lp(oben = 18))
+        val tasten = LinearLayout(this)
+        listOf(R.drawable.ic_pn_music to KeyEvent.KEYCODE_MEDIA_PREVIOUS, R.drawable.ic_pn_music to KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
+            R.drawable.ic_pn_music to KeyEvent.KEYCODE_MEDIA_NEXT).forEachIndexed { i, (res, code) ->
+            tasten.addView(ui.act(res, getString(arrayOf(R.string.leiste_zurueck, R.string.leiste_musik, R.string.leiste_weiter)[i])) { medienTaste(code) },
+                ui.lp(0, ui.dp(64), 1f, rechts = 6))
+        }
+        c.addView(tasten, ui.lp(-1, -2, oben = 6))
+        c.addView(ui.act(R.drawable.ic_pn_car, getString(R.string.leiste_kamera)) { oeffnePanoptes("live") }, ui.lp(-1, ui.dp(64), oben = 18))
+        c.addView(ui.act(R.drawable.ic_pn_status, getString(R.string.leiste_start)) { splitVerlassen() }, ui.lp(-1, ui.dp(64), oben = 10))
+        // nicht reg{}: zeichneSeite() räumt KachelAktualisierer weg; die Spalte lebt bis zum nächsten baueAlles()
+        aktualisierer += {
+            val s = summary
+            zeile.text = KartenStatus.zeile(s?.socPct, s?.rangeKm, s?.gear)
+            waechter.text = getString(if (s?.waechter?.an == true) R.string.leiste_waechter_an else R.string.leiste_waechter_aus)
+            titel.text = medien?.titel ?: s?.media?.title ?: ""
+        }
+        return ScrollView(this).apply { addView(c) }
+    }
+
     private fun naviWahl(): String? = getSharedPreferences(PREFS, MODE_PRIVATE).getString(KEY_NAVI, null)
 
     /** Einstellung „Navi-App“: Automatisch (Tacho-Wahl) oder eine der installierten Navi-Apps. */
@@ -1933,6 +2071,8 @@ class MainActivity : AppCompatActivity() {
         const val REQ_IMPORT = 42
         const val KEY_SPAETER = "update_spaeter"
         const val KEY_NAVI = "navi_app"
+        const val ZUSTAND_KARTE_SPLIT = "karte_im_split"
+        const val ZUSTAND_SPLIT_GEWOLLT = "split_gewollt_beendet"
         /** REGEL 50+: Klima-Knöpfe im Dock mindestens 64 dp, im Klima-Feld 96 dp. */
         const val DOCK_KNOPF = 64
         const val GROSS_KNOPF = 96

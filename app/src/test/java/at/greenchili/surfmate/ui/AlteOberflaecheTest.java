@@ -68,8 +68,7 @@ public class AlteOberflaecheTest {
     @Test
     public void keineEigeneNamenslisteMehr() throws Exception {
         for (String p : new String[] {
-                "app/src/main/java/at/greenchili/surfmate/ui/MainActivity.kt",
-                "app/src/main/java/at/greenchili/surfmate/ui/fragment/DashboardFragment.kt"}) {
+                "app/src/main/java/at/greenchili/surfmate/ui/MainActivity.kt"}) {   // 0.1.39 A1: DashboardFragment gelöscht
             String s = lies(p);
             assertFalse(p, s.contains("R.string.vehicle_model_"));
             assertFalse(p, s.contains("\"seagull\" ->"));
@@ -123,7 +122,7 @@ public class AlteOberflaecheTest {
         while (p != null) {
             if (Files.isDirectory(p.resolve("app/src/main"))) return p;
             if (Files.isDirectory(p.resolve("src/main")) && p.getFileName().toString().equals("app")) return p.getParent();
-            p = p.getParent();
+            p = at.greenchili.surfmate.testutil.RepoWurzel.hoch(p);
         }
         throw new IllegalStateException("Projektwurzel nicht gefunden");
     }
@@ -134,7 +133,7 @@ public class AlteOberflaecheTest {
             for (Path c : new Path[] {p.resolve(rel), p.resolve(rel.replaceFirst("^app/", ""))}) {
                 if (Files.isRegularFile(c)) return new String(Files.readAllBytes(c), "UTF-8");
             }
-            p = p.getParent();
+            p = at.greenchili.surfmate.testutil.RepoWurzel.hoch(p);
         }
         throw new java.io.FileNotFoundException(rel);
     }

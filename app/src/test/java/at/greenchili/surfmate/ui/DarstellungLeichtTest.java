@@ -53,7 +53,7 @@ public class DarstellungLeichtTest {
             if (Files.isRegularFile(candidate)) return candidate;
             Path fromModule = current.resolve(relativePath.replaceFirst("^app/", ""));
             if (Files.isRegularFile(fromModule)) return fromModule;
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError("Could not locate repository file: " + relativePath);
     }

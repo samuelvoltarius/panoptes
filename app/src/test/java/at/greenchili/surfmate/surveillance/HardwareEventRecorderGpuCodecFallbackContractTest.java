@@ -110,7 +110,7 @@ public class HardwareEventRecorderGpuCodecFallbackContractTest {
                         Files.readAllBytes(fromModule),
                         StandardCharsets.UTF_8);
             }
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError(
                 "Could not locate repository file: " + relativePath);

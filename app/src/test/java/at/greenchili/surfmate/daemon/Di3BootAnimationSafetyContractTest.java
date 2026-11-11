@@ -696,7 +696,7 @@ public class Di3BootAnimationSafetyContractTest {
             if (Files.isRegularFile(fromModule)) {
                 return at.greenchili.surfmate.testutil.Quelltext.lies(fromModule);
             }
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError("Could not locate " + relativePath);
     }

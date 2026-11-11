@@ -59,14 +59,10 @@ public class LocaleIsolationContractTest {
     @Test
     public void nativeSurfacesResolveStringsAgainstTheAppLocaleWithoutGlobalMutation()
             throws Exception {
+        // 0.1.39 A1: Prüfungen gelöschter Dateien (alte Oberfläche) entfernt
         String roadSense = readRepositoryFile(
                 "app/src/main/java/at/greenchili/surfmate/roadsense/overlay/"
                         + "RoadSenseOverlayService.kt");
-        String settings = readRepositoryFile(
-                "app/src/main/java/at/greenchili/surfmate/ui/fragment/SettingsFragment.kt");
-        String appearance = readRepositoryFile(
-                "app/src/main/java/at/greenchili/surfmate/ui/fragment/settings/"
-                        + "SettingsAppearanceFragment.kt");
 
         assertTrue(roadSense.contains(
                 "private fun localizedString(resId: Int, vararg formatArgs: Any)"));
@@ -74,12 +70,6 @@ public class LocaleIsolationContractTest {
                 "private fun severityLabel(sev: Int): String = localizedString("));
         assertFalse(roadSense.contains("LocaleList.setDefault("));
 
-        assertTrue(settings.contains(
-                "val displayLocale = resources.configuration.locales[0]"));
-        assertTrue(appearance.contains(
-                "val displayLocale = resources.configuration.locales[0]"));
-        assertFalse(settings.contains("getDisplayName(Locale.getDefault())"));
-        assertFalse(appearance.contains("getDisplayName(Locale.getDefault())"));
     }
 
     private static String readRepositoryFile(String relativePath) throws Exception {
@@ -94,7 +84,7 @@ public class LocaleIsolationContractTest {
             if (Files.isRegularFile(fromModule)) {
                 return new String(Files.readAllBytes(fromModule), StandardCharsets.UTF_8);
             }
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError("Could not locate repository file: " + relativePath);
     }

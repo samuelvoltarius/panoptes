@@ -143,7 +143,7 @@ public class ServerI18nPlaceholderRenderingTest {
             if (Files.isDirectory(fromModule)) return fromModule;
             Path fromRepository = current.resolve("app/src/main/assets/server-i18n");
             if (Files.isDirectory(fromRepository)) return fromRepository;
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError("Could not locate app/src/main/assets/server-i18n");
     }

@@ -102,62 +102,9 @@ public class SkeletonFirstLoadAssetTest {
         assertFalse(helper.contains("each('[data-sk-group]', function (el) {\n        if (el.style"));
     }
 
-    @Test
-    public void dashboardCoversItsFirstPaintValues() throws IOException {
-        for (String path : DASHBOARD_LAYOUTS) {
-            String layout = readRepositoryFile(path);
-            for (String slot : DASHBOARD_SLOTS) {
-                assertTrue(path + " " + slot, layout.contains(slot));
-            }
-        }
+    // 0.1.39 A1: dashboardCoversItsFirstPaintValues entfällt – prüfte nur die gelöschte alte Oberfläche
 
-        String fragment = readRepositoryFile(
-                "app/src/main/java/at/greenchili/surfmate/ui/fragment/DashboardFragment.kt");
-        assertTrue(fragment.contains("private fun bindSkeletons(view: View)"));
-        assertTrue(fragment.contains("skeleton?.cancel()"));
-        for (String slot : DASHBOARD_SLOTS) {
-            assertTrue(slot, fragment.contains("R.id." + slot.substring("@+id/".length())));
-        }
-        assertTrue(fragment.contains(
-                "if (dashboardState.vehicle != DashboardUiState.VehicleState.Loading)"));
-        // Clips and storage answer on separate hops, so neither retires the other's placeholder.
-        assertTrue(fragment.contains("if (clipCountResolved || unavailable)"));
-        assertTrue(fragment.contains("if (storageResolved || unavailable)"));
-        assertTrue(fragment.contains("skeleton?.isLoaded(R.id.activityRow1Skeleton) != true"));
-        // The activity placeholder spans the row, so its icon is covered with its text.
-        assertTrue(fragment.contains("skeleton.bind(R.id.activityRow1Skeleton, it.icon, it.text)"));
-        // A rotation must not repaint resolved sections as Loading.
-        assertTrue(fragment.contains("DashboardStateReducer.remoteExpanded("));
-        assertFalse(fragment.contains("DashboardUiState(),"));
-    }
-
-    @Test
-    public void recordingsCoversSummaryAndFirstLoadTiles() throws IOException {
-        for (String path : RECORDINGS_LAYOUTS) {
-            assertTrue(path, readRepositoryFile(path).contains("@+id/tvRecordingsSummarySkeleton"));
-        }
-        for (String path : LIBRARY_LAYOUTS) {
-            String layout = readRepositoryFile(path);
-            assertTrue(path, layout.contains("layout=\"@layout/skeleton_tile\""));
-            // The loading copy became the container's description; the spinner is gone.
-            assertTrue(path + " label", layout.contains(
-                    "android:contentDescription=\"@string/recording_library_loading\""));
-        }
-
-        String recordings = readRepositoryFile(
-                "app/src/main/java/at/greenchili/surfmate/ui/fragment/RecordingsFragment.kt");
-        assertTrue(recordings.contains("bind(R.id.tvRecordingsSummarySkeleton"));
-        assertTrue(recordings.contains("markLoaded(R.id.tvRecordingsSummarySkeleton)"));
-        assertTrue(recordings.contains("skeleton?.cancel()"));
-
-        String library = readRepositoryFile(
-                "app/src/main/java/at/greenchili/surfmate/ui/fragment/RecordingLibraryFragment.kt");
-        assertTrue(library.contains("follow(R.id.initialLoadingContainer)"));
-        assertTrue(library.contains("skeleton?.cancel()"));
-        // The real empty states and the refresh bar stay: they are answers, not loading.
-        assertTrue(library.contains("emptyStateContainer?.visibility = View.VISIBLE"));
-        assertTrue(library.contains("R.string.recording_library_refreshing"));
-    }
+    // 0.1.39 A1: recordingsCoversSummaryAndFirstLoadTiles entfällt – prüfte nur die gelöschte alte Oberfläche
 
     @Test
     public void vehicleControlCoversPillsAndTyresUntilFirstReading() throws IOException {
@@ -250,7 +197,7 @@ public class SkeletonFirstLoadAssetTest {
             if (Files.isRegularFile(fromModule)) {
                 return new String(Files.readAllBytes(fromModule), StandardCharsets.UTF_8);
             }
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError("Could not locate repository file: " + relativePath);
     }

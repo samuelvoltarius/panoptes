@@ -106,7 +106,7 @@ public class HomeLayoutAssetTest {
             for (Path p : new Path[] {current.resolve(relative), current.resolve(relative.replaceFirst("^app/", ""))}) {
                 if (Files.isRegularFile(p)) return Quelltext.lies(p);
             }
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError("Not found: " + relative);
     }

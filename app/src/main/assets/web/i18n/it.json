@@ -5070,7 +5070,7 @@
   },
   "navi": {
     "via_mehr": "Altro: tappe",
-    "karte_aus": "La mappa è spenta. Per attivarla: Impostazioni → Tutte le impostazioni → Fonte mappa.",
+    "karte_aus": "La mappa è spenta. Per attivarla: Impostazioni → Tutte le impostazioni → Auto e display → Fonte mappa.",
     "rate": "Troppe richieste – attendi 2 minuti.",
     "slow": "Il pianificatore non ha risposto in tempo. Riprova.",
     "nothing": "Nessun risultato",
@@ -6124,7 +6124,7 @@
   "kartenquelle": {
     "titel": "Scegli la fonte della mappa",
     "text": "Per mostrare la mappa, Panoptes scarica immagini da Internet. La fonte scelta vede il tuo indirizzo IP e la zona della mappa, quindi più o meno dove si trova la tua auto. Finché non scegli, la mappa resta vuota e non viene inviato nulla.",
-    "dauer": "Per quanto tempo la fonte conserva gli accessi lo decide il suo gestore. Puoi cambiare la scelta in qualsiasi momento in Impostazioni → Tutte le impostazioni → Fonte della mappa.",
+    "dauer": "Per quanto tempo la fonte conserva gli accessi lo decide il suo gestore. Puoi cambiare la scelta in qualsiasi momento in Impostazioni → Tutte le impostazioni → Auto e display → Fonte della mappa.",
     "waehlen": "Scegli la fonte della mappa",
     "nicht_erreichbar_titel": "Mappa non raggiungibile",
     "nicht_erreichbar_text": "La fonte scelta al momento non risponde. Panoptes non passa da solo a un’altra fonte.",

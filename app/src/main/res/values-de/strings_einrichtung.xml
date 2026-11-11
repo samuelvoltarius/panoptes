@@ -89,7 +89,7 @@
     <string name="einr_auto_unbekannt">Panoptes konnte noch nicht prüfen, was dein Auto kann. Das holt es später nach.</string>
     <string name="einr_auto_ausblenden">Was dein Auto nicht kann, blenden wir aus.</string>
     <string name="einr_auto_modell">Welches Auto fährst du?</string>
-    <string name="einr_auto_waehlen">Modell und Akku wählen</string>
+    <string name="einr_auto_menueweg">Panoptes liest das Modell aus dem Auto. Falls nicht: Einstellungen → Alle Einstellungen → Auto &amp; Anzeige → Fahrzeug manuell hinzufügen.</string>
     <string name="einr_auto_gewaehlt">Modell gespeichert.</string>
     <string name="einr_auto_weiss_nicht_satz">Kein Problem. Panoptes schätzt die Werte, bis du das Modell später wählst.</string>
     <string name="einr_f_kameras">Kameras</string>

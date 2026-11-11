@@ -1269,6 +1269,17 @@ public final class LauncherApiHandler {
             mode = req.optString("mode", "full");
         } catch (Throwable ignored) {}
         JSONObject fwd = new JSONObject();
+        if ("split_ende".equals(mode)) {
+            // 0.1.39 (L1-Nachbesserung): „Start“ neben der Karte – geteilten Bildschirm verlassen, Launcher im Vollbild.
+            // Nur der eigene Launcher, die Navi läuft dahinter weiter.
+            // Nur die Launcher-APK mit Panoptes-Signatur (LauncherAufrufer) wie Klima/Tacho: kein Web-Login, keine
+            // Web-Handy-Sitzung, keine Automation; Extern/Kopplung/Brücke sperrt ExternGuard ohnehin (POST nicht erlaubt).
+            if (!launcherDarf(out)) return;
+            boolean ok = at.greenchili.surfmate.launcher.AppLauncher.splitBeenden(LAUNCHER_PAKET);
+            BefehlsLog.ereignis("launcher.split_ende", ok ? "ok" : "kein_split", null, null);
+            HttpResponse.sendJson(out, ok ? "{\"success\":true}" : "{\"success\":false,\"error\":\"kein_split\"}");
+            return;
+        }
         if ("neben".equals(mode)) {
             // 0.1.37: „Apps neben dem Launcher öffnen“ – Launcher links (primär), die App rechts, über den
             // belegten Weg AppLauncher.launchSplitPair (fail-closed, kein Vollbild-Rückfall im Kern; den macht

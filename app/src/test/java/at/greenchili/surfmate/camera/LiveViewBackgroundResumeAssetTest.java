@@ -55,7 +55,7 @@ public class LiveViewBackgroundResumeAssetTest {
             if (Files.isRegularFile(candidate)) {
                 return new String(Files.readAllBytes(candidate), StandardCharsets.UTF_8);
             }
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError("Could not locate " + relativePath);
     }

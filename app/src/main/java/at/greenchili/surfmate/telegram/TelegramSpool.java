@@ -62,6 +62,47 @@ public final class TelegramSpool {
     /** Entries older than this are dropped unsent on drain (stale ⇒ noise). */
     static final long MAX_AGE_MS = 30L * 60L * 1000L;  // 30 minutes
 
+    /**
+     * 0.1.39 S1 (Surf 06.11.: „Abgestellt“ 18:32, Netz erst 19:10 → nach 38 min verworfen): Park-Meldungen
+     * („Abgestellt“-Bericht, Parkprotokoll) bleiben bis 12 h nachholbar und werden als verspätet gekennzeichnet.
+     * Wächter-Fotos/Motion behalten {@link #MAX_AGE_MS}.
+     */
+    static final long MAX_AGE_PARK_MS = 12L * 60L * 60L * 1000L;
+    /** Ab dieser Verspätung trägt eine nachgeholte Park-Meldung „(verspätet, Uhrzeit)“. */
+    static final long VERSPAETET_AB_MS = 5L * 60L * 1000L;
+
+    /** Park-Meldung? sendMessage mit Kategorie PARKING (Abschaltbericht) oder notifyParking (Parkprotokoll). */
+    static boolean istPark(JSONObject cmd) {
+        if (cmd == null) return false;
+        String c = cmd.optString("cmd", "");
+        return "notifyParking".equals(c) || ("sendMessage".equals(c) && "PARKING".equals(cmd.optString("category", "")));
+    }
+
+    /** Höchstalter eines Eintrags beim Nachholen. */
+    static long maxAlterMs(JSONObject cmd) {
+        return istPark(cmd) ? MAX_AGE_PARK_MS : MAX_AGE_MS;
+    }
+
+    /** Verspätete Park-Meldung kennzeichnen: Hinweis vor den Text (sendMessage) bzw. den Titel (notifyParking). */
+    static void kennzeichne(JSONObject cmd, long alterMs, String hinweis) {
+        if (!istPark(cmd) || alterMs <= VERSPAETET_AB_MS || hinweis == null || hinweis.isEmpty()) return;
+        try {
+            String feld = "notifyParking".equals(cmd.optString("cmd", "")) ? "title" : "text";
+            cmd.put(feld, hinweis + "\n" + cmd.optString(feld, ""));
+        } catch (Exception ignored) {
+        }
+    }
+
+    /** „(verspätet, 18:32)“ in Nutzersprache. */
+    static String verspaetetHinweis(long gespoolt) {
+        try {
+            String uhr = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.ROOT).format(new java.util.Date(gespoolt));
+            return TelegramMessages.get("spool.verspaetet", uhr);
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
     /** Injected timestamp (ms epoch) so the daemon can age-cap on drain. */
     static final String K_SPOOLED_AT = "_spooledAt";
 
@@ -209,7 +250,11 @@ public final class TelegramSpool {
             long stamped;
             try {
                 cmd = read(f);
-                if (cmd == null) { safeDelete(f); continue; }
+                if (cmd == null) {
+                    Log.w(TAG, "Dropping unreadable spool entry " + f.getName() + " (leer/kaputt)");
+                    safeDelete(f);
+                    continue;
+                }
                 stamped = cmd.optLong(K_SPOOLED_AT, 0L);
             } catch (Throwable t) {
                 Log.w(TAG, "Spool replay parse failed for " + f.getName()
@@ -227,9 +272,9 @@ public final class TelegramSpool {
             // backlogs). A rare forward-correction false-drop is far less harmful
             // than delivering hours-old alerts on park as if fresh.
             long age = now - stamped;
-            if (stamped > 0 && age > MAX_AGE_MS) {
-                Log.w(TAG, "Dropping stale spooled cmd " + f.getName()
-                        + " (age " + (age / 1000) + "s)");
+            if (stamped > 0 && age > maxAlterMs(cmd)) {
+                Log.w(TAG, "Dropping stale spooled cmd " + f.getName() + " '" + cmd.optString("cmd", "?")
+                        + "' (age " + (age / 1000) + "s > " + (maxAlterMs(cmd) / 1000) + "s)");
                 safeDelete(f);
                 continue;
             }
@@ -253,8 +298,14 @@ public final class TelegramSpool {
                 continue;
             }
             cmd.remove(K_SPOOLED_AT);
+            if (stamped > 0) kennzeichne(cmd, age, verspaetetHinweis(stamped));
             try {
-                if (sender.send(cmd)) replayed++;
+                if (sender.send(cmd)) {
+                    replayed++;
+                } else {
+                    Log.w(TAG, "Spool replay not delivered (dropped, at-most-once): " + f.getName()
+                            + " '" + cmd.optString("cmd", "?") + "'");
+                }
             } catch (Throwable t) {
                 Log.w(TAG, "Spool replay send error for " + f.getName() + ": " + t.getMessage());
             } finally {

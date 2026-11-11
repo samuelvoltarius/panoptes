@@ -5070,7 +5070,7 @@
   },
   "navi": {
     "via_mehr": "More: stops",
-    "karte_aus": "The map is off. To turn it on: Settings → All settings → Map source.",
+    "karte_aus": "The map is off. To turn it on: Settings → All settings → Car & display → Map source.",
     "rate": "Too many requests – please wait 2 minutes.",
     "slow": "The planner did not answer in time. Please try again.",
     "nothing": "Nothing found",
@@ -6124,7 +6124,7 @@
   "kartenquelle": {
     "titel": "Choose a map source",
     "text": "To show the map, Panoptes loads map images from the internet. The chosen source sees your IP address and the map area, so roughly where your car is. Until you choose, the map stays empty and nothing is sent.",
-    "dauer": "How long the source keeps requests is up to its operator. You can change your choice at any time under Settings → All settings → Map source.",
+    "dauer": "How long the source keeps requests is up to its operator. You can change your choice at any time under Settings → All settings → Car & display → Map source.",
     "waehlen": "Choose map source",
     "nicht_erreichbar_titel": "Map not reachable",
     "nicht_erreichbar_text": "The chosen map source is not answering right now. Panoptes does not switch to another source on its own.",

@@ -208,4 +208,14 @@
     <string name="groesse_hinweis">Automatique adapte le launcher à votre écran. Si tout paraît encore trop grand ou trop petit, choisissez Plus petit ou Plus grand.</string>
     <string name="erweitert">Avancé</string>
     <string name="zurueck">Retour</string>
+    <string name="leiste_musik">Pause/Lecture</string>
+    <string name="leiste_zurueck">Précédent</string>
+    <string name="leiste_weiter">Suivant</string>
+    <string name="leiste_kamera">Caméra</string>
+    <string name="leiste_start">Accueil</string>
+    <string name="leiste_waechter_an">Surveillance activée</string>
+    <string name="leiste_waechter_aus">Surveillance désactivée</string>
+    <string name="leiste_recht_titel">Barre d’état sur la carte</string>
+    <string name="leiste_recht_text">Cette app de navigation ne peut pas s’afficher à côté du launcher. Pour une fine barre d’état au-dessus de la carte, Android doit autoriser le launcher à « s’afficher par-dessus d’autres apps ». Sans cela, la carte s’ouvre en plein écran sans barre.</string>
+    <string name="leiste_ohne">Sans barre</string>
 </resources>

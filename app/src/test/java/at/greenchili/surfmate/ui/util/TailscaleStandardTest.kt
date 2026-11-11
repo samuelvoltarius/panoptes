@@ -65,9 +65,8 @@ class TailscaleStandardTest {
     /** Datenschutz-Audit Nr. 8: keine Avatare mehr von github.com. */
     @Test
     fun keinGithubAvatar() {
-        val about = Quelltext.lies(
-            Paths.get("src/main/java/at/greenchili/surfmate/ui/fragment/settings/SettingsAboutFragment.kt"))
-        assertFalse(about.contains(".png?size="))
-        assertFalse(about.contains("fetchAvatarBitmap"))
+        // 0.1.39 A1: SettingsAboutFragment (alte Oberfläche) ist gelöscht
+        assertFalse(java.nio.file.Files.exists(
+            Paths.get("src/main/java/at/greenchili/surfmate/ui/fragment/settings/SettingsAboutFragment.kt")))
     }
 }

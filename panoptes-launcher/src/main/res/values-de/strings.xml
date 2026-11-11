@@ -208,4 +208,14 @@
     <string name="groesse_hinweis">Automatisch passt den Launcher an deinen Bildschirm an. Wirkt trotzdem alles zu groß oder zu klein, wähl Kleiner oder Größer.</string>
     <string name="erweitert">Erweitert</string>
     <string name="zurueck">Zurück</string>
+    <string name="leiste_musik">Pause/Weiter</string>
+    <string name="leiste_zurueck">Zurück</string>
+    <string name="leiste_weiter">Nächster</string>
+    <string name="leiste_kamera">Kamera</string>
+    <string name="leiste_start">Start</string>
+    <string name="leiste_waechter_an">Wächter an</string>
+    <string name="leiste_waechter_aus">Wächter aus</string>
+    <string name="leiste_recht_titel">Statusleiste über der Karte</string>
+    <string name="leiste_recht_text">Diese Navi-App lässt sich nicht neben dem Launcher zeigen. Für eine schmale Statusleiste über der Karte muss Android dem Launcher „Über anderen Apps einblenden“ erlauben. Ohne das öffnet die Karte im Vollbild ohne Leiste.</string>
+    <string name="leiste_ohne">Ohne Leiste</string>
 </resources>

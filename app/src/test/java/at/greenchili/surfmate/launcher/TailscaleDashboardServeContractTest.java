@@ -26,12 +26,11 @@ public class TailscaleDashboardServeContractTest {
 
     @Test
     public void httpsUsesStandardServeAndRequiresVerifiedState() throws Exception {
+        // 0.1.39 A1: Prüfungen gelöschter Dateien (alte Oberfläche) entfernt
         String launcher = read(
                 "app/src/main/java/at/greenchili/surfmate/launcher/TailscaleLauncher.kt");
         String controller = read(
                 "app/src/main/java/at/greenchili/surfmate/ui/daemon/TailscaleController.kt");
-        String layout = read(
-                "app/src/main/res/layout/dialog_tailscale_settings.xml");
 
         assertEquals(
                 "serve --bg --https=443 http://127.0.0.1:8180",
@@ -54,7 +53,6 @@ public class TailscaleDashboardServeContractTest {
         assertFalse(launcher.contains("cmd = \"serve --bg $HTTP_PORT\""));
 
         assertTrue(controller.contains("fun saveHttpsSettings("));
-        assertTrue(layout.contains("@+id/switchTailscaleHttps"));
     }
 
     @Test
@@ -158,7 +156,7 @@ public class TailscaleDashboardServeContractTest {
             if (Files.isRegularFile(fromModule)) {
                 return at.greenchili.surfmate.testutil.Quelltext.lies(fromModule);
             }
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError("Could not locate repository file: " + relativePath);
     }

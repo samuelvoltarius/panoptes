@@ -355,7 +355,7 @@ public class TachoAnsichtSicherheitTest {
                 Path c = cur.resolve(r);
                 if (Files.isDirectory(c)) return c;
             }
-            cur = cur.getParent();
+            cur = at.greenchili.surfmate.testutil.RepoWurzel.hoch(cur);
         }
         throw new AssertionError("Quellordner nicht gefunden");
     }

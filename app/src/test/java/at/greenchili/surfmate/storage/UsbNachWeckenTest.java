@@ -35,7 +35,7 @@ public class UsbNachWeckenTest {
             for (java.nio.file.Path c : new java.nio.file.Path[] {p.resolve(rel), p.resolve(rel.replaceFirst("^app/", ""))}) {
                 if (java.nio.file.Files.isRegularFile(c)) return new String(java.nio.file.Files.readAllBytes(c), "UTF-8");
             }
-            p = p.getParent();
+            p = at.greenchili.surfmate.testutil.RepoWurzel.hoch(p);
         }
         throw new java.io.FileNotFoundException(rel);
     }

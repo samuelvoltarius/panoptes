@@ -61,7 +61,7 @@ class LauncherDirektTest {
         assertFalse(widget.contains("oeffnePanoptes"))
         listOf("fahrzeugInfo()", "akkuInfo()", "starteNavi()", "waechterInfo()").forEach { assertTrue(it, widget.contains(it)) }
         val reiter = main.substring(main.indexOf("private fun reiterZeile()"), main.indexOf("private fun reiterZeile()") + 2500)
-        assertTrue(reiter.contains("{ starteNavi() }"))
+        assertTrue("0.1.39 (L1): Reiter „Karte“ = Karte + Status", reiter.contains("{ karteMitStatus() }"))
         assertTrue(reiter.contains("{ klimaFeld() }"))
         // Panoptes nur noch über „Mehr in Panoptes“ (Info-/Klima-Feld) und die Navi-Notlösung ohne Navi-App
         val info = main.substring(main.indexOf("private fun infoFeld("), main.indexOf("private fun fahrzeugInfo()"))

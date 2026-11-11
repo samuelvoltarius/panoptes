@@ -5070,7 +5070,7 @@
   },
   "navi": {
     "via_mehr": "Plus : arrêts",
-    "karte_aus": "La carte est désactivée. Pour l’activer : Réglages → Tous les réglages → Source de carte.",
+    "karte_aus": "La carte est désactivée. Pour l’activer : Réglages → Tous les réglages → Voiture et affichage → Source de carte.",
     "rate": "Trop de requêtes – veuillez patienter 2 minutes.",
     "slow": "Le planificateur n'a pas répondu à temps. Veuillez réessayer.",
     "nothing": "Rien trouvé",
@@ -6124,7 +6124,7 @@
   "kartenquelle": {
     "titel": "Choisir la source de carte",
     "text": "Pour afficher la carte, Panoptes charge des images de carte depuis Internet. La source choisie voit votre adresse IP et la zone affichée, donc à peu près où se trouve votre voiture. Tant que vous ne choisissez rien, la carte reste vide et rien n’est envoyé.",
-    "dauer": "La durée de conservation des accès dépend de l’exploitant de la source. Vous pouvez changer votre choix à tout moment sous Réglages → Tous les réglages → Source de carte.",
+    "dauer": "La durée de conservation des accès dépend de l’exploitant de la source. Vous pouvez changer votre choix à tout moment sous Réglages → Tous les réglages → Voiture et affichage → Source de carte.",
     "waehlen": "Choisir la source de carte",
     "nicht_erreichbar_titel": "Carte inaccessible",
     "nicht_erreichbar_text": "La source de carte choisie ne répond pas pour le moment. Panoptes ne passe pas tout seul à une autre source.",

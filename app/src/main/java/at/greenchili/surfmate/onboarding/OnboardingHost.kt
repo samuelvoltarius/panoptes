@@ -142,11 +142,9 @@ class OnboardingHost(
         return true
     }
 
+    // 0.1.39 A1: Der Experten-Rundgang führte durch die alte native Oberfläche (gelöscht) – nichts mehr zu zeigen.
     private fun launchExpertTrack() {
-        val ov = overlay ?: return
-        ExpertTourCoach(activity, ov, state) {
-            dismiss()
-        }.begin()
+        dismiss()
     }
 
     // ---- Einrichtungsassistent 0.1.10 ----------------------------------------------------
@@ -168,7 +166,6 @@ class OnboardingHost(
         val an = at.greenchili.surfmate.onboarding.schritte.AssistentAnbindung(
             activity, contentRoot(), adbLauncher, state,
             beendet = { _ -> anbindung = null; dismiss() },
-            rundgangStarten = { mainHandler.post { rundgangStarten() } },
         )
         anbindung = an
         an.starten()
@@ -184,13 +181,6 @@ class OnboardingHost(
         routeFirstStep()
     }
 
-    /** „Kurze Führung durch Panoptes?“ nach dem Assistenten (DashboardTourCoach, unverändert). */
-    private fun rundgangStarten() {
-        val ov = OnboardingOverlayView(activity, encoderBusy = { encoderBusyCached })
-        ov.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-        contentRoot().addView(ov)
-        DashboardTourCoach(activity, ov, state) { (ov.parent as? ViewGroup)?.removeView(ov) }.begin()
-    }
 
     /** Tear everything down (ACC-ON, completion, or replay restart). */
     fun dismiss() {
@@ -673,12 +663,10 @@ class OnboardingHost(
         }.begin()
     }
 
+    // 0.1.39 A1: Das Dashboard-Kapitel lief über das alte native Dashboard (gelöscht) – direkt fertig.
     private fun launchDashboardChapter() {
-        val ov = overlay ?: return
-        DashboardTourCoach(activity, ov, state) {
-            currentStep = SetupStep.DONE
-            renderCurrent()
-        }.begin()
+        currentStep = SetupStep.DONE
+        renderCurrent()
     }
 
     // ---- completion ------------------------------------------------------------------

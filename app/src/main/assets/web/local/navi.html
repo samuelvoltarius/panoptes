@@ -12,7 +12,7 @@
     <script src="../shared/theme.js?v=13"></script>
     <script src="../shared/kartenquelle.js?v=6"></script>
     <script src="../shared/app-shell.js?v=pn35"></script>
-    <link rel="stylesheet" href="../shared/styles.css?v=pn14">
+    <link rel="stylesheet" href="../shared/styles.css?v=pn16">
     <style>
         .navi-page .main-content { padding: 0; }
         .navi { position: relative; margin: 0 28px 28px; height: calc(100vh - 190px); min-height: 460px;
@@ -1114,7 +1114,7 @@
         // 0.1.38.14: Kartenquelle „keine“ → kurzer Hinweis mit dem Weg zum Einschalten (kartenquelle.js bleibt unverändert)
         try {
             if (window.PanoptesKartenquelle && PanoptesKartenquelle.get() === 'keine') {
-                $('nKarteAus').textContent = t('navi.karte_aus', 'Die Karte ist aus. Einschalten: Einstellungen → Alle Einstellungen → Kartenquelle.');
+                $('nKarteAus').textContent = t('navi.karte_aus', 'Die Karte ist aus. Einschalten: Einstellungen → Alle Einstellungen → Auto & Anzeige → Kartenquelle.');
                 $('nKarteAus').hidden = false;
             }
         } catch (e) {}

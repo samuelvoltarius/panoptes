@@ -20,9 +20,9 @@ public class SeatPositionsAssetTest {
         int setStart = activity.indexOf("appBarConfiguration = AppBarConfiguration(");
         assertTrue(setStart >= 0);
         String set = activity.substring(setStart, activity.indexOf(')', setStart));
-        assertTrue(set.contains("R.id.seatPositionsFragment"));
-        assertTrue(set.contains("R.id.vehicleControlFragment"));
-        assertTrue(set.contains("R.id.liveViewFragment"));
+        // 0.1.39 A1: die alten nativen Ziele sind gelöscht; oben ohne Zurück-Pfeil bleiben Start und Projektion
+        assertTrue(set.contains("R.id.panoptesStartFragment"));
+        assertTrue(set.contains("R.id.projectionFragment"));
     }
 
     @Test
@@ -232,7 +232,7 @@ public class SeatPositionsAssetTest {
             if (Files.isRegularFile(fromModule)) {
                 return new String(Files.readAllBytes(fromModule), StandardCharsets.UTF_8);
             }
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError("Could not locate repository file: " + relativePath);
     }

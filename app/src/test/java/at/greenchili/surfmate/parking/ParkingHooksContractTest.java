@@ -213,7 +213,7 @@ public class ParkingHooksContractTest {
             if (Files.exists(candidate)) return candidate;
             Path fromModule = current.resolve(relativePath.replaceFirst("^app/", ""));
             if (Files.exists(fromModule)) return fromModule;
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError("Could not locate repository path: " + relativePath);
     }

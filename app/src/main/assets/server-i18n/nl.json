@@ -752,6 +752,9 @@
       "size_kb": "{0} KB",
       "size_mb": "{0} MB"
     },
+    "spool": {
+      "verspaetet": "⏱ (vertraagd, {0})"
+    },
     "media": {
       "video_too_large": "🎞 *Te groot om te sturen*\n`{0}` · {1} MB\nTelegram neemt maximaal 50 MB aan – bekijk hem in Panoptes.",
       "document_too_large": "📄 *Te groot om te sturen*\n`{0}` · {1} MB – Telegram neemt maximaal 50 MB aan.",

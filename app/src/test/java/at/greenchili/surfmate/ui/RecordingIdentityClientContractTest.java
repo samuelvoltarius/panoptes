@@ -59,7 +59,7 @@ public class RecordingIdentityClientContractTest {
             Path fromModule = at.greenchili.surfmate.testutil.Quelltext.aufloesen(
                     current.resolve(relativePath.replaceFirst("^app/", "")));
             if (Files.isRegularFile(fromModule)) return Files.readAllBytes(fromModule);
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError("Could not locate repository file: " + relativePath);
     }

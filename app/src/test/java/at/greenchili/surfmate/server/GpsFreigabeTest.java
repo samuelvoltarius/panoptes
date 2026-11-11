@@ -51,7 +51,7 @@ public class GpsFreigabeTest {
             for (Path c : new Path[] {p.resolve(rel), p.resolve(rel.replaceFirst("^app/", ""))}) {
                 if (Files.isRegularFile(c)) return new String(Files.readAllBytes(c), "UTF-8");
             }
-            p = p.getParent();
+            p = at.greenchili.surfmate.testutil.RepoWurzel.hoch(p);
         }
         throw new java.io.FileNotFoundException(rel);
     }

@@ -203,7 +203,7 @@
         var KQ = window.PanoptesKartenquelle;
         if (KQ) { KQ.hinweis(el, art); return; }
         el.classList.add('pn-map-unavailable');
-        el.textContent = art === 'nicht_erreichbar' ? 'Karte nicht erreichbar' : 'Keine Kartenquelle gewählt (Einstellungen → Alle Einstellungen → Kartenquelle)';
+        el.textContent = art === 'nicht_erreichbar' ? 'Karte nicht erreichbar' : 'Keine Kartenquelle gewählt (Einstellungen → Alle Einstellungen → Auto & Anzeige → Kartenquelle)';
     }
 
     function hexColor(v, fallback) {

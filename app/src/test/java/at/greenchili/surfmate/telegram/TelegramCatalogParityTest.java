@@ -135,7 +135,7 @@ public class TelegramCatalogParityTest {
                     "app/src/main/assets/server-i18n/" + locale + ".json");
             if (Files.isRegularFile(fromRepository)) return fromRepository;
 
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError("Could not find server-i18n/" + locale
                 + ".json from working directory " + System.getProperty("user.dir"));

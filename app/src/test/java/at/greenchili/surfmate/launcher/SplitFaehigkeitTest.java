@@ -20,7 +20,7 @@ public class SplitFaehigkeitTest {
         assertEquals(SplitFaehigkeit.JA, SplitFaehigkeit.urteil(0, 30, true));             // force_resizable_activities
         assertEquals(SplitFaehigkeit.JA, SplitFaehigkeit.urteil(2, 30, false));
         assertEquals(SplitFaehigkeit.JA, SplitFaehigkeit.urteil(1, 28, false));            // Standard ab API 24
-        assertEquals("BYD ScreenSplitUtils: VIA_SDK gilt als teilbar", SplitFaehigkeit.JA, SplitFaehigkeit.urteil(1, 23, false));
+        assertEquals("0.1.39: VIA_SDK erst ab targetSdk 24 teilbar (sonst Rückfall)", SplitFaehigkeit.NEIN, SplitFaehigkeit.urteil(1, 23, false));
         assertEquals(SplitFaehigkeit.NEIN, SplitFaehigkeit.urteil(5, 30, false));
         assertEquals(SplitFaehigkeit.NEIN, SplitFaehigkeit.urteil(6, 30, false));
         assertEquals(SplitFaehigkeit.UNBEKANNT, SplitFaehigkeit.urteil(null, 30, false));
@@ -82,14 +82,61 @@ public class SplitFaehigkeitTest {
                 "Stack id=1 bounds=[0,0][1280,720]", " configuration={ mWindowingMode=fullscreen}")));
     }
 
+    /** 0.1.39 (L1-Nachbesserung c): „Start“ verlässt den Split – Launcher-Task (links) in den Secondary-Stack, Navi bleibt. */
+    @Test
+    public void splitEndeSchiebtLauncherTaskInDenSecondary() throws Exception {
+        String liste = String.join("\n",
+                "Stack id=3 bounds=[0,0][635,720] displayId=0 userId=0",
+                " configuration={1.0 winConfig={ mWindowingMode=split-screen-primary mActivityType=standard}}",
+                "  taskId=205: at.greenchili.panoptes.launcher/at.greenchili.panoptes.launcher.MainActivity bounds=[0,0][635,720] userId=0 visible=true",
+                "Stack id=4 bounds=[645,0][1280,720] displayId=0 userId=0",
+                " configuration={1.0 winConfig={ mWindowingMode=split-screen-secondary mActivityType=standard}}",
+                "  taskId=207: com.google.android.apps.maps/com.google.android.maps.MapsActivity bounds=[645,0][1280,720] userId=0 visible=true",
+                "Stack id=9 bounds=[0,0][1280,720] displayId=0 userId=0",
+                " configuration={1.0 winConfig={ mWindowingMode=fullscreen mActivityType=standard}}",
+                "  taskId=211: at.greenchili.panoptes.launcher/at.greenchili.panoptes.launcher.MainActivity bounds=[0,0][1280,720] userId=0 visible=false");
+        assertEquals(205, AppLauncher.primaryTaskAusListe(liste, "at.greenchili.panoptes.launcher"));
+        assertEquals("die Navi wird nie verschoben", -1, AppLauncher.primaryTaskAusListe(liste, "com.google.android.apps.maps"));
+        assertEquals("ohne Split nichts", -1, AppLauncher.primaryTaskAusListe(String.join("\n",
+                "Stack id=9 bounds=[0,0][1280,720]", " configuration={ mWindowingMode=fullscreen}",
+                "  taskId=211: at.greenchili.panoptes.launcher/at.greenchili.panoptes.launcher.MainActivity bounds=[0,0][1280,720]"),
+                "at.greenchili.panoptes.launcher"));
+        String a = lies("app/src/main/java/at/greenchili/surfmate/launcher/AppLauncher.java").replace("\r\n", "\n");
+        String f = a.substring(a.indexOf("public static boolean splitBeenden("), a.indexOf("static int primaryTaskAusListe("));
+        assertTrue(f.contains("\"am stack move-task \" + task + \" \" + sekundaer + \" true\""));
+        assertTrue("kein Beenden der Navi", !f.contains("force-stop") && !f.contains("stack remove"));
+        String h = lies("app/src/main/java/at/greenchili/surfmate/server/LauncherApiHandler.java").replace("\r\n", "\n");
+        assertTrue("nur der eigene Launcher", h.contains("AppLauncher.splitBeenden(LAUNCHER_PAKET)"));
+    }
+
     private static String lies(String rel) throws Exception {
         Path cur = Paths.get(System.getProperty("user.dir")).toAbsolutePath().normalize();
         while (cur != null) {
             for (Path p : new Path[]{cur.resolve(rel), cur.resolve(rel.replaceFirst("^app/", ""))}) {
                 if (Files.isRegularFile(p)) return new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
             }
-            cur = cur.getParent();
+            cur = at.greenchili.surfmate.testutil.RepoWurzel.hoch(cur);
         }
         throw new AssertionError("Nicht gefunden: " + rel);
+    }
+
+    /** 0.1.39 E2E R2-1: „Start“ (splitBeenden) und ein neuer Split beenden ein laufendes haltePaarImSplit. */
+    @org.junit.Test
+    public void startBeendetDasHaltenImSplit() throws Exception {
+        int gen = AppLauncher.HALTEN_GENERATION.incrementAndGet();
+        org.junit.Assert.assertTrue(AppLauncher.halteNoch(gen));
+        AppLauncher.HALTEN_GENERATION.incrementAndGet();
+        org.junit.Assert.assertFalse(AppLauncher.halteNoch(gen));
+        java.nio.file.Path p = java.nio.file.Paths.get("src/main/java/at/greenchili/surfmate/launcher/AppLauncher.java");
+        if (!java.nio.file.Files.exists(p)) p = java.nio.file.Paths.get("app").resolve(p);
+        String src = new String(java.nio.file.Files.readAllBytes(p), java.nio.charset.StandardCharsets.UTF_8);
+        int sb = src.indexOf("public static boolean splitBeenden(");
+        org.junit.Assert.assertTrue("splitBeenden zählt hoch, bevor es verschiebt",
+                src.indexOf("HALTEN_GENERATION.incrementAndGet()", sb) < src.indexOf("am stack move-task", sb));
+        int h = src.indexOf("public static void haltePaarImSplit(");
+        String rumpf = src.substring(h, src.indexOf("public static boolean splitBeenden(", 0) > h ? src.indexOf("public static boolean splitBeenden(") : src.length());
+        org.junit.Assert.assertTrue(rumpf.contains("final int gen = HALTEN_GENERATION.incrementAndGet();"));
+        int mv = rumpf.indexOf("am stack move-task");
+        org.junit.Assert.assertTrue("Prüfung direkt vor dem Verschieben", rumpf.lastIndexOf("if (!halteNoch(gen)) break;", mv) > 0);
     }
 }

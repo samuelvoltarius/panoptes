@@ -67,7 +67,7 @@ public class WireGuardWebEntryContractTest {
             if (Files.isRegularFile(module)) {
                 return new String(Files.readAllBytes(module), StandardCharsets.UTF_8);
             }
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError("Could not locate " + relative);
     }

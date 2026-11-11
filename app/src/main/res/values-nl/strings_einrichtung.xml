@@ -89,7 +89,7 @@
     <string name="einr_auto_unbekannt">Panoptes kon nog niet controleren wat je auto kan. Dat doet Panoptes later.</string>
     <string name="einr_auto_ausblenden">Wat je auto niet kan, verbergen we.</string>
     <string name="einr_auto_modell">Welke auto rijd je?</string>
-    <string name="einr_auto_waehlen">Kies model en accu</string>
+    <string name="einr_auto_menueweg">Panoptes leest het model uit de auto. Lukt dat niet: Instellingen → Alle instellingen → Auto en scherm → Voertuig handmatig toevoegen.</string>
     <string name="einr_auto_gewaehlt">Model opgeslagen.</string>
     <string name="einr_auto_weiss_nicht_satz">Geen probleem. Panoptes schat de waarden tot je later het model kiest.</string>
     <string name="einr_f_kameras">Camera’s</string>

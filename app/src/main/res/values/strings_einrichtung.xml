@@ -89,7 +89,7 @@
     <string name="einr_auto_unbekannt">Panoptes could not yet check what your car can do. It will do so later.</string>
     <string name="einr_auto_ausblenden">What your car can\'t do, we hide.</string>
     <string name="einr_auto_modell">Which car do you drive?</string>
-    <string name="einr_auto_waehlen">Choose model and battery</string>
+    <string name="einr_auto_menueweg">Panoptes reads the model from the car. If it doesn\'t: Settings → All settings → Car &amp; display → Add vehicle manually.</string>
     <string name="einr_auto_gewaehlt">Model saved.</string>
     <string name="einr_auto_weiss_nicht_satz">No problem. Panoptes estimates the values until you choose the model later.</string>
     <string name="einr_f_kameras">Cameras</string>

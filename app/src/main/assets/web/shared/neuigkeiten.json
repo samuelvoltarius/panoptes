@@ -739,6 +739,45 @@
         "Nieuwe kaart ‘Je toegangscode’ onder Instellingen → Alle instellingen → Verbindingen: verborgen, ‘Tonen’ vraagt eerst en verbergt hem na 60 seconden weer. Alleen op het scherm in de auto.",
         "Opnames: ‘Terug’ brengt je van de video naar de lijst, de app blijft open. Ontbreekt een opname, dan staat dat er nu. Tijdens het rijden blijven video’s geblokkeerd."
       ]
+    },
+    {
+      "version": "0.1.39",
+      "versionCode": 79,
+      "de": [
+        "Launcher: Der Reiter „Karte“ zeigt deine Navi-App neben einer Statusspalte mit Akku, Reichweite, Wächter, Musik und Kamera. Lässt sich die App nicht teilen, liegt oben eine schmale Statusleiste.",
+        "Neben der Karte bringt dich „Start“ zurück zum vollen Launcher, die Navi läuft weiter.",
+        "Meldungen beim Abstellen und Parken kommen jetzt auch an, wenn das Netz erst Stunden später zurück ist. Sie sind dann als „verspätet“ markiert.",
+        "Die Zurück-Taste des Autos geht jetzt eine Seite zurück. Erst auf der Startseite legt sie Panoptes in den Hintergrund.",
+        "Die Überschrift oben bleibt beim Scrollen gut lesbar."
+      ],
+      "en": [
+        "Launcher: the “Map” tab shows your navigation app next to a status column with battery, range, guard, music and camera. If the app cannot be split, a slim status bar sits at the top.",
+        "Next to the map, “Start” takes you back to the full launcher while navigation keeps running.",
+        "Messages when you switch off and park now arrive even if the network only returns hours later. They are then marked as “delayed”.",
+        "The car’s Back key now goes back one page. Only on the start page does it send Panoptes to the background.",
+        "The heading at the top stays easy to read while scrolling."
+      ],
+      "fr": [
+        "Launcher : l’onglet « Carte » affiche votre app de navigation à côté d’une colonne d’état avec batterie, autonomie, gardien, musique et caméra. Sinon, une fine barre d’état reste en haut.",
+        "À côté de la carte, « Accueil » vous ramène au launcher en plein écran, la navigation continue.",
+        "Les messages à l’arrêt et au stationnement arrivent désormais même si le réseau ne revient que des heures plus tard. Ils sont alors marqués « en retard ».",
+        "La touche Retour de la voiture revient maintenant d’une page. Ce n’est que sur la page d’accueil qu’elle met Panoptes en arrière-plan.",
+        "Le titre en haut reste bien lisible pendant le défilement."
+      ],
+      "it": [
+        "Launcher: la scheda “Mappa” mostra la tua app di navigazione accanto a una colonna di stato con batteria, autonomia, guardiano, musica e camera. Altrimenti resta in alto una sottile barra di stato.",
+        "Accanto alla mappa, “Home” ti riporta al launcher a schermo intero, la navigazione continua.",
+        "I messaggi allo spegnimento e al parcheggio ora arrivano anche se la rete torna solo ore dopo. Sono allora segnati come “in ritardo”.",
+        "Il tasto Indietro dell’auto ora torna indietro di una pagina. Solo sulla pagina iniziale porta Panoptes in secondo piano.",
+        "Il titolo in alto resta ben leggibile durante lo scorrimento."
+      ],
+      "nl": [
+        "Launcher: het tabblad ‘Kaart’ toont je navigatie-app naast een statuskolom met accu, bereik, bewaker, muziek en camera. Kan de app niet gedeeld worden, dan staat bovenaan een smalle statusbalk.",
+        "Naast de kaart brengt ‘Start’ je terug naar de volledige launcher, de navigatie loopt door.",
+        "Meldingen bij uitzetten en parkeren komen nu ook aan als het netwerk pas uren later terug is. Ze zijn dan gemarkeerd als ‘te laat’.",
+        "De terugtoets van de auto gaat nu één pagina terug. Pas op de startpagina zet hij Panoptes op de achtergrond.",
+        "De titel bovenaan blijft bij het scrollen goed leesbaar."
+      ]
     }
   ]
 }

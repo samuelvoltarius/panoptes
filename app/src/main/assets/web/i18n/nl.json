@@ -5070,7 +5070,7 @@
   },
   "navi": {
     "via_mehr": "Meer: tussenstops",
-    "karte_aus": "De kaart staat uit. Aanzetten: Instellingen → Alle instellingen → Kaartbron.",
+    "karte_aus": "De kaart staat uit. Aanzetten: Instellingen → Alle instellingen → Auto en scherm → Kaartbron.",
     "rate": "Te veel verzoeken – wacht even 2 minuten.",
     "slow": "De planner antwoordde niet op tijd. Probeer het opnieuw.",
     "nothing": "Niets gevonden",
@@ -6124,7 +6124,7 @@
   "kartenquelle": {
     "titel": "Kaartbron kiezen",
     "text": "Voor de kaart laadt Panoptes kaartbeelden van internet. De gekozen bron ziet je IP-adres en het kaartgebied, dus ongeveer waar je auto staat. Zolang je niets kiest, blijft de kaart leeg en wordt er niets verstuurd.",
-    "dauer": "Hoe lang de bron verzoeken bewaart, bepaalt de beheerder. Je kunt je keuze altijd wijzigen onder Instellingen → Alle instellingen → Kaartbron.",
+    "dauer": "Hoe lang de bron verzoeken bewaart, bepaalt de beheerder. Je kunt je keuze altijd wijzigen onder Instellingen → Alle instellingen → Auto en scherm → Kaartbron.",
     "waehlen": "Kaartbron kiezen",
     "nicht_erreichbar_titel": "Kaart niet bereikbaar",
     "nicht_erreichbar_text": "De gekozen kaartbron reageert nu niet. Panoptes schakelt niet zelf over op een andere bron.",

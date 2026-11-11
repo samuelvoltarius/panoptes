@@ -746,6 +746,9 @@
       "size_kb": "{0} KB",
       "size_mb": "{0} MB"
     },
+    "spool": {
+      "verspaetet": "⏱ (delayed, {0})"
+    },
     "media": {
       "video_too_large": "🎞 *Too big to send*\n`{0}` · {1} MB\nTelegram takes 50 MB at most – watch it in Panoptes.",
       "document_too_large": "📄 *Too big to send*\n`{0}` · {1} MB – Telegram takes 50 MB at most.",

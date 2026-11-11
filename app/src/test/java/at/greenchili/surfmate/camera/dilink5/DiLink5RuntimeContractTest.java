@@ -2415,7 +2415,7 @@ public class DiLink5RuntimeContractTest {
             if (Files.isRegularFile(fromModule)) {
                 return fromModule;
             }
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError("Could not locate " + relativePath);
     }

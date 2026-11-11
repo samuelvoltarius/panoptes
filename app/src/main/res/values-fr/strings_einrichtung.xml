@@ -89,7 +89,7 @@
     <string name="einr_auto_unbekannt">Panoptes n’a pas encore pu vérifier ce que sait faire votre voiture. Il le fera plus tard.</string>
     <string name="einr_auto_ausblenden">Ce que votre voiture ne sait pas faire, nous le masquons.</string>
     <string name="einr_auto_modell">Quelle voiture conduisez-vous ?</string>
-    <string name="einr_auto_waehlen">Choisir le modèle et la batterie</string>
+    <string name="einr_auto_menueweg">Panoptes lit le modèle depuis la voiture. Sinon : Réglages → Tous les réglages → Voiture et affichage → Ajouter un véhicule manuellement.</string>
     <string name="einr_auto_gewaehlt">Modèle enregistré.</string>
     <string name="einr_auto_weiss_nicht_satz">Pas de souci. Panoptes estime les valeurs jusqu’à ce que vous choisissiez le modèle.</string>
     <string name="einr_f_kameras">Caméras</string>

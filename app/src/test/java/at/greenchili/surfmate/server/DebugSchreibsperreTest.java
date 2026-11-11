@@ -78,7 +78,7 @@ public class DebugSchreibsperreTest {
         assertFalse(ipc.contains("LogUploader.upload("));
         String gradle = Quelltext.lies(Paths.get("build.gradle.kts"));
         assertFalse(gradle.contains("buildConfigField(\"String\", \"LOG_UPLOAD_URL\""));
-        String frag = Quelltext.lies(Paths.get("src/main/java/at/greenchili/surfmate/ui/fragment/DaemonsFragment.kt"));
-        assertFalse(frag.contains("uploadDaemonLog"));
+        // 0.1.39 A1: DaemonsFragment (alte Oberfläche) ist gelöscht
+        assertFalse(java.nio.file.Files.exists(Paths.get("src/main/java/at/greenchili/surfmate/ui/fragment/DaemonsFragment.kt")));
     }
 }

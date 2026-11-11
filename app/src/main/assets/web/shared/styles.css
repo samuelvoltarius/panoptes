@@ -4706,6 +4706,14 @@ h1, h2, h3, .page-title, .card-title, [class$="-value"], [class*="-value "], .st
 }
 .page-title { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
 .page-header, .mobile-header { background: transparent; }
+/* 0.1.39 X1: Die Kopfzeile klebt oben (sticky) und ist VOLL DECKEND: Grundfarbe der Seite, kein Glas.
+   Glas (Alpha 0,88) ließ Karten und Überschriften durchscheinen; Chromium 74 am Auto kann kein backdrop-filter,
+   und die @supports-not-Ausnahmen decken .page-header nicht ab. --bg-base ist in beiden Themen eine Volltonfarbe. */
+.page-header {
+    background: var(--bg-base, var(--surface, #0A2238));
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
 
 /* Karten: leicht durchscheinend mit feiner Aqua-Linie */
 .card {

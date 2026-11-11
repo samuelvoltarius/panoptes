@@ -93,7 +93,7 @@ public class TachoRechtTest {
                     return new String(java.nio.file.Files.readAllBytes(g), java.nio.charset.StandardCharsets.UTF_8)
                             .replace("\r\n", "\n");
                 }
-                cur = cur.getParent();
+                cur = at.greenchili.surfmate.testutil.RepoWurzel.hoch(cur);
             }
             throw new AssertionError("nicht gefunden: " + rel);
         }

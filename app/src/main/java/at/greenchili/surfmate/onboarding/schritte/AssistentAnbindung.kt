@@ -31,8 +31,6 @@ internal class AssistentAnbindung(
     private val state: OnboardingState,
     /** Assistent beendet (fertig = Abschluss erreicht). */
     private val beendet: (fertig: Boolean) -> Unit,
-    /** Kurze Führung durch Panoptes (DashboardTourCoach) im Host starten. */
-    private val rundgangStarten: () -> Unit,
 ) : AssistentHost {
 
     private val haupt = Handler(Looper.getMainLooper())
@@ -84,12 +82,6 @@ internal class AssistentAnbindung(
             val ok = EinrichtungApi.get("/status").let { it.status in 200..499 }   // erreichbar = läuft
             ergebnis(ok)
         }, "EinrichtungDaemonCheck").start()
-    }
-
-    override fun fahrzeugWaehlen(fertig: (Boolean) -> Unit) {
-        val ma = activity as? at.greenchili.surfmate.ui.MainActivity
-        val geoeffnet = ma?.openVehicleProfileForOnboarding { haupt.post { fertig(true) } } ?: false
-        if (!geoeffnet) fertig(false)
     }
 
     override fun kamerasZuordnen(fertig: (Boolean) -> Unit) {
@@ -209,7 +201,6 @@ internal class AssistentAnbindung(
         (activity as? at.greenchili.surfmate.ui.MainActivity)?.zeigeWebSeite(EINRICHTUNG_SEITE)
     }
 
-    override fun rundgang() { rundgangStarten() }
 
     companion object {
         private const val WEB_EBENE_ID = 0x0F1E0001

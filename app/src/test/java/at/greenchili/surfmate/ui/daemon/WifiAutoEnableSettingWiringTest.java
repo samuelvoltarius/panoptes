@@ -13,23 +13,7 @@ import org.junit.Test;
 /** Guards Wi-Fi auto-enable user intent and hotspot suppression ownership. */
 public class WifiAutoEnableSettingWiringTest {
 
-    @Test
-    public void daemonsPagePersistsThePositiveSettingOffTheUiThread() throws Exception {
-        String layout = readRepositoryFile("app/src/main/res/layout/fragment_daemons.xml");
-        String fragment = readRepositoryFile(
-                "app/src/main/java/at/greenchili/surfmate/ui/fragment/DaemonsFragment.kt");
-
-        assertTrue(layout.contains("@+id/rowWifiAutoEnable"));
-        assertTrue(layout.contains("@+id/swWifiAutoEnable"));
-        assertTrue(fragment.contains("Executors.newSingleThreadExecutor"));
-        assertTrue(fragment.contains("wifiSettingsWorker.execute"));
-        assertTrue(fragment.contains("UnifiedConfigManager.isWifiAutoEnableEnabled()"));
-        assertTrue(fragment.contains(
-                "DaemonHttpClient.open(\"/api/keymap/fire\", \"POST\""));
-        assertTrue(fragment.contains(".put(\"kind\", \"radio\")"));
-        assertTrue(fragment.contains(".put(\"radio\", \"wifi\")"));
-        assertTrue(fragment.contains(".put(\"enable\", enabled)"));
-    }
+    // 0.1.39 A1: daemonsPagePersistsThePositiveSettingOffTheUiThread entfällt – prüfte nur die gelöschte alte Oberfläche
 
     @Test
     public void hotspotMarkerAndUserIntentRemainIndependent() throws Exception {
@@ -72,7 +56,7 @@ public class WifiAutoEnableSettingWiringTest {
             if (Files.isRegularFile(fromModule)) {
                 return new String(Files.readAllBytes(fromModule), StandardCharsets.UTF_8);
             }
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError("Could not locate repository file: " + relativePath);
     }

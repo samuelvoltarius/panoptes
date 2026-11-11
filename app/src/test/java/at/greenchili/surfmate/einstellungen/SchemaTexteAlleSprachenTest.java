@@ -101,7 +101,7 @@ public class SchemaTexteAlleSprachenTest {
             for (Path p : new Path[] {current.resolve(relativePath), current.resolve(relativePath.replaceFirst("^app/", ""))}) {
                 if (Files.isRegularFile(p)) return new String(Files.readAllBytes(p), java.nio.charset.StandardCharsets.UTF_8);
             }
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError("Nicht gefunden: " + relativePath);
     }

@@ -165,96 +165,9 @@ public class GenAiAssetContractTest {
         assertFalse(context.contains("\"vin\""));
     }
 
-    @Test
-    public void insightsAreOptInCardsInsideExistingDashboards() throws Exception {
-        String assistant = readProjectFile(
-                "src/main/assets/web/local/assistant.html");
-        String webDashboard = readProjectFile(
-                "src/main/assets/web/local/index.html");
-        String javascript = readProjectFile(
-                "src/main/assets/web/shared/genai.js");
-        String statusServer = readProjectFile(
-                "src/main/java/at/greenchili/surfmate/server/HttpServer.java");
-        String nativeProvider = readProjectFile(
-                "src/main/java/at/greenchili/surfmate/ui/dashboard/DashboardInsight.kt");
-        String nativeDashboard = readProjectFile(
-                "src/main/java/at/greenchili/surfmate/ui/fragment/DashboardFragment.kt");
-        String insights = readProjectFile(
-                "src/main/java/at/greenchili/surfmate/genai/GenAiInsights.java");
-        String api = readProjectFile(
-                "src/main/java/at/greenchili/surfmate/server/GenAiApiHandler.java");
-        String english = readProjectFile("src/main/assets/web/i18n/en.json");
+    // 0.1.39 A1: insightsAreOptInCardsInsideExistingDashboards entfällt – die alte native Oberfläche ist gelöscht (DashboardFragment)
 
-        assertTrue(assistant.contains("id=\"genAiInsightDashboard\""));
-        assertFalse(assistant.contains("id: 'insights'"));
-        assertFalse(assistant.contains("data-tab=\"insights\""));
-        assertTrue(webDashboard.contains("id=\"dashAiInsight\""));
-        assertTrue(webDashboard.contains(
-                "<button class=\"dash-ai-insight\""));
-        assertTrue(webDashboard.contains("aria-live=\"polite\""));
-        assertTrue(webDashboard.contains(".dash-ai-insight::before"));
-        assertFalse(webDashboard.contains(
-                "id=\"dashAiInsight\" href=\"/assistant\""));
-        assertTrue(webDashboard.contains("toggleAiInsight"));
-        assertTrue(webDashboard.contains("is-expanded"));
-        assertTrue(webDashboard.contains("/api/genai/insights/dashboard"));
-        assertTrue(webDashboard.contains(
-                "encodeURIComponent(language)"));
-        assertTrue(webDashboard.contains(
-                "document.getElementById('dashAiInsightText').textContent = text"));
-        assertTrue(webDashboard.contains(
-                "status.genAiDashboardEnabled === true"));
-        assertTrue(webDashboard.contains(
-                "if (document.hidden || !this.aiInsightEnabled) return"));
-        assertTrue(statusServer.contains(
-                "\"genAiDashboardEnabled\""));
-        assertTrue(nativeProvider.contains(
-                "if (!GenAiConfig.isDashboardPresentationEnabled()) return null"));
-        assertTrue(nativeProvider.contains(
-                "\"/api/genai/insights/dashboard?lang=${LocaleManager.get()}\""));
-        assertTrue(nativeDashboard.contains(
-                "aiInsightExpanded = !aiInsightExpanded"));
-        assertFalse(nativeDashboard.contains(
-                "aiInsightCard.setOnClickListener {\n"
-                        + "            findNavController().navigate(R.id.genAiFragment"));
-        assertTrue(javascript.contains(
-                "language: window.BYD && BYD.i18n"));
-        assertTrue(javascript.contains(
-                "message.mode === 'community_search'"));
-        assertTrue(javascript.contains("t('genai.no_community')"));
-        assertTrue(english.contains(
-                "\"no_community\": \"No matching rules from other drivers."));
-        assertTrue(insights.contains(
-                "\"surfmate_dashboard_insight\""));
-        assertTrue(insights.contains(
-                ".put(\"language\", language)"));
-        assertTrue(insights.contains(
-                "latestJson(String requestedLanguage)"));
-        assertTrue(api.contains(
-                "input.optString(\"language\", \"\")"));
-    }
-
-    @Test
-    public void assistantIsDefaultVisibleAndUsesExistingNavigationToggle()
-            throws Exception {
-        String catalog = readProjectFile(
-                "src/main/java/at/greenchili/surfmate/ui/navigation/NavigationRailCatalog.kt");
-        String preferences = readProjectFile(
-                "src/main/java/at/greenchili/surfmate/ui/util/PreferencesManager.kt");
-        String appearance = readProjectFile(
-                "src/main/java/at/greenchili/surfmate/ui/fragment/settings/SettingsAppearanceFragment.kt");
-        String activity = readProjectFile(
-                "src/main/java/at/greenchili/surfmate/ui/MainActivity.kt");
-
-        assertTrue(catalog.contains("const val ASSISTANT = \"assistant\""));
-        assertTrue(catalog.contains("NavigationRailOption(ASSISTANT"));
-        assertTrue(preferences.contains(
-                "resolveWithNewDefaults(stored, knownKeys, seen)"));
-        assertTrue(appearance.contains(
-                "NavigationRailCatalog.customizableOptions.forEach"));
-        assertTrue(activity.contains(
-                "RailItem(NavigationRailCatalog.ASSISTANT"));
-    }
+    // 0.1.39 A1: assistantIsDefaultVisibleAndUsesExistingNavigationToggle entfällt – die alte native Oberfläche ist gelöscht (Leiste/Einstellungen)
 
     private static String readProjectFile(String relativePath) throws Exception {
         Path current = Paths.get("").toAbsolutePath();

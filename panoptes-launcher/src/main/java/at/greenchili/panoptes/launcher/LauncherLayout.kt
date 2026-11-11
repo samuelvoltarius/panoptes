@@ -38,6 +38,7 @@ object Fahrsicherheit {
      * 0.1.38.5: welche Navi-App der Launcher direkt startet: eigene Wahl, sonst die am Tacho gewählte, sonst die erste
      * startbare bekannte; null = keine (dann Karte in Panoptes). Nur startbare Pakete.
      */
+    // 0.1.39 (L1): Automatisch = Google Maps, sonst Werksnavi; eine eigene Wahl bleibt immer zuerst (KartenStatus)
     fun naviZiel(eigen: String?, tacho: String?, bekannt: List<String>, startbar: (String) -> Boolean): String? =
-        listOfNotNull(eigen, tacho).plus(bekannt).firstOrNull { startbar(it) }
+        KartenStatus.naviReihenfolge(eigen, tacho, bekannt).firstOrNull { startbar(it) }
 }

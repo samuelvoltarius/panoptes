@@ -17,17 +17,11 @@ import org.junit.Test;
 public class AppToastConsistencyTest {
 
     private static final String[] PAGE_LAYOUTS = {
-            "app/src/main/res/layout/fragment_dashboard.xml",
-            "app/src/main/res/layout-land/fragment_dashboard.xml",
-            "app/src/main/res/layout/fragment_recordings.xml",
-            "app/src/main/res/layout-land/fragment_recordings.xml",
             "app/src/main/res/layout/fragment_projection.xml",
             "app/src/main/res/layout-land/fragment_projection.xml",
     };
 
     private static final String[] PAGE_FRAGMENTS = {
-            "app/src/main/java/at/greenchili/surfmate/ui/fragment/DashboardFragment.kt",
-            "app/src/main/java/at/greenchili/surfmate/ui/fragment/RecordingLibraryFragment.kt",
             "app/src/main/java/at/greenchili/surfmate/ui/fragment/ProjectionFragment.kt",
     };
 
@@ -72,7 +66,7 @@ public class AppToastConsistencyTest {
             if (Files.isRegularFile(fromModule)) {
                 return new String(Files.readAllBytes(fromModule), StandardCharsets.UTF_8);
             }
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError("Could not locate repository file: " + relativePath);
     }

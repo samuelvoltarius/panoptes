@@ -32,7 +32,10 @@ public final class SplitFaehigkeit {
     static String urteil(Integer resizeMode, int targetSdk, boolean erzwungen) {
         if (erzwungen) return JA;
         if (resizeMode == null) return UNBEKANNT;
-        // wie BYD ScreenSplitUtils.isAppSuportSplit (Firmware 04.11.): 0, 5, 6 = nicht teilbar; VIA_SDK gilt als teilbar
+        // wie BYD ScreenSplitUtils.isAppSuportSplit (Firmware 04.11.): 0, 5, 6 = nicht teilbar.
+        // 0.1.39 (L1, Koordination nach Surf-Befund): VIA_SDK nur mit targetSdk >= 24 teilbar (Android-Regel), sonst
+        // sicher nicht teilbar → der Launcher nimmt den Rückfall (Vollbild + Statusleiste) statt eines Split-Versuchs.
+        if (resizeMode == RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION && targetSdk < 24) return NEIN;
         if (resizeMode == RESIZE_MODE_UNRESIZEABLE || resizeMode == RESIZE_MODE_FORCE_RESIZABLE_LANDSCAPE_ONLY
                 || resizeMode == RESIZE_MODE_FORCE_RESIZABLE_PORTRAIT_ONLY) return NEIN;
         return JA;

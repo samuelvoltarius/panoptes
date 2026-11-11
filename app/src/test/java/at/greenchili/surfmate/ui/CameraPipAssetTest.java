@@ -89,7 +89,7 @@ public class CameraPipAssetTest {
                     current.resolve(relative), current.resolve(relative.replaceFirst("^app/", ""))}) {
                 if (Files.exists(candidate)) return candidate;
             }
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError("Not found: " + relative);
     }

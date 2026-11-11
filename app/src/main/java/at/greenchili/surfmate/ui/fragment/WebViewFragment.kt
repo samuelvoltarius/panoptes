@@ -590,10 +590,7 @@ class WebViewFragment : Fragment() {
             // 0.1.38.14 P1: Die alte Oberfläche ist nicht mehr erreichbar.
             requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner,
                 object : androidx.activity.OnBackPressedCallback(true) {
-                    override fun handleOnBackPressed() {
-                        val w = webView
-                        if (w != null && w.canGoBack()) w.goBack() else activity?.moveTaskToBack(true)
-                    }
+                    override fun handleOnBackPressed() { webZurueck() }
                 })
         }
 
@@ -1142,6 +1139,12 @@ class WebViewFragment : Fragment() {
                     return resp
                 }
                 
+                // 0.1.39 Z1: eigener Verlauf der Panoptes-Seiten (Rückfall, wenn canGoBack() nach Klick-Navigation false ist)
+                override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
+                    super.doUpdateVisitedHistory(view, url, isReload)
+                    seitenVerlauf.besucht(url, isReload)
+                }
+
                 override fun onPageStarted(
                     view: WebView?, url: String?, favicon: android.graphics.Bitmap?
                 ) {
@@ -1159,6 +1162,7 @@ class WebViewFragment : Fragment() {
 
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
+                    if (webVerlaufLeeren) { webVerlaufLeeren = false; view?.clearHistory() }
                     cancelPageLoadTimeout()
                     loadInProgress = false
                     if (url != null && url == startSeiteFuer) {
@@ -2062,6 +2066,39 @@ class WebViewFragment : Fragment() {
             }
         } catch (e: Exception) {
             android.util.Log.e("WebView", "Cookie inject failed: ${e.message}")
+        }
+    }
+
+    /** 0.1.39 Z1: besuchte Panoptes-Seiten dieses Fragments (nur Vollbild genutzt). */
+    private val seitenVerlauf = at.greenchili.surfmate.ui.WebZurueck.Verlauf()
+    /** 0.1.39 Z1: nach einem Ersatz-Zurück (loadUrl) den WebView-Verlauf in onPageFinished leeren. */
+    private var webVerlaufLeeren = false
+
+    /**
+     * 0.1.39 Z1: Android-Zurück in der Vollflächen-Oberfläche. Web-Zurück, solange es Verlauf gibt (WebView oder eigener
+     * Verlauf), sonst zur Startseite; erst auf der Startseite die App in den Hintergrund (Android-Standard, Koordination
+     * 21.10.). Diagnose nur auf Debug-Stufe.
+     */
+    private fun webZurueck() {
+        val w = webView
+        val aktuell = w?.url
+        val schritt = at.greenchili.surfmate.ui.WebZurueck.entscheide(w?.canGoBack() == true, seitenVerlauf.liste(), aktuell)
+        if (android.util.Log.isLoggable("WebZurueck", android.util.Log.DEBUG)) {
+            val bf = try { w?.copyBackForwardList() } catch (_: Throwable) { null }
+            android.util.Log.d("WebZurueck", "wv=" + (w?.hashCode() ?: 0) + " url=" + aktuell + " bf=" + (bf?.size ?: -1) + "/" +
+                (bf?.currentIndex ?: -1) + " eigen=" + seitenVerlauf.liste().size + " -> " + schritt)
+        }
+        when (schritt) {
+            at.greenchili.surfmate.ui.WebZurueck.Schritt.WEB_ZURUECK -> { seitenVerlauf.zurueck(); w?.goBack() }
+            // Ersatz-Zurück per loadUrl: danach den WebView-Verlauf leeren, sonst springt das nächste Zurück wieder vor
+            at.greenchili.surfmate.ui.WebZurueck.Schritt.VORIGE_LADEN -> seitenVerlauf.zurueck()?.let {
+                webVerlaufLeeren = true; w?.loadUrl(it)
+            }
+            at.greenchili.surfmate.ui.WebZurueck.Schritt.START_LADEN -> {
+                seitenVerlauf.leeren(); webVerlaufLeeren = true
+                w?.loadUrl("http://127.0.0.1:${CameraDaemon.HTTP_PORT}/")
+            }
+            at.greenchili.surfmate.ui.WebZurueck.Schritt.HINTERGRUND -> activity?.moveTaskToBack(true)
         }
     }
 

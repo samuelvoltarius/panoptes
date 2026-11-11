@@ -36,7 +36,7 @@ public final class Quelltext {
                     if (Files.size(naechster) < 1024) {
                         String ziel = new String(Files.readAllBytes(naechster), StandardCharsets.UTF_8).trim();
                         if (!ziel.isEmpty() && ziel.indexOf('\n') < 0 && ziel.indexOf('\0') < 0) {
-                            naechster = naechster.getParent().resolve(ziel).normalize();
+                            naechster = at.greenchili.surfmate.testutil.RepoWurzel.hoch(naechster).resolve(ziel).normalize();
                         }
                     }
                 } catch (IOException ignored) {

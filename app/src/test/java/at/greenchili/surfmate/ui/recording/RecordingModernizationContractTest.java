@@ -12,75 +12,26 @@ import org.junit.Test;
 /** Guards the portrait/landscape recording UI contract and player states. */
 public class RecordingModernizationContractTest {
 
-    @Test
-    public void bothRecordingScreensKeepCoreAndModernActions() throws IOException {
-        String portrait = read("app/src/main/res/layout/fragment_recordings.xml");
-        String landscape = read("app/src/main/res/layout-land/fragment_recordings.xml");
+    // 0.1.39 A1: bothRecordingScreensKeepCoreAndModernActions entfällt – prüfte nur die gelöschte alte Oberfläche
 
-        for (String id : new String[] {
-                "segmentedSource", "segmentDashcam", "segmentReplays",
-                "segmentSurveillance", "libraryContainer", "cardDateJump",
-                "etPlaceSearch", "btnOpenRecordingFilters", "btnSelectRecordings"
-        }) {
-            assertTrue("portrait missing " + id, portrait.contains("@+id/" + id));
-            assertTrue("landscape missing " + id, landscape.contains("@+id/" + id));
-        }
-        assertTrue("portrait must host restored inline player safely",
-                portrait.contains("@+id/previewContainer"));
-        assertTrue("portrait restoration host must remain hidden",
-                portrait.contains("android:importantForAccessibility=\"noHideDescendants\""));
-        assertTrue(landscape.contains("@+id/previewContainer"));
-        assertTrue(landscape.contains("@+id/previewPlaceholder"));
-    }
-
-    @Test
-    public void inlinePlayerHasPortraitRestoreGuard() throws IOException {
-        String recordings = read(
-                "app/src/main/java/at/greenchili/surfmate/ui/fragment/RecordingsFragment.kt");
-        String player = read(
-                "app/src/main/java/at/greenchili/surfmate/ui/fragment/VideoPlayerFragment.kt");
-
-        assertTrue(recordings.contains("closeRestoredInlinePlayerInPortrait"));
-        assertTrue(recordings.contains("commitNowAllowingStateLoss"));
-        assertTrue(recordings.contains("override fun onConfigurationChanged"));
-        assertTrue(player.contains("findViewById<View>(R.id.twoPaneBody) == null"));
-        assertTrue(player.contains("if (!playbackInitialized) return"));
-    }
+    // 0.1.39 A1: inlinePlayerHasPortraitRestoreGuard entfällt – prüfte nur die gelöschte alte Oberfläche
 
     @Test
     public void mediaAndPlayerExposeStableStatesAndLargeActions() throws IOException {
+        // 0.1.39 A1: Prüfungen gelöschter Dateien (alte Oberfläche) entfernt
         String portraitItem = read("app/src/main/res/layout/item_recording.xml");
         String landscapeItem = read("app/src/main/res/layout-land/item_recording.xml");
-        String player = read("app/src/main/res/layout/fragment_video_player.xml");
 
         assertTrue(portraitItem.contains("RecordingAspectRatioFrameLayout"));
         assertTrue(landscapeItem.contains("android:layout_width=\"144dp\""));
-        assertTrue(player.contains("@+id/playerLoadingContainer"));
-        assertTrue(player.contains("@+id/playerErrorContainer"));
-        assertTrue(player.contains("@+id/btnPlayerRetry"));
-        assertTrue(player.contains("@+id/btnPlayerErrorNext"));
-        assertTrue(player.contains("android:layout_width=\"56dp\""));
     }
 
     @Test
     public void selectionAndThumbnailWorkAreLifecycleSafe() throws IOException {
-        String library = read(
-                "app/src/main/java/at/greenchili/surfmate/ui/fragment/RecordingLibraryFragment.kt");
+        // 0.1.39 A1: Prüfungen gelöschter Dateien (alte Oberfläche) entfernt
         String adapter = read(
                 "app/src/main/java/at/greenchili/surfmate/ui/adapter/RecordingAdapter.kt");
 
-        assertTrue(library.contains("override fun onSaveInstanceState"));
-        assertTrue(library.contains("STATE_SELECT_MODE"));
-        assertTrue(library.contains("STATE_SELECTED_PATHS"));
-        assertTrue(library.contains("STATE_SELECT_ALL_PENDING"));
-        assertTrue(library.contains("recordingAdapter.restoreSelection("));
-        assertTrue(library.contains("selectAllRecordings()"));
-        assertTrue(library.contains("RecordingsApiClient.fetchAllRecordings(filter)"));
-        assertTrue(library.contains("setSelectionActionsEnabled(false)"));
-        assertTrue(library.contains("pendingRestoredSelectionPaths"));
-        assertTrue(library.contains("allMatchingSelected"));
-        assertTrue(library.contains("recyclerRecordings.adapter = null"));
-        assertTrue(library.contains("recordingAdapter.dispose()"));
         assertTrue(adapter.contains("fun restoreSelection("));
         assertTrue(adapter.contains("fun getSelectedPaths()"));
         assertTrue(adapter.contains("fun selectAllLoaded()"));
@@ -93,11 +44,10 @@ public class RecordingModernizationContractTest {
     @Test
     public void nativeRecordingCardsCreateTheSameAuthenticatedEvidencePack()
             throws IOException {
+        // 0.1.39 A1: Prüfungen gelöschter Dateien (alte Oberfläche) entfernt
         String row = read("app/src/main/res/layout/item_recording.xml");
         String adapter = read(
                 "app/src/main/java/at/greenchili/surfmate/ui/adapter/RecordingAdapter.kt");
-        String library = read(
-                "app/src/main/java/at/greenchili/surfmate/ui/fragment/RecordingLibraryFragment.kt");
         String client = read(
                 "app/src/main/java/at/greenchili/surfmate/ui/util/RecordingsApiClient.kt");
         String providerPaths = read("app/src/main/res/xml/file_paths.xml");
@@ -105,9 +55,6 @@ public class RecordingModernizationContractTest {
         assertTrue(row.contains("@+id/btnMore"));
         assertTrue(adapter.contains("R.string.action_create_evidence_pack"));
         assertTrue(adapter.contains("onEvidencePack?.invoke(recording)"));
-        assertTrue(library.contains("Theme_SurfMate_M3_Dialog"));
-        assertTrue(library.contains("RecordingsApiClient.createIncidentPack("));
-        assertTrue(library.contains("type = \"application/zip\""));
         assertTrue(client.contains("DaemonHttpClient.open("));
         assertTrue(client.contains("\"/api/genai/incidents\""));
         assertTrue(client.contains("\"/api/genai/incidents/$packId/download\""));
@@ -190,15 +137,10 @@ public class RecordingModernizationContractTest {
     @Test
     public void asyncTimelineAndThumbnailResultsCannotRebindStaleViews()
             throws IOException {
-        String player = read(
-                "app/src/main/java/at/greenchili/surfmate/ui/fragment/VideoPlayerFragment.kt");
+        // 0.1.39 A1: Prüfungen gelöschter Dateien (alte Oberfläche) entfernt
         String adapter = read(
                 "app/src/main/java/at/greenchili/surfmate/ui/adapter/RecordingAdapter.kt");
 
-        assertTrue(player.contains("val generation = ++timelineGeneration"));
-        assertTrue(player.contains("generation != timelineGeneration"));
-        assertTrue(player.contains("currentPath != videoPath"));
-        assertTrue(player.contains("timelineExecutor?.shutdownNow()"));
         assertTrue(adapter.contains(
                 "override fun onViewRecycled(holder: RecordingViewHolder)"));
         assertTrue(adapter.contains("holder.recycle()"));
@@ -210,61 +152,9 @@ public class RecordingModernizationContractTest {
         assertTrue(adapter.contains("inSampleSize = sampleSize("));
     }
 
-    @Test
-    public void recordingControlsAndFullscreenBackKeepTheirContracts()
-            throws IOException {
-        String portrait = read("app/src/main/res/layout/fragment_recordings.xml");
-        String landscape = read("app/src/main/res/layout-land/fragment_recordings.xml");
-        String host = read(
-                "app/src/main/java/at/greenchili/surfmate/ui/fragment/RecordingsFragment.kt");
+    // 0.1.39 A1: recordingControlsAndFullscreenBackKeepTheirContracts entfällt – prüfte nur die gelöschte alte Oberfläche
 
-        for (String layout : new String[] {portrait, landscape}) {
-            for (String id : new String[] {
-                    "btnSelectRecordings", "segmentDashcam", "segmentReplays",
-                    "segmentSurveillance", "btnPrevDay", "btnNextDay",
-                    "btnOpenRecordingFilters"
-            }) {
-                assertTrue(id + " must retain a 48dp target",
-                        openingTagForId(layout, id)
-                                .contains("android:layout_height=\"48dp\""));
-            }
-        }
-        assertTrue(host.contains("OnBackPressedCallback(false)"));
-        assertTrue(host.contains(
-                "onBackPressedDispatcher.addCallback("));
-        assertTrue(host.contains(
-                "fullscreenBackCallback.isEnabled = playerFullscreen"));
-        assertTrue(host.contains(
-                "player.onFullscreenToggle = { wantFullscreen ->"));
-    }
-
-    @Test
-    public void inlinePlayerKeepsUsableSpaceAndAutoHidingControls()
-            throws IOException {
-        String landscape = read("app/src/main/res/layout-land/fragment_recordings.xml");
-        String player = read(
-                "app/src/main/java/at/greenchili/surfmate/ui/fragment/VideoPlayerFragment.kt");
-        String host = read(
-                "app/src/main/java/at/greenchili/surfmate/ui/fragment/RecordingsFragment.kt");
-
-        assertTrue(openingTagForId(landscape, "libraryContainer")
-                .contains("android:layout_weight=\"11\""));
-        assertTrue(openingTagForId(landscape, "previewCard")
-                .contains("android:layout_weight=\"9\""));
-        assertTrue(openingTagForId(landscape, "previewInsightsToggle")
-                .contains("android:layout_height=\"48dp\""));
-        assertTrue(openingTagForId(landscape, "previewInsights")
-                .contains("android:visibility=\"gone\""));
-        assertTrue(host.contains("setPreviewDetailsExpanded(root, false)"));
-        assertTrue(host.contains("setPreviewDetailsExpanded(root, !expanded)"));
-        assertTrue(host.contains(
-                "previewInsightsToggle?.visibility = if (fullscreen) View.GONE else View.VISIBLE"));
-        assertTrue(host.contains("params.weight = if (fullscreen) 0f else 11f"));
-        assertTrue(player.contains(
-                "val chrome = listOfNotNull(topBar, quadrantBar, bottomControls)"));
-        assertTrue(player.contains(
-                "handler.postDelayed(hideOverlayRunnable, OVERLAY_HIDE_DELAY)"));
-    }
+    // 0.1.39 A1: inlinePlayerKeepsUsableSpaceAndAutoHidingControls entfällt – prüfte nur die gelöschte alte Oberfläche
 
     private static String openingTagForId(String xml, String id) {
         String marker = "android:id=\"@+id/" + id + "\"";
@@ -291,7 +181,7 @@ public class RecordingModernizationContractTest {
             if (Files.isRegularFile(fromModule)) {
                 return new String(Files.readAllBytes(fromModule), StandardCharsets.UTF_8);
             }
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError("Could not locate repository file: " + relativePath);
     }

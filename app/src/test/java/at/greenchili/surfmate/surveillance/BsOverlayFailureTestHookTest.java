@@ -172,7 +172,7 @@ public class BsOverlayFailureTestHookTest {
                 return new String(Files.readAllBytes(candidate), StandardCharsets.UTF_8)
                         .replace("\r\n", "\n");
             }
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new IllegalStateException("missing " + relative);
     }

@@ -1,6 +1,6 @@
 # Codekarte Panoptes
 
-**Stand: Version 0.1.38.14, Commit 3fe06d9e**
+**Stand: Version 0.1.39, Commit 8438cd8a**
 
 Wegweiser durch den Code. Zuerst hier suchen, dann gezielt die genannte Datei öffnen.
 Die Karte nennt Dateien und Klassen, keine Zeilennummern. Kurze Pfade gelten ab
@@ -123,7 +123,7 @@ Jedes Paket steht hier, auch Unterpakete. Pfade ab dem Wurzelpaket. Lose Dateien
 | `telenav/` | Telenav-Anbindung |
 | `trips/` | Fahrten, Fahrtenbuch-Daten |
 | `uebernahme/` | Overdrive-Übernahme |
-| `ui/`, `ui/about/`, `ui/adapter/`, `ui/daemon/`, `ui/dashboard/`, `ui/dialog/`, `ui/fragment/`, `ui/fragment/settings/`, `ui/model/`, `ui/navigation/`, `ui/privacy/`, `ui/setup/`, `ui/util/`, `ui/vehicle/`, `ui/view/`, `ui/viewmodel/`, `ui/widget/` | Native Oberfläche, vieles davon WebView-Hülle; 0.1.38.14: die alte native Oberfläche (Dashboard, Aufnahmen-Liste, Player, alte Leiste) ist unerreichbar – kein „Erweitert (alt)“, events.html bleibt im Web, nach Neuaufbau zurück ins Web (`NeuaufbauZiel.altesZiel`, nur Projektion bleibt nativ) |
+| `ui/`, `ui/about/`, `ui/adapter/`, `ui/daemon/`, `ui/dashboard/`, `ui/dialog/`, `ui/fragment/`, `ui/fragment/settings/`, `ui/model/`, `ui/navigation/`, `ui/privacy/`, `ui/setup/`, `ui/util/`, `ui/vehicle/`, `ui/view/`, `ui/viewmodel/`, `ui/widget/` | Native Oberfläche, vieles davon WebView-Hülle; 0.1.39 A1: die alte native Oberfläche (Dashboard, Aufnahmen-Liste, Player, Einstellungen, alte Leiste) ist gelöscht, im Nav-Graphen nur Web-Start, Projektion, BYD-Cloud (`AltDesignGeloeschtTest`); vorher 0.1.38.14 unerreichbar – kein „Erweitert (alt)“, events.html bleibt im Web, nach Neuaufbau zurück ins Web (`NeuaufbauZiel.altesZiel`, nur Projektion bleibt nativ); 0.1.39 `ui/WebZurueck`: Android-Zurück geht eine Web-Seite zurück, solange es Verlauf gibt (eigener Verlauf als Rückfall zu `canGoBack()`), erst auf der Startseite `moveTaskToBack` |
 | `updater/` | Installationsablauf nach Update |
 | `util/` | Hilfen, `DaemonStorage` |
 | `wallbox/` | Wallbox-Anbindung |
@@ -236,7 +236,7 @@ Extern, ist die Route für Kopplungen gesperrt.
 | `/api/positions` | `PositionsApiHandler` | Login |
 | `/api/apps/` | `AppsApiHandler` | Login; `/api/apps/verwaltung` für Handy-Web gesperrt |
 | `/api/display/` | `DisplayApiHandler` | Login; für Handy-Web gesperrt; `sperre/aus` am Display nur mit PIN |
-| `/api/launcher/` | `LauncherApiHandler` | Login; Extern `/api/launcher/v1/summary` lesen; `vehicle/*` → 404; `apps/launch` mit `mode:"neben"` = Split neben dem Launcher; einziger Fahrzeugweg `klima` (`LauncherKlimaBefehl`: sechs Klima-Aktionen, ab 0.1.38.6 dazu 14 feste Komfort-Aktionen: Sitzheizung/-lüftung je Sitz, Lenkrad, Umluft aus dem gelesenen Ist-Stand, Auto-Modus/Entfrosten/Nur-Gebläse als an/aus-Paar; nie Hupe, Licht, Blinker, Auf-/Zusperren, Fenster, Dach, Kofferraum, Spiegel, Sitzspeicher; Test `LauncherKomfortWegTest`) und `update/installieren` sowie „Tacho wieder normal“ `tacho/normal` nur von der Launcher-APK mit Panoptes-Signatur (`LauncherAufrufer`); 0.1.38 Layout `layout` (GET/PUT), `layout/standard`, `layout/apps` in der Datei launcher_layout.json (`LauncherLayoutSpeicher`, Prüfung `LauncherLayoutPruefung`, 64 KB, neueste gewinnt, 409), Extern nur Art `handy`/`cockpit` mit Recht `launcher`, Handy-Web nur mit Recht `launcher`, nie Automationen; Seite `launcher.html` |
+| `/api/launcher/` | `LauncherApiHandler` | Login; Extern `/api/launcher/v1/summary` lesen; `vehicle/*` → 404; `apps/launch` mit `mode:"neben"` = Split neben dem Launcher, `mode:"split_ende"` (0.1.39) = Split verlassen, Launcher im Vollbild (`AppLauncher.splitBeenden`, nur der eigene Launcher-Task, nur von der Launcher-APK mit Panoptes-Signatur); einziger Fahrzeugweg `klima` (`LauncherKlimaBefehl`: sechs Klima-Aktionen, ab 0.1.38.6 dazu 14 feste Komfort-Aktionen: Sitzheizung/-lüftung je Sitz, Lenkrad, Umluft aus dem gelesenen Ist-Stand, Auto-Modus/Entfrosten/Nur-Gebläse als an/aus-Paar; nie Hupe, Licht, Blinker, Auf-/Zusperren, Fenster, Dach, Kofferraum, Spiegel, Sitzspeicher; Test `LauncherKomfortWegTest`) und `update/installieren` sowie „Tacho wieder normal“ `tacho/normal` nur von der Launcher-APK mit Panoptes-Signatur (`LauncherAufrufer`); 0.1.38 Layout `layout` (GET/PUT), `layout/standard`, `layout/apps` in der Datei launcher_layout.json (`LauncherLayoutSpeicher`, Prüfung `LauncherLayoutPruefung`, 64 KB, neueste gewinnt, 409), Extern nur Art `handy`/`cockpit` mit Recht `launcher`, Handy-Web nur mit Recht `launcher`, nie Automationen; Seite `launcher.html` |
 | `/api/about/vehicle-info` | `AboutApiHandler` | Login |
 
 ### Einstellungen, Konto, Kopplung

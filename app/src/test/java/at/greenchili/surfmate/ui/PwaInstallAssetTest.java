@@ -104,7 +104,7 @@ public class PwaInstallAssetTest {
             }) {
                 if (Files.exists(candidate)) return candidate;
             }
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new java.io.FileNotFoundException(relative);
     }

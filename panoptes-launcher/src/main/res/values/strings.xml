@@ -208,4 +208,14 @@
     <string name="groesse_hinweis">Automatic fits the launcher to your screen. If everything still looks too big or too small, pick Smaller or Larger.</string>
     <string name="erweitert">Advanced</string>
     <string name="zurueck">Back</string>
+    <string name="leiste_musik">Play/Pause</string>
+    <string name="leiste_zurueck">Back</string>
+    <string name="leiste_weiter">Next</string>
+    <string name="leiste_kamera">Camera</string>
+    <string name="leiste_start">Home</string>
+    <string name="leiste_waechter_an">Guard on</string>
+    <string name="leiste_waechter_aus">Guard off</string>
+    <string name="leiste_recht_titel">Status bar over the map</string>
+    <string name="leiste_recht_text">This navigation app cannot be shown next to the launcher. For a narrow status bar on top of the map, Android must allow the launcher to “display over other apps”. Without it the map opens full screen without the bar.</string>
+    <string name="leiste_ohne">Without bar</string>
 </resources>

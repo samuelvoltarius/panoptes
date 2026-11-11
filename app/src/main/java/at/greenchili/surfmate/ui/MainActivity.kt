@@ -33,7 +33,6 @@ import at.greenchili.surfmate.ui.model.DaemonStatus
 import at.greenchili.surfmate.ui.model.DaemonType
 import at.greenchili.surfmate.ui.model.NavigationRailSwipePolicy
 import at.greenchili.surfmate.ui.model.TunnelDisplayPolicy
-import at.greenchili.surfmate.ui.fragment.SettingsFragment
 import at.greenchili.surfmate.ui.navigation.NavigationRailCatalog
 import at.greenchili.surfmate.ui.privacy.ScreenshotPrivacyController
 import at.greenchili.surfmate.ui.util.PreferencesManager
@@ -1300,13 +1299,12 @@ open class MainActivity : AppCompatActivity() {
     fun zeigeWebSeite(pfad: String) = navigateToWebSeite(pfad)
 
     /**
-     * Liegt eine alte native Oberfläche (dashboardFragment, Aufnahmen-Liste, Player, Einstellungen …) oben bzw. im
-     * Nav-Stapel? 0.1.38.14 P1: jedes Ziel außer dem Web-Startziel und den Funktionsflächen ([NeuaufbauZiel.NATIV]).
+     * Liegt nach einem Neuaufbau etwas anderes als die Web-Oberfläche oben? 0.1.38.14 P1: jedes Ziel außer dem
+     * Web-Startziel und der Funktionsfläche Projektion. 0.1.39 A1: die alten nativen Ziele sind gelöscht.
      */
     private fun alteOberflaecheImStapel(): Boolean = try {
         NeuaufbauZiel.altesZiel(navController.currentDestination?.id, R.id.panoptesStartFragment,
-            setOf(R.id.projectionFragment)) ||
-            navController.getBackStackEntry(R.id.dashboardFragment) != null
+            setOf(R.id.projectionFragment))
     } catch (_: IllegalArgumentException) {
         false   // nicht im Stapel
     } catch (_: Throwable) {
@@ -1321,38 +1319,13 @@ open class MainActivity : AppCompatActivity() {
         navController = navHostFragment.navController
 
         // Top-level destinations on the rail — no back arrow on these.
-        appBarConfiguration = AppBarConfiguration(
-            setOf(
-                R.id.dashboardFragment,
-                R.id.genAiFragment,
-                R.id.waechterFragment,
-                R.id.naviFragment,
-                R.id.systemFragment,
-                R.id.liveViewFragment,
-                R.id.recordingsFragment,
-                R.id.parkingFragment,
-                R.id.vehicleControlFragment,
-                R.id.seatPositionsFragment,
-                R.id.projectionFragment,
-                R.id.tripsFragment,
-                R.id.chargingFragment,
-                R.id.automationsFragment,
-                R.id.keyMappingFragment,
-                R.id.integrationsFragment,
-                R.id.roadSenseFragment,
-                R.id.networkFragment,
-                R.id.diagnosticsFragment,
-                R.id.settingsFragment,
-                R.id.settingsAboutFragment
-            )
-        )
+        // 0.1.39 A1: nur noch Web-Start und die Funktionsfläche Projektion (alte native Ziele gelöscht)
+        appBarConfiguration = AppBarConfiguration(setOf(R.id.panoptesStartFragment, R.id.projectionFragment))
 
         // The ActionBar wrapper marks the title as explicitly set, which stops
         // AppCompat re-applying the activity label over the destination label.
         setupActionBarWithNavController(navController, appBarConfiguration)
 
-        // Settings is a top-level rail destination, so NavigationUI hides the
-        // up caret; it has to be restored when Recordings opens it as a child.
         // Eine Oberfläche (0.1.7.1): Auf der Panoptes-Startseite navigiert die Web-Oberfläche selbst –
         // native Kopfzeile weg. 0.1.38.14 P1: die alte native Leiste (rail_menu) erscheint nie mehr, auch nicht auf
         // nativen Funktionsflächen (Projektion); dort führt die Kopfzeile zurück.
@@ -1360,13 +1333,6 @@ open class MainActivity : AppCompatActivity() {
             val voll = destination.id == R.id.panoptesStartFragment
             findViewById<View>(R.id.navigationRailContainer)?.visibility = View.GONE
             findViewById<View>(R.id.appBarLayout)?.visibility = if (voll) View.GONE else View.VISIBLE
-        }
-        navController.addOnDestinationChangedListener { _, destination, arguments ->
-            if (destination.id == R.id.settingsFragment &&
-                arguments?.getBoolean(SettingsFragment.KEY_FROM_RECORDINGS) == true
-            ) {
-                supportActionBar?.setDisplayHomeAsUpEnabled(true)
-            }
         }
 
         setupCustomRail(savedInstanceState)
@@ -1384,81 +1350,8 @@ open class MainActivity : AppCompatActivity() {
     private fun setupCustomRail(savedInstanceState: Bundle?) {
         // Order mirrors the include order in activity_main_new.xml, which is
         // where the category headers sit between these rows.
-        val items = listOf(
-            RailItem(RAIL_KEY_DASHBOARD, R.id.railDestDashboard, R.id.dashboardFragment,
-                R.drawable.ic_dashboard, R.string.rail_dashboard),
-            RailItem(NavigationRailCatalog.ASSISTANT, R.id.railDestAssistant,
-                R.id.genAiFragment, R.drawable.ic_smart_toy, R.string.rail_assistant),
-            RailItem(NavigationRailCatalog.WAECHTER, R.id.railDestWaechter, R.id.waechterFragment,
-                R.drawable.ic_sentry, R.string.rail_waechter),
-            RailItem(NavigationRailCatalog.LIVE, R.id.railDestLive, R.id.liveViewFragment,
-                R.drawable.ic_live, R.string.rail_live),
-            RailItem(NavigationRailCatalog.RECORDINGS, R.id.railDestRecordings,
-                R.id.recordingsFragment, R.drawable.ic_recording, R.string.rail_recordings,
-                ownedDestinationIds = setOf(
-                    R.id.videoPlayerFragment,
-                    R.id.surveillanceSettingsWebFragment,
-                    R.id.recordingSettingsWebFragment,
-                )),
-            RailItem(NavigationRailCatalog.PARKING, R.id.railDestParking,
-                R.id.parkingFragment, R.drawable.ic_parking, R.string.rail_parking),
-            RailItem(NavigationRailCatalog.VEHICLE, R.id.railDestVehicle,
-                R.id.vehicleControlFragment,
-                R.drawable.ic_vehicle_control, R.string.rail_vehicle),
-            RailItem(NavigationRailCatalog.SEAT_POSITIONS, R.id.railDestSeatPositions,
-                R.id.seatPositionsFragment,
-                R.drawable.ic_seat_positions, R.string.rail_seat_positions),
-            RailItem(NavigationRailCatalog.PROJECTION, R.id.railDestProjection,
-                R.id.projectionFragment,
-                R.drawable.ic_projection, R.string.rail_projection),
-            RailItem(NavigationRailCatalog.CHARGING, R.id.railDestCharging,
-                R.id.chargingFragment,
-                R.drawable.ic_charging, R.string.rail_charging),
-            RailItem(NavigationRailCatalog.NAVI, R.id.railDestNavi, R.id.naviFragment,
-                R.drawable.ic_route, R.string.rail_navi),
-            RailItem(NavigationRailCatalog.TRIPS, R.id.railDestTrips, R.id.tripsFragment,
-                R.drawable.ic_trips, R.string.rail_trips),
-            RailItem(NavigationRailCatalog.ROAD_SENSE, R.id.railDestRoadSense,
-                R.id.roadSenseFragment,
-                R.drawable.ic_roadsense, R.string.rail_roadsense),
-            // Hazard Map is a standalone Activity, not a nav-graph fragment,
-            // so it launches via startActivity (destinationId = 0).
-            RailItem(NavigationRailCatalog.MAP, R.id.railDestMap, 0,
-                R.drawable.ic_roadsense_map, R.string.rail_hazard_map,
-                launchActivity = at.greenchili.surfmate.navmap.RoadSenseMapActivity::class.java),
-            RailItem(NavigationRailCatalog.AUTOMATIONS, R.id.railDestAutomations,
-                R.id.automationsFragment,
-                R.drawable.ic_automations, R.string.rail_automations),
-            RailItem(NavigationRailCatalog.KEY_MAPPING, R.id.railDestKeyMapping,
-                R.id.keyMappingFragment,
-                R.drawable.ic_key_mapping, R.string.rail_key_mapping),
-            RailItem(NavigationRailCatalog.INTEGRATIONS, R.id.railDestIntegrations,
-                R.id.integrationsFragment, R.drawable.ic_integrations,
-                R.string.rail_integrations,
-                ownedDestinationIds = setOf(
-                    R.id.telegramSettingsFragment,
-                    R.id.abrpSettingsFragment,
-                    R.id.mqttFragment,
-                    R.id.bydCloudFragment,
-                )),
-            RailItem(NavigationRailCatalog.SYSTEM, R.id.railDestSystem, R.id.systemFragment,
-                R.drawable.ic_link, R.string.rail_system),
-            RailItem(NavigationRailCatalog.NETWORK, R.id.railDestNetwork,
-                R.id.networkFragment,
-                R.drawable.ic_hotspot, R.string.rail_network),
-            RailItem(NavigationRailCatalog.DIAGNOSTICS, R.id.railDestDiagnostics,
-                R.id.diagnosticsFragment,
-                R.drawable.ic_diagnostics, R.string.rail_diagnostics,
-                ownedDestinationIds = setOf(R.id.adbConsoleFragment)),
-            RailItem(RAIL_KEY_SETTINGS, R.id.railDestSettings, R.id.settingsFragment,
-                R.drawable.ic_settings, R.string.rail_settings,
-                ownedDestinationIds = setOf(
-                    R.id.daemonsFragment,
-                    R.id.settingsSecurityFragment,
-                )),
-            RailItem(RAIL_KEY_ABOUT, R.id.railDestAbout, R.id.settingsAboutFragment,
-                R.drawable.ic_update, R.string.settings_section_about)
-        )
+        // 0.1.39 A1: die alte native Leiste ist gelöscht – keine Ziele mehr (Container bleibt ausgeblendet)
+        val items = emptyList<RailItem>()
         railItems = items
 
         val languageClick = View.OnClickListener {
@@ -2077,12 +1970,6 @@ open class MainActivity : AppCompatActivity() {
     }
     
     override fun onSupportNavigateUp(): Boolean {
-        val fromRecordings = navController.currentDestination?.id == R.id.settingsFragment &&
-            navController.currentBackStackEntry?.arguments
-                ?.getBoolean(SettingsFragment.KEY_FROM_RECORDINGS) == true
-        if (fromRecordings) {
-            return navController.popBackStack()
-        }
         return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
     }
     
@@ -4627,31 +4514,9 @@ open class MainActivity : AppCompatActivity() {
         return true
     }
 
-    fun openVehicleProfileForOnboarding(onFinished: () -> Unit): Boolean {
-        val nav = supportFragmentManager.findFragmentById(R.id.navHostFragment)
-                as? androidx.navigation.fragment.NavHostFragment
-        val dash = nav?.childFragmentManager?.primaryNavigationFragment
-                as? at.greenchili.surfmate.ui.fragment.DashboardFragment
-                ?: return false
-        return dash.showVehicleCapacityDialog(onFinished)
-    }
 
-    /** Live DashboardFragment root for the orientation tour anchors (null if not current). */
-    fun currentDashboardRoot(): android.view.View? {
-        val nav = supportFragmentManager.findFragmentById(R.id.navHostFragment)
-                as? androidx.navigation.fragment.NavHostFragment
-        val dash = nav?.childFragmentManager?.primaryNavigationFragment
-                as? at.greenchili.surfmate.ui.fragment.DashboardFragment
-        return dash?.view
-    }
-
-    /** Expert-tour entry: land the user on Diagnostics (advanced camera knobs live there). */
-    fun openExpertTourEntry() {
-        try { navController.navigate(R.id.diagnosticsFragment) } catch (_: Throwable) {}
-    }
-
-    /** Setup-guide camera tip: land the user on Diagnostics, where the camera probe lives. */
-    fun invokeDiagnosticsScreen() = navigateToRailDestination(R.id.diagnosticsFragment)
+    /** Setup-guide camera tip. 0.1.39 A1: die alte Diagnose-Seite ist gelöscht → Kameras in der Web-Oberfläche. */
+    fun invokeDiagnosticsScreen() = navigateToWebSeite("/waechter.html#kamerasEinrichten")
 
     /**
      * A nav-rail ROW view by id (e.g. R.id.railDestMap), for the Expert tour to spotlight
@@ -4743,20 +4608,6 @@ open class MainActivity : AppCompatActivity() {
     // 0.1.21: ebenso ein Deep-Link (navigate_to) auf eine Web-Seite.
     private var pendingWebSeite: String? = null
 
-    /**
-     * Orientation-agnostic Settings anchor for the Expert tour (portrait card vs landscape
-     * sub-rail row). The live SettingsFragment resolves it and, in landscape, selects the
-     * section so its pane is shown. Null if Settings isn't current → caller centers.
-     */
-    fun settingsTourAnchor(
-        target: at.greenchili.surfmate.ui.fragment.SettingsFragment.TourTarget,
-    ): android.view.View? {
-        val nav = supportFragmentManager.findFragmentById(R.id.navHostFragment)
-                as? androidx.navigation.fragment.NavHostFragment
-        val settings = nav?.childFragmentManager?.primaryNavigationFragment
-                as? at.greenchili.surfmate.ui.fragment.SettingsFragment
-        return settings?.tourAnchorFor(target)
-    }
 
     private fun ensureOnboardingHost(): at.greenchili.surfmate.onboarding.OnboardingHost =
         onboardingHost ?: at.greenchili.surfmate.onboarding.OnboardingHost(

@@ -1228,7 +1228,7 @@
     <string name="roadsense_map_deleted_toast">Gefahrenstelle entfernt</string>
     <string name="roadsense_map_action_failed">Straßenzustand antwortet nicht. Versuche es noch einmal.</string>
     <string name="roadsense_map_no_location">Suche GPS-Signal…</string>
-    <string name="karte_keine_quelle">Keine Kartenquelle gewählt. Auswahl unter Einstellungen → Alle Einstellungen → Kartenquelle.</string>
+    <string name="karte_keine_quelle">Keine Kartenquelle gewählt. Auswahl unter Einstellungen → Alle Einstellungen → Auto &amp; Anzeige → Kartenquelle.</string>
     <string name="karte_suche_hinweis">Die Kartensuche schickt nur deinen Suchtext an den Panoptes-Routenplaner (unser Server). Eine Kennung wird nicht gesendet. Abschalten unter Einstellungen → Datenschutz.</string>
     <string name="karte_suche_aus">Die Suche im Internet ist aus. Einschalten unter Einstellungen → Datenschutz.</string>
     <!-- Navigation: search + routing + turn-by-turn -->

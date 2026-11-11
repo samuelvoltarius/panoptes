@@ -769,6 +769,9 @@
       "detected_at": "🕒 _gesehen um {0}_",
       "cleared_no_event": "👍 Fehlalarm – war niemand da, nichts aufgenommen."
     },
+    "spool": {
+      "verspaetet": "⏱ (verspätet, {0})"
+    },
     "media": {
       "video_too_large": "🎞 *Zu groß zum Schicken*\n`{0}` · {1} MB\nTelegram nimmt höchstens 50 MB – ansehen geht in Panoptes.",
       "document_too_large": "📄 *Zu groß zum Schicken*\n`{0}` · {1} MB – Telegram nimmt höchstens 50 MB.",

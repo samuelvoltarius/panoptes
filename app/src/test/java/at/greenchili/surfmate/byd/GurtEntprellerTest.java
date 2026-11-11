@@ -171,7 +171,7 @@ public class GurtEntprellerTest {
         while (p != null) {
             if (java.nio.file.Files.isRegularFile(p.resolve(rel))) return p.resolve(rel);
             if (java.nio.file.Files.isRegularFile(p.resolve("app/" + rel))) return p.resolve("app/" + rel);
-            p = p.getParent();
+            p = at.greenchili.surfmate.testutil.RepoWurzel.hoch(p);
         }
         throw new IllegalStateException(rel);
     }

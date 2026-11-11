@@ -28,10 +28,8 @@ public class MainActivityOrientationContractTest {
 
     @Test
     public void primaryAdaptiveScreensProvideLandscapeResources() throws Exception {
-        assertTrue(projectFile("src/main/res/layout/fragment_dashboard.xml").toFile().isFile());
-        assertTrue(projectFile("src/main/res/layout-land/fragment_dashboard.xml").toFile().isFile());
-        assertTrue(projectFile("src/main/res/layout/fragment_recordings.xml").toFile().isFile());
-        assertTrue(projectFile("src/main/res/layout-land/fragment_recordings.xml").toFile().isFile());
+        // 0.1.39 A1: Dashboard und Aufnahmen-Liste (alte Oberfläche) sind gelöscht; bleibt die Hülle selbst
+        assertTrue(projectFile("src/main/res/layout/activity_main_new.xml").toFile().isFile());
     }
 
     private static String readProjectFile(String relativePath) throws Exception {

@@ -98,7 +98,9 @@ class LauncherKomfortTest {
         // Komfort kam mit vC 6 / 0.1.38.6; spätere Versionen dürfen nur höher zählen (0.1.38.7: vC 7).
         val vc = Regex("versionCode = (\\d+)").find(gradle)!!.groupValues[1].toInt()
         assertTrue("versionCode $vc", vc >= 6)
-        assertTrue(Regex("versionName = \"0\\.1\\.38\\.\\d+\"").containsMatchIn(gradle))
+        // 0.1.39: ab 0.1.38.x, spätere Versionen (0.1.39, 0.1.40 …) zählen nur höher
+        val vn = Regex("versionName = \"0\\.1\\.(\\d+)(?:\\.\\d+)?\"").find(gradle)
+        assertTrue("versionName", vn != null && vn.groupValues[1].toInt() >= 38)
     }
 
     @Test

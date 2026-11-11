@@ -81,7 +81,7 @@ public class AutoArtErkennungTest {
             for (Path c : new Path[] {cur.resolve(rel), cur.resolve("app").resolve(rel)}) {
                 if (Files.isRegularFile(c)) return new String(Files.readAllBytes(c), StandardCharsets.UTF_8);
             }
-            cur = cur.getParent();
+            cur = at.greenchili.surfmate.testutil.RepoWurzel.hoch(cur);
         }
         throw new AssertionError("fehlt: " + rel);
     }

@@ -55,7 +55,7 @@ public class HomeDashboard0133Test {
             if (Files.isRegularFile(candidate)) return Quelltext.lies(candidate);
             Path fromModule = current.resolve(relative.replaceFirst("^app/", ""));
             if (Files.isRegularFile(fromModule)) return Quelltext.lies(fromModule);
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError("Could not locate " + relative);
     }

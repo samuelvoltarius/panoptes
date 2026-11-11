@@ -119,14 +119,11 @@ public class RemoteCommunicationAssetContractTest {
     @Test
     public void receiverAndSettingsStayInsideTheirDedicatedSurfaces()
             throws IOException {
+        // 0.1.39 A1: Prüfungen gelöschter Dateien (alte Oberfläche) entfernt
         String server = readRepositoryFile(
                 "app/src/main/java/at/greenchili/surfmate/server/HttpServer.java");
         String receiver = readRepositoryFile(
                 "app/src/main/java/at/greenchili/surfmate/services/RemoteVoiceService.java");
-        String overlaySettings = readRepositoryFile(
-                "app/src/main/res/layout/fragment_settings_overlay.xml");
-        String portraitSettings = readRepositoryFile(
-                "app/src/main/res/layout/fragment_settings.xml");
         String manifest = readRepositoryFile(
                 "app/src/main/AndroidManifest.xml");
 
@@ -139,10 +136,6 @@ public class RemoteCommunicationAssetContractTest {
                 "app/src/main/java/at/greenchili/surfmate/communication/"
                         + "RemoteVoiceBridge.java").contains(
                 "startSafetyWatcher()"));
-        assertTrue(overlaySettings.contains(
-                "@layout/include_remote_communication_settings"));
-        assertTrue(portraitSettings.contains(
-                "@layout/include_remote_communication_settings"));
         assertTrue(manifest.contains(
                 "android:name=\"at.greenchili.surfmate.overlay.MessageOverlayService\""));
         assertTrue(manifest.contains(
@@ -444,7 +437,7 @@ public class RemoteCommunicationAssetContractTest {
             if (Files.isRegularFile(fromModule)) {
                 return at.greenchili.surfmate.testutil.Quelltext.lies(fromModule);
             }
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError(
                 "Could not locate repository file: " + relativePath);

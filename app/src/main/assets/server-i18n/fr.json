@@ -752,6 +752,9 @@
       "size_kb": "{0} Ko",
       "size_mb": "{0} Mo"
     },
+    "spool": {
+      "verspaetet": "⏱ (en retard, {0})"
+    },
     "media": {
       "video_too_large": "🎞 *Trop volumineux pour l’envoi*\n`{0}` · {1} Mo\nTelegram accepte 50 Mo au maximum – regardez-le dans Panoptes.",
       "document_too_large": "📄 *Trop volumineux pour l’envoi*\n`{0}` · {1} Mo – Telegram accepte 50 Mo au maximum.",

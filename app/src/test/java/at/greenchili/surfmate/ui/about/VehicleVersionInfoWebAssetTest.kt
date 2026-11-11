@@ -77,7 +77,7 @@ class VehicleVersionInfoWebAssetTest {
             if (Files.exists(fromModule)) {
                 return at.greenchili.surfmate.testutil.Quelltext.lies(fromModule)
             }
-            current = current.parent
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current)
         }
         throw AssertionError("Could not locate $relative")
     }

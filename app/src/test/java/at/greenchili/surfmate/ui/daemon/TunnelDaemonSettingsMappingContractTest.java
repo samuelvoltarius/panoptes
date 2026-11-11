@@ -12,25 +12,7 @@ import org.junit.Test;
 /** Guards tunnel daemon rows against opening another tunnel's settings. */
 public class TunnelDaemonSettingsMappingContractTest {
 
-    @Test
-    public void eachTunnelTypeOpensItsOwnSettingsUi() throws IOException {
-        String fragment = read(
-                "app/src/main/java/at/greenchili/surfmate/ui/fragment/DaemonsFragment.kt");
-
-        assertTrue(fragment.contains(
-                "DaemonType.TAILSCALE_TUNNEL -> showTailscaleSettingsDialog()"));
-        assertTrue(fragment.contains(
-                "DaemonType.WIREGUARD_TUNNEL -> showWireGuardSettingsDialog()"));
-
-        assertTrue(fragment.contains(
-                "inflate(R.layout.dialog_tailscale_settings, null)"));
-
-        String wireguard = read(
-                "app/src/main/java/at/greenchili/surfmate/ui/daemon/"
-                        + "WireGuardSettingsDialog.kt");
-        assertTrue(wireguard.contains(
-                "inflate(R.layout.dialog_wireguard_settings, null)"));
-    }
+    // 0.1.39 A1: eachTunnelTypeOpensItsOwnSettingsUi entfällt – prüfte nur die gelöschte alte Oberfläche
 
     @Test
     public void daemonCardPassesTheBoundTypeToConfigureActions() throws IOException {
@@ -60,14 +42,7 @@ public class TunnelDaemonSettingsMappingContractTest {
         assertControllerType("WireGuardController.kt", "WIREGUARD_TUNNEL");
     }
 
-    @Test
-    public void settingsPaneHostsTheCanonicalDaemonScreen() throws IOException {
-        String settingsHost = read(
-                "app/src/main/java/at/greenchili/surfmate/ui/fragment/settings/"
-                        + "SettingsDaemonsFragment.kt");
-
-        assertTrue(settingsHost.contains("replace(HOST_ID, DaemonsFragment()"));
-    }
+    // 0.1.39 A1: settingsPaneHostsTheCanonicalDaemonScreen entfällt – prüfte nur die gelöschte alte Oberfläche
 
     private static void assertControllerType(String file, String type)
             throws IOException {
@@ -95,7 +70,7 @@ public class TunnelDaemonSettingsMappingContractTest {
                         Files.readAllBytes(fromModule),
                         StandardCharsets.UTF_8);
             }
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError(
                 "Could not locate repository file: " + relativePath);

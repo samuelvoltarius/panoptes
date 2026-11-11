@@ -208,4 +208,14 @@
     <string name="groesse_hinweis">Automatisch past de launcher aan je scherm aan. Lijkt alles nog te groot of te klein, kies dan Kleiner of Groter.</string>
     <string name="erweitert">Geavanceerd</string>
     <string name="zurueck">Terug</string>
+    <string name="leiste_musik">Pauze/Afspelen</string>
+    <string name="leiste_zurueck">Vorige</string>
+    <string name="leiste_weiter">Volgende</string>
+    <string name="leiste_kamera">Camera</string>
+    <string name="leiste_start">Start</string>
+    <string name="leiste_waechter_an">Bewaking aan</string>
+    <string name="leiste_waechter_aus">Bewaking uit</string>
+    <string name="leiste_recht_titel">Statusbalk boven de kaart</string>
+    <string name="leiste_recht_text">Deze navigatie-app kan niet naast de launcher worden getoond. Voor een smalle statusbalk boven de kaart moet Android de launcher toestaan „over andere apps weer te geven”. Zonder dat opent de kaart schermvullend zonder balk.</string>
+    <string name="leiste_ohne">Zonder balk</string>
 </resources>

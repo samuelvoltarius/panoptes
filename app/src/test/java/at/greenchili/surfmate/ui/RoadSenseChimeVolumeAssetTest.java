@@ -25,7 +25,7 @@ public class RoadSenseChimeVolumeAssetTest {
         assertTrue(html.contains(
                 "onchange=\"RoadSenseSettings.commitWarnVolume(this.value)\""));
         assertTrue(html.contains("class=\"slider-track-control\""));
-        assertTrue(html.contains("styles.css?v=pn14"));
+        assertTrue(html.contains("styles.css?v=pn16"));
         assertTrue(html.contains("road-sense.js?v=chimevolume8"));
     }
 
@@ -66,7 +66,7 @@ public class RoadSenseChimeVolumeAssetTest {
             if (Files.isRegularFile(fromModule)) {
                 return at.greenchili.surfmate.testutil.Quelltext.lies(fromModule);
             }
-            current = current.getParent();
+            current = at.greenchili.surfmate.testutil.RepoWurzel.hoch(current);
         }
         throw new AssertionError("Could not locate repository file: " + relativePath);
     }

@@ -50,9 +50,8 @@ public class AlterUpdaterEntferntTest {
             }
         }
         assertTrue("alter Updater noch aufgerufen: " + treffer, treffer.isEmpty());
-        String layout = Quelltext.lies(Paths.get("src/main/res/layout/fragment_settings_about.xml"));
-        assertFalse(layout.contains("@+id/cardCheckUpdate"));
-        assertFalse(layout.contains("@+id/toggleUpdateChannel"));
+        // 0.1.39 A1: die alte Einstellungen-Seite (fragment_settings_about) ist gelöscht
+        assertFalse(java.nio.file.Files.exists(Paths.get("src/main/res/layout/fragment_settings_about.xml")));
     }
 
     @Test
