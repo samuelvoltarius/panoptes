@@ -350,4 +350,24 @@
     <string name="seitenblick_ist_aus">Side view when indicating is off.</string>
     <string name="seitenblick_fehler">Side view could not be switched. Nothing was changed. Please try again later or check it in Panoptes.</string>
     <string name="seitenblick_nicht_erreichbar">Panoptes is not answering right now, so the side view setting cannot be shown. Please try again in a moment.</string>
+    <string name="hg_motiv">Motif</string>
+    <string name="motiv_1">Waves</string>
+    <string name="motiv_2">Dots</string>
+    <string name="motiv_3">Circles</string>
+    <string name="motiv_4">Stripes</string>
+    <string name="motiv_5">Honeycomb</string>
+    <string name="motiv_6">Horizon</string>
+    <string name="motiv_7">Contours</string>
+    <string name="motiv_8">Triangles</string>
+    <string name="motiv_9">Arcs</string>
+    <string name="motiv_10">Stars</string>
+    <string name="selbst_titel">Switch automatically</string>
+    <string name="selbst_hinweis">Display and page changes only, never a vehicle command. Not while you are using the screen (10 s).</string>
+    <string name="selbst_d">In D: show the map</string>
+    <string name="selbst_p">In P: show the home page</string>
+    <string name="selbst_laden">Charging starts: charging tile to the front</string>
+    <string name="stand_uhr">Parked clock</string>
+    <string name="stand_uhr_hinweis">In P, after this time without touching, a large dimmed clock appears. One tap ends it.</string>
+    <string name="stand_uhr_tipp">Tap to close</string>
+    <string name="stand_uhr_minuten">after %1$d min</string>
 </resources>

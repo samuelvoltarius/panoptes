@@ -851,6 +851,45 @@
         "Desgewenst een kleine balk boven alle apps (startscherm, volume) en ‘Muziek hervatten bij start’ – beide staan eerst uit.",
         "‘Zijzicht bij knipperen’ zet je nu in de launcher aan en uit. ‘Kaart naar paneel’ verschijnt alleen bij auto’s waarvan het instrumentenpaneel dat kan – de Dolphin Surf kan het niet."
       ]
+    },
+    {
+      "version": "0.1.42",
+      "versionCode": 82,
+      "de": [
+        "Tacho-Galerie: 15 neue Tacho-Designs, zusammen jetzt 20 zur Auswahl.",
+        "„Kamera & Video im Tacho“ (ab Werk aus): Rückfahrkamera, beim Blinken die Seite und im Stand die Rundumsicht im Tacho; im Stand in P auch eine Aufnahme ansehen, ohne Ton.",
+        "Launcher „Automatisch umschalten“ (ab Werk aus): bei D die Karte, bei P die Startseite, beim Laden die Lade-Kachel nach vorn.",
+        "Launcher: 10 gezeichnete Motive als Hintergrund und eine „Stand-Uhr“, die in P nach einer Weile ohne Bedienung groß erscheint.",
+        "Tacho-Designs, „Tacho gestalten“ und „Kamera & Video im Tacho“: Im Tacho nur bei Autos, deren Tacho fremde Anzeigen erlaubt; beim Dolphin Surf nur als Vorschau unter Display → Tacho."
+      ],
+      "en": [
+        "Cluster gallery: 15 new cluster designs, 20 to choose from in total.",
+        "“Camera & video in the cluster” (off by default): reversing camera, the side you are indicating to and, when parked, the surround view in the cluster; parked in P you can also watch a recording, without sound.",
+        "Launcher “Switch automatically” (off by default): map in D, home page in P, charging tile to the front when charging starts.",
+        "Launcher: 10 drawn patterns as background and a “Parked clock” that appears large in P after a while without use.",
+        "Cluster designs, “Design the cluster” and “Camera & video in the cluster”: shown in the cluster only on cars whose cluster allows other displays; on the Dolphin Surf only as a preview under Instrument cluster."
+      ],
+      "fr": [
+        "Galerie du combiné : 15 nouveaux designs, 20 au choix en tout.",
+        "« Caméra et vidéo au combiné » (désactivé par défaut) : caméra de recul, le côté du clignotant et, à l’arrêt, la vue panoramique au combiné ; à l’arrêt en P, vous pouvez aussi regarder un enregistrement, sans son.",
+        "Launcher « Changer automatiquement » (désactivé par défaut) : la carte en D, l’accueil en P, la tuile de charge devant quand la charge commence.",
+        "Launcher : 10 motifs dessinés comme fond et une « Horloge à l’arrêt » qui s’affiche en grand en P après un moment sans utilisation.",
+        "Designs du compteur, « Créer mon compteur » et « Caméra et vidéo au combiné » : au combiné seulement sur les voitures dont le combiné accepte d’autres affichages ; sur la Dolphin Surf seulement en aperçu sous Compteur."
+      ],
+      "it": [
+        "Galleria del quadro: 15 nuovi design, 20 in tutto tra cui scegliere.",
+        "“Telecamera e video nel quadro” (spento di fabbrica): retrocamera, il lato della freccia e, da fermo, la vista a 360° nel quadro; da fermo in P puoi anche guardare una registrazione, senza audio.",
+        "Launcher “Cambia automaticamente” (spento di fabbrica): mappa in D, pagina iniziale in P, riquadro di ricarica in primo piano quando inizia la ricarica.",
+        "Launcher: 10 motivi disegnati come sfondo e un “Orologio da fermo” che in P appare grande dopo un po’ senza uso.",
+        "Design del quadro, “Crea il tuo quadro” e “Telecamera e video nel quadro”: nel quadro solo sulle auto il cui quadro consente altre visualizzazioni; sulla Dolphin Surf solo come anteprima in Quadro strumenti."
+      ],
+      "nl": [
+        "Paneelgalerij: 15 nieuwe ontwerpen, in totaal 20 om uit te kiezen.",
+        "‘Camera & video in het instrumentenpaneel’ (standaard uit): achteruitrijcamera, de kant waarnaar je knippert en, stilstaand, het rondomzicht in het paneel; stilstaand in P kun je ook een opname bekijken, zonder geluid.",
+        "Launcher ‘Automatisch wisselen’ (standaard uit): kaart in D, startpagina in P, laadtegel naar voren als het laden begint.",
+        "Launcher: 10 getekende motieven als achtergrond en een ‘Parkeerklok’ die in P na een tijdje zonder bediening groot verschijnt.",
+        "Paneelontwerpen, ‘Teller zelf ontwerpen’ en ‘Camera & video in het instrumentenpaneel’: in het paneel alleen bij auto’s waarvan het paneel andere weergaven toestaat; bij de Dolphin Surf alleen als voorbeeld onder Dashboard."
+      ]
     }
   ]
 }

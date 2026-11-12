@@ -49,14 +49,19 @@ public class TachoAuswahlTest {
                 app("com.google.android.youtube", false, true, true, false), // freigegeben: sichtbar
                 app("org.beliebig.app", false, false, false, false)),     // weder Navi noch frei: nicht hier
                 "sport");
-        assertEquals(List.of("design:klar", "design:sport", "design:nacht", "design:horizont", "design:route",
-                "app:com.waze", "app:com.google.android.youtube"), ids(l));
+        // 0.1.42 (T2): alle 20 Designs zuerst, dann die Apps
+        List<String> erwartet = new ArrayList<>();
+        for (String d : TachoAnsicht.DESIGNS) erwartet.add("design:" + d);
+        erwartet.add("app:com.waze");
+        erwartet.add("app:com.google.android.youtube");
+        assertEquals(erwartet, ids(l));
+        int n = TachoAnsicht.DESIGNS.size();
         JSONArray e = l.getJSONArray("eintraege");
         assertTrue(e.getJSONObject(0).getBoolean("waehlbar"));
-        assertFalse(e.getJSONObject(5).getBoolean("waehlbar"));
-        assertEquals("nicht_freigegeben", e.getJSONObject(5).getString("grund"));
-        assertTrue(e.getJSONObject(6).getBoolean("waehlbar"));
-        assertFalse(e.getJSONObject(6).getBoolean("fahrt"));
+        assertFalse(e.getJSONObject(n).getBoolean("waehlbar"));
+        assertEquals("nicht_freigegeben", e.getJSONObject(n).getString("grund"));
+        assertTrue(e.getJSONObject(n + 1).getBoolean("waehlbar"));
+        assertFalse(e.getJSONObject(n + 1).getBoolean("fahrt"));
         assertEquals("normal", l.getJSONObject("jetzt").getString("id"));
         assertEquals("normal", l.getJSONObject("normal").getString("id"));
         assertFalse("Panoptes selbst nie als App", ids(l).contains("app:" + TachoAnsicht.PAKET));

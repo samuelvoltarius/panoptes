@@ -350,4 +350,24 @@
     <string name="seitenblick_ist_aus">Seitenblick beim Blinken ist aus.</string>
     <string name="seitenblick_fehler">Seitenblick ließ sich nicht umschalten. Es wurde nichts geändert. Bitte später nochmal versuchen oder in Panoptes prüfen.</string>
     <string name="seitenblick_nicht_erreichbar">Panoptes antwortet gerade nicht, darum lässt sich der Seitenblick jetzt nicht anzeigen. Bitte gleich nochmal versuchen.</string>
+    <string name="hg_motiv">Motiv</string>
+    <string name="motiv_1">Wellen</string>
+    <string name="motiv_2">Punkte</string>
+    <string name="motiv_3">Kreise</string>
+    <string name="motiv_4">Streifen</string>
+    <string name="motiv_5">Waben</string>
+    <string name="motiv_6">Horizont</string>
+    <string name="motiv_7">Höhenlinien</string>
+    <string name="motiv_8">Dreiecke</string>
+    <string name="motiv_9">Bögen</string>
+    <string name="motiv_10">Sterne</string>
+    <string name="selbst_titel">Automatisch umschalten</string>
+    <string name="selbst_hinweis">Nur Anzeige und Seitenwechsel, nie ein Fahrzeugbefehl. Nicht, während du selbst bedienst (10 s).</string>
+    <string name="selbst_d">Bei D: Karte zeigen</string>
+    <string name="selbst_p">Bei P: Startseite zeigen</string>
+    <string name="selbst_laden">Laden beginnt: Lade-Kachel nach vorn</string>
+    <string name="stand_uhr">Stand-Uhr</string>
+    <string name="stand_uhr_hinweis">In P erscheint nach dieser Zeit ohne Bedienung eine große, abgedunkelte Uhr. Ein Tipp beendet sie.</string>
+    <string name="stand_uhr_tipp">Zum Schließen tippen</string>
+    <string name="stand_uhr_minuten">nach %1$d Min.</string>
 </resources>

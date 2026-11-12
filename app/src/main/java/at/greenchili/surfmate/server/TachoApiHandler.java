@@ -161,6 +161,20 @@ public final class TachoApiHandler {
                     .put("warnungen", new org.json.JSONArray(e.warnungen)).toString());
             return true;
         }
+        // 0.1.42 (T3) Kamera-/Video-Ansicht im Tacho: lesen jederzeit; einschalten nur im Stand, ausschalten immer.
+        if (p.equals("/api/tacho/kamera") && method.equals("GET")) {
+            HttpResponse.sendJson(out, new JSONObject().put("ok", true)
+                    .put("wahl", at.greenchili.surfmate.tacho.TachoKameraAnsicht.wahl().json())
+                    .put("imStand", bewegungsGrund() == null).toString());
+            return true;
+        }
+        if (p.equals("/api/tacho/kamera") && (method.equals("PUT") || method.equals("POST"))) {
+            String grund = at.greenchili.surfmate.tacho.TachoKameraAnsicht.speichern(in, bewegungsGrund() == null);
+            HttpResponse.sendJson(out, grund == null ? 200 : ("nur_im_stand".equals(grund) ? 409 : 400),
+                    new JSONObject().put("ok", grund == null).put("grund", grund == null ? "" : grund)
+                            .put("wahl", at.greenchili.surfmate.tacho.TachoKameraAnsicht.wahl().json()).toString());
+            return true;
+        }
         if (p.equals("/api/tacho/eigen") && (method.equals("PUT") || method.equals("POST"))) {
             String bewegung = bewegungsGrund();
             if (bewegung != null) {

@@ -203,14 +203,15 @@ public class TachoGestaltenTest {
     @Test
     public void eigenesDesignInDerAuswahlUndAmTacho() throws Exception {
         assertEquals("eigen", TachoAnsicht.design("Eigen"));
-        assertEquals("die fuenf bleiben die fertigen Designs", 5, TachoAnsicht.DESIGNS.size());
+        // 0.1.42 (T2): 5 + 15 Galerie-Designs
+        assertEquals(20, TachoAnsicht.DESIGNS.size());
         assertEquals("design", TachoAuswahl.ziel("design:eigen")[0]);
         JSONObject st = new JSONObject().put("aktiv", JSONObject.NULL).put("angeboten", true).put("apps", new JSONArray());
-        assertEquals(5, TachoAuswahl.liste(st, "klar", false).getJSONArray("eintraege").length());
+        assertEquals(20, TachoAuswahl.liste(st, "klar", false).getJSONArray("eintraege").length());
         JSONArray mit = TachoAuswahl.liste(st, "klar", true).getJSONArray("eintraege");
-        assertEquals(6, mit.length());
-        assertEquals("design:eigen", mit.getJSONObject(5).getString("id"));
-        assertEquals("Eigenes", mit.getJSONObject(5).getString("name"));
+        assertEquals(21, mit.length());
+        assertEquals("design:eigen", mit.getJSONObject(20).getString("id"));
+        assertEquals("Eigenes", mit.getJSONObject(20).getString("name"));
         String act = TachoFaehigkeitTest.lies("app/src/main/java/at/greenchili/surfmate/tacho/TachoAnsichtActivity.kt");
         assertTrue(act.contains("\"kmStand\", \"design\", \"eigen\")) {"));
         String ansicht = TachoFaehigkeitTest.lies("app/src/main/java/at/greenchili/surfmate/tacho/TachoAnsicht.java");
@@ -242,7 +243,7 @@ public class TachoGestaltenTest {
         assertTrue(erw > 0);
         assertTrue(html.indexOf("data-i18n=\"tacho_gestalten.erweitert\">Erweitert<", erw) > erw);
         assertTrue(html.indexOf("<div id=\"tachoGestalten\"></div>", erw) > erw);
-        assertTrue(html.contains("<script src=\"../shared/tacho-gestalten.js?v=1\"></script>"));
+        assertTrue(html.contains("<script src=\"../shared/tacho-gestalten.js?v=3\"></script>"));
         String ed = TachoFaehigkeitTest.lies(EDITOR);
         assertTrue(ed.contains("t('tacho_gestalten.knopf', 'Tacho gestalten')"));
         assertTrue("grosse Knoepfe (50+)", ed.contains("min-height:56px;padding:10px 16px;font-size:17px;"));

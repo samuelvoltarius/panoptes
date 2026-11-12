@@ -12,6 +12,8 @@
  * ES5 (WebView 74 am Auto).
  *
  *   <div id="tachoGestalten"></div>  → Knopf „Tacho gestalten“, der Editor klappt darunter auf
+ *   0.1.42 (T2): window.PanoptesTachoGestalten.vorlage(design) öffnet den Editor mit einem Galerie-Design als
+ *   Ausgangspunkt (Farben, Schrift, Zeiger, Plätze des Designs; gespeichert wird erst mit „Speichern“).
  */
 (function () {
     'use strict';
@@ -343,8 +345,14 @@
             r.readAsText(f);
         }
 
+        // 0.1.42 (E2E G3): nur echte Tacho-Design-Dateien (Kennung und Version), wie der Kern (TachoEigen.pruefenText).
         function lokal(text) {
-            try { return text.length <= R.MAX_ZEICHEN ? T.pruefeEigen(JSON.parse(text)) : null; } catch (x) { return null; }
+            try {
+                if (text.length > R.MAX_ZEICHEN) return null;
+                var o = JSON.parse(text);
+                if (!o || typeof o !== 'object' || o.format !== R.FORMAT || o.version !== R.VERSION) return null;
+                return T.pruefeEigen(o);
+            } catch (x) { return null; }
         }
 
         function laden() {
@@ -359,6 +367,19 @@
                 sperren();
             }, function () { stand.imStand = false; sperren(); });
         }
+
+        // 0.1.42 (T2): „Als Vorlage nehmen“ aus der Galerie
+        window.PanoptesTachoGestalten = {
+            vorlage: function (d) {
+                var erw = document.getElementById('tachoErweitert');
+                if (erw && !erw.open) erw.open = true;
+                e = T.vorlage(d);
+                stand.geladen = true;   // das gespeicherte Design überschreibt die Vorlage nicht
+                if (editor.hidden) oeffnen.onclick(); else { if (vorschau) vorschau.eigen(e); allesZeigen(); }
+                meldung(t('tacho_galerie.vorlage_ok', 'Vorlage geladen. Ändern und dann „Speichern“.'));
+                if (editor.scrollIntoView) editor.scrollIntoView();
+            }
+        };
 
         oeffnen.onclick = function () {
             editor.hidden = !editor.hidden;

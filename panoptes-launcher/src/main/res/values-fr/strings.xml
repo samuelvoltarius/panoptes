@@ -350,4 +350,24 @@
     <string name="seitenblick_ist_aus">La vue latérale au clignotant est désactivée.</string>
     <string name="seitenblick_fehler">La vue latérale n’a pas pu être modifiée. Rien n’a changé. Réessayez plus tard ou vérifiez dans Panoptes.</string>
     <string name="seitenblick_nicht_erreichbar">Panoptes ne répond pas pour le moment ; le réglage de la vue latérale ne peut pas s’afficher. Réessayez dans un instant.</string>
+    <string name="hg_motiv">Motif</string>
+    <string name="motiv_1">Vagues</string>
+    <string name="motiv_2">Points</string>
+    <string name="motiv_3">Cercles</string>
+    <string name="motiv_4">Rayures</string>
+    <string name="motiv_5">Alvéoles</string>
+    <string name="motiv_6">Horizon</string>
+    <string name="motiv_7">Courbes de niveau</string>
+    <string name="motiv_8">Triangles</string>
+    <string name="motiv_9">Arcs</string>
+    <string name="motiv_10">Étoiles</string>
+    <string name="selbst_titel">Changer automatiquement</string>
+    <string name="selbst_hinweis">Affichage et changement de page uniquement, jamais de commande du véhicule. Pas pendant que vous utilisez l’écran (10 s).</string>
+    <string name="selbst_d">En D : afficher la carte</string>
+    <string name="selbst_p">En P : afficher l’accueil</string>
+    <string name="selbst_laden">Début de charge : tuile de charge devant</string>
+    <string name="stand_uhr">Horloge à l’arrêt</string>
+    <string name="stand_uhr_hinweis">En P, après ce délai sans toucher l’écran, une grande horloge assombrie apparaît. Un appui la ferme.</string>
+    <string name="stand_uhr_tipp">Appuyer pour fermer</string>
+    <string name="stand_uhr_minuten">après %1$d min</string>
 </resources>

@@ -175,7 +175,13 @@ public class TcpCommandServer {
             case "tachoAnsicht":
                 // Panoptes-Tacho-Ansicht (0.1.37): nur lesend, Tempo/Akku/Reichweite/Design und
                 // ob die Ansicht die aktive Projektion ist. Keine Position, keine Kennung.
-                response = at.greenchili.surfmate.tacho.TachoAnsicht.daten();
+                response = at.greenchili.surfmate.tacho.TachoAnsicht.daten(cmd);
+                break;
+
+            case "tachoAnsichtEnde":
+                // 0.1.42 (T3): Ansicht pausiert/beendet → eigenes Kamerabild im Tacho sofort weg.
+                at.greenchili.surfmate.tacho.TachoKameraAnsicht.ende();
+                response = new JSONObject().put("status", "ok");
                 break;
 
             case "getFrame":

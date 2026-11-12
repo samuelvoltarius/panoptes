@@ -33,6 +33,19 @@ public final class LauncherLayoutPruefung {
             Arrays.asList("com.byd.androidauto", "com.byd.carplay.ui"));
     public static final List<String> HINTERGRUENDE = Collections.unmodifiableList(
             Arrays.asList("panoptes", "cockpit", "bild", "video", "eigen"));
+    /** 0.1.42 (L48): eigene, im Launcher per Code gezeichnete Motive „motiv-1“ … „motiv-10“ (Launcher {@code Motive}). */
+    public static final int MOTIVE = 10;
+
+    static boolean hintergrundGueltig(String hg) {
+        if (hg == null) return false;
+        if (HINTERGRUENDE.contains(hg)) return true;
+        if (!hg.startsWith("motiv-")) return false;
+        try {
+            String n = hg.substring(6);
+            int i = Integer.parseInt(n);
+            return i >= 1 && i <= MOTIVE && n.equals(String.valueOf(i));
+        } catch (NumberFormatException e) { return false; }
+    }
     /** 0.1.40 (L2) eigenes Design wie {@code Raster.DESIGNS}/{@code ABSTAENDE}/{@code SPALTE_TEILE} im Launcher. */
     public static final List<String> DESIGNS = Collections.unmodifiableList(
             Arrays.asList("auto", "dunkel", "hell", "kontrast", "nacht"));
@@ -133,7 +146,7 @@ public final class LauncherLayoutPruefung {
             JSONArray schnell = pakete(root.optJSONArray("schnell"), MAX_SCHNELL, installiert, liste, false, weg);
             JSONArray neben = pakete(root.optJSONArray("nebenAnders"), MAX_NEBEN_ANDERS, installiert, liste, false, weg);
             String hg = root.optString("hintergrund", "panoptes");
-            if (!HINTERGRUENDE.contains(hg)) { hg = "panoptes"; weg[0]++; }
+            if (!hintergrundGueltig(hg)) { hg = "panoptes"; weg[0]++; }
             JSONObject o = new JSONObject();
             o.put("format", FORMAT).put("version", VERSION).put("seiten", seiten).put("dock", dock)
                     .put("hintergrund", hg).put("zaehler", Math.max(Math.max(0, root.optInt("zaehler", 0)), maxId))

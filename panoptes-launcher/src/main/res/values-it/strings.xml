@@ -350,4 +350,24 @@
     <string name="seitenblick_ist_aus">La vista laterale con la freccia è disattivata.</string>
     <string name="seitenblick_fehler">Non è stato possibile cambiare la vista laterale. Non è cambiato nulla. Riprova più tardi o controlla in Panoptes.</string>
     <string name="seitenblick_nicht_erreichbar">Panoptes al momento non risponde, quindi l’impostazione della vista laterale non può essere mostrata. Riprova tra poco.</string>
+    <string name="hg_motiv">Motivo</string>
+    <string name="motiv_1">Onde</string>
+    <string name="motiv_2">Punti</string>
+    <string name="motiv_3">Cerchi</string>
+    <string name="motiv_4">Strisce</string>
+    <string name="motiv_5">Nido d’ape</string>
+    <string name="motiv_6">Orizzonte</string>
+    <string name="motiv_7">Curve di livello</string>
+    <string name="motiv_8">Triangoli</string>
+    <string name="motiv_9">Archi</string>
+    <string name="motiv_10">Stelle</string>
+    <string name="selbst_titel">Cambia automaticamente</string>
+    <string name="selbst_hinweis">Solo visualizzazione e cambio pagina, mai un comando al veicolo. Non mentre usi lo schermo (10 s).</string>
+    <string name="selbst_d">In D: mostra la mappa</string>
+    <string name="selbst_p">In P: mostra la pagina iniziale</string>
+    <string name="selbst_laden">Inizio ricarica: riquadro ricarica in primo piano</string>
+    <string name="stand_uhr">Orologio da fermo</string>
+    <string name="stand_uhr_hinweis">In P, dopo questo tempo senza tocchi, appare un grande orologio scurito. Un tocco lo chiude.</string>
+    <string name="stand_uhr_tipp">Tocca per chiudere</string>
+    <string name="stand_uhr_minuten">dopo %1$d min</string>
 </resources>

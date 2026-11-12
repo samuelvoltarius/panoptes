@@ -6,6 +6,8 @@
  *   POST /api/tacho/auswahl {id}     → { ok, grund }
  * Freigabe, „auch beim Fahren“ und der Hinweis bleiben in tacho-appwahl.js (darunter auf derselben Seite).
  * Vertrag für Handy-Apps und Cockpit: TACHO_AUSWAHL_API.md (Notizordner).
+ * 0.1.42 (T2) Galerie: 20 Designs als große Bilder, Filter Analog/Digital/Navi/Ruhig (PanoptesTacho.arten),
+ * Live-Vorschau des zuletzt getippten Designs mit Beispielfahrt und „Als Vorlage nehmen“ (öffnet „Tacho gestalten“).
  */
 (function () {
     'use strict';
@@ -14,8 +16,15 @@
         return window.PanoptesShell && PanoptesShell.tr ? PanoptesShell.tr(key, fallback) : fallback;
     }
     var stand = null, letzt = '', laeuft = false, vorschauen = [];
+    var filter = 'alle', live = { design: null, tacho: null, takt: null, start: Date.now() };
 
-    function grundText(g) {
+    // 0.1.42 (E2E G1): Gründe aus der Fähigkeitsprüfung (single_os, kein_projektionsdienst …) heißen auf den Karten
+    // „Dieses Auto zeigt im Tacho keine Panoptes-Designs“; der Rückfall ist „Das hat nicht geklappt“, nie der App-Start-Text.
+    var KEIN_TACHO = ['single_os', 'kein_projektionsdienst', 'keine_shell_rechte', 'warnleuchten_verdeckt', 'warnleuchten_ungeprueft'];
+
+    function grundText(g, karte) {
+        var keinTacho = t('vehicle_control.tacho_auswahl_kein_tacho', 'Dieses Auto zeigt im Tacho keine Panoptes-Designs.');
+        if (KEIN_TACHO.indexOf(g) >= 0) return keinTacho;
         var map = {
             nicht_freigegeben: t('vehicle_control.tacho_auswahl_erst_freigeben', 'Erst unten freigeben'),
             nur_im_stand: t('vehicle_control.cluster_app_park', 'Nur in P möglich.'),
@@ -25,7 +34,8 @@
             ungueltige_auswahl: t('vehicle_control.cluster_app_invalid', 'Diese App kann nicht gewählt werden.')
         };
         if (g && g.indexOf('dilink5') === 0) return t('vehicle_control.tacho_auswahl_nicht_moeglich', 'Auf diesem Auto nicht möglich');
-        return map[g] || t('vehicle_control.cluster_app_failed', 'Das hat nicht geklappt.');
+        if (map[g]) return map[g];
+        return karte ? keinTacho : t('vehicle_control.tacho_auswahl_fehlgeschlagen', 'Das hat nicht geklappt.');
     }
 
     function meldung(text, schlecht) {
@@ -40,7 +50,7 @@
         b.type = 'button';
         b.setAttribute('data-tacho-id', e.id);
         b.setAttribute('aria-pressed', e.gewaehlt ? 'true' : 'false');
-        b.style.cssText = 'display:flex;flex-direction:column;align-items:stretch;gap:6px;width:100%;padding:8px;'
+        b.style.cssText = 'display:flex;flex-direction:column;align-items:stretch;width:100%;padding:8px;'
             + 'border-radius:14px;border:3px solid ' + (e.gewaehlt ? '#B5F23D' : 'var(--outline-variant)') + ';'
             + 'background:var(--surface-container);color:var(--on-surface);cursor:pointer;text-align:center;'
             + (e.waehlbar ? '' : 'opacity:.55;');
@@ -53,14 +63,14 @@
             vorschauen.push({ cv: cv, design: e.design });
         } else {
             var z = document.createElement('div');
-            z.style.cssText = 'position:absolute;top:0;right:0;bottom:0;left:0;inset:0;display:flex;align-items:center;justify-content:center;'
+            z.style.cssText = 'position:absolute;top:0;right:0;bottom:0;left:0;display:flex;align-items:center;justify-content:center;'
                 + 'font:700 40px/1 sans-serif;color:' + (e.art === 'normal' ? '#EEF4F8' : '#B5F23D') + ';';
             z.textContent = e.art === 'normal' ? 'BYD' : (e.name || '?').trim().charAt(0).toUpperCase();
             bild.appendChild(z);
         }
         b.appendChild(bild);
         var name = document.createElement('span');
-        name.style.cssText = 'font-size:18px;font-weight:700;line-height:1.2;';
+        name.style.cssText = 'font-size:18px;font-weight:700;line-height:1.2;margin-top:6px;';
         name.textContent = e.art === 'design' ? t('vehicle_control.cluster_design_' + e.design, e.name)
             : e.art === 'normal' ? t('vehicle_control.tacho_auswahl_normal', 'Normal') : e.name;
         b.appendChild(name);
@@ -73,13 +83,89 @@
             info.push(e.fahrt ? t('vehicle_control.tacho_auswahl_fahrt', 'Auch beim Fahren')
                 : t('vehicle_control.tacho_auswahl_nur_p', 'Nur in P'));
         }
-        if (!e.waehlbar && e.grund) info.push(grundText(e.grund));
+        if (!e.waehlbar && e.grund) info.push(grundText(e.grund, true));
         var klein = document.createElement('span');
-        klein.style.cssText = 'font-size:15px;opacity:.85;line-height:1.25;';
+        klein.style.cssText = 'font-size:15px;opacity:.85;line-height:1.25;margin-top:6px;';
         klein.textContent = info.join(' · ');
         b.appendChild(klein);
-        b.onclick = function () { waehle(e); };
+        b.onclick = function () { if (e.art === 'design') zeigeLive(e.design); waehle(e); };
         return b;
+    }
+
+    // ---------- 0.1.42 (T2) Galerie: Filter und Live-Vorschau
+
+    function passt(e) {
+        if (filter === 'alle') return true;
+        if (e.art !== 'design' || !window.PanoptesTacho || !PanoptesTacho.arten) return false;
+        return PanoptesTacho.arten(e.design).indexOf(filter) >= 0;
+    }
+
+    function filterLeiste() {
+        var box = $('tachoGalerieFilter');
+        if (!box || box.childNodes.length) return;
+        var namen = { alle: t('tacho_galerie.alle', 'Alle'), analog: t('tacho_galerie.analog', 'Analog'),
+            digital: t('tacho_galerie.digital', 'Digital'), navi: t('tacho_galerie.navi', 'Navi'), ruhig: t('tacho_galerie.ruhig', 'Ruhig') };
+        ['alle', 'analog', 'digital', 'navi', 'ruhig'].forEach(function (f) {
+            var k = document.createElement('button');
+            k.type = 'button';
+            k.className = 'btn';
+            k.setAttribute('data-filter', f);
+            k.style.cssText = 'min-height:56px;min-width:110px;font-size:17px;margin:0 8px 8px 0;';
+            k.textContent = namen[f];
+            k.onclick = function () { filter = f; filterZeigen(); zeichne(); };
+            box.appendChild(k);
+        });
+        filterZeigen();
+    }
+
+    function filterZeigen() {
+        var box = $('tachoGalerieFilter');
+        if (!box) return;
+        Array.prototype.forEach.call(box.querySelectorAll('[data-filter]'), function (k) {
+            var an = k.getAttribute('data-filter') === filter;
+            k.setAttribute('aria-pressed', an ? 'true' : 'false');
+            k.style.border = '3px solid ' + (an ? '#B5F23D' : 'transparent');
+        });
+    }
+
+    /** Große Vorschau mit Beispielfahrt; ruhig, zwei Bilder pro Sekunde, nur solange die Seite sichtbar ist. */
+    function zeigeLive(dsg) {
+        var box = $('tachoGalerieLive');
+        if (!box || !window.PanoptesTacho || !dsg || dsg === live.design) return;
+        live.design = dsg;
+        if (live.tacho) live.tacho.stop();
+        if (live.takt) clearInterval(live.takt);
+        box.textContent = '';
+        var titel = document.createElement('div');
+        titel.className = 'dp-titel';
+        titel.textContent = t('tacho_galerie.live', 'Vorschau') + ': ' + t('vehicle_control.cluster_design_' + dsg, dsg);
+        box.appendChild(titel);
+        var bild = document.createElement('div');
+        bild.style.cssText = 'position:relative;padding-top:40%;border-radius:12px;overflow:hidden;background:#000;';
+        var cv = document.createElement('canvas');
+        cv.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;';
+        bild.appendChild(cv);
+        box.appendChild(bild);
+        if (dsg !== 'eigen') {
+            var v = document.createElement('button');
+            v.type = 'button';
+            v.className = 'btn';
+            v.id = 'tachoGalerieVorlage';
+            v.style.cssText = 'min-height:56px;font-size:17px;margin-top:8px;';
+            v.textContent = t('tacho_galerie.vorlage', 'Als Vorlage nehmen');
+            v.onclick = function () { if (window.PanoptesTachoGestalten) window.PanoptesTachoGestalten.vorlage(dsg); };
+            box.appendChild(v);
+        }
+        live.tacho = PanoptesTacho.create(cv, { design: dsg });
+        var tick = function () {
+            if (document.hidden) return;
+            var d = PanoptesTacho.demo((Date.now() - live.start) / 1000);
+            d.design = dsg;
+            live.tacho.setze(d);
+        };
+        tick();
+        live.takt = setInterval(tick, 500);
+        if (dsg === 'eigen') eigenVorschau(live.tacho);
     }
 
     function zeichne() {
@@ -89,9 +175,11 @@
         vorschauen = [];
         box.textContent = '';
         var jetzt = stand.jetzt || {};
-        box.appendChild(kachel({ id: 'normal', art: 'normal', waehlbar: true, gewaehlt: jetzt.id === 'normal' }));
+        filterLeiste();
+        if (filter === 'alle') box.appendChild(kachel({ id: 'normal', art: 'normal', waehlbar: true, gewaehlt: jetzt.id === 'normal' }));
         var liste = stand.eintraege || [];
-        for (var j = 0; j < liste.length; j++) box.appendChild(kachel(liste[j]));
+        for (var j = 0; j < liste.length; j++) if (passt(liste[j])) box.appendChild(kachel(liste[j]));
+        if (!live.design) zeigeLive(jetzt.art === 'design' && jetzt.design ? jetzt.design : 'klar');
         for (var k = 0; k < vorschauen.length; k++) {
             var v = vorschauen[k];
             v.tacho = window.PanoptesTacho.create(v.cv, { design: v.design });
@@ -124,7 +212,7 @@
 
     function waehle(e) {
         if (laeuft) return;
-        if (!e.waehlbar && e.grund) { meldung(grundText(e.grund), true); return; }
+        if (!e.waehlbar && e.grund) { meldung(grundText(e.grund, true), true); return; }
         laeuft = true;
         meldung('');
         fetch('/api/tacho/auswahl', { method: 'POST', headers: { 'Content-Type': 'application/json' },

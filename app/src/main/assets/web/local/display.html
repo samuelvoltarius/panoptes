@@ -126,7 +126,10 @@
                 <div class="card-body">
                     <section id="tachoAuswahl">
                         <p class="dp-note" data-i18n="vehicle_control.tacho_auswahl_lead">Tippe auf ein Bild. Navi-Apps und Apps, die du unten freigibst, erscheinen hier auch.</p>
-                        <div id="tachoAuswahlKacheln" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;"></div>
+                        <!-- 0.1.42 (T2) Tacho-Galerie: Filter, Live-Vorschau, „Als Vorlage nehmen“ (tacho-auswahl.js) -->
+                        <div id="tachoGalerieFilter" role="group" style="margin:6px 0 10px;"></div>
+                        <div id="tachoGalerieLive" style="margin-bottom:12px;"></div>
+                        <div id="tachoAuswahlKacheln" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));grid-gap:14px;"></div>
                         <div id="tachoAuswahlMeldung" class="dp-note" aria-live="polite" style="margin-top:8px;font-size:16px;"></div>
                     </section>
                     <!-- 0.1.38.11 „Größe im Fahrerdisplay“ (tacho-groesse.js): eine Quelle blindspot.clusterSizeProfile, Tipp zeigt sofort -->
@@ -141,6 +144,8 @@
                             <button class="btn" id="tachoGroesseZurueck" type="button" style="min-height:56px;font-size:16px;margin:0 8px 8px 0;" data-i18n="vehicle_control.tacho_groesse_zurueck">Zurück zum vorherigen</button>
                         </div>
                     </section>
+                    <!-- 0.1.42 (T3) „Kamera & Video im Tacho“ (tacho-ansichten.js): ab Werk aus, Regeln im Kern -->
+                    <section id="tachoAnsichten" style="margin-top:14px;"></section>
                     <!-- 0.1.41 „Tacho gestalten“ (tacho-gestalten.js): eigenes Design unter „Erweitert“, speichern nur im Stand -->
                     <details id="tachoErweitert" style="margin-top:14px;">
                         <summary class="dp-titel" style="cursor:pointer;min-height:48px;line-height:48px;font-size:18px;" data-i18n="tacho_gestalten.erweitert">Erweitert</summary>
@@ -236,12 +241,14 @@
 <div id="toastContainer" class="toast-container"></div>
 <script src="../shared/auth.js"></script>
 <script src="../shared/core.js?v=pn6"></script>
-<script src="../shared/tacho-designs.js?v=2"></script>
+<script src="../shared/tacho-designs.js?v=3"></script>
+<script src="../shared/tacho-galerie.js?v=2"></script>
 <script src="../shared/tacho-appwahl.js?v=5"></script>
 <script src="../shared/tacho-groesse.js?v=1"></script>
-<script src="../shared/tacho-auswahl.js?v=1"></script>
+<script src="../shared/tacho-auswahl.js?v=3"></script>
 <script src="../shared/tacho-faehigkeit.js?v=1"></script>
-<script src="../shared/tacho-gestalten.js?v=1"></script>
+<script src="../shared/tacho-gestalten.js?v=3"></script>
+<script src="../shared/tacho-ansichten.js?v=1"></script>
 <script src="../shared/display-werkzeuge.js?v=1"></script>
 <script src="../shared/launcher-karte.js?v=3"></script>
 <script src="../shared/einstellungen.js?v=pn8"></script>

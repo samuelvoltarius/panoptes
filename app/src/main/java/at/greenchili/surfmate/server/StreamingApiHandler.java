@@ -819,6 +819,13 @@ public class StreamingApiHandler {
             // validity is session-scoped (see startCamViewArmRetry) — there is no
             // separate cancellation token to race with.
             pipeline.hideCamView();
+            // 0.1.42: persist=0 (nur der Panoptes-Tacho) → nichts speichern; der gespeicherte camview-Zustand
+            // des Nutzers ist nach dem Tacho-hide genau wie vorher.
+            if (nurSitzung(parseQuery(query))) {
+                JSONObject r = new JSONObject(); r.put("success", true); r.put("active", false);
+                HttpResponse.sendJson(out, r.toString());
+                return true;
+            }
             // Same false-return contract as the geometry persist: a failed write here
             // means a daemon restart re-shows the view the user just dismissed. The
             // hide itself already happened (session invalidated), so log — don't fail
@@ -882,8 +889,12 @@ public class StreamingApiHandler {
                 // means the persist FAILED — the requested geometry must then ride this
                 // session as the fail-open override (installed below), or the view
                 // renders at the stale persisted position while this API reports success.
-                failedGeo = persistCamViewGeometry(p, target);
-                try {
+                // 0.1.42: persist=0 (nur der Panoptes-Tacho) → Lage NUR fuer diese Sitzung (Override),
+                // camview.geometry/geometryCluster des Nutzers bleibt unberuehrt; nach hide gilt sie wieder.
+                failedGeo = nurSitzung(p) ? sitzungsGeometrie(p) : persistCamViewGeometry(p, target);
+                // 0.1.42: persist=0 → auch keine Absicht (enabled/mode/target/autoHideSec) speichern; sonst
+                // erschiene die Kamera nach einem Daemon-Neustart von selbst, nur weil der Tacho sie zeigte.
+                if (!nurSitzung(p)) try {
                     java.util.Map<String, Object> cvVals = new java.util.HashMap<>();
                     cvVals.put("enabled", true);
                     cvVals.put("mode", mode);
@@ -971,7 +982,7 @@ public class StreamingApiHandler {
             // the saved position is stale — the next boot/daemon restart resolves the
             // old rect. Callers that care (settings UI) can re-issue or surface it.
             if (p.containsKey("preset") || p.containsKey("geometry")) {
-                r.put("geometryPersisted", failedGeo == null);
+                r.put("geometryPersisted", failedGeo == null && !nurSitzung(p));
             }
             HttpResponse.sendJson(out, r.toString());
             return true;
@@ -1140,6 +1151,30 @@ public class StreamingApiHandler {
      *          the STALE persisted position while the API reports success. Null when
      *          no geometry was requested, the request was unparseable, or the
      *          persist succeeded (the resolver then reads the fresh config). */
+    /**
+     * 0.1.42: {@code persist=0} (nur der Panoptes-Tacho) → show/hide speichern nichts: keine Lage, keine Absicht.
+     * Eine Lage gilt dann nur aus {@code geometry=x/y/w/h} als Sitzungs-Override; {@code preset} wird ignoriert.
+     */
+    static boolean nurSitzung(java.util.Map<String, String> p) {
+        return p != null && "0".equals(p.get("persist"));
+    }
+
+    /** Absolute Lage aus {@code geometry=x/y/w/h} als Sitzungs-Override; ungueltig → null (dann gespeicherte Lage). */
+    static JSONObject sitzungsGeometrie(java.util.Map<String, String> p) {
+        try {
+            String[] parts = p.get("geometry").split("/");
+            if (parts.length != 4) return null;
+            JSONObject geo = new JSONObject();
+            geo.put("x", Integer.parseInt(parts[0].trim()));
+            geo.put("y", Integer.parseInt(parts[1].trim()));
+            geo.put("w", Integer.parseInt(parts[2].trim()));
+            geo.put("h", Integer.parseInt(parts[3].trim()));
+            return geo;
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
     private static JSONObject persistCamViewGeometry(java.util.Map<String, String> p, String target) {
         String geomKey = "cluster".equals(target) ? "geometryCluster" : "geometry";
         JSONObject geo = null;

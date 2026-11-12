@@ -17,6 +17,7 @@
 <body>
 <canvas id="tacho"></canvas>
 <script src="../shared/tacho-designs.js"></script>
+<script src="../shared/tacho-galerie.js"></script>
 <script>
 (function () {
     var q = {};
@@ -24,6 +25,8 @@
     var t = PanoptesTacho.create(document.getElementById('tacho'), { design: q.design });
     // Schnittstelle für die Activity (evaluateJavascript).
     window.tachoSetze = function (d) { t.setze(d); };
+    // 0.1.42: Einhängestelle für Ansichten (T3 Kamera/Video): window.tachoInstanz.ansicht(true) / .ansichtBereich()
+    window.tachoInstanz = t;
     if (q.demo) {
         var start = Date.now();
         var tick = function () {

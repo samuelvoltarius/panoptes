@@ -2885,6 +2885,8 @@
     "tacho_auswahl_nur_p": "Nur in P",
     "tacho_auswahl_erst_freigeben": "Erst unten freigeben",
     "tacho_auswahl_nicht_moeglich": "Auf diesem Auto nicht möglich",
+    "tacho_auswahl_kein_tacho": "Dieses Auto zeigt im Tacho keine Panoptes-Designs.",
+    "tacho_auswahl_fehlgeschlagen": "Das hat nicht geklappt.",
     "tacho_auswahl_ok": "Erledigt.",
     "cluster_ansicht_design": "Aussehen",
     "cluster_design_klar": "Klar",
@@ -2893,6 +2895,21 @@
     "cluster_design_horizont": "Horizont",
     "cluster_design_route": "Route",
     "cluster_design_eigen": "Eigenes",
+    "cluster_design_analog": "Analog",
+    "cluster_design_retro": "Retro",
+    "cluster_design_minimal": "Minimal",
+    "cluster_design_futur": "Futur",
+    "cluster_design_rennen": "Rennen",
+    "cluster_design_eco": "Eco",
+    "cluster_design_gross": "Groß & klar",
+    "cluster_design_sonne": "Sonne",
+    "cluster_design_karte": "Karte",
+    "cluster_design_abbiegen": "Abbiegen",
+    "cluster_design_bogen": "Bogen",
+    "cluster_design_saeulen": "Säulen",
+    "cluster_design_chrono": "Chrono",
+    "cluster_design_kacheln": "Kacheln",
+    "cluster_design_tunnel": "Tunnel",
     "cluster_ansicht_vorschau": "Vorschau mit Beispielwerten",
     "cloud_required": "Verbinde unter System ein BYD-Konto, dann geht das",
     "cloud_sent": "Über das BYD-Konto gesendet",
@@ -7404,6 +7421,16 @@
     "thema_hell": "Hell",
     "thema_auto": "Automatisch"
   },
+  "tacho_galerie": {
+    "alle": "Alle",
+    "analog": "Analog",
+    "digital": "Digital",
+    "navi": "Navi",
+    "ruhig": "Ruhig",
+    "live": "Vorschau",
+    "vorlage": "Als Vorlage nehmen",
+    "vorlage_ok": "Vorlage geladen. Ändern und dann „Speichern“."
+  },
   "tacho_gestalten": {
     "a_akku": "Akku %",
     "a_aussen": "Außentemperatur",
@@ -7466,5 +7493,19 @@
     "z_nadel": "Nadel",
     "z_zahl": "Nur Zahl",
     "zeiger_titel": "Zeigerform"
+  },
+  "tacho_ansichten": {
+    "fehler": "Nicht gespeichert.",
+    "heck": "Heckbild im Rückwärtsgang",
+    "heck_ohne_byd": "Mein Tacho zeigt beim Rückwärtsfahren kein eigenes BYD-Bild",
+    "hilfe": "Ab Werk aus. Die Kamera kommt über den Panoptes-Kamera-Weg. Läuft der Panoptes-Seitenblick, zeigt der Tacho keine Kamera.",
+    "kamera": "Kamera im Tacho",
+    "nur_im_stand": "Einschalten geht nur im Stand (P).",
+    "rundum": "Rundumsicht im Stand (nur in P)",
+    "seite": "Seitenblick beim Blinken",
+    "titel": "Kamera & Video im Tacho",
+    "video": "Video im Tacho (nur in P bei 0 km/h)",
+    "video_hilfe": "Ohne Ton. Sobald du aus P schaltest oder losfährst, ist das Video sofort weg.",
+    "video_waehlen": "Aufnahme wählen …"
   }
 }

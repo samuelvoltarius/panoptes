@@ -30,6 +30,22 @@ public final class TachoAuswahl {
             case TachoAnsicht.HORIZONT: return "Horizont";
             case TachoAnsicht.ROUTE: return "Route";
             case TachoEigen.NAME: return "Eigenes";
+            // 0.1.42 (T2): Galerie-Designs (Oberfläche übersetzt über vehicle_control.cluster_design_<name>)
+            case "analog": return "Analog";
+            case "retro": return "Retro";
+            case "minimal": return "Minimal";
+            case "futur": return "Futur";
+            case "rennen": return "Rennen";
+            case "eco": return "Eco";
+            case "gross": return "Groß & klar";
+            case "sonne": return "Sonne";
+            case "karte": return "Karte";
+            case "abbiegen": return "Abbiegen";
+            case "bogen": return "Bogen";
+            case "saeulen": return "Säulen";
+            case "chrono": return "Chrono";
+            case "kacheln": return "Kacheln";
+            case "tunnel": return "Tunnel";
             default: return "Klar";
         }
     }

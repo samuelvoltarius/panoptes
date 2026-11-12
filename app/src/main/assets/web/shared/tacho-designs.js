@@ -64,6 +64,24 @@
     }
     function design(d) { return DESIGNS.indexOf(d) >= 0 || d === EIGEN ? d : 'klar'; }
 
+    // 0.1.42 (T2 Tacho-Galerie): weitere Designs melden sich aus tacho-galerie.js an (eigene Datei, eigene Zeichnung).
+    // Filter der Galerie: analog, digital, navi, ruhig.
+    var ARTEN_LISTE = ['analog', 'digital', 'navi', 'ruhig'];
+    var ARTEN = { klar: ['analog'], sport: ['analog'], nacht: ['analog', 'ruhig'], horizont: ['digital'], route: ['navi'] };
+    var EXTRA = {};
+
+    /** def = { thema, arten, zeichne(c, w, h, u, th, d, st, jetzt, H), zeiger?, schrift?, plaetze? } */
+    function registriere(name, def) {
+        if (!/^[a-z]{3,16}$/.test(name) || DESIGNS.indexOf(name) >= 0 || name === EIGEN) return false;
+        if (!def || !def.thema || typeof def.zeichne !== 'function') return false;
+        THEMEN[name] = def.thema;
+        EXTRA[name] = def;
+        ARTEN[name] = (def.arten || []).filter(function (a) { return ARTEN_LISTE.indexOf(a) >= 0; });
+        DESIGNS.push(name);
+        if (window.PanoptesTacho) window.PanoptesTacho.DESIGNS.push(name);
+        return true;
+    }
+
     // ------------------------------------------------------------ Manöver
 
     /** Valhalla-Typ → {art, winkel}. winkel in Grad, rechts positiv. */
@@ -648,13 +666,15 @@
 
     /** Ausgangspunkt „Kopie bearbeiten“: Farben eines fertigen Designs, Standard-Anordnung. */
     function vorlage(dsg) {
-        var n = DESIGNS.indexOf(dsg) >= 0 ? dsg : 'klar', th = THEMEN[n];
+        var n = DESIGNS.indexOf(dsg) >= 0 ? dsg : 'klar', th = THEMEN[n], x = EXTRA[n] || {};
+        var p = standardPlaetze(), k;
+        if (x.plaetze) for (k in x.plaetze) if (p.hasOwnProperty(k)) p[k] = x.plaetze[k];
         return {
             format: E.FORMAT, version: E.VERSION, basis: n,
             farben: { hintergrund: th.bg0, ziffern: th.fg, zeiger: th.ring, akzent: th.ring2 === th.ring ? th.reku : th.ring2 },
-            schrift: n === 'horizont' ? 'normal' : 'schmal',
-            zeiger: n === 'nacht' ? 'nadel' : 'balken',
-            plaetze: standardPlaetze()
+            schrift: x.schrift || (n === 'horizont' ? 'normal' : 'schmal'),
+            zeiger: x.zeiger || (n === 'nacht' ? 'nadel' : 'balken'),
+            plaetze: p
         };
     }
 
@@ -834,12 +854,42 @@
 
     // ------------------------------------------------------------ Gesamtbild
 
+    // ------------------------------------------------------------ Einhängestelle „Ansicht“ (0.1.42, für T3 Kamera/Video)
+    // Ist eine Ansicht an (t.ansicht(true)), zeichnet das Design nur eine ruhige Leiste unten (Tempo, Gang, Akku, Uhr)
+    // und lässt darüber das Feld ansichtBereich(w, h) frei (schwarz). Das Kamera-/Videobild legt tacho-ansichten.js
+    // als eigenes Element genau über dieses Feld; Tempo bleibt immer sichtbar. Das Design selbst bleibt gewählt.
+
+    function leisteHoehe(w, h) { return Math.round(Math.min(h, w / 2.2) * 0.22); }
+
+    /** Freies Feld für eine Ansicht in CSS-Pixeln der Zeichenfläche: {x, y, w, h}. */
+    function ansichtBereich(w, h) { return { x: 0, y: 0, w: w, h: Math.max(0, h - leisteHoehe(w, h)) }; }
+
+    function zeichneAnsichtLeiste(c, w, h, u, th, d, jetzt) {
+        var lh = leisteHoehe(w, h), y0 = h - lh, y = y0 + lh / 2;
+        c.fillStyle = '#000000';
+        c.fillRect(0, 0, w, y0);
+        c.fillStyle = th.bg1;
+        c.fillRect(0, y0, w, lh);
+        var fam = th.familie || COND;
+        text(c, zahl(d.kmh) ? String(Math.round(d.kmh)) : '–', w * 0.42, y, lh * 0.72, th.fg, { ausrichtung: 'right', gewicht: '700', familie: fam });
+        text(c, 'km/h', w * 0.43, y + lh * 0.12, lh * 0.2, th.fg, { ausrichtung: 'left', familie: fam });
+        text(c, d.gang || '–', w * 0.56, y, lh * 0.5, th.fg, { gewicht: '700', familie: fam });
+        text(c, zahl(d.soc) ? Math.round(d.soc) + ' %' : '– %', w - u * 4, y, lh * 0.3, th.fg, { ausrichtung: 'right', gewicht: '600', familie: fam });
+        text(c, uhr(jetzt), u * 4, y, lh * 0.3, th.fg, { ausrichtung: 'left', familie: fam });
+    }
+
     function zeichne(c, w, h, d, st, jetzt) {
         var dsg = design(d.design);
         // Einheit: 1 u = 1 % der Höhe, aber nie breiter als das Bild bei 2,2:1 trägt.
         var u = Math.min(h, w / 2.2) / 100;
+        if (d.ansicht) {
+            var ath = dsg === EIGEN ? eigenThema(d.eigen && d.eigen.farben ? d.eigen : standardEigen()) : THEMEN[dsg];
+            zeichneAnsichtLeiste(c, w, h, u, ath, d, jetzt);
+            return;
+        }
         if (dsg === EIGEN) { zeichneEigen(c, w, h, u, d.eigen, d, st, jetzt); return; }
         var th = THEMEN[dsg];
+        if (EXTRA[dsg]) { EXTRA[dsg].zeichne(c, w, h, u, th, d, st, jetzt, HILFE); return; }
         hintergrund(c, w, h, th, dsg);
         kopfzeile(c, w, h, u, th, d, jetzt);
         if (dsg === 'horizont') {
@@ -940,6 +990,10 @@
             design: function (dsg) { anz.design = ziel.design = design(dsg); neu = true; },
             /** 0.1.41 Live-Vorschau beim Gestalten: eigenes Design setzen (wird geprüft). */
             eigen: function (e) { anz.eigen = geprueft(e); anz.design = ziel.design = EIGEN; neu = true; },
+            /** 0.1.42 Einhängestelle „Ansicht“ (T3): an = nur Leiste unten, Feld darüber frei. */
+            ansicht: function (an) { anz.ansicht = !!an; neu = true; },
+            /** Freies Feld {x, y, w, h} in CSS-Pixeln des Canvas (gilt, solange die Ansicht an ist). */
+            ansichtBereich: function () { groesse(); return ansichtBereich(w, h); },
             jetztZeichnen: function () {
                 for (var i = 0; i < GLEITEND.length; i++) anz[GLEITEND[i]] = ziel[GLEITEND[i]];
                 groesse();
@@ -967,8 +1021,21 @@
         };
     }
 
+    // 0.1.42: Bausteine für die Galerie-Designs (gleiche Zeichnung, gleiche Ruhe-Regeln)
+    var HILFE = {
+        TAU: TAU, COND: COND, SANS: SANS, clamp: clamp, zahl: zahl, tausender: tausender, entfernung: entfernung,
+        dauer: dauer, uhr: uhr, text: text, ring: ring, nadel: nadel, pfeil: pfeil, akkuBalken: akkuBalken, rund: rund,
+        mische: mische, hintergrund: hintergrund, kopfzeile: kopfzeile, fusszeile: fusszeile, mitte: mitte,
+        routeSkizze: routeSkizze, kwSkala: kwSkala, ringKw: ringKw, ringTempo: ringTempo
+    };
+
     window.PanoptesTacho = {
         DESIGNS: DESIGNS.slice(),
+        ARTEN: ARTEN_LISTE.slice(),
+        arten: function (dsg) { return (ARTEN[dsg] || []).slice(); },
+        registriere: registriere,
+        ansichtBereich: ansichtBereich,
+        thema: function (dsg) { return THEMEN[dsg] || null; },
         create: create,
         demo: demo,
         manoeverArt: manoeverArt,

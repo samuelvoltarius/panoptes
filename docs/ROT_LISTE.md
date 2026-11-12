@@ -3,7 +3,7 @@
 Diese Liste gehört zu den Release-Notizen („So wurde geprüft“). Sie nennt die Tests, die beim Freigabestand
 fehlschlagen, und warum. Maßstab für eine Freigabe ist: kein Test ist neu rot gegenüber dem Vorgänger.
 
-## Stand 0.1.41
+## Stand 0.1.42
 
 | Bereich | Rot | Übersprungen |
 |---|---:|---:|
@@ -15,6 +15,7 @@ unter Windows), und meldet sich deshalb ab statt rot zu werden. Auf Linux und An
 
 ## Verlauf
 
+- 0.1.42: 5484 Tests in der App und 175 im Launcher, keiner rot. Übersprungen sind dieselben 24 (Windows) wie in 0.1.41.
 - 0.1.41: 5460 Tests in der App und 165 im Launcher, keiner rot. Übersprungen sind dieselben 24 (Windows) wie in 0.1.40.
   Ein neuer Launcher-Test las den Quelltext mit Windows-Zeilenenden und fand sein Suchmuster nicht. Er liest jetzt
   zeilenendenunabhängig (`LauncherKombiSeitenblickTest`).

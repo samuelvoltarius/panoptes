@@ -2885,6 +2885,8 @@
     "tacho_auswahl_nur_p": "Seulement en P",
     "tacho_auswahl_erst_freigeben": "D’abord autoriser plus bas",
     "tacho_auswahl_nicht_moeglich": "Impossible sur cette voiture",
+    "tacho_auswahl_kein_tacho": "Cette voiture n’affiche pas les designs Panoptes au combiné.",
+    "tacho_auswahl_fehlgeschlagen": "Cela n’a pas fonctionné.",
     "tacho_auswahl_ok": "C’est fait.",
     "cluster_ansicht_design": "Apparence",
     "cluster_design_klar": "Clair",
@@ -2893,6 +2895,21 @@
     "cluster_design_horizont": "Horizon",
     "cluster_design_route": "Itinéraire",
     "cluster_design_eigen": "Personnel",
+    "cluster_design_analog": "Analogique",
+    "cluster_design_retro": "Rétro",
+    "cluster_design_minimal": "Minimal",
+    "cluster_design_futur": "Futur",
+    "cluster_design_rennen": "Course",
+    "cluster_design_eco": "Éco",
+    "cluster_design_gross": "Grand & net",
+    "cluster_design_sonne": "Soleil",
+    "cluster_design_karte": "Carte",
+    "cluster_design_abbiegen": "Virage",
+    "cluster_design_bogen": "Arc",
+    "cluster_design_saeulen": "Colonnes",
+    "cluster_design_chrono": "Chrono",
+    "cluster_design_kacheln": "Tuiles",
+    "cluster_design_tunnel": "Tunnel",
     "cluster_ansicht_vorschau": "Aperçu avec des valeurs d'exemple",
     "cloud_required": "Liez un compte BYD sous Système pour l'utiliser",
     "cloud_sent": "Envoyé via votre compte BYD",
@@ -7404,6 +7421,16 @@
     "thema_hell": "Clair",
     "thema_auto": "Automatique"
   },
+  "tacho_galerie": {
+    "alle": "Tous",
+    "analog": "Analogique",
+    "digital": "Numérique",
+    "navi": "Navigation",
+    "ruhig": "Sobre",
+    "live": "Aperçu",
+    "vorlage": "Utiliser comme modèle",
+    "vorlage_ok": "Modèle chargé. Modifiez-le, puis « Enregistrer »."
+  },
   "tacho_gestalten": {
     "a_akku": "Batterie %",
     "a_aussen": "Température extérieure",
@@ -7466,5 +7493,19 @@
     "z_nadel": "Aiguille",
     "z_zahl": "Chiffre seul",
     "zeiger_titel": "Forme de l’aiguille"
+  },
+  "tacho_ansichten": {
+    "fehler": "Non enregistré.",
+    "heck": "Vue arrière en marche arrière",
+    "heck_ohne_byd": "Mon combiné n'affiche pas sa propre image BYD en marche arrière",
+    "hilfe": "Désactivé par défaut. La caméra passe par la voie caméra Panoptes. Si la vue d'angle mort Panoptes est active, le combiné n'affiche aucune caméra.",
+    "kamera": "Caméra au combiné",
+    "nur_im_stand": "Activation possible uniquement à l'arrêt (P).",
+    "rundum": "Vue panoramique à l'arrêt (en P uniquement)",
+    "seite": "Vue latérale au clignotant",
+    "titel": "Caméra et vidéo au combiné",
+    "video": "Vidéo au combiné (en P uniquement, à 0 km/h)",
+    "video_hilfe": "Sans son. Dès que vous quittez P ou démarrez, la vidéo disparaît.",
+    "video_waehlen": "Choisir un enregistrement …"
   }
 }

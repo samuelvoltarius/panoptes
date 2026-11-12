@@ -83,6 +83,10 @@ class MainActivity : AppCompatActivity() {
     private var online = false
     private var bearbeiten = false
     private var seite = 0
+    /** 0.1.42 (L48): letzte Berührung (Sperre der Selbststeuerung, Stand-Uhr), Zustand der Selbststeuerung, Stand-Uhr. */
+    private var letzteBedienung = System.currentTimeMillis()
+    private val selbst = Selbststeuerung.Zustand()
+    private var standUhr: View? = null
     private var medien: Wiedergabe? = null
     /** 0.1.41 (E2E M1/G4): Android meldet Medienänderungen selbst, die Kachel zeichnet sofort neu. */
     private val medienBeobachter by lazy { MedienBeobachter(this, main) { medienNeu() } }
@@ -323,7 +327,9 @@ class MainActivity : AppCompatActivity() {
         if (pal.hell && !cockpit) window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
         else window.decorView.systemUiVisibility = 0
 
-        root = FrameLayout(this).apply { background = SeitenHintergrund(pal, cockpit) }
+        standUhr = null
+        // 0.1.42 (L48): eigene Motive (per Code gezeichnet) auf dem Seitenverlauf des Designs
+        root = FrameLayout(this).apply { background = Motive.nummer(layout.hintergrund)?.let { MotivHintergrund(it, pal) } ?: SeitenHintergrund(pal, cockpit) }
         bild = ImageView(this).apply { scaleType = ImageView.ScaleType.CENTER_CROP; visibility = View.GONE }
         root.addView(bild, FrameLayout.LayoutParams(-1, -1))
         schleier = View(this).apply { visibility = View.GONE }
@@ -730,6 +736,71 @@ class MainActivity : AppCompatActivity() {
             }
             return true
         }
+    }
+
+    // ---------- 0.1.42 (L48): Selbststeuerung + Stand-Uhr (Logik in Selbststeuerung.kt / StandUhr.kt) ----------
+
+    override fun onUserInteraction() {
+        super.onUserInteraction()
+        letzteBedienung = System.currentTimeMillis()
+    }
+
+    /** Nur Anzeige und Seitenwechsel, nie ein Fahrzeugbefehl. Gang nur frisch vom Kern (sonst null). */
+    private fun selbstSteuern() {
+        val s = summary
+        val ziel = Selbststeuerung.schritt(selbst, Selbststeuerung.wahl(this), s?.gear,
+            Selbststeuerung.laedt(s?.acc, s?.charging?.active), System.currentTimeMillis(), letzteBedienung) ?: return
+        if (bearbeiten || stopped) return
+        main.post {
+            when (ziel) {
+                Selbststeuerung.Ziel.KARTE -> if (karteImSplit == null) { standUhrWeg(); karteMitStatus() }
+                // R1: im Karten-Split erst den geteilten Bildschirm verlassen (Navi läuft weiter), sonst bliebe die Statusspalte
+                Selbststeuerung.Ziel.START -> { schliesseOverlay(); seite = 0; zeichneSeite()
+                    if (Selbststeuerung.splitVerlassen(ziel, karteImSplit)) splitVerlassen() }
+                Selbststeuerung.Ziel.LADEN -> {
+                    val i = layout.seiten.indexOfFirst { p -> p.any { it.kachel == Kachel.LADEN } }
+                        .takeIf { it >= 0 } ?: layout.seiten.indexOfFirst { p -> p.any { it.kachel == Kachel.AKKU } }
+                    if (i >= 0) { standUhrWeg(); schliesseOverlay(); seite = i; zeichneSeite() }
+                }
+            }
+        }
+    }
+
+    private fun nachtJetzt(): Boolean {
+        val c = java.util.Calendar.getInstance()
+        return TagNacht.istNacht(summary?.istNacht, c.get(java.util.Calendar.MONTH) + 1,
+            c.get(java.util.Calendar.HOUR_OF_DAY), c.get(java.util.Calendar.MINUTE))
+    }
+
+    private fun standUhrPruefen() {
+        val zeigen = StandUhr.zeigen(StandUhr.minuten(this), summary?.gear, bildAn && !stopped, overlay == null && !bearbeiten,
+            System.currentTimeMillis(), letzteBedienung)
+        if (zeigen && standUhr == null) {
+            val v = StandUhr.ansicht(this, ui, nachtJetzt()) { standUhrWeg(); letzteBedienung = System.currentTimeMillis() }
+            root.addView(v, FrameLayout.LayoutParams(-1, -1)); standUhr = v
+        } else if (standUhr != null && summary?.gear != "P") standUhrWeg()
+    }
+
+    private fun standUhrWeg() { standUhr?.let { root.removeView(it) }; standUhr = null }
+
+    private fun standUhrName(m: Int) = if (m == 0) getString(R.string.aus) else getString(R.string.stand_uhr_minuten, m)
+
+    private fun standUhrWaehlen() {
+        auswahl(getString(R.string.stand_uhr), StandUhr.MINUTEN.map { m ->
+            (if (m == StandUhr.minuten(this)) "✓ " else "") + standUhrName(m) to { StandUhr.setzen(this, m); einstellungen(erweitert = true) }
+        }, fuss = getString(R.string.stand_uhr_hinweis))
+    }
+
+    private fun selbstWaehlen() {
+        val w = Selbststeuerung.wahl(this)
+        val an = booleanArrayOf(w.karteBeiD, w.startBeiP, w.ladenVorn)
+        AlertDialog.Builder(this).setCustomTitle(auswahlKopf(getString(R.string.selbst_titel), getString(R.string.selbst_hinweis)))
+            .setMultiChoiceItems(arrayOf(getString(R.string.selbst_d), getString(R.string.selbst_p), getString(R.string.selbst_laden)), an) { _, i, x ->
+                Selbststeuerung.setzen(this, Selbststeuerung.SCHLUESSEL[i], x)
+            }
+            .setPositiveButton(R.string.fertig) { _, _ -> einstellungen(erweitert = true) }
+            .setOnCancelListener { einstellungen(erweitert = true) }
+            .show()
     }
 
     private fun zeichneSeite(richtung: Int = 0) {
@@ -1553,6 +1624,9 @@ class MainActivity : AppCompatActivity() {
             zeile(R.drawable.ic_pn_camera, getString(R.string.seitenblick_titel)) { if (darfBedienen()) seitenblickFragen() }
             zeile(R.drawable.ic_pn_music, getString(R.string.medien_zugriff)) { zugriffErklaeren() }
             zeile(R.drawable.ic_pn_play, schalter(R.string.musik_weiterspielen, MusikStart.an(this))) { MusikStart.umschalten(this); einstellungen(erweitert = true) }
+            // 0.1.42 (L48): Selbststeuerung und Stand-Uhr, ab Werk aus
+            zeile(R.drawable.ic_pn_auto_seite, getString(R.string.selbst_titel) + ": " + getString(if (Selbststeuerung.wahl(this).irgendeine) R.string.an else R.string.aus)) { selbstWaehlen() }
+            zeile(R.drawable.ic_pn_clock, getString(R.string.stand_uhr) + ": " + standUhrName(StandUhr.minuten(this))) { standUhrWaehlen() }
             // 0.1.41 (LO): Leiste über allen Apps (Haus, Lautstärke), Standard aus
             zeile(R.drawable.ic_pn_home, getString(R.string.schnell_titel) + ": " + schnellName(Schnellleiste.wahl(this))) { if (darfBedienen()) schnellleisteWaehlen() }
             zeile(R.drawable.ic_pn_route, getString(R.string.exportieren)) { exportieren() }
@@ -1585,12 +1659,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun hintergrundWaehlen() {
         val a = appearance
-        val optionen = Raster.hintergrundWahl(a?.hintergrundBild == true, a?.hintergrundVideo == true, EigenesBild.da(filesDir)).map { it to hgName(it) }
+        val optionen = (Raster.hintergrundWahl(a?.hintergrundBild == true, a?.hintergrundVideo == true, EigenesBild.da(filesDir)) + Motive.WERTE).map { it to hgName(it) }
         auswahl(getString(R.string.hintergrund), optionen.map { (w, t) -> (if (w == layout.hintergrund) "✓ $t" else t) to { schliesseOverlay(); aendern(Raster.hintergrund(layout, w)); baueAlles() } },
             fuss = getString(R.string.hg_hinweis))
     }
 
-    private fun hgName(w: String) = getString(when (w) {
+    private val motivNamen = intArrayOf(R.string.motiv_1, R.string.motiv_2, R.string.motiv_3, R.string.motiv_4, R.string.motiv_5,
+        R.string.motiv_6, R.string.motiv_7, R.string.motiv_8, R.string.motiv_9, R.string.motiv_10)
+
+    private fun hgName(w: String) = Motive.nummer(w)?.let { getString(R.string.hg_motiv) + ": " + getString(motivNamen[it - 1]) } ?: getString(when (w) {
         "cockpit" -> R.string.hg_cockpit; "bild" -> R.string.hg_bild; "video" -> R.string.hg_video; "eigen" -> R.string.hg_eigen
         else -> R.string.hg_panoptes
     })
@@ -1979,6 +2056,7 @@ class MainActivity : AppCompatActivity() {
         if (LayoutAbgleich.neuHolen(s?.layoutGeaendert, kernPrefs.getLong(KEY_BASIS, 0L), kernPrefs.getBoolean(KEY_OFFEN, false),
                 bearbeiten || overlay != null)) kernAbgleich()
         summary = s; traffic = t; online = ok
+        selbstSteuern(); standUhrPruefen()   // 0.1.42 (L48)
         if (!ok && warOnline) zeigeHinweis(getString(R.string.offline))
         val alt = appearance; appearance = a
         val cockpit = layout.hintergrund == "cockpit"

@@ -307,7 +307,10 @@ object Raster {
         return l.copy(schnell = m)
     }
 
-    fun hintergrund(l: StartLayout, wert: String): StartLayout = if (wert in HINTERGRUENDE) l.copy(hintergrund = wert) else l
+    /** 0.1.42 (L48): dazu die eigenen Motive „motiv-1“ … „motiv-10“ ([Motive]). */
+    fun hintergrundGueltig(w: String?): Boolean = w != null && (w in HINTERGRUENDE || Motive.ist(w))
+
+    fun hintergrund(l: StartLayout, wert: String): StartLayout = if (hintergrundGueltig(wert)) l.copy(hintergrund = wert) else l
 
     // ---------- Standard ----------
 
@@ -400,7 +403,7 @@ object Raster {
                     if (gueltigesPaket(p) && p !in this && size < MAX_DOCK) add(p)
                 }
             }
-            val hg = root.optString("hintergrund", "panoptes").takeIf { it in HINTERGRUENDE } ?: "panoptes"
+            val hg = root.optString("hintergrund", "panoptes").takeIf { hintergrundGueltig(it) } ?: "panoptes"
             val maxId = ids.mapNotNull { it.drop(1).toIntOrNull() }.maxOrNull() ?: 0
             val schnellJson = root.optJSONArray("schnell") ?: JSONArray()
             val schnell = buildList {

@@ -37,8 +37,19 @@ public final class TachoAnsicht {
      * Designs (0.1.37): alle zeichnet derselbe Renderer {@code web/shared/tacho-designs.js}, am
      * Fahrerdisplay in {@code web/local/tacho-ansicht.html} und in der Web-Vorschau.
      */
-    public static final List<String> DESIGNS =
-            Collections.unmodifiableList(Arrays.asList(KLAR, SPORT, NACHT, HORIZONT, ROUTE));
+    /**
+     * 0.1.42 (T2 Tacho-Galerie): 15 weitere eigene Designs aus {@code web/shared/tacho-galerie.js}, gleiche Reihenfolge
+     * (Vertragstest vergleicht beide Listen).
+     */
+    public static final List<String> GALERIE = Collections.unmodifiableList(Arrays.asList(
+            "analog", "retro", "minimal", "futur", "rennen", "eco", "gross", "sonne", "karte", "abbiegen",
+            "bogen", "saeulen", "chrono", "kacheln", "tunnel"));
+    public static final List<String> DESIGNS;
+    static {
+        List<String> alle = new java.util.ArrayList<>(Arrays.asList(KLAR, SPORT, NACHT, HORIZONT, ROUTE));
+        alle.addAll(GALERIE);
+        DESIGNS = Collections.unmodifiableList(alle);
+    }
     /** Seite fuer die Ansicht, nur aus den App-Assets (kein Netz). */
     public static final String SEITE = "file:///android_asset/web/local/tacho-ansicht.html";
     static final String DESIGN_KEY = "ansichtDesign";
@@ -129,6 +140,11 @@ public final class TachoAnsicht {
 
     /** Daemon-Seite des TCP-Befehls. Nur lesend. */
     public static JSONObject daten() throws Exception {
+        return daten(null);
+    }
+
+    /** Wie oben; 0.1.42: {@code cmd.bereich} = freies Feld der Ansicht fuer Kamera/Video (sonst keins). */
+    public static JSONObject daten(JSONObject cmd) throws Exception {
         boolean aktiv = false;
         try {
             aktiv = at.greenchili.surfmate.launcher.ClusterCast.isActive()
@@ -156,6 +172,15 @@ public final class TachoAnsicht {
         if (TachoEigen.NAME.equals(r.optString("design"))) {
             JSONObject e = TachoEigen.gespeichert();
             r.put("eigen", e != null ? e : TachoEigen.standard());
+        }
+        // 0.1.42 (T3): Kamera-/Video-Ansicht nach den Regeln in TachoKameraAnsicht (ab Werk aus).
+        try {
+            JSONObject k = TachoKameraAnsicht.schritt(aktiv, gang(gang), kmh,
+                    TachoKameraAnsicht.bereich(cmd != null ? cmd.optJSONArray("bereich") : null));
+            r.put("kamera", k.optString("kamera", "")).put("video", k.optBoolean("video", false))
+                    .put("videoId", k.optString("videoId", ""));
+        } catch (Throwable ignored) {
+            r.put("kamera", "").put("video", false).put("videoId", "");
         }
         return r;
     }

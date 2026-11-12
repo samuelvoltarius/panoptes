@@ -2885,6 +2885,8 @@
     "tacho_auswahl_nur_p": "Solo in P",
     "tacho_auswahl_erst_freigeben": "Prima autorizza qui sotto",
     "tacho_auswahl_nicht_moeglich": "Non possibile su questa auto",
+    "tacho_auswahl_kein_tacho": "Questa auto non mostra i design Panoptes nel quadro strumenti.",
+    "tacho_auswahl_fehlgeschlagen": "Non ha funzionato.",
     "tacho_auswahl_ok": "Fatto.",
     "cluster_ansicht_design": "Aspetto",
     "cluster_design_klar": "Chiaro",
@@ -2893,6 +2895,21 @@
     "cluster_design_horizont": "Orizzonte",
     "cluster_design_route": "Percorso",
     "cluster_design_eigen": "Personale",
+    "cluster_design_analog": "Analogico",
+    "cluster_design_retro": "Retrò",
+    "cluster_design_minimal": "Minimale",
+    "cluster_design_futur": "Futuro",
+    "cluster_design_rennen": "Corsa",
+    "cluster_design_eco": "Eco",
+    "cluster_design_gross": "Grande & chiaro",
+    "cluster_design_sonne": "Sole",
+    "cluster_design_karte": "Mappa",
+    "cluster_design_abbiegen": "Svolta",
+    "cluster_design_bogen": "Arco",
+    "cluster_design_saeulen": "Colonne",
+    "cluster_design_chrono": "Crono",
+    "cluster_design_kacheln": "Riquadri",
+    "cluster_design_tunnel": "Tunnel",
     "cluster_ansicht_vorschau": "Anteprima con valori di esempio",
     "cloud_required": "Collega un account BYD in Sistema per usarlo",
     "cloud_sent": "Inviato tramite il tuo account BYD",
@@ -7404,6 +7421,16 @@
     "thema_hell": "Chiaro",
     "thema_auto": "Automatico"
   },
+  "tacho_galerie": {
+    "alle": "Tutti",
+    "analog": "Analogico",
+    "digital": "Digitale",
+    "navi": "Navigazione",
+    "ruhig": "Sobrio",
+    "live": "Anteprima",
+    "vorlage": "Usa come modello",
+    "vorlage_ok": "Modello caricato. Modificalo, poi «Salva»."
+  },
   "tacho_gestalten": {
     "a_akku": "Batteria %",
     "a_aussen": "Temperatura esterna",
@@ -7466,5 +7493,19 @@
     "z_nadel": "Lancetta",
     "z_zahl": "Solo numero",
     "zeiger_titel": "Forma della lancetta"
+  },
+  "tacho_ansichten": {
+    "fehler": "Non salvato.",
+    "heck": "Vista posteriore in retromarcia",
+    "heck_ohne_byd": "Il mio quadro non mostra un'immagine BYD propria in retromarcia",
+    "hilfe": "Disattivato di serie. La telecamera usa il percorso telecamera di Panoptes. Se la vista angolo cieco di Panoptes è attiva, il quadro non mostra telecamere.",
+    "kamera": "Telecamera nel quadro",
+    "nur_im_stand": "Si attiva solo da fermo (P).",
+    "rundum": "Vista a 360° da fermo (solo in P)",
+    "seite": "Vista laterale con la freccia",
+    "titel": "Telecamera e video nel quadro",
+    "video": "Video nel quadro (solo in P a 0 km/h)",
+    "video_hilfe": "Senza audio. Appena esci da P o parti, il video sparisce.",
+    "video_waehlen": "Scegli registrazione …"
   }
 }

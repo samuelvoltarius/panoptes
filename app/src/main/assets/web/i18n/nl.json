@@ -2885,6 +2885,8 @@
     "tacho_auswahl_nur_p": "Alleen in P",
     "tacho_auswahl_erst_freigeben": "Eerst hieronder vrijgeven",
     "tacho_auswahl_nicht_moeglich": "Niet mogelijk op deze auto",
+    "tacho_auswahl_kein_tacho": "Deze auto toont geen Panoptes-designs in het instrumentenpaneel.",
+    "tacho_auswahl_fehlgeschlagen": "Dat is niet gelukt.",
     "tacho_auswahl_ok": "Klaar.",
     "cluster_ansicht_design": "Uiterlijk",
     "cluster_design_klar": "Helder",
@@ -2893,6 +2895,21 @@
     "cluster_design_horizont": "Horizon",
     "cluster_design_route": "Route",
     "cluster_design_eigen": "Eigen",
+    "cluster_design_analog": "Analoog",
+    "cluster_design_retro": "Retro",
+    "cluster_design_minimal": "Minimaal",
+    "cluster_design_futur": "Futur",
+    "cluster_design_rennen": "Race",
+    "cluster_design_eco": "Eco",
+    "cluster_design_gross": "Groot & helder",
+    "cluster_design_sonne": "Zon",
+    "cluster_design_karte": "Kaart",
+    "cluster_design_abbiegen": "Afslaan",
+    "cluster_design_bogen": "Boog",
+    "cluster_design_saeulen": "Zuilen",
+    "cluster_design_chrono": "Chrono",
+    "cluster_design_kacheln": "Tegels",
+    "cluster_design_tunnel": "Tunnel",
     "cluster_ansicht_vorschau": "Voorbeeld met voorbeeldwaarden",
     "cloud_required": "Koppel onder Systeem een BYD-account om dit te gebruiken",
     "cloud_sent": "Via je BYD-account verstuurd",
@@ -7404,6 +7421,16 @@
     "thema_hell": "Licht",
     "thema_auto": "Automatisch"
   },
+  "tacho_galerie": {
+    "alle": "Alle",
+    "analog": "Analoog",
+    "digital": "Digitaal",
+    "navi": "Navigatie",
+    "ruhig": "Rustig",
+    "live": "Voorbeeld",
+    "vorlage": "Als sjabloon gebruiken",
+    "vorlage_ok": "Sjabloon geladen. Pas het aan en tik dan op „Opslaan”."
+  },
   "tacho_gestalten": {
     "a_akku": "Accu %",
     "a_aussen": "Buitentemperatuur",
@@ -7466,5 +7493,19 @@
     "z_nadel": "Naald",
     "z_zahl": "Alleen getal",
     "zeiger_titel": "Wijzervorm"
+  },
+  "tacho_ansichten": {
+    "fehler": "Niet opgeslagen.",
+    "heck": "Achteruitzicht in de achteruit",
+    "heck_ohne_byd": "Mijn paneel toont bij achteruitrijden geen eigen BYD-beeld",
+    "hilfe": "Standaard uit. De camera gebruikt de Panoptes-cameraweg. Staat de Panoptes-dodehoekweergave aan, dan toont het paneel geen camera.",
+    "kamera": "Camera in het paneel",
+    "nur_im_stand": "Inschakelen kan alleen bij stilstand (P).",
+    "rundum": "Rondomzicht bij stilstand (alleen in P)",
+    "seite": "Zijzicht bij richtingaanwijzer",
+    "titel": "Camera & video in het instrumentenpaneel",
+    "video": "Video in het paneel (alleen in P bij 0 km/u)",
+    "video_hilfe": "Zonder geluid. Zodra je uit P schakelt of wegrijdt, is de video weg.",
+    "video_waehlen": "Opname kiezen …"
   }
 }

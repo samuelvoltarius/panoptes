@@ -148,9 +148,18 @@ public class TachoAnsichtSicherheitTest {
     public void ansichtEnthaeltKeinVideoUndKeineKamera() throws IOException {
         for (String f : neueDateien()) {
             String t = TachoFaehigkeitTest.lies(f);
+            // 0.1.42 (T3): Einzige Ausnahme ist die VideoView der Ansicht – nur in P (Kern und Ansicht pruefen), ohne Ton.
+            boolean videoErlaubt = f.endsWith("TachoAnsichtActivity.kt");
             for (String verboten : new String[] {"VideoView", "SurfaceView", "TextureView", "MediaPlayer",
                     "ExoPlayer", "android.hardware.camera", "Camera2", "CameraManager", "getFrame"}) {
+                if (videoErlaubt && "VideoView".equals(verboten)) continue;
                 assertFalse(f + " enthaelt " + verboten, t.contains(verboten));
+            }
+            if (videoErlaubt) {
+                assertTrue("Video nur mit Kern-Freigabe und eigenem P-Blick",
+                        t.contains("a.optBoolean(\"video\", false) && a.optString(\"gang\", \"\") == \"P\""));
+                assertTrue("ohne Ton", t.contains("mp.setVolume(0f, 0f)"));
+                assertTrue("ohne Antwort sofort weg", t.contains("videoStopp()\n            if (++fehlversuche"));
             }
         }
     }
@@ -250,7 +259,9 @@ public class TachoAnsichtSicherheitTest {
 
     @Test
     public void fuenfDesignsUndEinRendererFuerAnsichtUndVorschau() throws IOException {
-        assertEquals(List.of("klar", "sport", "nacht", "horizont", "route"), TachoAnsicht.DESIGNS);
+        // 0.1.42 (T2): die fünf bleiben vorn, dahinter die 15 Galerie-Designs
+        assertEquals(List.of("klar", "sport", "nacht", "horizont", "route"), TachoAnsicht.DESIGNS.subList(0, 5));
+        assertEquals(20, TachoAnsicht.DESIGNS.size());
         String js = TachoFaehigkeitTest.lies(JS);
         assertTrue(js.contains("var DESIGNS = ['klar', 'sport', 'nacht', 'horizont', 'route'];"));
         // 0.1.38: Die Web-Auswahl „Was zeigt der Tacho?“ liegt unter Apps & Display → Display (display.html).

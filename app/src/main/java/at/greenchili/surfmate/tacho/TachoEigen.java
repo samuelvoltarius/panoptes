@@ -142,11 +142,18 @@ public final class TachoEigen {
         }
     }
 
-    /** Import aus Dateitext: zu gross oder kein JSON = null. */
+    /**
+     * Import aus Dateitext: zu gross, kein JSON oder keine echte Tacho-Design-Datei = null.
+     * 0.1.42 (E2E G3): Eine Datei muss Kennung {@link #FORMAT} und {@link #VERSION} ausdruecklich tragen;
+     * fremdes JSON wie {@code {"foo":1}} wird nicht mehr still zu einem leeren Design.
+     */
     public static Ergebnis pruefenText(String text) {
         if (text == null || text.length() > MAX_ZEICHEN) return null;
         try {
-            return pruefen(new JSONObject(text.trim()));
+            JSONObject roh = new JSONObject(text.trim());
+            if (!roh.has("format") || !roh.has("version")) return null;
+            if (!FORMAT.equals(roh.opt("format")) || !(roh.opt("version") instanceof Number && ((Number) roh.opt("version")).doubleValue() == VERSION)) return null;
+            return pruefen(roh);
         } catch (Exception e) {
             return null;
         }

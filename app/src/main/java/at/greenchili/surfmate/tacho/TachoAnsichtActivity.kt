@@ -12,6 +12,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
+import android.widget.VideoView
 import at.greenchili.surfmate.client.CameraDaemonClient
 import java.util.concurrent.Executors
 
@@ -20,7 +21,9 @@ import java.util.concurrent.Executors
  * `ClusterCast.start` nach `TachoNaviApp.fahrtSperre` (Appwahl, Probe in P, Freigabe).
  *
  * - Zeigt Tempo, Leistung, Akku, Reichweite, Gang, Aussentemperatur, km-Stand und das naechste
- *   Navi-Manoever mit Routenskizze. Kein Video, keine Kamera, keine Position.
+ *   Navi-Manoever mit Routenskizze. Keine Position.
+ * - 0.1.42 (T3): Kamera ueber den Kern (`TachoKameraAnsicht`, native camview-Ebene, ab Werk aus) und Video
+ *   einer gewaehlten Aufnahme NUR in P bei 0 km/h, ohne Ton; ausserhalb von P sofort weg (auch ohne Kern-Antwort).
  * - Gezeichnet wird von `web/shared/tacho-designs.js` (gleicher Renderer wie die Web-Vorschau) in
  *   einer WebView aus den App-Assets; Netzladen ist gesperrt.
  * - Zeichnet nur im verkleinerten Mittelbereich ([TachoAnsicht.inhalt]), der Rest bleibt schwarz.
@@ -40,6 +43,11 @@ class TachoAnsichtActivity : Activity() {
 
     private lateinit var wurzel: FrameLayout
     private lateinit var seite: WebView
+    private lateinit var video: VideoView
+    private var videoLaeuft = ""
+    /** 0.1.42: freies Feld (Pixel des Fahrerdisplays) aus `tachoInstanz.ansichtBereich()` (T2); null = keins → nichts zeigen. */
+    @Volatile private var feld: IntArray? = null
+    private var ansichtAn = false
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,6 +72,14 @@ class TachoAnsichtActivity : Activity() {
             }
         }
         wurzel.addView(seite, FrameLayout.LayoutParams(0, 0))
+        video = VideoView(this).apply {
+            visibility = android.view.View.GONE
+            isFocusable = false
+            // Ohne Ton und in Schleife; nie ueber einen anderen Kanal als die Medienwiedergabe des Kopfgeraets.
+            setOnPreparedListener { mp -> try { mp.setVolume(0f, 0f); mp.isLooping = true } catch (_: Throwable) { } }
+            setOnErrorListener { _, _, _ -> videoStopp(); true }
+        }
+        wurzel.addView(video, FrameLayout.LayoutParams(0, 0))
         wurzel.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ -> platziere(v.width, v.height) }
         setContentView(wurzel)
         seite.loadUrl(TachoAnsicht.SEITE)
@@ -78,6 +94,65 @@ class TachoAnsichtActivity : Activity() {
         seite.layoutParams = lp
     }
 
+    /** 0.1.42: Video nur, wenn der Kern es erlaubt UND die Ansicht selbst P sieht; sonst sofort weg. */
+    private fun videoFolgen(a: org.json.JSONObject) {
+        val id = a.optString("videoId", "")
+        val darf = a.optBoolean("video", false) && a.optString("gang", "") == "P" && id.matches(Regex("^[a-f0-9]{32}$"))
+        if (!darf) { videoStopp(); return }
+        val f = feld
+        if (f == null) { videoStopp(); return }
+        if (id == videoLaeuft) return
+        videoLaeuft = id
+        try {
+            val ort = IntArray(2); wurzel.getLocationOnScreen(ort)
+            video.layoutParams = FrameLayout.LayoutParams(f[2], f[3]).apply { leftMargin = f[0] - ort[0]; topMargin = f[1] - ort[1] }
+            video.setVideoURI(android.net.Uri.parse(
+                "http://127.0.0.1:" + at.greenchili.surfmate.daemon.CameraDaemon.HTTP_PORT + "/video/id/" + id))
+            video.visibility = android.view.View.VISIBLE
+            video.start()
+        } catch (_: Throwable) { videoStopp() }
+    }
+
+    /** Design auf „ruhige Leiste unten“ (Tempo bleibt sichtbar), solange Kamera oder Video laeuft. */
+    private fun ansichtFolgen(an: Boolean) {
+        if (an == ansichtAn) return
+        ansichtAn = an
+        seite.evaluateJavascript("window.tachoInstanz && window.tachoInstanz.ansicht && window.tachoInstanz.ansicht($an)", null)
+    }
+
+    /** Freies Feld aus der Seite lesen (CSS-Pixel → Pixel des Displays). Ohne Einhaengestelle bleibt es null. */
+    private fun feldLesen() {
+        val js = "(function(){var c=document.getElementById('tacho');var i=window.tachoInstanz;" +
+            "if(!c||!i||!i.ansichtBereich)return null;var b=i.ansichtBereich();if(!b)return null;" +
+            "var r=c.getBoundingClientRect();return [r.left+b.x,r.top+b.y,b.w,b.h];})()"
+        seite.evaluateJavascript(js) { s -> feld = feldAus(s) }
+    }
+
+    private fun feldAus(s: String?): IntArray? = try {
+        val a = org.json.JSONArray(s ?: "null")
+        val dichte = resources.displayMetrics.density
+        val ort = IntArray(2); seite.getLocationOnScreen(ort)
+        val f = IntArray(4) { i -> Math.round(a.getDouble(i).toFloat() * dichte) }
+        f[0] += ort[0]; f[1] += ort[1]
+        if (f[2] > 0 && f[3] > 0) f else null
+    } catch (_: Throwable) { null }
+
+    private fun videoStopp() {
+        if (videoLaeuft.isEmpty() && video.visibility != android.view.View.VISIBLE) return
+        videoLaeuft = ""
+        try { video.stopPlayback() } catch (_: Throwable) { }
+        video.visibility = android.view.View.GONE
+    }
+
+    /** Kern: eigenes Kamerabild im Tacho weg (Ansicht pausiert/beendet). */
+    private fun kameraEnde() {
+        try {
+            hintergrund.execute {
+                try { daemon.sendCommand(org.json.JSONObject().put("cmd", "tachoAnsichtEnde")) } catch (_: Throwable) { }
+            }
+        } catch (_: Throwable) { }
+    }
+
     override fun onResume() {
         super.onResume()
         laeuft = true
@@ -87,6 +162,8 @@ class TachoAnsichtActivity : Activity() {
     override fun onPause() {
         laeuft = false
         haupt.removeCallbacksAndMessages(null)
+        videoStopp()
+        kameraEnde()
         super.onPause()
     }
 
@@ -115,6 +192,8 @@ class TachoAnsichtActivity : Activity() {
 
     private fun beenden() {
         laeuft = false
+        videoStopp()
+        kameraEnde()
         try { finishAndRemoveTask() } catch (_: Throwable) { finish() }
     }
 
@@ -124,7 +203,9 @@ class TachoAnsichtActivity : Activity() {
         if (aufDisplayNull()) { beenden(); return }
         hintergrund.execute {
             val antwort = try {
-                daemon.sendCommand(org.json.JSONObject().put("cmd", "tachoAnsicht"))
+                val c = org.json.JSONObject().put("cmd", "tachoAnsicht")
+                feld?.let { f -> c.put("bereich", org.json.JSONArray().put(f[0]).put(f[1]).put(f[2]).put(f[3])) }
+                daemon.sendCommand(c)
             } catch (_: Throwable) { null }
             haupt.post { zeige(antwort) }
         }
@@ -133,6 +214,7 @@ class TachoAnsichtActivity : Activity() {
     private fun zeige(a: org.json.JSONObject?) {
         if (!laeuft) return
         if (a == null || a.optString("status") != "ok") {
+            videoStopp()
             if (++fehlversuche >= FEHLER_GRENZE) { beenden(); return }
         } else {
             fehlversuche = 0
@@ -143,6 +225,9 @@ class TachoAnsichtActivity : Activity() {
                 if (a.has(k)) d.put(k, a.opt(k))
             }
             TachoAnsichtManoever.json(TachoAnsichtManoever.aktuell())?.let { d.put("navi", it) }
+            videoFolgen(a)
+            ansichtFolgen(a.optString("kamera", "").isNotEmpty() || videoLaeuft.isNotEmpty())
+            feldLesen()
             seite.evaluateJavascript("window.tachoSetze && window.tachoSetze($d)", null)
         }
         haupt.postDelayed({ takt() }, TAKT_MS)

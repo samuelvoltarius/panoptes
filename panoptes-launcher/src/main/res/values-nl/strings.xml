@@ -350,4 +350,24 @@
     <string name="seitenblick_ist_aus">Zijzicht bij knipperen staat uit.</string>
     <string name="seitenblick_fehler">Zijzicht kon niet worden omgeschakeld. Er is niets veranderd. Probeer het later opnieuw of controleer het in Panoptes.</string>
     <string name="seitenblick_nicht_erreichbar">Panoptes antwoordt nu niet, daarom kan de instelling voor zijzicht niet worden getoond. Probeer het zo meteen opnieuw.</string>
+    <string name="hg_motiv">Motief</string>
+    <string name="motiv_1">Golven</string>
+    <string name="motiv_2">Stippen</string>
+    <string name="motiv_3">Cirkels</string>
+    <string name="motiv_4">Strepen</string>
+    <string name="motiv_5">Honingraat</string>
+    <string name="motiv_6">Horizon</string>
+    <string name="motiv_7">Hoogtelijnen</string>
+    <string name="motiv_8">Driehoeken</string>
+    <string name="motiv_9">Bogen</string>
+    <string name="motiv_10">Sterren</string>
+    <string name="selbst_titel">Automatisch wisselen</string>
+    <string name="selbst_hinweis">Alleen weergave en paginawissel, nooit een voertuigopdracht. Niet terwijl je het scherm bedient (10 s).</string>
+    <string name="selbst_d">In D: kaart tonen</string>
+    <string name="selbst_p">In P: startpagina tonen</string>
+    <string name="selbst_laden">Laden begint: laadtegel naar voren</string>
+    <string name="stand_uhr">Parkeerklok</string>
+    <string name="stand_uhr_hinweis">In P verschijnt na deze tijd zonder bediening een grote, gedimde klok. Eén tik sluit hem.</string>
+    <string name="stand_uhr_tipp">Tik om te sluiten</string>
+    <string name="stand_uhr_minuten">na %1$d min</string>
 </resources>
