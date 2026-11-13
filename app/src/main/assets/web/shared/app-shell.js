@@ -760,7 +760,9 @@
         { id: 'apps', label: 'Apps & Display', i18n: 'shell.sec_apps', kurz: 'shell.kurz_apps', icon: 'grid', pages: [
             { href: 'apps.html',            label: 'Apps nebeneinander', i18n: 'shell.page_apps' },
             { href: 'dateien.html',         label: 'Dateien',            i18n: 'shell.page_dateien' },
-            { href: 'remote-dev-view.html', label: 'Bildschirm vom Handy', i18n: 'shell.page_bildschirm' },
+            // 0.1.43 (S3): die Seite zeigt den Panoptes-Bildschirm im Auto auf Handy/PC (nicht das Handy im Auto); am
+            // Display selbst ohne Sinn (man sieht ihn ja schon) – fern: nur in der Fernbedienung als Reiter
+            { href: 'remote-dev-view.html', label: 'Bildschirm im Auto', i18n: 'shell.page_bildschirm', fern: true },
             // 0.1.38: alles fürs Display im Auto auf einer Seite (Tacho, Hintergrund, Display-Sperre, Launcher)
             { href: 'display.html',         label: 'Display',            i18n: 'shell.page_display' },
             // 0.1.38: Startbildschirm-App (Panoptes Launcher) einrichten, Recht „launcher“
@@ -932,12 +934,17 @@
             + '</div></header>';
     }
 
+    // Ausgeblendet: versteckte Seiten, am Display auch die nur für die Fernbedienung (fern, 0.1.43 S3).
+    function seiteAus(p) {
+        return !!(p.hidden || (p.fern && dstDisplay()));
+    }
+
     // Seiten eines Teils (sichtbar oder gerade offen), in Menü-Reihenfolge.
     function teilSeiten(section, teil, base) {
         var r = [];
         for (var i = 0; i < section.pages.length; i++) {
             var p = section.pages[i];
-            if (p.teil === teil && (!p.hidden || p.href === base)) r.push(p);
+            if (p.teil === teil && (!seiteAus(p) || p.href === base)) r.push(p);
         }
         return r;
     }
@@ -947,7 +954,7 @@
         var pages = found.section.pages, html = '', n = 0, gesehen = {};
         for (var i = 0; i < pages.length; i++) {
             var p = pages[i];
-            if (p.hidden && p.href !== base) continue;
+            if (seiteAus(p) && p.href !== base) continue;
             var label = p.label, key = p.i18n, on = p.href === base;
             if (p.teil) {
                 // Ein Reiter je Teil: führt zur ersten Seite, leuchtet auf jeder Seite des Teils
@@ -1063,6 +1070,8 @@
         sections: SECTIONS,
         // 0.1.38.10: dieselbe Display-Erkennung für alle Seiten (navi.html: „Im Navi starten“ statt „Ziel ins Auto“)
         istDisplay: dstDisplay,
+        // 0.1.43 (S3): ob eine Menüseite hier ausgeblendet ist (versteckt, oder „fern“ am Display)
+        seiteAus: seiteAus,
         teile: TEILE,
         versteckt: VERSTECKT,
         modelName: function (id) { return MODEL_NAMES[id] || ''; },
@@ -1095,7 +1104,9 @@
                     else if (st.zustand === 'startet') setPill('pnPillGuard', tr('shell.pill_guard_starting', 'Wächter startet'), 'warn');
                     else if (st.zustand === 'unterdrueckt') setPill('pnPillGuard', tr('shell.pill_guard_paused', 'Wächter pausiert'), 'aq');
                     else if (st.enabled && st.active) setPill('pnPillGuard', tr('shell.pill_guard_on', 'Wächter aktiv'), 'ok');
-                    else if (st.enabled) setPill('pnPillGuard', tr('shell.pill_guard_ready', 'Wächter bereit'), 'aq');
+                    // 0.1.43 (S2): „aus“ nur, wenn der Wächter in den Einstellungen aus ist (gewollt); bei Zündung an
+                    // ist enabled immer false. Dieselbe Einstellung entscheidet, ob die Startkarte den Wächter führt.
+                    else if (st.enabled || st.gewollt) setPill('pnPillGuard', tr('shell.pill_guard_ready', 'Wächter bereit'), 'aq');
                     else setPill('pnPillGuard', tr('shell.pill_guard_off', 'Wächter aus'), '');
                 }).catch(function () {
                     // Gleich nach dem Laden (Anmeldung/Übersetzung noch unterwegs) kurz nachfassen.

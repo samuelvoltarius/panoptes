@@ -121,7 +121,9 @@ class StartStatusNachpruefTest {
             m.contains("StartStatus.nachprueferSetzen(this) { s, rueck -> stufeBereit(s, rueck) }"))
         assertTrue(m.contains("StartStatus.nachprueferEntfernen(this)"))
         assertTrue("REST nur mit Prüfung (Telegram)",
-            m.contains("stufen.filter { it != StartStufe.REST || PreferencesManager.isDaemonEnabled(DaemonType.TELEGRAM_DAEMON) }"))
+            m.contains("val anzeige = DaemonStartPlan.anzeige(stufen, startGewollt())") &&
+                m.contains("telegramAn = PreferencesManager.isDaemonEnabled(DaemonType.TELEGRAM_DAEMON)") &&
+                q("src/main/java/at/greenchili/surfmate/ui/daemon/DaemonStartPlan.kt").contains("StartStufe.REST -> g.telegramAn"))
     }
 
     @Test

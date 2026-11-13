@@ -168,6 +168,20 @@ public class LauncherApiSperreTest {
         assertTrue(leer.isNull("an"));
     }
 
+    /** 0.1.43 (S2b): bei Zündung an ist enabled immer false – eingeschaltet heißt die Einstellung (gewollt). */
+    @Test
+    public void waechterAnAusDerEinstellungWieChip() throws Exception {
+        Map<String, Object> m = new HashMap<>();
+        m.put("enabled", false);
+        m.put("gewollt", true);
+        assertTrue("Zündung an, Wächter eingeschaltet: nicht „aus“", ((JSONObject) LauncherApiHandler.waechterAus(m)).getBoolean("an"));
+        m.put("gewollt", false);
+        assertFalse("in den Einstellungen aus = aus", ((JSONObject) LauncherApiHandler.waechterAus(m)).getBoolean("an"));
+        Map<String, Object> alt = new HashMap<>();
+        alt.put("gewollt", true);
+        assertTrue("nur gewollt (Pipeline fehlt)", ((JSONObject) LauncherApiHandler.waechterAus(alt)).getBoolean("an"));
+    }
+
     @Test
     public void hintergrundNurFesteRegulaereDateien() throws Exception {
         File ordner = tmp.newFolder("dateien");

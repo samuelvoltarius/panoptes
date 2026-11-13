@@ -64,6 +64,8 @@
     <string name="musik_zurueck">Previous</string>
     <string name="medien_zugriff_hinweis">To control music (also CarPlay), allow notification access</string>
     <string name="medien_zugriff_erlauben">Allow access</string>
+    <string name="medien_kern_fehlt">Titles come from Panoptes – not available right now. The buttons still work.</string>
+    <string name="medien_zugriff_byd">On this car the Android page for notification access is locked, so the launcher does not open it. Title and artist come from Panoptes instead; the music buttons work either way.</string>
     <string name="musik_weiterspielen">Resume music at start</string>
     <string name="nach_links">Move left</string>
     <string name="nach_rechts">Move right</string>

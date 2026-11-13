@@ -26,6 +26,15 @@ public class WaechterGrundTest {
         assertEquals("Zündung unbekannt: nie raten", WaechterGrund.BEREIT, WaechterGrund.grund(st, null));
     }
 
+    /** 0.1.43 (S2): bei Zündung an ist enabled immer false – eingeschaltet heißt die Einstellung (gewollt). */
+    @Test
+    public void gewolltZaehltBeiZuendungAn() {
+        assertEquals(WaechterGrund.ZUENDUNG_AN, WaechterGrund.grund(s("enabled", false, "gewollt", true), true));
+        assertEquals(WaechterGrund.BEREIT, WaechterGrund.grund(s("enabled", false, "gewollt", true), false));
+        assertEquals("in den Einstellungen aus = aus", WaechterGrund.AUS,
+                WaechterGrund.grund(s("enabled", false, "gewollt", false), true));
+    }
+
     @Test
     public void reihenfolge() {
         assertEquals(WaechterGrund.AUS, WaechterGrund.grund(s("enabled", false), true));

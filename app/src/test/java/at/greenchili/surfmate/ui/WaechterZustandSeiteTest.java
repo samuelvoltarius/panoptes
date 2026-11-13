@@ -44,14 +44,14 @@ public class WaechterZustandSeiteTest {
     @Test
     public void uebersichtUndMenueNutzenSie() throws Exception {
         String w = lies(WEB + "local/waechter.html");
-        assertTrue(w.contains("waechter-zustand.js?v=1"));
+        assertTrue(w.contains("waechter-zustand.js?v=2"));
         assertTrue(w.contains("var z = PanoptesWaechterZustand.zeile(s, t);"));
         assertTrue(w.contains("}).catch(function () { zustandUnbekannt(); });"));
         assertFalse("keine zweite Kopie der Regel", w.contains("function grundAus"));
         assertFalse("Stopp nicht als zweite Zeile neben „Bereit“", w.contains("t('guard.stopped_because'"));
 
         String sh = lies(WEB + "local/surveillance.html");
-        assertTrue(sh.contains("waechter-zustand.js?v=1"));
+        assertTrue(sh.contains("waechter-zustand.js?v=2"));
         assertTrue(sh.indexOf("waechter-zustand.js") < sh.indexOf("surveillance.js?v="));
         assertTrue(sh.contains("surveillance.js?v=survtoggle14"));
         assertTrue(sh.contains("id=\"survZustand\""));

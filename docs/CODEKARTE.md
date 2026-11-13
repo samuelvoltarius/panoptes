@@ -1,6 +1,6 @@
 # Codekarte Panoptes
 
-**Stand: Version 0.1.43, Commit 48baf29a**
+**Stand: Version 0.1.43.1, Commit d120901b**
 
 Wegweiser durch den Code. Zuerst hier suchen, dann gezielt die genannte Datei öffnen.
 Die Karte nennt Dateien und Klassen, keine Zeilennummern. Kurze Pfade gelten ab
@@ -44,7 +44,7 @@ auf und läuft als `CLASSPATH=<apk> app_process`, bewacht von einem kleinen Watc
 
 App-seitige Hilfsdienste stehen in `services/`, darunter `VehicleActuatorService` (schreibt mit echter App-UID, Daemon-Seite ist `VehicleActuatorBridge`) und `KeepAliveAccessibilityService`.
 
-`ui/daemon/` und `daemon/management/` zeigen und steuern die Daemons aus der App. Start des Stapels: `ui/daemon/DaemonStartPlan.kt` (EINE Quelle: 45 s Boot-Schutz ab Geräte-Boot; 0.1.38.10 Stufen Zugang(nur mit Tailscale) → Web → Wächter → Rest, aus den Einstellungen) mit `ui/daemon/StartAblauf.kt` (Ablauf ohne feste Pausen) und `updater/HardResetTor.kt` (Stufe −1, hält Starts während des Hard-Resets an, nur den Zugang nie; der Hard-Reset beendet den Weg-1-tailscaled nicht mehr, Protokollzeile `TAILSCALED_ALT_LAEUFT`). 0.1.38.10 Anzeige je Dienst beim Start: `ui/daemon/StartStatus.kt` (eine Stelle je Stufe Zugang/Oberfläche/Wächter/Rest, App-Prozess) → Zeilen im Ladebildschirm (`ui/StartAnzeige.kt`, WebViewFragment) und Karte „Start“ (`web/shared/start-karte.js`, `GET /api/start/status` beantwortet die WebView selbst). 0.1.38.9: Prozesse beenden/prüfen nur eigene (`launcher/EigeneProzesse.kt`), Erkennung fremder Werkzeug-Apps `launcher/FremdApps.kt` (Hinweis am Ladebildschirm, Protokollzeile `FREMDE_WERKZEUG_APP`), Web-Schreibaufrufe asynchron (`httpRequestAsyncWeb` in `WebViewFragment`).
+`ui/daemon/` und `daemon/management/` zeigen und steuern die Daemons aus der App. Start des Stapels: `ui/daemon/DaemonStartPlan.kt` (EINE Quelle: 45 s Boot-Schutz ab Geräte-Boot; 0.1.38.10 Stufen Zugang(nur mit Tailscale) → Web → Wächter → Rest, aus den Einstellungen) mit `ui/daemon/StartAblauf.kt` (Ablauf ohne feste Pausen) und `updater/HardResetTor.kt` (Stufe −1, hält Starts während des Hard-Resets an, nur den Zugang nie; der Hard-Reset beendet den Weg-1-tailscaled nicht mehr, Protokollzeile `TAILSCALED_ALT_LAEUFT`). 0.1.38.10 Anzeige je Dienst beim Start: `ui/daemon/StartStatus.kt` (eine Stelle je Stufe Zugang/Oberfläche/Wächter/Rest, App-Prozess) → Zeilen im Ladebildschirm (`ui/StartAnzeige.kt`, WebViewFragment) und Karte „Start“ (`web/shared/start-karte.js`, `GET /api/start/status` beantwortet die WebView selbst). 0.1.43 (S2): Angezeigt wird nur, was gewollt laufen soll (`DaemonStartPlan.anzeige`): Wächter nur mit `surveillance.surveillanceEnabled` (dieselbe Einstellung wie Chip „Wächter aus“, Status-Feld `gewollt`), Rest nur mit Telegram, nichts mit Stopp-Marke des Nutzers; „startet nicht“ nur, wenn ein gewollter Dienst nicht läuft. Der Ablauf selbst bleibt gleich. Menü (`app-shell.js`): Seiten mit `fern: true` (Fernansicht) erscheinen am Display nicht als Reiter. 0.1.38.9: Prozesse beenden/prüfen nur eigene (`launcher/EigeneProzesse.kt`), Erkennung fremder Werkzeug-Apps `launcher/FremdApps.kt` (Hinweis am Ladebildschirm, Protokollzeile `FREMDE_WERKZEUG_APP`), Web-Schreibaufrufe asynchron (`httpRequestAsyncWeb` in `WebViewFragment`).
 
 ## 2. Pakete
 

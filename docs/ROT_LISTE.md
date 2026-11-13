@@ -3,7 +3,7 @@
 Diese Liste gehört zu den Release-Notizen („So wurde geprüft“). Sie nennt die Tests, die beim Freigabestand
 fehlschlagen, und warum. Maßstab für eine Freigabe ist: kein Test ist neu rot gegenüber dem Vorgänger.
 
-## Stand 0.1.43
+## Stand 0.1.43.1
 
 | Bereich | Rot | Übersprungen |
 |---|---:|---:|
@@ -15,6 +15,7 @@ unter Windows), und meldet sich deshalb ab statt rot zu werden. Auf Linux und An
 
 ## Verlauf
 
+- 0.1.43.1: 5570 Tests in der App und 237 im Launcher, keiner rot. Übersprungen sind dieselben 24 (Windows) wie in 0.1.43.
 - 0.1.43: 5557 Tests in der App und 231 im Launcher, keiner rot. Übersprungen sind dieselben 24 (Windows) wie in 0.1.42.
   Ein Launcher-Test erwartete noch das alte Raster-Layout; nach dem freien Editor prüft er dieselbe Abstandsregel am
   neuen Layout (`LauncherBedienungTest.grosseBedienungFaktor`).

@@ -568,8 +568,9 @@ class DaemonStartupManager(
         log.info(TAG, "Start-Stufen: $stufen (Boot-Schutz ${kameraWarteMs} ms)")
         startAbgebrochen = false
         // EINE Stelle für den Zustand je Stufe (Ladebildschirm, GET /api/start/status)
-        // REST nur anzeigen, wenn es eine Prüfung gibt (Telegram an); sonst stünde dort ein ungeprüftes „✓“
-        val anzeige = stufen.filter { it != StartStufe.REST || PreferencesManager.isDaemonEnabled(DaemonType.TELEGRAM_DAEMON) }
+        // Angezeigt wird nur, was gewollt laufen soll (0.1.43 S2): REST nur mit Prüfung (Telegram an), Wächter nur mit
+        // eingeschaltetem Wächter, nichts vom Nutzer Angehaltenes – sonst stünde dort „✗ startet nicht“ ohne Fehler
+        val anzeige = DaemonStartPlan.anzeige(stufen, startGewollt())
         StartStatus.beginne(anzeige, android.os.SystemClock.elapsedRealtime())
         StartAblauf(
             stufen = stufen,
@@ -583,6 +584,39 @@ class DaemonStartupManager(
             fertig = { log.info(TAG, "Start-Stufen durchlaufen") },
             melde = { s, z -> StartStatus.melde(s, z) }
         ).starten()
+    }
+
+    /** Was gewollt laufen soll, für die Anzeige des Starts (nur lesen; im Zweifel wird die Stufe gezeigt). */
+    private fun startGewollt(): DaemonStartPlan.Gewollt {
+        val waechterAn = try {
+            at.greenchili.surfmate.config.UnifiedConfigManager.isSurveillanceEnabled()
+        } catch (_: Throwable) {
+            true
+        }
+        val gestoppt = HashSet<StartStufe>()
+        if (nutzerGestoppt(DaemonType.TAILSCALE_TUNNEL)) gestoppt.add(StartStufe.ZUGANG)
+        if (nutzerGestoppt(DaemonType.CAMERA_DAEMON)) gestoppt.add(StartStufe.OBERFLAECHE)
+        // Richter der Stufe ist der ACC-Sentry (stufeBereit)
+        if (nutzerGestoppt(DaemonType.ACC_SENTRY_DAEMON)) gestoppt.add(StartStufe.WAECHTER)
+        if (nutzerGestoppt(DaemonType.TELEGRAM_DAEMON)) gestoppt.add(StartStufe.REST)
+        return DaemonStartPlan.Gewollt(
+            waechterAn = waechterAn,
+            telegramAn = PreferencesManager.isDaemonEnabled(DaemonType.TELEGRAM_DAEMON),
+            gestoppt = gestoppt
+        )
+    }
+
+    /** Stopp-Marke des Nutzers (wie ifNotUserStopped); unlesbare Marke gilt wie dort als angehalten. */
+    private fun nutzerGestoppt(type: DaemonType): Boolean = try {
+        val f = java.io.File(type.sentinelPath)
+        if (!f.exists()) {
+            false
+        } else {
+            val zeile = try { f.bufferedReader().use { it.readLine() } ?: "" } catch (_: Throwable) { "" }
+            DaemonStartPlan.nutzerGestoppt(zeile)
+        }
+    } catch (_: Throwable) {
+        false
     }
 
     private fun stufeAusloesen(s: StartStufe) {

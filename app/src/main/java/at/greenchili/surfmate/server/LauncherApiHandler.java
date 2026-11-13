@@ -156,6 +156,24 @@ public final class LauncherApiHandler {
             }
             // 0.1.44 (P4): Haus-Kachel (Home Assistant, NUR LESEN) und gespeicherte Sitzposition für Fahrerprofile (NUR LESEN).
             // Beide nur GET und nur von der Launcher-APK mit Panoptes-Signatur (private Namen, Fahrzeugwert).
+            // M1 (13.11.): Titel/Interpret der laufenden Musik aus dumpsys media_session (LauncherMusik), NUR LESEN,
+            // nur GET und nur von der Launcher-APK – der Launcher braucht so keinen Benachrichtigungszugriff.
+            if (cleanPath.equals(LauncherMusik.PFAD)) {
+                if (!launcherDarf(out)) return true;
+                if (!"GET".equals(method)) {
+                    HttpResponse.sendJson(out, 405, "{\"ok\":false,\"grund\":\"nur_lesen\"}");
+                    return true;
+                }
+                String fokus = null;
+                if (path.contains("fokus=")) {
+                    String q = path.substring(path.indexOf("fokus=") + 6);
+                    if (q.contains("&")) q = q.substring(0, q.indexOf('&'));
+                    fokus = java.net.URLDecoder.decode(q, "UTF-8");
+                    if (fokus.length() > 200) fokus = null;
+                }
+                HttpResponse.sendJson(out, LauncherMusik.lesen(System.currentTimeMillis(), fokus).toString());
+                return true;
+            }
             if (cleanPath.equals(LauncherHaus.PFAD) || cleanPath.equals(LauncherSitz.PFAD)) {
                 if (!launcherDarf(out)) return true;
                 if (!"GET".equals(method)) {
@@ -1740,7 +1758,12 @@ public final class LauncherApiHandler {
     static Object waechterAus(java.util.Map<String, Object> m) throws Exception {
         if (m == null) return JSONObject.NULL;
         JSONObject o = new JSONObject();
-        o.put("an", m.get("enabled") instanceof Boolean ? m.get("enabled") : JSONObject.NULL);
+        // 0.1.43 (S2b): „an“ = eingeschaltet wie Chip und Startkarte (Feld gewollt = Einstellung); „enabled“ allein ist
+        // bei Zündung an immer false und zeigte dann „aus“, obwohl der Wächter eingeschaltet ist
+        Object en = m.get("enabled"), gw = m.get("gewollt");
+        if (Boolean.TRUE.equals(en) || Boolean.TRUE.equals(gw)) o.put("an", true);
+        else if (en instanceof Boolean || gw instanceof Boolean) o.put("an", false);
+        else o.put("an", JSONObject.NULL);
         o.put("scharf", m.get("active") instanceof Boolean ? m.get("active") : JSONObject.NULL);
         o.put("aufnahme", m.get("recording") instanceof Boolean ? m.get("recording") : JSONObject.NULL);
         Object z = m.get("zustand");

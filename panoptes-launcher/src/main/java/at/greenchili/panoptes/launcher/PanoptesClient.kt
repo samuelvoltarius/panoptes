@@ -186,6 +186,11 @@ class PanoptesClient(private val baseUrl: String = "http://127.0.0.1:8180") {
         requestMitFehler("GET", "/api/launcher/v1/sitz", null, 8_000)
     } catch (_: Exception) { null }
 
+    /** M1: laufende Musik (Titel/Interpret) vom Kern, nur lesen; null = nicht erreichbar. */
+    fun musik(fokus: String?): String? = try {
+        requestMitFehler("GET", "/api/launcher/v1/musik" + (fokus?.let { "?fokus=" + java.net.URLEncoder.encode(it, "UTF-8") } ?: ""), null, 4_000)
+    } catch (_: Exception) { null }
+
     val hintergrundVideoUrl: String get() = "$baseUrl/api/launcher/v1/hintergrund/video"
 
     /** 0.1.44 (L1): Live-Umgebung; jede Abfrage hält die Kern-Erkennung wach, nur solange die Kachel sichtbar ist. */

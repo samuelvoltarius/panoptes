@@ -93,6 +93,9 @@ class MainActivity : AppCompatActivity() {
     private var medien: Wiedergabe? = null
     /** 0.1.41 (E2E M1/G4): Android meldet Medienänderungen selbst, die Kachel zeichnet sofort neu. */
     private val medienBeobachter by lazy { MedienBeobachter(this, main) { medienNeu() } }
+    // M1 (13.11.): Titel ohne Benachrichtigungszugriff über den Kern (KernMusik.kt); am BYD keine gesperrte Android-Seite
+    private val kernMusik by lazy { KernMusik { f -> client.musik(f) } }
+    private val byd by lazy { MusikAnzeige.BYD_PAKETE.any { p -> runCatching { packageManager.getPackageInfo(p, 0) }.isSuccess } }
     private var stilSchluessel = ""
 
     // ---------- Ansichten ----------
@@ -149,7 +152,7 @@ class MainActivity : AppCompatActivity() {
     /** Medien und Uhr laufen flüssiger als die Fahrzeugdaten, aber nur im Vordergrund und nur bei Änderung. */
     private val takt = object : Runnable {
         override fun run() {
-            val m = MedienQuelle.aktuell(this@MainActivity, MusikStart.letztes(this@MainActivity))
+            val m = medienLesen()
             medien = m
             MusikStart.gesehen(this@MainActivity, m?.paket, m?.spielt == true)   // 0.1.41 (LM)
             val stand = Ruhe.taktSchluessel(m?.paket, m?.titel, m?.kuenstler, m?.spielt, m?.positionMs, m?.dauerMs,
@@ -229,9 +232,18 @@ class MainActivity : AppCompatActivity() {
         medienNeu()
     }
 
+    /** M1: eigene Mediensitzung (mit Zugriff), sonst der letzte Stand vom Kern; stößt die Kern-Abfrage an. */
+    private fun medienLesen(): Wiedergabe? {
+        val letztes = MusikStart.letztes(this)
+        if (MedienQuelle.zugriffErlaubt(this)) return MedienQuelle.aktuell(this, letztes)
+        val jetzt = System.currentTimeMillis()
+        kernMusik.anstossen(jetzt, letztes) { main.post { if (!stopped) medienNeu() } }
+        return kernMusik.wiedergabe(jetzt)
+    }
+
     /** Mediensitzung neu lesen und Musik-Kachel + Statusleiste zeichnen (Meldung von Android oder Rückkehr). */
     private fun medienNeu() {
-        val m = MedienQuelle.aktuell(this, MusikStart.letztes(this))
+        val m = medienLesen()
         medien = m
         MusikStart.gesehen(this, m?.paket, m?.spielt == true)
         aktualisierer.forEach { it() }
@@ -1658,16 +1670,30 @@ class MainActivity : AppCompatActivity() {
         reg {
             val m = medien
             val erlaubt = MedienQuelle.zugriffErlaubt(this)
-            val ohne = if (erlaubt) View.VISIBLE else View.GONE
-            zugriff.visibility = if (erlaubt) View.GONE else View.VISIBLE
-            coverRahmen.visibility = ohne; titel.visibility = ohne; kuenstler.visibility = ohne; balken.visibility = ohne
-            val kompakt = MusikKartePlatz.kompakt(e.h, erlaubt)
+            // M1: ohne Zugriff Titel vom Kern; Knopf zur Android-Seite nur außerhalb des BYD (dort gesperrt)
+            val modus = MusikAnzeige.modus(erlaubt, kernMusik.liefert(System.currentTimeMillis()), byd)
+            val knopf = modus == MusikAnzeige.Modus.ZUGRIFF
+            val daten = modus == MusikAnzeige.Modus.LOKAL || modus == MusikAnzeige.Modus.KERN
+            val ohne = if (daten) View.VISIBLE else View.GONE
+            zugriff.visibility = if (knopf) View.VISIBLE else View.GONE
+            coverRahmen.visibility = ohne; titel.visibility = ohne; kuenstler.visibility = ohne
+            balken.visibility = if (modus == MusikAnzeige.Modus.LOKAL) View.VISIBLE else View.GONE
+            val kompakt = MusikKartePlatz.kompakt(e.h, !knopf)
             quelle.visibility = if (kompakt) View.GONE else View.VISIBLE; tasten.visibility = if (kompakt) View.GONE else View.VISIBLE
-            quelle.setOnClickListener(if (erlaubt) null else View.OnClickListener { zugriffSeite() })
+            quelle.setOnClickListener(when (modus) {
+                MusikAnzeige.Modus.ZUGRIFF -> View.OnClickListener { zugriffSeite() }
+                MusikAnzeige.Modus.OHNE_TITEL -> View.OnClickListener { zugriffErklaeren() }
+                else -> null
+            })
             if (m == null) {
-                qIcon.setImageDrawable(null); qName.text = getString(if (erlaubt) R.string.medien_nichts else R.string.medien_zugriff_hinweis)
-                // 0.1.41 (Nachtest N1): der Hinweis ist ein ganzer Satz; bis 4 Zeilen statt nach 2 Zeilen abgeschnitten
-                qName.maxLines = if (erlaubt) 2 else 4; qName.textSize = if (erlaubt) 18f else 16f
+                qIcon.setImageDrawable(null)
+                qName.text = getString(when (modus) {
+                    MusikAnzeige.Modus.ZUGRIFF -> R.string.medien_zugriff_hinweis
+                    MusikAnzeige.Modus.OHNE_TITEL -> R.string.medien_kern_fehlt
+                    else -> R.string.medien_nichts
+                })
+                // 0.1.41 (Nachtest N1): der Hinweis ist ein ganzer Satz; bis 4 Zeilen (flache Karte 2) statt nach 2 abgeschnitten
+                qName.maxLines = if (daten) 2 else if (MusikKartePlatz.flach(e.h)) 2 else 4; qName.textSize = if (daten) 18f else 16f
                 titel.text = "—"; kuenstler.text = ""; balken.progress = 0; cover.setImageDrawable(null)
             } else {
                 qIcon.setImageDrawable(appsNachPaket[m.paket]?.icon); qName.text = appName(m.paket)
@@ -2329,7 +2355,7 @@ class MainActivity : AppCompatActivity() {
         if (alt?.hintergrundBild != a?.hintergrundBild || alt?.hintergrundVideo != a?.hintergrundVideo) bildGeladen = false
         hintergrundAnwenden()
         // 0.1.41 (E2E M1): ruht der Sekundentakt, hält die Abfrage auch die Medien aktuell
-        if (!Ruhe.taktLaeuft(stopped, bildAn, fokus)) medien = MedienQuelle.aktuell(this, MusikStart.letztes(this))
+        if (!Ruhe.taktLaeuft(stopped, bildAn, fokus)) medien = medienLesen()
         aktualisierer.forEach { it() }
         // ohne Sekundentakt (Ruhe, kein Fokus) hält die Abfrage Uhr und Statusleiste aktuell
         if (!Ruhe.taktLaeuft(stopped, bildAn, fokus)) statusAktualisierer.forEach { it() }
@@ -2928,12 +2954,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun zugriffErklaeren() {
+        // M1: am BYD ist die Android-Seite gesperrt (Fehlermeldung des IVI) – ehrliche Erklärung ohne Knopf dorthin
+        if (!MusikAnzeige.androidSeite(byd)) {
+            AlertDialog.Builder(this).setTitle(R.string.medien_zugriff).setMessage(R.string.medien_zugriff_byd)
+                .setPositiveButton(android.R.string.ok, null).show()
+            return
+        }
         AlertDialog.Builder(this).setTitle(R.string.medien_zugriff).setMessage(R.string.medien_zugriff_text)
             .setPositiveButton(R.string.oeffnen) { _, _ -> zugriffSeite() }.setNegativeButton(R.string.abbrechen, null).show()
     }
 
-    /** Android-Seite „Benachrichtigungszugriff“; erlauben muss der Nutzer dort selbst. */
+    /** Android-Seite „Benachrichtigungszugriff“; erlauben muss der Nutzer dort selbst. Am BYD nie (gesperrt, M1). */
     private fun zugriffSeite() {
+        if (!MusikAnzeige.androidSeite(byd)) { zugriffErklaeren(); return }
         try { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) } catch (_: Exception) { zeigeHinweis(getString(R.string.launch_failed)) }
     }
 

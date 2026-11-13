@@ -317,8 +317,8 @@ android {
         // value (e.g. `-PsurfmateVersionName=27.4 -PsurfmateVersionCode=12`)
         // without a source edit per release; the defaults track the current
         // rolling head so a plain local build is still accurate.
-        versionCode = (project.findProperty("surfmateVersionCode") as? String)?.toIntOrNull() ?: 83
-        versionName = (project.findProperty("surfmateVersionName") as? String) ?: "0.1.43"
+        versionCode = (project.findProperty("surfmateVersionCode") as? String)?.toIntOrNull() ?: 84
+        versionName = (project.findProperty("surfmateVersionName") as? String) ?: "0.1.43.1"
         // The public release identity is separate from Android's versionName:
         // versionName intentionally stays semver-only for compatibility, while
         // users must still be able to distinguish stable and test artifacts.

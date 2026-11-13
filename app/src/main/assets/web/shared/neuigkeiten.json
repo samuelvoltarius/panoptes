@@ -954,6 +954,40 @@
         "Spraakopdrachten zonder internet en zonder eigen AI-sleutel (DE/EN): klimaat, muziek, naar huis navigeren, bereik. Standaard uit, opdrachten aan de auto alleen na bevestiging.",
         "Live-omgeving: schets van herkende auto’s en personen rond je auto, geen camerabeeld, standaard uit; start alleen als het apparaat snel genoeg rekent."
       ]
+    },
+    {
+      "version": "0.1.43.1",
+      "versionCode": 84,
+      "de": [
+        "Startkarte: Wächter, Telegram und Fernzugang erscheinen nur, wenn du sie eingeschaltet hast. Ein ausgeschalteter Wächter gilt nicht mehr als Fehler.",
+        "Ist der Wächter eingeschaltet, zeigen Statuszeile und Launcher bei eingeschalteter Zündung nicht mehr „aus“.",
+        "Launcher: Der Musiktitel kommt jetzt auch ohne Benachrichtigungszugriff, Panoptes liest ihn selbst. Am BYD öffnet der Knopf keine gesperrte Android-Seite mehr.",
+        "„Bildschirm im Auto“ hat einen eigenen Reiter und erscheint nur aus der Ferne, nicht am Display im Auto."
+      ],
+      "en": [
+        "Start card: guard, Telegram and remote access only appear if you switched them on. A guard that is switched off no longer counts as an error.",
+        "If the guard is switched on, the status line and the launcher no longer show “off” while the ignition is on.",
+        "Launcher: the music title now also works without notification access, Panoptes reads it itself. On the BYD the button no longer opens a locked Android page.",
+        "“Screen in the car” has its own tab and only appears remotely, not on the car display."
+      ],
+      "fr": [
+        "Carte de démarrage : le gardien, Telegram et l’accès à distance n’apparaissent que si vous les avez activés. Un gardien désactivé n’est plus compté comme une erreur.",
+        "Si le gardien est activé, la ligne d’état et le launcher n’affichent plus « désactivé » quand le contact est mis.",
+        "Launcher : le titre de la musique fonctionne aussi sans accès aux notifications, Panoptes le lit lui-même. Sur la BYD, le bouton n’ouvre plus de page Android verrouillée.",
+        "« Écran dans la voiture » a son propre onglet et n’apparaît qu’à distance, pas sur l’écran de la voiture."
+      ],
+      "it": [
+        "Scheda di avvio: guardiano, Telegram e accesso remoto compaiono solo se li hai attivati. Un guardiano spento non conta più come errore.",
+        "Se il guardiano è attivo, la riga di stato e il launcher non mostrano più “spento” con l’accensione inserita.",
+        "Launcher: il titolo della musica funziona anche senza accesso alle notifiche, Panoptes lo legge da sé. Sulla BYD il pulsante non apre più una pagina Android bloccata.",
+        "“Schermo in auto” ha una scheda propria e compare solo da remoto, non sul display dell’auto."
+      ],
+      "nl": [
+        "Startkaart: bewaker, Telegram en externe toegang verschijnen alleen als je ze hebt ingeschakeld. Een uitgeschakelde bewaker telt niet meer als fout.",
+        "Als de bewaker aan staat, tonen de statusregel en de launcher bij ingeschakeld contact niet meer ‘uit’.",
+        "Launcher: de muziektitel werkt nu ook zonder meldingstoegang, Panoptes leest hem zelf. Bij de BYD opent de knop geen vergrendelde Android-pagina meer.",
+        "‘Scherm in de auto’ heeft een eigen tabblad en verschijnt alleen op afstand, niet op het scherm in de auto."
+      ]
     }
   ]
 }

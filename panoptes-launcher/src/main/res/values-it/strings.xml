@@ -64,6 +64,8 @@
     <string name="musik_zurueck">Precedente</string>
     <string name="medien_zugriff_hinweis">Per controllare la musica (anche CarPlay), consenti l’accesso alle notifiche</string>
     <string name="medien_zugriff_erlauben">Consenti accesso</string>
+    <string name="medien_kern_fehlt">I titoli arrivano da Panoptes – al momento non disponibili. I tasti funzionano comunque.</string>
+    <string name="medien_zugriff_byd">In quest’auto la pagina Android per l’accesso alle notifiche è bloccata, quindi il launcher non la apre. Titolo e artista arrivano da Panoptes; i tasti della musica funzionano comunque.</string>
     <string name="musik_weiterspielen">Riprendi la musica all’avvio</string>
     <string name="nach_links">A sinistra</string>
     <string name="nach_rechts">A destra</string>

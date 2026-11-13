@@ -57,6 +57,47 @@ object DaemonStartPlan {
     }
 
     /**
+     * 0.1.43 (S2, Projektinhaber: „Wächter ✗ startet nicht“, obwohl der Wächter absichtlich aus ist): was gewollt laufen soll.
+     * Nur für die Anzeige (Startkarte, Ladebildschirm); der Ablauf ([stufen]) bleibt unverändert.
+     * @param waechterAn Wächter in den Einstellungen an (`surveillance.surveillanceEnabled`) – dieselbe Einstellung,
+     *   ohne die der Kern den Wächter nie einschaltet; sonst zeigt der Chip „Wächter aus“
+     * @param telegramAn Telegram in den Einstellungen an (nur Telegram hat in der Stufe REST eine Prüfung)
+     * @param gestoppt Dienste, die der Nutzer angehalten hat (Stopp-Marke, wie ifNotUserStopped sie liest)
+     */
+    class Gewollt(
+        @JvmField val waechterAn: Boolean,
+        @JvmField val telegramAn: Boolean,
+        @JvmField val gestoppt: Set<StartStufe> = emptySet()
+    )
+
+    /**
+     * Welche Stufen die Anzeige führt: nur, was gewollt laufen soll. Ein gewollt ausgeschalteter oder angehaltener Dienst
+     * ist kein Fehler und keine eigene Zeile (wie Zugang ohne Tailscale); „startet nicht“ bleibt für den echten Fall.
+     */
+    @JvmStatic
+    fun anzeige(stufen: List<StartStufe>, g: Gewollt): List<StartStufe> = stufen.filter { s ->
+        s !in g.gestoppt && when (s) {
+            StartStufe.WAECHTER -> g.waechterAn
+            StartStufe.REST -> g.telegramAn
+            else -> true
+        }
+    }
+
+    /**
+     * Stopp-Marke des Nutzers? Gleiche Regeln wie die Shell-Prüfung in DaemonStartupManager.ifNotUserStopped:
+     * „disabled by ui/telegram/user/12-V-Schlaf“ oder leer = angehalten; andere (Maschinen-)Marken räumt der Start weg.
+     * @param ersteZeile erste Zeile der Marke, null = keine Marke
+     */
+    @JvmStatic
+    fun nutzerGestoppt(ersteZeile: String?): Boolean {
+        if (ersteZeile == null) return false
+        val z = ersteZeile.trim()
+        return z.isEmpty() || NUTZER_STOPP.any { z.startsWith(it) }
+    }
+
+    private val NUTZER_STOPP = listOf("disabled by ui", "disabled by telegram", "disabled by user", "disabled by 12-V-Schlaf")
+
+    /**
      * Wie lange der Ablauf auf die Bereitschaft dieser Stufe wartet, bevor er mit der nächsten weitermacht; 0 = nur
      * auslösen, nie abwarten (Zugang: 10–40 s Startzeit von tailscaled sollen die Oberfläche nicht aufhalten).
      */

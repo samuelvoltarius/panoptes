@@ -21,8 +21,9 @@
         if (s.zustand === 'startet') return 'startet';
         if (s.zustand === 'unterdrueckt') return 'pausiert';
         if (s.enabled && s.active) return 'passt_auf';
-        if (s.enabled && s.zuendungAn === true) return 'zuendung_an';
-        return s.enabled ? 'bereit' : 'aus';
+        // 0.1.43 (S2): bei Zündung an ist enabled immer false; eingeschaltet heißt die Einstellung (gewollt)
+        if ((s.enabled || s.gewollt) && s.zuendungAn === true) return 'zuendung_an';
+        return (s.enabled || s.gewollt) ? 'bereit' : 'aus';
     }
 
     function zeile(s, t) {

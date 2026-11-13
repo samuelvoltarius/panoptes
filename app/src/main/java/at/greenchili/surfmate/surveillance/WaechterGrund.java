@@ -29,14 +29,16 @@ public final class WaechterGrund {
      */
     public static String grund(Map<String, Object> s, Boolean zuendungAn) {
         boolean enabled = wahr(s.get("enabled"));
+        // 0.1.43 (S2): bei Zündung an ist „enabled“ immer false; eingeschaltet heißt die Einstellung (gewollt)
+        boolean gewollt = enabled || wahr(s.get("gewollt"));
         if (wahr(s.get("safeZoneSuppressed")) || wahr(s.get("inSafeZone"))) return RUHEZONE;
         if (enabled && wahr(s.get("guardStopActive"))) return GESTOPPT;
         Object z = s.get("zustand");
         if (STARTET.equals(z)) return STARTET;
         if ("unterdrueckt".equals(z)) return PAUSIERT;
         if (enabled && wahr(s.get("active"))) return PASST_AUF;
-        if (enabled && Boolean.TRUE.equals(zuendungAn)) return ZUENDUNG_AN;
-        if (enabled) return BEREIT;
+        if (gewollt && Boolean.TRUE.equals(zuendungAn)) return ZUENDUNG_AN;
+        if (gewollt) return BEREIT;
         return AUS;
     }
 

@@ -37,7 +37,8 @@ data class Wiedergabe(
     val spielt: Boolean,
     val positionMs: Long?,
     val dauerMs: Long?,
-    val controller: MediaController
+    /** null = Daten vom Kern (M1, ohne Zugriff); dann gehen die Tasten als Android-Medientasten. */
+    val controller: MediaController?
 )
 
 object MedienQuelle {

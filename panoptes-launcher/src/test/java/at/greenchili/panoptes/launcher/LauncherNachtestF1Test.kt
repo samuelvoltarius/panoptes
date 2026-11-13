@@ -61,7 +61,7 @@ class LauncherNachtestF1Test {
     fun n1MusikHinweisWirdNichtAbgeschnitten() {
         val k = block("private fun medienKarte(", "private fun ordnerKachel(")
         assertTrue(k.contains("quelle.addView(qName, ui.lp(0, -2, 1f))"))
-        assertTrue(k.contains("qName.maxLines = if (erlaubt) 2 else 4"))
+        assertTrue(k.contains("qName.maxLines = if (daten) 2 else if (MusikKartePlatz.flach(e.h)) 2 else 4"))
         for (d in listOf("values", "values-de", "values-fr", "values-it", "values-nl")) {
             val x = lies("src/main/res/$d/strings.xml")
             val t = Regex("name=\"medien_zugriff_hinweis\">([^<]*)<").find(x)!!.groupValues[1]

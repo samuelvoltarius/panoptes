@@ -173,7 +173,7 @@
             var bereich = shell.tr(s.i18n, s.label);
             for (var j = 0; j < s.pages.length; j++) {
                 var p = s.pages[j];
-                if (p.hidden) continue;
+                if (shell.seiteAus ? shell.seiteAus(p) : p.hidden) continue;
                 var name = shell.tr(p.i18n, p.label);
                 var teil = p.teil && shell.teile[p.teil] ? shell.tr(shell.teile[p.teil].i18n, shell.teile[p.teil].label) : '';
                 out.push({ titel: (teil && teil !== name ? teil + ' · ' : '') + name, ort: bereich,

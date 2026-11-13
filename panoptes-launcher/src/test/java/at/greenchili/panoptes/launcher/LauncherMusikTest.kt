@@ -86,7 +86,7 @@ class LauncherMusikTest {
         assertFalse("nicht mehr „die erste“", med.contains("?: liste.firstOrNull()"))
         assertTrue(med.contains("transportControls?.play()"))
         val m = quelle("MainActivity.kt")
-        assertTrue(m.contains("MedienQuelle.aktuell(this@MainActivity, MusikStart.letztes(this@MainActivity))"))
+        assertTrue(m.contains("MedienQuelle.aktuell(this, letztes)") && m.contains("val m = medienLesen()"))
         assertTrue(m.contains("MusikStart.beimStart(this, main"))
         assertTrue(m.contains("val tc = c.transportControls"))
         assertTrue(m.contains("R.string.medien_zugriff_hinweis"))

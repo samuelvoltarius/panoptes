@@ -64,6 +64,8 @@
     <string name="musik_zurueck">Vorige</string>
     <string name="medien_zugriff_hinweis">Sta meldingstoegang toe om muziek te bedienen (ook CarPlay)</string>
     <string name="medien_zugriff_erlauben">Toegang toestaan</string>
+    <string name="medien_kern_fehlt">Titels komen via Panoptes – nu niet beschikbaar. De knoppen werken toch.</string>
+    <string name="medien_zugriff_byd">In deze auto is de Android-pagina voor meldingstoegang geblokkeerd, daarom opent de launcher die niet. Titel en artiest komen via Panoptes; de muziekknoppen werken hoe dan ook.</string>
     <string name="musik_weiterspielen">Muziek hervatten bij start</string>
     <string name="nach_links">Naar links</string>
     <string name="nach_rechts">Naar rechts</string>

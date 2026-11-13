@@ -64,6 +64,8 @@
     <string name="musik_zurueck">Précédent</string>
     <string name="medien_zugriff_hinweis">Pour piloter la musique (aussi CarPlay), autorisez l’accès aux notifications</string>
     <string name="medien_zugriff_erlauben">Autoriser l’accès</string>
+    <string name="medien_kern_fehlt">Les titres viennent de Panoptes – indisponibles pour le moment. Les touches fonctionnent quand même.</string>
+    <string name="medien_zugriff_byd">Dans cette voiture, la page Android d’accès aux notifications est bloquée ; le lanceur ne l’ouvre donc pas. Le titre et l’artiste viennent de Panoptes ; les touches de musique fonctionnent dans tous les cas.</string>
     <string name="musik_weiterspielen">Reprendre la musique au démarrage</string>
     <string name="nach_links">Vers la gauche</string>
     <string name="nach_rechts">Vers la droite</string>

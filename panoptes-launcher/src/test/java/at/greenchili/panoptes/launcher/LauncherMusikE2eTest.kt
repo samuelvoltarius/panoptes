@@ -33,7 +33,7 @@ class LauncherMusikE2eTest {
         assertTrue(neu.contains("medien = m") && neu.contains("aktualisierer.forEach { it() }") && neu.contains("statusAktualisierer.forEach { it() }"))
         assertTrue(m.substringAfter("override fun onStop()").substringBefore("}").contains("medienBeobachter.stop()"))
         assertTrue("Abfrage liest Medien, wenn der Takt ruht",
-            m.contains("if (!Ruhe.taktLaeuft(stopped, bildAn, fokus)) medien = MedienQuelle.aktuell(this, MusikStart.letztes(this))"))
+            m.contains("if (!Ruhe.taktLaeuft(stopped, bildAn, fokus)) medien = medienLesen()"))   // M1: eigene Sitzung, sonst Kern
     }
 
     @Test
@@ -56,7 +56,7 @@ class LauncherMusikE2eTest {
         assertTrue("Knopf vor Cover und Tasten", knopf < k.indexOf("val cover") && knopf < k.indexOf("val tasten"))
         assertTrue("keine feste Höhe", k.contains("c.addView(zugriff, ui.lp(-1, -2, oben = 8))"))
         assertFalse(k.contains("c.addView(zugriff, ui.lp(-1, ui.dp(56)"))
-        assertTrue(k.contains("coverRahmen.visibility = ohne; titel.visibility = ohne; kuenstler.visibility = ohne; balken.visibility = ohne"))
-        assertTrue("Hinweistext tippbar", k.contains("quelle.setOnClickListener(if (erlaubt) null else View.OnClickListener { zugriffSeite() })"))
+        assertTrue(k.contains("coverRahmen.visibility = ohne; titel.visibility = ohne; kuenstler.visibility = ohne"))
+        assertTrue("Hinweistext tippbar", k.contains("MusikAnzeige.Modus.ZUGRIFF -> View.OnClickListener { zugriffSeite() }"))
     }
 }

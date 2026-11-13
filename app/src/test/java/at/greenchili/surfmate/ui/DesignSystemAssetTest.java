@@ -130,7 +130,8 @@ public class DesignSystemAssetTest {
         String shell =
                 readRepositoryFile("app/src/main/assets/web/shared/app-shell.js");
 
-        assertTrue(shell.contains("if (p.hidden && p.href !== base) continue;"));
+        assertTrue(shell.contains("if (seiteAus(p) && p.href !== base) continue;"));
+        assertTrue(shell.contains("return !!(p.hidden || (p.fern && dstDisplay()));"));
         assertTrue(css.contains(".pn-pill[hidden] { display: none !important; }"));
         assertFalse(css.contains(
                 ".sidebar-nav [hidden] {\n    display: flex !important;"));

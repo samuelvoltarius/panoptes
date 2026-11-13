@@ -64,6 +64,8 @@
     <string name="musik_zurueck">Zurück</string>
     <string name="medien_zugriff_hinweis">Zum Steuern der Musik (auch CarPlay) den Benachrichtigungszugriff erlauben</string>
     <string name="medien_zugriff_erlauben">Zugriff erlauben</string>
+    <string name="medien_kern_fehlt">Titel kommen über Panoptes – gerade nicht verfügbar. Die Tasten gehen trotzdem.</string>
+    <string name="medien_zugriff_byd">In diesem Auto ist die Android-Seite für den Benachrichtigungszugriff gesperrt, darum öffnet der Launcher sie nicht. Titel und Interpret holt er stattdessen über Panoptes; die Musiktasten gehen in jedem Fall.</string>
     <string name="musik_weiterspielen">Musik beim Start weiterspielen</string>
     <string name="nach_links">Nach links</string>
     <string name="nach_rechts">Nach rechts</string>

@@ -9835,6 +9835,13 @@ public class CameraDaemon {
             status.put("events", new java.util.ArrayList<>());
         }
 
+        // 0.1.43 (S2): gewollt = Wächter in den Einstellungen an. „enabled“ ist nur die Absicht der laufenden Parkzeit
+        // (bei Zündung an immer false); Chip, Wächter-Zeile und Startkarte lesen „aus“ nur aus dieser Einstellung.
+        try {
+            status.put("gewollt", at.greenchili.surfmate.config.UnifiedConfigManager.isSurveillanceEnabled());
+        } catch (Throwable ignored) {
+        }
+
         // SOTA: Safe Location status
         at.greenchili.surfmate.surveillance.SafeLocationManager safeMgr =
             at.greenchili.surfmate.surveillance.SafeLocationManager.getInstance();
