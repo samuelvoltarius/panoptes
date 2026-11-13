@@ -91,6 +91,9 @@ public final class SprachModellLaden {
 
     private SprachModellLaden() {}
 
+    /** 0.1.43.3: für den Launcher-Katalog (nur lesen). */
+    public static boolean istDa(Modell m) { return da(m); }
+
     /** Ist das Modell schon da (geladen oder von Hand abgelegt)? */
     static boolean da(Modell m) {
         File o = new File(basis, m.name);

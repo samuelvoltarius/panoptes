@@ -474,6 +474,11 @@
     <!-- 0.1.44 (P1 „Bedienung 50+“): Zurück/Letzte App, Große Bedienung, geführte Einrichtung -->
     <string name="taste_zurueck">Terug</string>
     <string name="taste_letzte">Vorige app</string>
+    <!-- 0.1.43.3 (Rang 3): kurze Beschriftungen unter den Dock-Symbolen und in der festen Leiste -->
+    <string name="dock_byd">BYD-start</string>
+    <string name="dock_sitz">Stoel</string>
+    <string name="dock_sitz_stufe">Stoel %1$d</string>
+    <string name="dock_luft">Lucht</string>
     <string name="taste_fehlt">“Terug” en “Vorige app” hebben Panoptes of de toegankelijkheidsdienst “Panoptes Launcher” nodig.</string>
     <string name="taste_fehler">Dat is niet gelukt.</string>
     <string name="hilfe_name">Panoptes Launcher: Terug en Vorige app</string>

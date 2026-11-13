@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 0.1.43.3 (Rang 7) „Was kann ich sagen?“ und Assistent-Knopf (SprachHilfe.kt, SprachKnopf.kt) -->
+<resources>
+    <string name="sh_titel">Que puis-je dire ?</string>
+    <string name="sh_laedt">Chargement …</string>
+    <string name="sh_noch_nicht_kurz">pas encore</string>
+    <string name="sh_sprache_beschr" formatted="true">Langue : %1$s</string>
+    <string name="sh_schliessen">Fermer</string>
+    <string name="sh_fehlt">Panoptes ne répond pas. Les commandes vocales ont besoin de Panoptes.</string>
+    <string name="sh_aus">Les commandes vocales sont désactivées. Activez-les dans Panoptes sous Partage de données.</string>
+    <string name="sh_noch_nicht">La reconnaissance vocale ne fonctionne pas encore dans cette langue (allemand et anglais uniquement). Toucher une phrase fonctionne.</string>
+    <string name="sh_kein_modell">Le modèle vocal manque. Vous pouvez le télécharger dans Panoptes sous Partage de données.</string>
+    <string name="sh_bereit">Prêt : touchez le micro ou une phrase.</string>
+    <string name="sh_weck" formatted="true">Ou dites « %1$s ».</string>
+    <string name="sh_panoptes_oeffnen">Ouvrir dans Panoptes</string>
+    <string name="sh_jetzt">Parler maintenant</string>
+    <string name="sh_suche">Rechercher une commande</string>
+    <string name="sh_alle">Tout</string>
+    <string name="sh_k_klima">Climatisation</string>
+    <string name="sh_k_navigation">Navigation</string>
+    <string name="sh_k_medien">Médias</string>
+    <string name="sh_k_allgemein">Général</string>
+    <string name="sh_probieren">À essayer</string>
+    <string name="sh_tipp_ausfuehren">Touchez une phrase pour l’exécuter, comme si vous la disiez. La climatisation demande toujours d’abord.</string>
+    <string name="sh_keine">Rien trouvé.</string>
+    <string name="sh_sag">Dites par exemple :</string>
+    <string name="sh_ausfuehren_beschr" formatted="true">Exécuter « %1$s »</string>
+    <string name="sh_nie">Jamais à la voix : klaxon, clignotants, phares et alarme.</string>
+    <string name="sh_b_lesen">Lecture seule</string>
+    <string name="sh_b_rueckfrage">Avec confirmation</string>
+    <string name="sh_b_vorschau">Ouvre un aperçu</string>
+    <string name="sh_b_medien">Commande la musique</string>
+    <string name="sh_knopf_beschr">Parler (commandes vocales)</string>
+    <string name="sh_knopf_zeigen">Afficher le bouton Parler</string>
+    <string name="sh_t_klima_an">Climatisation marche</string>
+    <string name="sh_e_klima_an">Allume la climatisation. Panoptes demande d’abord « Oui/Non ».</string>
+    <string name="sh_t_klima_aus">Climatisation arrêt</string>
+    <string name="sh_e_klima_aus">Éteint la climatisation, après confirmation.</string>
+    <string name="sh_t_waermer">Plus chaud</string>
+    <string name="sh_e_waermer">Un niveau de climatisation plus chaud – jamais une température inventée. Avec confirmation.</string>
+    <string name="sh_t_kaelter">Plus frais</string>
+    <string name="sh_e_kaelter">Un niveau de climatisation plus frais. Avec confirmation.</string>
+    <string name="sh_t_navi_heim">Rentrer à la maison</string>
+    <string name="sh_e_navi_heim">Affiche l’itinéraire vers votre domicile enregistré. Le guidage démarre seulement quand vous touchez Démarrer.</string>
+    <string name="sh_t_musik_weiter">Chanson suivante</string>
+    <string name="sh_e_musik_weiter">Passe à la chanson suivante de la musique en cours.</string>
+    <string name="sh_t_musik_zurueck">Chanson précédente</string>
+    <string name="sh_e_musik_zurueck">Revient à la chanson précédente.</string>
+    <string name="sh_t_musik_pause">Pause musique</string>
+    <string name="sh_e_musik_pause">Met en pause la musique en cours.</string>
+    <string name="sh_t_wo_bin_ich">Où suis-je ?</string>
+    <string name="sh_e_wo_bin_ich">Indique le lieu s’il est déjà connu hors ligne. Lecture seule.</string>
+    <string name="sh_t_reichweite">Autonomie</string>
+    <string name="sh_e_reichweite">Indique l’autonomie électrique en km. Lecture seule.</string>
+</resources>

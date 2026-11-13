@@ -170,8 +170,10 @@ public class LauncherImUpdateTest {
     public void textUndWegeImCode() throws Exception {
         String dienst = UpdateHinweisTest.lies("src/main/java/at/greenchili/surfmate/appupdate/AppUpdateDienst.java");
         assertTrue("Telegram + Push", dienst.contains("String mit = UpdateHinweis.launcherSatz(f, installierterVc(), launcherStand());"));
+        // 0.1.43.3 (U1): darf nur aus Tipp/Vormerkung; ob er mitkommt, entscheidet der frische Stand vor dem Skript
         assertTrue("von selbst nie: nur Tipp oder Vormerkung",
-                dienst.contains("laufMitLauncher = alsVorgemerkt && launcherKommtMit("));
+                dienst.contains("laufDarfLauncher = alsVorgemerkt;")
+                        && dienst.contains("if (!darf) return UEBERSPRUNGEN_NICHT_GETIPPT;"));
         // 0.1.38.10: eine Mobilfunk-Quelle für Panoptes und Launcher, im Lauf dieselbe Einwilligung wie Panoptes
         assertTrue(dienst.contains("mobil = l.mobilEinmal;"));
         assertTrue(dienst.contains("l.nurWlan = nurWlan();\n        l.laeuft = launcherLaeuft;")

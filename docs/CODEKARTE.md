@@ -1,6 +1,6 @@
 # Codekarte Panoptes
 
-**Stand: Version 0.1.43.2, Commit a6cc889c**
+**Stand: Version 0.1.43.3, Commit d4dfddf2**
 
 Wegweiser durch den Code. Zuerst hier suchen, dann gezielt die genannte Datei öffnen.
 Die Karte nennt Dateien und Klassen, keine Zeilennummern. Kurze Pfade gelten ab
@@ -128,7 +128,7 @@ Jedes Paket steht hier, auch Unterpakete. Pfade ab dem Wurzelpaket. Lose Dateien
 | `util/` | Hilfen, `DaemonStorage` |
 | `wallbox/` | Wallbox-Anbindung |
 | `weather/` | Außentemperatur |
-| `weckwort/`, `sprache/` | Weckwort-Messung Stufe 1 (nur Zahlen, Standard aus, keine Befehle); ab 0.1.44 `sprache/` Sprachbefehle offline (feste Kommandos DE/EN, Rückfrage bei Klima, Weckwort Stufe 2; `docs/SPRACHBEFEHLE.md`) |
+| `weckwort/`, `sprache/` | Weckwort-Messung Stufe 1 (nur Zahlen, Standard aus, keine Befehle); ab 0.1.44 `sprache/` Sprachbefehle offline (feste Kommandos DE/EN, Rückfrage bei Klima, Weckwort Stufe 2; ab 0.1.43.3 Launcher-Knopf + „Was kann ich sagen?“ über `/api/launcher/v1/sprache`; `docs/SPRACHBEFEHLE.md`) |
 | `wireguard/` | WireGuard-Konfiguration |
 
 ## 3. Thema → Datei → Einstieg

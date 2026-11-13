@@ -132,6 +132,13 @@ public final class AppUpdateDienst {
 
         /** 0.1.37 Stufe 4: Launcher-APK am Gerät (Standard: nicht installiert). */
         default LauncherPaket.Stand launcherStand() { return LauncherPaket.ausListe(""); }
+        /**
+         * 0.1.43.3 (U1): Stand frisch, ohne Zwischenspeicher, direkt vor dem Panoptes-Skript; leer/Zeit abgelaufen wird
+         * einmal nachgelesen ({@link LauncherPaket#standFrisch}). Standard: wie {@link #launcherStand()}.
+         */
+        default LauncherPaket.Stand launcherStandFrisch() { return launcherStand(); }
+        /** 0.1.43.3 (U1): eine Zeile in /sdcard/surfmate-migration/update.log (gleiches Format wie update-on-car.sh). */
+        default void updateLog(String zeile) { }
         /** {@code pm install -r} der geprüften Launcher-APK; null = ok. */
         default String launcherInstallieren(File apk) { return "nicht_verfuegbar"; }
         /** 0.1.38.8: nach dem Launcher-Update den gewählten Startbildschirm prüfen/herstellen ({@link LauncherHome#nachUpdate}). */
@@ -232,6 +239,11 @@ public final class AppUpdateDienst {
     private String ergebnis = "nie";
     private String fehler;
     private Freigabe verfuegbar;
+
+    /** Bekannte Freigabe (paketweit, für Tests). */
+    Freigabe verfuegbarJetzt() {
+        synchronized (lock) { return verfuegbar; }
+    }
     private String phase;
     private Integer prozent;
     private long ausSeit = -1;
@@ -404,6 +416,8 @@ public final class AppUpdateDienst {
             }
         }
         LauncherPaket.Stand st = env.launcherStand();
+        if (st == null) return LauncherPaket.unbekannt();
+        if (!st.bekannt) return st;   // 0.1.43.3 (U1): unbekannt nie merken
         synchronized (lock) {
             launcherStandCache = st;
             launcherStandZeit = now;
@@ -499,7 +513,12 @@ public final class AppUpdateDienst {
                 long ab = UpdateRegel.automatischAb(l, automatischFuer(verfuegbar), pruefenAn(), ausSeit);
                 o.put("automatischGeplant", ab > 0 ? ab : JSONObject.NULL);
                 o.put("vorgemerkt", vorgemerkt());
-                o.put("launcher", launcherTeil(verfuegbar, env.installierterVc(), lst));
+                o.put("launcher", launcherTeil(verfuegbar, env.installierterVc(), lst)
+                        // 0.1.43.3 (U1): warum der Launcher beim letzten Lauf nicht mitkam; unbekannter Stand sichtbar
+                        .put("uebersprungenGrund", launcherUebersprungenGrund == null
+                                ? JSONObject.NULL : launcherUebersprungenGrund)
+                        .put("uebersprungenUm", launcherUebersprungenUm > 0 ? (Object) launcherUebersprungenUm : JSONObject.NULL)
+                        .put("standBekannt", lst != null && lst.bekannt));
             } catch (Exception ignored) { }
             return o;
         }
@@ -539,7 +558,8 @@ public final class AppUpdateDienst {
             laufGetippt = true;
         }
         final Freigabe f = verfuegbar;
-        laufMitLauncher = launcherKommtMit(f, env.installierterVc(), launcherStandGemerkt());
+        // 0.1.43.3 (U1): ob er mitkommt, entscheidet launcherMitnehmen direkt vor dem Skript mit frischem Stand
+        laufDarfLauncher = true;
         Thread t = new Thread(() -> {
             try {
                 ausfuehren(f);
@@ -547,7 +567,7 @@ public final class AppUpdateDienst {
                 synchronized (lock) {
                     installiertGerade = false;
                     laufGetippt = false;
-                    laufMitLauncher = false;
+                    laufDarfLauncher = false;
                 }
             }
         }, "AppUpdate-Install");
@@ -724,7 +744,8 @@ public final class AppUpdateDienst {
             laufGescheitert = false;
             f = verfuegbar;
             // 0.1.38.9: eine Vormerkung kommt aus einem Tipp, dann kommt der Launcher mit; von selbst nie
-            laufMitLauncher = alsVorgemerkt && launcherKommtMit(f, env.installierterVc(), launcherStandGemerkt());
+            // 0.1.43.3 (U1): ob er mitkommt, entscheidet launcherMitnehmen direkt vor dem Skript mit frischem Stand
+            laufDarfLauncher = alsVorgemerkt;
             // 0.1.38.8: kleines Update von selbst: danach keine Meldung (Marke übersteht den Neustart des Daemons)
             still = !alsVorgemerkt && lautlos(f);
             if (still) {
@@ -749,27 +770,94 @@ public final class AppUpdateDienst {
                     speichern();
                 }
                 laufVorgemerkt = false;
-                laufMitLauncher = false;
+                laufDarfLauncher = false;
             }
         }
     }
 
-    /** 0.1.38.9: Dieser Lauf bringt den Launcher mit (vor dem Start des Update-Skripts, eigener Fehler stört Panoptes nicht). */
-    private volatile boolean laufMitLauncher;
+    /**
+     * 0.1.38.9: Dieser Lauf darf den Launcher mitbringen (aus einem Tipp oder einer Vormerkung aus einem Tipp; von
+     * selbst nie). 0.1.43.3 (U1): ob er wirklich mitkommt, entscheidet {@link #launcherMitnehmen} mit frischem Stand.
+     */
+    volatile boolean laufDarfLauncher;   // paketweit nur für Tests
 
-    /** Launcher vor dem Panoptes-Skript: gleiche Prüfungen wie der Launcher-Knopf; scheitert er, läuft Panoptes weiter. */
-    private void launcherMitnehmen(Freigabe f) {
-        if (!laufMitLauncher || f.launcher == null) return;
-        boolean mobil;
+    /** 0.1.43.3 (U1): warum der Launcher beim letzten Lauf nicht mitkam (null = kam mit / kein Lauf); Status-Feld. */
+    private String launcherUebersprungenGrund;
+    private long launcherUebersprungenUm = -1;
+
+    static final String UEBERSPRUNGEN_NICHT_GETIPPT = "nicht_getippt";
+    static final String UEBERSPRUNGEN_KEIN_LAUNCHER = "kein_launcher_in_freigabe";
+    static final String UEBERSPRUNGEN_PANOPTES_NICHT_NEUER = "panoptes_nicht_neuer";
+    static final String UEBERSPRUNGEN_UNBEKANNT = "stand_unbekannt";
+    static final String UEBERSPRUNGEN_NICHT_INSTALLIERT = "nicht_installiert";
+    static final String UEBERSPRUNGEN_SCHON_AKTUELL = "schon_aktuell";
+    static final String UEBERSPRUNGEN_INSTALLIERT_NEUER = "installiert_neuer";
+    static final String UEBERSPRUNGEN_LAEUFT_SCHON = "laeuft_schon";
+
+    /**
+     * 0.1.43.3 (U1): Grund, warum der Launcher bei diesem Lauf NICHT mitkommt; null = er kommt mit. Rein. Ein
+     * unbekannter Stand zählt nie als „nicht installiert“, er hat seinen eigenen Grund (Koordination 13.11.: dann
+     * überspringen, „Aktualisieren“ bleibt in der Karte). Sicher installiert und älter: er kommt wie bisher mit.
+     */
+    static String launcherNichtMitWeil(boolean darf, Freigabe f, int installiertVc, LauncherPaket.Stand st) {
+        if (!darf) return UEBERSPRUNGEN_NICHT_GETIPPT;
+        if (f == null || f.launcher == null || f.launcher.apkUrl() == null) return UEBERSPRUNGEN_KEIN_LAUNCHER;
+        if (f.versionCode <= installiertVc) return UEBERSPRUNGEN_PANOPTES_NICHT_NEUER;
+        if (st == null || !st.bekannt) return UEBERSPRUNGEN_UNBEKANNT;
+        if (!st.installiert()) return UEBERSPRUNGEN_NICHT_INSTALLIERT;
+        if (st.versionCode == f.launcher.versionCode) return UEBERSPRUNGEN_SCHON_AKTUELL;
+        if (!LauncherRegel.neuer(f.launcher, st.versionCode)) return UEBERSPRUNGEN_INSTALLIERT_NEUER;
+        return null;
+    }
+
+    /**
+     * Launcher vor dem Panoptes-Skript: gleiche Prüfungen wie der Launcher-Knopf; scheitert er, läuft Panoptes weiter.
+     * 0.1.43.3 (U1): Stand direkt vorher frisch gelesen (ohne Zwischenspeicher, leer/Zeit abgelaufen einmal
+     * nachgelesen); jeder Grund fürs Überspringen steht in update.log und im Status ({@code launcher.uebersprungenGrund}).
+     */
+    void launcherMitnehmen(Freigabe f) {
+        boolean darf = laufDarfLauncher;
+        int installiertVc = env.installierterVc();
+        LauncherPaket.Stand st = null;
+        if (darf && f != null && f.launcher != null && f.launcher.apkUrl() != null && f.versionCode > installiertVc) {
+            try {
+                st = env.launcherStandFrisch();
+            } catch (Throwable t) {
+                st = null;
+            }
+            if (st == null) st = LauncherPaket.unbekannt();
+        }
+        String grund = launcherNichtMitWeil(darf, f, installiertVc, st);
+        boolean mobil = false;
         synchronized (lock) {
-            UpdateRegel.Lage l = lage();
-            mobil = l.mobilEinmal;   // dieselbe Einwilligung wie Panoptes; update.mobilfunk liest LauncherRegel selbst
-            if (launcherLaeuft) return;
-            launcherLaeuft = true;
-            launcherFehler = null;
+            if (grund == null && launcherLaeuft) grund = UEBERSPRUNGEN_LAEUFT_SCHON;
+            if (grund == null) {
+                UpdateRegel.Lage l = lage();
+                mobil = l.mobilEinmal;   // dieselbe Einwilligung wie Panoptes; update.mobilfunk liest LauncherRegel selbst
+                launcherLaeuft = true;
+                launcherFehler = null;
+            }
+            launcherUebersprungenGrund = grund;
+            launcherUebersprungenUm = env.jetzt();
+            if (st != null && st.bekannt) {
+                launcherStandCache = st;   // frisch und sicher: gleich für Status und Karte
+                launcherStandZeit = env.jetzt();
+            }
+        }
+        String fl = f != null && f.launcher != null ? f.launcher.versionName + " (vC " + f.launcher.versionCode + ")" : "-";
+        String am = st == null ? "nicht gelesen" : !st.bekannt ? "unbekannt"
+                : st.installiert() ? "vC " + st.versionCode : "nicht installiert";
+        if (grund != null) {
+            String z = "Launcher nicht mitgenommen: " + grund + " (am Gerät " + am + ", Freigabe " + fl + ")";
+            logger.info(z);
+            // von selbst / ohne Launcher in der Freigabe ist der Normalfall – nur echte Lücken ins update.log
+            if (!UEBERSPRUNGEN_NICHT_GETIPPT.equals(grund) && !UEBERSPRUNGEN_KEIN_LAUNCHER.equals(grund)) env.updateLog(z);
+            return;
         }
         try {
-            logger.info("Launcher " + f.launcher.versionName + " kommt mit dem Panoptes-Update mit");
+            String z = "Launcher " + fl + " kommt mit dem Panoptes-Update mit (am Gerät " + am + ")";
+            logger.info(z);
+            env.updateLog(z);
             launcherAusfuehren(f.launcher, mobil);
         } catch (Throwable t) {
             logger.warn("Launcher mit Panoptes: " + t.getMessage());
@@ -1263,6 +1351,9 @@ public final class AppUpdateDienst {
                 LauncherRegel.Lage l = launcherLage();
                 o.put("paket", LauncherPaket.PAKET);
                 o.put("installiert", st.installiert() ? (Object) st.versionCode : JSONObject.NULL);
+                // 0.1.43.3 (U1): Stand ließ sich nicht lesen (leer/Zeit abgelaufen) – nicht dasselbe wie „nicht installiert“
+                o.put("standBekannt", st.bekannt);
+                o.put("uebersprungenGrund", launcherUebersprungenGrund == null ? JSONObject.NULL : launcherUebersprungenGrund);
                 // 0.1.38.7: Rückfall-Stufe 2 hat das Paket ausgeschaltet: die Karte zeigt dann „Launcher wieder einschalten“
                 boolean aus = false;
                 try { aus = st.installiert() && LauncherHome.paketDeaktiviert(LauncherPaket.SHELL); } catch (Throwable ignored) { }
@@ -2057,6 +2148,21 @@ public final class AppUpdateDienst {
         }
 
         @Override public LauncherPaket.Stand launcherStand() { return LauncherPaket.stand(LauncherPaket.SHELL); }
+        @Override public LauncherPaket.Stand launcherStandFrisch() { return LauncherPaket.standFrisch(LauncherPaket.SHELL); }
+
+        @Override
+        public void updateLog(String zeile) {
+            try {
+                File dir = new File("/sdcard/surfmate-migration");
+                if (!dir.isDirectory() && !dir.mkdirs()) return;
+                String z = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.ROOT)
+                        .format(new java.util.Date()) + " " + zeile + "\n";
+                try (FileOutputStream o = new FileOutputStream(new File(dir, "update.log"), true)) {
+                    o.write(z.getBytes(StandardCharsets.UTF_8));
+                }
+            } catch (Throwable ignored) {
+            }
+        }
         @Override public String launcherInstallieren(File apk) { return LauncherPaket.installieren(LauncherPaket.SHELL, apk); }
 
         @Override

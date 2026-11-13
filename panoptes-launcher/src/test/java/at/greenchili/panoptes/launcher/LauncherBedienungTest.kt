@@ -51,7 +51,7 @@ class LauncherBedienungTest {
         assertTrue("große Zahlen in Kacheln bleiben", Regex("fun zahl\\(text: String, sp: Float\\) = TextView\\(ctx\\)\\.apply \\{\\s+this\\.text = text; textSize = sp;").containsMatchIn(b))
         val m = quelle("MainActivity.kt")
         assertTrue(m.contains("Ui(this, pal, cockpit, GrosseBedienung.faktor(this))"))
-        assertTrue("Dock wächst", m.contains("spalte.addView(dock(), ui.lp(-1, ui.bd(84)"))
+        assertTrue("Dock wächst", m.contains("spalte.addView(dock(), ui.lp(-1, ui.bd(DockPlatz.HOEHE)"))
         assertTrue("Kachelraster unabhängig", m.contains("FreiLayout(this, ui.dp(Raster.abstandDp(layout.abstand)))"))
         val s = quelle("Schnellleiste.kt")
         assertTrue("Leiste wächst", s.contains("val f = GrosseBedienung.faktor(ctx)") && s.contains("m(KNOPF_DP)"))

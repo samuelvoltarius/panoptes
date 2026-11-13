@@ -96,7 +96,8 @@ class LauncherStufe4Test {
         // 0.1.38.5: Aufrufer = Dock (Knöpfe, an/aus) und Klima-Feld (−/+ je Reihe, an/aus); nur Aktionen der festen Liste
         val aufrufe = Regex("klimaSenden\\(([^)]*)\\)").findAll(main).map { it.groupValues[1] }.toList()
         // 0.1.38.6: dazu das Komfort-Feld (an/aus-Paar und Kachel); deren feste Namen prüft LauncherKomfortTest
-        assertEquals(listOf("aktion(", "if (summary?.klima?.an == true", "aktion: String", "runter", "hoch",
+        // 0.1.43.3 (Rang 3): dazu Sitz/Luft der festen Leiste im Dock (komfortKnopf → klimaSenden(aktion), Namen prüft LauncherDockSymboleTest)
+        assertEquals(listOf("aktion(", "if (summary?.klima?.an == true", "aktion", "aktion: String", "runter", "hoch",
             "if (summary?.klima?.an == true", "an", "aus", "aktion"), aufrufe)
     }
 

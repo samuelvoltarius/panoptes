@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 0.1.43.3 (Rang 7) „Was kann ich sagen?“ und Assistent-Knopf (SprachHilfe.kt, SprachKnopf.kt) -->
+<resources>
+    <string name="sh_titel">What can I say?</string>
+    <string name="sh_laedt">Loading …</string>
+    <string name="sh_noch_nicht_kurz">not yet</string>
+    <string name="sh_sprache_beschr" formatted="true">Language: %1$s</string>
+    <string name="sh_schliessen">Close</string>
+    <string name="sh_fehlt">Panoptes is not answering. Voice commands need Panoptes.</string>
+    <string name="sh_aus">Voice commands are off. Switch them on in Panoptes under Data sharing.</string>
+    <string name="sh_noch_nicht">Speech recognition does not work in this language yet (German and English only). Tapping a sentence works.</string>
+    <string name="sh_kein_modell">The speech model is missing. You can load it in Panoptes under Data sharing.</string>
+    <string name="sh_bereit">Ready: tap the microphone or a sentence.</string>
+    <string name="sh_weck" formatted="true">Or say “%1$s”.</string>
+    <string name="sh_panoptes_oeffnen">Open in Panoptes</string>
+    <string name="sh_jetzt">Speak now</string>
+    <string name="sh_suche">Search commands</string>
+    <string name="sh_alle">All</string>
+    <string name="sh_k_klima">Climate</string>
+    <string name="sh_k_navigation">Navigation</string>
+    <string name="sh_k_medien">Media</string>
+    <string name="sh_k_allgemein">General</string>
+    <string name="sh_probieren">Try it</string>
+    <string name="sh_tipp_ausfuehren">Tap a sentence to run it, just like saying it. Climate always asks first.</string>
+    <string name="sh_keine">Nothing found.</string>
+    <string name="sh_sag">Say for example:</string>
+    <string name="sh_ausfuehren_beschr" formatted="true">Run “%1$s”</string>
+    <string name="sh_nie">Never by voice: horn, indicators, lights and alarm.</string>
+    <string name="sh_b_lesen">Read only</string>
+    <string name="sh_b_rueckfrage">Asks first</string>
+    <string name="sh_b_vorschau">Opens preview</string>
+    <string name="sh_b_medien">Controls music</string>
+    <string name="sh_knopf_beschr">Speak (voice commands)</string>
+    <string name="sh_knopf_zeigen">Show speak button</string>
+    <string name="sh_t_klima_an">Climate on</string>
+    <string name="sh_e_klima_an">Switches the climate control on. Panoptes asks “Yes/No” first.</string>
+    <string name="sh_t_klima_aus">Climate off</string>
+    <string name="sh_e_klima_aus">Switches the climate control off, after asking first.</string>
+    <string name="sh_t_waermer">Warmer</string>
+    <string name="sh_e_waermer">One climate level warmer – never an invented temperature. Asks first.</string>
+    <string name="sh_t_kaelter">Cooler</string>
+    <string name="sh_e_kaelter">One climate level cooler. Asks first.</string>
+    <string name="sh_t_navi_heim">Navigate home</string>
+    <string name="sh_e_navi_heim">Shows the route to your saved home. Guidance starts only when you tap Start.</string>
+    <string name="sh_t_musik_weiter">Next song</string>
+    <string name="sh_e_musik_weiter">Skips to the next song of the music that is playing.</string>
+    <string name="sh_t_musik_zurueck">Previous song</string>
+    <string name="sh_e_musik_zurueck">Goes back to the previous song.</string>
+    <string name="sh_t_musik_pause">Pause music</string>
+    <string name="sh_e_musik_pause">Pauses the music that is playing.</string>
+    <string name="sh_t_wo_bin_ich">Where am I?</string>
+    <string name="sh_e_wo_bin_ich">Names the place, if it is already known offline. Only reads.</string>
+    <string name="sh_t_reichweite">Range</string>
+    <string name="sh_e_reichweite">Says the electric range in km. Only reads.</string>
+</resources>

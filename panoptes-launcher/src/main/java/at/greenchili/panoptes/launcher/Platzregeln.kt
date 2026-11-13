@@ -34,6 +34,13 @@ object DockPlatz {
     const val WERT_TEMP = 98        // Rand 8 + Symbol 22 + 4 + Zahl mind. 64 („21,5°“)
     const val WERT_LUFT = 54        // Rand 8 + Symbol 22 + 4 + Zahl 20
     const val POWER = 52
+    /** 0.1.43.3 (Rang 3): Dock mit Beschriftung unter den Symbolen. */
+    const val HOEHE = 100
+    const val SYMBOL = 56           // Kasten um das Symbol, darunter die Beschriftung
+    const val SCHRIFT = 12f         // sp, wächst über Ui.text mit „Große Bedienung“
+    const val KLIMA_HOEHE = 72
+    /** Knopf Sitz bzw. Luft in der festen Leiste (Symbol + Wort). */
+    const val KOMFORT = 64
     const val INNEN = 12            // Innenrand links + rechts
 
     private fun b(v: Int, bedien: Float) = Math.round(v * bedien)
@@ -50,6 +57,13 @@ object DockPlatz {
 
     /** Platz, der für die Lieblings-Apps mindestens bleibt (zwei Knöpfe: eine App und „Hinzufügen“). */
     fun favsMin(bedien: Float): Int = 2 * (b(76, bedien) + 4)
+
+    /** Zusatzbreite der Leiste für [n] sichtbare Komfort-Knöpfe (Sitz, Luft). */
+    fun komfortBreite(bedien: Float, n: Int): Int = n.coerceIn(0, 2) * b(KOMFORT, bedien)
+
+    /** Sitz und Luft nur, wenn die volle Leiste mit beiden Knöpfen den Apps noch Platz lässt; sonst fallen sie zuerst weg. */
+    fun komfortPasst(breiteDp: Int, bedien: Float): Boolean =
+        fest(bedien) + klimaBreite(bedien, false) + komfortBreite(bedien, 2) + favsMin(bedien) <= breiteDp
 
     /** Kompakte Klima-Leiste, wenn die volle bei dieser Dockbreite den Apps den Platz nähme. */
     fun kompakt(breiteDp: Int, bedien: Float): Boolean = fest(bedien) + klimaBreite(bedien, false) + favsMin(bedien) > breiteDp

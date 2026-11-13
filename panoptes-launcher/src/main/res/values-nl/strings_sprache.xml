@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 0.1.43.3 (Rang 7) „Was kann ich sagen?“ und Assistent-Knopf (SprachHilfe.kt, SprachKnopf.kt) -->
+<resources>
+    <string name="sh_titel">Wat kan ik zeggen?</string>
+    <string name="sh_laedt">Laden …</string>
+    <string name="sh_noch_nicht_kurz">nog niet</string>
+    <string name="sh_sprache_beschr" formatted="true">Taal: %1$s</string>
+    <string name="sh_schliessen">Sluiten</string>
+    <string name="sh_fehlt">Panoptes antwoordt niet. Spraakopdrachten hebben Panoptes nodig.</string>
+    <string name="sh_aus">Spraakopdrachten staan uit. Zet ze aan in Panoptes onder Gegevens delen.</string>
+    <string name="sh_noch_nicht">Spraakherkenning werkt nog niet in deze taal (alleen Duits en Engels). Een zin aantikken werkt wel.</string>
+    <string name="sh_kein_modell">Het spraakmodel ontbreekt. Je kunt het in Panoptes laden onder Gegevens delen.</string>
+    <string name="sh_bereit">Klaar: tik op de microfoon of op een zin.</string>
+    <string name="sh_weck" formatted="true">Of zeg „%1$s”.</string>
+    <string name="sh_panoptes_oeffnen">Openen in Panoptes</string>
+    <string name="sh_jetzt">Nu spreken</string>
+    <string name="sh_suche">Opdracht zoeken</string>
+    <string name="sh_alle">Alle</string>
+    <string name="sh_k_klima">Airco</string>
+    <string name="sh_k_navigation">Navigatie</string>
+    <string name="sh_k_medien">Media</string>
+    <string name="sh_k_allgemein">Algemeen</string>
+    <string name="sh_probieren">Om te proberen</string>
+    <string name="sh_tipp_ausfuehren">Tik op een zin om hem uit te voeren, net als uitspreken. De airco vraagt altijd eerst.</string>
+    <string name="sh_keine">Niets gevonden.</string>
+    <string name="sh_sag">Zeg bijvoorbeeld:</string>
+    <string name="sh_ausfuehren_beschr" formatted="true">„%1$s” uitvoeren</string>
+    <string name="sh_nie">Nooit met spraak: toeter, knipperlichten, lichten en alarm.</string>
+    <string name="sh_b_lesen">Alleen lezen</string>
+    <string name="sh_b_rueckfrage">Met bevestiging</string>
+    <string name="sh_b_vorschau">Opent voorbeeld</string>
+    <string name="sh_b_medien">Bedient muziek</string>
+    <string name="sh_knopf_beschr">Spreken (spraakopdrachten)</string>
+    <string name="sh_knopf_zeigen">Spreekknop tonen</string>
+    <string name="sh_t_klima_an">Airco aan</string>
+    <string name="sh_e_klima_an">Zet de airco aan. Panoptes vraagt eerst „Ja/Nee”.</string>
+    <string name="sh_t_klima_aus">Airco uit</string>
+    <string name="sh_e_klima_aus">Zet de airco uit, na bevestiging.</string>
+    <string name="sh_t_waermer">Warmer</string>
+    <string name="sh_e_waermer">Eén airco-stand warmer – nooit een verzonnen temperatuur. Met bevestiging.</string>
+    <string name="sh_t_kaelter">Koeler</string>
+    <string name="sh_e_kaelter">Eén airco-stand koeler. Met bevestiging.</string>
+    <string name="sh_t_navi_heim">Naar huis</string>
+    <string name="sh_e_navi_heim">Toont de route naar je opgeslagen thuis. Navigatie start pas als je op Start tikt.</string>
+    <string name="sh_t_musik_weiter">Volgend nummer</string>
+    <string name="sh_e_musik_weiter">Gaat naar het volgende nummer van de muziek die speelt.</string>
+    <string name="sh_t_musik_zurueck">Vorig nummer</string>
+    <string name="sh_e_musik_zurueck">Gaat terug naar het vorige nummer.</string>
+    <string name="sh_t_musik_pause">Muziek pauzeren</string>
+    <string name="sh_e_musik_pause">Pauzeert de muziek die speelt.</string>
+    <string name="sh_t_wo_bin_ich">Waar ben ik?</string>
+    <string name="sh_e_wo_bin_ich">Noemt de plaats als die offline al bekend is. Alleen lezen.</string>
+    <string name="sh_t_reichweite">Actieradius</string>
+    <string name="sh_e_reichweite">Zegt de elektrische actieradius in km. Alleen lezen.</string>
+</resources>

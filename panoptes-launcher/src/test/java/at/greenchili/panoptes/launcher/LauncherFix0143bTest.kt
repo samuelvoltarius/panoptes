@@ -74,7 +74,7 @@ class LauncherFix0143bTest {
         assertTrue(DockPlatz.klimaBreite(GrosseBedienung.FAKTOR, true) < DockPlatz.klimaBreite(GrosseBedienung.FAKTOR, false))
         assertTrue("wächst mit Großer Bedienung", DockPlatz.klimaBreite(GrosseBedienung.FAKTOR, false) > DockPlatz.klimaBreite(1f, false))
         val d = main.substringAfter("private fun dock(").substringBefore("private fun klimaBedienung(")
-        assertTrue("feste Breite statt Inhaltsbreite", d.contains("z.addView(klimaBedienung(kompakt), ui.lp(ui.dp(DockPlatz.klimaBreite(ui.bedien, kompakt)), ui.bd(64), rechts = 10))"))
+        assertTrue("feste Breite statt Inhaltsbreite", d.contains("z.addView(klimaBedienung(kompakt, mitKomfort), ui.lp(ui.dp(DockPlatz.klimaBreite(ui.bedien, kompakt)), ui.bd(DockPlatz.KLIMA_HOEHE), rechts = 10))"))
         assertFalse(d.contains("z.addView(klimaBedienung(), ui.lp(-2"))
         assertTrue("Mindestbreite der Temperatur passt zur Rechnung", main.contains("minWidth = ui.dp(64); gravity = Gravity.CENTER; maxLines = 1"))
         // „Hinzufügen“ in der Reiterleiste: wächst mit, keine feste Breite mehr

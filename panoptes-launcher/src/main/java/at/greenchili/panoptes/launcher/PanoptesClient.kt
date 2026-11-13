@@ -83,6 +83,8 @@ class PanoptesClient(private val baseUrl: String = "http://127.0.0.1:8180") {
     } catch (_: Exception) { false }
 
     fun update(): UpdateStand = LauncherContract.parseUpdate(get("/api/launcher/v1/update"))
+    /** 0.1.43.3 (Rang 7): Katalog der Sprachbefehle (nur lesen); null, wenn Panoptes nicht antwortet. */
+    fun sprache(): SprachKatalog? = Sprache.parse(get("/api/launcher/v1/sprache"))
 
     /** 0.1.38.7: Wunsch „Launcher als Startbildschirm“ aus dem Kern; null = nicht erreichbar. */
     fun homeWunsch(): HomeWunsch? = try {

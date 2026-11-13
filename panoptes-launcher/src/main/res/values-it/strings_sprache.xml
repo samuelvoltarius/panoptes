@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 0.1.43.3 (Rang 7) „Was kann ich sagen?“ und Assistent-Knopf (SprachHilfe.kt, SprachKnopf.kt) -->
+<resources>
+    <string name="sh_titel">Cosa posso dire?</string>
+    <string name="sh_laedt">Caricamento …</string>
+    <string name="sh_noch_nicht_kurz">non ancora</string>
+    <string name="sh_sprache_beschr" formatted="true">Lingua: %1$s</string>
+    <string name="sh_schliessen">Chiudi</string>
+    <string name="sh_fehlt">Panoptes non risponde. I comandi vocali richiedono Panoptes.</string>
+    <string name="sh_aus">I comandi vocali sono disattivati. Attivali in Panoptes in Condivisione dati.</string>
+    <string name="sh_noch_nicht">Il riconoscimento vocale non funziona ancora in questa lingua (solo tedesco e inglese). Toccare una frase funziona.</string>
+    <string name="sh_kein_modell">Manca il modello vocale. Puoi scaricarlo in Panoptes in Condivisione dati.</string>
+    <string name="sh_bereit">Pronto: tocca il microfono o una frase.</string>
+    <string name="sh_weck" formatted="true">Oppure di’ «%1$s».</string>
+    <string name="sh_panoptes_oeffnen">Apri in Panoptes</string>
+    <string name="sh_jetzt">Parla ora</string>
+    <string name="sh_suche">Cerca un comando</string>
+    <string name="sh_alle">Tutti</string>
+    <string name="sh_k_klima">Clima</string>
+    <string name="sh_k_navigation">Navigazione</string>
+    <string name="sh_k_medien">Media</string>
+    <string name="sh_k_allgemein">Generale</string>
+    <string name="sh_probieren">Da provare</string>
+    <string name="sh_tipp_ausfuehren">Tocca una frase per eseguirla, come se la dicessi. Il clima chiede sempre prima.</string>
+    <string name="sh_keine">Nessun risultato.</string>
+    <string name="sh_sag">Di’ per esempio:</string>
+    <string name="sh_ausfuehren_beschr" formatted="true">Esegui «%1$s»</string>
+    <string name="sh_nie">Mai con la voce: clacson, frecce, luci e allarme.</string>
+    <string name="sh_b_lesen">Solo lettura</string>
+    <string name="sh_b_rueckfrage">Con conferma</string>
+    <string name="sh_b_vorschau">Apre l’anteprima</string>
+    <string name="sh_b_medien">Controlla la musica</string>
+    <string name="sh_knopf_beschr">Parla (comandi vocali)</string>
+    <string name="sh_knopf_zeigen">Mostra il pulsante Parla</string>
+    <string name="sh_t_klima_an">Clima acceso</string>
+    <string name="sh_e_klima_an">Accende il clima. Panoptes chiede prima «Sì/No».</string>
+    <string name="sh_t_klima_aus">Clima spento</string>
+    <string name="sh_e_klima_aus">Spegne il clima, dopo conferma.</string>
+    <string name="sh_t_waermer">Più caldo</string>
+    <string name="sh_e_waermer">Un livello di clima più caldo – mai una temperatura inventata. Con conferma.</string>
+    <string name="sh_t_kaelter">Più fresco</string>
+    <string name="sh_e_kaelter">Un livello di clima più fresco. Con conferma.</string>
+    <string name="sh_t_navi_heim">Verso casa</string>
+    <string name="sh_e_navi_heim">Mostra il percorso verso la tua casa salvata. La guida parte solo quando tocchi Avvia.</string>
+    <string name="sh_t_musik_weiter">Brano successivo</string>
+    <string name="sh_e_musik_weiter">Passa al brano successivo della musica in riproduzione.</string>
+    <string name="sh_t_musik_zurueck">Brano precedente</string>
+    <string name="sh_e_musik_zurueck">Torna al brano precedente.</string>
+    <string name="sh_t_musik_pause">Pausa musica</string>
+    <string name="sh_e_musik_pause">Mette in pausa la musica in riproduzione.</string>
+    <string name="sh_t_wo_bin_ich">Dove sono?</string>
+    <string name="sh_e_wo_bin_ich">Dice il luogo, se è già noto offline. Solo lettura.</string>
+    <string name="sh_t_reichweite">Autonomia</string>
+    <string name="sh_e_reichweite">Dice l’autonomia elettrica in km. Solo lettura.</string>
+</resources>

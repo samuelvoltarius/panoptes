@@ -474,6 +474,11 @@
     <!-- 0.1.44 (P1 „Bedienung 50+“): Zurück/Letzte App, Große Bedienung, geführte Einrichtung -->
     <string name="taste_zurueck">Indietro</string>
     <string name="taste_letzte">Ultima app</string>
+    <!-- 0.1.43.3 (Rang 3): kurze Beschriftungen unter den Dock-Symbolen und in der festen Leiste -->
+    <string name="dock_byd">Home BYD</string>
+    <string name="dock_sitz">Sedile</string>
+    <string name="dock_sitz_stufe">Sedile %1$d</string>
+    <string name="dock_luft">Aria</string>
     <string name="taste_fehlt">“Indietro” e “Ultima app” richiedono Panoptes o il servizio di accessibilità “Panoptes Launcher”.</string>
     <string name="taste_fehler">Non ha funzionato.</string>
     <string name="hilfe_name">Panoptes Launcher: Indietro e Ultima app</string>

@@ -26,7 +26,7 @@ public class LauncherKarteOeffnenTest {
         assertTrue("Rückmeldung abgelehnt in Klartext", js.contains("system.lnc_open_fail"));
         String html = lies("app/src/main/assets/web/local/display.html");
         assertTrue(html.contains("id=\"lncOpenHint\""));
-        assertTrue(html.contains("launcher-karte.js?v=3"));
+        assertTrue(html.contains("launcher-karte.js?v=4"));
         // 0.1.38 Handy-Einbettung: Karte nicht mehr fest ausgeblendet; aus der Ferne nur „Öffnen“, ohne Recht der Satz des Kerns
         assertFalse(html.contains("html[data-einbettung=\"handy\"] #launcherKarte"));
         assertTrue(js.contains("var amAuto = !fern();"));

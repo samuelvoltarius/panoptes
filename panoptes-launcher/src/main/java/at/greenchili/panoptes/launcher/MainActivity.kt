@@ -50,6 +50,8 @@ import kotlin.math.abs
 
 class MainActivity : AppCompatActivity() {
     private val client = PanoptesClient()
+    /** 0.1.43.3 (Rang 7): Assistent-Knopf, nur sichtbar mit eingeschalteten Sprachbefehlen (SprachKnopf.kt). */
+    private val sprachKnopf by lazy { SprachKnopf(this, client) }
     // 0.1.41 (Nachtest F1): nach dem Beenden keine Arbeit mehr annehmen, Rückrufe nur in einer lebenden Activity
     private val io = SichererIo()
     private val main: Handler = LebensHandler { !isFinishing && !isDestroyed }
@@ -234,6 +236,7 @@ class MainActivity : AppCompatActivity() {
         // 0.1.41 (E2E G4): Zugriff bei jeder Rückkehr neu prüfen (z. B. von der Android-Seite „Benachrichtigungszugriff“)
         medienBeobachter.start()
         medienNeu()
+        sprachKnopf.aktualisieren()   // 0.1.43.3 (Rang 7): Schalter in Panoptes evtl. geändert
     }
 
     /** M1: eigene Mediensitzung (mit Zugriff), sonst der letzte Stand vom Kern; stößt die Kern-Abfrage an. */
@@ -316,6 +319,7 @@ class MainActivity : AppCompatActivity() {
         schnellleiste.aus()
         runCatching { getSystemService(DisplayManager::class.java)?.unregisterDisplayListener(displayHoerer) }
         io.shutdownNow()
+        sprachKnopf.ende()
         klimaIo.shutdownNow()
         layoutIo.shutdown()
         webAuto?.destroy()
@@ -396,7 +400,7 @@ class MainActivity : AppCompatActivity() {
         punkte = LinearLayout(this).apply { gravity = Gravity.CENTER }
         spalte.addView(punkte, ui.lp(-1, ui.dp(18)))
         if (layout.zeigeReiter && !bearbeiten && !Raster.hatWidget(layout, Kachel.REITERLEISTE)) spalte.addView(reiterZeile().also { if (szene()) FahrzeugKacheln.pillenLeiste(it, ui) }, ui.lp(-1, ui.dp(88), oben = 4))
-        if (!Raster.hatWidget(layout, Kachel.DOCKLEISTE)) spalte.addView(dock(), ui.lp(-1, ui.bd(84), oben = 8))
+        if (!Raster.hatWidget(layout, Kachel.DOCKLEISTE)) spalte.addView(dock(), ui.lp(-1, ui.bd(DockPlatz.HOEHE), oben = 8))
 
         hinweis = ui.text("", 15f, 600, ui.p.onSurface).apply {
             visibility = View.GONE; gravity = Gravity.CENTER
@@ -404,6 +408,7 @@ class MainActivity : AppCompatActivity() {
             background = GradientDrawable().apply { cornerRadius = ui.dpf(16f); setColor(ui.p.surface); setStroke(ui.dp(1), ui.p.aqua) }
         }
         root.addView(hinweis, FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL).apply { bottomMargin = ui.dp(110) })
+        if (!bearbeiten && !isInMultiWindowMode) sprachKnopf.einhaengen(root, ui)   // 0.1.43.3 (Rang 7)
         // 0.1.39 (L1): neben der Karte (geteilter Bildschirm) statt der Startseite die schmale Statusspalte
         if (isInMultiWindowMode) {
             spalte.visibility = View.GONE
@@ -575,20 +580,24 @@ class MainActivity : AppCompatActivity() {
             }
         }
         // Fest als erstes Icon, nicht entfernbar: Rückweg zum BYD-Startbildschirm.
-        z.addView(dockIcon(R.drawable.ic_pn_home, getString(R.string.byd_home), hervor = true) { zumBydStart() }, ui.lp(ui.bd(84), -1, rechts = 6))
+        z.addView(dockIcon(R.drawable.ic_pn_home, getString(R.string.byd_home), hervor = true, kurz = getString(R.string.dock_byd)) { zumBydStart() }, ui.lp(ui.bd(84), -1, rechts = 6))
         // 0.1.44 (P1): „Letzte App“ (Tasten.kt). „Zurück“ gehört in die Leiste über den Apps; über dem Launcher selbst gibt es nichts zurückzugehen.
         z.addView(dockIcon(R.drawable.ic_pn_wechsel, getString(R.string.taste_letzte)) { Tasten.druecken(this, Tasten.LETZTE, client) }, ui.lp(ui.bd(76), -1, rechts = 6))
         val favs = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
         // Android Auto / CarPlay nur, wenn das BYD-Paket hier installiert und startbar ist (andere Autos: unsichtbar)
         layout.dock.filter { it !in Raster.PROJEKTION || startbar(it) }.forEach { p ->
-            favs.addView(appKnopf(p, mitName = false, gross = Math.round(44 * ui.bedien)) { lange -> if (lange) leistenMenue(p, schnell = false) else starteApp(p) }, ui.lp(ui.bd(76), -1, rechts = 4))
+            favs.addView(appKnopf(p, mitName = true, gross = Math.round(40 * ui.bedien), dock = true) { lange -> if (lange) leistenMenue(p, schnell = false) else starteApp(p) }, ui.lp(ui.bd(76), -1, rechts = 4))
         }
         favs.addView(dockIcon(R.drawable.ic_pn_plus, getString(R.string.hinzufuegen)) { if (darfBedienen()) schublade(Ziel.DOCK) }, ui.lp(ui.bd(76), -1))
         z.addView(HorizontalScrollView(this).apply { isHorizontalScrollBarEnabled = false; addView(favs) }, ui.lp(0, -1, 1f))
         // Fixrunde 0.1.43b (G4): feste Breite (Platzregeln.kt DockPlatz), bei zu schmalem Dock die kompakte Form
+        // 0.1.43.3 (Rang 3): feste Leiste Klima/Sitz/Luft. Sitz und Umluft nur, wenn Platz ist und der Kern den Wert liefert;
+        // ihre Breite kommt erst dazu, wenn sie sichtbar sind (DockPlatz.komfortBreite), damit nie eine Lücke bleibt.
         if (layout.zeigeKlima) {
-            val kompakt = DockPlatz.kompakt(Math.round(resources.displayMetrics.widthPixels / resources.displayMetrics.density), ui.bedien)
-            z.addView(klimaBedienung(kompakt), ui.lp(ui.dp(DockPlatz.klimaBreite(ui.bedien, kompakt)), ui.bd(64), rechts = 10))
+            val breiteDp = Math.round(resources.displayMetrics.widthPixels / resources.displayMetrics.density)
+            val kompakt = DockPlatz.kompakt(breiteDp, ui.bedien)
+            val mitKomfort = DockPlatz.komfortPasst(breiteDp, ui.bedien)
+            z.addView(klimaBedienung(kompakt, mitKomfort), ui.lp(ui.dp(DockPlatz.klimaBreite(ui.bedien, kompakt)), ui.bd(DockPlatz.KLIMA_HOEHE), rechts = 10))
         }
         z.addView(dockIcon(R.drawable.ic_pn_apps, getString(R.string.reiter_apps)) { schublade(null) }, ui.lp(ui.bd(76), -1, rechts = 4))
         z.addView(dockIcon(R.drawable.ic_pn_settings, getString(R.string.reiter_einstellungen)) { einstellungen() }, ui.lp(ui.bd(76), -1))
@@ -600,7 +609,7 @@ class MainActivity : AppCompatActivity() {
      * Der Kern prüft, dass die Anfrage von dieser APK kommt, und führt nur über die Panoptes-Klimabefehle mit allen
      * Sperren aus. Tipp auf die Werte öffnet das große Klima-Feld im Launcher (0.1.38.5), nicht Panoptes.
      */
-    private fun klimaBedienung(kompakt: Boolean = false): View {
+    private fun klimaBedienung(kompakt: Boolean = false, mitKomfort: Boolean = false): View {
         val z = LinearLayout(this).apply {
             gravity = Gravity.CENTER_VERTICAL; setPadding(ui.dp(6), 0, ui.dp(6), 0)
             background = GradientDrawable().apply { cornerRadius = ui.dpf(16f); setColor(ui.p.act); setStroke(ui.dp(1), ui.p.line) }
@@ -635,8 +644,45 @@ class MainActivity : AppCompatActivity() {
             // Unbekannter Zustand: „an“ (aus schalten geht über die volle Steuerung in Panoptes)
             setOnClickListener { klimaSenden(if (summary?.klima?.an == true) "aus" else "an") }
         }, ui.lp(ui.dp(52), -1))
+        // 0.1.43.3 (Rang 3): Sitzheizung Fahrer und Umluft in der festen Leiste, über denselben Kern-Weg wie die Komfort-Kacheln
+        // (klimaSenden → Kern schaltet aus dem gelesenen Ist-Stand weiter). Unlesbar (null) = Knopf fehlt, keine Lücke.
+        fun komfortKnopf(icon: Int, beschreibung: Int, aktion: String, wort: TextView): Pair<LinearLayout, ImageView> {
+            val i = ui.icon(icon, ui.p.onSurfaceVariant, 24)
+            val v = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; visibility = View.GONE
+                addView(i, LinearLayout.LayoutParams(ui.dp(24), ui.dp(24)))
+                addView(wort, LinearLayout.LayoutParams(-1, -2))
+                contentDescription = getString(beschreibung); isClickable = true; foreground = ui.welle()
+                setOnClickListener { klimaSenden(aktion) }
+            }
+            return v to i
+        }
+        val sitzWort = dockBeschriftung(getString(R.string.dock_sitz))
+        val luftWort = dockBeschriftung(getString(R.string.dock_luft))
+        val (sitz, sitzIcon) = komfortKnopf(R.drawable.ic_pn_sitz, R.string.komfort_sitz_fahrer, "sitz_fahrer", sitzWort)
+        val (luft, luftIcon) = komfortKnopf(R.drawable.ic_pn_umluft, R.string.komfort_umluft, "umluft", luftWort)
+        if (mitKomfort) {
+            z.addView(sitz, ui.lp(ui.bd(DockPlatz.KOMFORT), -1))
+            z.addView(luft, ui.lp(ui.bd(DockPlatz.KOMFORT), -1))
+        }
         aktualisierer += {
             val k = summary?.klima
+            if (mitKomfort) {
+                val sStufe = k?.sitzFahrer
+                val umluft = k?.umluft
+                sitz.visibility = if (sStufe != null) View.VISIBLE else View.GONE
+                luft.visibility = if (umluft != null) View.VISIBLE else View.GONE
+                sitzWort.text = if (sStufe != null && sStufe > 0) getString(R.string.dock_sitz_stufe, sStufe) else getString(R.string.dock_sitz)
+                sitzIcon.setColorFilter(if (sStufe != null && sStufe > 0) ui.p.lime else ui.p.onSurfaceVariant)
+                luftWort.text = getString(if (umluft == true) R.string.komfort_umluft_ein else R.string.dock_luft)
+                luftIcon.setColorFilter(if (umluft == true) ui.p.lime else ui.p.onSurfaceVariant)
+                val n = (if (sStufe != null) 1 else 0) + (if (umluft != null) 1 else 0)
+                val lp = z.layoutParams
+                if (lp != null) {
+                    val soll = ui.dp(DockPlatz.klimaBreite(ui.bedien, kompakt) + DockPlatz.komfortBreite(ui.bedien, n))
+                    if (lp.width != soll) { lp.width = soll; z.layoutParams = lp }
+                }
+            }
             soll.text = sollText(k) ?: "—"
             tempKnoepfe.forEach { it.alpha = if (k?.tempArt == "unbekannt") 0.35f else 1f }
             stufe.text = k?.stufe?.toString() ?: "—"
@@ -767,24 +813,33 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun dockIcon(res: Int, label: String, hervor: Boolean = false, f: () -> Unit) = FrameLayout(this).apply {
+    /** 0.1.43.3 (Rang 3): Dock-Symbol mit Beschriftung darunter (wächst mit „Große Bedienung“), [kurz] = Text unter dem Symbol. */
+    private fun dockIcon(res: Int, label: String, hervor: Boolean = false, kurz: String = label, f: () -> Unit) = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
         val box = FrameLayout(this@MainActivity).apply {
             background = GradientDrawable().apply { cornerRadius = ui.dpf(16f); setColor(if (hervor) ui.p.act else Color.TRANSPARENT); if (hervor) setStroke(ui.dp(1), ui.p.aqua) }
-            val i = Math.round(30 * ui.bedien)
+            val i = Math.round(28 * ui.bedien)
             addView(ui.icon(res, if (hervor) ui.p.aqua else ui.p.onSurface, i), FrameLayout.LayoutParams(ui.dp(i), ui.dp(i), Gravity.CENTER))
         }
-        addView(box, FrameLayout.LayoutParams(ui.bd(64), ui.bd(64), Gravity.CENTER))
+        addView(box, LinearLayout.LayoutParams(ui.bd(DockPlatz.SYMBOL), ui.bd(DockPlatz.SYMBOL)))
+        addView(dockBeschriftung(kurz), LinearLayout.LayoutParams(-1, -2))
         contentDescription = label; isClickable = true; foreground = ui.welle(); setOnClickListener { f() }
     }
 
+    /** Beschriftung unter Dock-Symbolen: klein, gedämpft (bei „Große Bedienung“ kontrastreich), eine Zeile. */
+    private fun dockBeschriftung(text: String) = ui.leise(text, DockPlatz.SCHRIFT).apply {
+        maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; gravity = Gravity.CENTER; setPadding(ui.dp(2), ui.dp(2), ui.dp(2), 0)
+    }
+
     /** App-Icon (aus dem PackageManager) mit optionalem Namen; langer Druck meldet sich mit true. */
-    private fun appKnopf(paket: String, mitName: Boolean, gross: Int, klick: (Boolean) -> Unit) = LinearLayout(this).apply {
+    private fun appKnopf(paket: String, mitName: Boolean, gross: Int, dock: Boolean = false, klick: (Boolean) -> Unit) = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
         val a = appsNachPaket[paket]
         addView(ImageView(this@MainActivity).apply {
             if (a?.icon != null) setImageDrawable(a.icon) else setImageDrawable(ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_pn_apps)?.mutate()?.also { it.setTint(ui.p.outline) })
         }, LinearLayout.LayoutParams(ui.dp(gross), ui.dp(gross)))
-        if (mitName) addView(ui.text(a?.name ?: paket, 13f, 600, ui.p.onSurfaceVariant).apply {
+        if (mitName && dock) addView(dockBeschriftung(a?.name ?: paket), LinearLayout.LayoutParams(-1, -2))
+        else if (mitName) addView(ui.text(a?.name ?: paket, 13f, 600, ui.p.onSurfaceVariant).apply {
             maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; gravity = Gravity.CENTER; setPadding(ui.dp(2), ui.dp(4), ui.dp(2), 0)
         }, LinearLayout.LayoutParams(-1, -2))
         contentDescription = a?.name ?: paket
@@ -1572,6 +1627,8 @@ class MainActivity : AppCompatActivity() {
         val c = spalte()
         c.addView(LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL; addView(ui.icon(R.drawable.ic_pn_mikro, ui.p.aqua, if (gross) 30 else 22)); addView(ui.titel(getString(R.string.widget_sprache)).apply { setPadding(ui.dp(8), 0, 0, 0) }) })
         c.addView(ui.leise(getString(R.string.sprache_tipp), 15f), ui.lp(oben = 8))
+        // 0.1.43.3 (Rang 7): „Was kann ich sagen?“ direkt aus der Kachel
+        c.addView(ui.act(null, getString(R.string.sh_titel)) { SprachHilfeActivity.starten(this) }, ui.lp(-1, ui.bd(56), oben = 8))
         return c
     }
 
@@ -1902,6 +1959,10 @@ class MainActivity : AppCompatActivity() {
             zeile(R.drawable.ic_pn_star, if (cockpit) getString(R.string.tagnacht) + ": " + getString(R.string.design_cockpit) else schalter(R.string.tagnacht, TagNacht.an(this))) {
                 if (cockpit) zeigeHinweis(getString(R.string.design_cockpit_hinweis)) else if (darfBedienen()) tagNachtUmschalten() }
             zeile(R.drawable.ic_pn_map, getString(R.string.bild_waehlen)) { if (darfBedienen()) bildWaehlen() }
+            // 0.1.43.3 (Rang 7): Assistent-Knopf (erscheint nur, wenn Sprachbefehle in Panoptes an sind) und Hilfe
+            zeile(R.drawable.ic_pn_mikro, schalter(R.string.sh_knopf_zeigen, Sprache.knopfSchalter(this))) {
+                Sprache.knopfSetzen(this, !Sprache.knopfSchalter(this)); baueAlles(); sprachKnopf.aktualisieren(); einstellungen(erweitert = true) }
+            zeile(R.drawable.ic_pn_mikro, getString(R.string.sh_titel)) { SprachHilfeActivity.starten(this) }
             if (layout.hintergrund == "eigen")
                 zeile(R.drawable.ic_pn_map, getString(R.string.abdunkelung) + ": " + schleierName(Schleier.wahl(this))) { if (darfBedienen()) schleierWaehlen() }
             zeile(R.drawable.ic_pn_apps, getString(R.string.abstand) + ": " + abstandName(layout.abstand)) { if (darfBedienen()) abstandWaehlen() }
@@ -2545,8 +2606,8 @@ class MainActivity : AppCompatActivity() {
             addView(ui.act(null, getString(R.string.komfort_aus)) { klimaSenden(aus) }, ui.lp(ui.dp(GROSS_KNOPF), ui.dp(GROSS_KNOPF)))
         }
         paare.addView(paar(R.string.komfort_auto, R.drawable.ic_pn_leaf, "auto_an", "auto_aus"), ui.lp(-1, -2, oben = 14))
-        paare.addView(paar(R.string.komfort_entfrosten_vorn, R.drawable.ic_pn_fan, "entfrosten_vorn_an", "entfrosten_vorn_aus"), ui.lp(-1, -2, oben = 14))
-        paare.addView(paar(R.string.komfort_entfrosten_hinten, R.drawable.ic_pn_fan, "entfrosten_hinten_an", "entfrosten_hinten_aus"), ui.lp(-1, -2, oben = 14))
+        paare.addView(paar(R.string.komfort_entfrosten_vorn, R.drawable.ic_pn_entfrosten, "entfrosten_vorn_an", "entfrosten_vorn_aus"), ui.lp(-1, -2, oben = 14))
+        paare.addView(paar(R.string.komfort_entfrosten_hinten, R.drawable.ic_pn_entfrosten, "entfrosten_hinten_an", "entfrosten_hinten_aus"), ui.lp(-1, -2, oben = 14))
         paare.addView(paar(R.string.komfort_nur_geblaese, R.drawable.ic_pn_fan, "nur_geblaese_an", "nur_geblaese_aus"), ui.lp(-1, -2, oben = 14))
         fun kachel(icon: Int, name: Int, zustand: String, aktion: String) = ui.act(icon, null) { klimaSenden(aktion) }.apply {
             minimumHeight = ui.dp(GROSS_KNOPF)
@@ -2556,13 +2617,13 @@ class MainActivity : AppCompatActivity() {
         val zeichnen = {
             val k = summary?.klima
             val tiles = listOfNotNull(
-                k?.sitzFahrer?.let { kachel(R.drawable.ic_pn_thermo, R.string.komfort_sitz_fahrer, stufeKlartext(it), "sitz_fahrer") },
-                k?.sitzBeifahrer?.let { kachel(R.drawable.ic_pn_thermo, R.string.komfort_sitz_beifahrer, stufeKlartext(it), "sitz_beifahrer") },
+                k?.sitzFahrer?.let { kachel(R.drawable.ic_pn_sitz, R.string.komfort_sitz_fahrer, stufeKlartext(it), "sitz_fahrer") },
+                k?.sitzBeifahrer?.let { kachel(R.drawable.ic_pn_sitz, R.string.komfort_sitz_beifahrer, stufeKlartext(it), "sitz_beifahrer") },
                 k?.lueftungFahrer?.let { kachel(R.drawable.ic_pn_fan, R.string.komfort_lueftung_fahrer, stufeKlartext(it), "lueftung_fahrer") },
                 k?.lueftungBeifahrer?.let { kachel(R.drawable.ic_pn_fan, R.string.komfort_lueftung_beifahrer, stufeKlartext(it), "lueftung_beifahrer") },
-                k?.lenkrad?.let { kachel(R.drawable.ic_pn_thermo, R.string.komfort_lenkrad,
+                k?.lenkrad?.let { kachel(R.drawable.ic_pn_lenkrad, R.string.komfort_lenkrad,
                     getString(if (it) R.string.komfort_an else R.string.komfort_aus), "lenkrad") },
-                k?.umluft?.let { kachel(R.drawable.ic_pn_fan, R.string.komfort_umluft,
+                k?.umluft?.let { kachel(R.drawable.ic_pn_umluft, R.string.komfort_umluft,
                     getString(if (it) R.string.komfort_umluft_ein else R.string.komfort_frischluft), "umluft") })
             kacheln.removeAllViews()
             tiles.chunked(2).forEach { zeile ->

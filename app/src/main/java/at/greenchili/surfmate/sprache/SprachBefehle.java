@@ -188,6 +188,46 @@ public final class SprachBefehle {
         return SPRACHEN.contains(s) ? s : "en";
     }
 
+    // ---- 0.1.43.3 (Rang 7) „Was kann ich sagen?“ im Launcher: Kategorien und ehrliche Art je Befehl
+
+    /** Kategorie je Befehl (nur Gruppen, die es wirklich gibt). */
+    public static final Map<String, String> KATEGORIE;
+    /** Art je Befehl: lesen (nur lesen), rueckfrage (Fahrzeugbefehl, immer mit Ja/Nein), vorschau (Navi), medien. */
+    public static final Map<String, String> ART;
+    public static final List<String> KATEGORIEN = liste("klima", "navigation", "medien", "allgemein");
+    static {
+        Map<String, String> k = new LinkedHashMap<>(), a = new LinkedHashMap<>();
+        for (String b : FAHRZEUG) { k.put(b, "klima"); a.put(b, "rueckfrage"); }
+        k.put(NAVI_HEIM, "navigation"); a.put(NAVI_HEIM, "vorschau");
+        for (String b : new String[] {MUSIK_WEITER, MUSIK_ZURUECK, MUSIK_PAUSE}) { k.put(b, "medien"); a.put(b, "medien"); }
+        for (String b : new String[] {WO_BIN_ICH, REICHWEITE}) { k.put(b, "allgemein"); a.put(b, "lesen"); }
+        KATEGORIE = Collections.unmodifiableMap(k);
+        ART = Collections.unmodifiableMap(a);
+    }
+
+    /**
+     * Katalog für „Was kann ich sagen?“: je Befehl Kategorie, Art und die Sätze der Sprache (eine Quelle mit der
+     * Erkennung). {@code nie}: Beispiele, die per Sprache nie gehen (Regel A+). Nur lesen, keine Wirkung.
+     */
+    public static JSONObject katalog(String spracheCode) {
+        String sp = sprache(spracheCode);
+        JSONObject o = new JSONObject();
+        try {
+            JSONArray bef = new JSONArray();
+            for (String b : BEFEHLE) {
+                JSONArray s = new JSONArray();
+                for (String x : saetze(sp, b)) s.put(x);
+                bef.put(new JSONObject().put("befehl", b).put("kategorie", KATEGORIE.get(b)).put("art", ART.get(b)).put("saetze", s));
+            }
+            JSONArray nie = new JSONArray();
+            for (String x : saetze(sp, VERBOTEN)) nie.put(x);
+            o.put("sprache", sp).put("erkennbar", erkennbar(sp)).put("befehle", bef).put("nie", nie);
+        } catch (Exception ignored) {
+            // nur Zeichenketten und Listen – kann nicht fehlschlagen
+        }
+        return o;
+    }
+
     /** Gibt es in dieser Sprache eine echte Erkennung? */
     public static boolean erkennbar(String sprache) { return ERKENNUNG.contains(sprache(sprache)); }
 

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 0.1.43.3 (Rang 7) „Was kann ich sagen?“ und Assistent-Knopf (SprachHilfe.kt, SprachKnopf.kt) -->
+<resources>
+    <string name="sh_titel">Was kann ich sagen?</string>
+    <string name="sh_laedt">Lädt …</string>
+    <string name="sh_noch_nicht_kurz">noch nicht</string>
+    <string name="sh_sprache_beschr" formatted="true">Sprache: %1$s</string>
+    <string name="sh_schliessen">Schließen</string>
+    <string name="sh_fehlt">Panoptes antwortet nicht. Sprachbefehle brauchen Panoptes.</string>
+    <string name="sh_aus">Sprachbefehle sind aus. Schalte sie in Panoptes unter Datenfreigaben ein.</string>
+    <string name="sh_noch_nicht">In dieser Sprache geht die Spracherkennung noch nicht (nur Deutsch und Englisch). Sätze antippen geht.</string>
+    <string name="sh_kein_modell">Das Sprachmodell fehlt. Du kannst es in Panoptes unter Datenfreigaben laden.</string>
+    <string name="sh_bereit">Bereit: Tippe aufs Mikrofon oder auf einen Satz.</string>
+    <string name="sh_weck" formatted="true">Oder sag „%1$s“.</string>
+    <string name="sh_panoptes_oeffnen">In Panoptes öffnen</string>
+    <string name="sh_jetzt">Jetzt sprechen</string>
+    <string name="sh_suche">Befehl suchen</string>
+    <string name="sh_alle">Alle</string>
+    <string name="sh_k_klima">Klima</string>
+    <string name="sh_k_navigation">Navigation</string>
+    <string name="sh_k_medien">Medien</string>
+    <string name="sh_k_allgemein">Allgemein</string>
+    <string name="sh_probieren">Zum Ausprobieren</string>
+    <string name="sh_tipp_ausfuehren">Tippe einen Satz an, um ihn auszuführen – wie gesprochen. Klima fragt immer vorher nach.</string>
+    <string name="sh_keine">Nichts gefunden.</string>
+    <string name="sh_sag">Sag zum Beispiel:</string>
+    <string name="sh_ausfuehren_beschr" formatted="true">„%1$s“ ausführen</string>
+    <string name="sh_nie">Nie per Sprache: Hupe, Blinker, Licht und Alarm.</string>
+    <string name="sh_b_lesen">Nur lesen</string>
+    <string name="sh_b_rueckfrage">Mit Rückfrage</string>
+    <string name="sh_b_vorschau">Öffnet Vorschau</string>
+    <string name="sh_b_medien">Steuert Musik</string>
+    <string name="sh_knopf_beschr">Sprechen (Sprachbefehle)</string>
+    <string name="sh_knopf_zeigen">Sprech-Knopf zeigen</string>
+    <string name="sh_t_klima_an">Klima an</string>
+    <string name="sh_e_klima_an">Schaltet das Klima ein. Panoptes fragt vorher „Ja/Nein“.</string>
+    <string name="sh_t_klima_aus">Klima aus</string>
+    <string name="sh_e_klima_aus">Schaltet das Klima aus, nach Rückfrage.</string>
+    <string name="sh_t_waermer">Wärmer</string>
+    <string name="sh_e_waermer">Eine Klima-Stufe wärmer – nie eine erfundene Gradzahl. Mit Rückfrage.</string>
+    <string name="sh_t_kaelter">Kälter</string>
+    <string name="sh_e_kaelter">Eine Klima-Stufe kälter. Mit Rückfrage.</string>
+    <string name="sh_t_navi_heim">Nach Hause</string>
+    <string name="sh_e_navi_heim">Zeigt die Route zu deinem gespeicherten Zuhause. Geführt wird erst, wenn du auf Start tippst.</string>
+    <string name="sh_t_musik_weiter">Nächstes Lied</string>
+    <string name="sh_e_musik_weiter">Springt zum nächsten Lied der laufenden Musik.</string>
+    <string name="sh_t_musik_zurueck">Voriges Lied</string>
+    <string name="sh_e_musik_zurueck">Geht zum vorigen Lied zurück.</string>
+    <string name="sh_t_musik_pause">Musik Pause</string>
+    <string name="sh_e_musik_pause">Hält die laufende Musik an.</string>
+    <string name="sh_t_wo_bin_ich">Wo bin ich?</string>
+    <string name="sh_e_wo_bin_ich">Nennt den Ort, wenn er ohne Netz schon bekannt ist. Liest nur.</string>
+    <string name="sh_t_reichweite">Reichweite</string>
+    <string name="sh_e_reichweite">Sagt die elektrische Reichweite in km. Liest nur.</string>
+</resources>

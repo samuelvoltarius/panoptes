@@ -119,6 +119,12 @@ public final class LauncherApiHandler {
             }
             // 0.1.37 Stufe 4: einziger Fahrzeugweg, nur Klima (an/aus, Sollwert ±1 Stufe, Gebläse ±1), nur von der
             // Launcher-APK mit Panoptes-Signatur (LauncherAufrufer), über die Router-Klimabefehle mit allen Sperren.
+            // 0.1.43.3 (Rang 7): Katalog der Sprachbefehle für den Launcher. Nur lesen, kein Mikrofon, kein Netz.
+            if (cleanPath.equals(SPRACHE_PFAD) && "GET".equals(method)) {
+                if (!launcherDarf(out)) return true;
+                HttpResponse.sendJson(out, spracheKatalog().toString());
+                return true;
+            }
             if (cleanPath.equals(KLIMA_PFAD) && "POST".equals(method)) {
                 if (!launcherDarf(out)) return true;
                 Object[] r = LauncherKlimaBefehl.ausfuehren(body, System.currentTimeMillis());
@@ -364,7 +370,26 @@ public final class LauncherApiHandler {
     }
 
     static final String KLIMA_PFAD = "/api/launcher/v1/klima";
+    /** 0.1.43.3 (Rang 7): „Was kann ich sagen?“ – Befehle aus den Sprachbefehlen, Schalter, Modell. Nur lesen. */
+    static final String SPRACHE_PFAD = "/api/launcher/v1/sprache";
     static final String FENSTER_PFAD = "/api/launcher/v1/fenster";
+
+    /** Katalog + Zustand (Schalter Sprachbefehle/Weckwort, Modell da) in der Panoptes-Sprache. */
+    static JSONObject spracheKatalog() throws Exception {
+        String sp;
+        try { sp = LocaleManager.get(); } catch (Throwable t) { sp = "de"; }
+        JSONObject k = at.greenchili.surfmate.sprache.SprachBefehle.katalog(sp);
+        boolean an = false, weck = false;
+        try {
+            JSONObject s = at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig().optJSONObject("sprache");
+            an = s != null && s.optBoolean("befehle", false);
+            weck = s != null && s.optBoolean("weckwort", false);
+        } catch (Throwable ignored) { }
+        // 0.1.43.2 (Fix 9f5eacf0): das Modell laedt die App; der Kern kennt nur ihre letzte Meldung
+        boolean modell = SprachModellKern.modellDa(k.optString("sprache"));
+        String w = at.greenchili.surfmate.sprache.SprachBefehle.WECKWORT.get(k.optString("sprache"));
+        return k.put("an", an).put("weckwort", weck && an).put("weckwortSatz", w == null ? "" : w).put("modellDa", modell);
+    }
     /** 0.1.44 (L1): Live-Umgebung im Launcher. */
     static final String UMGEBUNG_PFAD = "/api/launcher/v1/umgebung";
     static final String UPDATE_PFAD = "/api/launcher/v1/update";

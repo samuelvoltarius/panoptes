@@ -89,6 +89,12 @@
             android:exported="false"
             android:launchMode="singleTop"
             android:screenOrientation="landscape" />
+        <!-- 0.1.43.3 (Rang 7): „Was kann ich sagen?“ (nur lesen; Ausführen läuft über Panoptes mit Rückfrage). -->
+        <activity
+            android:name=".SprachHilfeActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="landscape" />
         <activity
             android:name=".ZurueckTestActivity"
             android:exported="false"

@@ -25,22 +25,46 @@ public final class LauncherPaket {
     private static final Pattern VC = Pattern.compile("versionCode:(\\d{1,9})");
     private static final Pattern UID = Pattern.compile("uid:(\\d{1,9})");
 
-    /** Stand am Gerät. {@code versionCode} −1 = nicht installiert. */
+    /**
+     * Stand am Gerät. {@code versionCode} −1 = nicht installiert (oder unbekannt, siehe {@link #bekannt}).
+     * 0.1.43.3 (U1): {@code bekannt} = false, wenn das Lesen leer blieb, abbrach oder in die Zeit lief. Ein unbekannter
+     * Stand ist NIE „nicht installiert“ – wer entscheidet, muss {@link #bekannt} prüfen.
+     */
     public static final class Stand {
         public final int versionCode;
         public final int uid;
         public final String apkPfad;
+        public final boolean bekannt;
 
         Stand(int versionCode, int uid, String apkPfad) {
+            this(versionCode, uid, apkPfad, true);
+        }
+
+        Stand(int versionCode, int uid, String apkPfad, boolean bekannt) {
             this.versionCode = versionCode;
             this.uid = uid;
             this.apkPfad = apkPfad;
+            this.bekannt = bekannt;
         }
 
         public boolean installiert() {
             return versionCode > 0;
         }
+
+        /** Sicher gelesen und nicht installiert. */
+        public boolean sicherNichtInstalliert() {
+            return bekannt && !installiert();
+        }
     }
+
+    /** Stand, der sich nicht lesen ließ (leer, Zeit abgelaufen, Fehler). */
+    public static Stand unbekannt() {
+        return new Stand(-1, -1, null, false);
+    }
+
+    /** 0.1.43.3 (U1): Ende-Zeichen hinter dem Lesebefehl; fehlt es, ist die Ausgabe abgebrochen oder leer. */
+    static final String ENDE = "__PANOPTES_ENDE__";
+    static final String LISTE_BEFEHL = "cmd package list packages -U --show-versioncode " + PAKET + "; echo " + ENDE;
 
     /** Gerät (im Test nachgebaut). */
     public interface Geraet {
@@ -51,11 +75,45 @@ public final class LauncherPaket {
 
     private LauncherPaket() {}
 
-    /** Aus {@code cmd package list packages -U --show-versioncode} und {@code pm path}; nie null. */
+    /**
+     * Aus {@code cmd package list packages -U --show-versioncode} und {@code pm path}; nie null. Ohne Ende-Zeichen
+     * (leer, Zeit abgelaufen, Fehler) {@link #unbekannt()} – nie „nicht installiert“.
+     */
     public static Stand stand(Geraet g) {
-        Stand s = ausListe(g.shell("cmd package list packages -U --show-versioncode " + PAKET, 10));
+        String aus;
+        try {
+            aus = g.shell(LISTE_BEFEHL, 10);
+        } catch (Throwable t) {
+            aus = null;
+        }
+        Stand s = ausAusgabe(aus);
         if (!s.installiert()) return s;
-        return new Stand(s.versionCode, s.uid, ausPfad(g.shell("pm path " + PAKET, 10)));
+        String pfad;
+        try {
+            pfad = ausPfad(g.shell("pm path " + PAKET, 10));
+        } catch (Throwable t) {
+            pfad = null;
+        }
+        return new Stand(s.versionCode, s.uid, pfad);
+    }
+
+    /**
+     * 0.1.43.3 (U1): Stand frisch, ohne Zwischenspeicher, für Entscheidungen direkt vor einer Installation. Ist das
+     * erste Lesen unbekannt oder ohne Paketzeile (leer), wird genau einmal nachgelesen; bleibt es unbekannt, ist der
+     * Stand unbekannt.
+     */
+    public static Stand standFrisch(Geraet g) {
+        Stand s = stand(g);
+        if (s.installiert()) return s;
+        Stand zwei = stand(g);
+        if (zwei.installiert() || zwei.bekannt) return zwei;
+        return s.bekannt ? s : zwei;
+    }
+
+    /** Ausgabe von {@link #LISTE_BEFEHL}: ohne Ende-Zeichen unbekannt, sonst wie {@link #ausListe}. */
+    static Stand ausAusgabe(String ausgabe) {
+        if (ausgabe == null || !ausgabe.contains(ENDE)) return unbekannt();
+        return ausListe(ausgabe);
     }
 
     /** Zeile genau dieses Pakets (der Filter von {@code list packages} trifft auch Teilnamen). */
@@ -126,8 +184,18 @@ public final class LauncherPaket {
         try {
             ProcessBuilder pb = new ProcessBuilder("sh", "-c", befehl).redirectErrorStream(true);
             pb.environment().remove("CLASSPATH");
-            Process p = pb.start();
+            final Process p = pb.start();
             p.getOutputStream().close();
+            // 0.1.43.3 (U1): die Frist gilt auch beim Lesen – hängt der Befehl, beendet der Wächter ihn; die Ausgabe
+            // endet dann ohne Ende-Zeichen und der Stand gilt als unbekannt (nie „nicht installiert“)
+            Thread waechter = new Thread(() -> {
+                try {
+                    if (!p.waitFor(sekunden, TimeUnit.SECONDS)) p.destroyForcibly();
+                } catch (InterruptedException ignored) {
+                }
+            }, "LauncherPaket-Frist");
+            waechter.setDaemon(true);
+            waechter.start();
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             try (InputStream in = p.getInputStream()) {
                 byte[] buf = new byte[4096];

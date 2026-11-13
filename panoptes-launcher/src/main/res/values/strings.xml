@@ -474,6 +474,11 @@
     <!-- 0.1.44 (P1 „Bedienung 50+“): Zurück/Letzte App, Große Bedienung, geführte Einrichtung -->
     <string name="taste_zurueck">Back</string>
     <string name="taste_letzte">Last app</string>
+    <!-- 0.1.43.3 (Rang 3): kurze Beschriftungen unter den Dock-Symbolen und in der festen Leiste -->
+    <string name="dock_byd">BYD home</string>
+    <string name="dock_sitz">Seat</string>
+    <string name="dock_sitz_stufe">Seat %1$d</string>
+    <string name="dock_luft">Air</string>
     <string name="taste_fehlt">“Back” and “Last app” need Panoptes or the accessibility service “Panoptes Launcher”.</string>
     <string name="taste_fehler">That did not work.</string>
     <string name="hilfe_name">Panoptes Launcher: Back and Last app</string>

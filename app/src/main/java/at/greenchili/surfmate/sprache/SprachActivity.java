@@ -45,6 +45,8 @@ public final class SprachActivity extends Activity {
     private final AtomicBoolean abbruch = new AtomicBoolean(false);
     private String sprache;
     private boolean weck;
+    /** 0.1.43.3: angetippter Befehl aus dem Launcher (geprüft) oder null = zuhören. */
+    private String vorgabe;
     private TextView titel, text;
     private LinearLayout knoepfe;
     private volatile String rueckfrageAntwort;   // "ja"/"nein" per Knopf
@@ -58,10 +60,16 @@ public final class SprachActivity extends Activity {
         super.onCreate(b);
         sprache = SprachBefehle.sprache(getIntent().getStringExtra(SprachStart.EXTRA_SPRACHE));
         weck = getIntent().getBooleanExtra(SprachStart.EXTRA_WECK, false);
+        vorgabe = SprachStart.vorgabe(getIntent().getStringExtra(SprachStart.EXTRA_BEFEHL));
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setFinishOnTouchOutside(false);
         bauen();
         registerReceiver(ende, new IntentFilter(AKTION_ENDE));
+        if (vorgabe != null) {
+            // 0.1.43.3: angetippter Satz – kein Zuhören nötig; Rückfrage per Knopf (per Stimme nur mit Recht und Modell).
+            new Thread(() -> ablauf(), "Sprachbefehl").start();
+            return;
+        }
         if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             // Nur der Nutzer erteilt das Recht (Android-Abfrage), nie still.
             requestPermissions(new String[] {android.Manifest.permission.RECORD_AUDIO}, RECHT_ANFRAGE);
@@ -86,11 +94,12 @@ public final class SprachActivity extends Activity {
         new Thread(() -> { schlafenKurz(); ablauf(); }, "Sprachbefehl").start();
     }
 
-    /** Ein Durchgang: zuhören, verstehen, ggf. nachfragen, ausführen. */
+    /** Ein Durchgang: zuhören (oder angetippter Satz), verstehen, ggf. nachfragen, ausführen. */
     private void ablauf() {
-        String gehoert = SprachErkenner.hoeren(this, sprache, SprachBefehle.grammatik(sprache, false), SprachRegeln.HOEREN_MS, abbruch);
+        String gehoert = vorgabe != null ? ersterSatz(vorgabe)
+                : SprachErkenner.hoeren(this, sprache, SprachBefehle.grammatik(sprache, false), SprachRegeln.HOEREN_MS, abbruch);
         if (abbruch.get()) return;
-        String befehl = SprachBefehle.befehl(sprache, gehoert);
+        String befehl = vorgabe != null ? vorgabe : SprachBefehle.befehl(sprache, gehoert);
         if (befehl == null || SprachBefehle.JA.equals(befehl) || SprachBefehle.NEIN.equals(befehl)) {
             post(getString(R.string.sprache_nicht_verstanden), getString(R.string.sprache_beispiel), 6000);
             return;
@@ -110,14 +119,31 @@ public final class SprachActivity extends Activity {
             String marke = a == null ? "" : a.optString("marke", "");
             if (a == null || !a.optBoolean("rueckfrage", false) || marke.isEmpty()) { post(gehoert, fehlerText(a), 6000); return; }
             haupt.post(() -> rueckfrageZeigen(befehl));
-            String antwort = SprachBefehle.befehl(sprache,
-                    SprachErkenner.hoeren(this, sprache, SprachBefehle.grammatik(sprache, true), SprachRegeln.RUECKFRAGE_MS, abbruch));
+            String antwort = antwortHolen();
             if (rueckfrageAntwort != null) antwort = rueckfrageAntwort;
             if (abbruch.get() && rueckfrageAntwort == null) return;
             if (!SprachBefehle.JA.equals(antwort)) { post(frage(befehl), getString(R.string.sprache_abgebrochen), 3000); return; }
             a = kern(befehl, marke);
         }
         post(gehoert, ergebnisText(befehl, a), 5000);
+    }
+
+    /** Ja/Nein: per Stimme nur mit Mikrofon-Recht und Modell, sonst nur per Knopf. Keine Antwort = Nein. */
+    private String antwortHolen() {
+        boolean stimme = checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+                && SprachBefehle.erkennbar(sprache) && SprachErkenner.modellDa(this, sprache);
+        if (stimme) {
+            return SprachBefehle.befehl(sprache,
+                    SprachErkenner.hoeren(this, sprache, SprachBefehle.grammatik(sprache, true), SprachRegeln.RUECKFRAGE_MS, abbruch));
+        }
+        long ende = System.currentTimeMillis() + SprachRegeln.RUECKFRAGE_MS;
+        while (rueckfrageAntwort == null && System.currentTimeMillis() < ende) schlafenKurz();
+        return rueckfrageAntwort;
+    }
+
+    private String ersterSatz(String befehl) {
+        java.util.List<String> s = SprachBefehle.saetze(sprache, befehl);
+        return s.isEmpty() ? befehl : s.get(0);
     }
 
     // ---- Kern

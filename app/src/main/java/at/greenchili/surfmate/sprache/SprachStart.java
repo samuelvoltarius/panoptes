@@ -24,6 +24,14 @@ public final class SprachStart extends Activity {
     public static final String AKTION_WECK_AUS = "at.greenchili.surfmate.sprache.WECK_AUS";
     static final String EXTRA_SPRACHE = "sprache";
     static final String EXTRA_WECK = "weck";
+    /**
+     * 0.1.43.3 (Rang 7): angetippter Beispielsatz aus „Was kann ich sagen?“ im Launcher. Nur ein Befehl aus
+     * {@link SprachBefehle#BEFEHLE}; dann wird nicht zugehört, der Ablauf ist sonst gleich (Klima mit Rückfrage, Kern mit Marke).
+     */
+    public static final String EXTRA_BEFEHL = "befehl";
+
+    /** Erlaubter angetippter Befehl oder null. */
+    static String vorgabe(String b) { return b != null && SprachBefehle.BEFEHLE.contains(b) ? b : null; }
 
     @Override
     protected void onCreate(Bundle b) {
@@ -51,7 +59,8 @@ public final class SprachStart extends Activity {
         });
         boolean weck = getIntent() != null && getIntent().getBooleanExtra(EXTRA_WECK, false);
         startActivity(new Intent(this, SprachActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                .putExtra(EXTRA_SPRACHE, sprache()).putExtra(EXTRA_WECK, weck));
+                .putExtra(EXTRA_SPRACHE, sprache()).putExtra(EXTRA_WECK, weck)
+                .putExtra(EXTRA_BEFEHL, vorgabe(getIntent() == null ? null : getIntent().getStringExtra(EXTRA_BEFEHL))));
     }
 
     private void weckAn() {

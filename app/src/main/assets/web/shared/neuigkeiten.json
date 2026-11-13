@@ -1027,6 +1027,40 @@
         "Spraakopdrachten: het spraakmodel laad je nu met een tik (Duits ca. 46 MB, Engels ca. 41 MB) onder Instellingen → Alle instellingen → Gegevens delen. Vaste bron, controlesom gecontroleerd, altijd af te breken.",
         "Kleine correcties: de launcher herkent de BYD-muziekapps betrouwbaarder, knoppen naar ontbrekende Android-pagina’s melden dat."
       ]
+    },
+    {
+      "version": "0.1.43.3",
+      "versionCode": 87,
+      "de": [
+        "Launcher: Unter jedem Dock-Symbol steht jetzt sein Name. Die Symbole haben einen einheitlichen Stil.",
+        "Launcher: In der festen Leiste neben dem Klima gibt es Sitzheizung (Fahrer) und Umluft, wenn das Auto die Werte liefert und Platz ist.",
+        "Launcher: Sind die Sprachbefehle in Panoptes eingeschaltet, gibt es einen Assistent-Knopf und die Seite „Was kann ich sagen?“. Dort kannst du einen Satz auch antippen.",
+        "Update: Der Launcher kommt beim Panoptes-Update zuverlässig mit. Wird er übersprungen, steht der Grund dabei."
+      ],
+      "en": [
+        "Launcher: every dock icon now has its name underneath. The icons share one style.",
+        "Launcher: the fixed bar next to the climate control has seat heating (driver) and recirculation, if the car provides the values and there is room.",
+        "Launcher: if voice commands are switched on in Panoptes, there is an assistant button and the page “What can I say?”. You can also tap a sentence there.",
+        "Update: the launcher reliably comes along with the Panoptes update. If it is skipped, the reason is shown."
+      ],
+      "fr": [
+        "Launcher : chaque icône du dock affiche maintenant son nom en dessous. Les icônes ont un style commun.",
+        "Launcher : la barre fixe à côté de la climatisation propose le chauffage du siège (conducteur) et le recyclage de l’air, si la voiture fournit les valeurs et qu’il y a de la place.",
+        "Launcher : si les commandes vocales sont activées dans Panoptes, un bouton assistant et la page « Que puis-je dire ? » apparaissent. Vous pouvez aussi y toucher une phrase.",
+        "Mise à jour : le launcher suit de façon fiable la mise à jour de Panoptes. S’il est ignoré, la raison est indiquée."
+      ],
+      "it": [
+        "Launcher: sotto ogni icona del dock ora c’è il suo nome. Le icone hanno uno stile unico.",
+        "Launcher: nella barra fissa accanto al clima ci sono il riscaldamento del sedile (conducente) e il ricircolo, se l’auto fornisce i valori e c’è spazio.",
+        "Launcher: se i comandi vocali sono attivi in Panoptes, c’è un pulsante assistente e la pagina “Cosa posso dire?”. Lì puoi anche toccare una frase.",
+        "Aggiornamento: il launcher segue in modo affidabile l’aggiornamento di Panoptes. Se viene saltato, viene indicato il motivo."
+      ],
+      "nl": [
+        "Launcher: onder elk dock-pictogram staat nu de naam. De pictogrammen hebben één stijl.",
+        "Launcher: in de vaste balk naast de klimaatregeling staan stoelverwarming (bestuurder) en recirculatie, als de auto de waarden levert en er plaats is.",
+        "Launcher: als spraakopdrachten in Panoptes aan staan, is er een assistentknop en de pagina ‘Wat kan ik zeggen?’. Daar kun je ook een zin aantikken.",
+        "Update: de launcher gaat betrouwbaar mee met de Panoptes-update. Wordt hij overgeslagen, dan staat de reden erbij."
+      ]
     }
   ]
 }
