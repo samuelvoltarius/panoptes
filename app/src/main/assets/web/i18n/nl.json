@@ -494,6 +494,10 @@
     "external_nav_guidance": "Google Maps/Waze-pijlen gebruiken",
     "external_nav_guidance_desc": "Android geeft technisch toegang tot alle meldingen; Panoptes verwerkt alleen afslag en afstand van Google Maps/Waze. Straatnaam, bestemming en positie worden niet overgenomen. De functie blijft geblokkeerd op niet-ondersteunde bestuurdersdisplays.",
     "external_nav_guidance_permission": "Meldingstoegang openen",
+    "notif_access_granted": "Meldingstoegang is verleend.",
+    "notif_access_missing": "Meldingstoegang is nog niet verleend. Zonder toegang blijven de pijlen uit.",
+    "notif_access_unavailable": "Deze Android-instellingenpagina bestaat niet op dit apparaat. Zonder toegang blijven de pijlen uit.",
+    "notif_access_nobridge": "De toegang stel je in op het scherm in de auto.",
     "map_cluster_auto_conflict_title": "Een andere app gebruikt het rijdersdisplay",
     "map_cluster_auto_conflict_body": "De pagina voor schermweergave is ingesteld om bij het starten een app naar het rijdersdisplay te sturen. Het display kan maar één ding tegelijk tonen. Dat uitzetten en in plaats daarvan de kaart tonen?",
     "map_cluster_auto_conflict_confirm": "Kaart tonen",
@@ -5086,6 +5090,12 @@
     "suche_treffer": "{n} resultaten",
     "suche_hier": "Op deze pagina",
     "suche_seite": "Eigen pagina",
+    "alle_funktionen": "Alle functies",
+    "kurz_alle": "Alles",
+    "umfang_einfach": "Eenvoudig",
+    "umfang_titel": "Hoeveel moet Panoptes tonen?",
+    "umfang_hilfe": "„Eenvoudig” toont alleen wat je dagelijks nodig hebt. „Alle functies” toont alles. Zoeken vindt altijd alles.",
+    "umfang_fehler": "Lukte niet – probeer opnieuw",
     "page_display": "Scherm"
   },
   "navi": {
@@ -5610,8 +5620,8 @@
     "upd_net_wlan": "Wifi",
     "upd_net_mobile": "Mobiele data",
     "lnc_title": "Panoptes Launcher",
-    "lnc_lead": "Eigen startscherm in Panoptes-stijl met klimaat, apps en updates. Het draait als app naast het BYD-startscherm.",
-    "lnc_home_hint": "Panoptes maakt de launcher nooit zelf het standaard-startscherm. Terug kan altijd: huisknop helemaal links in het dock, of verwijder de launcher hier.",
+    "lnc_lead": "Eigen startscherm in Panoptes-stijl met klimaat, apps en updates. Het draait als app naast het BYD-startscherm of, als je het inschakelt, als startscherm van de Home-toets.",
+    "lnc_home_hint": "De launcher wordt alleen startscherm als je het zelf inschakelt: met de schakelaar hieronder of in de launcher onder “Instellen als startscherm”. Terug kan altijd: schakelaar uit, “Alles terug naar BYD” in de launcher, huisknop helemaal links in het dock, of verwijder de launcher hier.",
     "lnc_install": "Installeren en activeren",
     "lnc_update": "Bijwerken",
     "lnc_open": "Openen",
@@ -5998,7 +6008,9 @@
         "radius": "Straal tussen {a} en {b} m"
       },
       "auswahl_auto": "Automatisch (standaard)",
-      "auswahl_auto_jetzt": "Automatisch (standaard) – nu {v}"
+      "auswahl_auto_jetzt": "Automatisch (standaard) – nu {v}",
+      "alle_hinweis": "Meer instellingen staan onder „Alle functies”.",
+      "alle_zeigen": "Alle functies tonen"
     },
     "anzeige": {
       "darstellung": {
@@ -6236,6 +6248,15 @@
     "offen_titel": "Nog instellen",
     "offen_keins": "Niets open – de installatie is compleet.",
     "offen_hinweis": "Alles is vrijwillig. Tik op een punt.",
+    "empf": {
+      "waechter": "Neemt op als iemand je geparkeerde auto aanstoot of openbreekt. Uit tot je hem aanzet.",
+      "extra_handy": "Bekijk je auto op je telefoon en krijg daar meldingen.",
+      "extra_launcher": "Panoptes als startscherm in de auto. Met één tik altijd terug naar BYD."
+    },
+    "einrichten_knopf": "Instellen",
+    "nur_display": "Gaat op het scherm in de auto.",
+    "weitere_zeigen": "Meer stappen ({anzahl})",
+    "weitere_verbergen": "Meer stappen verbergen",
     "erledigt_knopf": "Klaar / niet nodig",
     "neu_knopf": "Installatie opnieuw starten",
     "neu_frage": "Installatie echt opnieuw starten? De assistent vraagt dan alles nog een keer op het scherm in de auto. Je instellingen blijven tot je ze daar wijzigt; gegevens delen moet je opnieuw bevestigen.",
@@ -6345,7 +6366,7 @@
       "ja": "Ja",
       "nein": "Nee",
       "extra_display_text": "Je kunt een eigen afbeelding als achtergrond van het scherm in de auto zetten. Je kunt het scherm ook met een pincode vergrendelen, bijvoorbeeld voor de garage.",
-      "extra_launcher_text": "De Panoptes-launcher is een eigen startscherm met klimaat, apps en updates. Hij draait naast het BYD-startscherm. Je kunt hem altijd weer verwijderen.",
+      "extra_launcher_text": "De Panoptes-launcher is een eigen startscherm met klimaat, apps en updates. Hij draait naast het BYD-startscherm en wordt alleen startscherm van de Home-toets als je het inschakelt. Je kunt hem altijd weer verwijderen.",
       "extra_tacho_text": "Je auto kan meer tonen in het dashboard: een Panoptes-ontwerp, de navigatie of een app die je toestaat. Snelheid en waarschuwingslampjes blijven altijd zichtbaar. „Dashboard weer normaal” kan altijd.",
       "extra_abschaltbericht_text": "Als je de auto parkeert, stuurt Panoptes je een kort Telegram-bericht: rit, accu, actieradius, bewaking en of de auto op slot is. Zonder locatie. Werkt alleen als Telegram is ingesteld.",
       "extra_ladesaeule_text": "Na het laden vraagt Panoptes één keer aan de Panoptes-server bij welke laadpaal je was. Daarvoor gaat je ruwe positie naar de server, nooit op privéplekken. Zo kloppen prijs en naam van de paal.",
@@ -7596,5 +7617,29 @@
     "video": "Video in het paneel (alleen in P bij 0 km/u)",
     "video_hilfe": "Zonder geluid. Zodra je uit P schakelt of wegrijdt, is de video weg.",
     "video_waehlen": "Opname kiezen …"
+  },
+  "sprachmodell": {
+    "titel": "Spraakmodel voor spraakopdrachten",
+    "lead": "Wordt alleen geladen als je tikt – van de officiële Vosk-bron, met een vaste controlesom. Daarna herkent Panoptes de opdrachten zonder internet.",
+    "laden": "Spraakmodel laden ({sprache}, ca. {mb} MB)",
+    "da": "aanwezig",
+    "abbrechen": "Annuleren",
+    "fehler_datei": "Het bestand staat niet in de map Download.",
+    "fehler_dienst": "Panoptes kon het laden niet starten. Open Panoptes één keer en tik opnieuw.",
+    "fehler_sprache": "Voor deze taal is er geen spraakmodel om te laden.",
+    "fehler_ordner": "Panoptes kan de map voor het spraakmodel niet aanmaken. Er is niets geladen.",
+    "aus_download": "Uit Download overnemen ({sprache})",
+    "laedt": "Laden … {p} %",
+    "prueft": "Controlesom wordt gecontroleerd …",
+    "entpackt": "Uitpakken …",
+    "fertig": "Klaar. Spraakopdrachten werken nu zonder internet.",
+    "abgebrochen": "Geannuleerd. Er is niets geïnstalleerd.",
+    "fehler_pruefsumme": "De controlesom klopt niet. Het bestand is verwijderd, er is niets geïnstalleerd.",
+    "fehler_platz": "Te weinig opslag. Er moet ongeveer {mb} MB vrij zijn.",
+    "fehler_netz": "Laden is mislukt (internet?). Er is niets geïnstalleerd.",
+    "fehler_entpacken": "Uitpakken is mislukt. Er is niets geïnstalleerd.",
+    "laeuft_schon": "Er wordt al een model geladen.",
+    "nur_am_auto": "Laden werkt alleen hier op het autoscherm.",
+    "hand": "Of handmatig: zet het bestand {datei} in de map Download (bijv. adb push naar /sdcard/Download) en tik dan op „Uit Download overnemen”."
   }
 }

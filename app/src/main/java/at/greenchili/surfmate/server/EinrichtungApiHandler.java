@@ -13,6 +13,7 @@ import org.json.JSONObject;
 
 import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -60,6 +61,14 @@ public final class EinrichtungApiHandler {
 
     /** 0.1.24: Schritte unter „Für Fortgeschrittene“ (brauchen Tailscale; Laien kommen ohne aus). */
     public static final Set<String> FORTGESCHRITTEN = new HashSet<>(Arrays.asList("extra_fernzugang", "extra_notzugang"));
+
+    /**
+     * 0.1.44 (V1 E3 „Einfach ab Werk“, Projektinhaber 13.11.): Statt einer langen Liste „Noch einrichten“ zeigen Display und
+     * Web höchstens diese drei Empfehlungen als große Karten, in dieser Reihenfolge, solange sie offen sind. Alles
+     * Weitere bleibt unter „Weitere Schritte“ bzw. „Alle Schritte“ erreichbar, nichts entfällt.
+     */
+    public static final List<String> EMPFOHLEN = Collections.unmodifiableList(
+            Arrays.asList("waechter", "extra_handy", "extra_launcher"));
 
     /**
      * Overdrive-Übernahme (Kern 5): liefert true, wenn Overdrive-Daten gefunden wurden. Kern 5 setzt den Haken
@@ -480,6 +489,16 @@ public final class EinrichtungApiHandler {
                 .put("ziel", "system.html#kopplung");
     }
 
+    /** 0.1.44 (E3): die noch offenen Empfehlungen in fester Reihenfolge (offen oder später, nie erledigt/entfällt). */
+    static JSONArray empfohlen(JSONObject schritte) {
+        JSONArray r = new JSONArray();
+        for (String id : EMPFOHLEN) {
+            String st = schritte.optString(id, OFFEN);
+            if (OFFEN.equals(st) || SPAETER.equals(st)) r.put(id);
+        }
+        return r;
+    }
+
     public static JSONObject sicht(JSONObject root, JSONObject z, JSONObject faehigkeiten, JSONObject selbsttest)
             throws Exception {
         JSONObject s = z.getJSONObject("schritte");
@@ -535,6 +554,7 @@ public final class EinrichtungApiHandler {
             JSONObject e = new JSONObject().put("id", id).put("pflicht", PFLICHT.contains(id) && !frei).put("status", st);
             if (FORTGESCHRITTEN.contains(id)) e.put("gruppe", "fortgeschritten");
             e.put("schnellstart", SCHNELLSTART.contains(id) || wdh && OFFEN.equals(st));
+            if (EMPFOHLEN.contains(id)) e.put("empfohlen", true);
             if (g.has(id)) e.put("grund", g.getString(id));
             liste.put(e);
             if (aktuell == null && OFFEN.equals(st)) aktuell = id;
@@ -547,6 +567,7 @@ public final class EinrichtungApiHandler {
         r.put("aktuell", aktuell == null ? "fertig" : aktuell);
         r.put("schritte", liste);
         r.put("offen_spaeter", spaeter);
+        r.put("empfohlen", empfohlen(s));
         r.put("faehigkeiten", faehigkeiten == null ? JSONObject.NULL : faehigkeiten);
         r.put("selbsttest", selbsttest == null ? JSONObject.NULL : selbsttest);
         r.put("werte", z.optJSONObject("werte") == null ? new JSONObject() : z.getJSONObject("werte"));

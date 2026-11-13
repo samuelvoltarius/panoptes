@@ -5,7 +5,8 @@
  *   POST /api/appupdate/launcher   {aktion: installieren|oeffnen|aktivieren|entfernen, mobil}
  *
  * Die Launcher-APK kommt aus dem Panoptes-Release (sha256 + gleiche Signatur prüft der Kern). „Öffnen“ startet sie
- * nur als App. Panoptes setzt sie nie als Standard-Startbildschirm; das macht nur der Nutzer selbst in Android.
+ * nur als App. Standard-Startbildschirm wird sie nur, wenn der Nutzer es selbst einschaltet (Schalter
+ * launcher.startbildschirm darunter oder „Als Startbildschirm einrichten“ im Launcher, E5 13.11.).
  * Ohne WLAN fragt die Karte vorher mit Größe, die Einwilligung gilt nur für diesen einen Download. Fehlt die API
  * (älteres Panoptes) oder gibt es 403, bleibt die Karte unsichtbar. ES5, deutscher Rückfall eingebaut.
  */

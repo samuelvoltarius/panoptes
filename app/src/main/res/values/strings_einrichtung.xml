@@ -166,6 +166,13 @@
     <string name="einr_noch_text">All optional. You can do this any time.</string>
     <string name="einr_noch_knopf">Set up</string>
     <string name="einr_noch_erledigt">Done / not needed</string>
+    <string name="einr_st_freiwillig">not set up yet – optional</string>
+    <string name="einr_empf_titel">You can set this up now</string>
+    <string name="einr_empf_waechter">Records when someone bumps or breaks into your parked car. Off until you switch it on.</string>
+    <string name="einr_empf_handy">See your car on your phone and get alerts there.</string>
+    <string name="einr_empf_launcher">Make Panoptes your home screen in the car. Back to BYD with one tap at any time.</string>
+    <string name="einr_weitere_zeigen">More steps (%1$d)</string>
+    <string name="einr_weitere_verbergen">Hide more steps</string>
     <string name="einr_updates_ja_knopf">Yes, look for updates</string>
     <string name="einr_updates_github">Panoptes regularly asks GitHub if there is a new version. GitHub only sees the car\'s internet address, no car data.</string>
     <!-- 0.1.38.3: Handy-App unterwegs nutzen? (Standard aus, ausdrücklich gefragt) -->

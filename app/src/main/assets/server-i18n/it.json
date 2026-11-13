@@ -2422,6 +2422,12 @@
       }
     },
     "anzeige": {
+      "umfang": {
+          "title": "Quanto deve mostrare Panoptes?",
+          "help": "«Semplice» mostra solo le pagine e le impostazioni di tutti i giorni, «Tutte le funzioni» mostra tutto. La ricerca trova sempre tutto. Le nuove installazioni partono con «Semplice».",
+          "einfach": "Semplice",
+          "alle": "Tutte le funzioni"
+      },
       "darstellung": {
         "title": "Visualizzazione in auto",
         "help": "Leggera alleggerisce lo schermo dell’auto: mappe in 2D, senza effetti di sfocatura né animazioni continue. Completa mostra tutto, ma sullo schermo dell’auto costa prestazioni in modo evidente.",

@@ -988,6 +988,45 @@
         "Launcher: de muziektitel werkt nu ook zonder meldingstoegang, Panoptes leest hem zelf. Bij de BYD opent de knop geen vergrendelde Android-pagina meer.",
         "‘Scherm in de auto’ heeft een eigen tabblad en verschijnt alleen op afstand, niet op het scherm in de auto."
       ]
+    },
+    {
+      "version": "0.1.43.2",
+      "versionCode": 86,
+      "de": [
+        "Neu: „Einfach“ oder „Alle Funktionen“. Neue Installationen starten in „Einfach“ und zeigen nur, was man im Alltag braucht. Bestehende Installationen behalten alle Funktionen. Umschalten unter Einstellungen → Alle Einstellungen; die Suche findet immer alles.",
+        "Einrichtung: höchstens drei Empfehlungen (Wächter, Handy, Launcher), alles Weitere eingeklappt unter „Weitere Schritte“. Der Selbsttest zählt Freiwilliges nicht mehr als Fehler.",
+        "Launcher: keine Layout-Frage mehr beim ersten Start. Einmal kommt das Angebot „Als Startbildschirm einrichten?“, nur im Stand, mit „Später“. Oben in den Einstellungen stehen fünf Zeilen, der Rest unter „Mehr“; neue Kacheln zuerst aus einer Grundauswahl, der Rest unter „Weitere Kacheln …“.",
+        "Sprachbefehle: Das Sprachmodell lädst du jetzt per Tipp (Deutsch ca. 46 MB, Englisch ca. 41 MB) unter Einstellungen → Alle Einstellungen → Datenfreigaben. Feste Quelle, Prüfsumme wird geprüft, Abbrechen jederzeit.",
+        "Kleinere Korrekturen: Der Launcher erkennt die BYD-Musik-Apps zuverlässiger, Knöpfe zu fehlenden Android-Seiten melden das, Launcher-Texte durchgehend in der Du-Form."
+      ],
+      "en": [
+        "New: “Simple” or “All features”. New installations start in “Simple” and only show what you need every day. Existing installations keep all features. Switch under Settings → All settings; search always finds everything.",
+        "Setup: at most three recommendations (guard, phone, launcher), everything else collapsed under “More steps”. The self-test no longer counts optional items as errors.",
+        "Launcher: no layout question on first start any more. You are offered “Set up as home screen?” once, only when parked, with “Later”. Settings show five rows at the top, the rest under “More”; new tiles come from a basic selection first, the rest under “More tiles …”.",
+        "Voice commands: you now download the voice model with a tap (German about 46 MB, English about 41 MB) under Settings → All settings → Data sharing. Fixed source, checksum verified, cancel at any time.",
+        "Smaller fixes: the launcher detects the BYD music apps more reliably, buttons for missing Android pages say so, launcher texts use the informal form throughout."
+      ],
+      "fr": [
+        "Nouveau : « Simple » ou « Toutes les fonctions ». Les nouvelles installations démarrent en « Simple » et n’affichent que l’essentiel. Les installations existantes gardent toutes les fonctions. Changement sous Réglages → Tous les réglages ; la recherche trouve toujours tout.",
+        "Configuration : au plus trois recommandations (gardien, téléphone, launcher), le reste replié sous « Autres étapes ». L’autotest ne compte plus les éléments facultatifs comme des erreurs.",
+        "Launcher : plus de question de mise en page au premier démarrage. « Configurer comme écran d’accueil ? » est proposé une fois, seulement à l’arrêt, avec « Plus tard ». Les réglages affichent cinq lignes en haut, le reste sous « Plus » ; les nouvelles tuiles viennent d’abord d’une sélection de base, le reste sous « Autres tuiles … ».",
+        "Commandes vocales : le modèle vocal se télécharge d’un appui (allemand env. 46 Mo, anglais env. 41 Mo) sous Réglages → Tous les réglages → Partage des données. Source fixe, somme de contrôle vérifiée, annulation possible à tout moment.",
+        "Petites corrections : le launcher reconnaît mieux les applis musique BYD, les boutons vers des pages Android absentes le signalent."
+      ],
+      "it": [
+        "Novità: “Semplice” o “Tutte le funzioni”. Le nuove installazioni partono in “Semplice” e mostrano solo l’essenziale. Le installazioni esistenti mantengono tutte le funzioni. Si cambia in Impostazioni → Tutte le impostazioni; la ricerca trova sempre tutto.",
+        "Configurazione: al massimo tre consigli (guardiano, telefono, launcher), il resto chiuso sotto “Altri passaggi”. L’autotest non conta più le voci facoltative come errori.",
+        "Launcher: nessuna domanda sul layout al primo avvio. Una sola volta viene proposto “Configurare come schermata iniziale?”, solo da fermi, con “Più tardi”. Le impostazioni mostrano cinque righe in alto, il resto sotto “Altro”; i nuovi riquadri vengono prima da una selezione di base, il resto sotto “Altri riquadri …”.",
+        "Comandi vocali: il modello vocale si scarica con un tocco (tedesco circa 46 MB, inglese circa 41 MB) in Impostazioni → Tutte le impostazioni → Condivisione dati. Fonte fissa, checksum verificato, annullabile in ogni momento.",
+        "Piccole correzioni: il launcher riconosce meglio le app musicali BYD, i pulsanti verso pagine Android mancanti lo segnalano, testi del launcher con il “tu”."
+      ],
+      "nl": [
+        "Nieuw: ‘Eenvoudig’ of ‘Alle functies’. Nieuwe installaties starten in ‘Eenvoudig’ en tonen alleen wat je dagelijks nodig hebt. Bestaande installaties houden alle functies. Omschakelen onder Instellingen → Alle instellingen; zoeken vindt altijd alles.",
+        "Inrichting: hoogstens drie aanbevelingen (bewaker, telefoon, launcher), de rest ingeklapt onder ‘Meer stappen’. De zelftest telt vrijwillige onderdelen niet meer als fout.",
+        "Launcher: geen lay-outvraag meer bij de eerste start. Eén keer komt het aanbod ‘Instellen als startscherm?’, alleen bij stilstand, met ‘Later’. De instellingen tonen bovenaan vijf regels, de rest onder ‘Meer’; nieuwe tegels eerst uit een basiskeuze, de rest onder ‘Meer tegels …’.",
+        "Spraakopdrachten: het spraakmodel laad je nu met een tik (Duits ca. 46 MB, Engels ca. 41 MB) onder Instellingen → Alle instellingen → Gegevens delen. Vaste bron, controlesom gecontroleerd, altijd af te breken.",
+        "Kleine correcties: de launcher herkent de BYD-muziekapps betrouwbaarder, knoppen naar ontbrekende Android-pagina’s melden dat."
+      ]
     }
   ]
 }

@@ -2422,6 +2422,12 @@
       }
     },
     "anzeige": {
+      "umfang": {
+          "title": "Que doit afficher Panoptes ?",
+          "help": "« Simple » n’affiche que les pages et réglages du quotidien, « Toutes les fonctions » affiche tout. La recherche trouve toujours tout. Les nouvelles installations démarrent en « Simple ».",
+          "einfach": "Simple",
+          "alle": "Toutes les fonctions"
+      },
       "darstellung": {
         "title": "Affichage dans la voiture",
         "help": "Léger ménage l’écran de la voiture : cartes en 2D, sans effets de flou ni animations continues. Complet affiche tout, mais coûte nettement en performance sur l’écran de la voiture.",

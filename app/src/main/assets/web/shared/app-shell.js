@@ -715,72 +715,74 @@
      * Jede Seite unter web/local/ steht genau einmal hier oder in VERSTECKT. Dateinamen bleiben, nur die Ordnung ändert sich.
      * teil: Seiten mit gleichem Teil teilen sich einen Reiter (TEILE) und bekommen oben einen Umschalter.
      * kurz: Wort für die schmale Leiste unten am Handy.
+     * stufe (E4, 0.1.44): 'a' = braucht jeder (im Modus „Einfach“ sichtbar), 'b' = braucht mancher, 'c' = nur Experten.
+     *   „Einfach“ zeigt nur Seiten mit stufe 'a' (und immer die gerade offene). Suche und Direktlinks finden alle Seiten.
      */
     var SECTIONS = [
         { id: 'start', label: 'Start', i18n: 'shell.sec_start', kurz: 'shell.kurz_start', icon: 'home', pages: [
-            { href: 'index.html',           label: 'Übersicht',          i18n: 'shell.page_overview' },
-            { href: 'assistant.html',       label: 'Frag Panoptes',      i18n: 'shell.page_ask' }
+            { href: 'index.html',           label: 'Übersicht',          i18n: 'shell.page_overview', stufe: 'a' },
+            { href: 'assistant.html',       label: 'Frag Panoptes',      i18n: 'shell.page_ask', stufe: 'b' }
         ] },
         { id: 'drive', label: 'Navi & Fahrten', i18n: 'shell.sec_fahrten', kurz: 'shell.kurz_fahrten', icon: 'route', pages: [
             // 0.1.38.10: Navigation zuerst – ein Tipp auf den Bereich öffnet sie (Wunsch Alfred am Auto-Display, 04.11.)
-            { href: 'navi.html',            label: 'Navigation',         i18n: 'shell.page_navi' },
-            { href: 'trips.html',           label: 'Fahrten',            i18n: 'nav.trips' },
-            { href: 'charging.html',        label: 'Unterwegs',          i18n: 'shell.page_laden_unterwegs', teil: 'laden' },
-            { href: 'wallbox.html',         label: 'Wallbox',            i18n: 'shell.page_wallbox', teil: 'laden' },
-            { href: 'ladeplan.html',        label: 'Zu Hause laden',     i18n: 'shell.page_ladeplan', teil: 'laden' },
-            { href: 'bericht.html',         label: 'Monatsbericht',      i18n: 'shell.page_report' },
-            { href: 'road-sense.html',      label: 'Straßenzustand',     i18n: 'shell.page_road' }
+            { href: 'navi.html',            label: 'Navigation',         i18n: 'shell.page_navi', stufe: 'a' },
+            { href: 'trips.html',           label: 'Fahrten',            i18n: 'nav.trips', stufe: 'b' },
+            { href: 'charging.html',        label: 'Unterwegs',          i18n: 'shell.page_laden_unterwegs', teil: 'laden', stufe: 'a' },
+            { href: 'wallbox.html',         label: 'Wallbox',            i18n: 'shell.page_wallbox', teil: 'laden', stufe: 'b' },
+            { href: 'ladeplan.html',        label: 'Zu Hause laden',     i18n: 'shell.page_ladeplan', teil: 'laden', stufe: 'b' },
+            { href: 'bericht.html',         label: 'Monatsbericht',      i18n: 'shell.page_report', stufe: 'b' },
+            { href: 'road-sense.html',      label: 'Straßenzustand',     i18n: 'shell.page_road', stufe: 'b' }
         ] },
         { id: 'car', label: 'Steuerung', i18n: 'shell.sec_steuerung', kurz: 'shell.kurz_steuerung', icon: 'car', pages: [
-            { href: 'vehicle-control.html', label: 'Befehle',            i18n: 'shell.page_befehle' },
-            { href: 'seat-positions.html',  label: 'Sitze',              i18n: 'shell.page_seats' },
-            { href: 'key-mapping.html',     label: 'Tasten',             i18n: 'shell.page_keys' },
-            { href: 'camping.html',         label: 'Camping',            i18n: 'shell.page_camping' },
-            { href: 'tiermodus.html',       label: 'Tiermodus',          i18n: 'shell.page_tiermodus' }
+            { href: 'vehicle-control.html', label: 'Befehle',            i18n: 'shell.page_befehle', stufe: 'a' },
+            { href: 'seat-positions.html',  label: 'Sitze',              i18n: 'shell.page_seats', stufe: 'b' },
+            { href: 'key-mapping.html',     label: 'Tasten',             i18n: 'shell.page_keys', stufe: 'b' },
+            { href: 'camping.html',         label: 'Camping',            i18n: 'shell.page_camping', stufe: 'b' },
+            { href: 'tiermodus.html',       label: 'Tiermodus',          i18n: 'shell.page_tiermodus', stufe: 'b' }
         ] },
         { id: 'guard', label: 'Kameras & Wächter', i18n: 'shell.sec_kameras', kurz: 'shell.kurz_kameras', icon: 'eye', pages: [
             // 0.1.26.1: Live zuerst – ein Tipp auf den Bereich öffnet das Live-Bild (Wunsch Alfred)
-            { href: 'live-view.html',       label: 'Live',               i18n: 'shell.page_live' },
-            { href: 'events.html',          label: 'Aufnahmen',          i18n: 'nav.recordings' },
+            { href: 'live-view.html',       label: 'Live',               i18n: 'shell.page_live', stufe: 'a' },
+            { href: 'events.html',          label: 'Aufnahmen',          i18n: 'nav.recordings', stufe: 'a' },
             // Eine Wächter-Seite wie bei der Vorlage: Übersicht, dahinter Einstellungen und Aufnahmequalität
-            { href: 'waechter.html',        label: 'Übersicht',          i18n: 'shell.page_guard_home', teil: 'waechter' },
-            { href: 'surveillance.html',    label: 'Wächter-Einstellungen', i18n: 'shell.page_guard_settings', teil: 'waechter' },
-            { href: 'recording.html',       label: 'Aufnahmequalität',   i18n: 'shell.page_recording_quality', teil: 'waechter' },
-            { href: 'parking.html',         label: 'Parken',             i18n: 'nav.parking' },
-            { href: 'communicate.html',     label: 'Durchsage',          i18n: 'shell.page_durchsage' }
+            { href: 'waechter.html',        label: 'Übersicht',          i18n: 'shell.page_guard_home', teil: 'waechter', stufe: 'a' },
+            { href: 'surveillance.html',    label: 'Wächter-Einstellungen', i18n: 'shell.page_guard_settings', teil: 'waechter', stufe: 'b' },
+            { href: 'recording.html',       label: 'Aufnahmequalität',   i18n: 'shell.page_recording_quality', teil: 'waechter', stufe: 'b' },
+            { href: 'parking.html',         label: 'Parken',             i18n: 'nav.parking', stufe: 'b' },
+            { href: 'communicate.html',     label: 'Durchsage',          i18n: 'shell.page_durchsage', stufe: 'b' }
         ] },
         { id: 'auto', label: 'Regeln', i18n: 'shell.sec_automationen', kurz: 'shell.kurz_automationen', icon: 'bolt', pages: [
-            { href: 'automations.html',     label: 'Wenn-dann-Regeln',   i18n: 'shell.page_wenn_dann' },
-            { href: 'orte.html',            label: 'Orte',               i18n: 'shell.page_orte' },
+            { href: 'automations.html',     label: 'Wenn-dann-Regeln',   i18n: 'shell.page_wenn_dann', stufe: 'b' },
+            { href: 'orte.html',            label: 'Orte',               i18n: 'shell.page_orte', stufe: 'b' },
             // 0.1.28: alle Benachrichtigungen auf einer Seite (Handy + Telegram je Thema), Verlauf und Telegram dahinter
-            { href: 'meldungen.html',       label: 'Übersicht',          i18n: 'shell.page_meldungen_start', teil: 'meldungen' },
-            { href: 'notifications.html',   label: 'Verlauf',            i18n: 'shell.page_meldungen_verlauf', teil: 'meldungen' },
-            { href: 'telegram.html',        label: 'Telegram',           i18n: 'nav.telegram', teil: 'meldungen' }
+            { href: 'meldungen.html',       label: 'Übersicht',          i18n: 'shell.page_meldungen_start', teil: 'meldungen', stufe: 'b' },
+            { href: 'notifications.html',   label: 'Verlauf',            i18n: 'shell.page_meldungen_verlauf', teil: 'meldungen', stufe: 'b' },
+            { href: 'telegram.html',        label: 'Telegram',           i18n: 'nav.telegram', teil: 'meldungen', stufe: 'b' }
         ] },
         { id: 'apps', label: 'Apps & Display', i18n: 'shell.sec_apps', kurz: 'shell.kurz_apps', icon: 'grid', pages: [
-            { href: 'apps.html',            label: 'Apps nebeneinander', i18n: 'shell.page_apps' },
-            { href: 'dateien.html',         label: 'Dateien',            i18n: 'shell.page_dateien' },
+            { href: 'apps.html',            label: 'Apps nebeneinander', i18n: 'shell.page_apps', stufe: 'b' },
+            { href: 'dateien.html',         label: 'Dateien',            i18n: 'shell.page_dateien', stufe: 'b' },
             // 0.1.43 (S3): die Seite zeigt den Panoptes-Bildschirm im Auto auf Handy/PC (nicht das Handy im Auto); am
             // Display selbst ohne Sinn (man sieht ihn ja schon) – fern: nur in der Fernbedienung als Reiter
-            { href: 'remote-dev-view.html', label: 'Bildschirm im Auto', i18n: 'shell.page_bildschirm', fern: true },
+            { href: 'remote-dev-view.html', label: 'Bildschirm im Auto', i18n: 'shell.page_bildschirm', fern: true, stufe: 'c' },
             // 0.1.38: alles fürs Display im Auto auf einer Seite (Tacho, Hintergrund, Display-Sperre, Launcher)
-            { href: 'display.html',         label: 'Display',            i18n: 'shell.page_display' },
+            { href: 'display.html',         label: 'Display',            i18n: 'shell.page_display', stufe: 'b' },
             // 0.1.38: Startbildschirm-App (Panoptes Launcher) einrichten, Recht „launcher“
-            { href: 'launcher.html',        label: 'Launcher einrichten', i18n: 'shell.page_launcher' }
+            { href: 'launcher.html',        label: 'Launcher einrichten', i18n: 'shell.page_launcher', stufe: 'a' }
         ] },
         { id: 'system', label: 'Einstellungen', i18n: 'shell.sec_einstellungen', kurz: 'shell.kurz_einstellungen', icon: 'gear', pages: [
-            { href: 'system.html',          label: 'Alle Einstellungen', i18n: 'shell.page_einstellungen_alle' },
-            { href: 'network.html',         label: 'Hotspot & WLAN',     i18n: 'shell.page_hotspot', teil: 'verbindungen' },
-            { href: 'byd-cloud.html',       label: 'BYD-Konto',          i18n: 'shell.page_byd_konto', teil: 'verbindungen' },
-            { href: 'abrp.html',            label: 'Routenplaner (fremd)', i18n: 'shell.page_routenplaner_fremd', teil: 'verbindungen' },
-            { href: 'mqtt.html',            label: 'Smart Home',         i18n: 'shell.page_smarthome', teil: 'verbindungen' },
-            { href: 'wireguard.html',       label: 'Heimnetz',           i18n: 'shell.page_heimnetz', teil: 'verbindungen', hidden: true },
+            { href: 'system.html',          label: 'Alle Einstellungen', i18n: 'shell.page_einstellungen_alle', stufe: 'a' },
+            { href: 'network.html',         label: 'Hotspot & WLAN',     i18n: 'shell.page_hotspot', teil: 'verbindungen', stufe: 'b' },
+            { href: 'byd-cloud.html',       label: 'BYD-Konto',          i18n: 'shell.page_byd_konto', teil: 'verbindungen', stufe: 'b' },
+            { href: 'abrp.html',            label: 'Routenplaner (fremd)', i18n: 'shell.page_routenplaner_fremd', teil: 'verbindungen', stufe: 'c' },
+            { href: 'mqtt.html',            label: 'Smart Home',         i18n: 'shell.page_smarthome', teil: 'verbindungen', stufe: 'c' },
+            { href: 'wireguard.html',       label: 'Heimnetz',           i18n: 'shell.page_heimnetz', teil: 'verbindungen', hidden: true, stufe: 'c' },
             // 0.1.31 „Fehler melden“: zuerst unter „Hilfe & Info“, damit ihn jeder findet (REGEL DAU)
-            { href: 'fehler-melden.html',   label: 'Fehler melden',      i18n: 'shell.page_fehler', teil: 'hilfe' },
+            { href: 'fehler-melden.html',   label: 'Fehler melden',      i18n: 'shell.page_fehler', teil: 'hilfe', stufe: 'a' },
             // 0.1.38.10 Modellabdeckung: was bei welchem Modell und welcher Firmware geht (Hilfe, nur Anzeige)
-            { href: 'auto-funktionen.html', label: 'Was geht bei meinem Auto', i18n: 'shell.page_auto_funktionen', teil: 'hilfe' },
-            { href: 'performance.html',     label: 'Gerätezustand',      i18n: 'shell.page_geraet', teil: 'hilfe' },
-            { href: 'about.html',           label: 'Über',               i18n: 'shell.page_about', teil: 'hilfe' }
+            { href: 'auto-funktionen.html', label: 'Was geht bei meinem Auto', i18n: 'shell.page_auto_funktionen', teil: 'hilfe', stufe: 'b' },
+            { href: 'performance.html',     label: 'Gerätezustand',      i18n: 'shell.page_geraet', teil: 'hilfe', stufe: 'c' },
+            { href: 'about.html',           label: 'Über',               i18n: 'shell.page_about', teil: 'hilfe', stufe: 'a' }
         ] }
     ];
 
@@ -807,6 +809,8 @@
         // 0.1.37: Automationen (Blitz) und Apps & Display (Raster), gleiche Strichstärke wie die übrigen
         bolt:  '<path d="M13 2.5 4.5 13.5H11l-1 8 8.5-11H12z" stroke-linejoin="round"/>',
         grid:  '<rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/>',
+        // E4: „Alle Funktionen“ (Plus im Raster)
+        mehr:  '<rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><path d="M17 13.5v7M13.5 17h7" stroke-linecap="round"/>',
         gear:  '<circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M21.2 12h-2.4M5.2 12H2.8M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7M18.5 18.5l-1.7-1.7M7.2 7.2 5.5 5.5" stroke-linecap="round"/>'
     };
 
@@ -862,26 +866,87 @@
         return { section: null, page: null };
     }
 
+    // ---------------------------------------------------------------- E4: Modus „Einfach / Alle Funktionen“
+    // Quelle ist die Kern-Einstellung anzeige.umfang (über /api/system/profile), localStorage nur Spiegel für den
+    // ersten Aufbau. Ohne Wert gilt „alle“ – nie verschwindet still etwas.
+    var UMFANG_KEY = 'pn.umfang';
+    var umfang = (function () {
+        try { return localStorage.getItem(UMFANG_KEY) === 'einfach' ? 'einfach' : 'alle'; } catch (e) { return 'alle'; }
+    })();
+    function istEinfach() { return umfang === 'einfach'; }
+    function merkeUmfang(w) {
+        umfang = w === 'einfach' ? 'einfach' : 'alle';
+        try { localStorage.setItem(UMFANG_KEY, umfang); } catch (e) {}
+    }
+    // Sichtbar im Menü: im Modus „Alle“ jede Seite, im Modus „Einfach“ nur stufe 'a' – die offene Seite immer.
+    function zeigeSeite(p, base) {
+        return p.href === base || !istEinfach() || p.stufe === 'a';
+    }
+    function ersteSichtbare(s, base) {
+        for (var i = 0; i < s.pages.length; i++) {
+            var p = s.pages[i];
+            if ((!seiteAus(p) || p.href === base) && zeigeSeite(p, base)) return p;
+        }
+        return null;
+    }
+    // Umschalten schreibt die Kern-Einstellung (Login/Recht wie jede Einstellung) und lädt die Seite neu.
+    function setzeUmfang(w) {
+        var wert = w === 'einfach' ? 'einfach' : 'alle';
+        return fetch('/api/einstellungen', {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ werte: { 'anzeige.umfang': wert } })
+        }).then(function (r) {
+            return r.json().then(function (d) {
+                if (!r.ok || !d || d.ok !== true) throw new Error('umfang');
+                merkeUmfang(wert);
+                try { window.location.reload(); } catch (e) {}
+                return true;
+            });
+        });
+    }
+    function umfangKnopfGeklickt(a) {
+        var lab = a.querySelector('.pn-lang');
+        setzeUmfang(a.getAttribute('data-umfang')).then(null, function () {
+            if (lab) lab.textContent = tr('shell.umfang_fehler', 'Ging nicht – bitte nochmal');
+        });
+    }
+
     function svgIcon(name) {
         return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">'
             + (ICONS[name] || '') + '</svg>';
     }
 
-    function buildRail(active) {
-        var html = '<a href="index.html" class="pn-brand" aria-label="Start">'
+    function buildRail(active, base) {
+        return '<a href="index.html" class="pn-brand" aria-label="Start">'
             + '<img src="../shared/app-icon-glyph-dark.webp" alt=""></a>'
-            + '<nav class="pn-rail-nav" aria-label="Hauptbereiche">';
+            + '<nav class="pn-rail-nav" aria-label="Hauptbereiche">' + buildRailNav(active, base) + '</nav>'
+            + buildLegacyStatus();
+    }
+
+    // E4: im Modus „Einfach“ nur Bereiche mit einer sichtbaren Seite (der offene Bereich immer) und am Ende gut
+    // sichtbar „Alle Funktionen“. Im Modus „Alle“ wie bisher: jeder Bereich führt zu seiner ersten Seite.
+    function buildRailNav(active, base) {
+        var html = '';
         for (var i = 0; i < SECTIONS.length; i++) {
             var s = SECTIONS[i];
-            if (s.id === 'system') html += '<div class="pn-rail-spacer"></div>';
             var on = active && active.id === s.id;
-            html += '<a href="' + s.pages[0].href + '" class="pn-rail-link' + (on ? ' on' : '') + '"'
+            var ziel = ersteSichtbare(s, base);
+            if (!ziel && !on) continue;
+            if (s.id === 'system') html += '<div class="pn-rail-spacer"></div>';
+            // im Modus „Alle“ ist ziel die erste Seite des Abschnitts
+            var href = ziel ? ziel.href : s.pages[0].href;
+            html += '<a href="' + href + '" class="pn-rail-link' + (on ? ' on' : '') + '"'
                 + (on ? ' aria-current="page"' : '') + ' data-section="' + s.id + '">'
                 + svgIcon(s.icon)
                 + '<span class="pn-lang" data-i18n="' + s.i18n + '">' + esc(s.label) + '</span>'
                 + '<span class="pn-kurz" data-i18n="' + s.kurz + '">' + esc(s.label) + '</span></a>';
         }
-        html += '</nav>' + buildLegacyStatus();
+        if (istEinfach()) {
+            html += '<a href="system.html#umfang" class="pn-rail-link pn-umfang" data-umfang="alle">'
+                + svgIcon('mehr')
+                + '<span class="pn-lang" data-i18n="shell.alle_funktionen">' + esc(tr('shell.alle_funktionen', 'Alle Funktionen')) + '</span>'
+                + '<span class="pn-kurz" data-i18n="shell.kurz_alle">' + esc(tr('shell.kurz_alle', 'Alle')) + '</span></a>';
+        }
         return html;
     }
 
@@ -944,7 +1009,7 @@
         var r = [];
         for (var i = 0; i < section.pages.length; i++) {
             var p = section.pages[i];
-            if (p.teil === teil && (!seiteAus(p) || p.href === base)) r.push(p);
+            if (p.teil === teil && (!seiteAus(p) || p.href === base) && zeigeSeite(p, base)) r.push(p);
         }
         return r;
     }
@@ -955,6 +1020,7 @@
         for (var i = 0; i < pages.length; i++) {
             var p = pages[i];
             if (seiteAus(p) && p.href !== base) continue;
+            if (!zeigeSeite(p, base)) continue;   // E4: Modus „Einfach“
             var label = p.label, key = p.i18n, on = p.href === base;
             if (p.teil) {
                 // Ein Reiter je Teil: führt zur ersten Seite, leuchtet auf jeder Seite des Teils
@@ -1056,6 +1122,7 @@
             store({ displayName: p.displayName || '', vehicleName: p.vehicleName || '',
                     modelId: p.modelId || '', modellGewaehlt: p.modellGewaehlt, color: p.color || '',
                     batteryKwh: p.batteryKwh || 0 });
+            umfangAbgleichen(p.umfang);
         }).catch(function () {
             // Ältere App ohne Profil-Schnittstelle: wenigstens das Modell zeigen.
             fetch('/api/models/selected').then(function (r) { return r.json(); }).then(function (m) {
@@ -1074,6 +1141,9 @@
         seiteAus: seiteAus,
         teile: TEILE,
         versteckt: VERSTECKT,
+        // E4 (0.1.44): Modus „Einfach / Alle Funktionen“
+        umfang: function () { return umfang; },
+        setzeUmfang: setzeUmfang,
         modelName: function (id) { return MODEL_NAMES[id] || ''; },
         tr: tr
     };
@@ -1274,6 +1344,33 @@
             }).catch(function () {});
     }
 
+    var mountStand = null;
+
+    // E4: meldet der Kern einen anderen Umfang als der Spiegel, Leiste und Reiter neu zeichnen (ohne Neuladen).
+    function umfangAbgleichen(w) {
+        if (w !== 'einfach' && w !== 'alle') return;
+        if (w === umfang) return;
+        merkeUmfang(w);
+        if (!mountStand) return;
+        var nav = document.querySelector('#sidebar .pn-rail-nav');
+        if (nav) nav.innerHTML = buildRailNav(mountStand.found.section, mountStand.base);
+        var head = document.querySelector('.pn-head');
+        if (head) {
+            var alt = head.querySelectorAll('.pn-subnav, .pn-teilwahl');
+            for (var i = 0; i < alt.length; i++) alt[i].parentNode.removeChild(alt[i]);
+            var tmp = document.createElement('div');
+            tmp.innerHTML = buildSubnav(mountStand.found, mountStand.base);
+            while (tmp.firstChild) head.appendChild(tmp.firstChild);
+        }
+        try { if (window.BYD && BYD.i18n && BYD.i18n.hydrate) BYD.i18n.hydrate(document); } catch (e) {}
+        try {
+            var ev = document.createEvent('Event');
+            ev.initEvent('panoptes:umfang', true, true);
+            ev.umfang = umfang;
+            document.dispatchEvent(ev);
+        } catch (e) {}
+    }
+
     function mount() {
         var holder = findMount();
         if (!holder) return;
@@ -1283,8 +1380,15 @@
         var aside = document.createElement('aside');
         aside.className = 'sidebar pn-rail';
         aside.id = 'sidebar';
-        aside.innerHTML = buildRail(found.section);
+        aside.innerHTML = buildRail(found.section, base);
         if (holder.parentNode) holder.parentNode.replaceChild(aside, holder);
+        mountStand = { found: found, base: base };
+        aside.addEventListener('click', function (ev) {
+            var a = ev.target && ev.target.closest ? ev.target.closest('[data-umfang]') : null;
+            if (!a) return;
+            ev.preventDefault();
+            umfangKnopfGeklickt(a);
+        });
 
         document.documentElement.setAttribute('data-pn-shell', '1');
         if (document.body) document.body.setAttribute('data-app-shell', '1');

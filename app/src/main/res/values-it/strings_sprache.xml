@@ -16,7 +16,7 @@
     <string name="sprache_ja">Sì</string>
     <string name="sprache_nein">No</string>
     <string name="sprache_abgebrochen">Annullato. Non è stato cambiato nulla.</string>
-    <string name="sprache_schalter_aus">I comandi vocali sono disattivati. Attivali in Impostazioni → Sistema.</string>
+    <string name="sprache_schalter_aus">I comandi vocali sono disattivati. Attivali in Impostazioni → Tutte le impostazioni → Condivisione dati.</string>
     <string name="sprache_grenze">Il clima è già al limite.</string>
     <string name="sprache_stufe_unbekannt">Il livello del clima non è leggibile. Non è stato cambiato nulla.</string>
     <string name="sprache_fehler">Non ha funzionato.</string>
@@ -29,7 +29,7 @@
     <string name="sprache_musik_pause">Pausa</string>
     <string name="sprache_erledigt">Fatto</string>
     <string name="sprache_mikrofon_belegt">Panoptes sta registrando l’audio. Il microfono resta chiuso.</string>
-    <string name="sprache_weckwort_aus">La parola di attivazione è disattivata. Attivala in Impostazioni → Sistema.</string>
+    <string name="sprache_weckwort_aus">La parola di attivazione è disattivata. Attivala in Impostazioni → Tutte le impostazioni → Condivisione dati.</string>
     <string name="sprache_noch_nicht">Panoptes non riconosce ancora i comandi vocali in italiano (solo tedesco e inglese).</string>
     <string name="sprache_kein_modell">Il modello vocale offline manca in quest’auto. Non viene scaricato nulla automaticamente.</string>
     <string name="sprache_kein_mikrofon">Senza permesso del microfono non ci sono comandi vocali.</string>
@@ -38,4 +38,6 @@
     <string name="sprache_weckwort_stopp" formatted="true">Smetti di ascoltare «%1$s»</string>
     <string name="sprache_weckwort_anzeige" formatted="true">Microfono in ascolto di «%1$s» – tocca per fermare</string>
     <string name="sprache_schliessen">Chiudi</string>
+    <string name="sprachmodell_kanal">Modello vocale</string>
+    <string name="sprachmodell_laedt">Download del modello vocale …</string>
 </resources>

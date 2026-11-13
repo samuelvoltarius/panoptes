@@ -1577,11 +1577,17 @@ class WebViewFragment : Fragment() {
             }
         }
 
-        /** Opens Android's own notification-listener consent page; no permission is granted by Panoptes. */
+        /**
+         * Opens Android's own notification-listener consent page; no permission is granted by Panoptes.
+         * 0.1.44 (V1 E1): "unavailable" when this device has no such page (e.g. some DiLink builds) instead of a
+         * blind "ok", so the page can say so honestly.
+         */
         @android.webkit.JavascriptInterface
         fun openNotificationAccessSettings(): String {
             return try {
                 val act = activity ?: return "no_context"
+                val seite = android.content.Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                if (seite.resolveActivity(act.packageManager) == null) return "unavailable"
                 act.runOnUiThread {
                     try {
                         act.startActivity(android.content.Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
@@ -1590,6 +1596,23 @@ class WebViewFragment : Fragment() {
                     }
                 }
                 "ok"
+            } catch (e: Exception) {
+                "error"
+            }
+        }
+
+        /**
+         * 0.1.44 (V1 E1): honest state of Android's notification access for Panoptes:
+         * "granted" | "missing" (page exists, not yet allowed) | "unavailable" (no such page on this device) | "error".
+         * Read-only; never grants anything.
+         */
+        @android.webkit.JavascriptInterface
+        fun notificationAccessStatus(): String {
+            return try {
+                val ctx = context?.applicationContext ?: return "error"
+                if (androidx.core.app.NotificationManagerCompat.getEnabledListenerPackages(ctx).contains(ctx.packageName)) return "granted"
+                val seite = android.content.Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                if (seite.resolveActivity(ctx.packageManager) == null) "unavailable" else "missing"
             } catch (e: Exception) {
                 "error"
             }

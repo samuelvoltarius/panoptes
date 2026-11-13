@@ -2416,6 +2416,12 @@
       }
     },
     "anzeige": {
+      "umfang": {
+          "title": "Wie viel soll Panoptes zeigen?",
+          "help": "„Einfach“ zeigt nur die Seiten und Einstellungen für den Alltag, „Alle Funktionen“ zeigt alles. Die Suche findet immer alles. Neue Installationen starten mit „Einfach“.",
+          "einfach": "Einfach",
+          "alle": "Alle Funktionen"
+      },
       "darstellung": {
         "title": "Darstellung im Auto",
         "help": "Leicht schont den Bildschirm im Auto: Karten in 2D, ohne Unschärfe-Effekte und Dauer-Animationen. Voll zeigt alles, kostet am Display aber spürbar Leistung.",

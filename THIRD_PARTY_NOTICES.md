@@ -82,6 +82,14 @@ Since 0.1.44 the same library also serves the offline voice commands (setting `s
 `vosk-model-small-de-0.15` and `vosk-model-small-en-us-0.15` (Apache-2.0 per the model list at
 https://alphacephei.com/vosk/models; check the `COPYING` file shipped inside each model when placing it).
 
+Since 0.1.44 (P2b) the app can also download these two models **on tap only** (Settings → All settings → Data sharing),
+from the fixed official source and only with the fixed SHA-256 below; a mismatching file is discarded.
+
+| Model | Source | Size (zip) | SHA-256 (zip) | License |
+|---|---|---|---|---|
+| `vosk-model-small-de-0.15` | https://alphacephei.com/vosk/models/vosk-model-small-de-0.15.zip | 46 499 967 B | `b7e53c90b1f0a38456f4cd62b366ecd58803cd97cd42b06438e2c131713d5e43` | Apache-2.0 (`COPYING` in the archive, checked 13.11.2026) |
+| `vosk-model-small-en-us-0.15` | https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip | 41 205 931 B | `30f26242c4eb449f948e42cb302dd7a686cb29a3423a8367f99ff41780942498` | Apache-2.0 **as stated by the rights holder on the official model list** (checked 13.11.2026). The archive itself contains **no** `COPYING`/license file, only a README with “Copyright 2020 Alpha Cephei Inc”. |
+
 ## Web libraries (`app/src/main/assets/web/shared/vendor/`, fonts in `.../fonts/`)
 
 | Component | Upstream | Version | License |

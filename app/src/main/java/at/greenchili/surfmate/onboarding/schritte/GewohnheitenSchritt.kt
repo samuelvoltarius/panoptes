@@ -7,8 +7,9 @@ import org.json.JSONObject
 // ================================================================ 0.1.22 Gewohnheiten (GEWOHNHEITEN_KONZEPT §2)
 
 /**
- * „Gewohnheiten merken?“ – Regel 2: klare Erklärung, zwei große Knöpfe, „Ja“ vorgewählt (Standard an laut Konzept),
- * gespeichert wird erst mit „Weiter“. Bestand bekommt den Schritt als „Noch offen“ (kein stilles Einschalten, F6).
+ * „Gewohnheiten merken?“ – Regel 2: klare Erklärung, zwei große Knöpfe, gespeichert wird erst mit „Weiter“.
+ * Bestand bekommt den Schritt als „Noch offen“ (kein stilles Einschalten, F6).
+ * 0.1.44 (13.11., V1): nichts vorgewählt – ab Werk aus wie im Katalog (gewohnheiten.an = false), der Nutzer wählt selbst.
  */
 class GewohnheitenSchritt(a: Assistent) : SchrittAnsicht("extra_gewohnheiten", a) {
     private val wahl = Wahl(a, nebeneinander = true) { a.geaendert() }
@@ -19,7 +20,6 @@ class GewohnheitenSchritt(a: Assistent) : SchrittAnsicht("extra_gewohnheiten", a
         wahl.option("ja", t.res(R.string.einr_gewohnheiten_ja), null)
         wahl.option("nein", t.res(R.string.einr_gewohnheiten_nein), null)
         dazu(wahl.ansicht, 16f)
-        wahl.waehle("ja")
     }
 
     override fun weiterMoeglich(): Boolean = wahl.wert != null

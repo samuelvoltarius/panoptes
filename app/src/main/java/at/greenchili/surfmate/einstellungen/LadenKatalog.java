@@ -46,6 +46,7 @@ public final class LadenKatalog {
         modusNetze.standard = "bevorzugen";
         modusNetze.optionen.add(new Feld.Option("bevorzugen", "settings.laden.netzeModus.bevorzugen"));
         modusNetze.optionen.add(new Feld.Option("nur", "settings.laden.netzeModus.nur"));
+        modusNetze.erweitert = true;   // E4 (0.1.44): im Modus „Einfach“ ausgeblendet, unter „Alle Funktionen“
         l.add(gruppe(modusNetze, r += 10));
         l.add(gruppe(zahl("laden.umwegMaxMin", 10, 0, 60, "min", false), r += 10));
         l.add(bool("laden.nurOffen", r += 10));

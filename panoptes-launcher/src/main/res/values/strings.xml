@@ -54,6 +54,7 @@
     <string name="kein_platz">Not enough room there.</string>
     <string name="klima_hinweis">Climate: temperature and fan −/+, on/off. Tap the value to open the controls in Panoptes.</string>
     <string name="launch_failed">Could not start the app.</string>
+    <string name="einstellung_fehlt">This Android settings page does not exist on this device. Without it, this feature stays off.</string>
     <string name="luft_format">Air PM2.5 inside %1$s · outside %2$s</string>
     <string name="medien_nichts">Nothing is playing</string>
     <string name="medien_ohne_zugriff">Media</string>
@@ -85,7 +86,7 @@
     <string name="reiter_einstellungen">Settings</string>
     <string name="reiter_karte">Map</string>
     <string name="reiter_status">Status</string>
-    <string name="reiter_steuerung">Controls</string>
+    <string name="reiter_steuerung">Climate</string>
     <string name="rueckweg_hinweis">The house icon at the far left of the dock always leads back to the BYD home screen. It cannot be removed.</string>
     <string name="seite_neu">New page</string>
     <string name="seite_weg">Remove page</string>
@@ -211,7 +212,7 @@
     <string name="groesse_kleiner">Smaller</string>
     <string name="groesse_groesser">Larger</string>
     <string name="groesse_hinweis">Automatic fits the launcher to your screen. If everything still looks too big or too small, pick Smaller or Larger.</string>
-    <string name="erweitert">Advanced</string>
+    <string name="erweitert">More</string>
     <string name="zurueck">Back</string>
     <string name="leiste_musik">Play/Pause</string>
     <string name="leiste_zurueck">Back</string>
@@ -319,8 +320,6 @@
     <string name="tagnacht_hinweis">At night the \"Night\" design applies. The time comes from the sun position at the car, otherwise from the clock.</string>
     <string name="vorlage">Layout template</string>
     <string name="vorlage_hinweis">Replaces the start pages and the look. “Simple” sets the size to “Larger”, the others set it back to “Automatic”. Dock and apps stay.</string>
-    <string name="vorlage_frage">How should the launcher look?</string>
-    <string name="vorlage_spaeter">You can change this later under Settings → Advanced → Layout template.</string>
     <string name="vorlage_einfach">Simple</string>
     <string name="vorlage_einfach_text">few large tiles, large text</string>
     <string name="vorlage_standard">Standard</string>
@@ -425,7 +424,7 @@
     <string name="einrasten_an">Snap: on</string>
     <string name="einrasten_aus">Snap: off</string>
     <string name="text_hinzu">Label</string>
-    <string name="vorlage_zuruecksetzen">Reset to template</string>
+    <string name="vorlage_zuruecksetzen">Choose another template</string>
     <string name="bearbeiten_gesperrt">Editing ended – only when parked.</string>
     <string name="widget_dockleiste">Dock</string>
     <string name="widget_reiterleiste">Tabs</string>
@@ -479,11 +478,16 @@
     <string name="taste_fehler">That did not work.</string>
     <string name="hilfe_name">Panoptes Launcher: Back and Last app</string>
     <string name="hilfe_beschreibung">Lets Panoptes Launcher press “Back” and switch to the last used app. For this it only remembers the names of recently opened apps, in memory only, and reads no screen content.</string>
-    <string name="hilfe_einstellung">Accessibility for “Back”</string>
+    <string name="hilfe_einstellung">Accessibility for “Back” and “Last app”</string>
     <string name="hilfe_erklaerung">For “Back” and “Last app” to work reliably in every app, switch on “Panoptes Launcher” yourself in the Android settings under Accessibility. Android now opens that page.</string>
     <string name="gross_titel">Large controls</string>
     <string name="gross_hinweis">Text, buttons, dock and bar are a quarter larger, labels have more contrast. Tiles keep their size.</string>
     <string name="einr_titel">Set up as home screen</string>
+    <string name="kachel_weitere">More tiles …</string>
+    <string name="einr_angebot_spaeter">Later</string>
+    <string name="einr_angebot_ja">Set up</string>
+    <string name="einr_angebot_text">The Home key then leads to Panoptes Launcher. “Everything back to BYD” undoes it at any time. Later you find this at the top of Settings.</string>
+    <string name="einr_angebot_titel">Set up as home screen?</string>
     <string name="einr_s1_titel">1. Panoptes Launcher as home screen</string>
     <string name="einr_s1_text">The Home key then leads to Panoptes Launcher instead of the BYD home screen. “Everything back to BYD” undoes it at any time.</string>
     <string name="einr_einschalten">Switch on</string>

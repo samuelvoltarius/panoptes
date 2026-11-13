@@ -30,6 +30,8 @@
 
     var DE = {
         more: 'Mehr Einstellungen',
+        alle_hinweis: 'Weitere Einstellungen gibt es unter „Alle Funktionen“.',
+        alle_zeigen: 'Alle Funktionen zeigen',
         less: 'Weniger Einstellungen',
         save: 'Speichern',
         saved: 'Gespeichert',
@@ -246,11 +248,15 @@
             container.innerHTML = '';
             var box = el('div', 'pn-es');
             var normal = el('div'), mehr = el('div');
-            var letzterAbschnitt = null, hatMehr = false;
+            var letzterAbschnitt = null, hatMehr = false, hatVersteckt = false;
+            // E4 (0.1.44): im Modus „Einfach“ fehlen erweiterte Felder; ein Feld, zu dem die Suche führt, zeigt sich immer.
+            var einfach = istEinfach(), sprung = sprungFeld();
             felder.forEach(function (f) {
-                var ziel = f.erweitert ? mehr : normal;
-                if (f.erweitert) hatMehr = true;
-                if (!opts.abschnitt && f.abschnitt && f.abschnitt.id !== letzterAbschnitt && !f.erweitert) {
+                if (einfach && f.erweitert && f.key !== sprung) { hatVersteckt = true; return; }
+                var erw = f.erweitert && !einfach;
+                var ziel = erw ? mehr : normal;
+                if (erw) hatMehr = true;
+                if (!opts.abschnitt && f.abschnitt && f.abschnitt.id !== letzterAbschnitt && !erw) {
                     letzterAbschnitt = f.abschnitt.id;
                     ziel.appendChild(el('h3', null, f.abschnitt.titel || f.abschnitt.id));
                 }
@@ -264,6 +270,26 @@
                 b.onclick = function () { offen = !offen; mehr.hidden = !offen; b.textContent = offen ? t('less') : t('more'); };
                 box.appendChild(b);
                 box.appendChild(mehr);
+            }
+            if (hatVersteckt) {
+                // E4: statt „Mehr Einstellungen“ ein klarer Weg zu „Alle Funktionen“
+                var hw = el('div', 'r pn-es-alle');
+                var htx = el('div', 'tx');
+                htx.appendChild(el('small', null, t('alle_hinweis')));
+                hw.appendChild(htx);
+                var hvl = el('div', 'vl');
+                var hb = el('button', 'bt', t('alle_zeigen'));
+                hb.type = 'button';
+                hb.onclick = function () {
+                    hb.disabled = true;
+                    window.PanoptesShell.setzeUmfang('alle').then(null, function () {
+                        hb.disabled = false;
+                        hb.textContent = t('save_fail');
+                    });
+                };
+                hvl.appendChild(hb);
+                hw.appendChild(hvl);
+                box.appendChild(hw);
             }
             container.appendChild(box);
         }
@@ -535,6 +561,21 @@
     };
 
     function kv(k, v) { var o = {}; o[k] = v; return o; }
+
+    // E4 (0.1.44): Modus „Einfach / Alle Funktionen“ kommt aus der Hülle (app-shell.js); ohne Hülle gilt „alle“.
+    function istEinfach() {
+        try { return !!(window.PanoptesShell && PanoptesShell.umfang && PanoptesShell.umfang() === 'einfach'); } catch (e) { return false; }
+    }
+    // Feld, zu dem die Einstellungs-Suche gerade springt (system-overview.js merkt es kurz in sessionStorage).
+    // Einmal beim Laden der Seite gelesen und gelöscht, damit es nur für diesen Sprung gilt.
+    var SPRUNG = (function () {
+        try {
+            var v = sessionStorage.getItem('pn.sprungFeld') || '';
+            sessionStorage.removeItem('pn.sprungFeld');
+            return v;
+        } catch (e) { return ''; }
+    })();
+    function sprungFeld() { return SPRUNG; }
 
     /** Lädt Schema und Werte. Liefert null, wenn der Daemon die Schema-API noch nicht hat. */
     function laden() {

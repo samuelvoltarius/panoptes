@@ -46,6 +46,23 @@ public final class Katalog {
      */
     public static final String GUARD_LEGAL_VERSION = "2026-11-04";
 
+    /** E4 (0.1.44): Schlüssel und Werte des Modus „Einfach / Alle Funktionen“. */
+    public static final String UMFANG = "anzeige.umfang";
+    public static final String UMFANG_EINFACH = "einfach";
+    public static final String UMFANG_ALLE = "alle";
+
+    /** E4: Wert für den ersten Start – Neuinstallation „einfach“, Bestand „alle“ (nie still umschalten). */
+    public static String umfangFuerErstenStart(boolean bestand) {
+        return bestand ? UMFANG_ALLE : UMFANG_EINFACH;
+    }
+
+    /** E4: gespeicherter Umfang; ohne gültigen Wert „alle“, damit nie etwas still verschwindet. */
+    public static String umfang(JSONObject root) {
+        JSONObject a = root == null ? null : root.optJSONObject("anzeige");
+        String w = a == null ? "" : a.optString("umfang", "");
+        return UMFANG_EINFACH.equals(w) ? UMFANG_EINFACH : UMFANG_ALLE;
+    }
+
     public static final List<Gruppe> GRUPPEN = Collections.unmodifiableList(java.util.Arrays.asList(
             new Gruppe("waechter", "waechter", 30),
             new Gruppe("auto", "auto", 40),
@@ -133,11 +150,13 @@ public final class Katalog {
         halten.standard = 0; halten.min = 0.0; halten.max = 720.0; halten.schritt = 1.0; halten.einheit = "h";
         halten.nullIstAus = true;
         halten.empfohlen = 72;
+        halten.erweitert = true;   // E4 (0.1.44): im Modus „Einfach“ ausgeblendet, unter „Alle Funktionen“
         l.add(halten);
 
         Feld keep = new Feld("surveillance.keepDays", Feld.Typ.INT);
         keep.gruppe = "waechter"; keep.abschnitt = "aufnahme"; keep.reihenfolge = r += 10;
         keep.standard = 30; keep.min = 1.0; keep.max = 90.0; keep.schritt = 1.0; keep.einheit = "d";
+        keep.erweitert = true;   // E4 (0.1.44): im Modus „Einfach“ ausgeblendet, unter „Alle Funktionen“
         l.add(keep);
 
         // Kamera-Rate im Stand (0.1.9, mit Neubau 2 abgestimmt): nicht gesetzt = Energie-Profil, gesetzt gewinnt.
@@ -182,6 +201,7 @@ public final class Katalog {
         Feld ruhe = new Feld("surveillance.deterrentQuietSeconds", Feld.Typ.INT);
         ruhe.gruppe = "waechter"; ruhe.abschnitt = "abschreckung"; ruhe.reihenfolge = r += 10;
         ruhe.standard = 120; ruhe.min = 30.0; ruhe.max = 1800.0; ruhe.schritt = 10.0; ruhe.einheit = "s";
+        ruhe.erweitert = true;   // E4 (0.1.44): im Modus „Einfach“ ausgeblendet, unter „Alle Funktionen“
         l.add(ruhe);
 
         // ---------------------------------------------------------------- Wächter: Stopp
@@ -195,6 +215,7 @@ public final class Katalog {
         win.standard = new JSONArray(); win.maxEintraege = 7; win.reihenfolge = r += 10;
         win.listeVon = obj("days", "int[1..7]", "from", "HH:MM", "to", "HH:MM");
         stopp(win);
+        win.erweitert = true;   // E4 (0.1.44): im Modus „Einfach“ ausgeblendet, unter „Alle Funktionen“
         l.add(win);
         l.add(zahl("guardStop.useQuietZones", Feld.Typ.BOOL, true, null, null, null, null, r += 10));
         l.add(zahl("guardStop.reenable", Feld.Typ.BOOL, true, null, null, null, null, r += 10));
@@ -233,6 +254,7 @@ public final class Katalog {
         // ---------------------------------------------------------------- System
         Feld id = new Feld("planner.autoId", Feld.Typ.TEXT);
         id.gruppe = "system"; id.reihenfolge = 10; id.nurLesend = true; id.nurLesendExtern = true;
+        id.erweitert = true;   // E4 (0.1.44): im Modus „Einfach“ ausgeblendet, unter „Alle Funktionen“
         l.add(id);
         // planner.reserve ist in laden.ankunftSocMin aufgegangen (LADEN_VERTRAG A2, Doppelung).
         // F1 „Reicht es noch?“: Band am Mittelschirm (nur Anzeige) und Ansage (Standard aus, Koordination 21.10.)
@@ -252,6 +274,7 @@ public final class Katalog {
         Feld member = new Feld("planner.memberToken", Feld.Typ.GEHEIM);
         member.nieExtern = true;   // 0.1.38.8 harte Ausnahme: nie über eine Kopplung
         member.gruppe = "system"; member.reihenfolge = 20; member.nurLesendExtern = true;
+        member.erweitert = true;   // E4 (0.1.44): im Modus „Einfach“ ausgeblendet, unter „Alle Funktionen“
         l.add(member);
         // Community (Regeln teilen + Straßenzustand gemeinsam): Standard aus, ohne Einschalten kein Aufruf.
         Feld comm = new Feld("community.enabled", Feld.Typ.BOOL);
@@ -343,6 +366,14 @@ public final class Katalog {
         l.add(wetter);
         // Darstellung am Display (Neubau 2, 0.1.9): „leicht“ spart Grafiklast im Auto (2D-Karte, keine
         // Dauer-Animationen …). Gilt nur fürs Display; Handy/PC zeigen lokal immer „voll“.
+        // E4 (0.1.44, Projektinhaber 13.11.): Umfang der App. „einfach“ zeigt nur die nötigen Reiter und Felder (erweitert = aus),
+        // „alle“ alles. Festgeschrieben beim ersten Start (PreferencesManager): Neuinstallation „einfach“, Bestand „alle“ –
+        // nie still umschalten. Fehlt der Wert, gilt „alle“ (nichts verschwindet). Suche und Direktlinks finden immer alles.
+        Feld umfang = new Feld(UMFANG, Feld.Typ.AUSWAHL);
+        umfang.gruppe = "system"; umfang.reihenfolge = 1; umfang.standard = UMFANG_ALLE;
+        umfang.optionen.add(new Feld.Option(UMFANG_EINFACH, "settings.anzeige.umfang.einfach"));
+        umfang.optionen.add(new Feld.Option(UMFANG_ALLE, "settings.anzeige.umfang.alle"));
+        l.add(umfang);
         Feld darst = new Feld("anzeige.darstellung", Feld.Typ.AUSWAHL);
         darst.gruppe = "system"; darst.reihenfolge = 5; darst.standard = "leicht";
         // 0.1.38.7: vom PC/Handy aus änderbar (Login und Recht „web“ wie bei allen Einstellungen); gilt für das Auto-Display
@@ -363,12 +394,14 @@ public final class Katalog {
         befAns.optionen.add(new Feld.Option("automatisch", "settings.anzeige.befehleAnsicht.automatisch"));
         befAns.optionen.add(new Feld.Option("auto", "settings.anzeige.befehleAnsicht.auto"));
         befAns.optionen.add(new Feld.Option("kacheln", "settings.anzeige.befehleAnsicht.kacheln"));
+        befAns.erweitert = true;   // E4 (0.1.44): im Modus „Einfach“ ausgeblendet, unter „Alle Funktionen“
         l.add(befAns);
         // Fahrzeugseite: einfach (nur Bedienung) oder 3D (laedt die 3D-Ansicht, kostet am Display Leistung).
         Feld fzAns = new Feld("anzeige.fahrzeugAnsicht", Feld.Typ.AUSWAHL);
         fzAns.gruppe = "system"; fzAns.reihenfolge = 5; fzAns.standard = "lite";
         fzAns.optionen.add(new Feld.Option("lite", "settings.anzeige.fahrzeugAnsicht.lite"));
         fzAns.optionen.add(new Feld.Option("immersive", "settings.anzeige.fahrzeugAnsicht.immersive"));
+        fzAns.erweitert = true;   // E4 (0.1.44): im Modus „Einfach“ ausgeblendet, unter „Alle Funktionen“
         l.add(fzAns);
         // Startseite: dieselben Widgets, je nach Einsatz anders geordnet. Am Auto dauerhaft im Kern;
         // Handy/PC verwenden browserlokal denselben Katalog der vier Werte.
@@ -379,6 +412,7 @@ public final class Katalog {
         startAnsicht.optionen.add(new Feld.Option("fahrzeug", "settings.anzeige.startAnsicht.fahrzeug"));
         startAnsicht.optionen.add(new Feld.Option("kompakt", "settings.anzeige.startAnsicht.kompakt"));
         startAnsicht.optionen.add(new Feld.Option("cockpit", "settings.anzeige.startAnsicht.cockpit"));
+        startAnsicht.erweitert = true;   // E4 (0.1.44): im Modus „Einfach“ ausgeblendet, unter „Alle Funktionen“
         l.add(startAnsicht);
         // Panoptes Launcher (eigene APK): Video-Hintergrund. Standard aus; der Launcher spielt ihn nur in Gang P.
         Feld launcherVideo = new Feld("anzeige.launcherVideo", Feld.Typ.BOOL);
@@ -390,11 +424,13 @@ public final class Katalog {
         bandG.gruppe = "system"; bandG.reihenfolge = 6; bandG.standard = "gross";
         bandG.optionen.add(new Feld.Option("normal", "settings.anzeige.bandGroesse.normal"));
         bandG.optionen.add(new Feld.Option("gross", "settings.anzeige.bandGroesse.gross"));
+        bandG.erweitert = true;   // E4 (0.1.44): im Modus „Einfach“ ausgeblendet, unter „Alle Funktionen“
         l.add(bandG);
         Feld bandP = new Feld("anzeige.bandPosition", Feld.Typ.AUSWAHL);
         bandP.gruppe = "system"; bandP.reihenfolge = 7; bandP.standard = "oben_mitte";
         bandP.optionen.add(new Feld.Option("oben_rechts", "settings.anzeige.bandPosition.oben_rechts"));
         bandP.optionen.add(new Feld.Option("oben_mitte", "settings.anzeige.bandPosition.oben_mitte"));
+        bandP.erweitert = true;   // E4 (0.1.44): im Modus „Einfach“ ausgeblendet, unter „Alle Funktionen“
         l.add(bandP);
         // Unterwegs-Hilfe (F1, Koordination 0.1.9): eigener Schalter, holt beim Fahren die geplante Route vom
         // Planer. Neue Installation aus; Bestand mit Planer-Schlüssel wird beim ersten Start „an“ festgeschrieben.
@@ -437,6 +473,7 @@ public final class Katalog {
         l.add(zaehlen);
         Feld kennung = new Feld("zaehlen.kennung", Feld.Typ.TEXT);
         kennung.gruppe = "datenschutz"; kennung.reihenfolge = 31; kennung.nurLesend = true; kennung.nurLesendExtern = true;
+        kennung.erweitert = true;   // E4 (0.1.44): im Modus „Einfach“ ausgeblendet, unter „Alle Funktionen“
         l.add(kennung);
         Feld kennungAktion = new Feld("zaehlen.kennungAktion", Feld.Typ.AUSWAHL);
         kennungAktion.gruppe = "datenschutz"; kennungAktion.reihenfolge = 32; kennungAktion.standard = "behalten";
@@ -445,6 +482,7 @@ public final class Katalog {
         kennungAktion.optionen.add(new Feld.Option("neu", "settings.zaehlen.kennungAktion.neu"));
         kennungAktion.optionen.add(new Feld.Option("loeschen", "settings.zaehlen.kennungAktion.loeschen"));
         kennungAktion.zugriff = kennungAktion();
+        kennungAktion.erweitert = true;   // E4 (0.1.44): im Modus „Einfach“ ausgeblendet, unter „Alle Funktionen“
         l.add(kennungAktion);
         Feld zaehlenUrl = new Feld("zaehlen.url", Feld.Typ.TEXT);
         zaehlenUrl.nieExtern = true;   // 0.1.38.8 harte Ausnahme: nie über eine Kopplung
@@ -460,6 +498,7 @@ public final class Katalog {
         Feld kurveKennung = new Feld("ladekurve.kennung", Feld.Typ.TEXT);
         kurveKennung.gruppe = "datenschutz"; kurveKennung.reihenfolge = 35; kurveKennung.nurLesend = true;
         kurveKennung.nurLesendExtern = true;
+        kurveKennung.erweitert = true;   // E4 (0.1.44): im Modus „Einfach“ ausgeblendet, unter „Alle Funktionen“
         l.add(kurveKennung);
         Feld kurveUrl = new Feld("ladekurve.url", Feld.Typ.TEXT);
         kurveUrl.nieExtern = true;   // 0.1.38.8 harte Ausnahme: nie über eine Kopplung
@@ -487,6 +526,7 @@ public final class Katalog {
         prof.optionen.add(new Feld.Option(Energie.NORMAL, "settings.energie.profil.normal"));
         prof.optionen.add(new Feld.Option(Energie.SPARSAM, "settings.energie.profil.sparsam"));
         prof.optionen.add(new Feld.Option(Energie.MINIMAL, "settings.energie.profil.minimal"));
+        prof.erweitert = true;   // E4 (0.1.44): im Modus „Einfach“ ausgeblendet, unter „Alle Funktionen“
         l.add(prof);
         Feld gps = new Feld("energie.gpsStandSekunden", Feld.Typ.INT);
         gps.gruppe = "energie"; gps.reihenfolge = 20; gps.standard = null; gps.min = 1.0; gps.max = 60.0;
@@ -571,6 +611,7 @@ public final class Katalog {
         // 0.1.31: Karte am Display bei neuer Version, nur im Stand (appupdate.UpdateHinweis); aus = nur noch Abzeichen
         Feld hinweis = new Feld("update.hinweis", Feld.Typ.BOOL);
         hinweis.gruppe = "update"; hinweis.reihenfolge = 25; hinweis.standard = true;
+        hinweis.erweitert = true;   // E4 (0.1.44): im Modus „Einfach“ ausgeblendet, unter „Alle Funktionen“
         l.add(hinweis);
         // Projektinhaber 21.10.: viele Autos haben nur die SIM → Mobilfunk Standard an; aus = nur im WLAN laden
         Feld mobil = new Feld("update.mobilfunk", Feld.Typ.BOOL);

@@ -26,7 +26,7 @@ public class RoadSenseChimeVolumeAssetTest {
                 "onchange=\"RoadSenseSettings.commitWarnVolume(this.value)\""));
         assertTrue(html.contains("class=\"slider-track-control\""));
         assertTrue(html.contains("styles.css?v=pn16"));
-        assertTrue(html.contains("road-sense.js?v=chimevolume8"));
+        assertTrue(html.contains("road-sense.js?v=zugriff1"));
     }
 
     @Test

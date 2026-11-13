@@ -9,6 +9,11 @@
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <queries>
         <package android:name="at.greenchili.surfmate" />
+        <!-- M1/G1 (E2E 0.1.43.1): BYD-Erkennung (MusikAnzeige.BYD_PAKETE) muss diese Pakete sehen, auch ohne Start-Aktivität;
+             sonst erscheint ab Android 11 der gesperrte Zugriffsknopf wieder. Nur sichtbar machen, nichts starten. -->
+        <package android:name="com.byd.mediacenter" />
+        <package android:name="com.byd.carplay.ui" />
+        <package android:name="com.byd.androidauto" />
         <!-- Nur lesen: welcher Startbildschirm (BYD) ist da, damit der Knopf dorthin zurückführt. -->
         <intent>
             <action android:name="android.intent.action.MAIN" />

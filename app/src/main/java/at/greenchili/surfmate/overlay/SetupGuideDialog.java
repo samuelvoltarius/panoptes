@@ -306,8 +306,13 @@ public class SetupGuideDialog {
                     Intent fallback = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
                     context.startActivity(fallback);
                 } catch (Exception e2) {
-                    Intent last = new Intent(Settings.ACTION_SETTINGS);
-                    context.startActivity(last);
+                    // 0.1.44 (V1 E1): auch der letzte Rückfall darf nicht abstürzen, wenn es keine Einstellungen-App gibt
+                    try {
+                        Intent last = new Intent(Settings.ACTION_SETTINGS);
+                        context.startActivity(last);
+                    } catch (Exception e3) {
+                        android.util.Log.w("SetupGuideDialog", "keine Einstellungsseite für Überlagerung: " + e3.getMessage());
+                    }
                 }
             }
         });

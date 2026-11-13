@@ -494,6 +494,10 @@
     "external_nav_guidance": "Use Google Maps/Waze arrows",
     "external_nav_guidance_desc": "Android technically grants access to all notifications; Panoptes processes only turn direction and distance from Google Maps/Waze. Street name, destination and position are not imported. It stays blocked on unsupported driver displays.",
     "external_nav_guidance_permission": "Open notification access",
+    "notif_access_granted": "Notification access is granted.",
+    "notif_access_missing": "Notification access is not granted yet. Without it, the arrows stay off.",
+    "notif_access_unavailable": "This Android settings page does not exist on this device. Without access, the arrows stay off.",
+    "notif_access_nobridge": "You set up access on the screen in the car.",
     "map_cluster_auto_conflict_title": "Another app is using the driver display",
     "map_cluster_auto_conflict_body": "The screen-casting page is set to send an app to the driver display at start. The display can only show one thing at a time. Switch that off and show the map instead?",
     "map_cluster_auto_conflict_confirm": "Show the map",
@@ -5086,6 +5090,12 @@
     "suche_treffer": "{n} results",
     "suche_hier": "On this page",
     "suche_seite": "Own page",
+    "alle_funktionen": "All features",
+    "kurz_alle": "All",
+    "umfang_einfach": "Simple",
+    "umfang_titel": "How much should Panoptes show?",
+    "umfang_hilfe": "“Simple” shows only what you need every day. “All features” shows everything. Search always finds everything.",
+    "umfang_fehler": "Didn’t work – please try again",
     "page_display": "Display"
   },
   "navi": {
@@ -5610,8 +5620,8 @@
     "upd_net_wlan": "Wi-Fi",
     "upd_net_mobile": "Mobile data",
     "lnc_title": "Panoptes Launcher",
-    "lnc_lead": "Your own home screen in Panoptes style with climate, apps and updates. It runs as an app next to the BYD home screen.",
-    "lnc_home_hint": "Panoptes never makes the launcher the default home screen by itself. Way back at any time: the house button on the far left of the launcher dock, or remove the launcher here.",
+    "lnc_lead": "Your own home screen in Panoptes style with climate, apps and updates. It runs as an app next to the BYD home screen or, if you switch it on, as the home screen of the Home key.",
+    "lnc_home_hint": "The launcher becomes the home screen only if you switch it on yourself: with the switch below or in the launcher under “Set up as home screen”. Way back at any time: switch off, “Everything back to BYD” in the launcher, the house button on the far left of the launcher dock, or remove the launcher here.",
     "lnc_install": "Install and activate",
     "lnc_update": "Update",
     "lnc_open": "Open",
@@ -5998,7 +6008,9 @@
         "radius": "Radius between {a} and {b} m"
       },
       "auswahl_auto": "Automatic (default)",
-      "auswahl_auto_jetzt": "Automatic (default) – now {v}"
+      "auswahl_auto_jetzt": "Automatic (default) – now {v}",
+      "alle_hinweis": "More settings are under “All features”.",
+      "alle_zeigen": "Show all features"
     },
     "anzeige": {
       "darstellung": {
@@ -6236,6 +6248,15 @@
     "offen_titel": "Still to set up",
     "offen_keins": "Nothing open – setup is complete.",
     "offen_hinweis": "All optional. Tap an item.",
+    "empf": {
+      "waechter": "Records when someone bumps or breaks into your parked car. Off until you switch it on.",
+      "extra_handy": "See your car on your phone and get alerts there.",
+      "extra_launcher": "Make Panoptes your home screen in the car. Back to BYD with one tap at any time."
+    },
+    "einrichten_knopf": "Set up",
+    "nur_display": "Done on the screen in the car.",
+    "weitere_zeigen": "More steps ({anzahl})",
+    "weitere_verbergen": "Hide more steps",
     "erledigt_knopf": "Done / not needed",
     "neu_knopf": "Restart setup",
     "neu_frage": "Really restart setup? The assistant will then ask everything again on the car screen. Your settings stay until you change them there; you will have to confirm data sharing again.",
@@ -6345,7 +6366,7 @@
       "ja": "Yes",
       "nein": "No",
       "extra_display_text": "You can set your own picture as the background of the car screen. You can also lock the screen with a PIN, for example for the garage.",
-      "extra_launcher_text": "The Panoptes launcher is a home screen of its own with climate, apps and updates. It runs next to the BYD home screen. You can remove it at any time.",
+      "extra_launcher_text": "The Panoptes launcher is a home screen of its own with climate, apps and updates. It runs next to the BYD home screen and becomes the home screen of the Home key only if you switch it on. You can remove it at any time.",
       "extra_tacho_text": "Your car can show more in the instrument cluster: a Panoptes design, the navigation or an app you allow. Speed and warning lights always stay visible. “Cluster back to normal” works at any time.",
       "extra_abschaltbericht_text": "When you park the car, Panoptes sends you a short Telegram message: trip, battery, range, guard and whether the car is locked. No location. Only works if Telegram is set up.",
       "extra_ladesaeule_text": "After charging, Panoptes asks the Panoptes server once which charging station you used. For this your rough position goes to the server, never at private places. That way the price and the station name are right.",
@@ -7596,5 +7617,29 @@
     "video": "Video in the cluster (P only, at 0 km/h)",
     "video_hilfe": "No sound. As soon as you leave P or start driving, the video is gone.",
     "video_waehlen": "Choose recording …"
+  },
+  "sprachmodell": {
+    "titel": "Speech model for voice commands",
+    "lead": "Downloads only when you tap – from the official Vosk source, with a fixed checksum. After that Panoptes recognises the commands without internet.",
+    "laden": "Download speech model ({sprache}, approx. {mb} MB)",
+    "da": "installed",
+    "abbrechen": "Cancel",
+    "fehler_datei": "The file is not in the Download folder.",
+    "fehler_dienst": "Panoptes could not start the download. Please open Panoptes once and tap again.",
+    "fehler_sprache": "There is no speech model to download for this language.",
+    "fehler_ordner": "Panoptes cannot create the folder for the speech model. Nothing was downloaded.",
+    "aus_download": "Take from Download ({sprache})",
+    "laedt": "Downloading … {p} %",
+    "prueft": "Checking the checksum …",
+    "entpackt": "Unpacking …",
+    "fertig": "Done. Voice commands now work without internet.",
+    "abgebrochen": "Cancelled. Nothing was installed.",
+    "fehler_pruefsumme": "The checksum does not match. The file was discarded, nothing was installed.",
+    "fehler_platz": "Not enough storage. About {mb} MB must be free.",
+    "fehler_netz": "Download failed (internet?). Nothing was installed.",
+    "fehler_entpacken": "Unpacking failed. Nothing was installed.",
+    "laeuft_schon": "A model is already downloading.",
+    "nur_am_auto": "Downloading only works here on the car screen.",
+    "hand": "Or by hand: put the file {datei} into the Download folder (e.g. adb push to /sdcard/Download), then tap “Take from Download”."
   }
 }

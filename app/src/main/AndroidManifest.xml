@@ -705,6 +705,13 @@
             android:taskAffinity="at.greenchili.surfmate.sprache"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|uiMode|density|fontScale"
             android:theme="@android:style/Theme.DeviceDefault.Dialog.NoActionBar" />
+        <!-- 0.1.43.2 (Fix E2E M2): Sprachmodell lädt die App selbst in ihren eigenen Ordner (dort liest die Erkennung).
+             Start nur durch den Kern über am start-foreground-service (DUMP), nur nach dem Tipp in der Oberfläche. -->
+        <service
+            android:name="at.greenchili.surfmate.sprache.SprachModellDienst"
+            android:exported="true"
+            android:permission="android.permission.DUMP"
+            android:foregroundServiceType="dataSync" />
         <service
             android:name="at.greenchili.surfmate.sprache.SprachWeckDienst"
             android:process=":sprache"

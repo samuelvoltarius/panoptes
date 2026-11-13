@@ -494,6 +494,10 @@
     "external_nav_guidance": "Google-Maps-/Waze-Pfeile übernehmen",
     "external_nav_guidance_desc": "Android erteilt technisch Zugriff auf alle Meldungen; Panoptes verarbeitet nur Abbiegerichtung und Entfernung von Google Maps/Waze. Straßenname, Ziel und Position werden nicht übernommen. Auf nicht unterstützten Fahrerdisplays bleibt die Funktion gesperrt.",
     "external_nav_guidance_permission": "Benachrichtigungszugriff öffnen",
+    "notif_access_granted": "Benachrichtigungszugriff ist erteilt.",
+    "notif_access_missing": "Benachrichtigungszugriff ist noch nicht erteilt. Ohne ihn bleiben die Pfeile aus.",
+    "notif_access_unavailable": "Diese Android-Einstellungsseite gibt es auf diesem Gerät nicht. Ohne Zugriff bleiben die Pfeile aus.",
+    "notif_access_nobridge": "Den Zugriff stellst du am Bildschirm im Auto ein.",
     "map_cluster_auto_conflict_title": "Eine andere App nutzt das Fahrerdisplay",
     "map_cluster_auto_conflict_body": "Die Seite zur Bildübertragung schickt beim Start eine App aufs Fahrerdisplay. Das Display kann nur eines auf einmal zeigen. Das ausschalten und stattdessen die Karte zeigen?",
     "map_cluster_auto_conflict_confirm": "Karte nehmen",
@@ -5086,6 +5090,12 @@
     "suche_treffer": "{n} Treffer",
     "suche_hier": "Auf dieser Seite",
     "suche_seite": "Eigene Seite",
+    "alle_funktionen": "Alle Funktionen",
+    "kurz_alle": "Alle",
+    "umfang_einfach": "Einfach",
+    "umfang_titel": "Wie viel soll Panoptes zeigen?",
+    "umfang_hilfe": "„Einfach“ zeigt nur, was man im Alltag braucht. „Alle Funktionen“ zeigt alles. Die Suche findet immer alles.",
+    "umfang_fehler": "Ging nicht – bitte nochmal",
     "page_display": "Display"
   },
   "navi": {
@@ -5610,8 +5620,8 @@
     "upd_net_wlan": "WLAN",
     "upd_net_mobile": "Mobilfunk",
     "lnc_title": "Panoptes Launcher",
-    "lnc_lead": "Eigener Startbildschirm im Panoptes-Stil mit Klima, Apps und Updates. Er läuft als App neben dem BYD-Startbildschirm.",
-    "lnc_home_hint": "Panoptes macht den Launcher nie selbst zum Standard-Startbildschirm. Rückweg jederzeit: Haus-Knopf ganz links im Launcher-Dock, oder den Launcher hier entfernen.",
+    "lnc_lead": "Eigener Startbildschirm im Panoptes-Stil mit Klima, Apps und Updates. Er läuft als App neben dem BYD-Startbildschirm oder, wenn du es einschaltest, als Startbildschirm der Haus-Taste.",
+    "lnc_home_hint": "Startbildschirm wird der Launcher nur, wenn du es selbst einschaltest: mit dem Schalter darunter oder im Launcher unter „Als Startbildschirm einrichten“. Rückweg jederzeit: Schalter aus, „Alles zurück auf BYD“ im Launcher, Haus-Knopf ganz links im Launcher-Dock, oder den Launcher hier entfernen.",
     "lnc_install": "Installieren und aktivieren",
     "lnc_update": "Aktualisieren",
     "lnc_open": "Öffnen",
@@ -5998,7 +6008,9 @@
         "radius": "Umkreis zwischen {a} und {b} m"
       },
       "auswahl_auto": "Automatisch (Standard)",
-      "auswahl_auto_jetzt": "Automatisch (Standard) – jetzt {v}"
+      "auswahl_auto_jetzt": "Automatisch (Standard) – jetzt {v}",
+      "alle_hinweis": "Weitere Einstellungen gibt es unter „Alle Funktionen“.",
+      "alle_zeigen": "Alle Funktionen zeigen"
     },
     "anzeige": {
       "darstellung": {
@@ -6235,6 +6247,15 @@
     "offen_titel": "Noch einrichten",
     "offen_keins": "Nichts offen – die Einrichtung ist vollständig.",
     "offen_hinweis": "Alles freiwillig. Tippe auf einen Punkt.",
+    "empf": {
+      "waechter": "Nimmt auf, wenn jemand dein geparktes Auto anstößt oder aufbricht. Aus, bis du ihn einschaltest.",
+      "extra_handy": "Sieh dein Auto am Handy und bekomm Meldungen dorthin.",
+      "extra_launcher": "Panoptes als Startbildschirm im Auto. Mit einem Tipp jederzeit zurück zu BYD."
+    },
+    "einrichten_knopf": "Einrichten",
+    "nur_display": "Geht am Bildschirm im Auto.",
+    "weitere_zeigen": "Weitere Schritte ({anzahl})",
+    "weitere_verbergen": "Weitere Schritte ausblenden",
     "erledigt_knopf": "Erledigt / nicht nötig",
     "neu_knopf": "Einrichtung erneut starten",
     "neu_frage": "Einrichtung wirklich neu starten? Der Assistent fragt dann am Bildschirm im Auto alles noch einmal ab. Deine Einstellungen bleiben, bis du sie dort änderst; Freigaben musst du neu bestätigen.",
@@ -6345,7 +6366,7 @@
       "ja": "Ja",
       "nein": "Nein",
       "extra_display_text": "Du kannst ein eigenes Bild als Hintergrund für den Bildschirm im Auto setzen. Und du kannst den Bildschirm mit einer PIN sperren, zum Beispiel für die Werkstatt.",
-      "extra_launcher_text": "Der Panoptes Launcher ist ein eigener Startbildschirm mit Klima, Apps und Updates. Er läuft neben dem BYD-Startbildschirm. Du kannst ihn jederzeit wieder entfernen.",
+      "extra_launcher_text": "Der Panoptes Launcher ist ein eigener Startbildschirm mit Klima, Apps und Updates. Er läuft neben dem BYD-Startbildschirm; Startbildschirm der Haus-Taste wird er nur, wenn du es einschaltest. Du kannst ihn jederzeit wieder entfernen.",
       "extra_tacho_text": "Dein Auto kann im Tacho mehr zeigen: ein Panoptes-Design, die Navi oder eine App, die du freigibst. Tempo und Warnleuchten bleiben immer sichtbar. „Tacho wieder normal“ geht jederzeit.",
       "extra_abschaltbericht_text": "Wenn du das Auto abstellst, schickt Panoptes dir eine kurze Nachricht per Telegram: Fahrt, Akku, Reichweite, Wächter und ob das Auto zu ist. Ohne Ort. Geht nur, wenn Telegram eingerichtet ist.",
       "extra_ladesaeule_text": "Nach dem Laden fragt Panoptes einmal den Panoptes-Server, an welcher Ladesäule du warst. Dafür geht deine ungefähre Position an den Server, nie an privaten Orten. So stimmen Preis und Name der Säule.",
@@ -7596,5 +7617,29 @@
     "video": "Video im Tacho (nur in P bei 0 km/h)",
     "video_hilfe": "Ohne Ton. Sobald du aus P schaltest oder losfährst, ist das Video sofort weg.",
     "video_waehlen": "Aufnahme wählen …"
+  },
+  "sprachmodell": {
+    "titel": "Sprachmodell für Sprachbefehle",
+    "lead": "Lädt nur, wenn du tippst – von der offiziellen Vosk-Quelle, mit fester Prüfsumme. Danach erkennt Panoptes die Befehle ohne Internet.",
+    "laden": "Sprachmodell laden ({sprache}, ca. {mb} MB)",
+    "da": "vorhanden",
+    "abbrechen": "Abbrechen",
+    "fehler_datei": "Die Datei liegt nicht im Ordner Download.",
+    "fehler_dienst": "Panoptes konnte das Laden nicht starten. Bitte Panoptes einmal öffnen und erneut tippen.",
+    "fehler_sprache": "Für diese Sprache gibt es kein Sprachmodell zum Laden.",
+    "fehler_ordner": "Panoptes kann den Ordner für das Sprachmodell nicht anlegen. Es wurde nichts geladen.",
+    "aus_download": "Aus Download übernehmen ({sprache})",
+    "laedt": "Lädt … {p} %",
+    "prueft": "Prüft die Prüfsumme …",
+    "entpackt": "Entpackt …",
+    "fertig": "Fertig. Die Sprachbefehle erkennen jetzt ohne Internet.",
+    "abgebrochen": "Abgebrochen. Nichts wurde installiert.",
+    "fehler_pruefsumme": "Die Prüfsumme stimmt nicht. Die Datei wurde verworfen, nichts wurde installiert.",
+    "fehler_platz": "Zu wenig Speicher. Nötig sind etwa {mb} MB frei.",
+    "fehler_netz": "Laden hat nicht geklappt (Internet?). Nichts wurde installiert.",
+    "fehler_entpacken": "Entpacken hat nicht geklappt. Nichts wurde installiert.",
+    "laeuft_schon": "Es lädt schon ein Modell.",
+    "nur_am_auto": "Laden geht nur hier am Autobildschirm.",
+    "hand": "Oder von Hand: die Datei {datei} in den Ordner Download legen (z. B. per adb push nach /sdcard/Download), dann „Aus Download übernehmen“ tippen."
   }
 }

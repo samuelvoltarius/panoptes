@@ -43,6 +43,14 @@ public class SelbsttestTest {
         throw new AssertionError(id);
     }
 
+    private static String ziel(JSONObject r, String id) throws Exception {
+        JSONArray p = r.getJSONArray("punkte");
+        for (int i = 0; i < p.length(); i++) {
+            if (id.equals(p.getJSONObject(i).getString("id"))) return p.getJSONObject(i).optString("ziel", null);
+        }
+        throw new AssertionError(id);
+    }
+
     @Test
     public void allesGutIstOk() throws Exception {
         JSONObject r = Selbsttest.bewerte(alleGut());
@@ -55,13 +63,15 @@ public class SelbsttestTest {
     }
 
     @Test
-    public void uebersprungenerKameraSchrittIstFehltNieOk() throws Exception {
+    public void uebersprungenerKameraSchrittIstFreiwilligNieOk() throws Exception {
+        // 0.1.44 (V1 E2): nicht im Schnellstart gefragt → freiwillig (nie ok, aber auch kein Fehler)
         for (String st : new String[] {"offen", "spaeter"}) {
             Selbsttest.Fakten f = alleGut();
             f.kameraSchritt = st;   // auch wenn die Kamera Bilder liefert
             JSONObject r = Selbsttest.bewerte(f);
-            assertEquals(st, "fehlt", status(r, "kameras"));
-            assertFalse(r.getBoolean("ok"));
+            assertEquals(st, "freiwillig", status(r, "kameras"));
+            assertEquals("kameras", ziel(r, "kameras"));
+            assertTrue(r.getBoolean("ok"));
         }
         Selbsttest.Fakten ruht = alleGut();
         ruht.letztesBildMs = 0;
@@ -105,8 +115,13 @@ public class SelbsttestTest {
         f.waechterStatus = "nicht_gewaehlt";
         f.speicherFreiGb = 0.5;
         JSONObject r = Selbsttest.bewerte(f);
-        assertEquals("fehlt", status(r, "waechter"));
+        assertEquals("nicht gewählt = freiwillig, kein Fehler (0.1.44 E2)", "freiwillig", status(r, "waechter"));
+        assertEquals("waechter", ziel(r, "waechter"));
         assertEquals("fehlt", status(r, "speicher"));
+        assertFalse("echter Fehler (Speicher) bleibt Fehler", r.getBoolean("ok"));
+        Selbsttest.Fakten nurWaechter = alleGut();
+        nurWaechter.waechterStatus = null;
+        assertTrue("nur Wächter offen: Gesamtstatus ok", Selbsttest.bewerte(nurWaechter).getBoolean("ok"));
         f.speicherFreiGb = null;
         f.autostart = null;
         r = Selbsttest.bewerte(f);

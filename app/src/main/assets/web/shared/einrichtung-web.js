@@ -20,6 +20,14 @@
         'offen_titel': 'Noch einrichten',
         'offen_keins': 'Nichts offen – die Einrichtung ist vollständig.',
         'offen_hinweis': 'Alles freiwillig. Tippe auf einen Punkt.',
+        // 0.1.44 (V1 E3): Empfehlungskarten und eingeklappte weitere Schritte
+        'empf.waechter': 'Nimmt auf, wenn jemand dein geparktes Auto anstößt oder aufbricht. Aus, bis du ihn einschaltest.',
+        'empf.extra_handy': 'Sieh dein Auto am Handy und bekomm Meldungen dorthin.',
+        'empf.extra_launcher': 'Panoptes als Startbildschirm im Auto. Mit einem Tipp jederzeit zurück zu BYD.',
+        'einrichten_knopf': 'Einrichten',
+        'nur_display': 'Geht am Bildschirm im Auto.',
+        'weitere_zeigen': 'Weitere Schritte ({anzahl})',
+        'weitere_verbergen': 'Weitere Schritte ausblenden',
         'erledigt_knopf': 'Erledigt / nicht nötig',
         'neu_knopf': 'Einrichtung erneut starten',
         'durchgehen_knopf': 'Einrichtung noch einmal durchgehen',
@@ -147,6 +155,59 @@
             if (s.id !== 'fertig' && (s.status === 'offen' || s.status === 'spaeter') && ids.indexOf(s.id) < 0) ids.push(s.id);
         });
         return ids.map(function (id) { return { id: id, status: status[id] || 'spaeter', gruppe: gruppe[id] }; });
+    }
+
+    // 0.1.38.8: „Erledigt / nicht nötig“ blendet einen optionalen Punkt dauerhaft aus
+    // (POST /api/einrichtung/erledigt); für alles, was sich nicht am Zustand erkennen lässt.
+    function erledigtKnopf(inhalt, id) {
+        var erl = el('button', 'btn', t('erledigt_knopf'));
+        erl.type = 'button';
+        erl.setAttribute('data-erledigt', id);
+        erl.style.cssText = 'font-size:13px;padding:4px 10px;min-height:36px;flex:none;margin-left:8px';
+        erl.onclick = function () {
+            erl.disabled = true;
+            fetch('/api/einrichtung/erledigt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) })
+                .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return laden(); })
+                .then(function (neu) { if (neu) zeichne(inhalt, neu); })
+                .catch(function () { erl.disabled = false; toast(t('neu_fehler'), false); });
+        };
+        return erl;
+    }
+
+    // 0.1.44 (V1 E3): Empfehlungen in der Reihenfolge des Kerns (Feld „empfohlen“), sonst die bekannte Liste
+    var EMPFOHLEN = ['waechter', 'extra_handy', 'extra_launcher'];
+    function empfehlungen(d, offen) {
+        var ids = (d && d.empfohlen && typeof d.empfohlen.length === 'number') ? d.empfohlen : EMPFOHLEN;
+        var r = [];
+        ids.forEach(function (id) {
+            offen.forEach(function (o) { if (o.id === id && r.length < 3) r.push(o); });
+        });
+        return r;
+    }
+
+    function empfehlungsKarte(inhalt, o) {
+        var k = el('div', 'card');
+        k.setAttribute('data-empfohlen', o.id);
+        k.style.cssText = 'margin-top:10px;padding:14px 16px;border-radius:12px';
+        var titel = el('div', null, t('schritt.' + o.id));
+        titel.style.cssText = 'font-weight:600;font-size:17px';
+        k.appendChild(titel);
+        var satz = el('div', 'sys-note', t('empf.' + o.id));
+        satz.style.marginTop = '4px';
+        k.appendChild(satz);
+        var zeile = el('div');
+        zeile.style.cssText = 'display:flex;align-items:center;flex-wrap:wrap;margin-top:10px';
+        if (ZIEL[o.id]) {
+            var a = el('a', 'btn btn-primary', t('einrichten_knopf'));
+            a.href = ZIEL[o.id];
+            a.style.cssText = 'min-height:44px;display:inline-flex;align-items:center';
+            zeile.appendChild(a);
+        } else {
+            zeile.appendChild(el('span', 'sys-note', t('nur_display')));
+        }
+        zeile.appendChild(erledigtKnopf(inhalt, o.id));
+        k.appendChild(zeile);
+        return k;
     }
 
     function zeichne(inhalt, d) {
@@ -298,22 +359,45 @@
         if (!offen.length && !hinweise.length) {
             inhalt.appendChild(el('div', 'sys-note', t('offen_keins')));
         } else if (offen.length) {
+            // 0.1.44 (V1 E3 „Einfach ab Werk“): höchstens drei Empfehlungen als Karten, der Rest eingeklappt
+            var empf = empfehlungen(d, offen);
+            var rest = offen.filter(function (o) { return empf.indexOf(o) < 0; });
+            empf.forEach(function (o) { inhalt.appendChild(empfehlungsKarte(inhalt, o)); });
+            var ziel = inhalt;
+            if (rest.length && empf.length) {
+                var box = el('div');
+                box.setAttribute('data-weitere', '1');
+                box.style.display = 'none';
+                var auf = el('button', 'btn', t('weitere_zeigen').replace('{anzahl}', rest.length));
+                auf.type = 'button';
+                auf.setAttribute('data-weitere-knopf', '1');
+                auf.style.cssText = 'margin-top:12px;min-height:44px';
+                auf.onclick = function () {
+                    var zu = box.style.display !== 'none';
+                    box.style.display = zu ? 'none' : '';
+                    auf.textContent = zu ? t('weitere_zeigen').replace('{anzahl}', rest.length) : t('weitere_verbergen');
+                };
+                inhalt.appendChild(auf);
+                inhalt.appendChild(box);
+                ziel = box;
+            }
             // 0.1.24: Tailscale-Schritte gesondert unter „Für Fortgeschrittene“ (Laien kommen ohne aus)
             [false, true].forEach(function (fort) {
-                var teil = offen.filter(function (o) { return (o.gruppe === 'fortgeschritten') === fort; });
+                var teil = rest.filter(function (o) { return (o.gruppe === 'fortgeschritten') === fort; });
                 if (!teil.length) return;
                 if (fort) {
                     var kopf = el('div', 'sys-note', t('fortgeschritten'));
                     kopf.style.cssText = 'margin-top:10px;font-weight:600';
                     kopf.setAttribute('data-gruppe', 'fortgeschritten');
-                    inhalt.appendChild(kopf);
+                    ziel.appendChild(kopf);
                 }
                 var ul = el('ul');
                 ul.style.cssText = 'list-style:none;margin:6px 0 0;padding:0';
                 teil.forEach(function (o) {
                     var li = el('li');
                     li.setAttribute('data-schritt', o.id);
-                    li.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0';
+                    // Chromium 74: kein Flex-gap – Abstand über den linken Rand des Knopfs
+                    li.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 0';
                     var label;
                     if (ZIEL[o.id]) {
                         label = el('a', null, t('schritt.' + o.id));
@@ -323,23 +407,10 @@
                         label = el('span', null, t('schritt.' + o.id));
                     }
                     li.appendChild(label);
-                    // 0.1.38.8: „Erledigt / nicht nötig“ blendet einen optionalen Punkt dauerhaft aus
-                    // (POST /api/einrichtung/erledigt); für alles, was sich nicht am Zustand erkennen lässt.
-                    var erl = el('button', 'btn', t('erledigt_knopf'));
-                    erl.type = 'button';
-                    erl.setAttribute('data-erledigt', o.id);
-                    erl.style.cssText = 'font-size:13px;padding:4px 10px;min-height:36px;flex:none';
-                    erl.onclick = function () {
-                        erl.disabled = true;
-                        fetch('/api/einrichtung/erledigt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: o.id }) })
-                            .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return laden(); })
-                            .then(function (neu) { if (neu) zeichne(inhalt, neu); })
-                            .catch(function () { erl.disabled = false; toast(t('neu_fehler'), false); });
-                    };
-                    li.appendChild(erl);
+                    li.appendChild(erledigtKnopf(inhalt, o.id));
                     ul.appendChild(li);
                 });
-                inhalt.appendChild(ul);
+                ziel.appendChild(ul);
             });
             inhalt.appendChild(el('div', 'sys-note', t('offen_hinweis')));
         }
@@ -402,7 +473,7 @@
             if (s.id === 'fertig' || s.id === 'usb_freigabe' || s.status === 'entfaellt') return;
             var z = el('div');
             z.setAttribute('data-alle', s.id);
-            z.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--border-default)';
+            z.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--border-default)';
             var links = el('div');
             links.appendChild(el('div', null, t('schritt.' + s.id)));
             var st = el('div', 'sys-note', t('status.' + s.status));
@@ -424,6 +495,7 @@
                 };
             }
             b.style.minHeight = '48px';
+            b.style.marginLeft = '10px';   // Chromium 74: kein Flex-gap
             z.appendChild(b);
             det.appendChild(z);
         });

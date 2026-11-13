@@ -2416,6 +2416,12 @@
       }
     },
     "anzeige": {
+      "umfang": {
+          "title": "How much should Panoptes show?",
+          "help": "“Simple” shows only the pages and settings for everyday use, “All features” shows everything. Search always finds everything. New installations start with “Simple”.",
+          "einfach": "Simple",
+          "alle": "All features"
+      },
       "darstellung": {
         "title": "Display in the car",
         "help": "Light spares the car screen: maps in 2D, no blur effects or continuous animations. Full shows everything but costs noticeable performance on the car screen.",

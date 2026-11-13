@@ -74,6 +74,15 @@ class LauncherMusikKernTest {
     }
 
     @Test
+    fun bydPaketeSichtbarAbAndroid11() {
+        // G1 (E2E 0.1.43.1): ohne <package> in <queries> bleibt ein BYD-Paket ohne Start-Aktivität unsichtbar
+        val m = File(basis(), "src/main/AndroidManifest.xml").readText().replace("\r\n", "\n")
+        val q = m.substringAfter("<queries>").substringBefore("</queries>")
+        assertEquals(3, MusikAnzeige.BYD_PAKETE.size)
+        for (p in MusikAnzeige.BYD_PAKETE) assertTrue("queries: $p", q.contains("<package android:name=\"$p\" />"))
+    }
+
+    @Test
     fun keinKnopfInDieFehlermeldung() {
         val seite = main.substringAfter("private fun zugriffSeite() {").substringBefore("\n    }\n")
         assertTrue("Sperre vor dem Intent", seite.indexOf("if (!MusikAnzeige.androidSeite(byd))") in 0 until seite.indexOf("ACTION_NOTIFICATION_LISTENER_SETTINGS"))

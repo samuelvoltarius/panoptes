@@ -54,6 +54,7 @@
     <string name="kein_platz">Pas assez de place.</string>
     <string name="klima_hinweis">Climatisation : température et ventilation −/+, marche/arrêt. Touchez la valeur pour ouvrir les commandes dans Panoptes.</string>
     <string name="launch_failed">Impossible de démarrer l’application.</string>
+    <string name="einstellung_fehlt">Cette page de réglages Android n’existe pas sur cet appareil. Sans elle, cette fonction reste désactivée.</string>
     <string name="luft_format">Air PM2,5 int. %1$s · ext. %2$s</string>
     <string name="medien_nichts">Rien en lecture</string>
     <string name="medien_ohne_zugriff">Médias</string>
@@ -85,7 +86,7 @@
     <string name="reiter_einstellungen">Réglages</string>
     <string name="reiter_karte">Carte</string>
     <string name="reiter_status">État</string>
-    <string name="reiter_steuerung">Commandes</string>
+    <string name="reiter_steuerung">Climatisation</string>
     <string name="rueckweg_hinweis">La maison tout à gauche du dock ramène toujours à l’écran d’accueil BYD. Elle ne peut pas être retirée.</string>
     <string name="seite_neu">Nouvelle page</string>
     <string name="seite_weg">Supprimer la page</string>
@@ -211,7 +212,7 @@
     <string name="groesse_kleiner">Plus petit</string>
     <string name="groesse_groesser">Plus grand</string>
     <string name="groesse_hinweis">Automatique adapte le launcher à votre écran. Si tout paraît encore trop grand ou trop petit, choisissez Plus petit ou Plus grand.</string>
-    <string name="erweitert">Avancé</string>
+    <string name="erweitert">Plus</string>
     <string name="zurueck">Retour</string>
     <string name="leiste_musik">Pause/Lecture</string>
     <string name="leiste_zurueck">Précédent</string>
@@ -319,8 +320,6 @@
     <string name="tagnacht_hinweis">La nuit, le design « Nuit » s\'applique. L\'heure vient de la position du soleil à la voiture, sinon de l\'horloge.</string>
     <string name="vorlage">Modèle de disposition</string>
     <string name="vorlage_hinweis">Remplace les pages d\'accueil et l\'apparence. « Simple » passe la taille à « Plus grand », les autres la remettent sur « Automatique ». Le dock et les apps restent.</string>
-    <string name="vorlage_frage">Quelle apparence pour le launcher ?</string>
-    <string name="vorlage_spaeter">Modifiable plus tard sous Réglages → Avancé → Modèle de disposition.</string>
     <string name="vorlage_einfach">Simple</string>
     <string name="vorlage_einfach_text">peu de grandes tuiles, grand texte</string>
     <string name="vorlage_standard">Standard</string>
@@ -425,7 +424,7 @@
     <string name="einrasten_an">Aimanter : oui</string>
     <string name="einrasten_aus">Aimanter : non</string>
     <string name="text_hinzu">Libellé</string>
-    <string name="vorlage_zuruecksetzen">Revenir au modèle</string>
+    <string name="vorlage_zuruecksetzen">Choisir un autre modèle</string>
     <string name="bearbeiten_gesperrt">Édition terminée – uniquement à l’arrêt.</string>
     <string name="widget_dockleiste">Dock</string>
     <string name="widget_reiterleiste">Onglets</string>
@@ -479,11 +478,16 @@
     <string name="taste_fehler">Cela n’a pas fonctionné.</string>
     <string name="hilfe_name">Panoptes Launcher : Retour et Dernière app</string>
     <string name="hilfe_beschreibung">Permet à Panoptes Launcher d’appuyer sur « Retour » et de passer à la dernière app utilisée. Il ne retient que les noms des apps ouvertes récemment, uniquement en mémoire, et ne lit aucun contenu de l’écran.</string>
-    <string name="hilfe_einstellung">Accessibilité pour « Retour »</string>
+    <string name="hilfe_einstellung">Accessibilité pour « Retour » et « Dernière app »</string>
     <string name="hilfe_erklaerung">Pour que « Retour » et « Dernière app » fonctionnent dans chaque app, activez vous-même « Panoptes Launcher » dans les réglages Android, sous Accessibilité. Android ouvre maintenant cette page.</string>
     <string name="gross_titel">Grandes commandes</string>
     <string name="gross_hinweis">Texte, boutons, dock et barre sont plus grands d’un quart, les libellés plus contrastés. Les tuiles gardent leur taille.</string>
     <string name="einr_titel">Configurer comme écran d’accueil</string>
+    <string name="kachel_weitere">Autres tuiles …</string>
+    <string name="einr_angebot_spaeter">Plus tard</string>
+    <string name="einr_angebot_ja">Configurer</string>
+    <string name="einr_angebot_text">La touche Accueil mène alors à Panoptes Launcher. « Tout revenir à BYD » annule tout à tout moment. Plus tard, vous le trouvez tout en haut des Réglages.</string>
+    <string name="einr_angebot_titel">Configurer comme écran d’accueil ?</string>
     <string name="einr_s1_titel">1. Panoptes Launcher comme écran d’accueil</string>
     <string name="einr_s1_text">La touche Accueil mène alors à Panoptes Launcher au lieu de l’écran d’accueil BYD. « Tout revenir à BYD » annule tout à tout moment.</string>
     <string name="einr_einschalten">Activer</string>

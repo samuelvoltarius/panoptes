@@ -80,15 +80,14 @@ class LauncherVorlagenTest {
         assertFalse("nur einmal", Vorlagen.fragen(layoutGespeichert = false, schonGefragt = true))
         val c = block("override fun onCreate(", "override fun onSaveInstanceState(")
         assertTrue("vor ladeLayout geprüft", c.indexOf("Vorlagen.fragen(") < c.indexOf("layout = ladeLayout()"))
-        assertTrue(c.contains("vorlageErstFrage()"))
+        assertTrue("E5: statt Frage der stille erste Start", c.contains("main.post { erstStart(ersterStart) }"))
         val w = block("private fun vorlageWaehlen()", "private fun vorlageSetzen(")
         assertTrue("Rückfrage vor dem Ersetzen", w.contains("R.string.vorlage_ersetzen_frage") && w.contains("vorlageSetzen(v)"))
         assertTrue("Weg: erst als Datei sichern", w.contains("exportieren()"))
         val e = block("private fun einstellungen(", "private fun groesseName(")
         val erw = e.substring(e.indexOf("} else {"))
-        assertTrue("unter Erweitert", erw.contains("vorlageWaehlen()") && erw.contains("tagNachtUmschalten()"))
+        assertTrue("unter Mehr", erw.contains("vorlageWaehlen()") && erw.contains("tagNachtUmschalten()"))
         assertTrue("nur im Stand", erw.contains("if (darfBedienen()) vorlageWaehlen()"))
-        assertTrue("Kern-Layout schließt die Erst-Frage", block("private fun uebernimmKern(", "private fun kernSpeichern(").contains("vorlageDialog?.dismiss()"))
     }
 
     // ---------- 10 Tag/Nacht ----------
@@ -156,7 +155,7 @@ class LauncherVorlagenTest {
 
     @Test
     fun texteInFuenfSprachen() {
-        val keys = listOf("tagnacht", "tagnacht_hinweis", "vorlage", "vorlage_hinweis", "vorlage_frage", "vorlage_spaeter",
+        val keys = listOf("tagnacht", "tagnacht_hinweis", "vorlage", "vorlage_hinweis",
             "vorlage_einfach", "vorlage_einfach_text", "vorlage_standard", "vorlage_standard_text", "vorlage_cockpit",
             "vorlage_cockpit_text", "vorlage_ersetzen_frage", "vorlage_ersetzen", "vorlage_erst_sichern", "vorlage_ok")
         for (d in listOf("values", "values-de", "values-fr", "values-it", "values-nl")) {

@@ -177,13 +177,14 @@ class MainActivity : AppCompatActivity() {
         // 0.1.39 (L1-Nachbesserung): Karten-Split übersteht einen Neustart der Activity (Konfigwechsel)
         karteImSplit = savedInstanceState?.getString(ZUSTAND_KARTE_SPLIT)
         splitGewolltBeendet = savedInstanceState?.getBoolean(ZUSTAND_SPLIT_GEWOLLT) ?: false
-        val vorlageFragen = getSharedPreferences(PREFS, MODE_PRIVATE).let {
+        // E5 (13.11.): keine Layout-Frage mehr (Einfach.kt); erster Start = neu eingerichtet, Update zählt nicht
+        val ersterStart = getSharedPreferences(PREFS, MODE_PRIVATE).let {
             Vorlagen.fragen(it.contains(KEY_LAYOUT), it.getBoolean(KEY_VORLAGE_GEFRAGT, false), launcherLief())
         }
         layout = ladeLayout()
         baueAlles()
         kernAbgleich()
-        if (vorlageFragen) main.post { vorlageErstFrage() }
+        main.post { erstStart(ersterStart) }
         // 0.1.44 (P1): Haus-Taste startete den Launcher neu, während der Selbsttest darauf wartete
         if (intent?.hasCategory(Intent.CATEGORY_HOME) == true && Selbsttest.hausAngekommen(System.currentTimeMillis()))
             main.post { EinrichtungActivity.starten(this, Selbsttest.Schritt.ZURUECK) }
@@ -203,7 +204,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun bedienhilfeErklaeren() {
         AlertDialog.Builder(this).setTitle(R.string.hilfe_einstellung).setMessage(R.string.hilfe_erklaerung)
-            .setPositiveButton(android.R.string.ok) { _, _ -> PanoptesBedienhilfe.einstellungOeffnen(this) }
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                // 0.1.44 (V1 E1): fehlt die Android-Seite, sagt der Knopf es, statt still nichts zu tun
+                if (!PanoptesBedienhilfe.einstellungOeffnen(this)) zeigeHinweis(getString(R.string.einstellung_fehlt))
+            }
             .setNegativeButton(android.R.string.cancel, null).show()
     }
 
@@ -1053,7 +1057,7 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this).setTitle(R.string.schnell_titel).setMessage(R.string.schnell_recht_text)
             .setPositiveButton(R.string.oeffnen) { _, _ ->
                 try { startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-                catch (_: Exception) { zeigeHinweis(getString(R.string.launch_failed)) }
+                catch (_: Exception) { zeigeHinweis(getString(R.string.einstellung_fehlt)) }
             }
             .setNegativeButton(R.string.abbrechen, null).show()
     }
@@ -1105,8 +1109,8 @@ class MainActivity : AppCompatActivity() {
     private fun kachelHinzufuegen() {
         // 0.1.41 (CP): CarPlay / Android Auto nur anbieten, wenn eine Werks-App da ist
         val fehlend = Kachel.values().filter { it != Kachel.GERAETEWIDGET && !Raster.hatWidget(layout, it) && (it != Kachel.PROJEKTION || projektionSichtbar().isNotEmpty()) }
-        // 0.1.41 (LO): Android-Widgets immer anbietbar (mehrere erlaubt), Auswahl in eigener Liste
-        auswahl(getString(R.string.kachel_hinzu), listOf(getString(R.string.widget_geraet_hinzu) to { geraeteWidgetWaehlen() }) + fehlend.map { k ->
+        // E5 (13.11.): zuerst die Grundauswahl (KachelKatalog.GRUND), alles andere unter „Weitere Kacheln …“
+        fun eintrag(k: Kachel): Pair<String, () -> Unit> =
             kachelName(k) to {
                 if (k == Kachel.DOCKLEISTE || k == Kachel.REITERLEISTE) {
                     // 0.1.44 (E2): Leiste als Element, ganze Breite, an den ersten freien Platz
@@ -1123,7 +1127,11 @@ class MainActivity : AppCompatActivity() {
                 else if (aufNeuer !== mitSeite) { aendern(aufNeuer); seite = aufNeuer.seiten.size - 1; baueAlles(); zeigeHinweis(getString(R.string.kachel_neue_seite)) }
                 else zeigeHinweis(getString(R.string.kein_platz))
             }
-        })
+        // 0.1.41 (LO): Android-Widgets immer anbietbar (mehrere erlaubt), Auswahl in eigener Liste
+        val weitere = { auswahl(getString(R.string.kachel_weitere), KachelKatalog.weitere(fehlend).map { eintrag(it) } +
+            listOf(getString(R.string.widget_geraet_hinzu) to { geraeteWidgetWaehlen() })) }
+        if (KachelKatalog.direktWeitere(fehlend)) { weitere(); return }
+        auswahl(getString(R.string.kachel_hinzu), KachelKatalog.grund(fehlend).map { eintrag(it) } + listOf(getString(R.string.kachel_weitere) to weitere))
     }
 
     private fun seiteEntfernenFragen() {
@@ -1861,21 +1869,28 @@ class MainActivity : AppCompatActivity() {
             (getChildAt(1) as? TextView)?.apply { setPadding(ui.dp(14), 0, 0, 0); textSize = 16f * ui.bedien; gravity = Gravity.START or Gravity.CENTER_VERTICAL }
         }, ui.lp(-1, ui.bd(64), oben = 8))
         fun schalter(text: Int, an: Boolean) = getString(text) + ": " + getString(if (an) R.string.an else R.string.aus)
-        // 0.1.38.14 (P4, Zielgruppe 50+): oben nur, was man im Alltag braucht; Seltenes unter „Erweitert“ (nichts fällt weg)
+        // 0.1.38.14 (P4, Zielgruppe 50+): oben nur, was man im Alltag braucht; Seltenes unter „Mehr“ (nichts fällt weg)
+        // E5 (13.11.): oben genau die 5 Zeilen aus Einstellungen.OBEN, in dieser Reihenfolge, dann „Mehr“
         if (!erweitert) {
-            zeile(R.drawable.ic_pn_edit, getString(R.string.bearbeiten)) { if (darfBedienen()) { bearbeiten = true; baueAlles() } }
+            zeile(R.drawable.ic_pn_home, getString(R.string.einr_titel)) { if (darfBedienen()) EinrichtungActivity.starten(this) }
             zeile(R.drawable.ic_pn_apps, getString(R.string.launcher_groesse) + ": " + groesseName(LauncherGroesse.wahl(this))) { if (darfBedienen()) groesseWaehlen() }
             // 0.1.44 (P1): „Große Bedienung“ (GrosseBedienung.kt) und geführte Einrichtung (Einrichtung.kt)
             zeile(R.drawable.ic_pn_star, schalter(R.string.gross_titel, GrosseBedienung.an(this))) {
-                GrosseBedienung.setzen(this, !GrosseBedienung.an(this)); baueAlles(); einstellungen(); zeigeHinweis(getString(R.string.gross_hinweis)) }
-            zeile(R.drawable.ic_pn_home, getString(R.string.einr_titel)) { if (darfBedienen()) EinrichtungActivity.starten(this) }
-            zeile(R.drawable.ic_pn_map, getString(R.string.hintergrund)) { if (darfBedienen()) hintergrundWaehlen() }
+                val an = !GrosseBedienung.an(this); GrosseBedienung.setzen(this, an)
+                // E5: ein noch unverändertes Werks-Layout wird mit „Großer Bedienung“ zu „Einfach“; eigene Layouts bleiben
+                val v = ErstStart.vorlage(an, getSharedPreferences(PREFS, MODE_PRIVATE).contains(KEY_LAYOUT))
+                if (v != null && darfBedienen(still = true)) { vorlageSetzen(v); return@zeile }
+                baueAlles(); einstellungen(); zeigeHinweis(getString(R.string.gross_hinweis)) }
             zeile(R.drawable.ic_pn_nav, getString(R.string.navi_app) + ": " + (naviWahl()?.let { appName(it) } ?: getString(R.string.navi_app_auto))) { naviWaehlen() }
-            zeile(R.drawable.ic_pn_thermo, schalter(R.string.zeige_klima, layout.zeigeKlima)) { if (darfBedienen()) { aendern(layout.copy(zeigeKlima = !layout.zeigeKlima)); baueAlles(); einstellungen() } }
-            zeile(R.drawable.ic_pn_car, schalter(R.string.zeige_3d, layout.zeige3d)) { if (darfBedienen()) { aendern(layout.copy(zeige3d = !layout.zeige3d)); baueAlles(); einstellungen() } }
+            zeile(R.drawable.ic_pn_map, getString(R.string.hintergrund)) { if (darfBedienen()) hintergrundWaehlen() }
             zeile(R.drawable.ic_pn_settings, getString(R.string.erweitert)) { einstellungen(erweitert = true) }
         } else {
             zeile(R.drawable.ic_pn_close, getString(R.string.zurueck)) { einstellungen() }
+            // E5: aus der oberen Liste hierher: Startseiten bearbeiten, Layout-Vorlage, Klima im Dock, 3D-Fahrzeug
+            zeile(R.drawable.ic_pn_edit, getString(R.string.bearbeiten)) { if (darfBedienen()) { bearbeiten = true; baueAlles() } }
+            zeile(R.drawable.ic_pn_apps, getString(R.string.vorlage)) { if (darfBedienen()) vorlageWaehlen() }
+            zeile(R.drawable.ic_pn_thermo, schalter(R.string.zeige_klima, layout.zeigeKlima)) { if (darfBedienen()) { aendern(layout.copy(zeigeKlima = !layout.zeigeKlima)); baueAlles(); einstellungen(erweitert = true) } }
+            zeile(R.drawable.ic_pn_car, schalter(R.string.zeige_3d, layout.zeige3d)) { if (darfBedienen()) { aendern(layout.copy(zeige3d = !layout.zeige3d)); baueAlles(); einstellungen(erweitert = true) } }
             // 0.1.40 (L2) „Selbst gestalten“: alles hier unter „Erweitert“, oben bleibt es einfach
             // 0.1.40 (E2E M2): Beim Hintergrund „Cockpit“ gilt immer das dunkle Cockpit-Design → gesperrt mit Hinweis statt wirkungslos
             val cockpit = layout.hintergrund == "cockpit"
@@ -1886,7 +1901,6 @@ class MainActivity : AppCompatActivity() {
             // 0.1.41 (LA): Tag/Nacht automatisch (Standard aus) und Layout-Vorlagen
             zeile(R.drawable.ic_pn_star, if (cockpit) getString(R.string.tagnacht) + ": " + getString(R.string.design_cockpit) else schalter(R.string.tagnacht, TagNacht.an(this))) {
                 if (cockpit) zeigeHinweis(getString(R.string.design_cockpit_hinweis)) else if (darfBedienen()) tagNachtUmschalten() }
-            zeile(R.drawable.ic_pn_apps, getString(R.string.vorlage)) { if (darfBedienen()) vorlageWaehlen() }
             zeile(R.drawable.ic_pn_map, getString(R.string.bild_waehlen)) { if (darfBedienen()) bildWaehlen() }
             if (layout.hintergrund == "eigen")
                 zeile(R.drawable.ic_pn_map, getString(R.string.abdunkelung) + ": " + schleierName(Schleier.wahl(this))) { if (darfBedienen()) schleierWaehlen() }
@@ -1898,7 +1912,7 @@ class MainActivity : AppCompatActivity() {
             // 0.1.41 (LC): Kombi-Knopf und Seitenblick (KombiSeitenblick.kt), beide ab Werk aus
             zeile(R.drawable.ic_pn_nav, schalter(R.string.kombi_einstellung, kombiKnopfAn())) { if (darfBedienen()) kombiEinstellung() }
             zeile(R.drawable.ic_pn_camera, getString(R.string.seitenblick_titel)) { if (darfBedienen()) seitenblickFragen() }
-            zeile(R.drawable.ic_pn_music, getString(R.string.medien_zugriff)) { zugriffErklaeren() }
+            zeile(R.drawable.ic_pn_music, schalter(R.string.medien_zugriff, MedienQuelle.zugriffErlaubt(this))) { zugriffErklaeren() }
             zeile(R.drawable.ic_pn_play, schalter(R.string.musik_weiterspielen, MusikStart.an(this))) { MusikStart.umschalten(this); einstellungen(erweitert = true) }
             // 0.1.44 (P4): Fahrerprofile (ab Werk eines), Sitzposition nur gelesen
             zeile(R.drawable.ic_pn_auto_seite, getString(R.string.profil_titel) + ": " + profilKachel.name(Fahrerprofile.stand(this).aktiv)) { profilDialog() }
@@ -2050,8 +2064,6 @@ class MainActivity : AppCompatActivity() {
 
     // ==================== 0.1.41 (LA) Vorlagen, Tag/Nacht ====================
 
-    private var vorlageDialog: AlertDialog? = null
-
     private fun vorlageName(v: String) = getString(when (v) {
         Vorlagen.EINFACH -> R.string.vorlage_einfach; Vorlagen.COCKPIT -> R.string.vorlage_cockpit; Vorlagen.FAHRZEUG -> R.string.vorlage_fahrzeug; else -> R.string.vorlage_standard
     })
@@ -2060,26 +2072,49 @@ class MainActivity : AppCompatActivity() {
         Vorlagen.EINFACH -> R.string.vorlage_einfach_text; Vorlagen.COCKPIT -> R.string.vorlage_cockpit_text; Vorlagen.FAHRZEUG -> R.string.vorlage_fahrzeug_text; else -> R.string.vorlage_standard_text
     })
 
-    /** Beim ersten Start einmal fragen; große Einträge (Zielgruppe 50+). Abbrechen = Standard bleibt. */
-    private fun vorlageErstFrage() {
-        if (isFinishing || overlay != null) return
-        getSharedPreferences(PREFS, MODE_PRIVATE).edit().putBoolean(KEY_VORLAGE_GEFRAGT, true).apply()
-        // 0.1.41 (E2E G1): alle drei Einträge gleich groß. Der Adapter setzt Größe und Höhe für jede Zeile beim Zeichnen
-        // (vorher wurden nur die beim ersten Bild sichtbaren Zeilen umgestellt, „Cockpit“ blieb klein).
-        val eintraege = Vorlagen.WAHL.map { vorlageName(it) + " – " + vorlageText(it) }
-        val adapter = object : android.widget.ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, eintraege) {
-            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View =
-                super.getView(position, convertView, parent).also { v ->
-                    (v as? TextView)?.apply { textSize = 20f; minHeight = ui.dp(72); gravity = Gravity.CENTER_VERTICAL }
-                }
+    /**
+     * E5 (13.11.): keine Layout-Frage mehr. Neu eingerichtet: „Standard“ bleibt, mit „Großer Bedienung“ gilt „Einfach“
+     * ([ErstStart.vorlage]); gewechselt wird unter Einstellungen → Mehr → Layout-Vorlage. Danach einmal das
+     * Startbildschirm-Angebot ([startAngebot]).
+     */
+    private fun erstStart(neu: Boolean) {
+        if (isFinishing) return
+        if (neu) {
+            getSharedPreferences(PREFS, MODE_PRIVATE).edit().putBoolean(KEY_VORLAGE_GEFRAGT, true).apply()
+            ErstStart.vorlage(GrosseBedienung.an(this))?.let { v ->
+                val neustart = Vorlagen.groesse(v).let { g -> g != null && g != LauncherGroesse.wahl(this) }
+                vorlageSetzen(v)
+                if (neustart) return   // die Activity startet mit der neuen Größe neu; dort kommt das Angebot
+            }
         }
-        val d = AlertDialog.Builder(this).setCustomTitle(auswahlKopf(getString(R.string.vorlage_frage), getString(R.string.vorlage_spaeter)))
-            .setAdapter(adapter) { _, i -> if (darfBedienen()) vorlageSetzen(Vorlagen.WAHL[i]) }
-            .setNegativeButton(R.string.abbrechen, null).create()
-        d.setOnDismissListener { if (vorlageDialog === d) vorlageDialog = null }
-        vorlageDialog = d
-        d.show()
+        angebotPruefen = true
+        startAngebot()
     }
+
+    /** E5: Angebot noch offen? Wird bei jedem neuen Kern-Stand erneut geprüft, bis es gezeigt oder unnötig ist. */
+    private var angebotPruefen = false
+
+    /**
+     * E5 (Alfreds Entscheidung): Nach dem ersten Start EINMAL „Als Startbildschirm einrichten?“ mit „Später“.
+     * Nur im Stand und ohne offenes Fenster; sonst beim nächsten Kern-Stand. Danach nur noch in den Einstellungen.
+     */
+    private fun startAngebot() {
+        if (!angebotPruefen || isFinishing || stopped) return
+        val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
+        if (ErstStart.erledigt(prefs.getBoolean(KEY_HOME_ANGEBOTEN, false), istStartbildschirm())) { angebotPruefen = false; return }
+        if (overlay != null || !darfBedienen(still = true)) return   // später, beim nächsten Kern-Stand
+        angebotPruefen = false
+        prefs.edit().putBoolean(KEY_HOME_ANGEBOTEN, true).apply()
+        AlertDialog.Builder(this).setTitle(R.string.einr_angebot_titel).setMessage(R.string.einr_angebot_text)
+            .setPositiveButton(R.string.einr_angebot_ja) { _, _ -> if (darfBedienen()) EinrichtungActivity.starten(this) }
+            .setNegativeButton(R.string.einr_angebot_spaeter, null).show()
+    }
+
+    /** Ist dieser Launcher schon der Startbildschirm des Systems? */
+    private fun istStartbildschirm(): Boolean = runCatching {
+        packageManager.resolveActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), PackageManager.MATCH_DEFAULT_ONLY)
+            ?.activityInfo?.packageName == packageName
+    }.getOrDefault(false)
 
     /** 0.1.41 (E2E M2): Update statt Neuinstallation? Dann keine Erst-Frage, auch ohne gespeichertes Layout. */
     private fun launcherLief(): Boolean {
@@ -2165,7 +2200,6 @@ class MainActivity : AppCompatActivity() {
         if (anders) e.putString(KEY_LAYOUT, Raster.toJson(kern.layout))
         e.apply()
         if (!anders) return
-        vorlageDialog?.dismiss(); vorlageDialog = null
         layout = kern.layout
         if (!bearbeiten && overlay == null) { seite = seite.coerceIn(0, layout.seiten.size - 1); baueAlles() }
         if (hinweis) zeigeHinweis(getString(R.string.layout_neuer_stand))
@@ -2347,6 +2381,7 @@ class MainActivity : AppCompatActivity() {
         summary = if (ok) s else frische.alt(jetzt); traffic = t; online = ok
         selbstSteuern(); standUhrPruefen()   // 0.1.42 (L48)
         bearbeitenSperren()   // 0.1.44 (E2): Bearbeiten nur im Stand
+        if (angebotPruefen) startAngebot()   // E5: Startbildschirm-Angebot, sobald der Stand bekannt ist
         if (!ok && warOnline) zeigeHinweis(getString(R.string.offline))
         val alt = appearance; appearance = a
         val cockpit = layout.hintergrund == "cockpit"
@@ -2730,7 +2765,7 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this).setTitle(R.string.leiste_recht_titel).setMessage(R.string.leiste_recht_text)
             .setPositiveButton(R.string.oeffnen) { _, _ ->
                 try { startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-                catch (_: Exception) { zeigeHinweis(getString(R.string.launch_failed)) }
+                catch (_: Exception) { zeigeHinweis(getString(R.string.einstellung_fehlt)) }
             }
             .setNegativeButton(R.string.leiste_ohne) { _, _ -> starteVollbild(p) }.show()
             .getButton(AlertDialog.BUTTON_POSITIVE)?.apply { textSize = 20f; minHeight = ui.dp(64) }
@@ -2967,7 +3002,7 @@ class MainActivity : AppCompatActivity() {
     /** Android-Seite „Benachrichtigungszugriff“; erlauben muss der Nutzer dort selbst. Am BYD nie (gesperrt, M1). */
     private fun zugriffSeite() {
         if (!MusikAnzeige.androidSeite(byd)) { zugriffErklaeren(); return }
-        try { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) } catch (_: Exception) { zeigeHinweis(getString(R.string.launch_failed)) }
+        try { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) } catch (_: Exception) { zeigeHinweis(getString(R.string.einstellung_fehlt)) }
     }
 
     /** Medientaste: an die Sitzung (mit Zugriff), sonst als Android-Medientaste. Kein Fahrzeugbefehl. */
@@ -3032,6 +3067,8 @@ class MainActivity : AppCompatActivity() {
         const val KEY_PROJEKTION_ERGAENZT = "projektion_ergaenzt"
         /** 0.1.41 (LA): Vorlagen-Frage beim ersten Einrichten schon gestellt. */
         const val KEY_VORLAGE_GEFRAGT = "vorlage_gefragt"
+        /** E5: Startbildschirm-Angebot wurde gezeigt (nur einmal). */
+        const val KEY_HOME_ANGEBOTEN = "startbildschirm_angeboten"
         const val ZUSTAND_KARTE_SPLIT = "karte_im_split"
         const val ZUSTAND_SPLIT_GEWOLLT = "split_gewollt_beendet"
         /** REGEL 50+: Klima-Knöpfe im Dock mindestens 64 dp, im Klima-Feld 96 dp. */

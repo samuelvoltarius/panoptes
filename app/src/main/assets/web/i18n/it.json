@@ -494,6 +494,10 @@
     "external_nav_guidance": "Usa le frecce di Google Maps/Waze",
     "external_nav_guidance_desc": "Android concede tecnicamente l’accesso a tutte le notifiche; Panoptes elabora solo direzione e distanza di Google Maps/Waze. Nome della strada, destinazione e posizione non vengono importati. Resta bloccato sui display conducente non supportati.",
     "external_nav_guidance_permission": "Apri accesso alle notifiche",
+    "notif_access_granted": "L'accesso alle notifiche è concesso.",
+    "notif_access_missing": "L'accesso alle notifiche non è ancora concesso. Senza di esso le frecce restano spente.",
+    "notif_access_unavailable": "Questa pagina delle impostazioni Android non esiste su questo dispositivo. Senza accesso le frecce restano spente.",
+    "notif_access_nobridge": "L'accesso si imposta sullo schermo dell'auto.",
     "map_cluster_auto_conflict_title": "Un'altra app sta usando il display strumenti",
     "map_cluster_auto_conflict_body": "La pagina di trasmissione dello schermo è impostata per inviare un'app al display strumenti all'avvio. Il display può mostrare una cosa sola alla volta. Disattivarla e mostrare invece la mappa?",
     "map_cluster_auto_conflict_confirm": "Mostra la mappa",
@@ -5086,6 +5090,12 @@
     "suche_treffer": "{n} risultati",
     "suche_hier": "In questa pagina",
     "suche_seite": "Pagina dedicata",
+    "alle_funktionen": "Tutte le funzioni",
+    "kurz_alle": "Tutto",
+    "umfang_einfach": "Semplice",
+    "umfang_titel": "Quanto deve mostrare Panoptes?",
+    "umfang_hilfe": "«Semplice» mostra solo ciò che serve ogni giorno. «Tutte le funzioni» mostra tutto. La ricerca trova sempre tutto.",
+    "umfang_fehler": "Non è riuscito – riprova",
     "page_display": "Display"
   },
   "navi": {
@@ -5610,8 +5620,8 @@
     "upd_net_wlan": "Wi-Fi",
     "upd_net_mobile": "Rete mobile",
     "lnc_title": "Panoptes Launcher",
-    "lnc_lead": "Schermata iniziale in stile Panoptes con clima, app e aggiornamenti. Funziona come app accanto alla schermata iniziale BYD.",
-    "lnc_home_hint": "Panoptes non imposta mai da solo il launcher come schermata iniziale predefinita. Ritorno in qualsiasi momento: pulsante casa all'estrema sinistra del dock, oppure rimuovi il launcher qui.",
+    "lnc_lead": "Schermata iniziale in stile Panoptes con clima, app e aggiornamenti. Funziona come app accanto alla schermata iniziale BYD oppure, se lo attivi, come schermata iniziale del tasto Home.",
+    "lnc_home_hint": "Il launcher diventa schermata iniziale solo se lo attivi tu: con l'interruttore qui sotto o nel launcher alla voce “Configura come schermata iniziale”. Ritorno in qualsiasi momento: interruttore spento, “Tutto di nuovo su BYD” nel launcher, pulsante casa all'estrema sinistra del dock, oppure rimuovi il launcher qui.",
     "lnc_install": "Installa e attiva",
     "lnc_update": "Aggiorna",
     "lnc_open": "Apri",
@@ -5998,7 +6008,9 @@
         "radius": "Raggio tra {a} e {b} m"
       },
       "auswahl_auto": "Automatico (predefinito)",
-      "auswahl_auto_jetzt": "Automatico (predefinito) – ora {v}"
+      "auswahl_auto_jetzt": "Automatico (predefinito) – ora {v}",
+      "alle_hinweis": "Altre impostazioni sono in «Tutte le funzioni».",
+      "alle_zeigen": "Mostra tutte le funzioni"
     },
     "anzeige": {
       "darstellung": {
@@ -6236,6 +6248,15 @@
     "offen_titel": "Ancora da configurare",
     "offen_keins": "Niente in sospeso – la configurazione è completa.",
     "offen_hinweis": "Tutto facoltativo. Tocca una voce.",
+    "empf": {
+      "waechter": "Registra quando qualcuno urta o forza la tua auto parcheggiata. Spento finché non lo accendi.",
+      "extra_handy": "Vedi la tua auto sul telefono e ricevi lì gli avvisi.",
+      "extra_launcher": "Panoptes come schermata iniziale in auto. Torni a BYD con un tocco in qualsiasi momento."
+    },
+    "einrichten_knopf": "Configura",
+    "nur_display": "Si fa sullo schermo dell'auto.",
+    "weitere_zeigen": "Altri passaggi ({anzahl})",
+    "weitere_verbergen": "Nascondi altri passaggi",
     "erledigt_knopf": "Fatto / non necessario",
     "neu_knopf": "Riavvia la configurazione",
     "neu_frage": "Riavviare davvero la configurazione? L’assistente chiederà di nuovo tutto sullo schermo dell’auto. Le tue impostazioni restano finché non le cambi lì; dovrai confermare di nuovo le condivisioni dei dati.",
@@ -6345,7 +6366,7 @@
       "ja": "Sì",
       "nein": "No",
       "extra_display_text": "Puoi mettere una tua immagine come sfondo dello schermo dell’auto. Puoi anche bloccare lo schermo con un PIN, per esempio per l’officina.",
-      "extra_launcher_text": "Il launcher Panoptes è una schermata iniziale propria con clima, app e aggiornamenti. Funziona accanto alla schermata iniziale BYD. Puoi rimuoverlo quando vuoi.",
+      "extra_launcher_text": "Il launcher Panoptes è una schermata iniziale propria con clima, app e aggiornamenti. Funziona accanto alla schermata iniziale BYD e diventa schermata iniziale del tasto Home solo se lo attivi. Puoi rimuoverlo quando vuoi.",
       "extra_tacho_text": "La tua auto può mostrare di più nel quadro strumenti: un design Panoptes, il navigatore o un’app che autorizzi. Velocità e spie restano sempre visibili. «Quadro normale» funziona sempre.",
       "extra_abschaltbericht_text": "Quando parcheggi, Panoptes ti manda un breve messaggio Telegram: viaggio, batteria, autonomia, guardia e se l’auto è chiusa. Senza posizione. Funziona solo se Telegram è configurato.",
       "extra_ladesaeule_text": "Dopo la ricarica, Panoptes chiede una volta al server Panoptes a quale colonnina eri. Per questo la tua posizione approssimativa va al server, mai nei luoghi privati. Così prezzo e nome della colonnina sono giusti.",
@@ -7596,5 +7617,29 @@
     "video": "Video nel quadro (solo in P a 0 km/h)",
     "video_hilfe": "Senza audio. Appena esci da P o parti, il video sparisce.",
     "video_waehlen": "Scegli registrazione …"
+  },
+  "sprachmodell": {
+    "titel": "Modello vocale per i comandi vocali",
+    "lead": "Si scarica solo quando tocchi – dalla fonte ufficiale Vosk, con un checksum fisso. Dopo Panoptes riconosce i comandi senza internet.",
+    "laden": "Scarica il modello vocale ({sprache}, ca. {mb} MB)",
+    "da": "installato",
+    "abbrechen": "Annulla",
+    "fehler_datei": "Il file non è nella cartella Download.",
+    "fehler_dienst": "Panoptes non è riuscito ad avviare il download. Apri Panoptes una volta e tocca di nuovo.",
+    "fehler_sprache": "Per questa lingua non c’è un modello vocale da scaricare.",
+    "fehler_ordner": "Panoptes non riesce a creare la cartella per il modello vocale. Non è stato scaricato nulla.",
+    "aus_download": "Prendi da Download ({sprache})",
+    "laedt": "Download … {p} %",
+    "prueft": "Controllo del checksum …",
+    "entpackt": "Estrazione …",
+    "fertig": "Fatto. Ora i comandi vocali funzionano senza internet.",
+    "abgebrochen": "Annullato. Non è stato installato nulla.",
+    "fehler_pruefsumme": "Il checksum non corrisponde. Il file è stato scartato, non è stato installato nulla.",
+    "fehler_platz": "Spazio insufficiente. Servono circa {mb} MB liberi.",
+    "fehler_netz": "Download non riuscito (internet?). Non è stato installato nulla.",
+    "fehler_entpacken": "Estrazione non riuscita. Non è stato installato nulla.",
+    "laeuft_schon": "Un modello è già in download.",
+    "nur_am_auto": "Il download funziona solo sullo schermo dell’auto.",
+    "hand": "Oppure a mano: metti il file {datei} nella cartella Download (ad es. adb push su /sdcard/Download), poi tocca «Prendi da Download»."
   }
 }

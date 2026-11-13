@@ -80,7 +80,7 @@ class StartKarteGewolltTest {
     @Test
     fun fernansichtReiter() {
         val shell = lies("src/main/assets/web/shared/app-shell.js")
-        assertTrue(shell.contains("{ href: 'remote-dev-view.html', label: 'Bildschirm im Auto', i18n: 'shell.page_bildschirm', fern: true }"))
+        assertTrue(shell.contains("{ href: 'remote-dev-view.html', label: 'Bildschirm im Auto', i18n: 'shell.page_bildschirm', fern: true, stufe: 'c' }"))   // stufe: E4 (Modus Einfach)
         assertTrue(shell.contains("return !!(p.hidden || (p.fern && dstDisplay()));"))
         assertFalse(shell.contains("Bildschirm vom Handy"))
         assertTrue(lies("src/main/assets/web/shared/system-overview.js").contains("shell.seiteAus ? shell.seiteAus(p) : p.hidden"))

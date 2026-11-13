@@ -401,10 +401,12 @@ class FertigSchritt(a: Assistent, private val host: AssistentHost) : SchrittAnsi
         for (i in 0 until punkte.length()) {
             val p = punkte.optJSONObject(i) ?: continue
             val status = p.optString("status")
-            val zeichen = when (status) { "ok" -> "✓"; "fehlt" -> "✗"; "entfaellt" -> "–"; else -> "?" }
+            val zeichen = when (status) { "ok" -> "✓"; "fehlt" -> "✗"; "entfaellt" -> "–"; "freiwillig" -> "○"; else -> "?" }
             val wort = when (status) {
                 "ok" -> t.res(R.string.einr_st_ok)
                 "fehlt" -> t.res(R.string.einr_st_fehlt)
+                // 0.1.44 (V1 E2): bewusst nicht gefragt (Wächter, Kameras) → ruhig, kein Fehler
+                "freiwillig" -> t.res(R.string.einr_st_freiwillig)
                 // „entfällt“ nie ohne Grund (Koordination 22.10.: Laien verwirrt das)
                 "entfaellt" -> t.res(R.string.einr_st_entfaellt) + " – " + when (p.optString("id")) {
                     "autostart", "kameras" -> t.res(R.string.einr_entfaellt_nicht_noetig)
@@ -418,47 +420,94 @@ class FertigSchritt(a: Assistent, private val host: AssistentHost) : SchrittAnsi
             zeile.addView(a.text("$zeichen $name – $wort", 18f).apply { if (status == "fehlt") setTextColor(a.farbeWarnung) },
                 LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
             val ziel = p.optString("ziel", "")
-            // „Beheben“ nur mit Ziel-Schritt; Punkte mit „einstellungen“ (z. B. projektion) nennen die Einstellung im Text
-            if (status == "fehlt" && ziel.isNotEmpty()) {
-                val buttonText = if (id == "kameras") {
-                    t.res(R.string.einr_kameras_knopf)
-                } else {
-                    t.res(R.string.einr_beheben)
-                }
-                zeile.addView(a.knopf(buttonText) { a.zeige(ziel) })
+            // „Beheben“ nur mit Ziel-Schritt; Punkte mit „einstellungen“ (z. B. projektion) nennen die Einstellung im Text.
+            // 0.1.44 (E1): der Knopf richtet sich nach dem PUNKT (früher fälschlich nach der ID dieses Bildschirms = „fertig“).
+            if ((status == "fehlt" || status == "freiwillig") && ziel.isNotEmpty()) {
+                zeile.addView(a.knopf(knopfText(p.optString("id"), status)) { a.zeige(ziel) })
             }
             liste.dazu(zeile, 8f)
         }
         nochEinrichten()
     }
 
-    /** 0.1.32: ruhige Liste, alles freiwillig; ein Tipp öffnet genau diesen Schritt, danach geht es hierher zurück. */
+    /** Knopftext je Selbsttest-Punkt: Kameras zuordnen, sonst Beheben (Fehler) bzw. Einrichten (freiwillig). */
+    private fun knopfText(punkt: String, status: String): String = when {
+        punkt == "kameras" -> t.res(R.string.einr_kameras_knopf)
+        status == "freiwillig" -> t.res(R.string.einr_noch_knopf)
+        else -> t.res(R.string.einr_beheben)
+    }
+
+    /**
+     * 0.1.32: ruhige Liste, alles freiwillig; ein Tipp öffnet genau diesen Schritt, danach geht es hierher zurück.
+     * 0.1.44 (V1 E3 „Einfach ab Werk“): oben höchstens drei große Empfehlungskarten (Wächter, Handy, Launcher), alles
+     * Weitere eingeklappt hinter „Weitere Schritte (n)“. Nichts entfällt.
+     */
     private fun nochEinrichten() {
-        val offen = a.stand().nochOffen()
-        if (offen.isEmpty()) return
-        liste.dazu(a.text(t.res(R.string.einr_noch_titel), 21f, fett = true), 24f)
-        liste.dazu(a.text(t.res(R.string.einr_noch_text), 16f, leise = true), 2f)
-        val (einfach, fortgeschritten) = offen.partition { it !in ExtraSchritt.FORTGESCHRITTEN }
-        einfach.forEach { eintrag(it) }
+        val stand = a.stand()
+        val empfohlen = stand.empfehlungen()
+        val weitere = stand.weitere()
+        if (empfohlen.isEmpty() && weitere.isEmpty()) return
+        if (empfohlen.isNotEmpty()) {
+            liste.dazu(a.text(t.res(R.string.einr_empf_titel), 21f, fett = true), 24f)
+            liste.dazu(a.text(t.res(R.string.einr_noch_text), 16f, leise = true), 2f)
+            empfohlen.forEach { empfehlung(it) }
+        }
+        if (weitere.isEmpty()) return
+        val box = spalte().apply { visibility = View.GONE }
+        val (einfach, fortgeschritten) = weitere.partition { it !in ExtraSchritt.FORTGESCHRITTEN }
+        einfach.forEach { eintrag(box, it) }
         if (fortgeschritten.isNotEmpty()) {
-            liste.dazu(a.text(t.res(R.string.einr_fortgeschritten), 16f, leise = true), 16f)
-            fortgeschritten.forEach { eintrag(it) }
+            box.dazu(a.text(t.res(R.string.einr_fortgeschritten), 16f, leise = true), 16f)
+            fortgeschritten.forEach { eintrag(box, it) }
+        }
+        lateinit var auf: com.google.android.material.button.MaterialButton
+        auf = a.knopf(t.res(R.string.einr_weitere_zeigen, weitere.size)) {
+            val zu = box.visibility == View.VISIBLE
+            box.visibility = if (zu) View.GONE else View.VISIBLE
+            auf.text = if (zu) t.res(R.string.einr_weitere_zeigen, weitere.size) else t.res(R.string.einr_weitere_verbergen)
+        }
+        liste.dazu(auf, 16f)
+        liste.dazu(box, 4f)
+    }
+
+    /** 0.1.44 (E3): eine große Karte – Titel, ein Satz, „Einrichten“ und „Nicht nötig“. */
+    private fun empfehlung(id: String) {
+        val karte = spalte().apply {
+            background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = a.px(12f).toFloat(); setStroke(a.px(2f), a.farbeLeise)
+            }
+            setPadding(a.px(20f), a.px(14f), a.px(20f), a.px(14f))
+        }
+        karte.dazu(a.text(t.web("einr.schritt.$id", id), 20f, fett = true), 0f)
+        val satz = when (id) {
+            "waechter" -> R.string.einr_empf_waechter
+            "extra_handy" -> R.string.einr_empf_handy
+            else -> R.string.einr_empf_launcher
+        }
+        karte.dazu(a.text(t.res(satz), 16f, leise = true), 4f)
+        val knoepfe = LinearLayout(a.activity).apply { orientation = LinearLayout.HORIZONTAL }
+        knoepfe.addView(a.knopf(t.res(R.string.einr_noch_knopf), primaer = true) { a.zeige(id) })
+        knoepfe.addView(erledigtKnopf(id), LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT).apply { leftMargin = a.px(12f) })
+        karte.dazu(knoepfe, 10f)
+        liste.dazu(karte, 12f)
+    }
+
+    private fun erledigtKnopf(id: String) = a.knopf(t.res(R.string.einr_noch_erledigt)) {
+        a.imHintergrund({ EinrichtungApi.erledigt(id) }) { r ->
+            if (r != null && r.ok) a.laden { a.zeige("fertig") } else a.zeigeMeldung(t.res(R.string.einr_fehler_speichern))
         }
     }
 
-    private fun eintrag(id: String) {
+    private fun eintrag(ziel: LinearLayout, id: String) {
         val zeile = LinearLayout(a.activity).apply { orientation = LinearLayout.HORIZONTAL; gravity = android.view.Gravity.CENTER_VERTICAL }
         zeile.addView(a.text(t.web("einr.schritt.$id", id), 18f), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         // 0.1.38.8: „Erledigt / nicht nötig“ blendet den Punkt dauerhaft aus (für Nicht-prüfbares am Display)
-        val erl = a.knopf(t.res(R.string.einr_noch_erledigt)) {
-            a.imHintergrund({ EinrichtungApi.erledigt(id) }) { r ->
-                if (r != null && r.ok) a.laden { a.zeige("fertig") } else a.zeigeMeldung(t.res(R.string.einr_fehler_speichern))
-            }
-        }
+        val erl = erledigtKnopf(id)
         zeile.addView(erl, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
             .apply { rightMargin = a.px(8f) })
         zeile.addView(a.knopf(t.res(R.string.einr_noch_knopf)) { a.zeige(id) })
-        liste.dazu(zeile, 6f)
+        ziel.dazu(zeile, 6f)
     }
 
     /** Name je Punkt-ID (Kern G), mit Wert (Kameras n, Speicher GB, Wächter-Modus). Unbekannte IDs: Text des Kerns bzw. die ID. */

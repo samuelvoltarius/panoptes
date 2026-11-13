@@ -494,6 +494,10 @@
     "external_nav_guidance": "Utiliser les flèches Google Maps/Waze",
     "external_nav_guidance_desc": "Android accorde techniquement l’accès à toutes les notifications ; Panoptes ne traite que la direction et la distance de Google Maps/Waze. Le nom de rue, la destination et la position ne sont pas importés. La fonction reste bloquée sur les écrans non pris en charge.",
     "external_nav_guidance_permission": "Ouvrir l’accès aux notifications",
+    "notif_access_granted": "L'accès aux notifications est accordé.",
+    "notif_access_missing": "L'accès aux notifications n'est pas encore accordé. Sans lui, les flèches restent désactivées.",
+    "notif_access_unavailable": "Cette page de réglages Android n'existe pas sur cet appareil. Sans accès, les flèches restent désactivées.",
+    "notif_access_nobridge": "Tu règles l'accès sur l'écran de la voiture.",
     "map_cluster_auto_conflict_title": "Une autre application utilise l'affichage compteur",
     "map_cluster_auto_conflict_body": "La page de diffusion d'écran est réglée pour envoyer une application vers l'affichage compteur au démarrage. L'affichage ne peut montrer qu'une seule chose à la fois. Désactiver ce réglage et afficher la carte à la place ?",
     "map_cluster_auto_conflict_confirm": "Afficher la carte",
@@ -5086,6 +5090,12 @@
     "suche_treffer": "{n} résultats",
     "suche_hier": "Sur cette page",
     "suche_seite": "Page dédiée",
+    "alle_funktionen": "Toutes les fonctions",
+    "kurz_alle": "Tout",
+    "umfang_einfach": "Simple",
+    "umfang_titel": "Que doit afficher Panoptes ?",
+    "umfang_hilfe": "« Simple » n’affiche que l’essentiel au quotidien. « Toutes les fonctions » affiche tout. La recherche trouve toujours tout.",
+    "umfang_fehler": "Échec – veuillez réessayer",
     "page_display": "Écran"
   },
   "navi": {
@@ -5610,8 +5620,8 @@
     "upd_net_wlan": "Wi-Fi",
     "upd_net_mobile": "Données mobiles",
     "lnc_title": "Panoptes Launcher",
-    "lnc_lead": "Écran d'accueil au style Panoptes avec climatisation, applis et mises à jour. Il fonctionne comme une appli à côté de l'écran d'accueil BYD.",
-    "lnc_home_hint": "Panoptes ne définit jamais le launcher comme écran d'accueil par défaut. Retour à tout moment : bouton maison tout à gauche du dock, ou supprimer le launcher ici.",
+    "lnc_lead": "Écran d'accueil au style Panoptes avec climatisation, applis et mises à jour. Il fonctionne comme une appli à côté de l'écran d'accueil BYD ou, si tu l'actives, comme écran d'accueil de la touche Accueil.",
+    "lnc_home_hint": "Le launcher ne devient écran d'accueil que si tu l'actives toi-même : avec l'interrupteur ci-dessous ou dans le launcher sous « Configurer comme écran d’accueil ». Retour à tout moment : interrupteur désactivé, « Tout revenir à BYD » dans le launcher, bouton maison tout à gauche du dock, ou supprimer le launcher ici.",
     "lnc_install": "Installer et activer",
     "lnc_update": "Mettre à jour",
     "lnc_open": "Ouvrir",
@@ -5998,7 +6008,9 @@
         "radius": "Rayon entre {a} et {b} m"
       },
       "auswahl_auto": "Automatique (par défaut)",
-      "auswahl_auto_jetzt": "Automatique (par défaut) – actuellement {v}"
+      "auswahl_auto_jetzt": "Automatique (par défaut) – actuellement {v}",
+      "alle_hinweis": "D’autres réglages se trouvent sous « Toutes les fonctions ».",
+      "alle_zeigen": "Afficher toutes les fonctions"
     },
     "anzeige": {
       "darstellung": {
@@ -6236,6 +6248,15 @@
     "offen_titel": "Encore à configurer",
     "offen_keins": "Rien en attente – l’installation est complète.",
     "offen_hinweis": "Tout est facultatif. Touchez un élément.",
+    "empf": {
+      "waechter": "Enregistre quand quelqu'un heurte ou force ta voiture garée. Désactivé tant que tu ne l'actives pas.",
+      "extra_handy": "Vois ta voiture sur ton téléphone et reçois-y les alertes.",
+      "extra_launcher": "Panoptes comme écran d'accueil dans la voiture. Retour à BYD en un geste à tout moment."
+    },
+    "einrichten_knopf": "Configurer",
+    "nur_display": "Se fait sur l'écran de la voiture.",
+    "weitere_zeigen": "Autres étapes ({anzahl})",
+    "weitere_verbergen": "Masquer les autres étapes",
     "erledigt_knopf": "Fait / pas nécessaire",
     "neu_knopf": "Relancer l’installation",
     "neu_frage": "Vraiment relancer l’installation ? L’assistant reposera alors toutes les questions sur l’écran de la voiture. Vos réglages restent jusqu’à ce que vous les y modifiiez ; vous devrez reconfirmer les partages de données.",
@@ -6345,7 +6366,7 @@
       "ja": "Oui",
       "nein": "Non",
       "extra_display_text": "Tu peux mettre ta propre image en fond de l’écran de la voiture. Tu peux aussi verrouiller l’écran avec un code, par exemple pour le garage.",
-      "extra_launcher_text": "Le launcher Panoptes est un écran d’accueil à part avec climatisation, apps et mises à jour. Il fonctionne à côté de l’écran d’accueil BYD. Tu peux le retirer à tout moment.",
+      "extra_launcher_text": "Le launcher Panoptes est un écran d’accueil à part avec climatisation, apps et mises à jour. Il fonctionne à côté de l’écran d’accueil BYD et ne devient écran d’accueil de la touche Accueil que si tu l’actives. Tu peux le retirer à tout moment.",
       "extra_tacho_text": "Ta voiture peut afficher plus dans le compteur : un design Panoptes, la navigation ou une app que tu autorises. La vitesse et les témoins restent toujours visibles. « Compteur normal » marche à tout moment.",
       "extra_abschaltbericht_text": "Quand tu gares la voiture, Panoptes t’envoie un court message Telegram : trajet, batterie, autonomie, surveillance et si la voiture est verrouillée. Sans lieu. Fonctionne seulement si Telegram est configuré.",
       "extra_ladesaeule_text": "Après la recharge, Panoptes demande une fois au serveur Panoptes à quelle borne tu étais. Pour cela ta position approximative part au serveur, jamais aux lieux privés. Ainsi le prix et le nom de la borne sont justes.",
@@ -7596,5 +7617,29 @@
     "video": "Vidéo au combiné (en P uniquement, à 0 km/h)",
     "video_hilfe": "Sans son. Dès que vous quittez P ou démarrez, la vidéo disparaît.",
     "video_waehlen": "Choisir un enregistrement …"
+  },
+  "sprachmodell": {
+    "titel": "Modèle vocal pour les commandes vocales",
+    "lead": "Ne se télécharge que si vous touchez – depuis la source officielle Vosk, avec une somme de contrôle fixe. Ensuite, Panoptes reconnaît les commandes sans internet.",
+    "laden": "Télécharger le modèle vocal ({sprache}, env. {mb} Mo)",
+    "da": "installé",
+    "abbrechen": "Annuler",
+    "fehler_datei": "Le fichier n’est pas dans le dossier Download.",
+    "fehler_dienst": "Panoptes n’a pas pu lancer le téléchargement. Ouvrez Panoptes une fois et touchez à nouveau.",
+    "fehler_sprache": "Il n’y a pas de modèle vocal à télécharger pour cette langue.",
+    "fehler_ordner": "Panoptes ne peut pas créer le dossier du modèle vocal. Rien n’a été téléchargé.",
+    "aus_download": "Reprendre depuis Download ({sprache})",
+    "laedt": "Téléchargement … {p} %",
+    "prueft": "Vérification de la somme de contrôle …",
+    "entpackt": "Décompression …",
+    "fertig": "Terminé. Les commandes vocales fonctionnent maintenant sans internet.",
+    "abgebrochen": "Annulé. Rien n’a été installé.",
+    "fehler_pruefsumme": "La somme de contrôle ne correspond pas. Le fichier a été supprimé, rien n’a été installé.",
+    "fehler_platz": "Pas assez d’espace. Il faut environ {mb} Mo libres.",
+    "fehler_netz": "Le téléchargement a échoué (internet ?). Rien n’a été installé.",
+    "fehler_entpacken": "La décompression a échoué. Rien n’a été installé.",
+    "laeuft_schon": "Un modèle est déjà en cours de téléchargement.",
+    "nur_am_auto": "Le téléchargement ne fonctionne que sur l’écran de la voiture.",
+    "hand": "Ou à la main : placez le fichier {datei} dans le dossier Download (p. ex. adb push vers /sdcard/Download), puis touchez « Reprendre depuis Download »."
   }
 }

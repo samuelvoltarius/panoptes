@@ -19,11 +19,17 @@ import java.util.regex.Pattern;
  * <p>Je Punkt {@code ok | fehlt | entfaellt | ungeprueft} plus Ziel-Schritt-ID für „Beheben“.
  * <b>Nur echte Prüfungen, nichts behaupten:</b> wo der Daemon es gerade nicht messen kann (Kamera ruht,
  * kein Internet für den Planer, Tailscale-Status nicht lesbar), steht {@code ungeprueft} – nie {@code ok}.
- * Ein übersprungener (offen/später) Kamera-Schritt ist immer {@code fehlt}.
+ * Ein übersprungener (offen/später) Kamera-Schritt und ein nicht gewählter Wächter sind {@code freiwillig}
+ * (0.1.44: der Schnellstart fragt beide bewusst nicht, also kein Fehler).
  */
 public final class Selbsttest {
 
     public static final String OK = "ok", FEHLT = "fehlt", ENTFAELLT = "entfaellt", UNGEPRUEFT = "ungeprueft";
+    /**
+     * 0.1.44 (V1 E2 „Selbsttest ehrlich“): bewusst nicht gefragt und freiwillig nachholbar (Wächter, Kameras).
+     * Kein Fehler: zählt nicht gegen {@code ok}, wird ruhig angezeigt, mit Knopf zum Einrichten.
+     */
+    public static final String FREIWILLIG = "freiwillig";
 
     static final long BILD_MAX_MS = 60_000L;
     static final double SPEICHER_MIN_GB = 2.0;
@@ -67,7 +73,8 @@ public final class Selbsttest {
         // Kameras
         JSONObject k;
         if ("offen".equals(f.kameraSchritt) || "spaeter".equals(f.kameraSchritt)) {
-            k = punkt("kameras", FEHLT, "kameras");
+            // 0.1.44 (E2): seit 0.1.38.5 nicht mehr im Schnellstart gefragt → nachholbar, kein Fehler
+            k = punkt("kameras", FREIWILLIG, "kameras");
         } else if ("entfaellt".equals(f.kameraSchritt) || (f.kameraAnzahl != null && f.kameraAnzahl == 0)) {
             k = punkt("kameras", ENTFAELLT, "kameras");
         } else if (f.letztesBildMs > 0 && f.jetzt - f.letztesBildMs >= 0 && f.jetzt - f.letztesBildMs <= BILD_MAX_MS) {
@@ -121,7 +128,8 @@ public final class Selbsttest {
         // Wächter-Modus
         JSONObject w;
         if (f.waechterStatus == null || "nicht_gewaehlt".equals(f.waechterStatus)) {
-            w = punkt("waechter", FEHLT, "waechter");
+            // 0.1.44 (E2): Der Schnellstart fragt den Wächter bewusst nicht (Zusatzdienst, ab Werk aus) → freiwillig, kein Fehler
+            w = punkt("waechter", FREIWILLIG, "waechter");
         } else {
             w = punkt("waechter", OK, "waechter");
             w.put("wert", f.waechterStatus);

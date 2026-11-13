@@ -158,7 +158,7 @@ public class SprachApiHandlerTest {
         }
         String h = TestLies.lies("app/src/main/java/at/greenchili/surfmate/server/SprachApiHandler.java");
         assertTrue("erst Aufrufer, dann alles andere",
-                h.indexOf("SprachAufrufer.pruefe()") < h.indexOf("Object[] r = ausfuehren(body, System.currentTimeMillis());"));
+                h.indexOf("SprachAufrufer.pruefe()") < h.indexOf("Object[] r = modell ? modell(method, body) : ausfuehren(body, System.currentTimeMillis());"));   // 0.1.44 P2b: auch fürs Modell
         assertTrue(h.contains("String wer = AuthMiddleware.isDirektAmAuto() ? SprachAufrufer.pruefe() : SprachAufrufer.NICHT_LOKAL;"));
     }
 

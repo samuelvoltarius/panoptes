@@ -54,6 +54,7 @@
     <string name="kein_platz">Daar is geen ruimte.</string>
     <string name="klima_hinweis">Klimaat: temperatuur en ventilator −/+, aan/uit. Tik op de waarde om de bediening in Panoptes te openen.</string>
     <string name="launch_failed">De app kon niet worden gestart.</string>
+    <string name="einstellung_fehlt">Deze Android-instellingenpagina bestaat niet op dit apparaat. Zonder deze pagina blijft deze functie uit.</string>
     <string name="luft_format">Lucht PM2,5 binnen %1$s · buiten %2$s</string>
     <string name="medien_nichts">Er speelt niets</string>
     <string name="medien_ohne_zugriff">Media</string>
@@ -85,7 +86,7 @@
     <string name="reiter_einstellungen">Instellingen</string>
     <string name="reiter_karte">Kaart</string>
     <string name="reiter_status">Status</string>
-    <string name="reiter_steuerung">Bediening</string>
+    <string name="reiter_steuerung">Klimaat</string>
     <string name="rueckweg_hinweis">Het huisje helemaal links in het dock brengt je altijd terug naar het BYD-startscherm. Het kan niet worden verwijderd.</string>
     <string name="seite_neu">Nieuwe pagina</string>
     <string name="seite_weg">Pagina verwijderen</string>
@@ -211,7 +212,7 @@
     <string name="groesse_kleiner">Kleiner</string>
     <string name="groesse_groesser">Groter</string>
     <string name="groesse_hinweis">Automatisch past de launcher aan je scherm aan. Lijkt alles nog te groot of te klein, kies dan Kleiner of Groter.</string>
-    <string name="erweitert">Geavanceerd</string>
+    <string name="erweitert">Meer</string>
     <string name="zurueck">Terug</string>
     <string name="leiste_musik">Pauze/Afspelen</string>
     <string name="leiste_zurueck">Vorige</string>
@@ -319,8 +320,6 @@
     <string name="tagnacht_hinweis">\'s Nachts geldt het ontwerp \"Nacht\". Het tijdstip komt van de zonnestand bij de auto, anders van de klok.</string>
     <string name="vorlage">Lay-outsjabloon</string>
     <string name="vorlage_hinweis">Vervangt startpagina\'s en uiterlijk. „Eenvoudig” zet de grootte op „Groter”, de andere terug op „Automatisch”. Dock en apps blijven.</string>
-    <string name="vorlage_frage">Hoe moet de launcher eruitzien?</string>
-    <string name="vorlage_spaeter">Later te wijzigen onder Instellingen → Geavanceerd → Lay-outsjabloon.</string>
     <string name="vorlage_einfach">Eenvoudig</string>
     <string name="vorlage_einfach_text">weinig grote tegels, grote tekst</string>
     <string name="vorlage_standard">Standaard</string>
@@ -425,7 +424,7 @@
     <string name="einrasten_an">Uitlijnen: aan</string>
     <string name="einrasten_aus">Uitlijnen: uit</string>
     <string name="text_hinzu">Label</string>
-    <string name="vorlage_zuruecksetzen">Terug naar sjabloon</string>
+    <string name="vorlage_zuruecksetzen">Ander sjabloon kiezen</string>
     <string name="bearbeiten_gesperrt">Bewerken beëindigd – alleen bij stilstand.</string>
     <string name="widget_dockleiste">Dock</string>
     <string name="widget_reiterleiste">Tabbladen</string>
@@ -479,11 +478,16 @@
     <string name="taste_fehler">Dat is niet gelukt.</string>
     <string name="hilfe_name">Panoptes Launcher: Terug en Vorige app</string>
     <string name="hilfe_beschreibung">Laat Panoptes Launcher op “Terug” drukken en naar de laatst gebruikte app wisselen. Hij onthoudt daarvoor alleen de namen van recent geopende apps, alleen in het geheugen, en leest geen scherminhoud.</string>
-    <string name="hilfe_einstellung">Toegankelijkheid voor “Terug”</string>
+    <string name="hilfe_einstellung">Toegankelijkheid voor “Terug” en “Vorige app”</string>
     <string name="hilfe_erklaerung">Zet “Panoptes Launcher” zelf aan in de Android-instellingen onder Toegankelijkheid, zodat “Terug” en “Vorige app” in elke app werken. Android opent nu die pagina.</string>
     <string name="gross_titel">Grote bediening</string>
     <string name="gross_hinweis">Tekst, knoppen, dock en balk zijn een kwart groter, opschriften hebben meer contrast. Tegels houden hun grootte.</string>
     <string name="einr_titel">Instellen als startscherm</string>
+    <string name="kachel_weitere">Meer tegels …</string>
+    <string name="einr_angebot_spaeter">Later</string>
+    <string name="einr_angebot_ja">Instellen</string>
+    <string name="einr_angebot_text">De Home-toets leidt dan naar Panoptes Launcher. Met “Alles terug naar BYD” zet je alles op elk moment terug. Later vind je dit bovenaan in Instellingen.</string>
+    <string name="einr_angebot_titel">Instellen als startscherm?</string>
     <string name="einr_s1_titel">1. Panoptes Launcher als startscherm</string>
     <string name="einr_s1_text">De Home-toets leidt dan naar Panoptes Launcher in plaats van het BYD-startscherm. “Alles terug naar BYD” zet alles op elk moment terug.</string>
     <string name="einr_einschalten">Inschakelen</string>

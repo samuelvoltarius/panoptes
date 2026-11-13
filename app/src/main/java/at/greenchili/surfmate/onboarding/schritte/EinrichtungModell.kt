@@ -44,6 +44,12 @@ object Einrichtung {
     /** 0.1.38.5: Nach dem Vorlauf kommt kein eigener Schnellstart-Schritt mehr (alles Weitere ist „Noch einrichten“). */
     const val NACH_VORLAUF = 0
 
+    /**
+     * 0.1.44 (V1 E3, wie Kern `EinrichtungApiHandler.EMPFOHLEN`): höchstens diese drei offenen Punkte zeigt der Abschluss
+     * als große Empfehlungskarten, in dieser Reihenfolge. Alles andere steht eingeklappt unter „Weitere Schritte“.
+     */
+    val EMPFOHLEN = listOf("waechter", "extra_handy", "extra_launcher")
+
     const val ERLEDIGT = "erledigt"
     const val OFFEN = "offen"
     const val SPAETER = "spaeter"
@@ -117,6 +123,12 @@ data class EinrichtungStand(
 
     /** „Später“ ist nur bei Nicht-Pflichtschritten erlaubt (Kern antwortet sonst 422). */
     fun spaeterErlaubt(id: String): Boolean = schritt(id)?.pflicht == false
+
+    /** 0.1.44 (E3): offene Empfehlungen in fester Reihenfolge (höchstens drei). */
+    fun empfehlungen(): List<String> { val o = nochOffen(); return Einrichtung.EMPFOHLEN.filter { it in o } }
+
+    /** 0.1.44 (E3): alles Offene außer den Empfehlungen (eingeklappt unter „Weitere Schritte“). */
+    fun weitere(): List<String> { val e = empfehlungen(); return nochOffen().filter { it !in e } }
 
     /** Für die Liste „Noch einrichten“: offen_spaeter + offene/spätere Schritte (ohne „fertig“). */
     fun nochOffen(): List<String> {

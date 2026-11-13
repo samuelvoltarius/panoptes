@@ -166,7 +166,9 @@ class EinrichtungActivity : Activity() {
             }
             Selbsttest.Schritt.ERGEBNIS -> {
                 if (Selbsttest.zurueckOk == false)
-                    knopf(R.string.hilfe_einstellung) { PanoptesBedienhilfe.einstellungOeffnen(this) }
+                    knopf(R.string.hilfe_einstellung) {
+                        if (!PanoptesBedienhilfe.einstellungOeffnen(this)) hinweis(R.string.einstellung_fehlt)
+                    }
                 if (Selbsttest.hausOk == false) knopf(R.string.einr_nochmal) { weiter(Selbsttest.Schritt.HAUS) }
                 else if (Selbsttest.zurueckOk == false) knopf(R.string.einr_nochmal) { weiter(Selbsttest.Schritt.ZURUECK) }
                 knopf(R.string.einr_fertig, primary = true) { finish() }

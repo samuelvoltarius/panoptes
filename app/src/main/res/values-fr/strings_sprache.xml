@@ -16,7 +16,7 @@
     <string name="sprache_ja">Oui</string>
     <string name="sprache_nein">Non</string>
     <string name="sprache_abgebrochen">Annulé. Rien n’a été modifié.</string>
-    <string name="sprache_schalter_aus">Les commandes vocales sont désactivées. Activez-les dans Réglages → Système.</string>
+    <string name="sprache_schalter_aus">Les commandes vocales sont désactivées. Activez-les dans Réglages → Tous les réglages → Partage de données.</string>
     <string name="sprache_grenze">La climatisation est déjà à sa limite.</string>
     <string name="sprache_stufe_unbekannt">Le niveau de climatisation n’est pas lisible. Rien n’a été modifié.</string>
     <string name="sprache_fehler">Cela n’a pas fonctionné.</string>
@@ -29,7 +29,7 @@
     <string name="sprache_musik_pause">Pause</string>
     <string name="sprache_erledigt">C’est fait</string>
     <string name="sprache_mikrofon_belegt">Panoptes enregistre du son en ce moment. Le micro reste fermé.</string>
-    <string name="sprache_weckwort_aus">Le mot d’activation est désactivé. Activez-le dans Réglages → Système.</string>
+    <string name="sprache_weckwort_aus">Le mot d’activation est désactivé. Activez-le dans Réglages → Tous les réglages → Partage de données.</string>
     <string name="sprache_noch_nicht">Panoptes ne reconnaît pas encore les commandes vocales en français (allemand et anglais uniquement).</string>
     <string name="sprache_kein_modell">Le modèle vocal hors ligne manque dans cette voiture. Rien n’est téléchargé automatiquement.</string>
     <string name="sprache_kein_mikrofon">Sans autorisation du micro, pas de commandes vocales.</string>
@@ -38,4 +38,6 @@
     <string name="sprache_weckwort_stopp" formatted="true">Ne plus écouter « %1$s »</string>
     <string name="sprache_weckwort_anzeige" formatted="true">Micro à l’écoute de « %1$s » – touchez pour arrêter</string>
     <string name="sprache_schliessen">Fermer</string>
+    <string name="sprachmodell_kanal">Modèle vocal</string>
+    <string name="sprachmodell_laedt">Téléchargement du modèle vocal …</string>
 </resources>

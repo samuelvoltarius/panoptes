@@ -452,6 +452,16 @@ public class SystemApiHandler {
             res.put("modelId", gewaehlt != null ? gewaehlt : "");
             res.put("modellGewaehlt", gewaehlt != null);
             res.put("color", v != null ? v.optString("color", "") : "");
+            // E4 (0.1.44): Modus „Einfach / Alle Funktionen“ für die Leiste (app-shell); ohne Wert „alle“.
+            // Fixrunde E2E 0.1.43.2 (M1): frische Neuinstallation ohne Wert → der Kern schreibt „einfach“ selbst fest
+            // (die App kam beim ersten Start zu früh). Ein vorhandener Wert und ein Bestand bleiben unberührt.
+            if (Erststart.umfangFestschreiben(cfg)) {
+                try {
+                    UnifiedConfigManager.updateSection("anzeige", new JSONObject()
+                            .put("umfang", at.greenchili.surfmate.einstellungen.Katalog.UMFANG_EINFACH));
+                } catch (Throwable ignored) { }
+            }
+            res.put("umfang", Erststart.umfang(cfg));
             if (v != null && v.has("nominalKwh") && !v.isNull("nominalKwh")) {
                 res.put("batteryKwh", v.optDouble("nominalKwh", 0));
             }

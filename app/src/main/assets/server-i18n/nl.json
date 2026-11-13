@@ -2422,6 +2422,12 @@
       }
     },
     "anzeige": {
+      "umfang": {
+          "title": "Hoeveel moet Panoptes tonen?",
+          "help": "„Eenvoudig” toont alleen de pagina’s en instellingen voor elke dag, „Alle functies” toont alles. Zoeken vindt altijd alles. Nieuwe installaties starten met „Eenvoudig”.",
+          "einfach": "Eenvoudig",
+          "alle": "Alle functies"
+      },
       "darstellung": {
         "title": "Weergave in de auto",
         "help": "Licht ontziet het scherm in de auto: kaarten in 2D, zonder vervagingseffecten en doorlopende animaties. Volledig toont alles, maar kost op het scherm in de auto merkbaar prestaties.",

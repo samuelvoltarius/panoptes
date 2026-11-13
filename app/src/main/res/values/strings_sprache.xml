@@ -16,7 +16,7 @@
     <string name="sprache_ja">Yes</string>
     <string name="sprache_nein">No</string>
     <string name="sprache_abgebrochen">Cancelled. Nothing was changed.</string>
-    <string name="sprache_schalter_aus">Voice commands are off. Switch them on under Settings → System.</string>
+    <string name="sprache_schalter_aus">Voice commands are off. Switch them on under Settings → All settings → Data sharing.</string>
     <string name="sprache_grenze">The climate is already at its limit.</string>
     <string name="sprache_stufe_unbekannt">The current climate level cannot be read. Nothing was changed.</string>
     <string name="sprache_fehler">That did not work.</string>
@@ -29,7 +29,7 @@
     <string name="sprache_musik_pause">Paused</string>
     <string name="sprache_erledigt">Done</string>
     <string name="sprache_mikrofon_belegt">Panoptes is recording sound right now. The microphone stays closed.</string>
-    <string name="sprache_weckwort_aus">The wake word is off. Switch it on under Settings → System.</string>
+    <string name="sprache_weckwort_aus">The wake word is off. Switch it on under Settings → All settings → Data sharing.</string>
     <string name="sprache_noch_nicht">Panoptes cannot recognise voice commands in this language yet (German and English only).</string>
     <string name="sprache_kein_modell">The offline speech model is missing on this car. Nothing is downloaded automatically.</string>
     <string name="sprache_kein_mikrofon">Without microphone permission there are no voice commands.</string>
@@ -38,4 +38,6 @@
     <string name="sprache_weckwort_stopp" formatted="true">Stop listening for “%1$s”</string>
     <string name="sprache_weckwort_anzeige" formatted="true">Microphone listening for “%1$s” – tap to stop</string>
     <string name="sprache_schliessen">Close</string>
+    <string name="sprachmodell_kanal">Speech model</string>
+    <string name="sprachmodell_laedt">Downloading speech model …</string>
 </resources>

@@ -17,6 +17,11 @@ object PreferencesManager {
     private const val TAG = "PreferencesManager"
     private const val PREFS_NAME = "surfmate_prefs"
     private const val KEY_ENABLED_DAEMONS = "enabled_daemons"
+    /** E4 (0.1.44): beim ersten Start gemerkter Modus (einfach/alle), nur für das einmalige Festschreiben. */
+    private const val KEY_UMFANG_ERSTSTART = "umfang_erststart"
+    /** Fixrunde 0.1.43.2 (M1): Wiederholen, bis der Kern den Umfang hat (40 × 15 s = 10 min). */
+    internal const val UMFANG_VERSUCHE = 40
+    internal const val UMFANG_PAUSE_MS = 15_000L
     private const val KEY_THEME_MODE = "theme_mode"
     private const val KEY_KERN_THEMA = "kern_thema"
     private const val KEY_SELECTED_CAMERAS = "selected_cameras"
@@ -66,7 +71,9 @@ object PreferencesManager {
         Log.d(TAG, "Initialized with device-encrypted storage")
         // Bestand sofort bestimmen (vor allem, was die Config anlegen könnte), festschreiben im Hintergrund
         istBestand()
+        merkeUmfangErststart()
         Thread({ festschreibenTailscale() }, "TailscaleStandard").start()
+        Thread({ festschreibenUmfang() }, "UmfangStandard").start()
     }
     
     /**
@@ -229,6 +236,59 @@ object PreferencesManager {
             Log.w(TAG, "festschreibenTailscale: ${t.message}")
         }
     }
+
+    /**
+     * E4 (0.1.44, Projektinhaber 13.11.): Modus „Einfach / Alle Funktionen“ (anzeige.umfang) einmal festschreiben, wenn es
+     * noch keinen Eintrag gibt: Neuinstallation „einfach“, Bestand „alle“. Ein vorhandener Wert wird nie geändert
+     * (nie still umschalten). Scheitert das Schreiben, gilt im Kern „alle“ – es verschwindet nichts.
+     */
+    private fun festschreibenUmfang() {
+        // Fixrunde E2E 0.1.43.2 (M1): beim ersten Start ist der Kern oft noch nicht bereit und der Wert ging verloren.
+        // Darum schreiben, zurücklesen und bei Fehlen wiederholen (höchstens UMFANG_VERSUCHE × UMFANG_PAUSE_MS).
+        // Nie überschreiben: steht schon ein Wert (auch vom Kern selbst, Erststart), ist nichts zu tun.
+        val wert = prefs?.getString(KEY_UMFANG_ERSTSTART, null)
+            ?: at.greenchili.surfmate.einstellungen.Katalog.umfangFuerErstenStart(istBestand())
+        for (versuch in 1..UMFANG_VERSUCHE) {
+            try {
+                val vorher = at.greenchili.surfmate.config.UnifiedConfigManager.forceReload().optJSONObject("anzeige")
+                if (!umfangFehlt(vorher)) {
+                    if (versuch > 1) Log.i(TAG, "Umfang steht (Versuch $versuch)")
+                    return
+                }
+                at.greenchili.surfmate.config.UnifiedConfigManager.updateSection(
+                    "anzeige", org.json.JSONObject().put("umfang", wert))
+                val nachher = at.greenchili.surfmate.config.UnifiedConfigManager.forceReload().optJSONObject("anzeige")
+                if (!umfangFehlt(nachher)) {
+                    Log.i(TAG, "Umfang festgeschrieben und zurückgelesen: ${nachher?.optString("umfang")}")
+                    return
+                }
+                Log.w(TAG, "Umfang nach dem Schreiben nicht gelesen (Versuch $versuch), wiederhole")
+            } catch (t: Throwable) {
+                Log.w(TAG, "festschreibenUmfang (Versuch $versuch): ${t.message}")
+            }
+            try { Thread.sleep(UMFANG_PAUSE_MS) } catch (_: InterruptedException) { return }
+        }
+    }
+
+    /**
+     * Die Entscheidung „neu oder Bestand“ fällt genau einmal, beim allerersten Start dieser Version, und wird lokal
+     * gemerkt. Klappt das Schreiben in die Kern-Config erst bei einem späteren Start (Kern noch nicht bereit), bleibt
+     * eine Neuinstallation trotzdem „einfach“ (sonst wäre sie bis dahin durch die neue Config zum „Bestand“ geworden).
+     */
+    private fun merkeUmfangErststart() {
+        try {
+            val p = prefs ?: return
+            if (p.contains(KEY_UMFANG_ERSTSTART)) return
+            p.edit().putString(KEY_UMFANG_ERSTSTART,
+                at.greenchili.surfmate.einstellungen.Katalog.umfangFuerErstenStart(istBestand())).commit()
+        } catch (t: Throwable) {
+            Log.w(TAG, "merkeUmfangErststart: ${t.message}")
+        }
+    }
+
+    /** Nur festschreiben, wenn es noch gar keinen Eintrag gibt (rein, testbar). */
+    internal fun umfangFehlt(anzeige: org.json.JSONObject?): Boolean =
+        anzeige == null || !anzeige.has("umfang") || anzeige.isNull("umfang")
 
     /** Re-reads the shared section from disk; the health check calls this once per tick. */
     fun refreshSharedDaemonState() {

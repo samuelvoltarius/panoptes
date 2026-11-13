@@ -16,7 +16,7 @@
     <string name="sprache_ja">Ja</string>
     <string name="sprache_nein">Nee</string>
     <string name="sprache_abgebrochen">Geannuleerd. Er is niets veranderd.</string>
-    <string name="sprache_schalter_aus">Spraakopdrachten staan uit. Zet ze aan onder Instellingen → Systeem.</string>
+    <string name="sprache_schalter_aus">Spraakopdrachten staan uit. Zet ze aan onder Instellingen → Alle instellingen → Gegevens delen.</string>
     <string name="sprache_grenze">De airco staat al op de grens.</string>
     <string name="sprache_stufe_unbekannt">De airco-stand is niet leesbaar. Er is niets veranderd.</string>
     <string name="sprache_fehler">Dat is niet gelukt.</string>
@@ -29,7 +29,7 @@
     <string name="sprache_musik_pause">Pauze</string>
     <string name="sprache_erledigt">Klaar</string>
     <string name="sprache_mikrofon_belegt">Panoptes neemt nu geluid op. De microfoon blijft dicht.</string>
-    <string name="sprache_weckwort_aus">Het activeringswoord staat uit. Zet het aan onder Instellingen → Systeem.</string>
+    <string name="sprache_weckwort_aus">Het activeringswoord staat uit. Zet het aan onder Instellingen → Alle instellingen → Gegevens delen.</string>
     <string name="sprache_noch_nicht">Panoptes herkent nog geen spraakopdrachten in het Nederlands (alleen Duits en Engels).</string>
     <string name="sprache_kein_modell">Het offline spraakmodel ontbreekt in deze auto. Er wordt niets automatisch gedownload.</string>
     <string name="sprache_kein_mikrofon">Zonder toestemming voor de microfoon zijn er geen spraakopdrachten.</string>
@@ -38,4 +38,6 @@
     <string name="sprache_weckwort_stopp" formatted="true">Niet meer luisteren naar „%1$s”</string>
     <string name="sprache_weckwort_anzeige" formatted="true">Microfoon luistert naar „%1$s” – tik = uit</string>
     <string name="sprache_schliessen">Sluiten</string>
+    <string name="sprachmodell_kanal">Spraakmodel</string>
+    <string name="sprachmodell_laedt">Spraakmodel wordt geladen …</string>
 </resources>

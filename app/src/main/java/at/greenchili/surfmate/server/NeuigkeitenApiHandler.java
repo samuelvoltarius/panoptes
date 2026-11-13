@@ -22,6 +22,8 @@ public final class NeuigkeitenApiHandler {
     public static boolean handle(String method, String path, String body, OutputStream out) throws Exception {
         String pathOnly = path.contains("?") ? path.substring(0, path.indexOf('?')) : path;
         if (pathOnly.equals("/api/neuigkeiten") && method.equals("GET")) {
+            // Fixrunde E2E 0.1.43.2 (G3): frische Neuinstallation sieht kein „Neu in …“, nur ein Update
+            neuinstallationAlsGesehen();
             HttpResponse.sendJson(out, Neuigkeiten.antwort(stand(), at.greenchili.surfmate.BuildConfig.VERSION_CODE,
                     at.greenchili.surfmate.BuildConfig.VERSION_NAME).toString());
             return true;
@@ -44,6 +46,16 @@ public final class NeuigkeitenApiHandler {
             return true;
         }
         return false;
+    }
+
+    private static void neuinstallationAlsGesehen() {
+        try {
+            JSONObject root = UnifiedConfigManager.loadConfig();
+            if (Erststart.neuigkeitenAlsGesehen(root.optJSONObject(ABSCHNITT), root)) {
+                UnifiedConfigManager.updateSection(ABSCHNITT, new JSONObject()
+                        .put("gesehenVersionCode", at.greenchili.surfmate.BuildConfig.VERSION_CODE));
+            }
+        } catch (Throwable ignored) { }
     }
 
     static JSONObject stand() {

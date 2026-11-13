@@ -166,6 +166,13 @@
     <string name="einr_noch_text">Alles freiwillig. Geht jederzeit.</string>
     <string name="einr_noch_knopf">Einrichten</string>
     <string name="einr_noch_erledigt">Erledigt / nicht nötig</string>
+    <string name="einr_st_freiwillig">noch nicht eingerichtet – freiwillig</string>
+    <string name="einr_empf_titel">Das kannst du jetzt einrichten</string>
+    <string name="einr_empf_waechter">Nimmt auf, wenn jemand dein geparktes Auto anstößt oder aufbricht. Aus, bis du ihn einschaltest.</string>
+    <string name="einr_empf_handy">Sieh dein Auto am Handy und bekomm Meldungen dorthin.</string>
+    <string name="einr_empf_launcher">Panoptes als Startbildschirm im Auto. Mit einem Tipp jederzeit zurück zu BYD.</string>
+    <string name="einr_weitere_zeigen">Weitere Schritte (%1$d)</string>
+    <string name="einr_weitere_verbergen">Weitere Schritte ausblenden</string>
     <string name="einr_updates_ja_knopf">Ja, nach Updates suchen</string>
     <string name="einr_updates_github">Panoptes fragt dazu regelmäßig bei GitHub nach. GitHub sieht dabei nur die Internet-Adresse des Autos, keine Fahrzeugdaten.</string>
     <!-- 0.1.38.3: Handy-App unterwegs nutzen? (Standard aus, ausdrücklich gefragt) -->

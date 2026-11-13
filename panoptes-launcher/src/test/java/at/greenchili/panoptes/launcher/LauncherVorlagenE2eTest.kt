@@ -61,10 +61,11 @@ class LauncherVorlagenE2eTest {
     // ---------- G1, G2, G3 ----------
 
     @Test
-    fun g1ErstFrageEinheitlichGross() {
-        val e = block("private fun vorlageErstFrage()", "private fun launcherLief()")
-        assertTrue("Adapter stellt jede Zeile ein", e.contains("override fun getView(") && e.contains("textSize = 20f") && e.contains("setAdapter(adapter)"))
-        assertFalse("kein nachträgliches Umstellen nur sichtbarer Zeilen", e.contains("lv.post"))
+    fun g1ErstFrageEntfaellt() {
+        // E5 (13.11.): die Layout-Frage beim ersten Start gibt es nicht mehr (LauncherEinfachTest)
+        assertFalse(m.contains("private fun vorlageErstFrage()"))
+        val e = block("private fun erstStart(", "private fun launcherLief()")
+        assertFalse("kein Auswahldialog", e.contains("setAdapter("))
     }
 
     @Test

@@ -26,6 +26,12 @@ import java.io.OutputStream;
 public final class SprachApiHandler {
 
     static final String PFAD = "/api/sprache/v1/befehl";
+    /** 0.1.44 (P2b): Sprachmodell laden – GET Stand, POST {aktion: laden|abbrechen, sprache}. Nur auf Tipp. */
+    static final String MODELL_PFAD = "/api/sprache/v1/modell";
+    /** 0.1.43.2 (Fix E2E M2): die App meldet Fortschritt und vorhandene Modelle (nur App-UID). */
+    static final String MODELL_STAND_PFAD = "/api/sprache/v1/modell/stand";
+    /** 0.1.43.2: Datei aus dem Ordner Download an die App (Quelle „hand“; Prüfsumme prüft die App). */
+    static final String MODELL_DATEI_PFAD = "/api/sprache/v1/modell/datei";
     static final String ZIEL = "sprache";
     static final Rueckfrage RUECKFRAGE = new Rueckfrage();
 
@@ -47,17 +53,72 @@ public final class SprachApiHandler {
     public static boolean handle(String method, String path, String body, OutputStream out) throws Exception {
         String p = path.contains("?") ? path.substring(0, path.indexOf('?')) : path;
         if (!p.startsWith("/api/sprache/")) return false;
-        if (!PFAD.equals(p)) { HttpResponse.sendJson(out, 404, "{\"ok\":false,\"grund\":\"pfad\"}"); return true; }
-        if (!"POST".equals(method)) { HttpResponse.sendJson(out, 405, "{\"ok\":false,\"grund\":\"methode\"}"); return true; }
+        boolean modell = MODELL_PFAD.equals(p) || MODELL_STAND_PFAD.equals(p) || MODELL_DATEI_PFAD.equals(p);
+        if (!PFAD.equals(p) && !modell) { HttpResponse.sendJson(out, 404, "{\"ok\":false,\"grund\":\"pfad\"}"); return true; }
+        if (!methodeErlaubt(p, method)) {
+            HttpResponse.sendJson(out, 405, "{\"ok\":false,\"grund\":\"methode\"}");
+            return true;
+        }
         String wer = AuthMiddleware.isDirektAmAuto() ? SprachAufrufer.pruefe() : SprachAufrufer.NICHT_LOKAL;
         if (wer != null) {
             BefehlsLog.grund(wer);
             HttpResponse.sendJson(out, 403, new JSONObject().put("ok", false).put("grund", wer).toString());
             return true;
         }
-        Object[] r = ausfuehren(body, System.currentTimeMillis());
+        if (MODELL_DATEI_PFAD.equals(p)) { datei(path, out); return true; }
+        if (MODELL_STAND_PFAD.equals(p)) {
+            at.greenchili.surfmate.server.SprachModellKern.melden(lesen(body), System.currentTimeMillis());
+            HttpResponse.sendJson(out, "{\"ok\":true}");
+            return true;
+        }
+        Object[] r = modell ? modell(method, body) : ausfuehren(body, System.currentTimeMillis());
         HttpResponse.sendJson(out, (Integer) r[0], r[1].toString());
         return true;
+    }
+
+    /** Erlaubte Methoden je Pfad: Befehl POST; Modell GET/POST; Stand POST; Datei GET. */
+    static boolean methodeErlaubt(String p, String method) {
+        if (MODELL_PFAD.equals(p)) return "GET".equals(method) || "POST".equals(method);
+        if (MODELL_DATEI_PFAD.equals(p)) return "GET".equals(method);
+        return "POST".equals(method);
+    }
+
+    private static JSONObject lesen(String body) {
+        try {
+            return new JSONObject(body == null || body.isEmpty() ? "{}" : body);
+        } catch (Exception e) {
+            return new JSONObject();
+        }
+    }
+
+    /** Datei aus Download an die App, nur wenn sie zu einem bekannten Modell passt (Name fest, Größe höchstens wie erwartet). */
+    private static void datei(String path, OutputStream out) throws Exception {
+        String sp = path.contains("sprache=") ? path.substring(path.indexOf("sprache=") + 8) : "";
+        if (sp.contains("&")) sp = sp.substring(0, sp.indexOf('&'));
+        at.greenchili.surfmate.sprache.SprachModellLaden.Modell m = at.greenchili.surfmate.sprache.SprachModellLaden.MODELLE.get(sp);
+        java.io.File f = m == null ? null : SprachModellKern.handDatei(m);
+        if (f == null || !f.isFile() || f.length() > m.zipBytes) {
+            HttpResponse.sendJson(out, 404, "{\"ok\":false,\"grund\":\"datei_fehlt\"}");
+            return;
+        }
+        HttpResponse.sendMediaFile(out, f, "application/zip");
+    }
+
+    /**
+     * 0.1.44 (P2b) Sprachmodell: GET = Stand (ohne Netz), POST laden/abbrechen. Nur hier wird geladen – auf Tipp in der
+     * Oberfläche, nie automatisch (kein Start, kein Takt, keine Automation ruft {@code SprachModellKern.starten}).
+     * 0.1.43.2 (Fix E2E M2): geladen wird in der App ({@code SprachModellDienst}), der Kern löst nur aus.
+     */
+    static Object[] modell(String method, String body) throws Exception {
+        long jetzt = System.currentTimeMillis();
+        if ("GET".equals(method)) return new Object[]{200, SprachModellKern.stand(jetzt)};
+        JSONObject in = lesen(body);
+        String aktion = in.optString("aktion", "");
+        if ("abbrechen".equals(aktion)) return new Object[]{200, SprachModellKern.abbrechen()};
+        if (!"laden".equals(aktion)) return new Object[]{400, new JSONObject().put("ok", false).put("grund", "aktion")};
+        JSONObject r = SprachModellKern.starten(in.optString("sprache", ""), in.optString("quelle", "netz"), jetzt);
+        BefehlsLog.ereignis("sprache.modell.laden", r.optBoolean("ok") ? "ok" : "abgelehnt", null, null);
+        return new Object[]{r.optBoolean("ok") ? 200 : 409, r};
     }
 
     /** Antwort {@code {status, json}} (ohne Aufrufer-Prüfung, die macht {@link #handle}). */

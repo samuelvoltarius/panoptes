@@ -452,6 +452,7 @@ BYD.roadSense = {
             this._setChecked('rsClusterAuto', c.autoProjectCluster);
             this._setChecked('rsOemTurnGuidance', c.oemTurnGuidance && !this._oemTurnGesperrt);
             this._setChecked('rsExternalNavGuidance', c.externalNotificationGuidance);
+            this.refreshNotificationAccess();
             if (loadLiveStatus) this.loadClusterStatus();
         }
 
@@ -1350,9 +1351,7 @@ BYD.roadSense = {
             if (data && data.success) {
                 this.config.externalNotificationGuidance = on;
                 this._toastSaved();
-                if (on && window.AndroidBridge && typeof AndroidBridge.openNotificationAccessSettings === 'function') {
-                    AndroidBridge.openNotificationAccessSettings();
-                }
+                if (on) this.openNotificationAccessSettings();
             } else {
                 el.checked = !on;
                 this._toastFailed();
@@ -1365,10 +1364,40 @@ BYD.roadSense = {
         }
     },
 
-    openNotificationAccessSettings() {
-        if (window.AndroidBridge && typeof AndroidBridge.openNotificationAccessSettings === 'function') {
-            AndroidBridge.openNotificationAccessSettings();
+    // 0.1.44 (V1 E1): ehrlich anzeigen, ob der Benachrichtigungszugriff besteht – statt blind „ok“.
+    // granted | missing | unavailable (Seite fehlt auf diesem Gerät) | nobridge (Handy/PC: nur am Auto einstellbar)
+    _notifAccessState() {
+        if (!window.AndroidBridge || typeof AndroidBridge.notificationAccessStatus !== 'function') return 'nobridge';
+        try { return String(AndroidBridge.notificationAccessStatus() || 'error'); } catch (e) { return 'error'; }
+    },
+
+    refreshNotificationAccess(stand) {
+        var el = document.getElementById('rsNotifAccessStatus');
+        if (!el) return;
+        var s = stand || this._notifAccessState();
+        var key = { granted: 'notif_access_granted', missing: 'notif_access_missing', unavailable: 'notif_access_unavailable',
+            nobridge: 'notif_access_nobridge' }[s] || 'notif_access_missing';
+        el.textContent = BYD.i18n.t('road_sense.' + key);
+        el.setAttribute('data-zugriff', s);
+        // nach der Rückkehr aus den Android-Einstellungen neu lesen (einmal angemeldet)
+        if (!this._notifAccessHorcht) {
+            this._notifAccessHorcht = true;
+            var self = this;
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden) self.refreshNotificationAccess();
+            });
         }
+    },
+
+    openNotificationAccessSettings() {
+        if (!window.AndroidBridge || typeof AndroidBridge.openNotificationAccessSettings !== 'function') {
+            this.refreshNotificationAccess('nobridge');
+            return;
+        }
+        var r = '';
+        try { r = String(AndroidBridge.openNotificationAccessSettings() || ''); } catch (e) { r = 'error'; }
+        if (r === 'unavailable') this.refreshNotificationAccess('unavailable');
+        else if (r !== 'ok') this._toastFailed();
     },
 
     // ==================== Destructive actions ====================

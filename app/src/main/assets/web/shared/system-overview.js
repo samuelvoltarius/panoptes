@@ -117,6 +117,36 @@
     };
     var schemaTreffer = null;
 
+    // Fixrunde E2E 0.1.43.2 (G2): Einstellungen außerhalb dieser Seite und ohne Schema-Feld, die Leute mit eigenen
+    // Wörtern suchen („Benachrichtigung“, „Waze“, „Pfeile“, „Overlay“). Suchwörter in allen 5 Sprachen (de, en, fr,
+    // it, nl), weil die Suche sprachunabhängig über den Text geht; der Titel kommt aus der gewählten Sprache.
+    var STICHWOERTER = [
+        { ziel: 'road-sense.html', titel: 'road_sense.external_nav_guidance', fallback: 'Google-Maps-/Waze-Pfeile übernehmen',
+          woerter: 'google maps waze pfeile pfeil abbiegepfeile benachrichtigung benachrichtigungen benachrichtigungszugriff '
+            + 'mitteilungen navigation fremde navi notification notifications notification access arrows turn arrows '
+            + 'fleches fleche notifications acces frecce freccia notifiche accesso notifiche pijlen pijl meldingen meldingtoegang' },
+        { ziel: 'road-sense.html', titel: 'road_sense.oem_turn_guidance', fallback: 'Abbiegepfeile im Fahrerdisplay',
+          woerter: 'pfeile pfeil abbiegepfeile fahrerdisplay kombi kombiinstrument tacho cluster arrows turn arrows '
+            + 'driver display fleches combine frecce quadro strumenti pijlen instrumentenpaneel' },
+        { ziel: 'meldungen.html', titel: 'shell.page_meldungen_start', fallback: 'Meldungen',
+          woerter: 'benachrichtigung benachrichtigungen mitteilungen push meldungen notification notifications alerts '
+            + 'notifications alertes notifiche avvisi meldingen' },
+        { ziel: 'system.html#einrichtung', titel: 'einr.schritt.ueberlagerung', fallback: 'Anzeige über anderen Apps',
+          woerter: 'overlay ueberlagerung uber anderen apps einblenden schwebend draw over other apps display over apps '
+            + 'superposition au dessus des applis sovrapposizione sopra altre app weergave over andere apps' }
+    ];
+
+    function stichListe() {
+        var out = [];
+        for (var i = 0; i < STICHWOERTER.length; i++) {
+            var e = STICHWOERTER[i];
+            var titel = t(e.titel, e.fallback);
+            out.push({ titel: titel, text: norm(titel + ' ' + e.woerter), ziel: e.ziel,
+                ort: e.ziel.indexOf('system.html') === 0 ? '' : seitenOrt(e.ziel.split('#')[0]) });
+        }
+        return out;
+    }
+
     function norm(s) {
         s = String(s || '').toLowerCase();
         try { s = s.normalize('NFD').replace(/[̀-ͯ]/g, ''); } catch (e) {}
@@ -140,7 +170,7 @@
                         var f = fs[j];
                         if (f.sichtbar === false || !f.titel) continue;
                         var ziel = feldZiel(f.key) || SCHEMA_SEITE[gs[i].id] || 'system.html';
-                        schemaTreffer.push({ titel: f.titel, text: norm(f.titel + ' ' + (f.hilfe || '')),
+                        schemaTreffer.push({ titel: f.titel, text: norm(f.titel + ' ' + (f.hilfe || '')), feld: f.key,
                             ziel: ziel, ort: ziel.indexOf('system.html') === 0 ? '' : seitenOrt(ziel.split('#')[0]) });
                     }
                 }
@@ -228,6 +258,7 @@
         }
         nimm(seitenListe(), 'seite');
         nimm(kartenListe(), 'karte');
+        nimm(stichListe(), 'stich');
         nimm(schemaTreffer || [], 'feld');
         liste.hidden = false;
         if (!treffer.length) {
@@ -251,6 +282,20 @@
         a.innerHTML = '<b>' + esc(e.titel) + '</b><span>'
             + esc(e.ort || (hier ? t('shell.suche_hier', 'Auf dieser Seite') : t('shell.suche_seite', 'Eigene Seite'))) + '</span>';
         a.onclick = function (ev) {
+            // E4 (0.1.44): ein Treffer zeigt sein Feld auch im Modus „Einfach“ (einstellungen.js liest den Sprung)
+            try {
+                if (e.feld) sessionStorage.setItem('pn.sprungFeld', e.feld);
+                else sessionStorage.removeItem('pn.sprungFeld');
+            } catch (x) {}
+            var shell = global.PanoptesShell;
+            if (e.feld && shell && shell.umfang && shell.umfang() === 'einfach') {
+                // erweitertes Feld ist im Modus „Einfach“ nicht gezeichnet: Zielseite neu laden, dann zeigt es sich
+                ev.preventDefault();
+                var gleich = (global.location.pathname || '').split('/').pop() === e.ziel.split('#')[0];
+                global.location.href = e.ziel;
+                if (gleich) global.location.reload();
+                return;
+            }
             var id = e.karte || (e.ziel.indexOf('system.html#') === 0 ? e.ziel.split('#')[1] : '');
             if (!id) return;   // andere Seite: normaler Link
             ev.preventDefault();

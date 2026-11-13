@@ -166,6 +166,13 @@
     <string name="einr_noch_text">Tout est facultatif. Possible à tout moment.</string>
     <string name="einr_noch_knopf">Configurer</string>
     <string name="einr_noch_erledigt">Fait / pas nécessaire</string>
+    <string name="einr_st_freiwillig">pas encore configuré – facultatif</string>
+    <string name="einr_empf_titel">Tu peux configurer ceci maintenant</string>
+    <string name="einr_empf_waechter">Enregistre quand quelqu’un heurte ou force ta voiture garée. Désactivé tant que tu ne l’actives pas.</string>
+    <string name="einr_empf_handy">Vois ta voiture sur ton téléphone et reçois-y les alertes.</string>
+    <string name="einr_empf_launcher">Panoptes comme écran d’accueil dans la voiture. Retour à BYD en un geste à tout moment.</string>
+    <string name="einr_weitere_zeigen">Autres étapes (%1$d)</string>
+    <string name="einr_weitere_verbergen">Masquer les autres étapes</string>
     <string name="einr_updates_ja_knopf">Oui, chercher des mises à jour</string>
     <string name="einr_updates_github">Panoptes demande régulièrement à GitHub s’il existe une nouvelle version. GitHub voit seulement l’adresse Internet de la voiture, aucune donnée du véhicule.</string>
     <!-- 0.1.38.3: Handy-App unterwegs nutzen? (Standard aus, ausdrücklich gefragt) -->

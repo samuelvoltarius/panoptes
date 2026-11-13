@@ -166,6 +166,13 @@
     <string name="einr_noch_text">Alles is vrijwillig. Kan altijd.</string>
     <string name="einr_noch_knopf">Instellen</string>
     <string name="einr_noch_erledigt">Klaar / niet nodig</string>
+    <string name="einr_st_freiwillig">nog niet ingesteld – optioneel</string>
+    <string name="einr_empf_titel">Dit kun je nu instellen</string>
+    <string name="einr_empf_waechter">Neemt op als iemand je geparkeerde auto aanstoot of openbreekt. Uit tot je hem aanzet.</string>
+    <string name="einr_empf_handy">Bekijk je auto op je telefoon en krijg daar meldingen.</string>
+    <string name="einr_empf_launcher">Panoptes als startscherm in de auto. Met één tik altijd terug naar BYD.</string>
+    <string name="einr_weitere_zeigen">Meer stappen (%1$d)</string>
+    <string name="einr_weitere_verbergen">Meer stappen verbergen</string>
     <string name="einr_updates_ja_knopf">Ja, zoek naar updates</string>
     <string name="einr_updates_github">Panoptes vraagt regelmatig aan GitHub of er een nieuwe versie is. GitHub ziet alleen het internetadres van de auto, geen autogegevens.</string>
     <!-- 0.1.38.3: Handy-App unterwegs nutzen? (Standard aus, ausdrücklich gefragt) -->
