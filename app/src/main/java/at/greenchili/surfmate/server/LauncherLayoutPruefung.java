@@ -25,7 +25,14 @@ import java.util.regex.Pattern;
 public final class LauncherLayoutPruefung {
 
     public static final String FORMAT = "panoptes-launcher-layout";
-    public static final int VERSION = 1;
+    /** 0.1.44 (E2 freier Editor): Version 2 = optionale feine Lage (fx/fy/fb/fh) und Stil je Element, Typ „text“;
+     *  Version 1 bleibt lesbar (ohne die neuen Felder). */
+    public static final int VERSION = 2;
+    /** Feinraster: 8 Teile je Zelle, also 48 × 24 Einheiten. */
+    public static final int FEIN = 8;
+    /** Mindestgrößen in Feineinheiten (Lesbarkeit, Tippfläche ≥ 64 dp): Kachel 8 × 6, App/Ordner 4 × 4, Text 4 × 2. */
+    static final int[] MIN_KACHEL = {8, 6}, MIN_APP = {4, 4}, MIN_TEXT = {4, 2}, MIN_LEISTE = {8, 4};
+    static final int ECKE_MAX = 48, DECKUNG_MIN = 30, UNSCHAERFE_MAX = 3;
     public static final int SPALTEN = 6, ZEILEN = 3, MAX_SEITEN = 5, MAX_DOCK = 8, MAX_SCHNELL = 6,
             MAX_ORDNER_APPS = 24, MAX_NAME = 24, MAX_NEBEN_ANDERS = 64;
     public static final String PANOPTES = "at.greenchili.surfmate";
@@ -33,8 +40,9 @@ public final class LauncherLayoutPruefung {
             Arrays.asList("com.byd.androidauto", "com.byd.carplay.ui"));
     public static final List<String> HINTERGRUENDE = Collections.unmodifiableList(
             Arrays.asList("panoptes", "cockpit", "bild", "video", "eigen"));
-    /** 0.1.42 (L48): eigene, im Launcher per Code gezeichnete Motive „motiv-1“ … „motiv-10“ (Launcher {@code Motive}). */
-    public static final int MOTIVE = 10;
+    /** 0.1.42 (L48): eigene, im Launcher per Code gezeichnete Motive „motiv-1“ … „motiv-10“ (Launcher {@code Motive});
+     *  0.1.44 (D1): dazu die Szenen „motiv-11“ … „motiv-14“ (Nachtstraße, Showroom, Bergstraße, Garage; Launcher {@code Szenen}). */
+    public static final int MOTIVE = 14;
 
     static boolean hintergrundGueltig(String hg) {
         if (hg == null) return false;
@@ -59,7 +67,12 @@ public final class LauncherLayoutPruefung {
             Arrays.asList("fahrzeug", "akku", "navi", "musik", "waechter", "uhr", "schloss", "laden", "kamera",
                     "projektion",     // 0.1.41 (CP): CarPlay / Android Auto
                     "reifen", "fahrt", "tempo",   // 0.1.41 (LK): Reifen, letzte Fahrt, Tempo (nur Kern-Daten)
-                    "geraetewidget")); // 0.1.41 (LO): Android-Widget (wid = gebundene Nummer), mehrfach erlaubt
+                    "geraetewidget",  // 0.1.41 (LO): Android-Widget (wid = gebundene Nummer), mehrfach erlaubt
+                    "sprache",       // 0.1.44 (P2): Sprachbefehle von Panoptes öffnen
+                    "fahrstatus", "autoansicht",   // 0.1.44 (D1): Fahrzeug-Startseite (Status-Karte, Fahrzeug-Ansicht)
+                    "dockleiste", "reiterleiste",   // 0.1.44 (E2): Dock und Reiter als frei platzierbare Elemente
+                    "haus", "profil",   // 0.1.44 (P4): Haus-Kachel (Home Assistant, nur lesen) und Fahrerprofil
+                    "umgebung"));   // 0.1.44 (L1): Live-Umgebung (Skizze aus der Erkennung, ab Werk aus)
     /** Widget-Größen (Breite × Höhe in Zellen) wie {@code Raster.GROESSEN}. */
     static final int[][] GROESSEN = {{1, 1}, {2, 1}, {2, 2}, {2, 3}, {3, 2}, {3, 3}, {4, 2}, {4, 3}, {6, 3}};
 
@@ -128,7 +141,7 @@ public final class LauncherLayoutPruefung {
                     String kachel = e.optString("kachel", null);
                     // Android-Widgets dürfen mehrfach vorkommen, je gebundener Nummer einmal
                     if ("geraetewidget".equals(kachel)) kachel = kachel + ":" + e.optInt("wid", 0);
-                    int[] r = {e.getInt("x"), e.getInt("y"), e.getInt("b"), e.getInt("h")};
+                    int[] r = fein(e);
                     if (ids.contains(id) || (kachel != null && widgets.contains(kachel)) || !passt(belegt, r)) {
                         weg[0]++;
                         continue;
@@ -177,9 +190,15 @@ public final class LauncherLayoutPruefung {
         }
     }
 
+    /** Rechteck in Feineinheiten: die feine Lage, sonst die Zellen × {@link #FEIN}. */
+    static int[] fein(JSONObject e) {
+        if (e.has("fx")) return new int[]{e.optInt("fx"), e.optInt("fy"), e.optInt("fb"), e.optInt("fh")};
+        return new int[]{e.optInt("x") * FEIN, e.optInt("y") * FEIN, e.optInt("b") * FEIN, e.optInt("h") * FEIN};
+    }
+
     private static boolean passt(List<int[]> belegt, int[] r) {
         int x = r[0], y = r[1], b = r[2], h = r[3];
-        if (b < 1 || h < 1 || x < 0 || y < 0 || x + b > SPALTEN || y + h > ZEILEN) return false;
+        if (b < 1 || h < 1 || x < 0 || y < 0 || x + b > SPALTEN * FEIN || y + h > ZEILEN * FEIN) return false;
         for (int[] o : belegt) {
             if (x < o[0] + o[2] && o[0] < x + b && y < o[1] + o[3] && o[1] < y + h) return false;
         }
@@ -204,7 +223,47 @@ public final class LauncherLayoutPruefung {
         return out;
     }
 
+    /**
+     * 0.1.44 (E2): Element mit optionaler feiner Lage und Stil. Mit feiner Lage gilt die Mindestgröße statt der festen
+     * Kachelgrößen; x/y/b/h werden als umfassende Zellen neu gesetzt (für ältere Leser). Ungültiger Stil fällt weg.
+     */
     private static JSONObject element(JSONObject o, Set<String> installiert, boolean liste, int[] weg) throws Exception {
+        if (o == null) return null;
+        boolean frei = o.has("fx") || o.has("fy") || o.has("fb") || o.has("fh");
+        JSONObject roh = o;
+        if (frei) {
+            int fx = o.optInt("fx", -1), fy = o.optInt("fy", -1), fb = o.optInt("fb", 0), fh = o.optInt("fh", 0);
+            if (fx < 0 || fy < 0 || fb < 1 || fh < 1 || fx + fb > SPALTEN * FEIN || fy + fh > ZEILEN * FEIN) return null;
+            String typ = o.optString("typ", "");
+            String kachel = o.optString("kachel", "");
+            int[] min = "widget".equals(typ) ? ("dockleiste".equals(kachel) || "reiterleiste".equals(kachel) ? MIN_LEISTE : MIN_KACHEL)
+                    : "text".equals(typ) ? MIN_TEXT : MIN_APP;
+            if (fb < min[0] || fh < min[1]) return null;
+            int x = fx / FEIN, y = fy / FEIN;
+            int b = (fx + fb + FEIN - 1) / FEIN - x, h = (fy + fh + FEIN - 1) / FEIN - y;
+            // Für die Kachel-Prüfung eine erlaubte Größe einsetzen; die feine Lage ist maßgeblich.
+            roh = new JSONObject(o.toString()).put("x", x).put("y", y).put("b", "widget".equals(typ) ? 1 : b).put("h", "widget".equals(typ) ? 1 : h);
+            JSONObject e = elementGrund(roh, installiert, liste, weg);
+            if (e == null) return null;
+            e.put("x", x).put("y", y).put("b", b).put("h", h).put("fx", fx).put("fy", fy).put("fb", fb).put("fh", fh);
+            return stil(o, e);
+        }
+        if ("text".equals(o.optString("typ", ""))) return null;   // Text gibt es nur frei platziert
+        JSONObject e = elementGrund(roh, installiert, liste, weg);
+        return e == null ? null : stil(o, e);
+    }
+
+    /** Stil je Element übernehmen, nur gültige Werte (Ecken 0–48 dp, Deckung 30–100 %, Unschärfe 0–3, Akzent #RRGGBB). */
+    private static JSONObject stil(JSONObject o, JSONObject e) throws Exception {
+        if (o.has("ecke")) { int v = o.optInt("ecke", -1); if (v >= 0 && v <= ECKE_MAX) e.put("ecke", v); }
+        if (o.has("deckung")) { int v = o.optInt("deckung", -1); if (v >= DECKUNG_MIN && v <= 100) e.put("deckung", v); }
+        if (o.has("unschaerfe")) { int v = o.optInt("unschaerfe", -1); if (v >= 0 && v <= UNSCHAERFE_MAX) e.put("unschaerfe", v); }
+        String a = o.optString("akzent", "");
+        if (AKZENT.matcher(a).matches()) e.put("akzent", a.toUpperCase(java.util.Locale.ROOT));
+        return e;
+    }
+
+    private static JSONObject elementGrund(JSONObject o, Set<String> installiert, boolean liste, int[] weg) throws Exception {
         if (o == null) return null;
         String id = o.optString("id", "");
         if (!ID.matcher(id).matches()) return null;
@@ -226,6 +285,11 @@ public final class LauncherLayoutPruefung {
                 String p = o.optString("paket", "");
                 if (!installiert(p, installiert, liste)) return null;
                 return e.put("b", 1).put("h", 1).put("paket", p);
+            }
+            case "text": {
+                String n = name(o.optString("name", null));
+                if (n == null) return null;
+                return e.put("b", o.optInt("b", 1)).put("h", o.optInt("h", 1)).put("name", n);
             }
             case "ordner": {
                 JSONArray roh = o.optJSONArray("apps");

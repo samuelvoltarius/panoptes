@@ -36,7 +36,7 @@ class LauncherDirektTest {
     @Test
     fun klimaWirktDirektUndGross() {
         val main = quelle("MainActivity.kt")
-        val bedienung = main.substring(main.indexOf("private fun klimaBedienung()"), main.indexOf("private fun klimaSenden("))
+        val bedienung = main.substring(main.indexOf("private fun klimaBedienung("), main.indexOf("private fun klimaSenden("))
         assertFalse("Tipp auf den Wert öffnet nicht Panoptes", bedienung.contains("oeffnePanoptes"))
         assertTrue(bedienung.contains("setOnClickListener { klimaFeld() }"))
         assertTrue(Regex("""const val DOCK_KNOPF = (\d+)""").find(main)!!.groupValues[1].toInt() >= 64)

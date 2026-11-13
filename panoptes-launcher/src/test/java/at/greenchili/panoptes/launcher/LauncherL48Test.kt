@@ -77,10 +77,10 @@ class LauncherL48Test {
 
     @Test
     fun motive() {
-        assertEquals(10, Motive.WERTE.size)
-        assertTrue(Motive.WERTE.size in 8..12)
+        assertEquals(14, Motive.WERTE.size)   // 0.1.44 (D1): + 4 Szenen
+        assertTrue("8–12 Muster + Szenen", Motive.WERTE.size - (Szenen.LETZTE - Szenen.ERSTE + 1) in 8..12)
         assertEquals(3, Motive.nummer("motiv-3"))
-        assertNull(Motive.nummer("motiv-11"))
+        assertNull(Motive.nummer("motiv-15"))
         assertNull(Motive.nummer("panoptes"))
         val l = Raster.standard(null)
         assertEquals("motiv-7", Raster.hintergrund(l, "motiv-7").hintergrund)

@@ -2979,7 +2979,8 @@ public class VehicleControlApiHandler {
      * request. Codes match the OEM vehicle-control app (mediaNext=87, mediaPrevious=88). Returns false on
      * unknown key.
      */
-    private static boolean dispatchMediaKey(String key) {
+    /** 0.1.44 (P2): auch für Sprachbefehle ({@link SprachApiHandler}). */
+    static boolean dispatchMediaKey(String key) {
         int code;
         switch (key == null ? "" : key.trim().toLowerCase()) {
             case "play_pause":

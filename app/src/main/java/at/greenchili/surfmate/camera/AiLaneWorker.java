@@ -127,6 +127,12 @@ public final class AiLaneWorker {
         }
     }
 
+    /** 0.1.44 (L1): Puffer, den die Live-Umgebung schon kopiert hat, an den Downscaler zurueckgeben. */
+    public void zurueckgeben(byte[] frame) {
+        if (frame == null) return;
+        try { recycler.recycle(frame); } catch (Throwable ignored) {}
+    }
+
     /** Diagnostic counters for the periodic Stats log. */
     public long getDroppedFrames() {
         return droppedFrames;

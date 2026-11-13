@@ -69,13 +69,22 @@ data class RouteManeuver(
  * @property maneuvers ordered turn-by-turn maneuvers
  * @property totalDistanceMeters total trip distance in meters
  * @property totalDurationSeconds total trip duration in seconds
+ * @property tempolimits belegte Tempolimits entlang der Route (Planer-Feld `tempolimits`, OSM `maxspeed`), Indizes wie
+ *   [RouteManeuver.beginShapeIndex] auf [points]; leer = nichts belegt (dann zeigt niemand ein Limit)
  */
 data class NavRoute(
     val points: List<GeoPoint>,
     val maneuvers: List<RouteManeuver>,
     val totalDistanceMeters: Double,
-    val totalDurationSeconds: Double
+    val totalDurationSeconds: Double,
+    val tempolimits: List<TempoAbschnitt> = emptyList()
 )
+
+/**
+ * Ein Abschnitt der Route mit belegtem Tempolimit: gilt auf den Teilstrecken [von] bis [bis] (Index des Anfangspunkts der
+ * ersten bis zum Endpunkt der letzten Teilstrecke, also die Strecke `points[von]..points[bis]`).
+ */
+data class TempoAbschnitt(val von: Int, val bis: Int, val kmh: Int)
 
 /**
  * A single forward-geocoding (search) result.

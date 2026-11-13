@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 0.1.44 (P2) Sprachbefehle ohne eigenen KI-Schlüssel (SprachActivity, SprachStart, SprachWeckDienst) -->
+<resources>
+    <string name="sprache_titel">Spraakopdrachten</string>
+    <string name="sprache_hoere">Ik luister …</string>
+    <string name="sprache_beispiel">Spraakopdrachten zijn nog niet beschikbaar in het Nederlands.</string>
+    <string name="sprache_nicht_verstanden">Niet begrepen</string>
+    <string name="sprache_verboten">Toeter, knipperlichten, lichten en alarm gaan nooit met spraak.</string>
+    <string name="sprache_navi_heim">De route naar huis wordt getoond. Tik op de kaart op „Start” om te beginnen.</string>
+    <string name="sprache_kein_zuhause">Nog geen thuis opgeslagen. Leg eerst „Thuis” vast in de navigatie.</string>
+    <string name="sprache_frage_klima_an">Airco aanzetten?</string>
+    <string name="sprache_frage_klima_aus">Airco uitzetten?</string>
+    <string name="sprache_frage_waermer">Eén stand warmer?</string>
+    <string name="sprache_frage_kaelter">Eén stand koeler?</string>
+    <string name="sprache_ja_nein">Zeg „ja” of „nee”, of tik. Zonder antwoord geldt nee.</string>
+    <string name="sprache_ja">Ja</string>
+    <string name="sprache_nein">Nee</string>
+    <string name="sprache_abgebrochen">Geannuleerd. Er is niets veranderd.</string>
+    <string name="sprache_schalter_aus">Spraakopdrachten staan uit. Zet ze aan onder Instellingen → Systeem.</string>
+    <string name="sprache_grenze">De airco staat al op de grens.</string>
+    <string name="sprache_stufe_unbekannt">De airco-stand is niet leesbaar. Er is niets veranderd.</string>
+    <string name="sprache_fehler">Dat is niet gelukt.</string>
+    <string name="sprache_reichweite_unbekannt">De actieradius is nu niet bekend.</string>
+    <string name="sprache_ort_unbekannt">De plaats is offline nu niet bekend.</string>
+    <string name="sprache_reichweite" formatted="true">Actieradius: %1$d km</string>
+    <string name="sprache_ort" formatted="true">Je bent in %1$s</string>
+    <string name="sprache_musik_weiter">Volgend nummer</string>
+    <string name="sprache_musik_zurueck">Vorig nummer</string>
+    <string name="sprache_musik_pause">Pauze</string>
+    <string name="sprache_erledigt">Klaar</string>
+    <string name="sprache_mikrofon_belegt">Panoptes neemt nu geluid op. De microfoon blijft dicht.</string>
+    <string name="sprache_weckwort_aus">Het activeringswoord staat uit. Zet het aan onder Instellingen → Systeem.</string>
+    <string name="sprache_noch_nicht">Panoptes herkent nog geen spraakopdrachten in het Nederlands (alleen Duits en Engels).</string>
+    <string name="sprache_kein_modell">Het offline spraakmodel ontbreekt in deze auto. Er wordt niets automatisch gedownload.</string>
+    <string name="sprache_kein_mikrofon">Zonder toestemming voor de microfoon zijn er geen spraakopdrachten.</string>
+    <string name="sprache_keine_anzeige">Het activeringswoord heeft toestemming nodig om de melding „microfoon luistert” te tonen.</string>
+    <string name="sprache_weckwort_start" formatted="true">Luisteren naar „%1$s”</string>
+    <string name="sprache_weckwort_stopp" formatted="true">Niet meer luisteren naar „%1$s”</string>
+    <string name="sprache_weckwort_anzeige" formatted="true">Microfoon luistert naar „%1$s” – tik = uit</string>
+    <string name="sprache_schliessen">Sluiten</string>
+</resources>

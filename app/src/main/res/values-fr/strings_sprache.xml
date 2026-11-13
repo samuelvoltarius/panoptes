@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 0.1.44 (P2) Sprachbefehle ohne eigenen KI-Schlüssel (SprachActivity, SprachStart, SprachWeckDienst) -->
+<resources>
+    <string name="sprache_titel">Commandes vocales</string>
+    <string name="sprache_hoere">J’écoute …</string>
+    <string name="sprache_beispiel">Les commandes vocales ne sont pas encore disponibles en français.</string>
+    <string name="sprache_nicht_verstanden">Pas compris</string>
+    <string name="sprache_verboten">Klaxon, clignotants, phares et alarme ne sont jamais possibles à la voix.</string>
+    <string name="sprache_navi_heim">L’itinéraire vers la maison est affiché. Touchez « Démarrer » sur la carte pour lancer le guidage.</string>
+    <string name="sprache_kein_zuhause">Aucun domicile enregistré. Définissez d’abord « Domicile » dans la navigation.</string>
+    <string name="sprache_frage_klima_an">Allumer la climatisation ?</string>
+    <string name="sprache_frage_klima_aus">Éteindre la climatisation ?</string>
+    <string name="sprache_frage_waermer">Un niveau plus chaud ?</string>
+    <string name="sprache_frage_kaelter">Un niveau plus frais ?</string>
+    <string name="sprache_ja_nein">Dites « oui » ou « non », ou touchez. Sans réponse, c’est non.</string>
+    <string name="sprache_ja">Oui</string>
+    <string name="sprache_nein">Non</string>
+    <string name="sprache_abgebrochen">Annulé. Rien n’a été modifié.</string>
+    <string name="sprache_schalter_aus">Les commandes vocales sont désactivées. Activez-les dans Réglages → Système.</string>
+    <string name="sprache_grenze">La climatisation est déjà à sa limite.</string>
+    <string name="sprache_stufe_unbekannt">Le niveau de climatisation n’est pas lisible. Rien n’a été modifié.</string>
+    <string name="sprache_fehler">Cela n’a pas fonctionné.</string>
+    <string name="sprache_reichweite_unbekannt">L’autonomie n’est pas connue pour le moment.</string>
+    <string name="sprache_ort_unbekannt">Le lieu n’est pas connu hors ligne pour le moment.</string>
+    <string name="sprache_reichweite" formatted="true">Autonomie : %1$d km</string>
+    <string name="sprache_ort" formatted="true">Vous êtes à %1$s</string>
+    <string name="sprache_musik_weiter">Chanson suivante</string>
+    <string name="sprache_musik_zurueck">Chanson précédente</string>
+    <string name="sprache_musik_pause">Pause</string>
+    <string name="sprache_erledigt">C’est fait</string>
+    <string name="sprache_mikrofon_belegt">Panoptes enregistre du son en ce moment. Le micro reste fermé.</string>
+    <string name="sprache_weckwort_aus">Le mot d’activation est désactivé. Activez-le dans Réglages → Système.</string>
+    <string name="sprache_noch_nicht">Panoptes ne reconnaît pas encore les commandes vocales en français (allemand et anglais uniquement).</string>
+    <string name="sprache_kein_modell">Le modèle vocal hors ligne manque dans cette voiture. Rien n’est téléchargé automatiquement.</string>
+    <string name="sprache_kein_mikrofon">Sans autorisation du micro, pas de commandes vocales.</string>
+    <string name="sprache_keine_anzeige">Le mot d’activation a besoin de l’autorisation d’afficher l’indication « micro à l’écoute ».</string>
+    <string name="sprache_weckwort_start" formatted="true">Écouter « %1$s »</string>
+    <string name="sprache_weckwort_stopp" formatted="true">Ne plus écouter « %1$s »</string>
+    <string name="sprache_weckwort_anzeige" formatted="true">Micro à l’écoute de « %1$s » – touchez pour arrêter</string>
+    <string name="sprache_schliessen">Fermer</string>
+</resources>

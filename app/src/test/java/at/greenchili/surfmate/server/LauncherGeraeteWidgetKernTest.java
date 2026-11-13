@@ -56,7 +56,7 @@ public class LauncherGeraeteWidgetKernTest {
             cur = at.greenchili.surfmate.testutil.RepoWurzel.hoch(cur);
         }
         assertNotNull(html);
-        assertTrue(html.contains("'tempo', 'geraetewidget'];"));
+        assertTrue(html.contains("'tempo', 'geraetewidget', 'sprache'];"));   // 0.1.44 (P2): Kachel „Sprechen“ am Ende
         assertTrue(html.contains("k !== 'geraetewidget' && !hatWidget(k)"));
     }
 }

@@ -58,7 +58,7 @@ public class TachoGalerieE2eTest {
         assertFalse(mit.eigen.has("token"));
         // Seite prüft ohne Kern genauso
         String ges = lies("app/src/main/assets/web/shared/tacho-gestalten.js");
-        assertTrue(ges.contains("o.format !== R.FORMAT || o.version !== R.VERSION) return null;"));
-        assertTrue(lies("app/src/main/assets/web/local/display.html").contains("tacho-gestalten.js?v=3"));
+        assertTrue(ges.contains("o.format !== R.FORMAT || (o.version !== R.VERSION && o.version !== R.VERSION_FREI)) return null;"));
+        assertTrue(lies("app/src/main/assets/web/local/display.html").contains("tacho-gestalten.js?v=4"));
     }
 }

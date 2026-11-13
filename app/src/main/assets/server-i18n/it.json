@@ -2462,6 +2462,10 @@
       }
     },
     "launcher": {
+      "tempoWarnung": {
+        "title": "Launcher: avviso velocità discreto",
+        "help": "Se il launcher mostra un limite, la velocità diventa gialla quando lo superi. Nessun suono. Il limite viene solo da dati verificati (OpenStreetMap lungo il percorso Panoptes); senza valore non viene mostrato nulla. Disattivato di serie."
+      },
       "startbildschirm": {
         "title": "Panoptes Launcher come schermata iniziale",
         "help": "Con Home si arriva poi al Panoptes Launcher invece che alla schermata iniziale BYD. Dopo l'attivazione il launcher chiede se deve restare. Se non tocchi Mantieni entro 5 minuti, tutto torna da solo. Si può tornare indietro in ogni momento: tasto casa nel launcher, questo interruttore o Telegram \"/startbildschirm original\". La schermata iniziale BYD resta nell'auto e non viene mai cancellata."
@@ -2611,6 +2615,14 @@
       "weckwortMessung": {
         "title": "Consenti misura della parola di attivazione",
         "help": "Solo per misurare: consente di avviare sullo schermo dell’auto, in Funzioni di prova, una misura per capire se una parola di attivazione vocale funziona accanto all’assistente vocale BYD. Registra solo numeri (carico CPU, memoria, attivazioni errate). Nessun audio viene salvato o inviato. Durante la misura in alto compare «Microfono attivo (misura)». Disattivato per impostazione predefinita."
+      },
+      "befehle": {
+        "title": "Comandi vocali (offline)",
+        "help": "Comandi fissi senza chiave IA propria, riconosciuti in auto senza internet (per ora tedesco e inglese; italiano non ancora): clima acceso/spento, un livello più caldo/più fresco, navigazione verso casa, musica avanti/indietro/pausa, dove sono, autonomia. Clima solo dopo conferma «Sì/No». Mai clacson, frecce, luci o allarme. Il microfono ascolta solo dopo un tocco su «Parla»; non viene registrato nulla. Disattivato di serie."
+      },
+      "weckwort": {
+        "title": "Parola di attivazione «Hallo Auto»",
+        "help": "Apre i comandi vocali quando dici «Hallo Auto» (tedesco) o «hello car» (inglese). Si attiva solo toccando lo schermo dell’auto, al massimo 2 ore di fila, con l’avviso «microfono in ascolto». Si ferma quando Panoptes registra audio. Non viene registrato nulla. Disattivato di serie."
       }
     },
     "zaehlen": {

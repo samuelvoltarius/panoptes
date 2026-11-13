@@ -67,5 +67,26 @@
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
+        <!-- 0.1.44 (P1): Bedienungshilfe für „Zurück“ / „Letzte App“; nur aktiv, wenn der Nutzer sie selbst einschaltet. -->
+        <service
+            android:name=".PanoptesBedienhilfe"
+            android:exported="true"
+            android:label="@string/hilfe_name"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data android:name="android.accessibilityservice" android:resource="@xml/bedienhilfe" />
+        </service>
+        <!-- 0.1.44 (P1): geführte Einrichtung „als Startbildschirm“ mit Selbsttest (nicht von außen startbar). -->
+        <activity
+            android:name=".EinrichtungActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="landscape" />
+        <activity
+            android:name=".ZurueckTestActivity"
+            android:exported="false"
+            android:screenOrientation="landscape" />
     </application>
 </manifest>

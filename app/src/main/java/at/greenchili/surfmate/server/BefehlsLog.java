@@ -68,7 +68,8 @@ public final class BefehlsLog {
             "/api/tacho/groesse",   // 0.1.38.11 Größe im Fahrerdisplay
             "/api/tacho/eigen",   // 0.1.41 Tacho gestalten (ohne Inhalt)
             "/api/launcher/v1/layout",   // 0.1.38: Launcher-Layout (ohne Inhalt)
-            "/api/launcher/v1/seitenblick"};   // 0.1.41 LC: Seitenblick beim Blinken ein/aus
+            "/api/launcher/v1/seitenblick",   // 0.1.41 LC: Seitenblick beim Blinken ein/aus
+            "/api/launcher/v1/fenster"};   // 0.1.44 D1: Fenster-Schnellknöpfe der Fahrzeug-Startseite
 
     /** Gründe, die ein technischer Fehler sind (sonst gilt ok:false als Ablehnung). */
     static final Set<String> FEHLER_GRUENDE = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(

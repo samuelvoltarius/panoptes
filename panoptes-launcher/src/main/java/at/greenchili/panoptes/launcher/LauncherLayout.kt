@@ -5,7 +5,16 @@ package at.greenchili.panoptes.launcher
 /** 0.1.41 (CP): PROJEKTION = CarPlay / Android Auto (Werks-Apps, Start im Vollbild), siehe [Projektion]. */
 /** 0.1.41 (LK): REIFEN, FAHRT (letzte Fahrt), TEMPO – nur Kern-Daten, siehe [ZusatzKacheln].
  *  0.1.41 (LO): GERAETEWIDGET = Android-Widget einer fremden App (Element.wid), darf mehrfach vorkommen. */
-enum class Kachel { FAHRZEUG, AKKU, NAVI, MUSIK, WAECHTER, UHR, SCHLOSS, LADEN, KAMERA, PROJEKTION, REIFEN, FAHRT, TEMPO, GERAETEWIDGET }
+/** 0.1.44 (P2): SPRACHE öffnet die Sprachbefehle von Panoptes (feste Kommandos, Fahrzeugbefehle nur nach Rückfrage). */
+/** 0.1.44 (P4): HAUS = Haus-Status aus Home Assistant (nur lesen, siehe [Haus]), PROFIL = Fahrerprofil wechseln (siehe [Fahrerprofile]). */
+/** 0.1.44 (D1): FAHRSTATUS (Tempo-Ring, Gang, Reichweite, Akku, Reifen) und AUTOANSICHT (eigene Fahrzeug-Ansicht + Fenster). */
+enum class Kachel { FAHRZEUG, AKKU, NAVI, MUSIK, WAECHTER, UHR, SCHLOSS, LADEN, KAMERA, PROJEKTION, REIFEN, FAHRT, TEMPO, GERAETEWIDGET, SPRACHE, FAHRSTATUS, AUTOANSICHT,
+    /** 0.1.44 (E2): Dock und Reiterzeile als frei platzierbare Elemente (dann entfällt die feste Leiste). */
+    DOCKLEISTE, REITERLEISTE,
+    /** 0.1.44 (P4): Haus-Kachel (Home Assistant, nur lesen) und Fahrerprofil. */
+    HAUS, PROFIL,
+    /** 0.1.44 (L1): Live-Umgebung (Skizze aus der Erkennung, ab Werk aus). */
+    UMGEBUNG }
 
 /** Fahrsicherheit: reine Regeln, im Unit-Test belegt. Starten und Ansehen geht immer. */
 object Fahrsicherheit {

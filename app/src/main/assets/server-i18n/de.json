@@ -2456,6 +2456,10 @@
       }
     },
     "launcher": {
+      "tempoWarnung": {
+        "title": "Launcher: leise Tempo-Warnung",
+        "help": "Zeigt der Launcher ein Tempolimit, färbt sich das Tempo bei Überschreiten gelb. Kein Ton. Das Limit kommt nur aus belegten Daten (OpenStreetMap entlang der Panoptes-Route); ohne Wert zeigt der Launcher nichts. Standard aus."
+      },
       "startbildschirm": {
         "title": "Panoptes Launcher als Startbildschirm",
         "help": "Mit „Home“ kommst du dann zum Panoptes Launcher statt zum BYD-Startbildschirm. Nach dem Einschalten fragt der Launcher, ob er bleiben soll. Tippst du nicht innerhalb von 5 Minuten auf „Behalten“, geht alles von selbst zurück. Zurück geht jederzeit: Haus-Knopf im Launcher, dieser Schalter oder Telegram „/startbildschirm original“. Der BYD-Startbildschirm bleibt im Auto und wird nie gelöscht."
@@ -2605,6 +2609,14 @@
       "weckwortMessung": {
         "title": "Weckwort-Messung erlauben",
         "help": "Nur zum Messen: Erlaubt, am Autobildschirm unter Testfunktionen eine Messung zu starten, ob ein Sprach-Weckwort neben dem BYD-Sprachassistenten möglich ist. Misst nur Zahlen (Rechenlast, Speicher, Fehlauslösungen). Kein Ton wird gespeichert oder gesendet. Während der Messung steht oben „Mikrofon an (Messung)“. Standard aus."
+      },
+      "befehle": {
+        "title": "Sprachbefehle (offline)",
+        "help": "Feste Befehle ohne eigenen KI-Schlüssel, im Auto ohne Internet erkannt (Deutsch und Englisch): Klima an/aus, eine Stufe wärmer/kälter, Navi nach Hause, Musik weiter/zurück/Pause, Wo bin ich, Reichweite. Klima erst nach Rückfrage „Ja/Nein“. Hupe, Blinker, Licht und Alarm nie. Das Mikrofon hört nur zu, nachdem du auf „Sprechen“ tippst; nichts wird aufgenommen oder gespeichert. Standard aus."
+      },
+      "weckwort": {
+        "title": "Weckwort „Hallo Auto“",
+        "help": "Öffnet die Sprachbefehle, wenn du „Hallo Auto“ sagst (Englisch: „hello car“). Einschalten nur per Tipp am Autobildschirm, höchstens 2 Stunden am Stück, mit der Anzeige „Mikrofon hört“ oben. Endet, wenn Panoptes Ton aufnimmt. Nichts wird aufgenommen oder gespeichert. Standard aus."
       }
     },
     "zaehlen": {

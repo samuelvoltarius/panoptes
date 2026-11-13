@@ -94,7 +94,7 @@ class LauncherGestaltenTest {
         val uhrMittel = Raster.kachelStufe(l, uhr.id, "mittel").seiten[1].first { it.id == uhr.id }
         assertEquals("mittel", Raster.stufeVon(uhrMittel))
         assertEquals(listOf(6, 14, 24), Raster.ABSTAENDE.map { Raster.abstandDp(it) })
-        assertTrue(m.contains("RasterLayout(this, Raster.SPALTEN, Raster.ZEILEN, ui.dp(Raster.abstandDp(layout.abstand)))"))
+        assertTrue(m.contains("FreiLayout(this, ui.dp(Raster.abstandDp(layout.abstand)))"))   // 0.1.44 (E2): Feinraster, Abstand wie bisher
         assertTrue(m.contains("Raster.kachelStufe(layout, e.id, st)"))
     }
 

@@ -80,6 +80,8 @@ public final class WebSitzungRechte {
         }
         // 0.1.38.10 Integration B: Panoptes-Führung (G2) nur am Display oder mit Login, nie aus der Web-Sitzung
         m.put("/api/navi/fuehrung", NIE);
+        // 0.1.44 (P3b): das Tempolimit der Führung meldet nur die App am Auto selbst, nie eine Web-Sitzung
+        m.put("/api/navi/tempolimit", NIE);
         PFADE = Collections.unmodifiableMap(m);
     }
 

@@ -1,6 +1,6 @@
-**Erprobungsversion** · *Test version* — Panoptes {VERSION}
+Panoptes {VERSION}
 
-Panoptes ist die kostenlose Community-App für BYD-Autos mit DiLink 3, 4 und 5. Sie wird im Alltag erprobt, bisher vor allem auf einem BYD Dolphin Surf (DiLink 3). Auf anderen Modellen kann manches fehlen oder anders sein.
+Panoptes ist die kostenlose Community-App für BYD-Autos mit DiLink 3, 4 und 5. Entwickelt und im Auto genutzt wird sie vor allem auf einem BYD Dolphin Surf (DiLink 3). Auf anderen Modellen kann manches fehlen oder anders sein.
 
 **Installationsanleitung:** https://byd.serveone.at/panoptes/#installieren
 
@@ -19,8 +19,8 @@ Panoptes ist die kostenlose Community-App für BYD-Autos mit DiLink 3, 4 und 5. 
 **So wurde geprüft**
 - Automatische Tests: {TESTS_APP} in der App und {TESTS_LAUNCHER} im Launcher, davon {ROT} rot und {SKIP} übersprungen (Test passt nicht zum Testrechner). Liste und Gründe: [docs/ROT_LISTE.md](https://github.com/samuelvoltarius/panoptes/blob/v{VERSION}/docs/ROT_LISTE.md).
 - Vor der Freigabe zusätzlich: Suche nach Geheimnissen (Gitleaks) und nach privaten Ortsdaten im ganzen Quellcode, Prüfung der Signatur und der Prüfsumme.
-- Erprobt im Auto: BYD Dolphin Surf, DiLink 3 (Android 10, eingebauter Browser Chromium 74). {ERPROBUNG}
-- DiLink 4 und 5 sind nicht selbst erprobt. Was dort geht, wissen wir nur aus Rückmeldungen der Community.
+- Eigenes Auto: BYD Dolphin Surf, DiLink 3 (Android 10, eingebauter Browser Chromium 74). {PRUEFSTAND}
+- DiLink 4 und 5 haben wir nicht selbst geprüft. Was dort geht, wissen wir nur aus Rückmeldungen der Community.
 
 **Bekannte Fehler und Einschränkungen**
 {EINSCHRAENKUNGEN_DE}
@@ -31,4 +31,4 @@ Privates Freizeitprojekt, kostenlos und ohne Gewähr, nicht mit BYD verbunden. N
 
 ---
 
-**EN:** Panoptes {VERSION}, the free community app for BYD cars with DiLink 3, 4 and 5 (test version). Installation guide: https://byd.serveone.at/panoptes/en/#install. Check the SHA-256 above. New: {NEU_EN} **How it was checked:** {TESTS_APP} automated tests in the app and {TESTS_LAUNCHER} in the launcher, {ROT} failing, {SKIP} skipped (list: docs/ROT_LISTE.md); secret and location scan over the whole source, signature and checksum checked. Tested in a BYD Dolphin Surf, DiLink 3 (Android 10, built-in browser Chromium 74); DiLink 4 and 5 only from community reports. **Known limitations:** {EINSCHRAENKUNGEN_EN}
+**EN:** Panoptes {VERSION}, the free community app for BYD cars with DiLink 3, 4 and 5. Installation guide: https://byd.serveone.at/panoptes/en/#install. Check the SHA-256 above. New: {NEU_EN} **How it was checked:** {TESTS_APP} automated tests in the app and {TESTS_LAUNCHER} in the launcher, {ROT} failing, {SKIP} skipped (list: docs/ROT_LISTE.md); secret and location scan over the whole source, signature and checksum checked. Own car: BYD Dolphin Surf, DiLink 3 (Android 10, built-in browser Chromium 74); DiLink 4 and 5 only from community reports. **Known limitations:** {EINSCHRAENKUNGEN_EN}

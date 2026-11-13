@@ -229,7 +229,8 @@ object ValhallaRouteClient {
         return try {
             val root = JSONObject(json)
             val out = ArrayList<NavRoute>()
-            root.optJSONObject("trip")?.let { parseTrip(it)?.let(out::add) }
+            // Tempolimits (P3b) gehören zur Hauptroute: je Bein [[von, bis, kmh], …]; fehlt das Feld (null), gibt es keine Werte
+            root.optJSONObject("trip")?.let { parseTrip(it, root.optJSONArray("tempolimits"))?.let(out::add) }
             val alts = root.optJSONArray("alternates")
             if (alts != null) {
                 for (i in 0 until alts.length()) {
@@ -260,12 +261,13 @@ object ValhallaRouteClient {
      * de-duplicated so the polyline has no zero-length seam. Trip totals come from
      * `trip.summary` (already the whole-trip sum) with a per-leg fallback.
      */
-    private fun parseTrip(trip: JSONObject): NavRoute? {
+    private fun parseTrip(trip: JSONObject, tempolimits: JSONArray? = null): NavRoute? {
         val legs = trip.optJSONArray("legs") ?: return null
         if (legs.length() == 0) return null
 
         val points = ArrayList<GeoPoint>()
         val maneuvers = ArrayList<RouteManeuver>()
+        val tempo = ArrayList<TempoAbschnitt>()
         var legSumDistanceM = 0.0
         var legSumDurationS = 0.0
 
@@ -297,6 +299,9 @@ object ValhallaRouteClient {
                 base = points.size       // not adjacent (prior leg skipped) → append all
                 points.addAll(legPts)
             }
+
+            // Tempolimits dieses Beins mit demselben Versatz wie die Manöver (Index im Bein -> Index in der ganzen Route)
+            tempo.addAll(Tempolimits.ausBein(tempolimits?.optJSONArray(li), base))
 
             // Keep EVERY leg's maneuvers here (including each leg's terminal
             // "destination" maneuver, type 4/5/6); the via-stop dedup happens in a
@@ -373,7 +378,8 @@ object ValhallaRouteClient {
             points = points,
             maneuvers = maneuvers,
             totalDistanceMeters = totalDistanceMeters,
-            totalDurationSeconds = totalDurationSeconds
+            totalDurationSeconds = totalDurationSeconds,
+            tempolimits = tempo
         )
     }
 }

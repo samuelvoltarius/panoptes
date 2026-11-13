@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 0.1.44 (P2) Sprachbefehle ohne eigenen KI-Schlüssel (SprachActivity, SprachStart, SprachWeckDienst) -->
+<resources>
+    <string name="sprache_titel">Sprachbefehle</string>
+    <string name="sprache_hoere">Ich höre zu …</string>
+    <string name="sprache_beispiel">Sag zum Beispiel: „Klima an“, „wärmer“, „nach Hause“, „nächstes Lied“, „Reichweite“.</string>
+    <string name="sprache_nicht_verstanden">Nicht verstanden</string>
+    <string name="sprache_verboten">Hupe, Blinker, Licht und Alarm gehen nie per Sprache.</string>
+    <string name="sprache_navi_heim">Route nach Hause wird gezeigt. Zum Losfahren auf der Karte „Start“ tippen.</string>
+    <string name="sprache_kein_zuhause">Noch kein Zuhause gespeichert. Lege „Zuhause“ zuerst in der Navigation fest.</string>
+    <string name="sprache_frage_klima_an">Klima einschalten?</string>
+    <string name="sprache_frage_klima_aus">Klima ausschalten?</string>
+    <string name="sprache_frage_waermer">Eine Stufe wärmer?</string>
+    <string name="sprache_frage_kaelter">Eine Stufe kälter?</string>
+    <string name="sprache_ja_nein">Sag „Ja“ oder „Nein“ oder tippe. Ohne Antwort gilt Nein.</string>
+    <string name="sprache_ja">Ja</string>
+    <string name="sprache_nein">Nein</string>
+    <string name="sprache_abgebrochen">Abgebrochen. Nichts wurde geändert.</string>
+    <string name="sprache_schalter_aus">Sprachbefehle sind aus. Einschalten unter Einstellungen → System.</string>
+    <string name="sprache_grenze">Das Klima ist schon an der Grenze.</string>
+    <string name="sprache_stufe_unbekannt">Die Klima-Stufe ist gerade nicht lesbar. Nichts wurde geändert.</string>
+    <string name="sprache_fehler">Das hat nicht geklappt.</string>
+    <string name="sprache_reichweite_unbekannt">Die Reichweite ist gerade nicht bekannt.</string>
+    <string name="sprache_ort_unbekannt">Der Ort ist ohne Netz gerade nicht bekannt.</string>
+    <string name="sprache_reichweite" formatted="true">Reichweite: %1$d km</string>
+    <string name="sprache_ort" formatted="true">Du bist in %1$s</string>
+    <string name="sprache_musik_weiter">Nächstes Lied</string>
+    <string name="sprache_musik_zurueck">Voriges Lied</string>
+    <string name="sprache_musik_pause">Pause</string>
+    <string name="sprache_erledigt">Erledigt</string>
+    <string name="sprache_mikrofon_belegt">Panoptes nimmt gerade Ton auf. Das Mikrofon bleibt zu.</string>
+    <string name="sprache_weckwort_aus">Das Weckwort ist aus. Einschalten unter Einstellungen → System.</string>
+    <string name="sprache_noch_nicht">In dieser Sprache erkennt Panoptes noch keine Sprachbefehle (nur Deutsch und Englisch).</string>
+    <string name="sprache_kein_modell">Das Offline-Sprachmodell fehlt in diesem Auto. Es wird nichts automatisch geladen.</string>
+    <string name="sprache_kein_mikrofon">Ohne Mikrofon-Erlaubnis gibt es keine Sprachbefehle.</string>
+    <string name="sprache_keine_anzeige">Das Weckwort braucht die Erlaubnis, die Anzeige „Mikrofon hört“ oben einzublenden.</string>
+    <string name="sprache_weckwort_start" formatted="true">Auf „%1$s“ hören</string>
+    <string name="sprache_weckwort_stopp" formatted="true">Nicht mehr auf „%1$s“ hören</string>
+    <string name="sprache_weckwort_anzeige" formatted="true">Mikrofon hört auf „%1$s“ – Tipp = aus</string>
+    <string name="sprache_schliessen">Schließen</string>
+</resources>

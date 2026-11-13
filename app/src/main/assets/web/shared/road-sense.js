@@ -450,7 +450,7 @@ BYD.roadSense = {
         if (clusterCard) {
             clusterCard.style.display = '';
             this._setChecked('rsClusterAuto', c.autoProjectCluster);
-            this._setChecked('rsOemTurnGuidance', c.oemTurnGuidance);
+            this._setChecked('rsOemTurnGuidance', c.oemTurnGuidance && !this._oemTurnGesperrt);
             this._setChecked('rsExternalNavGuidance', c.externalNotificationGuidance);
             if (loadLiveStatus) this.loadClusterStatus();
         }
@@ -1151,6 +1151,8 @@ BYD.roadSense = {
         try {
             const resp = await fetch('/api/navmap/cluster/status');
             const data = await resp.json();
+            // E2E 0.1.43b M2: Abbiegepfeile nur bedienbar, wenn der Kern sie auf diesem Auto kann.
+            this._setOemTurnMoeglich(data && data.abbiegepfeile);
             if (this._clusterProjectPending
                     || writeVersion !== this._clusterProjectVersion) return;
             const projecting = !!(data && data.success && data.projecting);
@@ -1290,9 +1292,35 @@ BYD.roadSense = {
         }
     },
 
+    // E2E 0.1.43b M2: meldet der Kern „nicht möglich“ (single_os/unsupported), ist der Schalter grau und aus,
+    // mit Hinweis „Bei diesem Auto nicht möglich“; Speichern geht dann nicht. Unbekannt (kein Feld) = bedienbar.
+    _setOemTurnMoeglich(v) {
+        var gesperrt = !!(v && v.moeglich === false);
+        var war = !!this._oemTurnGesperrt;
+        this._oemTurnGesperrt = gesperrt;
+        var hint = document.getElementById('rsOemTurnGesperrt');
+        if (hint) hint.style.display = gesperrt ? '' : 'none';
+        var el = document.getElementById('rsOemTurnGuidance');
+        if (!el) return;
+        var row = el.closest ? el.closest('.setting-row') : null;
+        if (row) row.style.opacity = gesperrt ? '0.55' : '';
+        if (gesperrt) {
+            el.checked = false;
+            el.disabled = true;
+        } else if (war) {
+            el.disabled = false;
+            el.checked = !!this.config.oemTurnGuidance;
+        }
+    },
+
     async toggleOemTurnGuidance() {
         var el = document.getElementById('rsOemTurnGuidance');
         if (!el) return;
+        if (this._oemTurnGesperrt) {
+            el.checked = false;
+            el.disabled = true;
+            return;
+        }
         var on = !!el.checked;
         el.disabled = true;
         try {
@@ -1308,7 +1336,7 @@ BYD.roadSense = {
             el.checked = !on;
             this._toastFailed();
         } finally {
-            el.disabled = false;
+            el.disabled = !!this._oemTurnGesperrt;
         }
     },
 

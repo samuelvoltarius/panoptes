@@ -46,7 +46,7 @@ public class LauncherLayoutKernTest {
     @Test
     public void falschesFormatOderVersionIstUngueltig() throws Exception {
         assertNull(LauncherLayoutPruefung.pruefen(new JSONObject().put("format", "x").put("version", 1), APPS));
-        assertNull(LauncherLayoutPruefung.pruefen(layout(new JSONArray()).put("version", 2), APPS));
+        assertNull(LauncherLayoutPruefung.pruefen(layout(new JSONArray()).put("version", 3), APPS));   // 0.1.44 (E2): 2 ist jetzt gültig
         assertNull(LauncherLayoutPruefung.pruefen(null, APPS));
     }
 

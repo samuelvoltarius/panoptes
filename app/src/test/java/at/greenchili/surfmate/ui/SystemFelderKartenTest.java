@@ -78,8 +78,8 @@ public class SystemFelderKartenTest {
         assertTrue(sys.contains("store.zeichne(box, { gruppe: 'system', nur: keys });"));
         assertTrue("Suche nutzt dieselbe Liste", ov.contains("var ziel = feldZiel(f.key) ||"));
         // Launcher-Video: fachlich bei den Launcher-Schaltern auf display.html
-        assertTrue(ov.contains("var SEITEN_FELDER = { 'display.html#launcher': ['anzeige.launcherVideo'] };"));
-        assertTrue(lies("local/display.html").contains("nur: ['launcher.startbildschirm', 'anzeige.launcherVideo']"));
+        assertTrue(ov.contains("var SEITEN_FELDER = { 'display.html#launcher': ['anzeige.launcherVideo', 'launcher.tempoWarnung'] };"));
+        assertTrue(lies("local/display.html").contains("nur: ['launcher.startbildschirm', 'anzeige.launcherVideo', 'launcher.tempoWarnung']"));
     }
 
     @Test

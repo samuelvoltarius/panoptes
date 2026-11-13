@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 0.1.44 (P1): Bild zur geführten Einrichtung, eigene Zeichnung im Panoptes-Strichstil. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="320dp" android:height="200dp" android:viewportWidth="160" android:viewportHeight="100">
+    <path android:pathData="M10,10 H150 V80 H10 Z" android:strokeColor="#FF8A94A6" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" />
+    <path android:pathData="M70,80 L64,92 H96 L90,80" android:strokeColor="#FF8A94A6" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" />
+    <path android:pathData="M20,20 H70 V48 H20 Z" android:strokeColor="#FF4FD1C5" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" />
+    <path android:pathData="M78,20 H140 V48 H78 Z" android:strokeColor="#FF4FD1C5" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" />
+    <path android:pathData="M20,56 H140 V70 H20 Z" android:strokeColor="#FFB8E05A" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" />
+</vector>

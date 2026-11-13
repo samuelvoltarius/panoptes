@@ -12,7 +12,9 @@ object Vorlagen {
     const val EINFACH = "einfach"
     const val STANDARD = "standard"
     const val COCKPIT = "cockpit"
-    val WAHL = listOf(EINFACH, STANDARD, COCKPIT)
+    /** 0.1.44 (D1): Fahrzeug-Startseite (Status-Karte, eigene Fahrzeug-Ansicht mit Fenstern, Musik, Szene). */
+    const val FAHRZEUG = "fahrzeug"
+    val WAHL = listOf(EINFACH, STANDARD, COCKPIT, FAHRZEUG)
 
     fun datei(name: String): String = "vorlagen/$name.json"
 
@@ -20,7 +22,7 @@ object Vorlagen {
      *  wieder auf „Automatisch“, sonst bliebe „Größer“ von „Einfach“ stehen. Unbekannter Name: Größe bleibt. */
     fun groesse(name: String): String? = when (name) {
         EINFACH -> LauncherGroesse.GROESSER
-        STANDARD, COCKPIT -> LauncherGroesse.AUTO
+        STANDARD, COCKPIT, FAHRZEUG -> LauncherGroesse.AUTO
         else -> null
     }
 

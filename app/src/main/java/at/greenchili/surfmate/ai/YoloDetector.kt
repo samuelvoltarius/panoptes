@@ -86,7 +86,14 @@ data class Detection(
  * - Height filter before NMS
  * - Ghost filter (max 50 detections)
  */
-class YoloDetector(private val context: Context) {
+/**
+ * 0.1.44 (L1): [cpuThreads] und [leise] fuer die Live-Umgebung im Launcher – weniger Threads, damit die Dashcam
+ * fluessig bleibt, und keine Zeile je Lauf im Log (nichts ueber Erkanntes speichern). Waechter unveraendert (4, laut).
+ */
+class YoloDetector @JvmOverloads constructor(private val context: Context, private val cpuThreads: Int = 4) {
+
+    /** 0.1.44 (L1): true = keine Protokollzeilen je Lauf (Live-Umgebung). */
+    @Volatile var leise: Boolean = false
 
     private val logger = DaemonLogger.getInstance("YoloDetector")
 
@@ -268,7 +275,7 @@ class YoloDetector(private val context: Context) {
             // core.
             try {
                 val cpuOptions = Interpreter.Options()
-                cpuOptions.setNumThreads(4)
+                cpuOptions.setNumThreads(cpuThreads.coerceIn(1, 4))
                 interpreter = Interpreter(modelFile, cpuOptions)
                 interpreter!!.allocateTensors()
             } catch (e: Exception) {
@@ -368,7 +375,7 @@ class YoloDetector(private val context: Context) {
                        else "MIXED($inputDtype/$outputDtype)"
             val layout = if (outputIsEndToEnd) "END2END[$e2eMaxDet,6]"
                          else "LEGACY[$legacyNumChannels,$legacyNumBoxes]+hostNMS"
-            logger.info("CPU XNNPACK initialized (4 threads, $mode model, $layout, in=${inputSize}x$inputSize, " +
+            logger.info("CPU XNNPACK initialized ($cpuThreads threads, $mode model, $layout, in=${inputSize}x$inputSize, " +
                     (if (outputIsQuantized) "outScale=$outputScale outZp=$outputZeroPoint, " else "") +
                     "encoder-isolated via nice gradient)")
 
@@ -751,7 +758,7 @@ class YoloDetector(private val context: Context) {
                 // actual ratios there is no way to tell a genuinely tiny far
                 // object from a big partial-body blob whose bbox is short.
                 if (bestClass == CLASS_PERSON) {
-                    logger.info("YOLO size-gate dropped PERSON conf=%.3f relH=%.3f (need %.3f) box=%dx%d quad=%dx%d"
+                    if (!leise) logger.info("YOLO size-gate dropped PERSON conf=%.3f relH=%.3f (need %.3f) box=%dx%d quad=%dx%d"
                         .format(bestConf, relH, minRelativeHeight, objW, objH, quadrantWidth, quadrantHeight))
                 }
                 continue
@@ -812,7 +819,7 @@ class YoloDetector(private val context: Context) {
             }
         }
 
-        logger.info("Detected ${final.size} objects: person=$personCount car=$carCount bike=$bikeCount animal=$animalCount (max_conf=${"%.3f".format(bestKeptConf)} class=$bestKeptClass)")
+        if (!leise) logger.info("Detected ${final.size} objects: person=$personCount car=$carCount bike=$bikeCount animal=$animalCount (max_conf=${"%.3f".format(bestKeptConf)} class=$bestKeptClass)")
 
         // Raw-funnel line — only when NOTHING survived, which is the case that was
         // previously unattributable. `raw` is the model's true peak before any gate,
@@ -823,7 +830,7 @@ class YoloDetector(private val context: Context) {
         // healthy person score ⇒ the partial-body/size-gate case; rejUnwanted>0 ⇒ a
         // class-filter mismatch. Emitted at most once per inference and only on the
         // empty path, so it costs nothing in the common case.
-        if (final.isEmpty()) {
+        if (final.isEmpty() && !leise) {
             logger.info(("YOLO raw funnel: raw=%.3f class=%d person=%.3f | " +
                     "rej conf=%d implausible=%d unwanted=%d size=%d | " +
                     "confThr=%.2f minRelH=%.3f in=%dx%d quad=%dx%d")
@@ -984,7 +991,7 @@ class YoloDetector(private val context: Context) {
             if (!passes) {
                 rejSize++
                 if (classId == CLASS_PERSON) {
-                    logger.info("YOLO size-gate dropped PERSON conf=%.3f relH=%.3f (need %.3f) box=%dx%d quad=%dx%d"
+                    if (!leise) logger.info("YOLO size-gate dropped PERSON conf=%.3f relH=%.3f (need %.3f) box=%dx%d quad=%dx%d"
                         .format(score, relH, minRelativeHeight, objW, objH, quadrantWidth, quadrantHeight))
                 }
                 continue
@@ -1033,9 +1040,9 @@ class YoloDetector(private val context: Context) {
             }
         }
 
-        logger.info("Detected ${final.size} objects: person=$personCount car=$carCount bike=$bikeCount animal=$animalCount (max_conf=${"%.3f".format(bestKeptConf)} class=$bestKeptClass) [e2e]")
+        if (!leise) logger.info("Detected ${final.size} objects: person=$personCount car=$carCount bike=$bikeCount animal=$animalCount (max_conf=${"%.3f".format(bestKeptConf)} class=$bestKeptClass) [e2e]")
 
-        if (final.isEmpty()) {
+        if (final.isEmpty() && !leise) {
             logger.info(("YOLO raw funnel [e2e]: raw=%.3f class=%d person=%.3f | " +
                     "rej conf=%d implausible=%d unwanted=%d size=%d | " +
                     "confThr=%.2f minRelH=%.3f in=%dx%d quad=%dx%d")

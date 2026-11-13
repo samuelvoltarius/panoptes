@@ -1222,6 +1222,11 @@ public class HttpServer {
             return LauncherApiHandler.handle(method, path, body, rangeHeader, out);
         }
 
+        // 0.1.44 (P2) Sprachbefehle: nur die Panoptes-App direkt am Auto, Fahrzeugbefehle nur nach Rückfrage (SprachApiHandler).
+        if (path.startsWith("/api/sprache/")) {
+            return SprachApiHandler.handle(method, path, body, out);
+        }
+
         // Authenticated, read-only metadata for the web About page. VIN deliberately never enters
         // this HTTP response; the native About screen is the only surface that can request it.
         if (path.equals("/api/about/vehicle-info")) {

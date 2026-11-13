@@ -640,14 +640,33 @@
         FORMAT: 'panoptes-tacho-design',
         VERSION: 1,
         MIN_KONTRAST: 4.5,
-        MAX_ZEICHEN: 4096,
+        MAX_ZEICHEN: 40000,
         FARBEN: ['hintergrund', 'ziffern', 'zeiger', 'akzent'],
         SCHRIFTEN: ['schmal', 'normal', 'breit'],
         ZEIGER: ['nadel', 'balken', 'zahl'],
         GROSS: ['links', 'mitte', 'rechts'],
         KLEIN: ['oben_links', 'oben_mitte', 'oben_rechts', 'unten_links', 'unten_mitte', 'unten_rechts'],
         ANZEIGEN: ['tempo', 'akku', 'reichweite', 'leistung', 'gang', 'uhr', 'aussen', 'navi', 'kmstand', 'leer'],
-        NUR_GROSS: ['tempo', 'navi']
+        NUR_GROSS: ['tempo', 'navi'],
+        // 0.1.44 (E1) Version 2 (freier Editor), gleiche Werte wie TachoFrei.java
+        VERSION_FREI: 2,
+        BREITE: 1000,
+        HOEHE: 450,
+        MIN_GROESSE: 4,
+        MAX_ELEMENTE: 40,
+        MAX_BILD: 24000,
+        SCHLEIER: 0.7,
+        TEMPO_MIN_HOEHE: 90,
+        TEMPO_MIN_BREITE: 150,
+        TYPEN: ['rund', 'zahl', 'balken', 'gang', 'navi', 'uhr', 'ring', 'linie', 'flaeche', 'verlauf'],
+        FORMEN: ['ring', 'linie', 'flaeche', 'verlauf'],
+        RUND_WERTE: ['tempo', 'leistung', 'akku'],
+        ZAHL_WERTE: ['tempo', 'leistung', 'akku', 'reichweite', 'aussen', 'kmstand'],
+        BALKEN_WERTE: ['leistung', 'akku'],
+        ZEIGERFORMEN: ['nadel', 'balken', 'ring'],
+        RICHTUNGEN: ['waagrecht', 'senkrecht'],
+        AUSRICHTUNGEN: ['links', 'mitte', 'rechts'],
+        HG_ARTEN: ['farbe', 'verlauf']
     };
     var FAMILIEN = {
         schmal: COND,
@@ -708,6 +727,7 @@
     function pruefeEigen(roh) {
         if (!roh || typeof roh !== 'object') return null;
         if (roh.format !== undefined && roh.format !== E.FORMAT) return null;
+        if (roh.version === E.VERSION_FREI) return pruefeFrei(roh);   // 0.1.44 (E1)
         if (roh.version !== undefined && roh.version !== E.VERSION) return null;
         var std = standardEigen(), warn = [], i;
         var f = {}, rf = roh.farben && typeof roh.farben === 'object' ? roh.farben : null, falsch = false;
@@ -852,6 +872,417 @@
         grossPlatz(c, p.rechts, rx, cy, r, r * 2.4, h * 0.62, u, th, d, st, jetzt, e.zeiger);
     }
 
+    // ------------------------------------------------------------ 0.1.44 (E1) Freier Editor: Version 2
+    // Elemente frei auf einer Fläche E.BREITE × E.HOEHE (Format des Fahrerdisplays). Gleiche Regeln wie
+    // TachoFrei.java (Vertragstest TachoFreiTest): Erlaubnislisten, Tempo genau einmal und groß genug,
+    // Kontrast je Element zur Fläche dahinter, nichts außerhalb des Bildes, Bild nur klein und mit Schleier.
+
+    function liste2(v, l, sonst) { return typeof v === 'string' && l.indexOf(v.trim().toLowerCase()) >= 0 ? v.trim().toLowerCase() : sonst; }
+    function klemme(v, a, b) { return v < a ? a : v > b ? b : v; }
+    function ganz(o, k, sonst) {
+        var v = o[k];
+        if (typeof v !== 'number' || !isFinite(v)) return sonst;
+        return Math.max(-100000, Math.min(100000, Math.round(v)));
+    }
+    function farbe2(o, k, sonst, warn) {
+        var v = o ? o[k] : undefined;
+        if (typeof v === 'string' && HEXFARBE.test(v)) return v.toUpperCase();
+        if (o && v !== undefined && warn.indexOf('farbe_ungueltig') < 0) warn.push('farbe_ungueltig');
+        return sonst;
+    }
+    /** Lineare Mischung #RRGGBB (wie TachoFrei.mische). */
+    function mischeHex(a, b, t) {
+        t = clamp(t, 0, 1);
+        var x = hex(a), y = hex(b), s = '#';
+        for (var i = 0; i < 3; i++) {
+            var k = Math.floor(x[i] + (y[i] - x[i]) * t + 0.5).toString(16).toUpperCase();
+            s += k.length < 2 ? '0' + k : k;
+        }
+        return s;
+    }
+    function skalaStd(w) { return w === 'tempo' ? [0, 200] : w === 'leistung' ? [-50, 150] : [0, 100]; }
+    function infoTyp(t) { return E.FORMEN.indexOf(t) < 0; }
+
+    var BILD_RE = /^data:image\/(jpeg|png);base64,[A-Za-z0-9+\/]+={0,2}$/;
+    function bildOk(s) {
+        if (typeof s !== 'string' || s.length > E.MAX_BILD || !BILD_RE.test(s)) return false;
+        try {
+            var d = atob(s.slice(s.indexOf(',') + 1));
+            if (s.indexOf('data:image/jpeg') === 0) return d.length > 3 && d.charCodeAt(0) === 0xFF && d.charCodeAt(1) === 0xD8 && d.charCodeAt(2) === 0xFF;
+            return d.length > 8 && d.charCodeAt(0) === 0x89 && d.charAt(1) === 'P' && d.charAt(2) === 'N' && d.charAt(3) === 'G';
+        } catch (x) { return false; }
+    }
+
+    function elementPruefen(r, warn) {
+        if (!r || typeof r !== 'object') return null;
+        var typ = liste2(r.typ, E.TYPEN, '');
+        if (!typ) return null;
+        var e = { typ: typ };
+        if (typ === 'rund' || typ === 'zahl' || typ === 'balken') {
+            var w = liste2(r.wert, typ === 'rund' ? E.RUND_WERTE : typ === 'zahl' ? E.ZAHL_WERTE : E.BALKEN_WERTE, '');
+            if (!w) return null;
+            e.wert = w;
+        }
+        var b = klemme(ganz(r, 'b', 200), E.MIN_GROESSE, E.BREITE), h = klemme(ganz(r, 'h', 120), E.MIN_GROESSE, E.HOEHE);
+        e.x = klemme(ganz(r, 'x', 0), 0, E.BREITE - b);
+        e.y = klemme(ganz(r, 'y', 0), 0, E.HOEHE - h);
+        e.b = b; e.h = h;
+        e.farbe = farbe2(r, 'farbe', '#FFFFFF', warn);
+        if (typ === 'rund' || typ === 'balken') {
+            if (typ === 'rund') e.form = liste2(r.form, E.ZEIGERFORMEN, 'ring');
+            else e.richtung = liste2(r.richtung, E.RICHTUNGEN, 'waagrecht');
+            var s = skalaStd(e.wert), mn = klemme(ganz(r, 'min', s[0]), -1000, 1000), mx = klemme(ganz(r, 'max', s[1]), -1000, 1000);
+            if (mx <= mn) { mn = s[0]; mx = s[1]; }
+            e.min = mn; e.max = mx;
+            if (typ === 'rund') e.drehung = klemme(ganz(r, 'drehung', 0), -180, 180);
+            e.akzent = farbe2(r, 'akzent', '#B5F23D', warn);
+            if (typ === 'rund') e.schrift = liste2(r.schrift, E.SCHRIFTEN, 'schmal');
+        } else if (typ === 'zahl' || typ === 'gang' || typ === 'uhr') {
+            e.schrift = liste2(r.schrift, E.SCHRIFTEN, 'schmal');
+            e.ausrichtung = liste2(r.ausrichtung, E.AUSRICHTUNGEN, 'mitte');
+        } else if (typ === 'navi') {
+            e.schrift = liste2(r.schrift, E.SCHRIFTEN, 'schmal');
+        } else if (typ === 'ring' || typ === 'linie') {
+            e.dicke = klemme(ganz(r, 'dicke', 4), 1, 60);
+        } else if (typ === 'flaeche') {
+            e.ecken = klemme(ganz(r, 'ecken', 0), 0, 100);
+        } else if (typ === 'verlauf') {
+            e.farbe2 = farbe2(r, 'farbe2', '#000000', warn);
+            e.richtung = liste2(r.richtung, E.RICHTUNGEN, 'waagrecht');
+        }
+        return e;
+    }
+
+    /** Farben hinter dem Mittelpunkt von Element i (oberste deckende Form, sonst Hintergrund; mit Bild beide Grenzen). */
+    function dahinter(el, i, hg, mitBild) {
+        var e = el[i], cx = e.x + e.b / 2, cy = e.y + e.h / 2;
+        for (var j = i - 1; j >= 0; j--) {
+            var f = el[j];
+            if (f.typ !== 'flaeche' && f.typ !== 'verlauf') continue;
+            if (cx < f.x || cx > f.x + f.b || cy < f.y || cy > f.y + f.h) continue;
+            if (f.typ === 'flaeche') return [f.farbe];
+            return [mischeHex(f.farbe, f.farbe2, f.richtung === 'senkrecht' ? (cy - f.y) / f.h : (cx - f.x) / f.b)];
+        }
+        var grund = hg.farbe;
+        if (hg.art === 'verlauf') grund = mischeHex(hg.farbe, hg.farbe2, hg.richtung === 'waagrecht' ? cx / E.BREITE : cy / E.HOEHE);
+        if (!mitBild) return [grund];
+        return [mischeHex('#000000', grund, E.SCHLEIER), mischeHex('#FFFFFF', grund, E.SCHLEIER)];
+    }
+    function minKontrast(f, hinten) {
+        var m = 21;
+        for (var i = 0; i < hinten.length; i++) m = Math.min(m, kontrast(f, hinten[i]));
+        return m;
+    }
+
+    /** Prüft ein Design der Version 2. Ergebnis wie pruefeEigen: { eigen, warnungen }. */
+    function pruefeFrei(roh) {
+        var warn = [], i;
+        var rh = roh.hintergrund && typeof roh.hintergrund === 'object' ? roh.hintergrund : null;
+        var hg = {
+            art: liste2(rh ? rh.art : '', E.HG_ARTEN, 'farbe'),
+            farbe: farbe2(rh, 'farbe', '#0E1620', warn),
+            farbe2: farbe2(rh, 'farbe2', '#05090D', warn),
+            richtung: liste2(rh ? rh.richtung : '', E.RICHTUNGEN, 'senkrecht')
+        };
+        var bild = null;
+        if (typeof roh.bild === 'string' && roh.bild.length > 0) { if (bildOk(roh.bild)) bild = roh.bild; else warn.push('bild_ungueltig'); }
+        var re = Object.prototype.toString.call(roh.elemente) === '[object Array]' ? roh.elemente : [], el = [];
+        if (re.length > E.MAX_ELEMENTE) warn.push('zu_viele');
+        for (i = 0; i < re.length && el.length < E.MAX_ELEMENTE; i++) {
+            var e = elementPruefen(re[i], warn);
+            if (e) el.push(e);
+        }
+        var tempo = -1;
+        for (i = 0; i < el.length; i++) {
+            if (el[i].wert !== 'tempo') continue;
+            if (tempo < 0) { tempo = i; continue; }
+            el.splice(i--, 1);
+            if (warn.indexOf('tempo_einmal') < 0) warn.push('tempo_einmal');
+        }
+        if (tempo < 0) {
+            el.push({ typ: 'zahl', wert: 'tempo', x: 700, y: 150, b: 260, h: 150, farbe: '#FFFFFF', schrift: 'schmal', ausrichtung: 'mitte' });
+            warn.push('tempo_pflicht');
+        } else {
+            var t = el[tempo];
+            if (t.h < E.TEMPO_MIN_HOEHE || t.b < E.TEMPO_MIN_BREITE) {
+                var nb = Math.max(t.b, E.TEMPO_MIN_BREITE), nh = Math.max(t.h, E.TEMPO_MIN_HOEHE);
+                var cx = t.x + Math.floor(t.b / 2), cy = t.y + Math.floor(t.h / 2);
+                t.b = nb; t.h = nh;
+                t.x = klemme(cx - Math.floor(nb / 2), 0, E.BREITE - nb);
+                t.y = klemme(cy - Math.floor(nh / 2), 0, E.HOEHE - nh);
+                warn.push('tempo_groesse');
+            }
+        }
+        var kw = false;
+        for (var runde = 0; runde < 2; runde++) {
+            var weg = false;
+            for (i = 0; i < el.length; i++) {
+                var x = el[i];
+                if (!infoTyp(x.typ)) continue;
+                var feld = x.typ === 'balken' ? 'akzent' : 'farbe', hinten = dahinter(el, i, hg, bild !== null);
+                if (minKontrast(x[feld], hinten) >= E.MIN_KONTRAST) continue;
+                var best = minKontrast('#FFFFFF', hinten) >= minKontrast('#000000', hinten) ? '#FFFFFF' : '#000000';
+                if (minKontrast(best, hinten) < E.MIN_KONTRAST) { weg = true; break; }
+                x[feld] = best;
+                kw = true;
+            }
+            if (!weg) break;
+            bild = null;
+            warn.push('bild_kontrast');
+        }
+        if (kw) warn.push('kontrast');
+        var o = { format: E.FORMAT, version: E.VERSION_FREI, basis: liste2(roh.basis, DESIGNS, 'klar'), hintergrund: hg };
+        if (bild) o.bild = bild;
+        o.elemente = el;
+        return { eigen: o, warnungen: warn };
+    }
+
+    /** Leerer Start: nur die Pflicht-Geschwindigkeit. */
+    function leerFrei() {
+        return pruefeFrei({ hintergrund: { art: 'farbe', farbe: '#0E1620' }, elemente: [
+            { typ: 'zahl', wert: 'tempo', x: 370, y: 150, b: 260, h: 150, farbe: '#FFFFFF' }] }).eigen;
+    }
+
+    /**
+     * Version 1 (feste Plätze) oder ein Galerie-Design in Elemente zerlegen. Ergebnis { eigen, zerlegt }:
+     * zerlegt = false, wenn das Design eine eigene Zeichnung hat, die sich nicht zerlegen lässt (ehrlicher Hinweis).
+     */
+    function zuElementen(v1, dsg) {
+        var f = v1.farben, p = v1.plaetze, el = [], i;
+        var zeiger = v1.zeiger === 'nadel' ? 'nadel' : 'ring';
+        var gross = { links: [35, 103, 270, 270], mitte: [335, 103, 330, 270], rechts: [695, 103, 270, 270] };
+        var klein = { oben_links: [18, 14, 300, 'links'], oben_mitte: [350, 14, 300, 'mitte'], oben_rechts: [682, 14, 300, 'rechts'],
+            unten_links: [18, 396, 300, 'links'], unten_mitte: [350, 396, 300, 'mitte'], unten_rechts: [682, 396, 300, 'rechts'] };
+        var th = THEMEN[dsg] || null;
+        var hg = th && dsg !== EIGEN ? { art: 'verlauf', farbe: th.bg0, farbe2: th.bg1, richtung: 'senkrecht' }
+            : { art: 'farbe', farbe: f.hintergrund, farbe2: f.hintergrund, richtung: 'senkrecht' };
+        for (i = 0; i < E.GROSS.length; i++) {
+            var g = gross[E.GROSS[i]], a = p[E.GROSS[i]];
+            var basis = { x: g[0], y: g[1], b: g[2], h: g[3], farbe: f.ziffern, akzent: f.zeiger, schrift: v1.schrift };
+            if (a === 'leer' || !a) continue;
+            if (a === 'navi' || a === 'gang' || a === 'uhr') { basis.typ = a; el.push(basis); continue; }
+            if (E.RUND_WERTE.indexOf(a) >= 0 && v1.zeiger !== 'zahl') { basis.typ = 'rund'; basis.wert = a; basis.form = zeiger; el.push(basis); continue; }
+            basis.typ = 'zahl'; basis.wert = a === 'leistung' ? 'leistung' : a; basis.y = g[1] + 75; basis.h = 120;
+            el.push(basis);
+        }
+        for (var k in klein) if (klein.hasOwnProperty(k)) {
+            var q = klein[k], b = p[k];
+            if (!b || b === 'leer') continue;
+            var z = { x: q[0], y: q[1], b: q[2], h: 40, farbe: b === 'gang' || b === 'uhr' ? f.ziffern : f.ziffern, schrift: v1.schrift, ausrichtung: q[3] };
+            if (b === 'gang' || b === 'uhr') z.typ = b; else { z.typ = 'zahl'; z.wert = b; }
+            el.push(z);
+        }
+        var g2 = pruefeFrei({ basis: dsg || v1.basis, hintergrund: hg, elemente: el });
+        var eigeneZeichnung = !!EXTRA[dsg] || dsg === 'horizont' || dsg === 'route';
+        return { eigen: g2.eigen, zerlegt: !eigeneZeichnung, warnungen: g2.warnungen };
+    }
+
+    // ---- Zeichnen (Version 2)
+    var BILDER = {}, bildGeladen = false;
+    function bildVon(s) {
+        if (BILDER[s]) return BILDER[s];
+        var keys = Object.keys(BILDER);
+        if (keys.length > 2) BILDER = {};   // höchstens wenige Bilder im Speicher
+        var im = new Image();
+        im.onload = function () { bildGeladen = true; };
+        im.src = s;
+        BILDER[s] = im;
+        return im;
+    }
+
+    function schriftFam(s) { return FAMILIEN[s] || COND; }
+
+    function wertVon(w, d) {
+        switch (w) {
+            case 'tempo': return { v: zahl(d.kmh) ? d.kmh : null, t: zahl(d.kmh) ? String(Math.round(d.kmh)) : '–', e: 'km/h' };
+            case 'leistung': return { v: zahl(d.kw) ? d.kw : null, t: zahl(d.kw) ? (d.kw < -0.5 ? '−' : '') + Math.abs(Math.round(d.kw)) : '–', e: 'kW' };
+            case 'akku': return { v: zahl(d.soc) ? d.soc : null, t: zahl(d.soc) ? String(Math.round(d.soc)) : '–', e: '%' };
+            case 'reichweite': return { v: zahl(d.reichweiteKm) ? d.reichweiteKm : null, t: zahl(d.reichweiteKm) ? String(Math.round(d.reichweiteKm)) : '–', e: 'km' };
+            case 'aussen': return { v: null, t: zahl(d.aussenC) ? Math.round(d.aussenC) + '°' : '–', e: 'C' };
+            case 'kmstand': return { v: null, t: zahl(d.kmStand) ? tausender(d.kmStand) : '–', e: 'km' };
+            default: return { v: null, t: '–', e: '' };
+        }
+    }
+
+    /** Text so groß wie möglich in die Box (Höhe px, schrumpft auf die Breite). */
+    function textBox(c, s, e, x, y, b, h, farbe, fam, aus) {
+        var px = h * 0.78, pe = e ? px * 0.34 : 0;
+        c.font = '700 ' + Math.round(px) + 'px ' + fam;
+        var bw = c.measureText(s).width;
+        c.font = '600 ' + Math.max(1, Math.round(pe)) + 'px ' + fam;
+        var ew = e ? c.measureText(' ' + e).width : 0;
+        var k = (bw + ew) > b ? b / (bw + ew) : 1;
+        px *= k; pe *= k; bw *= k; ew *= k;
+        var x0 = aus === 'links' ? x : aus === 'rechts' ? x + b - bw - ew : x + (b - bw - ew) / 2, cy = y + h / 2;
+        text(c, s, x0, cy, px, farbe, { ausrichtung: 'left', gewicht: '700', familie: fam });
+        if (e) text(c, ' ' + e, x0 + bw, cy + px * 0.22, pe, farbe, { ausrichtung: 'left', gewicht: '600', familie: fam });
+    }
+
+    function instrument(c, e, d) {
+        var cx = e.x + e.b / 2, cy = e.y + e.h / 2, r = Math.min(e.b, e.h) / 2 * 0.9, w = wertVon(e.wert, d);
+        var von = Math.PI * 0.75 + e.drehung * Math.PI / 180, spanne = Math.PI * 1.5, sp = e.max - e.min;
+        var n0 = clamp((0 - e.min) / sp, 0, 1), a = w.v === null ? null : clamp((w.v - e.min) / sp, 0, 1);
+        var fam = schriftFam(e.schrift);
+        c.save();
+        c.lineCap = 'round';
+        c.globalAlpha = 0.25;
+        c.strokeStyle = e.farbe;
+        c.lineWidth = r * 0.08;
+        c.beginPath();
+        c.arc(cx, cy, r, von, von + spanne);
+        c.stroke();
+        c.globalAlpha = 0.6;
+        c.lineWidth = Math.max(1, r * 0.018);
+        for (var i = 0; i <= 10; i++) {
+            var wi = von + spanne * i / 10, r2 = r - r * (i % 2 === 0 ? 0.16 : 0.1);
+            c.beginPath();
+            c.moveTo(cx + Math.cos(wi) * (r - r * 0.06), cy + Math.sin(wi) * (r - r * 0.06));
+            c.lineTo(cx + Math.cos(wi) * r2, cy + Math.sin(wi) * r2);
+            c.stroke();
+        }
+        c.globalAlpha = 1;
+        if (a !== null) {
+            var wa = von + spanne * n0, wb = von + spanne * a;
+            c.strokeStyle = e.akzent;
+            c.fillStyle = e.akzent;
+            if (e.form === 'nadel') {
+                c.lineWidth = Math.max(2, r * 0.05);
+                c.beginPath();
+                c.moveTo(cx - Math.cos(wb) * r * 0.1, cy - Math.sin(wb) * r * 0.1);
+                c.lineTo(cx + Math.cos(wb) * r * 0.88, cy + Math.sin(wb) * r * 0.88);
+                c.stroke();
+                c.beginPath();
+                c.arc(cx, cy, r * 0.07, 0, TAU);
+                c.fill();
+            } else if (Math.abs(wb - wa) > 0.002) {
+                var lo = Math.min(wa, wb), hi = Math.max(wa, wb);
+                if (e.form === 'balken') {
+                    c.lineCap = 'butt';
+                    c.lineWidth = r * 0.12;
+                    var seg = 30, schritt = spanne / seg;
+                    for (var s = 0; s < seg; s++) {
+                        var sa = von + schritt * s, sb = sa + schritt * 0.7;
+                        if (sb < lo - 0.001 || sa > hi + 0.001) continue;
+                        c.beginPath();
+                        c.arc(cx, cy, r, Math.max(sa, lo), Math.min(sb, hi));
+                        c.stroke();
+                    }
+                } else {
+                    c.lineWidth = r * 0.1;
+                    c.beginPath();
+                    c.arc(cx, cy, r, lo, hi);
+                    c.stroke();
+                }
+            }
+        }
+        c.restore();
+        var unten = e.form === 'nadel';
+        text(c, w.t, cx, unten ? cy + r * 0.45 : cy - r * 0.04, r * (unten ? 0.4 : w.t.length > 4 ? 0.42 : 0.62), e.farbe, { gewicht: '700', familie: fam });
+        text(c, w.e, cx, unten ? cy + r * 0.75 : cy + r * 0.45, r * 0.18, e.farbe, { gewicht: '600', familie: fam });
+    }
+
+    function balkenZeichnen(c, e, d) {
+        var w = wertVon(e.wert, d), sp = e.max - e.min, n0 = clamp((0 - e.min) / sp, 0, 1);
+        c.save();
+        c.globalAlpha = 0.25;
+        c.fillStyle = e.farbe;
+        c.fillRect(e.x, e.y, e.b, e.h);
+        c.globalAlpha = 1;
+        if (w.v !== null) {
+            var a = clamp((w.v - e.min) / sp, 0, 1), lo = Math.min(n0, a), hi = Math.max(n0, a);
+            c.fillStyle = e.akzent;
+            if (e.richtung === 'senkrecht') c.fillRect(e.x, e.y + e.h * (1 - hi), e.b, e.h * (hi - lo));
+            else c.fillRect(e.x + e.b * lo, e.y, e.b * (hi - lo), e.h);
+        }
+        c.restore();
+    }
+
+    function hgFuellen(c, x, y, b, h, hg) {
+        if (hg.art === 'verlauf') {
+            var g = hg.richtung === 'waagrecht' ? c.createLinearGradient(x, 0, x + b, 0) : c.createLinearGradient(0, y, 0, y + h);
+            g.addColorStop(0, hg.farbe);
+            g.addColorStop(1, hg.farbe2);
+            c.fillStyle = g;
+        } else {
+            c.fillStyle = hg.farbe;
+        }
+        c.fillRect(x, y, b, h);
+    }
+
+    function elementZeichnen(c, e, d, jetzt) {
+        var fam = schriftFam(e.schrift);
+        switch (e.typ) {
+            case 'rund': instrument(c, e, d); return;
+            case 'zahl': { var w = wertVon(e.wert, d); textBox(c, w.t, w.e, e.x, e.y, e.b, e.h, e.farbe, fam, e.ausrichtung); return; }
+            case 'balken': balkenZeichnen(c, e, d); return;
+            case 'gang': textBox(c, d.gang || '–', '', e.x, e.y, e.b, e.h, e.farbe, fam, e.ausrichtung); return;
+            case 'uhr': textBox(c, uhr(jetzt), '', e.x, e.y, e.b, e.h, e.farbe, fam, e.ausrichtung); return;
+            case 'navi': {
+                // Nur aus der Panoptes-Navigation; ohne Route bleibt das Feld leer (nichts vortäuschen).
+                var n = d.navi;
+                if (!n) return;
+                var g = Math.min(e.b, e.h * 0.72);
+                pfeil(c, e.x + e.b / 2, e.y + e.h * 0.38, g, n.typ, e.farbe, true);
+                text(c, entfernung(n.distanzM), e.x + e.b / 2, e.y + e.h * 0.86, e.h * 0.2, e.farbe, { gewicht: '700', familie: fam });
+                return;
+            }
+            case 'ring': {
+                var r = Math.max(1, Math.min(e.b, e.h) / 2 - e.dicke / 2);
+                c.save(); c.strokeStyle = e.farbe; c.lineWidth = e.dicke;
+                c.beginPath(); c.arc(e.x + e.b / 2, e.y + e.h / 2, r, 0, TAU); c.stroke(); c.restore();
+                return;
+            }
+            case 'linie': {
+                c.save(); c.strokeStyle = e.farbe; c.lineWidth = e.dicke; c.lineCap = 'round'; c.beginPath();
+                if (e.b >= e.h) { c.moveTo(e.x, e.y + e.h / 2); c.lineTo(e.x + e.b, e.y + e.h / 2); }
+                else { c.moveTo(e.x + e.b / 2, e.y); c.lineTo(e.x + e.b / 2, e.y + e.h); }
+                c.stroke(); c.restore();
+                return;
+            }
+            case 'flaeche':
+                c.save(); rund(c, e.x, e.y, e.b, e.h, Math.min(e.b, e.h) / 2 * e.ecken / 100); c.fillStyle = e.farbe; c.fill(); c.restore();
+                return;
+            case 'verlauf': {
+                c.save();
+                var gr = e.richtung === 'senkrecht' ? c.createLinearGradient(0, e.y, 0, e.y + e.h) : c.createLinearGradient(e.x, 0, e.x + e.b, 0);
+                gr.addColorStop(0, e.farbe); gr.addColorStop(1, e.farbe2);
+                c.fillStyle = gr; c.fillRect(e.x, e.y, e.b, e.h); c.restore();
+                return;
+            }
+            default: return;
+        }
+    }
+
+    /** Version 2 zeichnen: Fläche mittig, Hintergrund über das ganze Bild. Nichts blinkt, nichts pulsiert. */
+    function zeichneFrei(c, w, h, e, d, jetzt) {
+        var s = Math.min(w / E.BREITE, h / E.HOEHE), ox = (w - E.BREITE * s) / 2, oy = (h - E.HOEHE * s) / 2;
+        hgFuellen(c, 0, 0, w, h, e.hintergrund);
+        c.save();
+        c.translate(ox, oy);
+        c.scale(s, s);
+        if (e.bild) {
+            var im = bildVon(e.bild);
+            if (im.complete && im.naturalWidth) {
+                var k = Math.max(E.BREITE / im.naturalWidth, E.HOEHE / im.naturalHeight);
+                var iw = im.naturalWidth * k, ih = im.naturalHeight * k;
+                c.save();
+                c.beginPath(); c.rect(0, 0, E.BREITE, E.HOEHE); c.clip();
+                c.drawImage(im, (E.BREITE - iw) / 2, (E.HOEHE - ih) / 2, iw, ih);
+                c.globalAlpha = E.SCHLEIER;
+                hgFuellen(c, 0, 0, E.BREITE, E.HOEHE, e.hintergrund);
+                c.restore();
+            }
+        }
+        for (var i = 0; i < e.elemente.length; i++) elementZeichnen(c, e.elemente[i], d, jetzt);
+        c.restore();
+    }
+
+    /** Farbsatz für die Ansicht-Leiste (Kamera/Video) bei Version 2: Ziffern weiß oder schwarz, je nach Hintergrund. */
+    function freiThema(e) {
+        var bg = e.hintergrund.farbe, fg = kontrast('#FFFFFF', bg) >= kontrast('#000000', bg) ? '#FFFFFF' : '#000000';
+        return { bg0: bg, bg1: bg, fg: fg, familie: COND };
+    }
+
     // ------------------------------------------------------------ Gesamtbild
 
     // ------------------------------------------------------------ Einhängestelle „Ansicht“ (0.1.42, für T3 Kamera/Video)
@@ -883,10 +1314,12 @@
         // Einheit: 1 u = 1 % der Höhe, aber nie breiter als das Bild bei 2,2:1 trägt.
         var u = Math.min(h, w / 2.2) / 100;
         if (d.ansicht) {
-            var ath = dsg === EIGEN ? eigenThema(d.eigen && d.eigen.farben ? d.eigen : standardEigen()) : THEMEN[dsg];
+            var ath = dsg !== EIGEN ? THEMEN[dsg] : d.eigen && d.eigen.version === E.VERSION_FREI ? freiThema(d.eigen)
+                : eigenThema(d.eigen && d.eigen.farben ? d.eigen : standardEigen());
             zeichneAnsichtLeiste(c, w, h, u, ath, d, jetzt);
             return;
         }
+        if (dsg === EIGEN && d.eigen && d.eigen.version === E.VERSION_FREI) { zeichneFrei(c, w, h, d.eigen, d, jetzt); return; }
         if (dsg === EIGEN) { zeichneEigen(c, w, h, u, d.eigen, d, st, jetzt); return; }
         var th = THEMEN[dsg];
         if (EXTRA[dsg]) { EXTRA[dsg].zeichne(c, w, h, u, th, d, st, jetzt, HILFE); return; }
@@ -959,6 +1392,7 @@
             var jetzt = opt.uhr ? opt.uhr() : new Date();
             var u = uhr(jetzt);
             if (u !== letzteUhr) { letzteUhr = u; bewegt = true; }
+            if (bildGeladen) { bildGeladen = false; bewegt = true; }   // 0.1.44 (E1): Hintergrundbild ist da
             if (bewegt && t - letztesBild < MIN_BILD_MS) {
                 neu = true;   // höchstens ~30 Bilder pro Sekunde; der Rest kommt im nächsten Bild
             } else if (bewegt) {
@@ -1046,6 +1480,18 @@
         vorlage: vorlage,
         standardEigen: standardEigen,
         pruefeEigen: pruefeEigen,
-        kontrast: kontrast
+        kontrast: kontrast,
+        // 0.1.44 (E1) freier Editor
+        pruefeFrei: pruefeFrei,
+        leerFrei: leerFrei,
+        zuElementen: zuElementen,
+        mischeHex: mischeHex,
+        elementPruefen: elementPruefen,
+        /** Kontrast von Element i zur Fläche dahinter (wie beim Speichern); null bei reinen Formen. */
+        kontrastElement: function (e, i) {
+            var x = e.elemente[i];
+            if (!x || !infoTyp(x.typ)) return null;
+            return minKontrast(x.typ === 'balken' ? x.akzent : x.farbe, dahinter(e.elemente, i, e.hintergrund, !!e.bild));
+        }
     };
 })();

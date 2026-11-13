@@ -46,6 +46,13 @@ class PanoptesClient(private val baseUrl: String = "http://127.0.0.1:8180") {
     fun klima(aktion: String): KlimaAntwort =
         LauncherContract.parseKlima(requestMitFehler("POST", "/api/launcher/v1/klima", LauncherContract.klimaBody(aktion), KLIMA_LESEN_MS))
 
+    /** 0.1.44 (D1): ein Fenster auf/zu über den engen Kern-Weg (nur im Stand, nur vl/vr/hl/hr/dach). */
+    fun fenster(fenster: String, ziel: String): FensterAntwort = try {
+        LauncherContract.parseFenster(requestMitFehler("POST", "/api/launcher/v1/fenster", LauncherContract.fensterBody(fenster, ziel), FENSTER_LESEN_MS))
+    } catch (_: Exception) {
+        FensterAntwort(false, "fehler")
+    }
+
     /** „Tacho wieder normal“: der Kern stoppt jede Projektion am Fahrerdisplay. true = alles gestoppt. */
     fun tachoNormal(): Boolean = try {
         org.json.JSONObject(requestMitFehler("POST", "/api/launcher/v1/tacho/normal", "{}", 10_000)).optBoolean("ok", false)
@@ -94,6 +101,21 @@ class PanoptesClient(private val baseUrl: String = "http://127.0.0.1:8180") {
     /** „Zurück zum BYD-Startbildschirm“: der Kern setzt den Standard zurück. true = geschafft. */
     fun homeAus(): Boolean = try {
         org.json.JSONObject(requestMitFehler("POST", "/api/launcher/v1/home/aus", "{}", 20_000)).optBoolean("ok", false)
+    } catch (_: Exception) {
+        false
+    }
+
+    /** 0.1.44 (P1): Schalter „Startbildschirm“ an (Totmann bleibt, bis „Behalten“). true = geschrieben. */
+    fun homeAn(): Boolean = try {
+        org.json.JSONObject(requestMitFehler("POST", "/api/launcher/v1/home/an", "{}")).optBoolean("ok", false)
+    } catch (_: Exception) {
+        false
+    }
+
+    /** 0.1.44 (P1): „Zurück“ bzw. „Letzte App“ als Daemon-Taste. true = der Kern hat sie gedrückt. */
+    fun taste(taste: String): Boolean = try {
+        org.json.JSONObject(requestMitFehler("POST", "/api/launcher/v1/taste",
+            org.json.JSONObject().put("taste", taste).toString())).optBoolean("ok", false)
     } catch (_: Exception) {
         false
     }
@@ -154,7 +176,23 @@ class PanoptesClient(private val baseUrl: String = "http://127.0.0.1:8180") {
     }
 
     /** Hintergrund-Video als Stream-Adresse (nur Loopback, Kern prüft Schalter und Datei). */
+    /** 0.1.44 (P4): Haus-Status (Home Assistant, nur lesen) für die gewählten Geräte; ohne [ids] die ganze Liste. null = nicht lesbar. */
+    fun haus(ids: List<String>?): String? = try {
+        requestMitFehler("GET", "/api/launcher/v1/haus" + (ids?.let { "?ids=" + java.net.URLEncoder.encode(it.joinToString(","), "UTF-8") } ?: ""), null, 5_000)
+    } catch (_: Exception) { null }
+
+    /** 0.1.44 (P4): gespeicherte Sitzpositionen und die gerade passende (nur lesen). null = nicht lesbar. */
+    fun sitz(): String? = try {
+        requestMitFehler("GET", "/api/launcher/v1/sitz", null, 8_000)
+    } catch (_: Exception) { null }
+
     val hintergrundVideoUrl: String get() = "$baseUrl/api/launcher/v1/hintergrund/video"
+
+    /** 0.1.44 (L1): Live-Umgebung; jede Abfrage hält die Kern-Erkennung wach, nur solange die Kachel sichtbar ist. */
+    fun umgebung(): Umgebung.Stand? = Umgebung.parse(get("/api/launcher/v1/umgebung"))
+    fun umgebungSchalten(an: Boolean): Boolean = try {
+        org.json.JSONObject(requestMitFehler("POST", "/api/launcher/v1/umgebung", Umgebung.schaltenBody(an), 5_000)).optBoolean("ok", false)
+    } catch (e: Exception) { false }
 
     private fun get(path: String): String = request("GET", path, null)
 
@@ -197,5 +235,7 @@ class PanoptesClient(private val baseUrl: String = "http://127.0.0.1:8180") {
         private const val MAX_BILD = 15L * 1024 * 1024
         /** Klima an wartet im Kern auf das Echo der Anlage (einige Sekunden). */
         private const val KLIMA_LESEN_MS = 15_000
+        /** Fenster warten im Kern auf das Echo (FENSTER_ECHO_MS). */
+        private const val FENSTER_LESEN_MS = 20_000
     }
 }

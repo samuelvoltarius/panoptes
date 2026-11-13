@@ -2462,6 +2462,10 @@
       }
     },
     "launcher": {
+      "tempoWarnung": {
+        "title": "Launcher : alerte de vitesse discrète",
+        "help": "Si le launcher affiche une limite, la vitesse devient jaune en cas de dépassement. Aucun son. La limite vient uniquement de données vérifiées (OpenStreetMap le long de l’itinéraire Panoptes) ; sans valeur, rien n’est affiché. Désactivé par défaut."
+      },
       "startbildschirm": {
         "title": "Panoptes Launcher comme écran d'accueil",
         "help": "Avec Home, vous arrivez alors sur le Panoptes Launcher au lieu de l'écran d'accueil BYD. Après l'activation, le launcher demande s'il doit rester. Si vous ne touchez pas Garder en 5 minutes, tout revient de lui-même. Retour possible à tout moment : bouton maison dans le launcher, cet interrupteur ou Telegram \"/startbildschirm original\". L'écran d'accueil BYD reste dans la voiture et n'est jamais supprimé."
@@ -2611,6 +2615,14 @@
       "weckwortMessung": {
         "title": "Autoriser la mesure du mot d’éveil",
         "help": "Uniquement pour mesurer : permet de lancer, sur l’écran de la voiture sous Fonctions de test, une mesure pour savoir si un mot d’éveil vocal fonctionne à côté de l’assistant vocal BYD. Seuls des chiffres sont relevés (charge CPU, mémoire, déclenchements erronés). Aucun son n’est enregistré ni envoyé. Pendant la mesure, « Micro activé (mesure) » s’affiche en haut. Désactivé par défaut."
+      },
+      "befehle": {
+        "title": "Commandes vocales (hors ligne)",
+        "help": "Commandes fixes sans clé d’IA, reconnues dans la voiture sans internet (allemand et anglais pour l’instant ; le français pas encore) : climatisation marche/arrêt, un niveau plus chaud/plus frais, retour à la maison, musique suivante/précédente/pause, où suis-je, autonomie. Climatisation seulement après confirmation « Oui/Non ». Jamais klaxon, clignotants, phares ni alarme. Le micro n’écoute qu’après un appui sur « Parler » ; rien n’est enregistré. Désactivé par défaut."
+      },
+      "weckwort": {
+        "title": "Mot d’activation « Hallo Auto »",
+        "help": "Ouvre les commandes vocales quand vous dites « Hallo Auto » (allemand) ou « hello car » (anglais). Activé seulement par un toucher sur l’écran de la voiture, au plus 2 heures d’affilée, avec l’indication « micro à l’écoute ». S’arrête quand Panoptes enregistre du son. Rien n’est enregistré. Désactivé par défaut."
       }
     },
     "zaehlen": {

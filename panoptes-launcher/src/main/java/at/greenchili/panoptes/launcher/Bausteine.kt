@@ -30,9 +30,15 @@ import kotlin.math.sin
  * Bausteine im Panoptes-Stil (index.html Startseite: `.hc`, `.hc h2`, `.big`, `.muted`, `.act`, `.pn-pill`),
  * Schriften Sora (Überschriften/Zahlen) und Manrope (Text) wie die Weboberfläche.
  */
-class Ui(val ctx: Context, val p: Palette, val cockpit: Boolean) {
+class Ui(val ctx: Context, val p: Palette, val cockpit: Boolean, val bedien: Float = 1f) {
     private val dichte = ctx.resources.displayMetrics.density
     fun dp(v: Int) = (v * dichte).toInt()
+
+    /** 0.1.44 (P1): Maß eines Bedienelements (Knopf, Dock, Leiste) mit „Große Bedienung“ ([GrosseBedienung]). */
+    fun bd(v: Int) = dp(Math.round(v * bedien))
+
+    /** 0.1.44 (P1): „Große Bedienung“ an = leise Beschriftungen und Titel kontrastreich. */
+    val kontrast get() = bedien > 1f
     fun dpf(v: Float) = v * dichte
 
     val titelFarbe get() = if (cockpit) PanoptesStil.COCKPIT_TITEL else p.outline
@@ -68,8 +74,8 @@ class Ui(val ctx: Context, val p: Palette, val cockpit: Boolean) {
 
     /** `.hc h2`: Sora 13, 600, Großbuchstaben, Sperrung .08em, Farbe outline. */
     fun titel(text: String) = TextView(ctx).apply {
-        this.text = text.uppercase(); textSize = 13f; typeface = sora(600); letterSpacing = 0.08f
-        setTextColor(titelFarbe); maxLines = 1
+        this.text = text.uppercase(); textSize = 13f * bedien; typeface = sora(600); letterSpacing = 0.08f
+        setTextColor(if (kontrast && !cockpit) p.onSurface else titelFarbe); maxLines = 1
         ellipsize = android.text.TextUtils.TruncateAt.END   // 0.1.38.14: lange Titel überlappen nicht, sie enden mit „…“
     }
 
@@ -80,11 +86,11 @@ class Ui(val ctx: Context, val p: Palette, val cockpit: Boolean) {
     }
 
     fun text(text: String, sp: Float = 15f, gewicht: Int = 500, farbe: Int = p.onSurface) = TextView(ctx).apply {
-        this.text = text; textSize = sp; typeface = manrope(gewicht); setTextColor(farbe)
+        this.text = text; textSize = sp * bedien; typeface = manrope(gewicht); setTextColor(farbe)
     }
 
     /** `.muted`: on-surface-variant, 13. */
-    fun leise(text: String, sp: Float = 13f) = text(text, sp, 500, p.onSurfaceVariant)
+    fun leise(text: String, sp: Float = 13f) = text(text, sp, 500, if (kontrast) p.onSurface else p.onSurfaceVariant)
 
     fun icon(res: Int, farbe: Int = p.aqua, groesse: Int = 24) = ImageView(ctx).apply {
         setImageDrawable(ContextCompat.getDrawable(ctx, res)?.mutate()?.also { it.setTint(farbe) })
@@ -95,14 +101,14 @@ class Ui(val ctx: Context, val p: Palette, val cockpit: Boolean) {
     /** `.act`: Kachelknopf mit Icon (aqua) und Text, Radius 16; primary = Limette. Mindestens 64 dp hoch. */
     fun act(res: Int?, label: String?, primary: Boolean = false, klick: () -> Unit) = LinearLayout(ctx).apply {
         orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-        minimumHeight = dp(64); minimumWidth = dp(64)
+        minimumHeight = bd(64); minimumWidth = bd(64)
         setPadding(dp(10), dp(8), dp(10), dp(8))
         background = GradientDrawable().apply {
             cornerRadius = dpf(PanoptesStil.RADIUS_ACT.toFloat())
             setColor(if (primary) p.lime else p.act)
             if (!primary) setStroke(dp(1), p.line)
         }
-        res?.let { addView(icon(it, if (primary) p.onPrimary else p.aqua, 26)) }
+        res?.let { addView(icon(it, if (primary) p.onPrimary else p.aqua, Math.round(26 * bedien))) }
         label?.let {
             addView(text(it, 13f, 600, if (primary) p.onPrimary else p.onSurface).apply {
                 gravity = Gravity.CENTER; maxLines = 1
@@ -116,7 +122,7 @@ class Ui(val ctx: Context, val p: Palette, val cockpit: Boolean) {
 
     /** `.pn-pill`: runde Plakette. */
     fun pill(text: String, aktiv: Boolean = false) = TextView(ctx).apply {
-        this.text = text; textSize = 13f; typeface = sora(600); gravity = Gravity.CENTER
+        this.text = text; textSize = 13f * bedien; typeface = sora(600); gravity = Gravity.CENTER
         setTextColor(if (aktiv) p.onPrimary else p.onSurfaceVariant)
         setPadding(dp(14), dp(6), dp(14), dp(6))
         background = GradientDrawable().apply {

@@ -22,11 +22,11 @@
         homeassistant: ['ha.positionTeilen', 'ha.mdns'],
         planerKarte: ['planner.autoId', 'fahrtenbuch.planer'],
         datenschutz: ['wetter.online', 'community.enabled', 'gewohnheiten.an', 'gewohnheiten.aufbewahrungTage',
-            'gewohnheiten.vergessen'],
+            'gewohnheiten.vergessen', 'sprache.befehle', 'sprache.weckwort'],   // 0.1.44 (P2): Mikrofon = Datenschutz
         weitereEinstellungen: ['autostart.beiZuendung', 'telegram.zurueckAmAuto', 'logs.tage', 'logs.mb']
     };
     // Felder, die fachlich auf eine andere Seite gehören (dort mit nur:[…] gezeichnet)
-    var SEITEN_FELDER = { 'display.html#launcher': ['anzeige.launcherVideo'] };
+    var SEITEN_FELDER = { 'display.html#launcher': ['anzeige.launcherVideo', 'launcher.tempoWarnung'] };
 
     /** Sprungziel eines Felds aus den Listen oben, sonst null. */
     function feldZiel(key) {

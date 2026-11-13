@@ -23,7 +23,8 @@ import kotlin.math.sqrt
  * Kacheln bleiben lesbar. Im Layout heißen sie „motiv-1“ … „motiv-10“.
  */
 object Motive {
-    const val ANZAHL = 10
+    /** 0.1.44 (D1): 11–14 = eigene Szenen ([Szenen]: Nachtstraße, Showroom-Halle, Bergstraße, Garage), ebenfalls per Code. */
+    const val ANZAHL = 14
     val WERTE = (1..ANZAHL).map { "motiv-$it" }
 
     fun ist(w: String?): Boolean = w != null && w in WERTE
@@ -65,7 +66,8 @@ class MotivHintergrund(private val nr: Int, private val p: Palette) : Drawable()
             7 -> hoehenlinien(c, w, h, e)
             8 -> dreiecke(c, w, h, e)
             9 -> boegen(c, w, h, e)
-            else -> sterne(c, w, h, e)
+            10 -> sterne(c, w, h, e)
+            else -> Szenen.zeichne(nr, AndroidLeinwand(c), w, h, p)
         }
     }
 

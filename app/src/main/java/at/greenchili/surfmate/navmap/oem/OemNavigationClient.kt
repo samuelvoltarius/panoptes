@@ -74,6 +74,7 @@ object OemNavigationClient {
                     .put("remainingMeters", distance)
                     .put("remainingSeconds", 0)
                     .put("roundaboutExit", roundaboutExit.coerceIn(0, 10))
+                    .put("ohneRest", true)
                 daemon.sendCommand(org.json.JSONObject().put("cmd", "oemNavigation").put("data", data))
             } catch (_: Throwable) { }
         }

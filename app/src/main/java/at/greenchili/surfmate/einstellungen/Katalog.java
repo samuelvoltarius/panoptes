@@ -309,6 +309,16 @@ public final class Katalog {
         weckMess.gruppe = "system"; weckMess.reihenfolge = 78; weckMess.standard = false;
         weckMess.erweitert = true; weckMess.nurLesendExtern = true;
         l.add(weckMess);
+        // 0.1.44 (P2) Sprachbefehle ohne eigenen KI-Schlüssel: feste Kommandos offline (Vosk), Standard AUS, aus der Ferne nur
+        // lesbar. Mikrofon nur mit Android-Erlaubnis; Fahrzeugbefehle nur nach Rückfrage; nichts wird aufgenommen.
+        Feld sprBef = new Feld(at.greenchili.surfmate.sprache.SprachBefehle.SCHALTER, Feld.Typ.BOOL);
+        sprBef.gruppe = "system"; sprBef.reihenfolge = 79; sprBef.standard = false; sprBef.nurLesendExtern = true;
+        l.add(sprBef);
+        Feld sprWeck = new Feld(at.greenchili.surfmate.sprache.SprachBefehle.SCHALTER_WECKWORT, Feld.Typ.BOOL);
+        sprWeck.gruppe = "system"; sprWeck.reihenfolge = 82; sprWeck.standard = false; sprWeck.nurLesendExtern = true;
+        sprWeck.erweitert = true;
+        sprWeck.nurWenn = obj("key", at.greenchili.surfmate.sprache.SprachBefehle.SCHALTER, "gleich", true);
+        l.add(sprWeck);
         Feld gew = new Feld("gewohnheiten.an", Feld.Typ.BOOL);
         gew.gruppe = "system"; gew.reihenfolge = 75; gew.standard = false; gew.nurLesendExtern = true;
         l.add(gew);
@@ -502,6 +512,11 @@ public final class Katalog {
         Feld startbild = new Feld("launcher.startbildschirm", Feld.Typ.BOOL);
         startbild.gruppe = "system"; startbild.reihenfolge = 86; startbild.standard = false;
         l.add(startbild);
+        // 0.1.44 (P3): leise Warnung im Launcher beim Überschreiten eines belegten Tempolimits (nur Anzeige, kein Ton).
+        // Ab Werk aus; über eine Kopplung nur lesen.
+        Feld tempoWarn = new Feld("launcher.tempoWarnung", Feld.Typ.BOOL);
+        tempoWarn.gruppe = "system"; tempoWarn.reihenfolge = 87; tempoWarn.standard = false; tempoWarn.nurLesendExtern = true;
+        l.add(tempoWarn);
         // 0.1.36 Log-Archiv (03.11.: Logs dürfen auch bei Updates nicht überschrieben werden): je Art höchstens
         // so viele Tage und MB, älteste zuerst; bei wenig freiem Platz enger (logging.LogArchiv).
         Feld logTage = new Feld("logs.tage", Feld.Typ.INT);

@@ -2456,6 +2456,10 @@
       }
     },
     "launcher": {
+      "tempoWarnung": {
+        "title": "Launcher: quiet speed warning",
+        "help": "If the launcher shows a speed limit, the speed turns yellow when you exceed it. No sound. The limit comes only from verified data (OpenStreetMap along the Panoptes route); without a value the launcher shows nothing. Off by default."
+      },
       "startbildschirm": {
         "title": "Panoptes Launcher as home screen",
         "help": "Pressing Home then takes you to the Panoptes Launcher instead of the BYD home screen. After switching on, the launcher asks whether it should stay. If you do not tap Keep within 5 minutes, everything goes back by itself. You can go back at any time: the house button in the launcher, this switch, or Telegram \"/startbildschirm original\". The BYD home screen stays in the car and is never deleted."
@@ -2605,6 +2609,14 @@
       "weckwortMessung": {
         "title": "Allow wake-word measurement",
         "help": "For measuring only: allows starting a measurement under Test features on the car screen to see whether a voice wake word works next to the BYD voice assistant. Records numbers only (CPU load, memory, false triggers). No audio is stored or sent. While it runs, “Microphone on (measurement)” is shown at the top. Off by default."
+      },
+      "befehle": {
+        "title": "Voice commands (offline)",
+        "help": "Fixed commands without your own AI key, recognised in the car without internet (German and English): climate on/off, warmer/cooler by one level, navigate home, music next/back/pause, where am I, range. Climate only after asking back “Yes/No”. Horn, indicators, lights and alarm never. The microphone only listens after you tap “Speak”; nothing is recorded or stored. Default off."
+      },
+      "weckwort": {
+        "title": "Wake word “hello car”",
+        "help": "Opens voice commands when you say “hello car” (German: “Hallo Auto”). Switched on only by a tap on the car screen, at most 2 hours at a time, with the notice “microphone listening” on top. Stops when Panoptes records sound. Nothing is recorded or stored. Default off."
       }
     },
     "zaehlen": {

@@ -34,13 +34,22 @@ data class LauncherSummary(
     /** 0.1.40: Türschloss laut Kern state.locked (true/false), null = unbekannt. Nur lesen. */
     val locked: Boolean? = null,
     /** 0.1.41 (LA): Nacht laut Sonnenstand am Auto-Standort (Kern env.isNight), null = kein Wert (dann Uhrzeit). */
-    val istNacht: Boolean? = null
+    val istNacht: Boolean? = null,
+    /** 0.1.44 (D1): Türen, Fenster, Dach für die Fahrzeug-Ansicht; null = Kern liefert es nicht. */
+    val koerper: LauncherKoerper? = null,
+    /** 0.1.44 (P3): belegtes Tempolimit (Tempolimit.kt), null = keins; leise Warnung nur wenn eingeschaltet. */
+    val tempolimit: LauncherTempolimit? = null,
+    val tempoWarnung: Boolean = false
 )
 
 data class LauncherReifen(val vl: Double?, val vr: Double?, val hl: Double?, val hr: Double?, val unten: Double?, val oben: Double?,
                           /** 0.1.41 (LK): Kern-Warnung je Rad [VL, VR, HL, HR] (ReifenWarnung), null = keine/unbekannt. */
                           val warn: List<String?> = listOf(null, null, null, null))
 data class LauncherLuft(val innen: Double?, val aussen: Double?)
+/** 0.1.44 (D1): nur bekannte Werte: Tür/Klappe offen (lf, rf, lr, rr, hood, trunk), Fenster 0..100 % (vl, vr, hl, hr, dach). */
+data class LauncherKoerper(val tueren: Map<String, Boolean>, val fenster: Map<String, Int>, val dach: Boolean)
+/** 0.1.44 (D1): Antwort des Kern-Fensterwegs; grund = fahrt, ratenlimit, aktion, Router-Ausgang oder fehler. */
+data class FensterAntwort(val ok: Boolean, val grund: String?)
 data class LauncherKlima(
     val sollC: Double?, val stufe: Int?, val innenC: Double?, val an: Boolean? = null,
     /** 0.1.38.5: Auto stellt die Temperatur in festen Stufen (Surf); dann gilt [tempStufe] 1..17 statt [sollC]. */
@@ -163,7 +172,10 @@ object LauncherContract {
             battery?.nullableDouble("sohAutoPct")?.takeIf { it > 0 && it <= 110 },
             battery?.nullableDouble("sohSchaetzungPct")?.takeIf { it > 0 && it <= 110 },
             locked = state?.takeIf { it.has("locked") && !it.isNull("locked") }?.optBoolean("locked"),
-            istNacht = root.optJSONObject("env")?.let { e -> if (e.has("isNight") && !e.isNull("isNight")) e.optBoolean("isNight") else null }
+            istNacht = root.optJSONObject("env")?.let { e -> if (e.has("isNight") && !e.isNull("isNight")) e.optBoolean("isNight") else null },
+            koerper = root.optJSONObject("koerper")?.let { koerper(it) },
+            tempolimit = Tempolimit.parse(root.optJSONObject("tempolimit")),
+            tempoWarnung = root.optBoolean("tempoWarnung", false)
         )
     }
 
@@ -195,6 +207,36 @@ object LauncherContract {
             it.optJSONObject("fern")?.takeIf { f -> !f.isNull("art") }?.optString("art")?.takeIf { a -> a == "heizen" || a == "kuehlen" || a == "neutral" })
 
     private fun stufe02(it: JSONObject, name: String): Int? = it.nullableDouble(name)?.toInt()?.takeIf { s -> s in 0..2 }
+
+    /** 0.1.44 (D1): Kern-Summary `koerper` lesen; unbekannte Schlüssel und Werte außerhalb 0..100 fallen weg. */
+    fun koerper(o: JSONObject): LauncherKoerper {
+        val t = o.optJSONObject("tueren")
+        val tueren = listOf("lf", "rf", "lr", "rr", "hood", "trunk").mapNotNull { k ->
+            if (t != null && t.has(k) && !t.isNull(k) && t.opt(k) is Boolean) k to t.optBoolean(k) else null
+        }.toMap()
+        val f = o.optJSONObject("fenster")
+        val fenster = listOf("vl", "vr", "hl", "hr", "dach").mapNotNull { k ->
+            val v = if (f != null && f.has(k) && !f.isNull(k)) f.optInt(k, -1) else -1
+            if (v in 0..100) k to v else null
+        }.toMap()
+        return LauncherKoerper(tueren, fenster, o.optBoolean("dach", false) && fenster.containsKey("dach"))
+    }
+
+    /** 0.1.44 (D1): die einzigen Fenster und Ziele des Kern-Fensterwegs; nichts anderes wird je gesendet. */
+    val FENSTER = setOf("vl", "vr", "hl", "hr", "dach")
+    val FENSTER_ZIELE = setOf("auf", "zu")
+
+    fun fensterBody(fenster: String, ziel: String): String {
+        require(fenster in FENSTER && ziel in FENSTER_ZIELE) { "fenster" }
+        return JSONObject().put("fenster", fenster).put("ziel", ziel).toString()
+    }
+
+    fun parseFenster(json: String?): FensterAntwort = try {
+        val r = JSONObject(json ?: "")
+        FensterAntwort(r.optBoolean("ok", false), r.nullableString("grund"))
+    } catch (_: Exception) {
+        FensterAntwort(false, "fehler")
+    }
 
     /** Die sechs Aktionen des Kern-Klimawegs; nichts anderes wird je gesendet. */
     val KLIMA_AKTIONEN = setOf("an", "aus", "temp_hoch", "temp_runter", "luft_hoch", "luft_runter")

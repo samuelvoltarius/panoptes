@@ -89,7 +89,7 @@ public class TachoGalerieTest {
     public void galerieDesignAlsVorlageImEditorUndDateiPruefung() throws Exception {
         String ges = lies(GES);
         assertTrue(ges.contains("window.PanoptesTachoGestalten = {"));
-        assertTrue("gespeichertes Design überschreibt die Vorlage nicht", ges.contains("e = T.vorlage(d);\n                stand.geladen = true;"));
+        assertTrue("gespeichertes Design überschreibt die Vorlage nicht", ges.contains("stand.geladen = true;   // das gespeicherte Design überschreibt die Vorlage nicht") && ges.contains("var z = T.zuElementen(T.vorlage(d), d);"));
         assertTrue(lies(AUS).contains("window.PanoptesTachoGestalten.vorlage(dsg)"));
         // Datei mit Galerie-Basis: Kern nimmt die Basis an, Geheimnisse und Fremdes fallen weg
         JSONObject roh = new JSONObject().put("format", TachoEigen.FORMAT).put("version", TachoEigen.VERSION).put("basis", "tunnel")

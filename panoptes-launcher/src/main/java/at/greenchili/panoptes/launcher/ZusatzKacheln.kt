@@ -146,7 +146,15 @@ class ZusatzKacheln(
             c.addView(zahl, ui.lp(-1, -2, oben = 4))
             c.addView(einheit, ui.lp(-1, -2))
         }
-        reg { zahl.text = tempo(summary()?.speedKmh) ?: STRICH }
+        // 0.1.44 (P3): Tempolimit-Schild nur mit belegtem, frischem Wert; leise Warnung (Farbe) nur wenn eingeschaltet.
+        // Bei Kern-Aus hat der alte Stand kein Limit (Frische.veraltet), darum hier online = true.
+        val schild = Tempolimit.schild(ctx, ui, if (gross) 56 else 42)
+        c.addView(schild, LinearLayout.LayoutParams(schild.layoutParams).apply { gravity = Gravity.CENTER_HORIZONTAL; topMargin = ui.dp(4) })
+        reg {
+            val s = summary()
+            zahl.text = tempo(s?.speedKmh) ?: STRICH
+            Tempolimit.setze(schild, zahl, s, true, ui.p.onSurface, ui.p.warning)
+        }
         return Einpassen(ctx, c)
     }
 }

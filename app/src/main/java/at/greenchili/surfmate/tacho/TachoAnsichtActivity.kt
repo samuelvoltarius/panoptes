@@ -205,11 +205,16 @@ class TachoAnsichtActivity : Activity() {
             val antwort = try {
                 val c = org.json.JSONObject().put("cmd", "tachoAnsicht")
                 feld?.let { f -> c.put("bereich", org.json.JSONArray().put(f[0]).put(f[1]).put(f[2]).put(f[3])) }
+                // 0.1.44 (E1): eigenes Design nur holen, wenn es sich geaendert hat
+                if (eigenStand.isNotEmpty()) c.put("eigenStand", eigenStand)
                 daemon.sendCommand(c)
             } catch (_: Throwable) { null }
             haupt.post { zeige(antwort) }
         }
     }
+
+    /** 0.1.44 (E1): Kennung des eigenen Designs, das die Seite schon hat. */
+    @Volatile private var eigenStand = ""
 
     private fun zeige(a: org.json.JSONObject?) {
         if (!laeuft) return
@@ -224,6 +229,7 @@ class TachoAnsichtActivity : Activity() {
             for (k in arrayOf("kmh", "kw", "soc", "reichweiteKm", "gang", "aussenC", "kmStand", "design", "eigen")) {
                 if (a.has(k)) d.put(k, a.opt(k))
             }
+            if (a.has("eigen")) eigenStand = a.optString("eigenStand", "")
             TachoAnsichtManoever.json(TachoAnsichtManoever.aktuell())?.let { d.put("navi", it) }
             videoFolgen(a)
             ansichtFolgen(a.optString("kamera", "").isNotEmpty() || videoLaeuft.isNotEmpty())

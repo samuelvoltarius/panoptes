@@ -149,6 +149,15 @@ class NavGuidanceEngine {
         return out
     }
 
+    /**
+     * Belegtes Tempolimit (OSM `maxspeed` laut Planer) an der zuletzt zugeordneten Teilstrecke der Route, oder null: keine Route,
+     * noch keine Zuordnung oder dort nichts belegt. Nichts wird erfunden. Der Aufrufer fragt nur, solange er auf der Route ist.
+     */
+    fun tempolimitKmh(): Int? {
+        val r = route ?: return null
+        return Tempolimits.fuer(r.tempolimits, matchedSegIndex)
+    }
+
     /** Stop guidance and clear all state. Subsequent [update] calls no-op. */
     fun stop() {
         this.route = null

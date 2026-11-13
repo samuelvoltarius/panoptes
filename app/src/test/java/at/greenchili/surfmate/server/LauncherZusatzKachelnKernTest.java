@@ -66,7 +66,7 @@ public class LauncherZusatzKachelnKernTest {
         assertTrue(api.contains("ReifenWarnung.rad(vd.tyrePressureState, vd.tyreAirLeakState, vd.tyreSignalState, i)"));
         assertTrue(api.contains("o.put(\"warn\", warn);"));
         String h = lies("src/main/assets/web/local/launcher.html");
-        assertTrue(h.contains("'projektion', 'reifen', 'fahrt', 'tempo', 'geraetewidget']"));
+        assertTrue(h.contains("'projektion', 'reifen', 'fahrt', 'tempo', 'geraetewidget', 'sprache']"));   // 0.1.44 (P2)
         assertTrue(h.contains("reifen: 'Reifen', fahrt: 'Letzte Fahrt', tempo: 'Tempo'"));
         for (String l : new String[] {"de", "en", "fr", "it", "nl"}) {
             JSONObject j = new JSONObject(lies("src/main/assets/web/i18n/" + l + ".json")).getJSONObject("launcherlayout");

@@ -22,6 +22,9 @@ import java.util.regex.Pattern;
  * <p>Sicherheit: Die Geschwindigkeit ist Pflicht und steht immer auf einem grossen Platz. Ziffern (Tempo und Gang)
  * brauchen mindestens {@link #MIN_KONTRAST}:1 Kontrast zum Hintergrund, sonst gelten die Standardfarben und es
  * gibt die Warnung {@code kontrast}. Speichern geht nur im Stand (TachoApiHandler, Fahrsperre).
+ *
+ * <p>0.1.44 (E1): Version 2 = freier Editor ({@link TachoFrei}). Beide Versionen sind ladbar; {@link #pruefen}
+ * waehlt die Regeln nach {@code version}. {@link #standard()} bleibt Version 1.
  */
 public final class TachoEigen {
 
@@ -29,8 +32,11 @@ public final class TachoEigen {
     public static final String FORMAT = "panoptes-tacho-design";
     public static final int VERSION = 1;
     static final String KEY = "ansichtEigen";
-    /** Groesste Import-Datei in Zeichen. Ein gueltiges Design ist deutlich kleiner. */
-    public static final int MAX_ZEICHEN = 4096;
+    /**
+     * Groesste Datei in Zeichen. 0.1.44 (E1): 40000 statt 4096 – Version 2 hat bis zu {@link TachoFrei#MAX_ELEMENTE}
+     * Elemente und ein kleines Hintergrundbild ({@link TachoFrei#MAX_BILD}).
+     */
+    public static final int MAX_ZEICHEN = 40000;
     /** WCAG-Kontrast fuer normalen Text. Tempo und Gang muessen das mindestens erreichen. */
     public static final double MIN_KONTRAST = 4.5;
 
@@ -78,7 +84,7 @@ public final class TachoEigen {
         public final JSONObject eigen;
         public final List<String> warnungen;
 
-        Ergebnis(JSONObject eigen, List<String> warnungen) {
+        Ergebnis(JSONObject eigen, java.util.List<String> warnungen) {
             this.eigen = eigen;
             this.warnungen = Collections.unmodifiableList(warnungen);
         }
@@ -92,7 +98,9 @@ public final class TachoEigen {
         if (roh == null) return null;
         String format = roh.optString("format", FORMAT);
         if (!FORMAT.equals(format)) return null;
-        if (roh.optInt("version", VERSION) != VERSION) return null;
+        int version = roh.optInt("version", VERSION);
+        if (version == TachoFrei.VERSION) return TachoFrei.pruefen(roh);
+        if (version != VERSION) return null;
         List<String> warn = new java.util.ArrayList<>();
         try {
             JSONObject std = standard();
@@ -152,7 +160,9 @@ public final class TachoEigen {
         try {
             JSONObject roh = new JSONObject(text.trim());
             if (!roh.has("format") || !roh.has("version")) return null;
-            if (!FORMAT.equals(roh.opt("format")) || !(roh.opt("version") instanceof Number && ((Number) roh.opt("version")).doubleValue() == VERSION)) return null;
+            Object v = roh.opt("version");
+            double nr = v instanceof Number ? ((Number) v).doubleValue() : -1;
+            if (!FORMAT.equals(roh.opt("format")) || (nr != VERSION && nr != TachoFrei.VERSION)) return null;
             return pruefen(roh);
         } catch (Exception e) {
             return null;
@@ -189,16 +199,31 @@ public final class TachoEigen {
 
     // ------------------------------------------------------------ Speicher (Kern-Konfiguration)
 
-    /** Gespeichertes Design (geprueft) oder null, wenn keines gespeichert ist. */
-    public static JSONObject gespeichert() {
+    private static String letzterText = null;
+    private static JSONObject letztesDesign = null;
+
+    /**
+     * Gespeichertes Design (geprueft) oder null, wenn keines gespeichert ist. 0.1.44 (E1): Die Pruefung laeuft nur,
+     * wenn sich der gespeicherte Text geaendert hat (die Tacho-Ansicht fragt 4x pro Sekunde).
+     */
+    public static synchronized JSONObject gespeichert() {
         try {
             String s = TachoNaviApp.sektion().optString(KEY, "");
             if (s.isEmpty()) return null;
-            Ergebnis e = pruefenText(s);
-            return e == null ? null : e.eigen;
+            if (!s.equals(letzterText)) {
+                Ergebnis e = pruefenText(s);
+                letztesDesign = e == null ? null : e.eigen;
+                letzterText = s;
+            }
+            return letztesDesign == null ? null : new JSONObject(letztesDesign.toString());
         } catch (Throwable t) {
             return null;
         }
+    }
+
+    /** 0.1.44 (E1): Kennung des gespeicherten Designs; die Ansicht holt das Design nur, wenn sie sich aendert. */
+    public static String stand(JSONObject eigen) {
+        return eigen == null ? "" : Integer.toHexString(eigen.toString().hashCode());
     }
 
     public static boolean speichern(JSONObject eigen) {

@@ -1,0 +1,118 @@
+{
+  "format": "panoptes-launcher-layout",
+  "version": 1,
+  "vorlage": "fahrzeug",
+  "seiten": [
+    [
+      {
+        "id": "w1",
+        "typ": "widget",
+        "x": 0,
+        "y": 0,
+        "b": 2,
+        "h": 2,
+        "kachel": "fahrstatus"
+      },
+      {
+        "id": "w2",
+        "typ": "widget",
+        "x": 0,
+        "y": 2,
+        "b": 2,
+        "h": 1,
+        "kachel": "musik"
+      },
+      {
+        "id": "w3",
+        "typ": "widget",
+        "x": 2,
+        "y": 0,
+        "b": 4,
+        "h": 3,
+        "kachel": "autoansicht"
+      }
+    ],
+    [
+      {
+        "id": "w7",
+        "typ": "widget",
+        "x": 0,
+        "y": 0,
+        "b": 2,
+        "h": 2,
+        "kachel": "fahrzeug"
+      },
+      {
+        "id": "w8",
+        "typ": "widget",
+        "x": 2,
+        "y": 0,
+        "b": 2,
+        "h": 2,
+        "kachel": "akku"
+      },
+      {
+        "id": "w9",
+        "typ": "widget",
+        "x": 4,
+        "y": 0,
+        "b": 2,
+        "h": 1,
+        "kachel": "waechter"
+      },
+      {
+        "id": "w10",
+        "typ": "widget",
+        "x": 4,
+        "y": 1,
+        "b": 2,
+        "h": 1,
+        "kachel": "schloss"
+      },
+      {
+        "id": "w11",
+        "typ": "widget",
+        "x": 0,
+        "y": 2,
+        "b": 2,
+        "h": 1,
+        "kachel": "fahrt"
+      },
+      {
+        "id": "w12",
+        "typ": "widget",
+        "x": 2,
+        "y": 2,
+        "b": 2,
+        "h": 1,
+        "kachel": "kamera"
+      }
+    ]
+  ],
+  "dock": [
+    "at.greenchili.surfmate",
+    "com.byd.androidauto",
+    "com.byd.carplay.ui"
+  ],
+  "hintergrund": "motiv-11",
+  "zaehler": 20,
+  "schnell": [],
+  "zeigeStatus": true,
+  "zeigeReiter": true,
+  "zeigeKlima": true,
+  "zeige3d": false,
+  "nebeneinander": false,
+  "nebenAnders": [],
+  "design": "auto",
+  "akzent": "",
+  "abstand": "eng",
+  "spalte": [
+    "akku",
+    "reichweite",
+    "gang",
+    "waechter",
+    "musik",
+    "uhr",
+    "kamera"
+  ]
+}

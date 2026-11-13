@@ -77,7 +77,7 @@ public class TachoGestaltenTest {
         assertNull(TachoEigen.pruefenText("kein json"));
         assertNull(TachoEigen.pruefenText("[1,2]"));
         assertNull("fremdes Format", TachoEigen.pruefenText(gut().put("format", "panoptes-launcher-layout").toString()));
-        assertNull("andere Version", TachoEigen.pruefenText(gut().put("version", 2).toString()));
+        assertNull("andere Version (0.1.44: 1 und 2 gibt es)", TachoEigen.pruefenText(gut().put("version", 3).toString()));
         StringBuilder gross = new StringBuilder(gut().toString());
         gross.insert(1, "\"x\":\"" + new String(new char[TachoEigen.MAX_ZEICHEN]).replace('\0', 'a') + "\",");
         assertNull("zu gross", TachoEigen.pruefenText(gross.toString()));
@@ -232,7 +232,7 @@ public class TachoGestaltenTest {
                 .contains("\"/api/tacho/eigen\","));
         String ed = TachoFaehigkeitTest.lies(EDITOR);
         assertTrue("Editor sperrt in Fahrt", ed.contains("if (!stand.imStand) { sperren(); return; }"));
-        assertTrue(ed.contains("steuer.forEach(function (x) { x.disabled = zu;"));
+        assertTrue(ed.contains("steuer.concat(panelSteuer, hgSteuer).forEach(function (x) { x.disabled = zu;"));
         assertTrue("ohne Kern gesperrt", ed.contains("function () { stand.imStand = false; sperren(); }"));
     }
 
@@ -243,7 +243,7 @@ public class TachoGestaltenTest {
         assertTrue(erw > 0);
         assertTrue(html.indexOf("data-i18n=\"tacho_gestalten.erweitert\">Erweitert<", erw) > erw);
         assertTrue(html.indexOf("<div id=\"tachoGestalten\"></div>", erw) > erw);
-        assertTrue(html.contains("<script src=\"../shared/tacho-gestalten.js?v=3\"></script>"));
+        assertTrue(html.contains("<script src=\"../shared/tacho-gestalten.js?v=4\"></script>"));
         String ed = TachoFaehigkeitTest.lies(EDITOR);
         assertTrue(ed.contains("t('tacho_gestalten.knopf', 'Tacho gestalten')"));
         assertTrue("grosse Knoepfe (50+)", ed.contains("min-height:56px;padding:10px 16px;font-size:17px;"));

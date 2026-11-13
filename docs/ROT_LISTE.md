@@ -3,11 +3,11 @@
 Diese Liste gehört zu den Release-Notizen („So wurde geprüft“). Sie nennt die Tests, die beim Freigabestand
 fehlschlagen, und warum. Maßstab für eine Freigabe ist: kein Test ist neu rot gegenüber dem Vorgänger.
 
-## Stand 0.1.42
+## Stand 0.1.43
 
 | Bereich | Rot | Übersprungen |
 |---|---:|---:|
-| App (`:app:testDebugUnitTest`) | 0 | 24 (Windows), 12 (Linux) |
+| App (`:app:testDebugUnitTest`) | 0 | 24 (Windows); Linux in CI ohne Rot, nicht eigens gezählt |
 | Launcher (`:panoptes-launcher:testDebugUnitTest`) | 0 | 0 |
 
 Übersprungen heißt: Der Test prüft etwas, das es auf dem Testrechner nicht gibt (zum Beispiel POSIX-Dateirechte
@@ -15,6 +15,9 @@ unter Windows), und meldet sich deshalb ab statt rot zu werden. Auf Linux und An
 
 ## Verlauf
 
+- 0.1.43: 5557 Tests in der App und 231 im Launcher, keiner rot. Übersprungen sind dieselben 24 (Windows) wie in 0.1.42.
+  Ein Launcher-Test erwartete noch das alte Raster-Layout; nach dem freien Editor prüft er dieselbe Abstandsregel am
+  neuen Layout (`LauncherBedienungTest.grosseBedienungFaktor`).
 - 0.1.42: 5484 Tests in der App und 175 im Launcher, keiner rot. Übersprungen sind dieselben 24 (Windows) wie in 0.1.41.
 - 0.1.41: 5460 Tests in der App und 165 im Launcher, keiner rot. Übersprungen sind dieselben 24 (Windows) wie in 0.1.40.
   Ein neuer Launcher-Test las den Quelltext mit Windows-Zeilenenden und fand sein Suchmuster nicht. Er liest jetzt

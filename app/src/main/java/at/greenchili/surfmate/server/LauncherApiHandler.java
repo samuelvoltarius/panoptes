@@ -42,6 +42,7 @@ import java.io.OutputStream;
  *   <li>{@code POST /api/launcher/v1/apps/launch} — proxy of app launch (§2.3)</li>
  *   <li>{@code /api/launcher/v1/vehicle/*} — gesperrt, 404 (0.1.37, REGEL A+)</li>
  *   <li>{@code POST /api/launcher/v1/klima} — nur Klima, nur Launcher-APK ({@link LauncherKlimaBefehl})</li>
+ *   <li>{@code POST /api/launcher/v1/fenster} — 0.1.44: nur Fenster auf/zu im Stand, nur Launcher-APK ({@link LauncherFensterBefehl})</li>
  *   <li>{@code GET  /api/launcher/v1/update}, {@code POST …/update/installieren} — Update-Karte (Stufe 4)</li>
  *   <li>{@code GET  /api/launcher/v1/appearance}  — theme + locale + material + launcherMode (§2.5)</li>
  *   <li>{@code GET|PUT /api/launcher/v1/layout}, {@code POST …/layout/standard}, {@code GET …/layout/apps} —
@@ -124,6 +125,55 @@ public final class LauncherApiHandler {
                 JSONObject o = (JSONObject) r[1];
                 if ((int) r[0] == 200) o.put("klima", buildKlima());
                 HttpResponse.sendJson(out, (int) r[0], o.toString());
+                return true;
+            }
+            // 0.1.44 (D1): Fenster-Schnellknöpfe der Fahrzeug-Startseite – nur vl/vr/hl/hr/dach auf/zu, nur im Stand,
+            // nur von der Launcher-APK mit Panoptes-Signatur (LauncherAufrufer), über den Router-Fensterbefehl.
+            // 0.1.44 (L1): Live-Umgebung. GET = Kachel sichtbar + letztes Ergebnis (Skizze, keine Bilder);
+            // POST {an} = Schalter (ab Werk aus), nur von der Launcher-APK.
+            if (cleanPath.equals(UMGEBUNG_PFAD)) {
+                if ("GET".equals(method)) {
+                    // Nur die Launcher-APK haelt die Erkennung wach (jede Abfrage = „Kachel sichtbar“).
+                    if (!launcherDarf(out)) return true;
+                    HttpResponse.sendJson(out, at.greenchili.surfmate.surveillance.LiveUmgebung.abfrage().toString());
+                    return true;
+                }
+                if ("POST".equals(method)) {
+                    if (!launcherDarf(out)) return true;
+                    boolean an = new JSONObject(body == null || body.isEmpty() ? "{}" : body).optBoolean("an", false);
+                    boolean ok = at.greenchili.surfmate.surveillance.LiveUmgebung.schalten(an);
+                    HttpResponse.sendJson(out, ok ? 200 : 500, new JSONObject().put("ok", ok).put("an", an).toString());
+                    return true;
+                }
+            }
+            if (cleanPath.equals(FENSTER_PFAD) && "POST".equals(method)) {
+                if (!launcherDarf(out)) return true;
+                Object[] r = LauncherFensterBefehl.ausfuehren(body, System.currentTimeMillis());
+                JSONObject o = (JSONObject) r[1];
+                if ((int) r[0] == 200) o.put("koerper", buildKoerper());
+                HttpResponse.sendJson(out, (int) r[0], o.toString());
+                return true;
+            }
+            // 0.1.44 (P4): Haus-Kachel (Home Assistant, NUR LESEN) und gespeicherte Sitzposition für Fahrerprofile (NUR LESEN).
+            // Beide nur GET und nur von der Launcher-APK mit Panoptes-Signatur (private Namen, Fahrzeugwert).
+            if (cleanPath.equals(LauncherHaus.PFAD) || cleanPath.equals(LauncherSitz.PFAD)) {
+                if (!launcherDarf(out)) return true;
+                if (!"GET".equals(method)) {
+                    HttpResponse.sendJson(out, 405, "{\"ok\":false,\"grund\":\"nur_lesen\"}");
+                    return true;
+                }
+                if (cleanPath.equals(LauncherSitz.PFAD)) {
+                    HttpResponse.sendJson(out, LauncherSitz.lesen(System.currentTimeMillis()).toString());
+                    return true;
+                }
+                java.util.List<String> ids = null;
+                if (path.contains("ids=")) {
+                    String q = path.substring(path.indexOf("ids=") + 4);
+                    if (q.contains("&")) q = q.substring(0, q.indexOf('&'));
+                    ids = LauncherHaus.ids(java.net.URLDecoder.decode(q, "UTF-8"));
+                }
+                HttpResponse.sendJson(out, LauncherHaus.antwort(at.greenchili.surfmate.ha.HaGeraeteSpeicher.get().lies(), ids,
+                        System.currentTimeMillis()).toString());
                 return true;
             }
             // 0.1.37 „Tacho wieder normal“: stoppt jede Projektion am Fahrerdisplay (nur Richtung sicher), nur von der
@@ -223,6 +273,19 @@ public final class LauncherApiHandler {
                         .put("fehler", fehler == null ? JSONObject.NULL : fehler).toString());
                 return true;
             }
+            // 0.1.44 (P1): Schalter „Startbildschirm“ an aus der geführten Einrichtung im Launcher (Totmann bleibt aktiv).
+            if (cleanPath.equals(LauncherBedienung.HOME_AN_PFAD) && "POST".equals(method)) {
+                if (!launcherDarf(out)) return true;
+                HttpResponse.sendJson(out, LauncherBedienung.homeAn().toString());
+                return true;
+            }
+            // 0.1.44 (P1): „Zurück“ / „Letzte App“ als Daemon-Taste, nur diese zwei, nur von der Launcher-APK.
+            if (cleanPath.equals(LauncherBedienung.TASTE_PFAD) && "POST".equals(method)) {
+                if (!launcherDarf(out)) return true;
+                Object[] r = LauncherBedienung.taste(body);
+                HttpResponse.sendJson(out, (int) r[0], r[1].toString());
+                return true;
+            }
             if (cleanPath.equals(HOME_PFAD + "/aus") && "POST".equals(method)) {
                 if (!launcherDarf(out)) return true;
                 String fehler = at.greenchili.surfmate.launcher.HomeWaechter.rueckfall(
@@ -283,6 +346,9 @@ public final class LauncherApiHandler {
     }
 
     static final String KLIMA_PFAD = "/api/launcher/v1/klima";
+    static final String FENSTER_PFAD = "/api/launcher/v1/fenster";
+    /** 0.1.44 (L1): Live-Umgebung im Launcher. */
+    static final String UMGEBUNG_PFAD = "/api/launcher/v1/umgebung";
     static final String UPDATE_PFAD = "/api/launcher/v1/update";
     static final String HOME_PFAD = "/api/launcher/v1/home";
     static final String TACHO_NORMAL_PFAD = "/api/launcher/v1/tacho/normal";
@@ -461,6 +527,16 @@ public final class LauncherApiHandler {
         return t;
     }
 
+    /** Einstellung {@code launcher.tempoWarnung} (Katalog, Standard aus). */
+    static boolean tempoWarnung() {
+        try {
+            JSONObject l = at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig().optJSONObject("launcher");
+            return l != null && l.optBoolean("tempoWarnung", false);
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
     private static void sendSummary(OutputStream out) throws Exception {
         JSONObject root = new JSONObject();
         root.put("ts", System.currentTimeMillis());
@@ -481,6 +557,11 @@ public final class LauncherApiHandler {
         root.put("tacho",     buildTacho());
         root.put("naviApp",   buildNaviApp());
         root.put("launcherLayout", buildLauncherLayout());
+        root.put("koerper",   buildKoerper());   // 0.1.44 (D1): Türen, Fenster, Dach für die Fahrzeug-Ansicht
+        // 0.1.44 (P3): Tempolimit nur belegt und frisch (TempolimitStand), sonst null; leise Warnung ab Werk aus
+        Object limit = at.greenchili.surfmate.navmap.nav.TempolimitStand.json(System.currentTimeMillis());
+        root.put("tempolimit", limit == null ? JSONObject.NULL : limit);
+        root.put("tempoWarnung", tempoWarnung());
         HttpResponse.sendJson(out, root.toString());
     }
 
@@ -611,6 +692,39 @@ public final class LauncherApiHandler {
         } catch (Throwable t) {
             return JSONObject.NULL;
         }
+    }
+
+    /**
+     * 0.1.44 (D1) koerper: {@code {tueren:{lf,rf,lr,rr,hood,trunk}, fenster:{vl,vr,hl,hr,dach}, dach}} – nur bekannte
+     * Werte (Tür offen true/false, Fenster 0..100 %), nie geraten. Dieselben Lesewege wie vehicle-control
+     * ({@link VehicleControlApiHandler#tuerOffenStand}, {@link VehicleControlApiHandler#fensterStand}).
+     */
+    private static Object buildKoerper() {
+        try {
+            at.greenchili.surfmate.byd.BydDataCollector c = at.greenchili.surfmate.byd.BydDataCollector.getInstance();
+            at.greenchili.surfmate.byd.BydVehicleData vd = c.getData();
+            JSONObject tueren = VehicleControlApiHandler.tuerOffenStand(c);
+            JSONObject fenster = vd == null ? new JSONObject() : VehicleControlApiHandler.fensterStand(c, vd)[0];
+            return koerper(tueren, fenster);
+        } catch (Throwable t) {
+            return JSONObject.NULL;
+        }
+    }
+
+    /** Reine Umsetzung (im Test belegt): API-Schlüssel lf/rf/lr/rr/sunroof → vl/vr/hl/hr/dach, nur 0..100. */
+    static JSONObject koerper(JSONObject tuerOffen, JSONObject fenster) throws Exception {
+        JSONObject t = new JSONObject();
+        for (String k : new String[]{"lf", "rf", "lr", "rr", "hood", "trunk"}) {
+            if (tuerOffen != null && tuerOffen.has(k) && !tuerOffen.isNull(k)) t.put(k, tuerOffen.optBoolean(k));
+        }
+        JSONObject f = new JSONObject();
+        String[][] paare = {{"lf", "vl"}, {"rf", "vr"}, {"lr", "hl"}, {"rr", "hr"}, {"sunroof", "dach"}};
+        for (String[] p : paare) {
+            if (fenster == null || !fenster.has(p[0]) || fenster.isNull(p[0])) continue;
+            int v = fenster.optInt(p[0], -1);
+            if (v >= 0 && v <= 100) f.put(p[1], v);
+        }
+        return new JSONObject().put("tueren", t).put("fenster", f).put("dach", f.has("dach"));
     }
 
     /** range: total/elec/fuel km + socPct + fuelPct from VehicleDataMonitor. */

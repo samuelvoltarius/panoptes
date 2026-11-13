@@ -686,6 +686,30 @@
             android:process=":weckwort"
             android:exported="false" />
 
+        <!-- 0.1.44 (P2) Sprachbefehle (Schalter sprache.befehle, Standard aus). SprachStart: App-Prozess, ohne Ansicht,
+             exportiert nur für die Launcher-Kachel „Sprechen“ (öffnet nur die Ansicht; alles Weitere prüft die App).
+             SprachActivity und SprachWeckDienst: eigener Prozess :sprache (nativer Erkenner), nicht exportiert. -->
+        <activity
+            android:name="at.greenchili.surfmate.sprache.SprachStart"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity="at.greenchili.surfmate.sprache"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <activity
+            android:name="at.greenchili.surfmate.sprache.SprachActivity"
+            android:process=":sprache"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:taskAffinity="at.greenchili.surfmate.sprache"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|uiMode|density|fontScale"
+            android:theme="@android:style/Theme.DeviceDefault.Dialog.NoActionBar" />
+        <service
+            android:name="at.greenchili.surfmate.sprache.SprachWeckDienst"
+            android:process=":sprache"
+            android:exported="false" />
+
         <!-- RoadSense one-shot chimes use a separate player so they can overlap
              Automation Audio without replacing a loop or being replaced mid-prepare.
              The shell-UID daemon launches it through the same exported-component bridge;

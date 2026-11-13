@@ -2462,6 +2462,10 @@
       }
     },
     "launcher": {
+      "tempoWarnung": {
+        "title": "Launcher: stille snelheidswaarschuwing",
+        "help": "Toont de launcher een snelheidslimiet, dan wordt de snelheid geel als je die overschrijdt. Geen geluid. De limiet komt alleen uit bevestigde gegevens (OpenStreetMap langs de Panoptes-route); zonder waarde toont de launcher niets. Standaard uit."
+      },
       "startbildschirm": {
         "title": "Panoptes Launcher als startscherm",
         "help": "Met Home kom je dan bij de Panoptes Launcher in plaats van het BYD-startscherm. Na het inschakelen vraagt de launcher of hij moet blijven. Tik je niet binnen 5 minuten op Behouden, dan gaat alles vanzelf terug. Terug kan altijd: huisknop in de launcher, deze schakelaar of Telegram \"/startbildschirm original\". Het BYD-startscherm blijft in de auto en wordt nooit verwijderd."
@@ -2611,6 +2615,14 @@
       "weckwortMessung": {
         "title": "Wekwoordmeting toestaan",
         "help": "Alleen om te meten: staat toe om op het autoscherm onder Testfuncties een meting te starten of een spraakwekwoord naast de BYD-spraakassistent werkt. Legt alleen getallen vast (CPU-belasting, geheugen, valse activeringen). Er wordt geen geluid opgeslagen of verzonden. Tijdens de meting staat bovenaan „Microfoon aan (meting)”. Standaard uit."
+      },
+      "befehle": {
+        "title": "Spraakopdrachten (offline)",
+        "help": "Vaste opdrachten zonder eigen AI-sleutel, in de auto zonder internet herkend (voorlopig Duits en Engels; Nederlands nog niet): airco aan/uit, één stand warmer/koeler, naar huis navigeren, muziek volgende/vorige/pauze, waar ben ik, actieradius. Airco pas na bevestiging „Ja/Nee”. Nooit toeter, knipperlichten, lichten of alarm. De microfoon luistert pas nadat je op „Spreken” tikt; er wordt niets opgenomen. Standaard uit."
+      },
+      "weckwort": {
+        "title": "Activeringswoord „Hallo Auto”",
+        "help": "Opent de spraakopdrachten als je „Hallo Auto” (Duits) of „hello car” (Engels) zegt. Alleen aan te zetten met een tik op het autoscherm, hooguit 2 uur achter elkaar, met de melding „microfoon luistert”. Stopt als Panoptes geluid opneemt. Er wordt niets opgenomen. Standaard uit."
       }
     },
     "zaehlen": {

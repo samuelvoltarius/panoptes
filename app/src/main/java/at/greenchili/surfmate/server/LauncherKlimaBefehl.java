@@ -212,6 +212,11 @@ final class LauncherKlimaBefehl {
      * nicht möglich, 429 beim Ratenlimit. Ablehnungen kommen mit Grund ins Befehls-Log.
      */
     static Object[] ausfuehren(String body, long jetzt) throws Exception {
+        return ausfuehren(body, jetzt, "launcher.klima.");
+    }
+
+    /** 0.1.44 (P2): dieselben Regeln für Sprachbefehle ({@link SprachApiHandler}), eigenes Kennwort im Befehls-Log. */
+    static Object[] ausfuehren(String body, long jetzt, String log) throws Exception {
         String aktion;
         try {
             aktion = new JSONObject(body == null || body.isEmpty() ? "{}" : body).optString("aktion", "");
@@ -226,7 +231,7 @@ final class LauncherKlimaBefehl {
         o.put("aktion", aktion);
         if (!ratenlimit(jetzt)) {
             BefehlsLog.grund("ratenlimit");
-            BefehlsLog.ereignis("launcher.klima." + aktion, "abgelehnt", null, null);
+            BefehlsLog.ereignis(log + aktion, "abgelehnt", null, null);
             return new Object[]{429, o.put("grund", "ratenlimit")};
         }
         Auto a = auto;
@@ -235,7 +240,7 @@ final class LauncherKlimaBefehl {
         // relative Dreh-Befehl verweigert am Surf still und würde bei Stufen-Autos eine erfundene Gradzahl vortäuschen)
         if (("temp_hoch".equals(aktion) || "temp_runter".equals(aktion)) && KlimaStufe.ART_UNBEKANNT.equals(a.tempArt())) {
             BefehlsLog.grund("temperatur_unbekannt");
-            BefehlsLog.ereignis("launcher.klima." + aktion, "abgelehnt", null, null);
+            BefehlsLog.ereignis(log + aktion, "abgelehnt", null, null);
             return new Object[]{409, o.put("grund", "temperatur_unbekannt")};
         }
         VehicleCommand c = KOMFORT_AKTIONEN.contains(aktion)
@@ -243,10 +248,10 @@ final class LauncherKlimaBefehl {
                 : befehl(aktion, a.luft(), a.sollC(), a.sollRoh(), a.stufenModell(), grund);
         if (c == null) {
             BefehlsLog.grund(grund[0]);
-            BefehlsLog.ereignis("launcher.klima." + aktion, "abgelehnt", null, null);
+            BefehlsLog.ereignis(log + aktion, "abgelehnt", null, null);
             return new Object[]{409, o.put("grund", grund[0])};
         }
-        BefehlsLog.ereignis("launcher.klima." + aktion, "ok", null, null);
+        BefehlsLog.ereignis(log + aktion, "ok", null, null);
         Ergebnis e = a.ausfuehren(c);
         boolean ok = "success".equals(e.ausgang);
         o.put("ok", ok).put("ausgang", e.ausgang).put("weg", e.weg);

@@ -1,0 +1,2267 @@
+[
+ {
+  "name": "leer",
+  "ein": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 370,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    }
+   ]
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 370,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    }
+   ]
+  },
+  "warnungen": []
+ },
+ {
+  "name": "klar_zerlegt",
+  "ein": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "verlauf",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "rund",
+     "wert": "leistung",
+     "x": 35,
+     "y": 103,
+     "b": 270,
+     "h": 270,
+     "farbe": "#EEF4F8",
+     "form": "ring",
+     "min": -50,
+     "max": 150,
+     "drehung": 0,
+     "akzent": "#B5F23D",
+     "schrift": "schmal"
+    },
+    {
+     "typ": "navi",
+     "x": 335,
+     "y": 103,
+     "b": 330,
+     "h": 270,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal"
+    },
+    {
+     "typ": "rund",
+     "wert": "tempo",
+     "x": 695,
+     "y": 103,
+     "b": 270,
+     "h": 270,
+     "farbe": "#EEF4F8",
+     "form": "ring",
+     "min": 0,
+     "max": 200,
+     "drehung": 0,
+     "akzent": "#B5F23D",
+     "schrift": "schmal"
+    },
+    {
+     "typ": "uhr",
+     "x": 18,
+     "y": 14,
+     "b": 300,
+     "h": 40,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal",
+     "ausrichtung": "links"
+    },
+    {
+     "typ": "gang",
+     "x": 350,
+     "y": 14,
+     "b": 300,
+     "h": 40,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "zahl",
+     "wert": "aussen",
+     "x": 682,
+     "y": 14,
+     "b": 300,
+     "h": 40,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal",
+     "ausrichtung": "rechts"
+    },
+    {
+     "typ": "zahl",
+     "wert": "akku",
+     "x": 18,
+     "y": 396,
+     "b": 300,
+     "h": 40,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal",
+     "ausrichtung": "links"
+    },
+    {
+     "typ": "zahl",
+     "wert": "reichweite",
+     "x": 350,
+     "y": 396,
+     "b": 300,
+     "h": 40,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "zahl",
+     "wert": "kmstand",
+     "x": 682,
+     "y": 396,
+     "b": 300,
+     "h": 40,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal",
+     "ausrichtung": "rechts"
+    }
+   ]
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "verlauf",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "rund",
+     "wert": "leistung",
+     "x": 35,
+     "y": 103,
+     "b": 270,
+     "h": 270,
+     "farbe": "#EEF4F8",
+     "form": "ring",
+     "min": -50,
+     "max": 150,
+     "drehung": 0,
+     "akzent": "#B5F23D",
+     "schrift": "schmal"
+    },
+    {
+     "typ": "navi",
+     "x": 335,
+     "y": 103,
+     "b": 330,
+     "h": 270,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal"
+    },
+    {
+     "typ": "rund",
+     "wert": "tempo",
+     "x": 695,
+     "y": 103,
+     "b": 270,
+     "h": 270,
+     "farbe": "#EEF4F8",
+     "form": "ring",
+     "min": 0,
+     "max": 200,
+     "drehung": 0,
+     "akzent": "#B5F23D",
+     "schrift": "schmal"
+    },
+    {
+     "typ": "uhr",
+     "x": 18,
+     "y": 14,
+     "b": 300,
+     "h": 40,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal",
+     "ausrichtung": "links"
+    },
+    {
+     "typ": "gang",
+     "x": 350,
+     "y": 14,
+     "b": 300,
+     "h": 40,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "zahl",
+     "wert": "aussen",
+     "x": 682,
+     "y": 14,
+     "b": 300,
+     "h": 40,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal",
+     "ausrichtung": "rechts"
+    },
+    {
+     "typ": "zahl",
+     "wert": "akku",
+     "x": 18,
+     "y": 396,
+     "b": 300,
+     "h": 40,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal",
+     "ausrichtung": "links"
+    },
+    {
+     "typ": "zahl",
+     "wert": "reichweite",
+     "x": 350,
+     "y": 396,
+     "b": 300,
+     "h": 40,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "zahl",
+     "wert": "kmstand",
+     "x": 682,
+     "y": 396,
+     "b": 300,
+     "h": 40,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal",
+     "ausrichtung": "rechts"
+    }
+   ]
+  },
+  "warnungen": []
+ },
+ {
+  "name": "analog_zerlegt",
+  "ein": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#0E1620",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "rund",
+     "wert": "leistung",
+     "x": 35,
+     "y": 103,
+     "b": 270,
+     "h": 270,
+     "farbe": "#EEF4F8",
+     "form": "ring",
+     "min": -50,
+     "max": 150,
+     "drehung": 0,
+     "akzent": "#B5F23D",
+     "schrift": "schmal"
+    },
+    {
+     "typ": "navi",
+     "x": 335,
+     "y": 103,
+     "b": 330,
+     "h": 270,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal"
+    },
+    {
+     "typ": "rund",
+     "wert": "tempo",
+     "x": 695,
+     "y": 103,
+     "b": 270,
+     "h": 270,
+     "farbe": "#EEF4F8",
+     "form": "ring",
+     "min": 0,
+     "max": 200,
+     "drehung": 0,
+     "akzent": "#B5F23D",
+     "schrift": "schmal"
+    },
+    {
+     "typ": "uhr",
+     "x": 18,
+     "y": 14,
+     "b": 300,
+     "h": 40,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal",
+     "ausrichtung": "links"
+    },
+    {
+     "typ": "gang",
+     "x": 350,
+     "y": 14,
+     "b": 300,
+     "h": 40,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "zahl",
+     "wert": "aussen",
+     "x": 682,
+     "y": 14,
+     "b": 300,
+     "h": 40,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal",
+     "ausrichtung": "rechts"
+    },
+    {
+     "typ": "zahl",
+     "wert": "akku",
+     "x": 18,
+     "y": 396,
+     "b": 300,
+     "h": 40,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal",
+     "ausrichtung": "links"
+    },
+    {
+     "typ": "zahl",
+     "wert": "reichweite",
+     "x": 350,
+     "y": 396,
+     "b": 300,
+     "h": 40,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "zahl",
+     "wert": "kmstand",
+     "x": 682,
+     "y": 396,
+     "b": 300,
+     "h": 40,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal",
+     "ausrichtung": "rechts"
+    }
+   ]
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#0E1620",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "rund",
+     "wert": "leistung",
+     "x": 35,
+     "y": 103,
+     "b": 270,
+     "h": 270,
+     "farbe": "#EEF4F8",
+     "form": "ring",
+     "min": -50,
+     "max": 150,
+     "drehung": 0,
+     "akzent": "#B5F23D",
+     "schrift": "schmal"
+    },
+    {
+     "typ": "navi",
+     "x": 335,
+     "y": 103,
+     "b": 330,
+     "h": 270,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal"
+    },
+    {
+     "typ": "rund",
+     "wert": "tempo",
+     "x": 695,
+     "y": 103,
+     "b": 270,
+     "h": 270,
+     "farbe": "#EEF4F8",
+     "form": "ring",
+     "min": 0,
+     "max": 200,
+     "drehung": 0,
+     "akzent": "#B5F23D",
+     "schrift": "schmal"
+    },
+    {
+     "typ": "uhr",
+     "x": 18,
+     "y": 14,
+     "b": 300,
+     "h": 40,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal",
+     "ausrichtung": "links"
+    },
+    {
+     "typ": "gang",
+     "x": 350,
+     "y": 14,
+     "b": 300,
+     "h": 40,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "zahl",
+     "wert": "aussen",
+     "x": 682,
+     "y": 14,
+     "b": 300,
+     "h": 40,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal",
+     "ausrichtung": "rechts"
+    },
+    {
+     "typ": "zahl",
+     "wert": "akku",
+     "x": 18,
+     "y": 396,
+     "b": 300,
+     "h": 40,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal",
+     "ausrichtung": "links"
+    },
+    {
+     "typ": "zahl",
+     "wert": "reichweite",
+     "x": 350,
+     "y": 396,
+     "b": 300,
+     "h": 40,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "zahl",
+     "wert": "kmstand",
+     "x": 682,
+     "y": 396,
+     "b": 300,
+     "h": 40,
+     "farbe": "#EEF4F8",
+     "schrift": "schmal",
+     "ausrichtung": "rechts"
+    }
+   ]
+  },
+  "warnungen": []
+ },
+ {
+  "name": "unbekanntes_faellt_weg",
+  "ein": {
+   "pfad": "/sdcard/x",
+   "lat": 47.8,
+   "token": "geheim",
+   "blinken": true,
+   "hintergrund": {
+    "art": "muster",
+    "farbe": "#123456",
+    "bild": "content://x"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 370,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF"
+    },
+    {
+     "typ": "video",
+     "x": 1,
+     "y": 1
+    },
+    {
+     "typ": "zahl",
+     "wert": "passwort"
+    },
+    {
+     "typ": "uhr",
+     "x": 10,
+     "y": 10,
+     "b": 200,
+     "h": 60,
+     "farbe": "#FFFFFF",
+     "takt": 500,
+     "blinken": true,
+     "url": "http://x"
+    }
+   ],
+   "format": "panoptes-tacho-design",
+   "version": 2
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#123456",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 370,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "uhr",
+     "x": 10,
+     "y": 10,
+     "b": 200,
+     "h": 60,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    }
+   ]
+  },
+  "warnungen": []
+ },
+ {
+  "name": "ausserhalb",
+  "ein": {
+   "elemente": [
+    {
+     "typ": "rund",
+     "wert": "tempo",
+     "x": -500,
+     "y": 9999,
+     "b": 5000,
+     "h": -3,
+     "farbe": "#ffffff"
+    },
+    {
+     "typ": "linie",
+     "x": 990,
+     "y": 440,
+     "b": 400,
+     "h": 2,
+     "dicke": 500,
+     "farbe": "#ff0000"
+    }
+   ],
+   "format": "panoptes-tacho-design",
+   "version": 2
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "rund",
+     "wert": "tempo",
+     "x": 0,
+     "y": 360,
+     "b": 1000,
+     "h": 90,
+     "farbe": "#FFFFFF",
+     "form": "ring",
+     "min": 0,
+     "max": 200,
+     "drehung": 0,
+     "akzent": "#B5F23D",
+     "schrift": "schmal"
+    },
+    {
+     "typ": "linie",
+     "x": 600,
+     "y": 440,
+     "b": 400,
+     "h": 4,
+     "farbe": "#FF0000",
+     "dicke": 60
+    }
+   ]
+  },
+  "warnungen": [
+   "tempo_groesse"
+  ]
+ },
+ {
+  "name": "tempo_doppelt",
+  "ein": {
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 370,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF"
+    },
+    {
+     "typ": "rund",
+     "wert": "tempo",
+     "x": 0,
+     "y": 0,
+     "b": 300,
+     "h": 300
+    },
+    {
+     "typ": "zahl",
+     "wert": "akku",
+     "x": 0,
+     "y": 400,
+     "b": 100,
+     "h": 40
+    }
+   ],
+   "format": "panoptes-tacho-design",
+   "version": 2
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 370,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "zahl",
+     "wert": "akku",
+     "x": 0,
+     "y": 400,
+     "b": 100,
+     "h": 40,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    }
+   ]
+  },
+  "warnungen": [
+   "tempo_einmal"
+  ]
+ },
+ {
+  "name": "tempo_fehlt",
+  "ein": {
+   "elemente": [
+    {
+     "typ": "balken",
+     "wert": "tempo",
+     "x": 0,
+     "y": 0,
+     "b": 300,
+     "h": 30
+    },
+    {
+     "typ": "zahl",
+     "wert": "akku",
+     "x": 0,
+     "y": 400,
+     "b": 100,
+     "h": 40
+    }
+   ],
+   "format": "panoptes-tacho-design",
+   "version": 2
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "akku",
+     "x": 0,
+     "y": 400,
+     "b": 100,
+     "h": 40,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 700,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    }
+   ]
+  },
+  "warnungen": [
+   "tempo_pflicht"
+  ]
+ },
+ {
+  "name": "tempo_klein",
+  "ein": {
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 990,
+     "y": 440,
+     "b": 20,
+     "h": 10,
+     "farbe": "#FFFFFF"
+    }
+   ],
+   "format": "panoptes-tacho-design",
+   "version": 2
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 850,
+     "y": 360,
+     "b": 150,
+     "h": 90,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    }
+   ]
+  },
+  "warnungen": [
+   "tempo_groesse"
+  ]
+ },
+ {
+  "name": "kontrast_hintergrund",
+  "ein": {
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#FFFFFF"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 100,
+     "y": 100,
+     "b": 300,
+     "h": 150,
+     "farbe": "#EEEEEE"
+    },
+    {
+     "typ": "gang",
+     "x": 500,
+     "y": 10,
+     "b": 100,
+     "h": 60,
+     "farbe": "#111111"
+    }
+   ],
+   "format": "panoptes-tacho-design",
+   "version": 2
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#FFFFFF",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 100,
+     "y": 100,
+     "b": 300,
+     "h": 150,
+     "farbe": "#000000",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "gang",
+     "x": 500,
+     "y": 10,
+     "b": 100,
+     "h": 60,
+     "farbe": "#111111",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    }
+   ]
+  },
+  "warnungen": [
+   "kontrast"
+  ]
+ },
+ {
+  "name": "kontrast_flaeche",
+  "ein": {
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#000000"
+   },
+   "elemente": [
+    {
+     "typ": "flaeche",
+     "x": 0,
+     "y": 0,
+     "b": 500,
+     "h": 450,
+     "farbe": "#F0F0F0",
+     "ecken": 20
+    },
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 370,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF"
+    },
+    {
+     "typ": "uhr",
+     "x": 10,
+     "y": 10,
+     "b": 200,
+     "h": 60,
+     "farbe": "#FFFFFF"
+    },
+    {
+     "typ": "balken",
+     "wert": "akku",
+     "x": 20,
+     "y": 300,
+     "b": 300,
+     "h": 30,
+     "farbe": "#000000",
+     "akzent": "#FFFF00"
+    }
+   ],
+   "format": "panoptes-tacho-design",
+   "version": 2
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#000000",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "flaeche",
+     "x": 0,
+     "y": 0,
+     "b": 500,
+     "h": 450,
+     "farbe": "#F0F0F0",
+     "ecken": 20
+    },
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 370,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#000000",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "uhr",
+     "x": 10,
+     "y": 10,
+     "b": 200,
+     "h": 60,
+     "farbe": "#000000",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "balken",
+     "wert": "akku",
+     "x": 20,
+     "y": 300,
+     "b": 300,
+     "h": 30,
+     "farbe": "#000000",
+     "richtung": "waagrecht",
+     "min": 0,
+     "max": 100,
+     "akzent": "#000000"
+    }
+   ]
+  },
+  "warnungen": [
+   "kontrast"
+  ]
+ },
+ {
+  "name": "kontrast_verlauf",
+  "ein": {
+   "hintergrund": {
+    "art": "verlauf",
+    "farbe": "#000000",
+    "farbe2": "#FFFFFF",
+    "richtung": "waagrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 700,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF"
+    },
+    {
+     "typ": "verlauf",
+     "x": 0,
+     "y": 0,
+     "b": 300,
+     "h": 450,
+     "farbe": "#FFFFFF",
+     "farbe2": "#000000",
+     "richtung": "senkrecht"
+    },
+    {
+     "typ": "zahl",
+     "wert": "reichweite",
+     "x": 20,
+     "y": 20,
+     "b": 200,
+     "h": 60,
+     "farbe": "#FFFFFF"
+    }
+   ],
+   "format": "panoptes-tacho-design",
+   "version": 2
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "verlauf",
+    "farbe": "#000000",
+    "farbe2": "#FFFFFF",
+    "richtung": "waagrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 700,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#000000",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "verlauf",
+     "x": 0,
+     "y": 0,
+     "b": 300,
+     "h": 450,
+     "farbe": "#FFFFFF",
+     "farbe2": "#000000",
+     "richtung": "senkrecht"
+    },
+    {
+     "typ": "zahl",
+     "wert": "reichweite",
+     "x": 20,
+     "y": 20,
+     "b": 200,
+     "h": 60,
+     "farbe": "#000000",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    }
+   ]
+  },
+  "warnungen": [
+   "kontrast"
+  ]
+ },
+ {
+  "name": "bild_ok",
+  "ein": {
+   "bild": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#000000"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 370,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF"
+    }
+   ],
+   "format": "panoptes-tacho-design",
+   "version": 2
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#000000",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "bild": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 370,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    }
+   ]
+  },
+  "warnungen": []
+ },
+ {
+  "name": "bild_kontrast_weg",
+  "ein": {
+   "bild": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ==",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#808080"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 370,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF"
+    }
+   ],
+   "format": "panoptes-tacho-design",
+   "version": 2
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#808080",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 370,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#000000",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    }
+   ]
+  },
+  "warnungen": [
+   "bild_kontrast",
+   "kontrast"
+  ]
+ },
+ {
+  "name": "bild_pfad",
+  "ein": {
+   "bild": "file:///sdcard/a.png",
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 370,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF"
+    }
+   ],
+   "format": "panoptes-tacho-design",
+   "version": 2
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 370,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    }
+   ]
+  },
+  "warnungen": [
+   "bild_ungueltig"
+  ]
+ },
+ {
+  "name": "bild_falsche_kennung",
+  "ein": {
+   "bild": "data:image/png;base64,/9j/4AAQSkZJRgABAQ==",
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 370,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF"
+    }
+   ],
+   "format": "panoptes-tacho-design",
+   "version": 2
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 370,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    }
+   ]
+  },
+  "warnungen": [
+   "bild_ungueltig"
+  ]
+ },
+ {
+  "name": "werte_falsch",
+  "ein": {
+   "hintergrund": {
+    "farbe": "rot",
+    "farbe2": "#12345"
+   },
+   "elemente": [
+    {
+     "typ": "rund",
+     "wert": "leistung",
+     "x": "10",
+     "y": null,
+     "b": 300,
+     "h": 300,
+     "min": 200,
+     "max": 100,
+     "drehung": 999,
+     "form": "laser",
+     "farbe": "#ABCDEF",
+     "akzent": "gelb",
+     "schrift": "Comic"
+    },
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 370,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF"
+    }
+   ],
+   "format": "panoptes-tacho-design",
+   "version": 2
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "rund",
+     "wert": "leistung",
+     "x": 0,
+     "y": 0,
+     "b": 300,
+     "h": 300,
+     "farbe": "#ABCDEF",
+     "form": "ring",
+     "min": -50,
+     "max": 150,
+     "drehung": 180,
+     "akzent": "#B5F23D",
+     "schrift": "schmal"
+    },
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 370,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    }
+   ]
+  },
+  "warnungen": [
+   "farbe_ungueltig"
+  ]
+ },
+ {
+  "name": "skala_eigen",
+  "ein": {
+   "elemente": [
+    {
+     "typ": "rund",
+     "wert": "tempo",
+     "x": 600,
+     "y": 50,
+     "b": 350,
+     "h": 350,
+     "min": 0,
+     "max": 160,
+     "drehung": -45,
+     "form": "NADEL",
+     "farbe": "#ffffff",
+     "akzent": "#ff3b1f",
+     "schrift": "breit"
+    },
+    {
+     "typ": "balken",
+     "wert": "leistung",
+     "richtung": "senkrecht",
+     "x": 20,
+     "y": 20,
+     "b": 40,
+     "h": 400,
+     "min": -60,
+     "max": 200,
+     "farbe": "#ffffff",
+     "akzent": "#ffffff"
+    }
+   ],
+   "format": "panoptes-tacho-design",
+   "version": 2
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "rund",
+     "wert": "tempo",
+     "x": 600,
+     "y": 50,
+     "b": 350,
+     "h": 350,
+     "farbe": "#FFFFFF",
+     "form": "nadel",
+     "min": 0,
+     "max": 160,
+     "drehung": -45,
+     "akzent": "#FF3B1F",
+     "schrift": "breit"
+    },
+    {
+     "typ": "balken",
+     "wert": "leistung",
+     "x": 20,
+     "y": 20,
+     "b": 40,
+     "h": 400,
+     "farbe": "#FFFFFF",
+     "richtung": "senkrecht",
+     "min": -60,
+     "max": 200,
+     "akzent": "#FFFFFF"
+    }
+   ]
+  },
+  "warnungen": []
+ },
+ {
+  "name": "zu_viele",
+  "ein": {
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 370,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF"
+    },
+    {
+     "typ": "linie",
+     "x": 0,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 10,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 20,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 30,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 40,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 50,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 60,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 70,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 80,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 90,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 100,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 110,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 120,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 130,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 140,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 150,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 160,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 170,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 180,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 190,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 200,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 210,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 220,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 230,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 240,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 250,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 260,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 270,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 280,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 290,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 300,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 310,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 320,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 330,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 340,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 350,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 360,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 370,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 380,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 390,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 400,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 410,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 420,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 430,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 440,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 450,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 460,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 470,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 480,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    },
+    {
+     "typ": "linie",
+     "x": 490,
+     "y": 5,
+     "b": 100,
+     "h": 2,
+     "farbe": "#333333"
+    }
+   ],
+   "format": "panoptes-tacho-design",
+   "version": 2
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 370,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "linie",
+     "x": 0,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 10,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 20,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 30,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 40,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 50,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 60,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 70,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 80,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 90,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 100,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 110,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 120,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 130,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 140,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 150,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 160,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 170,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 180,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 190,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 200,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 210,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 220,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 230,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 240,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 250,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 260,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 270,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 280,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 290,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 300,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 310,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 320,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 330,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 340,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 350,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 360,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 370,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    },
+    {
+     "typ": "linie",
+     "x": 380,
+     "y": 5,
+     "b": 100,
+     "h": 4,
+     "farbe": "#333333",
+     "dicke": 4
+    }
+   ]
+  },
+  "warnungen": [
+   "zu_viele"
+  ]
+ }
+]

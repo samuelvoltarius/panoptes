@@ -230,12 +230,20 @@ public class AppAudioCaptureController {
         tonBedarfHorcher = r;
     }
 
+    /** 0.1.44 (P2) Sprachbefehle/Weckwort: eigener Horcher, gibt das Mikrofon ebenfalls sofort frei. */
+    private static volatile Runnable sprachTonHorcher;
+
+    public static void setSprachTonHorcher(Runnable r) {
+        sprachTonHorcher = r;
+    }
+
     private static void tonBedarfMelden() {
-        Runnable r = tonBedarfHorcher;
-        if (r == null) return;
-        try {
-            r.run();
-        } catch (Throwable ignored) {
+        for (Runnable r : new Runnable[] {tonBedarfHorcher, sprachTonHorcher}) {
+            if (r == null) continue;
+            try {
+                r.run();
+            } catch (Throwable ignored) {
+            }
         }
     }
 

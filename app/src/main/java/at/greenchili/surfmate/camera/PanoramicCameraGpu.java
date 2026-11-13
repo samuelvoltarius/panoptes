@@ -6825,8 +6825,10 @@ public class PanoramicCameraGpu {
             // fed by the GL→encoder chain directly — so excluding it keeps the
             // lane (thread + EGL context + ~6.5MB cropper) from being created and
             // per-frame-fed for nothing in that sub-mode.
-            boolean aiLaneNeeded = localSentry != null && localSentry.isActive()
-                    && !localSentry.isContinuousMode();
+            // 0.1.44 (L1): oder die Live-Umgebung im Launcher ist an und sichtbar (gleiche Spur, gleiche Kamera).
+            boolean aiLaneNeeded = (localSentry != null && localSentry.isActive()
+                    && !localSentry.isContinuousMode())
+                    || at.greenchili.surfmate.surveillance.LiveUmgebung.benoetigt();
             // Lazy lifecycle: bring the AI lane UP on the first surveillance-
             // active frame, tear it DOWN (freeing thread + EGL context + ~6.5MB
             // GPU + ~2.8MB CPU) when surveillance disarms. Both run here on the

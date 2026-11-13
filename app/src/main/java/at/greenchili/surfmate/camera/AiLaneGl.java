@@ -326,7 +326,20 @@ public final class AiLaneGl {
             // the AI worker still processing the prior frame, which the
             // isBusy() check covers.
             try {
-                if (sentry != null && sentry.isActive()
+                // 0.1.44 (L1): Waechter hat Vorrang. Nur wenn er nicht laeuft, bekommt die Live-Umgebung im Launcher
+                // dasselbe Mosaik (kein zweites Kamera-Oeffnen), und nur wenn sie ein Bild will (eigener Takt).
+                boolean fuerWaechter = sentry != null && sentry.isActive();
+                boolean fuerLive = !fuerWaechter
+                        && at.greenchili.surfmate.surveillance.LiveUmgebung.willBild();
+                if (fuerLive && downscaler != null && aiLaneWorker != null && !aiLaneWorker.isBusy()) {
+                    byte[] liveFrame = downscaler.readPixelsDirect(textureId);
+                    if (liveFrame != null) {
+                        at.greenchili.surfmate.surveillance.LiveUmgebung.nimm(liveFrame,
+                                downscaler.getWidth(), downscaler.getHeight());
+                        aiLaneWorker.zurueckgeben(liveFrame);
+                    }
+                }
+                if (fuerWaechter
                         && downscaler != null && aiLaneWorker != null) {
                     if (!aiLaneWorker.isBusy()) {
                         byte[] smallFrame = downscaler.readPixelsDirect(textureId);

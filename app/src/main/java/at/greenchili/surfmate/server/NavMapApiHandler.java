@@ -17,7 +17,8 @@ import java.io.OutputStream;
  * Endpoints:
  *  - POST /api/navmap/cluster/start  -> {success, available, projecting}
  *  - POST /api/navmap/cluster/stop   -> {success, available, projecting}
- *  - GET  /api/navmap/cluster/status -> {success, available, projecting}
+ *  - GET  /api/navmap/cluster/status -> {success, available, projecting, abbiegepfeile:{moeglich, grund}}
+ *    (abbiegepfeile: E2E 0.1.43b M2, Schalter „Abbiegepfeile im Fahrerdisplay“ grau, wenn nicht moeglich)
  */
 public class NavMapApiHandler {
 
@@ -63,6 +64,11 @@ public class NavMapApiHandler {
             response.put("available", at.greenchili.surfmate.tacho.TachoFaehigkeit.karteVerfuegbar());
             response.put("projecting", at.greenchili.surfmate.navmap.ClusterMapProjector.isActive());
             if (!operationAccepted) response.put("error", "cluster_not_available_or_not_admitted");
+            try {
+                response.put("abbiegepfeile", at.greenchili.surfmate.tacho.oem.OemNavigationBridge.verfuegbarkeit());
+            } catch (Throwable t) {
+                logger.warn("Abbiegepfeile-Pruefung fehlgeschlagen: " + t.getMessage());
+            }
         } catch (Exception e) {
             response.put("success", false);
             response.put("error", e.getMessage());

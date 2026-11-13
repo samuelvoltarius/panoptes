@@ -105,7 +105,11 @@
     // Gleiche Regeln wie Raster in der Launcher-APK und LauncherLayoutPruefung im Kern (LAUNCHER_LAYOUT_API.md).
     var SPALTEN = 6, ZEILEN = 3, MAX_SEITEN = 5, MAX_DOCK = 8;
     var GROESSEN = [[1, 1], [2, 1], [2, 2], [2, 3], [3, 2], [3, 3], [4, 2], [4, 3], [6, 3]];
-    var KACHELN = ['fahrzeug', 'akku', 'navi', 'musik', 'waechter', 'uhr', 'schloss', 'laden', 'kamera', 'projektion', 'reifen', 'fahrt', 'tempo', 'geraetewidget'];
+    var KACHELN = ['fahrzeug', 'akku', 'navi', 'musik', 'waechter', 'uhr', 'schloss', 'laden', 'kamera', 'projektion', 'reifen', 'fahrt', 'tempo', 'geraetewidget', 'sprache'];
+    KACHELN.push('fahrstatus', 'autoansicht');   // 0.1.44 (D1): Fahrzeug-Startseite
+    KACHELN.push('dockleiste', 'reiterleiste');   // 0.1.44 (E2): Dock und Reiter als Elemente
+    KACHELN.push('haus', 'profil');   // 0.1.44 (P4): Haus-Kachel (Home Assistant, nur lesen) und Fahrerprofil
+    KACHELN.push('umgebung');   // 0.1.44 (L1): Live-Umgebung
     var PROJEKTION = ['com.byd.androidauto', 'com.byd.carplay.ui'];
     var API = '/api/launcher/v1/layout';
 
@@ -131,7 +135,7 @@
         var f = { fahrzeug: 'Fahrzeug', akku: 'Akku', navi: 'Navigation', musik: 'Musik', waechter: 'Wächter', uhr: 'Uhr',
             schloss: 'Schloss', laden: 'Laden', kamera: 'Live-Kamera', projektion: 'CarPlay / Android Auto',
             reifen: 'Reifen', fahrt: 'Letzte Fahrt', tempo: 'Tempo',
-            geraetewidget: 'Android-Widget' };
+            geraetewidget: 'Android-Widget', sprache: 'Sprechen', fahrstatus: 'Fahrstatus', autoansicht: 'Fahrzeug-Ansicht', dockleiste: 'Dock', reiterleiste: 'Reiter', haus: 'Haus', profil: 'Profil', umgebung: 'Live-Umgebung' };
         return t('k_' + k, f[k] || k);
     }
     function appName(p) {
@@ -167,6 +171,7 @@
         if (!f || !passt(stand.seiten[seite], x, y, f.e.b, f.e.h, id)) return false;
         stand.seiten[f.s] = stand.seiten[f.s].filter(function (e) { return e.id !== id; });
         f.e.x = x; f.e.y = y;
+        delete f.e.fx; delete f.e.fy; delete f.e.fb; delete f.e.fh;   // 0.1.44 (E2): Zellen gelten wieder
         stand.seiten[seite].push(f.e);
         return true;
     }
@@ -177,7 +182,7 @@
         GROESSEN.forEach(function (g, i) { if (g[0] === f.e.b && g[1] === f.e.h) start = i; });
         for (var k = 1; k <= GROESSEN.length; k++) {
             var g = GROESSEN[(start + k) % GROESSEN.length];
-            if (passt(stand.seiten[f.s], f.e.x, f.e.y, g[0], g[1], id)) { f.e.b = g[0]; f.e.h = g[1]; return true; }
+            if (passt(stand.seiten[f.s], f.e.x, f.e.y, g[0], g[1], id)) { f.e.b = g[0]; f.e.h = g[1]; delete f.e.fx; delete f.e.fy; delete f.e.fb; delete f.e.fh; return true; }
         }
         return false;
     }
@@ -288,7 +293,7 @@
             var k = document.createElement('div');
             k.className = 'll-kachel ' + e.typ + (e.id === gewaehlt ? ' gewaehlt' : '');
             k.style.gridColumn = (e.x + 1) + ' / span ' + e.b; k.style.gridRow = (e.y + 1) + ' / span ' + e.h;
-            k.textContent = e.typ === 'widget' ? kachelName(e.kachel) : e.typ === 'app' ? appName(e.paket)
+            k.textContent = e.typ === 'widget' ? kachelName(e.kachel) : e.typ === 'app' ? appName(e.paket) : e.typ === 'text' ? '\u201E' + (e.name || '') + '\u201C'
                 : (e.name || t('ordner', 'Ordner')) + ' (' + (e.apps || []).length + ')';
             k.setAttribute('role', 'button'); k.tabIndex = 0;
             ziehbar(k, e);

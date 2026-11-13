@@ -86,6 +86,21 @@ public class NaviApiHandler {
             HttpResponse.sendJson(out, res.toString());
             return true;
         }
+        // 0.1.44 (P3b): die Panoptes-Führung (App-Prozess) meldet das belegte Tempolimit an ihrer Teilstrecke; der Launcher liest es
+        // aus dem Kern (TempolimitStand, Quelle osm, frisch höchstens 15 s). Nur Loopback, nur eine Zahl, keine Position.
+        if (path.equals("/api/navi/tempolimit")) {
+            if (!"POST".equals(method)) {
+                HttpResponse.sendError(out, 405, "Method Not Allowed");
+                return true;
+            }
+            if (AuthMiddleware.isExternRequest()) {
+                HttpResponse.sendJson(out, 403, "{\"ok\":false,\"grund\":\"verboten\"}");
+                return true;
+            }
+            JSONObject res = tempolimitMelden(body, System.currentTimeMillis());
+            HttpResponse.sendJson(out, res.optBoolean("ok") ? 200 : 400, res.toString());
+            return true;
+        }
         // Ziel aus Google-Maps-, Waze- oder geo:-Link: im Auto gelesen, nie an den Planer. Kurzlinks nur mit
         // „aufloesen“: HEAD vom Auto, nur der Location-Kopf (ZielLink). Link und Koordinaten werden nicht geloggt.
         if (path.equals("/api/navi/link")) {
@@ -268,6 +283,33 @@ public class NaviApiHandler {
      * Body für {@code /ev/api/fuehrung}: Route und Punkte unverändert (die Führung braucht die genaue Position);
      * nur ein {@code laden}-Objekt wird genau wie ein Plan-Body aufbereitet (Vorlieben aus dem Auto, Fahrzeug).
      */
+    /**
+     * Rein bis auf {@link at.greenchili.surfmate.navmap.nav.TempolimitStand}: {@code {kmh: 5..200}} setzt das belegte Limit
+     * (Quelle osm), {@code {kmh: null}} oder ohne Feld löscht es; alles andere ist ungültig und ändert nichts.
+     */
+    static JSONObject tempolimitMelden(String body, long jetztMs) throws Exception {
+        try {
+            JSONObject j = new JSONObject(body == null || body.isEmpty() || body.length() > 256 ? "{}" : body);
+            Object v = j.opt("kmh");
+            if (v == null || v == JSONObject.NULL) {
+                at.greenchili.surfmate.navmap.nav.TempolimitStand.loeschen();
+                return new JSONObject().put("ok", true);
+            }
+            if (v instanceof Number) {
+                double d = ((Number) v).doubleValue();
+                if (d == Math.rint(d) && d >= at.greenchili.surfmate.navmap.nav.Tempolimits.MIN_KMH
+                        && d <= at.greenchili.surfmate.navmap.nav.Tempolimits.MAX_KMH) {
+                    at.greenchili.surfmate.navmap.nav.TempolimitStand.setze((int) d,
+                            at.greenchili.surfmate.navmap.nav.TempolimitStand.QUELLE_OSM, jetztMs);
+                    return new JSONObject().put("ok", true);
+                }
+            }
+            return new JSONObject().put("ok", false).put("grund", "werte");
+        } catch (Exception e) {
+            return new JSONObject().put("ok", false).put("grund", "json");
+        }
+    }
+
     static String fuehrungBody(String body) {
         try {
             JSONObject b = new JSONObject(body);

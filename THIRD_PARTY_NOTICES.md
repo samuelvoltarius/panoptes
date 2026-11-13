@@ -77,6 +77,11 @@ native libraries are packaged. **No speech model is bundled in the APK.** For a 
 `vosk-model-small-de-0.15` (Apache-2.0, https://alphacephei.com/vosk/models) is placed on the device separately.
 Audio never leaves the device and is not stored; only numbers are kept.
 
+Since 0.1.44 the same library also serves the offline voice commands (setting `sprache.befehle`, default off; see
+`docs/SPRACHBEFEHLE.md`). Models are placed on the device separately, never downloaded automatically:
+`vosk-model-small-de-0.15` and `vosk-model-small-en-us-0.15` (Apache-2.0 per the model list at
+https://alphacephei.com/vosk/models; check the `COPYING` file shipped inside each model when placing it).
+
 ## Web libraries (`app/src/main/assets/web/shared/vendor/`, fonts in `.../fonts/`)
 
 | Component | Upstream | Version | License |
@@ -94,6 +99,7 @@ Audio never leaves the device and is not stored; only numbers are kept.
 
 - **Map data** © OpenStreetMap contributors, [ODbL 1.0](https://opendatacommons.org/licenses/odbl/). Protomaps basemap, terrain © Mapterhorn. The attribution is shown on every map.
 - **Speed cameras** from OpenStreetMap (ODbL), served via the project's own server.
+- **Speed limits** (Panoptes Launcher, optional) from OpenStreetMap `maxspeed` (© OpenStreetMap contributors, ODbL 1.0), along the Panoptes route, served via the project's own route planner (Valhalla). Only where OpenStreetMap has a value; no guessing.
 - **3D vehicle models:** models by [Nazh Design](https://sketchfab.com/NazhDesign) under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (logos removed, mesh reduced, Draco-compressed), plus models built for Panoptes under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). Full list: `app/src/main/assets/licenses/MODELLE_LIZENZEN.md`.
 - **Vehicle pictures** (`app/src/main/res/drawable-nodpi/vehicle_*.webp`, since 0.1.20): rendered for Panoptes with `tools/render_vehicle_art.py` (Blender) from the CC BY 4.0 models by [Nazh Design](https://sketchfab.com/NazhDesign): “2023 BYD Seagull”, “2024 BYD Seal Performance AWD”, “2023 BYD Song Plus” (Seal U), “2024 BYD Dolphin Premium Long Range”, “2024 BYD Atto 3 Superior Extended Range” – changed (rendered, cropped). `vehicle_fallback.webp` is a neutral silhouette derived from the “2023 BYD Song Plus” render. Earlier press photos without a licence were removed.
 - **Charger data:** source and license of the live data are shown in the app below the map (for example EnBW, CC BY 4.0).

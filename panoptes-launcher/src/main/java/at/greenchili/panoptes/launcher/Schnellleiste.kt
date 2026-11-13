@@ -25,8 +25,8 @@ import java.util.concurrent.Executors
  * - Abschaltbar (Standard aus), Position rechts, links oder oben. 0.1.41 E2E (G6): Knöpfe mindestens 64 dp (Zielgruppe
  *   50+); seitlich steht sie zuerst zur Wahl, weil oben die Reiter vieler Apps liegen (oben bleibt wählbar, mit Hinweis).
  * - Nicht über dem Launcher selbst und nie im Rückwärtsgang (Rückfahrkamera bleibt frei).
- * - „Zurück“ fehlt bewusst: Ohne Bedienungshilfe kann eine App fremden Apps keine Zurück-Taste schicken, und eine
- *   Bedienungshilfe ist ausgeschlossen (siehe LO_LEISTE_0141.md).
+ * - 0.1.44 (P1): „Zurück“ und „Letzte App“ über [Tasten] (Bedienungshilfe, die der Nutzer selbst einschaltet, sonst
+ *   Kern-Taste auf Tipp); ohne beide Wege bleiben die zwei Knöpfe weg.
  */
 class Schnellleiste(private val ctx: Context, private val ui: Ui) {
 
@@ -81,8 +81,9 @@ class Schnellleiste(private val ctx: Context, private val ui: Ui) {
         override fun run() {
             if (!laeuft) return
             io.execute {
-                val gear = runCatching { client.summary()?.gear }.getOrNull()
-                main.post { if (laeuft) anwenden(gear) }
+                val s = runCatching { client.summary() }.getOrNull()
+                Tasten.kernDa = s != null   // 0.1.44 (P1): Weg „Daemon“ für Zurück/Letzte App
+                main.post { if (laeuft) anwenden(s?.gear) }
             }
             main.postDelayed(this, 2_000)
         }
@@ -104,13 +105,19 @@ class Schnellleiste(private val ctx: Context, private val ui: Ui) {
     private fun anwenden(gear: String?) {
         val w = wahl(ctx)
         if (!zeigen(w, Settings.canDrawOverlays(ctx), launcherVorn, gear)) { entfernen(); return }
-        if (ansicht != null && gebautFuer == w) return
+        // 0.1.44 (P1): neu bauen, wenn Position, „Große Bedienung“ oder der Weg für Zurück/Letzte App wechselt
+        val schluessel = "$w:${GrosseBedienung.faktor(ctx)}:${Tasten.wegJetzt() != Tasten.Weg.KEINER}"
+        if (ansicht != null && gebautFuer == schluessel) return
         entfernen()
         bauen(w)
+        if (ansicht != null) gebautFuer = schluessel
     }
 
     private fun bauen(w: String) {
         val quer = w == OBEN
+        // 0.1.44 (P1): „Große Bedienung“ vergrößert die Leiste um den gleichen Faktor wie Dock und Knöpfe
+        val f = GrosseBedienung.faktor(ctx)
+        fun m(v: Int) = ui.dp(Math.round(v * f))
         val z = LinearLayout(ctx).apply {
             orientation = if (quer) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
             gravity = Gravity.CENTER
@@ -120,11 +127,16 @@ class Schnellleiste(private val ctx: Context, private val ui: Ui) {
             }
         }
         fun knopf(res: Int, label: Int, f: () -> Unit) = z.addView(ui.act(res, null) { f() }.apply {
-            minimumHeight = ui.dp(KNOPF_DP); minimumWidth = ui.dp(KNOPF_DP); contentDescription = ctx.getString(label)
-        }, LinearLayout.LayoutParams(ui.dp(if (quer) KNOPF_BREITE_DP else KNOPF_DP), ui.dp(if (quer) KNOPF_DP else KNOPF_BREITE_DP)).apply {
+            minimumHeight = m(KNOPF_DP); minimumWidth = m(KNOPF_DP); contentDescription = ctx.getString(label)
+        }, LinearLayout.LayoutParams(m(if (quer) KNOPF_BREITE_DP else KNOPF_DP), m(if (quer) KNOPF_DP else KNOPF_BREITE_DP)).apply {
             val a = ui.dp(3); setMargins(a, a, a, a)
         })
         knopf(R.drawable.ic_pn_home, R.string.schnell_haus) { haus() }
+        // 0.1.44 (P1): Zurück und Letzte App, nur wenn ein Weg da ist (Bedienungshilfe oder Kern), sonst ohne Knöpfe
+        if (Tasten.wegJetzt() != Tasten.Weg.KEINER) {
+            knopf(R.drawable.ic_pn_zurueck, R.string.taste_zurueck) { Tasten.druecken(ctx, Tasten.ZURUECK, client) }
+            knopf(R.drawable.ic_pn_wechsel, R.string.taste_letzte) { Tasten.druecken(ctx, Tasten.LETZTE, client) }
+        }
         knopf(R.drawable.ic_pn_minus, R.string.schnell_leiser) { lautstaerke(AudioManager.ADJUST_LOWER) }
         knopf(R.drawable.ic_pn_plus, R.string.schnell_lauter) { lautstaerke(AudioManager.ADJUST_RAISE) }
         // L1: eigene Anzeige (Wert + Balken) am Ende der Leiste. Der Platz ist immer reserviert (unsichtbar statt weg),
@@ -139,7 +151,7 @@ class Schnellleiste(private val ctx: Context, private val ui: Ui) {
             addView(text, LinearLayout.LayoutParams(-2, -2))
             addView(spur, LinearLayout.LayoutParams(ui.dp(BALKEN_DP), ui.dp(6)).apply { topMargin = ui.dp(4) })
         }
-        z.addView(box, LinearLayout.LayoutParams(ui.dp(KNOPF_BREITE_DP), ui.dp(if (quer) KNOPF_DP else 44)))
+        z.addView(box, LinearLayout.LayoutParams(m(KNOPF_BREITE_DP), m(if (quer) KNOPF_DP else 44)))
         anzeige = box; anzeigeText = text; anzeigeFuellung = fuellung
         val lp = WindowManager.LayoutParams(-2, -2, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,

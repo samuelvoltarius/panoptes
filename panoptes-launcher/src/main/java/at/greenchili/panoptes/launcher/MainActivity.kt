@@ -78,6 +78,9 @@ class MainActivity : AppCompatActivity() {
     private var apps: List<InstallierteApp> = emptyList()
     private var appsNachPaket: Map<String, InstallierteApp> = emptyMap()
     private var summary: LauncherSummary? = null
+    /** 0.1.44 (P3): letzter guter Kern-Stand (Kacheln bei Kern-Aus „zuletzt vor X min“) und Messpunkte ins Log. */
+    private val frische = Frische.Merker()
+    private val messUhr = Messpunkte.Uhr()
     private var appearance: LauncherAppearance? = null
     private var traffic = LauncherTraffic(0, 0)
     private var online = false
@@ -101,7 +104,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var seitenHost: Wischer
     private lateinit var punkte: LinearLayout
     private lateinit var hinweis: TextView
-    private var raster: RasterLayout? = null
+    private var raster: FreiLayout? = null
+    /** 0.1.44 (E2): freier Editor – Hilfslinien, Rückgängig/Wiederholen, Ziehen/Größe/Aussehen (FreiEditor.kt). */
+    private var linienAnsicht: HilfslinienAnsicht? = null
+    private val verlauf = Verlauf()
+    private val freiEditor by lazy {
+        FreiEditor(this, ui, { layout }, { seite }, { raster }, { linienAnsicht }, { neu -> aendern(neu); main.post { zeichneSeite() } },
+            { zeigeHinweis(it) }, { seitenHost.zieht = it })
+    }
     private var overlay: View? = null
     private var webAuto: WebView? = null
     private var webAutoUrl: String? = null
@@ -160,6 +170,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        messUhr.start(System.currentTimeMillis())
         // 0.1.39 (L1-Nachbesserung): Karten-Split übersteht einen Neustart der Activity (Konfigwechsel)
         karteImSplit = savedInstanceState?.getString(ZUSTAND_KARTE_SPLIT)
         splitGewolltBeendet = savedInstanceState?.getBoolean(ZUSTAND_SPLIT_GEWOLLT) ?: false
@@ -170,11 +181,27 @@ class MainActivity : AppCompatActivity() {
         baueAlles()
         kernAbgleich()
         if (vorlageFragen) main.post { vorlageErstFrage() }
+        // 0.1.44 (P1): Haus-Taste startete den Launcher neu, während der Selbsttest darauf wartete
+        if (intent?.hasCategory(Intent.CATEGORY_HOME) == true && Selbsttest.hausAngekommen(System.currentTimeMillis()))
+            main.post { EinrichtungActivity.starten(this, Selbsttest.Schritt.ZURUECK) }
         displayAn = Ruhe.displayAn(displayZustand())
         runCatching { getSystemService(DisplayManager::class.java)?.registerDisplayListener(displayHoerer, main) }
         if (!isInMultiWindowMode) splitEndeGesehen()   // Split endete, während die Activity neu startete
         // 0.1.41 (LM): letzte Musik weiterspielen, nur wenn eingeschaltet (ab Werk aus), einmal je Start
         MusikStart.beimStart(this, main, { startbar(it) || rueckfallIntent(it) != null }) { starteVollbild(it) }
+    }
+
+    /** 0.1.44 (P1): Haus-Taste kam an; wartet der Selbsttest der Einrichtung darauf, geht es dort weiter. */
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        if (intent?.hasCategory(Intent.CATEGORY_HOME) == true && Selbsttest.hausAngekommen(System.currentTimeMillis()))
+            main.post { EinrichtungActivity.starten(this, Selbsttest.Schritt.ZURUECK) }
+    }
+
+    private fun bedienhilfeErklaeren() {
+        AlertDialog.Builder(this).setTitle(R.string.hilfe_einstellung).setMessage(R.string.hilfe_erklaerung)
+            .setPositiveButton(android.R.string.ok) { _, _ -> PanoptesBedienhilfe.einstellungOeffnen(this) }
+            .setNegativeButton(android.R.string.cancel, null).show()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -185,6 +212,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+        messUhr.haus(System.currentTimeMillis())
+        Messpunkte.beiSichtbar(window.decorView) { Messpunkte.log(messUhr.sichtbar(System.currentTimeMillis())) }
         stopped = false
         geraeteWidgets.start()                  // 0.1.41 (LO)
         schnellleiste.launcherVorn(true)        // 0.1.41 (LO): nie über dem Launcher selbst
@@ -315,7 +344,7 @@ class MainActivity : AppCompatActivity() {
     private fun baueAlles() {
         val cockpit = layout.hintergrund == "cockpit"
         val pal = stilPalette(cockpit, appearance?.modus)
-        ui = Ui(this, pal, cockpit)
+        ui = Ui(this, pal, cockpit, GrosseBedienung.faktor(this))   // 0.1.44 (P1): „Große Bedienung“
         dichteDpi = resources.configuration.densityDpi
         stilSchluessel = "${pal.hell}:$cockpit:${pal.aqua}:${pal.background}"
         aktualisierer.clear(); statusAktualisierer.clear()
@@ -350,8 +379,8 @@ class MainActivity : AppCompatActivity() {
         spalte.addView(seitenHost, ui.lp(-1, 0, 1f, oben = 6))
         punkte = LinearLayout(this).apply { gravity = Gravity.CENTER }
         spalte.addView(punkte, ui.lp(-1, ui.dp(18)))
-        if (layout.zeigeReiter && !bearbeiten) spalte.addView(reiterZeile(), ui.lp(-1, ui.dp(88), oben = 4))
-        spalte.addView(dock(), ui.lp(-1, ui.dp(84), oben = 8))
+        if (layout.zeigeReiter && !bearbeiten && !Raster.hatWidget(layout, Kachel.REITERLEISTE)) spalte.addView(reiterZeile().also { if (szene()) FahrzeugKacheln.pillenLeiste(it, ui) }, ui.lp(-1, ui.dp(88), oben = 4))
+        if (!Raster.hatWidget(layout, Kachel.DOCKLEISTE)) spalte.addView(dock(), ui.lp(-1, ui.bd(84), oben = 8))
 
         hinweis = ui.text("", 15f, 600, ui.p.onSurface).apply {
             visibility = View.GONE; gravity = Gravity.CENTER
@@ -398,6 +427,13 @@ class MainActivity : AppCompatActivity() {
         val musik = ui.text("", 16f, 600, ui.p.onSurfaceVariant).apply { maxLines = 1; maxWidth = ui.dp(380); ellipsize = android.text.TextUtils.TruncateAt.END }
         musikBox.addView(musikIcon, ui.lp(ui.dp(22), ui.dp(22), rechts = 8)); musikBox.addView(musik, ui.lp())
         z.addView(musikBox, ui.lp(0, -2, 1f, rechts = 22))
+        // 0.1.44 (P3): Kern weg → die Kacheln zeigen alte Werte, hier steht wie alt (nie als frisch)
+        val alt = ui.text("", 16f, 700, ui.p.warning).apply { maxLines = 1; visibility = View.GONE }
+        z.addView(alt, ui.lp(rechts = 16))
+        aktualisierer += {
+            alt.text = frische.hinweis(this@MainActivity, online, System.currentTimeMillis())
+            alt.visibility = if (alt.text.isEmpty()) View.GONE else View.VISIBLE
+        }
         val uhr = ui.zahl("", 22f)
         z.addView(uhr, ui.lp(rechts = 16))
         z.addView(ImageView(this).apply {
@@ -452,12 +488,30 @@ class MainActivity : AppCompatActivity() {
         k(R.drawable.ic_pn_plus, R.string.seite_neu) { aendern(Raster.seiteHinzufuegen(layout)); seite = layout.seiten.size - 1; zeichneSeite() }
         k(R.drawable.ic_pn_close, R.string.seite_weg) { seiteEntfernenFragen() }
         k(R.drawable.ic_pn_edit, R.string.hintergrund) { hintergrundWaehlen() }
-        z.addView(HorizontalScrollView(this).apply { isHorizontalScrollBarEnabled = false; addView(knoepfe) }, ui.lp(0, -2, 1f))
-        z.addView(ui.act(null, getString(R.string.fertig), primary = true) { bearbeiten = false; baueAlles(); kernSpeichern() }, ui.lp(ui.dp(130), ui.dp(60)))
+        // 0.1.44 (E2): Rückgängig/Wiederholen, Einrasten, Beschriftung, Notausgang „auf Vorlage zurücksetzen“
+        k(R.drawable.ic_pn_prev, R.string.rueckgaengig) { verlauf.zurueck(layout)?.let { aendern(it, merken = false); baueAlles() } ?: zeigeHinweis(getString(R.string.nichts_rueckgaengig)) }
+        k(R.drawable.ic_pn_next, R.string.wiederholen) { verlauf.vor(layout)?.let { aendern(it, merken = false); baueAlles() } }
+        k(R.drawable.ic_pn_resize, if (freiEditor.einrasten) R.string.einrasten_an else R.string.einrasten_aus) { freiEditor.einrasten = !freiEditor.einrasten; baueAlles() }
+        k(R.drawable.ic_pn_edit, R.string.text_hinzu) {
+            nameFragen(getString(R.string.text_hinzu), "") { n ->
+                val neu = Frei.hinzufuegen(layout, seite, ElementTyp.TEXT, 12, 3, text = n)
+                if (neu === layout) zeigeHinweis(getString(R.string.kein_platz)); aendern(neu); zeichneSeite()
+            }
+        }
+        k(R.drawable.ic_pn_home, R.string.vorlage_zuruecksetzen) { vorlageWaehlen() }
+        // Fixrunde 0.1.43b (G3): Scrollposition bleibt nach jeder Aktion (Platzregeln.kt), Abstand und weicher Rand vor „Fertig“
+        z.addView(HorizontalScrollView(this).apply {
+            isHorizontalScrollBarEnabled = false; isHorizontalFadingEdgeEnabled = true; setFadingEdgeLength(ui.dp(36)); addView(knoepfe)
+            Leistenlage.einhaengen(this)
+        }, ui.lp(0, -2, 1f, rechts = 14))
+        z.addView(ui.act(null, getString(R.string.fertig), primary = true) { bearbeiten = false; Leistenlage.zuruecksetzen(); verlauf.leeren(); baueAlles(); kernSpeichern() }, ui.lp(ui.dp(130), ui.dp(60)))
         return z
     }
 
     // ---------- Reiterzeile ----------
+
+    /** 0.1.44 (D1): Hintergrund ist eine der eigenen Szenen (Motive 11–14)? */
+    private fun szene() = Szenen.ist(Motive.nummer(layout.hintergrund))
 
     private fun reiterZeile(): View {
         val z = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
@@ -489,7 +543,8 @@ class MainActivity : AppCompatActivity() {
         layout.schnell.forEach { p ->
             z.addView(appKnopf(p, mitName = true, gross = 44) { lange -> if (lange) leistenMenue(p, schnell = true) else starteApp(p) }, ui.lp(ui.dp(96), -1, rechts = 4))
         }
-        z.addView(ui.act(R.drawable.ic_pn_plus, getString(R.string.hinzufuegen)) { if (darfBedienen()) schublade(Ziel.SCHNELL) }, ui.lp(ui.dp(104), ui.dp(80)))
+        // Fixrunde 0.1.43b (G4): mit „Große Bedienung“ wächst der Knopf mit, damit „Hinzufügen“ ganz lesbar bleibt
+        z.addView(ui.act(R.drawable.ic_pn_plus, getString(R.string.hinzufuegen)) { if (darfBedienen()) schublade(Ziel.SCHNELL) }.apply { minimumWidth = ui.bd(104) }, ui.lp(-2, ui.bd(80)))
         return z
     }
 
@@ -504,17 +559,23 @@ class MainActivity : AppCompatActivity() {
             }
         }
         // Fest als erstes Icon, nicht entfernbar: Rückweg zum BYD-Startbildschirm.
-        z.addView(dockIcon(R.drawable.ic_pn_home, getString(R.string.byd_home), hervor = true) { zumBydStart() }, ui.lp(ui.dp(84), -1, rechts = 6))
+        z.addView(dockIcon(R.drawable.ic_pn_home, getString(R.string.byd_home), hervor = true) { zumBydStart() }, ui.lp(ui.bd(84), -1, rechts = 6))
+        // 0.1.44 (P1): „Letzte App“ (Tasten.kt). „Zurück“ gehört in die Leiste über den Apps; über dem Launcher selbst gibt es nichts zurückzugehen.
+        z.addView(dockIcon(R.drawable.ic_pn_wechsel, getString(R.string.taste_letzte)) { Tasten.druecken(this, Tasten.LETZTE, client) }, ui.lp(ui.bd(76), -1, rechts = 6))
         val favs = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
         // Android Auto / CarPlay nur, wenn das BYD-Paket hier installiert und startbar ist (andere Autos: unsichtbar)
         layout.dock.filter { it !in Raster.PROJEKTION || startbar(it) }.forEach { p ->
-            favs.addView(appKnopf(p, mitName = false, gross = 44) { lange -> if (lange) leistenMenue(p, schnell = false) else starteApp(p) }, ui.lp(ui.dp(76), -1, rechts = 4))
+            favs.addView(appKnopf(p, mitName = false, gross = Math.round(44 * ui.bedien)) { lange -> if (lange) leistenMenue(p, schnell = false) else starteApp(p) }, ui.lp(ui.bd(76), -1, rechts = 4))
         }
-        favs.addView(dockIcon(R.drawable.ic_pn_plus, getString(R.string.hinzufuegen)) { if (darfBedienen()) schublade(Ziel.DOCK) }, ui.lp(ui.dp(76), -1))
+        favs.addView(dockIcon(R.drawable.ic_pn_plus, getString(R.string.hinzufuegen)) { if (darfBedienen()) schublade(Ziel.DOCK) }, ui.lp(ui.bd(76), -1))
         z.addView(HorizontalScrollView(this).apply { isHorizontalScrollBarEnabled = false; addView(favs) }, ui.lp(0, -1, 1f))
-        if (layout.zeigeKlima) z.addView(klimaBedienung(), ui.lp(-2, ui.dp(64), rechts = 10))
-        z.addView(dockIcon(R.drawable.ic_pn_apps, getString(R.string.reiter_apps)) { schublade(null) }, ui.lp(ui.dp(76), -1, rechts = 4))
-        z.addView(dockIcon(R.drawable.ic_pn_settings, getString(R.string.reiter_einstellungen)) { einstellungen() }, ui.lp(ui.dp(76), -1))
+        // Fixrunde 0.1.43b (G4): feste Breite (Platzregeln.kt DockPlatz), bei zu schmalem Dock die kompakte Form
+        if (layout.zeigeKlima) {
+            val kompakt = DockPlatz.kompakt(Math.round(resources.displayMetrics.widthPixels / resources.displayMetrics.density), ui.bedien)
+            z.addView(klimaBedienung(kompakt), ui.lp(ui.dp(DockPlatz.klimaBreite(ui.bedien, kompakt)), ui.bd(64), rechts = 10))
+        }
+        z.addView(dockIcon(R.drawable.ic_pn_apps, getString(R.string.reiter_apps)) { schublade(null) }, ui.lp(ui.bd(76), -1, rechts = 4))
+        z.addView(dockIcon(R.drawable.ic_pn_settings, getString(R.string.reiter_einstellungen)) { einstellungen() }, ui.lp(ui.bd(76), -1))
         return z
     }
 
@@ -523,7 +584,7 @@ class MainActivity : AppCompatActivity() {
      * Der Kern prüft, dass die Anfrage von dieser APK kommt, und führt nur über die Panoptes-Klimabefehle mit allen
      * Sperren aus. Tipp auf die Werte öffnet das große Klima-Feld im Launcher (0.1.38.5), nicht Panoptes.
      */
-    private fun klimaBedienung(): View {
+    private fun klimaBedienung(kompakt: Boolean = false): View {
         val z = LinearLayout(this).apply {
             gravity = Gravity.CENTER_VERTICAL; setPadding(ui.dp(6), 0, ui.dp(6), 0)
             background = GradientDrawable().apply { cornerRadius = ui.dpf(16f); setColor(ui.p.act); setStroke(ui.dp(1), ui.p.line) }
@@ -541,15 +602,17 @@ class MainActivity : AppCompatActivity() {
             addView(text, ui.lp().apply { marginStart = ui.dp(4) })
             isClickable = true; foreground = ui.welle(); setOnClickListener { klimaFeld() }
         }
-        val soll = ui.zahl("—", 21f).apply { minWidth = ui.dp(52); gravity = Gravity.CENTER; maxLines = 1 }
+        val soll = ui.zahl("—", 21f).apply { minWidth = ui.dp(64); gravity = Gravity.CENTER; maxLines = 1 }
         val stufe = ui.zahl("—", 21f).apply { minWidth = ui.dp(20); gravity = Gravity.CENTER }
         val power = ui.icon(R.drawable.ic_pn_power, ui.p.onSurfaceVariant, 26)
-        z.addView(knopf(R.drawable.ic_pn_minus, R.string.klima_temp_runter) { "temp_runter" }.also { tempKnoepfe += it }, ui.lp(ui.dp(DOCK_KNOPF), -1))
+        z.addView(knopf(R.drawable.ic_pn_minus, R.string.klima_temp_runter) { "temp_runter" }.also { tempKnoepfe += it }, ui.lp(ui.bd(DOCK_KNOPF), -1))
         z.addView(wert(R.drawable.ic_pn_thermo, soll), ui.lp(h = -1))
-        z.addView(knopf(R.drawable.ic_pn_plus, R.string.klima_temp_hoch) { "temp_hoch" }.also { tempKnoepfe += it }, ui.lp(ui.dp(DOCK_KNOPF), -1, rechts = 6))
-        z.addView(knopf(R.drawable.ic_pn_minus, R.string.klima_luft_runter) { "luft_runter" }, ui.lp(ui.dp(DOCK_KNOPF), -1))
-        z.addView(wert(R.drawable.ic_pn_fan, stufe), ui.lp(h = -1))
-        z.addView(knopf(R.drawable.ic_pn_plus, R.string.klima_luft_hoch) { "luft_hoch" }, ui.lp(ui.dp(DOCK_KNOPF), -1, rechts = 6))
+        z.addView(knopf(R.drawable.ic_pn_plus, R.string.klima_temp_hoch) { "temp_hoch" }.also { tempKnoepfe += it }, ui.lp(ui.bd(DOCK_KNOPF), -1, rechts = 6))
+        if (!kompakt) {
+            z.addView(knopf(R.drawable.ic_pn_minus, R.string.klima_luft_runter) { "luft_runter" }, ui.lp(ui.bd(DOCK_KNOPF), -1))
+            z.addView(wert(R.drawable.ic_pn_fan, stufe), ui.lp(h = -1))
+            z.addView(knopf(R.drawable.ic_pn_plus, R.string.klima_luft_hoch) { "luft_hoch" }, ui.lp(ui.bd(DOCK_KNOPF), -1, rechts = 6))
+        }
         z.addView(FrameLayout(this).apply {
             addView(power, FrameLayout.LayoutParams(ui.dp(26), ui.dp(26), Gravity.CENTER))
             contentDescription = getString(R.string.klima_an_aus); isClickable = true; foreground = ui.welle()
@@ -691,9 +754,10 @@ class MainActivity : AppCompatActivity() {
     private fun dockIcon(res: Int, label: String, hervor: Boolean = false, f: () -> Unit) = FrameLayout(this).apply {
         val box = FrameLayout(this@MainActivity).apply {
             background = GradientDrawable().apply { cornerRadius = ui.dpf(16f); setColor(if (hervor) ui.p.act else Color.TRANSPARENT); if (hervor) setStroke(ui.dp(1), ui.p.aqua) }
-            addView(ui.icon(res, if (hervor) ui.p.aqua else ui.p.onSurface, 30), FrameLayout.LayoutParams(ui.dp(30), ui.dp(30), Gravity.CENTER))
+            val i = Math.round(30 * ui.bedien)
+            addView(ui.icon(res, if (hervor) ui.p.aqua else ui.p.onSurface, i), FrameLayout.LayoutParams(ui.dp(i), ui.dp(i), Gravity.CENTER))
         }
-        addView(box, FrameLayout.LayoutParams(ui.dp(64), ui.dp(64), Gravity.CENTER))
+        addView(box, FrameLayout.LayoutParams(ui.bd(64), ui.bd(64), Gravity.CENTER))
         contentDescription = label; isClickable = true; foreground = ui.welle(); setOnClickListener { f() }
     }
 
@@ -785,6 +849,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun standUhrName(m: Int) = if (m == 0) getString(R.string.aus) else getString(R.string.stand_uhr_minuten, m)
 
+    private fun formName(w: String) = getString(when (w) {
+        "kompakt" -> R.string.form_kompakt; "suv" -> R.string.form_suv; "limousine" -> R.string.form_limousine; else -> R.string.form_auto
+    })
+
+    private fun formWaehlen() {
+        auswahl(getString(R.string.fahrzeug_form), FahrzeugStart.FORMEN.map { w ->
+            (if (w == FahrzeugStart.formWahl(this)) "✓ " else "") + formName(w) to { FahrzeugStart.formSetzen(this, w); zeichneSeite(); einstellungen(erweitert = true) }
+        })
+    }
+
     private fun standUhrWaehlen() {
         auswahl(getString(R.string.stand_uhr), StandUhr.MINUTEN.map { m ->
             (if (m == StandUhr.minuten(this)) "✓ " else "") + standUhrName(m) to { StandUhr.setzen(this, m); einstellungen(erweitert = true) }
@@ -806,18 +880,21 @@ class MainActivity : AppCompatActivity() {
     private fun zeichneSeite(richtung: Int = 0) {
         aktualisierer.removeAll { it is KachelAktualisierer }
         seitenHost.removeAllViews()
-        val r = RasterLayout(this, Raster.SPALTEN, Raster.ZEILEN, ui.dp(Raster.abstandDp(layout.abstand)))
+        // 0.1.44 (E2): Feinraster 48 × 24 (FreiLayout); Elemente auf ganzen Zellen liegen wie bisher
+        val r = FreiLayout(this, ui.dp(Raster.abstandDp(layout.abstand)))
         raster = r
-        layout.seiten[seite].forEach { e -> r.addView(baueElement(e), RasterLayout.Zelle(e.x, e.y, e.b, e.h)) }
+        layout.seiten[seite].forEach { e -> val q = Frei.rect(e); r.addView(baueElement(e), FreiLayout.Fein(q[0], q[1], q[2], q[3])) }
         if (bearbeiten) {
             // freie Zellen sichtbar machen
             for (y in 0 until Raster.ZEILEN) for (x in 0 until Raster.SPALTEN) {
-                if (Raster.passt(layout.seiten[seite], x, y, 1, 1)) r.addView(View(this).apply {
+                val zelle = intArrayOf(x * Frei.FEIN, y * Frei.FEIN, Frei.FEIN, Frei.FEIN)
+                if (Frei.passt(layout.seiten[seite], zelle)) r.addView(View(this).apply {
                     background = GradientDrawable().apply { cornerRadius = ui.dpf(16f); setStroke(ui.dp(1), ui.p.line, ui.dpf(8f), ui.dpf(6f)) }
-                }, 0, RasterLayout.Zelle(x, y, 1, 1))
+                }, 0, FreiLayout.Fein(zelle[0], zelle[1], zelle[2], zelle[3]))
             }
         }
         seitenHost.addView(r, FrameLayout.LayoutParams(-1, -1))
+        linienAnsicht = if (bearbeiten) HilfslinienAnsicht(this, ui).also { seitenHost.addView(it, FrameLayout.LayoutParams(-1, -1)) } else null
         if (richtung != 0) { r.translationX = richtung * ui.dpf(120f); r.alpha = 0f; r.animate().translationX(0f).alpha(1f).setDuration(240).start() }
         punkte.removeAllViews()
         if (layout.seiten.size > 1) layout.seiten.indices.forEach { i ->
@@ -833,13 +910,18 @@ class MainActivity : AppCompatActivity() {
     private fun baueElement(e: Element): View {
         val box = FrameLayout(this)
         val hero = e.typ == ElementTyp.WIDGET && (e.kachel == Kachel.AKKU || e.kachel == Kachel.FAHRZEUG) && e.b >= 2 && e.h >= 2
-        box.background = if (e.typ == ElementTyp.WIDGET) ui.karte(hero) else null
+        // 0.1.44 (D1): auf einer Szene schwebende Glas-Karten, die Fahrzeug-Ansicht ohne Karte (FahrzeugKacheln.karte)
+        box.background = if (e.typ == ElementTyp.WIDGET) FahrzeugKacheln.karte(e.kachel, szene(), ui) { ui.karte(hero) } else null
+        if (e.typ == ElementTyp.WIDGET && FahrzeugKacheln.schwebt(e.kachel, szene())) box.elevation = ui.dpf(10f)
+        // 0.1.44 (E2): eigener Stil je Element (Ecken, Deckung, Unschärfe-Ersatz, Akzent; Lesbarkeit geprüft)
+        if (Stil.gesetzt(e) && e.typ != ElementTyp.TEXT && !FahrzeugKacheln.frei(e.kachel)) box.background = Stil.karte(e, ui)
         val inhalt: View = when (e.typ) {
             ElementTyp.WIDGET -> widget(e)
             ElementTyp.APP -> appKnopf(e.paket!!, mitName = true, gross = 64) { lange -> if (lange) langerDruck(e) else starteApp(e.paket) }.apply {
                 background = ui.karte(); setPadding(ui.dp(6), ui.dp(8), ui.dp(6), ui.dp(8))
             }
             ElementTyp.ORDNER -> ordnerKachel(e)
+            ElementTyp.TEXT -> textElement(e)
         }
         box.addView(inhalt, FrameLayout.LayoutParams(-1, -1))
         if (bearbeiten) bearbeitenSchicht(box, e)
@@ -848,7 +930,27 @@ class MainActivity : AppCompatActivity() {
 
     private fun langerDruck(e: Element) {
         if (!darfBedienen()) return
-        bearbeiten = true; baueAlles()
+        bearbeiten = true; verlauf.leeren(); baueAlles()
+    }
+
+    /** 0.1.44 (E2): Beschriftung – nur Text, Größe passt sich der Fläche an (mindestens 16 sp), Akzent nur wenn lesbar. */
+    private fun textElement(e: Element): View = TextView(this).apply {
+        text = e.name; typeface = ui.sora(600); gravity = Gravity.CENTER_VERTICAL; maxLines = 2
+        setAutoSizeTextTypeUniformWithConfiguration(16, 96, 2, android.util.TypedValue.COMPLEX_UNIT_SP)
+        val a = Farbe.hex(e.akzent)?.takeIf { Lesbarkeit.kontrast(it, ui.p.background) >= Lesbarkeit.TEXT }
+        setTextColor(a ?: ui.p.onSurface)
+        setPadding(ui.dp(6), 0, ui.dp(6), 0)
+        setOnLongClickListener { langerDruck(e); true }
+    }
+
+    /** 0.1.44 (E2): Dock/Reiter als Element; ihre Aktualisierer werden wie die der Kacheln beim Neuzeichnen geräumt. */
+    private fun leisteAlsKachel(f: () -> View): View {
+        val vorher = aktualisierer.size
+        val v = f()
+        val neu = aktualisierer.subList(vorher, aktualisierer.size).toList()
+        repeat(neu.size) { aktualisierer.removeAt(aktualisierer.size - 1) }
+        neu.forEach { aktualisierer += KachelAktualisierer(it) }
+        return v
     }
 
     // ---------- Bearbeiten-Modus: ziehen, Größe, entfernen ----------
@@ -858,40 +960,24 @@ class MainActivity : AppCompatActivity() {
         box.foreground = GradientDrawable().apply { cornerRadius = ui.dpf(20f); setStroke(ui.dp(2), ui.p.lime) }
         val fang = View(this)
         box.addView(fang, FrameLayout.LayoutParams(-1, -1))
-        var rx = 0f; var ry = 0f; var zieht = false
-        val slop = ViewConfiguration.get(this).scaledTouchSlop
-        fang.setOnTouchListener { _, ev ->
-            when (ev.actionMasked) {
-                MotionEvent.ACTION_DOWN -> { rx = ev.rawX; ry = ev.rawY; zieht = false; box.parent.requestDisallowInterceptTouchEvent(true); seitenHost.zieht = true }
-                MotionEvent.ACTION_MOVE -> {
-                    val dx = ev.rawX - rx; val dy = ev.rawY - ry
-                    if (!zieht && (abs(dx) > slop || abs(dy) > slop)) { zieht = true; box.elevation = ui.dpf(12f); box.alpha = 0.85f }
-                    if (zieht) { box.translationX = dx; box.translationY = dy }
-                }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    seitenHost.zieht = false
-                    if (zieht) {
-                        val r = raster!!
-                        val (x, y) = r.zelleBei(box.left + box.translationX + r.zellBreite / 2, box.top + box.translationY + r.zellHoehe / 2, e.b, e.h)
-                        val neu = Raster.verschieben(layout, e.id, seite, x, y)
-                        if (neu === layout) zeigeHinweis(getString(R.string.kein_platz))
-                        aendern(neu); main.post { zeichneSeite() }
-                    } else if (ev.actionMasked == MotionEvent.ACTION_UP) kachelMenue(e)
-                }
-            }
-            true
-        }
+        // 0.1.44 (E2): frei ziehen mit Einrasten und Hilfslinien (FreiEditor)
+        fang.setOnTouchListener(freiEditor.ziehen(box, e) { kachelMenue(e) })
         fun abzeichen(res: Int, schwerkraft: Int, f: () -> Unit) = box.addView(FrameLayout(this).apply {
             background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(ui.p.lime) }
             addView(ui.icon(res, ui.p.onPrimary, 22), FrameLayout.LayoutParams(ui.dp(22), ui.dp(22), Gravity.CENTER))
             isClickable = true; setOnClickListener { f() }
         }, FrameLayout.LayoutParams(ui.dp(48), ui.dp(48), schwerkraft).apply { setMargins(ui.dp(4), ui.dp(4), ui.dp(4), ui.dp(4)) })
         abzeichen(R.drawable.ic_pn_close, Gravity.TOP or Gravity.END) { aendern(Raster.entfernen(layout, e.id)); main.post { zeichneSeite() } }
-        if (e.typ == ElementTyp.WIDGET) abzeichen(R.drawable.ic_pn_resize, Gravity.BOTTOM or Gravity.END) {
-            val neu = Raster.groesseWechseln(layout, e.id)
-            if (neu === layout) zeigeHinweis(getString(R.string.kein_platz))
-            aendern(neu); main.post { zeichneSeite() }
-        }
+        // 0.1.44 (E2): Größe am Griff frei ziehen; ein Tipp schaltet bei Kacheln wie bisher die Größen durch
+        abzeichen(R.drawable.ic_pn_resize, Gravity.BOTTOM or Gravity.END) {}
+        val griff = box.getChildAt(box.childCount - 1)
+        griff.setOnTouchListener(freiEditor.groesseZiehen(box, griff, e) {
+            if (e.typ == ElementTyp.WIDGET) {
+                val neu = Raster.groesseWechseln(layout, e.id)
+                if (neu === layout) zeigeHinweis(getString(R.string.kein_platz))
+                aendern(neu); main.post { zeichneSeite() }
+            }
+        })
     }
 
     private fun kachelMenue(e: Element) {
@@ -920,6 +1006,9 @@ class MainActivity : AppCompatActivity() {
                 if (neu === layout) zeigeHinweis(getString(R.string.kein_platz)); aendern(neu); zeichneSeite()
             }
         }
+        if (e.typ == ElementTyp.TEXT) punkte += getString(R.string.umbenennen) to { nameFragen(getString(R.string.umbenennen), e.name ?: "") { n -> aendern(Raster.umbenennen(layout, e.id, n)); zeichneSeite() } }
+        // 0.1.44 (E2): Aussehen je Element (Ecken, Deckung, Unschärfe, Akzent)
+        punkte += getString(R.string.stil_titel) to { auswahl(getString(R.string.stil_titel), freiEditor.stilPunkte(e) { t, p, fuss -> auswahl(t, p, fuss) }) }
         punkte += getString(R.string.entfernen) to {
             if (e.kachel == Kachel.GERAETEWIDGET) geraeteWidgets.freigeben(e.wid)   // 0.1.41 (LO): Bindung freigeben
             aendern(Raster.entfernen(layout, e.id)); zeichneSeite()
@@ -985,6 +1074,7 @@ class MainActivity : AppCompatActivity() {
         ElementTyp.WIDGET -> kachelName(e.kachel!!)
         ElementTyp.APP -> appName(e.paket!!)
         ElementTyp.ORDNER -> e.name ?: ""
+        ElementTyp.TEXT -> e.name ?: ""
     }
 
     private fun kachelName(k: Kachel) = getString(when (k) {
@@ -993,6 +1083,11 @@ class MainActivity : AppCompatActivity() {
         Kachel.SCHLOSS -> R.string.widget_schloss; Kachel.LADEN -> R.string.widget_laden; Kachel.KAMERA -> R.string.widget_kamera
         Kachel.PROJEKTION -> R.string.widget_projektion
         Kachel.REIFEN -> R.string.widget_reifendruck; Kachel.FAHRT -> R.string.widget_fahrt; Kachel.TEMPO -> R.string.widget_tempo; Kachel.GERAETEWIDGET -> R.string.widget_geraet
+        Kachel.FAHRSTATUS -> R.string.widget_fahrstatus; Kachel.AUTOANSICHT -> R.string.widget_autoansicht
+        Kachel.DOCKLEISTE -> R.string.widget_dockleiste; Kachel.REITERLEISTE -> R.string.widget_reiterleiste
+        Kachel.HAUS -> R.string.widget_haus; Kachel.PROFIL -> R.string.widget_profil
+        Kachel.UMGEBUNG -> R.string.widget_umgebung
+        Kachel.SPRACHE -> R.string.widget_sprache
     })
 
     private fun kachelHinzufuegen() {
@@ -1001,7 +1096,13 @@ class MainActivity : AppCompatActivity() {
         // 0.1.41 (LO): Android-Widgets immer anbietbar (mehrere erlaubt), Auswahl in eigener Liste
         auswahl(getString(R.string.kachel_hinzu), listOf(getString(R.string.widget_geraet_hinzu) to { geraeteWidgetWaehlen() }) + fehlend.map { k ->
             kachelName(k) to {
-                val g = if (k == Kachel.PROJEKTION) Projektion.GROESSEN else listOf(2 to 1, 1 to 1)
+                if (k == Kachel.DOCKLEISTE || k == Kachel.REITERLEISTE) {
+                    // 0.1.44 (E2): Leiste als Element, ganze Breite, an den ersten freien Platz
+                    val neu = Frei.hinzufuegen(layout, seite, ElementTyp.WIDGET, Frei.LEISTE.first, Frei.LEISTE.second, kachel = k)
+                    if (neu === layout) zeigeHinweis(getString(R.string.kein_platz)) else { aendern(neu); baueAlles() }
+                    return@to
+                }
+                val g = when (k) { Kachel.PROJEKTION -> Projektion.GROESSEN; Kachel.HAUS -> listOf(2 to 2, 2 to 1); Kachel.PROFIL -> listOf(1 to 1, 2 to 1); else -> listOf(2 to 1, 1 to 1) }
                 val neu = Raster.widgetHinzufuegen(layout, seite, k, g)
                 // 0.1.40 (E2E G2): Seite voll → Kachel auf einer neuen Seite anlegen und dorthin wechseln (statt still nichts)
                 val mitSeite = if (neu === layout) Raster.seiteHinzufuegen(layout) else layout
@@ -1040,6 +1141,14 @@ class MainActivity : AppCompatActivity() {
             Kachel.FAHRT -> zusatz.fahrt(gross)
             Kachel.TEMPO -> zusatz.tempo(gross, e.h)
             Kachel.GERAETEWIDGET -> geraeteWidgetKachel(e)
+            Kachel.FAHRSTATUS -> fahrzeugStart.status(gross)
+            Kachel.AUTOANSICHT -> fahrzeugStart.ansicht()
+            Kachel.DOCKLEISTE -> leisteAlsKachel { dock() }
+            Kachel.REITERLEISTE -> leisteAlsKachel { reiterZeile() }
+            Kachel.HAUS -> haus.ansicht(gross, e.h)
+            Kachel.PROFIL -> profilKachel.ansicht()
+            Kachel.UMGEBUNG -> UmgebungKachel(this, ui, client)   // 0.1.44 (L1): Live-Umgebung, ab Werk aus
+            Kachel.SPRACHE -> sprachKachel(gross)
         }
         // 0.1.38.5: direkt im Launcher; Panoptes nur über „Mehr in Panoptes“ im jeweiligen Feld
         when (k) {
@@ -1051,6 +1160,11 @@ class MainActivity : AppCompatActivity() {
             Kachel.SCHLOSS -> v.setOnClickListener { schlossFrage() }
             Kachel.LADEN -> v.setOnClickListener { akkuInfo() }
             Kachel.KAMERA -> v.setOnClickListener { liveAnsicht() }
+            Kachel.FAHRSTATUS -> v.setOnClickListener { fahrzeugInfo() }
+            // 0.1.44 (P4): Haus nur Anzeige (Tipp = Geräte wählen, nie schalten); Profil: Tipp wechselt
+            Kachel.HAUS -> v.setOnClickListener { hausWaehlen() }
+            Kachel.PROFIL -> v.setOnClickListener { profilTipp() }
+            Kachel.SPRACHE -> v.setOnClickListener { sprechen() }
             else -> {}
         }
         v.setOnLongClickListener { langerDruck(e); true }
@@ -1060,7 +1174,112 @@ class MainActivity : AppCompatActivity() {
     private fun spalte(pad: Int = 20) = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(ui.dp(pad), ui.dp(pad - 2), ui.dp(pad), ui.dp(pad - 2)) }
     private fun reg(f: () -> Unit) { aktualisierer += KachelAktualisierer(f) }
     /** 0.1.41 (LK): Reifen, letzte Fahrt, Tempo – eigene Datei, hier nur eingehängt. */
+    // ---------- 0.1.44 (P4): Haus-Kachel (nur lesen) und Fahrerprofile – Logik in HausKachel.kt / Fahrerprofile.kt ----------
+    private var hausStand: HausStand? = null
+    private var lastHausFetch = 0L
+    private var lastSitzFetch = 0L
+    private var letzteSitzId: String? = null
+    private val haus get() = HausKachel(this, ui, { reg(it) }, { hausAuswahl() }, { hausStand })
+    private val profilKachel get() = ProfilKachel(this, ui, { reg(it) }, { Fahrerprofile.stand(this) })
+
+    private fun hausAuswahl() = Haus.auswahlLesen(getSharedPreferences(PREFS, MODE_PRIVATE).getString(Haus.KEY, null))
+
+    /** Im Takt der Abfrage (io-Thread): Haus-Zustand und – nur wenn nötig – die erkannte Sitzposition holen. Nur lesen. */
+    private fun hausUndSitzHolen(s: LauncherSummary?, jetzt: Long) {
+        val wahl = hausAuswahl()
+        if (wahl.isNotEmpty() && layout.seiten.any { p -> p.any { it.kachel == Kachel.HAUS } } && jetzt - lastHausFetch >= Haus.TAKT_MS) {
+            lastHausFetch = jetzt
+            hausStand = Haus.parse(client.haus(wahl))   // null = nicht lesbar: die Kachel zeigt „—“ und den Hinweis
+        }
+        val st = Fahrerprofile.stand(this)
+        if (Fahrerprofile.sitzAbfragen(st, s?.gear, s?.speedKmh, jetzt, lastSitzFetch)) {
+            lastSitzFetch = jetzt
+            val info = Fahrerprofile.parseSitz(client.sitz()) ?: return
+            val ziel = Fahrerprofile.ziel(st, info.aktuell, letzteSitzId, s?.gear, s?.speedKmh)
+            if (info.aktuell != null) letzteSitzId = info.aktuell
+            if (ziel != null) main.post { if (!bearbeiten && !stopped) profilWechseln(ziel) }
+        }
+    }
+
+    private fun hausWaehlen() {
+        if (!darfBedienen()) return
+        io.execute {
+            val alle = Haus.parse(client.haus(null))
+            main.post {
+                if (alle == null || alle.geraete.isEmpty()) {
+                    zeigeHinweis(getString(if (alle == null) R.string.haus_nicht_lesbar else R.string.haus_keine)); return@post
+                }
+                var wahl = hausAuswahl()
+                val namen = alle.geraete.map { it.titel + (it.raum?.let { r -> " ($r)" } ?: "") }.toTypedArray()
+                val an = BooleanArray(alle.geraete.size) { alle.geraete[it].entity in wahl }
+                AlertDialog.Builder(this).setCustomTitle(auswahlKopf(getString(R.string.haus_waehlen), getString(R.string.haus_hinweis)))
+                    .setMultiChoiceItems(namen, an) { d, i, x ->
+                        val neu = Haus.umschalten(wahl, alle.geraete[i].entity)
+                        if (x && neu == wahl) { (d as AlertDialog).listView.setItemChecked(i, false); zeigeHinweis(getString(R.string.haus_max)) }
+                        else wahl = neu
+                    }
+                    .setPositiveButton(R.string.fertig) { _, _ ->
+                        getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString(Haus.KEY, Haus.auswahlSchreiben(wahl)).apply()
+                        hausStand = null; lastHausFetch = 0L; zeichneSeite()
+                    }
+                    .setNegativeButton(R.string.abbrechen, null).show()
+            }
+        }
+    }
+
+    /** Wechsel zu Profil [nach]: das aktuelle Layout bleibt beim bisherigen Profil, Layout und Design des Ziels gelten. */
+    private fun profilWechseln(nach: Int) {
+        val neu = Fahrerprofile.wechseln(this, layout, nach) ?: return
+        aendern(neu); seite = 0; schliesseOverlay(); baueAlles()
+        zeigeHinweis(getString(R.string.profil_gewechselt, profilKachel.name(nach)))
+    }
+
+    private fun profilTipp() {
+        if (!darfBedienen()) return
+        val a = Fahrerprofile.anderes(Fahrerprofile.stand(this))
+        if (a != null) profilWechseln(a) else profilDialog()
+    }
+
+    private fun profilDialog() {
+        val st = Fahrerprofile.stand(this)
+        val punkte = mutableListOf<Pair<String, () -> Unit>>()
+        Fahrerprofile.anderes(st)?.let { a -> punkte += getString(R.string.profil_wechseln, profilKachel.name(a)) to { if (darfBedienen()) profilWechseln(a) } }
+        if (!st.zweitesDa) {
+            punkte += getString(R.string.profil_anlegen) to {
+                if (darfBedienen()) Fahrerprofile.anlegen(this, layout)?.let { aendern(it); baueAlles(); profilDialog() }
+            }
+        } else {
+            for (n in 1..Fahrerprofile.MAX) punkte += getString(R.string.profil_sitz, profilKachel.name(n),
+                Fahrerprofile.sitzName(this, n) ?: getString(R.string.profil_sitz_keine)) to { sitzWaehlen(n) }
+            punkte += getString(R.string.profil_auto) + ": " + getString(if (st.automatisch) R.string.an else R.string.aus) to
+                { Fahrerprofile.autoSetzen(this, !st.automatisch); profilDialog() }
+            punkte += getString(R.string.profil_entfernen) to {
+                if (st.aktiv != 1) zeigeHinweis(getString(R.string.profil_entfernen_erst))
+                else AlertDialog.Builder(this).setTitle(R.string.profil_entfernen)
+                    .setPositiveButton(R.string.entfernen) { _, _ -> Fahrerprofile.entfernen(this); profilDialog() }
+                    .setNegativeButton(R.string.abbrechen, null).show()
+            }
+        }
+        auswahl(getString(R.string.profil_titel) + " – " + getString(R.string.profil_aktiv, profilKachel.name(st.aktiv)), punkte,
+            fuss = getString(R.string.profil_hinweis))
+    }
+
+    private fun sitzWaehlen(n: Int) {
+        io.execute {
+            val info = Fahrerprofile.parseSitz(client.sitz())
+            main.post {
+                if (info == null || info.positionen.isEmpty()) { zeigeHinweis(getString(R.string.profil_sitz_leer)); return@post }
+                val punkte = listOf(getString(R.string.profil_sitz_keine) to { Fahrerprofile.sitzSetzen(this, n, null, null); profilDialog() }) +
+                    info.positionen.map { (id, name) -> name to { Fahrerprofile.sitzSetzen(this, n, id, name); profilDialog() } }
+                auswahl(getString(R.string.profil_sitz_waehlen, profilKachel.name(n)), punkte, fuss = getString(R.string.profil_sitz_hinweis))
+            }
+        }
+    }
+
     private val zusatz get() = ZusatzKacheln(this, ui, { reg(it) }, { summary }, { cachedHistory })
+    /** 0.1.44 (D1): Fahrzeug-Startseite – eigene Datei, hier nur eingehängt. Fenster nur über den engen Kern-Weg. */
+    private val fahrzeugStart get() = FahrzeugKacheln(this, ui, { reg(it) }, { summary }, { summary?.modelId }, { summary?.farbe },
+        { f, ziel, fertig -> io.execute { val a = client.fenster(f, ziel); main.post { fertig(a) } } }, { zeigeHinweis(it) })
     private val u get() = getString(R.string.unknown)
 
     /** Großes Fahrzeug-Feld: 3D-Modell aus dem Katalog, Datum/Uhr, Reifen, Gang, Tempo, Akku. */
@@ -1100,7 +1319,9 @@ class MainActivity : AppCompatActivity() {
         unten.addView(gaenge, ui.lp(rechts = 36))
         val tempoBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
         val tempo = ui.zahl("—", 60f); tempoBox.addView(tempo, LinearLayout.LayoutParams(-2, -2)); tempoBox.addView(ui.leise("km/h", 15f))   // WRAP_CONTENT, sonst nur das erste Zeichen
-        unten.addView(tempoBox, ui.lp(rechts = 36))
+        unten.addView(tempoBox, ui.lp(rechts = 16))
+        val tempoSchild = Tempolimit.schild(this, ui, 52)   // 0.1.44 (P3): nur mit belegtem Limit sichtbar
+        unten.addView(tempoSchild, ui.lp(ui.dp(52), ui.dp(52), rechts = 36))
         val akkuBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
         akkuBox.addView(ui.icon(R.drawable.ic_pn_battery, ui.p.aqua, 34))
         val soc = ui.zahl("—", 34f); akkuBox.addView(soc, LinearLayout.LayoutParams(-2, -2))   // WRAP_CONTENT, sonst zeigt die Zahl nur die erste Ziffer
@@ -1124,6 +1345,7 @@ class MainActivity : AppCompatActivity() {
             }
             gang.forEach { (g, tv) -> tv.setTextColor(if (s?.gear == g) ui.p.aqua else ui.p.outline) }
             tempo.text = s?.speedKmh?.let { nf.format(it) } ?: "—"
+            Tempolimit.setze(tempoSchild, tempo, s, online, ui.p.onSurface, ui.p.warning)
             soc.text = s?.socPct?.let { "${nf.format(it)}%" } ?: "—"
             gesundStart.text = gesundheitWerte(s) ?: ""
             gesundStart.visibility = if (gesundStart.text.isEmpty()) View.GONE else View.VISIBLE
@@ -1325,6 +1547,20 @@ class MainActivity : AppCompatActivity() {
     /** Live-Bild gibt es nur in Panoptes (Kamera-Daemon); dort gelten dessen Regeln. */
     private fun liveAnsicht() = oeffnePanoptes("live")
 
+    /** 0.1.44 (P2) Sprechen: öffnet die Sprachbefehle von Panoptes (Regeln, Mikrofon-Erlaubnis und Rückfrage dort). */
+    private fun sprachKachel(gross: Boolean): View {
+        val c = spalte()
+        c.addView(LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL; addView(ui.icon(R.drawable.ic_pn_mikro, ui.p.aqua, if (gross) 30 else 22)); addView(ui.titel(getString(R.string.widget_sprache)).apply { setPadding(ui.dp(8), 0, 0, 0) }) })
+        c.addView(ui.leise(getString(R.string.sprache_tipp), 15f), ui.lp(oben = 8))
+        return c
+    }
+
+    /** Sprachbefehle von Panoptes (feste Komponente, exportiert); fehlt Panoptes, nur ein Hinweis. */
+    private fun sprechen() {
+        val i = Intent().setClassName(Raster.PANOPTES, Raster.PANOPTES + ".sprache.SprachStart").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        try { startActivity(i) } catch (_: Exception) { zeigeHinweis(getString(R.string.launch_failed)) }
+    }
+
     /** 0.1.40 (L2) Live-Kamera: öffnet die Panoptes-Liveansicht (dort gelten deren Regeln). */
     private fun kameraKachel(gross: Boolean): View {
         val c = spalte()   // 0.1.40 (E2E G3): Beschriftung oben wie bei den anderen Kacheln
@@ -1378,7 +1614,9 @@ class MainActivity : AppCompatActivity() {
 
     /** Medien-Karte: Quelle, Cover, Titel, Fortschritt, Knöpfe. Daten nur aus der Android-Mediensitzung (mit Zugriff). */
     private fun medienKarte(e: Element): View {
-        val c = spalte(20)
+        // Fixrunde 0.1.43b (G1): flache Karte (Vorlage Fahrzeug) mit schmalem Rand, Knopf direkt unter dem Titel (Platzregeln.kt)
+        val flach = MusikKartePlatz.flach(e.h)
+        val c = spalte(if (flach) MusikKartePlatz.RAND_FLACH else 20)
         val quelle = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
         val qIcon = ImageView(this); val qName = ui.text("", 18f, 700)
         quelle.addView(qIcon, ui.lp(ui.dp(30), ui.dp(30), rechts = 10)); quelle.addView(qName, ui.lp(0, -2, 1f))
@@ -1389,7 +1627,13 @@ class MainActivity : AppCompatActivity() {
         // Erteilt wird der Zugriff nur dort vom Nutzer, nie per Befehl.
         qName.maxLines = 2
         val zugriff = ui.act(R.drawable.ic_pn_settings, getString(R.string.medien_zugriff_erlauben)) { zugriffSeite() }
-        c.addView(zugriff, ui.lp(-1, -2, oben = 8))
+        if (flach) {
+            zugriff.orientation = LinearLayout.HORIZONTAL; zugriff.minimumHeight = ui.bd(MusikKartePlatz.KNOPF_FLACH)
+            zugriff.setPadding(ui.dp(10), ui.dp(2), ui.dp(10), ui.dp(2))
+            (zugriff.getChildAt(1) as? TextView)?.apply { setPadding(ui.dp(8), 0, 0, 0); maxLines = 1 }
+            zugriff.contentDescription = getString(R.string.medien_zugriff_hinweis)
+            c.addView(zugriff, c.childCount - 1, ui.lp(-1, -2, oben = 6))   // vor die Quellen-Zeile
+        } else c.addView(zugriff, ui.lp(-1, -2, oben = 8))
         val cover = ImageView(this).apply {
             scaleType = ImageView.ScaleType.CENTER_CROP; clipToOutline = true
             background = GradientDrawable().apply { cornerRadius = ui.dpf(16f); setColor(ui.p.act) }
@@ -1417,6 +1661,8 @@ class MainActivity : AppCompatActivity() {
             val ohne = if (erlaubt) View.VISIBLE else View.GONE
             zugriff.visibility = if (erlaubt) View.GONE else View.VISIBLE
             coverRahmen.visibility = ohne; titel.visibility = ohne; kuenstler.visibility = ohne; balken.visibility = ohne
+            val kompakt = MusikKartePlatz.kompakt(e.h, erlaubt)
+            quelle.visibility = if (kompakt) View.GONE else View.VISIBLE; tasten.visibility = if (kompakt) View.GONE else View.VISIBLE
             quelle.setOnClickListener(if (erlaubt) null else View.OnClickListener { zugriffSeite() })
             if (m == null) {
                 qIcon.setImageDrawable(null); qName.text = getString(if (erlaubt) R.string.medien_nichts else R.string.medien_zugriff_hinweis)
@@ -1586,13 +1832,17 @@ class MainActivity : AppCompatActivity() {
         val liste = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         fun zeile(res: Int, text: String, f: () -> Unit) = liste.addView(ui.act(res, text) { f() }.apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL or Gravity.START
-            (getChildAt(1) as? TextView)?.apply { setPadding(ui.dp(14), 0, 0, 0); textSize = 16f; gravity = Gravity.START or Gravity.CENTER_VERTICAL }
-        }, ui.lp(-1, ui.dp(64), oben = 8))
+            (getChildAt(1) as? TextView)?.apply { setPadding(ui.dp(14), 0, 0, 0); textSize = 16f * ui.bedien; gravity = Gravity.START or Gravity.CENTER_VERTICAL }
+        }, ui.lp(-1, ui.bd(64), oben = 8))
         fun schalter(text: Int, an: Boolean) = getString(text) + ": " + getString(if (an) R.string.an else R.string.aus)
         // 0.1.38.14 (P4, Zielgruppe 50+): oben nur, was man im Alltag braucht; Seltenes unter „Erweitert“ (nichts fällt weg)
         if (!erweitert) {
             zeile(R.drawable.ic_pn_edit, getString(R.string.bearbeiten)) { if (darfBedienen()) { bearbeiten = true; baueAlles() } }
             zeile(R.drawable.ic_pn_apps, getString(R.string.launcher_groesse) + ": " + groesseName(LauncherGroesse.wahl(this))) { if (darfBedienen()) groesseWaehlen() }
+            // 0.1.44 (P1): „Große Bedienung“ (GrosseBedienung.kt) und geführte Einrichtung (Einrichtung.kt)
+            zeile(R.drawable.ic_pn_star, schalter(R.string.gross_titel, GrosseBedienung.an(this))) {
+                GrosseBedienung.setzen(this, !GrosseBedienung.an(this)); baueAlles(); einstellungen(); zeigeHinweis(getString(R.string.gross_hinweis)) }
+            zeile(R.drawable.ic_pn_home, getString(R.string.einr_titel)) { if (darfBedienen()) EinrichtungActivity.starten(this) }
             zeile(R.drawable.ic_pn_map, getString(R.string.hintergrund)) { if (darfBedienen()) hintergrundWaehlen() }
             zeile(R.drawable.ic_pn_nav, getString(R.string.navi_app) + ": " + (naviWahl()?.let { appName(it) } ?: getString(R.string.navi_app_auto))) { naviWaehlen() }
             zeile(R.drawable.ic_pn_thermo, schalter(R.string.zeige_klima, layout.zeigeKlima)) { if (darfBedienen()) { aendern(layout.copy(zeigeKlima = !layout.zeigeKlima)); baueAlles(); einstellungen() } }
@@ -1624,11 +1874,17 @@ class MainActivity : AppCompatActivity() {
             zeile(R.drawable.ic_pn_camera, getString(R.string.seitenblick_titel)) { if (darfBedienen()) seitenblickFragen() }
             zeile(R.drawable.ic_pn_music, getString(R.string.medien_zugriff)) { zugriffErklaeren() }
             zeile(R.drawable.ic_pn_play, schalter(R.string.musik_weiterspielen, MusikStart.an(this))) { MusikStart.umschalten(this); einstellungen(erweitert = true) }
+            // 0.1.44 (P4): Fahrerprofile (ab Werk eines), Sitzposition nur gelesen
+            zeile(R.drawable.ic_pn_auto_seite, getString(R.string.profil_titel) + ": " + profilKachel.name(Fahrerprofile.stand(this).aktiv)) { profilDialog() }
             // 0.1.42 (L48): Selbststeuerung und Stand-Uhr, ab Werk aus
             zeile(R.drawable.ic_pn_auto_seite, getString(R.string.selbst_titel) + ": " + getString(if (Selbststeuerung.wahl(this).irgendeine) R.string.an else R.string.aus)) { selbstWaehlen() }
             zeile(R.drawable.ic_pn_clock, getString(R.string.stand_uhr) + ": " + standUhrName(StandUhr.minuten(this))) { standUhrWaehlen() }
+            // 0.1.44 (D1): Grundform der eigenen Fahrzeug-Ansicht (Automatisch = aus dem Modell)
+            zeile(R.drawable.ic_pn_car, getString(R.string.fahrzeug_form) + ": " + formName(FahrzeugStart.formWahl(this))) { formWaehlen() }
             // 0.1.41 (LO): Leiste über allen Apps (Haus, Lautstärke), Standard aus
             zeile(R.drawable.ic_pn_home, getString(R.string.schnell_titel) + ": " + schnellName(Schnellleiste.wahl(this))) { if (darfBedienen()) schnellleisteWaehlen() }
+            // 0.1.44 (P1): Bedienungshilfe für Zurück / Letzte App – nur die Android-Seite öffnen, einschalten tut der Nutzer
+            zeile(R.drawable.ic_pn_zurueck, schalter(R.string.hilfe_einstellung, PanoptesBedienhilfe.aktiv != null)) { bedienhilfeErklaeren() }
             zeile(R.drawable.ic_pn_route, getString(R.string.exportieren)) { exportieren() }
             zeile(R.drawable.ic_pn_plus, getString(R.string.importieren)) { if (darfBedienen()) importieren() }
             zeile(R.drawable.ic_pn_close, getString(R.string.zuruecksetzen)) { if (darfBedienen()) zuruecksetzenFragen() }
@@ -1665,7 +1921,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private val motivNamen = intArrayOf(R.string.motiv_1, R.string.motiv_2, R.string.motiv_3, R.string.motiv_4, R.string.motiv_5,
-        R.string.motiv_6, R.string.motiv_7, R.string.motiv_8, R.string.motiv_9, R.string.motiv_10)
+        R.string.motiv_6, R.string.motiv_7, R.string.motiv_8, R.string.motiv_9, R.string.motiv_10,
+        R.string.motiv_11, R.string.motiv_12, R.string.motiv_13, R.string.motiv_14)   // 0.1.44 (D1): Szenen
 
     private fun hgName(w: String) = Motive.nummer(w)?.let { getString(R.string.hg_motiv) + ": " + getString(motivNamen[it - 1]) } ?: getString(when (w) {
         "cockpit" -> R.string.hg_cockpit; "bild" -> R.string.hg_bild; "video" -> R.string.hg_video; "eigen" -> R.string.hg_eigen
@@ -1770,11 +2027,11 @@ class MainActivity : AppCompatActivity() {
     private var vorlageDialog: AlertDialog? = null
 
     private fun vorlageName(v: String) = getString(when (v) {
-        Vorlagen.EINFACH -> R.string.vorlage_einfach; Vorlagen.COCKPIT -> R.string.vorlage_cockpit; else -> R.string.vorlage_standard
+        Vorlagen.EINFACH -> R.string.vorlage_einfach; Vorlagen.COCKPIT -> R.string.vorlage_cockpit; Vorlagen.FAHRZEUG -> R.string.vorlage_fahrzeug; else -> R.string.vorlage_standard
     })
 
     private fun vorlageText(v: String) = getString(when (v) {
-        Vorlagen.EINFACH -> R.string.vorlage_einfach_text; Vorlagen.COCKPIT -> R.string.vorlage_cockpit_text; else -> R.string.vorlage_standard_text
+        Vorlagen.EINFACH -> R.string.vorlage_einfach_text; Vorlagen.COCKPIT -> R.string.vorlage_cockpit_text; Vorlagen.FAHRZEUG -> R.string.vorlage_fahrzeug_text; else -> R.string.vorlage_standard_text
     })
 
     /** Beim ersten Start einmal fragen; große Einträge (Zielgruppe 50+). Abbrechen = Standard bleibt. */
@@ -1844,8 +2101,9 @@ class MainActivity : AppCompatActivity() {
         return Raster.fromJson(prefs.getString(KEY_LAYOUT, null)) ?: Raster.standard(null)
     }
 
-    private fun aendern(neu: StartLayout) {
+    private fun aendern(neu: StartLayout, merken: Boolean = true) {
         if (neu === layout) return
+        if (bearbeiten && merken) verlauf.merke(layout)   // 0.1.44 (E2): Rückgängig im Bearbeiten-Modus
         layout = neu
         getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString(KEY_LAYOUT, Raster.toJson(neu))
             .putBoolean(KEY_OFFEN, true).putLong(KEY_LOKAL_ZEIT, System.currentTimeMillis()).apply()
@@ -2011,6 +2269,7 @@ class MainActivity : AppCompatActivity() {
                         lastHistoryFetch = now
                     }
                 }
+                runCatching { hausUndSitzHolen(s, now) }   // 0.1.44 (P4): nur lesen
                 main.post { neueDaten(s, trafficValue, a, true); homeAbgleichen(homeWunsch) }
             } catch (_: Exception) {
                 main.post { neueDaten(null, LauncherTraffic(0, 0), appearance, false) }
@@ -2051,12 +2310,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun neueDaten(s: LauncherSummary?, t: LauncherTraffic, a: LauncherAppearance?, ok: Boolean) {
+        Tasten.kernDa = ok   // 0.1.44 (P1): Weg „Daemon“ für Zurück / Letzte App
         val warOnline = online
         if (ok && !warOnline && kernPrefs.getBoolean(KEY_OFFEN, false)) kernSpeichern()
         if (LayoutAbgleich.neuHolen(s?.layoutGeaendert, kernPrefs.getLong(KEY_BASIS, 0L), kernPrefs.getBoolean(KEY_OFFEN, false),
                 bearbeiten || overlay != null)) kernAbgleich()
-        summary = s; traffic = t; online = ok
+        val jetzt = System.currentTimeMillis()
+        if (ok) frische.gut(s, jetzt)
+        messUhr.daten(ok, jetzt).forEach { Messpunkte.log(it) }
+        summary = if (ok) s else frische.alt(jetzt); traffic = t; online = ok
         selbstSteuern(); standUhrPruefen()   // 0.1.42 (L48)
+        bearbeitenSperren()   // 0.1.44 (E2): Bearbeiten nur im Stand
         if (!ok && warOnline) zeigeHinweis(getString(R.string.offline))
         val alt = appearance; appearance = a
         val cockpit = layout.hintergrund == "cockpit"
@@ -2135,6 +2399,13 @@ class MainActivity : AppCompatActivity() {
     // ==================== Aktionen ====================
 
     /** Bedienen nur im Stand (Fahrsicherheit). Starten und Ansehen geht immer. */
+    /** 0.1.44 (E2): beim Losfahren den Bearbeiten-Modus beenden (Stand bleibt gespeichert), Bedienung normal. */
+    private fun bearbeitenSperren() {
+        val s = summary
+        if (!bearbeiten || Fahrsicherheit.bearbeitenErlaubt(s?.gear, s?.acc, s?.speedKmh)) return
+        main.post { if (bearbeiten) { bearbeiten = false; verlauf.leeren(); baueAlles(); kernSpeichern(); zeigeHinweis(getString(R.string.bearbeiten_gesperrt)) } }
+    }
+
     private fun darfBedienen(still: Boolean = false): Boolean {
         val s = summary
         if (Fahrsicherheit.bearbeitenErlaubt(s?.gear, s?.acc, s?.speedKmh)) return true

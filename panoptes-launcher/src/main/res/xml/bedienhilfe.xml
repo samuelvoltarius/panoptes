@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    0.1.44 (P1): Bedienungshilfe für „Zurück“ und „Letzte App“. Nur Fensterwechsel (Paketname der App vorn),
+    keine Bildschirminhalte (canRetrieveWindowContent=false), keine Gesten, keine Tasten-Filter.
+    Einschalten nur durch den Nutzer in den Android-Einstellungen.
+-->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:notificationTimeout="200"
+    android:canRetrieveWindowContent="false"
+    android:description="@string/hilfe_beschreibung" />

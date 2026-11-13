@@ -171,7 +171,11 @@ public final class TachoAnsicht {
         // 0.1.41: Eigenes Design (geprueft, nur Farben und Anordnung) geht mit, wenn es gewaehlt ist.
         if (TachoEigen.NAME.equals(r.optString("design"))) {
             JSONObject e = TachoEigen.gespeichert();
-            r.put("eigen", e != null ? e : TachoEigen.standard());
+            if (e == null) e = TachoEigen.standard();
+            // 0.1.44 (E1): Das Design (bis 40000 Zeichen) geht nur mit, wenn die Ansicht es noch nicht hat.
+            String stand = TachoEigen.stand(e);
+            r.put("eigenStand", stand);
+            if (cmd == null || !stand.equals(cmd.optString("eigenStand", ""))) r.put("eigen", e);
         }
         // 0.1.42 (T3): Kamera-/Video-Ansicht nach den Regeln in TachoKameraAnsicht (ab Werk aus).
         try {

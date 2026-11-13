@@ -890,6 +890,70 @@
         "Launcher: 10 getekende motieven als achtergrond en een ‘Parkeerklok’ die in P na een tijdje zonder bediening groot verschijnt.",
         "Paneelontwerpen, ‘Teller zelf ontwerpen’ en ‘Camera & video in het instrumentenpaneel’: in het paneel alleen bij auto’s waarvan het paneel andere weergaven toestaat; bij de Dolphin Surf alleen als voorbeeld onder Dashboard."
       ]
+    },
+    {
+      "version": "0.1.43",
+      "versionCode": 83,
+      "de": [
+        "Neue Launcher-Vorlage „Fahrzeug“ mit großem Auto, Status- und Musik-Karte, Fenster-Knöpfen (nur im Stand) und 4 neuen Szenen.",
+        "Die Fahrzeug-Startseite zeigt dein echtes Modell, wo vorhanden.",
+        "Launcher frei gestalten: alles verschieben und ziehen, nur im Stand.",
+        "Tacho frei gestalten (wirkt nur bei Autos mit Tacho-Projektion, beim Dolphin Surf nur als Vorschau).",
+        "Zurück und Letzte App in der Leiste, Schalter „Große Bedienung“, geführte Einrichtung mit Selbsttest und „Alles zurück auf BYD“.",
+        "Haus-Kachel (Home Assistant, nur ansehen) und zwei Fahrerprofile.",
+        "Tempo-Kachel mit Tempolimit-Schild aus der aktiven Panoptes-Route, wo eines bekannt ist.",
+        "Navi-Hinweise im BYD-Kombi (Ansicht „Einfach“) über den BYD-Kartendienst, bei Dual-OS-Autos mit DiLink 3 und 4.",
+        "Sprachbefehle ohne Internet und ohne eigenen KI-Schlüssel (DE/EN): Klima, Musik, Navi nach Hause, Reichweite. Ab Werk aus, Befehle ans Auto nur nach Rückfrage.",
+        "Live-Umgebung: Skizze erkannter Autos und Personen um dein Auto, kein Kamerabild, ab Werk aus; startet nur, wenn das Gerät schnell genug rechnet."
+      ],
+      "en": [
+        "New launcher template “Vehicle” with a large car, status and music card, window buttons (only when parked) and 4 new scenes.",
+        "The vehicle home page shows your actual model where available.",
+        "Design the launcher freely: move and drag everything, only when parked.",
+        "Design the cluster freely (only on cars with cluster projection; on the Dolphin Surf only as a preview).",
+        "Back and Recent apps in the bar, a “Large controls” switch, guided setup with self-test and “Everything back to BYD”.",
+        "Home tile (Home Assistant, view only) and two driver profiles.",
+        "Speed tile with a speed limit sign from the active Panoptes route, where one is known.",
+        "Navigation hints in the BYD instrument cluster (“Simple” view) via the BYD map service, on dual-OS cars with DiLink 3 and 4.",
+        "Voice commands without internet and without your own AI key (DE/EN): climate, music, navigate home, range. Off by default, commands to the car only after confirmation.",
+        "Live surroundings: a sketch of detected cars and people around your car, no camera image, off by default; only starts if the device computes fast enough."
+      ],
+      "fr": [
+        "Nouveau modèle de launcher « Véhicule » avec une grande voiture, une carte d’état et de musique, des boutons de vitres (seulement à l’arrêt) et 4 nouvelles scènes.",
+        "La page d’accueil véhicule affiche votre vrai modèle, quand il existe.",
+        "Personnaliser librement le launcher : tout déplacer et faire glisser, seulement à l’arrêt.",
+        "Personnaliser librement le compteur (seulement sur les voitures avec projection au combiné ; sur la Dolphin Surf seulement en aperçu).",
+        "Retour et Dernière app dans la barre, interrupteur « Grandes commandes », configuration guidée avec autotest et « Tout revenir à BYD ».",
+        "Tuile Maison (Home Assistant, affichage seulement) et deux profils conducteur.",
+        "Tuile Vitesse avec panneau de limitation issu de l’itinéraire Panoptes actif, quand elle est connue.",
+        "Indications de navigation au combiné BYD (vue « Simple ») via le service de cartes BYD, sur les voitures double OS avec DiLink 3 et 4.",
+        "Commandes vocales sans internet et sans clé IA personnelle (DE/EN) : climatisation, musique, navigation vers la maison, autonomie. Désactivé par défaut, commandes à la voiture seulement après confirmation.",
+        "Environnement en direct : croquis des voitures et personnes détectées autour de votre voiture, sans image caméra, désactivé par défaut ; démarre seulement si l’appareil calcule assez vite."
+      ],
+      "it": [
+        "Nuovo modello di launcher “Veicolo” con auto grande, scheda stato e musica, pulsanti finestrini (solo da fermo) e 4 nuove scene.",
+        "La pagina iniziale del veicolo mostra il tuo modello reale, dove disponibile.",
+        "Personalizza liberamente il launcher: sposta e trascina tutto, solo da fermo.",
+        "Personalizza liberamente il quadro (solo sulle auto con proiezione nel quadro; sulla Dolphin Surf solo come anteprima).",
+        "Indietro e Ultima app nella barra, interruttore “Comandi grandi”, configurazione guidata con autotest e “Tutto di nuovo su BYD”.",
+        "Riquadro Casa (Home Assistant, solo visualizzazione) e due profili conducente.",
+        "Riquadro Velocità con cartello del limite dal percorso Panoptes attivo, dove è noto.",
+        "Indicazioni di navigazione nel quadro BYD (vista “Semplice”) tramite il servizio mappe BYD, sulle auto dual-OS con DiLink 3 e 4.",
+        "Comandi vocali senza internet e senza una tua chiave IA (DE/EN): clima, musica, navigazione verso casa, autonomia. Spento di fabbrica, comandi all’auto solo dopo conferma.",
+        "Ambiente dal vivo: schizzo di auto e persone rilevate intorno alla tua auto, nessuna immagine della telecamera, spento di fabbrica; parte solo se il dispositivo calcola abbastanza in fretta."
+      ],
+      "nl": [
+        "Nieuw launchersjabloon ‘Voertuig’ met grote auto, status- en muziekkaart, raamknoppen (alleen stilstaand) en 4 nieuwe scènes.",
+        "De voertuig-startpagina toont je echte model, waar beschikbaar.",
+        "Launcher vrij inrichten: alles verplaatsen en slepen, alleen stilstaand.",
+        "Teller vrij ontwerpen (alleen bij auto’s met projectie in het instrumentenpaneel; bij de Dolphin Surf alleen als voorbeeld).",
+        "Terug en Laatste app in de balk, schakelaar ‘Grote bediening’, begeleide installatie met zelftest en ‘Alles terug naar BYD’.",
+        "Huis-tegel (Home Assistant, alleen bekijken) en twee bestuurdersprofielen.",
+        "Snelheidstegel met snelheidsbord uit de actieve Panoptes-route, waar dat bekend is.",
+        "Navigatieaanwijzingen in het BYD-instrumentenpaneel (weergave ‘Eenvoudig’) via de BYD-kaartdienst, bij dual-OS-auto’s met DiLink 3 en 4.",
+        "Spraakopdrachten zonder internet en zonder eigen AI-sleutel (DE/EN): klimaat, muziek, naar huis navigeren, bereik. Standaard uit, opdrachten aan de auto alleen na bevestiging.",
+        "Live-omgeving: schets van herkende auto’s en personen rond je auto, geen camerabeeld, standaard uit; start alleen als het apparaat snel genoeg rekent."
+      ]
     }
   ]
 }

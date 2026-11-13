@@ -12,7 +12,8 @@ import org.json.JSONObject
  * Jede Änderung liefert ein neues Layout; ist sie nicht möglich (kein Platz, ungültig), kommt
  * das unveränderte Layout zurück.
  */
-enum class ElementTyp { WIDGET, APP, ORDNER }
+/** 0.1.44 (E2): TEXT = reine Beschriftung (Text in [Element.name]), nur frei platziert. */
+enum class ElementTyp { WIDGET, APP, ORDNER, TEXT }
 
 data class Element(
     val id: String,
@@ -26,8 +27,15 @@ data class Element(
     val name: String? = null,
     val apps: List<String> = emptyList(),
     /** 0.1.41 (LO): Nummer des gebundenen Android-Widgets (nur bei Kachel.GERAETEWIDGET). */
-    val wid: Int? = null
-)
+    val wid: Int? = null,
+    /** 0.1.44 (E2): feine Lage in Achtel-Zellen (48 × 24, [Frei]); null = die Zellen gelten. */
+    val fx: Int? = null, val fy: Int? = null, val fb: Int? = null, val fh: Int? = null,
+    /** 0.1.44 (E2): Stil je Element: Ecken (dp), Deckung (%), Unschärfe-Stufe 0–3, Akzentfarbe "#RRGGBB"; null = Design. */
+    val ecke: Int? = null, val deckung: Int? = null, val unschaerfe: Int? = null, val akzent: String? = null
+) {
+    /** Zellen gelten wieder (nach Verschieben/Größe im Zellraster). */
+    fun ohneFein() = copy(fx = null, fy = null, fb = null, fh = null)
+}
 
 data class StartLayout(
     val seiten: List<List<Element>>,
@@ -64,7 +72,8 @@ object Raster {
     const val MAX_ORDNER_APPS = 24
     const val MAX_NAME = 24
     const val MAX_NEBEN_ANDERS = 64
-    const val VERSION = 1
+    /** 0.1.44 (E2): 2 = feine Lage, Stil, Text; 1 bleibt lesbar. */
+    const val VERSION = 2
     const val PANOPTES = "at.greenchili.surfmate"
     /** BYDs eigene Projektions-Apps (Paket-Inventur Surf): ab Werk im Dock, sichtbar nur wenn startbar. */
     const val ANDROID_AUTO = "com.byd.androidauto"
@@ -90,7 +99,8 @@ object Raster {
 
     fun passt(seite: List<Element>, x: Int, y: Int, b: Int, h: Int, ohne: String? = null): Boolean {
         if (b < 1 || h < 1 || x < 0 || y < 0 || x + b > SPALTEN || y + h > ZEILEN) return false
-        return seite.none { it.id != ohne && x < it.x + it.b && it.x < x + b && y < it.y + it.h && it.y < y + h }
+        val r = intArrayOf(x * Frei.FEIN, y * Frei.FEIN, b * Frei.FEIN, h * Frei.FEIN)
+        return seite.none { it.id != ohne && Frei.ueberlappt(Frei.rect(it), r) }
     }
 
     fun freierPlatz(seite: List<Element>, b: Int, h: Int): Pair<Int, Int>? {
@@ -118,7 +128,7 @@ object Raster {
         if (zielSeite !in l.seiten.indices) return l
         if (!passt(l.seiten[zielSeite], x, y, e.b, e.h, ohne = id)) return l
         val ohne = mitSeite(l, quelle, l.seiten[quelle].filter { it.id != id })
-        return mitSeite(ohne, zielSeite, ohne.seiten[zielSeite] + e.copy(x = x, y = y))
+        return mitSeite(ohne, zielSeite, ohne.seiten[zielSeite] + e.copy(x = x, y = y).ohneFein())
     }
 
     /** Auf eine andere Seite an den ersten freien Platz. */
@@ -136,7 +146,7 @@ object Raster {
         val start = GROESSEN.indexOf(e.b to e.h)
         for (k in 1..GROESSEN.size) {
             val (b, h) = GROESSEN[(start + k).mod(GROESSEN.size)]
-            if (passt(l.seiten[i], e.x, e.y, b, h, ohne = id)) return ersetze(l, e.copy(b = b, h = h))
+            if (passt(l.seiten[i], e.x, e.y, b, h, ohne = id)) return ersetze(l, e.copy(b = b, h = h).ohneFein())
         }
         return l
     }
@@ -149,11 +159,11 @@ object Raster {
         val (i, e) = finde(l, id) ?: return l
         if (e.typ != ElementTyp.WIDGET) return l
         val groessen = STUFEN[stufe] ?: return l
-        for ((b, h) in groessen) if (passt(l.seiten[i], e.x, e.y, b, h, ohne = id)) return ersetze(l, e.copy(b = b, h = h))
+        for ((b, h) in groessen) if (passt(l.seiten[i], e.x, e.y, b, h, ohne = id)) return ersetze(l, e.copy(b = b, h = h).ohneFein())
         val rest = l.seiten[i].filter { it.id != id }
         for ((b, h) in groessen) {
             val p = freierPlatz(rest, b, h) ?: continue
-            return ersetze(l, e.copy(x = p.first, y = p.second, b = b, h = h))
+            return ersetze(l, e.copy(x = p.first, y = p.second, b = b, h = h).ohneFein())
         }
         return l
     }
@@ -254,7 +264,7 @@ object Raster {
     fun umbenennen(l: StartLayout, ordnerId: String, rohName: String): StartLayout {
         val name = name(rohName) ?: return l
         val (_, o) = finde(l, ordnerId) ?: return l
-        if (o.typ != ElementTyp.ORDNER) return l
+        if (o.typ != ElementTyp.ORDNER && o.typ != ElementTyp.TEXT) return l   // 0.1.44 (E2): auch Beschriftungen
         return ersetze(l, o.copy(name = name))
     }
 
@@ -355,6 +365,10 @@ object Raster {
                 e.paket?.let { o.put("paket", it) }
                 e.name?.let { o.put("name", it) }
                 if (e.typ == ElementTyp.ORDNER) o.put("apps", JSONArray(e.apps))
+                // 0.1.44 (E2): feine Lage und Stil nur, wenn gesetzt (alte Leser sehen die umfassenden Zellen)
+                if (e.fx != null) o.put("fx", e.fx).put("fy", e.fy).put("fb", e.fb).put("fh", e.fh)
+                e.ecke?.let { o.put("ecke", it) }; e.deckung?.let { o.put("deckung", it) }
+                e.unschaerfe?.let { o.put("unschaerfe", it) }; e.akzent?.let { o.put("akzent", it) }
                 a.put(o)
             }
             seiten.put(a)
@@ -391,7 +405,7 @@ object Raster {
                     // 0.1.41 (LO): Android-Widgets je gebundener Nummer einmal, sonst jede Kachel einmal
                     if (e.typ == ElementTyp.WIDGET && s.any { it.kachel == e.kachel && it.wid == e.wid }) continue
                     if (seiten.flatten().any { it.typ == ElementTyp.WIDGET && it.kachel == e.kachel && it.wid == e.wid && e.typ == ElementTyp.WIDGET }) continue
-                    if (passt(s, e.x, e.y, e.b, e.h)) s += e
+                    if (Frei.passt(s, Frei.rect(e))) s += e
                 }
                 seiten += s
             }
@@ -433,14 +447,21 @@ object Raster {
         }
     }
 
+    /** 0.1.44 (E2): Element mit optionaler feiner Lage und Stil (Regeln wie der Kern, [Frei.lesen]). */
     private fun element(o: JSONObject): Element? {
+        val frei = o.has("fx") || o.has("fy") || o.has("fb") || o.has("fh")
+        val grund = elementGrund(o, frei) ?: return null
+        return Frei.lesen(o, grund, frei)
+    }
+
+    private fun elementGrund(o: JSONObject, frei: Boolean): Element? {
         val id = o.optString("id").takeIf { it.matches(Regex("^[a-z][0-9]{1,6}$")) } ?: return null
-        val typ = when (o.optString("typ")) { "widget" -> ElementTyp.WIDGET; "app" -> ElementTyp.APP; "ordner" -> ElementTyp.ORDNER; else -> return null }
+        val typ = when (o.optString("typ")) { "widget" -> ElementTyp.WIDGET; "app" -> ElementTyp.APP; "ordner" -> ElementTyp.ORDNER; "text" -> ElementTyp.TEXT; else -> return null }
         val x = o.optInt("x", -1); val y = o.optInt("y", -1); val b = o.optInt("b", 1); val h = o.optInt("h", 1)
         return when (typ) {
             ElementTyp.WIDGET -> {
                 val k = Kachel.values().firstOrNull { it.name.lowercase() == o.optString("kachel") } ?: return null
-                if ((b to h) !in GROESSEN) return null
+                if (!frei && (b to h) !in GROESSEN) return null
                 if (k == Kachel.GERAETEWIDGET) {
                     val wid = o.optInt("wid", 0).takeIf { it > 0 } ?: return null
                     return Element(id, typ, x, y, b, h, kachel = k, wid = wid)
@@ -450,6 +471,10 @@ object Raster {
             ElementTyp.APP -> {
                 val p = o.optString("paket").takeIf { gueltigesPaket(it) } ?: return null
                 Element(id, typ, x, y, 1, 1, paket = p)
+            }
+            ElementTyp.TEXT -> {
+                if (!frei) return null
+                Element(id, typ, x, y, b, h, name = name(o.optString("name")) ?: return null)
             }
             ElementTyp.ORDNER -> {
                 val a = o.optJSONArray("apps") ?: return null

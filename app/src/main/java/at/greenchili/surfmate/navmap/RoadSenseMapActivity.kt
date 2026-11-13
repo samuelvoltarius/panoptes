@@ -4813,6 +4813,12 @@ open class RoadSenseMapActivity : AppCompatActivity() {
                     android.os.SystemClock.elapsedRealtime()
                 )
                 lastFix = fix
+                // P3b: belegtes Tempolimit (OSM maxspeed laut Planer) an der Teilstrecke → Kern → Launcher. Nur auf der Route
+                // und nur wo etwas belegt ist; sonst „leer“. Nichts wird erfunden, ohne Route gibt es keinen Wert.
+                if (!clusterMode) {
+                    at.greenchili.surfmate.navmap.nav.TempolimitMelder.aktualisiere(
+                        if (state.offRoute || state.arrived) null else guidance.tempolimitKmh())
+                }
                 // Feed the TRUTH fix into the motion estimator. The puck + camera are
                 // NOT painted here anymore — the ~12fps renderMotionFrame() glides
                 // them from the dead-reckoned estimate so motion is continuous between
@@ -5501,6 +5507,7 @@ open class RoadSenseMapActivity : AppCompatActivity() {
         if (!clusterMode) {
             at.greenchili.surfmate.navmap.oem.OemNavigationClient.stop()
             at.greenchili.surfmate.tacho.TachoAnsichtManoever.loesche()
+            at.greenchili.surfmate.navmap.nav.TempolimitMelder.beenden()
         }
         // Nav ended (arrived / end-nav) → drop the persisted trip so a later re-entry
         // opens fresh, not back into a finished route.
@@ -6086,7 +6093,10 @@ open class RoadSenseMapActivity : AppCompatActivity() {
         // Clear it here so the cluster ends too. Guarded !clusterMode: the cluster
         // instance is a pure consumer and must never publish/clear (and clear() is a
         // no-op when already idle, so this is safe even when not navigating).
-        if (!clusterMode) NavSession.clear()
+        if (!clusterMode) {
+            NavSession.clear()
+            at.greenchili.surfmate.navmap.nav.TempolimitMelder.beenden()
+        }
         NavSession.removeListener(navSessionListener)
         navSessionListener = null
         try { navVoice?.shutdown() } catch (_: Throwable) {}
