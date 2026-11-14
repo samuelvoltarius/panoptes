@@ -81,7 +81,7 @@ public class WebAssetVersionTest {
     public void festgehalteneZaehlerDerRunde01436() throws Exception {
         JSONObject stand = new JSONObject(new String(Files.readAllBytes(
                 new File(basis(), "src/test/resources/web-asset-staende.json").toPath()), StandardCharsets.UTF_8));
-        assertEquals("R1: app-shell.js wurde in 7e5e5506 geändert", "pn38", stand.getJSONObject("app-shell.js").getString("v"));
+        assertEquals("0.1.43.7 Paket E: app-shell.js prüft den Web-Stand", "pn39", stand.getJSONObject("app-shell.js").getString("v"));
         assertEquals("14", stand.getJSONObject("theme.js").getString("v"));
         assertNotNull(stand.optJSONObject("stil-launcher.css"));
         String theme = new String(Files.readAllBytes(new File(basis(), "src/main/assets/web/shared/theme.js").toPath()), StandardCharsets.UTF_8);

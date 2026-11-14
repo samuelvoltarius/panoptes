@@ -109,6 +109,20 @@ object DaemonStartPlan {
         StartStufe.REST -> 0L
     }
 
+    /**
+     * 0.1.43.7: Nachfrist einer aufhaltenden Stufe nach ihrem Zeitlimit ([zeitlimitMs]). Der Ablauf geht nach dem Limit
+     * weiter, die Stufe wird aber noch so lange beobachtet, bevor sie als „startet nicht“ gilt (Anzeige, Start-Protokoll
+     * `STUFE_STARTET_NICHT`). Grund: Nach einem Update meldete der Wächter 2 s nach seinen 20 s „startet nicht“, obwohl er
+     * lief (0.1.43.5 03:17:49, 0.1.43.6 11:59:34) – ein Spätstart, kein Fehler. Ein echter Nichtstart wird nach Limit
+     * plus Nachfrist weiter gemeldet.
+     */
+    @JvmStatic
+    fun nachfristMs(s: StartStufe): Long = when (s) {
+        StartStufe.OBERFLAECHE -> 60_000L
+        StartStufe.WAECHTER -> 60_000L
+        else -> 0L
+    }
+
     /** Wie lange eine nicht aufhaltende Stufe nur beobachtet wird (danach „startet nicht“ in der Anzeige). */
     @JvmStatic
     fun beobachtungMs(s: StartStufe): Long = when (s) {

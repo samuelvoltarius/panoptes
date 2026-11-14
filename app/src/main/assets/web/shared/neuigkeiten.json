@@ -1158,6 +1158,35 @@
         "Nieuw: de webinterface is nu ook beschikbaar in ‘Launcher-stijl’, met glazen kaarten en de kleuren van de launcher. Kiezen onder Apps & scherm → Scherm → ‘Uiterlijk van de interface’; ‘Panoptes’ blijft de standaard.",
         "Voertuigafbeeldingen: de Tang heeft een nieuwe, volledige foto. Atto 2, Seal U DM-i, Sealion 7 en Shark zijn netter vrijgesteld."
       ]
+    },
+    {
+      "version": "0.1.43.7",
+      "versionCode": 91,
+      "de": [
+        "Launcher: Die Hinweise unter dem Fahrzeugbild (Namensnennung, Bitte um ein 3D-Modell, Fensterstand) sind jetzt auch nachts gut lesbar.",
+        "Nach einem Update lädt die Weboberfläche einmal neu und zeigt gleich die neue Fassung, auch auf der ersten Seite.",
+        "Startet der Wächter nach einem Update etwas später, meldet Panoptes das nicht mehr als Fehler."
+      ],
+      "en": [
+        "Launcher: the notes below the vehicle picture (credits, request for a 3D model, window position) are now readable at night too.",
+        "After an update the web interface reloads once and shows the new version straight away, on the first page too.",
+        "If the guard starts a little later after an update, Panoptes no longer reports this as an error."
+      ],
+      "fr": [
+        "Launcher : les indications sous l’image du véhicule (crédits, demande de modèle 3D, position des vitres) sont maintenant lisibles aussi la nuit.",
+        "Après une mise à jour, l’interface web se recharge une fois et affiche tout de suite la nouvelle version, y compris sur la première page.",
+        "Si le gardien démarre un peu plus tard après une mise à jour, Panoptes ne le signale plus comme une erreur."
+      ],
+      "it": [
+        "Launcher: le indicazioni sotto l’immagine del veicolo (crediti, richiesta di un modello 3D, posizione dei finestrini) ora sono leggibili anche di notte.",
+        "Dopo un aggiornamento l’interfaccia web si ricarica una volta e mostra subito la nuova versione, anche nella prima pagina.",
+        "Se dopo un aggiornamento il guardiano parte un po’ più tardi, Panoptes non lo segnala più come errore."
+      ],
+      "nl": [
+        "Launcher: de aanwijzingen onder de voertuigafbeelding (naamsvermelding, verzoek om een 3D-model, raamstand) zijn nu ook ’s nachts goed leesbaar.",
+        "Na een update laadt de webinterface één keer opnieuw en toont meteen de nieuwe versie, ook op de eerste pagina.",
+        "Start de bewaker na een update iets later, dan meldt Panoptes dat niet meer als fout."
+      ]
     }
   ]
 }

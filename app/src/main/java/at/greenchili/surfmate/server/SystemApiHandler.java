@@ -185,6 +185,15 @@ public class SystemApiHandler {
             HttpResponse.sendJson(out, profile().toString());
             return true;
         }
+        // 0.1.43.7 (Paket E): ausgelieferte ?v=-Zähler; die Seite lädt einmal neu, wenn ihre eigenen veraltet sind
+        if (path.equals("/api/system/webstand") && method.equals("GET")) {
+            try {
+                HttpResponse.sendJson(out, WebStand.json().toString());
+            } catch (Exception e) {
+                HttpResponse.sendJson(out, "{\"kennung\":\"\",\"zaehler\":{}}");
+            }
+            return true;
+        }
         if (path.equals("/api/system/profile") && method.equals("POST")) {
             setProfile(body, out);
             return true;
@@ -464,6 +473,8 @@ public class SystemApiHandler {
             res.put("umfang", Erststart.umfang(cfg));
             // 0.1.43.6: Aussehen der Weboberfläche (panoptes | launcher) für jede Seite; ohne Wert „panoptes“
             res.put("stil", at.greenchili.surfmate.einstellungen.Katalog.stil(cfg));
+            // 0.1.43.7 (Paket E): Kennung der ausgelieferten Web-Dateien (Seite vergleicht beim Start)
+            try { res.put("webStand", WebStand.kennung()); } catch (Throwable ignored) { }
             if (v != null && v.has("nominalKwh") && !v.isNull("nominalKwh")) {
                 res.put("batteryKwh", v.optDouble("nominalKwh", 0));
             }

@@ -298,9 +298,27 @@ public final class Notzugang {
         return out.toByteArray();
     }
 
+    /**
+     * 0.1.43.7 (Paket F 4): ohne CLASSPATH starten. Der Kamera-Daemon läuft als {@code CLASSPATH=<apk> app_process};
+     * ein ProcessBuilder erbt diese Umgebung, und damit trugen Aufpasser und tailscaled des Notzugangs unser APK im
+     * CLASSPATH. {@code update-on-car.sh} (stop_daemons) beendet jeden solchen Prozess vor {@code pm install} – der
+     * Notzugang startete deshalb bei jedem Update neu und kam erst mit dem neuen Kamera-Daemon wieder. Wie
+     * {@code AppUpdateDienst.starteAbgekoppelt}: CLASSPATH muss weg, dann überlebt der Notzugang das Update.
+     */
+    static ProcessBuilder prozess(String cmd) {
+        ProcessBuilder pb = new ProcessBuilder("sh", "-c", cmd).redirectErrorStream(true);
+        ohneApkUmgebung(pb.environment());
+        return pb;
+    }
+
+    /** Entfernt CLASSPATH aus der Umgebung eines zu startenden Prozesses (siehe {@link #prozess}). */
+    static void ohneApkUmgebung(java.util.Map<String, String> umgebung) {
+        umgebung.remove("CLASSPATH");
+    }
+
     static String shell(String cmd, int sekunden) {
         try {
-            Process p = new ProcessBuilder("sh", "-c", cmd).redirectErrorStream(true).start();
+            Process p = prozess(cmd).start();
             byte[] b;
             try (InputStream in = p.getInputStream()) {
                 b = lesen(in);

@@ -570,6 +570,70 @@
 
     // 0.1.38.7: Das Auto-Display übernimmt Änderungen aus dem Kern (auch vom PC/Handy) ohne Neuladen:
     // alle 8 s drei kleine Werte (Darstellung, Startansicht, Hell/Dunkel), nur solange die Seite sichtbar ist.
+    // 0.1.43.7 (Paket E, E2E_01436b H1): Nach install -r öffnet die App ihre Seite, während noch der alte Kern
+    // antwortet – die erste Seite trug dann bis zum nächsten Seitenwechsel alte Dateien (theme.js Stand 13, app-shell.js Stand pn37).
+    // Der Kern meldet eine kurze Kennung seiner ?v=-Zähler (Profil beim Laden, am Auto-Display im ohnehin laufenden
+    // 8-s-Abgleich). Nur wenn sie neu ist, holt die Seite die Liste und vergleicht ihre eigenen Verweise; weicht einer ab,
+    // lädt sie genau einmal neu. Kein eigenes Abfragen im Takt.
+    // Schleifenschutz: je Kennung höchstens ein Neuladen, dazwischen mindestens 60 s; ohne sessionStorage nie.
+    var STAND_KEY = 'pn.stand', STAND_NEU_KEY = 'pn.stand.neu';
+    var standGeprueft = null, standLaeuft = false;
+    function standEigene() {
+        var m = {}, els = document.querySelectorAll('script[src],link[href]');
+        for (var i = 0; i < els.length; i++) {
+            var u = els[i].getAttribute('src') || els[i].getAttribute('href') || '';
+            var r = /([\w.-]+\.(?:js|css))\?v=([\w.-]+)/.exec(u);
+            if (r) m[r[1]] = r[2];
+        }
+        return m;
+    }
+    function standAbweichung(eigene, kern) {
+        for (var n in eigene) {
+            if (!eigene.hasOwnProperty(n) || !kern.hasOwnProperty(n)) continue;
+            if (kern[n] !== eigene[n]) return n + '?v=' + eigene[n] + ' -> ' + kern[n];
+        }
+        return null;
+    }
+    function standNeuLaden(kennung, grund) {
+        var a = document.activeElement, tag = a && a.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') { standGeprueft = null; return false; }   // später, Eingabe nicht verlieren
+        var jetzt = Date.now(), alt = null;
+        try {
+            alt = JSON.parse(sessionStorage.getItem(STAND_NEU_KEY) || 'null');
+            if (alt && (alt.k === kennung || jetzt - (alt.t || 0) < 60000)) return false;
+            sessionStorage.setItem(STAND_NEU_KEY, JSON.stringify({ k: kennung, t: jetzt }));
+        } catch (e) { return false; }
+        try { console.info('[Panoptes] Seite veraltet (' + grund + '), lade einmal neu'); } catch (e) {}
+        location.reload();
+        return true;
+    }
+    function standVergleichen(d) {
+        if (!d || !d.kennung || !d.zaehler) return;
+        standGeprueft = d.kennung;
+        var grund = standAbweichung(standEigene(), d.zaehler);
+        if (grund) standNeuLaden(d.kennung, grund);
+    }
+    function standPruefen(kennung) {
+        if (standLaeuft || !window.fetch) return;
+        if (kennung && kennung === standGeprueft) return;
+        var gemerkt = null;
+        try { gemerkt = JSON.parse(sessionStorage.getItem(STAND_KEY) || 'null'); } catch (e) {}
+        if (kennung && gemerkt && gemerkt.kennung === kennung) { standVergleichen(gemerkt); return; }
+        standLaeuft = true;
+        fetch('/api/system/webstand', { cache: 'no-store', credentials: 'same-origin' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (d) {
+                standLaeuft = false;
+                if (!d || !d.kennung) return;
+                try { sessionStorage.setItem(STAND_KEY, JSON.stringify(d)); } catch (e) {}
+                standVergleichen(d);
+            }, function () { standLaeuft = false; });
+    }
+    // PC und Handy: beim Zurückkehren auf den Reiter (das Auto-Display prüft im Anzeige-Abgleich)
+    try {
+        document.addEventListener('visibilitychange', function () { if (!document.hidden && !dstDisplay()) standPruefen(null); });
+    } catch (e) {}
+
     var anzeigeTaktId = null;
     function anzeigeAbfragen() {
         if (document.hidden || !window.fetch) return;
@@ -577,6 +641,7 @@
             .then(function (r) { return r.ok ? r.json() : null; })
             .then(function (d) {
                 if (!d) return;
+                if (d.webStand) standPruefen(d.webStand);
                 if (d.darstellung === 'leicht' || d.darstellung === 'voll') {
                     if (dstLokal() !== d.darstellung) dstSpiegel(d.darstellung);
                     dstAnwenden();
@@ -1125,6 +1190,8 @@
             umfangAbgleichen(p.umfang);
             // 0.1.43.6: Aussehen aus dem Kern (gilt für alle Geräte); fehlt der Wert (ältere App), bleibt alles, wie es ist
             if ((p.stil === 'panoptes' || p.stil === 'launcher') && window.BYD && BYD.stil) BYD.stil.anwenden(p.stil);
+            // 0.1.43.7 (Paket E): Seite vom alten Kern? Dann einmal neu laden
+            if (p.webStand) standPruefen(p.webStand);
         }).catch(function () {
             // Ältere App ohne Profil-Schnittstelle: wenigstens das Modell zeigen.
             fetch('/api/models/selected').then(function (r) { return r.json(); }).then(function (m) {

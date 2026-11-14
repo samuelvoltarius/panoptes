@@ -65,7 +65,10 @@ class StartAblauf(
                     melde(s, StufeZustand.BEREIT)
                     stufe(i + 1)
                 } else if (jetzt() >= bis) {
-                    melde(s, StufeZustand.STARTET_NICHT)
+                    // 0.1.43.7: Limit erreicht – weiter mit der nächsten Stufe, „startet nicht“ aber erst nach der
+                    // Nachfrist (ein Spätstart nach dem Update ist kein Fehler); ohne Nachfrist sofort wie bisher
+                    val frist = DaemonStartPlan.nachfristMs(s)
+                    if (frist > 0L) beobachten(s, jetzt() + frist) else melde(s, StufeZustand.STARTET_NICHT)
                     stufe(i + 1)
                 } else {
                     warten(i, s, bis)

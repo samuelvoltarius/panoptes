@@ -28,8 +28,8 @@ enum class StufeZustand(val schluessel: String) { STARTET("startet"), BEREIT("be
 object StartStatus {
     /**
      * Rückfall nur für die Anzeige: Meldet niemand mehr (Ablauf abgebrochen), gilt „startet …“ nach dieser Zeit als
-     * „startet nicht“. Länger als der längste Ablauf (Boot-Schutz 45 s + Oberfläche 60 s + Wächter 20 s + Beobachtung
-     * 60 s), damit der Ablauf seine eigenen Zeitlimits ([DaemonStartPlan.zeitlimitMs]) selbst meldet.
+     * „startet nicht“. Länger als der längste Ablauf (Boot-Schutz 45 s + Oberfläche 60 s + Wächter 20 s + Nachfrist bzw.
+     * Beobachtung 60 s, 0.1.43.7), damit der Ablauf seine eigenen Zeitlimits ([DaemonStartPlan.zeitlimitMs]) selbst meldet.
      */
     const val ZEITLIMIT_MS = 300_000L
 

@@ -198,6 +198,75 @@ class StartAblaufTest {
         assertEquals(listOf(StufeZustand.STARTET, StufeZustand.BEREIT), zustaende(w, StartStufe.REST))
     }
 
+    /**
+     * 0.1.43.7 (Paket F 3): Nach den Updates 0.1.43.5/0.1.43.6 stand je einmal `STUFE_STARTET_NICHT stufe=waechter`
+     * im Protokoll, der Wächter lief aber 1–2 s später. Ein Spätstart nach dem Limit ist kein Fehler: der Ablauf geht
+     * nach 20 s weiter, „startet nicht“ kommt erst nach der Nachfrist – ein echter Nichtstart wird weiter gemeldet.
+     */
+    @Test
+    fun spaetstartDesWaechtersNachDemLimitIstKeinFehler() {
+        val w = Welt()
+        val log = ArrayList<String>()
+        val vorher = StartStatus.protokoll
+        StartStatus.zuruecksetzen()
+        StartStatus.protokoll = { e, v -> log.add("$e $v") }
+        try {
+            val stufen = listOf(StartStufe.OBERFLAECHE, StartStufe.WAECHTER, StartStufe.REST)
+            StartStatus.beginne(stufen, 0L)
+            StartAblauf(
+                stufen = stufen, bootSchutzMs = 1_000L,
+                plane = { ms, r -> w.plane(ms, r) }, jetzt = { w.jetzt }, toroffen = { true },
+                aktion = { s -> w.aktionen.add(Pair(s, w.jetzt)) },
+                pruefen = { s, rueck -> rueck(s != StartStufe.WAECHTER || w.jetzt >= 25_000L) },
+                melde = { s, z -> w.meldungen.add(Triple(s, z, w.jetzt)); StartStatus.melde(s, z, w.jetzt) }
+            ).starten()
+            w.laufen(200_000)
+            val waechter = zeit(w, StartStufe.WAECHTER)
+            assertTrue("Szenario: bereit erst nach dem 20-s-Limit", waechter + DaemonStartPlan.zeitlimitMs(StartStufe.WAECHTER) < 25_000L)
+            assertEquals("Spätstart: startet → bereit, kein „startet nicht“", listOf(StufeZustand.STARTET, StufeZustand.BEREIT),
+                zustaende(w, StartStufe.WAECHTER))
+            assertTrue("nichts im Start-Protokoll: $log", log.isEmpty())
+            assertTrue("der Ablauf wartet trotzdem nur 20 s (Rest nicht aufgehalten)",
+                zeit(w, StartStufe.REST) - waechter in 20_000L..21_000L)
+            assertEquals(StufeZustand.BEREIT, StartStatus.stand(200_000L).first { it.first == StartStufe.WAECHTER }.second)
+        } finally {
+            StartStatus.protokoll = vorher
+            StartStatus.zuruecksetzen()
+        }
+    }
+
+    @Test
+    fun echterNichtstartDesWaechtersWirdNachDerNachfristGemeldet() {
+        val w = Welt()
+        val log = ArrayList<String>()
+        val vorher = StartStatus.protokoll
+        StartStatus.zuruecksetzen()
+        StartStatus.protokoll = { e, v -> log.add("$e $v") }
+        try {
+            val stufen = listOf(StartStufe.OBERFLAECHE, StartStufe.WAECHTER, StartStufe.REST)
+            StartStatus.beginne(stufen, 0L)
+            StartAblauf(
+                stufen = stufen, bootSchutzMs = 1_000L,
+                plane = { ms, r -> w.plane(ms, r) }, jetzt = { w.jetzt }, toroffen = { true },
+                aktion = { s -> w.aktionen.add(Pair(s, w.jetzt)) },
+                pruefen = { s, rueck -> rueck(s != StartStufe.WAECHTER) },
+                melde = { s, z -> w.meldungen.add(Triple(s, z, w.jetzt)); StartStatus.melde(s, z, w.jetzt) }
+            ).starten()
+            w.laufen(200_000)
+            val waechter = zeit(w, StartStufe.WAECHTER)
+            val nicht = w.meldungen.single { it.first == StartStufe.WAECHTER && it.second == StufeZustand.STARTET_NICHT }
+            val frist = DaemonStartPlan.zeitlimitMs(StartStufe.WAECHTER) + DaemonStartPlan.nachfristMs(StartStufe.WAECHTER)
+            assertEquals(80_000L, frist)
+            assertTrue("nach Limit + Nachfrist (80 s)", nicht.third - waechter in frist..frist + 2_500L)
+            assertEquals(listOf("STUFE_STARTET_NICHT stufe=waechter grund=zeitlimit_ablauf"), log)
+            assertTrue("unter dem Anzeige-Rückfall", frist + 45_000L + 60_000L < StartStatus.ZEITLIMIT_MS)
+            assertTrue("Rest trotzdem nach 20 s", zeit(w, StartStufe.REST) - waechter in 20_000L..21_000L)
+        } finally {
+            StartStatus.protokoll = vorher
+            StartStatus.zuruecksetzen()
+        }
+    }
+
     @Test
     fun zugangStartetNichtNachDerBeobachtung() {
         val w = Welt()

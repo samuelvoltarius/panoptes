@@ -62,7 +62,10 @@ public final class EinstellungenApiHandler {
         }
         // 0.1.38.7: drei Werte für das Auto-Display (Darstellung, Startansicht, Hell/Dunkel), kurz genug zum Abfragen im Takt
         if (pathOnly.equals("/api/einstellungen/anzeige") && method.equals("GET")) {
-            HttpResponse.sendJson(out, anzeigeStand(UnifiedConfigManager.loadConfig()).toString());
+            JSONObject stand = anzeigeStand(UnifiedConfigManager.loadConfig());
+            // 0.1.43.7 (Paket E): Kennung der ausgelieferten Web-Dateien; ändert sie sich (neuer Kern), prüft die Seite einmal
+            try { stand.put("webStand", WebStand.kennung()); } catch (Throwable ignored) { }
+            HttpResponse.sendJson(out, stand.toString());
             return true;
         }
         if (pathOnly.equals("/api/einstellungen") && method.equals("GET")) {

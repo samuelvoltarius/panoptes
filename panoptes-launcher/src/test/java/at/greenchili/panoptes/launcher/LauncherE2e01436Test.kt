@@ -12,7 +12,7 @@ class LauncherE2e01436Test {
     @Test
     fun h2BitteHatFeldUndSchatten() {
         val k = quelle("FahrzeugKacheln.kt")
-        assertTrue(k.contains("        Lesbar.feld(bitte, ui)\n        c.addView(bitte, LinearLayout.LayoutParams(-2, -2).apply { gravity = Gravity.END"))
+        assertTrue(k.contains("        Lesbar.zeile(c, bitte, ui, Gravity.END)"))   // seit 0.1.43.7 über Lesbar.zeile
         assertTrue(k.contains("v.setShadowLayer(ui.dpf(2f), 0f, ui.dpf(1f), schatten(hell))"))
         // Nacht: dunkles Feld, Tag: helles Feld – jeweils deutlich deckend
         assertTrue(k.contains("if (hell) android.graphics.Color.argb(178, 255, 255, 255) else android.graphics.Color.argb(153, 6, 11, 20)"))

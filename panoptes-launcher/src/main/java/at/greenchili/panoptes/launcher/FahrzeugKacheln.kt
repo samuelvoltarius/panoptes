@@ -176,8 +176,9 @@ class FahrzeugKacheln(
         tippen.zonen = { w, h -> tippZonen(w, h, bild.hatBild()) }
         tippen.getippt = { teil -> teilGetippt(teil) }
         // 0.1.44 (D1b): Namensnennung der Renderbilder (CC BY 4.0) sichtbar unter dem Auto
+        // 0.1.43.7 (Paket E): alle Hinweiszeilen unter dem Fahrzeugbild einheitlich auf eigenem Feld (Lesbar.zeile)
         val nennung = ui.leise("", 11f).apply { gravity = Gravity.END; visibility = View.GONE }
-        c.addView(nennung, ui.lp(-1, -2))
+        Lesbar.zeile(c, nennung, ui, Gravity.END)
         // 0.1.43.4 (Foto statt Zeichnung): dezente Bitte um ein 3D-Modell, Tipp öffnet die Panoptes-Seite
         val bitte = ui.leise(ctx.getString(R.string.fahrzeug_modell_bitte), 11f).apply {
             gravity = Gravity.END; visibility = View.GONE
@@ -188,12 +189,12 @@ class FahrzeugKacheln(
             }
         }
         // 0.1.43.6 (E2E H2): vor hellen Spiegelungen der Nachtszene lesbar – eigenes, abgedunkeltes Feld und Textschatten
-        Lesbar.feld(bitte, ui)
-        c.addView(bitte, LinearLayout.LayoutParams(-2, -2).apply { gravity = Gravity.END; topMargin = ui.dp(2) })
+        Lesbar.zeile(c, bitte, ui, Gravity.END)
         val knoepfe = LinearLayout(ctx).apply { gravity = Gravity.CENTER }
         c.addView(knoepfe, ui.lp(-1, -2, oben = 4))
+        // 0.1.43.7 (Paket E, E2E_01436b H2): „Fensterstand nicht lesbar“ verschwamm nachts mit den Spiegelungen
         val leer = ui.leise(ctx.getString(R.string.fenster_unbekannt), 14f).apply { gravity = Gravity.CENTER }
-        c.addView(leer, ui.lp(-1, -2, oben = 4))
+        Lesbar.zeile(c, leer, ui, Gravity.CENTER_HORIZONTAL, oben = 4)
         var zuletzt: List<String>? = null
         reg {
             val s = summary()
@@ -518,5 +519,11 @@ object Lesbar {
         v.background = android.graphics.drawable.GradientDrawable().apply { cornerRadius = ui.dpf(8f); setColor(grund(hell)) }
         v.setPadding(ui.dp(8), ui.dp(3), ui.dp(8), ui.dp(3))
         v.setShadowLayer(ui.dpf(2f), 0f, ui.dpf(1f), schatten(hell))
+    }
+
+    /** Hinweiszeile unter dem Fahrzeugbild: eigenes Feld, nur so breit wie der Text, Tag und Nacht gleich gebaut. */
+    fun zeile(c: LinearLayout, v: TextView, ui: Ui, lage: Int, oben: Int = 2) {
+        feld(v, ui)
+        c.addView(v, LinearLayout.LayoutParams(-2, -2).apply { gravity = lage; topMargin = ui.dp(oben) })
     }
 }

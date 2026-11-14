@@ -53,6 +53,8 @@ public class HttpServer {
     static { UebernahmeApiHandler.anmelden(); }   // Kern 5: Erkennung für den Einrichtungsschritt extra_overdrive
 
     private static final String WEB_ROOT = at.greenchili.surfmate.util.DaemonStorage.rebase("/data/user_de/0/com.android.shell/surfmate/web");
+    /** 0.1.43.7: ausgeliefertes Web-Verzeichnis, für {@link WebStand}. */
+    static String webRoot() { return WEB_ROOT; }
     private final int port;
     private ServerSocket serverSocket;
     private volatile boolean running = true;
