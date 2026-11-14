@@ -2435,6 +2435,12 @@
         "dark": "Dunkel",
         "light": "Hell"
       },
+      "stil": {
+        "title": "Aussehen",
+        "help": "Gilt für alle Geräte: Auto, PC und Handy. Es ändert sich nur das Aussehen, keine Funktion.",
+        "panoptes": "Panoptes",
+        "launcher": "Launcher-Stil"
+      },
       "befehleAnsicht": {
         "title": "Befehle-Ansicht",
         "help": "Auf der Seite Steuerung: Automatisch richtet sich nach der Bildschirmbreite. Auto zeigt das Auto, Kacheln zeigt große Kacheln.",

@@ -162,19 +162,19 @@ def maske(b, modell, merk, weg=()):
         groesse = ndimage.sum(np.ones_like(a), teile, range(1, n + 1))
         haupt = teile == (int(np.argmax(groesse)) + 1)
         a = np.where(ndimage.binary_dilation(haupt, iterations=6), a, 0).astype(np.uint8)
-    # bis auf 5 % an den Rand heran = abgeschnitten (oder von einer verdeckten Stelle begrenzt): dort ausblenden
+    # bis auf 2 % an den Rand heran = abgeschnitten: dort ausblenden (ein Auto 4 % vom Rand ist vollständig, z. B. Tang)
     r = max(2, int(0.06 * max(w, h)))
     ys, xs = np.where(a > 128)
     rampe = np.linspace(0.0, 1.0, r, dtype=np.float32)
     f = np.ones(a.shape, dtype=np.float32)
     l, re, o = int(xs.min()), int(xs.max()) + 1, int(ys.min())
-    if l < 0.05 * w:
+    if l < 0.02 * w:
         f[:, l:l + r] *= rampe[None, :w - l][:, :min(r, w - l)]
         f[:, :l] = 0
-    if re > 0.95 * w:
+    if re > 0.98 * w:
         f[:, max(0, re - r):re] *= rampe[::-1][None, -min(r, re):]
         f[:, re:] = 0
-    if o < 0.05 * h:
+    if o < 0.02 * h:
         f[o:o + r, :] *= rampe[:min(r, h - o), None]
         f[:o, :] = 0
     return (a * f).astype(np.uint8)

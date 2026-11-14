@@ -2435,6 +2435,12 @@
         "dark": "Dark",
         "light": "Light"
       },
+      "stil": {
+        "title": "Look",
+        "help": "Applies to all devices: car, PC and phone. Only the look changes, no function.",
+        "panoptes": "Panoptes",
+        "launcher": "Launcher style"
+      },
       "befehleAnsicht": {
         "title": "Commands view",
         "help": "On the Controls page: Automatic follows the screen width. Car shows the car, Tiles shows large tiles.",

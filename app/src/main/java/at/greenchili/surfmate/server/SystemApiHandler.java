@@ -462,6 +462,8 @@ public class SystemApiHandler {
                 } catch (Throwable ignored) { }
             }
             res.put("umfang", Erststart.umfang(cfg));
+            // 0.1.43.6: Aussehen der Weboberfläche (panoptes | launcher) für jede Seite; ohne Wert „panoptes“
+            res.put("stil", at.greenchili.surfmate.einstellungen.Katalog.stil(cfg));
             if (v != null && v.has("nominalKwh") && !v.isNull("nominalKwh")) {
                 res.put("batteryKwh", v.optDouble("nominalKwh", 0));
             }

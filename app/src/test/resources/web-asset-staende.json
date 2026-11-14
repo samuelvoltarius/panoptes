@@ -1,0 +1,434 @@
+{
+ "DRACOLoader.js": {
+  "sha256": "d508e5d3af5a4ec2e6572c112fcc24874dab5a065bd218ed3e089ee43478aed5",
+  "v": "12"
+ },
+ "GLTFLoader.js": {
+  "sha256": "b2edda923572c73e6b30b139756d182c87e2c34d022845c6e067a9a0a9544e01",
+  "v": "12"
+ },
+ "OrbitControls.js": {
+  "sha256": "b4c6e53f98538535b11fd6655627d47fb5877b3ad972568bff0a7026c4b6d5c4",
+  "v": "12"
+ },
+ "SotaPlayer.js": {
+  "sha256": "11b508fc1a6b1e0f06708f71d8018043392edd51fa9d680b15e93555bd70870f",
+  "v": "13"
+ },
+ "abrp.js": {
+  "sha256": "f9698de72ddfe158a7e9a30863149d3eed7923045584a97e9c0f9a55e981fc2d",
+  "v": "apikey1"
+ },
+ "anzeige.css": {
+  "sha256": "ff1102f56d96ebb05febfc441641498bd12221d57b08892e10ef0715294fd9a1",
+  "v": "6"
+ },
+ "anzeige.js": {
+  "sha256": "6f0370ecfff69c29343207e72ee27b9f06f1e3340275e34f2ba91072d28f1f8a",
+  "v": "5"
+ },
+ "app-collapse.js": {
+  "sha256": "62fa50219cc4cbe989af1bf6a727d8bdbb7705daa6edf44594814db8b5e4f975",
+  "v": "2"
+ },
+ "app-shell.js": {
+  "sha256": "5020855df4d4a17db2197da03c383bbcff117a519469b99fe0b8aa9e5dfb214e",
+  "v": "pn38"
+ },
+ "app-updates.js": {
+  "sha256": "d69b44e6fdfe3f7cdc3fc42365d7b0cad356f2b3e2e1e0bec205ffbbb89f3731",
+  "v": "7"
+ },
+ "assistenz-hinweis.js": {
+  "sha256": "eb08f98acf32bc2fe76d9c2a714ed24f642e57396b18b90d867056e0d6eb6821",
+  "v": "1"
+ },
+ "audio-library.js": {
+  "sha256": "613cd4904e2ef21d40f218d2f1762538a1e220b40776364223c407fc806160aa",
+  "v": "3"
+ },
+ "auth.js": {
+  "sha256": "2b153c830ff2114f2a7291d5b9aefe2920ac7a4e8be5eece314bf05ffb68af0a",
+  "v": "12"
+ },
+ "automations.css": {
+  "sha256": "974a057fd6a423a0fc0a001da7730bee7d16048f77e6268020af619896b8157d",
+  "v": "av54"
+ },
+ "automations.js": {
+  "sha256": "1b9ff186ded47c8b96597ba207237ca6115643807b0c6a54342d79a84115d15e",
+  "v": "av75"
+ },
+ "backup-flow.js": {
+  "sha256": "46fc5be33c98371822b0553449647ba6b4879895ba37fbab6e24fc1f070722a4",
+  "v": "3"
+ },
+ "befehle-kacheln.css": {
+  "sha256": "8c67d3552ee0a77eb0d259c9dd0dcf895e3f3f26ff55017ab9a62f218efd1076",
+  "v": "1"
+ },
+ "befehle-kacheln.js": {
+  "sha256": "d698afd70f201f6d9a5bf894d1ecc9c131ad969446b5c1499b3a39d657921e54",
+  "v": "1"
+ },
+ "befehlslog.js": {
+  "sha256": "a1b1b346a10d19b9125491af616a0534e3d61df330ffb3d1d130ab861113fbb0",
+  "v": "4"
+ },
+ "belegung.js": {
+  "sha256": "e790948feae9e705587dabe0e776b650ae7e3a8ca5a2bd0b473291832af3f9fc",
+  "v": "2"
+ },
+ "blitzer.js": {
+  "sha256": "3d96e79a30681b69b4fde3de7d7b77538b9eb967063f5b6c6a69e03846423c6e",
+  "v": "5"
+ },
+ "cabin-audio-worklet.js": {
+  "sha256": "f3be766012b4ea240ec6f9ea355f1a3ad135db2fd528571b7c6229b53d99553b",
+  "v": "1"
+ },
+ "cabin-audio.js": {
+  "sha256": "e006006db61945a6b8c6762bb5a9abdf7562806abe75ea8b06ea7fb8a9393c45",
+  "v": "2"
+ },
+ "charging.js": {
+  "sha256": "32bc49c96f157498707021591c0e9fc9ac4e4fccfb1ccb2a33f9e0bb05a5714c",
+  "v": "52"
+ },
+ "clip-keep.js": {
+  "sha256": "493d3f11b82d72ad125fcf32dda12a78d1293ee37e14b02ff723d5cdf4e3a82e",
+  "v": "pn7"
+ },
+ "cluster-projection.js": {
+  "sha256": "039db4eaf846489d19afde6580c0b391eb3198d890daa5fd94c5441766e645b6",
+  "v": "1"
+ },
+ "communicate-worklet.js": {
+  "sha256": "74004790438dc5b7549fbfb29601719ef533dccd46fad46967d677333ccb74f0",
+  "v": "1"
+ },
+ "communicate.css": {
+  "sha256": "e53b3fb32aec78badb43a4c4e652de7201ac7b09414d3413b6d3f2d06157da06",
+  "v": "5"
+ },
+ "communicate.js": {
+  "sha256": "154e21bbd739c05eb92d2cb65bf1329080bdd0b7829af9755450cd18cf913ebf",
+  "v": "12"
+ },
+ "community-automations.css": {
+  "sha256": "a5db362ffe981b67b59b7fb4a6ba56a49ce200bc19968db40e54f2fced5c7318",
+  "v": "4"
+ },
+ "community-automations.js": {
+  "sha256": "4552c535f500e3fbbca75e265fcd74ccceca71946eeb2ca8633046448c5ededd",
+  "v": "8"
+ },
+ "community-karte.js": {
+  "sha256": "4010715a6c62c02bce596e220a97ca5cab2566bb0c85a5e17ce3eb04ce1b9e65",
+  "v": "1"
+ },
+ "core.js": {
+  "sha256": "ad00950c72d31319289cbb3408ad5720fc5ed7fe3c2b5b102e74c2db8da348b0",
+  "v": "pn6"
+ },
+ "display-werkzeuge.js": {
+  "sha256": "ff4bb30858240581d3c984c42077bec5c3a95556b9f54fb8d59c726ef46a0a96",
+  "v": "1"
+ },
+ "einrichtung-web.js": {
+  "sha256": "a3f93fcddad987126deb245fce0599594df29c4ce7b1f66333c6c8c1b33909e8",
+  "v": "13"
+ },
+ "einstellungen.js": {
+  "sha256": "498622f4ea56320b3a70ed48f79b1c45bbbd4b96f679f5949ab87961c9b91d0c",
+  "v": "pn9"
+ },
+ "ev-card-3d.js": {
+  "sha256": "e312933456599e1ead0b997cb558eced54789729d74067f0307acb7faf45a2c7",
+  "v": "2"
+ },
+ "events.js": {
+  "sha256": "c1177f5c729d6cee68322db0568a32b05acebcf3b03fa4360d159d9d40885347",
+  "v": "zurueck14c"
+ },
+ "fahrt-statistik.js": {
+  "sha256": "5e5eeea882e01beaea25c5cdb51721fe5e7c340f4d27d756beef191ceaa87b73",
+  "v": "1"
+ },
+ "fahrzeug-foto.js": {
+  "sha256": "6e69e803a5af0d069ff69e1ad8577f84a34204b8c56911b3cf9c56b25b2d640d",
+  "v": "2"
+ },
+ "genai.js": {
+  "sha256": "6e66c65f8a158f6d46572717c0c41a586d58ea28d0c3737ad6918f0ef1d970e4",
+  "v": "13"
+ },
+ "gewohnheit-karte.js": {
+  "sha256": "c8bb589c66b0e423fc37e2ac99940388baf3f0e6941534ad0279b563ef3975eb",
+  "v": "1"
+ },
+ "gsap.min.js": {
+  "sha256": "28033e449a31ebcc396e5be8b13b63152bf03094288fb5867034321927bce087",
+  "v": "12"
+ },
+ "guard-trigger.js": {
+  "sha256": "f338527aee16dfee19dc3396f2469373fe03ebf5d1b3fdfeef45191a071740fb",
+  "v": "pn9"
+ },
+ "hinweise.js": {
+  "sha256": "60701fba90e50a9ed2c060c9f5bdfd541aa7ce963612581617a34027233edc18",
+  "v": "pn10"
+ },
+ "home-layout.js": {
+  "sha256": "394d5ba8d61ea21a86de0b4483c256d9af7417344907dc8d0ea08c8e53c24d1e",
+  "v": "2"
+ },
+ "kartenquelle.js": {
+  "sha256": "f314b03e57fad7351292b2c37c310615496e9c3c9e2e8144f8e9fc5b42149af6",
+  "v": "6"
+ },
+ "key-mapping.js": {
+  "sha256": "09b84e834ff8490c55b6b5b37a82a367e27d3624ec17c2c4568a6b255bb9bb7f",
+  "v": "39"
+ },
+ "klima-stufe.js": {
+  "sha256": "80810121d8d3ceb23e69324b0897b2313add612898ac202523d7869a3f9f339f",
+  "v": "2"
+ },
+ "kompat.js": {
+  "sha256": "64d492aaad5762e3f9b2588abf0598b6f2c5782d148b8d84eae7fc014cecce53",
+  "v": "1"
+ },
+ "laden-nachfrage.js": {
+  "sha256": "d7a99783744d5d4100e66704106b13c8c3f8baf4f62f16651db768a0efb26863",
+  "v": "1"
+ },
+ "laden-vorlieben.js": {
+  "sha256": "980fa491128d2df94120e824e67490259494e15f6e033b43387edb578d09c620",
+  "v": "2"
+ },
+ "ladesaeule.js": {
+  "sha256": "f9205cd934485ddb4d791141dff0791f4eade7c3af7d8a8082ea609c4b5f9682",
+  "v": "1"
+ },
+ "ladeverlust-hinweis.js": {
+  "sha256": "6ac8fd6dd3b9241766f7c287b19fdae8b489f8bde21a0fa0ee2225c1d190a944",
+  "v": "2"
+ },
+ "launcher-karte.js": {
+  "sha256": "c894085aae8cc61b9bbc38ac8f3f611010813f9469313a1d89a31ef6770366eb",
+  "v": "4"
+ },
+ "map.js": {
+  "sha256": "00a5f9c3d54ce582321d85465cac481a50083049307012d62a2d46d85c6d2ec9",
+  "v": "10"
+ },
+ "mqtt.js": {
+  "sha256": "a4564e70cc9c221efb5fe33c0566a5c323869fe642c5a9f11bf203a0fbdde739",
+  "v": "6"
+ },
+ "nachbepreisung.js": {
+  "sha256": "b35aae8ffa844802764bf2f6d7ef74f7a871861cb65f4b9975918322c908128d",
+  "v": "1"
+ },
+ "navi-etappen.js": {
+  "sha256": "6366359f34f83c19bcac9f28444fc50fc546a7252a810ddfc13613bbf36b7913",
+  "v": "1"
+ },
+ "network.js": {
+  "sha256": "39a32d7b695102b0f5c3d3e2fb5988edc1264f84c4b98a97bf43507921420c6e",
+  "v": "3"
+ },
+ "neuigkeiten.js": {
+  "sha256": "7ba8443e0ccf170162552d1e4b9a5ed8f5ba7f8780313a6786e4699cb52d7b0f",
+  "v": "4"
+ },
+ "notif-log.js": {
+  "sha256": "d7ed7c5ab16409ebe30058e5052a7dde6413af8dc81b59846d921404203e8234",
+  "v": "3"
+ },
+ "notzugang.js": {
+  "sha256": "31150624c1dc911b1dd377341b5e0e56868f273ff5c2b0588a54e154c77ce8f0",
+  "v": "1"
+ },
+ "overdrive-verlauf.js": {
+  "sha256": "f349a1cb8bd1a12ed807dcfa0b5cbd8eb440af62541e841b05a3a53c4fcc421f",
+  "v": "2"
+ },
+ "panoptes-map.js": {
+  "sha256": "c132d4d79cebca0ecb7b850c9be2072dc34b35d30d6b8a75bf63ef4186e2dae5",
+  "v": "12"
+ },
+ "parking-settings.js": {
+  "sha256": "86c739e08112f6af3e1ec951f7f00f4b40e0e0fe2b88edc5fa2eca4bb65a1fc3",
+  "v": "4"
+ },
+ "parking.js": {
+  "sha256": "92bfa923ff91b037178c5c0de4b24561f32bd6c6da2b87c601e62a0731b10c70",
+  "v": "10"
+ },
+ "performance.js": {
+  "sha256": "8a0f39f08b7d3143c4bd262cfd60101d0957704490a702aa055ad44ca35427bf",
+  "v": "14"
+ },
+ "pip.js": {
+  "sha256": "67678203b950ee124e67f530d0855cbfcdc9b18fa7716bdf7a41e048337578bf",
+  "v": "3"
+ },
+ "pwa-init.js": {
+  "sha256": "b1ac3441542cfc7c4f4a299cad0f3076744ea07d7b59a0fb6e1f6bc8e31f5d6e",
+  "v": "index2"
+ },
+ "recording.js": {
+  "sha256": "8b089bd007d8f8c2019fcae356ac44903ded43b3a31d11d2398410b4762895ed",
+  "v": "budget18"
+ },
+ "reinigung.js": {
+  "sha256": "27439a86a9ac32b34297134ff4c21997d1bc2e394c89d7ef6ad10fc548ff1d4b",
+  "v": "1"
+ },
+ "remote-dev-view.js": {
+  "sha256": "5a64257ab2c79cc65ffa1c9065a0b593982ffd99d57b2a09afa85f581095bb9e",
+  "v": "11"
+ },
+ "road-sense.js": {
+  "sha256": "c8c5a5ced5ba2a6dcaae80429bb1bb0a3dbf12cf5857f39022e11e56021208f0",
+  "v": "zugriff1"
+ },
+ "roi-schedule.js": {
+  "sha256": "f4739970f2380486090341a1451bcdf9f68adec6c88a03cc4f26db15c9f0c12f",
+  "v": "3"
+ },
+ "safe-locations.js": {
+  "sha256": "3a5d6744522aac7f72799de0690a862a2b6f946311e898b0fc5b060197efd02a",
+  "v": "ml4"
+ },
+ "seat-positions.css": {
+  "sha256": "4a120a96749f2d66098a300e4bb4e3da822a988421679d9d6dad3ceb8a882944",
+  "v": "9"
+ },
+ "seat-positions.js": {
+  "sha256": "ba9184f1b10740b363d9dd85443e9e22e843c2f2fda4cde602d5f036b4a6658c",
+  "v": "8"
+ },
+ "settings-hydration.js": {
+  "sha256": "c7bf545102b6cb09d0d5207fd62bbc5c6d4c60854da8d881c495ab3dfe41efba",
+  "v": "1"
+ },
+ "skeleton.js": {
+  "sha256": "9083927f1265b1025792cff6c606a48ddb38a123aee66d2d9228ef7d161cfa81",
+  "v": "4"
+ },
+ "sprachmodell.js": {
+  "sha256": "61aa2cc0bc6bc816e070e8f39c08a3b8d98cb5cef18ae94e07b94c46ad40a916",
+  "v": "2"
+ },
+ "start-karte.js": {
+  "sha256": "cbe4a54a1908cfbe15a2139964e41b2c2a7f36718690655781450b5486710610",
+  "v": "1"
+ },
+ "stil-launcher.css": {
+  "sha256": "6e01bf7f4fc139286f5edf0899aedaa9e29fcb435c95c51b4de5ea78887bded7",
+  "v": "1"
+ },
+ "storage-budget.js": {
+  "sha256": "0759e424f82460f8dc9d3729f8ca9c800a66ef321cb36568933d9c58b749148f",
+  "v": "8"
+ },
+ "stream.js": {
+  "sha256": "5abb7c8df88e092abb72c80dbffb06ac804c8b7f164568e67c1f7f1238a6c757",
+  "v": "index5"
+ },
+ "styles.css": {
+  "sha256": "6e8575540f35a8a60f037664067f1d1f619a55594fd106fd08cd83b88b396eb9",
+  "v": "pn16"
+ },
+ "surveillance.js": {
+  "sha256": "3b6b4ab1f92dbf993c635da5ee0fc01942d4af794bb3b867976e708ce3cf32fa",
+  "v": "survtoggle14"
+ },
+ "system-overview.js": {
+  "sha256": "4ba225bcdb8931180cad31706a617288b4f674289091f90c011dbf91b5d43e0e",
+  "v": "11"
+ },
+ "system.js": {
+  "sha256": "0f54c2df74545d2895a68c1fd670b58dd055d98dcd688c2a40b93f1d850b4a4e",
+  "v": "4"
+ },
+ "tacho-ansichten.js": {
+  "sha256": "bd9c318245557b68ca4d4a2b4cdcf4e3e226a970309ae75f7aaeb3834f16e258",
+  "v": "1"
+ },
+ "tacho-appwahl.js": {
+  "sha256": "183f0a332dae81365beba7036591ecf82ea93e12f32821df257b9adbde218185",
+  "v": "5"
+ },
+ "tacho-auswahl.js": {
+  "sha256": "0efe099dfa572b4c341e674052e48eb6be1ae72a26c5dc62609c080b64f5a519",
+  "v": "3"
+ },
+ "tacho-designs.js": {
+  "sha256": "ec1804d9c76c6f41bbcb5201dc9f6f0eb987f68a212b7fe20aed3b0ac88429d3",
+  "v": "4"
+ },
+ "tacho-faehigkeit.js": {
+  "sha256": "91d3960ea5d1f57c2a4362d05f191e7ed851e6e6bc297ed368b6f1e7830fb151",
+  "v": "1"
+ },
+ "tacho-galerie.js": {
+  "sha256": "084c08f311174d2ff59885d4c0466d69bcbac3b724badf7bd72b3fb514d034fb",
+  "v": "2"
+ },
+ "tacho-gestalten.js": {
+  "sha256": "43c32ec2957e1efe4b7bae8685dc25073bcb8509ced5ec1d92f557bf0f013f98",
+  "v": "4"
+ },
+ "tacho-groesse.js": {
+  "sha256": "db3605029ced4a9d4e0bd199bf27f22d19843903e14a9e0a867fa4c3567438ae",
+  "v": "1"
+ },
+ "theme.js": {
+  "sha256": "0e0e39f8baa957875cc4b1a97f5fd0fe157c418fb54977caf37472ea55c971b7",
+  "v": "14"
+ },
+ "three.min.js": {
+  "sha256": "f34446bf875b5fb0dcd93819ffe1d9e182d46634ee855f5d904c6c4ac7cdbc95",
+  "v": "12"
+ },
+ "trips.js": {
+  "sha256": "a511ca84ad45b8a0aa1db9fbff92d7a8d7ec034d8c312868a9c12c746b9f5778",
+  "v": "panoptes9"
+ },
+ "ts-https.js": {
+  "sha256": "da73861a8fb40bf6469626cc6714a33fbe0855a81045b1b2d4670c77ea36ce2a",
+  "v": "2"
+ },
+ "vehicle-control.css": {
+  "sha256": "ec3d1cca458295af2b456345e2bcfbb4b3b90c37b975c6573d151e9584316904",
+  "v": "49"
+ },
+ "vehicle-control.js": {
+  "sha256": "9c9f89e08bedbf9f0cfe8da0486b3b73b74fff3e5d58d7f291cd9d48020cfb04",
+  "v": "vclite41"
+ },
+ "waechter-zustand.js": {
+  "sha256": "b4aefa196b59f0885021555045de2ab4291c2b42a9ec1debf9feb1f556b98fdd",
+  "v": "2"
+ },
+ "wireguard.js": {
+  "sha256": "c448ed4ad39b8de9cce2605a2e1e8ab5d5d64b2501ab431960174956b190d813",
+  "v": "1"
+ },
+ "zaehlen-frage.js": {
+  "sha256": "2c63da9c1d63098463bf22205c6ec6e1443c2e424dcac5d6a5d44af8e2c1fd18",
+  "v": "1"
+ },
+ "zugangscode.js": {
+  "sha256": "2620d4245abf1124595abfd433b6972e2f91d43b54424d558ab761fc8a24c920",
+  "v": "1"
+ },
+ "zusatzknoepfe.js": {
+  "sha256": "f8c1d25aaa0779eaacf6aba48d1eaba809fa5f6cf4baaea8284aae5d3110f46d",
+  "v": "1"
+ }
+}

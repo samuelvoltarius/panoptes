@@ -2441,6 +2441,12 @@
         "dark": "Donker",
         "light": "Licht"
       },
+      "stil": {
+        "title": "Uiterlijk",
+        "help": "Geldt voor alle apparaten: auto, pc en telefoon. Alleen het uiterlijk verandert, geen functie.",
+        "panoptes": "Panoptes",
+        "launcher": "Launcher-stijl"
+      },
       "befehleAnsicht": {
         "title": "Opdrachtenweergave",
         "help": "Op de pagina Bediening: Automatisch volgt de schermbreedte. Auto toont de auto, Tegels toont grote tegels.",

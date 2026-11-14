@@ -1,0 +1,228 @@
+/* 0.1.43.6 (14.11., „als alternatives Design mit einbauen“): Launcher-Stil L3 für die Panoptes-Weboberfläche.
+ *
+ * Wirkt NUR unter html[data-stil="launcher"] (theme.js stempelt das aus der Kern-Einstellung anzeige.stil). Ohne das
+ * Attribut ändert diese Datei nichts – das bisherige Panoptes-Design bleibt Standard und unverändert.
+ * Werte wie im Launcher (Gestaltung.kt/Bausteine.kt: Glas, Signal, Schriftstufen) und in der Handy-App
+ * (tools/design-l3-tokens.css): Akzent Aqua #35D0E6, OK #5EE3A1, Warnung #FFB454, Fehler #FF6B6B, Glas-Karten,
+ * Sora (Titel/Zahlen) und Manrope (Text) – beide OFL, lokal eingebettet über design-tokens.css (kein CDN).
+ *
+ * Chromium 74 (Auto): kein backdrop-filter → @supports-not mit festem, dichtem Glas wie im Launcher (dunkel .88, hell .94).
+ * Präfix `:not(#pn)` hebt die Spezifität einmalig über die Seitenregeln, ohne !important; keine neue Funktion.
+ */
+
+/* ---------- Farben und Maße: Nacht ---------- */
+html[data-stil="launcher"]:not(#pn) {
+    color-scheme: dark;
+    --primary: #35D0E6;
+    --on-primary: #04202A;
+    --primary-container: #0E4652;
+    --on-primary-container: #C9F5FB;
+    --secondary: #9FB0C6;
+    --on-secondary: #0E1B2C;
+    --secondary-container: #1B2A40;
+    --on-secondary-container: #D6E2F0;
+    --tertiary: #35D0E6;
+    --on-tertiary: #04202A;
+    --tertiary-container: #0E4652;
+    --on-tertiary-container: #C9F5FB;
+    --error: #FF6B6B;
+    --on-error: #3D0B0B;
+    --error-container: #5C1A1A;
+    --on-error-container: #FFD9D9;
+    --background: #060B14;
+    --on-background: #EEF4FB;
+    --surface: #0D1626;
+    --on-surface: #EEF4FB;
+    --surface-variant: #1B2A40;
+    --on-surface-variant: #9FB0C6;
+    --surface-dim: #060B14;
+    --surface-bright: #22324A;
+    --surface-container-lowest: #04070D;
+    --surface-container-low: #0A1220;
+    --surface-container: #0D1626;
+    --surface-container-high: #121D30;
+    --surface-container-highest: #18253A;
+    --outline: #8394AB;
+    --outline-variant: #1B2A40;
+    --inverse-surface: #EEF4FB;
+    --inverse-on-surface: #0E1B2C;
+    --inverse-primary: #0A8197;
+    --status-success: #5EE3A1;
+    --status-warning: #FFB454;
+    --status-danger: #FF6B6B;
+    --status-info: #35D0E6;
+    --status-success-container: rgba(94, 227, 161, 0.14);
+    --status-warning-container: rgba(255, 180, 84, 0.14);
+    --status-danger-container: rgba(255, 107, 107, 0.14);
+    --status-info-container: rgba(53, 208, 230, 0.14);
+    --radius-lg: 22px;
+    --radius-xl: 28px;
+    --sm-ocean: #0B1526;
+    --sm-teal: #4F63D9;
+    --sm-aqua: #35D0E6;
+    --sm-lime: #5EE3A1;
+    --sm-line: rgba(255, 255, 255, 0.10);
+    --sm-card: rgba(16, 26, 42, 0.58);
+    --sm-page-bg: radial-gradient(1100px 620px at 88% -12%, rgba(53, 208, 230, 0.16), transparent 62%),
+        radial-gradient(900px 600px at -10% 110%, rgba(122, 140, 255, 0.10), transparent 60%), #060B14;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.40);
+    --shadow-md: 0 8px 22px rgba(0, 0, 0, 0.38);
+    --shadow-lg: 0 14px 40px rgba(0, 0, 0, 0.50);
+    --pn-glas-dicht: rgba(16, 26, 42, 0.88);
+    --pn-glas-licht: rgba(255, 255, 255, 0.06);
+    --pn-glas-schatten: 0 12px 32px rgba(0, 0, 0, 0.38);
+    --pn-leiste: rgba(6, 11, 20, 0.62);
+    --pn-leiste-dicht: rgba(6, 11, 20, 0.96);
+    --pn-aktiv-a: rgba(53, 208, 230, 0.22);
+    --pn-aktiv-b: rgba(53, 208, 230, 0.10);
+}
+
+/* ---------- Farben und Maße: Tag ---------- */
+html[data-stil="launcher"][data-theme="light"]:not(#pn) {
+    color-scheme: light;
+    --primary: #0A8197;
+    --on-primary: #FFFFFF;
+    --primary-container: #C9F5FB;
+    --on-primary-container: #04202A;
+    --secondary: #37506B;
+    --on-secondary: #FFFFFF;
+    --secondary-container: #D6E2F0;
+    --on-secondary-container: #0E1B2C;
+    --tertiary: #0A8197;
+    --on-tertiary: #FFFFFF;
+    --tertiary-container: #C9F5FB;
+    --on-tertiary-container: #04202A;
+    --error: #C0392B;
+    --on-error: #FFFFFF;
+    --error-container: #FFDAD6;
+    --on-error-container: #3D0B0B;
+    --background: #DCE7F2;
+    --on-background: #0E1B2C;
+    --surface: #F4F8FC;
+    --on-surface: #0E1B2C;
+    --surface-variant: #D6E2F0;
+    --on-surface-variant: #37506B;
+    --surface-dim: #DCE7F2;
+    --surface-bright: #FFFFFF;
+    --surface-container-lowest: #FFFFFF;
+    --surface-container-low: #F4F8FC;
+    --surface-container: #EAF1F8;
+    --surface-container-high: #E2EBF4;
+    --surface-container-highest: #D6E2F0;
+    --outline: #5F7590;
+    --outline-variant: #C3D2E2;
+    --inverse-surface: #0E1B2C;
+    --inverse-on-surface: #EEF4FB;
+    --inverse-primary: #35D0E6;
+    --status-success: #0F9D63;
+    --status-warning: #C76A00;
+    --status-danger: #C0392B;
+    --status-info: #0A8197;
+    --status-success-container: rgba(15, 157, 99, 0.12);
+    --status-warning-container: rgba(199, 106, 0, 0.12);
+    --status-danger-container: rgba(192, 57, 43, 0.12);
+    --status-info-container: rgba(10, 129, 151, 0.12);
+    --sm-aqua: #0A8197;
+    --sm-lime: #0F9D63;
+    --sm-line: rgba(20, 40, 70, 0.14);
+    --sm-card: rgba(255, 255, 255, 0.72);
+    --sm-page-bg: radial-gradient(1100px 620px at 88% -12%, rgba(53, 208, 230, 0.18), transparent 62%), linear-gradient(170deg, #E9F1F8, #DCE7F2 70%);
+    --shadow-sm: 0 1px 2px rgba(20, 40, 70, 0.08);
+    --shadow-md: 0 6px 16px rgba(20, 40, 70, 0.12);
+    --shadow-lg: 0 10px 28px rgba(20, 40, 70, 0.14);
+    --pn-glas-dicht: rgba(255, 255, 255, 0.94);
+    --pn-glas-licht: rgba(255, 255, 255, 0.55);
+    --pn-glas-schatten: 0 10px 28px rgba(20, 40, 70, 0.12);
+    --pn-leiste: rgba(255, 255, 255, 0.74);
+    --pn-leiste-dicht: rgba(250, 252, 255, 0.97);
+    --pn-aktiv-a: rgba(10, 129, 151, 0.18);
+    --pn-aktiv-b: rgba(10, 129, 151, 0.07);
+}
+
+/* ---------- Grund und Schrift ---------- */
+html[data-stil="launcher"]:not(#pn), html[data-stil="launcher"]:not(#pn) body { background: var(--sm-page-bg); background-attachment: fixed; }
+html[data-stil="launcher"]:not(#pn) body { font-weight: 500; }
+html[data-stil="launcher"]:not(#pn) body::before { opacity: 0; }   /* L3 ohne Wellenmuster */
+html[data-stil="launcher"]:not(#pn) .page-header { background: var(--background); }
+html[data-stil="launcher"]:not(#pn) .page-title { font-weight: 700; letter-spacing: -0.015em; }
+
+/* ---------- Glas-Karten (Glas/GlasFlaeche im Launcher: oben heller, 1 px Rand, Innenlicht, weicher Schatten) ---------- */
+html[data-stil="launcher"]:not(#pn) .card, html[data-stil="launcher"]:not(#pn) .hc {
+    background-color: var(--sm-card);
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 45%);
+    border: 1px solid var(--sm-line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--pn-glas-schatten), inset 0 1px 0 var(--pn-glas-licht);
+    -webkit-backdrop-filter: blur(18px) saturate(1.2); backdrop-filter: blur(18px) saturate(1.2);
+}
+/* Beschriftung wie Stufe BESCHRIFTUNG: Großbuchstaben, weit gesperrt, gedämpft, kräftig */
+html[data-stil="launcher"]:not(#pn) .card-title {
+    font-family: var(--family-sans); font-size: 12px; font-weight: 700; letter-spacing: .14em; color: var(--on-surface-variant);
+}
+html[data-stil="launcher"]:not(#pn) .card-title svg { color: var(--primary); }
+
+/* ---------- Startseite: Kacheln (.hc) als Glas, Pegel-Karte mit Akzent-Schimmer, Hauptaktion in Akzentfarbe ---------- */
+html[data-stil="launcher"]:not(#pn) .hc {
+    background-color: var(--sm-card);
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 45%);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--pn-glas-schatten), inset 0 1px 0 var(--pn-glas-licht);
+}
+html[data-stil="launcher"]:not(#pn) .hc h2 {
+    font-family: var(--family-sans); font-size: 12px; font-weight: 700; letter-spacing: .14em; color: var(--on-surface-variant);
+}
+html[data-stil="launcher"]:not(#pn) .hc h2 .more { letter-spacing: 0; color: var(--primary); }
+html[data-stil="launcher"]:not(#pn) .c-hero {
+    background-image: radial-gradient(420px 260px at 0% 0%, rgba(53, 208, 230, 0.16), rgba(53, 208, 230, 0) 70%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 45%);
+}
+html[data-stil="launcher"]:not(#pn) .act.primary, html[data-stil="launcher"]:not(#pn) .act.primary svg {
+    background: #35D0E6; color: #04202A;
+}
+html[data-stil="launcher"]:not(#pn) .act.primary svg { background: none; }
+
+/* ---------- Seitenleiste: Glas, aktive Zeile als Akzent-Pille ---------- */
+html[data-stil="launcher"]:not(#pn) .sidebar {
+    background: var(--pn-leiste);
+    -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+    border-right: 1px solid var(--sm-line);
+}
+html[data-stil="launcher"]:not(#pn) .sidebar::before { background: linear-gradient(90deg, #35D0E6, #7A8CFF); }
+html[data-stil="launcher"]:not(#pn) .sidebar-nav .nav-link { border-radius: 999px; }
+html[data-stil="launcher"]:not(#pn) .sidebar-nav .nav-link.active,
+html[data-stil="launcher"]:not(#pn) .sidebar-nav .nav-link[aria-current="page"] {
+    background: linear-gradient(180deg, var(--pn-aktiv-a), var(--pn-aktiv-b));
+}
+html[data-stil="launcher"]:not(#pn) .sidebar-nav .nav-link.active::before,
+html[data-stil="launcher"]:not(#pn) .sidebar-nav .nav-link[aria-current="page"]::before { background: var(--primary); }
+html[data-stil="launcher"]:not(#pn) .sidebar-nav .nav-link.active .nav-icon,
+html[data-stil="launcher"]:not(#pn) .sidebar-nav .nav-link[aria-current="page"] .nav-icon { color: var(--primary); }
+
+/* ---------- Knöpfe, Pillen, Felder ---------- */
+html[data-stil="launcher"]:not(#pn) .btn, html[data-stil="launcher"]:not(#pn) button.btn { border-radius: 999px; font-weight: 700; }
+html[data-stil="launcher"]:not(#pn) .btn-primary { background: var(--primary); color: var(--on-primary); border-color: transparent; }
+html[data-stil="launcher"]:not(#pn) .btn-secondary, html[data-stil="launcher"]:not(#pn) .btn-outline {
+    background: var(--sm-card); border: 1px solid var(--sm-line); color: var(--on-surface);
+}
+html[data-stil="launcher"]:not(#pn) .badge, html[data-stil="launcher"]:not(#pn) .pill, html[data-stil="launcher"]:not(#pn) .chip {
+    border-radius: 999px; font-weight: 700;
+}
+html[data-stil="launcher"]:not(#pn) input[type="text"], html[data-stil="launcher"]:not(#pn) input[type="number"],
+html[data-stil="launcher"]:not(#pn) input[type="search"], html[data-stil="launcher"]:not(#pn) select,
+html[data-stil="launcher"]:not(#pn) textarea { border-radius: 12px; }
+/* Auswahl-Kacheln (z. B. Aussehen): gewählt in Akzentfarbe statt Limette */
+html[data-stil="launcher"]:not(#pn) .dp-thema[aria-pressed="true"] { border-color: var(--primary); }
+
+/* ---------- Chromium 74 (Auto) ohne backdrop-filter: dichtes Glas statt Durchschein ---------- */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    html[data-stil="launcher"]:not(#pn) .card, html[data-stil="launcher"]:not(#pn) .hc { background-color: var(--pn-glas-dicht); }
+    html[data-stil="launcher"]:not(#pn) .sidebar { background: var(--pn-leiste-dicht); }
+}
+/* Am Auto-Display (App-WebView) ohne Unschärfe rechnen – spart Grafiklast, gleiches Bild wie oben */
+html[data-stil="launcher"][data-android-app]:not(#pn) .card, html[data-stil="launcher"][data-android-embed]:not(#pn) .card,
+html[data-stil="launcher"][data-android-app]:not(#pn) .hc, html[data-stil="launcher"][data-android-embed]:not(#pn) .hc {
+    -webkit-backdrop-filter: none; backdrop-filter: none; background-color: var(--pn-glas-dicht);
+}
+html[data-stil="launcher"][data-android-app]:not(#pn) .sidebar, html[data-stil="launcher"][data-android-embed]:not(#pn) .sidebar {
+    -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--pn-leiste-dicht);
+}

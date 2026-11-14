@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
     <title data-i18n="shell.page_display">Display</title>
     <link rel="icon" type="image/webp" href="../shared/app-icon-dark.webp">
-    <script src="../shared/theme.js?v=13"></script>
-    <script src="../shared/app-shell.js?v=pn37"></script>
+    <script src="../shared/theme.js?v=14"></script>
+    <script src="../shared/app-shell.js?v=pn38"></script>
     <link rel="stylesheet" href="../shared/styles.css?v=pn16">
     <style>
         /* 0.1.38 „Apps & Display → Display“: alles, was das Display im Auto betrifft, auf einer Seite (REGEL 50+). */
@@ -41,6 +41,16 @@
         .dp-v-dunkel { background:#0A2238; } .dp-v-dunkel i { background:#1E4A6A; }
         .dp-v-hell { background:#F4F7FA; } .dp-v-hell i { background:#C9D6E2; }
         .dp-v-auto { background:linear-gradient(90deg, #0A2238 50%, #F4F7FA 50%); } .dp-v-auto i { background:#7F98AE; }
+        /* 0.1.43.6 Aussehen: kleine Vorschau je Stil, links Nacht, rechts Tag (feste Farben, unabhängig vom aktuellen Stil) */
+        .dp-stile { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; }
+        .dp-stilv { display:flex; width:100%; height:78px; border-radius:10px; overflow:hidden; }
+        .dp-stilv > b { flex:1; display:flex; flex-direction:column; gap:5px; padding:8px; }
+        .dp-stilv u { display:block; height:22px; border-radius:6px; }
+        .dp-stilv s { display:block; width:60%; height:8px; border-radius:4px; }
+        .dp-sv-p-n { background:linear-gradient(160deg, #0A2238, #071A2B); } .dp-sv-p-n u { background:rgba(255,255,255,.06); border:1px solid rgba(160,230,240,.14); } .dp-sv-p-n s { background:#B5F23D; }
+        .dp-sv-p-t { background:linear-gradient(160deg, #F6FBFC, #E3F0F4); } .dp-sv-p-t u { background:rgba(255,255,255,.8); border:1px solid rgba(10,34,56,.10); } .dp-sv-p-t s { background:#4E7F00; }
+        .dp-sv-l-n { background:radial-gradient(120px 60px at 80% 0%, rgba(53,208,230,.28), transparent 70%), #060B14; } .dp-sv-l-n u { background:rgba(16,26,42,.78); border:1px solid rgba(255,255,255,.10); border-radius:9px; } .dp-sv-l-n s { background:#35D0E6; border-radius:9px; }
+        .dp-sv-l-t { background:#DCE7F2; } .dp-sv-l-t u { background:rgba(255,255,255,.92); border:1px solid rgba(20,40,70,.14); border-radius:9px; } .dp-sv-l-t s { background:#0A8197; border-radius:9px; }
         #dpPaket { width:100%; margin:10px 0; padding:12px; font-size:16px; border-radius:10px; background:var(--bg-elevated);
             color:var(--text-primary); border:1px solid var(--border-default); }
         @media (max-width:520px) { .sys-grid { grid-template-columns:1fr; } }
@@ -68,6 +78,16 @@
                 <div class="card-body">
                     <!-- 0.1.38.7: klar getrennt. „Für das Auto-Display“ liegt im Kern und geht auch vom PC/Handy aus (Auto holt es alle 8 s);
                          „Nur für dieses Gerät“ bleibt im Browser und erscheint nur am Handy/PC. -->
+                    <!-- 0.1.43.6 (14.11.): Aussehen der Oberfläche, im Kern (anzeige.stil), gilt für Auto, PC und Handy -->
+                    <div class="dp-gruppe" id="stilGruppe">
+                        <div class="dp-gruppentitel" data-i18n="display.stil_titel">Aussehen der Oberfläche</div>
+                        <p class="dp-note" data-i18n="display.stil_hilfe">Gilt für alle Geräte: Auto, PC und Handy. Es ändert sich nur das Aussehen, keine Funktion.</p>
+                        <div class="dp-stile" id="stilWahl">
+                            <button type="button" class="dp-thema" data-stil-wahl="panoptes"><span class="dp-stilv"><b class="dp-sv-p-n"><u></u><s></s></b><b class="dp-sv-p-t"><u></u><s></s></b></span><span data-i18n="display.stil_panoptes">Panoptes</span></button>
+                            <button type="button" class="dp-thema" data-stil-wahl="launcher"><span class="dp-stilv"><b class="dp-sv-l-n"><u></u><s></s></b><b class="dp-sv-l-t"><u></u><s></s></b></span><span data-i18n="display.stil_launcher">Launcher-Stil</span></button>
+                        </div>
+                        <div class="dp-note" id="stilMeldung" aria-live="polite"></div>
+                    </div>
                     <div class="dp-gruppe" id="ausAuto">
                         <div class="dp-gruppentitel" data-i18n="display.fuer_auto_titel">Für das Auto-Display</div>
                         <p class="dp-note" data-i18n="display.fuer_auto_hilfe">Das wird im Auto gespeichert. Du kannst es auch vom PC oder Handy aus ändern. Das Auto übernimmt es in wenigen Sekunden.</p>
@@ -262,6 +282,25 @@
         var darst = window.PanoptesDarstellung, home = window.PanoptesHomeLayout;
         var amAuto = !!(darst && darst.display && darst.display());
         function neuZeichnen(f) { if (window.BYD && BYD.i18n && BYD.i18n.onChange) BYD.i18n.onChange(f); }
+        // ---- 0.1.43.6 Aussehen der Oberfläche (im Kern, für alle Geräte)
+        var stile = document.querySelectorAll('[data-stil-wahl]');
+        function markiereStil(w) {
+            Array.prototype.forEach.call(stile, function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-stil-wahl') === w ? 'true' : 'false'); });
+        }
+        if (window.BYD && BYD.stil) {
+            markiereStil(BYD.stil.get());
+            BYD.stil.lesen().then(function (w) { if (w) { BYD.stil.anwenden(w); markiereStil(w); } });
+        }
+        Array.prototype.forEach.call(stile, function (b) {
+            b.onclick = function () {
+                var w = b.getAttribute('data-stil-wahl'), m = document.getElementById('stilMeldung');
+                if (!(window.BYD && BYD.stil)) return;
+                BYD.stil.setzen(w).then(function (ok) {
+                    if (ok) { markiereStil(w); if (m) m.textContent = ''; }
+                    else if (m) m.textContent = (BYD.i18n && BYD.i18n.t && BYD.i18n.t('display.stil_fehler')) || 'Speichern hat nicht geklappt. Das Aussehen ist unverändert.';
+                });
+            };
+        });
         // ---- Für das Auto-Display (im Kern, auch vom PC/Handy aus)
         var autoThemen = document.querySelectorAll('[data-thema-auto]');
         function markiereAuto(w) {

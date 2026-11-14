@@ -2441,6 +2441,12 @@
         "dark": "Scuro",
         "light": "Chiaro"
       },
+      "stil": {
+        "title": "Aspetto",
+        "help": "Vale per tutti i dispositivi: auto, PC e telefono. Cambia solo l’aspetto, nessuna funzione.",
+        "panoptes": "Panoptes",
+        "launcher": "Stile launcher"
+      },
       "befehleAnsicht": {
         "title": "Vista dei comandi",
         "help": "Nella pagina Comandi: Automatico segue la larghezza dello schermo. Auto mostra l'auto, Riquadri mostra grandi riquadri.",

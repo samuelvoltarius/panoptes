@@ -509,7 +509,7 @@
     },
     {
       "id": "tang",
-      "photo": {"file": "tang-ev_front.jpg", "sha256": "c5de28d3a5f300df12a8c6dff22d7a75c6268a69c844bf140fd12ca58cf68f9d", "author": "Ethan Llamas", "license": "CC-BY-SA-4.0", "sourceUrl": "https://commons.wikimedia.org/wiki/File:BYD_Tang_EV_Silver_Sand_Black_-_front.jpg", "url": "https://upload.wikimedia.org/wikipedia/commons/8/85/BYD_Tang_EV_Silver_Sand_Black_-_front.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original", "verdecken": [[0.0, 0.12, 0.09, 0.42]]},
+      "photo": {"file": "tang-ev_snowy-white_01.jpg", "sha256": "c93dda5bc181accc781cdeddaf831e38def29c21114469e22ef0f03a5a3ca65c", "author": "Ethan Llamas", "license": "CC-BY-SA-4.0", "sourceUrl": "https://commons.wikimedia.org/wiki/File:BYD_Tang_EV_Snowy_White_01.jpg", "url": "https://upload.wikimedia.org/wikipedia/commons/8/8f/BYD_Tang_EV_Snowy_White_01.jpg", "verdecken": [[0.84, 0.565, 0.935, 0.645]]},
       "name": "BYD Tang",
       "file": "tang.glb",
       "sizeBytes": 100620,

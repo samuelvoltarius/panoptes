@@ -2441,6 +2441,12 @@
         "dark": "Sombre",
         "light": "Clair"
       },
+      "stil": {
+        "title": "Apparence",
+        "help": "S’applique à tous les appareils : voiture, PC et téléphone. Seule l’apparence change, aucune fonction.",
+        "panoptes": "Panoptes",
+        "launcher": "Style du lanceur"
+      },
       "befehleAnsicht": {
         "title": "Vue des commandes",
         "help": "Sur la page Commandes : Automatique suit la largeur de l'écran. Voiture montre la voiture, Tuiles montre de grandes tuiles.",

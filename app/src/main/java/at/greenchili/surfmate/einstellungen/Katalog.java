@@ -50,6 +50,17 @@ public final class Katalog {
     public static final String UMFANG = "anzeige.umfang";
     public static final String UMFANG_EINFACH = "einfach";
     public static final String UMFANG_ALLE = "alle";
+    /** 0.1.43.6 (14.11.): Aussehen der Weboberfläche für alle Geräte. Standard „panoptes“ = das bisherige Design. */
+    public static final String STIL = "anzeige.stil";
+    public static final String STIL_PANOPTES = "panoptes";
+    public static final String STIL_LAUNCHER = "launcher";
+
+    /** Gespeicherter Stil; ohne gültigen Wert „panoptes“ – Bestandsnutzer sehen nichts Neues, bis sie umschalten. */
+    public static String stil(JSONObject root) {
+        JSONObject a = root == null ? null : root.optJSONObject("anzeige");
+        String w = a == null ? "" : a.optString("stil", "");
+        return STIL_LAUNCHER.equals(w) ? STIL_LAUNCHER : STIL_PANOPTES;
+    }
 
     /** E4: Wert für den ersten Start – Neuinstallation „einfach“, Bestand „alle“ (nie still umschalten). */
     public static String umfangFuerErstenStart(boolean bestand) {
@@ -388,6 +399,12 @@ public final class Katalog {
         thema.optionen.add(new Feld.Option("dark", "settings.anzeige.thema.dark"));
         thema.optionen.add(new Feld.Option("light", "settings.anzeige.thema.light"));
         l.add(thema);
+        // 0.1.43.6: Aussehen der Weboberfläche (Auto, PC, Handy). Nur CSS-Variablen/Klasse an <html>, keine Funktion ändert sich.
+        Feld stil = new Feld(STIL, Feld.Typ.AUSWAHL);
+        stil.gruppe = "system"; stil.reihenfolge = 5; stil.standard = STIL_PANOPTES;
+        stil.optionen.add(new Feld.Option(STIL_PANOPTES, "settings.anzeige.stil.panoptes"));
+        stil.optionen.add(new Feld.Option(STIL_LAUNCHER, "settings.anzeige.stil.launcher"));
+        l.add(stil);
         // Befehle-Ansicht (Seite Steuerung): automatisch = je nach Bildschirmbreite (Handy Kacheln, sonst Auto), sonst fest.
         Feld befAns = new Feld("anzeige.befehleAnsicht", Feld.Typ.AUSWAHL);
         befAns.gruppe = "system"; befAns.reihenfolge = 5; befAns.standard = "automatisch";

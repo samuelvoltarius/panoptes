@@ -1123,6 +1123,8 @@
                     modelId: p.modelId || '', modellGewaehlt: p.modellGewaehlt, color: p.color || '',
                     batteryKwh: p.batteryKwh || 0 });
             umfangAbgleichen(p.umfang);
+            // 0.1.43.6: Aussehen aus dem Kern (gilt für alle Geräte); fehlt der Wert (ältere App), bleibt alles, wie es ist
+            if ((p.stil === 'panoptes' || p.stil === 'launcher') && window.BYD && BYD.stil) BYD.stil.anwenden(p.stil);
         }).catch(function () {
             // Ältere App ohne Profil-Schnittstelle: wenigstens das Modell zeigen.
             fetch('/api/models/selected').then(function (r) { return r.json(); }).then(function (m) {

@@ -157,6 +157,33 @@
         stamp(resolveEffective(stored));
     }
 
+    // ─── Step 1b: Aussehen (0.1.43.6, 14.11.) ─────────────────────────
+    // „panoptes“ (Standard, bisheriges Design) oder „launcher“ (L3-Design des Launchers). Quelle ist die Kern-Einstellung
+    // anzeige.stil (gilt für Auto, PC und Handy; app-shell.js gleicht sie über /api/system/profile ab), localStorage nur
+    // Spiegel für den ersten Aufbau. Umschalten = Attribut data-stil an <html> + das Stylesheet stil-launcher.css, das nur
+    // unter html[data-stil="launcher"] wirkt. Keine zweite Seite, keine Funktion ändert sich.
+    var STIL_KEY = 'pn.stil';
+    var STIL_CSS = 'stil-launcher.css?v=1';
+    function stilGueltig(v) { return v === 'launcher' ? 'launcher' : 'panoptes'; }
+    function readStoredStil() {
+        try { return stilGueltig(localStorage.getItem(STIL_KEY)); } catch (e) { return 'panoptes'; }
+    }
+    function stilCssLaden() {
+        if (document.getElementById('pn-stil-launcher')) return;
+        var basis = '../shared/';
+        var eigen = document.currentScript || document.querySelector('script[src*="theme.js"]');
+        if (eigen && eigen.src) basis = eigen.src.replace(/theme\.js(\?.*)?$/, '');
+        var l = document.createElement('link');
+        l.id = 'pn-stil-launcher'; l.rel = 'stylesheet'; l.href = basis + STIL_CSS;
+        (document.head || document.documentElement).appendChild(l);
+    }
+    function stampStil(v) {
+        var root = document.documentElement;
+        if (stilGueltig(v) === 'launcher') { stilCssLaden(); root.setAttribute('data-stil', 'launcher'); }
+        else root.removeAttribute('data-stil');
+    }
+    stampStil(readStoredStil());
+
     // ─── Step 2: server sync ────────────────────────────────────────────────
     // Defer the fetch until DOMContentLoaded so it doesn't block first paint.
     // Skipped inside the Android WebView (the app theme is the source of
@@ -225,6 +252,7 @@
         },
 
         /** Re-apply the stored theme (e.g. after dynamic DOM changes). */
+        stilGet: function () { return readStoredStil(); },
         apply: function () { stamp(resolveEffective(readStoredTheme())); },
 
         /**
@@ -281,6 +309,37 @@
                 .then(function (r) { return r.ok ? r.json() : null; })
                 .then(function (d) { return d && d.werte && d.werte['anzeige.thema'] ? d.werte['anzeige.thema'].wert : null; })
                 .catch(function () { return null; });
+        }
+    };
+
+    /**
+     * 0.1.43.6: Aussehen. anwenden(v) stempelt und merkt den Kern-Wert (von app-shell nach /api/system/profile);
+     * setzen(v) speichert im Kern (Login/Recht wie jede Einstellung), liest zurück und wendet erst dann an.
+     */
+    window.BYD.stil = {
+        get: function () { return readStoredStil(); },
+        anwenden: function (v) {
+            if (v !== 'panoptes' && v !== 'launcher') return;
+            try { localStorage.setItem(STIL_KEY, v); } catch (e) {}
+            stampStil(v);
+        },
+        lesen: function () {
+            return fetch('/api/einstellungen', { cache: 'no-store', credentials: 'same-origin' })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (d) { return d && d.werte && d.werte['anzeige.stil'] ? stilGueltig(d.werte['anzeige.stil'].wert) : null; })
+                .catch(function () { return null; });
+        },
+        setzen: function (v) {
+            if (v !== 'panoptes' && v !== 'launcher') return Promise.resolve(false);
+            var w = {}; w['anzeige.stil'] = v;
+            return fetch('/api/einstellungen', {
+                method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ werte: w })
+            }).then(function () { return window.BYD.stil.lesen(); }).then(function (n) {
+                if (n !== v) return false;
+                window.BYD.stil.anwenden(v);
+                return true;
+            }).catch(function () { return false; });
         }
     };
 

@@ -187,7 +187,9 @@ class FahrzeugKacheln(
                     .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (_: Exception) {}
             }
         }
-        c.addView(bitte, ui.lp(-1, -2))
+        // 0.1.43.6 (E2E H2): vor hellen Spiegelungen der Nachtszene lesbar – eigenes, abgedunkeltes Feld und Textschatten
+        Lesbar.feld(bitte, ui)
+        c.addView(bitte, LinearLayout.LayoutParams(-2, -2).apply { gravity = Gravity.END; topMargin = ui.dp(2) })
         val knoepfe = LinearLayout(ctx).apply { gravity = Gravity.CENTER }
         c.addView(knoepfe, ui.lp(-1, -2, oben = 4))
         val leer = ui.leise(ctx.getString(R.string.fenster_unbekannt), 14f).apply { gravity = Gravity.CENTER }
@@ -502,5 +504,19 @@ object HauptPlaketten {
         Art.TUER -> ctx.getString(R.string.ansicht_tuer_offen)
         Art.FENSTER -> ctx.getString(R.string.ansicht_fenster_offen)
         Art.LAEDT -> ctx.getString(R.string.ansicht_laedt) + (t.kw?.let { " · " + String.format(java.util.Locale.getDefault(), "%.1f kW", it) } ?: "")
+    }
+}
+
+/** 0.1.43.6 (E2E H2): kleine Texte über dem Fahrzeugbild lesbar halten – Feld hinter dem Text plus Schatten, je nach Thema. */
+object Lesbar {
+    /** Farbe des Felds hinter dem Text: Nacht dunkel (60 %), Tag hell (70 %). */
+    fun grund(hell: Boolean): Int = if (hell) android.graphics.Color.argb(178, 255, 255, 255) else android.graphics.Color.argb(153, 6, 11, 20)
+    fun schatten(hell: Boolean): Int = if (hell) android.graphics.Color.argb(200, 255, 255, 255) else android.graphics.Color.argb(220, 0, 0, 0)
+
+    fun feld(v: TextView, ui: Ui) {
+        val hell = ui.p.hell
+        v.background = android.graphics.drawable.GradientDrawable().apply { cornerRadius = ui.dpf(8f); setColor(grund(hell)) }
+        v.setPadding(ui.dp(8), ui.dp(3), ui.dp(8), ui.dp(3))
+        v.setShadowLayer(ui.dpf(2f), 0f, ui.dpf(1f), schatten(hell))
     }
 }

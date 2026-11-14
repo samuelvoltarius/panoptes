@@ -1134,6 +1134,30 @@
         "Na het verwijderen van Panoptes start de achtergronddienst niet meer eindeloos opnieuw. Crasht hij meerdere keren achter elkaar, dan wacht hij langer.",
         "Launcher: merk- en modelnamen krijgen in elke taal de juiste hoofdletters."
       ]
+    },
+    {
+      "version": "0.1.43.6",
+      "versionCode": 90,
+      "de": [
+        "Neu: Die Weboberfläche gibt es jetzt auch im „Launcher-Stil“ mit Glas-Karten und den Farben des Launchers. Wählen kannst du unter Apps & Display → Display → „Aussehen der Oberfläche“; „Panoptes“ bleibt der Standard.",
+        "Fahrzeugbilder: Der Tang hat ein neues, vollständiges Foto. Atto 2, Seal U DM-i, Sealion 7 und Shark sind sauberer freigestellt."
+      ],
+      "en": [
+        "New: the web interface is now also available in “Launcher style” with glass cards and the launcher colours. Choose it under Apps & display → Display → “Look of the interface”; “Panoptes” stays the default.",
+        "Vehicle pictures: the Tang has a new, complete photo. Atto 2, Seal U DM-i, Sealion 7 and Shark are cut out more cleanly."
+      ],
+      "fr": [
+        "Nouveau : l’interface web existe aussi en « Style du lanceur », avec des cartes en verre et les couleurs du launcher. Choix sous Apps & écran → Écran → « Apparence de l’interface » ; « Panoptes » reste le réglage par défaut.",
+        "Images du véhicule : le Tang a une nouvelle photo complète. Atto 2, Seal U DM-i, Sealion 7 et Shark sont détourés plus proprement."
+      ],
+      "it": [
+        "Novità: l’interfaccia web è disponibile anche in “Stile launcher”, con schede in vetro e i colori del launcher. Si sceglie in App & display → Display → “Aspetto dell’interfaccia”; “Panoptes” resta l’impostazione predefinita.",
+        "Immagini del veicolo: il Tang ha una nuova foto completa. Atto 2, Seal U DM-i, Sealion 7 e Shark sono scontornati in modo più pulito."
+      ],
+      "nl": [
+        "Nieuw: de webinterface is nu ook beschikbaar in ‘Launcher-stijl’, met glazen kaarten en de kleuren van de launcher. Kiezen onder Apps & scherm → Scherm → ‘Uiterlijk van de interface’; ‘Panoptes’ blijft de standaard.",
+        "Voertuigafbeeldingen: de Tang heeft een nieuwe, volledige foto. Atto 2, Seal U DM-i, Sealion 7 en Shark zijn netter vrijgesteld."
+      ]
     }
   ]
 }
