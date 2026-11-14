@@ -60,7 +60,7 @@ contained three files derived from [FAST_CAM_CAPTURE](https://github.com/frances
 ## Java/Kotlin libraries (Gradle dependencies)
 
 Including AndroidX and Material Components (Apache-2.0), FlatBuffers Java (Apache-2.0), MapLibre Native Android (BSD-2-Clause),
-dadb (Apache-2.0), OkHttp (Apache-2.0), ZXing (Apache-2.0), TensorFlow Lite Java (Apache-2.0),
+dadb (Apache-2.0), OkHttp (Apache-2.0), ZXing (Apache-2.0, auch im Launcher für den Datei-QR), TensorFlow Lite Java (Apache-2.0),
 Eclipse Paho MQTT (EPL-2.0 / EDL-1.0), H2 Database (MPL-2.0 / EPL-1.0), Java-WebSocket (MIT), Vosk (Apache-2.0)
 and JNA (used under Apache-2.0).
 The exact list and versions are in `app/build.gradle.kts` and `gradle/libs.versions.toml`.
@@ -110,6 +110,15 @@ from the fixed official source and only with the fixed SHA-256 below; a mismatch
 - **Speed limits** (Panoptes Launcher, optional) from OpenStreetMap `maxspeed` (© OpenStreetMap contributors, ODbL 1.0), along the Panoptes route, served via the project's own route planner (Valhalla). Only where OpenStreetMap has a value; no guessing.
 - **3D vehicle models:** models by [Nazh Design](https://sketchfab.com/NazhDesign) under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (logos removed, mesh reduced, Draco-compressed), plus models built for Panoptes under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). Full list: `app/src/main/assets/licenses/MODELLE_LIZENZEN.md`.
 - **Vehicle pictures** (`app/src/main/res/drawable-nodpi/vehicle_*.webp`, since 0.1.20): rendered for Panoptes with `tools/render_vehicle_art.py` (Blender) from the CC BY 4.0 models by [Nazh Design](https://sketchfab.com/NazhDesign): “2023 BYD Seagull”, “2024 BYD Seal Performance AWD”, “2023 BYD Song Plus” (Seal U), “2024 BYD Dolphin Premium Long Range”, “2024 BYD Atto 3 Superior Extended Range” – changed (rendered, cropped). `vehicle_fallback.webp` is a neutral silhouette derived from the “2023 BYD Song Plus” render. Earlier press photos without a licence were removed.
+- **Launcher vehicle pictures** (`panoptes-launcher/src/main/assets/fahrzeug/*_grund.webp`, `*_lack.webp`, since 0.1.43.4): three-quarter views rendered for Panoptes (Blender, own camera, light and paint mask – changed) from the same CC BY 4.0 models by [Nazh Design](https://sketchfab.com/NazhDesign) (seagull/Dolphin Surf, seal, seal-u, dolphin, atto3; logos removed). The attribution “3D: Nazh Design · CC BY 4.0 · verändert” is shown under the picture. Details: `panoptes-launcher/src/main/assets/fahrzeug/QUELLEN.md`.
+- **Launcher vehicle photos** (`panoptes-launcher/src/main/assets/fahrzeug/*_foto.webp`, since 0.1.43.4), all from Wikimedia Commons, changed for Panoptes (cropped to 16:9; except the Sealion 7 photo, number plates, badges, signs and persons made unrecognisable). Changed versions of CC BY-SA photos are released under the same licence. The credit is shown under each photo.
+  - BYD Sealion 7 (`sealion7_foto.webp`): “BYD Sealion 7 Performance AWD Shark Grey 01.jpg” by Ethan Llamas, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), source https://commons.wikimedia.org/wiki/File:BYD_Sealion_7_Performance_AWD_Shark_Grey_01.jpg
+  - BYD Shark (`shark_foto.webp`): “BYD Shark 6 DMO Premium Aurora White.jpg” by Ethan Llamas, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), source https://commons.wikimedia.org/wiki/File:BYD_Shark_6_DMO_Premium_Aurora_White.jpg
+  - BYD Seal U DM-i (`seal-u-dmi_foto.webp`): “BYD Seal U DM-i DSC 9308.jpg” by Alexander Migl, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), source https://commons.wikimedia.org/wiki/File:BYD_Seal_U_DM-i_DSC_9308.jpg
+  - BYD Atto 2 (`atto2_foto.webp`): “BYD Atto 2 DSC 8763.jpg” by Alexander Migl, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), source https://commons.wikimedia.org/wiki/File:BYD_Atto_2_DSC_8763.jpg
+  - BYD Tang (`tang_foto.webp`): “BYD Tang EV Silver Sand Black - front.jpg” by Ethan Llamas, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), source https://commons.wikimedia.org/wiki/File:BYD_Tang_EV_Silver_Sand_Black_-_front.jpg
+  - BYD M6 (`m6_foto.webp`): “BYD M6, Soekarno-Hatta International Airport, 2025 (01).jpg” by Bahnfrend, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), source https://commons.wikimedia.org/wiki/File:BYD_M6,_Soekarno-Hatta_International_Airport,_2025_(01).jpg
+  - BYD Seal 6 GT (`seal6-gt_foto.webp`): “BYD Seal 06 GT 003.jpg” by Quzhouliulian, [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), source https://commons.wikimedia.org/wiki/File:BYD_Seal_06_GT_003.jpg
 - **Charger data:** source and license of the live data are shown in the app below the map (for example EnBW, CC BY 4.0).
 
 ## Modifications (Apache-2.0 §4(b) notice of changes)

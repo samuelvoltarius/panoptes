@@ -1492,6 +1492,12 @@ window.KM = (function () {
             ph.disabled = true; ph.selected = true;
             sel.appendChild(ph);
             var prevFound = false;
+            // 0.1.43.4: der Panoptes Launcher steht ganz oben, damit „Doppeldruck = Launcher öffnen“ zwei Klicks sind
+            var vorn = [], hinten = [];
+            for (var k = 0; k < apps.length; k++) {
+                (apps[k]['package'] === 'at.greenchili.panoptes.launcher' ? vorn : hinten).push(apps[k]);
+            }
+            apps = vorn.concat(hinten);
             for (var i = 0; i < apps.length; i++) {
                 var o = document.createElement('option');
                 o.value = apps[i]['package'];

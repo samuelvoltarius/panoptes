@@ -11,7 +11,7 @@ import org.junit.Test
 import java.io.File
 
 /**
- * E4 (0.1.44, Projektinhaber 13.11.): Modus „Einfach / Alle Funktionen“.
+ * E4 (0.1.44, 13.11.): Modus „Einfach / Alle Funktionen“.
  * Neuinstallation „einfach“, Bestand „alle“ (nie still umschalten), ohne Wert „alle“. Einfach zeigt nur stufe 'a' und
  * keine erweiterten Felder; Suche und Direktlinks finden alles; Notzugang, Fernzugang, Rechtshinweise bleiben erreichbar.
  */

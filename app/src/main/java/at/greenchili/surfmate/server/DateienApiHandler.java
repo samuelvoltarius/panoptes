@@ -53,6 +53,7 @@ public final class DateienApiHandler {
     public static boolean handle(String method, String path, String body, OutputStream out) throws Exception {
         String p = path.contains("?") ? path.substring(0, path.indexOf('?')) : path;
         if (!p.equals(PFAD) && !p.startsWith(PFAD + "/")) return false;
+        if (DateiQrApiHandler.handleAuto(method, p, body, out)) return true;   // 0.1.43.4 Datei per QR (nur am Auto)
         if (p.equals(WECHSEL) || p.startsWith(WECHSEL + "/")) return wechsel(method, p, body, out);
         Dateiablage a = ablage();
         long now = System.currentTimeMillis();

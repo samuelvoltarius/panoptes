@@ -21,7 +21,7 @@ public class LauncherMotiveKernTest {
 
     @Test
     public void motiveBleiben() throws Exception {
-        for (int i = 1; i <= 14; i++) {   // 0.1.44 (D1): 11–14 Szenen
+        for (int i = 1; i <= 20; i++) {   // 0.1.44 (D1): 11–14 Szenen; 0.1.43.4: 15–20 gerenderte Szenen
             LauncherLayoutPruefung.Ergebnis e = LauncherLayoutPruefung.pruefen(roh("motiv-" + i), Collections.<String>emptySet());
             assertEquals("motiv-" + i, e.layout.getString("hintergrund"));
             assertEquals(0, e.bereinigt);
@@ -30,7 +30,7 @@ public class LauncherMotiveKernTest {
 
     @Test
     public void unbekanntWirdPanoptes() throws Exception {
-        for (String s : new String[] {"motiv-0", "motiv-15", "motiv-01", "motiv-", "motiv-x", "foo"}) {
+        for (String s : new String[] {"motiv-0", "motiv-21", "motiv-01", "motiv-", "motiv-x", "foo"}) {
             assertFalse(s, LauncherLayoutPruefung.hintergrundGueltig(s));
             assertEquals(s, "panoptes", LauncherLayoutPruefung.pruefen(roh(s), Collections.<String>emptySet()).layout.getString("hintergrund"));
         }

@@ -7641,5 +7641,8 @@
     "laeuft_schon": "Er wordt al een model geladen.",
     "nur_am_auto": "Laden werkt alleen hier op het autoscherm.",
     "hand": "Of handmatig: zet het bestand {datei} in de map Download (bijv. adb push naar /sdcard/Download) en tik dan op „Uit Download overnemen”."
+  },
+  "fahrzeug_foto": {
+    "bitte": "Heb je een 3D-model van deze auto dat je ons kunt geven? We zouden je dankbaar zijn."
   }
 }

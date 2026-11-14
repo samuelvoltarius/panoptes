@@ -7641,5 +7641,8 @@
     "laeuft_schon": "Un modèle est déjà en cours de téléchargement.",
     "nur_am_auto": "Le téléchargement ne fonctionne que sur l’écran de la voiture.",
     "hand": "Ou à la main : placez le fichier {datei} dans le dossier Download (p. ex. adb push vers /sdcard/Download), puis touchez « Reprendre depuis Download »."
+  },
+  "fahrzeug_foto": {
+    "bitte": "Tu as un modèle 3D de cette voiture à nous donner ? Nous t'en serions reconnaissants."
   }
 }

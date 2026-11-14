@@ -132,9 +132,9 @@ object PanoptesStil {
     val PEGEL_KRITISCH = intArrayOf(hex(0xFF8A6B), hex(0x7A2414))
 
     /** Radien in dp wie index.html: Karte 20 (Cockpit 14), Knopf .act 16, .hbtn 12. */
-    const val RADIUS_KARTE = 20
+    const val RADIUS_KARTE = Mass.RADIUS_GROSS   // 0.1.43.3: Radien aus Gestaltung.kt
     const val RADIUS_KARTE_COCKPIT = 14
-    const val RADIUS_ACT = 16
+    const val RADIUS_ACT = Mass.RADIUS_MITTEL
 
     /** "dark" | "light" | "auto" (appearance.modus) → Palette. auto folgt dem System wie theme.js. */
     fun palette(modus: String?, systemHell: Boolean): Palette = when (modus) {

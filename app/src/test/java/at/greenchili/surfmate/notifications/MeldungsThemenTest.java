@@ -176,7 +176,7 @@ public class MeldungsThemenTest {
     @Test
     public void seiteHatRouteUndLinks() throws Exception {
         String server = Quelltext.lies(Paths.get("src/main/java/at/greenchili/surfmate/server/HttpServer.java"));
-        assertTrue(server.contains("path.equals(\"/meldungen.html\")") && server.contains("\"local/meldungen.html\""));
+        assertTrue(server.contains("pathOnly.equals(\"/meldungen.html\")") && server.contains("\"local/meldungen.html\""));
         // /api/notifications/themen läuft über die bestehende Weiterleitung /api/notifications*
         assertTrue(server.contains("path.startsWith(\"/api/notifications\")"));
         String h = Quelltext.lies(Paths.get("src/main/java/at/greenchili/surfmate/server/NotificationApiHandler.java"));

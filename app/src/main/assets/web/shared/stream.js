@@ -1242,6 +1242,14 @@ BYD.stream = {
         
         // Load saved quality from backend
         this.loadSavedQuality();
+        // 0.1.43.4: Launcher-Deep-Link /live-view?cam=N (0 = 360°, 1 vorne, 2 rechts, 3 hinten, 4 links) waehlt nur vor.
+        try {
+            const camParam = new URLSearchParams(window.location.search).get('cam');
+            if (camParam && /^[0-4]$/.test(camParam)) {
+                this.currentViewMode = parseInt(camParam, 10);
+                if (this.updateCarDiagram) this.updateCarDiagram(this.currentViewMode);
+            }
+        } catch (e) { /* ohne Vorwahl weiter */ }
         
         // Status polling is handled by core.js - no duplicate polling here
         

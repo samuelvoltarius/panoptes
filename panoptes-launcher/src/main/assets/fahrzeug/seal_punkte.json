@@ -1,0 +1,94 @@
+{
+ "modell": "seal",
+ "breite": 1200,
+ "hoehe": 675,
+ "kamera": "dreiviertel_vorn_links",
+ "punkte": {
+  "tuer_vl": {
+   "x": 0.6172,
+   "y": 0.5146,
+   "sichtbar": true
+  },
+  "tuer_hl": {
+   "x": 0.7176,
+   "y": 0.4609,
+   "sichtbar": true
+  },
+  "tuer_vr": {
+   "x": 0.3236,
+   "y": 0.4341,
+   "sichtbar": false
+  },
+  "tuer_hr": {
+   "x": 0.4357,
+   "y": 0.395,
+   "sichtbar": false
+  },
+  "fenster_vl": {
+   "x": 0.6097,
+   "y": 0.3741,
+   "sichtbar": true
+  },
+  "fenster_hl": {
+   "x": 0.7127,
+   "y": 0.334,
+   "sichtbar": true
+  },
+  "fenster_vr": {
+   "x": 0.3377,
+   "y": 0.3193,
+   "sichtbar": false
+  },
+  "fenster_hr": {
+   "x": 0.452,
+   "y": 0.2893,
+   "sichtbar": false
+  },
+  "dach": {
+   "x": 0.5275,
+   "y": 0.2003,
+   "sichtbar": true
+  },
+  "haube": {
+   "x": 0.2823,
+   "y": 0.4549,
+   "sichtbar": true
+  },
+  "kofferraum": {
+   "x": 0.7106,
+   "y": 0.3034,
+   "sichtbar": false
+  },
+  "rad_vl": {
+   "x": 0.504,
+   "y": 0.7221,
+   "sichtbar": true
+  },
+  "rad_hl": {
+   "x": 0.7901,
+   "y": 0.5311,
+   "sichtbar": true
+  },
+  "rad_vr": {
+   "x": 0.2042,
+   "y": 0.6006,
+   "sichtbar": false
+  },
+  "rad_hr": {
+   "x": 0.5217,
+   "y": 0.4615,
+   "sichtbar": false
+  },
+  "mitte": {
+   "x": 0.5149,
+   "y": 0.4253,
+   "sichtbar": true
+  }
+ },
+ "rahmen": {
+  "x0": 0.1333,
+  "x1": 0.8117,
+  "y0": 0.1897,
+  "y1": 0.8533
+ }
+}

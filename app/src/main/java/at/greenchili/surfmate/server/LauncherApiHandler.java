@@ -180,6 +180,28 @@ public final class LauncherApiHandler {
                 HttpResponse.sendJson(out, LauncherMusik.lesen(System.currentTimeMillis(), fokus).toString());
                 return true;
             }
+            // 0.1.43.4 (Kamera im Launcher): Liste der Aufnahmen, NUR LESEN, nur GET, nur Launcher-APK (Anzeigefelder, keine Pfade).
+            if (cleanPath.equals(LauncherAufnahmen.PFAD)) {
+                if (!launcherDarf(out)) return true;
+                if (!"GET".equals(method)) {
+                    HttpResponse.sendJson(out, 405, "{\"ok\":false,\"grund\":\"nur_lesen\"}");
+                    return true;
+                }
+                String zeitQ = null, sortQ = null;
+                int qi = path.indexOf('?');
+                if (qi >= 0) {
+                    for (String kv : path.substring(qi + 1).split("&")) {
+                        if (kv.startsWith("zeit=")) zeitQ = kv.substring(5);
+                        else if (kv.startsWith("sort=")) sortQ = kv.substring(5);
+                    }
+                }
+                long jetzt = System.currentTimeMillis();
+                java.util.Calendar mn = java.util.Calendar.getInstance();
+                mn.set(java.util.Calendar.HOUR_OF_DAY, 0); mn.set(java.util.Calendar.MINUTE, 0);
+                mn.set(java.util.Calendar.SECOND, 0); mn.set(java.util.Calendar.MILLISECOND, 0);
+                HttpResponse.sendJson(out, LauncherAufnahmen.lesen(zeitQ, sortQ, jetzt, mn.getTimeInMillis()).toString());
+                return true;
+            }
             if (cleanPath.equals(LauncherHaus.PFAD) || cleanPath.equals(LauncherSitz.PFAD)) {
                 if (!launcherDarf(out)) return true;
                 if (!"GET".equals(method)) {
@@ -601,6 +623,7 @@ public final class LauncherApiHandler {
         root.put("naviApp",   buildNaviApp());
         root.put("launcherLayout", buildLauncherLayout());
         root.put("koerper",   buildKoerper());   // 0.1.44 (D1): Türen, Fenster, Dach für die Fahrzeug-Ansicht
+        root.put("gurt",      buildGurt());      // 0.1.43.4 (Rang 4): Gurt nur lesen, für die Warnplaketten
         // 0.1.44 (P3): Tempolimit nur belegt und frisch (TempolimitStand), sonst null; leise Warnung ab Werk aus
         Object limit = at.greenchili.surfmate.navmap.nav.TempolimitStand.json(System.currentTimeMillis());
         root.put("tempolimit", limit == null ? JSONObject.NULL : limit);
@@ -752,6 +775,29 @@ public final class LauncherApiHandler {
         } catch (Throwable t) {
             return JSONObject.NULL;
         }
+    }
+
+    /**
+     * 0.1.43.4 (Rang 4, Warnplaketten): Gurtstatus nur lesen. {@code {fahrer, beifahrer}} je true = angelegt,
+     * false = nicht angelegt; nur bekannte Werte, der Beifahrer nur bei belegtem Sitz. Kein Wert = Feld fehlt.
+     */
+    private static Object buildGurt() {
+        try {
+            at.greenchili.surfmate.byd.BydVehicleData vd = at.greenchili.surfmate.byd.BydDataCollector.getInstance().getData();
+            if (vd == null) return JSONObject.NULL;
+            return gurt(vd.seatbeltStatus, vd.passengerDetection);
+        } catch (Throwable t) {
+            return JSONObject.NULL;
+        }
+    }
+
+    /** Reine Umsetzung (im Test belegt): [0] Fahrer, [1] Beifahrer, 1 = angelegt, 0 = nicht; Belegung [0] 1 = besetzt. */
+    static JSONObject gurt(int[] gurt, int[] belegt) throws Exception {
+        JSONObject o = new JSONObject();
+        if (gurt != null && gurt.length > 0 && (gurt[0] == 0 || gurt[0] == 1)) o.put("fahrer", gurt[0] == 1);
+        boolean besetzt = belegt != null && belegt.length > 0 && belegt[0] == 1;
+        if (besetzt && gurt != null && gurt.length > 1 && (gurt[1] == 0 || gurt[1] == 1)) o.put("beifahrer", gurt[1] == 1);
+        return o;
     }
 
     /** Reine Umsetzung (im Test belegt): API-Schlüssel lf/rf/lr/rr/sunroof → vl/vr/hl/hr/dach, nur 0..100. */

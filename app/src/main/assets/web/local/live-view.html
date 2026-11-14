@@ -2288,6 +2288,15 @@
             }
         }
 
+        // 0.1.43.4 Fix R1: Launcher-Deep-Link /live-view?cam=N (0..4) waehlt die Startkamera vor, sonst 360 Grad. ES5.
+        function startKamera() {
+            try {
+                var m = /[?&]cam=([0-4])(?:&|$)/.exec(window.location.search || '');
+                if (m) return parseInt(m[1], 10);
+            } catch (e) { /* ohne Vorwahl */ }
+            return 0;
+        }
+
         // i18n must load before first paint. Once the shared modules and the
         // saved quality are ready, start the useful view immediately instead
         // of presenting an empty "select camera" state.
@@ -2301,7 +2310,7 @@
             BYD.qualityMenu.init();
             if (!BYD.stream.autoStartRequested) {
                 BYD.stream.autoStartRequested = true;
-                await BYD.stream.selectCamera(0);
+                await BYD.stream.selectCamera(startKamera());
             }
         });
 

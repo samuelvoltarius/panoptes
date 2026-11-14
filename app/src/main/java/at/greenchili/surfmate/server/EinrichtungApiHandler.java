@@ -63,7 +63,7 @@ public final class EinrichtungApiHandler {
     public static final Set<String> FORTGESCHRITTEN = new HashSet<>(Arrays.asList("extra_fernzugang", "extra_notzugang"));
 
     /**
-     * 0.1.44 (V1 E3 „Einfach ab Werk“, Projektinhaber 13.11.): Statt einer langen Liste „Noch einrichten“ zeigen Display und
+     * 0.1.44 (V1 E3 „Einfach ab Werk“, 13.11.): Statt einer langen Liste „Noch einrichten“ zeigen Display und
      * Web höchstens diese drei Empfehlungen als große Karten, in dieser Reihenfolge, solange sie offen sind. Alles
      * Weitere bleibt unter „Weitere Schritte“ bzw. „Alle Schritte“ erreichbar, nichts entfällt.
      */

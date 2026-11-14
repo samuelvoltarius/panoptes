@@ -22,6 +22,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import at.greenchili.surfmate.storage.DateiQr;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -646,6 +647,14 @@ public class HttpServer {
                 client.close();
                 return;
             }
+            // 0.1.43.4 Datei per QR: ohne Login, nur mit Einmal-Kennung und nur aus dem lokalen Netz. Lokal heißt: echte
+            // Socket-Adresse privat/Link-Local, kein Loopback (Tailscale kommt über 127.0.0.1), keine Tunnel-Merkmale.
+            if (path.startsWith(DateiQrApiHandler.OEFFENTLICH)) {
+                boolean lan = !hasTunnelHeaders && DateiQr.lokalesNetz(client.getInetAddress());
+                DateiQrApiHandler.handleHandy(method, path, body, out, lan);
+                client.close();
+                return;
+            }
             if (path.startsWith("/auth/")) {
                 String identity;
                 if (forwardedFor != null && !forwardedFor.isEmpty()) {
@@ -816,23 +825,23 @@ public class HttpServer {
                 // Handled by a modular handler
             }
             // Static pages
-            else if (path.equals("/") || path.equals("/index.html")) {
+            else if (pathOnly.equals("/") || pathOnly.equals("/index.html")) {
                 if (!serveStaticFile(out, "local/index.html")) {
                     HttpResponse.sendError(out, 404, "index.html not found");
                 }
-            } else if (path.equals("/assistant.html") || path.equals("/assistant")) {
+            } else if (pathOnly.equals("/assistant.html") || pathOnly.equals("/assistant")) {
                 if (!serveStaticFile(out, "local/assistant.html")) {
                     HttpResponse.sendError(out, 404, "assistant.html not found");
                 }
-            } else if (path.equals("/live-view.html") || path.equals("/live-view")) {
+            } else if (pathOnly.equals("/live-view.html") || pathOnly.equals("/live-view")) {
                 if (!serveStaticFile(out, "local/live-view.html")) {
                     HttpResponse.sendError(out, 404, "live-view.html not found");
                 }
-            } else if (path.equals("/communicate.html") || path.equals("/communicate")) {
+            } else if (pathOnly.equals("/communicate.html") || pathOnly.equals("/communicate")) {
                 if (!serveStaticFile(out, "local/communicate.html")) {
                     HttpResponse.sendError(out, 404, "communicate.html not found");
                 }
-            } else if (path.equals("/apple-touch-icon.png") || path.equals("/apple-touch-icon-precomposed.png")) {
+            } else if (pathOnly.equals("/apple-touch-icon.png") || pathOnly.equals("/apple-touch-icon-precomposed.png")) {
                 // 0.1.21 PWA: iOS fragt das Symbol ohne Anmeldung an der Wurzel ab (PNG, kein WebP)
                 if (!serveStaticFile(out, "shared/apple-touch-icon.png")) HttpResponse.sendError(out, 404, "icon not found");
             } else if (path.startsWith("/manifest.json")) {
@@ -843,159 +852,159 @@ public class HttpServer {
                 if (!serveStaticFile(out, "local/sw.js")) {
                     HttpResponse.sendError(out, 404, "sw.js not found");
                 }
-            } else if (path.equals("/recording.html") || path.equals("/recording")) {
+            } else if (pathOnly.equals("/recording.html") || pathOnly.equals("/recording")) {
                 if (!serveStaticFile(out, "local/recording.html")) {
                     HttpResponse.sendError(out, 404, "recording.html not found");
                 }
-            } else if (path.equals("/parking.html") || path.equals("/parking")) {
+            } else if (pathOnly.equals("/parking.html") || pathOnly.equals("/parking")) {
                 if (!serveStaticFile(out, "local/parking.html")) {
                     HttpResponse.sendError(out, 404, "parking.html not found");
                 }
-            } else if (path.equals("/surveillance.html") || path.equals("/surveillance")) {
+            } else if (pathOnly.equals("/surveillance.html") || pathOnly.equals("/surveillance")) {
                 if (!serveStaticFile(out, "local/surveillance.html")) {
                     HttpResponse.sendError(out, 404, "surveillance.html not found");
                 }
-            } else if (path.equals("/events.html") || path.equals("/events") || 
+            } else if (pathOnly.equals("/events.html") || pathOnly.equals("/events") || 
                        path.startsWith("/events.html?") || path.startsWith("/events?")) {
                 if (!serveStaticFile(out, "local/events.html")) {
                     HttpResponse.sendError(out, 404, "events.html not found");
                 }
-            } else if (path.equals("/performance.html") || path.equals("/performance")) {
+            } else if (pathOnly.equals("/performance.html") || pathOnly.equals("/performance")) {
                 if (!serveStaticFile(out, "local/performance.html")) {
                     HttpResponse.sendError(out, 404, "performance.html not found");
                 }
-            } else if (path.equals("/remote-dev-view.html") || path.equals("/remote-dev-view")) {
+            } else if (pathOnly.equals("/remote-dev-view.html") || pathOnly.equals("/remote-dev-view")) {
                 if (!serveStaticFile(out, "local/remote-dev-view.html")) {
                     HttpResponse.sendError(out, 404, "remote-dev-view.html not found");
                 }
-            } else if (path.equals("/abrp.html") || path.equals("/abrp")) {
+            } else if (pathOnly.equals("/abrp.html") || pathOnly.equals("/abrp")) {
                 if (!serveStaticFile(out, "local/abrp.html")) {
                     HttpResponse.sendError(out, 404, "abrp.html not found");
                 }
-            } else if (path.equals("/mqtt.html") || path.equals("/mqtt")) {
+            } else if (pathOnly.equals("/mqtt.html") || pathOnly.equals("/mqtt")) {
                 if (!serveStaticFile(out, "local/mqtt.html")) {
                     HttpResponse.sendError(out, 404, "mqtt.html not found");
                 }
-            } else if (path.equals("/wireguard.html") || path.equals("/wireguard")) {
+            } else if (pathOnly.equals("/wireguard.html") || pathOnly.equals("/wireguard")) {
                 if (!serveStaticFile(out, "local/wireguard.html")) {
                     HttpResponse.sendError(out, 404, "wireguard.html not found");
                 }
-            } else if (path.equals("/waechter.html") || path.equals("/waechter")) {
+            } else if (pathOnly.equals("/waechter.html") || pathOnly.equals("/waechter")) {
                 if (!serveStaticFile(out, "local/waechter.html")) {
                     HttpResponse.sendError(out, 404, "waechter.html not found");
                 }
-            } else if (path.equals("/testfunktionen.html")) {
+            } else if (pathOnly.equals("/testfunktionen.html")) {
                 // Versteckte Testfunktionen (Über → 7× Version). Die Seite selbst ist harmlos;
                 // die API dahinter (/api/test/*) prüft Login und sperrt Kopplungs-Zugänge.
                 if (!serveStaticFile(out, "local/testfunktionen.html")) {
                     HttpResponse.sendError(out, 404, "testfunktionen.html not found");
                 }
-            } else if (path.equals("/wallbox.html")) {
+            } else if (pathOnly.equals("/wallbox.html")) {
                 // Wallbox-Testseite (Kern 6, 0.1.11); die API dahinter prüft Login, Freigabe und Fahrt-Sperre.
                 if (!serveStaticFile(out, "local/wallbox.html")) HttpResponse.sendError(out, 404, "wallbox.html not found");
-            } else if (path.equals("/ladeplan.html")) {
+            } else if (pathOnly.equals("/ladeplan.html")) {
                 // Ladeplan zu Hause (0.1.20); die API dahinter prüft Login, Freigabe und Fahrt-Sperre.
                 if (!serveStaticFile(out, "local/ladeplan.html")) HttpResponse.sendError(out, 404, "ladeplan.html not found");
-            } else if (path.equals("/orte.html")) {
+            } else if (pathOnly.equals("/orte.html")) {
                 // Orte (0.1.11, ORTE_VERTRAG): Seite nur Anzeige/Formular; /api/orte prüft Login und sperrt die Kopplung.
                 if (!serveStaticFile(out, "local/orte.html")) HttpResponse.sendError(out, 404, "orte.html not found");
-            } else if (path.equals("/dateien.html")) {
+            } else if (pathOnly.equals("/dateien.html")) {
                 // Dateien Handy ↔ Auto: Seite nur Anzeige/Formular; /api/dateien prüft Login bzw. Recht „dateien“.
                 if (!serveStaticFile(out, "local/dateien.html")) HttpResponse.sendError(out, 404, "dateien.html not found");
-            } else if (path.equals("/display.html")) {
+            } else if (pathOnly.equals("/display.html")) {
                 // 0.1.38 Display (Tacho, Hintergrund, Display-Sperre, Launcher): Seite nur Anzeige;
                 // /api/tacho, /api/display und /api/appupdate/launcher prüfen Login und Fahrt-Sperre selbst.
                 if (!serveStaticFile(out, "local/display.html")) HttpResponse.sendError(out, 404, "display.html not found");
-            } else if (path.equals("/camping.html")) {
+            } else if (pathOnly.equals("/camping.html")) {
                 // 0.1.16 Camping (Kern 9): Seite nur Anzeige/Formular; /api/camping prüft Login und Fahrt-Sperre.
                 // Fehlte im Merge (Emulator-Abnahme 23.10.: „Not Found“).
                 if (!serveStaticFile(out, "local/camping.html")) HttpResponse.sendError(out, 404, "camping.html not found");
-            } else if (path.equals("/tiermodus.html")) {
+            } else if (pathOnly.equals("/tiermodus.html")) {
                 // Tiermodus (03.11.2026): große Anzeige fürs Display; /api/tiermodus prüft Login und „direkt am Auto“.
                 if (!serveStaticFile(out, "local/tiermodus.html")) HttpResponse.sendError(out, 404, "tiermodus.html not found");
-            } else if (path.equals("/bericht.html") || path.equals("/bericht")) {
+            } else if (pathOnly.equals("/bericht.html") || pathOnly.equals("/bericht")) {
                 // Monatsbericht (H7): Seite nur lesend, Daten aus /api/bericht/monat.
                 if (!serveStaticFile(out, "local/bericht.html")) {
                     HttpResponse.sendError(out, 404, "bericht.html not found");
                 }
-            } else if (path.equals("/navi.html") || path.equals("/navi")) {
+            } else if (pathOnly.equals("/navi.html") || pathOnly.equals("/navi")) {
                 if (!serveStaticFile(out, "local/navi.html")) {
                     HttpResponse.sendError(out, 404, "navi.html not found");
                 }
-            } else if (path.equals("/trips.html") || path.equals("/trips")) {
+            } else if (pathOnly.equals("/trips.html") || pathOnly.equals("/trips")) {
                 if (!serveStaticFile(out, "local/trips.html")) {
                     HttpResponse.sendError(out, 404, "trips.html not found");
                 }
-            } else if (path.equals("/charging.html") || path.equals("/charging")) {
+            } else if (pathOnly.equals("/charging.html") || pathOnly.equals("/charging")) {
                 if (!serveStaticFile(out, "local/charging.html")) {
                     HttpResponse.sendError(out, 404, "charging.html not found");
                 }
-            } else if (path.equals("/automations.html") || path.equals("/automations")) {
+            } else if (pathOnly.equals("/automations.html") || pathOnly.equals("/automations")) {
                 if (!serveStaticFile(out, "local/automations.html")) {
                     HttpResponse.sendError(out, 404, "automations.html not found");
                 }
-            } else if (path.equals("/apps.html") || path.equals("/apps")) {
+            } else if (pathOnly.equals("/apps.html") || pathOnly.equals("/apps")) {
                 if (!serveStaticFile(out, "local/apps.html")) {
                     HttpResponse.sendError(out, 404, "apps.html not found");
                 }
-            } else if (path.equals("/launcher.html") || path.equals("/launcher")) {
+            } else if (pathOnly.equals("/launcher.html") || pathOnly.equals("/launcher")) {
                 // 0.1.38 „Launcher einrichten“ (Layout im Kern)
                 if (!serveStaticFile(out, "local/launcher.html")) {
                     HttpResponse.sendError(out, 404, "launcher.html not found");
                 }
-            } else if (path.equals("/vehicle-control.html") || path.equals("/vehicle-control")) {
+            } else if (pathOnly.equals("/vehicle-control.html") || pathOnly.equals("/vehicle-control")) {
                 if (!serveStaticFile(out, "local/vehicle-control.html")) {
                     HttpResponse.sendError(out, 404, "vehicle-control.html not found");
                 }
-            } else if (path.equals("/telegram.html") || path.equals("/telegram")) {
+            } else if (pathOnly.equals("/telegram.html") || pathOnly.equals("/telegram")) {
                 if (!serveStaticFile(out, "local/telegram.html")) {
                     HttpResponse.sendError(out, 404, "telegram.html not found");
                 }
-            } else if (path.equals("/meldungen.html")) {
+            } else if (pathOnly.equals("/meldungen.html")) {
                 // 0.1.28 P4 (Kern A): alle Meldungen auf einer Seite; Daten aus /api/notifications/themen.
                 if (!serveStaticFile(out, "local/meldungen.html")) HttpResponse.sendError(out, 404, "meldungen.html not found");
-            } else if (path.equals("/byd-cloud.html") || path.equals("/byd-cloud")) {
+            } else if (pathOnly.equals("/byd-cloud.html") || pathOnly.equals("/byd-cloud")) {
                 if (!serveStaticFile(out, "local/byd-cloud.html")) {
                     HttpResponse.sendError(out, 404, "byd-cloud.html not found");
                 }
-            } else if (path.equals("/road-sense.html") || path.equals("/road-sense")) {
+            } else if (pathOnly.equals("/road-sense.html") || pathOnly.equals("/road-sense")) {
                 if (!serveStaticFile(out, "local/road-sense.html")) {
                     HttpResponse.sendError(out, 404, "road-sense.html not found");
                 }
-            } else if (path.equals("/system.html") || path.equals("/system")) {
+            } else if (pathOnly.equals("/system.html") || pathOnly.equals("/system")) {
                 if (!serveStaticFile(out, "local/system.html")) {
                     HttpResponse.sendError(out, 404, "system.html not found");
                 }
-            } else if (path.equals("/network.html") || path.equals("/network")) {
+            } else if (pathOnly.equals("/network.html") || pathOnly.equals("/network")) {
                 if (!serveStaticFile(out, "local/network.html")) {
                     HttpResponse.sendError(out, 404, "network.html not found");
                 }
-            } else if (path.equals("/notifications.html") || path.equals("/notifications")) {
+            } else if (pathOnly.equals("/notifications.html") || pathOnly.equals("/notifications")) {
                 if (!serveStaticFile(out, "local/notifications.html")) {
                     HttpResponse.sendError(out, 404, "notifications.html not found");
                 }
-            } else if (path.equals("/seat-positions.html") || path.equals("/seat-positions")) {
+            } else if (pathOnly.equals("/seat-positions.html") || pathOnly.equals("/seat-positions")) {
                 if (!serveStaticFile(out, "local/seat-positions.html")) {
                     HttpResponse.sendError(out, 404, "seat-positions.html not found");
                 }
-            } else if (path.equals("/key-mapping.html") || path.equals("/key-mapping")) {
+            } else if (pathOnly.equals("/key-mapping.html") || pathOnly.equals("/key-mapping")) {
                 if (!serveStaticFile(out, "local/key-mapping.html")) {
                     HttpResponse.sendError(out, 404, "key-mapping.html not found");
                 }
-            } else if (path.equals("/fehler-melden.html")) {
+            } else if (pathOnly.equals("/fehler-melden.html")) {
                 if (!serveStaticFile(out, "local/fehler-melden.html")) {
                     HttpResponse.sendError(out, 404, "fehler-melden.html not found");
                 }
-            } else if (path.equals("/auto-funktionen.html")) {
+            } else if (pathOnly.equals("/auto-funktionen.html")) {
                 // 0.1.38.10 Hilfe „Was geht bei meinem Auto“ (nur Anzeige, Modell und Firmware kommen aus /api/rueckmeldung/fehler)
                 if (!serveStaticFile(out, "local/auto-funktionen.html")) {
                     HttpResponse.sendError(out, 404, "auto-funktionen.html not found");
                 }
-            } else if (path.equals("/about.html") || path.equals("/about")) {
+            } else if (pathOnly.equals("/about.html") || pathOnly.equals("/about")) {
                 if (!serveStaticFile(out, "local/about.html")) {
                     HttpResponse.sendError(out, 404, "about.html not found");
                 }
-            } else if (path.equals("/credits.json")) {
+            } else if (pathOnly.equals("/credits.json")) {
                 if (!serveStaticFile(out, "local/credits.json")) {
                     HttpResponse.sendError(out, 404, "credits.json not found");
                 }

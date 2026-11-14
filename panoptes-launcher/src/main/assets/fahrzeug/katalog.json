@@ -1,0 +1,91 @@
+{
+  "alias": {
+    "bydsealudmi": "seal-u-dmi",
+    "bydsongplusdmi": "seal-u-dmi",
+    "dolphinsurf": "seagull",
+    "sealudmi": "seal-u-dmi",
+    "songplusdmi": "seal-u-dmi"
+  },
+  "bitteUrl": "https://byd.serveone.at/",
+  "fotos": {
+    "atto2": {
+      "lizenz": "CC-BY-SA-4.0",
+      "namensnennung": "Foto: Alexander Migl · CC BY-SA 4.0 · bearbeitet",
+      "quelle": "https://commons.wikimedia.org/wiki/File:BYD_Atto_2_DSC_8763.jpg",
+      "sha256": "91930b92a01b040b7ea45ee2bf25afa6adb0fb4290a708098c89611bffb66d39",
+      "urheber": "Alexander Migl"
+    },
+    "m6": {
+      "lizenz": "CC-BY-SA-4.0",
+      "namensnennung": "Foto: Bahnfrend · CC BY-SA 4.0 · bearbeitet",
+      "quelle": "https://commons.wikimedia.org/wiki/File:BYD_M6,_Soekarno-Hatta_International_Airport,_2025_(01).jpg",
+      "sha256": "ff4ac03fc2cf70e0c1d873c86509281fdfdfd5ce6a191993a8e3c6ebf4d94818",
+      "urheber": "Bahnfrend"
+    },
+    "seal-u-dmi": {
+      "lizenz": "CC-BY-SA-4.0",
+      "namensnennung": "Foto: Alexander Migl · CC BY-SA 4.0 · bearbeitet",
+      "quelle": "https://commons.wikimedia.org/wiki/File:BYD_Seal_U_DM-i_DSC_9308.jpg",
+      "sha256": "f815a4091fbae0b8e389dd9058e8fff0aeefd3bbd9f5c8d247f11101c2f74264",
+      "urheber": "Alexander Migl"
+    },
+    "seal6-gt": {
+      "lizenz": "CC0-1.0",
+      "namensnennung": "Foto: Quzhouliulian · CC0",
+      "quelle": "https://commons.wikimedia.org/wiki/File:BYD_Seal_06_GT_003.jpg",
+      "sha256": "281a1a778aedebd24a7415a925660873420850915302f10cad7df4a2b3085552",
+      "urheber": "Quzhouliulian"
+    },
+    "sealion7": {
+      "lizenz": "CC-BY-SA-4.0",
+      "namensnennung": "Foto: Ethan Llamas · CC BY-SA 4.0 · bearbeitet",
+      "quelle": "https://commons.wikimedia.org/wiki/File:BYD_Sealion_7_Performance_AWD_Shark_Grey_01.jpg",
+      "sha256": "04c3e0336c0f56dd42761d6928dba56cecd598da28ed3acfa9951982bff93dc0",
+      "urheber": "Ethan Llamas"
+    },
+    "shark": {
+      "lizenz": "CC-BY-SA-4.0",
+      "namensnennung": "Foto: Ethan Llamas · CC BY-SA 4.0 · bearbeitet",
+      "quelle": "https://commons.wikimedia.org/wiki/File:BYD_Shark_6_DMO_Premium_Aurora_White.jpg",
+      "sha256": "e74116075299c978dd31faaa994ed60fdf92956c72bda6c8e61206fabd8d3837",
+      "urheber": "Ethan Llamas"
+    },
+    "tang": {
+      "lizenz": "CC-BY-SA-4.0",
+      "namensnennung": "Foto: Ethan Llamas · CC BY-SA 4.0 · bearbeitet",
+      "quelle": "https://commons.wikimedia.org/wiki/File:BYD_Tang_EV_Silver_Sand_Black_-_front.jpg",
+      "sha256": "c5de28d3a5f300df12a8c6dff22d7a75c6268a69c844bf140fd12ca58cf68f9d",
+      "urheber": "Ethan Llamas"
+    }
+  },
+  "manifestVersion": 19,
+  "modelle": {
+    "atto3": {
+      "lizenz": "CC-BY-4.0",
+      "namensnennung": "3D: Nazh Design · CC BY 4.0 · verändert",
+      "sha256": "ce2eb2f3953902fda3a6f961c340c675a1f45f65713068da10220330aa6f89a0"
+    },
+    "dolphin": {
+      "lizenz": "CC-BY-4.0",
+      "namensnennung": "3D: Nazh Design · CC BY 4.0 · verändert",
+      "sha256": "778e5795c32c5c768f629aba4f4ba3315f9fac79a3f033875fcf24151779a4cc"
+    },
+    "seagull": {
+      "lizenz": "CC-BY-4.0",
+      "namensnennung": "3D: Nazh Design · CC BY 4.0 · verändert",
+      "sha256": "a01ee0700e071f4ddd04941d1e7db006be1698ea2043b0a83e0e8d3637ef3e86"
+    },
+    "seal": {
+      "lizenz": "CC-BY-4.0",
+      "namensnennung": "3D: Nazh Design · CC BY 4.0 · verändert",
+      "sha256": "0ad562a83141a2112a88e75db049bf6680dd57de5523a2c534c32841ed3aaf88"
+    },
+    "seal-u": {
+      "lizenz": "CC-BY-4.0",
+      "namensnennung": "3D: Nazh Design · CC BY 4.0 · verändert",
+      "sha256": "368b0f4d46b2dd3db5252f555005d0b70ae05890a0441b0f2e461dfb3a92b2b6"
+    }
+  },
+  "quelle": "app/src/main/assets/web/shared/models/manifest.json",
+  "regel": "top == true und verfuegbar != false; sonst photo"
+}

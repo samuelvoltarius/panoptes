@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <meta name="referrer" content="no-referrer">
+    <title>Panoptes – Datei</title>
+    <style>
+        body { margin: 0; background: #0A2238; color: #eef3f8; font: 16px/1.45 system-ui, sans-serif; }
+        main { max-width: 480px; margin: 0 auto; padding: 24px 16px; }
+        h1 { font-size: 20px; margin: 0 0 8px; }
+        p { color: #b9c7d6; }
+        input[type=file] { width: 100%; box-sizing: border-box; margin-top: 8px; padding: 12px; border-radius: 12px;
+                           border: 1px solid #36506a; background: #10304d; color: #fff; font: 16px system-ui, sans-serif; }
+        button { margin-top: 12px; width: 100%; border: 0; border-radius: 12px; padding: 14px; font: 600 16px system-ui, sans-serif;
+                 background: #c6f432; color: #1d2a00; }
+        button:disabled { opacity: .5; }
+        progress { width: 100%; margin-top: 12px; height: 10px; }
+        .ok { color: #c6f432; } .fehler { color: #ffb4a8; }
+    </style>
+</head>
+<body>
+<main>
+    <!-- 0.1.43.4 Datei per QR (F7): ohne Login, nur mit der Einmal-Kennung aus dem QR-Code im Auto, nur im selben WLAN.
+         Die Datei geht nur an dein Auto (dieselbe Adresse), nie an andere Server. ES5. -->
+    <h1 id="titel"></h1>
+    <p id="lead"></p>
+    <input id="datei" type="file" style="display:none">
+    <button id="aktion" type="button"></button>
+    <progress id="fortschritt" value="0" max="100" style="display:none"></progress>
+    <p id="stand"></p>
+</main>
+<script>
+(function () {
+    'use strict';
+    var TEXTE = {
+        de: { u_titel: 'Datei an dein Auto senden', u_lead: 'Wähle eine Datei auf deinem Handy. Sie landet im Panoptes-Ordner im Auto.',
+              u_knopf: 'Datei wählen und senden', h_titel: 'Datei vom Auto laden', h_lead: 'Das Auto bietet dir diese Datei einmal an:',
+              h_knopf: 'Herunterladen', ok_u: 'Fertig – die Datei liegt im Auto. Du kannst die Seite schließen.',
+              ok_h: 'Der Download wurde gestartet. Du kannst die Seite schließen.', sende: 'Wird gesendet …',
+              falsch: 'Dieser Code gilt nicht (mehr). Bitte im Auto einen neuen QR-Code zeigen.', abgelaufen: 'Der Code ist abgelaufen. Bitte im Auto „QR erneuern“ wählen.',
+              zu_viele: 'Zu viele Versuche. Bitte später erneut.', nur_lokales_netz: 'Das geht nur im gleichen WLAN wie das Auto.',
+              zu_gross: 'Die Datei ist zu groß (höchstens 200 MB).', typ: 'Dieser Dateityp ist nicht erlaubt.', belegt: 'Mit diesem Code läuft schon eine Übertragung.',
+              fehlt: 'Kein Code – bitte den QR-Code im Auto scannen.', fehler: 'Das hat nicht geklappt.' },
+        en: { u_titel: 'Send a file to your car', u_lead: 'Pick a file on your phone. It lands in the Panoptes folder in the car.',
+              u_knopf: 'Choose file and send', h_titel: 'Get a file from your car', h_lead: 'The car offers you this file once:',
+              h_knopf: 'Download', ok_u: 'Done – the file is in the car. You can close this page.',
+              ok_h: 'The download has started. You can close this page.', sende: 'Sending …',
+              falsch: 'This code is not valid (any more). Please show a new QR code in the car.', abgelaufen: 'This code has expired. Please choose “Renew QR” in the car.',
+              zu_viele: 'Too many attempts. Please try again later.', nur_lokales_netz: 'This only works on the same Wi-Fi as the car.',
+              zu_gross: 'The file is too large (200 MB at most).', typ: 'This file type is not allowed.', belegt: 'A transfer is already running with this code.',
+              fehlt: 'No code – please scan the QR code shown in the car.', fehler: 'That did not work.' },
+        fr: { u_titel: 'Envoyer un fichier à votre voiture', u_lead: 'Choisissez un fichier sur votre téléphone. Il arrive dans le dossier Panoptes de la voiture.',
+              u_knopf: 'Choisir et envoyer', h_titel: 'Récupérer un fichier de la voiture', h_lead: 'La voiture vous propose ce fichier une seule fois :',
+              h_knopf: 'Télécharger', ok_u: 'Terminé – le fichier est dans la voiture. Vous pouvez fermer cette page.',
+              ok_h: 'Le téléchargement a commencé. Vous pouvez fermer cette page.', sende: 'Envoi en cours …',
+              falsch: 'Ce code n’est (plus) valable. Affichez un nouveau code QR dans la voiture.', abgelaufen: 'Le code a expiré. Choisissez « Renouveler le QR » dans la voiture.',
+              zu_viele: 'Trop d’essais. Réessayez plus tard.', nur_lokales_netz: 'Cela ne fonctionne que sur le même Wi-Fi que la voiture.',
+              zu_gross: 'Le fichier est trop volumineux (200 Mo maximum).', typ: 'Ce type de fichier n’est pas autorisé.', belegt: 'Un transfert est déjà en cours avec ce code.',
+              fehlt: 'Pas de code – scannez le code QR affiché dans la voiture.', fehler: 'Cela n’a pas fonctionné.' },
+        it: { u_titel: 'Invia un file alla tua auto', u_lead: 'Scegli un file sul telefono. Finisce nella cartella Panoptes dell’auto.',
+              u_knopf: 'Scegli e invia', h_titel: 'Scarica un file dall’auto', h_lead: 'L’auto ti offre questo file una sola volta:',
+              h_knopf: 'Scarica', ok_u: 'Fatto – il file è nell’auto. Puoi chiudere questa pagina.',
+              ok_h: 'Il download è partito. Puoi chiudere questa pagina.', sende: 'Invio in corso …',
+              falsch: 'Questo codice non è (più) valido. Mostra un nuovo codice QR nell’auto.', abgelaufen: 'Il codice è scaduto. Scegli «Rinnova QR» nell’auto.',
+              zu_viele: 'Troppi tentativi. Riprova più tardi.', nur_lokales_netz: 'Funziona solo nella stessa rete Wi-Fi dell’auto.',
+              zu_gross: 'Il file è troppo grande (massimo 200 MB).', typ: 'Questo tipo di file non è consentito.', belegt: 'Con questo codice è già in corso un trasferimento.',
+              fehlt: 'Nessun codice – scansiona il codice QR mostrato nell’auto.', fehler: 'Non ha funzionato.' },
+        nl: { u_titel: 'Stuur een bestand naar je auto', u_lead: 'Kies een bestand op je telefoon. Het komt in de Panoptes-map in de auto.',
+              u_knopf: 'Kies bestand en verstuur', h_titel: 'Haal een bestand uit je auto', h_lead: 'De auto biedt je dit bestand één keer aan:',
+              h_knopf: 'Downloaden', ok_u: 'Klaar – het bestand staat in de auto. Je kunt deze pagina sluiten.',
+              ok_h: 'De download is gestart. Je kunt deze pagina sluiten.', sende: 'Bezig met verzenden …',
+              falsch: 'Deze code is niet (meer) geldig. Toon in de auto een nieuwe QR-code.', abgelaufen: 'De code is verlopen. Kies in de auto “QR vernieuwen”.',
+              zu_viele: 'Te veel pogingen. Probeer het later opnieuw.', nur_lokales_netz: 'Dit werkt alleen op hetzelfde wifi als de auto.',
+              zu_gross: 'Het bestand is te groot (maximaal 200 MB).', typ: 'Dit bestandstype is niet toegestaan.', belegt: 'Met deze code loopt al een overdracht.',
+              fehlt: 'Geen code – scan de QR-code die in de auto staat.', fehler: 'Dat is niet gelukt.' },
+        es: { u_titel: 'Enviar un archivo a tu coche', u_lead: 'Elige un archivo en tu móvil. Llega a la carpeta de Panoptes del coche.',
+              u_knopf: 'Elegir y enviar', h_titel: 'Descargar un archivo del coche', h_lead: 'El coche te ofrece este archivo una sola vez:',
+              h_knopf: 'Descargar', ok_u: 'Listo: el archivo está en el coche. Puedes cerrar esta página.',
+              ok_h: 'La descarga ha empezado. Puedes cerrar esta página.', sende: 'Enviando …',
+              falsch: 'Este código ya no es válido. Muestra un código QR nuevo en el coche.', abgelaufen: 'El código ha caducado. Elige «Renovar QR» en el coche.',
+              zu_viele: 'Demasiados intentos. Inténtalo más tarde.', nur_lokales_netz: 'Solo funciona en la misma Wi-Fi que el coche.',
+              zu_gross: 'El archivo es demasiado grande (200 MB como máximo).', typ: 'Este tipo de archivo no está permitido.', belegt: 'Ya hay una transferencia en curso con este código.',
+              fehlt: 'Sin código: escanea el código QR que se muestra en el coche.', fehler: 'No ha funcionado.' },
+        pt: { u_titel: 'Enviar um ficheiro para o seu carro', u_lead: 'Escolha um ficheiro no telemóvel. Fica na pasta Panoptes do carro.',
+              u_knopf: 'Escolher e enviar', h_titel: 'Obter um ficheiro do carro', h_lead: 'O carro oferece-lhe este ficheiro uma única vez:',
+              h_knopf: 'Transferir', ok_u: 'Pronto – o ficheiro está no carro. Pode fechar esta página.',
+              ok_h: 'A transferência começou. Pode fechar esta página.', sende: 'A enviar …',
+              falsch: 'Este código já não é válido. Mostre um novo código QR no carro.', abgelaufen: 'O código expirou. Escolha «Renovar QR» no carro.',
+              zu_viele: 'Demasiadas tentativas. Tente mais tarde.', nur_lokales_netz: 'Só funciona na mesma rede Wi-Fi do carro.',
+              zu_gross: 'O ficheiro é demasiado grande (200 MB no máximo).', typ: 'Este tipo de ficheiro não é permitido.', belegt: 'Já existe uma transferência em curso com este código.',
+              fehlt: 'Sem código – leia o código QR mostrado no carro.', fehler: 'Não funcionou.' },
+        tr: { u_titel: 'Arabana dosya gönder', u_lead: 'Telefonundan bir dosya seç. Arabadaki Panoptes klasörüne kaydedilir.',
+              u_knopf: 'Dosya seç ve gönder', h_titel: 'Arabadan dosya al', h_lead: 'Araba bu dosyayı sana yalnızca bir kez sunar:',
+              h_knopf: 'İndir', ok_u: 'Tamam – dosya arabada. Bu sayfayı kapatabilirsin.',
+              ok_h: 'İndirme başladı. Bu sayfayı kapatabilirsin.', sende: 'Gönderiliyor …',
+              falsch: 'Bu kod artık geçerli değil. Arabada yeni bir QR kodu göster.', abgelaufen: 'Kodun süresi doldu. Arabada “QR’yi yenile” seç.',
+              zu_viele: 'Çok fazla deneme. Daha sonra tekrar dene.', nur_lokales_netz: 'Yalnızca arabayla aynı Wi-Fi ağında çalışır.',
+              zu_gross: 'Dosya çok büyük (en fazla 200 MB).', typ: 'Bu dosya türüne izin verilmiyor.', belegt: 'Bu kodla zaten bir aktarım sürüyor.',
+              fehlt: 'Kod yok – arabadaki QR kodunu tara.', fehler: 'Olmadı.' }
+    };
+    var dil = ((navigator.language || 'de').toLowerCase().split('-')[0]);
+    var T = TEXTE[dil] || TEXTE.en;
+    function $(id) { return document.getElementById(id); }
+    document.documentElement.lang = TEXTE[dil] ? dil : 'en';
+
+    var m = /(?:^#|&)k=([0-9a-f]{32})/.exec(location.hash);
+    var z = /(?:^#|&)z=(h|u)/.exec(location.hash);
+    var kennung = m ? m[1] : '';
+    var holen = !!(z && z[1] === 'h');
+    history.replaceState(null, '', location.pathname);   // Kennung aus der Adresszeile nehmen
+
+    $('titel').textContent = holen ? T.h_titel : T.u_titel;
+    $('lead').textContent = holen ? T.h_lead : T.u_lead;
+    $('aktion').textContent = holen ? T.h_knopf : T.u_knopf;
+    function melde(text, klasse) { $('stand').textContent = text; $('stand').className = klasse || ''; }
+    function grund(g) { return T[g] || T.fehler; }
+    if (!kennung) { melde(T.fehlt, 'fehler'); $('aktion').disabled = true; return; }
+
+    function post(aktion, koerper) {
+        koerper.k = kennung;
+        return fetch('/auth/datei-qr/' + aktion, { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(koerper) })
+            .then(function (r) { return r.json().catch(function () { return {}; }); });
+    }
+
+    function blob64(blob) {
+        return new Promise(function (ok, nein) {
+            var fr = new FileReader();
+            fr.onload = function () { var s = String(fr.result); ok(s.substring(s.indexOf(',') + 1)); };
+            fr.onerror = function () { nein(new Error('lesen')); };
+            fr.readAsDataURL(blob);
+        });
+    }
+
+    function senden(datei) {
+        var teil = 1024 * 1024;
+        var nr = 0;
+        $('aktion').disabled = true;
+        $('fortschritt').style.display = '';
+        melde(T.sende);
+        return post('start', { name: datei.name, groesse: datei.size }).then(function (d) {
+            if (!d.ok) throw d;
+            var id = d.id;
+            var pos = 0;
+            function weiter() {
+                if (pos >= datei.size && nr > 0) {
+                    return post('fertig', { id: id }).then(function (f) {
+                        if (!f.ok) throw f;
+                        $('fortschritt').value = 100;
+                        melde(T.ok_u, 'ok');
+                    });
+                }
+                var ende = Math.min(datei.size, pos + teil);
+                return blob64(datei.slice(pos, ende)).then(function (b) {
+                    return post('teil', { id: id, nr: nr, daten: b });
+                }).then(function (t) {
+                    if (!t.ok) throw t;
+                    nr++;
+                    pos = ende;
+                    $('fortschritt').value = datei.size ? Math.round(pos * 100 / datei.size) : 100;
+                    return weiter();
+                });
+            }
+            return weiter();
+        });
+    }
+
+    $('datei').onchange = function () {
+        var f = this.files && this.files[0];
+        if (!f) return;
+        senden(f).catch(function (e) {
+            melde(grund(e && e.grund), 'fehler');
+            $('aktion').disabled = !!(e && (e.grund === 'abgelaufen' || e.grund === 'falsch'));
+            $('fortschritt').style.display = 'none';
+        });
+    };
+
+    $('aktion').onclick = function () {
+        if (holen) {
+            // Einmal-Download: der Browser holt die Datei direkt; die Kennung ist danach verbraucht
+            window.location.href = '/auth/datei-qr/holen?k=' + kennung;
+            $('aktion').disabled = true;
+            melde(T.ok_h, 'ok');
+            return;
+        }
+        $('datei').click();
+    };
+
+    // Vorab prüfen, ob der Code noch gilt (und bei „holen“ den Dateinamen zeigen)
+    fetch('/auth/datei-qr/info?k=' + kennung, { cache: 'no-store' })
+        .then(function (r) { return r.json().catch(function () { return {}; }); })
+        .then(function (d) {
+            if (!d.ok) { melde(grund(d.grund), 'fehler'); $('aktion').disabled = true; return; }
+            if (holen && d.name) $('lead').textContent = T.h_lead + ' ' + d.name;
+        }, function () { melde(T.fehler, 'fehler'); });
+})();
+</script>
+</body>
+</html>

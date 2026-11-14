@@ -41,7 +41,10 @@ class Ui(val ctx: Context, val p: Palette, val cockpit: Boolean, val bedien: Flo
     val kontrast get() = bedien > 1f
     fun dpf(v: Float) = v * dichte
 
-    val titelFarbe get() = if (cockpit) PanoptesStil.COCKPIT_TITEL else p.outline
+    /** 0.1.43.3: Überschrift auf Mindestkontrast gesichert (4,5:1, Nacht 7:1, [Kontrast]). */
+    val titelFarbe get() = if (cockpit) PanoptesStil.COCKPIT_TITEL else Kontrast.titel(p)
+    /** 0.1.43.3: gedämpfter Text, auf Mindestkontrast gesichert. */
+    val leiseFarbe get() = if (kontrast) p.onSurface else Kontrast.leise(p)
 
     fun sora(gewicht: Int) = schrift("fonts/sora.ttf", gewicht)
     fun manrope(gewicht: Int) = schrift("fonts/manrope.ttf", gewicht)
@@ -72,9 +75,12 @@ class Ui(val ctx: Context, val p: Palette, val cockpit: Boolean, val bedien: Flo
         }
     }
 
+    /** 0.1.43.4 (E2E G5): Großbuchstaben nach Gerätesprache (Türkisch „MENZİL“), nie Locale.ROOT. */
+    fun gross(text: String): String = Gross.text(text, java.util.Locale.getDefault())
+
     /** `.hc h2`: Sora 13, 600, Großbuchstaben, Sperrung .08em, Farbe outline. */
     fun titel(text: String) = TextView(ctx).apply {
-        this.text = text.uppercase(); textSize = 13f * bedien; typeface = sora(600); letterSpacing = 0.08f
+        this.text = gross(text); textSize = 13f * bedien; typeface = sora(600); letterSpacing = 0.08f
         setTextColor(if (kontrast && !cockpit) p.onSurface else titelFarbe); maxLines = 1
         ellipsize = android.text.TextUtils.TruncateAt.END   // 0.1.38.14: lange Titel überlappen nicht, sie enden mit „…“
     }
@@ -83,6 +89,43 @@ class Ui(val ctx: Context, val p: Palette, val cockpit: Boolean, val bedien: Flo
     fun zahl(text: String, sp: Float) = TextView(ctx).apply {
         this.text = text; textSize = sp; typeface = sora(700); letterSpacing = -0.02f
         setTextColor(p.onSurface); includeFontPadding = false; maxLines = 1
+        fontFeatureSettings = "tnum"   // 0.1.43.3: gleich breite Ziffern, Zahlen springen beim Wechsel nicht
+        LeerWert.ruhig(this, p.onSurface, leiseFarbe)   // 0.1.43.3 (A3): „—“ ruhig und gedämpft
+    }
+
+    /** 0.1.43.3: Text in einer Stufe der Schriftskala ([Stufe]); Zahlen mit gleich breiten Ziffern. */
+    fun stufe(s: Stufe, text: String, farbe: Int? = null) = TextView(ctx).apply {
+        this.text = if (s.gross) gross(text) else text
+        textSize = s.sp * (if (s.waechst) bedien else 1f)
+        typeface = if (s.sora) sora(s.gewicht) else manrope(s.gewicht)
+        if (s.sperrung != 0f) letterSpacing = s.sperrung
+        if (s.ziffern) { fontFeatureSettings = "tnum"; includeFontPadding = false; maxLines = 1 }
+        setTextColor(farbe ?: when { s == Stufe.TITEL -> titelFarbe; s.gedaempft -> leiseFarbe; else -> p.onSurface })
+    }
+
+    /** 0.1.43.3: Radius aus [Mass] in Pixel. */
+    fun radius(r: Int) = dpf(Mass.radius(r).toFloat())
+
+    /** 0.1.43.3 (L3): Glas-Fläche (Karte, Pillen-Leiste, Plakette) mit Radius aus [Mass]; Werte in [Glas]. */
+    fun glas(r: Int = Mass.RADIUS_GROSS): Drawable = GlasFlaeche(p.hell, radius(r), dpf(1f))
+
+    /**
+     * 0.1.43.3 (L3): Plakette (Verriegelt, Fenster offen, Lädt …): Glas, runder Rand in der Tonfarbe, Symbol + Text in der
+     * Tonfarbe. [Signal.Ton.GEFAHR] ist gefüllt (wie „Gurt fehlt“ im Entwurf). Nur Anzeige, kein Tipp.
+     */
+    fun plakette(text: String, ton: Signal.Ton, symbol: Int? = null): LinearLayout = LinearLayout(ctx).apply {
+        gravity = Gravity.CENTER_VERTICAL
+        val f = Signal.farbe(ton, p)
+        val gefuellt = ton == Signal.Ton.GEFAHR
+        val schrift = if (gefuellt) Color.WHITE else f
+        minimumHeight = bd(40)
+        setPadding(dp(14), dp(6), dp(16), dp(6))
+        background = if (gefuellt) GradientDrawable().apply { cornerRadius = radius(Mass.RADIUS_RUND); setColor(f) }
+            else android.graphics.drawable.LayerDrawable(arrayOf(glas(Mass.RADIUS_RUND), GradientDrawable().apply {
+                cornerRadius = radius(Mass.RADIUS_RUND); setColor(0); setStroke(dp(1), Farbe.alpha(f, 120)) }))
+        symbol?.let { addView(icon(it, schrift, 20), lp(dp(20), dp(20), rechts = 8)) }
+        addView(stufe(Stufe.PLAKETTE, text, schrift).apply { maxLines = 1 })
+        contentDescription = text
     }
 
     fun text(text: String, sp: Float = 15f, gewicht: Int = 500, farbe: Int = p.onSurface) = TextView(ctx).apply {
@@ -90,7 +133,7 @@ class Ui(val ctx: Context, val p: Palette, val cockpit: Boolean, val bedien: Flo
     }
 
     /** `.muted`: on-surface-variant, 13. */
-    fun leise(text: String, sp: Float = 13f) = text(text, sp, 500, if (kontrast) p.onSurface else p.onSurfaceVariant)
+    fun leise(text: String, sp: Float = 13f) = text(text, sp, 500, leiseFarbe)
 
     fun icon(res: Int, farbe: Int = p.aqua, groesse: Int = 24) = ImageView(ctx).apply {
         setImageDrawable(ContextCompat.getDrawable(ctx, res)?.mutate()?.also { it.setTint(farbe) })
@@ -123,10 +166,10 @@ class Ui(val ctx: Context, val p: Palette, val cockpit: Boolean, val bedien: Flo
     /** `.pn-pill`: runde Plakette. */
     fun pill(text: String, aktiv: Boolean = false) = TextView(ctx).apply {
         this.text = text; textSize = 13f * bedien; typeface = sora(600); gravity = Gravity.CENTER
-        setTextColor(if (aktiv) p.onPrimary else p.onSurfaceVariant)
+        setTextColor(if (aktiv) p.onPrimary else leiseFarbe)
         setPadding(dp(14), dp(6), dp(14), dp(6))
         background = GradientDrawable().apply {
-            cornerRadius = dpf(999f); setColor(if (aktiv) p.lime else p.act); if (!aktiv) setStroke(dp(1), p.line)
+            cornerRadius = dpf(Mass.RADIUS_RUND.toFloat()); setColor(if (aktiv) p.lime else p.act); if (!aktiv) setStroke(dp(1), p.line)
         }
     }
 
@@ -139,6 +182,35 @@ class Ui(val ctx: Context, val p: Palette, val cockpit: Boolean, val bedien: Flo
            oben: Int = 0, rechts: Int = 0) = LinearLayout.LayoutParams(b, h, gewicht).apply { topMargin = dp(oben); marginEnd = dp(rechts) }
 
     companion object { private val cache = HashMap<String, Typeface>() }
+}
+
+/**
+ * 0.1.43.3 (L3): Glas als eigene Zeichnung: Füllung von oben hell nach unten satt, 1 dp Rand, 1 dp Innenlicht an der
+ * Oberkante (innerhalb der Rundung). Keine Unschärfe (Android 10), dafür dichtere Füllung ([Glas]).
+ */
+class GlasFlaeche(private val hell: Boolean, private val r: Float, private val linie: Float) : Drawable() {
+    private val f = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val s = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+    private val box = RectF()
+    private val form = Path()
+    override fun draw(c: Canvas) {
+        val b = bounds; if (b.isEmpty) return
+        val rr = minOf(r, b.height() / 2f, b.width() / 2f)
+        box.set(b.left + linie / 2, b.top + linie / 2, b.right - linie / 2, b.bottom - linie / 2)
+        f.shader = LinearGradient(0f, b.top.toFloat(), 0f, b.bottom.toFloat(), Glas.fuellung(hell), Glas.fuellungUnten(hell), Shader.TileMode.CLAMP)
+        c.drawRoundRect(box, rr, rr, f)
+        // Innenlicht: 1 dp unter der Oberkante, zwischen den Rundungen
+        form.reset(); form.addRoundRect(box, rr, rr, Path.Direction.CW)
+        c.save(); c.clipPath(form)
+        s.strokeWidth = linie; s.color = Glas.innenlicht(hell)
+        c.drawLine(box.left + rr * 0.6f, box.top + linie * 1.5f, box.right - rr * 0.6f, box.top + linie * 1.5f, s)
+        c.restore()
+        s.color = Glas.rand(hell); c.drawRoundRect(box, rr, rr, s)
+    }
+    override fun getOutline(o: android.graphics.Outline) { o.setRoundRect(bounds, minOf(r, bounds.height() / 2f, bounds.width() / 2f)); o.alpha = 1f }
+    override fun setAlpha(alpha: Int) {}
+    override fun setColorFilter(colorFilter: ColorFilter?) {}
+    @Deprecated("Deprecated in Java") override fun getOpacity() = PixelFormat.TRANSLUCENT
 }
 
 /** Seitenhintergrund wie `--sm-page-bg` (bzw. Cockpit-Hintergrund der Startansicht „Cockpit“). */

@@ -84,7 +84,7 @@ class LauncherSpracheTest {
         val e = man.substring(man.indexOf(".SprachHilfeActivity")).substringBefore("/>")
         assertTrue(e.contains("android:exported=\"false\""))
         val m = quelle("MainActivity.kt")
-        assertTrue(m.contains("if (!bearbeiten && !isInMultiWindowMode) sprachKnopf.einhaengen(root, ui)"))
+        assertTrue(m.contains("if (!bearbeiten && !isInMultiWindowMode) sprachKnopf.einhaengen(root, ui, sprachPlatz)"))   // L3: Pille in der Statusleiste
         assertTrue(m.contains("sprachKnopf.aktualisieren()"))
         val kn = quelle("SprachKnopf.kt")
         assertTrue(kn.contains("val sichtbar = katalog?.knopfSichtbar(Sprache.knopfSchalter(activity)) == true"))

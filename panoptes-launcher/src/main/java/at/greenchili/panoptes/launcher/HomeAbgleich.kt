@@ -24,6 +24,13 @@ object HomeAbgleich {
     fun aliasSoll(wunsch: HomeWunsch?, aliasAn: Boolean): Boolean? =
         if (wunsch == null || wunsch.gewuenscht == aliasAn) null else wunsch.gewuenscht
 
+    /**
+     * 0.1.43.4 (Paket S): Wurde der Startbildschirm ohne Panoptes im Launcher gewählt und kommt Panoptes dazu, dessen
+     * Schalter noch aus ist, übernimmt der Launcher die Wahl in Panoptes (homeAn + behalten), statt sich abzuschalten.
+     */
+    fun lokalUebernehmen(wunsch: HomeWunsch?, aliasAn: Boolean, lokal: Boolean): Boolean =
+        wunsch != null && lokal && aliasAn && !wunsch.gewuenscht
+
     /** Soll der Launcher jetzt „Behalten?“ fragen: Schalter an, Alias an, noch nicht bestätigt. */
     fun fragen(wunsch: HomeWunsch?, aliasAn: Boolean): Boolean =
         wunsch != null && wunsch.gewuenscht && wunsch.frage && !wunsch.behalten && aliasAn

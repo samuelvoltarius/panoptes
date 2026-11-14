@@ -77,10 +77,12 @@ class LauncherL48Test {
 
     @Test
     fun motive() {
-        assertEquals(14, Motive.WERTE.size)   // 0.1.44 (D1): + 4 Szenen
-        assertTrue("8–12 Muster + Szenen", Motive.WERTE.size - (Szenen.LETZTE - Szenen.ERSTE + 1) in 8..12)
+        assertEquals(20, Motive.WERTE.size)   // 0.1.44 (D1): + 4 Szenen; 0.1.43.4: + 6 gerenderte Szenen
+        assertTrue("8–12 Muster + Szenen", Motive.WERTE.size - (Szenen.LETZTE - Szenen.ERSTE + 1)
+            - (SzenenBilder.LETZTE - SzenenBilder.ERSTE + 1) in 8..12)
         assertEquals(3, Motive.nummer("motiv-3"))
-        assertNull(Motive.nummer("motiv-15"))
+        assertEquals(15, Motive.nummer("motiv-15"))
+        assertNull(Motive.nummer("motiv-21"))
         assertNull(Motive.nummer("panoptes"))
         val l = Raster.standard(null)
         assertEquals("motiv-7", Raster.hintergrund(l, "motiv-7").hintergrund)
@@ -119,7 +121,8 @@ class LauncherL48Test {
         assertTrue(st.contains("seite = 0; zeichneSeite()"))
         assertTrue(st.contains("Kachel.LADEN"))
         assertTrue(st.contains("if (bearbeiten || stopped) return"))
-        assertTrue(m.contains("Motive.nummer(layout.hintergrund)?.let { MotivHintergrund(it, pal) } ?: SeitenHintergrund(pal, cockpit)"))
+        assertTrue(m.contains("szeneJetzt = SzenenWechsel.nummer(Motive.nummer(layout.hintergrund), summary?.gear)"))   // 0.1.43.3 (L3): Fahrt-Szene bei D
+        assertTrue(m.contains("szeneJetzt?.let { MotivHintergrund(it, pal) } ?: SeitenHintergrund(pal, cockpit)"))
         assertTrue(m.contains("+ Motive.WERTE).map { it to hgName(it) }"))
         val sel = quelle("Selbststeuerung.kt")
         val uhr = quelle("StandUhr.kt")

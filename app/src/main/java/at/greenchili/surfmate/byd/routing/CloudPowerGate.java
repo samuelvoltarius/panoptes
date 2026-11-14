@@ -103,7 +103,7 @@ public final class CloudPowerGate {
     }
 
     /**
-     * Aufsperren über die Cloud nie – einzige Ausnahme (0.1.18, Projektinhaber 27.10.) ist der handy-signierte Befehl
+     * Aufsperren über die Cloud nie – einzige Ausnahme (0.1.18, 27.10.) ist der handy-signierte Befehl
      * {@code unlock-handy} (VehicleCommandRouter.HandyUnlockCommand, nur mit Biometrie-Freigabe baubar). Für ihn gilt
      * die normale Regel: nur bei frischem power_level 0 und ACC nicht an. Jeder andere Name mit „unlock“ bleibt zu.
      */

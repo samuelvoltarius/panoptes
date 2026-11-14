@@ -52,6 +52,8 @@ class MainActivity : AppCompatActivity() {
     private val client = PanoptesClient()
     /** 0.1.43.3 (Rang 7): Assistent-Knopf, nur sichtbar mit eingeschalteten Sprachbefehlen (SprachKnopf.kt). */
     private val sprachKnopf by lazy { SprachKnopf(this, client) }
+    /** 0.1.43.3 (L3): Platz der Pille „Sprechen“ in der Statusleiste; ohne Statusleiste null (dann oben rechts). */
+    private var sprachPlatz: FrameLayout? = null
     // 0.1.41 (Nachtest F1): nach dem Beenden keine Arbeit mehr annehmen, Rückrufe nur in einer lebenden Activity
     private val io = SichererIo()
     private val main: Handler = LebensHandler { !isFinishing && !isDestroyed }
@@ -70,6 +72,11 @@ class MainActivity : AppCompatActivity() {
 
     // Update-Karte (Stufe 4): Stand höchstens alle 5 min lesen, „Später“ gilt je Version.
     private var updateStand: UpdateStand? = null
+    /** 0.1.43.4 (Paket S): ohne Panoptes selbst gefundene Launcher-Version (öffentliches GitHub-Release). */
+    @Volatile private var eigenUpdate: EigenUpdate.Fund? = null
+    @Volatile private var eigenUpdateLaedt = false
+    /** Zuletzt gezeichnet: ohne Panoptes (Platzhalter) oder mit. */
+    private var ohneGezeigt = false
     private var lastUpdateFetch = 0L
     private lateinit var updateHost: FrameLayout
 
@@ -96,7 +103,7 @@ class MainActivity : AppCompatActivity() {
     /** 0.1.41 (E2E M1/G4): Android meldet Medienänderungen selbst, die Kachel zeichnet sofort neu. */
     private val medienBeobachter by lazy { MedienBeobachter(this, main) { medienNeu() } }
     // M1 (13.11.): Titel ohne Benachrichtigungszugriff über den Kern (KernMusik.kt); am BYD keine gesperrte Android-Seite
-    private val kernMusik by lazy { KernMusik { f -> client.musik(f) } }
+    private val kernMusik by lazy { KernMusik { f -> if (KernVerbindung.verfuegbar()) client.musik(f) else null } }
     private val byd by lazy { MusikAnzeige.BYD_PAKETE.any { p -> runCatching { packageManager.getPackageInfo(p, 0) }.isSuccess } }
     private var stilSchluessel = ""
 
@@ -121,6 +128,8 @@ class MainActivity : AppCompatActivity() {
     private var webAuto: WebView? = null
     private var webAutoUrl: String? = null
     private var bildGeladen = false
+    /** 0.1.43.3 (L3): gerade gezeigte Motiv-/Szenen-Nummer (Stand-Szene oder Fahrt-Szene). */
+    private var szeneJetzt: Int? = null
     private var videoLaeuft = false
     private val aktualisierer = mutableListOf<() -> Unit>()
     private val statusAktualisierer = mutableListOf<() -> Unit>()
@@ -175,6 +184,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        SzenenBilder.anmelden(this)   // 0.1.43.4: gerenderte Szenen laden ohne eigenen Kontext
+        // 0.1.43.4 (Integration Rang 4 + Fahrzeugbild): Tippzonen nutzen die Ankerpunkte des gerenderten Modells
+        FahrzeugTippen.ankerQuelle = { m -> FahrzeugBild.punkte(this, m)?.mapValues { FahrzeugTippen.Punkt(it.value.x, it.value.y, it.value.sichtbar) } }
         messUhr.start(System.currentTimeMillis())
         // 0.1.39 (L1-Nachbesserung): Karten-Split übersteht einen Neustart der Activity (Konfigwechsel)
         karteImSplit = savedInstanceState?.getString(ZUSTAND_KARTE_SPLIT)
@@ -236,7 +248,9 @@ class MainActivity : AppCompatActivity() {
         // 0.1.41 (E2E G4): Zugriff bei jeder Rückkehr neu prüfen (z. B. von der Android-Seite „Benachrichtigungszugriff“)
         medienBeobachter.start()
         medienNeu()
-        sprachKnopf.aktualisieren()   // 0.1.43.3 (Rang 7): Schalter in Panoptes evtl. geändert
+        // 0.1.43.3 (Rang 7): Schalter in Panoptes evtl. geändert; 0.1.43.4 (Paket S): ohne Panoptes nicht fragen
+        if (!KernVerbindung.ohnePanoptes()) sprachKnopf.aktualisieren()
+        KernVerbindung.anstossen(System.currentTimeMillis())   // Paket S: höchstens alle 15 s
     }
 
     /** M1: eigene Mediensitzung (mit Zugriff), sonst der letzte Stand vom Kern; stößt die Kern-Abfrage an. */
@@ -258,6 +272,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onStop() {
+        gps.stop()   // 0.1.43.4 (Paket S): GPS nur, solange der Launcher vorn ist
         medienBeobachter.stop()
         stopped = true
         geraeteWidgets.stop()
@@ -377,8 +392,11 @@ class MainActivity : AppCompatActivity() {
         else window.decorView.systemUiVisibility = 0
 
         standUhr = null
+        sprachPlatz = null
         // 0.1.42 (L48): eigene Motive (per Code gezeichnet) auf dem Seitenverlauf des Designs
-        root = FrameLayout(this).apply { background = Motive.nummer(layout.hintergrund)?.let { MotivHintergrund(it, pal) } ?: SeitenHintergrund(pal, cockpit) }
+        // 0.1.43.3 (L3): auf einer Szene in Gang D die Fahrt-Szene (SzenenWechsel), Wechsel weich in hintergrundAnwenden()
+        szeneJetzt = SzenenWechsel.nummer(Motive.nummer(layout.hintergrund), summary?.gear)
+        root = FrameLayout(this).apply { background = szeneJetzt?.let { MotivHintergrund(it, pal) } ?: SeitenHintergrund(pal, cockpit) }
         bild = ImageView(this).apply { scaleType = ImageView.ScaleType.CENTER_CROP; visibility = View.GONE }
         root.addView(bild, FrameLayout.LayoutParams(-1, -1))
         schleier = View(this).apply { visibility = View.GONE }
@@ -399,16 +417,16 @@ class MainActivity : AppCompatActivity() {
         spalte.addView(seitenHost, ui.lp(-1, 0, 1f, oben = 6))
         punkte = LinearLayout(this).apply { gravity = Gravity.CENTER }
         spalte.addView(punkte, ui.lp(-1, ui.dp(18)))
-        if (layout.zeigeReiter && !bearbeiten && !Raster.hatWidget(layout, Kachel.REITERLEISTE)) spalte.addView(reiterZeile().also { if (szene()) FahrzeugKacheln.pillenLeiste(it, ui) }, ui.lp(-1, ui.dp(88), oben = 4))
-        if (!Raster.hatWidget(layout, Kachel.DOCKLEISTE)) spalte.addView(dock(), ui.lp(-1, ui.bd(DockPlatz.HOEHE), oben = 8))
+        if (layout.zeigeReiter && !bearbeiten && !Raster.hatWidget(layout, Kachel.REITERLEISTE)) spalte.addView(reiterZeile().also { if (szene()) FahrzeugKacheln.pillenLeiste(it, ui) }, ui.lp(-1, ui.bd(80), oben = 4))
+        if (!Raster.hatWidget(layout, Kachel.DOCKLEISTE)) spalte.addView(dock(), ui.lp(-1, ui.bd(DockPlatz.HOEHE), oben = 8).apply { bottomMargin = ui.dp(Mass.S) })   // L3: Dock schwebt
 
         hinweis = ui.text("", 15f, 600, ui.p.onSurface).apply {
             visibility = View.GONE; gravity = Gravity.CENTER
             setPadding(ui.dp(20), ui.dp(12), ui.dp(20), ui.dp(12))
-            background = GradientDrawable().apply { cornerRadius = ui.dpf(16f); setColor(ui.p.surface); setStroke(ui.dp(1), ui.p.aqua) }
+            background = GradientDrawable().apply { cornerRadius = ui.radius(Mass.RADIUS_MITTEL); setColor(ui.p.surface); setStroke(ui.dp(1), ui.p.aqua) }
         }
         root.addView(hinweis, FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL).apply { bottomMargin = ui.dp(110) })
-        if (!bearbeiten && !isInMultiWindowMode) sprachKnopf.einhaengen(root, ui)   // 0.1.43.3 (Rang 7)
+        if (!bearbeiten && !isInMultiWindowMode) sprachKnopf.einhaengen(root, ui, sprachPlatz)   // 0.1.43.3 (Rang 7; L3: in der Statusleiste)
         // 0.1.39 (L1): neben der Karte (geteilter Bildschirm) statt der Startseite die schmale Statusspalte
         if (isInMultiWindowMode) {
             spalte.visibility = View.GONE
@@ -440,10 +458,18 @@ class MainActivity : AppCompatActivity() {
             addView(glocke); addView(punkt, FrameLayout.LayoutParams(ui.dp(9), ui.dp(9), Gravity.TOP or Gravity.END))
             setOnClickListener { if (!MedienQuelle.zugriffErlaubt(this@MainActivity)) zugriffErklaeren() }
         }
-        listOf(glockeBox, wlan, bt, ort).forEach { z.addView(it, ui.lp(ui.dp(44), ui.dp(44), rechts = 14)) }
+        // 0.1.43.3 (L3): links Logo, Uhr und Musik; rechts „Sprechen“ (falls an) und die Zustände Ort, Bluetooth, WLAN, Glocke
+        z.addView(ImageView(this).apply {
+            setImageDrawable(ContextCompat.getDrawable(this@MainActivity, R.drawable.logo_square))
+            clipToOutline = true; outlineProvider = android.view.ViewOutlineProvider.BACKGROUND
+            background = GradientDrawable().apply { cornerRadius = ui.radius(Mass.RADIUS_KLEIN); setColor(Color.TRANSPARENT) }
+            contentDescription = getString(R.string.app_name)
+        }, ui.lp(ui.dp(36), ui.dp(36), rechts = Mass.M))
+        val uhr = ui.zahl("", 24f)
+        z.addView(uhr, ui.lp(rechts = Mass.L))
         // 0.1.41 (G5): Musik steht in einer dehnbaren Box. Ein langer Titel wird gekürzt, statt Uhr und Logo
         // aus der Zeile zu drücken (vorher blieb nach der Musik-Umstellung nur ♫ statt der Uhr).
-        val musikBox = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL or Gravity.END }
+        val musikBox = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL or Gravity.START }
         val musikIcon = ui.icon(R.drawable.ic_pn_music, ui.p.onSurfaceVariant, 22)
         val musik = ui.text("", 16f, 600, ui.p.onSurfaceVariant).apply { maxLines = 1; maxWidth = ui.dp(380); ellipsize = android.text.TextUtils.TruncateAt.END }
         musikBox.addView(musikIcon, ui.lp(ui.dp(22), ui.dp(22), rechts = 8)); musikBox.addView(musik, ui.lp())
@@ -455,14 +481,9 @@ class MainActivity : AppCompatActivity() {
             alt.text = frische.hinweis(this@MainActivity, online, System.currentTimeMillis())
             alt.visibility = if (alt.text.isEmpty()) View.GONE else View.VISIBLE
         }
-        val uhr = ui.zahl("", 22f)
-        z.addView(uhr, ui.lp(rechts = 16))
-        z.addView(ImageView(this).apply {
-            setImageDrawable(ContextCompat.getDrawable(this@MainActivity, R.drawable.logo_square))
-            clipToOutline = true; outlineProvider = android.view.ViewOutlineProvider.BACKGROUND
-            background = GradientDrawable().apply { cornerRadius = ui.dpf(10f); setColor(Color.TRANSPARENT) }
-            contentDescription = getString(R.string.app_name)
-        }, ui.lp(ui.dp(36), ui.dp(36)))
+        // 0.1.43.3 (L3, H2): Platz für die Pille „Sprechen“ (SprachKnopf), statt eines Knopfs über der Musik-Karte
+        sprachPlatz = FrameLayout(this).also { z.addView(it, ui.lp(rechts = 14)) }
+        listOf(ort, bt, wlan, glockeBox).forEachIndexed { i, v -> z.addView(v, ui.lp(ui.dp(44), ui.dp(44), rechts = if (i < 3) 14 else 0)) }
         // 0.1.41 (Nachtest N2): sofort einmal füllen. Vorher blieb die neu gebaute Leiste leer (keine Uhr, nur ♫),
         // bis sich Minute oder Musik änderten – bei pausierter Musik bis zu 60 s.
         val fuellen: () -> Unit = {
@@ -536,24 +557,26 @@ class MainActivity : AppCompatActivity() {
 
     private fun reiterZeile(): View {
         val z = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
+        // 0.1.43.3 (L3): Reiter als Pillen – Symbol links, Text rechts; aktiv in Akzent getönt mit Akzentrand, rund
         fun reiter(res: Int, t: Int, aktiv: Boolean, f: () -> Unit) = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-            addView(ui.icon(res, if (aktiv) ui.p.aqua else ui.p.onSurfaceVariant, 28))
-            addView(ui.text(getString(t), 14f, if (aktiv) 700 else 600, if (aktiv) ui.p.onSurface else ui.p.onSurfaceVariant).apply { setPadding(0, ui.dp(4), 0, 0); gravity = Gravity.CENTER; maxLines = 1 })
-            if (aktiv) background = GradientDrawable().apply { cornerRadius = ui.dpf(16f); setColor(ui.p.card); setStroke(ui.dp(2), ui.p.aqua) }
+            gravity = Gravity.CENTER; setPadding(ui.dp(Mass.M + 2), 0, ui.dp(Mass.M + 4), 0)
+            addView(ui.icon(res, if (aktiv) ui.p.aqua else ui.p.onSurface, 24), ui.lp(ui.dp(24), ui.dp(24), rechts = 10))
+            addView(ui.text(getString(t), 17f, if (aktiv) 700 else 600, if (aktiv) ui.p.aqua else ui.p.onSurface).apply { gravity = Gravity.CENTER; maxLines = 1 })
+            if (aktiv) background = GradientDrawable().apply { cornerRadius = ui.radius(Mass.RADIUS_RUND); setColor(Farbe.alpha(ui.p.aqua, 36)); setStroke(ui.dp(1), Farbe.alpha(ui.p.aqua, 170)) }
+            minimumHeight = ui.bd(Mass.TIPPFLAECHE - 8)
             isClickable = true; foreground = ui.welle(); setOnClickListener { f() }
         }
-        z.addView(reiter(R.drawable.ic_pn_status, R.string.reiter_status, true) { seite = 0; zeichneSeite() }, ui.lp(ui.dp(104), -1, rechts = 6))
-        z.addView(reiter(R.drawable.ic_pn_map, R.string.reiter_karte, false) { karteMitStatus() }, ui.lp(ui.dp(104), -1, rechts = 6))
-        z.addView(reiter(R.drawable.ic_pn_car, R.string.reiter_steuerung, false) { klimaFeld() }, ui.lp(ui.dp(104), -1, rechts = 6))
-        z.addView(reiter(R.drawable.ic_pn_apps, R.string.reiter_apps, false) { schublade(null) }, ui.lp(ui.dp(104), -1, rechts = 6))
-        z.addView(reiter(R.drawable.ic_pn_settings, R.string.reiter_einstellungen, false) { einstellungen() }, ui.lp(ui.dp(120), -1, rechts = 6))
+        z.addView(reiter(R.drawable.ic_pn_car, R.string.reiter_status, true) { seite = 0; zeichneSeite() }, ui.lp(-2, ui.bd(Mass.TIPPFLAECHE - 8), rechts = 4))
+        z.addView(reiter(R.drawable.ic_pn_map, R.string.reiter_karte, false) { karteMitStatus() }, ui.lp(-2, ui.bd(Mass.TIPPFLAECHE - 8), rechts = 4))
+        z.addView(reiter(R.drawable.ic_pn_fan, R.string.reiter_steuerung, false) { klimaFeld() }, ui.lp(-2, ui.bd(Mass.TIPPFLAECHE - 8), rechts = 4))
+        z.addView(reiter(R.drawable.ic_pn_apps, R.string.reiter_apps, false) { schublade(null) }, ui.lp(-2, ui.bd(Mass.TIPPFLAECHE - 8), rechts = 4))
+        z.addView(reiter(R.drawable.ic_pn_settings, R.string.reiter_einstellungen, false) { einstellungen() }, ui.lp(-2, ui.bd(Mass.TIPPFLAECHE - 8), rechts = 6))
         // 0.1.37 „Tacho wieder normal“: groß und rot, nur wenn am Fahrerdisplay gerade etwas läuft; ohne Rückfrage.
         val tachoNormal = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
             addView(ui.icon(R.drawable.ic_pn_status, ui.p.danger, 28))
             addView(ui.text(getString(R.string.tacho_normal), 14f, 700, ui.p.danger).apply { setPadding(0, ui.dp(4), 0, 0); gravity = Gravity.CENTER; maxLines = 2 })
-            background = GradientDrawable().apply { cornerRadius = ui.dpf(16f); setStroke(ui.dp(2), ui.p.danger) }
+            background = GradientDrawable().apply { cornerRadius = ui.radius(Mass.RADIUS_MITTEL); setStroke(ui.dp(2), ui.p.danger) }
             contentDescription = getString(R.string.tacho_normal)
             isClickable = true; foreground = ui.welle(); setOnClickListener { tachoNormal() }
             visibility = if (summary?.tachoAktiv == true) View.VISIBLE else View.GONE
@@ -574,10 +597,12 @@ class MainActivity : AppCompatActivity() {
     private fun dock(): View {
         val z = LinearLayout(this).apply {
             gravity = Gravity.CENTER_VERTICAL; setPadding(ui.dp(12), 0, ui.dp(12), 0)
-            background = GradientDrawable().apply {
-                cornerRadii = floatArrayOf(ui.dpf(22f), ui.dpf(22f), ui.dpf(22f), ui.dpf(22f), 0f, 0f, 0f, 0f)
-                setColor(if (ui.cockpit) PanoptesStil.COCKPIT_KARTE_BIS else ui.p.card); setStroke(ui.dp(1), if (ui.cockpit) PanoptesStil.COCKPIT_RAND else ui.p.line)
-            }
+            // 0.1.43.3 (L3): schwebende Glas-Leiste, rundum Radius groß, mit weichem Schatten (Cockpit: eigene dichte Optik)
+            background = if (ui.cockpit) GradientDrawable().apply {
+                cornerRadius = ui.radius(Mass.RADIUS_GROSS)
+                setColor(PanoptesStil.COCKPIT_KARTE_BIS); setStroke(ui.dp(1), PanoptesStil.COCKPIT_RAND)
+            } else ui.glas(Mass.RADIUS_GROSS)
+            elevation = ui.dpf(Glas.schatten(ui.p.hell).toFloat())
         }
         // Fest als erstes Icon, nicht entfernbar: Rückweg zum BYD-Startbildschirm.
         z.addView(dockIcon(R.drawable.ic_pn_home, getString(R.string.byd_home), hervor = true, kurz = getString(R.string.dock_byd)) { zumBydStart() }, ui.lp(ui.bd(84), -1, rechts = 6))
@@ -593,7 +618,7 @@ class MainActivity : AppCompatActivity() {
         // Fixrunde 0.1.43b (G4): feste Breite (Platzregeln.kt DockPlatz), bei zu schmalem Dock die kompakte Form
         // 0.1.43.3 (Rang 3): feste Leiste Klima/Sitz/Luft. Sitz und Umluft nur, wenn Platz ist und der Kern den Wert liefert;
         // ihre Breite kommt erst dazu, wenn sie sichtbar sind (DockPlatz.komfortBreite), damit nie eine Lücke bleibt.
-        if (layout.zeigeKlima) {
+        if (layout.zeigeKlima && !KernVerbindung.ohnePanoptes()) {   // 0.1.43.4 (Paket S): ohne Panoptes keine leere Klima-Leiste
             val breiteDp = Math.round(resources.displayMetrics.widthPixels / resources.displayMetrics.density)
             val kompakt = DockPlatz.kompakt(breiteDp, ui.bedien)
             val mitKomfort = DockPlatz.komfortPasst(breiteDp, ui.bedien)
@@ -612,11 +637,13 @@ class MainActivity : AppCompatActivity() {
     private fun klimaBedienung(kompakt: Boolean = false, mitKomfort: Boolean = false): View {
         val z = LinearLayout(this).apply {
             gravity = Gravity.CENTER_VERTICAL; setPadding(ui.dp(6), 0, ui.dp(6), 0)
-            background = GradientDrawable().apply { cornerRadius = ui.dpf(16f); setColor(ui.p.act); setStroke(ui.dp(1), ui.p.line) }
+            // 0.1.43.3 (L3): Klima-Leiste als runde Fläche, Knöpfe als Kreise
+            background = GradientDrawable().apply { cornerRadius = ui.radius(Mass.RADIUS_RUND); setColor(Farbe.alpha(ui.p.onSurface, if (ui.p.hell) 12 else 14)) }
             contentDescription = getString(R.string.klima_hinweis)
         }
         val tempKnoepfe = mutableListOf<View>()
         fun knopf(res: Int, beschreibung: Int, aktion: () -> String) = FrameLayout(this).apply {
+            background = android.graphics.drawable.InsetDrawable(GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Farbe.alpha(ui.p.onSurface, if (ui.p.hell) 18 else 22)) }, ui.dp(8))
             addView(ui.icon(res, ui.p.onSurface, 24), FrameLayout.LayoutParams(ui.dp(24), ui.dp(24), Gravity.CENTER))
             contentDescription = getString(beschreibung); isClickable = true; foreground = ui.welle()
             setOnClickListener { klimaSenden(aktion()) }
@@ -630,6 +657,7 @@ class MainActivity : AppCompatActivity() {
         val soll = ui.zahl("—", 21f).apply { minWidth = ui.dp(64); gravity = Gravity.CENTER; maxLines = 1 }
         val stufe = ui.zahl("—", 21f).apply { minWidth = ui.dp(20); gravity = Gravity.CENTER }
         val power = ui.icon(R.drawable.ic_pn_power, ui.p.onSurfaceVariant, 26)
+        val powerGrund = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Farbe.alpha(ui.p.onSurface, 22)) }
         z.addView(knopf(R.drawable.ic_pn_minus, R.string.klima_temp_runter) { "temp_runter" }.also { tempKnoepfe += it }, ui.lp(ui.bd(DOCK_KNOPF), -1))
         z.addView(wert(R.drawable.ic_pn_thermo, soll), ui.lp(h = -1))
         z.addView(knopf(R.drawable.ic_pn_plus, R.string.klima_temp_hoch) { "temp_hoch" }.also { tempKnoepfe += it }, ui.lp(ui.bd(DOCK_KNOPF), -1, rechts = 6))
@@ -640,6 +668,7 @@ class MainActivity : AppCompatActivity() {
         }
         z.addView(FrameLayout(this).apply {
             addView(power, FrameLayout.LayoutParams(ui.dp(26), ui.dp(26), Gravity.CENTER))
+            background = android.graphics.drawable.InsetDrawable(powerGrund, ui.dp(4))
             contentDescription = getString(R.string.klima_an_aus); isClickable = true; foreground = ui.welle()
             // Unbekannter Zustand: „an“ (aus schalten geht über die volle Steuerung in Panoptes)
             setOnClickListener { klimaSenden(if (summary?.klima?.an == true) "aus" else "an") }
@@ -686,7 +715,9 @@ class MainActivity : AppCompatActivity() {
             soll.text = sollText(k) ?: "—"
             tempKnoepfe.forEach { it.alpha = if (k?.tempArt == "unbekannt") 0.35f else 1f }
             stufe.text = k?.stufe?.toString() ?: "—"
-            power.setColorFilter(if (k?.an == true) ui.p.lime else ui.p.onSurfaceVariant)
+            // 0.1.43.3 (L3): an = gefüllter Kreis in Akzentfarbe
+            power.setColorFilter(if (k?.an == true) (if (ui.p.hell) Color.WHITE else Farbe.rgb(0x06121C)) else ui.p.onSurfaceVariant)
+            powerGrund.setColor(if (k?.an == true) ui.p.aqua else Farbe.alpha(ui.p.onSurface, 22))
         }
         return z
     }
@@ -743,7 +774,7 @@ class MainActivity : AppCompatActivity() {
     private fun zeichneUpdateKarte() {
         if (!::updateHost.isInitialized) return
         updateHost.removeAllViews()
-        val u = updateStand ?: return
+        val u = updateStand ?: return eigenUpdateKarte()
         val spaeter = getSharedPreferences(PREFS, MODE_PRIVATE).getString(KEY_SPAETER, "").orEmpty()
         val eintraege = listOfNotNull(
             u.panoptes?.let { Triple("panoptes", it, getString(R.string.update_panoptes, it.version)) },
@@ -773,6 +804,59 @@ class MainActivity : AppCompatActivity() {
             zeichneUpdateKarte()
         }, ui.lp(h = ui.dp(56)))
         updateHost.addView(karte, FrameLayout.LayoutParams(-1, -2))
+    }
+
+    /** 0.1.43.4 (Paket S): io-Thread. Ohne Kern höchstens einmal am Tag das öffentliche Release lesen. */
+    private fun eigenUpdatePruefen(jetzt: Long) {
+        val p = getSharedPreferences(PREFS, MODE_PRIVATE)
+        if (!EigenUpdate.faellig(KernVerbindung.verfuegbar(), p.getLong(KEY_EIGEN_UPDATE, 0L), p.getBoolean(KEY_EIGEN_UPDATE_FEHL, false), jetzt)) return
+        val eigen = runCatching { packageManager.getPackageInfo(packageName, 0).longVersionCode.toInt() }.getOrDefault(Int.MAX_VALUE)
+        val r = EigenUpdate.holen(eigen)
+        p.edit().putLong(KEY_EIGEN_UPDATE, jetzt).putBoolean(KEY_EIGEN_UPDATE_FEHL, r.isFailure).apply()
+        r.getOrNull()?.let { f -> main.post { if (f != eigenUpdate) { eigenUpdate = f; zeichneUpdateKarte() } } }
+    }
+
+    /** Hinweis „Neue Version“ ohne Panoptes: Laden (sha256 geprüft) und an den Android-Installer geben. Installiert nie selbst. */
+    private fun eigenUpdateKarte() {
+        val f = eigenUpdate ?: return
+        val spaeter = getSharedPreferences(PREFS, MODE_PRIVATE).getString(KEY_SPAETER, "").orEmpty()
+        if ("launcher:${f.versionCode}" in spaeter.split(',') || bearbeiten) return
+        val karte = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+            background = ui.karte(); setPadding(ui.dp(16), ui.dp(8), ui.dp(12), ui.dp(8))
+        }
+        karte.addView(ui.icon(R.drawable.ic_pn_download, ui.p.aqua, 28), ui.lp(rechts = 12))
+        val texte = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        texte.addView(ui.titel(getString(R.string.update_titel)))
+        texte.addView(ui.text(getString(R.string.update_launcher, f.versionName), 15f, 600).apply { maxLines = 1 })
+        texte.addView(ui.leise(getString(if (eigenUpdateLaedt) R.string.eigen_update_laedt else R.string.eigen_update_text)).apply { maxLines = 2 })
+        karte.addView(texte, ui.lp(0, -2, 1f))
+        if (!eigenUpdateLaedt) karte.addView(ui.act(null, getString(R.string.eigen_update_laden), primary = true) { eigenUpdateLaden(f) }, ui.lp(h = ui.dp(56), rechts = 8))
+        karte.addView(ui.act(null, getString(R.string.update_spaeter)) {
+            val neu = (spaeter.split(',').filter { it.isNotBlank() } + "launcher:${f.versionCode}").takeLast(6)
+            getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString(KEY_SPAETER, neu.joinToString(",")).apply()
+            zeichneUpdateKarte()
+        }, ui.lp(h = ui.dp(56)))
+        updateHost.addView(karte, FrameLayout.LayoutParams(-1, -2))
+    }
+
+    private fun eigenUpdateLaden(f: EigenUpdate.Fund) {
+        if (!darfBedienen()) return
+        if (!EigenUpdate.darfInstallieren(this)) {
+            AlertDialog.Builder(this).setTitle(R.string.update_titel).setMessage(R.string.eigen_update_erlaubnis)
+                .setPositiveButton(android.R.string.ok) { _, _ -> if (!EigenUpdate.erlaubnisSeite(this)) zeigeHinweis(getString(R.string.launch_failed)) }
+                .setNegativeButton(R.string.abbrechen, null).show()
+            return
+        }
+        eigenUpdateLaedt = true; zeichneUpdateKarte()
+        io.execute {
+            val apk = EigenUpdate.laden(this, f)
+            main.post {
+                eigenUpdateLaedt = false; zeichneUpdateKarte()
+                if (apk == null) zeigeHinweis(getString(R.string.eigen_update_fehler))
+                else if (!EigenUpdate.installer(this, apk)) zeigeHinweis(getString(R.string.launch_failed))
+            }
+        }
     }
 
     private fun mb(b: Long) = "${nf1.format(b / 1_048_576.0)} MB"
@@ -817,7 +901,7 @@ class MainActivity : AppCompatActivity() {
     private fun dockIcon(res: Int, label: String, hervor: Boolean = false, kurz: String = label, f: () -> Unit) = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
         val box = FrameLayout(this@MainActivity).apply {
-            background = GradientDrawable().apply { cornerRadius = ui.dpf(16f); setColor(if (hervor) ui.p.act else Color.TRANSPARENT); if (hervor) setStroke(ui.dp(1), ui.p.aqua) }
+            background = GradientDrawable().apply { cornerRadius = ui.radius(Mass.RADIUS_MITTEL); setColor(if (hervor) Farbe.alpha(ui.p.aqua, 30) else Farbe.alpha(ui.p.onSurface, if (ui.p.hell) 12 else 14)); if (hervor) setStroke(ui.dp(1), Farbe.alpha(ui.p.aqua, 170)) }
             val i = Math.round(28 * ui.bedien)
             addView(ui.icon(res, if (hervor) ui.p.aqua else ui.p.onSurface, i), FrameLayout.LayoutParams(ui.dp(i), ui.dp(i), Gravity.CENTER))
         }
@@ -828,21 +912,29 @@ class MainActivity : AppCompatActivity() {
 
     /** Beschriftung unter Dock-Symbolen: klein, gedämpft (bei „Große Bedienung“ kontrastreich), eine Zeile. */
     private fun dockBeschriftung(text: String) = ui.leise(text, DockPlatz.SCHRIFT).apply {
-        maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; gravity = Gravity.CENTER; setPadding(ui.dp(2), ui.dp(2), ui.dp(2), 0)
+        maxLines = 1; gravity = Gravity.CENTER; setPadding(ui.dp(1), ui.dp(2), ui.dp(1), 0)
+        // 0.1.43.3 (G1): lange Namen („Einstellungen“ bei 160 dpi) werden etwas kleiner statt abgeschnitten (nie unter 10 sp)
+        setAutoSizeTextTypeUniformWithConfiguration(10, Math.round(DockPlatz.SCHRIFT * ui.bedien), 1, android.util.TypedValue.COMPLEX_UNIT_SP)
     }
 
     /** App-Icon (aus dem PackageManager) mit optionalem Namen; langer Druck meldet sich mit true. */
     private fun appKnopf(paket: String, mitName: Boolean, gross: Int, dock: Boolean = false, klick: (Boolean) -> Unit) = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
         val a = appsNachPaket[paket]
-        addView(ImageView(this@MainActivity).apply {
+        val symbol = ImageView(this@MainActivity).apply {
             if (a?.icon != null) setImageDrawable(a.icon) else setImageDrawable(ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_pn_apps)?.mutate()?.also { it.setTint(ui.p.outline) })
-        }, LinearLayout.LayoutParams(ui.dp(gross), ui.dp(gross)))
-        if (mitName && dock) addView(dockBeschriftung(a?.name ?: paket), LinearLayout.LayoutParams(-1, -2))
-        else if (mitName) addView(ui.text(a?.name ?: paket, 13f, 600, ui.p.onSurfaceVariant).apply {
+        }
+        // 0.1.43.3 (G1): im Dock steht das App-Symbol im selben Kasten wie die anderen Symbole (DockPlatz.SYMBOL),
+        // damit alle Namen auf einer Grundlinie liegen (vorher stand „Panoptes“ ~8 px zu hoch)
+        if (dock) addView(FrameLayout(this@MainActivity).apply { addView(symbol, FrameLayout.LayoutParams(ui.dp(gross), ui.dp(gross), Gravity.CENTER)) },
+            LinearLayout.LayoutParams(ui.bd(DockPlatz.SYMBOL), ui.bd(DockPlatz.SYMBOL)))
+        else addView(symbol, LinearLayout.LayoutParams(ui.dp(gross), ui.dp(gross)))
+        val name = AppName.anzeige(this@MainActivity, paket, a?.name)   // nie der Paketname
+        if (mitName && dock) addView(dockBeschriftung(name), LinearLayout.LayoutParams(-1, -2))
+        else if (mitName) addView(ui.text(name, 13f, 600, ui.p.onSurfaceVariant).apply {
             maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; gravity = Gravity.CENTER; setPadding(ui.dp(2), ui.dp(4), ui.dp(2), 0)
         }, LinearLayout.LayoutParams(-1, -2))
-        contentDescription = a?.name ?: paket
+        contentDescription = name
         isClickable = true; foreground = ui.welle()
         setOnClickListener { klick(false) }
         setOnLongClickListener { klick(true); true }
@@ -960,13 +1052,15 @@ class MainActivity : AppCompatActivity() {
             for (y in 0 until Raster.ZEILEN) for (x in 0 until Raster.SPALTEN) {
                 val zelle = intArrayOf(x * Frei.FEIN, y * Frei.FEIN, Frei.FEIN, Frei.FEIN)
                 if (Frei.passt(layout.seiten[seite], zelle)) r.addView(View(this).apply {
-                    background = GradientDrawable().apply { cornerRadius = ui.dpf(16f); setStroke(ui.dp(1), ui.p.line, ui.dpf(8f), ui.dpf(6f)) }
+                    background = GradientDrawable().apply { cornerRadius = ui.radius(Mass.RADIUS_MITTEL); setStroke(ui.dp(1), ui.p.line, ui.dpf(8f), ui.dpf(6f)) }
                 }, 0, FreiLayout.Fein(zelle[0], zelle[1], zelle[2], zelle[3]))
             }
         }
         seitenHost.addView(r, FrameLayout.LayoutParams(-1, -1))
         linienAnsicht = if (bearbeiten) HilfslinienAnsicht(this, ui).also { seitenHost.addView(it, FrameLayout.LayoutParams(-1, -1)) } else null
-        if (richtung != 0) { r.translationX = richtung * ui.dpf(120f); r.alpha = 0f; r.animate().translationX(0f).alpha(1f).setDuration(240).start() }
+        // 0.1.43.3 (A8): Seitenwechsel gleitet kurz; „Weniger Bewegung“ / Android ohne Animation = sofort (Gestaltung.kt)
+        val gleiten = Bewegung.dauer(this, Bewegung.MITTEL)
+        if (richtung != 0 && gleiten > 0) { r.translationX = richtung * ui.dpf(120f); r.alpha = 0f; r.animate().translationX(0f).alpha(1f).setDuration(gleiten).start() }
         punkte.removeAllViews()
         if (layout.seiten.size > 1) layout.seiten.indices.forEach { i ->
             punkte.addView(View(this).apply {
@@ -1028,7 +1122,7 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("ClickableViewAccessibility")
     private fun bearbeitenSchicht(box: FrameLayout, e: Element) {
-        box.foreground = GradientDrawable().apply { cornerRadius = ui.dpf(20f); setStroke(ui.dp(2), ui.p.lime) }
+        box.foreground = GradientDrawable().apply { cornerRadius = ui.radius(Mass.RADIUS_GROSS); setStroke(ui.dp(2), ui.p.lime) }
         val fang = View(this)
         box.addView(fang, FrameLayout.LayoutParams(-1, -1))
         // 0.1.44 (E2): frei ziehen mit Einrasten und Hilfslinien (FreiEditor)
@@ -1201,6 +1295,7 @@ class MainActivity : AppCompatActivity() {
     private fun widget(e: Element): View {
         val k = e.kachel!!
         val gross = e.b >= 2 && e.h >= 2
+        if (KernVerbindung.platzhalter(k)) return mitPanoptesKachel(e, k, gross)   // 0.1.43.4 (Paket S)
         val v = when (k) {
             Kachel.FAHRZEUG -> if (e.b >= 3 && e.h >= 2) fahrzeugFeld() else fahrzeugKlein(gross)
             Kachel.AKKU -> akku(e)
@@ -1244,6 +1339,27 @@ class MainActivity : AppCompatActivity() {
         }
         v.setOnLongClickListener { langerDruck(e); true }
         return v
+    }
+
+    /**
+     * 0.1.43.4 (Paket S): Kachel, die Panoptes braucht, wenn Panoptes fehlt: ruhig „Mit Panoptes: …“ und ein Link
+     * (Panoptes-App öffnen bzw. die Panoptes-Seite). Keine Fehlermeldung, keine leeren Werte. Kommt der Kern dazu, baut
+     * neueDaten() die Seite neu und die echte Kachel erscheint von selbst.
+     */
+    private fun mitPanoptesKachel(e: Element, k: Kachel, gross: Boolean): View = spalte(if (gross) 20 else 14).apply {
+        gravity = Gravity.CENTER_VERTICAL
+        // 0.1.43.4 (Integration, Nachtrag Design L3): Design-Bausteine statt ui.leise/ui.text-Groessen; keine Warnfarbe.
+        // Die Flaeche (Glas auf einer Szene, sonst Karte) setzt baueElement schon am Rahmen, ausser bei der frei stehenden
+        // Fahrzeug-Ansicht – nur dort bekommt der Platzhalter sie selbst.
+        if (FahrzeugKacheln.frei(k)) background = if (szene()) ui.glas(Mass.RADIUS_GROSS) else ui.karte()
+        addView(ui.stufe(Stufe.TEXT, getString(R.string.mit_panoptes, kachelName(k)), ui.leiseFarbe).apply { maxLines = 3 })
+        addView(ui.text(getString(R.string.mit_panoptes_link), 15f, 600, ui.p.aqua).apply {
+            maxLines = 1; gravity = Gravity.CENTER_VERTICAL; minimumHeight = ui.bd(Mass.TIPPFLAECHE - 8)
+        }, ui.lp(oben = 8))
+        contentDescription = getString(R.string.mit_panoptes, kachelName(k))
+        isClickable = true; foreground = ui.welle()
+        setOnClickListener { if (!KernVerbindung.panoptesOeffnen(this@MainActivity)) zeigeHinweis(getString(R.string.mit_panoptes_seite, KernVerbindung.PANOPTES_SEITE)) }
+        setOnLongClickListener { langerDruck(e); true }
     }
 
     private fun spalte(pad: Int = 20) = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(ui.dp(pad), ui.dp(pad - 2), ui.dp(pad), ui.dp(pad - 2)) }
@@ -1354,7 +1470,7 @@ class MainActivity : AppCompatActivity() {
     private val zusatz get() = ZusatzKacheln(this, ui, { reg(it) }, { summary }, { cachedHistory })
     /** 0.1.44 (D1): Fahrzeug-Startseite – eigene Datei, hier nur eingehängt. Fenster nur über den engen Kern-Weg. */
     private val fahrzeugStart get() = FahrzeugKacheln(this, ui, { reg(it) }, { summary }, { summary?.modelId }, { summary?.farbe },
-        { f, ziel, fertig -> io.execute { val a = client.fenster(f, ziel); main.post { fertig(a) } } }, { zeigeHinweis(it) })
+        { f, ziel, fertig -> io.execute { val a = client.fenster(f, ziel); main.post { fertig(a) } } }, { zeigeHinweis(it) }, { online })
     private val u get() = getString(R.string.unknown)
 
     /** Großes Fahrzeug-Feld: 3D-Modell aus dem Katalog, Datum/Uhr, Reifen, Gang, Tempo, Akku. */
@@ -1388,7 +1504,7 @@ class MainActivity : AppCompatActivity() {
         val unten = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL or Gravity.CENTER_HORIZONTAL; setPadding(ui.dp(18), 0, ui.dp(18), ui.dp(14)) }
         val gaenge = LinearLayout(this).apply {
             gravity = Gravity.CENTER_VERTICAL; setPadding(ui.dp(8), ui.dp(6), ui.dp(8), ui.dp(6))
-            background = GradientDrawable().apply { cornerRadius = ui.dpf(999f); setColor(ui.p.act); setStroke(ui.dp(1), ui.p.line) }
+            background = GradientDrawable().apply { cornerRadius = ui.radius(Mass.RADIUS_RUND); setColor(ui.p.act); setStroke(ui.dp(1), ui.p.line) }
         }
         val gang = listOf("P", "R", "N", "D").associateWith { g -> ui.zahl(g, 22f).apply { setPadding(ui.dp(10), 0, ui.dp(10), 0) }.also { gaenge.addView(it) } }
         unten.addView(gaenge, ui.lp(rechts = 36))
@@ -1490,6 +1606,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+    /** 0.1.43.4 (E2E G3): Zündung aus dem Kern („on“/„off“/„charging“) übersetzt, nie der Rohwert. */
+    private fun accText(acc: String?): String = Zuendung.text(acc)?.let { getString(it) } ?: u
     private var standbild: Pair<String, android.graphics.Bitmap>? = null
     private var autoErsatz: View? = null
 
@@ -1502,9 +1620,9 @@ class MainActivity : AppCompatActivity() {
         if (gross) { c.addView(verkehr, ui.lp(oben = 10)); c.addView(verlauf, ui.lp(oben = 4)) }
         reg {
             val s = summary
-            s?.vehicleName?.let { titel.text = it.uppercase() }
+            s?.vehicleName?.let { titel.text = it.uppercase(java.util.Locale.getDefault()) }
             reichweite.text = getString(R.string.range_format, s?.rangeKm?.let { nf.format(it) } ?: u)
-            zustand.text = getString(R.string.state_format, s?.acc ?: u, s?.gear ?: u)
+            zustand.text = getString(R.string.state_format, accText(s?.acc), s?.gear ?: u)
             verkehr.text = if (traffic.nearby == 0) getString(R.string.traffic_empty) else getString(R.string.traffic_format, traffic.nearby, traffic.approaching)
             val h = cachedHistory
             verlauf.text = if (h.lastTripKm == null && h.lastChargeKwh == null) getString(R.string.history_empty)
@@ -1639,11 +1757,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     /** 0.1.40 (L2) Live-Kamera: öffnet die Panoptes-Liveansicht (dort gelten deren Regeln). */
-    private fun kameraKachel(gross: Boolean): View {
-        val c = spalte()   // 0.1.40 (E2E G3): Beschriftung oben wie bei den anderen Kacheln
-        c.addView(LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL; addView(ui.icon(R.drawable.ic_pn_camera, ui.p.aqua, if (gross) 30 else 22)); addView(ui.titel(getString(R.string.widget_kamera)).apply { setPadding(ui.dp(8), 0, 0, 0) }) })
-        c.addView(ui.leise(getString(R.string.kamera_tipp), 15f), ui.lp(oben = 8))
-        return c
+    private fun kameraKachel(gross: Boolean): View = KameraKachel(this, ui, { reg(it) },
+        { Kamera.erlaubt(summary?.gear, summary?.speedKmh) },
+        { cam -> oeffnePanoptes("live", Kamera.EXTRA_KAMERA to cam.toString()) },
+        { aufnahmenFenster() }, { zeigeHinweis(it) }).ansicht(gross)
+
+    /** 0.1.43.4: Liste der Aufnahmen als großes Fenster (nur lesen, nur im Stand); Abspielen geschieht in Panoptes. */
+    private fun aufnahmenFenster() {
+        if (!Kamera.erlaubt(summary?.gear, summary?.speedKmh)) { zeigeHinweis(getString(R.string.kamera_nur_stand)); return }
+        val f = AufnahmenFenster(this, ui, { z, so -> client.aufnahmen(z, so) }, { id ->
+            if (Kamera.erlaubt(summary?.gear, summary?.speedKmh) && Kamera.idGueltig(id)) { schliesseOverlay(); oeffnePanoptes("aufnahme_alle", Kamera.EXTRA_AUFNAHME to id) }
+            else zeigeHinweis(getString(R.string.kamera_nur_stand))
+        }, { id -> if (Kamera.idGueltig(id)) AufnahmeQrFenster(this, ui, id).zeigen() })
+        zeigeOverlay(f.ansicht(kopf(getString(R.string.aufn_titel))))
     }
 
     /**
@@ -1713,7 +1839,7 @@ class MainActivity : AppCompatActivity() {
         } else c.addView(zugriff, ui.lp(-1, -2, oben = 8))
         val cover = ImageView(this).apply {
             scaleType = ImageView.ScaleType.CENTER_CROP; clipToOutline = true
-            background = GradientDrawable().apply { cornerRadius = ui.dpf(16f); setColor(ui.p.act) }
+            background = GradientDrawable().apply { cornerRadius = ui.radius(Mass.RADIUS_MITTEL); setColor(ui.p.act) }
         }
         val coverGross = e.h >= 3
         val coverRahmen = FrameLayout(this).apply { addView(cover, FrameLayout.LayoutParams(ui.dp(if (coverGross) 170 else 96), ui.dp(if (coverGross) 170 else 96), Gravity.CENTER)) }
@@ -1799,13 +1925,16 @@ class MainActivity : AppCompatActivity() {
             setOnClickListener { schliesseOverlay() }
         }
         val karte = FrameLayout(this).apply {
-            background = GradientDrawable().apply { cornerRadius = ui.dpf(24f); setColor(ui.p.surface); setStroke(ui.dp(1), ui.p.line) }
+            background = GradientDrawable().apply { cornerRadius = ui.radius(Mass.RADIUS_GROSS); setColor(ui.p.surface); setStroke(ui.dp(1), ui.p.line) }
             isClickable = true
             addView(inhalt, FrameLayout.LayoutParams(-1, -1))
         }
         o.addView(karte, if (breit) FrameLayout.LayoutParams(-1, -1).apply { setMargins(ui.dp(40), ui.dp(30), ui.dp(40), ui.dp(30)) }
         else FrameLayout.LayoutParams(ui.dp(560), -2, Gravity.CENTER))
         root.addView(o, FrameLayout.LayoutParams(-1, -1))
+        // 0.1.43.3 (A8): Fenster blendet kurz ein (ohne Bewegung: sofort)
+        val ein = Bewegung.dauer(this, Bewegung.KURZ)
+        if (ein > 0) { o.alpha = 0f; o.animate().alpha(1f).setDuration(ein).start() }
         overlay = o
     }
 
@@ -1828,7 +1957,7 @@ class MainActivity : AppCompatActivity() {
             setTextColor(ui.p.onSurface); setHintTextColor(ui.p.onSurfaceVariant)
             setCompoundDrawablesRelativeWithIntrinsicBounds(ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_pn_search)?.mutate()?.also { it.setTint(ui.p.aqua) }, null, null, null)
             compoundDrawablePadding = ui.dp(10)
-            background = GradientDrawable().apply { cornerRadius = ui.dpf(16f); setColor(ui.p.act); setStroke(ui.dp(1), ui.p.line) }
+            background = GradientDrawable().apply { cornerRadius = ui.radius(Mass.RADIUS_MITTEL); setColor(ui.p.act); setStroke(ui.dp(1), ui.p.line) }
             setPadding(ui.dp(16), ui.dp(12), ui.dp(16), ui.dp(12))
         }
         val titel = getString(when (ziel) { Ziel.DOCK -> R.string.waehle_dock; Ziel.SCHNELL -> R.string.waehle_schnell; Ziel.STARTSEITE -> R.string.app_hinzu; null -> R.string.alle_apps })
@@ -1945,6 +2074,7 @@ class MainActivity : AppCompatActivity() {
             zeile(R.drawable.ic_pn_close, getString(R.string.zurueck)) { einstellungen() }
             // E5: aus der oberen Liste hierher: Startseiten bearbeiten, Layout-Vorlage, Klima im Dock, 3D-Fahrzeug
             zeile(R.drawable.ic_pn_edit, getString(R.string.bearbeiten)) { if (darfBedienen()) { bearbeiten = true; baueAlles() } }
+            zeile(R.drawable.ic_pn_apps, getString(R.string.datei_qr_titel)) { if (darfBedienen()) DateiQrFenster(this, ui).zeigen() }   // 0.1.43.4 F7: Datei per QR
             zeile(R.drawable.ic_pn_apps, getString(R.string.vorlage)) { if (darfBedienen()) vorlageWaehlen() }
             zeile(R.drawable.ic_pn_thermo, schalter(R.string.zeige_klima, layout.zeigeKlima)) { if (darfBedienen()) { aendern(layout.copy(zeigeKlima = !layout.zeigeKlima)); baueAlles(); einstellungen(erweitert = true) } }
             zeile(R.drawable.ic_pn_car, schalter(R.string.zeige_3d, layout.zeige3d)) { if (darfBedienen()) { aendern(layout.copy(zeige3d = !layout.zeige3d)); baueAlles(); einstellungen(erweitert = true) } }
@@ -1975,6 +2105,9 @@ class MainActivity : AppCompatActivity() {
             zeile(R.drawable.ic_pn_camera, getString(R.string.seitenblick_titel)) { if (darfBedienen()) seitenblickFragen() }
             zeile(R.drawable.ic_pn_music, schalter(R.string.medien_zugriff, MedienQuelle.zugriffErlaubt(this))) { zugriffErklaeren() }
             zeile(R.drawable.ic_pn_play, schalter(R.string.musik_weiterspielen, MusikStart.an(this))) { MusikStart.umschalten(this); einstellungen(erweitert = true) }
+            // 0.1.43.3 (A8): „Weniger Bewegung“ (ab Werk aus) schaltet alle Übergänge ab
+            zeile(R.drawable.ic_pn_star, schalter(R.string.weniger_bewegung, Bewegung.weniger(this))) {
+                Bewegung.setzen(this, !Bewegung.weniger(this)); einstellungen(erweitert = true); zeigeHinweis(getString(R.string.weniger_bewegung_hinweis)) }
             // 0.1.44 (P4): Fahrerprofile (ab Werk eines), Sitzposition nur gelesen
             zeile(R.drawable.ic_pn_auto_seite, getString(R.string.profil_titel) + ": " + profilKachel.name(Fahrerprofile.stand(this).aktiv)) { profilDialog() }
             // 0.1.42 (L48): Selbststeuerung und Stand-Uhr, ab Werk aus
@@ -2023,7 +2156,8 @@ class MainActivity : AppCompatActivity() {
 
     private val motivNamen = intArrayOf(R.string.motiv_1, R.string.motiv_2, R.string.motiv_3, R.string.motiv_4, R.string.motiv_5,
         R.string.motiv_6, R.string.motiv_7, R.string.motiv_8, R.string.motiv_9, R.string.motiv_10,
-        R.string.motiv_11, R.string.motiv_12, R.string.motiv_13, R.string.motiv_14)   // 0.1.44 (D1): Szenen
+        R.string.motiv_11, R.string.motiv_12, R.string.motiv_13, R.string.motiv_14,   // 0.1.44 (D1): Szenen
+        R.string.motiv_15, R.string.motiv_16, R.string.motiv_17, R.string.motiv_18, R.string.motiv_19, R.string.motiv_20)   // 0.1.43.4: gerenderte Szenen
 
     private fun hgName(w: String) = Motive.nummer(w)?.let { getString(R.string.hg_motiv) + ": " + getString(motivNamen[it - 1]) } ?: getString(when (w) {
         "cockpit" -> R.string.hg_cockpit; "bild" -> R.string.hg_bild; "video" -> R.string.hg_video; "eigen" -> R.string.hg_eigen
@@ -2373,7 +2507,15 @@ class MainActivity : AppCompatActivity() {
         if (!refreshInFlight.compareAndSet(false, true)) return
         io.execute {
             try {
-                val s = client.summary()
+                // 0.1.43.4 (Paket S): Kern nur fragen, wenn KernVerbindung es erlaubt (gedrosselt, ohne Panoptes gar nicht)
+                val jetzt0 = System.currentTimeMillis()
+                if (!KernVerbindung.sollPruefen(jetzt0) { KernVerbindung.installiert(this) }) {
+                    eigenUpdatePruefen(jetzt0)
+                    main.post { neueDaten(null, LauncherTraffic(0, 0), appearance, false) }
+                    return@execute
+                }
+                val s = try { client.summary() } catch (x: Exception) { KernVerbindung.melde(false, System.currentTimeMillis()); throw x }
+                KernVerbindung.melde(true, System.currentTimeMillis())
                 val trafficValue = runCatching { client.traffic() }.getOrDefault(LauncherTraffic(0, 0))
                 val homeWunsch = runCatching { client.homeWunsch() }.getOrNull()
                 val a = runCatching { client.appearance() }.getOrDefault(LauncherAppearance("auto", "crystal"))
@@ -2393,6 +2535,7 @@ class MainActivity : AppCompatActivity() {
                 runCatching { hausUndSitzHolen(s, now) }   // 0.1.44 (P4): nur lesen
                 main.post { neueDaten(s, trafficValue, a, true); homeAbgleichen(homeWunsch) }
             } catch (_: Exception) {
+                eigenUpdatePruefen(System.currentTimeMillis())
                 main.post { neueDaten(null, LauncherTraffic(0, 0), appearance, false) }
             } finally {
                 refreshInFlight.set(false)
@@ -2401,12 +2544,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     private var homeFrageOffen = false
+    private var homeUebernahmeLaeuft = false
 
     /**
      * 0.1.38.7: Alias des Launchers dem Kern-Wunsch anpassen (nie bei unerreichbarem Kern) und, wenn der Schalter frisch an
      * ist, groß fragen. „Ja“: der Kern setzt uns als Standard; „Nein“: Rückweg zum BYD-Startbildschirm.
      */
     private fun homeAbgleichen(w: HomeWunsch?) {
+        // 0.1.43.4 (Paket S): ohne Panoptes gewählter Startbildschirm bleibt, Panoptes übernimmt die Wahl
+        if (HomeAbgleich.lokalUebernehmen(w, HomeSchalter.istAn(this), HomeSchalter.lokal(this))) {
+            if (!homeUebernahmeLaeuft) {
+                homeUebernahmeLaeuft = true
+                io.execute {
+                    val ok = client.homeAn() && client.homeBehalten()
+                    main.post { homeUebernahmeLaeuft = false; if (ok) HomeSchalter.lokalMerken(this, false) }
+                }
+            }
+            return
+        }
         HomeAbgleich.aliasSoll(w, HomeSchalter.istAn(this))?.let { HomeSchalter.setze(this, it) }
         if (HomeAbgleich.fragen(w, HomeSchalter.istAn(this)) && !homeFrageOffen && !isFinishing) {
             homeFrageOffen = true
@@ -2438,12 +2593,21 @@ class MainActivity : AppCompatActivity() {
                 bearbeiten || overlay != null)) kernAbgleich()
         val jetzt = System.currentTimeMillis()
         if (ok) frische.gut(s, jetzt)
+        if (ok) eigenUpdate = null   // 0.1.43.4 (Paket S): mit Kern meldet der Kern Updates
+        gpsAnwenden()   // Paket S: GPS nur ohne Panoptes
         messUhr.daten(ok, jetzt).forEach { Messpunkte.log(it) }
         summary = if (ok) s else frische.alt(jetzt); traffic = t; online = ok
         selbstSteuern(); standUhrPruefen()   // 0.1.42 (L48)
         bearbeitenSperren()   // 0.1.44 (E2): Bearbeiten nur im Stand
         if (angebotPruefen) startAngebot()   // E5: Startbildschirm-Angebot, sobald der Stand bekannt ist
         if (!ok && warOnline) zeigeHinweis(getString(R.string.offline))
+        // 0.1.43.4 (Paket S): Panoptes kam dazu oder fehlt (seit Start nie erreicht) → Kacheln/Leiste neu, ohne Meldung
+        val ohne = KernVerbindung.ohnePanoptes()
+        if (ohne != ohneGezeigt && overlay == null && !bearbeiten) {
+            ohneGezeigt = ohne
+            if (!ohne) { eigenUpdate = null; sprachKnopf.aktualisieren() }
+            appearance = a; baueAlles(); return
+        }
         val alt = appearance; appearance = a
         val cockpit = layout.hintergrund == "cockpit"
         val pal = stilPalette(cockpit, a?.modus)
@@ -2462,6 +2626,7 @@ class MainActivity : AppCompatActivity() {
     // ---------- Hintergrund ----------
 
     private fun hintergrundAnwenden() {
+        szeneWechseln()
         if (layout.hintergrund == "eigen") {
             // 0.1.40: eigenes Bild aus dem Launcher (fehlt es, bleibt der Panoptes-Look)
             videoStopp()
@@ -2494,6 +2659,23 @@ class MainActivity : AppCompatActivity() {
         if (bildAn && !stopped && layout.hintergrund == "video" && Fahrsicherheit.videoErlaubt(a?.hintergrundVideo == true, summary?.gear)) videoStart() else videoStopp()
     }
 
+    /**
+     * 0.1.43.3 (L3): Stand-Szene ↔ Fahrt-Szene bei Gang D. Blendet über [Bewegung.MITTEL] über; mit „Weniger Bewegung“
+     * oder Android ohne Animationen sofort. Ohne gewählte Szene ändert sich nichts.
+     */
+    private fun szeneWechseln() {
+        if (!::root.isInitialized) return
+        val soll = SzenenWechsel.nummer(Motive.nummer(layout.hintergrund), summary?.gear)
+        if (soll == szeneJetzt || soll == null) return
+        szeneJetzt = soll
+        val neu = MotivHintergrund(soll, ui.p)
+        val dauer = Bewegung.dauer(this, Bewegung.MITTEL).toInt()
+        val alt = root.background
+        if (dauer <= 0 || alt == null) { root.background = neu; return }
+        val ueber = android.graphics.drawable.TransitionDrawable(arrayOf(alt, neu)).apply { isCrossFadeEnabled = true }
+        root.background = ueber; ueber.startTransition(dauer)
+    }
+
     private fun dekodieren(bytes: ByteArray) = try {
         val grenzen = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, grenzen)
@@ -2523,19 +2705,72 @@ class MainActivity : AppCompatActivity() {
     /** Bedienen nur im Stand (Fahrsicherheit). Starten und Ansehen geht immer. */
     /** 0.1.44 (E2): beim Losfahren den Bearbeiten-Modus beenden (Stand bleibt gespeichert), Bedienung normal. */
     private fun bearbeitenSperren() {
-        val s = summary
-        if (!bearbeiten || Fahrsicherheit.bearbeitenErlaubt(s?.gear, s?.acc, s?.speedKmh)) return
+        if (!bearbeiten || standOk()) return
         main.post { if (bearbeiten) { bearbeiten = false; verlauf.leeren(); baueAlles(); kernSpeichern(); zeigeHinweis(getString(R.string.bearbeiten_gesperrt)) } }
     }
 
     private fun darfBedienen(still: Boolean = false): Boolean {
-        val s = summary
-        if (Fahrsicherheit.bearbeitenErlaubt(s?.gear, s?.acc, s?.speedKmh)) return true
-        if (!still) zeigeHinweis(getString(R.string.nur_im_stand))
+        if (standOk()) return true
+        val fragen = KernVerbindung.ohnePanoptes() &&
+            StandOhneKern.urteil(StandOhneKern.recht(this), gps.letzter, System.currentTimeMillis()) == StandOhneKern.Urteil.FRAGEN
+        if (!still && fragen) standFragen() else if (!still) zeigeHinweis(getString(R.string.nur_im_stand))
         return false
     }
 
-    private fun appName(p: String) = appsNachPaket[p]?.name ?: p
+    /** 0.1.43.4 (Paket S): bis wann „Ich stehe“ gilt (nur ohne Panoptes, nur im Speicher). */
+    private var standBestaetigtBis = 0L
+
+    /**
+     * 0.1.43.4 (Paket S, Projektinhaber 13.11. „GPS-Tempo, sonst fragen“): mit Panoptes allein der Kern-Stand; ohne Panoptes
+     * das GPS-Tempo (unter 3 km/h, höchstens 10 s alt), sonst die Bestätigung „Ich stehe“ (StandOhneKern).
+     */
+    private fun standOk(): Boolean {
+        val s = summary
+        return StandOhneKern.erlaubt(Fahrsicherheit.bearbeitenErlaubt(s?.gear, s?.acc, s?.speedKmh),
+            KernVerbindung.ohnePanoptes(), StandOhneKern.recht(this), gps.letzter, standBestaetigtBis, System.currentTimeMillis())
+    }
+
+    /** GPS nur, solange der Launcher vorn ist und Panoptes fehlt (und der Nutzer den Standort erlaubt hat). */
+    private val gps by lazy {
+        StandOhneKern.Quelle(this) { g ->
+            if (StandOhneKern.bestaetigungVerfaellt(g, System.currentTimeMillis())) standBestaetigtBis = 0L
+            bearbeitenSperren()
+        }
+    }
+
+    private fun gpsAnwenden() { if (!stopped && KernVerbindung.ohnePanoptes()) gps.start() else gps.stop() }
+
+    /** Ohne Panoptes und ohne GPS-Wert: einmal fragen, dann gilt es 10 min. Standort nur auf Tipp, mit Erklärung. */
+    private fun standFragen() {
+        val b = AlertDialog.Builder(this).setTitle(R.string.stand_frage_titel).setMessage(R.string.stand_frage_text)
+            .setPositiveButton(R.string.stand_frage_ja) { _, _ ->
+                standBestaetigtBis = System.currentTimeMillis() + StandOhneKern.BESTAETIGT_MS
+                zeigeHinweis(getString(R.string.stand_frage_ok))
+            }
+            .setNegativeButton(R.string.abbrechen, null)
+        if (!StandOhneKern.recht(this)) b.setNeutralButton(R.string.stand_gps_knopf) { _, _ -> standortErklaeren() }
+        b.show().apply {
+            listOf(AlertDialog.BUTTON_POSITIVE, AlertDialog.BUTTON_NEGATIVE, AlertDialog.BUTTON_NEUTRAL).forEach { k ->
+                getButton(k)?.apply { textSize = 20f; minHeight = ui.dp(64) }
+            }
+        }
+    }
+
+    /** Freiwillig: erst erklären, dann fragt Android. Nie von selbst beim Start. */
+    private fun standortErklaeren() {
+        AlertDialog.Builder(this).setTitle(R.string.stand_gps_knopf).setMessage(R.string.stand_gps_erklaerung)
+            .setPositiveButton(R.string.stand_gps_erlauben) { _, _ ->
+                requestPermissions(arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION), REQ_STANDORT)
+            }
+            .setNegativeButton(R.string.abbrechen, null).show()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQ_STANDORT) gpsAnwenden()
+    }
+
+    private fun appName(p: String) = AppName.anzeige(this, p, appsNachPaket[p]?.name)
 
     // ---------- Direkt im Launcher (0.1.38.5): Klima-Feld, Info-Felder, Navi ----------
 
@@ -3085,10 +3320,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     /** Panoptes öffnen, optional direkt auf einer Seite (Deep-Link navigate_to, NavigateZiel in Panoptes). */
-    private fun oeffnePanoptes(ziel: String? = null) {
+    private fun oeffnePanoptes(ziel: String? = null, extra: Pair<String, String>? = null) {
         val i = packageManager.getLaunchIntentForPackage(Raster.PANOPTES)
         if (i == null) { zeigeHinweis(getString(R.string.app_fehlt)); return }
         ziel?.let { i.putExtra("navigate_to", it) }
+        extra?.let { i.putExtra(it.first, it.second) }
         try { startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (_: Exception) { zeigeHinweis(getString(R.string.launch_failed)) }
     }
 
@@ -3123,6 +3359,7 @@ class MainActivity : AppCompatActivity() {
         const val REQ_EXPORT = 41
         const val REQ_IMPORT = 42
         const val REQ_BILD = 43
+        const val REQ_STANDORT = 44
         const val KEY_SPAETER = "update_spaeter"
         const val KEY_NAVI = "navi_app"
         const val KEY_PROJEKTION_ERGAENZT = "projektion_ergaenzt"
@@ -3136,5 +3373,8 @@ class MainActivity : AppCompatActivity() {
         const val DOCK_KNOPF = 64
         const val GROSS_KNOPF = 96
         const val UPDATE_TAKT_MS = 5 * 60_000L
+        /** 0.1.43.4 (Paket S): letzter eigener Blick ins GitHub-Release und ob er scheiterte. */
+        const val KEY_EIGEN_UPDATE = "eigen_update_zeit"
+        const val KEY_EIGEN_UPDATE_FEHL = "eigen_update_fehl"
     }
 }

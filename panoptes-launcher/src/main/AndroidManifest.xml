@@ -4,6 +4,13 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- 0.1.39 (L1): Rückfall-Statusleiste über einer nicht teilbaren Navi-App; nur nach Zustimmung in den Android-Einstellungen -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- 0.1.43.4 (Paket S): ohne Panoptes Update-Hinweis aus dem öffentlichen GitHub-Release; die geladene und per sha256
+         geprüfte APK geht an den Android-Installer, dort bestätigt der Nutzer. Der Launcher installiert nie selbst. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- 0.1.43.4 (Paket S, 13.11.): nur ohne Panoptes, freiwillig, nur auf Tipp mit Erklärung angefragt. Das GPS-Tempo
+         entscheidet „im Stand“ (unter 3 km/h); nichts wird gespeichert oder gesendet. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <!-- Nur für die Statusleiste: WLAN an/aus und Bluetooth an/aus anzeigen (keine Verbindungen, kein Scan). -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
@@ -99,5 +106,15 @@
             android:name=".ZurueckTestActivity"
             android:exported="false"
             android:screenOrientation="landscape" />
+        <!-- 0.1.43.4 (Paket S): nur der Ordner cache/update (geprüfte Launcher-APK) für den Android-Installer. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.update"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/update_pfade" />
+        </provider>
     </application>
 </manifest>

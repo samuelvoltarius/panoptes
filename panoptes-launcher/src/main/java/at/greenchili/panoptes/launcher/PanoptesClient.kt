@@ -193,6 +193,11 @@ class PanoptesClient(private val baseUrl: String = "http://127.0.0.1:8180") {
         requestMitFehler("GET", "/api/launcher/v1/musik" + (fokus?.let { "?fokus=" + java.net.URLEncoder.encode(it, "UTF-8") } ?: ""), null, 4_000)
     } catch (_: Exception) { null }
 
+    /** Kamera im Launcher: Liste der Aufnahmen vom Kern, nur lesen (Zeitfenster und Sortierung aus festen Listen). null = nicht erreichbar. */
+    fun aufnahmen(zeit: String, sort: String): String? = try {
+        requestMitFehler("GET", "/api/launcher/v1/aufnahmen?zeit=" + (if (zeit in Kamera.ZEITEN) zeit else "alle") + "&sort=" + (if (sort in Kamera.SORTIERUNGEN) sort else "neu"), null, 8_000)
+    } catch (_: Exception) { null }
+
     val hintergrundVideoUrl: String get() = "$baseUrl/api/launcher/v1/hintergrund/video"
 
     /** 0.1.44 (L1): Live-Umgebung; jede Abfrage hält die Kern-Erkennung wach, nur solange die Kachel sichtbar ist. */

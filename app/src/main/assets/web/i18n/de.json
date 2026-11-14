@@ -7641,5 +7641,8 @@
     "laeuft_schon": "Es lädt schon ein Modell.",
     "nur_am_auto": "Laden geht nur hier am Autobildschirm.",
     "hand": "Oder von Hand: die Datei {datei} in den Ordner Download legen (z. B. per adb push nach /sdcard/Download), dann „Aus Download übernehmen“ tippen."
+  },
+  "fahrzeug_foto": {
+    "bitte": "Hast du ein 3D-Modell von diesem Auto, das du uns geben kannst? Wir wären dankbar."
   }
 }

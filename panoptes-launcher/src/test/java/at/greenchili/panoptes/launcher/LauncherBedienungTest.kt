@@ -47,7 +47,7 @@ class LauncherBedienungTest {
         val b = quelle("Bausteine.kt")
         assertTrue(b.contains("fun bd(v: Int) = dp(Math.round(v * bedien))"))
         assertTrue("Schrift wächst", b.contains("textSize = sp * bedien"))
-        assertTrue("kontrastreiche Beschriftung", b.contains("if (kontrast) p.onSurface else p.onSurfaceVariant"))
+        assertTrue("kontrastreiche Beschriftung (0.1.43.3: über leiseFarbe, sonst auf Mindestkontrast gesichert)", b.contains("val leiseFarbe get() = if (kontrast) p.onSurface else Kontrast.leise(p)"))
         assertTrue("große Zahlen in Kacheln bleiben", Regex("fun zahl\\(text: String, sp: Float\\) = TextView\\(ctx\\)\\.apply \\{\\s+this\\.text = text; textSize = sp;").containsMatchIn(b))
         val m = quelle("MainActivity.kt")
         assertTrue(m.contains("Ui(this, pal, cockpit, GrosseBedienung.faktor(this))"))

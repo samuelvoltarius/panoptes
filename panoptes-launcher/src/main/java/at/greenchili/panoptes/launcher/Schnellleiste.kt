@@ -123,7 +123,7 @@ class Schnellleiste(private val ctx: Context, private val ui: Ui) {
             gravity = Gravity.CENTER
             setPadding(ui.dp(4), ui.dp(4), ui.dp(4), ui.dp(4))
             background = GradientDrawable().apply {
-                setColor(ui.p.surface); setStroke(ui.dp(1), ui.p.line); cornerRadius = ui.dpf(18f)
+                setColor(ui.p.surface); setStroke(ui.dp(1), ui.p.line); cornerRadius = ui.radius(Mass.RADIUS_MITTEL)
             }
         }
         fun knopf(res: Int, label: Int, f: () -> Unit) = z.addView(ui.act(res, null) { f() }.apply {

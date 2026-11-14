@@ -11,7 +11,7 @@ import java.io.File
 import java.util.Locale
 
 /**
- * 0.1.44 (D1 „Fahrzeug-Startseite“, Projektinhaber 12.11.): Vorlage „Fahrzeug“, Fahrstatus-Karte, eigene Fahrzeug-Ansicht
+ * 0.1.44 (D1 „Fahrzeug-Startseite“, 12.11.): Vorlage „Fahrzeug“, Fahrstatus-Karte, eigene Fahrzeug-Ansicht
  * (Kompakt/SUV/Limousine), Fenster-Schnellknöpfe nur im Stand mit Bestätigung über den engen Kern-Weg, Szenen.
  */
 class LauncherD1Test {

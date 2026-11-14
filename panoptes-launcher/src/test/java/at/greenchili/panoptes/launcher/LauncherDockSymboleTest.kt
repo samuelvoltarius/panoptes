@@ -22,7 +22,9 @@ class LauncherDockSymboleTest {
         val i = main.substringAfter("private fun dockIcon(").substringBefore("private fun appKnopf(")
         assertTrue("Beschriftung unter dem Symbol", i.contains("addView(dockBeschriftung(kurz), LinearLayout.LayoutParams(-1, -2))"))
         assertTrue("Vorlesetext bleibt der lange Name", i.contains("contentDescription = label"))
-        assertTrue("eine Zeile, abgeschnitten", i.contains("maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END"))
+        // 0.1.43.3 (G1): eine Zeile; lange Namen werden kleiner (nie unter 10 sp) statt mit „…“ abgeschnitten
+        assertTrue("eine Zeile", i.contains("maxLines = 1"))
+        assertTrue("schrumpft statt abzuschneiden", i.contains("setAutoSizeTextTypeUniformWithConfiguration(10, Math.round(DockPlatz.SCHRIFT * ui.bedien)"))
         assertTrue("leise Farbe, bei Großer Bedienung kontrastreich", i.contains("ui.leise(text, DockPlatz.SCHRIFT)"))
         val d = dock()
         assertTrue("Apps im Dock mit Namen", d.contains("appKnopf(p, mitName = true, gross = Math.round(40 * ui.bedien), dock = true)"))

@@ -41,8 +41,10 @@ public final class LauncherLayoutPruefung {
     public static final List<String> HINTERGRUENDE = Collections.unmodifiableList(
             Arrays.asList("panoptes", "cockpit", "bild", "video", "eigen"));
     /** 0.1.42 (L48): eigene, im Launcher per Code gezeichnete Motive „motiv-1“ … „motiv-10“ (Launcher {@code Motive});
-     *  0.1.44 (D1): dazu die Szenen „motiv-11“ … „motiv-14“ (Nachtstraße, Showroom, Bergstraße, Garage; Launcher {@code Szenen}). */
-    public static final int MOTIVE = 14;
+     *  0.1.44 (D1): dazu die Szenen „motiv-11“ … „motiv-14“ (Nachtstraße, Showroom, Bergstraße, Garage; Launcher {@code Szenen});
+     *  0.1.43.4: „motiv-15“ … „motiv-20“ gerenderte Szenen (Studio, Stadt, Berge, Küste, Tiefgarage, Ladepark;
+     *  Launcher {@code SzenenBilder}). */
+    public static final int MOTIVE = 20;
 
     static boolean hintergrundGueltig(String hg) {
         if (hg == null) return false;

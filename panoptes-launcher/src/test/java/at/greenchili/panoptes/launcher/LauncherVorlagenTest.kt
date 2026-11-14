@@ -147,7 +147,8 @@ class LauncherVorlagenTest {
         val s = block("private fun statusLeiste()", "private fun statusIcon(")
         assertTrue("Musik in dehnbarer Box", s.contains("z.addView(musikBox, ui.lp(0, -2, 1f"))
         assertTrue("Titel wird gekürzt", s.contains("TruncateAt.END"))
-        assertTrue("Uhr nach der Box", s.indexOf("z.addView(uhr") > s.indexOf("z.addView(musikBox"))
+        // 0.1.43.3 (L3): Uhr steht links VOR der dehnbaren Musik-Box – ein langer Titel kann sie nicht mehr hinausdrücken
+        assertTrue("Uhr vor der Box", s.indexOf("z.addView(uhr") in 0 until s.indexOf("z.addView(musikBox"))
         assertFalse("kein fester Leerraum mehr vor der Musik", s.contains("z.addView(View(this), ui.lp(0, 1, 1f))"))
     }
 

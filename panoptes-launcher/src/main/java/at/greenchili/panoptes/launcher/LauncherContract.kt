@@ -39,8 +39,13 @@ data class LauncherSummary(
     val koerper: LauncherKoerper? = null,
     /** 0.1.44 (P3): belegtes Tempolimit (Tempolimit.kt), null = keins; leise Warnung nur wenn eingeschaltet. */
     val tempolimit: LauncherTempolimit? = null,
-    val tempoWarnung: Boolean = false
+    val tempoWarnung: Boolean = false,
+    /** 0.1.43.4 (Rang 4): Gurt laut Kern (nur lesen), null = kein Wert. */
+    val gurt: LauncherGurt? = null
 )
+
+/** 0.1.43.4 (Rang 4): true = angelegt, false = nicht angelegt, null = unbekannt (Beifahrer nur bei belegtem Sitz). */
+data class LauncherGurt(val fahrer: Boolean?, val beifahrer: Boolean?)
 
 data class LauncherReifen(val vl: Double?, val vr: Double?, val hl: Double?, val hr: Double?, val unten: Double?, val oben: Double?,
                           /** 0.1.41 (LK): Kern-Warnung je Rad [VL, VR, HL, HR] (ReifenWarnung), null = keine/unbekannt. */
@@ -175,7 +180,8 @@ object LauncherContract {
             istNacht = root.optJSONObject("env")?.let { e -> if (e.has("isNight") && !e.isNull("isNight")) e.optBoolean("isNight") else null },
             koerper = root.optJSONObject("koerper")?.let { koerper(it) },
             tempolimit = Tempolimit.parse(root.optJSONObject("tempolimit")),
-            tempoWarnung = root.optBoolean("tempoWarnung", false)
+            tempoWarnung = root.optBoolean("tempoWarnung", false),
+            gurt = root.optJSONObject("gurt")?.let { gurt(it) }
         )
     }
 
@@ -207,6 +213,13 @@ object LauncherContract {
             it.optJSONObject("fern")?.takeIf { f -> !f.isNull("art") }?.optString("art")?.takeIf { a -> a == "heizen" || a == "kuehlen" || a == "neutral" })
 
     private fun stufe02(it: JSONObject, name: String): Int? = it.nullableDouble(name)?.toInt()?.takeIf { s -> s in 0..2 }
+
+    /** 0.1.43.4 (Rang 4): Kern-Summary `gurt` lesen; nur echte Wahrheitswerte, sonst null. */
+    fun gurt(o: JSONObject): LauncherGurt? {
+        fun b(k: String): Boolean? = if (o.has(k) && !o.isNull(k) && o.opt(k) is Boolean) o.optBoolean(k) else null
+        val g = LauncherGurt(b("fahrer"), b("beifahrer"))
+        return if (g.fahrer == null && g.beifahrer == null) null else g
+    }
 
     /** 0.1.44 (D1): Kern-Summary `koerper` lesen; unbekannte Schlüssel und Werte außerhalb 0..100 fallen weg. */
     fun koerper(o: JSONObject): LauncherKoerper {

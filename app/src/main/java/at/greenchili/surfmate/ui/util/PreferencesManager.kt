@@ -238,7 +238,7 @@ object PreferencesManager {
     }
 
     /**
-     * E4 (0.1.44, Projektinhaber 13.11.): Modus „Einfach / Alle Funktionen“ (anzeige.umfang) einmal festschreiben, wenn es
+     * E4 (0.1.44, 13.11.): Modus „Einfach / Alle Funktionen“ (anzeige.umfang) einmal festschreiben, wenn es
      * noch keinen Eintrag gibt: Neuinstallation „einfach“, Bestand „alle“. Ein vorhandener Wert wird nie geändert
      * (nie still umschalten). Scheitert das Schreiben, gilt im Kern „alle“ – es verschwindet nichts.
      */

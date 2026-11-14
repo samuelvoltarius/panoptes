@@ -283,7 +283,7 @@ public final class UpdateLifecycle {
                 "done\n" +
                 hrMarke("marker") +
                 // 0.1.38.10: kein Log-Archiv-Schritt mehr im Hard-Reset (am Auto 14 s und mehr, Deploy 3, 87 Archivdateien).
-                // Logs gehen auch ohne ihn nie verloren (0.1.36, Projektinhaber 03.11.): nichts wird gelöscht, jeder Wächter
+                // Logs gehen auch ohne ihn nie verloren (0.1.36, 03.11.): nichts wird gelöscht, jeder Wächter
                 // archiviert sein Log beim eigenen Start (log_archivieren im Start-Skript) und räumt dabei EINMAL auf,
                 // im Betrieb kürzt der Beobachter die Logs mit Archivkopie (log_kopieren_kuerzen).
                 "rm -f " + UPDATE_IN_PROGRESS_FILE + " " + POST_UPDATE_FILE + " 2>/dev/null\n" +

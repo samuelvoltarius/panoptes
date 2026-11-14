@@ -16,8 +16,8 @@ android {
         applicationId = "at.greenchili.panoptes.launcher"
         minSdk = 28
         targetSdk = 35
-        versionCode = 20
-        versionName = "0.1.43.3"
+        versionCode = 21
+        versionName = "0.1.43.4"
     }
 
     buildTypes {
@@ -41,6 +41,7 @@ android {
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
+    implementation(libs.zxing.core)   // 0.1.43.4: QR-Code im Fenster „Datei vom Handy“ (Apache-2.0, wie in :app)
     testImplementation(libs.junit)
     testImplementation("org.json:json:20240303")
 }

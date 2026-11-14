@@ -17,6 +17,23 @@ public final class NavigateZiel {
     public static final String ZIEL_AUFNAHME = "aufnahme";
     public static final String EXTRA_AUFNAHME = "aufnahme_id";
 
+    /** 0.1.43.4 (Kamera im Launcher): beliebige Aufnahme abspielen (alle Arten), Kennung im Extra {@link #EXTRA_AUFNAHME}. */
+    public static final String ZIEL_AUFNAHME_ALLE = "aufnahme_alle";
+    /** Live-Ansicht mit vorgewählter Kamera (0 = 360°, 1 vorne, 2 rechts, 3 hinten, 4 links), Extra {@link #EXTRA_KAMERA}. */
+    public static final String EXTRA_KAMERA = "kamera_id";
+
+    /** Aufnahmen-Seite, die genau diese Aufnahme (jede Art) abspielt. */
+    public static String aufnahmePfadAlle(String id) {
+        if (!aufnahmeGueltig(id)) return "/events";
+        return "/events?filter=all&id=" + id;
+    }
+
+    /** Live-Ansicht, Kamera nur 0..4 (sonst ohne Vorwahl). */
+    public static String livePfad(String kamera) {
+        if (kamera != null && kamera.matches("[0-4]")) return "/live-view?cam=" + kamera;
+        return "/live-view";
+    }
+
     /** Aufnahme-Kennung bzw. Dateiname: nur harmlose Zeichen (kommt in eine URL). */
     public static boolean aufnahmeGueltig(String id) {
         return id != null && id.matches("[A-Za-z0-9_.-]{1,120}");

@@ -3,7 +3,7 @@
 Diese Liste gehört zu den Release-Notizen („So wurde geprüft“). Sie nennt die Tests, die beim Freigabestand
 fehlschlagen, und warum. Maßstab für eine Freigabe ist: kein Test ist neu rot gegenüber dem Vorgänger.
 
-## Stand 0.1.43.3
+## Stand 0.1.43.4
 
 | Bereich | Rot | Übersprungen |
 |---|---:|---:|
@@ -15,6 +15,9 @@ unter Windows), und meldet sich deshalb ab statt rot zu werden. Auf Linux und An
 
 ## Verlauf
 
+- 0.1.43.4: 5663 Tests in der App und 327 im Launcher, keiner rot. Übersprungen sind dieselben 24 (Windows) wie in 0.1.43.3.
+  Der Kamera-Fix R1 (statische Seiten über `pathOnly`) änderte die Schreibweise der Routen; fünf Tests, die den Quelltext
+  wörtlich lesen, prüfen jetzt die neue Schreibweise (gleicher Inhalt).
 - 0.1.43.3: 5629 Tests in der App und 257 im Launcher, keiner rot. Übersprungen sind dieselben 24 (Windows) wie in 0.1.43.2.
 - 0.1.43.2: 5608 Tests in der App und 247 im Launcher, keiner rot. Übersprungen sind dieselben 24 (Windows) wie in 0.1.43.1.
   Beim Zusammenführen erwartete ein Test aus 0.1.43.1 die Menüzeile „Bildschirm im Auto“ noch ohne die Stufe des Modus

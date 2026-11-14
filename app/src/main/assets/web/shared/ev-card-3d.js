@@ -148,6 +148,16 @@
         return root.__surfmateEvCard3dVendorPromise;
     }
 
+    // 0.1.43.4: Foto-Modul bei Bedarf nachladen (eine Quelle mit dem Launcher: manifest.json "photo").
+    function fotoModul(cb) {
+        if (root.PanoptesFahrzeugFoto) { cb(root.PanoptesFahrzeugFoto); return; }
+        var s = document.createElement('script');
+        s.src = '../shared/fahrzeug-foto.js?v=1';
+        s.onload = function () { cb(root.PanoptesFahrzeugFoto || null); };
+        s.onerror = function () { cb(null); };
+        document.head.appendChild(s);
+    }
+
     // Minimal ModelStore. The real one in vehicle-control.js handles
     // download progress UI; we don't need that here — just resolve the URL.
     function resolveModelUrl(modelId, manifest, cb) {
@@ -676,6 +686,25 @@
                     break;
                 }
             }
+            // 0.1.43.4: Modell ohne gutes 3D, aber mit Foto im Manifest → Foto statt 3D (fahrzeug-foto.js)
+            if (modelEntry && modelEntry.photo && modelEntry.top !== true) {
+                fotoModul(function (F) {
+                    if (gen !== self._loadGen) return;
+                    var e = F ? F.eintrag(manifest, modelId) : null;
+                    if (!e) {
+                        resolveModelUrl(modelId, manifest, function (url, err) {
+                            if (gen !== self._loadGen || err || !url) return;
+                            self._loadGlb(url, gen, modelEntry);
+                        });
+                        return;
+                    }
+                    self._disposeCarModel();
+                    self._scheduleRender();
+                    if (self.canvas && self.canvas.parentNode) F.zeige(self.canvas.parentNode, e, manifest);
+                });
+                return;
+            }
+            if (window.PanoptesFahrzeugFoto && self.canvas) window.PanoptesFahrzeugFoto.entferne(self.canvas.parentNode);
             resolveModelUrl(modelId, manifest, function (url, err) {
                 if (gen !== self._loadGen || err || !url) return;
                 self._loadGlb(url, gen, modelEntry);

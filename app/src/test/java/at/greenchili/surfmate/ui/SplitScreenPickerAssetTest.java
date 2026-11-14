@@ -35,7 +35,7 @@ public class SplitScreenPickerAssetTest {
         String api = read("src/main/java/at/greenchili/surfmate/server/AppsApiHandler.java");
         String shell = read("src/main/assets/web/shared/app-shell.js");
 
-        assertTrue(server.contains("path.equals(\"/apps.html\") || path.equals(\"/apps\")"));
+        assertTrue(server.contains("pathOnly.equals(\"/apps.html\") || pathOnly.equals(\"/apps\")"));
         assertTrue(api.contains("cleanPath.equals(\"/api/apps/capabilities\")"));
         assertTrue(api.contains("AppLauncher.isSplitScreenSupported()"));
         assertTrue(api.contains("\"split_screen_not_supported\""));

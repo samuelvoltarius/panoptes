@@ -366,7 +366,7 @@ public final class Katalog {
         l.add(wetter);
         // Darstellung am Display (Neubau 2, 0.1.9): „leicht“ spart Grafiklast im Auto (2D-Karte, keine
         // Dauer-Animationen …). Gilt nur fürs Display; Handy/PC zeigen lokal immer „voll“.
-        // E4 (0.1.44, Projektinhaber 13.11.): Umfang der App. „einfach“ zeigt nur die nötigen Reiter und Felder (erweitert = aus),
+        // E4 (0.1.44, 13.11.): Umfang der App. „einfach“ zeigt nur die nötigen Reiter und Felder (erweitert = aus),
         // „alle“ alles. Festgeschrieben beim ersten Start (PreferencesManager): Neuinstallation „einfach“, Bestand „alle“ –
         // nie still umschalten. Fehlt der Wert, gilt „alle“ (nichts verschwindet). Suche und Direktlinks finden immer alles.
         Feld umfang = new Feld(UMFANG, Feld.Typ.AUSWAHL);

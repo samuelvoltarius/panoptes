@@ -24,9 +24,9 @@ public class LiveViewDashboardAssetTest {
                 "<div class=\"tab-panel active\" id=\"panelCameras\">"));
         assertTrue(liveView.contains("activeTab: 'cameras'"));
         assertTrue(liveView.contains("BYD.stream.currentViewMode = 0;"));
-        assertTrue(liveView.contains("await BYD.stream.selectCamera(0);"));
+        assertTrue(liveView.contains("await BYD.stream.selectCamera(startKamera());"));
         assertTrue(liveView.indexOf("await loadSavedStreamQuality();")
-                < liveView.indexOf("await BYD.stream.selectCamera(0);"));
+                < liveView.indexOf("await BYD.stream.selectCamera(startKamera());"));
     }
 
     @Test

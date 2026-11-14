@@ -11,7 +11,7 @@ import org.json.JSONObject
 
 /**
  * 0.1.32 Schnellstart, letzter Schritt: Handy koppeln. Der QR-Code steht direkt hier, ohne Umweg über die System-Seite.
- * Die Brücke schickt Daten über unseren Server, darum erst nach dem Häkchen (nie vorausgewählt, Projektinhaber 28.10.).
+ * Die Brücke schickt Daten über unseren Server, darum erst nach dem Häkchen (nie vorausgewählt, 28.10.).
  * „Später“ lässt alles aus; ein neues Handy in GET /api/kopplungen zeigt der Schritt von selbst an.
  */
 class HandySchritt(a: Assistent) : SchrittAnsicht("extra_handy", a) {

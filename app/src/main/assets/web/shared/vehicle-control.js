@@ -943,6 +943,19 @@ var VC = {
         // bodyPaintMeshes is rebuilt below as the new model is traversed.
         this._disposeCarModel();
 
+        // 0.1.43.4: Modell ohne gutes 3D, aber mit Foto im Manifest → Foto statt 3D (fahrzeug-foto.js),
+        // gleicher Zustand wie „kein Modell geladen“; sonst ein altes Foto wieder entfernen.
+        var fotoVp = document.querySelector('.vc-viewport');
+        var fotoE = window.PanoptesFahrzeugFoto ? window.PanoptesFahrzeugFoto.eintrag(this.manifest, modelId) : null;
+        if (fotoE) {
+            this._modelLoadComplete = true;
+            if (this._modelLoadTimeout) { clearTimeout(this._modelLoadTimeout); this._modelLoadTimeout = null; }
+            if (loadingEl) loadingEl.classList.add('hidden');
+            if (fotoVp) { fotoVp.removeAttribute('data-model-loading'); window.PanoptesFahrzeugFoto.zeige(fotoVp, fotoE, this.manifest); }
+            return;
+        }
+        if (fotoVp && window.PanoptesFahrzeugFoto) window.PanoptesFahrzeugFoto.entferne(fotoVp);
+
         // Track whether load completed; arm a hard timeout so the spinner can never spin forever.
         // BYD AVN networks can stall mid-download with no error event; without this the UI hangs.
         this._modelLoadComplete = false;

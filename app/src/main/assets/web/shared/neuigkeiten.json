@@ -1061,6 +1061,45 @@
         "Launcher: als spraakopdrachten in Panoptes aan staan, is er een assistentknop en de pagina ‘Wat kan ik zeggen?’. Daar kun je ook een zin aantikken.",
         "Update: de launcher gaat betrouwbaar mee met de Panoptes-update. Wordt hij overgeslagen, dan staat de reden erbij."
       ]
+    },
+    {
+      "version": "0.1.43.4",
+      "versionCode": 88,
+      "de": [
+        "Launcher: neue Gestaltung mit ruhigen Plaketten für Schloss, Fenster und Laden.",
+        "Launcher: Fahrzeugbild als 3D-Rendering für fünf Modelle, für sieben weitere ein frei lizenziertes Foto. Antippen: Fenster öffnen die Rückfrage (nur im Stand), Türen, Kofferraum und Haube zeigen nur ihren Zustand. Warnplaketten für Gurt, Kofferraum, Haube und Reifendruck.",
+        "Launcher: Kamera-Kachel mit Vorwahl der Kamera und die Liste „Aufnahmen“. Eine Aufnahme kannst du per QR aufs Handy laden, eine Datei vom Handy per QR ins Auto schicken (beides nur im selben WLAN).",
+        "Launcher ohne Panoptes: Er startet auch allein. Kacheln, die Panoptes brauchen, zeigen einen ruhigen Hinweis; Updates kommen dann aus dem Panoptes-Release, du bestätigst sie im Android-Installer.",
+        "Launcher zusätzlich auf Spanisch, Portugiesisch und Türkisch."
+      ],
+      "en": [
+        "Launcher: new design with calm badges for lock, windows and charging.",
+        "Launcher: vehicle picture as a 3D rendering for five models, a freely licensed photo for seven more. Tapping: windows open the confirmation (only when parked), doors, boot and bonnet only show their state. Warning badges for seat belt, boot, bonnet and tyre pressure.",
+        "Launcher: camera tile with camera preselection and the “Recordings” list. You can load a recording onto your phone via QR and send a file from your phone to the car via QR (both only on the same Wi-Fi).",
+        "Launcher without Panoptes: it also starts on its own. Tiles that need Panoptes show a calm hint; updates then come from the Panoptes release and you confirm them in the Android installer.",
+        "Launcher also in Spanish, Portuguese and Turkish."
+      ],
+      "fr": [
+        "Launcher : nouveau design avec des pastilles discrètes pour le verrouillage, les fenêtres et la charge.",
+        "Launcher : image du véhicule en rendu 3D pour cinq modèles, photo sous licence libre pour sept autres. En touchant : les fenêtres ouvrent la confirmation (à l’arrêt seulement), portes, coffre et capot n’affichent que leur état. Pastilles d’alerte pour ceinture, coffre, capot et pression des pneus.",
+        "Launcher : tuile caméra avec présélection de la caméra et liste « Enregistrements ». Vous pouvez charger un enregistrement sur votre téléphone par QR et envoyer un fichier du téléphone à la voiture par QR (uniquement sur le même Wi-Fi).",
+        "Launcher sans Panoptes : il démarre aussi seul. Les tuiles qui ont besoin de Panoptes affichent une indication discrète ; les mises à jour viennent alors de la version Panoptes publiée et vous les confirmez dans l’installateur Android.",
+        "Launcher aussi en espagnol, portugais et turc."
+      ],
+      "it": [
+        "Launcher: nuovo design con indicatori discreti per chiusura, finestrini e ricarica.",
+        "Launcher: immagine del veicolo come rendering 3D per cinque modelli, foto con licenza libera per altri sette. Toccando: i finestrini aprono la conferma (solo da fermi), porte, bagagliaio e cofano mostrano solo il loro stato. Indicatori di avviso per cintura, bagagliaio, cofano e pressione pneumatici.",
+        "Launcher: riquadro telecamera con preselezione della telecamera e lista “Registrazioni”. Puoi caricare una registrazione sul telefono via QR e inviare un file dal telefono all’auto via QR (solo sulla stessa rete Wi-Fi).",
+        "Launcher senza Panoptes: si avvia anche da solo. I riquadri che richiedono Panoptes mostrano un avviso discreto; gli aggiornamenti arrivano allora dalla release di Panoptes e li confermi nell’installer Android.",
+        "Launcher anche in spagnolo, portoghese e turco."
+      ],
+      "nl": [
+        "Launcher: nieuw ontwerp met rustige labels voor slot, ramen en laden.",
+        "Launcher: voertuigafbeelding als 3D-weergave voor vijf modellen, een vrij gelicenseerde foto voor zeven andere. Aantikken: ramen openen de bevestiging (alleen bij stilstand), deuren, kofferbak en motorkap tonen alleen hun toestand. Waarschuwingslabels voor gordel, kofferbak, motorkap en bandenspanning.",
+        "Launcher: camerategel met voorkeuze van de camera en de lijst ‘Opnamen’. Een opname kun je via QR op je telefoon laden en een bestand van je telefoon via QR naar de auto sturen (alleen op hetzelfde wifi).",
+        "Launcher zonder Panoptes: hij start ook zelfstandig. Tegels die Panoptes nodig hebben tonen een rustige hint; updates komen dan uit de Panoptes-release en je bevestigt ze in het Android-installatieprogramma.",
+        "Launcher ook in het Spaans, Portugees en Turks."
+      ]
     }
   ]
 }

@@ -9,7 +9,8 @@ package at.greenchili.panoptes.launcher
 object Szenen {
     const val ERSTE = 11
     const val LETZTE = 14
-    fun ist(nr: Int?) = nr != null && nr in ERSTE..LETZTE
+    /** Auch die gerenderten Szenen ([SzenenBilder], 0.1.43.4) zählen als Szene (Glas-Karten, Auto frei). */
+    fun ist(nr: Int?) = nr != null && (nr in ERSTE..LETZTE || SzenenBilder.ist(nr))
 
     /** Feste Zahlenfolge (kein Zufall zur Laufzeit): immer das gleiche Bild. */
     private class Folge(var s: Long) { fun naechste(): Float { s = (s * 1103515245L + 12345L) and 0x7fffffffL; return (s % 10000) / 10000f } }

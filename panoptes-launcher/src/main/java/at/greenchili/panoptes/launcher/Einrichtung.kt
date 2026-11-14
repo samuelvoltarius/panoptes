@@ -179,7 +179,7 @@ class EinrichtungActivity : Activity() {
         spalte.addView(ui.act(R.drawable.ic_pn_home, getString(R.string.einr_alles_byd)) { allesZurueckFragen() }.apply {
             orientation = LinearLayout.HORIZONTAL
             (getChildAt(1) as? TextView)?.apply { textSize = 20f * ui.bedien; setPadding(ui.dp(12), 0, 0, 0) }
-            background = GradientDrawable().apply { cornerRadius = ui.dpf(16f); setColor(ui.p.act); setStroke(ui.dp(3), ui.p.danger) }
+            background = GradientDrawable().apply { cornerRadius = ui.radius(Mass.RADIUS_MITTEL); setColor(ui.p.act); setStroke(ui.dp(3), ui.p.danger) }
         }, ui.lp(-2, ui.bd(80), oben = 32))
         setContentView(ScrollView(this).apply { setBackgroundColor(ui.p.background); addView(spalte) })
     }
@@ -206,6 +206,7 @@ class EinrichtungActivity : Activity() {
 
     /** Schalter an, eigenen Alias an, dann „Behalten“ (der Kern setzt den Launcher als Standard). */
     private fun einschalten() {
+        if (!KernVerbindung.verfuegbar()) { lokalEinschalten(); return }   // 0.1.43.4 (Paket S)
         io.execute {
             val an = client.homeAn()
             if (an) main.post { HomeSchalter.setze(this, true) }
@@ -215,6 +216,25 @@ class EinrichtungActivity : Activity() {
                 if (ok) weiter(Selbsttest.Schritt.HAUS) else hinweis(R.string.einr_fehler_kern)
             }
         }
+    }
+
+    /**
+     * 0.1.43.4 (Paket S): ohne Panoptes. Eigenen HOME-Alias an (eigene Komponente, keine Berechtigung nötig), merken, dass
+     * die Wahl hier getroffen wurde, und die Android-Seite „Standard-Startbildschirm“ öffnen: dort wählt der Nutzer selbst.
+     * Zurück geht immer mit „Alles zurück auf BYD“ (Alias aus → Android nimmt wieder BYD).
+     */
+    private fun lokalEinschalten() {
+        HomeSchalter.setze(this, true)
+        HomeSchalter.lokalMerken(this, true)
+        hinweisDann(R.string.einr_lokal_text) {
+            if (!HomeSchalter.androidWahlOeffnen(this)) hinweis(R.string.einr_lokal_keine_seite)
+            weiter(Selbsttest.Schritt.HAUS)
+        }
+    }
+
+    private fun hinweisDann(text: Int, dann: () -> Unit) {
+        AlertDialog.Builder(this).setMessage(text).setCancelable(false).setPositiveButton(android.R.string.ok) { _, _ -> dann() }.show()
+            .getButton(AlertDialog.BUTTON_POSITIVE)?.apply { textSize = 20f; minHeight = ui.dp(64) }
     }
 
     private fun allesZurueckFragen() {
@@ -229,10 +249,13 @@ class EinrichtungActivity : Activity() {
     /** Kern-Rückweg (Standard zurück, Schalter aus) und lokal: Alias aus, Leiste aus. Dann zum BYD-Startbildschirm. */
     private fun allesZurueck() {
         HomeSchalter.setze(this, false)
+        HomeSchalter.lokalMerken(this, false)
         Schnellleiste.setzen(this, Schnellleiste.AUS)
         Selbsttest.hausWartetSeit = 0L
+        // 0.1.43.4 (Paket S): ohne Panoptes reicht der eigene Rückweg (Alias aus); dann nicht nach Panoptes fragen
+        val ohne = KernVerbindung.ohnePanoptes()
         io.execute {
-            val kern = client.homeAus()
+            val kern = ohne || client.homeAus()
             main.post {
                 if (isFinishing) return@post
                 android.widget.Toast.makeText(this, if (kern) R.string.einr_alles_byd_ok else R.string.einr_alles_byd_lokal,

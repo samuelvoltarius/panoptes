@@ -51,7 +51,8 @@
 //
 // v6 (Panoptes 0.1.8): ev-card-3d.js laedt Modelle nur noch ueber den Daemon
 // (SHA-256), kein direkter Download mehr; dazu das neue seagull.glb.
-const CACHE_VERSION = 'surfmate-3d-v6';
+// v7 (Panoptes 0.1.43.4): Foto statt 3D für Modelle ohne gutes 3D-Modell (fahrzeug-foto.js, ev-card-3d.js).
+const CACHE_VERSION = 'surfmate-3d-v7';
 
 // Static, APK-bundled assets that the EV card needs on every page.
 // Same-origin only — the daemon serves these with public, max-age=86400,
@@ -60,6 +61,7 @@ const CACHE_VERSION = 'surfmate-3d-v6';
 // (the daemon explicitly serves those no-store).
 const PRECACHE_URLS = [
   '/shared/ev-card-3d.js',
+  '/shared/fahrzeug-foto.js',
   '/shared/ev-card-sprite-cache.js',
   '/shared/vendor/three.min.js',
   '/shared/vendor/GLTFLoader.js',

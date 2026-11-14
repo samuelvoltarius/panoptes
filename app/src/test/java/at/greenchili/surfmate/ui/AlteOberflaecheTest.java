@@ -27,7 +27,7 @@ public class AlteOberflaecheTest {
             String p = NavigateZiel.pfad(z);
             assertNotNull(z, p);
             if (p.equals("/")) continue;
-            assertTrue(z + " → " + p + " ohne Route", http.contains("path.equals(\"" + p + "\")"));
+            assertTrue(z + " → " + p + " ohne Route", http.contains("pathOnly.equals(\"" + p + "\")"));
         }
         assertEquals("/events", NavigateZiel.pfad("recordings"));
         assertEquals("/", NavigateZiel.pfad("dashboard"));

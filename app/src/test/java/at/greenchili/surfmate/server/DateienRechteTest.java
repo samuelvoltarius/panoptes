@@ -133,7 +133,7 @@ public class DateienRechteTest {
         int extern = hs.indexOf("String noetig = ExternGuard.noetigesRecht(pathOnly);");
         int handler = hs.indexOf("DateienApiHandler.handle(method, path, body, out)");
         assertTrue(guard > 0 && extern > 0 && guard < route && extern < route && handler > 0);
-        assertTrue(hs.contains("path.equals(\"/dateien.html\")"));
+        assertTrue(hs.contains("pathOnly.equals(\"/dateien.html\")"));
         // Body-Grenze: ein Teil (Base64) passt unter die allgemeine 16-MB-Grenze
         assertTrue(Dateiablage.TEIL_BYTES * 4 / 3 + 1024 < HttpServer.maxBodyBytesForRequestLine("POST /api/dateien/teil HTTP/1.1"));
     }

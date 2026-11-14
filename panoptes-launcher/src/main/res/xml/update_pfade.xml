@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 0.1.43.4 (Paket S): nur die geprüfte Launcher-APK aus EigenUpdate. -->
+<paths>
+    <cache-path name="update" path="update/" />
+</paths>

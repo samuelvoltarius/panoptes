@@ -520,8 +520,14 @@ open class MainActivity : AppCompatActivity() {
         val aufnahme = intent.getStringExtra(NavigateZiel.EXTRA_AUFNAHME)
         intent.removeExtra(NavigateZiel.EXTRA_AUFNAHME)
         setIntent(intent)
-        val pfad = (if (target == NavigateZiel.ZIEL_AUFNAHME) NavigateZiel.aufnahmePfad(aufnahme)
-            else NavigateZiel.pfad(target)) ?: return
+        val kamera = intent.getStringExtra(NavigateZiel.EXTRA_KAMERA)
+        intent.removeExtra(NavigateZiel.EXTRA_KAMERA)
+        val pfad = (when (target) {
+            NavigateZiel.ZIEL_AUFNAHME -> NavigateZiel.aufnahmePfad(aufnahme)
+            NavigateZiel.ZIEL_AUFNAHME_ALLE -> NavigateZiel.aufnahmePfadAlle(aufnahme)
+            "live" -> NavigateZiel.livePfad(kamera)
+            else -> NavigateZiel.pfad(target)
+        }) ?: return
         navigateToWebSeite(pfad)
     }
 

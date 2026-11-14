@@ -9,7 +9,7 @@ import org.junit.Test
 import java.io.File
 
 /**
- * 0.1.44 (L1 „Live-Umgebung“, Projektinhaber 12.11.): Skizze um das eigene Auto aus der Kern-Erkennung. Kein Kamerabild,
+ * 0.1.44 (L1 „Live-Umgebung“, 12.11.): Skizze um das eigene Auto aus der Kern-Erkennung. Kein Kamerabild,
  * keine Warnfarbe, ab Werk aus; ohne frisches Ergebnis keine Objekte.
  */
 class LauncherL1Test {

@@ -175,12 +175,14 @@ public class LauncherFensterBefehlTest {
         assertTrue(LauncherLayoutPruefung.KACHELN.contains("autoansicht"));
         assertTrue(LauncherLayoutPruefung.hintergrundGueltig("motiv-11"));
         assertTrue(LauncherLayoutPruefung.hintergrundGueltig("motiv-14"));
-        assertFalse(LauncherLayoutPruefung.hintergrundGueltig("motiv-15"));
+        assertTrue("0.1.43.4: gerenderte Szenen", LauncherLayoutPruefung.hintergrundGueltig("motiv-15"));
+        assertTrue(LauncherLayoutPruefung.hintergrundGueltig("motiv-20"));
+        assertFalse(LauncherLayoutPruefung.hintergrundGueltig("motiv-21"));
         String vorlage = lies("../panoptes-launcher/src/main/assets/vorlagen/fahrzeug.json");
         LauncherLayoutPruefung.Ergebnis e = LauncherLayoutPruefung.pruefen(new JSONObject(vorlage), Collections.<String>emptySet());
         assertNotNull(e.layout);
         assertEquals("nichts fällt weg", 0, e.bereinigt);
-        assertEquals("motiv-11", e.layout.getString("hintergrund"));
+        assertEquals("0.1.43.4: Vorlage Fahrzeug mit gerenderter Stadt", "motiv-16", e.layout.getString("hintergrund"));
         String web = lies("src/main/assets/web/local/launcher.html");
         assertTrue(web.contains("KACHELN.push('fahrstatus', 'autoansicht');"));
         for (String l : new String[]{"de", "en", "fr", "it", "nl"}) {
