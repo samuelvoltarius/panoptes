@@ -164,7 +164,10 @@ public class ModelsApiHandler {
         }
         // Vehicle render for a model id — the same drawable the native Dashboard uses.
         if (pathOnly.equals("/api/models/art") && method.equals("GET")) {
-            handleGetArt(out, queryParam(path, "id"));
+            // 0.1.43.5: zuerst dasselbe Bild wie der Launcher (Rendering in Lackfarbe bzw. freigestelltes Foto)
+            if (!eigenesBildSenden(out, queryParam(path, "id"), queryParam(path, "farbe"))) {
+                handleGetArt(out, queryParam(path, "id"));
+            }
             return true;
         }
         // Effective manifest (cached-remote if newer, else bundled). The JS calls this
@@ -352,6 +355,82 @@ public class ModelsApiHandler {
      * every id it doesn't recognise (including null) onto a generic drawable,
      * so this only 404s when our resource table can't be reached at all.
      */
+    /** Kopfzeile mit der Namensnennung des gelieferten Bildes (URL-kodiert, UTF-8); leer = keine nötig. */
+    static final String NENNUNG_KOPF = "X-Panoptes-Namensnennung";
+    /** Lackfarbe ohne gespeicherte Wahl: dieselbe neutrale Farbe wie im Launcher (FahrzeugStart.lack, hell). */
+    static final int LACK_OHNE_WAHL = 0xC9D1D6;
+
+    private static final Object ART_LOCK = new Object();
+    private static String artSchluessel;
+    private static byte[] artBytes;
+
+    /**
+     * 0.1.43.5 (Paket A): dasselbe Bild wie der Launcher ({@link FahrzeugArt}): Rendering der fünf CC-BY-Modelle in der
+     * Lackfarbe (Parameter {@code farbe}, sonst die gespeicherte Fahrzeugfarbe) bzw. das freigestellte Foto, mit der
+     * Namensnennung in {@link #NENNUNG_KOPF}. false = kein eigenes Bild (dann wie bisher das Kern-Bild).
+     */
+    private static boolean eigenesBildSenden(OutputStream out, String id, String farbeParam) {
+        try {
+            FahrzeugArt.Wahl w = FahrzeugArt.waehle(readManifest(), id);
+            if (w == null) return false;
+            File ordner = new File(MANIFEST_BUNDLED_PATH).getParentFile();
+            byte[] bytes;
+            if (FahrzeugArt.FOTO.equals(w.art)) {
+                File f = new File(ordner, "fotos/" + w.id + ".webp");
+                if (!f.isFile()) return false;
+                bytes = java.nio.file.Files.readAllBytes(f.toPath());
+            } else {
+                File g = new File(ordner, "bilder/" + w.id + "_grund.webp");
+                File l = new File(ordner, "bilder/" + w.id + "_lack.webp");
+                if (!g.isFile() || !l.isFile()) return false;
+                Integer farbe = FahrzeugArt.hex(farbeParam);
+                if (farbe == null) farbe = FahrzeugArt.hex(UnifiedConfigManager.getVehicle().optString("color", ""));
+                if (farbe == null) farbe = LACK_OHNE_WAHL;
+                String schluessel = w.id + "#" + Integer.toHexString(farbe);
+                synchronized (ART_LOCK) {
+                    if (schluessel.equals(artSchluessel)) {
+                        bytes = artBytes;
+                    } else {
+                        bytes = rendering(g, l, farbe);
+                        if (bytes == null) return false;
+                        artSchluessel = schluessel;
+                        artBytes = bytes;
+                    }
+                }
+            }
+            String nennung = w.nennung == null ? "" : java.net.URLEncoder.encode(w.nennung, "UTF-8").replace("+", "%20");
+            HttpResponse.sendImageBytes(out, bytes, "image/webp", "no-cache",
+                    NENNUNG_KOPF + ": " + nennung + "\r\nAccess-Control-Expose-Headers: " + NENNUNG_KOPF + "\r\n");
+            return true;
+        } catch (Throwable t) {
+            logger.warn(TAG + ": eigenes Fahrzeugbild für " + id + " nicht möglich: " + t.getMessage());
+            return false;
+        }
+    }
+
+    /** Grund + Lack × Farbe (wie der Launcher), als WebP mit Alpha; null bei Fehler. */
+    private static byte[] rendering(File grund, File lack, int farbe) {
+        android.graphics.BitmapFactory.Options opt = new android.graphics.BitmapFactory.Options();
+        opt.inPreferredConfig = android.graphics.Bitmap.Config.ARGB_8888;
+        android.graphics.Bitmap g = android.graphics.BitmapFactory.decodeFile(grund.getAbsolutePath(), opt);
+        android.graphics.Bitmap l = android.graphics.BitmapFactory.decodeFile(lack.getAbsolutePath(), opt);
+        if (g == null || l == null || g.getWidth() != l.getWidth() || g.getHeight() != l.getHeight()) return null;
+        int w = g.getWidth(), h = g.getHeight();
+        int[] gp = new int[w * h];
+        int[] lp = new int[w * h];
+        g.getPixels(gp, 0, w, 0, 0, w, h);
+        l.getPixels(lp, 0, w, 0, 0, w, h);
+        g.recycle();
+        l.recycle();
+        FahrzeugArt.mische(gp, lp, farbe);
+        android.graphics.Bitmap erg = android.graphics.Bitmap.createBitmap(gp, w, h, android.graphics.Bitmap.Config.ARGB_8888);
+        java.io.ByteArrayOutputStream b = new java.io.ByteArrayOutputStream();
+        @SuppressWarnings("deprecation")
+        boolean ok = erg.compress(android.graphics.Bitmap.CompressFormat.WEBP, 90, b);
+        erg.recycle();
+        return ok ? b.toByteArray() : null;
+    }
+
     private static void handleGetArt(OutputStream out, String id) throws Exception {
         android.content.res.Resources res = appResources();
         if (res == null) {

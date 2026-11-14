@@ -192,12 +192,13 @@ class FahrzeugBildTest {
         assertNull("Foto ohne Namensnennung nie", k.foto["tang"])
         assertEquals("https://byd.serveone.at/", k.bitteUrl)
         assertNull("nur https", FahrzeugBild.katalogLesen("""{"bitteUrl":"http://x"}""").bitteUrl)
-        // Einbau: Foto vor dem alten Kern-Renderbild, ohne Leuchtpunkte und Bodenlicht, Plaketten bleiben
+        // Einbau: Foto vor dem alten Kern-Renderbild, ohne Leuchtpunkte, Plaketten bleiben; 0.1.43.5: freigestellt mit Bodenlicht
         val kk = lies("src/main/java/at/greenchili/panoptes/launcher/FahrzeugKacheln.kt")
         assertTrue(kk.indexOf("FahrzeugBild.hat(ctx, m)") < kk.indexOf("FahrzeugBild.hatFoto(ctx, m)"))
         assertTrue(kk.indexOf("FahrzeugBild.hatFoto(ctx, m)") < kk.indexOf("FahrzeugModelle.hatBild(m)"))
         assertTrue(kk.contains("bild.setzeBild(bmp, null, foto = true)"))
-        assertTrue(kk.contains("if (!foto) FahrzeugStart.bodenlicht(l, z, ui.p, r)"))
+        assertTrue(kk.contains("FahrzeugStart.bodenlicht(l, z, ui.p, r)   // 0.1.43.5: auch unter dem freigestellten Foto"))
+        assertFalse(kk.contains("if (!foto) FahrzeugStart.bodenlicht"))
         assertTrue(kk.contains("if (!foto) anker?.let { FahrzeugBild.zustandZeichnen(l, z, it, ui.p, r) }"))
         assertTrue(kk.indexOf("FahrzeugStart.symboleZeichnen(l, z, ui.p, r)") > kk.indexOf("if (!foto) anker"))
         assertTrue(kk.contains("R.string.fahrzeug_modell_bitte"))
@@ -245,6 +246,35 @@ class FahrzeugBildTest {
                 assertTrue(m.getString("id"), p.getJSONArray("verdecken").length() > 0)
         }
         assertTrue(q.contains("ebenfalls unter CC BY-SA 4.0"))
+    }
+
+    /**
+     * 0.1.43.5 (14.11.): Fotos freigestellt (Alpha, Bodenschatten, wie die Renderings), Vorlage „Standard“ zeigt
+     * dasselbe Bild wie „Fahrzeug“ mit Namensnennung (E2E_01434 H1), Bitte führt zur Installationsseite.
+     */
+    @Test
+    fun fotosFreigestelltUndStandardGleichesBild() {
+        for (id in katalog.foto.values.toSet()) {
+            val k = datei("src/main/assets/fahrzeug/${id}_foto.webp").readBytes()
+            assertEquals("$id: erweitertes WebP", "VP8X", String(k, 12, 4))
+            assertTrue("$id: mit Alpha (freigestellt)", (k[20].toInt() and 0x10) != 0)
+        }
+        val fb = lies("src/main/java/at/greenchili/panoptes/launcher/FahrzeugBild.kt")
+        assertTrue("Foto mit Alpha laden", fb.contains("inPreferredConfig = Bitmap.Config.ARGB_8888 }") && !fb.contains("RGB_565"))
+        val w = File(basis(), "../tools/launcher_fahrzeugbilder.py").readText()
+        assertTrue(w.contains("FREISTELLER_SHA") && w.contains("def freigestellt(") && w.contains("alpha_quality"))
+        // Standard: eigenes Bild zuerst (Rendering in Lackfarbe bzw. Foto), mit Namensnennung, sonst /api/models/art
+        val main = lies("src/main/java/at/greenchili/panoptes/launcher/MainActivity.kt")
+        val s = main.substring(main.indexOf("private fun standbildLaden("), main.indexOf("private var standbild:"))
+        assertTrue(s.indexOf("FahrzeugBild.holen(this, modell, FahrzeugStart.lack(farbe, ui.p), fertig)") in 1 until s.indexOf("client.fahrzeugBild(modell)"))
+        assertTrue(s.contains("FahrzeugBild.fotoHolen(this, modell, fertig)") && s.contains("Namensnennung.lokal(this, it)"))
+        assertTrue(main.contains("if (eigenes || !layout.zeige3d || modell == null || !online) {"))
+        assertTrue(main.contains("standbildLaden(ersatz as? ImageView, modell, s?.farbe)"))
+        // Bitte → Installationsseite, in der Gerätesprache
+        assertEquals(PanoptesSeite.DE, katalog.bitteUrl)
+        assertEquals(PanoptesSeite.EN, PanoptesSeite.bitteZiel(PanoptesSeite.DE, "en"))
+        assertEquals(PanoptesSeite.DE, PanoptesSeite.bitteZiel(PanoptesSeite.DE, "fr"))
+        assertEquals("https://example.org/modell", PanoptesSeite.bitteZiel("https://example.org/modell", "en"))
     }
 
     @Test

@@ -6,7 +6,7 @@ import at.greenchili.surfmate.byd.routing.VehicleCommandRouter;
 
 /**
  * 0.1.38.7: <b>eine</b> Stelle, an der Panoptes den Klima-Zustand bewertet (Web, Handy-API, Launcher, Telegram, HA-Zustand lesen
- * alle das Ergebnis; Projektinhaber 04.11.: „Klima aus“ bei laufendem Fernklima). Reihenfolge der Belege, wenn das Auto selbst schläft
+ * alle das Ergebnis; 04.11.: „Klima aus“ bei laufendem Fernklima). Reihenfolge der Belege, wenn das Auto selbst schläft
  * (Zündung aus, SDK meldet 0 ohne Aussagekraft):
  * <ol>
  *   <li>frischer Cloud-Rücklese-Wert {@code airRunState} ({@link KlimaLaeuft}, 1 = läuft, gemessen am 04.11.2026 beim Fernklima);</li>

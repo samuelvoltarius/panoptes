@@ -13,7 +13,7 @@ import org.junit.Test
 import java.io.File
 
 /**
- * 0.1.44 (E2 „freier Editor“, Projektinhaber 12.11.: „ja beides freier editor einplanen“): Feinraster, Einrasten/Hilfslinien,
+ * 0.1.44 (E2 „freier Editor“, 12.11.: „ja beides freier editor einplanen“): Feinraster, Einrasten/Hilfslinien,
  * Mindestgröße, Überlappen verhindert, Stil je Element, Lesbarkeit, Rückgängig/Wiederholen, Datei Version 2 (alte
  * Version 1 lesbar), Dock/Reiter/Text als Elemente, Bearbeiten nur im Stand.
  */

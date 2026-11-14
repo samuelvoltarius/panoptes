@@ -12,7 +12,7 @@ import java.util.concurrent.Executors
 /**
  * 0.1.43.4 (Rang 1, Koordination 13.11.: „Fahrzeugbild und Szenen“): Dreiviertel-Ansicht des eigenen Autos als
  * vorgerendertes Bild aus den Modellen des Panoptes-Katalogs (Blender, `tools/render_launcher_fahrzeug.py`).
- * Nur die fünf CC-BY-Vorlagen (Nazh Design: Dolphin Surf, Seal, Seal U, Dolphin, Atto 3; Projektinhaber 13.11.: „nur die 5
+ * Nur die fünf CC-BY-Vorlagen (Nazh Design: Dolphin Surf, Seal, Seal U, Dolphin, Atto 3; 13.11.: „nur die 5
  * guten Modelle“), Quelle in `MODELLE_LIZENZEN.md`; keine KI-Bilder, keine Fremdbilder. Die Eigenbau-Modelle haben
  * kein Bild hier und fallen auf das Kern-Renderbild bzw. die gezeichnete Form zurück.
  *
@@ -21,8 +21,10 @@ import java.util.concurrent.Executors
  * Einträge mit `"top": true`) – dieselben GLB-Dateien (SHA-256), die Panoptes als 3D zeigt, und dieselbe Lizenzliste.
  *
  * Fotos (13.11.): Modelle ohne gutes 3D-Modell, aber mit frei lizenziertem Foto im Manifest (`"photo"`), zeigen
- * statt der Zeichnung `<id>_foto.webp` mit Namensnennung (Urheber, Lizenz) und der Bitte um ein 3D-Modell. Beim Foto
- * entfallen Leuchtpunkte und Bodenlicht; die Plaketten bleiben. Ein Rendering geht immer vor dem Foto.
+ * statt der Zeichnung `<id>_foto.webp` mit Namensnennung (Urheber, Lizenz) und der Bitte um ein 3D-Modell. Seit 0.1.43.5
+ * ist das Auto freigestellt (transparenter Grund, weicher Bodenschatten, gleiche Größe und Lage wie die Renderings) und
+ * steht mit Bodenlicht in der Szene wie ein Rendering; nur die Leuchtpunkte entfallen (keine Ankerpunkte), die Plaketten
+ * bleiben. Ein Rendering geht immer vor dem Foto.
  *
  * Je Modell liegen im Launcher (`assets/fahrzeug/`):
  * - `<id>_grund.webp` – Auto mit schwarzem Glanzlack (Glas, Räder, Licht, Reflexe) und weichem Bodenschatten,
@@ -102,7 +104,7 @@ object FahrzeugBild {
     fun fotoNennung(ctx: Context, modell: String?): String? = foto(ctx, modell)?.let { katalog(ctx).fotoNennung[it] }
     fun bitteUrl(ctx: Context): String? = katalog(ctx).bitteUrl
 
-    /** Foto laden (RGB 565, einmal gemerkt); [fertig] im Haupt-Thread, null = kein Bild (dann bleibt die Form). */
+    /** Foto laden (ARGB, freigestellt; einmal gemerkt); [fertig] im Haupt-Thread, null = kein Bild (dann bleibt die Form). */
     fun fotoHolen(ctx: Context, modell: String, fertig: (Bitmap?) -> Unit) {
         val a = foto(ctx, modell) ?: run { fertig(null); return }
         val k = "foto:$a"
@@ -111,7 +113,7 @@ object FahrzeugBild {
         val app = ctx.applicationContext
         io.execute {
             val bmp = try {
-                val opt = BitmapFactory.Options().apply { inPreferredConfig = Bitmap.Config.RGB_565 }
+                val opt = BitmapFactory.Options().apply { inPreferredConfig = Bitmap.Config.ARGB_8888 }
                 app.assets.open("$ORDNER/${a}_foto.webp").use { BitmapFactory.decodeStream(it, null, opt) }
             } catch (_: Throwable) { null }
             haupt.post {

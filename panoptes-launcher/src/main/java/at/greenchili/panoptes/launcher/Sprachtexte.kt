@@ -6,6 +6,9 @@ import java.util.Locale
 /** 0.1.43.4 (E2E G5): Großschreibung nach Sprache – Türkisch i → İ (MENZİL, MÜZİK), nie Locale.ROOT. */
 object Gross {
     fun text(s: String, sprache: Locale): String = s.uppercase(sprache)
+
+    /** 0.1.43.5 (E2E_01434b H1): Eigennamen (Marke, Modell) sprachneutral – „BYD DOLPHIN SURF“, auch auf Türkisch. */
+    fun eigenname(s: String): String = s.uppercase(Locale.ROOT)
 }
 
 /** 0.1.43.4 (E2E G3): Zündungswert aus dem Kern → Text; unbekannt = null (dann „—“). */

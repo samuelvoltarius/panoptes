@@ -3,7 +3,7 @@ package at.greenchili.panoptes.launcher
 import java.util.Locale
 
 /**
- * 0.1.44 (D1b, Projektinhaber 12.11.: „warum nutzen wir nicht die modelle die wir schon haben aus Panoptes?“ und „es geht ja
+ * 0.1.44 (D1b, 12.11.: „warum nutzen wir nicht die modelle die wir schon haben aus Panoptes?“ und „es geht ja
  * nicht nur um meinen Surf sondern um alle“): welches Bild die Fahrzeug-Ansicht für ein Modell zeigt.
  *
  * - **Echtes Renderbild** aus Panoptes (`/api/models/art?id=…`, dieselben Bilder wie das Panoptes-Dashboard, Kern

@@ -47,7 +47,7 @@ public class VehiclePaintHintAssetTest {
                 "paintName.indexOf(paintMeshHint) < 0"));
 
         assertTrue(serviceWorker.contains(
-                "const CACHE_VERSION = 'surfmate-3d-v7';"));
+                "const CACHE_VERSION = 'surfmate-3d-v8';"));
     }
 
     @Test

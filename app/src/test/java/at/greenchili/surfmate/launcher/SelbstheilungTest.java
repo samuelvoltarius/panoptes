@@ -230,7 +230,8 @@ public class SelbstheilungTest {
             assertTrue(String.join("\n", z).contains("= \"" + namen[i] + "\""));
         }
         // 0.1.40 W1: +61 Zeilen Lock-Übernahme mit Alter, Übernahme-Sperre, exklusiver Eigentümer-Datei und Log-Zeilen.
-        assertEquals("Kamera-Skript (am Auto 227 Zeilen) + Anhänge-Modus + W1-Sperre", 312, kamera().size());
+        // 0.1.43.5 H1: +7 Zeilen (Beenden ohne App nach 6 Versuchen).
+        assertEquals("Kamera-Skript (am Auto 227 Zeilen) + Anhänge-Modus + W1-Sperre", 319, kamera().size());
     }
 
     /**

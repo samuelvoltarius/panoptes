@@ -543,10 +543,17 @@ public class HttpResponse {
      * Send image bytes directly with caching headers.
      */
     public static void sendImageBytes(OutputStream out, byte[] data, String contentType) throws Exception {
+        sendImageBytes(out, data, contentType, "public, max-age=86400", null);
+    }
+
+    /** 0.1.43.5: wie oben, mit eigener Cache-Regel und optionalen weiteren Kopfzeilen (je „Name: Wert\r\n“, nur ASCII). */
+    public static void sendImageBytes(OutputStream out, byte[] data, String contentType, String cacheControl,
+                                      String extraHeaders) throws Exception {
         String headers = "HTTP/1.1 200 OK\r\n" +
                         "Content-Type: " + contentType + "\r\n" +
                         "Content-Length: " + data.length + "\r\n" +
-                        "Cache-Control: public, max-age=86400\r\n" +
+                        "Cache-Control: " + cacheControl + "\r\n" +
+                        (extraHeaders == null ? "" : extraHeaders) +
                         "Connection: close\r\n\r\n";
         out.write(headers.getBytes());
         out.write(data);

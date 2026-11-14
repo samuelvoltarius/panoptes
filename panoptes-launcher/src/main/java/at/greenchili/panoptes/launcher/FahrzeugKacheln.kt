@@ -211,7 +211,7 @@ class FahrzeugKacheln(
                     bitte.visibility = View.GONE
                 }
             } else if (FahrzeugStart.formWahl(ctx) == FahrzeugStart.AUTO && FahrzeugBild.hatFoto(ctx, m)) {
-                // Foto statt Zeichnung (Modell ohne gutes 3D): ohne Leuchtpunkte und Bodenlicht, Plaketten bleiben
+                // Foto statt Zeichnung (Modell ohne gutes 3D): freigestellt mit Bodenlicht, ohne Leuchtpunkte, Plaketten bleiben
                 FahrzeugBild.fotoHolen(ctx, m!!) { bmp ->
                     bild.setzeBild(bmp, null, foto = true)
                     val nn = if (bmp != null) FahrzeugBild.fotoNennung(ctx, m)?.let { Namensnennung.lokal(ctx, it) } else null
@@ -434,7 +434,7 @@ class AutoAnsicht(ctx: Context, private val ui: Ui) : View(ctx) {
     /** 0.1.43.4: Ankerpunkte des Bildes (Dreiviertel-Ansicht), null = altes Renderbild ohne Punkte. */
     private var anker: Map<String, FahrzeugBild.Anker>? = null
 
-    /** Foto statt Rendering: kein Bodenlicht, keine Leuchtpunkte (nur die Plaketten). */
+    /** Foto statt Rendering: freigestellt, mit Bodenlicht wie ein Rendering, aber ohne Leuchtpunkte (nur die Plaketten). */
     private var foto = false
 
     fun setzeBild(b: android.graphics.Bitmap?, punkte: Map<String, FahrzeugBild.Anker>? = null, foto: Boolean = false) {
@@ -452,7 +452,7 @@ class AutoAnsicht(ctx: Context, private val ui: Ui) : View(ctx) {
         bild?.let { b ->
             val l = AndroidLeinwand(c)
             val r = FahrzeugStart.bildRahmen(width.toFloat(), height.toFloat())
-            if (!foto) FahrzeugStart.bodenlicht(l, z, ui.p, r)
+            FahrzeugStart.bodenlicht(l, z, ui.p, r)   // 0.1.43.5: auch unter dem freigestellten Foto
             ziel.set(r[0], r[1], r[0] + r[2], r[1] + r[3]); c.drawBitmap(b, null, ziel, bildPinsel)
             if (!foto) anker?.let { FahrzeugBild.zustandZeichnen(l, z, it, ui.p, r) }   // 0.1.43.4: offene Teile an ihrer Stelle
             FahrzeugStart.symboleZeichnen(l, z, ui.p, r)

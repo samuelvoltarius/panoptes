@@ -33,8 +33,12 @@ object PanoptesSeite {
 
     fun sprache(): String = java.util.Locale.getDefault().language
 
-    /** H2: solange es keine eigene Einsendeseite gibt, führt die Bitte zur Anleitung; eine eigene Seite im Katalog gilt. */
-    fun bitteZiel(url: String, sprache: String?): String = if (url.trimEnd('/') == STARTSEITE.trimEnd('/')) adresse(sprache) else url
+    /**
+     * H2: solange es keine eigene Einsendeseite gibt, führt die Bitte zur Anleitung; eine eigene Seite im Katalog gilt.
+     * 0.1.43.5: Der Katalog nennt jetzt selbst die Installationsseite (deutsch); auch sie geht in die Gerätesprache.
+     */
+    fun bitteZiel(url: String, sprache: String?): String =
+        if (url.trimEnd('/') == STARTSEITE.trimEnd('/') || url == DE) adresse(sprache) else url
 }
 
 object KernVerbindung {

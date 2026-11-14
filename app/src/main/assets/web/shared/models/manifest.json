@@ -2,7 +2,7 @@
  "version": 19,
   "default": "seagull",
   "baseUrl": "https://byd.serveone.at/tiles/models/",
-  "modellBitteUrl": "https://byd.serveone.at/",
+  "modellBitteUrl": "https://byd.serveone.at/panoptes/#installieren",
   "batteryChemistryDefinitions": {
     "blade": {
       "chemistry": "lfp",
@@ -102,7 +102,7 @@
     },
     {
       "id": "sealion7",
-      "photo": {"file": "sealion7_shark-grey_01.jpg", "sha256": "04c3e0336c0f56dd42761d6928dba56cecd598da28ed3acfa9951982bff93dc0", "author": "Ethan Llamas", "license": "CC-BY-SA-4.0", "sourceUrl": "https://commons.wikimedia.org/wiki/File:BYD_Sealion_7_Performance_AWD_Shark_Grey_01.jpg", "url": "https://upload.wikimedia.org/wikipedia/commons/e/e5/BYD_Sealion_7_Performance_AWD_Shark_Grey_01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original", "verdecken": []},
+      "photo": {"file": "sealion7_japan_front.jpg", "sha256": "f8f3a8bb37c7a52d649a2ed21f9df8370dc78e8b12f679371f948911e3671a90", "author": "Kazyakuruma", "license": "CC0-1.0", "sourceUrl": "https://commons.wikimedia.org/wiki/File:BYD_Sealion_7,_RWD,_Japan,_2025,_front.jpg", "url": "https://upload.wikimedia.org/wikipedia/commons/2/25/BYD_Sealion_7%2C_RWD%2C_Japan%2C_2025%2C_front.jpg", "verdecken": [], "weg": [[0.43, 0.0, 0.55, 0.133]]},
       "name": "BYD Sealion 7",
       "file": "sealion7.glb",
       "sizeBytes": 98468,
@@ -155,7 +155,7 @@
     },
     {
       "id": "shark",
-      "photo": {"file": "shark6_aurora-white.jpg", "sha256": "e74116075299c978dd31faaa994ed60fdf92956c72bda6c8e61206fabd8d3837", "author": "Ethan Llamas", "license": "CC-BY-SA-4.0", "sourceUrl": "https://commons.wikimedia.org/wiki/File:BYD_Shark_6_DMO_Premium_Aurora_White.jpg", "url": "https://upload.wikimedia.org/wikipedia/commons/8/83/BYD_Shark_6_DMO_Premium_Aurora_White.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original", "verdecken": [[0.465, 0.15, 0.51, 0.19], [0.855, 0.505, 0.94, 0.575]], "mitte": [0.5, 0.46]},
+      "photo": {"file": "shark6_aurora-white.jpg", "sha256": "e74116075299c978dd31faaa994ed60fdf92956c72bda6c8e61206fabd8d3837", "author": "Ethan Llamas", "license": "CC-BY-SA-4.0", "sourceUrl": "https://commons.wikimedia.org/wiki/File:BYD_Shark_6_DMO_Premium_Aurora_White.jpg", "url": "https://upload.wikimedia.org/wikipedia/commons/8/83/BYD_Shark_6_DMO_Premium_Aurora_White.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original", "verdecken": [[0.465, 0.15, 0.51, 0.19], [0.855, 0.505, 0.94, 0.575]]},
       "name": "BYD Shark",
       "file": "shark.glb",
       "sizeBytes": 99252,
@@ -557,7 +557,8 @@
     },
     {
       "id": "m6",
-      "photo": {"file": "m6_airport.jpg", "sha256": "ff4ac03fc2cf70e0c1d873c86509281fdfdfd5ce6a191993a8e3c6ebf4d94818", "author": "Bahnfrend", "license": "CC-BY-SA-4.0", "sourceUrl": "https://commons.wikimedia.org/wiki/File:BYD_M6,_Soekarno-Hatta_International_Airport,_2025_(01).jpg", "url": "https://upload.wikimedia.org/wikipedia/commons/3/38/BYD_M6%2C_Soekarno-Hatta_International_Airport%2C_2025_%2801%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original", "verdecken": [[0.77, 0.38, 0.89, 0.56]]},
+      "photo": {"file": "m6_airport.jpg", "sha256": "ff4ac03fc2cf70e0c1d873c86509281fdfdfd5ce6a191993a8e3c6ebf4d94818", "author": "Bahnfrend", "license": "CC-BY-SA-4.0", "sourceUrl": "https://commons.wikimedia.org/wiki/File:BYD_M6,_Soekarno-Hatta_International_Airport,_2025_(01).jpg", "url": "https://upload.wikimedia.org/wikipedia/commons/3/38/BYD_M6%2C_Soekarno-Hatta_International_Airport%2C_2025_%2801%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original", "verdecken": [[0.77, 0.38, 0.89, 0.56]],
+        "weg": [[0.0, 0.0, 1.0, 0.32], [0.858, 0.0, 1.0, 1.0], [0.765, 0.32, 0.8, 0.49], [0.8, 0.32, 0.82, 0.505], [0.82, 0.32, 0.835, 0.52], [0.835, 0.32, 0.85, 0.54], [0.85, 0.32, 0.86, 0.56]]},
       "name": "BYD M6",
       "file": "m6.glb",
       "sizeBytes": 95144,
@@ -657,7 +658,7 @@
     },
     {
       "id": "seal6-gt",
-      "photo": {"file": "seal6-gt_003.jpg", "sha256": "281a1a778aedebd24a7415a925660873420850915302f10cad7df4a2b3085552", "author": "Quzhouliulian", "license": "CC0-1.0", "sourceUrl": "https://commons.wikimedia.org/wiki/File:BYD_Seal_06_GT_003.jpg", "url": "https://upload.wikimedia.org/wikipedia/commons/7/7d/BYD_Seal_06_GT_003.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original", "verdecken": [[0.265, 0.4, 0.36, 0.46]], "mitte": [0.5, 0.58]},
+      "photo": {"file": "seal6-gt_003.jpg", "sha256": "281a1a778aedebd24a7415a925660873420850915302f10cad7df4a2b3085552", "author": "Quzhouliulian", "license": "CC0-1.0", "sourceUrl": "https://commons.wikimedia.org/wiki/File:BYD_Seal_06_GT_003.jpg", "url": "https://upload.wikimedia.org/wikipedia/commons/7/7d/BYD_Seal_06_GT_003.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original", "verdecken": [[0.265, 0.4, 0.36, 0.46]]},
       "name": "BYD Seal 6 GT",
       "file": "seal6-gt.glb",
       "sizeBytes": 96176,

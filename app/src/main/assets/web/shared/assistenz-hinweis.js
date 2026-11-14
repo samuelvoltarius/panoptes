@@ -1,5 +1,5 @@
 /**
- * Panoptes – Haftungshinweis für Assistenzsysteme (0.1.37, Alfred 03.11.2026: „das sollen sie selbst entscheiden“).
+ * Panoptes – Haftungshinweis für Assistenzsysteme (0.1.37, 03.11.2026: „das sollen sie selbst entscheiden“).
  *
  *   PanoptesAssistenz.pruefe(antwort)   → Promise<bool>: zeigt den Hinweis, wenn die Antwort grund "hinweis_fehlt"
  *                                         trägt; true = bestätigt (dann den Vorgang wiederholen)

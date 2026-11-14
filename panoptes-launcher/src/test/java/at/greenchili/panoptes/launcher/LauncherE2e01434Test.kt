@@ -78,6 +78,19 @@ class LauncherE2e01434Test {
     }
 
     @Test
+    fun h1EigennamenNichtNachGebietsschema() {
+        val alt = Locale.getDefault()
+        try {
+            Locale.setDefault(Locale("tr", "TR"))
+            assertEquals("BYD DOLPHIN SURF", Gross.eigenname("BYD Dolphin Surf"))
+            assertEquals("SEALION 7", Gross.eigenname("Sealion 7"))
+        } finally { Locale.setDefault(alt) }
+        val m = quelle("MainActivity.kt")
+        assertTrue(m.contains("s?.vehicleName?.let { titel.text = Gross.eigenname(it) }"))
+        assertFalse(m.contains("vehicleName?.let { titel.text = it.uppercase("))
+    }
+
+    @Test
     fun h4H2PanoptesSeiteIstAnleitung() {
         assertEquals("https://byd.serveone.at/panoptes/#installieren", PanoptesSeite.adresse("de"))
         assertEquals("https://byd.serveone.at/panoptes/en/#install", PanoptesSeite.adresse("en"))

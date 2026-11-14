@@ -58,7 +58,7 @@ public class VehicleControlAssetTest {
         String html = readRepositoryFile("app/src/main/assets/web/local/vehicle-control.html");
         String css = readRepositoryFile("app/src/main/assets/web/shared/vehicle-control.css");
 
-        assertTrue(html.contains("vehicle-control.css?v=47"));
+        assertTrue(html.contains("vehicle-control.css?v=49"));
         assertTrue(css.contains("order: 3;"));
         assertTrue(css.contains("flex: 0 0 100%;"));
         assertTrue(css.contains(".vc-bar { left: 0; right: 0; bottom: 0; }"));
@@ -478,7 +478,7 @@ public class VehicleControlAssetTest {
         assertTrue(html.contains("id=\"vcLiteHeroImg\""));
         assertFalse(html.contains("M19 17h2c.6 0 1-.4 1-1v-3"));
         assertFalse(css.contains(".vc-lite-hero svg"));
-        assertTrue(script.contains("apply('');"));
+        assertTrue(script.contains("apply('', '');"));   // 0.1.43.5: mit Lackfarbe
         assertTrue(script.contains("VC.artIdFromSelected(selected)"));
         assertTrue(script.contains("if (selected.modelSource === 'unset') return '';"));
         assertFalse(script.contains("apply((selected && selected.modelId) || '');"));
@@ -638,7 +638,7 @@ public class VehicleControlAssetTest {
                 + count(html, "data-state=\"3\" disabled")
                 + count(html, "data-state=\"4\" disabled")
                 + count(html, "data-state=\"5\" disabled"));
-        assertTrue(html.contains("vehicle-control.js?v=vclite39"));
+        assertTrue(html.contains("vehicle-control.js?v=vclite41"));
         assertTrue(script.contains("fetch('/api/vehicle/ac-charge-current-limit')"));
         assertTrue(script.contains("self.apiPost('/api/vehicle/ac-charge-current-limit'"));
         assertTrue(script.contains("startAcChargeCurrentSync: function()"));

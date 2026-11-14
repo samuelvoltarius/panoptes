@@ -299,15 +299,21 @@ var VC = {
         var hero = document.getElementById('vcLiteHero');
         var img = document.getElementById('vcLiteHeroImg');
         if (!hero || !img || typeof fetch !== 'function') return;
+        // 0.1.43.5: dasselbe Bild wie der Launcher (Rendering in der Lackfarbe bzw. freigestelltes Foto), darunter
+        // klein die Namensnennung aus der Kopfzeile X-Panoptes-Namensnennung (leer = keine nötig).
+        var nennungEl = document.getElementById('vcLiteHeroNennung');
 
-        var apply = function(id, triesLeft) {
-            var key = id || '';
+        var apply = function(id, farbe, triesLeft) {
+            var key = (id || '') + '|' + (farbe || '');
             if (img.getAttribute('data-art-id') === key && hero.classList.contains('has-art')) {
                 return;
             }
-            fetch('/api/models/art?id=' + encodeURIComponent(key))
+            var nennung = '';
+            fetch('/api/models/art?id=' + encodeURIComponent(id || '') +
+                    (farbe ? '&farbe=' + encodeURIComponent(farbe) : ''))
                 .then(function(resp) {
                     if (!resp.ok) throw new Error('art ' + resp.status);
+                    try { nennung = decodeURIComponent(resp.headers.get('X-Panoptes-Namensnennung') || ''); } catch (e) { nennung = ''; }
                     return resp.blob();
                 })
                 .then(function(blob) {
@@ -316,19 +322,60 @@ var VC = {
                     img.src = img._artUrl;
                     img.setAttribute('data-art-id', key);
                     hero.classList.add('has-art');
+                    if (nennungEl) {
+                        nennungEl.textContent = nennung;
+                        nennungEl.style.display = nennung ? '' : 'none';
+                        img.onload = function() { VC.placeLiteNennung(); };
+                        VC.placeLiteNennung();
+                    }
                 })
                 .catch(function() {
                     if (hero.classList.contains('has-art')) return;
                     var left = typeof triesLeft === 'number' ? triesLeft : 4;
                     if (left <= 0) return;
-                    setTimeout(function() { apply(key, left - 1); }, 1500);
+                    setTimeout(function() { apply(id, farbe, left - 1); }, 1500);
                 });
         };
 
-        apply('');
+        if (!VC._liteNennungResize) {
+            VC._liteNennungResize = true;
+            window.addEventListener('resize', function() { VC.placeLiteNennung(); });
+            // nach Umschaltern (Auto zeigen/Kacheln, Reifen-Panel) neu prüfen, wenn das Layout steht
+            document.addEventListener('click', function() { setTimeout(function() { VC.placeLiteNennung(); }, 350); }, true);
+        }
+        apply('', '');
         this._fetchSelected(function(selected) {
-            apply(VC.artIdFromSelected(selected));
+            apply(VC.artIdFromSelected(selected), selected && selected.color ? selected.color : '');
         });
+    },
+
+    /**
+     * 0.1.43.5 (E2E R1): Die Namensnennung muss sichtbar sein (CC BY). Liegt sie unter dem Reifen-Panel
+     * oder dem Dock (kleines Fenster, Handy, umbrechende Reifen-Zellen), wird sie um die Überdeckung
+     * plus 4 px nach oben geschoben. Rein lesend bis auf die eigene Verschiebung; ES5.
+     */
+    LITE_NENNUNG_HINDERNISSE: ['vcTyreOverlay', 'vcDock'],
+
+    placeLiteNennung: function() {
+        var el = document.getElementById('vcLiteHeroNennung');
+        if (!el || el.style.display === 'none' || !el.getBoundingClientRect) return 0;
+        el.style.transform = '';
+        el.style.webkitTransform = '';
+        var r = el.getBoundingClientRect();
+        if (!r.height) return 0;
+        var hoch = 0;
+        for (var i = 0; i < VC.LITE_NENNUNG_HINDERNISSE.length; i++) {
+            var b = document.getElementById(VC.LITE_NENNUNG_HINDERNISSE[i]);
+            if (!b || !b.getBoundingClientRect) continue;
+            var q = b.getBoundingClientRect();
+            if (!q.height || !q.width || q.right <= r.left || q.left >= r.right) continue;
+            if (q.top < r.bottom && q.bottom > r.top) hoch = Math.max(hoch, r.bottom - q.top + 4);
+        }
+        if (hoch > 0) {
+            el.style.transform = 'translateY(-' + Math.ceil(hoch) + 'px)';
+            el.style.webkitTransform = el.style.transform;
+        }
+        return hoch;
     },
 
     // Same provenance as DashboardFragment.refreshVehicleTile: modelId is the

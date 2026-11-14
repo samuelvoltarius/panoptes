@@ -55,7 +55,7 @@
             'align-items:stretch;pointer-events:none;z-index:1';
         var img = document.createElement('img');
         img.alt = e.name || e.id;
-        img.src = (basis || '../shared/models/fotos/') + e.id + '.webp';
+        img.src = (basis || '../shared/models/fotos/') + e.id + '.webp?v=2';   // v2 (0.1.43.5): freigestellt
         img.style.cssText = 'flex:1 1 auto;min-height:0;width:100%;object-fit:contain';
         box.appendChild(img);
         var n = document.createElement('div');

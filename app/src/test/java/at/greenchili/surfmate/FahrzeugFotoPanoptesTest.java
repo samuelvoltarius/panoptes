@@ -71,10 +71,10 @@ public class FahrzeugFotoPanoptesTest {
         String vc = lies("app/src/main/assets/web/shared/vehicle-control.js");
         int foto = vc.indexOf("window.PanoptesFahrzeugFoto.eintrag(this.manifest, modelId)");
         assertTrue(foto > 0 && foto < vc.indexOf("this.ModelStore.ensureLoaded(modelId, this.manifest"));
-        assertTrue(lies("app/src/main/assets/web/local/vehicle-control.html").contains("chain.push('../shared/fahrzeug-foto.js?v=1');"));
-        assertTrue(lies("app/src/main/assets/web/local/launcher-fahrzeug.html").contains("../shared/fahrzeug-foto.js?v=1"));
+        assertTrue(lies("app/src/main/assets/web/local/vehicle-control.html").contains("chain.push('../shared/fahrzeug-foto.js?v=2');"));
+        assertTrue(lies("app/src/main/assets/web/local/launcher-fahrzeug.html").contains("../shared/fahrzeug-foto.js?v=2"));
         String sw = lies("app/src/main/assets/web/local/sw.js");
-        assertTrue(sw.contains("'surfmate-3d-v7'") && sw.contains("'/shared/fahrzeug-foto.js'"));
+        assertTrue(sw.contains("'surfmate-3d-v8'") && sw.contains("'/shared/fahrzeug-foto.js'"));
     }
 
     @Test

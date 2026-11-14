@@ -6,7 +6,7 @@
     "sealudmi": "seal-u-dmi",
     "songplusdmi": "seal-u-dmi"
   },
-  "bitteUrl": "https://byd.serveone.at/",
+  "bitteUrl": "https://byd.serveone.at/panoptes/#installieren",
   "fotos": {
     "atto2": {
       "lizenz": "CC-BY-SA-4.0",
@@ -37,11 +37,11 @@
       "urheber": "Quzhouliulian"
     },
     "sealion7": {
-      "lizenz": "CC-BY-SA-4.0",
-      "namensnennung": "Foto: Ethan Llamas · CC BY-SA 4.0 · bearbeitet",
-      "quelle": "https://commons.wikimedia.org/wiki/File:BYD_Sealion_7_Performance_AWD_Shark_Grey_01.jpg",
-      "sha256": "04c3e0336c0f56dd42761d6928dba56cecd598da28ed3acfa9951982bff93dc0",
-      "urheber": "Ethan Llamas"
+      "lizenz": "CC0-1.0",
+      "namensnennung": "Foto: Kazyakuruma · CC0",
+      "quelle": "https://commons.wikimedia.org/wiki/File:BYD_Sealion_7,_RWD,_Japan,_2025,_front.jpg",
+      "sha256": "f8f3a8bb37c7a52d649a2ed21f9df8370dc78e8b12f679371f948911e3671a90",
+      "urheber": "Kazyakuruma"
     },
     "shark": {
       "lizenz": "CC-BY-SA-4.0",

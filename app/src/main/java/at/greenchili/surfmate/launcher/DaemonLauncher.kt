@@ -763,8 +763,8 @@ class DaemonLauncher(
         /**
          * Build the start_acc_sentry.sh watchdog script body. Static so the
          * Telegram bot daemon can emit the SAME watchdog the UI uses. The
-         * acc-sentry watchdog is intentionally UNCAPPED (no MAX_RETRIES, no
-         * backoff) — see [[feedback_acc_sentry_uncapped_immortal]].
+         * acc-sentry watchdog is intentionally UNCAPPED (no MAX_RETRIES; since
+         * 0.1.43.5 only a pause after crashes in series, and it ends when the app is uninstalled) — see [[feedback_acc_sentry_uncapped_immortal]].
          */
         fun buildAccSentryWatchdogScript(apkPath: String, proxyArgs: String): List<String> {
             val lockFile = at.greenchili.surfmate.util.DaemonStorage.rebase("/data/user_de/0/com.android.shell/surfmate/acc_sentry_daemon.lock")
@@ -788,6 +788,17 @@ class DaemonLauncher(
                 // cannot keep a parked head unit busy. Never exists in onAndOff mode.
                 "PARKED=\"/data/user_de/0/com.android.shell/surfmate/surfmate_parked_shutdown\"",
                 "PARKED_RESPAWNS=0",
+                "CRASH_SERIE=0",
+                // 0.1.43.5 (N2): der Zähler überlebt einen neuen Wächter (die App startet während der Pause einen
+                // neuen). Datei neben der Sperre: "Serie Sekunden-der-Uhr". Älter als 10 min oder kaputt = 0.
+                "CRASH_DATEI=\"$ACC_SENTRY_WATCHDOG_LOCK_PATH.crash\"",
+                "if [ -f \"\$CRASH_DATEI\" ]; then",
+                "  read CS_SERIE CS_ZEIT < \"\$CRASH_DATEI\" 2>/dev/null",
+                "  CS_JETZT=\$(date +%s)",
+                "  case \"\$CS_SERIE\" in ''|*[!0-9]*) CS_SERIE=0 ;; esac",
+                "  case \"\$CS_ZEIT\" in ''|*[!0-9]*) CS_ZEIT=0 ;; esac",
+                "  if [ \$CS_SERIE -gt 0 ] && [ \$((CS_JETZT - CS_ZEIT)) -ge 0 ] && [ \$((CS_JETZT - CS_ZEIT)) -lt 600 ]; then CRASH_SERIE=\$CS_SERIE; fi",
+                "fi",
                 "PROXY_ARGS=\"$proxyArgs\"",
                 *logArchivDefinitionLines(ACC_SENTRY_DAEMON_LOG).toTypedArray(),
                 "LA_GELAUFEN=0",
@@ -836,8 +847,22 @@ class DaemonLauncher(
                 "  fi",
                 "",
                 "  RESOLVED_APK=\$(pm path at.greenchili.surfmate 2>/dev/null | grep '/base.apk\$' | head -n 1 | sed 's/^package://')",
-                "  if [ -n \"\$RESOLVED_APK\" ] && [ -f \"\$RESOLVED_APK\" ]; then APK_PATH=\"\$RESOLVED_APK\"; fi",
+                // 0.1.43.5 (N1): ist die App deinstalliert, liefert pm path nichts. Dann den Wächter beenden, statt den
+                // Daemon mit dem alten APK-Pfad endlos neu zu starten (SIGABRT im Kreis). Zur Sicherheit dreimal mit
+                // 2 s Pause fragen, damit ein kurzes Aussetzen des Paketdienstes den Wächter nicht beendet.
+                "  PM_VERSUCHE=0",
+                "  while [ -z \"\$RESOLVED_APK\" ] && [ \$PM_VERSUCHE -lt 3 ]; do",
+                "    sleep 2",
+                "    PM_VERSUCHE=\$((PM_VERSUCHE + 1))",
+                "    RESOLVED_APK=\$(pm path at.greenchili.surfmate 2>/dev/null | grep '/base.apk\$' | head -n 1 | sed 's/^package://')",
+                "  done",
+                "  if [ -z \"\$RESOLVED_APK\" ]; then",
+                "    echo \"[\$(date)] App nicht mehr installiert (pm path leer). Exiting watchdog.\" >> \"\$LOG_FILE\"",
+                "    exit 0",
+                "  fi",
+                "  if [ -f \"\$RESOLVED_APK\" ]; then APK_PATH=\"\$RESOLVED_APK\"; fi",
                 "  echo \"[\$(date)] Starting Daemon from \$APK_PATH...\" >> \"\$LOG_FILE\"",
+                "  T_START=\$(date +%s)",
                 // Backgrounded so the log poller can supervise it while it runs.
                 "  CLASSPATH=\"\$APK_PATH\" app_process \$PROXY_ARGS /system/bin --nice-name=\"\$PROCESS_NAME\" \"\$CLS\" >> \"\$LOG_FILE\" 2>&1 &",
                 "  DAEMON_PID=\$!",
@@ -884,7 +909,28 @@ class DaemonLauncher(
                 "    done",
                 "  else",
                 "    PARKED_RESPAWNS=0",
-                "    sleep 2",
+                // 0.1.43.5 (N1): stirbt der Daemon in Serie gleich nach dem Start (unter 30 s), wird die Pause länger
+                // (ab dem 3. Mal 15 s mehr je Absturz, höchstens 5 min), sonst bleibt es bei 2 s. Der Sentinel wird
+                // dabei alle 5 s geprüft.
+                "    T_LAUF=\$((\$(date +%s) - T_START))",
+                "    if [ \$T_LAUF -lt 30 ]; then",
+                "      CRASH_SERIE=\$((CRASH_SERIE + 1))",
+                "      echo \"\$CRASH_SERIE \$(date +%s)\" > \"\$CRASH_DATEI\" 2>/dev/null",
+                "    else",
+                "      CRASH_SERIE=0",
+                "      rm -f \"\$CRASH_DATEI\" 2>/dev/null",
+                "    fi",
+                "    if [ \$CRASH_SERIE -ge 3 ]; then",
+                "      CRASH_WAIT=\$(((CRASH_SERIE - 2) * 15))",
+                "      if [ \$CRASH_WAIT -gt 300 ]; then CRASH_WAIT=300; fi",
+                "      echo \"[\$(date)] Absturz in Serie (#\$CRASH_SERIE), Pause \${CRASH_WAIT}s\" >> \"\$LOG_FILE\"",
+                "      while [ \$CRASH_WAIT -gt 0 ] && [ ! -f \"\$SENTINEL\" ]; do",
+                "        sleep 5",
+                "        CRASH_WAIT=\$((CRASH_WAIT - 5))",
+                "      done",
+                "    else",
+                "      sleep 2",
+                "    fi",
                 "  fi",
                 "done"
             )
@@ -1010,6 +1056,7 @@ class DaemonLauncher(
                 "SENTINEL=\"/data/user_de/0/com.android.shell/surfmate/camera_daemon.disabled\"",
                 "PARKED=\"/data/user_de/0/com.android.shell/surfmate/surfmate_parked_shutdown\"",
                 "RETRY_COUNT=0",
+                "APK_FEHLT=0",
                 "HEALTHY_UPTIME_SEC=300",
                 *logArchivDefinitionLines(CAMERA_DAEMON_LOG).toTypedArray(),
                 "LA_GELAUFEN=0",
@@ -1036,10 +1083,18 @@ class DaemonLauncher(
                 // of retaining the path embedded when the script was written.
                 "  APK_PATH=\$(pm path at.greenchili.surfmate 2>/dev/null | grep '/base.apk\$' | head -n 1 | sed 's/^package://')",
                 "  if [ -z \"\$APK_PATH\" ] || [ ! -f \"\$APK_PATH\" ]; then",
+                // 0.1.43.5 (H1): pm path bleibt leer = App deinstalliert. Nach 6 Versuchen (rund 1 min, trägt auch ein
+                // Update) den Wächter beenden statt ewig nachzufragen.
+                "    APK_FEHLT=\$((APK_FEHLT + 1))",
+                "    if [ -z \"\$(pm path at.greenchili.surfmate 2>/dev/null)\" ] && [ \$APK_FEHLT -ge 6 ]; then",
+                "      echo \"[\$(date)] App nicht mehr installiert (pm path leer). Exiting watchdog.\" >> \"\$LOG_FILE\"",
+                "      exit 0",
+                "    fi",
                 "    echo \"[\$(date)] Installed SurfMate APK not found, retrying in 10s...\" >> \"\$LOG_FILE\"",
                 "    sleep 10",
                 "    continue",
                 "  fi",
+                "  APK_FEHLT=0",
                 "  NATIVE_LIB_DIR=\"\${APK_PATH%/base.apk}/lib/arm64\"",
                 "  echo \"[\$(date)] Starting CameraDaemon...\" >> \"\$LOG_FILE\"",
                 "  START_EPOCH=\$(awk '{print int(\$1)}' /proc/uptime 2>/dev/null || date +%s)",

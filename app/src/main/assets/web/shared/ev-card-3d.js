@@ -152,7 +152,7 @@
     function fotoModul(cb) {
         if (root.PanoptesFahrzeugFoto) { cb(root.PanoptesFahrzeugFoto); return; }
         var s = document.createElement('script');
-        s.src = '../shared/fahrzeug-foto.js?v=1';
+        s.src = '../shared/fahrzeug-foto.js?v=2';
         s.onload = function () { cb(root.PanoptesFahrzeugFoto || null); };
         s.onerror = function () { cb(null); };
         document.head.appendChild(s);

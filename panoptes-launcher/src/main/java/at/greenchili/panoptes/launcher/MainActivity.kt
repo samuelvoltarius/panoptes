@@ -1484,6 +1484,10 @@ class MainActivity : AppCompatActivity() {
             scaleType = ImageView.ScaleType.FIT_CENTER; alpha = 0.8f
         }
         mitte.addView(ersatz, FrameLayout.LayoutParams(-1, -1, Gravity.CENTER))   // 0.1.38.14: eingepasst statt fest 360×144 dp
+        // 0.1.43.5 (E2E_01434 H1): Namensnennung unter dem eigenen Bild (Rendering CC BY, Foto CC BY-SA), wie in „Fahrzeug“
+        val nennung = ui.leise("", 11f).apply { visibility = View.GONE; gravity = Gravity.END }
+        mitte.addView(nennung, FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.END))
+        standNennung = nennung
         // oben links: Datum, Uhr, Luft (nur mit echtem Wert)
         val links = spalte(18)
         val datum = ui.text("", 17f, 600, ui.p.onSurfaceVariant); val uhr = ui.zahl("", 34f)
@@ -1549,8 +1553,11 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     private fun fahrzeug3d(mitte: FrameLayout, ersatz: View, s: LauncherSummary?) {
         val modell = s?.modelId
-        standbildLaden(ersatz as? ImageView, modell)
-        if (!layout.zeige3d || modell == null || !online) {
+        // 0.1.43.5 (E2E_01434 H1): Modelle mit eigenem Bild (5 Renderings, freigestellte Fotos) zeigen hier dasselbe
+        // Bild wie die Vorlage „Fahrzeug“ – in Lackfarbe, mit Namensnennung – statt der 3D-Seite.
+        val eigenes = modell != null && (FahrzeugBild.hat(this, modell) || FahrzeugBild.hatFoto(this, modell))
+        standbildLaden(ersatz as? ImageView, modell, s?.farbe)
+        if (eigenes || !layout.zeige3d || modell == null || !online) {
             ersatz.visibility = View.VISIBLE
             webAuto?.let { (it.parent as? ViewGroup)?.removeView(it) }
             return
@@ -1588,9 +1595,25 @@ class MainActivity : AppCompatActivity() {
     private var autoGezeichnet = false
     private var standbildFuer: String? = null
 
-    /** Standbild aus Panoptes (`/api/models/art`) einmal je Modell holen; ohne Antwort bleibt die Silhouette. */
-    private fun standbildLaden(bildView: ImageView?, modell: String?) {
+    /**
+     * Standbild: 0.1.43.5 (E2E_01434 H1) zuerst das eigene Bild wie in der Vorlage „Fahrzeug“ ([FahrzeugBild]: Rendering
+     * in der Lackfarbe des Kerns bzw. freigestelltes Foto) mit Namensnennung; sonst aus Panoptes (`/api/models/art`)
+     * einmal je Modell holen; ohne Antwort bleibt die Silhouette.
+     */
+    private fun standbildLaden(bildView: ImageView?, modell: String?, farbe: String? = null) {
         if (bildView == null || modell == null) return
+        val render = FahrzeugBild.hat(this, modell)
+        if (render || FahrzeugBild.hatFoto(this, modell)) {
+            val fertig: (android.graphics.Bitmap?) -> Unit = { bmp ->
+                if (bmp != null && bildView.tag !== bmp) { bildView.setImageBitmap(bmp); bildView.alpha = 1f; bildView.tag = bmp }
+                val roh = if (bmp == null) null else if (render) FahrzeugBild.namensnennung(this, modell) else FahrzeugBild.fotoNennung(this, modell)
+                val nn = roh?.let { Namensnennung.lokal(this, it) }
+                standNennung?.let { it.text = nn ?: ""; it.visibility = if (nn != null) View.VISIBLE else View.GONE }
+            }
+            if (render) FahrzeugBild.holen(this, modell, FahrzeugStart.lack(farbe, ui.p), fertig) else FahrzeugBild.fotoHolen(this, modell, fertig)
+            return
+        }
+        standNennung?.visibility = View.GONE
         // 0.1.41 (G1): Das Standbild bleibt gemerkt. Nach einem Neuaufbau bekommt das NEUE Ersatzbild es sofort,
         // statt der flachen Silhouette (vorher wurde es je Modell nur einmal geholt und nur ins alte Bild gelegt).
         standbild?.takeIf { it.first == modell }?.let { (_, bmp) ->
@@ -1609,6 +1632,7 @@ class MainActivity : AppCompatActivity() {
     /** 0.1.43.4 (E2E G3): Zündung aus dem Kern („on“/„off“/„charging“) übersetzt, nie der Rohwert. */
     private fun accText(acc: String?): String = Zuendung.text(acc)?.let { getString(it) } ?: u
     private var standbild: Pair<String, android.graphics.Bitmap>? = null
+    private var standNennung: TextView? = null
     private var autoErsatz: View? = null
 
     private fun fahrzeugKlein(gross: Boolean): View {
@@ -1620,7 +1644,7 @@ class MainActivity : AppCompatActivity() {
         if (gross) { c.addView(verkehr, ui.lp(oben = 10)); c.addView(verlauf, ui.lp(oben = 4)) }
         reg {
             val s = summary
-            s?.vehicleName?.let { titel.text = it.uppercase(java.util.Locale.getDefault()) }
+            s?.vehicleName?.let { titel.text = Gross.eigenname(it) }
             reichweite.text = getString(R.string.range_format, s?.rangeKm?.let { nf.format(it) } ?: u)
             zustand.text = getString(R.string.state_format, accText(s?.acc), s?.gear ?: u)
             verkehr.text = if (traffic.nearby == 0) getString(R.string.traffic_empty) else getString(R.string.traffic_format, traffic.nearby, traffic.approaching)

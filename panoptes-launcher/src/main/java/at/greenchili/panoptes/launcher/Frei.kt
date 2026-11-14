@@ -3,7 +3,7 @@ package at.greenchili.panoptes.launcher
 import org.json.JSONObject
 
 /**
- * 0.1.44 (E2 „freier Editor“, Projektinhaber 12.11.: „ja beides freier editor einplanen“): reine Regeln für die frei gebaute
+ * 0.1.44 (E2 „freier Editor“, 12.11.: „ja beides freier editor einplanen“): reine Regeln für die frei gebaute
  * Startseite. Jede Seite hat ein Feinraster von 48 × 24 Einheiten (8 je Zelle); Elemente liegen auf diesen Einheiten,
  * überlappen sich nie und haben eine Mindestgröße (Lesbarkeit, Tippfläche). Einrasten (abschaltbar) rastet auf
  * Viertelzellen und an Kanten der Nachbarn (Hilfslinien). Je Element: Ecken, Deckung, Unschärfe-Stufe, Akzentfarbe.

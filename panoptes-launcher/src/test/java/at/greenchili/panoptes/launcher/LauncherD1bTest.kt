@@ -10,7 +10,7 @@ import java.io.File
 import java.util.Base64
 
 /**
- * 0.1.44 (D1b, Projektinhaber 12.11.: „warum nutzen wir nicht die modelle die wir schon haben aus Panoptes?“, „es geht ja nicht
+ * 0.1.44 (D1b, 12.11.: „warum nutzen wir nicht die modelle die wir schon haben aus Panoptes?“, „es geht ja nicht
  * nur um meinen Surf sondern um alle“): Zuordnung Modell → echtes Renderbild oder gezeichnete Grundform für JEDES
  * bekannte Modell, nie ein fremdes Modell, kein Absturz bei Unbekanntem; Zustände als Ebene über dem Bild.
  */

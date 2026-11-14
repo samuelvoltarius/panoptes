@@ -113,7 +113,7 @@ object DaemonStartPlan {
     @JvmStatic
     fun beobachtungMs(s: StartStufe): Long = when (s) {
         StartStufe.ZUGANG -> 60_000L
-        StartStufe.REST -> 30_000L
+        StartStufe.REST -> 60_000L   // 0.1.43.5: Telegram brauchte 32 s, die Frist von 30 s war 2 s zu kurz
         else -> 0L
     }
 

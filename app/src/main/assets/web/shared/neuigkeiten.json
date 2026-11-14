@@ -1100,6 +1100,40 @@
         "Launcher zonder Panoptes: hij start ook zelfstandig. Tegels die Panoptes nodig hebben tonen een rustige hint; updates komen dan uit de Panoptes-release en je bevestigt ze in het Android-installatieprogramma.",
         "Launcher ook in het Spaans, Portugees en Turks."
       ]
+    },
+    {
+      "version": "0.1.43.5",
+      "versionCode": 89,
+      "de": [
+        "Fahrzeugbilder: Die Fotos sind jetzt freigestellt und stehen wie die 3D-Bilder auf eigenem Grund. Der Sealion 7 hat ein neues, vollständiges Foto.",
+        "Panoptes zeigt jetzt dasselbe Fahrzeugbild wie der Launcher, in der Farbe deines Autos und mit Namensnennung. Auch die Launcher-Vorlage „Standard“ nutzt es.",
+        "Nach dem Deinstallieren von Panoptes startet der Hintergrunddienst nicht mehr endlos neu. Stürzt er mehrmals kurz hintereinander ab, wartet er länger.",
+        "Launcher: Marken- und Modellnamen werden in jeder Sprache richtig großgeschrieben."
+      ],
+      "en": [
+        "Vehicle pictures: the photos are now cut out and stand on their own background like the 3D pictures. The Sealion 7 has a new, complete photo.",
+        "Panoptes now shows the same vehicle picture as the launcher, in your car’s colour and with credit. The launcher template “Standard” uses it too.",
+        "After Panoptes is uninstalled, the background service no longer restarts endlessly. If it crashes several times in a row, it waits longer.",
+        "Launcher: brand and model names are capitalised correctly in every language."
+      ],
+      "fr": [
+        "Images du véhicule : les photos sont maintenant détourées et posées sur leur propre fond, comme les images 3D. Le Sealion 7 a une nouvelle photo complète.",
+        "Panoptes affiche maintenant la même image du véhicule que le launcher, dans la couleur de votre voiture et avec le crédit. Le modèle « Standard » du launcher l’utilise aussi.",
+        "Après la désinstallation de Panoptes, le service d’arrière-plan ne redémarre plus sans fin. S’il plante plusieurs fois de suite, il attend plus longtemps.",
+        "Launcher : les noms de marque et de modèle sont mis en majuscules correctement dans chaque langue."
+      ],
+      "it": [
+        "Immagini del veicolo: le foto sono ora scontornate e stanno su uno sfondo proprio come le immagini 3D. Il Sealion 7 ha una nuova foto completa.",
+        "Panoptes mostra ora la stessa immagine del veicolo del launcher, nel colore della tua auto e con i crediti. Anche il modello “Standard” del launcher la usa.",
+        "Dopo la disinstallazione di Panoptes il servizio in background non si riavvia più all’infinito. Se si blocca più volte di seguito, attende più a lungo.",
+        "Launcher: i nomi di marca e modello sono scritti in maiuscolo correttamente in ogni lingua."
+      ],
+      "nl": [
+        "Voertuigafbeeldingen: de foto’s zijn nu vrijgesteld en staan net als de 3D-afbeeldingen op een eigen achtergrond. De Sealion 7 heeft een nieuwe, volledige foto.",
+        "Panoptes toont nu dezelfde voertuigafbeelding als de launcher, in de kleur van je auto en met naamsvermelding. Ook de launcher-sjabloon ‘Standaard’ gebruikt die.",
+        "Na het verwijderen van Panoptes start de achtergronddienst niet meer eindeloos opnieuw. Crasht hij meerdere keren achter elkaar, dan wacht hij langer.",
+        "Launcher: merk- en modelnamen krijgen in elke taal de juiste hoofdletters."
+      ]
     }
   ]
 }

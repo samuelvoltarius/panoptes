@@ -3,7 +3,7 @@ package at.greenchili.panoptes.launcher
 import java.util.Locale
 
 /**
- * 0.1.44 (D1 „Fahrzeug-Startseite“, Projektinhaber 12.11.: „das wollen die user“): reine Regeln und die Geometrie der eigenen
+ * 0.1.44 (D1 „Fahrzeug-Startseite“, 12.11.: „das wollen die user“): reine Regeln und die Geometrie der eigenen
  * Fahrzeug-Ansicht. Nur die Funktionsidee ist übernommen; Aufteilung, Formen und Farben sind eigene Arbeit im
  * Panoptes-Stil (keine fremden Bilder, Autos, Szenen oder Namen, kein BYD-Bild).
  *

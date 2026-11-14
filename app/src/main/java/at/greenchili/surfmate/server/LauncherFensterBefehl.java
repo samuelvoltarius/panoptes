@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 0.1.44 (D1 „Fahrzeug-Startseite“, Projektinhaber 12.11.: „das wollen die user“): Fenster-Schnellknöpfe des Launchers,
+ * 0.1.44 (D1 „Fahrzeug-Startseite“, 12.11.: „das wollen die user“): Fenster-Schnellknöpfe des Launchers,
  * {@code POST /api/launcher/v1/fenster {fenster, ziel}}. Bewusst eng, wie der Klimaweg ({@link LauncherKlimaBefehl}):
  *
  * <ul>
