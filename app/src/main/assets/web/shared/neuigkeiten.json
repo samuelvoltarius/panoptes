@@ -1187,6 +1187,40 @@
         "Na een update laadt de webinterface één keer opnieuw en toont meteen de nieuwe versie, ook op de eerste pagina.",
         "Start de bewaker na een update iets later, dan meldt Panoptes dat niet meer als fout."
       ]
+    },
+    {
+      "version": "0.1.43.8",
+      "versionCode": 92,
+      "de": [
+        "Updates laufen auf neuerem Android (ab Android 11) zuverlässiger durch.",
+        "Die Weboberfläche lädt nach einem Update zuverlässiger neu, auch wenn kurz hintereinander zwei Updates kommen.",
+        "Launcher: Das Schloss-Symbol ist im hellen Design gut sichtbar, die Namen im Dock werden nicht mehr abgeschnitten.",
+        "Wer Panoptes mit der Handy-App über „Ins Auto installieren“ einspielt, kann das Handy gleich danach koppeln, ohne QR-Code. Dafür braucht es eine Handy-App mit diesem Schritt."
+      ],
+      "en": [
+        "Updates now run more reliably on newer Android (Android 11 and later).",
+        "After an update the web interface reloads more reliably, even when two updates come shortly after each other.",
+        "Launcher: the lock symbol is clearly visible in the light design, and the names in the dock are no longer cut off.",
+        "If you install Panoptes with the phone app via “Install in car”, you can pair the phone right afterwards, without a QR code. This needs a phone app version with this step."
+      ],
+      "fr": [
+        "Les mises à jour se déroulent de façon plus fiable sur les versions récentes d’Android (à partir d’Android 11).",
+        "Après une mise à jour, l’interface web se recharge de façon plus fiable, même si deux mises à jour se suivent de près.",
+        "Launcher : le symbole du cadenas est bien visible dans le design clair, et les noms du dock ne sont plus coupés.",
+        "Si vous installez Panoptes avec l’application mobile via « Installer dans la voiture », vous pouvez associer le téléphone juste après, sans code QR. Il faut pour cela une version de l’application mobile qui propose cette étape."
+      ],
+      "it": [
+        "Gli aggiornamenti funzionano in modo più affidabile sulle versioni recenti di Android (da Android 11).",
+        "Dopo un aggiornamento l’interfaccia web si ricarica in modo più affidabile, anche se arrivano due aggiornamenti a breve distanza.",
+        "Launcher: il simbolo del lucchetto è ben visibile nel design chiaro e i nomi nel dock non vengono più tagliati.",
+        "Se installi Panoptes con l’app per telefono tramite “Installa in auto”, puoi associare il telefono subito dopo, senza codice QR. Serve una versione dell’app per telefono con questo passaggio."
+      ],
+      "nl": [
+        "Updates verlopen betrouwbaarder op nieuwere Android-versies (vanaf Android 11).",
+        "Na een update laadt de webinterface betrouwbaarder opnieuw, ook als er twee updates kort na elkaar komen.",
+        "Launcher: het slotsymbool is goed zichtbaar in het lichte ontwerp en de namen in het dock worden niet meer afgekapt.",
+        "Installeer je Panoptes met de telefoonapp via ‘In de auto installeren’, dan kun je de telefoon meteen daarna koppelen, zonder QR-code. Daarvoor is een versie van de telefoonapp met deze stap nodig."
+      ]
     }
   ]
 }

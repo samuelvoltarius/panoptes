@@ -216,6 +216,34 @@ object FahrzeugStart {
         if (z.laedt) add("laden")
     }
 
+    /**
+     * 0.1.43.8 (Paket H4, E2E_01437 H4): Grund der Zustands-Plaketten – immer dunkel, auch im hellen Design. Vorher stand
+     * dort im Design „Hell“ das dunkle Schloss (onSurface/aqua/warning des hellen Designs) auf diesem dunklen Kreis.
+     */
+    val PLAKETTE_GRUND: Int = Farbe.argb(215, 6, 14, 20)
+    /** Mindestkontrast Symbol ↔ Plakettengrund (WCAG für Grafik verlangt 3:1, hier mit Reserve). */
+    const val PLAKETTE_KONTRAST = 3.5
+    /** Schloss unbekannt: gedämpftes Grau (vorher onSurface mit Deckkraft 110 – im hellen Design fast unsichtbar). */
+    val SCHLOSS_UNBEKANNT: Int = Farbe.rgb(0x9AA6AF)
+
+    /**
+     * Symbolfarbe auf [PLAKETTE_GRUND]: die Farbe des Designs, so weit aufgehellt, bis der Kontrast mindestens
+     * [PLAKETTE_KONTRAST] ist – gemessen über hellem Hintergrund (ungünstigster Fall, Tag/helles Foto). Im dunklen
+     * Design bleiben die Farben unverändert.
+     */
+    fun plakettenFarbe(c: Int): Int {
+        val grund = Farbe.ueber(PLAKETTE_GRUND, Farbe.rgb(0xFFFFFF))
+        val voll = Farbe.alpha(c, 255)
+        var f = voll
+        var t = 0f
+        while (Farbe.kontrast(f, grund) < PLAKETTE_KONTRAST && t < 1f) { t += 0.05f; f = Farbe.heller(voll, t) }
+        return f
+    }
+
+    /** Farbe des Schloss-Symbols: verriegelt Akzent, entriegelt Warnung, unbekannt Grau – immer auf dem dunklen Grund lesbar. */
+    fun schlossFarbe(verriegelt: Boolean?, p: Palette): Int =
+        plakettenFarbe(when (verriegelt) { true -> p.aqua; false -> p.warning; null -> SCHLOSS_UNBEKANNT })
+
     /** Über dem Bild: Symbol-Plaketten (Schloss immer; Tür, Klappe, Fenster, Dach offen in der Warnfarbe; Laden). */
     fun symboleZeichnen(l: Leinwand, z: Zustand, p: Palette, r: FloatArray) {
         val liste = symbole(z)
@@ -225,11 +253,11 @@ object FahrzeugStart {
         val y = r[1] - e * 0.4f
         for (art in liste) {
             val farbe = when (art) {
-                "schloss" -> when (z.verriegelt) { true -> p.aqua; false -> p.warning; null -> Farbe.alpha(p.onSurface, 110) }
-                "laden" -> p.lime
-                else -> p.warning
+                "schloss" -> schlossFarbe(z.verriegelt, p)
+                "laden" -> plakettenFarbe(p.lime)
+                else -> plakettenFarbe(p.warning)
             }
-            l.ellipse(x, y, e * 1.25f, e * 1.25f, Voll(Farbe.argb(190, 6, 14, 20)))
+            l.ellipse(x, y, e * 1.25f, e * 1.25f, Voll(PLAKETTE_GRUND))
             l.ellipseRahmen(x, y, e * 1.25f, e * 1.25f, e * 0.12f, Voll(Farbe.alpha(farbe, 220)))
             when (art) {
                 "schloss" -> {
@@ -387,8 +415,8 @@ object FahrzeugStart {
             intArrayOf(Farbe.alpha(p.lime, 170), Farbe.alpha(p.lime, 0)), floatArrayOf(0f, 1f)))
         // Schloss-Plakette über dem Dach
         val bx = sx((pr.dachVon + pr.dachBis) / 2f); val by = sy(dachY + 0.085f); val e = s * 0.018f
-        val sf = when (z.verriegelt) { true -> p.aqua; false -> p.warning; null -> Farbe.alpha(p.onSurface, 110) }
-        l.ellipse(bx, by, e * 1.9f, e * 1.9f, Voll(Farbe.argb(170, 6, 14, 20)))
+        val sf = schlossFarbe(z.verriegelt, p)
+        l.ellipse(bx, by, e * 1.9f, e * 1.9f, Voll(PLAKETTE_GRUND))
         l.ellipseRahmen(bx, by, e * 1.9f, e * 1.9f, s * 0.003f, Voll(Farbe.alpha(sf, 210)))
         val bv = if (z.verriegelt == false) e * 0.35f else 0f
         l.streckenzug(floatArrayOf(bx - e * 0.55f + bv, by - e * 0.05f, bx - e * 0.55f + bv, by - e * 0.65f, bx - e * 0.3f + bv, by - e * 0.95f,

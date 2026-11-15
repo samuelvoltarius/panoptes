@@ -23,7 +23,8 @@ import java.util.regex.Pattern;
  * nächsten Seitenwechsel die alte (alte theme.js/app-shell.js). Die Seite vergleicht deshalb ihre eigenen `?v=`-Verweise
  * mit dieser Liste und lädt bei Abweichung einmal neu (app-shell.js, mit Schleifenschutz).
  *
- * Gelesen wird, was der Server wirklich ausliefert (WEB_ROOT: local/*.html und shared/**.js), einmal je Stand der
+ * Gelesen wird, was der Server wirklich ausliefert (WEB_ROOT: local/*.html und shared/**.js|css – seit 0.1.43.8 auch die
+ * @import-Verweise in CSS, z. B. app-shell.css aus styles.css), einmal je Stand der
  * Startseite (Änderungszeit, Größe). Dateien mit mehreren Zählern bleiben draußen (WebAssetVersionTest verhindert das).
  * Die {@link #kennung()} ist kurz und steht in /api/einstellungen/anzeige (Auto-Display fragt ohnehin alle 8 s) und im
  * Profil; nur wenn sie sich ändert, holt die Seite die ganze Liste über /api/system/webstand.
@@ -96,7 +97,7 @@ public final class WebStand {
         for (File f : k) {
             if (f.isDirectory()) { sammeln(f, alle); continue; }
             String n = f.getName();
-            if (!n.endsWith(".html") && !n.endsWith(".js")) continue;
+            if (!n.endsWith(".html") && !n.endsWith(".js") && !n.endsWith(".css")) continue;   // 0.1.43.8 H3: @import in CSS
             String text = lies(f);
             if (text == null) continue;
             Matcher m = VERWEIS.matcher(text);

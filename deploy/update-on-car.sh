@@ -91,13 +91,37 @@ OLDAPK=$(pm path "$PKG" 2>/dev/null | sed -n 's/^package://p' | head -1)
 
 # Daemons und ihre Startschleifen gezielt über den Paketpfad beenden (nie
 # "pkill -f <paketname>": die eigene Befehlszeile enthält den Namen).
+# 0.1.43.8 (Paket G F1): Prozesse mit unserem APK im CLASSPATH. Der Pfad lautet unter Android 10
+# /data/app/$PKG-<x>/base.apk, ab Android 11 /data/app/~~<x>==/$PKG-<y>==/base.apk; davor kann
+# /system/framework/bmmcamera.jar: stehen. Nicht getroffen: Prozesse ohne CLASSPATH (Notzugang ab 0.1.43.7,
+# tailscaled, adb-Shell) und der Launcher ($PKG.launcher-…). Fremde /proc/<pid>/environ sind nicht lesbar;
+# die Meldung („Permission denied“) bleibt in der Klammer, sonst stand sie bei jedem Update im Protokoll.
+APK_CP_MUSTER="^CLASSPATH=(.*:)?/data/app/(~~[^/:]*/)?$PKG-"
+apk_prozesse() {
+    for p in $(ls /proc | grep -E '^[0-9]+$'); do
+        { tr '\0' '\n' < /proc/$p/environ | grep -qE "$APK_CP_MUSTER"; } 2>/dev/null && echo "$p"
+    done
+}
 stop_daemons() {
     pkill -f "$NEW/start_" 2>/dev/null
     sleep 1
-    for p in $(ls /proc | grep -E '^[0-9]+$'); do
-        tr '\0' '\n' < /proc/$p/environ 2>/dev/null | grep -q "^CLASSPATH=.*/data/app/$PKG-" && kill -9 "$p" 2>/dev/null
+    for p in $(apk_prozesse); do
+        kill -9 "$p" 2>/dev/null
     done
     am force-stop "$PKG"
+}
+# 0.1.43.8 (Paket G 2): echte tailscaled-Prozesse (pidof) mit genau diesem --statedir. Bis 0.1.43.7 zählte
+# „ps -A -o ARGS | grep -c statedir …“ jede Befehlszeile mit dem Text mit (sh -c-Hülle des Starts,
+# kurzlebige Prüf-Shells mit „--statedir …“ im Skript) und konnte so tailscaled=2 melden. Der Notzugang hat ein
+# eigenes statedir und steht getrennt als notzugang=.
+NZ_STATE=/data/local/tmp/panoptes-notzugang/state
+ts_zahl() {
+    n=0
+    for p in $(pidof tailscaled 2>/dev/null); do
+        case "$p" in ''|*[!0-9]*) continue ;; esac
+        { tr '\000' '\n' < "/proc/$p/cmdline" | grep -qxF -- "$1"; } 2>/dev/null && n=$((n + 1))
+    done
+    echo "$n"
 }
 # 0.1.16 (Deploy, Koordination 23.10.): App MINIMIERT starten – derselbe Start, den BootReceiver bei
 # MY_PACKAGE_REPLACED vorsieht (post_update + minimize_on_start). MainActivity fährt die Daemons hoch und geht
@@ -171,11 +195,12 @@ while [ $i -lt $((DEADLINE_MIN * 2)) ]; do
         exit 0
     fi
     if [ $((i % 4)) -eq 0 ]; then
-        TS=$(ps -A -o ARGS | grep -c "[s]tatedir $NEW/.tailscale")
+        TS=$(ts_zahl "$NEW/.tailscale")
+        NZ=$(ts_zahl "$NZ_STATE")
         WEB=$(web_code)
         DM=$(daemon_zahl)
         SK=$(skripte_befund)
-        log "Stand nach $((i / 2)) min: tailscaled=$TS web=$WEB daemons=$DM/3 skripte=$SK"
+        log "Stand nach $((i / 2)) min: tailscaled=$TS notzugang=$NZ web=$WEB daemons=$DM/3 skripte=$SK"
         if [ "$AUTO_OK" = "1" ]; then
             VC=$(installierter_vc)
             if [ "$VC" = "$EXPECT_VC" ] && [ "$DM" -ge 1 ] && [ "$DM" -ge "$DM_VORHER" ] \

@@ -7216,6 +7216,7 @@
     "a_update": "Update",
     "a_fahrzeug": "Vehicle command",
     "a_gekoppelt": "Device paired",
+    "a_installer": "Phone paired via the installer",
     "a_entfernt": "Device removed",
     "a_rechte": "Permissions changed",
     "a_anfrage": "Pairing request decided",

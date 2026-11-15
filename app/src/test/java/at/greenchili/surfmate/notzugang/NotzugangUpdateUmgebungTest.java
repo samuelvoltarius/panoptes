@@ -58,18 +58,23 @@ public class NotzugangUpdateUmgebungTest {
         assertFalse(q.contains("Runtime.getRuntime()"));
     }
 
-    /** Die ECHTE stop_daemons-Schleife aus update-on-car.sh, gegen ein Attrappen-/proc und mit echo statt kill. */
+    /**
+     * Die ECHTE Prozessauswahl von stop_daemons aus update-on-car.sh (ab 0.1.43.8 {@code apk_prozesse}), gegen ein
+     * Attrappen-/proc und mit echo statt kill.
+     */
     @Test
     public void stopDaemonsLaesstProzessOhneClasspathStehen() throws Exception {
         String nl = "\n";
         String skript = new String(Files.readAllBytes(wurzel().resolve("app/src/main/assets/deploy/update-on-car.sh")),
                 StandardCharsets.UTF_8).replace("\r" + nl, nl);
-        int a = skript.indexOf("    for p in $(ls /proc | grep -E '^[0-9]+$'); do" + nl);
-        assertTrue("Schleife in stop_daemons gefunden", a > 0 && skript.lastIndexOf("stop_daemons() {", a) > 0);
-        String ende = "    done" + nl;
-        int b = skript.indexOf(ende, a);
-        String schleife = skript.substring(a, b + ende.length());
-        assertTrue(schleife, schleife.contains("grep -q \"^CLASSPATH=.*/data/app/$PKG-\" && kill -9 \"$p\""));
+        int a = skript.indexOf("APK_CP_MUSTER=");
+        int b = skript.indexOf(nl + "}" + nl, skript.indexOf("apk_prozesse() {", a));
+        assertTrue("apk_prozesse gefunden", a > 0 && b > a);
+        String stop = skript.substring(skript.indexOf("stop_daemons() {"));
+        stop = stop.substring(0, stop.indexOf(nl + "}" + nl));
+        assertTrue(stop, stop.contains("for p in $(apk_prozesse); do") && stop.contains("kill -9 \"$p\""));
+        String schleife = skript.substring(a, b + 3)
+                + "for p in $(apk_prozesse); do kill -9 \"$p\"; done" + nl;
 
         File proc = tmp.newFolder("proc");
         umgebung(proc, "101", "CLASSPATH=" + APK_CP, "ANDROID_DATA=/data");   // Kamera-Daemon
@@ -80,7 +85,7 @@ public class NotzugangUpdateUmgebungTest {
 
         String pr = LogArchivShellTest.pfad(proc);
         String lauf = schleife.replace("/proc", pr).replace("kill -9 \"$p\"", "echo \"KILL $p\"");
-        assertEquals("genau zwei /proc-Stellen ersetzt", 2, anzahl(lauf, pr));
+        assertEquals("genau zwei /proc-Stellen ersetzt", 2, anzahl(lauf, pr + "/") + anzahl(lauf, pr + " "));
         assertEquals("kill ersetzt", 0, anzahl(lauf, "kill -9"));
         String out = LogArchivShellTest.fuehreAus("PKG=at.greenchili.surfmate" + nl + lauf + "true" + nl);   // letzter grep ohne Treffer: Status 1
         assertTrue(out, out.contains("KILL 101"));

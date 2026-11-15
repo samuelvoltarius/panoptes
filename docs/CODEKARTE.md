@@ -1,6 +1,6 @@
 # Codekarte Panoptes
 
-**Stand: Version 0.1.43.7, Commit 6334fa0e**
+**Stand: Version 0.1.43.8, Commit 3d74e27b**
 
 Wegweiser durch den Code. Zuerst hier suchen, dann gezielt die genannte Datei öffnen.
 Die Karte nennt Dateien und Klassen, keine Zeilennummern. Kurze Pfade gelten ab
@@ -308,7 +308,7 @@ Extern, ist die Route für Kopplungen gesperrt.
 | `/api/hotspot` | `HotspotApiHandler` | Login; für Handy-Web gesperrt |
 | `/api/wireguard` | `WireGuardApiHandler` | Login; für Handy-Web gesperrt |
 | `/api/tailscale/https` | `TailscaleHttpsApiHandler` | Login; für Handy-Web gesperrt |
-| `/api/notzugang`, `/api/zugang/code` | `NotzugangApiHandler`, `ZugangCodeApiHandler` | Login; für Handy-Web gesperrt; `zugang/code` (0.1.38.14, Karte „Dein Zugangscode“ in `system.html`) nur Display-WebView der App (App-UID), no-store |
+| `/api/notzugang`, `/api/zugang/code`, `/api/installer/kopplung` | `NotzugangApiHandler`, `ZugangCodeApiHandler`, `InstallerKopplungApiHandler` | Login; für Handy-Web gesperrt; `zugang/code` (0.1.38.14, Karte „Dein Zugangscode“ in `system.html`) nur Display-WebView der App (App-UID), no-store; `installer/kopplung` (0.1.43.8, `auth/InstallerKopplung`, docs/INSTALLER_KOPPLUNG.md) Kopplungs-QR nach „Ins Auto installieren“ nur für adb shell (UID 2000, nicht tailscaled), no-store |
 | `/api/storage/external` | `ExternalStorageApiHandler` | Login |
 | `/api/models/` | `ModelsApiHandler` | Login |
 | `/api/audio/`, `/api/audio/library/raw` | `AudioApiHandler` | Login |
@@ -377,7 +377,7 @@ auch Ablehnungen mitkommen; die Zeile schreibt `BefehlsLog.abschliessen` im `fin
 | `assets/web/i18n/*.json`, `assets/server-i18n/*.json` | Jeder hängt neue Schlüssel ans Dateiende bzw. Gruppenende, das gibt Merge-Konflikte und vergessene Kommas. Im Arbeitsbaum Windows-Zeilenenden, im Repo LF. | Neue Schlüssel in die fachliche Gruppe, immer alle 5 Sprachen (`de`, `en`, `fr`, `it`, `nl`). Nach dem Merge alle 10 Dateien als JSON prüfen. |
 | `server-i18n/it.json`, `fr.json` | Apostroph bricht das Java-MessageFormat. | Platzhalter-Texte mit `MessageFormatSafe`; siehe `ServerI18nPlaceholderRenderingTest`. |
 | `web/shared/core.js` | Lädt nur die gewählte Sprache, Englisch erst bei Lücken. | `I18nVollstaendigTest` verlangt vollständige Kataloge. |
-| `deploy/update-on-car.sh` | Liegt doppelt, muss byte-gleich sein mit `assets/deploy/update-on-car.sh`. | Immer beide ändern (`AppUpdateTest` prüft). |
+| `deploy/update-on-car.sh` | Liegt doppelt, muss byte-gleich sein mit `assets/deploy/update-on-car.sh`. 0.1.43.8: `stop_daemons` beendet über `apk_prozesse` Prozesse mit unserem APK im CLASSPATH (Android 10 und 11+ `/data/app/~~…/`); die Statuszeile zählt mit `ts_zahl` nur echte tailscaled je statedir (`tailscaled=` Panoptes, `notzugang=` getrennt). | Immer beide ändern (`AppUpdateTest` prüft; `UpdateSkriptProzesseTest` läuft die Funktionen gegen ein Attrappen-/proc). |
 | `app/build.gradle.kts` | Debug-Build ist der Auslieferungs-Build, nicht debuggable. `ENTWICKLUNG` statt `BuildConfig.DEBUG`. | `NichtDebuggableTest` prüft. |
 | Java-Quelltext allgemein, `assets/web` | Auto = Android 10, minSdk 28. Instanzmethoden wie `InputStream.readAllBytes()` fehlen dort. **Web-UI-Ziel = Chrome 74** (Firmware-WebView, kein Update): kein `?.`, `??`, `replaceAll`, `inset`, `:is()`, Selektorliste mit `:focus-visible`; `min()`, `clamp()`, `color-mix()`, `appearance` nur mit Rückfall davor; dünnes Glas (`backdrop-filter`, Hintergrund unter 0,9) braucht direkt danach einen `@supports not (backdrop-filter …)`-Block mit dichterer Fläche. | `MinSdkApiTest` verbietet sie; `Chromium74WebTest`, `CssInsetRueckfallTest` und `BackdropErsatzTest` prüfen alle Web-Dateien. |
 | `surveillance/` | Fehlalarme vermeiden hat Vorrang, Änderungen brauchen die Invarianten. | `DETECTION-INVARIANTS.md` |

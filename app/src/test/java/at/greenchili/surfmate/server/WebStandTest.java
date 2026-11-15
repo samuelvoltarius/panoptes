@@ -25,7 +25,8 @@ public class WebStandTest {
     @Test
     public void zaehlerAusDenAusgeliefertenSeiten() {
         Map<String, String> z = WebStand.auslesen(new File(basis(), WEB));
-        assertEquals("pn39", z.get("app-shell.js"));
+        assertEquals("pn40", z.get("app-shell.js"));
+        assertEquals("0.1.43.8 H3: @import aus styles.css", "pn11", z.get("app-shell.css"));
         assertEquals("14", z.get("theme.js"));
         assertEquals("aus theme.js geladen", "1", z.get("stil-launcher.css"));
         assertTrue("alle geteilten Dateien: " + z.size(), z.size() > 80);
@@ -33,7 +34,7 @@ public class WebStandTest {
         assertTrue(k, k.matches("[0-9a-f]{12}"));
         assertEquals("gleiche Liste, gleiche Kennung", k, WebStand.kennung(new TreeMap<>(z)));
         Map<String, String> neu = new TreeMap<>(z);
-        neu.put("app-shell.js", "pn40");
+        neu.put("app-shell.js", "pn41");
         assertNotEquals("neuer Zähler, neue Kennung", k, WebStand.kennung(neu));
     }
 
@@ -70,10 +71,16 @@ public class WebStandTest {
         for (String verboten : new String[] { "=>", "let ", "const ", "`", "class ", "setInterval", "setTimeout" }) {
             assertFalse("ES5, kein eigener Takt: " + verboten, teil.contains(verboten));
         }
-        assertTrue("Schleifenschutz je Kennung und 60 s",
-                teil.contains("if (alt && (alt.k === kennung || jetzt - (alt.t || 0) < 60000)) return false;"));
+        assertTrue("Schleifenschutz: je Kennung höchstens einmal",
+                teil.contains("for (var i = 0; i < ks.length; i++) if (ks[i] === kennung) return false;"));
+        assertTrue("0.1.43.8 H2: Wechsel in der 60-s-Sperre wird beim nächsten Abgleich nachgeholt",
+                teil.contains("if (alt && jetzt - (alt.t || 0) < 60000) { standGeprueft = null; return false; }"));
+        assertTrue("Liste der neu geladenen Kennungen bleibt kurz", teil.contains("if (ks.length > 8) ks = ks.slice(ks.length - 8);"));
         assertTrue("ohne sessionStorage kein Neuladen", teil.contains("} catch (e) { return false; }"));
-        assertTrue("Eingaben gehen nicht verloren", teil.contains("tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'"));
+        assertTrue("Eingaben gehen nicht verloren", teil.contains("if (tag === 'TEXTAREA' || tag === 'SELECT') return true;"));
+        assertTrue("0.1.43.8 H1: Checkbox/Radio/Knopf halten nicht auf",
+                teil.contains("var STAND_KEIN_TEXT = { checkbox: 1, radio: 1, button: 1, submit: 1, reset: 1,"));
+        assertTrue("0.1.43.8 H3: @import-Verweise der Seite zählen mit", teil.contains("if (regeln[i].type !== 3) continue;   // CSSImportRule"));
         assertEquals("genau ein Neuladen-Aufruf", 1, teil.split("location\\.reload\\(\\)", -1).length - 1);
         assertTrue("Liste nur bei neuer Kennung", teil.contains("if (kennung && kennung === standGeprueft) return;"));
         assertTrue(s.contains("if (d.webStand) standPruefen(d.webStand);"));

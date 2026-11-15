@@ -576,15 +576,30 @@
     // 8-s-Abgleich). Nur wenn sie neu ist, holt die Seite die Liste und vergleicht ihre eigenen Verweise; weicht einer ab,
     // lädt sie genau einmal neu. Kein eigenes Abfragen im Takt.
     // Schleifenschutz: je Kennung höchstens ein Neuladen, dazwischen mindestens 60 s; ohne sessionStorage nie.
+    // 0.1.43.8 (Paket H, E2E_01437 H1-H3): Aufschub nur bei Texteingabe (nicht Checkbox/Radio/Knopf); ein Wechsel, den
+    // die 60-s-Sperre zurückhält, wird beim nächsten Abgleich nachgeholt; app-shell.css (per @import) zählt mit.
     var STAND_KEY = 'pn.stand', STAND_NEU_KEY = 'pn.stand.neu';
     var standGeprueft = null, standLaeuft = false;
+    function standMerken(m, u) {
+        var r = /([\w.-]+\.(?:js|css))\?v=([\w.-]+)/.exec(u || '');
+        if (r) m[r[1]] = r[2];
+    }
+    function standImporte(m, blatt, tiefe) {
+        var regeln = null;
+        try { regeln = blatt.cssRules; } catch (e) { return; }
+        if (!regeln) return;
+        for (var i = 0; i < regeln.length; i++) {
+            if (regeln[i].type !== 3) continue;   // CSSImportRule
+            standMerken(m, regeln[i].href);
+            if (tiefe < 2 && regeln[i].styleSheet) standImporte(m, regeln[i].styleSheet, tiefe + 1);
+        }
+    }
     function standEigene() {
         var m = {}, els = document.querySelectorAll('script[src],link[href]');
-        for (var i = 0; i < els.length; i++) {
-            var u = els[i].getAttribute('src') || els[i].getAttribute('href') || '';
-            var r = /([\w.-]+\.(?:js|css))\?v=([\w.-]+)/.exec(u);
-            if (r) m[r[1]] = r[2];
-        }
+        for (var i = 0; i < els.length; i++) standMerken(m, els[i].getAttribute('src') || els[i].getAttribute('href'));
+        try {
+            for (var j = 0; j < document.styleSheets.length; j++) standImporte(m, document.styleSheets[j], 0);
+        } catch (e) {}
         return m;
     }
     function standAbweichung(eigene, kern) {
@@ -594,14 +609,24 @@
         }
         return null;
     }
-    function standNeuLaden(kennung, grund) {
+    var STAND_KEIN_TEXT = { checkbox: 1, radio: 1, button: 1, submit: 1, reset: 1, range: 1, color: 1, file: 1, image: 1, hidden: 1 };
+    function standTexteingabe() {
         var a = document.activeElement, tag = a && a.tagName;
-        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') { standGeprueft = null; return false; }   // später, Eingabe nicht verlieren
-        var jetzt = Date.now(), alt = null;
+        if (tag === 'TEXTAREA' || tag === 'SELECT') return true;
+        if (tag === 'INPUT') return !STAND_KEIN_TEXT[String(a.getAttribute('type') || 'text').toLowerCase()];
+        return !!(a && a.isContentEditable);
+    }
+    function standNeuLaden(kennung, grund) {
+        if (standTexteingabe()) { standGeprueft = null; return false; }   // später, Eingabe nicht verlieren
+        var jetzt = Date.now(), alt = null, ks = [];
         try {
             alt = JSON.parse(sessionStorage.getItem(STAND_NEU_KEY) || 'null');
-            if (alt && (alt.k === kennung || jetzt - (alt.t || 0) < 60000)) return false;
-            sessionStorage.setItem(STAND_NEU_KEY, JSON.stringify({ k: kennung, t: jetzt }));
+            if (alt) ks = alt.ks || (alt.k ? [alt.k] : []);
+            for (var i = 0; i < ks.length; i++) if (ks[i] === kennung) return false;   // je Kennung höchstens einmal
+            if (alt && jetzt - (alt.t || 0) < 60000) { standGeprueft = null; return false; }   // Sperre: beim nächsten Abgleich nachholen
+            ks.push(kennung);
+            if (ks.length > 8) ks = ks.slice(ks.length - 8);
+            sessionStorage.setItem(STAND_NEU_KEY, JSON.stringify({ ks: ks, t: jetzt }));
         } catch (e) { return false; }
         try { console.info('[Panoptes] Seite veraltet (' + grund + '), lade einmal neu'); } catch (e) {}
         location.reload();

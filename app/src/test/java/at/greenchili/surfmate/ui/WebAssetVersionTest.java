@@ -41,7 +41,7 @@ public class WebAssetVersionTest {
         for (String ordner : new String[] { "local", "shared" }) {
             for (File f : alle(new File(web, ordner))) {
                 String n = f.getName();
-                if (!n.endsWith(".html") && !n.endsWith(".js")) continue;
+                if (!n.endsWith(".html") && !n.endsWith(".js") && !n.endsWith(".css")) continue;   // 0.1.43.8 H3: auch @import
                 Matcher m = VERWEIS.matcher(new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8));
                 while (m.find()) {
                     zaehler.computeIfAbsent(m.group(1), k -> new TreeSet<>()).add(m.group(2));
@@ -81,7 +81,8 @@ public class WebAssetVersionTest {
     public void festgehalteneZaehlerDerRunde01436() throws Exception {
         JSONObject stand = new JSONObject(new String(Files.readAllBytes(
                 new File(basis(), "src/test/resources/web-asset-staende.json").toPath()), StandardCharsets.UTF_8));
-        assertEquals("0.1.43.7 Paket E: app-shell.js prüft den Web-Stand", "pn39", stand.getJSONObject("app-shell.js").getString("v"));
+        assertEquals("0.1.43.8 Paket H: Neuladen nachholen, nur bei Texteingabe aufschieben", "pn40", stand.getJSONObject("app-shell.js").getString("v"));
+        assertEquals("0.1.43.8 Paket H3: app-shell.css (aus styles.css per @import) steht in der Liste", "pn11", stand.getJSONObject("app-shell.css").getString("v"));
         assertEquals("14", stand.getJSONObject("theme.js").getString("v"));
         assertNotNull(stand.optJSONObject("stil-launcher.css"));
         String theme = new String(Files.readAllBytes(new File(basis(), "src/main/assets/web/shared/theme.js").toPath()), StandardCharsets.UTF_8);

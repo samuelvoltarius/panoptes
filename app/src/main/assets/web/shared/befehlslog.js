@@ -54,6 +54,8 @@
         if (ev.indexOf('fahrzeug.lock') === 0) return T('protokoll.a_zusperren', 'Zusperren');
         if (ev.indexOf('fahrzeug.climate') === 0) return T('protokoll.a_klima', 'Klima');
         if (ev.indexOf('fahrzeug.') === 0) return T('protokoll.a_fahrzeug', 'Fahrzeugbefehl') + ' (' + ev.substring(9).split(':')[0] + ')';
+        // 0.1.43.8: Kopplungs-QR für die Handy-App gleich nach „Ins Auto installieren“ (nur adb shell)
+        if (ev.indexOf('kopplung.installer') === 0) return T('protokoll.a_installer', 'Handy über den Installer gekoppelt');
         if (ev.indexOf('kopplung.angelegt') === 0) return T('protokoll.a_gekoppelt', 'Gerät gekoppelt');
         if (ev.indexOf('kopplung.widerrufen') === 0) return T('protokoll.a_entfernt', 'Gerät entfernt');
         if (ev.indexOf('kopplung.rechte') === 0) return T('protokoll.a_rechte', 'Rechte geändert');

@@ -40,6 +40,22 @@ object Farbe {
     }
     fun dunkler(c: Int, t: Float) = mix(c, argb(a(c), 0, 0, 0), t)
     fun heller(c: Int, t: Float) = mix(c, argb(a(c), 255, 255, 255), t)
+    /** [vorn] (mit Deckkraft) über der deckenden Farbe [hinten]. */
+    fun ueber(vorn: Int, hinten: Int): Int {
+        val t = a(vorn) / 255f
+        fun k(x: Int, y: Int) = Math.round(y + (x - y) * t)
+        return argb(255, k(r(vorn), r(hinten)), k(g(vorn), g(hinten)), k(b(vorn), b(hinten)))
+    }
+    /** Relative Leuchtdichte nach WCAG 2.x (0 … 1), Deckkraft unbeachtet. */
+    fun leuchte(c: Int): Double {
+        fun l(x: Int): Double { val v = x / 255.0; return if (v <= 0.03928) v / 12.92 else Math.pow((v + 0.055) / 1.055, 2.4) }
+        return 0.2126 * l(r(c)) + 0.7152 * l(g(c)) + 0.0722 * l(b(c))
+    }
+    /** Kontrastverhältnis nach WCAG 2.x (1 … 21). */
+    fun kontrast(c1: Int, c2: Int): Double {
+        val a = leuchte(c1); val b = leuchte(c2)
+        return (maxOf(a, b) + 0.05) / (minOf(a, b) + 0.05)
+    }
     fun css(c: Int): String = String.format(Locale.ROOT, "rgba(%d,%d,%d,%.3f)", r(c), g(c), b(c), a(c) / 255f)
     /** Lackfarbe aus dem Kern („#RRGGBB“), sonst null. */
     fun hex(s: String?): Int? = s?.takeIf { it.matches(Regex("^#[0-9A-Fa-f]{6}$")) }?.let { rgb(it.substring(1).toInt(16)) }

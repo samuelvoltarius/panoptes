@@ -21,7 +21,7 @@ def dateien():
     for ordner in ('local', 'shared'):
         for wurzel, _, namen in os.walk(os.path.join(WEB, ordner)):
             for n in namen:
-                if n.endswith(('.html', '.js')):
+                if n.endswith(('.html', '.js', '.css')):   # 0.1.43.8 H3: @import in CSS
                     yield os.path.join(wurzel, n)
 
 
