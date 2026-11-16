@@ -56,7 +56,13 @@
             farbe_ungueltig: t('tacho_gestalten.warn_farbe', 'Eine Farbe war ungültig und wurde ersetzt.'),
             bild_ungueltig: t('tacho_gestalten.warn_bild_ungueltig', 'Das Bild war zu groß oder kein Bild und wurde weggelassen.'),
             bild_kontrast: t('tacho_gestalten.warn_bild_kontrast', 'Auf diesem Hintergrund wäre mit Bild nicht alles lesbar. Das Bild wurde weggelassen.'),
-            zu_viele: t('tacho_gestalten.warn_zu_viele', 'Höchstens 40 Elemente. Der Rest wurde weggelassen.')
+            zu_viele: t('tacho_gestalten.warn_zu_viele', 'Höchstens 40 Elemente. Der Rest wurde weggelassen.'),
+            karte_einmal: t('tacho_gestalten.warn_karte_einmal', 'Es gibt nur eine Karte im Tacho.'),
+            karte_groesse: t('tacho_gestalten.warn_karte_groesse', 'Die Karte war zu klein und wurde vergrößert.'),
+            // 0.1.43.9 (T2) App-Fenster
+            app_einmal: t('tacho_gestalten.warn_app_einmal', 'Es gibt nur ein App-Fenster. Das zweite wurde weggelassen.'),
+            app_groesse: t('tacho_gestalten.warn_app_groesse', 'Das App-Fenster war zu klein und wurde vergrößert.'),
+            app_tempo: t('tacho_gestalten.warn_app_tempo', 'Das App-Fenster darf die Geschwindigkeit nicht verdecken. Es wurde weggelassen.')
         };
         return m[w] || '';
     }
@@ -76,6 +82,8 @@
         ['n_gang', 'Gang', { typ: 'gang', b: 120, h: 90 }],
         ['n_navi', 'Navi-Pfeil', { typ: 'navi', b: 260, h: 220 }],
         ['n_uhr', 'Uhr', { typ: 'uhr', b: 200, h: 60 }],
+        ['n_karte', 'Karte', { typ: 'karte', b: 360, h: 230, blick: 'fahrt', rahmen: 4 }],
+        ['n_app', 'App-Fenster', { typ: 'app', paket: '', b: 420, h: 260, rahmen: 4, akzent: '#35D0E6' }],
         ['n_akku', 'Akku', { typ: 'zahl', wert: 'akku', b: 200, h: 60 }],
         ['n_reichweite', 'Reichweite', { typ: 'zahl', wert: 'reichweite', b: 220, h: 60 }],
         ['n_kw', 'kW', { typ: 'zahl', wert: 'leistung', b: 200, h: 60 }],
@@ -276,10 +284,22 @@
 
         function hinzufuegen(v) {
             if (e.elemente.length >= R.MAX_ELEMENTE) { meldung(warnText('zu_viele'), true); return; }
+            if (v.typ === 'karte') {
+                for (var ki = 0; ki < e.elemente.length; ki++) if (e.elemente[ki].typ === 'karte') { meldung(warnText('karte_einmal'), true); return; }
+            }
             merken();
             var x = kopie(v);
             x.x = Math.round((R.BREITE - x.b) / 2);
             x.y = Math.round((R.HOEHE - x.h) / 2);
+            if (x.typ === 'app') {
+                // 0.1.43.9 (T2): höchstens eins; nicht über die Geschwindigkeit legen (links, sonst rechts, sonst Mitte)
+                for (var a = 0; a < e.elemente.length; a++) if (e.elemente[a].typ === 'app') { meldung(warnText('app_einmal'), true); return; }
+                var probe = [20, R.BREITE - x.b - 20, x.x];
+                for (var q = 0; q < probe.length; q++) {
+                    x.x = probe[q];
+                    if (!T.appUeberTempo({ elemente: e.elemente.concat([x]) })) break;
+                }
+            }
             if (!x.farbe) x.farbe = lesbar(e.hintergrund.farbe);
             if (x.typ === 'rund' || x.typ === 'balken') x.akzent = GRUEN;
             e.elemente.push(T.elementPruefen(x, []));
@@ -488,6 +508,67 @@
             ziel.appendChild(lab);
         }
 
+        // ---- 0.1.43.9 (T2) App-Fenster: App wählen, ehrlich sagen, ob es auf diesem Tacho geht
+        var appListe = null, appStatus = null;
+        function appDaten() {
+            api('GET', '/api/tacho/navi').then(function (r) { appListe = (r.j && r.j.apps) || []; panelBauen(); },
+                function () { appListe = []; });
+            api('GET', '/api/tacho/appfenster').then(function (r) { if (r.ok) { appStatus = r.j; panelBauen(); } }, function () {});
+        }
+        function appFinden(p) {
+            for (var i = 0; appListe && i < appListe.length; i++) if (appListe[i].paket === p) return appListe[i];
+            return null;
+        }
+        function ganzerTacho(p) {
+            api('PUT', '/api/tacho/navi', { an: true, paket: p }).then(function (x) {
+                var g = x.j && x.j.grund;
+                meldung(x.ok ? t('tacho_gestalten.app_ganz_ok', 'Die App läuft jetzt über den ganzen Tacho.')
+                    : g === 'nur_im_stand' ? t('tacho_gestalten.app_ganz_stand', 'Das geht nur im Stand.')
+                    : g === 'nicht_freigegeben' || g === 'hinweis_noetig' ? t('tacho_gestalten.app_freigeben', 'Diese App ist für den Tacho noch nicht freigegeben. Gib sie unter „App auf dem Tacho“ frei.')
+                    : t('tacho_gestalten.app_ganz_fehler', 'Das hat nicht geklappt. Der Tacho ist unverändert.'), !x.ok);
+            }, function () { meldung(t('tacho_gestalten.app_ganz_fehler', 'Das hat nicht geklappt. Der Tacho ist unverändert.'), true); });
+        }
+        function appPanel(x) {
+            if (appListe === null) { appListe = []; appDaten(); }
+            panel.appendChild(el('p', NOTIZ, t('tacho_gestalten.app_info',
+                'Die gewählte App läuft als Fenster genau in diesem Kasten, dein Design bleibt drumherum. Beim Fahren nur Navi-Apps, alle anderen nur im Stand.')));
+            if (T.appUeberTempo(e)) {
+                var w = el('p', 'font-size:16px;font-weight:700;margin:6px 0;color:var(--status-danger, var(--status-error));', warnText('app_tempo'));
+                w.id = 'tgAppTempo';
+                panel.appendChild(w);
+            }
+            titel(panel, t('tacho_gestalten.app_wahl', 'App'));
+            var sel = el('select', 'min-height:52px;font-size:17px;padding:6px 10px;border-radius:10px;max-width:100%;');
+            sel.id = 'tgAppWahl';
+            function opt(wert, text) { var o = el('option', '', text); o.value = wert; sel.appendChild(o); }
+            opt('', t('tacho_gestalten.app_keine', '– keine App gewählt –'));
+            appListe.forEach(function (a) {
+                if (a.panoptes) return;
+                opt(a.paket, a.name + (a.navi ? '' : ' · ' + t('tacho_gestalten.app_nur_stand', 'nur im Stand')));
+            });
+            if (x.paket && !appFinden(x.paket)) opt(x.paket, x.paket);
+            sel.value = x.paket || '';
+            sel.onchange = function () { aendern('paket', sel.value); };
+            panelSteuer.push(sel);
+            panel.appendChild(sel);
+            var a = appFinden(x.paket);
+            if (x.paket && a && !a.gespeichertFreigegeben) {
+                panel.appendChild(el('p', NOTIZ + 'margin-top:8px;', t('tacho_gestalten.app_freigeben',
+                    'Diese App ist für den Tacho noch nicht freigegeben. Gib sie unter „App auf dem Tacho“ frei.')));
+            }
+            var kann = appStatus ? (appStatus.belegt === 'nein' ? 'nein' : appStatus.belegt === 'ja' ? 'ja' : '') : '';
+            if (kann === 'nein') {
+                panel.appendChild(el('p', NOTIZ + 'margin-top:8px;font-weight:700;', t('tacho_gestalten.app_kein_fenster',
+                    'Dein Auto hat die App im Kasten abgelehnt. Der Kasten bleibt leer; die App geht nur über den ganzen Tacho.')));
+                if (x.paket) panel.appendChild(knopf(t('tacho_gestalten.app_ganz', 'Stattdessen auf dem ganzen Tacho'), function () { ganzerTacho(x.paket); }, '', panelSteuer));
+            } else if (kann === '') {
+                panel.appendChild(el('p', NOTIZ + 'margin-top:8px;', t('tacho_gestalten.app_ungeprueft',
+                    'Ob dein Tacho App-Fenster kann, zeigt der erste Start. Klappt es nicht, bleibt der Kasten leer.')));
+            }
+            schieber(panel, t('tacho_gestalten.app_rahmen', 'Rahmen'), 0, R.APP_MAX_RAHMEN, 1, x.rahmen, function (v) { aendern('rahmen', v); });
+            farbWahl(panel, t('tacho_gestalten.app_rahmen_farbe', 'Farbe des Rahmens'), x.akzent, function (h) { aendern('akzent', h); });
+        }
+
         var SCHRIFT_N = { schmal: t('tacho_gestalten.s_schmal', 'Schmal'), normal: t('tacho_gestalten.s_normal', 'Normal'), breit: t('tacho_gestalten.s_breit', 'Breit') };
         var FORM_N = { nadel: t('tacho_gestalten.z_nadel', 'Nadel'), balken: t('tacho_gestalten.z_balken', 'Balken'), ring: t('tacho_gestalten.z_ring', 'Ring') };
         var RICHT_N = { waagrecht: t('tacho_gestalten.r_waagrecht', 'Waagrecht'), senkrecht: t('tacho_gestalten.r_senkrecht', 'Senkrecht') };
@@ -523,13 +604,28 @@
                 zahlFeld(panel, t('tacho_gestalten.max', 'bis'), x.max, function (v) { aendern('max', v); });
             }
             if (x.typ === 'rund') schieber(panel, t('tacho_gestalten.drehung', 'Drehung (Grad)'), -180, 180, 15, x.drehung, function (v) { aendern('drehung', v); });
-            farbWahl(panel, x.typ === 'balken' ? t('tacho_gestalten.f_spur', 'Spur') : t('tacho_gestalten.farbe', 'Farbe'), x.farbe, function (h) { aendern('farbe', h); });
+            if (x.typ === 'karte') {
+                panel.appendChild(el('p', 'font-size:16px;margin:6px 0 0;', t('tacho_gestalten.karte_hinweis',
+                    'Zeigt die Straßenkarte der in Panoptes gewählten Kartenquelle, darauf die Route der Panoptes-Navigation und dein Auto. Ohne gewählte Kartenquelle bleibt der Kasten leer.')));
+                // 0.1.43.9 (T3): ehrlich, woher die Kartenbilder kommen (wie bei der Kartenquelle in Panoptes)
+                var kq = window.PanoptesKartenquelle && typeof PanoptesKartenquelle.get === 'function' ? PanoptesKartenquelle.get() : 'keine';
+                panel.appendChild(el('p', 'font-size:16px;margin:6px 0 0;', kq === 'community' || kq === 'osm'
+                    ? t('tacho_gestalten.karte_bilder_von', 'Kartenbilder kommen von {quelle}.').replace('{quelle}', t('kartenquelle.q_' + kq, kq))
+                    : t('tacho_gestalten.karte_ohne_quelle', 'Keine Kartenquelle gewählt: Der Kasten zeigt keine Straßenkarte, und es geht nichts ins Netz.')));
+                wahlKnoepfe(panel, t('tacho_gestalten.blick', 'Ausrichtung der Karte'), R.KARTE_BLICKE, x.blick,
+                    { fahrt: t('tacho_gestalten.b_fahrt', 'In Fahrtrichtung'), nord: t('tacho_gestalten.b_nord', 'Norden oben') }, function (w) { aendern('blick', w); });
+                schieber(panel, t('tacho_gestalten.rahmen', 'Rahmen'), 0, R.KARTE_MAX_RAHMEN, 1, x.rahmen, function (v) { aendern('rahmen', v); });
+                farbWahl(panel, t('tacho_gestalten.f_rahmen', 'Rahmenfarbe'), x.akzent, function (h) { aendern('akzent', h); });
+            }
+            farbWahl(panel, x.typ === 'balken' ? t('tacho_gestalten.f_spur', 'Spur') : x.typ === 'karte' ? t('tacho_gestalten.f_route', 'Route und Auto')
+                : t('tacho_gestalten.farbe', 'Farbe'), x.farbe, function (h) { aendern('farbe', h); });
             if (x.typ === 'rund' || x.typ === 'balken') farbWahl(panel, t('tacho_gestalten.f_zeiger', 'Zeiger und Balken'), x.akzent, function (h) { aendern('akzent', h); });
             if (x.typ === 'verlauf') farbWahl(panel, t('tacho_gestalten.farbe2', 'Zweite Farbe'), x.farbe2, function (h) { aendern('farbe2', h); });
             if (x.schrift) wahlKnoepfe(panel, t('tacho_gestalten.schrift_titel', 'Schrift'), R.SCHRIFTEN, x.schrift, SCHRIFT_N, function (w) { aendern('schrift', w); });
             if (x.ausrichtung) wahlKnoepfe(panel, t('tacho_gestalten.ausrichtung', 'Ausrichtung'), R.AUSRICHTUNGEN, x.ausrichtung, AUS_N, function (w) { aendern('ausrichtung', w); });
             if (x.typ === 'ring' || x.typ === 'linie') schieber(panel, t('tacho_gestalten.dicke', 'Dicke'), 1, 60, 1, x.dicke, function (v) { aendern('dicke', v); });
             if (x.typ === 'flaeche') schieber(panel, t('tacho_gestalten.ecken', 'Runde Ecken (%)'), 0, 100, 5, x.ecken, function (v) { aendern('ecken', v); });
+            if (x.typ === 'app') appPanel(x);
             titel(panel, t('tacho_gestalten.anordnen', 'Größe und Ebene'));
             var r = el('div', '');
             r.appendChild(knopf('− ' + t('tacho_gestalten.kleiner', 'Kleiner'), function () { groesse(0.9); }, '', panelSteuer));

@@ -43,16 +43,30 @@ public final class TachoFrei {
     public static final int TEMPO_MIN_HOEHE = 90;
     public static final int TEMPO_MIN_BREITE = 150;
 
-    public static final List<String> TYPEN = liste("rund", "zahl", "balken", "gang", "navi", "uhr", "ring", "linie", "flaeche", "verlauf");
+    public static final List<String> TYPEN = liste("rund", "zahl", "balken", "gang", "navi", "uhr", "karte", "app", "ring", "linie", "flaeche", "verlauf");
     /** Formen ohne Information (Schmuck); deckend sind nur flaeche und verlauf. */
     public static final List<String> FORMEN = liste("ring", "linie", "flaeche", "verlauf");
     public static final List<String> RUND_WERTE = liste("tempo", "leistung", "akku");
     public static final List<String> ZAHL_WERTE = liste("tempo", "leistung", "akku", "reichweite", "aussen", "kmstand");
     public static final List<String> BALKEN_WERTE = liste("leistung", "akku");
+    /** 0.1.43.9 (T1) Karte: hoechstens einmal, Mindestgroesse, Blick fahrtrichtungs- oder nordoben. */
+    public static final List<String> KARTE_BLICKE = liste("fahrt", "nord");
+    public static final int KARTE_MIN_BREITE = 200;
+    public static final int KARTE_MIN_HOEHE = 120;
+    public static final int KARTE_MAX_RAHMEN = 12;
     public static final List<String> ZEIGERFORMEN = liste("nadel", "balken", "ring");
     public static final List<String> RICHTUNGEN = liste("waagrecht", "senkrecht");
     public static final List<String> AUSRICHTUNGEN = liste("links", "mitte", "rechts");
     public static final List<String> HG_ARTEN = liste("farbe", "verlauf");
+
+    /**
+     * 0.1.43.9 (T2) App-Fenster: hoechstens eines, Mindestgroesse, nie ueber der Geschwindigkeit (das echte Fenster liegt
+     * ueber dem Bild). Gespeichert wird nur der Paketname; ob und wann es laeuft, entscheidet {@link TachoAppFenster}.
+     */
+    public static final int APP_MIN_BREITE = 300;
+    public static final int APP_MIN_HOEHE = 180;
+    public static final int APP_MAX_RAHMEN = 12;
+    private static final Pattern PAKET = Pattern.compile("^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)+$");
 
     private static final Pattern FARBE = Pattern.compile("^#[0-9A-Fa-f]{6}$");
     private static final Pattern BILD = Pattern.compile("^data:image/(jpeg|png);base64,[A-Za-z0-9+/]+={0,2}$");
@@ -69,7 +83,7 @@ public final class TachoFrei {
     }
 
     /** Ein Element mit Information (wird auf Kontrast geprueft). */
-    static boolean info(String typ) { return !FORMEN.contains(typ); }
+    static boolean info(String typ) { return !FORMEN.contains(typ) && !"app".equals(typ); }
 
     /** Pruefen wie {@link TachoEigen#pruefen}, fuer Version 2. */
     static TachoEigen.Ergebnis pruefen(JSONObject roh) {
@@ -121,6 +135,27 @@ public final class TachoFrei {
                 }
             }
 
+            // Karte (T1): hoechstens eine, mindestens KARTE_MIN_BREITE x KARTE_MIN_HOEHE.
+            int karte = -1;
+            for (int i = 0; i < el.size(); i++) {
+                if (!"karte".equals(el.get(i).optString("typ"))) continue;
+                if (karte < 0) { karte = i; continue; }
+                el.remove(i--);
+                if (!warn.contains("karte_einmal")) warn.add("karte_einmal");
+            }
+            if (karte >= 0) {
+                JSONObject k = el.get(karte);
+                int kb = k.getInt("b"), kh = k.getInt("h");
+                if (kb < KARTE_MIN_BREITE || kh < KARTE_MIN_HOEHE) {
+                    int nb = Math.max(kb, KARTE_MIN_BREITE), nh = Math.max(kh, KARTE_MIN_HOEHE);
+                    int cx = k.getInt("x") + kb / 2, cy = k.getInt("y") + kh / 2;
+                    k.put("b", nb).put("h", nh);
+                    k.put("x", klemme(cx - nb / 2, 0, BREITE - nb)).put("y", klemme(cy - nh / 2, 0, HOEHE - nh));
+                    warn.add("karte_groesse");
+                }
+            }
+            appPruefen(el, warn);
+
             // Kontrast je Element zur Flaeche dahinter.
             boolean kontrastWarn = false;
             for (int runde = 0; runde < 2; runde++) {
@@ -130,7 +165,7 @@ public final class TachoFrei {
                     String typ = e.getString("typ");
                     if (!info(typ)) continue;
                     String feld = "balken".equals(typ) ? "akzent" : "farbe";
-                    List<String> hinten = dahinter(el, i, hg, bild != null);
+                    List<String> hinten = "karte".equals(typ) ? karteSchleier(el, i, hg) : dahinter(el, i, hg, bild != null);
                     if (minKontrast(e.getString(feld), hinten) >= TachoEigen.MIN_KONTRAST) continue;
                     String w = "#FFFFFF", s = "#000000";
                     String best = minKontrast(w, hinten) >= minKontrast(s, hinten) ? w : s;
@@ -194,6 +229,16 @@ public final class TachoFrei {
             case "navi":
                 e.put("schrift", wahl(r.optString("schrift", ""), TachoEigen.SCHRIFTEN, "schmal"));
                 break;
+            case "karte":
+                e.put("blick", wahl(r.optString("blick", ""), KARTE_BLICKE, "fahrt"));
+                e.put("rahmen", klemme(ganz(r, "rahmen", 4), 0, KARTE_MAX_RAHMEN));
+                e.put("akzent", farbe(r, "akzent", "#35D0E6", warn));
+                break;
+            case "app":
+                e.put("paket", paket(r.optString("paket", "")));
+                e.put("rahmen", klemme(ganz(r, "rahmen", 4), 0, APP_MAX_RAHMEN));
+                e.put("akzent", farbe(r, "akzent", "#35D0E6", warn));
+                break;
             case "ring":
             case "linie":
                 e.put("dicke", klemme(ganz(r, "dicke", 4), 1, 60));
@@ -209,6 +254,49 @@ public final class TachoFrei {
                 break;
         }
         return e;
+    }
+
+    /** Paketname einer App oder "" (nur Buchstaben, Ziffern, Unterstrich, Punkte; hoechstens 120 Zeichen). */
+    static String paket(String p) {
+        String s = p == null ? "" : p.trim();
+        return s.length() <= 120 && PAKET.matcher(s).matches() ? s : "";
+    }
+
+    /** Ueberschneiden sich zwei Elemente (Lage x, y, b, h)? Beruehren an der Kante zaehlt nicht. */
+    static boolean ueberlappt(JSONObject a, JSONObject b) {
+        return a.optInt("x") < b.optInt("x") + b.optInt("b") && b.optInt("x") < a.optInt("x") + a.optInt("b")
+                && a.optInt("y") < b.optInt("y") + b.optInt("h") && b.optInt("y") < a.optInt("y") + a.optInt("h");
+    }
+
+    /**
+     * 0.1.43.9 (T2): App-Fenster hoechstens einmal, mindestens {@link #APP_MIN_BREITE} x {@link #APP_MIN_HOEHE}. Das echte
+     * Fenster deckt alles darunter ab, deshalb darf es die Geschwindigkeit nie ueberdecken: dann faellt es weg
+     * (Warnung {@code app_tempo}); der Editor zeigt das vorher an.
+     */
+    static void appPruefen(List<JSONObject> el, List<String> warn) throws Exception {
+        int app = -1;
+        for (int i = 0; i < el.size(); i++) {
+            if (!"app".equals(el.get(i).optString("typ"))) continue;
+            if (app < 0) { app = i; continue; }
+            el.remove(i--);
+            if (!warn.contains("app_einmal")) warn.add("app_einmal");
+        }
+        if (app < 0) return;
+        JSONObject a = el.get(app);
+        int b = a.getInt("b"), h = a.getInt("h");
+        if (b < APP_MIN_BREITE || h < APP_MIN_HOEHE) {
+            int nb = Math.max(b, APP_MIN_BREITE), nh = Math.max(h, APP_MIN_HOEHE);
+            int cx = a.getInt("x") + b / 2, cy = a.getInt("y") + h / 2;
+            a.put("b", nb).put("h", nh);
+            a.put("x", klemme(cx - nb / 2, 0, BREITE - nb)).put("y", klemme(cy - nh / 2, 0, HOEHE - nh));
+            warn.add("app_groesse");
+        }
+        for (JSONObject t : el) {
+            if (!"tempo".equals(t.optString("wert")) || !ueberlappt(a, t)) continue;
+            el.remove(a);
+            warn.add("app_tempo");
+            return;
+        }
     }
 
     private static void skalaPruefen(JSONObject r, JSONObject e) throws Exception {
@@ -228,9 +316,10 @@ public final class TachoFrei {
         for (int j = i - 1; j >= 0; j--) {
             JSONObject f = el.get(j);
             String typ = f.getString("typ");
-            if (!"flaeche".equals(typ) && !"verlauf".equals(typ)) continue;
+            if (!"flaeche".equals(typ) && !"verlauf".equals(typ) && !"karte".equals(typ)) continue;
             int x = f.getInt("x"), y = f.getInt("y"), b = f.getInt("b"), h = f.getInt("h");
             if (cx < x || cx > x + b || cy < y || cy > y + h) continue;
+            if ("karte".equals(typ)) return karteSchleier(el, j, hg);
             if ("flaeche".equals(typ)) return Collections.singletonList(f.getString("farbe"));
             double t = "senkrecht".equals(f.getString("richtung")) ? (cy - y) / h : (cx - x) / b;
             return Collections.singletonList(mische(f.getString("farbe"), f.getString("farbe2"), t));
@@ -242,6 +331,12 @@ public final class TachoFrei {
         }
         if (!bild) return Collections.singletonList(grund);
         return Arrays.asList(mische("#000000", grund, SCHLEIER), mische("#FFFFFF", grund, SCHLEIER));
+    }
+
+    /** 0.1.43.9 (T3): Kartenbild im Kasten liegt unter einem Schleier der Flaeche dahinter, wie das Hintergrundbild. */
+    static List<String> karteSchleier(List<JSONObject> el, int i, JSONObject hg) throws Exception {
+        String g = dahinter(el, i, hg, false).get(0);
+        return Arrays.asList(mische("#000000", g, SCHLEIER), mische("#FFFFFF", g, SCHLEIER));
     }
 
     static double minKontrast(String f, List<String> hinten) {

@@ -1221,6 +1221,45 @@
         "Launcher: het slotsymbool is goed zichtbaar in het lichte ontwerp en de namen in het dock worden niet meer afgekapt.",
         "Installeer je Panoptes met de telefoonapp via ‘In de auto installeren’, dan kun je de telefoon meteen daarna koppelen, zonder QR-code. Daarvoor is een versie van de telefoonapp met deze stap nodig."
       ]
+    },
+    {
+      "version": "0.1.43.9",
+      "versionCode": 93,
+      "de": [
+        "Neu im eigenen Tacho-Design: das Element „Karte“. Der Kasten zeigt eine echte Straßenkarte der gewählten Kartenquelle mit der Route der Panoptes-Navigation, wahlweise in Fahrtrichtung oder mit Norden oben. Ohne gewählte Kartenquelle bleibt er ohne Straßenkarte. Beim Fahren lädt die Karte etwa 5 bis 15 MB pro Stunde, auf bekannten Wegen weniger.",
+        "Neu: das Element „App-Fenster“. Eine gewählte App, zum Beispiel Google Maps, läuft im Kasten, dein Design bleibt drumherum. Das geht nur, wenn der Tacho es zulässt; während der Fahrt nur mit Navi-Apps.",
+        "Zwei neue Designs mit Kartenkasten in der Galerie: „Kombi“ und „Kasten“.",
+        "„Was kann mein Tacho?“ prüft jetzt auch „Kann mein Tacho App-Fenster?“.",
+        "Hinweis: Eigene Tacho-Designs erscheinen nur bei Autos, deren Tacho fremde Anzeigen erlaubt. Beim Dolphin Surf gibt es sie nur als Vorschau."
+      ],
+      "en": [
+        "New in your own cluster design: the “Map” element. The box shows a real street map from the chosen map source with the route of the Panoptes navigation, either in driving direction or north up. Without a chosen map source it shows no street map. While driving the map loads about 5 to 15 MB per hour, less on familiar routes.",
+        "New: the “App window” element. A chosen app, for example Google Maps, runs inside the box while your design stays around it. This only works if the cluster allows it; while driving only with navigation apps.",
+        "Two new designs with a map box in the gallery: “Combo” and “Box”.",
+        "“What can my cluster do?” now also checks “Can my cluster show app windows?”.",
+        "Note: your own cluster designs only appear on cars whose cluster allows other displays. On the Dolphin Surf they are only a preview."
+      ],
+      "fr": [
+        "Nouveau dans votre propre design de combiné : l’élément « Carte ». Le cadre affiche une vraie carte routière de la source de carte choisie avec l’itinéraire de la navigation Panoptes, dans le sens de la marche ou nord en haut. Sans source de carte choisie, il n’affiche pas de carte routière. En roulant, la carte charge environ 5 à 15 Mo par heure, moins sur les trajets connus.",
+        "Nouveau : l’élément « Fenêtre d’app ». Une app choisie, par exemple Google Maps, s’affiche dans le cadre et votre design reste autour. Cela ne fonctionne que si le combiné le permet ; en roulant, uniquement avec des apps de navigation.",
+        "Deux nouveaux designs avec un cadre de carte dans la galerie : « Combiné » et « Cadre ».",
+        "« Que peut faire mon combiné ? » vérifie maintenant aussi « Mon combiné peut-il afficher des fenêtres d’app ? ».",
+        "Remarque : les designs de combiné personnels n’apparaissent que sur les voitures dont le combiné accepte d’autres affichages. Sur la Dolphin Surf, ils ne sont qu’un aperçu."
+      ],
+      "it": [
+        "Novità nel tuo design del quadro: l’elemento “Mappa”. Il riquadro mostra una vera mappa stradale della fonte mappa scelta con il percorso della navigazione Panoptes, nel senso di marcia o con il nord in alto. Senza una fonte mappa scelta non mostra la mappa stradale. Durante la guida la mappa scarica circa da 5 a 15 MB all’ora, meno sui percorsi già noti.",
+        "Novità: l’elemento “Finestra app”. Un’app scelta, per esempio Google Maps, gira nel riquadro e il tuo design resta intorno. Funziona solo se il quadro lo consente; durante la guida solo con app di navigazione.",
+        "Due nuovi design con riquadro mappa nella galleria: “Combo” e “Riquadro”.",
+        "“Cosa sa fare il mio quadro?” ora controlla anche “Il mio quadro può mostrare finestre app?”.",
+        "Nota: i design personali del quadro compaiono solo sulle auto il cui quadro consente altre visualizzazioni. Sulla Dolphin Surf sono solo un’anteprima."
+      ],
+      "nl": [
+        "Nieuw in je eigen dashboardontwerp: het element ‘Kaart’. Het kader toont een echte wegenkaart van de gekozen kaartbron met de route van de Panoptes-navigatie, in rijrichting of met het noorden boven. Zonder gekozen kaartbron toont het geen wegenkaart. Tijdens het rijden laadt de kaart ongeveer 5 tot 15 MB per uur, minder op bekende routes.",
+        "Nieuw: het element ‘App-venster’. Een gekozen app, bijvoorbeeld Google Maps, draait in het kader en je ontwerp blijft eromheen. Dat werkt alleen als het dashboard het toestaat; tijdens het rijden alleen met navigatie-apps.",
+        "Twee nieuwe ontwerpen met een kaartkader in de galerij: ‘Combi’ en ‘Vak’.",
+        "‘Wat kan mijn paneel?’ controleert nu ook ‘Kan mijn dashboard app-vensters tonen?’.",
+        "Let op: eigen dashboardontwerpen verschijnen alleen bij auto’s waarvan het dashboard andere weergaven toestaat. Bij de Dolphin Surf zijn ze alleen een voorbeeld."
+      ]
     }
   ]
 }

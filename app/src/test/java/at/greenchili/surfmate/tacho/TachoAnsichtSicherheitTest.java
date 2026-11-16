@@ -123,8 +123,10 @@ public class TachoAnsichtSicherheitTest {
         assertTrue(act.contains("const val TAKT_MS = 250L"));
         assertTrue(act.contains("const val FEHLER_GRENZE = (3000L / TAKT_MS).toInt()"));
         assertTrue(act.contains("haupt.postDelayed({ takt() }, TAKT_MS)"));
-        assertTrue("nur sichtbar: onPause stoppt den Takt",
-                act.replaceAll("\\s+", " ").contains("override fun onPause() { laeuft = false haupt.removeCallbacksAndMessages(null)"));
+        // 0.1.43.9 (F, B3): an die Sichtbarkeit gebunden, nicht an den Fokus
+        assertTrue("nur sichtbar: onStop stoppt den Takt",
+                act.replaceAll("\\s+", " ").contains("override fun onStop() { laeuft = false haupt.removeCallbacksAndMessages(null)"));
+        assertFalse("Fokuswechsel friert nichts ein", act.contains("override fun onPause()"));
     }
 
     // ------------------------------------------------------------ Video nur in P
@@ -153,6 +155,13 @@ public class TachoAnsichtSicherheitTest {
             for (String verboten : new String[] {"VideoView", "SurfaceView", "TextureView", "MediaPlayer",
                     "ExoPlayer", "android.hardware.camera", "Camera2", "CameraManager", "getFrame"}) {
                 if (videoErlaubt && "VideoView".equals(verboten)) continue;
+                // 0.1.43.9 (T2): Die SurfaceView ist nur die eigene Flaeche fuer das App-Fenster (privates VirtualDisplay,
+                // nur auf Kern-Erlaubnis); Pruefung der Form in TachoAppFensterTest.eigeneFlaecheIstPrivatUndLiegtNurImKasten.
+                if (videoErlaubt && "SurfaceView".equals(verboten)) {
+                    assertTrue(t.contains("android.hardware.display.DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY)"));
+                    assertFalse(t.contains("MediaProjection"));
+                    continue;
+                }
                 assertFalse(f + " enthaelt " + verboten, t.contains(verboten));
             }
             if (videoErlaubt) {
@@ -222,7 +231,9 @@ public class TachoAnsichtSicherheitTest {
                     || zeile.startsWith("DiLink: ") || zeile.startsWith("Tacho-Firmware: ")
                     || zeile.startsWith("Single-OS: ") || zeile.startsWith("Projektionsdienst: ")
                     || zeile.startsWith("Totwinkel am Tacho: ") || zeile.startsWith("Karte am Tacho: ")
-                    || zeile.startsWith("Andere Apps am Tacho: ") || zeile.startsWith("Warnleuchten in der Probe frei: "));
+                    || zeile.startsWith("Andere Apps am Tacho: ") || zeile.startsWith("Warnleuchten in der Probe frei: ")
+                    // 0.1.43.9 (T2) „Kann mein Tacho App-Fenster?“ (ja/nein/offen)
+                    || zeile.startsWith("App-Fenster im Tacho: "));
         }
         String api = TachoFaehigkeitTest.lies("app/src/main/java/at/greenchili/surfmate/server/TachoApiHandler.java");
         assertTrue(api.contains("TachoRueckmeldung.senden(in.opt(\"einwilligung\")"));
@@ -261,7 +272,7 @@ public class TachoAnsichtSicherheitTest {
     public void fuenfDesignsUndEinRendererFuerAnsichtUndVorschau() throws IOException {
         // 0.1.42 (T2): die fünf bleiben vorn, dahinter die 15 Galerie-Designs
         assertEquals(List.of("klar", "sport", "nacht", "horizont", "route"), TachoAnsicht.DESIGNS.subList(0, 5));
-        assertEquals(20, TachoAnsicht.DESIGNS.size());
+        assertEquals(22, TachoAnsicht.DESIGNS.size());
         String js = TachoFaehigkeitTest.lies(JS);
         assertTrue(js.contains("var DESIGNS = ['klar', 'sport', 'nacht', 'horizont', 'route'];"));
         // 0.1.38: Die Web-Auswahl „Was zeigt der Tacho?“ liegt unter Apps & Display → Display (display.html).
@@ -313,8 +324,23 @@ public class TachoAnsichtSicherheitTest {
         JSONObject j = TachoAnsichtManoever.json(st);
         for (java.util.Iterator<String> it = j.keys(); it.hasNext(); ) {
             String k = it.next();
-            assertTrue(k, List.of("typ", "distanzM", "restM", "restS", "richtung", "skizze").contains(k));
+            assertTrue(k, List.of("typ", "distanzM", "restM", "restS", "richtung", "skizze", "kurs").contains(k));
         }
+        assertFalse("ohne Kurs kein Feld", j.has("kurs"));
+    }
+
+    /** 0.1.43.9 (T1): Kurs fuer die nordoben gedrehte Karte, nur ganze Grad, keine Position. */
+    @Test
+    public void kursFuerNordobenOhnePosition() throws Exception {
+        assertEquals(0, TachoAnsichtManoever.kurs(359.6));
+        assertEquals(270, TachoAnsichtManoever.kurs(-90.0));
+        assertEquals(-1, TachoAnsichtManoever.kurs(null));
+        assertEquals(-1, TachoAnsichtManoever.kurs(Double.NaN));
+        TachoAnsichtManoever.Stand st = new TachoAnsichtManoever.Stand(10, 350, 0L, 12400, 900, "O", new int[] {0, 0, 5, 80}, 92);
+        JSONObject j = TachoAnsichtManoever.json(st);
+        assertEquals(92, j.getInt("kurs"));
+        String t = j.toString();
+        assertFalse(t.contains("lat") || t.contains("lon") || t.contains("lng"));
     }
 
     // ------------------------------------------------------------ Flaeche

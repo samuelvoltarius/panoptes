@@ -59,6 +59,8 @@ public final class TachoRueckmeldung {
         sb.append("Warnleuchten in der Probe frei: ")
                 .append("warnleuchten_frei".equals(code) ? "ja" : "warnleuchten_verdeckt".equals(code) ? "nein" : "offen")
                 .append('\n');
+        // 0.1.43.9 (T2) „Kann mein Tacho App-Fenster?“ (ja/nein/offen), damit die Community es meldet.
+        sb.append("App-Fenster im Tacho: ").append(status(r, "appFenster")).append('\n');
         return sb.toString();
     }
 

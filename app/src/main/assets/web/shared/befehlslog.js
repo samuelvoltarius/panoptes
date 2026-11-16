@@ -76,6 +76,7 @@
 
     function geraet(e) {
         if (e.art === 'display') return T('protokoll.w_display', 'Autobildschirm');
+        if (e.art === 'installer') return T('protokoll.w_installer', 'Installer (Handy-App über ADB)');   // 0.1.43.9 (E2E-H2)
         if (e.art === 'login') return T('protokoll.w_login', 'Browser mit Anmeldung');
         if (e.eigen) return T('protokoll.w_eigen', 'Dieses Handy');
         if (e.art === 'intern') {

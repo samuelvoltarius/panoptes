@@ -46,6 +46,8 @@ public final class TachoAuswahl {
             case "chrono": return "Chrono";
             case "kacheln": return "Kacheln";
             case "tunnel": return "Tunnel";
+            case "kombi": return "Kombi";
+            case "kasten": return "Kasten";
             default: return "Klar";
         }
     }

@@ -48,8 +48,8 @@
   "v": "5"
  },
  "app-updates.js": {
-  "sha256": "d69b44e6fdfe3f7cdc3fc42365d7b0cad356f2b3e2e1e0bec205ffbbb89f3731",
-  "v": "7"
+  "sha256": "c96cb56e7597eca766e65b5f628264dbca8395fa6f48cd1870c8e72e9c5395fc",
+  "v": "8"
  },
  "assistenz-hinweis.js": {
   "sha256": "eb08f98acf32bc2fe76d9c2a714ed24f642e57396b18b90d867056e0d6eb6821",
@@ -84,8 +84,8 @@
   "v": "1"
  },
  "befehlslog.js": {
-  "sha256": "33fb4a0e803e3479700749d92ac9823af94049d42ed2944c13c36bd14389a73d",
-  "v": "5"
+  "sha256": "42a7bfdf6173a2d86260e0d0d0ec48667f518a13634350d7cf2655b4943a5734",
+  "v": "6"
  },
  "belegung.js": {
   "sha256": "e790948feae9e705587dabe0e776b650ae7e3a8ca5a2bd0b473291832af3f9fc",
@@ -384,20 +384,20 @@
   "v": "3"
  },
  "tacho-designs.js": {
-  "sha256": "ec1804d9c76c6f41bbcb5201dc9f6f0eb987f68a212b7fe20aed3b0ac88429d3",
-  "v": "4"
+  "sha256": "2829367fb755ecef00c9864c499bc133ccf30792d00c02289c72142ea0b399f8",
+  "v": "8"
  },
  "tacho-faehigkeit.js": {
-  "sha256": "91d3960ea5d1f57c2a4362d05f191e7ed851e6e6bc297ed368b6f1e7830fb151",
-  "v": "1"
+  "sha256": "4aed9949959cfa3620128cf9883eac5be178453b30c63a2928f5e79f8a78c3dc",
+  "v": "3"
  },
  "tacho-galerie.js": {
-  "sha256": "084c08f311174d2ff59885d4c0466d69bcbac3b724badf7bd72b3fb514d034fb",
-  "v": "2"
+  "sha256": "db8b3c67ff6c1d6233c83fde45a869f3571cca3ca215eff5272b6d1e8768f8b0",
+  "v": "4"
  },
  "tacho-gestalten.js": {
-  "sha256": "43c32ec2957e1efe4b7bae8685dc25073bcb8509ced5ec1d92f557bf0f013f98",
-  "v": "4"
+  "sha256": "a4532a79c4b062d03911021b0469641786f849765f84bc2f40a984f0481b6c2c",
+  "v": "7"
  },
  "tacho-groesse.js": {
   "sha256": "db3605029ced4a9d4e0bd199bf27f22d19843903e14a9e0a867fa4c3567438ae",

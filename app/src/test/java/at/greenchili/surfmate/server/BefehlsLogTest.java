@@ -131,6 +131,32 @@ public class BefehlsLogTest {
         assertFalse(alles().contains("48.2"));
     }
 
+    /** 0.1.43.9 (E2E-H2): Der Installer (adb shell, direkt am Auto) steht mit eigener Herkunft im Log, nicht als display. */
+    @Test
+    public void installerKopplungMitHerkunftInstaller() throws Exception {
+        BefehlsLog.Mitschnitt m = antwort();
+        BefehlsLog.beginne("POST", "/api/installer/kopplung", "{\"adresse\":\"http://192.168.0.20:8180\"}", null, null, null,
+                true, false, m, jetzt);
+        BefehlsLog.ereignis("kopplung.installer", "besitzer", null, null);
+        sende(m, 200, "{\"ok\":true}");
+        BefehlsLog.abschliessen();
+        JSONObject e = eintraege().getJSONObject(0);
+        assertEquals("installer", e.getString("wer"));
+        assertEquals("installer", e.getString("art"));
+        assertEquals("lokal", e.getString("weg"));
+        assertEquals("kopplung.installer:besitzer", e.getJSONArray("ereignisse").getString(0));
+        assertFalse("kein Code im Log", alles().contains("192.168.0.20") && alles().contains("#k="));
+
+        // anderer direkter Aufruf bleibt display
+        BefehlsLog.Mitschnitt m2 = antwort();
+        BefehlsLog.beginne("POST", "/api/kopplung/rechte", "{}", null, null, null, true, false, m2, jetzt + 5);
+        BefehlsLog.ereignis("kopplung.rechte", "gesetzt", null, null);
+        sende(m2, 200, "{\"ok\":true}");
+        BefehlsLog.abschliessen();
+        assertEquals("display", eintraege().getJSONObject(0).getString("wer"));
+        assertTrue(Quelltext.lies(Paths.get("src/main/assets/web/shared/befehlslog.js")).contains("e.art === 'installer'"));
+    }
+
     @Test
     public void rechteAenderungMitZielUndRechten() throws Exception {
         final JSONArray[] platte = {new JSONArray()};

@@ -37,7 +37,7 @@ public class TachoGalerieE2eTest {
         String gal = lies("app/src/main/assets/web/shared/tacho-galerie.js");
         assertTrue(gal.contains("H.text(c, (z < 0 ? '\\u2212' : '') + String(Math.abs(z)),"));
         assertFalse(gal.contains("H.text(c, String(Math.abs(z)),"));
-        assertTrue(lies("app/src/main/assets/web/local/display.html").contains("tacho-galerie.js?v=2"));
+        assertTrue(lies("app/src/main/assets/web/local/display.html").contains("tacho-galerie.js?v=4"));
     }
 
     @Test
@@ -59,6 +59,6 @@ public class TachoGalerieE2eTest {
         // Seite prüft ohne Kern genauso
         String ges = lies("app/src/main/assets/web/shared/tacho-gestalten.js");
         assertTrue(ges.contains("o.format !== R.FORMAT || (o.version !== R.VERSION && o.version !== R.VERSION_FREI)) return null;"));
-        assertTrue(lies("app/src/main/assets/web/local/display.html").contains("tacho-gestalten.js?v=4"));
+        assertTrue(lies("app/src/main/assets/web/local/display.html").contains("tacho-gestalten.js?v=7"));
     }
 }

@@ -1,0 +1,509 @@
+[
+ {
+  "name": "app_normal",
+  "ein": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 700,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "app",
+     "paket": "com.google.android.apps.maps",
+     "x": 40,
+     "y": 60,
+     "b": 600,
+     "h": 330,
+     "rahmen": 4,
+     "akzent": "#35d0e6",
+     "farbe": "#FFFFFF"
+    }
+   ]
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 700,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "app",
+     "x": 40,
+     "y": 60,
+     "b": 600,
+     "h": 330,
+     "farbe": "#FFFFFF",
+     "paket": "com.google.android.apps.maps",
+     "rahmen": 4,
+     "akzent": "#35D0E6"
+    }
+   ]
+  },
+  "warnungen": []
+ },
+ {
+  "name": "app_zu_klein",
+  "ein": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 700,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "app",
+     "paket": "com.waze",
+     "x": 100,
+     "y": 100,
+     "b": 120,
+     "h": 80
+    }
+   ]
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 700,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "app",
+     "x": 10,
+     "y": 50,
+     "b": 300,
+     "h": 180,
+     "farbe": "#FFFFFF",
+     "paket": "com.waze",
+     "rahmen": 4,
+     "akzent": "#35D0E6"
+    }
+   ]
+  },
+  "warnungen": [
+   "app_groesse"
+  ]
+ },
+ {
+  "name": "app_zweimal",
+  "ein": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 700,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "app",
+     "paket": "com.waze",
+     "x": 20,
+     "y": 20,
+     "b": 320,
+     "h": 200
+    },
+    {
+     "typ": "app",
+     "paket": "com.spotify.music",
+     "x": 20,
+     "y": 230,
+     "b": 320,
+     "h": 200
+    }
+   ]
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 700,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "app",
+     "x": 20,
+     "y": 20,
+     "b": 320,
+     "h": 200,
+     "farbe": "#FFFFFF",
+     "paket": "com.waze",
+     "rahmen": 4,
+     "akzent": "#35D0E6"
+    }
+   ]
+  },
+  "warnungen": [
+   "app_einmal"
+  ]
+ },
+ {
+  "name": "app_ueber_tempo",
+  "ein": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 700,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "app",
+     "paket": "com.waze",
+     "x": 600,
+     "y": 100,
+     "b": 400,
+     "h": 300
+    }
+   ]
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 700,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    }
+   ]
+  },
+  "warnungen": [
+   "app_tempo"
+  ]
+ },
+ {
+  "name": "app_paket_ungueltig",
+  "ein": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 700,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "app",
+     "paket": "../../data/x; rm -rf",
+     "x": 20,
+     "y": 20,
+     "b": 400,
+     "h": 300,
+     "rahmen": 99,
+     "akzent": "rot"
+    }
+   ]
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 700,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "app",
+     "x": 20,
+     "y": 20,
+     "b": 400,
+     "h": 300,
+     "farbe": "#FFFFFF",
+     "paket": "",
+     "rahmen": 12,
+     "akzent": "#35D0E6"
+    }
+   ]
+  },
+  "warnungen": [
+   "farbe_ungueltig"
+  ]
+ },
+ {
+  "name": "app_ohne_paket",
+  "ein": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 700,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "app",
+     "x": 20,
+     "y": 20,
+     "b": 400,
+     "h": 300
+    }
+   ]
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 700,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "app",
+     "x": 20,
+     "y": 20,
+     "b": 400,
+     "h": 300,
+     "farbe": "#FFFFFF",
+     "paket": "",
+     "rahmen": 4,
+     "akzent": "#35D0E6"
+    }
+   ]
+  },
+  "warnungen": []
+ },
+ {
+  "name": "app_rand_beruehrt_tempo",
+  "ein": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 700,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "app",
+     "paket": "org.mozilla.firefox",
+     "x": 300,
+     "y": 100,
+     "b": 400,
+     "h": 300,
+     "rahmen": 0
+    }
+   ]
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 700,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "app",
+     "x": 300,
+     "y": 100,
+     "b": 400,
+     "h": 300,
+     "farbe": "#FFFFFF",
+     "paket": "org.mozilla.firefox",
+     "rahmen": 0,
+     "akzent": "#35D0E6"
+    }
+   ]
+  },
+  "warnungen": []
+ }
+]

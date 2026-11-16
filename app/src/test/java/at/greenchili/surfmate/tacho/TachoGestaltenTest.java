@@ -165,7 +165,8 @@ public class TachoGestaltenTest {
         assertTrue(js.contains("if (kontrast(f.ziffern, f.hintergrund) < E.MIN_KONTRAST) {"));
         assertTrue("Gang klein in Ziffernfarbe", js.contains("v.gang || a === 'uhr' ? th.fg : th.dim"));
         assertTrue("fg = Ziffern", js.contains("bg0: f.hintergrund, bg1: f.hintergrund, fg: f.ziffern,"));
-        assertTrue("Design wird vor dem Zeichnen geprueft", js.contains("if (d.eigen !== undefined) anz.eigen = geprueft(d.eigen);"));
+        assertTrue("Design wird vor dem Zeichnen geprueft", js.contains("if (d.eigen !== undefined) {\n                anz.eigen = geprueft(d.eigen);")
+                || js.contains("if (d.eigen !== undefined) {\r\n                anz.eigen = geprueft(d.eigen);"));
     }
 
     // ------------------------------------------------------------ Kern und Oberflaeche: dieselben Listen
@@ -203,15 +204,15 @@ public class TachoGestaltenTest {
     @Test
     public void eigenesDesignInDerAuswahlUndAmTacho() throws Exception {
         assertEquals("eigen", TachoAnsicht.design("Eigen"));
-        // 0.1.42 (T2): 5 + 15 Galerie-Designs
-        assertEquals(20, TachoAnsicht.DESIGNS.size());
+        // 0.1.42 (T2): 5 + 15 Galerie-Designs, 0.1.43.9 (T1): + Kombi und Kasten
+        assertEquals(22, TachoAnsicht.DESIGNS.size());
         assertEquals("design", TachoAuswahl.ziel("design:eigen")[0]);
         JSONObject st = new JSONObject().put("aktiv", JSONObject.NULL).put("angeboten", true).put("apps", new JSONArray());
-        assertEquals(20, TachoAuswahl.liste(st, "klar", false).getJSONArray("eintraege").length());
+        assertEquals(22, TachoAuswahl.liste(st, "klar", false).getJSONArray("eintraege").length());
         JSONArray mit = TachoAuswahl.liste(st, "klar", true).getJSONArray("eintraege");
-        assertEquals(21, mit.length());
-        assertEquals("design:eigen", mit.getJSONObject(20).getString("id"));
-        assertEquals("Eigenes", mit.getJSONObject(20).getString("name"));
+        assertEquals(23, mit.length());
+        assertEquals("design:eigen", mit.getJSONObject(22).getString("id"));
+        assertEquals("Eigenes", mit.getJSONObject(22).getString("name"));
         String act = TachoFaehigkeitTest.lies("app/src/main/java/at/greenchili/surfmate/tacho/TachoAnsichtActivity.kt");
         assertTrue(act.contains("\"kmStand\", \"design\", \"eigen\")) {"));
         String ansicht = TachoFaehigkeitTest.lies("app/src/main/java/at/greenchili/surfmate/tacho/TachoAnsicht.java");
@@ -243,7 +244,7 @@ public class TachoGestaltenTest {
         assertTrue(erw > 0);
         assertTrue(html.indexOf("data-i18n=\"tacho_gestalten.erweitert\">Erweitert<", erw) > erw);
         assertTrue(html.indexOf("<div id=\"tachoGestalten\"></div>", erw) > erw);
-        assertTrue(html.contains("<script src=\"../shared/tacho-gestalten.js?v=4\"></script>"));
+        assertTrue(html.contains("<script src=\"../shared/tacho-gestalten.js?v=7\"></script>"));
         String ed = TachoFaehigkeitTest.lies(EDITOR);
         assertTrue(ed.contains("t('tacho_gestalten.knopf', 'Tacho gestalten')"));
         assertTrue("grosse Knoepfe (50+)", ed.contains("min-height:56px;padding:10px 16px;font-size:17px;"));

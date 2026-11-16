@@ -658,15 +658,24 @@
         SCHLEIER: 0.7,
         TEMPO_MIN_HOEHE: 90,
         TEMPO_MIN_BREITE: 150,
-        TYPEN: ['rund', 'zahl', 'balken', 'gang', 'navi', 'uhr', 'ring', 'linie', 'flaeche', 'verlauf'],
+        TYPEN: ['rund', 'zahl', 'balken', 'gang', 'navi', 'uhr', 'karte', 'app', 'ring', 'linie', 'flaeche', 'verlauf'],
         FORMEN: ['ring', 'linie', 'flaeche', 'verlauf'],
         RUND_WERTE: ['tempo', 'leistung', 'akku'],
         ZAHL_WERTE: ['tempo', 'leistung', 'akku', 'reichweite', 'aussen', 'kmstand'],
         BALKEN_WERTE: ['leistung', 'akku'],
+        // 0.1.43.9 (T1) Karte: höchstens einmal, Mindestgröße, Blick fahrtrichtungs- oder nordoben
+        KARTE_BLICKE: ['fahrt', 'nord'],
+        KARTE_MIN_BREITE: 200,
+        KARTE_MIN_HOEHE: 120,
+        KARTE_MAX_RAHMEN: 12,
         ZEIGERFORMEN: ['nadel', 'balken', 'ring'],
         RICHTUNGEN: ['waagrecht', 'senkrecht'],
         AUSRICHTUNGEN: ['links', 'mitte', 'rechts'],
-        HG_ARTEN: ['farbe', 'verlauf']
+        HG_ARTEN: ['farbe', 'verlauf'],
+        // 0.1.43.9 (T2) App-Fenster: höchstens eins, Mindestgröße, nie über der Geschwindigkeit (wie TachoFrei.java)
+        APP_MIN_BREITE: 300,
+        APP_MIN_HOEHE: 180,
+        APP_MAX_RAHMEN: 12
     };
     var FAMILIEN = {
         schmal: COND,
@@ -901,7 +910,39 @@
         return s;
     }
     function skalaStd(w) { return w === 'tempo' ? [0, 200] : w === 'leistung' ? [-50, 150] : [0, 100]; }
-    function infoTyp(t) { return E.FORMEN.indexOf(t) < 0; }
+    function infoTyp(t) { return E.FORMEN.indexOf(t) < 0 && t !== 'app'; }
+    var PAKET_RE = /^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+$/;
+    function paketName(p) {
+        var s = typeof p === 'string' ? p.replace(/^\s+|\s+$/g, '') : '';
+        return s.length <= 120 && PAKET_RE.test(s) ? s : '';
+    }
+    function ueberlappt(a, b) { return a.x < b.x + b.b && b.x < a.x + a.b && a.y < b.y + b.h && b.y < a.y + a.h; }
+    /** 0.1.43.9 (T2): App-Fenster höchstens einmal, Mindestgröße, nie über der Geschwindigkeit (sonst fällt es weg). */
+    function appPruefen(el, warn) {
+        var app = -1, i;
+        for (i = 0; i < el.length; i++) {
+            if (el[i].typ !== 'app') continue;
+            if (app < 0) { app = i; continue; }
+            el.splice(i--, 1);
+            if (warn.indexOf('app_einmal') < 0) warn.push('app_einmal');
+        }
+        if (app < 0) return;
+        var a = el[app];
+        if (a.b < E.APP_MIN_BREITE || a.h < E.APP_MIN_HOEHE) {
+            var nb = Math.max(a.b, E.APP_MIN_BREITE), nh = Math.max(a.h, E.APP_MIN_HOEHE);
+            var cx = a.x + Math.floor(a.b / 2), cy = a.y + Math.floor(a.h / 2);
+            a.b = nb; a.h = nh;
+            a.x = klemme(cx - Math.floor(nb / 2), 0, E.BREITE - nb);
+            a.y = klemme(cy - Math.floor(nh / 2), 0, E.HOEHE - nh);
+            warn.push('app_groesse');
+        }
+        for (i = 0; i < el.length; i++) {
+            if (el[i].wert !== 'tempo' || !ueberlappt(a, el[i])) continue;
+            el.splice(el.indexOf(a), 1);
+            warn.push('app_tempo');
+            return;
+        }
+    }
 
     var BILD_RE = /^data:image\/(jpeg|png);base64,[A-Za-z0-9+\/]+={0,2}$/;
     function bildOk(s) {
@@ -942,6 +983,14 @@
             e.ausrichtung = liste2(r.ausrichtung, E.AUSRICHTUNGEN, 'mitte');
         } else if (typ === 'navi') {
             e.schrift = liste2(r.schrift, E.SCHRIFTEN, 'schmal');
+        } else if (typ === 'karte') {
+            e.blick = liste2(r.blick, E.KARTE_BLICKE, 'fahrt');
+            e.rahmen = klemme(ganz(r, 'rahmen', 4), 0, E.KARTE_MAX_RAHMEN);
+            e.akzent = farbe2(r, 'akzent', '#35D0E6', warn);
+        } else if (typ === 'app') {
+            e.paket = paketName(r.paket);
+            e.rahmen = klemme(ganz(r, 'rahmen', 4), 0, E.APP_MAX_RAHMEN);
+            e.akzent = farbe2(r, 'akzent', '#35D0E6', warn);
         } else if (typ === 'ring' || typ === 'linie') {
             e.dicke = klemme(ganz(r, 'dicke', 4), 1, 60);
         } else if (typ === 'flaeche') {
@@ -958,8 +1007,9 @@
         var e = el[i], cx = e.x + e.b / 2, cy = e.y + e.h / 2;
         for (var j = i - 1; j >= 0; j--) {
             var f = el[j];
-            if (f.typ !== 'flaeche' && f.typ !== 'verlauf') continue;
+            if (f.typ !== 'flaeche' && f.typ !== 'verlauf' && f.typ !== 'karte') continue;
             if (cx < f.x || cx > f.x + f.b || cy < f.y || cy > f.y + f.h) continue;
+            if (f.typ === 'karte') return karteSchleier(el, j, hg);
             if (f.typ === 'flaeche') return [f.farbe];
             return [mischeHex(f.farbe, f.farbe2, f.richtung === 'senkrecht' ? (cy - f.y) / f.h : (cx - f.x) / f.b)];
         }
@@ -967,6 +1017,11 @@
         if (hg.art === 'verlauf') grund = mischeHex(hg.farbe, hg.farbe2, hg.richtung === 'waagrecht' ? cx / E.BREITE : cy / E.HOEHE);
         if (!mitBild) return [grund];
         return [mischeHex('#000000', grund, E.SCHLEIER), mischeHex('#FFFFFF', grund, E.SCHLEIER)];
+    }
+    /** 0.1.43.9 (T3): Kartenbild im Kasten liegt unter einem Schleier der Fläche dahinter, wie das Hintergrundbild. */
+    function karteSchleier(el, i, hg) {
+        var g = dahinter(el, i, hg, false)[0];
+        return [mischeHex('#000000', g, E.SCHLEIER), mischeHex('#FFFFFF', g, E.SCHLEIER)];
     }
     function minKontrast(f, hinten) {
         var m = 21;
@@ -1013,13 +1068,34 @@
                 warn.push('tempo_groesse');
             }
         }
+        // Karte (T1): höchstens eine, mindestens KARTE_MIN_BREITE × KARTE_MIN_HOEHE
+        var karte = -1;
+        for (i = 0; i < el.length; i++) {
+            if (el[i].typ !== 'karte') continue;
+            if (karte < 0) { karte = i; continue; }
+            el.splice(i--, 1);
+            if (warn.indexOf('karte_einmal') < 0) warn.push('karte_einmal');
+        }
+        if (karte >= 0) {
+            var k = el[karte];
+            if (k.b < E.KARTE_MIN_BREITE || k.h < E.KARTE_MIN_HOEHE) {
+                var kb = Math.max(k.b, E.KARTE_MIN_BREITE), kh = Math.max(k.h, E.KARTE_MIN_HOEHE);
+                var kx = k.x + Math.floor(k.b / 2), ky = k.y + Math.floor(k.h / 2);
+                k.b = kb; k.h = kh;
+                k.x = klemme(kx - Math.floor(kb / 2), 0, E.BREITE - kb);
+                k.y = klemme(ky - Math.floor(kh / 2), 0, E.HOEHE - kh);
+                warn.push('karte_groesse');
+            }
+        }
+        appPruefen(el, warn);
         var kw = false;
         for (var runde = 0; runde < 2; runde++) {
             var weg = false;
             for (i = 0; i < el.length; i++) {
                 var x = el[i];
                 if (!infoTyp(x.typ)) continue;
-                var feld = x.typ === 'balken' ? 'akzent' : 'farbe', hinten = dahinter(el, i, hg, bild !== null);
+                var feld = x.typ === 'balken' ? 'akzent' : 'farbe';
+                var hinten = x.typ === 'karte' ? karteSchleier(el, i, hg) : dahinter(el, i, hg, bild !== null);
                 if (minKontrast(x[feld], hinten) >= E.MIN_KONTRAST) continue;
                 var best = minKontrast('#FFFFFF', hinten) >= minKontrast('#000000', hinten) ? '#FFFFFF' : '#000000';
                 if (minKontrast(best, hinten) < E.MIN_KONTRAST) { weg = true; break; }
@@ -1079,6 +1155,8 @@
 
     // ---- Zeichnen (Version 2)
     var BILDER = {}, bildGeladen = false;
+    // 0.1.43.9 (T3): letztes Kartenbild des Kerns (kommt nur bei Änderung mit)
+    var karteSrc = null;
     function bildVon(s) {
         if (BILDER[s]) return BILDER[s];
         var keys = Object.keys(BILDER);
@@ -1209,6 +1287,93 @@
         c.fillRect(x, y, b, h);
     }
 
+    /**
+     * Karte (T1): Rahmen, darin die Route der Panoptes-Navigation (Skizze voraus, Meter relativ zum Auto) und das Auto.
+     * Ohne gewählte Kartenquelle nur Rahmen und Kartenzeichen; ohne Route nur der Rahmen. Keine Wörter, keine Position.
+     */
+    function karteZeichnen(c, e, d) {
+        var x = e.x, y = e.y, b = e.b, h = e.h, rr = Math.min(b, h) * 0.08, my = y + h / 2;
+        c.save();
+        if (e.rahmen > 0) {
+            c.strokeStyle = e.akzent; c.lineWidth = e.rahmen;
+            rund(c, x + e.rahmen / 2, y + e.rahmen / 2, b - e.rahmen, h - e.rahmen, rr); c.stroke();
+        }
+        rund(c, x + e.rahmen, y + e.rahmen, b - 2 * e.rahmen, h - 2 * e.rahmen, Math.max(0, rr - e.rahmen));
+        c.clip();
+        var q = d.karteQuelle, n = d.navi, cx = x + b / 2, g = Math.min(b, h);
+        var kb = d.karteBild, im = kb && kb.src && (q === 'community' || q === 'osm') ? bildVon(kb.src) : null;
+        var mitBild = !!(im && im.complete && im.naturalWidth && kb.mpp > 0 && kb.b > 0);
+        if (q !== 'community' && q !== 'osm') {
+            // Kartenzeichen (gefaltete Karte), gedämpft: keine Quelle gewählt, nichts geht ins Netz
+            var s = g * 0.16;
+            c.globalAlpha = 0.45; c.strokeStyle = e.farbe; c.lineWidth = Math.max(2, s * 0.12); c.lineJoin = 'round';
+            c.beginPath();
+            c.moveTo(cx - 1.5 * s, my - s); c.lineTo(cx - 0.5 * s, my - 1.3 * s); c.lineTo(cx + 0.5 * s, my - s);
+            c.lineTo(cx + 1.5 * s, my - 1.3 * s); c.lineTo(cx + 1.5 * s, my + 1.3 * s); c.lineTo(cx + 0.5 * s, my + s);
+            c.lineTo(cx - 0.5 * s, my + 1.3 * s); c.lineTo(cx - 1.5 * s, my + s); c.closePath();
+            c.moveTo(cx - 0.5 * s, my - 1.3 * s); c.lineTo(cx - 0.5 * s, my + 1.3 * s);
+            c.moveTo(cx + 0.5 * s, my - s); c.lineTo(cx + 0.5 * s, my + s);
+            c.stroke(); c.restore();
+            return;
+        }
+        if (mitBild) {
+            // Kartenbild vom Kern (netzfrei übergeben), darüber der Schleier der Fläche dahinter
+            c.drawImage(im, x, y, b, h);
+            c.globalAlpha = E.SCHLEIER; c.fillStyle = e.schleier || '#000000'; c.fillRect(x, y, b, h);
+            c.globalAlpha = 1;
+        }
+        if (!n && !mitBild) { c.restore(); return; }
+        var kurs = n && typeof n.kurs === 'number' ? n.kurs : mitBild && typeof kb.kurs === 'number' ? kb.kurs : null;
+        var p = n ? n.skizze || [] : [], nord = e.blick === 'nord' && kurs !== null;
+        var ay = e.blick === 'nord' ? my : y + h * 0.72, w = 0, i;
+        for (i = 0; i + 1 < p.length; i += 2) w = Math.max(w, Math.abs(p[i]), Math.abs(p[i + 1]));
+        var k = mitBild ? (b / kb.b) / kb.mpp : g * (nord ? 0.42 : 0.6) / Math.max(150, w), rad = nord ? kurs * Math.PI / 180 : 0;
+        var co = Math.cos(rad), si = Math.sin(rad);
+        if (p.length >= 4) {
+            c.strokeStyle = e.farbe; c.lineWidth = Math.max(3, g * 0.035); c.lineCap = 'round'; c.lineJoin = 'round';
+            c.beginPath(); c.moveTo(cx, ay);
+            for (i = 0; i + 1 < p.length; i += 2) {
+                // Skizze ist fahrtrichtungsoben; nordoben um den Kurs zurückdrehen
+                var sx = nord ? p[i] * co + p[i + 1] * si : p[i], sy = nord ? -p[i] * si + p[i + 1] * co : p[i + 1];
+                c.lineTo(cx + sx * k, ay - sy * k);
+            }
+            c.stroke();
+        }
+        // Auto als Pfeil; fahrtrichtungsoben zeigt er nach oben
+        var a = g * 0.07;
+        c.translate(cx, ay); c.rotate(rad);
+        c.fillStyle = e.farbe; c.beginPath();
+        c.moveTo(0, -a * 1.3); c.lineTo(a, a); c.lineTo(0, a * 0.45); c.lineTo(-a, a); c.closePath(); c.fill();
+        c.restore();
+        if (mitBild && kb.nennung) {
+            // Namensnennung der Kartenquelle (Lizenz), klein unten rechts im Kasten
+            c.save();
+            text(c, String(kb.nennung).slice(0, 60), x + b - e.rahmen - 4, y + h - e.rahmen - Math.max(6, h * 0.035), Math.max(9, h * 0.05),
+                e.farbe, { ausrichtung: 'right', familie: SANS, gewicht: '500' });
+            c.restore();
+        }
+    }
+
+    /**
+     * 0.1.43.9 (T2) App-Fenster: nur Rahmen und ein App-Zeichen (vier Kacheln), keine Wörter. Am Fahrerdisplay legt der
+     * Kern das echte Fenster der gewählten App genau darüber; geht das nicht, bleibt der Rahmen leer.
+     */
+    function appZeichnen(c, e) {
+        var x = e.x, y = e.y, b = e.b, h = e.h, rr = Math.min(b, h) * 0.06, r = e.rahmen || 0;
+        c.save();
+        if (r > 0) {
+            c.strokeStyle = e.akzent; c.lineWidth = r;
+            rund(c, x + r / 2, y + r / 2, b - r, h - r, rr); c.stroke();
+        }
+        var g = Math.min(b, h) * 0.12, cx = x + b / 2, cy = y + h / 2, l = g * 0.42;
+        c.globalAlpha = 0.45; c.fillStyle = e.farbe;
+        for (var i = 0; i < 4; i++) {
+            rund(c, cx + (i % 2 ? l * 0.2 : -l * 1.2), cy + (i < 2 ? -l * 1.2 : l * 0.2), l, l, l * 0.2);
+            c.fill();
+        }
+        c.restore();
+    }
+
     function elementZeichnen(c, e, d, jetzt) {
         var fam = schriftFam(e.schrift);
         switch (e.typ) {
@@ -1217,6 +1382,7 @@
             case 'balken': balkenZeichnen(c, e, d); return;
             case 'gang': textBox(c, d.gang || '–', '', e.x, e.y, e.b, e.h, e.farbe, fam, e.ausrichtung); return;
             case 'uhr': textBox(c, uhr(jetzt), '', e.x, e.y, e.b, e.h, e.farbe, fam, e.ausrichtung); return;
+            case 'app': appZeichnen(c, e); return;
             case 'navi': {
                 // Nur aus der Panoptes-Navigation; ohne Route bleibt das Feld leer (nichts vortäuschen).
                 var n = d.navi;
@@ -1226,6 +1392,7 @@
                 text(c, entfernung(n.distanzM), e.x + e.b / 2, e.y + e.h * 0.86, e.h * 0.2, e.farbe, { gewicht: '700', familie: fam });
                 return;
             }
+            case 'karte': karteZeichnen(c, e, d); return;
             case 'ring': {
                 var r = Math.max(1, Math.min(e.b, e.h) / 2 - e.dicke / 2);
                 c.save(); c.strokeStyle = e.farbe; c.lineWidth = e.dicke;
@@ -1273,7 +1440,17 @@
                 c.restore();
             }
         }
-        for (var i = 0; i < e.elemente.length; i++) elementZeichnen(c, e.elemente[i], d, jetzt);
+        for (var i = 0; i < e.elemente.length; i++) {
+            var el = e.elemente[i];
+            if (el.typ === 'karte') {
+                // Schleierfarbe = Fläche hinter dem Kasten (wie bei der Prüfung)
+                var kopie = {};
+                for (var schl in el) if (el.hasOwnProperty(schl)) kopie[schl] = el[schl];
+                kopie.schleier = dahinter(e.elemente, i, e.hintergrund, false)[0];
+                el = kopie;
+            }
+            elementZeichnen(c, el, d, jetzt);
+        }
         c.restore();
     }
 
@@ -1362,7 +1539,7 @@
         var ziel = { design: design(opt.design) };
         var anz = { design: ziel.design, eigen: geprueft(opt.eigen) };
         var st = { kwMax: 150 };
-        var lauf = true, letzt = 0, letztesBild = 0, letzteUhr = '', dpr = 1, w = 0, h = 0, neu = true;
+        var lauf = true, letzt = 0, letztesBild = 0, letzteUhr = '', dpr = 1, w = 0, h = 0, neu = true, eigenStand = '';
 
         function groesse() {
             dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -1406,21 +1583,44 @@
 
         function setze(d) {
             if (!d) return;
-            var schl = ['kmh', 'kw', 'soc', 'reichweiteKm', 'gang', 'aussenC', 'kmStand', 'navi'];
+            // 0.1.43.9 (T3): Das Kartenbild kommt nur bei Änderung mit; dazwischen gilt das letzte.
+            if (d.karteBild && typeof d.karteBild === 'object') {
+                if (typeof d.karteBild.src === 'string' && d.karteBild.src.indexOf('data:image/') === 0) karteSrc = d.karteBild.src;
+                else d.karteBild.src = karteSrc;
+            } else karteSrc = null;
+            var schl = ['kmh', 'kw', 'soc', 'reichweiteKm', 'gang', 'aussenC', 'kmStand', 'navi', 'karteQuelle', 'karteBild'];
             for (var i = 0; i < schl.length; i++) {
                 var n = schl[i];
                 ziel[n] = d[n];
                 if (GLEITEND.indexOf(n) < 0) anz[n] = d[n];
             }
             if (d.design) anz.design = ziel.design = design(d.design);
-            if (d.eigen !== undefined) anz.eigen = geprueft(d.eigen);
+            if (d.eigen !== undefined) {
+                anz.eigen = geprueft(d.eigen);
+                // 0.1.43.9 (F, B2): Kennung nur merken, wenn das Design hier wirklich angekommen und gültig ist
+                eigenStand = anz.eigen && typeof d.eigenStand === 'string' ? d.eigenStand : '';
+            }
             neu = true;
+        }
+
+        /**
+         * 0.1.43.9 (F, B2): Was die Seite gerade zeigt, als Bestätigung für die Ansicht. eigenStand nur, solange das
+         * eigene Design wirklich gezeichnet wird; app nur, wenn dabei ein App-Kasten sichtbar ist (nicht bei der
+         * Leiste für Kamera/Video). Ohne Bestätigung schickt der Kern das Design erneut und legt keine App an.
+         */
+        function stand() {
+            var e = anz.design === EIGEN ? anz.eigen : null, app = false, i;
+            if (e && e.version === E.VERSION_FREI && !anz.ansicht && e.elemente) {
+                for (i = 0; i < e.elemente.length; i++) if (e.elemente[i] && e.elemente[i].typ === 'app') app = true;
+            }
+            return { design: anz.design, eigenStand: e ? eigenStand : '', app: app };
         }
 
         window.addEventListener('resize', function () { neu = true; });
         window.requestAnimationFrame(bild);
         return {
             setze: setze,
+            stand: stand,
             design: function (dsg) { anz.design = ziel.design = design(dsg); neu = true; },
             /** 0.1.41 Live-Vorschau beim Gestalten: eigenes Design setzen (wird geprüft). */
             eigen: function (e) { anz.eigen = geprueft(e); anz.design = ziel.design = EIGEN; neu = true; },
@@ -1451,7 +1651,10 @@
         }
         return {
             kmh: kmh, kw: kw, soc: 64, reichweiteKm: 287, gang: 'D', aussenC: 14, kmStand: 18342,
-            navi: { typ: 10, distanzM: dist, restM: 12400, restS: 900, richtung: 'NO', skizze: sk }
+            navi: { typ: 10, distanzM: dist, restM: 12400, restS: 900, richtung: 'NO', kurs: 35, skizze: sk },
+            // Vorschau zeigt die Karte nur mit der Quelle, die auch im Auto gilt (T1)
+            karteQuelle: window.PanoptesKartenquelle && typeof window.PanoptesKartenquelle.get === 'function'
+                ? window.PanoptesKartenquelle.get() : 'keine'
         };
     }
 
@@ -1460,7 +1663,7 @@
         TAU: TAU, COND: COND, SANS: SANS, clamp: clamp, zahl: zahl, tausender: tausender, entfernung: entfernung,
         dauer: dauer, uhr: uhr, text: text, ring: ring, nadel: nadel, pfeil: pfeil, akkuBalken: akkuBalken, rund: rund,
         mische: mische, hintergrund: hintergrund, kopfzeile: kopfzeile, fusszeile: fusszeile, mitte: mitte,
-        routeSkizze: routeSkizze, kwSkala: kwSkala, ringKw: ringKw, ringTempo: ringTempo
+        routeSkizze: routeSkizze, kwSkala: kwSkala, ringKw: ringKw, ringTempo: ringTempo, karte: karteZeichnen
     };
 
     window.PanoptesTacho = {
@@ -1487,6 +1690,14 @@
         zuElementen: zuElementen,
         mischeHex: mischeHex,
         elementPruefen: elementPruefen,
+        // 0.1.43.9 (T2) App-Fenster: überdeckt der Kasten die Geschwindigkeit? (Editor warnt vor dem Speichern)
+        appUeberTempo: function (e) {
+            var el = e.elemente || [], a = null, i;
+            for (i = 0; i < el.length; i++) if (el[i].typ === 'app') { a = el[i]; break; }
+            if (!a) return false;
+            for (i = 0; i < el.length; i++) if (el[i].wert === 'tempo' && ueberlappt(a, el[i])) return true;
+            return false;
+        },
         /** Kontrast von Element i zur Fläche dahinter (wie beim Speichern); null bei reinen Formen. */
         kontrastElement: function (e, i) {
             var x = e.elemente[i];

@@ -181,6 +181,8 @@ public class TcpCommandServer {
             case "tachoAnsichtEnde":
                 // 0.1.42 (T3): Ansicht pausiert/beendet → eigenes Kamerabild im Tacho sofort weg.
                 at.greenchili.surfmate.tacho.TachoKameraAnsicht.ende();
+                // 0.1.43.9 (T2): App-Fenster vom Fahrerdisplay
+                at.greenchili.surfmate.tacho.TachoAppFenster.ende();
                 response = new JSONObject().put("status", "ok");
                 break;
 

@@ -449,6 +449,44 @@ public final class TachoNaviApp {
         return l;
     }
 
+    /**
+     * 0.1.43.9 (F, H1): Vorinstallierte Navigations-Apps (z. B. Google Maps als System-App) fehlen in der Liste, wenn
+     * sie nur ueber {@code pm list packages -3} entsteht. Bekannte Navi-Pakete deshalb ergaenzen, sofern sie
+     * startbar sind; die Freigabe-Regeln bleiben dieselben wie fuer jede App.
+     */
+    static JSONArray naviErgaenzt(JSONArray apps) {
+        JSONArray r = apps == null ? new JSONArray() : apps;
+        java.util.Set<String> schon = new HashSet<>();
+        for (int i = 0; i < r.length(); i++) {
+            JSONObject a = r.optJSONObject(i);
+            if (a != null) schon.add(a.optString("package", ""));
+        }
+        for (String p : naviPakete()) {
+            if (schon.contains(p)) continue;
+            try {
+                if (!at.greenchili.surfmate.launcher.AppLauncher.isLaunchable(p)) continue;
+                r.put(new JSONObject().put("package", p).put("label", naviName(p)));
+            } catch (Throwable ignored) { }
+        }
+        return r;
+    }
+
+    /** Anzeigename fuer ergaenzte Navi-Apps (ohne Label aus dem PackageManager). */
+    static String naviName(String p) {
+        switch (p) {
+            case "com.google.android.apps.maps": return "Google Maps";
+            case "com.google.android.apps.mapslite": return "Google Maps Go";
+            case "com.waze": return "Waze";
+            case "net.osmand": return "OsmAnd";
+            case "net.osmand.plus": return "OsmAnd+";
+            case "com.iternio.abrpapp": return "A Better Routeplanner";
+            case "com.here.app.maps": return "HERE WeGo";
+            case "com.sygic.aura": return "Sygic";
+            case "com.generalmagic.magicearth": return "Magic Earth";
+            default: return p;
+        }
+    }
+
     /** Die am Tacho gewählte App, wenn sie eine Navigations-App ist (nicht Panoptes selbst), sonst null. */
     public static String gewaehlteNaviApp() {
         String p = paket();
@@ -549,7 +587,7 @@ public final class TachoNaviApp {
                 .put("gespeichertFreigegeben", ansichtFrei)
                 .put("navi", true).put("video", false)
                 .put("fahrt", fahrtErlaubt(TachoAnsicht.PAKET, fahrt, fahrtHinweis)));
-        JSONArray apps = at.greenchili.surfmate.launcher.AppLauncher.listLaunchableApps();
+        JSONArray apps = naviErgaenzt(at.greenchili.surfmate.launcher.AppLauncher.listLaunchableApps());
         for (int i = 0; i < apps.length(); i++) {
             JSONObject app = apps.optJSONObject(i);
             if (app == null) continue;

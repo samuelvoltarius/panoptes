@@ -94,14 +94,44 @@ public class TachoFreiTest {
         assertEquals(TachoFrei.RICHTUNGEN, jsListe(js, "RICHTUNGEN"));
         assertEquals(TachoFrei.AUSRICHTUNGEN, jsListe(js, "AUSRICHTUNGEN"));
         assertEquals(TachoFrei.HG_ARTEN, jsListe(js, "HG_ARTEN"));
+        assertEquals(TachoFrei.KARTE_BLICKE, jsListe(js, "KARTE_BLICKE"));
         String[][] zahlen = {{"VERSION_FREI", "" + TachoFrei.VERSION}, {"BREITE", "" + TachoFrei.BREITE}, {"HOEHE", "" + TachoFrei.HOEHE},
             {"MIN_GROESSE", "" + TachoFrei.MIN_GROESSE}, {"MAX_ELEMENTE", "" + TachoFrei.MAX_ELEMENTE}, {"MAX_BILD", "" + TachoFrei.MAX_BILD},
             {"SCHLEIER", "" + TachoFrei.SCHLEIER}, {"TEMPO_MIN_HOEHE", "" + TachoFrei.TEMPO_MIN_HOEHE},
-            {"TEMPO_MIN_BREITE", "" + TachoFrei.TEMPO_MIN_BREITE}, {"MAX_ZEICHEN", "" + TachoEigen.MAX_ZEICHEN}};
+            {"TEMPO_MIN_BREITE", "" + TachoFrei.TEMPO_MIN_BREITE}, {"MAX_ZEICHEN", "" + TachoEigen.MAX_ZEICHEN},
+            {"KARTE_MIN_BREITE", "" + TachoFrei.KARTE_MIN_BREITE}, {"KARTE_MIN_HOEHE", "" + TachoFrei.KARTE_MIN_HOEHE},
+            {"KARTE_MAX_RAHMEN", "" + TachoFrei.KARTE_MAX_RAHMEN}};
         for (String[] z : zahlen) assertTrue(z[0], js.contains("        " + z[0] + ": " + z[1] + ","));
         // Format des Fahrerdisplays (Mittelbereich 50 % × 60 % von 1920 × 720 = 960 × 432 ≈ 1000 × 450)
         int[] f = TachoAnsicht.inhalt(1920, 720);
         assertEquals((double) f[2] / f[3], (double) TachoFrei.BREITE / TachoFrei.HOEHE, 0.01);
+    }
+
+    /** 0.1.43.9 (T1): Karte hoechstens einmal, gross genug, zaehlt beim Kontrast als Information. */
+    @Test
+    public void karteEinmalGrossGenugUndLesbar() throws Exception {
+        assertTrue(TachoFrei.info("karte"));
+        assertFalse(TachoFrei.FORMEN.contains("karte"));
+        JSONArray faelle = faelle();
+        int karten = 0;
+        for (int i = 0; i < faelle.length(); i++) {
+            JSONObject f = faelle.getJSONObject(i);
+            if (!f.getString("name").startsWith("karte_")) continue;
+            karten++;
+            JSONArray el = f.getJSONObject("aus").getJSONArray("elemente");
+            int n = 0;
+            for (int j = 0; j < el.length(); j++) {
+                JSONObject e = el.getJSONObject(j);
+                if (!"karte".equals(e.getString("typ"))) continue;
+                n++;
+                assertTrue(f.getString("name"), e.getInt("b") >= TachoFrei.KARTE_MIN_BREITE && e.getInt("h") >= TachoFrei.KARTE_MIN_HOEHE);
+                assertTrue(TachoFrei.KARTE_BLICKE.contains(e.getString("blick")));
+                assertTrue(e.getInt("rahmen") >= 0 && e.getInt("rahmen") <= TachoFrei.KARTE_MAX_RAHMEN);
+                assertFalse("keine Quelle/Adresse im Design", e.has("quelle") || e.has("url"));
+            }
+            assertEquals(f.getString("name"), 1, n);
+        }
+        assertTrue("Karte-Faelle vorhanden", karten >= 5);
     }
 
     // ------------------------------------------------------------ Sicherheitsregeln
@@ -223,7 +253,9 @@ public class TachoFreiTest {
         assertTrue(a.contains("if (cmd == null || !stand.equals(cmd.optString(\"eigenStand\", \"\"))) r.put(\"eigen\", e);"));
         String act = lies("app/src/main/java/at/greenchili/surfmate/tacho/TachoAnsichtActivity.kt");
         assertTrue(act.contains("if (eigenStand.isNotEmpty()) c.put(\"eigenStand\", eigenStand)"));
-        assertTrue(act.contains("if (a.has(\"eigen\")) eigenStand = a.optString(\"eigenStand\", \"\")"));
+        // 0.1.43.9 (F, B2): Kennung geht mit dem Design an die Seite, uebernommen nur aus deren Bestaetigung
+        assertTrue(act.contains("if (a.has(\"eigen\")) d.put(\"eigenStand\", a.optString(\"eigenStand\", \"\"))"));
+        assertFalse(act.contains("eigenStand = a.optString("));
         String e = lies("app/src/main/java/at/greenchili/surfmate/tacho/TachoEigen.java");
         assertTrue("Pruefung nur bei neuem Text", e.contains("if (!s.equals(letzterText)) {"));
         JSONObject d = faelle().getJSONObject(1).getJSONObject("aus");
@@ -270,7 +302,7 @@ public class TachoFreiTest {
         }
         assertTrue(lies(EDITOR).contains("t('tacho_gestalten.nur_projektion',"));
         String doku = lies("docs/TACHO_GESTALTEN.md");
-        assertTrue(doku.contains("Freier Editor (0.1.44, E1)"));
+        assertTrue(doku.contains("Freier Editor (0.1.43, E1)"));
         assertTrue(doku.contains("Beim Surf (Single-OS) nur als Vorschau"));
         String designs = lies(JS);
         assertTrue("Galerie-Design mit eigener Zeichnung: ehrlicher Hinweis", designs.contains("var eigeneZeichnung = !!EXTRA[dsg] || dsg === 'horizont' || dsg === 'route';"));

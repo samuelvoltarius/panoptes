@@ -43,7 +43,7 @@ public final class TachoAnsicht {
      */
     public static final List<String> GALERIE = Collections.unmodifiableList(Arrays.asList(
             "analog", "retro", "minimal", "futur", "rennen", "eco", "gross", "sonne", "karte", "abbiegen",
-            "bogen", "saeulen", "chrono", "kacheln", "tunnel"));
+            "bogen", "saeulen", "chrono", "kacheln", "tunnel", "kombi", "kasten"));
     public static final List<String> DESIGNS;
     static {
         List<String> alle = new java.util.ArrayList<>(Arrays.asList(KLAR, SPORT, NACHT, HORIZONT, ROUTE));
@@ -62,6 +62,37 @@ public final class TachoAnsicht {
 
     public static boolean istAnsicht(String paket) {
         return paket != null && PAKET.equals(paket.trim());
+    }
+
+    /**
+     * 0.1.43.9 (F, B2): Bestaetigung der Tacho-Seite (Rueckgabe von {@code tachoSetze}, JSON) lesen.
+     * Ergebnis {eigenStand, "1"/"0" App-Kasten}. Kennung nur, solange die Seite das eigene Design zeigt; App-Kasten
+     * nur mit Kennung. Alles Unklare (Seite nicht bereit, kein JSON, fremde Werte) = leer, also nichts bestaetigt.
+     */
+    public static String[] seitenStand(String js) {
+        String[] leer = {"", "0"};
+        if (js == null) return leer;
+        try {
+            Object o = new org.json.JSONTokener(js.trim()).nextValue();
+            if (!(o instanceof JSONObject)) return leer;
+            JSONObject s = (JSONObject) o;
+            if (!TachoEigen.NAME.equals(s.optString("design", ""))) return leer;
+            String st = s.optString("eigenStand", "");
+            if (!st.matches("^[0-9a-f-]{1,16}$")) return leer;
+            return new String[] {st, s.optBoolean("app", false) ? "1" : "0"};
+        } catch (Throwable t) {
+            return leer;
+        }
+    }
+
+    /**
+     * 0.1.43.9 (F, B2): Lage der Seite fuer das App-Fenster nur, wenn die Ansicht bestaetigt, dass ihre Seite genau
+     * das gespeicherte eigene Design zeigt ({@code eigenStand} gleich). Sonst null: Der Kern legt keine App an bzw.
+     * nimmt sie weg, auch wenn die Seite das Design verloren hat und das Standard-Design zeigt.
+     */
+    static org.json.JSONArray appFlaeche(JSONObject cmd, String stand) {
+        if (cmd == null || stand == null || stand.isEmpty()) return null;
+        return stand.equals(cmd.optString("eigenStand", "")) ? cmd.optJSONArray("flaeche") : null;
     }
 
     /** Gueltiges Design (die fuenf oder 0.1.41 {@link TachoEigen#NAME}), sonst {@link #KLAR}. */
@@ -168,12 +199,16 @@ public final class TachoAnsicht {
             }
         } catch (Throwable ignored) { }
         JSONObject r = antwort(aktiv, kmh, soc, rw, design(), kw, gang, aussen, km);
+        JSONObject eigenDesign = null;
+        String eigenKennung = "";
         // 0.1.41: Eigenes Design (geprueft, nur Farben und Anordnung) geht mit, wenn es gewaehlt ist.
         if (TachoEigen.NAME.equals(r.optString("design"))) {
             JSONObject e = TachoEigen.gespeichert();
             if (e == null) e = TachoEigen.standard();
+            eigenDesign = e;
             // 0.1.44 (E1): Das Design (bis 40000 Zeichen) geht nur mit, wenn die Ansicht es noch nicht hat.
             String stand = TachoEigen.stand(e);
+            eigenKennung = stand;
             r.put("eigenStand", stand);
             if (cmd == null || !stand.equals(cmd.optString("eigenStand", ""))) r.put("eigen", e);
         }
@@ -185,6 +220,24 @@ public final class TachoAnsicht {
                     .put("videoId", k.optString("videoId", ""));
         } catch (Throwable ignored) {
             r.put("kamera", "").put("video", false).put("videoId", "");
+        }
+        // 0.1.43.9 (T3): Position nur auf Anfrage der Ansicht (Karte im Design, Quelle gewaehlt), nur an die Activity.
+        if (cmd != null && cmd.optBoolean("karte", false)) {
+            try {
+                at.greenchili.surfmate.monitor.GpsMonitor.GpsFixSnapshot f =
+                        at.greenchili.surfmate.monitor.GpsMonitor.getInstance().getFixSnapshot();
+                JSONObject p = f == null ? null : TachoKachelKarte.position(f.latitude, f.longitude,
+                        f.speed > 0.5f ? f.heading : Double.NaN, f.lastUpdate, System.currentTimeMillis());
+                if (p != null) r.put("kartePos", p);
+            } catch (Throwable ignored) { }
+        }
+        // 0.1.43.9 (T2): App-Fenster aus dem eigenen Design (Regeln in TachoAppFenster); cmd.flaeche = Lage der Seite,
+        // 0.1.43.9 (F, B2) nur mit Bestaetigung, dass die Seite genau dieses Design zeigt.
+        try {
+            r.put("appFenster", TachoAppFenster.schritt(aktiv, eigenDesign, appFlaeche(cmd, eigenKennung),
+                    cmd != null ? cmd.optInt("appDisplay", -1) : -1));
+        } catch (Throwable ignored) {
+            r.put("appFenster", new JSONObject().put("zustand", TachoAppFenster.AUS));
         }
         return r;
     }

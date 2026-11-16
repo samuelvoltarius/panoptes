@@ -16,7 +16,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 0.1.42 (T2) Tacho-Galerie: 15 eigene Designs in tacho-galerie.js, zusammen 20. Vertrag zwischen Kern-Liste,
+ * 0.1.42 (T2) Tacho-Galerie: 15 eigene Designs in tacho-galerie.js, zusammen 20 (0.1.43.9 T1: 17, zusammen 22). Vertrag zwischen Kern-Liste,
  * Renderer, Galerie-Oberfläche, Editor-Vorlage und Übersetzungen; dazu Ruhe, Kontrast und ES5.
  */
 public class TachoGalerieTest {
@@ -39,8 +39,8 @@ public class TachoGalerieTest {
     public void zwanzigDesignsKernUndRendererGleich() throws Exception {
         String js = lies(GAL);
         assertEquals("gleiche Namen, gleiche Reihenfolge", TachoAnsicht.GALERIE, registriert(js));
-        assertEquals(15, TachoAnsicht.GALERIE.size());
-        assertEquals(20, TachoAnsicht.DESIGNS.size());
+        assertEquals(17, TachoAnsicht.GALERIE.size());
+        assertEquals(22, TachoAnsicht.DESIGNS.size());
         for (String d : TachoAnsicht.GALERIE) {
             assertEquals(d, TachoAnsicht.design(d));
             assertEquals("design", TachoAuswahl.ziel("design:" + d)[0]);
@@ -71,7 +71,7 @@ public class TachoGalerieTest {
                 zahl.put(k, zahl.getOrDefault(k, 0) + 1);
             }
         }
-        assertEquals(15, n);
+        assertEquals(17, n);
         for (String k : new String[] {"analog", "digital", "navi", "ruhig"}) assertTrue(k, zahl.getOrDefault(k, 0) >= 3);
         String aus = lies(AUS);
         assertTrue(aus.contains("['alle', 'analog', 'digital', 'navi', 'ruhig'].forEach"));
@@ -145,7 +145,7 @@ public class TachoGalerieTest {
                     assertTrue("Design " + n + " " + text + "/" + bg + " = " + k, k >= 4.5);
                 }
         }
-        assertEquals(15, n);
+        assertEquals(17, n);
         assertTrue(kontrast("#FFFFFF", "#000000") > 20.9);
     }
 

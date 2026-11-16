@@ -121,7 +121,8 @@ public class TachoKameraAnsichtTest {
         assertTrue(act.contains("window.tachoInstanz.ansicht($an)"));
         String tcp = TachoFaehigkeitTest.lies("app/src/main/java/at/greenchili/surfmate/server/TcpCommandServer.java");
         assertTrue(tcp.contains("case \"tachoAnsichtEnde\":"));
-        assertTrue("Pause → Kamera weg", act.contains("videoStopp()\n        kameraEnde()\n        super.onPause()"));
+        // 0.1.43.9 (F, B3): nicht mehr sichtbar → Kamera weg (vorher schon bei Fokusverlust)
+        assertTrue("Ansicht verdeckt → Kamera weg", act.contains("videoStopp()\n        kameraEnde()\n        super.onStop()"));
     }
 
     @Test

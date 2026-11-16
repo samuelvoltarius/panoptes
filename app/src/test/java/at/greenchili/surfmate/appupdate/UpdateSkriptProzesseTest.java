@@ -70,6 +70,23 @@ public class UpdateSkriptProzesseTest {
         assertFalse(out, out.contains("environ"));
     }
 
+    /** 0.1.43.9 (E2E-H1): Meldet ls selbst „Permission denied“ (Start von Hand), bleibt die Auswahl stumm. */
+    @Test
+    public void lsProcFehlerBleibtStumm() throws Exception {
+        String skript = skript();
+        File proc = tmp.newFolder("proc");
+        umgebung(proc, "201", "CLASSPATH=/data/app/" + PKG + "-AbC12==/base.apk");
+        umgebung(proc, "205", "PATH=/system/bin");
+        String fn = block(skript, "APK_CP_MUSTER=", "apk_prozesse() {");
+        assertTrue(fn, fn.contains("$(ls /proc 2>/dev/null | grep -E"));
+        String pr = LogArchivShellTest.pfad(proc);
+        // Attrappe: ls listet wie echt, schreibt aber wie am Auto eine Fehlermeldung auf stderr
+        String ls = "ls() { command ls \"$@\"; echo \"ls: /proc/1/ns: Permission denied\" >&2; }" + NL;
+        String out = LogArchivShellTest.fuehreAus("PKG=" + PKG + NL + ls + fn.replace("/proc", pr)
+                + "for p in $(apk_prozesse); do echo \"KILL $p\"; done" + NL + "true" + NL);
+        assertEquals("nur der Treffer, keine Meldung: " + out, "KILL 201", out.trim());
+    }
+
     @Test
     public void stopDaemonsNutztDieAuswahlUndBleibtStumm() throws Exception {
         String skript = skript();

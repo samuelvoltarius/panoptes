@@ -98,7 +98,8 @@ OLDAPK=$(pm path "$PKG" 2>/dev/null | sed -n 's/^package://p' | head -1)
 # die Meldung („Permission denied“) bleibt in der Klammer, sonst stand sie bei jedem Update im Protokoll.
 APK_CP_MUSTER="^CLASSPATH=(.*:)?/data/app/(~~[^/:]*/)?$PKG-"
 apk_prozesse() {
-    for p in $(ls /proc | grep -E '^[0-9]+$'); do
+    # 0.1.43.9 (E2E-H1): ls meldet bei Start von Hand fuer fremde Eintraege „Permission denied“ auf stderr; stumm schalten
+    for p in $(ls /proc 2>/dev/null | grep -E '^[0-9]+$'); do
         { tr '\0' '\n' < /proc/$p/environ | grep -qE "$APK_CP_MUSTER"; } 2>/dev/null && echo "$p"
     done
 }

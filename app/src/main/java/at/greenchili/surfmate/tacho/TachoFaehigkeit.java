@@ -50,6 +50,8 @@ public final class TachoFaehigkeit {
         public String uid = "";               // id -u des Daemons
         /** Bestätigung „Warnleuchten bleiben frei“ (ja|nein|""), aus der Probe im Stand. */
         public String warnleuchtenFrei = "";
+        /** 0.1.43.9 (T2): App-Fenster am Auto belegt: ja (Grenzen bestätigt), nein (abgelehnt), "" ungeprüft. */
+        public String appFensterBelegt = "";
     }
 
     // ---------------------------------------------------------------- reine Auswertung
@@ -148,6 +150,7 @@ public final class TachoFaehigkeit {
                                 + "Mach im Stand die Probe.", true));
             }
         }
+        res.put("appFenster", appFenster(res.optJSONObject("andereApps"), e));
         // Ehrlicher Zusatz für Single-OS-Autos mit dem XDJA-Baustein. Surf, Bindversuch A/B 30.10. (Deploy (2)):
         // der Dienst läuft, aber sein Gegenstück im Tacho (AutoContainerServiceNative) fehlt → kein Bild möglich.
         boolean nativ = enthaeltDienst(dienste, "AutoContainerServiceNative");
@@ -157,6 +160,27 @@ public final class TachoFaehigkeit {
                     + "aber ohne Gegenstück im Tacho. Er kann deshalb keine Bilder zeigen.");
         }
         return res;
+    }
+
+    /**
+     * 0.1.43.9 (T2) „Kann mein Tacho App-Fenster?“: eine App im Kasten der Panoptes-Tacho-Ansicht (eigene Fläche). Nur
+     * Belegtes ist „ja“: Die App lag auf diesem Auto schon einmal im Kasten. Hat das Auto den Start abgelehnt: nein.
+     * Ohne „andere Apps am Tacho“ gibt es auch keine App-Fenster.
+     */
+    static JSONObject appFenster(JSONObject andereApps, Eingaben e) throws Exception {
+        String apps = andereApps == null ? UNBEKANNT : andereApps.optString("status", UNBEKANNT);
+        if (NEIN.equals(apps)) {
+            return urteil(NEIN, "andere_apps_nein", "Auf diesem Auto laufen keine anderen Apps am Tacho.", false);
+        }
+        if (NEIN.equals(trim(e.appFensterBelegt))) {
+            return urteil(NEIN, "fenster_abgelehnt",
+                    "Dein Auto hat die App im Kasten abgelehnt. Die App geht nur über den ganzen Tacho.", false);
+        }
+        if (JA.equals(trim(e.appFensterBelegt))) {
+            return urteil(JA, "fenster_belegt", "Eine App lief auf deinem Tacho schon im Kasten neben dem Panoptes-Design.", true);
+        }
+        return urteil(UNBEKANNT, "fenster_ungeprueft",
+                "Noch nicht ausprobiert. Leg im Tacho-Editor ein App-Fenster an; beim ersten Start sieht Panoptes, ob es geht.", true);
     }
 
     /**
@@ -266,11 +290,12 @@ public final class TachoFaehigkeit {
             }
             sb.append("Tacho-Firmware: ").append(p.optString("tachoFirmware", "?")).append('\n');
         }
-        for (String k : new String[] {"totwinkel", "karte", "andereApps"}) {
+        for (String k : new String[] {"totwinkel", "karte", "andereApps", "appFenster"}) {
             JSONObject u = r.optJSONObject(k);
             if (u == null) continue;
             String titel = "totwinkel".equals(k) ? "Totwinkel am Tacho"
-                    : "karte".equals(k) ? "Karte am Tacho" : "Andere Apps am Tacho";
+                    : "karte".equals(k) ? "Karte am Tacho" : "andereApps".equals(k) ? "Andere Apps am Tacho"
+                    : "App-Fenster im Tacho";
             sb.append(titel).append(": ").append(u.optString("status")).append(" – ")
                     .append(u.optString("grund")).append('\n');
         }
@@ -310,6 +335,7 @@ public final class TachoFaehigkeit {
         e.amapInstalliert = run("cmd package path " + AMAP_PAKET + " 2>/dev/null", 3).contains("package:");
         e.uid = run("id -u", 2);
         e.warnleuchtenFrei = TachoNaviApp.warnleuchtenFrei();
+        e.appFensterBelegt = TachoAppFenster.belegt();
         return e;
     }
 

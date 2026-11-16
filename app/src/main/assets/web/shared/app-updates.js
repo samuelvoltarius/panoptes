@@ -149,7 +149,7 @@
             } else if (d.kanal === 'test') {
                 txt = t('system.upd_test_note', 'Kanal Test: Neue Versionen kommen früher, sind aber weniger geprüft.');
             } else if (aktuellKanal === 'test' && d.kanal === 'stabil') {
-                txt = t('system.upd_stable_wait', 'Kanal Stabil ist gewählt. Diese Testversion bleibt installiert, bis eine stabile Version mit einer höheren Buildnummer verfügbar ist.');
+                txt = t('system.upd_stable_wait', 'Kanal Stabil ist gewählt. Die installierte Version aus dem Kanal Test bleibt, bis eine stabile Version mit einer höheren Buildnummer verfügbar ist.');
             }
             if (!txt && !v && li && L.neuer && lv) txt = t('system.upd_launcher_neu', 'Neuer Launcher {v}. Panoptes selbst ist aktuell.', { v: lv.version });
             st.textContent = txt;

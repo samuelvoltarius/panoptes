@@ -77,12 +77,12 @@ native libraries are packaged. **No speech model is bundled in the APK.** For a 
 `vosk-model-small-de-0.15` (Apache-2.0, https://alphacephei.com/vosk/models) is placed on the device separately.
 Audio never leaves the device and is not stored; only numbers are kept.
 
-Since 0.1.44 the same library also serves the offline voice commands (setting `sprache.befehle`, default off; see
+Since 0.1.43 the same library also serves the offline voice commands (setting `sprache.befehle`, default off; see
 `docs/SPRACHBEFEHLE.md`). Models are placed on the device separately, never downloaded automatically:
 `vosk-model-small-de-0.15` and `vosk-model-small-en-us-0.15` (Apache-2.0 per the model list at
 https://alphacephei.com/vosk/models; check the `COPYING` file shipped inside each model when placing it).
 
-Since 0.1.44 (P2b) the app can also download these two models **on tap only** (Settings → All settings → Data sharing),
+Since 0.1.43.2 (P2b) the app can also download these two models **on tap only** (Settings → All settings → Data sharing),
 from the fixed official source and only with the fixed SHA-256 below; a mismatching file is discarded.
 
 | Model | Source | Size (zip) | SHA-256 (zip) | License |

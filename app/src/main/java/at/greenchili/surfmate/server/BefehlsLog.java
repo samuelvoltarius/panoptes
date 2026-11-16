@@ -143,8 +143,11 @@ public final class BefehlsLog {
         try {
             String pfad = SchreibProtokoll.pfadOhneWerte(methode, path);
             if (pfad == null) return;
-            String wer = kid != null ? kid : direkt ? "display" : "login";
-            String a = kid != null ? (art == null || art.isEmpty() ? "kopplung" : art) : direkt ? "display" : "login";
+            // 0.1.43.9 (E2E-H2): Aufrufe des Installers (adb shell, direkt am Auto) mit eigener Herkunft statt display
+            boolean installer = kid == null && direkt && pfad.startsWith("/api/installer/");
+            String wer = kid != null ? kid : installer ? "installer" : direkt ? "display" : "login";
+            String a = kid != null ? (art == null || art.isEmpty() ? "kopplung" : art)
+                    : installer ? "installer" : direkt ? "display" : "login";
             String weg = bruecke ? "bruecke" : direkt ? "lokal" : "direkt";
             Anfrage r = new Anfrage(nowMs, methode.toUpperCase(Locale.ROOT), pfad, wer, kid == null ? null : sauber(name),
                     a, weg);
@@ -507,7 +510,7 @@ public final class BefehlsLog {
 
     /** Arten ohne Kopplung dahinter: deren {@code wer} ist keine Kopplungs-id. */
     private static final Set<String> OHNE_KOPPLUNG = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-            "display", "login", "intern")));
+            "display", "login", "intern", "installer")));
 
     /**
      * 0.1.34 Abruf für ein gekoppeltes Handy (und die Web-Sitzung dahinter). Ohne Recht „protokoll“ nur die eigenen

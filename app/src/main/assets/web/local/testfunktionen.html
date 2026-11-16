@@ -51,7 +51,7 @@
                 <button class="tbtn lime" type="button" id="ttStart" data-i18n="testf.tacho_start">Test starten</button>
                 <button class="tbtn lime" type="button" id="ttSenden" hidden data-i18n="testf.tacho_send">Ergebnis senden</button>
                 <button class="tbtn" type="button" id="ttCopy" hidden data-i18n="testf.tacho_copy">Ergebnis kopieren</button>
-                <p id="ttHinweis" hidden data-i18n="testf.tacho_share">Willst du uns helfen? Schick uns das Ergebnis. Es enthält nur Modell, Software-Stand und die drei Antworten – keine Kennung, keinen Ort.</p>
+                <p id="ttHinweis" hidden data-i18n="testf.tacho_share">Willst du uns helfen? Schick uns das Ergebnis. Es enthält nur Modell, Software-Stand und die Antworten – keine Kennung, keinen Ort.</p>
                 <div id="ttVorschau" hidden>
                     <p data-i18n="testf.tacho_preview">Genau das geht an uns:</p>
                     <pre id="ttVorschauText" style="max-height:220px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px"></pre>
@@ -209,12 +209,13 @@
     }
     function ttZeige(d) {
         var zeilen = [['totwinkel', t('testf.tacho_bs', 'Totwinkel am Tacho')], ['karte', t('testf.tacho_map', 'Karte am Tacho')],
-                      ['andereApps', t('testf.tacho_apps', 'Andere Apps am Tacho')]];
+                      ['andereApps', t('testf.tacho_apps', 'Andere Apps am Tacho')],
+                      ['appFenster', t('testf.tacho_appfenster', 'Kann mein Tacho App-Fenster?')]];
         var h = '';
         zeilen.forEach(function (z) {
             var u = d[z[0]] || {};
             var s = u.status === 'ja' ? t('testf.ja', 'ja') : u.status === 'nein' ? t('testf.nein', 'nein') : t('testf.unbekannt', 'noch offen');
-            h += '<p><b>' + esc(z[1]) + ': ' + esc(s) + '</b><br>' + esc(u.grund || '') + '</p>';
+            h += '<p><b>' + esc(z[1]) + (/\?$/.test(z[1]) ? ' ' : ': ') + esc(s) + '</b><br>' + esc(u.grund || '') + '</p>';   // 0.1.43.9 (F, H2)
         });
         if (d.hinweis) h += '<p>' + esc(d.hinweis) + '</p>';
         $('ttErg').innerHTML = h;

@@ -37,7 +37,7 @@
         senden.type = 'button';
         senden.hidden = true;
         var hinweis = el('p', 'font-size:15px;opacity:.85;line-height:1.5;',
-            t('testf.tacho_share', 'Willst du uns helfen? Schick uns das Ergebnis. Es enthält nur Modell, Software-Stand und die drei Antworten – keine Kennung, keinen Ort.'));
+            t('testf.tacho_share', 'Willst du uns helfen? Schick uns das Ergebnis. Es enthält nur Modell, Software-Stand und die Antworten – keine Kennung, keinen Ort.'));
         hinweis.hidden = true;
         var vorschau = el('div', 'margin-top:8px;');
         vorschau.hidden = true;
@@ -58,11 +58,13 @@
         function zeige(d) {
             erg.textContent = '';
             [['totwinkel', t('testf.tacho_bs', 'Totwinkel am Tacho')], ['karte', t('testf.tacho_map', 'Karte am Tacho')],
-             ['andereApps', t('testf.tacho_apps', 'Andere Apps am Tacho')]].forEach(function (z) {
+             ['andereApps', t('testf.tacho_apps', 'Andere Apps am Tacho')],
+             // 0.1.43.9 (T2): App-Fenster mit festen Grenzen über dem Panoptes-Tacho (ja/nein/noch offen)
+             ['appFenster', t('testf.tacho_appfenster', 'Kann mein Tacho App-Fenster?')]].forEach(function (z) {
                 var u = d[z[0]] || {};
                 var s = u.status === 'ja' ? t('testf.ja', 'ja') : u.status === 'nein' ? t('testf.nein', 'nein') : t('testf.unbekannt', 'noch offen');
                 var p = el('p', 'margin:4px 0;');
-                p.appendChild(el('b', '', z[1] + ': ' + s));
+                p.appendChild(el('b', '', z[1] + (/\?$/.test(z[1]) ? ' ' : ': ') + s));   // 0.1.43.9 (F, H2): nach „?“ kein Doppelpunkt
                 if (u.grund) { p.appendChild(document.createElement('br')); p.appendChild(document.createTextNode(u.grund)); }
                 erg.appendChild(p);
             });

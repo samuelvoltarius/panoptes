@@ -161,6 +161,13 @@ public final class TachoApiHandler {
                     .put("warnungen", new org.json.JSONArray(e.warnungen)).toString());
             return true;
         }
+        // 0.1.43.9 (T2) App-Fenster im Tacho: nur lesen (Zustand, Grund, ob das Auto Fenster kann). Gesteuert wird es
+        // ausschliesslich ueber das gespeicherte Design und den Takt der Tacho-Ansicht.
+        if (p.equals("/api/tacho/appfenster") && method.equals("GET")) {
+            HttpResponse.sendJson(out, at.greenchili.surfmate.tacho.TachoAppFenster.status().put("ok", true)
+                    .put("imStand", bewegungsGrund() == null).toString());
+            return true;
+        }
         // 0.1.42 (T3) Kamera-/Video-Ansicht im Tacho: lesen jederzeit; einschalten nur im Stand, ausschalten immer.
         if (p.equals("/api/tacho/kamera") && method.equals("GET")) {
             HttpResponse.sendJson(out, new JSONObject().put("ok", true)

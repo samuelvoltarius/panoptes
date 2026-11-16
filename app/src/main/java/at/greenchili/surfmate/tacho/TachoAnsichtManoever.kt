@@ -15,7 +15,7 @@ object TachoAnsichtManoever {
     /** Hoechstens so viele Punkte der Skizze, auf ganze Meter gerundet. */
     const val SKIZZE_MAX = 48
 
-    data class Stand(
+    data class Stand @JvmOverloads constructor(
         val typ: Int,
         val distanzM: Int,
         val zeitMs: Long,
@@ -23,7 +23,9 @@ object TachoAnsichtManoever {
         val restS: Int = -1,
         val richtung: String? = null,
         /** Paare {x rechts, y voraus} in Metern, relativ zum Auto. */
-        val skizze: IntArray = IntArray(0)
+        val skizze: IntArray = IntArray(0),
+        /** 0.1.43.9 (T1): Fahrtrichtung in ganzen Grad (0 = Nord) fuer die nordoben gedrehte Karte; -1 = unbekannt. */
+        val kurs: Int = -1
     )
 
     @Volatile
@@ -47,7 +49,8 @@ object TachoAnsichtManoever {
             if (restM.isFinite() && restM >= 0) restM.toInt() else -1,
             if (restS.isFinite() && restS >= 0) restS.toInt() else -1,
             kursGrad?.let { richtung(it) },
-            skizze(voraus, kursGrad)
+            skizze(voraus, kursGrad),
+            kurs(kursGrad)
         )
     }
 
@@ -58,6 +61,13 @@ object TachoAnsichtManoever {
     fun aktuell(jetztMs: Long = System.currentTimeMillis()): Stand? {
         val s = stand ?: return null
         return if (jetztMs - s.zeitMs in 0..STALE_MS) s else null
+    }
+
+    /** Kurs auf ganze Grad 0..359; ohne gueltigen Kurs -1. */
+    @JvmStatic
+    fun kurs(kursGrad: Double?): Int {
+        if (kursGrad == null || !kursGrad.isFinite()) return -1
+        return (Math.round(((kursGrad % 360.0) + 360.0) % 360.0).toInt()) % 360
     }
 
     /** Acht Sektoren, deutsch abgekuerzt (N, NO, O, SO, S, SW, W, NW). */
@@ -92,6 +102,7 @@ object TachoAnsichtManoever {
         if (s.restM >= 0) o.put("restM", s.restM)
         if (s.restS >= 0) o.put("restS", s.restS)
         if (s.richtung != null) o.put("richtung", s.richtung)
+        if (s.kurs >= 0) o.put("kurs", s.kurs)
         if (s.skizze.isNotEmpty()) {
             val a = JSONArray()
             for (v in s.skizze) a.put(v)

@@ -594,4 +594,40 @@
             H.text(c, gang(d), w - u * 4, u * 7, u * 6.5, th.ring, { familie: BREIT, ausrichtung: 'right', gewicht: '700' });
         }
     });
+
+    // ------------------------------------------------------------ 16 Kombi: Rundinstrument links, Kartenkasten rechts (0.1.43.9, T1)
+    T.registriere('kombi', {
+        arten: ['analog', 'navi'], zeiger: 'nadel', schrift: 'normal',
+        thema: thema({ bg0: '#0A1220', bg1: '#03060C', fg: '#EEF4FB', dim: '#9FB0C6', leise: '#2C3A4E', spur: '#162234',
+            ring: '#35D0E6', ring2: '#35D0E6', reku: '#5EE3A1', stil: 'fein' }),
+        zeichne: function (c, w, h, u, th, d, st, jetzt, H) {
+            flaeche(c, w, h, th);
+            kopf(c, w, u, th, d, jetzt, H, H.SANS);
+            var r = Math.min(h * 0.36, w * 0.17), cy = h * 0.52, tx = w * 0.27;
+            zifferblatt(c, tx, cy, r, th, H, { min: 0, max: 200, schritt: 20, wert: kmh(H, d), text: kmhText(H, d),
+                einheit: 'km/h', familie: H.SANS });
+            // Kasten rechts: Rahmen in Akzentfarbe, darin die Route der Panoptes-Navigation
+            var kb = w * 0.4, kh = h * 0.6;
+            H.karte(c, { x: w * 0.54, y: cy - kh / 2, b: kb, h: kh, farbe: th.fg, akzent: th.ring, rahmen: Math.max(2, u * 0.6), blick: 'fahrt', schleier: th.bg0 }, d);
+            H.fusszeile(c, w, h, u, th, d);
+        }
+    });
+
+    // ------------------------------------------------------------ 17 Kasten: Karte groß in der Mitte, Tempo und Akku daneben (0.1.43.9, T1)
+    T.registriere('kasten', {
+        arten: ['navi', 'digital'], zeiger: 'zahl', schrift: 'breit',
+        thema: thema({ bg0: '#101418', bg1: '#06080A', fg: '#F2F5F7', dim: '#A4AFB8', leise: '#323A42', spur: '#1A2128',
+            ring: '#FFB454', ring2: '#FFB454', reku: '#5EE3A1' }),
+        zeichne: function (c, w, h, u, th, d, st, jetzt, H) {
+            flaeche(c, w, h, th);
+            kopf(c, w, u, th, d, jetzt, H, BREIT);
+            var kb = w * 0.46, kh = h * 0.66, kx = (w - kb) / 2, ky = h * 0.2;
+            H.karte(c, { x: kx, y: ky, b: kb, h: kh, farbe: th.fg, akzent: th.ring, rahmen: Math.max(2, u * 0.5), blick: 'nord', schleier: th.bg0 }, d);
+            var my = ky + kh / 2;
+            H.text(c, kmhText(H, d), kx / 2, my, u * 16, th.fg, { familie: BREIT, gewicht: '700' });
+            H.text(c, 'km/h', kx / 2, my + u * 10, u * 4.5, th.dim, { familie: BREIT });
+            H.text(c, socText(H, d), kx + kb + kx / 2, my - u * 4, u * 9, th.fg, { familie: BREIT, gewicht: '600' });
+            H.text(c, rwText(H, d), kx + kb + kx / 2, my + u * 6, u * 6, th.dim, { familie: BREIT });
+        }
+    });
 })();
