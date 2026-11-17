@@ -1289,6 +1289,25 @@
         "De klimaatwaarden uit de BYD-cloud worden nu goed gelezen: ventilatorstand, luchtrichting, buitenlucht of recirculatie, airco aan of uit en de ingestelde temperatuur. Panoptes leest ze alleen, aan de klimaatbediening verandert niets.",
         "De doorlopende meldingen van de BYD-cloud stopten tot nu toe meteen na het verbinden. Panoptes meldt zich daar nu op een andere manier voor aan."
       ]
+    },
+    {
+      "version": "0.1.43.11",
+      "versionCode": 95,
+      "de": [
+        "Launcher: Der Hinweis zum 3D-Modell steht jetzt unter dem Auto und verdeckt Akku und Tempo nicht mehr."
+      ],
+      "en": [
+        "Launcher: the note about the 3D model now sits below the car and no longer covers the battery and speed."
+      ],
+      "fr": [
+        "Launcher : la mention du modèle 3D se trouve maintenant sous la voiture et ne cache plus la batterie ni la vitesse."
+      ],
+      "it": [
+        "Launcher: la nota sul modello 3D ora sta sotto l’auto e non copre più batteria e velocità."
+      ],
+      "nl": [
+        "Launcher: de vermelding bij het 3D-model staat nu onder de auto en bedekt accu en snelheid niet meer."
+      ]
     }
   ]
 }

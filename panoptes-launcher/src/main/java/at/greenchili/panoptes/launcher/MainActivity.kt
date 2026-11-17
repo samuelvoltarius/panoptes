@@ -1477,16 +1477,21 @@ class MainActivity : AppCompatActivity() {
     private fun fahrzeugFeld(): View {
         val f = FrameLayout(this)
         // 3D-Fahrzeug aus Panoptes (WebView, gleicher Katalog und Renderer), bis es gezeichnet ist ein ruhiges Standardbild
+        // 0.1.43.11 (3D-Hinweis): Bild und Namensnennung untereinander in einer eigenen Bühne. Die Bühne endet über der
+        // Zeile Gang/Tempo/Akku (Abstand nach deren echter Höhe, auch mit „Große Bedienung“ und großer System-Schrift),
+        // die Namensnennung steht unten rechts direkt unter dem Auto und überdeckt nichts.
+        val buehne = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        f.addView(buehne, FrameLayout.LayoutParams(-1, -1).apply { setMargins(ui.dp(120), ui.dp(40), ui.dp(170), ui.dp(96)) })
         val mitte = FrameLayout(this)
-        f.addView(mitte, FrameLayout.LayoutParams(-1, -1).apply { setMargins(ui.dp(120), ui.dp(40), ui.dp(170), ui.dp(96)) })
+        buehne.addView(mitte, LinearLayout.LayoutParams(-1, 0, 1f))
         val ersatz = ImageView(this).apply {
             setImageDrawable(ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_pn_auto_seite)?.mutate()?.also { it.setTint(ui.p.outline) })
             scaleType = ImageView.ScaleType.FIT_CENTER; alpha = 0.8f
         }
         mitte.addView(ersatz, FrameLayout.LayoutParams(-1, -1, Gravity.CENTER))   // 0.1.38.14: eingepasst statt fest 360×144 dp
         // 0.1.43.5 (E2E_01434 H1): Namensnennung unter dem eigenen Bild (Rendering CC BY, Foto CC BY-SA), wie in „Fahrzeug“
-        val nennung = ui.leise("", 11f).apply { visibility = View.GONE; gravity = Gravity.END }
-        mitte.addView(nennung, FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.END))
+        val nennung = ui.leise("", 11f).apply { visibility = View.GONE; gravity = Gravity.END; setPadding(0, ui.dp(2), 0, 0) }
+        buehne.addView(nennung, LinearLayout.LayoutParams(-2, -2).apply { gravity = Gravity.END })
         standNennung = nennung
         // oben links: Datum, Uhr, Luft (nur mit echtem Wert)
         val links = spalte(18)
@@ -1525,6 +1530,7 @@ class MainActivity : AppCompatActivity() {
         akkuBox.addView(gesundStart, LinearLayout.LayoutParams(-2, -2))
         unten.addView(akkuBox)
         f.addView(unten, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM))
+        unten.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ -> buehneUeber(buehne, v.height) }
         reg {
             val s = summary
             val jetzt = Date()
@@ -1547,6 +1553,13 @@ class MainActivity : AppCompatActivity() {
             fahrzeug3d(mitte, ersatz, s)
         }
         return f
+    }
+
+    /** 0.1.43.11: Unterkante der Bühne (Bild + Namensnennung) über der Zeile Gang/Tempo/Akku, mit 4 dp Luft. */
+    private fun buehneUeber(buehne: View, untenHoehe: Int) {
+        val lp = buehne.layoutParams as? ViewGroup.MarginLayoutParams ?: return
+        val soll = untenHoehe + ui.dp(4)
+        if (untenHoehe > 0 && lp.bottomMargin != soll) buehne.post { lp.bottomMargin = soll; buehne.layoutParams = lp }
     }
 
     /** 3D-Modell: dieselbe Seite wie in Panoptes (Modellkatalog, Renderer ev-card-3d.js), nur bei Bedarf geladen. */
