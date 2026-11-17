@@ -1219,6 +1219,9 @@ public final class BydCloudDataProvider {
                 }
                 if (s.hasElecRange()) status.put("rangeKm", s.elecRangeKm);
                 if (s.hasFreshInsideTemp()) status.put("insideTempC", s.insideTempC);
+                // 0.1.43.10: Klima-Werte nur lesend (Lüfter 1–7, Richtung, Umluft, Kompressor, Sollwert)
+                JSONObject klima = s.klimaJson();
+                if (klima.length() > 0) status.put("klima", klima);
             }
 
             BydCloudConfig config = BydCloudConfig.fromUnifiedConfig();

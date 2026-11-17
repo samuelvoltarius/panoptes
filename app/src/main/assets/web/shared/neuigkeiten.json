@@ -1260,6 +1260,35 @@
         "‘Wat kan mijn paneel?’ controleert nu ook ‘Kan mijn dashboard app-vensters tonen?’.",
         "Let op: eigen dashboardontwerpen verschijnen alleen bij auto’s waarvan het dashboard andere weergaven toestaat. Bij de Dolphin Surf zijn ze alleen een voorbeeld."
       ]
+    },
+    {
+      "version": "0.1.43.10",
+      "versionCode": 94,
+      "de": [
+        "BYD-Cloud: Seit Mitte November hat die BYD-Cloud bei manchen Konten nur noch mit einem Fehler geantwortet, und Werte wie die Türschlösser kamen nicht mehr an. Panoptes fragt jetzt so, wie BYD es neu verlangt, damit die Verbindung wieder klappt.",
+        "Die Klima-Werte aus der BYD-Cloud werden jetzt richtig gelesen: Lüfterstufe, Luftrichtung, Frischluft oder Umluft, Klimaanlage an oder aus und die eingestellte Temperatur. Panoptes liest sie nur, an der Klima-Steuerung ändert sich nichts.",
+        "Die laufenden Meldungen aus der BYD-Cloud brachen bisher gleich nach dem Verbinden ab. Panoptes meldet sich dafür jetzt auf einem anderen Weg an."
+      ],
+      "en": [
+        "BYD cloud: since mid-November the BYD cloud answered some accounts only with an error, and values such as the door locks no longer came through. Panoptes now asks the way BYD newly requires, so the connection works again.",
+        "Climate values from the BYD cloud are now read correctly: fan level, air direction, fresh air or recirculation, air conditioning on or off and the set temperature. Panoptes only reads them, nothing changes in the climate control.",
+        "The ongoing messages from the BYD cloud used to stop right after connecting. Panoptes now signs up for them in a different way."
+      ],
+      "fr": [
+        "Cloud BYD : depuis mi-novembre, le cloud BYD ne répondait plus à certains comptes que par une erreur, et des valeurs comme le verrouillage des portes n’arrivaient plus. Panoptes interroge maintenant le cloud comme BYD l’exige désormais, pour que la connexion fonctionne à nouveau.",
+        "Les valeurs de climatisation du cloud BYD sont maintenant lues correctement : niveau de ventilation, direction de l’air, air frais ou recyclage, climatisation marche ou arrêt et température réglée. Panoptes ne fait que les lire, rien ne change dans la commande de la climatisation.",
+        "Les messages continus du cloud BYD s’arrêtaient jusqu’ici juste après la connexion. Panoptes s’y abonne maintenant d’une autre manière."
+      ],
+      "it": [
+        "Cloud BYD: da metà novembre il cloud BYD rispondeva ad alcuni account solo con un errore, e valori come le serrature delle porte non arrivavano più. Panoptes ora interroga il cloud come BYD richiede da poco, così la connessione funziona di nuovo.",
+        "I valori del clima dal cloud BYD ora vengono letti correttamente: livello della ventola, direzione dell’aria, aria esterna o ricircolo, climatizzatore acceso o spento e temperatura impostata. Panoptes li legge soltanto, nel comando del clima non cambia nulla.",
+        "I messaggi continui dal cloud BYD finora si interrompevano subito dopo la connessione. Panoptes ora si iscrive in un altro modo."
+      ],
+      "nl": [
+        "BYD-cloud: sinds half november antwoordde de BYD-cloud bij sommige accounts alleen nog met een fout, en waarden zoals de deursloten kwamen niet meer door. Panoptes vraagt nu op de manier die BYD nieuw vereist, zodat de verbinding weer werkt.",
+        "De klimaatwaarden uit de BYD-cloud worden nu goed gelezen: ventilatorstand, luchtrichting, buitenlucht of recirculatie, airco aan of uit en de ingestelde temperatuur. Panoptes leest ze alleen, aan de klimaatbediening verandert niets.",
+        "De doorlopende meldingen van de BYD-cloud stopten tot nu toe meteen na het verbinden. Panoptes meldt zich daar nu op een andere manier voor aan."
+      ]
     }
   ]
 }

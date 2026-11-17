@@ -33,6 +33,8 @@ public final class BydCloudClient {
     private BydCloudTransport transport;
     private BydCloudSession session;
     private boolean commandsVerified = false;
+    /** Gast/Besitzer je VIN für die Lese-Abfragen (userType, BYD seit ca. 12.11.2026). */
+    private final BydKontoArt kontoArt = new BydKontoArt();
 
     private static final long CAPABILITY_CACHE_TTL_MS = 30L * 60L * 1000L;
     private volatile CloudCapabilities cloudCapabilities;
@@ -250,6 +252,13 @@ public final class BydCloudClient {
 
         if (list == null || list.length() == 0) {
             throw new IOException("No vehicles found on account");
+        }
+
+        // Erste Annahme Gast/Besitzer je VIN (empowerType/empowerId); die Cloud berichtigt sie.
+        for (int i = 0; i < list.length(); i++) {
+            JSONObject vehicle = list.optJSONObject(i);
+            if (vehicle == null) continue;
+            kontoArt.annahme(vehicle.optString("vin", ""), BydKontoArt.gastAusFahrzeug(vehicle));
         }
 
         return list;
@@ -1393,26 +1402,17 @@ public final class BydCloudClient {
             int maxPollAttempts,
             long callTimeoutMs) throws IOException {
         BydCloudSession s = ensureSession();
-        long nowMs = System.currentTimeMillis();
 
-        JSONObject inner = buildInner(nowMs);
-        try {
-            inner.put("energyType", "0");
-            inner.put("tboxVersion", "3");
-            inner.put("vin", vin);
-        } catch (Exception e) {
-            throw new IOException("Failed to build realtime request", e);
-        }
-
-        TokenEnvelope env = buildTokenOuterEnvelope(nowMs, s, inner);
-        JSONObject response = postRealtimeSecure(
-                "/vehicleInfo/vehicle/vehicleRealTimeRequest",
-                env.outer,
-                callTimeoutMs);
+        final TokenEnvelope[] gesendet = new TokenEnvelope[1];
+        JSONObject response = postFahrzeugLesen(
+                "/vehicleInfo/vehicle/vehicleRealTimeRequest", vin, s,
+                realtimeInner(vin, null), callTimeoutMs, gesendet);
+        TokenEnvelope env = gesendet[0];
 
         String code = response.optString("code", "");
         if (!"0".equals(code)) {
-            throw new IOException("Realtime request failed: code=" + code);
+            throw new IOException("Realtime request failed: code=" + code
+                    + (kontoArt.istGast(vin) ? " (userType=1)" : ""));
         }
 
         String respondData = response.optString("respondData", "");
@@ -1434,21 +1434,12 @@ public final class BydCloudClient {
                 return vehicleInfo;
             }
 
-            nowMs = System.currentTimeMillis();
-            JSONObject pollInner = buildInner(nowMs);
             try {
-                pollInner.put("energyType", "0");
-                pollInner.put("tboxVersion", "3");
-                pollInner.put("vin", vin);
-                pollInner.put("requestSerial", requestSerial);
-            } catch (Exception e) { continue; }
-
-            TokenEnvelope pollEnv = buildTokenOuterEnvelope(nowMs, s, pollInner);
-            try {
-                JSONObject pollResp = postRealtimeSecure(
-                        "/vehicleInfo/vehicle/vehicleRealTimeResult",
-                        pollEnv.outer,
-                        callTimeoutMs);
+                final TokenEnvelope[] pollGesendet = new TokenEnvelope[1];
+                JSONObject pollResp = postFahrzeugLesen(
+                        "/vehicleInfo/vehicle/vehicleRealTimeResult", vin, s,
+                        realtimeInner(vin, requestSerial), callTimeoutMs, pollGesendet);
+                TokenEnvelope pollEnv = pollGesendet[0];
                 if (!"0".equals(pollResp.optString("code", ""))) continue;
 
                 String pollData = pollResp.optString("respondData", "");
@@ -1469,6 +1460,64 @@ public final class BydCloudClient {
         }
 
         return vehicleInfo;
+    }
+
+    /** Baut das innere Paket einer Realtime-Abfrage; je Versand frisch (random/timeStamp sind einmalig). */
+    private interface InnerBau {
+        JSONObject bau(long nowMs) throws Exception;
+    }
+
+    private InnerBau realtimeInner(final String vin, final String requestSerial) {
+        return new InnerBau() {
+            @Override
+            public JSONObject bau(long nowMs) throws Exception {
+                JSONObject inner = buildInner(nowMs);
+                inner.put("energyType", "0");
+                inner.put("tboxVersion", "3");
+                inner.put("vin", vin);
+                if (requestSerial != null) inner.put("requestSerial", requestSerial);
+                return inner;
+            }
+        };
+    }
+
+    /**
+     * Lese-Abfrage am Fahrzeug (Realtime) mit Kontoart: Gast sendet {@code userType:"1"} im äußeren
+     * Umschlag (mitsigniert). Bei 1001 bzw. 8003 genau ein Versuch mit der anderen Kontoart, Ergebnis
+     * je VIN gemerkt ({@link BydKontoArt}). CN-Region unverändert. Nicht für Fernbefehle.
+     * {@code gesendet[0]} erhält den Umschlag der zurückgegebenen Antwort (Schlüssel zum Entschlüsseln).
+     */
+    private JSONObject postFahrzeugLesen(
+            final String endpoint,
+            String vin,
+            final BydCloudSession s,
+            final InnerBau innerBau,
+            final long callTimeoutMs,
+            final TokenEnvelope[] gesendet) throws IOException {
+        final java.util.IdentityHashMap<JSONObject, TokenEnvelope> umschlaege =
+                new java.util.IdentityHashMap<>();
+        BydKontoArt.Sender sender = new BydKontoArt.Sender() {
+            @Override
+            public JSONObject sende(boolean gast) throws IOException {
+                long nowMs = System.currentTimeMillis();
+                JSONObject inner;
+                try {
+                    inner = innerBau.bau(nowMs);
+                } catch (Exception e) {
+                    throw new IOException("Failed to build request for " + endpoint, e);
+                }
+                TokenEnvelope env = buildTokenOuterEnvelope(
+                        nowMs, s, inner, gast ? BydKontoArt.USER_TYPE_GAST : null);
+                JSONObject antwort = postRealtimeSecure(endpoint, env.outer, callTimeoutMs);
+                umschlaege.put(antwort, env);
+                return antwort;
+            }
+        };
+        JSONObject antwort = config.isChinaRegion()
+                ? sender.sende(false)
+                : kontoArt.mitRueckfall(vin, endpoint, sender);
+        gesendet[0] = umschlaege.get(antwort);
+        return antwort;
     }
 
     private JSONObject postRealtimeSecure(
@@ -1810,6 +1859,29 @@ public final class BydCloudClient {
     }
 
     private TokenEnvelope buildTokenOuterEnvelope(long nowMs, BydCloudSession s, JSONObject inner) {
+        return buildTokenOuterEnvelope(nowMs, s, inner, null);
+    }
+
+    /**
+     * Felder, über die der äußere Umschlag signiert wird: inneres Paket + äußerer Kontext.
+     * {@code userType} (Gast "1") kommt mit in die Signatur, wenn gesetzt; ohne Signatur → 1007.
+     */
+    static JSONObject tokenSignFelder(JSONObject inner, String countryCode, String identifier,
+                                      String imeiMd5, String language, String reqTimestamp,
+                                      String userType) throws org.json.JSONException {
+        JSONObject signFields = new JSONObject(inner.toString());
+        signFields.put("countryCode", countryCode);
+        signFields.put("identifier", identifier);
+        signFields.put("imeiMD5", imeiMd5);
+        signFields.put("language", language);
+        signFields.put("reqTimestamp", reqTimestamp);
+        if (userType != null) signFields.put("userType", userType);
+        return signFields;
+    }
+
+    /** {@code userType} == null: Umschlag wie bisher (Besitzer, alle Nicht-Lese-Abfragen). */
+    private TokenEnvelope buildTokenOuterEnvelope(long nowMs, BydCloudSession s, JSONObject inner,
+                                                  String userType) {
         if (config.isChinaRegion()) {
             return buildCnTokenOuterEnvelope(nowMs, s, inner);
         }
@@ -1820,13 +1892,9 @@ public final class BydCloudClient {
 
             String encryData = BydCryptoUtils.aesEncryptHex(inner.toString(), contentKey);
 
-            // Build sign fields: inner + outer context
-            JSONObject signFields = new JSONObject(inner.toString());
-            signFields.put("countryCode", config.countryCode);
-            signFields.put("identifier", s.userId);
-            signFields.put("imeiMD5", config.imeiMd5);
-            signFields.put("language", config.language);
-            signFields.put("reqTimestamp", reqTimestamp);
+            // Build sign fields: inner + outer context (+ userType für Gast)
+            JSONObject signFields = tokenSignFelder(inner, config.countryCode, s.userId,
+                    config.imeiMd5, config.language, reqTimestamp, userType);
 
             String sign = BydCryptoUtils.sha1Mixed(
                     BydCryptoUtils.buildSignString(signFields, signKey));
@@ -1839,6 +1907,7 @@ public final class BydCloudClient {
             outer.put("language", config.language);
             outer.put("reqTimestamp", reqTimestamp);
             outer.put("sign", sign);
+            if (userType != null) outer.put("userType", userType);
             // Common device fields
             outer.put("ostype", "and");
             outer.put("imei", "BANGCLE01234");

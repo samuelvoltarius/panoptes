@@ -267,7 +267,12 @@ public final class BydCloudMqttSubscriber implements MqttCallback {
             // A topic listener supersedes the global callback for matching messages in Paho v5.
             // Route both callback surfaces through one ingestion function; its identity guard also
             // protects against versions that fan the same MqttMessage out to both callbacks.
-            mc.subscribe(topic, 1, this::dispatchIncomingMessage);
+            // 0.1.43.10: Array-Variante mit MqttSubscription[]. In Paho 1.2.5 führt
+            // subscribe(String, int, listener) über subscribe(String[], int[], listener[]), und diese
+            // ruft sich selbst auf: StackOverflowError, bevor SUBSCRIBE gesendet wird (ein Error, kein
+            // Exception-Fang). Gefunden in Overdrive v57 (MIT), hier nachgebaut, im Bytecode geprüft.
+            mc.subscribe(abo(topic), new org.eclipse.paho.mqttv5.client.IMqttMessageListener[] {
+                    this::dispatchIncomingMessage });
 
             mqttClient = mc;
             mc = null; // ownership transferred to the field — don't close in a later failure path
@@ -657,5 +662,11 @@ public final class BydCloudMqttSubscriber implements MqttCallback {
     @Override
     public void deliveryComplete(IMqttToken token) {
         // Subscriber only — no publishes
+    }
+
+    /** Ein Abo mit QoS 1 für die Array-Variante von {@code MqttClient.subscribe} (siehe connect). */
+    static org.eclipse.paho.mqttv5.common.MqttSubscription[] abo(String topic) {
+        return new org.eclipse.paho.mqttv5.common.MqttSubscription[] {
+                new org.eclipse.paho.mqttv5.common.MqttSubscription(topic, 1) };
     }
 }

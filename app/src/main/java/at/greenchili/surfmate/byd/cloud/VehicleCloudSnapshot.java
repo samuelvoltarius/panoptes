@@ -75,6 +75,18 @@ public final class VehicleCloudSnapshot {
      */
     public final int airRunState;
 
+    // ── Klima (nur lesend, pyBYD Issue #64/#20, Dolphin Surf) ────────────
+    /** Lüfterstufe {@code windPosition}: 1–7, 0 = aus, −1 = unbekannt. */
+    public final int windPosition;
+    /** Luftrichtung {@code windMode}: 1 Armaturenbrett, 2 + Fußraum, 3 Fußraum, 4 Scheibe + Fußraum, 5 Scheibe. */
+    public final int windMode;
+    /** Luftzufuhr {@code cycleChoice}: 1 = Frischluft, 2 = Umluft (nicht 0/1). */
+    public final int cycleChoice;
+    /** Kompressor {@code acSwitch}: 1 = aus, 2 = an. */
+    public final int acSwitch;
+    /** Sollwert roh {@code mainSettingTemp}: 1–17 (Surf: Stufe, = 17–33). */
+    public final int mainSettingTemp;
+
     // ── Temperature (mergeable) ─────────────────────────────────────────
     public final double insideTempC;         // tempInCar
     public final double outsideTempC;        // tempOutCar
@@ -127,6 +139,11 @@ public final class VehicleCloudSnapshot {
         this.steeringWheelHeatState = b.steeringWheelHeatState;
         this.batteryHeatState = b.batteryHeatState;
         this.airRunState = b.airRunState;
+        this.windPosition = b.windPosition;
+        this.windMode = b.windMode;
+        this.cycleChoice = b.cycleChoice;
+        this.acSwitch = b.acSwitch;
+        this.mainSettingTemp = b.mainSettingTemp;
         this.insideTempC = b.insideTempC;
         this.outsideTempC = b.outsideTempC;
         this.pm25Inside = b.pm25Inside;
@@ -308,7 +325,59 @@ public final class VehicleCloudSnapshot {
     }
 
     public boolean hasOutsideTemp() {
-        return !Double.isNaN(outsideTempC) && !(outsideTempC == 0.0 && !isOnline());
+        // −129 ist ein Platzhalter der Cloud (pyBYD Issue #20), kein Messwert
+        return !Double.isNaN(outsideTempC) && outsideTempC > -128.0
+                && !(outsideTempC == 0.0 && !isOnline());
+    }
+
+    // ── Klima (nur lesend) ──────────────────────────────────────────────
+
+    /** Lüfterstufe 1–7, sonst −1 (0 = aus und Platzhalter zählen als unbekannt). */
+    public int luefterStufe() {
+        return luefterStufe(windPosition);
+    }
+
+    static int luefterStufe(int roh) {
+        return roh >= 1 && roh <= 7 ? roh : -1;
+    }
+
+    /** Luftrichtung 1–5, sonst −1. */
+    public int luftrichtung() {
+        return windMode >= 1 && windMode <= 5 ? windMode : -1;
+    }
+
+    /** Umluft: TRUE bei 2, FALSE (Frischluft) bei 1, sonst null (unbekannt). */
+    public Boolean umluft() {
+        return cycleChoice == 2 ? Boolean.TRUE : cycleChoice == 1 ? Boolean.FALSE : null;
+    }
+
+    /** Kompressor: TRUE bei 2, FALSE bei 1, sonst null (unbekannt). */
+    public Boolean kompressorAn() {
+        return acSwitch == 2 ? Boolean.TRUE : acSwitch == 1 ? Boolean.FALSE : null;
+    }
+
+    /** Sollwert in der SDK-Skala (Surf 17–33 = Stufe 1–17) oder −1 bei Platzhalter/außerhalb. */
+    public int sollSdk() {
+        return at.greenchili.surfmate.byd.KlimaStufe.sdkAusCloudRoh(mainSettingTemp);
+    }
+
+    static final String[] LUFTRICHTUNG = {
+            null, "armaturenbrett", "armaturenbrett_fussraum", "fussraum", "scheibe_fussraum", "scheibe"};
+
+    /** Nur bekannte Klima-Werte; leeres Objekt, wenn die Cloud nichts Brauchbares meldet. */
+    public JSONObject klimaJson() {
+        JSONObject k = new JSONObject();
+        try {
+            if (luefterStufe() > 0) k.put("luefterStufe", luefterStufe());
+            if (luftrichtung() > 0) k.put("luftrichtung", LUFTRICHTUNG[luftrichtung()]);
+            if (umluft() != null) k.put("umluft", umluft().booleanValue());
+            if (kompressorAn() != null) k.put("kompressor", kompressorAn().booleanValue());
+            if (sollSdk() > 0) {
+                k.put("sollSdk", sollSdk());
+                k.put("roh", mainSettingTemp);
+            }
+        } catch (Exception ignored) { }
+        return k;
     }
 
     public boolean hasPm25Inside() {
@@ -376,6 +445,11 @@ public final class VehicleCloudSnapshot {
                 "steeringWheelHeatState", "stearingWheelHeatState");
         b.batteryHeatState = cloudStatusInt(vi, hvac, "batteryHeatState");
         b.airRunState = cloudStatusInt(vi, hvac, "airRunState");
+        b.windPosition = cloudStatusInt(vi, hvac, "windPosition");
+        b.windMode = cloudStatusInt(vi, hvac, "windMode");
+        b.cycleChoice = cloudStatusInt(vi, hvac, "cycleChoice");
+        b.acSwitch = cloudStatusInt(vi, hvac, "acSwitch");
+        b.mainSettingTemp = cloudStatusInt(vi, hvac, "mainSettingTemp");
 
         // Temperature — from vehicleInfo or HVAC
         b.insideTempC = vi.optDouble("tempInCar", SENTINEL_TEMP);
@@ -504,6 +578,11 @@ public final class VehicleCloudSnapshot {
         int steeringWheelHeatState = WHEEL_HEAT_UNKNOWN;
         int batteryHeatState = SENTINEL_INT;
         int airRunState = SENTINEL_INT;
+        int windPosition = SENTINEL_INT;
+        int windMode = SENTINEL_INT;
+        int cycleChoice = SENTINEL_INT;
+        int acSwitch = SENTINEL_INT;
+        int mainSettingTemp = SENTINEL_INT;
 
         double insideTempC = SENTINEL_TEMP;
         double outsideTempC = Double.NaN;
