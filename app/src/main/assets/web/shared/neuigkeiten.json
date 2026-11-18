@@ -1327,6 +1327,25 @@
       "nl": [
         "Launcher: ‘km/h’ onder de snelheid staat er nu helemaal, ook met ‘Grote bediening’."
       ]
+    },
+    {
+      "version": "0.1.43.13",
+      "versionCode": 97,
+      "de": [
+        "Die Frage, ob der Wächter an sein soll, kommt nach einem Update nur noch, wenn das Auto steht – nie während der Fahrt."
+      ],
+      "en": [
+        "After an update, the question whether the guard should be on now only comes when the car is parked – never while driving."
+      ],
+      "fr": [
+        "Après une mise à jour, la question de savoir si le gardien doit être activé n’apparaît plus que lorsque la voiture est à l’arrêt – jamais en roulant."
+      ],
+      "it": [
+        "Dopo un aggiornamento, la domanda se il guardiano debba essere acceso arriva solo quando l’auto è ferma – mai durante la guida."
+      ],
+      "nl": [
+        "Na een update komt de vraag of de bewaker aan moet alleen nog als de auto stilstaat – nooit tijdens het rijden."
+      ]
     }
   ]
 }

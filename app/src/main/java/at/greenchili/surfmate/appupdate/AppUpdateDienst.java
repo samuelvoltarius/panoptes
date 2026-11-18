@@ -157,15 +157,33 @@ public final class AppUpdateDienst {
         default boolean zeigeInfo(String titel, String text) { return false; }
         /** 0.1.38.8: Konfiguration (Wurzel) für die einmalige Wächter-Frage; null = nicht lesbar, dann wird nicht gefragt. */
         default JSONObject konfig() { return null; }
-        /** 0.1.38.8: die einmalige Frage „Wächter einschalten?“ über Telegram, Handy und Display senden. */
-        default void frageWaechterStandard() { }
+        /**
+         * 0.1.43.13: die einmalige Frage „Wächter einschalten?“ am Display zeigen (mit Quittung); true = stand wirklich da.
+         * Nur im sicheren Stand aufrufen ({@code WaechterStandardHinweis.standFuerFrage}).
+         */
+        default boolean zeigeWaechterFrage() { return false; }
+        /** 0.1.43.13: dieselbe Frage über Telegram und Handy; einmal, zusammen mit dem Display. */
+        default void meldeWaechterFrage() { }
     }
 
     /**
      * 0.1.38.8 Wächter Standard an, Phase 3: beim ersten Start auf einer neuen Version EINMAL fragen, ob der Wächter an soll
      * (Bestand, nie still einschalten). Ein Marker je versionCode; Entscheidung in {@code WaechterStandardHinweis}.
+     *
+     * <p>0.1.43.13 (E2E 0.1.43.12, B1): die Frage ist ein Overlay am Display, auch über dem Launcher. Sie kommt nur, wenn das
+     * Auto sicher steht ({@code WaechterStandardHinweis.standFuerFrage}, fail-closed); sonst aufschieben, der nächste Takt
+     * prüft erneut. Der Marker gilt erst als erledigt, wenn die Frage wirklich am Display stand (Quittung). Telegram und
+     * Handy gehen zusammen mit dem Display, damit nichts doppelt kommt. Steht das Auto, aber der Overlay-Dienst quittiert
+     * {@value #WAECHTER_FRAGE_VERSUCHE}-mal nicht (z. B. ohne Overlay-Recht), gehen nur Telegram und Handy, dann Marker.
      */
     private long waechterHinweisZuletzt = -1;
+    /** Fehlgeschlagene Display-Versuche im sicheren Stand, je versionCode (nur im Prozess). */
+    private int waechterFrageFehlVc;
+    private int waechterFrageFehl;
+    /** versionCode, für den „aufgeschoben“ schon protokolliert ist (eine Zeile, nicht alle 5 min). */
+    private int waechterFrageAufgeschobenVc;
+
+    static final int WAECHTER_FRAGE_VERSUCHE = 3;
 
     void waechterHinweisTakt(long now) {
         if (waechterHinweisZuletzt >= 0 && now - waechterHinweisZuletzt < MELDUNG_TAKT_MS) return;
@@ -175,15 +193,55 @@ public final class AppUpdateDienst {
         if (vc <= 0 || marker >= vc) return;   // schon erledigt: die Konfiguration wird gar nicht erst gelesen
         String was = at.greenchili.surfmate.surveillance.WaechterStandardHinweis.entscheide(env.konfig(), vc, marker);
         if (at.greenchili.surfmate.surveillance.WaechterStandardHinweis.NICHTS.equals(was)) return;
-        // Marker zuerst: auch wenn der Versand scheitert oder niemand tippt, wird nicht erneut gefragt
-        at.greenchili.surfmate.surveillance.WaechterStandardHinweis.speichereMarker(env.basis(), vc);
-        if (at.greenchili.surfmate.surveillance.WaechterStandardHinweis.FRAGEN.equals(was)) {
-            logger.info("Wächter-Frage (Standard an) gesendet, versionCode " + vc);
-            try {
-                env.frageWaechterStandard();
-            } catch (Throwable t) {
-                logger.warn("Wächter-Frage: " + t.getMessage());
+        if (at.greenchili.surfmate.surveillance.WaechterStandardHinweis.STILL.equals(was)) {
+            at.greenchili.surfmate.surveillance.WaechterStandardHinweis.speichereMarker(env.basis(), vc);
+            return;
+        }
+        // FRAGEN: nur im sicheren Stand, sonst aufschieben (Marker bleibt offen)
+        String sperre;
+        Boolean gang;
+        double kmh;
+        try {
+            sperre = env.fahrsperre();
+            gang = env.gangP();
+            kmh = env.kmh();
+        } catch (Throwable t) {
+            sperre = "state_unknown";
+            gang = null;
+            kmh = Double.NaN;
+        }
+        if (!at.greenchili.surfmate.surveillance.WaechterStandardHinweis.standFuerFrage(sperre, gang, kmh)) {
+            if (waechterFrageAufgeschobenVc != vc) {
+                waechterFrageAufgeschobenVc = vc;
+                logger.info("Wächter-Frage aufgeschoben (Auto steht nicht sicher: " + sperre + ", P=" + gang + ", km/h="
+                        + kmh + "), versionCode " + vc);
             }
+            return;
+        }
+        boolean gezeigt = false;
+        try {
+            gezeigt = env.zeigeWaechterFrage();
+        } catch (Throwable t) {
+            logger.warn("Wächter-Frage Display: " + t.getMessage());
+        }
+        if (!gezeigt) {
+            if (waechterFrageFehlVc != vc) {
+                waechterFrageFehlVc = vc;
+                waechterFrageFehl = 0;
+            }
+            waechterFrageFehl++;
+            if (waechterFrageFehl < WAECHTER_FRAGE_VERSUCHE) {
+                logger.info("Wächter-Frage: Display ohne Quittung (" + waechterFrageFehl + "), später erneut, versionCode " + vc);
+                return;
+            }
+            logger.warn("Wächter-Frage: Display " + waechterFrageFehl + "-mal ohne Quittung, nur Telegram und Handy, versionCode " + vc);
+        }
+        at.greenchili.surfmate.surveillance.WaechterStandardHinweis.speichereMarker(env.basis(), vc);
+        logger.info("Wächter-Frage (Standard an) " + (gezeigt ? "am Display gezeigt" : "ohne Display") + ", versionCode " + vc);
+        try {
+            env.meldeWaechterFrage();
+        } catch (Throwable t) {
+            logger.warn("Wächter-Frage: " + t.getMessage());
         }
     }
 
@@ -2092,8 +2150,13 @@ public final class AppUpdateDienst {
         }
 
         @Override
-        public void frageWaechterStandard() {
-            at.greenchili.surfmate.surveillance.WaechterStandardKanaele.senden();
+        public boolean zeigeWaechterFrage() {
+            return at.greenchili.surfmate.surveillance.WaechterStandardKanaele.zeigenDisplay();
+        }
+
+        @Override
+        public void meldeWaechterFrage() {
+            at.greenchili.surfmate.surveillance.WaechterStandardKanaele.sendenFern();
         }
 
         @Override

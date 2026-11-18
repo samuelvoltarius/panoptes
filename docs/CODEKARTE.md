@@ -1,6 +1,6 @@
 # Codekarte Panoptes
 
-**Stand: Version 0.1.43.12, Commit 85e5d59f**
+**Stand: Version 0.1.43.13, Commit efe226a5**
 
 Wegweiser durch den Code. Zuerst hier suchen, dann gezielt die genannte Datei öffnen.
 Die Karte nennt Dateien und Klassen, keine Zeilennummern. Kurze Pfade gelten ab
@@ -116,7 +116,7 @@ Jedes Paket steht hier, auch Unterpakete. Pfade ab dem Wurzelpaket. Lose Dateien
 | `shell/` | Shell-Rechte, Hidden-API |
 | `storage/` | Speicher, Aufbewahrung |
 | `streaming/` | Video-Stream |
-| `surveillance/` | Wächter-Kern (siehe `DETECTION-INVARIANTS.md`); 0.1.38.8 Standard an: `WaechterStandardHinweis` (rein: einmal je versionCode fragen, Marker, nie still einschalten, `/api/surveillance/standard-an` braucht die Rechtshinweis-Version), `WaechterStandardKanaele` (Telegram mit Knopf `/waechter standard`, Push `system.waechter`, Display-Hinweis), Takt `AppUpdateDienst.waechterHinweisTakt` |
+| `surveillance/` | Wächter-Kern (siehe `DETECTION-INVARIANTS.md`); 0.1.38.8 Standard an: `WaechterStandardHinweis` (rein: einmal je versionCode fragen, Marker, nie still einschalten, `/api/surveillance/standard-an` braucht die Rechtshinweis-Version), `WaechterStandardKanaele` (Telegram mit Knopf `/waechter standard`, Push `system.waechter`, Display-Hinweis), Takt `AppUpdateDienst.waechterHinweisTakt`; 0.1.43.13 nur im sicheren Stand (`WaechterStandardHinweis.standFuerFrage`: Fahrsperre frei und Gang P oder Gang unbekannt + 0 km/h, sonst aufschieben), Marker erst nach Display-Quittung, Telegram/Handy zusammen damit |
 | `tacho/`, `tacho/oem/` | Tacho-Fähigkeitstest, App-Freigabe sowie streng gegatete OEM-Abbiegepfeile über AutoContainer |
 | `telegram/`, `telegram/config/`, `telegram/event/`, `telegram/impl/`, `telegram/model/` | Telegram: Versand, Konfiguration, Kopplung |
 | `telemetry/` | Overlay-Daten für Aufnahmen |

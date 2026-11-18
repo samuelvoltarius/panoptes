@@ -20,7 +20,8 @@ import java.util.Map;
  * <p>Rein: {@link #entscheide} (Config rein, Entscheidung raus), {@link #standardAn} (Prüfung und Werte für „Wächter
  * einschalten“) und der Done-Marker je versionCode. Der Versand steht in {@link WaechterStandardKanaele}.
  * <ul>
- *   <li>Ein Marker je versionCode: einmal gefragt (oder bewusst nicht gefragt), danach nie wieder auf dieser Version.</li>
+ *   <li>Ein Marker je versionCode: einmal gefragt (oder bewusst nicht gefragt), danach nie wieder auf dieser Version.
+ *       0.1.43.13: „gefragt“ heißt, die Frage stand wirklich am Display; vorher nur im sicheren Stand ({@link #standFuerFrage}).</li>
  *   <li>Bewusst aus, schon eingerichtet (gültiger triggerMode): keine Frage ({@link EinrichtungApiHandler#waechterStandardFragen}).</li>
  *   <li>Läuft der Assistent einer Neuinstallation noch, wird nicht gefragt (er fragt den Wächter selbst); der Marker bleibt offen.</li>
  *   <li>Ohne Einrichtungs-Abschnitt (noch nie geöffnet) wird gewartet: erst das erste Öffnen entscheidet Bestand oder neu.</li>
@@ -49,6 +50,27 @@ public final class WaechterStandardHinweis {
     private static boolean wizardFertig(JSONObject z) {
         JSONObject s = z.optJSONObject("schritte");
         return s != null && EinrichtungApiHandler.ERLEDIGT.equals(s.optString("fertig"));
+    }
+
+    /** 0.1.43.13: höchstens so schnell (km/h) gilt „steht“, wenn der Gang unbekannt ist. */
+    static final double STAND_KMH = 0.5;
+
+    /**
+     * 0.1.43.13 (E2E 0.1.43.12, B1): Darf die Frage jetzt am Display erscheinen? Nur wenn das Auto sicher steht, fail-closed.
+     * <ul>
+     *   <li>{@code fahrsperre} aus {@code DrivingSafetyGuard} muss null sein (ACC frisch und sicher, bei Zündung an Gang P
+     *       frisch und Tempo bekannt; jeder unbekannte oder veraltete Wert ist ein Grund, also nein);</li>
+     *   <li>Gang P, oder Gang unbekannt und 0 km/h bekannt; Gang bekannt außerhalb P ist immer nein;</li>
+     *   <li>ein bekanntes Tempo über {@value #STAND_KMH} km/h ist immer nein.</li>
+     * </ul>
+     * Nein heißt aufschieben, nicht verwerfen: der Marker bleibt offen, der nächste Takt prüft erneut.
+     */
+    public static boolean standFuerFrage(String fahrsperre, Boolean gangP, double kmh) {
+        if (fahrsperre != null) return false;
+        if (Boolean.FALSE.equals(gangP)) return false;
+        boolean tempoBekannt = !Double.isNaN(kmh) && !Double.isInfinite(kmh);
+        if (tempoBekannt && Math.abs(kmh) > STAND_KMH) return false;
+        return Boolean.TRUE.equals(gangP) || tempoBekannt;
     }
 
     /**

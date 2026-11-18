@@ -120,10 +120,13 @@ public class WaechterStandardHinweisTest {
         String k = lies("app/src/main/java/at/greenchili/surfmate/surveillance/WaechterStandardKanaele.java");
         assertTrue("Telegram", k.contains("TelegramNotifier.notifyWaechterStandard()"));
         assertTrue("Handy und Verlauf", k.contains("NotificationBus.get().publish") && k.contains("\"system.waechter\""));
-        assertTrue("Display", k.contains("MessageOverlayController.showDialog"));
+        assertTrue("Display mit Quittung", k.contains("MessageOverlayController.showDialogAcknowledged"));
         String d = lies("app/src/main/java/at/greenchili/surfmate/appupdate/AppUpdateDienst.java");
         assertTrue(d.contains("waechterHinweisTakt(now);"));
-        assertTrue(d.contains("WaechterStandardKanaele.senden();"));
+        assertTrue(d.contains("WaechterStandardKanaele.zeigenDisplay();"));
+        assertTrue(d.contains("WaechterStandardKanaele.sendenFern();"));
+        // 0.1.43.13 (E2E 0.1.43.12, B1): Fahrtsperre vor dem Display
+        assertTrue(d.contains("WaechterStandardHinweis.standFuerFrage(sperre, gang, kmh)"));
         String sink = lies("app/src/main/java/at/greenchili/surfmate/notifications/sinks/TelegramSink.java");
         assertTrue("Telegram kommt direkt, nicht doppelt", sink.contains("\"system.waechter\".equals(event.category)"));
         String bot = lies("app/src/main/java/at/greenchili/surfmate/daemon/TelegramBotDaemon.java");

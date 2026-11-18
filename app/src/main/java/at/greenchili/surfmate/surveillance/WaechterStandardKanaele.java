@@ -14,7 +14,8 @@ import org.json.JSONObject;
  * <ul>
  *   <li>Telegram: Text mit Rechtshinweis und Knopf „Wächter einschalten“ ({@code /waechter standard});</li>
  *   <li>Handy und Verlauf: Meldung {@value #KATEGORIE} mit Sprung auf die Wächter-Seite, dort steht dieselbe Frage mit Knopf;</li>
- *   <li>Display: Hinweis am Bildschirm mit Verweis auf dieselbe Seite (der Overlay-Dienst kennt keinen eigenen Knopf für diese Frage).</li>
+ *   <li>Display: Hinweis am Bildschirm mit Verweis auf dieselbe Seite (der Overlay-Dienst kennt keinen eigenen Knopf für diese Frage).
+ *       0.1.43.13: nur im sicheren Stand, mit Quittung.</li>
  * </ul>
  */
 public final class WaechterStandardKanaele {
@@ -25,7 +26,11 @@ public final class WaechterStandardKanaele {
 
     private WaechterStandardKanaele() {}
 
-    public static void senden() {
+    /**
+     * 0.1.43.13: Telegram und Handy. Erst nach {@link #zeigenDisplay()} (oder dessen endgültigem Fehlschlag) senden,
+     * damit die Frage je versionCode nur einmal über alle Kanäle geht.
+     */
+    public static void sendenFern() {
         try {
             TelegramNotifier.notifyWaechterStandard();
         } catch (Throwable ignored) {
@@ -37,10 +42,20 @@ public final class WaechterStandardKanaele {
                     "waechter-standard-frage", SEITE, new JSONObject().put("art", "waechter_standard_frage")));
         } catch (Throwable ignored) {
         }
+    }
+
+    /**
+     * 0.1.43.13: Display, mit Quittung des Overlay-Dienstes. true = stand wirklich am Bildschirm. Nur im sicheren Stand
+     * aufrufen ({@link WaechterStandardHinweis#standFuerFrage}); das prüft der Takt im {@code AppUpdateDienst}.
+     */
+    public static boolean zeigenDisplay() {
         try {
-            MessageOverlayController.showDialog(Messages.get("notifications.waechter_standard_titel"),
+            MessageOverlayController.DisplayResult r = MessageOverlayController.showDialogAcknowledged(
+                    Messages.get("notifications.waechter_standard_titel"),
                     Messages.get("notifications.waechter_standard_display"), "OK", "info", 60);
+            return r != null && r.displayed;
         } catch (Throwable ignored) {
+            return false;
         }
     }
 }
