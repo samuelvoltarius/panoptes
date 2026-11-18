@@ -1308,6 +1308,25 @@
       "nl": [
         "Launcher: de vermelding bij het 3D-model staat nu onder de auto en bedekt accu en snelheid niet meer."
       ]
+    },
+    {
+      "version": "0.1.43.12",
+      "versionCode": 96,
+      "de": [
+        "Launcher: „km/h“ unter dem Tempo steht jetzt auch mit „Große Bedienung“ vollständig da."
+      ],
+      "en": [
+        "Launcher: “km/h” below the speed is now shown in full, also with “Large controls”."
+      ],
+      "fr": [
+        "Launcher : « km/h » sous la vitesse s’affiche maintenant en entier, aussi avec « Grandes commandes »."
+      ],
+      "it": [
+        "Launcher: «km/h» sotto la velocità ora si vede per intero, anche con «Comandi grandi»."
+      ],
+      "nl": [
+        "Launcher: ‘km/h’ onder de snelheid staat er nu helemaal, ook met ‘Grote bediening’."
+      ]
     }
   ]
 }

@@ -1518,7 +1518,11 @@ class MainActivity : AppCompatActivity() {
         val gang = listOf("P", "R", "N", "D").associateWith { g -> ui.zahl(g, 22f).apply { setPadding(ui.dp(10), 0, ui.dp(10), 0) }.also { gaenge.addView(it) } }
         unten.addView(gaenge, ui.lp(rechts = 36))
         val tempoBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
-        val tempo = ui.zahl("—", 60f); tempoBox.addView(tempo, LinearLayout.LayoutParams(-2, -2)); tempoBox.addView(ui.leise("km/h", 15f))   // WRAP_CONTENT, sonst nur das erste Zeichen
+        val tempo = ui.zahl("—", 60f); tempoBox.addView(tempo, LinearLayout.LayoutParams(-2, -2))   // WRAP_CONTENT, sonst nur das erste Zeichen
+        // 0.1.43.12 (E2E_014311 H1): auch die Einheit WRAP_CONTENT. Ohne eigene Parameter bekam sie MATCH_PARENT und damit
+        // nur die Breite der Zahl; mit „Große Bedienung“ (Text wächst, große Zahlen nicht) wurde „km/h“ bei „0“ zu „km/“.
+        // So richtet sich die Spalte nach max(Zahl, Einheit).
+        tempoBox.addView(ui.leise("km/h", 15f), LinearLayout.LayoutParams(-2, -2))
         unten.addView(tempoBox, ui.lp(rechts = 16))
         val tempoSchild = Tempolimit.schild(this, ui, 52)   // 0.1.44 (P3): nur mit belegtem Limit sichtbar
         unten.addView(tempoSchild, ui.lp(ui.dp(52), ui.dp(52), rechts = 36))

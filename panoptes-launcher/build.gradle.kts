@@ -16,8 +16,8 @@ android {
         applicationId = "at.greenchili.panoptes.launcher"
         minSdk = 28
         targetSdk = 35
-        versionCode = 27
-        versionName = "0.1.43.11"
+        versionCode = 28
+        versionName = "0.1.43.12"
     }
 
     buildTypes {
