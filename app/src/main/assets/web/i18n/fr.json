@@ -6472,7 +6472,22 @@
       "fehler": "L’enregistrement a échoué. Réessaie.",
       "preis_fehlt": "Saisis un prix (0 = gratuit).",
       "hinweis_plausibel": "Enregistré. Le prix semble inhabituel – vérifie-le.",
-      "gratis": "gratuit"
+      "gratis": "gratuit",
+      "anbieter_titel": "Fournisseurs",
+      "anbieter_neu": "+ Ajouter un fournisseur",
+      "anbieter_name": "Nom (p. ex. Lidl)",
+      "preis_ac": "Prix AC par kWh",
+      "preis_dc": "Prix DC par kWh",
+      "grundgebuehr": "Abonnement mensuel (facultatif)",
+      "mit_karte": "Avec carte de recharge ou appli",
+      "anlegen": "Ajouter et utiliser",
+      "abbrechen": "Annuler",
+      "anbieter_hinweis": "Saisis les prix demandés par le fournisseur. Un prix suffit ; 0 = gratuit. L’abonnement n’est qu’une note et n’entre pas dans les coûts de recharge.",
+      "name_fehlt": "Saisis un nom.",
+      "anbieter_preis_fehlt": "Saisis au moins un prix (AC ou DC, 0 = gratuit).",
+      "anbieter_angelegt": "Fournisseur enregistré. Saisis encore le prix de cette recharge.",
+      "ort_merken": "Retenir pour ce lieu",
+      "preis_vom_anbieter": "Prix du fournisseur ; tu peux le modifier pour cette recharge."
     }
   },
   "od_verlauf": {

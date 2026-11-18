@@ -48,6 +48,7 @@ public final class ExternGuard {
             "/api/einstellungen/schema",
             "/api/laden",   // Lade-Vorlieben fürs Cockpit (LADEN_VERTRAG A4)
             "/api/laden/nachfrage",   // Ladenachfrage: Cockpit zeigt an (LADENACHFRAGE_VERTRAG)
+            "/api/laden/anbieter",    // 0.1.43.15 eigene Ladeanbieter für die Ladenachfrage (nur Name/Preise)
             "/api/laden/kosten",      // „Was kosten 100 km?“ (0.1.10.1)
             "/api/laden/ladungen",    // Ladungsliste ohne Koordinaten (0.1.10.1)
             "/api/appupdate/status",
@@ -113,6 +114,7 @@ public final class ExternGuard {
             "/api/laden",   // Cockpit pflegt die Vorlieben im Auto (GRUNDSATZ)
             "/api/laden/nachfrage",   // Cockpit darf beantworten (Koordination 22.10.), Auto bleibt die Quelle
             "/api/laden/nachfrage/spaeter",
+            "/api/laden/anbieter",    // 0.1.43.15 Anbieter in der Ladenachfrage anlegen (wie Beantworten)
             "/api/gewohnheiten/antwort",   // 0.1.23 Gewohnheiten: Cockpit darf die Karte beantworten (Auto bleibt die Quelle)
             "/api/laden/nachfrage/kein-preis",
             "/api/ha/v1/aktion",

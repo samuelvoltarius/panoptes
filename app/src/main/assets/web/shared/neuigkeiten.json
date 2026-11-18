@@ -1365,6 +1365,25 @@
       "nl": [
         "Loopt de camera-encoder vast, dan ruimt Panoptes nu zelf op en start de cameradienst opnieuw, in plaats van steeds meer geheugen te gebruiken."
       ]
+    },
+    {
+      "version": "0.1.43.15",
+      "versionCode": 99,
+      "de": [
+        "Bei „Wo hast du geladen?“ kannst du jetzt einen Ladeanbieter auswählen oder gleich einen neuen mit deinem Preis anlegen."
+      ],
+      "en": [
+        "At “Where did you charge?” you can now choose a charging provider or right away add a new one with your price."
+      ],
+      "fr": [
+        "À « Où as-tu rechargé ? », tu peux maintenant choisir un fournisseur de recharge ou en créer tout de suite un nouveau avec ton prix."
+      ],
+      "it": [
+        "In «Dove hai ricaricato?» ora puoi scegliere un fornitore di ricarica o crearne subito uno nuovo con il tuo prezzo."
+      ],
+      "nl": [
+        "Bij ‘Waar heb je geladen?’ kun je nu een laadaanbieder kiezen of meteen een nieuwe met je eigen prijs aanmaken."
+      ]
     }
   ]
 }

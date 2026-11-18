@@ -6472,7 +6472,22 @@
       "fehler": "Speichern hat nicht geklappt. Bitte nochmal versuchen.",
       "preis_fehlt": "Bitte einen Preis eingeben (0 = gratis).",
       "hinweis_plausibel": "Gespeichert. Der Preis wirkt ungewöhnlich – bitte prüfen.",
-      "gratis": "gratis"
+      "gratis": "gratis",
+      "anbieter_titel": "Anbieter",
+      "anbieter_neu": "+ Anbieter hinzufügen",
+      "anbieter_name": "Name (z. B. Lidl)",
+      "preis_ac": "Preis AC je kWh",
+      "preis_dc": "Preis DC je kWh",
+      "grundgebuehr": "Grundgebühr je Monat (optional)",
+      "mit_karte": "Mit Ladekarte oder App",
+      "anlegen": "Anlegen und übernehmen",
+      "abbrechen": "Abbrechen",
+      "anbieter_hinweis": "Trag die Preise so ein, wie der Anbieter sie verlangt. Ein Preis reicht; 0 = gratis. Die Grundgebühr ist nur eine Notiz und zählt nicht zu den Ladekosten.",
+      "name_fehlt": "Bitte einen Namen eingeben.",
+      "anbieter_preis_fehlt": "Bitte mindestens einen Preis eingeben (AC oder DC, 0 = gratis).",
+      "anbieter_angelegt": "Anbieter gespeichert. Bitte noch den Preis für diese Ladung eintragen.",
+      "ort_merken": "Für diesen Ort merken",
+      "preis_vom_anbieter": "Preis vom Anbieter, du kannst ihn für diese Ladung ändern."
     }
   },
   "od_verlauf": {

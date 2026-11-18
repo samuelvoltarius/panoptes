@@ -139,16 +139,42 @@ public final class LadeNachfrage {
                 if (ortName == null) ortName = s.optString("name", "");
             }
         }
+        int isDc = z.isNull("dc") ? -1 : (z.optBoolean("dc") ? 1 : 0);
+        // 0.1.43.15: erkannte Säule (Betreiber an der Ladung) → passender eigener Anbieter als Vorschlag
+        JSONObject zumBetreiber = LadeAnbieter.zuBetreiber(LadeAnbieter.liste(cfg), z.optString("betreiber", ""));
+        if (zumBetreiber != null) {
+            Double pr = LadeAnbieter.preisFuer(zumBetreiber, isDc);
+            vorschlaege.put(new JSONObject().put("art", "anbieter").put("anbieterId", zumBetreiber.getString("id"))
+                    .put("name", zumBetreiber.getString("name")).put("preisKwh", pr == null ? JSONObject.NULL : (Object) pr));
+        }
         e.put("ort", ortName == null || ortName.isEmpty() ? new JSONObject().put("bekannt", false)
                 : new JSONObject().put("bekannt", true).put("name", ortName));
+        // Nur ja/nein, nie Koordinaten: mit Position kann die Oberfläche „Für diesen Ort merken“ anbieten (ortMerken)
+        e.put("hatPosition", pos);
         e.put("vorschlaege", vorschlaege);
-        e.put("auswahl", auswahl(cfg));
+        e.put("auswahl", auswahl(cfg, isDc));
         return e;
     }
 
-    /** Ladekarten aus der Gruppe „laden“, ad hoc, zuhause, zuhause (gratis). Kartenpreise kennt das Auto nicht (Planer). */
     static JSONArray auswahl(JSONObject cfg) throws Exception {
+        return auswahl(cfg, -1);
+    }
+
+    /**
+     * Eigene Anbieter ({@link LadeAnbieter}, Preis passend zu AC/DC), Ladekarten aus der Gruppe „laden“, ad hoc,
+     * zuhause, zuhause (gratis). Kartenpreise kennt das Auto nicht (Planer).
+     */
+    static JSONArray auswahl(JSONObject cfg, int isDc) throws Exception {
         JSONArray a = new JSONArray();
+        JSONArray anbieter = LadeAnbieter.liste(cfg);
+        for (int i = 0; i < anbieter.length(); i++) {
+            JSONObject n = anbieter.getJSONObject(i);
+            Double pr = LadeAnbieter.preisFuer(n, isDc);
+            a.put(new JSONObject().put("art", "anbieter").put("id", n.getString("id")).put("anzeige", n.getString("name"))
+                    .put("preisKwh", pr == null ? JSONObject.NULL : (Object) pr)
+                    .put("preisAc", n.opt("preisAc")).put("preisDc", n.opt("preisDc"))
+                    .put("grundgebuehr", n.opt("grundgebuehr")).put("karte", n.optBoolean("karte")));
+        }
         JSONObject l = cfg == null ? null : cfg.optJSONObject("laden");
         JSONArray karten = l == null ? null : l.optJSONArray("karten");
         for (int i = 0; karten != null && i < karten.length(); i++) {
@@ -168,7 +194,7 @@ public final class LadeNachfrage {
 
     /**
      * {@code POST /api/laden/nachfrage} → Anfrage für {@link LadePreis#preis}: {@code {id, art, preisKwh?, karteId?,
-     * waehrung?}}. Rückgabe null + Fehlergrund in {@code grund[0]}.
+     * anbieterId?, waehrung?}}. Rückgabe null + Fehlergrund in {@code grund[0]}.
      */
     public static JSONObject alsPreisAnfrage(JSONObject req, JSONObject cfg, String[] grund) throws Exception {
         long id = req.optLong("id", -1);
@@ -181,6 +207,12 @@ public final class LadeNachfrage {
                 p.put("gratis", true);
                 p.put("label", "zuhause");
                 return p;
+            case "anbieter":
+                if (LadeAnbieter.finde(LadeAnbieter.liste(cfg), req.optString("anbieterId", "")) == null) {
+                    grund[0] = "anbieterId";
+                    return null;
+                }
+                // fall through: der Preis kommt vom Anbieter, ist in der Oberfläche aber überschreibbar → preisKwh
             case "karte":
             case "adhoc":
             case "zuhause":
@@ -211,6 +243,10 @@ public final class LadeNachfrage {
             return "Ladekarte";
         }
         if ("zuhause".equals(art)) return "zuhause";
+        if ("anbieter".equals(art)) {
+            JSONObject n = LadeAnbieter.finde(LadeAnbieter.liste(cfg), req.optString("anbieterId", ""));
+            return n == null ? "Anbieter" : n.optString("name", "Anbieter");
+        }
         if ("ortskreis".equals(art)) return req.optString("name", "");
         return "ad hoc";
     }

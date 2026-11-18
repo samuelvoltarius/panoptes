@@ -6472,7 +6472,22 @@
       "fehler": "Opslaan is mislukt. Probeer het opnieuw.",
       "preis_fehlt": "Voer een prijs in (0 = gratis).",
       "hinweis_plausibel": "Opgeslagen. De prijs lijkt ongebruikelijk – controleer hem.",
-      "gratis": "gratis"
+      "gratis": "gratis",
+      "anbieter_titel": "Aanbieders",
+      "anbieter_neu": "+ Aanbieder toevoegen",
+      "anbieter_name": "Naam (bijv. Lidl)",
+      "preis_ac": "AC-prijs per kWh",
+      "preis_dc": "DC-prijs per kWh",
+      "grundgebuehr": "Maandelijks abonnement (optioneel)",
+      "mit_karte": "Met laadpas of app",
+      "anlegen": "Toevoegen en gebruiken",
+      "abbrechen": "Annuleren",
+      "anbieter_hinweis": "Vul de prijzen in die de aanbieder rekent. Eén prijs is genoeg; 0 = gratis. Het abonnement is alleen een notitie en telt niet mee in de laadkosten.",
+      "name_fehlt": "Voer een naam in.",
+      "anbieter_preis_fehlt": "Voer minstens één prijs in (AC of DC, 0 = gratis).",
+      "anbieter_angelegt": "Aanbieder opgeslagen. Vul nog de prijs voor deze laadbeurt in.",
+      "ort_merken": "Onthouden voor deze plaats",
+      "preis_vom_anbieter": "Prijs van de aanbieder; je kunt hem voor deze laadbeurt aanpassen."
     }
   },
   "od_verlauf": {

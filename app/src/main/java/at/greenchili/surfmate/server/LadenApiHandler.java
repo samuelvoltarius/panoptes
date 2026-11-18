@@ -29,6 +29,7 @@ import java.util.Map;
  *   <li>{@code POST /api/laden/zuruecksetzen} – nur Login/Display</li>
  *   <li>{@code GET /api/laden/tarife}, {@code GET /api/laden/betreiber?q=} – öffentliche Planer-Kataloge durchgereicht</li>
  *   <li>{@code GET/POST /api/laden/aus-konto} – einmalige Übernahme aus dem Planer-Konto mit Vorschau</li>
+ *   <li>{@code GET/POST /api/laden/anbieter} – eigene Ladeanbieter (Ladenachfrage, 0.1.43.15), Preise nur vom Nutzer</li>
  * </ul>
  * Regel A/A+: nur gespeicherte Werte, keine Befehle ans Auto. Nichts davon wird protokolliert.
  */
@@ -169,6 +170,13 @@ public final class LadenApiHandler {
                 return at.greenchili.surfmate.charging.LadePreis.preis(new JSONObject().put("id", id).put("fehlt", true),
                         u.preisDb(), u.tarife(), u.protokoll(), u.standardWaehrung(), u.jetzt());
             }
+            case "/api/laden/anbieter":
+                if ("GET".equals(method)) {
+                    return ok(new JSONObject().put("ok", true).put("anbieter",
+                            at.greenchili.surfmate.charging.LadeAnbieter.liste(u.config())));
+                }
+                if ("POST".equals(method)) return anbieterAnlegen(body, u);
+                return fehler(405, "methode");
             case "/api/laden/aus-konto":
                 if (u.extern()) return fehler(403, "nur_mit_login");
                 if ("GET".equals(method)) return ausKonto(u, false, body);
@@ -287,6 +295,29 @@ public final class LadenApiHandler {
             }
         }
         return r;
+    }
+
+    /**
+     * {@code POST /api/laden/anbieter}: Anbieter anlegen (gleicher Name ändert ihn). Eigener Abschnitt
+     * {@code ladeanbieter}, geschrieben nur dessen Schlüssel {@code liste}; danach zurückgelesen.
+     */
+    static Object[] anbieterAnlegen(String body, Umgebung u) throws Exception {
+        JSONObject req;
+        try {
+            req = new JSONObject(body == null || body.isEmpty() ? "{}" : body);
+        } catch (Exception e) {
+            return fehler(400, "json");
+        }
+        at.greenchili.surfmate.charging.LadeAnbieter.Ergebnis e = at.greenchili.surfmate.charging.LadeAnbieter.anlegen(
+                at.greenchili.surfmate.charging.LadeAnbieter.liste(u.config()), req);
+        if (!e.ok()) return fehler(400, e.grund);
+        java.util.Map<String, Object> w = new java.util.HashMap<>();
+        w.put(at.greenchili.surfmate.charging.LadeAnbieter.LISTE, e.liste);
+        if (!u.schreibe(at.greenchili.surfmate.charging.LadeAnbieter.ABSCHNITT, w)) return fehler(500, "speichernFehlgeschlagen");
+        JSONArray jetzt = at.greenchili.surfmate.charging.LadeAnbieter.liste(u.config());
+        JSONObject gespeichert = at.greenchili.surfmate.charging.LadeAnbieter.finde(jetzt, e.anbieter.getString("id"));
+        if (gespeichert == null) return fehler(500, "speichernFehlgeschlagen");   // zurückgelesen: nicht da
+        return ok(new JSONObject().put("ok", true).put("neu", e.neu).put("anbieter", gespeichert).put("liste", jetzt));
     }
 
     // ---------------------------------------------------------------- Kataloge
@@ -484,7 +515,20 @@ public final class LadenApiHandler {
 
         public JSONArray ladungenSeit(long seit) {
             at.greenchili.surfmate.monitor.SocHistoryDatabase d = at.greenchili.surfmate.monitor.SocHistoryDatabase.getInstance();
-            return d == null ? new JSONArray() : d.chargingSessionsSeit(seit, 300);
+            if (d == null) return new JSONArray();
+            JSONArray a = d.chargingSessionsSeit(seit, 300);
+            // 0.1.43.15: erkannter Betreiber (LadesaeuleDienst) nur für offene Nachfragen nachlesen → Anbieter-Vorschlag
+            try {
+                JSONObject cfg = config();
+                for (int i = 0; i < a.length(); i++) {
+                    JSONObject z = a.optJSONObject(i);
+                    if (z == null || !at.greenchili.surfmate.charging.LadeNachfrage.offen(z, cfg)) continue;
+                    JSONObject voll = d.getChargingSessionById(z.optLong("id"));
+                    if (voll != null && !voll.isNull("betreiber")) z.put("betreiber", voll.optString("betreiber", ""));
+                }
+            } catch (Throwable ignored) {
+            }
+            return a;
         }
 
         public JSONArray ortskreise() {

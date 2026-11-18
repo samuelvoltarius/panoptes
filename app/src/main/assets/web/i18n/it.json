@@ -6472,7 +6472,22 @@
       "fehler": "Salvataggio non riuscito. Riprova.",
       "preis_fehlt": "Inserisci un prezzo (0 = gratis).",
       "hinweis_plausibel": "Salvato. Il prezzo sembra insolito – controllalo.",
-      "gratis": "gratis"
+      "gratis": "gratis",
+      "anbieter_titel": "Fornitori",
+      "anbieter_neu": "+ Aggiungi fornitore",
+      "anbieter_name": "Nome (es. Lidl)",
+      "preis_ac": "Prezzo AC per kWh",
+      "preis_dc": "Prezzo DC per kWh",
+      "grundgebuehr": "Canone mensile (facoltativo)",
+      "mit_karte": "Con carta di ricarica o app",
+      "anlegen": "Aggiungi e usa",
+      "abbrechen": "Annulla",
+      "anbieter_hinweis": "Inserisci i prezzi applicati dal fornitore. Basta un prezzo; 0 = gratis. Il canone è solo una nota e non rientra nei costi di ricarica.",
+      "name_fehlt": "Inserisci un nome.",
+      "anbieter_preis_fehlt": "Inserisci almeno un prezzo (AC o DC, 0 = gratis).",
+      "anbieter_angelegt": "Fornitore salvato. Inserisci ancora il prezzo di questa ricarica.",
+      "ort_merken": "Ricorda per questo luogo",
+      "preis_vom_anbieter": "Prezzo del fornitore; puoi cambiarlo per questa ricarica."
     }
   },
   "od_verlauf": {

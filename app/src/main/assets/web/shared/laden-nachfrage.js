@@ -7,6 +7,10 @@
  * immer, solange Ladungen ohne Preis offen sind. Fehlt die API (404) oder ist nichts offen, bleibt die Karte weg.
  * Antworten gehen an POST /api/laden/nachfrage (bzw. /spaeter, /kein-preis); danach wird neu gelesen.
  * Keine Koordinaten: die API liefert nur Ortsnamen. ES5 (WebView 74).
+ *
+ * 0.1.43.15 (18.11.): eigene Anbieter wählen (Preis vom Anbieter, überschreibbar) oder gleich anlegen
+ * (POST /api/laden/anbieter: Name, Preis AC/DC, Grundgebühr als Notiz, Karte ja/nein). Mit Position zusätzlich
+ * „Für diesen Ort merken“ (ortMerken → Ortskreis, beim nächsten Mal als Vorschlag). Keine Preise im Code.
  */
 (function () {
     'use strict';
@@ -30,7 +34,22 @@
         fehler: 'Speichern hat nicht geklappt. Bitte nochmal versuchen.',
         preis_fehlt: 'Bitte einen Preis eingeben (0 = gratis).',
         hinweis_plausibel: 'Gespeichert. Der Preis wirkt ungewöhnlich – bitte prüfen.',
-        gratis: 'gratis'
+        gratis: 'gratis',
+        anbieter_titel: 'Anbieter',
+        anbieter_neu: '+ Anbieter hinzufügen',
+        anbieter_name: 'Name (z. B. Lidl)',
+        preis_ac: 'Preis AC je kWh',
+        preis_dc: 'Preis DC je kWh',
+        grundgebuehr: 'Grundgebühr je Monat (optional)',
+        mit_karte: 'Mit Ladekarte oder App',
+        anlegen: 'Anlegen und übernehmen',
+        abbrechen: 'Abbrechen',
+        anbieter_hinweis: 'Trag die Preise so ein, wie der Anbieter sie verlangt. Ein Preis reicht; 0 = gratis. Die Grundgebühr ist nur eine Notiz und zählt nicht zu den Ladekosten.',
+        name_fehlt: 'Bitte einen Namen eingeben.',
+        anbieter_preis_fehlt: 'Bitte mindestens einen Preis eingeben (AC oder DC, 0 = gratis).',
+        anbieter_angelegt: 'Anbieter gespeichert. Bitte noch den Preis für diese Ladung eintragen.',
+        ort_merken: 'Für diesen Ort merken',
+        preis_vom_anbieter: 'Preis vom Anbieter, du kannst ihn für diese Ladung ändern.'
     };
 
     function T(k, vars) {
@@ -74,6 +93,7 @@
                 .then(function (d) { zeichne(d); });
         }
         function weg() { box.style.display = 'none'; box.innerHTML = ''; }
+        var vorauswahl = null;   // nach „Anbieter hinzufügen“ ohne passenden Preis: diesen Anbieter gleich auswählen
 
         function zeichne(d) {
             var offen = (d && d.ok && d.offen) || [];
@@ -103,11 +123,16 @@
                 });
             }
 
-            // Vorschläge (gemerkter Ort mit Preis) – ein Tipp
+            function preisText(p) { return p === 0 ? T('gratis') : zahl(p, 2) + ' €/kWh'; }
+
+            // Vorschläge (gemerkter Ort bzw. eigener Anbieter zur erkannten Säule, jeweils mit Preis) – ein Tipp
             (z.vorschlaege || []).forEach(function (v) {
-                if (v.art !== 'ortskreis' || typeof v.preisKwh !== 'number') return;
-                var b = knopf(T('vorschlag') + ': ' + v.name + ' · ' + (v.preisKwh === 0 ? T('gratis') : zahl(v.preisKwh, 2) + ' €/kWh'), 'btn-primary');
-                b.onclick = function () { senden('/api/laden/nachfrage', { id: z.id, art: 'ortskreis', preisKwh: v.preisKwh, name: v.name }); };
+                if ((v.art !== 'ortskreis' && v.art !== 'anbieter') || typeof v.preisKwh !== 'number') return;
+                var b = knopf(T('vorschlag') + ': ' + v.name + ' · ' + preisText(v.preisKwh), 'btn-primary');
+                b.onclick = function () {
+                    if (v.art === 'anbieter') senden('/api/laden/nachfrage', { id: z.id, art: 'anbieter', anbieterId: v.anbieterId, preisKwh: v.preisKwh });
+                    else senden('/api/laden/nachfrage', { id: z.id, art: 'ortskreis', preisKwh: v.preisKwh, name: v.name });
+                };
                 box.appendChild(b);
             });
 
@@ -122,20 +147,41 @@
             preisZeile.appendChild(el('span', null, T('preis') + ' (€)'));
             preisZeile.appendChild(eingabe);
             preisZeile.appendChild(speichern);
+            // „Für diesen Ort merken“: nur mit Position (die API sagt nur ja/nein) und nur für eigene Anbieter
+            var merkenZeile = el('label', 'ch-note');
+            merkenZeile.style.cssText = 'display:none;align-items:center;gap:8px;margin:4px 0';
+            var merken = el('input');
+            merken.type = 'checkbox';
+            merkenZeile.appendChild(merken);
+            merkenZeile.appendChild(el('span', null, T('ort_merken')));
+            var preisHinweis = el('div', 'ch-note', T('preis_vom_anbieter'));
+            preisHinweis.style.display = 'none';
             var gewaehlt = null;
+            var anbieterReihe = el('div');
+            var anbieterKnoepfe = {};
+            function waehle(a, b) {
+                gewaehlt = a;
+                [].forEach.call(box.querySelectorAll('.nf-wahl'), function (x) { x.className = 'btn btn-secondary nf-wahl'; });
+                b.className = 'btn btn-primary nf-wahl';
+                eingabe.value = typeof a.preisKwh === 'number' ? zahl(a.preisKwh, 2) : '';
+                preisZeile.style.display = 'flex';
+                var istAnbieter = a.art === 'anbieter';
+                preisHinweis.style.display = istAnbieter && typeof a.preisKwh === 'number' ? '' : 'none';
+                merkenZeile.style.display = istAnbieter && z.hatPosition ? 'flex' : 'none';
+                if (!istAnbieter) merken.checked = false;
+                try { eingabe.focus(); } catch (e) {}
+            }
             (z.auswahl || []).forEach(function (a) {
-                var name = a.art === 'karte' ? T('art_karte', { name: a.anzeige || '' }) : T('art_' + a.art);
-                var b = knopf(name);
+                var name;
+                if (a.art === 'anbieter') name = (a.anzeige || '') + (typeof a.preisKwh === 'number' ? ' · ' + preisText(a.preisKwh) : '');
+                else name = a.art === 'karte' ? T('art_karte', { name: a.anzeige || '' }) : T('art_' + a.art);
+                var b = knopf(name, 'btn-secondary nf-wahl');
                 b.onclick = function () {
                     if (a.art === 'zuhause_gratis') { senden('/api/laden/nachfrage', { id: z.id, art: 'zuhause_gratis' }); return; }
-                    gewaehlt = a;
-                    [].forEach.call(reihe.querySelectorAll('button'), function (x) { x.className = 'btn btn-secondary'; });
-                    b.className = 'btn btn-primary';
-                    eingabe.value = typeof a.preisKwh === 'number' ? zahl(a.preisKwh, 2) : '';
-                    preisZeile.style.display = 'flex';
-                    try { eingabe.focus(); } catch (e) {}
+                    waehle(a, b);
                 };
-                reihe.appendChild(b);
+                if (a.art === 'anbieter') { anbieterReihe.appendChild(b); anbieterKnoepfe[a.id] = { a: a, b: b }; }
+                else reihe.appendChild(b);
             });
             speichern.onclick = function () {
                 if (!gewaehlt) return;
@@ -143,10 +189,107 @@
                 if (p === null || isNaN(p)) { meldung.textContent = T('preis_fehlt'); return; }
                 var body = { id: z.id, art: gewaehlt.art, preisKwh: p };
                 if (gewaehlt.art === 'karte') body.karteId = gewaehlt.id;
+                if (gewaehlt.art === 'anbieter') {
+                    body.anbieterId = gewaehlt.id;
+                    if (merken.checked && z.hatPosition) body.ortMerken = { name: gewaehlt.anzeige || '' };
+                }
                 senden('/api/laden/nachfrage', body);
             };
+
+            // „Anbieter hinzufügen“: Name, Preis AC/DC (einer reicht), Grundgebühr (Notiz), Karte ja/nein
+            var neuKnopf = knopf(T('anbieter_neu'));
+            var form = el('div');
+            form.style.cssText = 'display:none;margin:8px 0;padding:8px 0;border-top:1px solid rgba(128,128,128,.3)';
+            function feld(label, breite, art) {
+                var z1 = el('div');
+                z1.style.cssText = 'display:flex;align-items:center;gap:8px;margin:4px 0;flex-wrap:wrap';
+                var l = el('span', null, label);
+                l.style.cssText = 'flex:0 0 300px;max-width:100%';
+                var i = el('input', 'text-input');
+                i.type = 'text';
+                if (art === 'zahl') i.setAttribute('inputmode', 'decimal');
+                i.style.cssText = 'width:' + breite;
+                z1.appendChild(l); z1.appendChild(i);
+                form.appendChild(z1);
+                return i;
+            }
+            var fName = feld(T('anbieter_name'), '220px');
+            fName.setAttribute('maxlength', '60');
+            var fAc = feld(T('preis_ac') + ' (€)', '120px', 'zahl');
+            var fDc = feld(T('preis_dc') + ' (€)', '120px', 'zahl');
+            var fGg = feld(T('grundgebuehr') + ' (€)', '120px', 'zahl');
+            var kZeile = el('label');
+            kZeile.style.cssText = 'display:flex;align-items:center;gap:8px;margin:4px 0';
+            var fKarte = el('input');
+            fKarte.type = 'checkbox';
+            kZeile.appendChild(fKarte); kZeile.appendChild(el('span', null, T('mit_karte')));
+            form.appendChild(kZeile);
+            var fMerken = null;
+            if (z.hatPosition) {
+                var fMerkenZeile = el('label');
+                fMerkenZeile.style.cssText = 'display:flex;align-items:center;gap:8px;margin:4px 0';
+                fMerken = el('input');
+                fMerken.type = 'checkbox';
+                fMerkenZeile.appendChild(fMerken); fMerkenZeile.appendChild(el('span', null, T('ort_merken')));
+                form.appendChild(fMerkenZeile);
+            }
+            form.appendChild(el('div', 'ch-note', T('anbieter_hinweis')));
+            var anlegen = knopf(T('anlegen'), 'btn-primary');
+            var abbrechen = knopf(T('abbrechen'));
+            form.appendChild(anlegen); form.appendChild(abbrechen);
+            neuKnopf.onclick = function () {
+                form.style.display = '';
+                neuKnopf.style.display = 'none';
+                try { fName.focus(); } catch (e) {}
+            };
+            abbrechen.onclick = function () { form.style.display = 'none'; neuKnopf.style.display = ''; meldung.textContent = ''; };
+            anlegen.onclick = function () {
+                var name = String(fName.value || '').trim();
+                if (!name) { meldung.textContent = T('name_fehlt'); return; }
+                var ac = preisAus(fAc.value), dc = preisAus(fDc.value), gg = preisAus(fGg.value);
+                if (isNaN(ac) || isNaN(dc) || isNaN(gg) || (ac === null && dc === null)) { meldung.textContent = T('anbieter_preis_fehlt'); return; }
+                var neu = { name: name, karte: !!fKarte.checked };
+                if (ac !== null) neu.preisAc = ac;
+                if (dc !== null) neu.preisDc = dc;
+                if (gg !== null) neu.grundgebuehr = gg;
+                [].forEach.call(box.querySelectorAll('button'), function (b) { b.disabled = true; });
+                post('/api/laden/anbieter', neu).then(function (r) {
+                    if (r._status >= 400 || r.ok === false || !r.anbieter) throw new Error('x');
+                    var an = r.anbieter;
+                    // Preis passend zur Ladung: DC → DC-Preis, AC → AC-Preis, unbekannt → der einzige
+                    var p = z.dc === true ? an.preisDc : (z.dc === false ? an.preisAc
+                        : (an.preisAc == null ? an.preisDc : (an.preisDc == null || an.preisDc === an.preisAc ? an.preisAc : null)));
+                    if (typeof p === 'number') {
+                        var body = { id: z.id, art: 'anbieter', anbieterId: an.id, preisKwh: p };
+                        if (fMerken && fMerken.checked) body.ortMerken = { name: an.name };
+                        senden('/api/laden/nachfrage', body);
+                    } else {
+                        vorauswahl = an.id;
+                        toast(T('anbieter_angelegt'), true);
+                        laden();
+                    }
+                }).catch(function () {
+                    meldung.textContent = T('fehler');
+                    [].forEach.call(box.querySelectorAll('button'), function (b) { b.disabled = false; });
+                });
+            };
+
+            if (anbieterReihe.childNodes.length) {
+                var ueb = el('div', 'ch-note', T('anbieter_titel'));
+                ueb.style.cssText = 'margin-top:6px;font-weight:600';
+                box.appendChild(ueb);
+                box.appendChild(anbieterReihe);
+            }
+            box.appendChild(neuKnopf);
+            box.appendChild(form);
             box.appendChild(reihe);
             box.appendChild(preisZeile);
+            box.appendChild(preisHinweis);
+            box.appendChild(merkenZeile);
+            if (vorauswahl && anbieterKnoepfe[vorauswahl]) {
+                waehle(anbieterKnoepfe[vorauswahl].a, anbieterKnoepfe[vorauswahl].b);
+            }
+            vorauswahl = null;
 
             var unten = el('div');
             var sp = knopf(T('spaeter'));

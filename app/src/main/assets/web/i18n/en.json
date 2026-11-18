@@ -6472,7 +6472,22 @@
       "fehler": "Saving failed. Please try again.",
       "preis_fehlt": "Please enter a price (0 = free).",
       "hinweis_plausibel": "Saved. The price looks unusual – please check.",
-      "gratis": "free"
+      "gratis": "free",
+      "anbieter_titel": "Providers",
+      "anbieter_neu": "+ Add provider",
+      "anbieter_name": "Name (e.g. Lidl)",
+      "preis_ac": "AC price per kWh",
+      "preis_dc": "DC price per kWh",
+      "grundgebuehr": "Monthly fee (optional)",
+      "mit_karte": "With charging card or app",
+      "anlegen": "Add and use",
+      "abbrechen": "Cancel",
+      "anbieter_hinweis": "Enter the prices the provider charges. One price is enough; 0 = free. The monthly fee is only a note and is not added to charging costs.",
+      "name_fehlt": "Please enter a name.",
+      "anbieter_preis_fehlt": "Please enter at least one price (AC or DC, 0 = free).",
+      "anbieter_angelegt": "Provider saved. Please enter the price for this charge.",
+      "ort_merken": "Remember for this place",
+      "preis_vom_anbieter": "Price from the provider; you can change it for this charge."
     }
   },
   "od_verlauf": {

@@ -212,6 +212,7 @@ public final class WebHandyGuard {
             "/api/laden/nachfrage",
             "/api/laden/nachfrage/spaeter",
             "/api/laden/nachfrage/kein-preis",
+            "/api/laden/anbieter",
             "/api/gewohnheiten/antwort")));
 
     /** 0.1.39: Anfrage eines PCs (Web-Sitzung oder Kopplungs-JWT) außerhalb von {@link #PC_WEB_SCHREIBEN}? */
