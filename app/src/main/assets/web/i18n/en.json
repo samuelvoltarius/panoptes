@@ -3565,6 +3565,7 @@
     "hotspot_oem_dashcam": "DVR",
     "oem_starting": "Starting the car's own dashcam…",
     "pano_starting": "Camera is starting…",
+    "encoder_blocked": "Camera encoder is stuck. The camera service is restarting, please try again shortly.",
     "stream_starting": "Live picture is starting…",
     "oem_disabled": "The car's own dashcam is turned off in this car",
     "oem_unsupported": "This car has no usable own dashcam",

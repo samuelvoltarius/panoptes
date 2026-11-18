@@ -1711,9 +1711,19 @@ public class HardwareEventRecorderGpu {
             throw new IllegalStateException("encoder instance is terminal (worker "
                 + "wedged during teardown) — refusing re-init; trip-safe restart pending");
         }
+        // 0.1.43.14: while an abandoned encoder thread is still alive in native
+        // code, or the persisted backoff after such a hang runs, every new build
+        // would add one more stuck thread. Refuse before touching MediaCodec.
+        String haengerSperre = EncoderHaenger.sperrgrund();
+        if (haengerSperre != null) {
+            throw new IllegalStateException("encoder build blocked: " + haengerSperre);
+        }
         try {
             initOnce();
         } catch (Exception hevcFailure) {
+            // A hang is not a codec rejection: an AVC retry would only start a
+            // second native call against the same stuck encoder service.
+            if (hevcFailure instanceof EncoderHaenger.EncoderHaengerException) throw hevcFailure;
             if (!shouldRetryInitWithAvc()) throw hevcFailure;
             logger.warn("DI5 HEVC encoder init failed synchronously ("
                 + hevcFailure.getMessage() + ") — retrying THIS SESSION with "
@@ -1873,32 +1883,28 @@ public class HardwareEventRecorderGpu {
         final MediaFormat finalFormat = format;
         final String finalCodecMimeType = codecMimeType;
         
-        // Create encoder with timeout
+        // Create encoder with timeout.
+        // 0.1.43.14 (E2E_014313 B1): createEncoderByType can hang in NATIVE code
+        // (emulator: endless "AString ctor got NULL" loop, ~1 CPU core, 3.4 GB
+        // PSS in 12 min, then the kernel OOM killer). interrupt() never reaches
+        // native code, so the old "interrupt + throw" left that thread running
+        // forever. EncoderHaenger now registers the abandoned thread, releases a
+        // codec that still arrives late, blocks further encoder builds, and has
+        // its supervisor request the trip-safe process restart if the thread is
+        // still alive after the grace period.
         logger.info("Creating MediaCodec encoder...");
-        final MediaCodec[] encoderResult = {null};
-        final Exception[] createError = {null};
-        Thread createThread = new Thread(() -> {
-            try {
-                encoderResult[0] = MediaCodec.createEncoderByType(finalCodecMimeType);
-            } catch (Exception e) {
-                createError[0] = e;
-            }
-        }, "EncoderCreate");
-        createThread.start();
+        final MediaCodec created;
         try {
-            createThread.join(10000);
-        } catch (InterruptedException e) {
-            logger.warn("Encoder create interrupted");
-        }
-        if (createThread.isAlive()) {
+            created = EncoderHaenger.zeitbegrenzt("EncoderCreate", 10000L,
+                    () -> MediaCodec.createEncoderByType(finalCodecMimeType),
+                    late -> { try { late.release(); } catch (Throwable ignored) {} });
+        } catch (EncoderHaenger.EncoderHaengerException stuck) {
             logger.error("MediaCodec.createEncoderByType TIMEOUT - hardware encoder stuck");
-            createThread.interrupt();
-            throw new RuntimeException("Encoder create timeout - try restarting mediaserver");
+            throw new EncoderHaenger.EncoderHaengerException(stuck.phase,
+                    "Encoder create timeout - try restarting mediaserver");
         }
-        if (createError[0] != null) {
-            throw createError[0];
-        }
-        encoder = encoderResult[0];
+        EncoderHaenger.erfolg();
+        encoder = created;
         // Confirm the negotiated codec name on this device, not just our intent.
         // If the device-side codec selection silently downgraded HEVC→AVC (rare,
         // but possible if the platform encoder list rejects HEVC for our params),
@@ -1934,9 +1940,11 @@ public class HardwareEventRecorderGpu {
             if (configThread.isAlive()) {
                 logger.error("encoder.configure TIMEOUT - hardware encoder stuck");
                 configThread.interrupt();
+                EncoderHaenger.melden(configThread, "EncoderConfig");
                 try { encoder.release(); } catch (Exception e) {}
                 encoder = null;
-                throw new RuntimeException("Encoder configure timeout");
+                throw new EncoderHaenger.EncoderHaengerException("EncoderConfig",
+                        "Encoder configure timeout");
             }
             if (configError[0] != null) {
                 throw configError[0];
@@ -1965,9 +1973,11 @@ public class HardwareEventRecorderGpu {
             if (surfaceThread.isAlive()) {
                 logger.error("createInputSurface TIMEOUT - hardware encoder stuck");
                 surfaceThread.interrupt();
+                EncoderHaenger.melden(surfaceThread, "EncoderSurface");
                 try { encoder.release(); } catch (Exception e) {}
                 encoder = null;
-                throw new RuntimeException("Surface create timeout");
+                throw new EncoderHaenger.EncoderHaengerException("EncoderSurface",
+                        "Surface create timeout");
             }
             if (surfaceError[0] != null) {
                 throw surfaceError[0];
@@ -2001,6 +2011,7 @@ public class HardwareEventRecorderGpu {
             if (startThread.isAlive()) {
                 logger.error("Encoder start TIMEOUT after 10s - hardware encoder may be stuck");
                 startThread.interrupt();
+                EncoderHaenger.melden(startThread, "EncoderStart");
                 // Try to release the encoder
                 try {
                     encoder.release();
@@ -2009,7 +2020,8 @@ public class HardwareEventRecorderGpu {
                 }
                 encoder = null;
                 inputSurface = null;
-                throw new RuntimeException("Encoder start timeout - hardware encoder busy or stuck");
+                throw new EncoderHaenger.EncoderHaengerException("EncoderStart",
+                        "Encoder start timeout - hardware encoder busy or stuck");
             }
             if (startError[0] != null) {
                 throw startError[0];

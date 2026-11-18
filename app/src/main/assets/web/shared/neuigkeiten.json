@@ -1346,6 +1346,25 @@
       "nl": [
         "Na een update komt de vraag of de bewaker aan moet alleen nog als de auto stilstaat – nooit tijdens het rijden."
       ]
+    },
+    {
+      "version": "0.1.43.14",
+      "versionCode": 98,
+      "de": [
+        "Hängt der Kamera-Encoder, räumt Panoptes jetzt selbst auf und startet den Kamera-Dienst neu, statt immer mehr Speicher zu belegen."
+      ],
+      "en": [
+        "If the camera encoder gets stuck, Panoptes now cleans up by itself and restarts the camera service instead of using more and more memory."
+      ],
+      "fr": [
+        "Si l’encodeur de la caméra se bloque, Panoptes fait maintenant le ménage lui-même et redémarre le service caméra, au lieu d’occuper toujours plus de mémoire."
+      ],
+      "it": [
+        "Se l’encoder della telecamera si blocca, Panoptes ora fa pulizia da solo e riavvia il servizio telecamera, invece di occupare sempre più memoria."
+      ],
+      "nl": [
+        "Loopt de camera-encoder vast, dan ruimt Panoptes nu zelf op en start de cameradienst opnieuw, in plaats van steeds meer geheugen te gebruiken."
+      ]
     }
   ]
 }

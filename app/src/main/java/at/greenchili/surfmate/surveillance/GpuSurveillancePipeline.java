@@ -2648,6 +2648,17 @@ public class GpuSurveillancePipeline {
                     + "wedged (terminal); process restart required");
                 return;
             }
+            // 0.1.43.14 (E2E_014313 B1): a hardware-encoder call that hung in
+            // native code cannot be stopped in-process. While that thread lives
+            // (supervisor restarts the daemon) or the persisted backoff runs,
+            // a cold start would only stack another stuck encoder thread on it.
+            if (!initialized) {
+                String haengerSperre = EncoderHaenger.sperrgrund();
+                if (haengerSperre != null) {
+                    logger.warn("Refusing start() — " + haengerSperre);
+                    return;
+                }
+            }
             starting = true;  // Block concurrent starts; running stays false
                               // until camera open is verified.
             // FIX (audit R5): bump generation on start so a retry scheduled

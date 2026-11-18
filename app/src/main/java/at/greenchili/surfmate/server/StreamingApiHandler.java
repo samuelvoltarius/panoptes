@@ -392,6 +392,25 @@ public class StreamingApiHandler {
         t.start();
     }
 
+    /**
+     * Terminal Live answer while a hung hardware encoder blocks cold starts
+     * (0.1.43.14). Returns true if the response was sent.
+     */
+    private static boolean sendEncoderBlockedIfAny(OutputStream out, int viewMode)
+            throws Exception {
+        String grund = at.greenchili.surfmate.surveillance.EncoderHaenger.sperrgrund();
+        if (grund == null) return false;
+        CameraDaemon.log("Live view refused: " + grund);
+        JSONObject blocked = new JSONObject();
+        blocked.put("success", false);
+        blocked.put("viewMode", viewMode);
+        blocked.put("starting", false);
+        blocked.put("errorCode", "encoder_blocked");
+        blocked.put("error", grund);
+        HttpResponse.sendJson(out, blocked.toString());
+        return true;
+    }
+
     private static boolean ensurePanoStartedNonBlocking(GpuSurveillancePipeline pano) {
         if (pano == null) return false;
         if (pano.isRunning()) return true;
@@ -587,6 +606,17 @@ public class StreamingApiHandler {
             return;
         }
         if (!pipeline.isRunning()) {
+            // 0.1.43.14 (E2E_014313 B1): this watchdog only owns a RUNNING
+            // pipeline. A failed start() already rolled the pipeline back, but
+            // an encoder thread hung in native code is outside the pipeline and
+            // kept growing after "disarmed". Hand it to the encoder supervisor
+            // explicitly instead of disarming blind.
+            if (at.greenchili.surfmate.surveillance.EncoderHaenger.haengtNoch()) {
+                at.greenchili.surfmate.surveillance.EncoderHaenger.aufsichtSicherstellen();
+                CameraDaemon.log("Live View orphan watchdog: pipeline did not start,"
+                        + " encoder thread still stuck - handed to encoder supervisor");
+                return;
+            }
             CameraDaemon.log("Live View orphan watchdog: pipeline did not start"
                     + " within the bounded wait - disarmed");
             return;
@@ -2283,6 +2313,11 @@ public class StreamingApiHandler {
             return;
         }
 
+        // 0.1.43.14: a hung hardware encoder blocks cold starts (see
+        // EncoderHaenger). Answer terminally (no starting flag) so the Live
+        // page stops polling and shows the reason instead of spinning.
+        if (!pipeline.isRunning() && sendEncoderBlockedIfAny(out, viewMode)) return;
+
         // Auto-start pipeline if not running. Cold-start is async — the
         // 4-9s warmup runs on a dedup'd worker thread and we report
         // starting=true so the JS poll loop just waits.
@@ -2457,6 +2492,7 @@ public class StreamingApiHandler {
     private static void handleOemDashcamView(
             OutputStream out, ViewRequest request) throws Exception {
         GpuSurveillancePipeline pano = CameraDaemon.getGpuPipeline();
+        if (pano != null && !pano.isRunning() && sendEncoderBlockedIfAny(out, 6)) return;
         // Async-warm pano if needed; return starting=true while it's coming up.
         if (!ensurePanoStartedNonBlocking(pano)) {
             armLiveViewOrphanWatchdog(pano);

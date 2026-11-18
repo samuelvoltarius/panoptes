@@ -3565,6 +3565,7 @@
     "hotspot_oem_dashcam": "DVR",
     "oem_starting": "Avvio della dashcam dell'auto…",
     "pano_starting": "La telecamera si sta avviando…",
+    "encoder_blocked": "L’encoder della telecamera è bloccato. Il servizio telecamera si riavvia, riprova tra poco.",
     "stream_starting": "L'immagine live si sta avviando…",
     "oem_disabled": "La dashcam dell'auto è disattivata in questa auto",
     "oem_unsupported": "Questa auto non ha una dashcam utilizzabile",
