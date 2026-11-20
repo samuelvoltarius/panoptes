@@ -4670,6 +4670,7 @@ public class GpuSurveillancePipeline {
      */
     public void onAccOn() {
         logger.info("ACC ON detected - stopping surveillance and finalizing recordings");
+        at.greenchili.surfmate.camera.KameraAnlauf.zuendung();   // 0.1.43.18 (F4b): Anlaufzeit ab Zündung
 
         // 0.1.25 Nachlauf bei ACC an: ein laufendes Wächter-Ereignis schreibt seinen Nachlauf zu Ende (höchstens
         // 10 s ab ACC an), erst dann wird gestoppt und abgeschaltet. Neue Ereignisse entstehen in der Zeit keine

@@ -893,6 +893,13 @@ public class PanoramicCameraGpu {
     static final long OHNE_VERBRAUCHER_GUELTIG_MS = 45_000L;
     private volatile long ohneVerbraucherSeitMs = 0L;
     private volatile boolean leerlaufStallGemeldet = false;
+    // 0.1.43.18 (F1): Bedarf und Neustart-Bremse für den Stall-Wächter auf dem Legacy-Pfad. Ohne frische Meldung
+    // (älter als OHNE_VERBRAUCHER_GUELTIG_MS) und bei aktivem Wächter bleibt es beim bisherigen Verhalten (fail-closed).
+    private volatile long legacyBedarfSeitMs = 0L;   // elapsedRealtime der letzten Meldung, 0 = nie
+    private volatile boolean legacyFrameDemanded = false;
+    private final StallNeustartBremse stallBremse = new StallNeustartBremse();
+    /** Zuletzt gemeldetes Bremsen-Urteil (KEIN_BEDARF/PAUSE einmal je Episode loggen, NEUSTART wie bisher). */
+    private volatile StallNeustartBremse.Urteil stallBremseGemeldet = null;
     private volatile String dilink4FrameDemandReason = "none";
     private volatile long dilink4LastSoftRecoveryAttemptMs = 0L;
     private volatile int dilink4SoftRecoveryCycles = 0;
@@ -3156,6 +3163,66 @@ public class PanoramicCameraGpu {
         return seitMs > 0L && jetztMs - seitMs < OHNE_VERBRAUCHER_GUELTIG_MS;
     }
 
+    /** 0.1.43.18 (F1): Bedarf frischer Bilder auf dem Legacy-Pfad (aus RecordingModeManager, eine Quelle). */
+    void setLegacyFrameDemand(boolean demanded) {
+        long jetzt = android.os.SystemClock.elapsedRealtime();
+        boolean rising = demanded
+            && (!legacyFrameDemanded || !legacyBedarfGueltig(legacyBedarfSeitMs, jetzt));
+        legacyFrameDemanded = demanded;
+        legacyBedarfSeitMs = jetzt;
+        if (rising) stallBremse.bedarfGestiegen();
+    }
+
+    /** 0.1.43.18 (F1), rein: Bedarfsmeldung frisch? Der RecordingModeManager-Takt erneuert sie alle 30 s. */
+    static boolean legacyBedarfGueltig(long seitMs, long jetztMs) {
+        return seitMs > 0L && jetztMs >= seitMs && jetztMs - seitMs < OHNE_VERBRAUCHER_GUELTIG_MS;
+    }
+
+    /**
+     * 0.1.43.18 (F1), rein: Braucht auf dem Legacy-Pfad jemand frische Bilder? Ohne gemeldeten Bedarf (bekannt=false)
+     * gilt wie bisher „ja“, damit Wächter und Aufnahme nie still ohne Reparatur bleiben.
+     */
+    static boolean legacyBedarf(boolean bekannt, boolean verlangt, boolean totWinkelSichtbar,
+                                boolean aufnahmeSchreibt, boolean ereignisSchreibt, boolean stream,
+                                boolean waechterAktiv) {
+        if (!bekannt || waechterAktiv) return true;
+        return isDiLink4ConsumerStarved(verlangt, totWinkelSichtbar, aufnahmeSchreibt, ereignisSchreibt, stream);
+    }
+
+    /**
+     * 0.1.43.18 (F1): Ausführung des Bremsen-Urteils im Stall-Wächter (nur Legacy, keine BYD-App aktiv).
+     * NEUSTART: wie bisher neu öffnen (läuft schon ein Neustart, nicht doppelt zählen). KEIN_BEDARF/PAUSE: Kamera offen
+     * lassen, einmal je Episode melden.
+     */
+    private void legacyStallNeustartOderBremse(StallNeustartBremse.Urteil urteil, long uhr, boolean mitLog) {
+        if (urteil == StallNeustartBremse.Urteil.NEUSTART) {
+            stallBremseGemeldet = StallNeustartBremse.Urteil.NEUSTART;
+            if (restartInProgress.get()) return;
+            if (mitLog) logger.info("Frame stall is HAL issue — restarting camera");
+            stallBremse.neustartGemacht(uhr);
+            if (glHandler != null) {
+                glHandler.post(() -> restartCameraAfterError());
+            }
+            return;
+        }
+        if (stallBremseGemeldet == urteil) return;
+        stallBremseGemeldet = urteil;
+        if (urteil == StallNeustartBremse.Urteil.KEIN_BEDARF) {
+            logger.info("Frame stall ohne Bedarf (Toter Winkel verdeckt, keine Aufnahme, kein Stream; targetFps="
+                + targetFps + ") — kein Neustart");
+        } else {
+            logger.warn("Stall-Neustarts pausiert nach " + StallNeustartBremse.MAX_IN_FOLGE
+                + " in Folge — nächster Versuch in " + Math.max(0L, stallBremse.pauseBis() - uhr)
+                + "ms oder sofort bei neuem Bedarf");
+        }
+    }
+
+    /** 0.1.43.18 (F1), rein: Schwelle des Stall-Wächters je Pfad. Legacy ohne BYD-App: nach Ziel-Bildrate. */
+    static long stallSchwelleMs(boolean legacyPfad, boolean nativeActive, int zielFps) {
+        if (nativeActive) return FRAME_STALL_CONTENTION_THRESHOLD_MS;
+        return legacyPfad ? StallNeustartBremse.schwelleMs(zielFps) : FRAME_STALL_THRESHOLD_MS;
+    }
+
     /**
      * Publish whether a real camera consumer currently needs fresh DI4 frames.
      * Repeated calls are cheap: recovery is single-flight, stale-gated and
@@ -3163,7 +3230,10 @@ public class PanoramicCameraGpu {
      * is also visible to the watchdog so a producer that later stalls is repaired.
      */
     public void setDiLink4FrameDemand(boolean demanded, String reason) {
-        if (!USE_DILINK4_AVM_PATH) return;
+        if (!USE_DILINK4_AVM_PATH) {
+            if (!USE_DILINK5_QCARCAM_PATH) setLegacyFrameDemand(demanded);
+            return;
+        }
         String safeReason = (reason == null || reason.trim().isEmpty())
             ? "unspecified" : reason;
         boolean rising = demanded && !dilink4FrameDemanded;
@@ -5100,6 +5170,7 @@ public class PanoramicCameraGpu {
             mStart.setAccessible(true);
             mStart.invoke(cameraObj);
             logger.info("Camera started (id=" + cameraId + ", targetFps=" + targetFps + ")");
+            KameraAnlauf.kameraGeoeffnet();   // 0.1.43.18 (F4b): Anlaufzeit ab (Neu-)Öffnen
         }
     }
     
@@ -7329,9 +7400,9 @@ public class PanoramicCameraGpu {
                         // CPU/IO stalls shouldn't trigger a yield that interrupts recording
                         boolean nativeActive = cameraCoordinator != null && 
                             cameraCoordinator.isNativeAppActive();
-                        long stallThreshold = nativeActive 
-                            ? FRAME_STALL_CONTENTION_THRESHOLD_MS 
-                            : FRAME_STALL_THRESHOLD_MS;
+                        // 0.1.43.18 (F1): Legacy-Schwelle nach Ziel-Bildrate (1 fps → 6 s statt 4 s).
+                        final boolean legacyPfad = !USE_DILINK4_AVM_PATH && !USE_DILINK5_QCARCAM_PATH;
+                        long stallThreshold = stallSchwelleMs(legacyPfad, nativeActive, targetFps);
                         
                         // Post-(re)open warmup grace. The BYD AVM HAL takes ~5-8s
                         // to deliver the first frame after any camera open (see GL
@@ -7418,7 +7489,27 @@ public class PanoramicCameraGpu {
                             // 0.1.38.11 (K1): im Leerlauf ohne Verbraucher nach der ersten Meldung still (keine Log-Flut)
                             boolean leerlaufStill = leerlaufStallGemeldet
                                 && leerlaufGueltig(ohneVerbraucherSeitMs, android.os.SystemClock.elapsedRealtime());
-                            if ((firstOfEpisode || !usesRealArrivalStallClock || relogDue) && !leerlaufStill) {
+                            // 0.1.43.18 (F1): Legacy ohne BYD-App – neu öffnen nur bei Bedarf, mit Grenze und Pause.
+                            final long bremseUhr = android.os.SystemClock.elapsedRealtime();
+                            StallNeustartBremse.Urteil bremseUrteil = StallNeustartBremse.Urteil.NEUSTART;
+                            if (legacyPfad && !nativeActive) {
+                                GpuMosaicRecorder recB = recorder;
+                                HardwareEventRecorderGpu encB = encoder;
+                                SurveillanceEngineGpu wB = sentry;
+                                boolean bedarf = legacyBedarf(
+                                    legacyBedarfGueltig(legacyBedarfSeitMs, bremseUhr),
+                                    legacyFrameDemanded,
+                                    bsLayerVisible,
+                                    recB != null && recB.isRecording(),
+                                    encB != null && encB.isWritingToFile(),
+                                    streamEncoder != null,
+                                    wB != null && wB.isActive());
+                                bremseUrteil = stallBremse.pruefen(bremseUhr, bedarf);
+                            }
+                            boolean bremseStill = bremseUrteil != StallNeustartBremse.Urteil.NEUSTART
+                                && stallBremseGemeldet == bremseUrteil;
+                            if ((firstOfEpisode || !usesRealArrivalStallClock || relogDue)
+                                    && !leerlaufStill && !bremseStill) {
                                 logger.warn("FRAME STALL: No frames for " + timeSinceFrame + "ms" +
                                     (nativeActive ? " (native app active)" : "")
                                     + (USE_DILINK4_AVM_PATH
@@ -7484,21 +7575,22 @@ public class PanoramicCameraGpu {
                                     }
                                 } else {
                                     // No native app — this is a HAL issue, restart camera
+                                    // (0.1.43.18 F1: nur bei Bedarf, höchstens 3 in Folge, dann Pause)
                                     consecutiveContentionStalls = 0;
-                                    logger.info("Frame stall is HAL issue — restarting camera");
-                                    if (glHandler != null) {
-                                        glHandler.post(() -> restartCameraAfterError());
-                                    }
+                                    legacyStallNeustartOderBremse(bremseUrteil, bremseUhr, true);
                                 }
                             } else {
-                                // No coordinator — just restart
-                                if (glHandler != null) {
-                                    glHandler.post(() -> restartCameraAfterError());
-                                }
+                                // No coordinator — just restart (0.1.43.18 F1: gleiche Bremse)
+                                legacyStallNeustartOderBremse(bremseUrteil, bremseUhr, false);
                             }
                         } else if (nativeActive && timeSinceFrame < 500) {
                             // Frames are flowing despite native app — reset stall counter
                             consecutiveContentionStalls = 0;
+                        }
+                        // 0.1.43.18 (F1): Bilder laufen → Bremse beruhigt sich, nächste Episode wird wieder gemeldet
+                        if (legacyPfad && timeSinceFrame <= stallThreshold) {
+                            stallBremse.ruhig(android.os.SystemClock.elapsedRealtime());
+                            stallBremseGemeldet = null;
                         }
                     }
                     
@@ -9472,6 +9564,9 @@ public class PanoramicCameraGpu {
     public void setBsLayerVisible(boolean visible) {
         boolean rising = visible && !this.bsLayerVisible;
         this.bsLayerVisible = visible;
+        if (rising && !USE_DILINK4_AVM_PATH && !USE_DILINK5_QCARCAM_PATH) {
+            stallBremse.bedarfGestiegen();   // 0.1.43.18 (F1): sichtbarer Toter Winkel repariert sofort
+        }
         if (rising) {
             requestDiLink4ProducerRecovery("blind-spot/camera-view visible");
         }

@@ -2067,8 +2067,42 @@ open class MainActivity : AppCompatActivity() {
      * fetch failure rather than opening an empty dialog.
      */
     private fun onReconfigureCameraClicked() {
+        // 0.1.43.18 (F4a): ein Abruf zur Zeit (Doppeltipp startet keine zweite Warteschleife)
+        if (!kameraZuordnungLaeuft.compareAndSet(false, true)) return
+        val mitCoach = pendingCameraOnboardingCoach != null
         Thread {
-            val state = fetchCameraMappingState()
+            // 0.1.43.18 (F4a): Anlaufzeit. Kern oder Kamera starten nach Kern-Start/Zündung bis ~25 s; erst wenn sie
+            // dann noch nicht antworten, kommt der Hinweis „nicht erreichbar“. Dazwischen einmal „starten noch …“.
+            // 0.1.43.18b (E2E A2): ein Abruf, der bis zum Fensterende beginnt, läuft zu Ende; antwortet der Kern schon
+            // (verbunden, aber noch am Initialisieren), verlängert sich das Fenster einmal; harte Grenze 35 s; nie parallel.
+            val start = android.os.SystemClock.elapsedRealtime()
+            val fenster = KameraZuordnungAnlauf.Fenster(start, mitCoach)
+            var beginn = start
+            var state = fetchCameraMappingState(fenster.zeitgrenzen(beginn))
+            var ausgang = kameraAbrufAusgang
+            var versuche = 1
+            var wartenGezeigt = false
+            while (state == null && !isFinishing && !isDestroyed) {
+                val warte = fenster.nachAbruf(ausgang, beginn, android.os.SystemClock.elapsedRealtime())
+                if (warte == KameraZuordnungAnlauf.SCHLUSS) break
+                if (!wartenGezeigt) {
+                    wartenGezeigt = true
+                    runOnUiThread {
+                        if (!isFinishing && !isDestroyed) {
+                            Toast.makeText(this, getString(R.string.camera_mapping_starting), Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+                if (warte > 0) {
+                    try { Thread.sleep(warte) } catch (_: InterruptedException) { break }
+                }
+                beginn = android.os.SystemClock.elapsedRealtime()
+                state = fetchCameraMappingState(fenster.zeitgrenzen(beginn))
+                ausgang = kameraAbrufAusgang
+                versuche++
+            }
+            val gewartetMs = android.os.SystemClock.elapsedRealtime() - start
+            kameraZuordnungLaeuft.set(false)
             runOnUiThread {
                 // Bail if the activity tore down during the 4-7 s fetch
                 // window — without this guard the captured `this@MainActivity`
@@ -2083,6 +2117,10 @@ open class MainActivity : AppCompatActivity() {
                 if (state == null) {
                     // 0.1.38.3: nichts wurde gespeichert, die Kamera-Einstellungen waren nicht erreichbar → Klartext mit
                     // Lösung statt „Speichern hat nicht geklappt“ (Community, Seal U DM-i)
+                    // 0.1.43.18 (F5): Meldung ins Start-Protokoll, damit „wann und warum“ später belegbar ist
+                    at.greenchili.surfmate.logging.LauncherEreignisse.merken(
+                        "KAMERA_MELDUNG",
+                        KameraZuordnungAnlauf.diagnose(gewartetMs, versuche, ausgang, fenster.verlaengert))
                     Toast.makeText(
                         this,
                         getString(R.string.camera_mapping_unreachable),
@@ -2104,13 +2142,30 @@ open class MainActivity : AppCompatActivity() {
      * resolved camera summary into the response so the dialog can render
      * roles, candidates, and current mappings without a second round-trip.
      */
-    private fun fetchCameraMappingState(): CameraMappingState? {
+    private fun fetchCameraMappingState(
+        zeitgrenzen: Pair<Int, Int> = Pair(
+            KameraZuordnungAnlauf.VERBINDEN_MS.toInt(), KameraZuordnungAnlauf.LESEN_MS.toInt())
+    ): CameraMappingState? {
         var conn: java.net.HttpURLConnection? = null
+        // 0.1.43.18b: Ausgang merken (Kern nicht da / antwortet schon / echter Fehler) für das Anlauf-Fenster
+        var verbunden = false
+        kameraAbrufAusgang = KameraZuordnungAnlauf.Abruf.NICHT_DA
         return try {
             conn = at.greenchili.surfmate.util.DaemonHttpClient.open(
-                "/api/surveillance/config", "GET", 3000, 4000)
+                "/api/surveillance/config", "GET", zeitgrenzen.first, zeitgrenzen.second)
+            conn.connect()
+            verbunden = true
+            val code = conn.responseCode
+            if (code !in 200..299) {
+                if (code == 401) at.greenchili.surfmate.util.DaemonHttpClient.invalidate()
+                kameraAbrufAusgang = KameraZuordnungAnlauf.ausgangFuerStatus(code)
+                return null
+            }
             val body = conn.inputStream.bufferedReader().use { it.readText() }
-            val config = org.json.JSONObject(body).optJSONObject("config") ?: return null
+            val config = org.json.JSONObject(body).optJSONObject("config") ?: run {
+                kameraAbrufAusgang = KameraZuordnungAnlauf.Abruf.KERN_ANTWORTET
+                return null
+            }
 
             val panoCameraId = config.optInt("panoCameraId", config.optInt("cameraId", -1))
             val panoWidth = config.optInt("panoWidth", -1)
@@ -2187,6 +2242,7 @@ open class MainActivity : AppCompatActivity() {
             val decoupledEncoderLaneEnabled = cameraSection.optBoolean(
                 "decoupledEncoderLane", false)
 
+            kameraAbrufAusgang = KameraZuordnungAnlauf.Abruf.OK
             CameraMappingState(
                 summary = summary,
                 roles = roles,
@@ -2213,6 +2269,8 @@ open class MainActivity : AppCompatActivity() {
                 decoupledEncoderLaneEnabled = decoupledEncoderLaneEnabled
             )
         } catch (e: Exception) {
+            kameraAbrufAusgang = if (verbunden) KameraZuordnungAnlauf.Abruf.KERN_ANTWORTET
+                else KameraZuordnungAnlauf.Abruf.NICHT_DA
             logsViewModel.error("Camera", "Failed to load camera mapping state: ${e.message}")
             null
         } finally {
@@ -4440,6 +4498,10 @@ open class MainActivity : AppCompatActivity() {
 
     /** Set by CameraWizardCoach before it opens the camera dialog; consumed on show(). */
     private var pendingCameraOnboardingCoach: at.greenchili.surfmate.onboarding.CameraWizardCoach? = null
+    /** 0.1.43.18 (F4a): läuft gerade ein Abruf der Kamera-Zuordnung (mit Anlaufzeit)? */
+    private val kameraZuordnungLaeuft = java.util.concurrent.atomic.AtomicBoolean(false)
+    /** 0.1.43.18b: Ausgang des letzten `fetchCameraMappingState` (nur aus dem Abruf-Faden, nie parallel). */
+    @Volatile private var kameraAbrufAusgang = KameraZuordnungAnlauf.Abruf.NICHT_DA
 
     /** Open the real camera-mapping dialog for the onboarding wizard to coach over. */
     fun openCameraMappingForOnboarding(coach: at.greenchili.surfmate.onboarding.CameraWizardCoach) {

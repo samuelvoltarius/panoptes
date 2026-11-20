@@ -565,6 +565,7 @@ public class CameraDaemon {
     private static java.nio.channels.FileLock fileLock;
 
     public static void main(String[] args) {
+        at.greenchili.surfmate.camera.KameraAnlauf.kernGestartet();   // 0.1.43.18 (F4b): Anlaufzeit ab Kern-Start
         initFileLogging();
         // 0.1.20: Context/Assets für Stellen, die DaemonBootstrap fragen (i18n, HA-mDNS, Fahrzeugeinstellungen, Cloud-Tabellen)
         DaemonBootstrap.setDaemonQuellen(CameraDaemon::getAppContext, CameraDaemon::getApkAssets);

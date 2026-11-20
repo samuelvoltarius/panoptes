@@ -958,7 +958,7 @@ public class StreamingApiHandler {
             if (!ensurePanoStartedNonBlocking(pipeline)) {
                 startCamViewArmRetry(mode, target, autoHide, showSession);
                 JSONObject pending = new JSONObject();
-                pending.put("success", false); pending.put("starting", true);
+                pending.put("success", false); pending.put("starting", true); at.greenchili.surfmate.camera.KameraAnlauf.anhaengen(pending);
                 pending.put("error", "Pipeline starting — retrying");
                 pending.put("errorCode", "pano_starting");
                 pending.put("retrying", true);
@@ -978,7 +978,7 @@ public class StreamingApiHandler {
                 // background retry so a single fire-and-forget call still lands.
                 startCamViewArmRetry(mode, target, autoHide, showSession);
                 JSONObject pending = new JSONObject();
-                pending.put("success", false); pending.put("starting", true);
+                pending.put("success", false); pending.put("starting", true); at.greenchili.surfmate.camera.KameraAnlauf.anhaengen(pending);
                 pending.put("error", "Camera-view lane arming — retrying");
                 pending.put("errorCode", "camview_starting");
                 // Tell callers a retry is already running so they don't need to poll.
@@ -1580,7 +1580,7 @@ public class StreamingApiHandler {
         if (!ensurePanoStartedNonBlocking(pipeline)) {
             JSONObject pending = new JSONObject();
             pending.put("success", false);
-            pending.put("starting", true);
+            pending.put("starting", true); at.greenchili.surfmate.camera.KameraAnlauf.anhaengen(pending);
             pending.put("error", "Pipeline starting — try again in a few seconds");
             pending.put("errorCode", "pano_starting");
             HttpResponse.sendJson(out, pending.toString());
@@ -1605,7 +1605,7 @@ public class StreamingApiHandler {
                     + " (concurrent enable in flight) — reporting starting so caller re-polls");
                 JSONObject pending = new JSONObject();
                 pending.put("success", false);
-                pending.put("starting", true);
+                pending.put("starting", true); at.greenchili.surfmate.camera.KameraAnlauf.anhaengen(pending);
                 pending.put("error", "Blind-spot lane arming — try again in a few seconds");
                 pending.put("errorCode", "bs_starting");
                 HttpResponse.sendJson(out, pending.toString());
@@ -1942,7 +1942,7 @@ public class StreamingApiHandler {
         if (!pipeline.isBlindSpotEnabled()) {
             JSONObject pending = new JSONObject();
             pending.put("success", false);
-            pending.put("starting", true);
+            pending.put("starting", true); at.greenchili.surfmate.camera.KameraAnlauf.anhaengen(pending);
             pending.put("view", mode);
             pending.put("error", "Blind-spot lane not yet armed — try again in a few seconds");
             pending.put("errorCode", "bs_starting");
@@ -2063,7 +2063,7 @@ public class StreamingApiHandler {
             armLiveViewOrphanWatchdog(pipeline);
             JSONObject pending = new JSONObject();
             pending.put("success", false);
-            pending.put("starting", true);
+            pending.put("starting", true); at.greenchili.surfmate.camera.KameraAnlauf.anhaengen(pending);
             pending.put("error", "Pipeline starting — try again in a few seconds");
             pending.put("errorCode", "pano_starting");
             pending.put("dilink5", diLink5);
@@ -2326,7 +2326,7 @@ public class StreamingApiHandler {
             JSONObject pending = new JSONObject();
             pending.put("success", false);
             pending.put("viewMode", viewMode);
-            pending.put("starting", true);
+            pending.put("starting", true); at.greenchili.surfmate.camera.KameraAnlauf.anhaengen(pending);
             pending.put("error", "Pipeline starting — try again in a few seconds");
             pending.put("errorCode", "pano_starting");
             HttpResponse.sendJson(out, pending.toString());
@@ -2499,7 +2499,7 @@ public class StreamingApiHandler {
             JSONObject pending = new JSONObject();
             pending.put("success", false);
             pending.put("viewMode", 6);
-            pending.put("starting", true);
+            pending.put("starting", true); at.greenchili.surfmate.camera.KameraAnlauf.anhaengen(pending);
             pending.put("errorCode", "pano_starting");
             pending.put("error", "Pipeline starting — try again in a few seconds");
             HttpResponse.sendJson(out, pending.toString());
@@ -2527,7 +2527,7 @@ public class StreamingApiHandler {
             JSONObject pending = new JSONObject();
             pending.put("success", false);
             pending.put("viewMode", 6);
-            pending.put("starting", true);
+            pending.put("starting", true); at.greenchili.surfmate.camera.KameraAnlauf.anhaengen(pending);
             pending.put("errorCode", "stream_starting");
             pending.put("error", "Streaming starting — try again in a few seconds");
             HttpResponse.sendJson(out, pending.toString());
@@ -2594,7 +2594,7 @@ public class StreamingApiHandler {
             JSONObject pending = new JSONObject();
             pending.put("success", false);
             pending.put("viewMode", 6);
-            pending.put("starting", true);
+            pending.put("starting", true); at.greenchili.surfmate.camera.KameraAnlauf.anhaengen(pending);
             pending.put("errorCode", "oem_starting");
             pending.put("error", "OEM Dashcam starting — try again in a few seconds");
             HttpResponse.sendJson(out, pending.toString());
@@ -2630,7 +2630,7 @@ public class StreamingApiHandler {
             } catch (Throwable ignored) {}
             response.put("success", false);
             response.put("viewMode", 6);
-            response.put("starting", true);
+            response.put("starting", true); at.greenchili.surfmate.camera.KameraAnlauf.anhaengen(response);
             response.put("errorCode", "oem_starting");
             response.put("error", routed
                 ? "OEM Dashcam waiting for its first frame — try again in a few seconds"
@@ -2657,7 +2657,7 @@ public class StreamingApiHandler {
         JSONObject pending = new JSONObject();
         pending.put("success", false);
         pending.put("viewMode", 6);
-        pending.put("starting", true);
+        pending.put("starting", true); at.greenchili.surfmate.camera.KameraAnlauf.anhaengen(pending);
         pending.put("errorCode", errorCode);
         pending.put("error", error);
         HttpResponse.sendJson(out, pending.toString());

@@ -1423,6 +1423,35 @@
         "Na het inloggen in de browser kom je niet meer op een lege pagina, maar op de gewenste pagina of de startpagina.",
         "Je eigen dashboardontwerp: de kaart in het kader is lichter. Route, autopijl en getallen erop blijven goed leesbaar."
       ]
+    },
+    {
+      "version": "0.1.43.18",
+      "versionCode": 102,
+      "de": [
+        "Kurz nach dem Start steht bei den Kameras statt einer Fehlermeldung kurz „Kameras starten noch …“, bis sie bereit sind.",
+        "Im Stand startet Panoptes die Kameras seltener unnötig neu.",
+        "Sieht es so aus, als liefe der Kameradienst doppelt, prüft Panoptes das erst noch einmal nach, bevor es ihn neu startet."
+      ],
+      "en": [
+        "Shortly after starting, the cameras briefly show “Cameras are still starting …” instead of an error message until they are ready.",
+        "While parked, Panoptes restarts the cameras unnecessarily less often.",
+        "If the camera service seems to be running twice, Panoptes checks again first before restarting it."
+      ],
+      "fr": [
+        "Peu après le démarrage, les caméras affichent brièvement « Les caméras démarrent encore … » au lieu d’un message d’erreur, jusqu’à ce qu’elles soient prêtes.",
+        "À l’arrêt, Panoptes redémarre moins souvent les caméras inutilement.",
+        "Si le service des caméras semble tourner en double, Panoptes vérifie d’abord encore une fois avant de le redémarrer."
+      ],
+      "it": [
+        "Poco dopo l’avvio, le telecamere mostrano brevemente «Le telecamere si stanno ancora avviando …» invece di un messaggio di errore, finché non sono pronte.",
+        "Da fermo, Panoptes riavvia le telecamere inutilmente meno spesso.",
+        "Se il servizio delle telecamere sembra in esecuzione due volte, Panoptes controlla prima ancora una volta prima di riavviarlo."
+      ],
+      "nl": [
+        "Kort na het starten staat er bij de camera’s even „De camera’s starten nog …” in plaats van een foutmelding, tot ze klaar zijn.",
+        "Bij stilstand herstart Panoptes de camera’s minder vaak onnodig.",
+        "Lijkt de cameradienst dubbel te draaien, dan controleert Panoptes dat eerst nog een keer voordat hij hem herstart."
+      ]
     }
   ]
 }

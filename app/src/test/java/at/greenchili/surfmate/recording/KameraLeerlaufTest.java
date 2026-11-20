@@ -128,11 +128,12 @@ public class KameraLeerlaufTest {
         assertTrue(schliessen > 0 && neustart > schliessen);
 
         String cam = lies("camera/PanoramicCameraGpu.java");
-        int wd = cam.indexOf("Frame stall is HAL issue — restarting camera");
+        // 0.1.43.18 (F1): der Neustart läuft jetzt über die Stall-Bremse (Meldung in legacyStallNeustartOderBremse)
+        int wd = cam.indexOf("legacyStallNeustartOderBremse(bremseUrteil, bremseUhr, true)");
         int leer = cam.lastIndexOf("leerlaufGueltig(ohneVerbraucherSeitMs", wd);
         assertTrue("Leerlauf-Zweig vor dem Neustart", leer > 0 && wd - leer < 1200);
         assertTrue(cam.contains("if (enabled) setOhneVerbraucher(false);"));
-        assertTrue(cam.contains("&& !leerlaufStill)"));
+        assertTrue(cam.contains("&& !leerlaufStill && !bremseStill)"));
         // DiLink 4/5 behalten ihre eigenen Wege
         int di4 = cam.indexOf("maybeRestartStalledDilink4Producer(now, episodeMs,");
         assertTrue(di4 > 0 && di4 < wd);

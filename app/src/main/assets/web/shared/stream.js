@@ -145,6 +145,29 @@ BYD.stream = {
                 toastShown = true;
             }
         }
+        // 0.1.43.18 (F4b): Anlaufzeit. Nach Kern-Start, Zündung oder Neu-Öffnen braucht die Kamera bis ~25 s.
+        // Solange der Kern „starting“ mit anlaufRestMs > 0 meldet, weiter fragen (alle ≤ 4 s, höchstens 30 s
+        // zusätzlich), statt nach den festen 10,5 s „Die Kamera startet nicht“ zu zeigen. Echte Fehler (kein
+        // „starting“) brechen wie bisher sofort ab.
+        const anlaufEnde = Date.now() + 30000;
+        while (data && data.success !== true && data.starting === true
+                && Number(data.anlaufRestMs) > 0 && Date.now() < anlaufEnde) {
+            if (cancelled()) return { cancelled: true };
+            const warte = Math.min(4000, Math.max(1000, Number(data.anlaufRestMs)));
+            await new Promise(r => setTimeout(r, warte));
+            if (cancelled()) return { cancelled: true };
+            let naechste;
+            try {
+                naechste = mode === 6
+                    ? await this._requestViewStatus(mode, selectionToken)
+                    : await this._requestViewRoute(mode, selectionToken);
+            } catch (e) { continue; }
+            if (naechste && naechste.cancelled) return naechste;
+            if (cancelled()) return { cancelled: true };
+            data = naechste;
+            if (data && data.success === true) break;
+            if (data && data.success === false && !data.starting) break;
+        }
         // Augment the returned data so the caller can distinguish
         // "polling exhausted while still in starting state" from
         // "backend rejected the view mode". Without this flag the

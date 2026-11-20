@@ -1850,6 +1850,8 @@
     </plurals>
     <!-- 0.1.38.3: Kamera-Einstellungen nicht erreichbar (statt „Speichern hat nicht geklappt“) -->
     <string name="camera_mapping_unreachable">Panoptes erreicht die Kameras gerade nicht. Kurz warten und noch einmal tippen. Klappt es dann nicht: Hilfe &amp; Info → Fehler melden.</string>
+    <!-- 0.1.43.18 (F4a): Kern/Kamera laufen noch an, Panoptes fragt bis 25 s erneut -->
+    <string name="camera_mapping_starting">Kameras starten noch …</string>
     <!-- 0.1.38.14 (P3): Telegram-Notiz bei eingefrorener Oberfläche (UiHaengerWaechter) -->
     <string name="ui_haenger_telegram">⚠️ Panoptes am Auto-Bildschirm reagiert seit %1$d s nicht. Schick /fehler, dann geht ein Fehlerbericht raus – auch wenn die Anzeige hängt.</string>
 </resources>

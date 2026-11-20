@@ -724,6 +724,24 @@ class DaemonLauncher(
         fun selbstheilungOk(befund: String?): Boolean =
             befund == "gruen" || befund == "skript_neu" || befund == "angehaengt" || befund == "gesperrt"
 
+        /** 0.1.43.18 (F3): Abstand bis zum zweiten Blick, wenn kurz mehrere Kamera-Daemons laufen (Übergang beim Neustart). */
+        const val MEHRERE_NACHPRUEF_MS = 10_000L
+
+        /** 0.1.43.18 (F3): Was nach einer Selbstprüfung zu tun ist. */
+        enum class SelbstheilSchritt { FERTIG, NOCHMAL_PRUEFEN, NEUSTART }
+
+        /**
+         * 0.1.43.18 (F3, Befund 19.11. 11:55): „mehrere“ ist oft nur der Übergang eines laufenden Neustarts (alter
+         * Prozess noch nicht weg). Erst nach [MEHRERE_NACHPRUEF_MS] noch einmal prüfen; nur wenn es dann weiter nicht
+         * stimmt, wie bisher ganz neu starten. Jeder andere rote Befund startet wie bisher sofort neu.
+         */
+        @JvmStatic
+        fun selbstheilSchritt(befund: String?, zweiterBlick: Boolean): SelbstheilSchritt = when {
+            selbstheilungOk(befund) -> SelbstheilSchritt.FERTIG
+            befund == "mehrere" && !zweiterBlick -> SelbstheilSchritt.NOCHMAL_PRUEFEN
+            else -> SelbstheilSchritt.NEUSTART
+        }
+
         @JvmStatic
         @JvmOverloads
         fun buildSelbstheilSkript(art: String, scriptLines: List<String>, nurPid: Int = 0): String {
@@ -1243,7 +1261,9 @@ class DaemonLauncher(
      * startet die Kamera einmal ganz neu: Das ist der Weg, den die Meldung an den Nutzer verspricht
      * („Panoptes einmal öffnen“), kurzer Ausfall der Kamera inklusive.
      */
-    private fun kameraWatchdogPruefen(outputDir: String, nativeLibDir: String, callback: LaunchCallback) {
+    private fun kameraWatchdogPruefen(
+        outputDir: String, nativeLibDir: String, callback: LaunchCallback, zweiterBlick: Boolean = false
+    ) {
         val zeilen = buildCamDaemonWatchdogScript(context.applicationInfo.sourceDir, nativeLibDir, outputDir, getProxyArgs())
         adbShellExecutor.executeScript(
             scriptBody = buildSelbstheilSkript(ART_KAMERA, zeilen),
@@ -1251,11 +1271,26 @@ class DaemonLauncher(
                 override fun onSuccess(output: String) = weiter(selbstheilBefund(output))
                 override fun onError(error: String) = weiter(selbstheilBefund(error) ?: "fehler")
                 private fun weiter(befund: String?) {
-                    if (befund != "gruen") LauncherEreignisse.merken("SELBSTHEILUNG", "art=$ART_KAMERA weg=app befund=$befund")
-                    if (selbstheilungOk(befund)) {
-                        callback.onLaunched()
-                        cameraLaunchStartedAt = 0L
-                        return
+                    if (befund != "gruen") {
+                        LauncherEreignisse.merken("SELBSTHEILUNG",
+                            "art=$ART_KAMERA weg=app befund=$befund" + if (zweiterBlick) " zweiter_blick=1" else "")
+                    }
+                    when (selbstheilSchritt(befund, zweiterBlick)) {
+                        SelbstheilSchritt.FERTIG -> {
+                            callback.onLaunched()
+                            cameraLaunchStartedAt = 0L
+                            return
+                        }
+                        SelbstheilSchritt.NOCHMAL_PRUEFEN -> {
+                            // 0.1.43.18 (F3): Übergang abwarten statt einen weiteren Neustart obendrauf
+                            logManager.info(TAG, "Mehrere Kamera-Daemons – in ${MEHRERE_NACHPRUEF_MS / 1000} s noch einmal prüfen")
+                            Thread({
+                                try { Thread.sleep(MEHRERE_NACHPRUEF_MS) } catch (_: InterruptedException) {}
+                                kameraWatchdogPruefen(outputDir, nativeLibDir, callback, zweiterBlick = true)
+                            }, "KameraNachpruefung").apply { isDaemon = true }.start()
+                            return
+                        }
+                        SelbstheilSchritt.NEUSTART -> Unit
                     }
                     logManager.warn(TAG, "CameraDaemon läuft, Watchdog nicht heilbar ($befund) — Neustart der Kamera")
                     launchCameraDaemonInternal(outputDir, nativeLibDir, object : LaunchCallback {

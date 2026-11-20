@@ -1,6 +1,6 @@
 # Codekarte Panoptes
 
-**Stand: Version 0.1.43.17, Commit f1dae80c**
+**Stand: Version 0.1.43.18, Commit 417facec**
 
 Wegweiser durch den Code. Zuerst hier suchen, dann gezielt die genannte Datei öffnen.
 Die Karte nennt Dateien und Klassen, keine Zeilennummern. Kurze Pfade gelten ab
@@ -67,7 +67,7 @@ Jedes Paket steht hier, auch Unterpakete. Pfade ab dem Wurzelpaket. Lose Dateien
 | `bridge/` | Fahrzeugdaten für App-Oberfläche (nicht die Handy-Brücke) |
 | `bruecke/` | Panoptes-Brücke zum Handy |
 | `byd/`, `byd/bodywork/`, `byd/cloud/`, `byd/cloud/crypto/`, `byd/dilink5/`, `byd/light/`, `byd/radar/`, `byd/routing/` | BYD-Zugriff: Daten lesen, Befehle, Cloud, DiLink 5. Cloud-Lese-Abfragen (Realtime-Anfrage/-Ergebnis) senden bei geteiltem Konto (Gast) `userType:"1"` im äußeren Umschlag, mitsigniert (`BydKontoArt`: Annahme aus der Fahrzeugliste, bei 1001 einmal mit, bei 8003 einmal ohne, Ergebnis je VIN gemerkt); Fernbefehle und CN-Region unverändert. Cloud-Klima nur lesend in `VehicleCloudSnapshot` (`windPosition` Lüfter 1–7, `windMode` Richtung 1–5, `cycleChoice` 1 Frischluft/2 Umluft, `acSwitch` 1 aus/2 an, `mainSettingTemp` 1–17; Platzhalter 0/−1/−129 = unbekannt; `klima` im Cloud-Status); Fernstart OPENAIR unverändert (kein `windLevel`, bis die Sende-Zuordnung am Surf gemessen ist). EMQ-Abo über `subscribe(MqttSubscription[], listener[])` (Paho 1.2.5: die Einzelvariante endet in StackOverflowError). `byd/cloud/crypto/`: Zugangsdaten über `CredentialCipher`; 0.1.38.6 legt neben dem Klartext (bleibt für den Rückfall auf 0.1.38.5) eine geprüfte Schattenkopie `enc_<feld>` an (`ZugangsMigration.schatten`, Abgleich beim Daemon-Start), 0.1.38.8 auch `auth.deviceSecret`, `hotspot.password`, Brücken-Datei (a, g); Klartext erst nach 0.1.38.8 löschen; Fernklima: `KlimaZustand` ist die eine Bewertung (frischer Cloud-`airRunState` > Befehl > unbekannt, `KlimaLaeuft`), `FernKlima` (rein) hält den erfolgreichen Cloud-Start als Sitzung „laut Befehl“ (Router `fernKlimaSitzung()`, `climate.fern` in `/api/vehicle/state`, Telegram `GET_FERNKLIMA`); `climate.acOn` fehlt bei Zündung aus, nie „Klima aus“ ohne Beleg; `StoppKnopf` (rein) entscheidet den roten Stopp-Knopf (`climate.stopp {zeigen,grund,weg}`, nur bei Beleg, Fern-Sitzung → Stopp über die Cloud), Web und Handy-App `heizen_stoppen` lesen ihn |
-| `camera/`, `camera/dilink5/` | Kamera-Zugriff, Panorama, Dashcam-Pipeline; Kamera-Eingang erkennen `AutoArtErkennung` (K2: libais/Android/Modell, nur Vorschlag, `GET /api/surveillance/autoart`) |
+| `camera/`, `camera/dilink5/` | Kamera-Zugriff, Panorama, Dashcam-Pipeline; Kamera-Eingang erkennen `AutoArtErkennung` (K2: libais/Android/Modell, nur Vorschlag, `GET /api/surveillance/autoart`); 0.1.43.18 Stall-Wächter Legacy: `StallNeustartBremse` (nur bei Bedarf, Schwelle nach Ziel-fps, 3 in Folge dann Pause), Anlaufzeit 25 s `KameraAnlauf` (`anlaufRestMs` an Live-„starting“, App-Seite `ui/KameraZuordnungAnlauf.kt`) |
 | `camping/` | Camping-Modus |
 | `charging/` | Ladesitzungen, Tarife |
 | `client/` | IPC-Klienten zum Daemon |
