@@ -348,11 +348,29 @@
             return (v && v !== key) ? v : fallback;
         }
 
-        // Parse redirect URL from query string
+        // 0.1.43.17: Ziel nach dem Login nur relativ und auf diesem Gerät (keine offene Weiterleitung, kein javascript:)
+        // BEGIN sicheresLoginZiel
+        function sicheresLoginZiel(roh, origin) {
+            try {
+                if (typeof roh !== 'string' || roh.length === 0 || roh.length > 2048) return '/';
+                if (roh.charAt(0) !== '/' || roh.charAt(1) === '/' || roh.indexOf('\\') >= 0) return '/';
+                for (let i = 0; i < roh.length; i++) {
+                    const c = roh.charCodeAt(i);
+                    if (c < 0x20 || c === 0x7f) return '/';   // Tab/Zeilenumbruch: Browser würden sie entfernen
+                }
+                const u = new URL(roh, origin);
+                if (u.origin !== origin || (u.protocol !== 'http:' && u.protocol !== 'https:')) return '/';
+                if (u.pathname === '/login.html') return '/';
+                return u.pathname + u.search + u.hash;
+            } catch (e) {
+                return '/';
+            }
+        }
+        // END sicheresLoginZiel
         let redirectUrl = '/';
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('redirect')) {
-            redirectUrl = decodeURIComponent(urlParams.get('redirect'));
+            redirectUrl = sicheresLoginZiel(urlParams.get('redirect'), window.location.origin);
         }
         
         // Store device ID for token construction

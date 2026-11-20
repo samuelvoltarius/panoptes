@@ -656,6 +656,9 @@
         MAX_ELEMENTE: 40,
         MAX_BILD: 24000,
         SCHLEIER: 0.7,
+        // 0.1.43.16: eigener, schwächerer Schleier nur über dem Kartenbild (Straßen gut lesbar). Route, Auto, Namensnennung
+        // und alle Infoelemente auf der Karte liegen dafür auf einer eigenen Unterlage in der Farbe der Fläche dahinter.
+        SCHLEIER_KARTE: 0.35,
         TEMPO_MIN_HOEHE: 90,
         TEMPO_MIN_BREITE: 150,
         TYPEN: ['rund', 'zahl', 'balken', 'gang', 'navi', 'uhr', 'karte', 'app', 'ring', 'linie', 'flaeche', 'verlauf'],
@@ -1018,10 +1021,27 @@
         if (!mitBild) return [grund];
         return [mischeHex('#000000', grund, E.SCHLEIER), mischeHex('#FFFFFF', grund, E.SCHLEIER)];
     }
-    /** 0.1.43.9 (T3): Kartenbild im Kasten liegt unter einem Schleier der Fläche dahinter, wie das Hintergrundbild. */
+    /**
+     * 0.1.43.9 (T3): Kartenbild im Kasten. Seit 0.1.43.16 liegt es nur unter dem schwächeren {@code SCHLEIER_KARTE};
+     * dafür steht alles mit Information darauf (Route, Auto, Namensnennung, Elemente über der Karte) auf einer eigenen
+     * Unterlage in der Farbe der Fläche dahinter. Geprüft wird gegen genau diese Unterlage.
+     */
     function karteSchleier(el, i, hg) {
-        var g = dahinter(el, i, hg, false)[0];
-        return [mischeHex('#000000', g, E.SCHLEIER), mischeHex('#FFFFFF', g, E.SCHLEIER)];
+        return [karteUnterlage(el, i, hg)];
+    }
+    function karteUnterlage(el, i, hg) {
+        return dahinter(el, i, hg, false)[0];
+    }
+    /** Index der Karte, auf der Element i liegt (oberste deckende Form unter seinem Mittelpunkt), sonst -1. */
+    function karteUnter(el, i) {
+        var e = el[i], cx = e.x + e.b / 2, cy = e.y + e.h / 2;
+        for (var j = i - 1; j >= 0; j--) {
+            var f = el[j];
+            if (f.typ !== 'flaeche' && f.typ !== 'verlauf' && f.typ !== 'karte') continue;
+            if (cx < f.x || cx > f.x + f.b || cy < f.y || cy > f.y + f.h) continue;
+            return f.typ === 'karte' ? j : -1;
+        }
+        return -1;
     }
     function minKontrast(f, hinten) {
         var m = 21;
@@ -1316,10 +1336,11 @@
             c.stroke(); c.restore();
             return;
         }
+        var unterlage = e.schleier || '#000000';
         if (mitBild) {
-            // Kartenbild vom Kern (netzfrei übergeben), darüber der Schleier der Fläche dahinter
+            // Kartenbild vom Kern (netzfrei übergeben), darüber der schwächere Kartenschleier der Fläche dahinter
             c.drawImage(im, x, y, b, h);
-            c.globalAlpha = E.SCHLEIER; c.fillStyle = e.schleier || '#000000'; c.fillRect(x, y, b, h);
+            c.globalAlpha = E.SCHLEIER_KARTE; c.fillStyle = unterlage; c.fillRect(x, y, b, h);
             c.globalAlpha = 1;
         }
         if (!n && !mitBild) { c.restore(); return; }
@@ -1329,26 +1350,35 @@
         for (i = 0; i + 1 < p.length; i += 2) w = Math.max(w, Math.abs(p[i]), Math.abs(p[i + 1]));
         var k = mitBild ? (b / kb.b) / kb.mpp : g * (nord ? 0.42 : 0.6) / Math.max(150, w), rad = nord ? kurs * Math.PI / 180 : 0;
         var co = Math.cos(rad), si = Math.sin(rad);
+        var lw = Math.max(3, g * 0.035), rand = Math.max(2, lw * 0.6);
         if (p.length >= 4) {
-            c.strokeStyle = e.farbe; c.lineWidth = Math.max(3, g * 0.035); c.lineCap = 'round'; c.lineJoin = 'round';
+            c.lineCap = 'round'; c.lineJoin = 'round';
             c.beginPath(); c.moveTo(cx, ay);
             for (i = 0; i + 1 < p.length; i += 2) {
                 // Skizze ist fahrtrichtungsoben; nordoben um den Kurs zurückdrehen
                 var sx = nord ? p[i] * co + p[i + 1] * si : p[i], sy = nord ? -p[i] * si + p[i + 1] * co : p[i + 1];
                 c.lineTo(cx + sx * k, ay - sy * k);
             }
-            c.stroke();
+            // 0.1.43.16: erst die Unterlage (breiter, Farbe der Fläche dahinter), dann die Route darauf
+            c.strokeStyle = unterlage; c.lineWidth = lw + 2 * rand; c.stroke();
+            c.strokeStyle = e.farbe; c.lineWidth = lw; c.stroke();
         }
-        // Auto als Pfeil; fahrtrichtungsoben zeigt er nach oben
+        // Auto als Pfeil; fahrtrichtungsoben zeigt er nach oben (mit Unterlage als Rand)
         var a = g * 0.07;
         c.translate(cx, ay); c.rotate(rad);
-        c.fillStyle = e.farbe; c.beginPath();
-        c.moveTo(0, -a * 1.3); c.lineTo(a, a); c.lineTo(0, a * 0.45); c.lineTo(-a, a); c.closePath(); c.fill();
+        c.beginPath();
+        c.moveTo(0, -a * 1.3); c.lineTo(a, a); c.lineTo(0, a * 0.45); c.lineTo(-a, a); c.closePath();
+        c.lineJoin = 'round'; c.strokeStyle = unterlage; c.lineWidth = 2 * rand; c.stroke();
+        c.fillStyle = e.farbe; c.fill();
         c.restore();
         if (mitBild && kb.nennung) {
-            // Namensnennung der Kartenquelle (Lizenz), klein unten rechts im Kasten
+            // Namensnennung der Kartenquelle (Lizenz), klein unten rechts im Kasten, auf eigener Unterlage
             c.save();
-            text(c, String(kb.nennung).slice(0, 60), x + b - e.rahmen - 4, y + h - e.rahmen - Math.max(6, h * 0.035), Math.max(9, h * 0.05),
+            var ng = Math.max(9, h * 0.05), nt = String(kb.nennung).slice(0, 60);
+            c.font = '500 ' + Math.round(ng) + 'px ' + SANS;
+            var nb = c.measureText(nt).width + 8, nx = x + b - e.rahmen - nb, ny = y + h - e.rahmen - ng * 1.35;
+            c.fillStyle = unterlage; c.fillRect(nx, ny, nb, ng * 1.35);
+            text(c, nt, x + b - e.rahmen - 4, y + h - e.rahmen - Math.max(6, h * 0.035), ng,
                 e.farbe, { ausrichtung: 'right', familie: SANS, gewicht: '500' });
             c.restore();
         }
@@ -1448,6 +1478,16 @@
                 for (var schl in el) if (el.hasOwnProperty(schl)) kopie[schl] = el[schl];
                 kopie.schleier = dahinter(e.elemente, i, e.hintergrund, false)[0];
                 el = kopie;
+            } else if (infoTyp(el.typ)) {
+                // 0.1.43.16: Infoelement auf der Karte bekommt eine eigene Unterlage (Farbe der Fläche hinter der Karte),
+                // denn das Kartenbild ist nur noch schwach abgedunkelt. Geprüft wird gegen genau diese Farbe.
+                var kj = karteUnter(e.elemente, i);
+                if (kj >= 0) {
+                    c.save();
+                    rund(c, el.x, el.y, el.b, el.h, Math.min(el.b, el.h) * 0.12);
+                    c.fillStyle = karteUnterlage(e.elemente, kj, e.hintergrund); c.fill();
+                    c.restore();
+                }
             }
             elementZeichnen(c, el, d, jetzt);
         }

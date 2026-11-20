@@ -2725,16 +2725,14 @@
      "y": 40,
      "b": 360,
      "h": 230,
-     "farbe": "#FFFFFF",
+     "farbe": "#7A8A99",
      "blick": "fahrt",
      "rahmen": 4,
      "akzent": "#35D0E6"
     }
    ]
   },
-  "warnungen": [
-   "kontrast"
-  ]
+  "warnungen": []
  },
  {
   "name": "karte_werte_falsch",
@@ -2812,6 +2810,285 @@
   },
   "warnungen": [
    "farbe_ungueltig"
+  ]
+ },
+ {
+  "name": "karte_unterlage_grau_auf_karte",
+  "ein": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 80,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "karte",
+     "x": 600,
+     "y": 40,
+     "b": 360,
+     "h": 230,
+     "farbe": "#FFFFFF"
+    },
+    {
+     "typ": "zahl",
+     "wert": "akku",
+     "x": 700,
+     "y": 120,
+     "b": 160,
+     "h": 60,
+     "farbe": "#8A9AA9",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    }
+   ]
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 80,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "karte",
+     "x": 600,
+     "y": 40,
+     "b": 360,
+     "h": 230,
+     "farbe": "#FFFFFF",
+     "blick": "fahrt",
+     "rahmen": 4,
+     "akzent": "#35D0E6"
+    },
+    {
+     "typ": "zahl",
+     "wert": "akku",
+     "x": 700,
+     "y": 120,
+     "b": 160,
+     "h": 60,
+     "farbe": "#8A9AA9",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    }
+   ]
+  },
+  "warnungen": []
+ },
+ {
+  "name": "karte_unterlage_dunkel_auf_karte",
+  "ein": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 80,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "karte",
+     "x": 600,
+     "y": 40,
+     "b": 360,
+     "h": 230,
+     "farbe": "#FFFFFF"
+    },
+    {
+     "typ": "zahl",
+     "wert": "akku",
+     "x": 700,
+     "y": 120,
+     "b": 160,
+     "h": 60,
+     "farbe": "#1A2430",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    }
+   ]
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 80,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "karte",
+     "x": 600,
+     "y": 40,
+     "b": 360,
+     "h": 230,
+     "farbe": "#FFFFFF",
+     "blick": "fahrt",
+     "rahmen": 4,
+     "akzent": "#35D0E6"
+    },
+    {
+     "typ": "zahl",
+     "wert": "akku",
+     "x": 700,
+     "y": 120,
+     "b": 160,
+     "h": 60,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    }
+   ]
+  },
+  "warnungen": [
+   "kontrast"
+  ]
+ },
+ {
+  "name": "karte_unterlage_auf_heller_flaeche",
+  "ein": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 80,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "flaeche",
+     "x": 560,
+     "y": 20,
+     "b": 430,
+     "h": 280,
+     "farbe": "#E8E8E8",
+     "ecken": 10
+    },
+    {
+     "typ": "karte",
+     "x": 600,
+     "y": 40,
+     "b": 360,
+     "h": 230,
+     "farbe": "#FFFFFF"
+    }
+   ]
+  },
+  "aus": {
+   "format": "panoptes-tacho-design",
+   "version": 2,
+   "basis": "klar",
+   "hintergrund": {
+    "art": "farbe",
+    "farbe": "#0E1620",
+    "farbe2": "#05090D",
+    "richtung": "senkrecht"
+   },
+   "elemente": [
+    {
+     "typ": "zahl",
+     "wert": "tempo",
+     "x": 80,
+     "y": 150,
+     "b": 260,
+     "h": 150,
+     "farbe": "#FFFFFF",
+     "schrift": "schmal",
+     "ausrichtung": "mitte"
+    },
+    {
+     "typ": "flaeche",
+     "x": 560,
+     "y": 20,
+     "b": 430,
+     "h": 280,
+     "farbe": "#E8E8E8",
+     "ecken": 10
+    },
+    {
+     "typ": "karte",
+     "x": 600,
+     "y": 40,
+     "b": 360,
+     "h": 230,
+     "farbe": "#000000",
+     "blick": "fahrt",
+     "rahmen": 4,
+     "akzent": "#35D0E6"
+    }
+   ]
+  },
+  "warnungen": [
+   "kontrast"
   ]
  }
 ]

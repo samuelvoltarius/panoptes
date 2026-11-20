@@ -44,18 +44,24 @@ public final class WaechterStandardKanaele {
         }
     }
 
+    /** 0.1.43.16 (E2E 0.1.43.13): so lange steht die Frage, bevor sie von selbst geht (vorher 60 s). */
+    public static final int DISPLAY_SEK = 180;
+
     /**
-     * 0.1.43.13: Display, mit Quittung des Overlay-Dienstes. true = stand wirklich am Bildschirm. Nur im sicheren Stand
-     * aufrufen ({@link WaechterStandardHinweis#standFuerFrage}); das prüft der Takt im {@code AppUpdateDienst}.
+     * 0.1.43.13: Display, mit Quittung des Overlay-Dienstes. Nur im sicheren Stand aufrufen
+     * ({@link WaechterStandardHinweis#standFuerFrage}); das prüft der Takt im {@code AppUpdateDienst}.
+     * 0.1.43.16: wartet, bis die Frage zu ist, und liefert, wie sie ausging; nur {@code OK} heißt gelesen.
+     * Blockiert bis {@value #DISPLAY_SEK} s plus Spielraum (der Takt hat seinen eigenen Faden).
      */
-    public static boolean zeigenDisplay() {
+    public static MessageOverlayController.DialogAusgang zeigenDisplay() {
         try {
-            MessageOverlayController.DisplayResult r = MessageOverlayController.showDialogAcknowledged(
+            MessageOverlayController.DialogAusgang a = MessageOverlayController.showDialogMitAusgang(
                     Messages.get("notifications.waechter_standard_titel"),
-                    Messages.get("notifications.waechter_standard_display"), "OK", "info", 60);
-            return r != null && r.displayed;
+                    Messages.get("notifications.waechter_standard_display"), "OK", "info", DISPLAY_SEK,
+                    at.greenchili.surfmate.appupdate.AppUpdateDienst::sichererStandJetzt);   // 0.1.43.17: losgefahren → zu
+            return a == null ? MessageOverlayController.DialogAusgang.NICHT_GEZEIGT : a;
         } catch (Throwable ignored) {
-            return false;
+            return MessageOverlayController.DialogAusgang.NICHT_GEZEIGT;
         }
     }
 }

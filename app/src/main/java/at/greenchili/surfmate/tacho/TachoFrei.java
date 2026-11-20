@@ -39,6 +39,11 @@ public final class TachoFrei {
     public static final int MAX_BILD = 24000;
     /** Anteil der Hintergrundfarbe ueber einem eigenen Bild. */
     public static final double SCHLEIER = 0.7;
+    /**
+     * 0.1.43.16: Anteil der Flaechenfarbe ueber dem Kartenbild im Kasten (schwaecher als {@link #SCHLEIER}, damit Strassen
+     * gut lesbar sind). Infoelemente darauf haben eine eigene Unterlage; die Seite ({@code tacho-designs.js}) zeichnet so.
+     */
+    public static final double SCHLEIER_KARTE = 0.35;
     /** Tempo: Mindesthoehe und -breite (Einheiten der Flaeche). */
     public static final int TEMPO_MIN_HOEHE = 90;
     public static final int TEMPO_MIN_BREITE = 150;
@@ -333,10 +338,13 @@ public final class TachoFrei {
         return Arrays.asList(mische("#000000", grund, SCHLEIER), mische("#FFFFFF", grund, SCHLEIER));
     }
 
-    /** 0.1.43.9 (T3): Kartenbild im Kasten liegt unter einem Schleier der Flaeche dahinter, wie das Hintergrundbild. */
+    /**
+     * 0.1.43.9 (T3): Kartenbild im Kasten. Seit 0.1.43.16 liegt es nur unter dem schwaecheren {@link #SCHLEIER_KARTE};
+     * dafuer steht alles mit Information darauf (Route, Auto, Namensnennung, Elemente ueber der Karte) auf einer eigenen
+     * Unterlage in der Farbe der Flaeche dahinter (Seite {@code karteUnterlage}). Geprueft wird gegen genau diese Unterlage.
+     */
     static List<String> karteSchleier(List<JSONObject> el, int i, JSONObject hg) throws Exception {
-        String g = dahinter(el, i, hg, false).get(0);
-        return Arrays.asList(mische("#000000", g, SCHLEIER), mische("#FFFFFF", g, SCHLEIER));
+        return Collections.singletonList(dahinter(el, i, hg, false).get(0));
     }
 
     static double minKontrast(String f, List<String> hinten) {

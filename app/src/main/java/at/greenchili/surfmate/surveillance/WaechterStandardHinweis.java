@@ -119,8 +119,59 @@ public final class WaechterStandardHinweis {
 
     public static void speichereMarker(File basis, int versionCode) {
         try {
+            schreibe(basis, new JSONObject().put("versionCode", versionCode));
+        } catch (Exception ignored) {
+        }
+    }
+
+    /**
+     * 0.1.43.16: Stand der Display-Versuche für die offene Frage (überlebt einen Neustart des Kerns, damit Telegram und
+     * Handy wirklich nur einmal gehen und die 3 Versuche nicht von vorn zählen).
+     */
+    public static final class Versuch {
+        public final int vc;
+        public final int anzahl;
+        public final boolean fernGesendet;
+        public final long letzterMs;
+
+        public Versuch(int vc, int anzahl, boolean fernGesendet, long letzterMs) {
+            this.vc = vc;
+            this.anzahl = anzahl;
+            this.fernGesendet = fernGesendet;
+            this.letzterMs = letzterMs;
+        }
+    }
+
+    /** Versuchsstand für {@code vc}; frisch (0, nicht gesendet), wenn keiner oder für eine andere Version. */
+    public static Versuch ladeVersuch(File basis, int vc) {
+        try {
+            File f = new File(basis, DATEI);
+            if (f.isFile()) {
+                JSONObject o = new JSONObject(new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8)).optJSONObject("versuch");
+                if (o != null && o.optInt("vc", 0) == vc) {
+                    return new Versuch(vc, o.optInt("anzahl", 0), o.optBoolean("fern", false), o.optLong("letzterMs", 0));
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return new Versuch(vc, 0, false, 0);
+    }
+
+    /** Versuchsstand ablegen; der Marker (versionCode) bleibt dabei unverändert. */
+    public static void speichereVersuch(File basis, Versuch v) {
+        try {
+            JSONObject o = new JSONObject().put("versionCode", ladeMarker(basis));
+            o.put("versuch", new JSONObject().put("vc", v.vc).put("anzahl", v.anzahl).put("fern", v.fernGesendet)
+                    .put("letzterMs", v.letzterMs));
+            schreibe(basis, o);
+        } catch (Exception ignored) {
+        }
+    }
+
+    private static void schreibe(File basis, JSONObject o) {
+        try {
             File tmp = new File(basis, DATEI + ".neu");
-            byte[] b = new JSONObject().put("versionCode", versionCode).toString().getBytes(StandardCharsets.UTF_8);
+            byte[] b = o.toString().getBytes(StandardCharsets.UTF_8);
             Files.write(tmp.toPath(), b);
             if (!tmp.renameTo(new File(basis, DATEI))) {
                 Files.write(new File(basis, DATEI).toPath(), b);

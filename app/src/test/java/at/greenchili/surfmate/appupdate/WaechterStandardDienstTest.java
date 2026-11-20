@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import at.greenchili.surfmate.byd.MessageOverlayController;
 import at.greenchili.surfmate.surveillance.WaechterStandardHinweis;
 
 import org.json.JSONObject;
@@ -44,6 +45,8 @@ public class WaechterStandardDienstTest {
     Boolean gangP = Boolean.TRUE;
     double kmh = 0;
     boolean displayQuittiert = true;
+    /** 0.1.43.16: wie die gezeigte Frage ausgeht (Standard: OK getippt). */
+    MessageOverlayController.DialogAusgang ausgang = MessageOverlayController.DialogAusgang.OK;
 
     private AppUpdateDienst dienst(File basis, File dd) {
         AppUpdateDienst.Umgebung env = new AppUpdateDienst.Umgebung() {
@@ -62,10 +65,10 @@ public class WaechterStandardDienstTest {
             @Override public JSONObject konfig() { return konfig; }
             @Override public String fahrsperre() { return fahrsperre; }
             @Override public Boolean gangP() { return gangP; }
-            @Override public boolean zeigeWaechterFrage() {
-                if (!displayQuittiert) return false;
+            @Override public MessageOverlayController.DialogAusgang zeigeWaechterFrage() {
+                if (!displayQuittiert) return MessageOverlayController.DialogAusgang.NICHT_GEZEIGT;
                 gefragt++;
-                return true;
+                return ausgang;
             }
             @Override public void meldeWaechterFrage() { gemeldet++; }
         };
@@ -202,16 +205,121 @@ public class WaechterStandardDienstTest {
         File dd = tmp.newFolder("deploy");
         konfig = bestand(null);
         displayQuittiert = false;
+        long a = AppUpdateDienst.WAECHTER_FRAGE_ABSTAND_MS;
         AppUpdateDienst d = dienst(basis, dd);
         d.waechterHinweisTakt(jetzt);
-        d.waechterHinweisTakt(jetzt + 2 * AppUpdateDienst.MELDUNG_TAKT_MS);
+        d.waechterHinweisTakt(jetzt + a);
         assertEquals(0, gemeldet);
         assertEquals("nicht gezeigt = nicht erledigt", 0, WaechterStandardHinweis.ladeMarker(basis));
-        d.waechterHinweisTakt(jetzt + 4 * AppUpdateDienst.MELDUNG_TAKT_MS);
+        d.waechterHinweisTakt(jetzt + 2 * a);
         assertEquals("nach " + AppUpdateDienst.WAECHTER_FRAGE_VERSUCHE + " Versuchen nur Telegram/Handy", 1, gemeldet);
         assertEquals(70, WaechterStandardHinweis.ladeMarker(basis));
-        d.waechterHinweisTakt(jetzt + 6 * AppUpdateDienst.MELDUNG_TAKT_MS);
+        d.waechterHinweisTakt(jetzt + 3 * a);
         assertEquals("kein Nerven danach", 1, gemeldet);
+    }
+
+    // ------------------------------------------------------------- 0.1.43.16 Selbstschließen (E2E 0.1.43.13)
+
+    @Test
+    public void selbstGeschlossenKeinMarkerUndErneutImStandNachFruehestens15Min() throws Exception {
+        File basis = tmp.newFolder("surfmate");
+        File dd = tmp.newFolder("deploy");
+        konfig = bestand(null);
+        ausgang = MessageOverlayController.DialogAusgang.ABGELAUFEN;
+        long a = AppUpdateDienst.WAECHTER_FRAGE_ABSTAND_MS;
+        AppUpdateDienst d = dienst(basis, dd);
+        d.waechterHinweisTakt(jetzt);
+        assertEquals("einmal am Display", 1, gefragt);
+        assertEquals("Telegram/Handy gleich mit dem ersten Mal am Display", 1, gemeldet);
+        assertEquals("von selbst zu = nicht gelesen, kein Marker", 0, WaechterStandardHinweis.ladeMarker(basis));
+        // 5 und 10 min später: noch nicht wieder
+        d.waechterHinweisTakt(jetzt + AppUpdateDienst.MELDUNG_TAKT_MS);
+        d.waechterHinweisTakt(jetzt + 2 * AppUpdateDienst.MELDUNG_TAKT_MS);
+        assertEquals("Abstand mindestens 15 min", 1, gefragt);
+        // nach 15 min, aber gerade Fahrt: nicht
+        fahrsperre = "not_park";
+        gangP = Boolean.FALSE;
+        kmh = 40;
+        d.waechterHinweisTakt(jetzt + a);
+        assertEquals("auch der zweite Versuch nur im Stand", 1, gefragt);
+        // wieder im Stand: zweiter Versuch, jetzt OK
+        fahrsperre = null;
+        gangP = Boolean.TRUE;
+        kmh = 0;
+        ausgang = MessageOverlayController.DialogAusgang.OK;
+        d.waechterHinweisTakt(jetzt + a + AppUpdateDienst.MELDUNG_TAKT_MS);
+        assertEquals(2, gefragt);
+        assertEquals("Telegram/Handy nur einmal", 1, gemeldet);
+        assertEquals("erst OK erledigt die Frage", 70, WaechterStandardHinweis.ladeMarker(basis));
+    }
+
+    @Test
+    public void hoechstensDreiVersucheJeVersionAuchNachNeustart() throws Exception {
+        File basis = tmp.newFolder("surfmate");
+        File dd = tmp.newFolder("deploy");
+        konfig = bestand(null);
+        ausgang = MessageOverlayController.DialogAusgang.ABGELAUFEN;
+        long a = AppUpdateDienst.WAECHTER_FRAGE_ABSTAND_MS;
+        dienst(basis, dd).waechterHinweisTakt(jetzt);
+        ausgang = MessageOverlayController.DialogAusgang.WEG_GETIPPT;
+        dienst(basis, dd).waechterHinweisTakt(jetzt + a);              // Neustart dazwischen: Stand bleibt
+        assertEquals(2, gefragt);
+        assertEquals("Telegram/Handy auch über einen Neustart nur einmal", 1, gemeldet);
+        assertEquals(0, WaechterStandardHinweis.ladeMarker(basis));
+        dienst(basis, dd).waechterHinweisTakt(jetzt + a + 60_000L);   // zu früh nach Versuch 2
+        assertEquals(2, gefragt);
+        ausgang = MessageOverlayController.DialogAusgang.ABGELAUFEN;
+        dienst(basis, dd).waechterHinweisTakt(jetzt + 2 * a);
+        assertEquals(3, gefragt);
+        assertEquals("nach 3 Versuchen Ruhe", 70, WaechterStandardHinweis.ladeMarker(basis));
+        dienst(basis, dd).waechterHinweisTakt(jetzt + 4 * a);
+        assertEquals(3, gefragt);
+        assertEquals(1, gemeldet);
+    }
+
+    // ------------------------------------------------------------- 0.1.43.17b losgefahren / belegt / verdrängt
+
+    @Test
+    public void losgefahrenBelegtOderVerdraengtKeinVersuchKeinTelegram() throws Exception {
+        File basis = tmp.newFolder("surfmate");
+        File dd = tmp.newFolder("deploy");
+        konfig = bestand(null);
+        AppUpdateDienst d = dienst(basis, dd);
+        long takt = AppUpdateDienst.MELDUNG_TAKT_MS;
+        MessageOverlayController.DialogAusgang[] folge = {
+                MessageOverlayController.DialogAusgang.ABBRUCH_FAHRT, MessageOverlayController.DialogAusgang.BELEGT,
+                MessageOverlayController.DialogAusgang.VERDRAENGT, MessageOverlayController.DialogAusgang.ABBRUCH_FAHRT};
+        for (int i = 0; i < folge.length; i++) {
+            ausgang = folge[i];
+            d.waechterHinweisTakt(jetzt + i * takt);   // kein 15-min-Abstand nötig: es war kein Versuch
+        }
+        assertEquals("viermal am Display versucht", 4, gefragt);
+        assertEquals("aber nicht gezählt: kein Telegram/Handy", 0, gemeldet);
+        assertEquals("kein Marker", 0, WaechterStandardHinweis.ladeMarker(basis));
+        assertEquals("kein Versuch verbraucht", 0, WaechterStandardHinweis.ladeVersuch(basis, vc).anzahl);
+        ausgang = MessageOverlayController.DialogAusgang.OK;
+        d.waechterHinweisTakt(jetzt + 4 * takt);
+        assertEquals(5, gefragt);
+        assertEquals(1, gemeldet);
+        assertEquals(70, WaechterStandardHinweis.ladeMarker(basis));
+    }
+
+    @Test
+    public void unbekannterGangUndTempoKeinDialogAuchBeiWiederholung() throws Exception {
+        File basis = tmp.newFolder("surfmate");
+        File dd = tmp.newFolder("deploy");
+        konfig = bestand(null);
+        ausgang = MessageOverlayController.DialogAusgang.ABGELAUFEN;
+        long a = AppUpdateDienst.WAECHTER_FRAGE_ABSTAND_MS;
+        AppUpdateDienst d = dienst(basis, dd);
+        d.waechterHinweisTakt(jetzt);
+        assertEquals(1, gefragt);
+        gangP = null;
+        kmh = Double.NaN;
+        d.waechterHinweisTakt(jetzt + a);
+        d.waechterHinweisTakt(jetzt + 2 * a);
+        assertEquals("Gang und Tempo unbekannt: kein Dialog", 1, gefragt);
+        assertEquals(0, WaechterStandardHinweis.ladeMarker(basis));
     }
 
     @Test

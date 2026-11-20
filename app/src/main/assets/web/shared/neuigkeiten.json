@@ -1384,6 +1384,45 @@
       "nl": [
         "Bij ‘Waar heb je geladen?’ kun je nu een laadaanbieder kiezen of meteen een nieuwe met je eigen prijs aanmaken."
       ]
+    },
+    {
+      "version": "0.1.43.17",
+      "versionCode": 101,
+      "de": [
+        "Der Hinweis auf fehlende Rechte und die Frage, ob der Wächter an sein soll, kommen nur noch im Stand und bleiben 3 Minuten stehen. Fährst du los, gehen sie sofort zu. Ein versehentlicher Tipp gleich beim Erscheinen oder Verschwinden löst nichts mehr aus.",
+        "Tippst du bei der Wächter-Frage nicht auf OK, kommt sie frühestens nach 15 Minuten im Stand noch einmal, höchstens dreimal.",
+        "Fehlt Panoptes ein Recht, kommt die Telegram-Nachricht dazu nach einem Neustart von Panoptes nicht noch einmal.",
+        "Nach dem Anmelden im Browser landest du nicht mehr auf einer leeren Seite, sondern auf der gewünschten Seite oder der Startseite.",
+        "Eigenes Tacho-Design: Die Karte im Kasten ist heller. Route, Auto-Pfeil und Zahlen darauf bleiben gut lesbar."
+      ],
+      "en": [
+        "The notice about missing permissions and the question whether the guard should be on now only appear while parked and stay for 3 minutes. If you drive off, they close at once. An accidental tap right as they appear or disappear no longer does anything.",
+        "If you don’t tap OK on the guard question, it comes back while parked after 15 minutes at the earliest, at most three times.",
+        "If Panoptes is missing a permission, the Telegram message about it no longer comes again after Panoptes restarts.",
+        "After signing in in the browser you no longer end up on an empty page, but on the page you wanted or the start page.",
+        "Your own cluster design: the map in the box is brighter. Route, car arrow and numbers on it stay easy to read."
+      ],
+      "fr": [
+        "L’avis sur les autorisations manquantes et la question de savoir si le gardien doit être activé n’apparaissent plus qu’à l’arrêt et restent affichés 3 minutes. Si tu démarres, ils se ferment aussitôt. Un appui accidentel juste à leur apparition ou disparition ne déclenche plus rien.",
+        "Si tu n’appuies pas sur OK à la question du gardien, elle revient à l’arrêt au plus tôt après 15 minutes, au maximum trois fois.",
+        "S’il manque une autorisation à Panoptes, le message Telegram à ce sujet ne revient plus après un redémarrage de Panoptes.",
+        "Après la connexion dans le navigateur, tu n’arrives plus sur une page vide, mais sur la page voulue ou la page d’accueil.",
+        "Votre propre design de combiné : la carte dans le cadre est plus claire. L’itinéraire, la flèche de la voiture et les chiffres restent bien lisibles."
+      ],
+      "it": [
+        "L’avviso sui permessi mancanti e la domanda se il guardiano debba essere attivo compaiono ormai solo da fermo e restano visibili 3 minuti. Se parti, si chiudono subito. Un tocco accidentale appena compaiono o scompaiono non fa più nulla.",
+        "Se alla domanda sul guardiano non tocchi OK, torna da fermo dopo almeno 15 minuti, al massimo tre volte.",
+        "Se a Panoptes manca un permesso, il messaggio Telegram al riguardo non arriva più di nuovo dopo un riavvio di Panoptes.",
+        "Dopo l’accesso nel browser non finisci più su una pagina vuota, ma sulla pagina desiderata o sulla pagina iniziale.",
+        "Il tuo design del quadro: la mappa nel riquadro è più chiara. Percorso, freccia dell’auto e numeri restano ben leggibili."
+      ],
+      "nl": [
+        "De melding over ontbrekende rechten en de vraag of de bewaker aan moet, komen alleen nog bij stilstand en blijven 3 minuten staan. Rijd je weg, dan sluiten ze meteen. Per ongeluk tikken net bij het verschijnen of verdwijnen doet niets meer.",
+        "Tik je bij de bewakervraag niet op OK, dan komt die bij stilstand na minstens 15 minuten terug, hoogstens drie keer.",
+        "Mist Panoptes een recht, dan komt het Telegram-bericht daarover na een herstart van Panoptes niet nog eens.",
+        "Na het inloggen in de browser kom je niet meer op een lege pagina, maar op de gewenste pagina of de startpagina.",
+        "Je eigen dashboardontwerp: de kaart in het kader is lichter. Route, autopijl en getallen erop blijven goed leesbaar."
+      ]
     }
   ]
 }

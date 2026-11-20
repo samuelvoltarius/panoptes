@@ -364,10 +364,66 @@ public class AuthMiddleware {
             return false;
         }
         
-        // Page requests get redirected to login
-        String redirectUrl = "/login.html?redirect=" + urlEncode(path);
-        HttpResponse.sendRedirect(out, redirectUrl);
+        // Page requests get redirected to login (0.1.43.17: back only to a page that exists)
+        HttpResponse.sendRedirect(out, loginUrl(path, statischDa));
         return false;
+    }
+
+    // ------------------------------------------------------------------ 0.1.43.17 Login-Rücksprung
+
+    /**
+     * Seiten, auf die der Login zurückspringen darf: dieselben Pfade wie im Seiten-Teil von {@code HttpServer}
+     * (Quellvertrag {@code LoginZielTest} hält beide gleich). Ein unbekannter Pfad (z. B. {@code /l}) springt nach dem
+     * Login auf die Startseite statt auf „Not Found“.
+     */
+    static final Set<String> SEITEN = new HashSet<>(Arrays.asList(
+            "/", "/index.html",
+            "/assistant", "/assistant.html", "/live-view", "/live-view.html", "/communicate", "/communicate.html",
+            "/recording", "/recording.html", "/parking", "/parking.html", "/surveillance", "/surveillance.html",
+            "/events", "/events.html", "/performance", "/performance.html", "/remote-dev-view", "/remote-dev-view.html",
+            "/abrp", "/abrp.html", "/mqtt", "/mqtt.html", "/wireguard", "/wireguard.html", "/waechter", "/waechter.html",
+            "/testfunktionen.html", "/wallbox.html", "/ladeplan.html", "/orte.html", "/dateien.html", "/display.html",
+            "/camping.html", "/tiermodus.html", "/bericht", "/bericht.html", "/navi", "/navi.html", "/trips", "/trips.html",
+            "/charging", "/charging.html", "/automations", "/automations.html", "/apps", "/apps.html",
+            "/launcher", "/launcher.html", "/vehicle-control", "/vehicle-control.html", "/telegram", "/telegram.html",
+            "/meldungen.html", "/byd-cloud", "/byd-cloud.html", "/road-sense", "/road-sense.html", "/system", "/system.html",
+            "/network", "/network.html", "/notifications", "/notifications.html", "/seat-positions", "/seat-positions.html",
+            "/key-mapping", "/key-mapping.html", "/fehler-melden.html", "/auto-funktionen.html", "/about", "/about.html"));
+
+    /** Gibt es diese statische Datei (relativ zum Web-Ordner, z. B. {@code local/x.html})? Setzt {@code HttpServer}. */
+    private static volatile java.util.function.Predicate<String> statischDa;
+
+    public static void setStatischDa(java.util.function.Predicate<String> p) {
+        statischDa = p;
+    }
+
+    /** Ist {@code path} (mit oder ohne Query) eine Seite, auf die der Login zurückspringen darf? Rein, testbar. */
+    static boolean loginZielBekannt(String path, java.util.function.Predicate<String> dateiDa) {
+        if (path == null) return false;
+        String p = path;
+        int q = p.indexOf('?');
+        if (q >= 0) p = p.substring(0, q);
+        int h = p.indexOf('#');
+        if (h >= 0) p = p.substring(0, h);
+        if (!p.startsWith("/") || p.startsWith("//") || p.contains("\\") || p.contains("..")) return false;
+        for (int i = 0; i < p.length(); i++) if (p.charAt(i) < 0x20 || p.charAt(i) == 0x7f) return false;
+        if (SEITEN.contains(p)) return true;
+        if ((p.startsWith("/local/") || p.startsWith("/shared/")) && p.endsWith(".html") && dateiDa != null) {
+            try {
+                return dateiDa.test(p.substring(1));
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    /** Ziel der Weiterleitung zum Login: mit {@code redirect} nur zu einer bekannten Seite außer der Startseite. */
+    static String loginUrl(String path, java.util.function.Predicate<String> dateiDa) {
+        if (!loginZielBekannt(path, dateiDa)) return "/login.html";
+        String p = path.indexOf('?') >= 0 ? path.substring(0, path.indexOf('?')) : path;
+        if ("/".equals(p) || "/index.html".equals(p)) return "/login.html";
+        return "/login.html?redirect=" + urlEncode(path);
     }
     
     /**

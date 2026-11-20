@@ -97,7 +97,8 @@ public class TachoFreiTest {
         assertEquals(TachoFrei.KARTE_BLICKE, jsListe(js, "KARTE_BLICKE"));
         String[][] zahlen = {{"VERSION_FREI", "" + TachoFrei.VERSION}, {"BREITE", "" + TachoFrei.BREITE}, {"HOEHE", "" + TachoFrei.HOEHE},
             {"MIN_GROESSE", "" + TachoFrei.MIN_GROESSE}, {"MAX_ELEMENTE", "" + TachoFrei.MAX_ELEMENTE}, {"MAX_BILD", "" + TachoFrei.MAX_BILD},
-            {"SCHLEIER", "" + TachoFrei.SCHLEIER}, {"TEMPO_MIN_HOEHE", "" + TachoFrei.TEMPO_MIN_HOEHE},
+            {"SCHLEIER", "" + TachoFrei.SCHLEIER}, {"SCHLEIER_KARTE", "" + TachoFrei.SCHLEIER_KARTE},
+            {"TEMPO_MIN_HOEHE", "" + TachoFrei.TEMPO_MIN_HOEHE},
             {"TEMPO_MIN_BREITE", "" + TachoFrei.TEMPO_MIN_BREITE}, {"MAX_ZEICHEN", "" + TachoEigen.MAX_ZEICHEN},
             {"KARTE_MIN_BREITE", "" + TachoFrei.KARTE_MIN_BREITE}, {"KARTE_MIN_HOEHE", "" + TachoFrei.KARTE_MIN_HOEHE},
             {"KARTE_MAX_RAHMEN", "" + TachoFrei.KARTE_MAX_RAHMEN}};
@@ -207,6 +208,44 @@ public class TachoFreiTest {
         String ed = lies(EDITOR);
         assertTrue("Editor verkleinert vor dem Speichern", ed.contains("if (s.length <= R.MAX_BILD) daten = s;"));
         assertTrue(ed.contains("bildDatei.accept = 'image/png,image/jpeg';"));
+    }
+
+    /**
+     * 0.1.43.16 (19.11.: „ja heller machen“): Kartenbild nur unter dem schwaecheren Kartenschleier, Hintergrundbild
+     * bleibt bei 0,7. Route, Auto, Namensnennung und Infoelemente auf der Karte liegen auf einer eigenen Unterlage in der
+     * Farbe der Flaeche dahinter; die Kontrastregel (4,5:1) gilt unveraendert gegen genau diese Unterlage.
+     */
+    @Test
+    public void karteHellerMitEigenerUnterlage() throws Exception {
+        assertEquals(0.7, TachoFrei.SCHLEIER, 0);
+        assertEquals(0.35, TachoFrei.SCHLEIER_KARTE, 0);
+        assertTrue(TachoFrei.SCHLEIER_KARTE < TachoFrei.SCHLEIER);
+        String js = lies(JS);
+        assertTrue("Karte unter dem Kartenschleier",
+                js.contains("c.globalAlpha = E.SCHLEIER_KARTE; c.fillStyle = unterlage; c.fillRect(x, y, b, h);"));
+        int halo = js.indexOf("c.strokeStyle = unterlage; c.lineWidth = lw + 2 * rand; c.stroke();");
+        assertTrue("Route erst mit Unterlage, dann darauf", halo > 0
+                && js.indexOf("c.strokeStyle = e.farbe; c.lineWidth = lw; c.stroke();") > halo);
+        assertTrue("Auto mit Rand in der Unterlage", js.contains("c.strokeStyle = unterlage; c.lineWidth = 2 * rand; c.stroke();"));
+        assertTrue("Namensnennung auf Unterlage", js.contains("c.fillStyle = unterlage; c.fillRect(nx, ny, nb, ng * 1.35);"));
+        assertTrue("Infoelement auf der Karte bekommt Unterlage", js.contains("var kj = karteUnter(e.elemente, i);")
+                && js.contains("c.fillStyle = karteUnterlage(e.elemente, kj, e.hintergrund); c.fill();"));
+        assertTrue("Seite prueft gegen die Unterlage", js.contains("return [karteUnterlage(el, i, hg)];"));
+        // Galerie „Kombi“ und „Kasten“ zeichnen ueber dieselbe Funktion mit der Flaechenfarbe als Unterlage
+        String g = lies("app/src/main/assets/web/shared/tacho-galerie.js");
+        assertEquals(2, g.split("schleier: th.bg0 }, d\\);", -1).length - 1);
+        // Gemeinsame Faelle: grau bleibt auf der Unterlage, zu dunkel wird weiss, auf heller Flaeche wird die Route schwarz
+        java.util.Map<String, JSONObject> f = new java.util.HashMap<>();
+        JSONArray a = faelle();
+        for (int i = 0; i < a.length(); i++) f.put(a.getJSONObject(i).getString("name"), a.getJSONObject(i));
+        assertEquals("#8A9AA9", f.get("karte_unterlage_grau_auf_karte").getJSONObject("aus").getJSONArray("elemente")
+                .getJSONObject(2).getString("farbe"));
+        assertEquals("#FFFFFF", f.get("karte_unterlage_dunkel_auf_karte").getJSONObject("aus").getJSONArray("elemente")
+                .getJSONObject(2).getString("farbe"));
+        assertEquals("#000000", f.get("karte_unterlage_auf_heller_flaeche").getJSONObject("aus").getJSONArray("elemente")
+                .getJSONObject(2).getString("farbe"));
+        assertEquals("#7A8A99", f.get("karte_schleier_mittelgrau").getJSONObject("aus").getJSONArray("elemente")
+                .getJSONObject(1).getString("farbe"));
     }
 
     @Test

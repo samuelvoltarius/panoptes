@@ -120,9 +120,15 @@ public class WaechterStandardHinweisTest {
         String k = lies("app/src/main/java/at/greenchili/surfmate/surveillance/WaechterStandardKanaele.java");
         assertTrue("Telegram", k.contains("TelegramNotifier.notifyWaechterStandard()"));
         assertTrue("Handy und Verlauf", k.contains("NotificationBus.get().publish") && k.contains("\"system.waechter\""));
-        assertTrue("Display mit Quittung", k.contains("MessageOverlayController.showDialogAcknowledged"));
+        // 0.1.43.16: Display mit Ausgang (nur OK zählt), 180 s statt 60 s
+        assertTrue("Display mit Ausgang", k.contains("MessageOverlayController.showDialogMitAusgang"));
+        assertTrue("180 s", k.contains("DISPLAY_SEK = 180"));
+        assertFalse("nicht mehr 60 s", k.contains("\"info\", 60)"));
         String d = lies("app/src/main/java/at/greenchili/surfmate/appupdate/AppUpdateDienst.java");
         assertTrue(d.contains("waechterHinweisTakt(now);"));
+        // 0.1.43.17: eigener Faden, der Update-Takt wartet nicht auf den Dialog
+        assertTrue(d.contains("new Thread(r, \"AppUpdate-Waechter\")"));
+        assertTrue("Stand-Prüfung bei offener Frage", k.contains("AppUpdateDienst::sichererStandJetzt"));
         assertTrue(d.contains("WaechterStandardKanaele.zeigenDisplay();"));
         assertTrue(d.contains("WaechterStandardKanaele.sendenFern();"));
         // 0.1.43.13 (E2E 0.1.43.12, B1): Fahrtsperre vor dem Display

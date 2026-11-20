@@ -158,10 +158,13 @@ public final class AppUpdateDienst {
         /** 0.1.38.8: Konfiguration (Wurzel) für die einmalige Wächter-Frage; null = nicht lesbar, dann wird nicht gefragt. */
         default JSONObject konfig() { return null; }
         /**
-         * 0.1.43.13: die einmalige Frage „Wächter einschalten?“ am Display zeigen (mit Quittung); true = stand wirklich da.
+         * 0.1.43.13: die einmalige Frage „Wächter einschalten?“ am Display zeigen (mit Quittung).
          * Nur im sicheren Stand aufrufen ({@code WaechterStandardHinweis.standFuerFrage}).
+         * 0.1.43.16: wartet, bis sie zu ist, und liefert, wie sie ausging; nur {@code OK} heißt gelesen.
          */
-        default boolean zeigeWaechterFrage() { return false; }
+        default at.greenchili.surfmate.byd.MessageOverlayController.DialogAusgang zeigeWaechterFrage() {
+            return at.greenchili.surfmate.byd.MessageOverlayController.DialogAusgang.NICHT_GEZEIGT;
+        }
         /** 0.1.43.13: dieselbe Frage über Telegram und Handy; einmal, zusammen mit dem Display. */
         default void meldeWaechterFrage() { }
     }
@@ -175,15 +178,20 @@ public final class AppUpdateDienst {
      * prüft erneut. Der Marker gilt erst als erledigt, wenn die Frage wirklich am Display stand (Quittung). Telegram und
      * Handy gehen zusammen mit dem Display, damit nichts doppelt kommt. Steht das Auto, aber der Overlay-Dienst quittiert
      * {@value #WAECHTER_FRAGE_VERSUCHE}-mal nicht (z. B. ohne Overlay-Recht), gehen nur Telegram und Handy, dann Marker.
+     *
+     * <p>0.1.43.16 (E2E 0.1.43.13): erledigt ist die Frage erst, wenn OK getippt wurde. Geht sie von selbst zu, wird sie
+     * daneben getippt oder verdrängt, kommt sie im sicheren Stand wieder, frühestens nach {@link #WAECHTER_FRAGE_ABSTAND_MS},
+     * höchstens {@value #WAECHTER_FRAGE_VERSUCHE} Versuche je Version (gezeigt oder nicht). Telegram und Handy gehen genau
+     * einmal: mit dem ersten Mal, das am Display stand, sonst mit dem letzten Versuch. Der Versuchsstand liegt neben dem
+     * Marker und überlebt einen Neustart.
      */
     private long waechterHinweisZuletzt = -1;
-    /** Fehlgeschlagene Display-Versuche im sicheren Stand, je versionCode (nur im Prozess). */
-    private int waechterFrageFehlVc;
-    private int waechterFrageFehl;
     /** versionCode, für den „aufgeschoben“ schon protokolliert ist (eine Zeile, nicht alle 5 min). */
     private int waechterFrageAufgeschobenVc;
 
     static final int WAECHTER_FRAGE_VERSUCHE = 3;
+    /** 0.1.43.16: Abstand zwischen zwei Versuchen der Frage. */
+    static final long WAECHTER_FRAGE_ABSTAND_MS = 15 * 60_000L;
 
     void waechterHinweisTakt(long now) {
         if (waechterHinweisZuletzt >= 0 && now - waechterHinweisZuletzt < MELDUNG_TAKT_MS) return;
@@ -210,6 +218,9 @@ public final class AppUpdateDienst {
             gang = null;
             kmh = Double.NaN;
         }
+        at.greenchili.surfmate.surveillance.WaechterStandardHinweis.Versuch v = at.greenchili.surfmate.surveillance.WaechterStandardHinweis.ladeVersuch(env.basis(), vc);
+        // Abstand zum letzten Versuch (Uhr zurückgestellt: nicht warten)
+        if (v.anzahl > 0 && now >= v.letzterMs && now - v.letzterMs < WAECHTER_FRAGE_ABSTAND_MS) return;
         if (!at.greenchili.surfmate.surveillance.WaechterStandardHinweis.standFuerFrage(sperre, gang, kmh)) {
             if (waechterFrageAufgeschobenVc != vc) {
                 waechterFrageAufgeschobenVc = vc;
@@ -218,31 +229,43 @@ public final class AppUpdateDienst {
             }
             return;
         }
-        boolean gezeigt = false;
+        at.greenchili.surfmate.byd.MessageOverlayController.DialogAusgang a =
+                at.greenchili.surfmate.byd.MessageOverlayController.DialogAusgang.NICHT_GEZEIGT;
         try {
-            gezeigt = env.zeigeWaechterFrage();
+            a = env.zeigeWaechterFrage();
+            if (a == null) a = at.greenchili.surfmate.byd.MessageOverlayController.DialogAusgang.NICHT_GEZEIGT;
         } catch (Throwable t) {
             logger.warn("Wächter-Frage Display: " + t.getMessage());
         }
-        if (!gezeigt) {
-            if (waechterFrageFehlVc != vc) {
-                waechterFrageFehlVc = vc;
-                waechterFrageFehl = 0;
-            }
-            waechterFrageFehl++;
-            if (waechterFrageFehl < WAECHTER_FRAGE_VERSUCHE) {
-                logger.info("Wächter-Frage: Display ohne Quittung (" + waechterFrageFehl + "), später erneut, versionCode " + vc);
-                return;
-            }
-            logger.warn("Wächter-Frage: Display " + waechterFrageFehl + "-mal ohne Quittung, nur Telegram und Handy, versionCode " + vc);
+        if (a.ohneVersuch()) {
+            // 0.1.43.17: losgefahren (Kern hat geschlossen), anderer Frage-Dialog offen oder verdrängt: kein Versuch,
+            // kein Telegram; der nächste Takt versucht es im sicheren Stand wieder
+            logger.info("Wächter-Frage: " + a + ", zählt nicht als Versuch, versionCode " + vc);
+            return;
         }
-        at.greenchili.surfmate.surveillance.WaechterStandardHinweis.speichereMarker(env.basis(), vc);
-        logger.info("Wächter-Frage (Standard an) " + (gezeigt ? "am Display gezeigt" : "ohne Display") + ", versionCode " + vc);
-        try {
-            env.meldeWaechterFrage();
-        } catch (Throwable t) {
-            logger.warn("Wächter-Frage: " + t.getMessage());
+        int anzahl = v.anzahl + 1;
+        boolean ok = a == at.greenchili.surfmate.byd.MessageOverlayController.DialogAusgang.OK;
+        boolean fertig = ok || anzahl >= WAECHTER_FRAGE_VERSUCHE;
+        boolean fern = v.fernGesendet;
+        if (!fern && (a.gezeigt() || fertig)) {
+            // Telegram und Handy genau einmal: mit dem ersten Mal am Display, sonst mit dem letzten Versuch
+            fern = true;
+            at.greenchili.surfmate.surveillance.WaechterStandardHinweis.speichereVersuch(env.basis(), new at.greenchili.surfmate.surveillance.WaechterStandardHinweis.Versuch(vc, anzahl, true, now));
+            try {
+                env.meldeWaechterFrage();
+            } catch (Throwable t) {
+                logger.warn("Wächter-Frage: " + t.getMessage());
+            }
         }
+        if (fertig) {
+            at.greenchili.surfmate.surveillance.WaechterStandardHinweis.speichereMarker(env.basis(), vc);
+            logger.info("Wächter-Frage (Standard an) " + (ok ? "mit OK bestätigt" : "nach " + anzahl + " Versuchen beendet (zuletzt "
+                    + a + ")") + ", versionCode " + vc);
+            return;
+        }
+        at.greenchili.surfmate.surveillance.WaechterStandardHinweis.speichereVersuch(env.basis(), new at.greenchili.surfmate.surveillance.WaechterStandardHinweis.Versuch(vc, anzahl, fern, now));
+        logger.info("Wächter-Frage: " + a + " (Versuch " + anzahl + "), im Stand in frühestens "
+                + WAECHTER_FRAGE_ABSTAND_MS / 60_000 + " min erneut, versionCode " + vc);
     }
 
     /** 0.1.38.1: Update-Meldungen höchstens alle 5 min prüfen (der Launcher-Stand kostet einen Shell-Aufruf). */
@@ -452,7 +475,35 @@ public final class AppUpdateDienst {
                 logger.warn("hinweis: " + t.getMessage());
             }
         }, 60, 1, TimeUnit.SECONDS);
+        // 0.1.43.17: eigener Faden für die Wächter-Frage; sie blockiert, solange der Dialog offen ist (bis ca. 3 min),
+        // der Update-Takt läuft unterdessen weiter
+        Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "AppUpdate-Waechter");
+            t.setDaemon(true);
+            return t;
+        }).scheduleWithFixedDelay(() -> {
+            try {
+                long now = d.env.jetzt();
+                d.waechterHinweisTakt(now);
+            } catch (Throwable t) {
+                logger.warn("Wächter-Frage: " + t.getMessage());
+            }
+        }, 10 * 60, 60, TimeUnit.SECONDS);
         instance = d;
+    }
+
+    /**
+     * 0.1.43.16: sicherer Stand für Overlays mit Knopf, mit denselben Quellen wie die Wächter-Frage
+     * ({@code fahrsperre}, {@code gangP}, {@code kmh}) und derselben fail-closed-Regel
+     * ({@code WaechterStandardHinweis.standFuerFrage}). Auch für die Rechte-Meldung.
+     */
+    public static boolean sichererStandJetzt() {
+        try {
+            AndroidUmgebung u = new AndroidUmgebung();
+            return at.greenchili.surfmate.surveillance.WaechterStandardHinweis.standFuerFrage(u.fahrsperre(), u.gangP(), u.kmh());
+        } catch (Throwable t) {
+            return false;
+        }
     }
 
     public static AppUpdateDienst get() {
@@ -776,11 +827,7 @@ public final class AppUpdateDienst {
             logger.warn("Update-Meldung: " + t.getMessage());
         }
         umstellungMeldenTakt();
-        try {
-            waechterHinweisTakt(now);
-        } catch (Throwable t) {
-            logger.warn("Wächter-Frage: " + t.getMessage());
-        }
+        // 0.1.43.17: die Wächter-Frage hat ihren eigenen Faden (start()), sie wartet bis ca. 3 min auf den Dialog
         // update.pruefen aus (Ersteinrichtung „Nein“): kein Abruf bei GitHub im Hintergrund, nichts von selbst
         if (pruefenAn() && UpdateRegel.pruefenFaellig(now, letztePruefung, fehler != null)) pruefen(false);
         Freigabe f;
@@ -2150,7 +2197,7 @@ public final class AppUpdateDienst {
         }
 
         @Override
-        public boolean zeigeWaechterFrage() {
+        public at.greenchili.surfmate.byd.MessageOverlayController.DialogAusgang zeigeWaechterFrage() {
             return at.greenchili.surfmate.surveillance.WaechterStandardKanaele.zeigenDisplay();
         }
 

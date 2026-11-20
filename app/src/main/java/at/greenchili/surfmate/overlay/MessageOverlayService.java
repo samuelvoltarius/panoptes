@@ -86,6 +86,137 @@ public final class MessageOverlayService extends Service {
     private Runnable autoDismiss;
     private boolean dismissReceiverRegistered;
 
+    /**
+     * 0.1.43.16 (E2E 0.1.43.13): Fehltipp-Schutz im Dialog. In den ersten {@value #TIPP_SPERRE_MS} ms nach dem Erscheinen
+     * zählt kein Tipp auf OK oder daneben (der Finger war schon unterwegs zu etwas anderem).
+     */
+    static final long TIPP_SPERRE_MS = 700;
+    /**
+     * 0.1.43.16: Schließt sich der Dialog von selbst, bleibt das Fenster noch {@value #NACHLAUF_MS} ms unsichtbar liegen und
+     * fängt Tipps ab, statt sie an den Launcher dahinter durchzulassen (Tipp auf OK genau beim Schließen).
+     */
+    static final long NACHLAUF_MS = 1000;
+    /** Intent des Dialogs, der seinen Schluss melden soll ({@code schlussAck}); null = keiner offen. */
+    private Intent dialogSchluss;
+
+    /**
+     * 0.1.43.17 (E2E 0.1.43.16, 3a): die Sperre zählt ab dem ersten Bild, das wirklich am Display ist, nicht ab
+     * {@code addView} (im Emulator kam das erste Bild 0,4–0,8 s später). Solange nichts gezeichnet ist, ist jeder Tipp gesperrt.
+     * Rein, testbar; je Dialog eine eigene Sperre.
+     */
+    static final class TippSperre {
+        private long bildMs = -1;
+        /**
+         * 0.1.43.17c (E2E 0.1.43.17, 3a): Ereigniszeit des letzten ACTION_DOWN ({@code MotionEvent.getEventTime()},
+         * uptimeMillis), -1 = keins. Maßgeblich für das UP/Click dieses Fingers, auch wenn der App-Faden ihn erst später
+         * verarbeitet. Wird beim Click verbraucht.
+         */
+        private long downMs = -1;
+
+        /** Erstes Bild am Display (nur das erste zählt), uptimeMillis. */
+        void erstesBild(long ms) {
+            if (bildMs < 0) bildMs = ms;
+        }
+
+        boolean hatBild() {
+            return bildMs >= 0;
+        }
+
+        /** Finger aufgesetzt (Ereigniszeit, uptimeMillis). */
+        void down(long eventMs) {
+            downMs = eventMs;
+        }
+
+        boolean zuFrueh(long tippMs) {
+            return bildMs < 0 || tippMs < bildMs || tippMs - bildMs < TIPP_SPERRE_MS;
+        }
+
+        /**
+         * Click prüfen: gezählt wird die Zeit, zu der der Finger aufgesetzt wurde; ohne bekanntes DOWN (z. B. Klick ohne
+         * Berührung) die Verarbeitungszeit. Das DOWN gilt nur für diesen einen Click.
+         */
+        boolean klickZuFrueh(long jetztMs) {
+            long t = downMs >= 0 ? downMs : jetztMs;
+            downMs = -1;
+            return zuFrueh(t);
+        }
+    }
+
+    /**
+     * 0.1.43.17c: Sicherheitsnetz. Kommt nach {@code addView} nie ein Bildtakt an, zählt die Sperre spätestens ab hier,
+     * damit ein Tipp nie für immer gesperrt bleibt.
+     */
+    static final long BILD_SPAETESTENS_MS = 3000;
+
+    private TippSperre dialogSperre = new TippSperre();
+
+    /** Tipp so kurz nach dem ersten Bild ({@code bildMs} < 0 = noch keins): ignorieren (rein, testbar). */
+    static boolean tippZuFrueh(long bildMs, long tippMs) {
+        TippSperre s = new TippSperre();
+        if (bildMs >= 0) s.erstesBild(bildMs);
+        return s.zuFrueh(tippMs);
+    }
+
+    /**
+     * Zeitpunkt des Bilds aus dem Bildtakt ({@code frameTimeNanos}, gleiche Uhr wie uptimeMillis). Liegt er unplausibel
+     * weit weg (andere Uhr), gilt die Uhr beim Rückruf (rein, testbar).
+     */
+    static long bildZeitMs(long frameTimeNanos, long uptimeJetztMs) {
+        long f = frameTimeNanos / 1_000_000L;
+        return (f > uptimeJetztMs || uptimeJetztMs - f > 1000) ? uptimeJetztMs : f;
+    }
+
+    private boolean dialogTippZuFrueh() {
+        boolean zu = dialogSperre.klickZuFrueh(android.os.SystemClock.uptimeMillis());
+        if (zu) logger.info("Dialog: Tipp vor dem ersten Bild bzw. in den ersten " + TIPP_SPERRE_MS + " ms ignoriert");
+        return zu;
+    }
+
+    /** 0.1.43.17c: Abdunklung, die die Ereigniszeit jedes ACTION_DOWN an die Sperre gibt (alle Tipps laufen hier durch). */
+    private static FrameLayout dialogScrim(Context ctx, TippSperre sperre) {
+        return new FrameLayout(ctx) {
+            @Override
+            public boolean dispatchTouchEvent(android.view.MotionEvent ev) {
+                if (ev.getActionMasked() == android.view.MotionEvent.ACTION_DOWN) sperre.down(ev.getEventTime());
+                return super.dispatchTouchEvent(ev);
+            }
+        };
+    }
+
+    /**
+     * 0.1.43.17: einmal beim ersten Zeichnen von {@code v}; der Zeitpunkt ist der nächste Bildtakt danach (dann ist das
+     * Bild am Display). Der Zuhörer entfernt sich selbst.
+     */
+    private void beimErstenBild(View v, TippSperre sperre) {
+        try {
+            final android.view.ViewTreeObserver.OnDrawListener[] l = new android.view.ViewTreeObserver.OnDrawListener[1];
+            l[0] = () -> {
+                handler.post(() -> {
+                    try {
+                        v.getViewTreeObserver().removeOnDrawListener(l[0]);
+                    } catch (Throwable ignored) {
+                    }
+                });
+                android.view.Choreographer.getInstance().postFrameCallback(
+                        f -> sperre.erstesBild(bildZeitMs(f, android.os.SystemClock.uptimeMillis())));
+            };
+            v.getViewTreeObserver().addOnDrawListener(l[0]);
+            handler.postDelayed(() -> {
+                if (!sperre.hatBild()) sperre.erstesBild(android.os.SystemClock.uptimeMillis());
+            }, BILD_SPAETESTENS_MS);
+        } catch (Throwable t) {
+            // ohne Zuhörer: lieber ab jetzt zählen als Tipps für immer sperren
+            sperre.erstesBild(android.os.SystemClock.uptimeMillis());
+        }
+    }
+
+    /** Schluss des Dialogs an den Kern melden (einmal). */
+    private void meldeSchluss(String status) {
+        Intent i = dialogSchluss;
+        dialogSchluss = null;
+        if (i != null) sendAcknowledgement(i, status);
+    }
+
     /** Tears down any showing message on the ACTION_DISMISS broadcast — the broadcast
      *  half of {@link at.greenchili.surfmate.byd.MessageOverlayController#dismiss()} (the
      *  am stopservice half also works; this makes an explicit dismiss instant and lets a
@@ -638,10 +769,15 @@ public final class MessageOverlayService extends Service {
         Context ctx = themedContext();
         int pad = dp(ctx, 20);
 
-        // Dimmed full-screen scrim; tap outside the card dismisses.
-        FrameLayout scrim = new FrameLayout(ctx);
+        // Dimmed full-screen scrim; tap outside the card dismisses (not in the first TIPP_SPERRE_MS).
+        TippSperre sperre = new TippSperre();          // je Dialog eine eigene Sperre
+        FrameLayout scrim = dialogScrim(ctx, sperre);
         scrim.setBackgroundColor(0x99000000);
-        scrim.setOnClickListener(v -> dismissAndStop());
+        scrim.setOnClickListener(v -> {
+            if (dialogTippZuFrueh()) return;
+            meldeSchluss("SCHLUSS_WEG");
+            dismissAndStop();
+        });
 
         LinearLayout card = new LinearLayout(ctx);
         card.setOrientation(LinearLayout.VERTICAL);
@@ -682,7 +818,11 @@ public final class MessageOverlayService extends Service {
         okBg.setColor(accent);
         okBg.setCornerRadius(dp(ctx, 12));
         ok.setBackground(okBg);
-        ok.setOnClickListener(v -> dismissAndStop());
+        ok.setOnClickListener(v -> {
+            if (dialogTippZuFrueh()) return;
+            meldeSchluss("SCHLUSS_OK");
+            dismissAndStop();
+        });
         LinearLayout.LayoutParams olp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         olp.topMargin = dp(ctx, 20);
@@ -696,10 +836,35 @@ public final class MessageOverlayService extends Service {
 
         if (!replaceOverlay(scrim, dialogLayoutParams())) return false;
         dialogShowing = true;
+        dialogSperre = sperre;
+        beimErstenBild(scrim, sperre);
+        if (intent.getBooleanExtra("schlussAck", false)) dialogSchluss = intent;
         // A dialog holds until OK/scrim tap, unless the user set an auto-dismiss.
         cancelDismiss();
-        if (timeoutSec > 0) scheduleDismiss(timeoutSec * 1000L);
+        if (timeoutSec > 0) {
+            cancelDismiss();
+            autoDismiss = () -> selbstSchliessen(scrim);
+            handler.postDelayed(autoDismiss, timeoutSec * 1000L);
+        }
         return true;
+    }
+
+    /**
+     * 0.1.43.16: Dialog läuft ab. Erst unsichtbar machen und noch {@link #NACHLAUF_MS} ms jeden Tipp schlucken (kein Durchgriff
+     * auf den Launcher), dann das Fenster entfernen. Der Kern erfährt „abgelaufen“, nicht „OK“.
+     */
+    private void selbstSchliessen(FrameLayout scrim) {
+        meldeSchluss("SCHLUSS_ABGELAUFEN");
+        try {
+            scrim.removeAllViews();
+            scrim.setBackgroundColor(0x00000000);
+            scrim.setOnClickListener(v -> { });
+        } catch (Throwable t) {
+            dismissAndStop();
+            return;
+        }
+        autoDismiss = this::dismissAndStop;
+        handler.postDelayed(autoDismiss, NACHLAUF_MS);
     }
 
     // ── Overlay plumbing ───────────────────────────────────────────────────────
@@ -726,6 +891,15 @@ public final class MessageOverlayService extends Service {
      * fire-and-forget.
      */
     private void sendAcknowledgement(Intent intent, boolean displayed, String reason) {
+        sendAcknowledgement(intent, displayed ? "DISPLAYED" : "FAILED", reason);
+    }
+
+    /** 0.1.43.16: Schluss-Bescheid eines Dialogs ({@code SCHLUSS_…}) über denselben Weg, zweite Verbindung. */
+    private void sendAcknowledgement(Intent intent, String status) {
+        sendAcknowledgement(intent, status, "");
+    }
+
+    private void sendAcknowledgement(Intent intent, String status, String reason) {
         String portValue = intent.getStringExtra("ackPort");
         String token = intent.getStringExtra("ackToken");
         if (portValue == null || token == null || token.isEmpty()) return;
@@ -743,7 +917,7 @@ public final class MessageOverlayService extends Service {
                 DataOutputStream output =
                         new DataOutputStream(socket.getOutputStream());
                 output.writeUTF(token);
-                output.writeUTF(displayed ? "DISPLAYED" : "FAILED");
+                output.writeUTF(status);
                 output.writeUTF(reason == null ? "" : reason);
                 output.flush();
             } catch (Throwable error) {
@@ -757,6 +931,7 @@ public final class MessageOverlayService extends Service {
     }
 
     private void removeOverlay() {
+        meldeSchluss("SCHLUSS_VERDRAENGT");   // nur, wenn ein Dialog mit Schluss-Bescheid noch offen ist
         if (overlayView != null) {
             try { windowManager.removeView(overlayView); } catch (Throwable ignored) {}
             overlayView = null;

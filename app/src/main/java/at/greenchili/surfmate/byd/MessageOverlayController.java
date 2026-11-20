@@ -104,6 +104,98 @@ public final class MessageOverlayController {
     }
 
     /**
+     * 0.1.43.16: Wie ein Dialog ausging. Nur {@link #OK} heißt „der Fahrer hat OK getippt“; alles andere zählt nicht als
+     * gelesen (z. B. von selbst nach {@code timeoutSec} geschlossen).
+     */
+    public enum DialogAusgang {
+        /** Nicht am Display (kein Overlay-Recht, Dienst antwortet nicht, …). */
+        NICHT_GEZEIGT,
+        /** OK getippt. */
+        OK,
+        /** Daneben (Abdunklung) getippt. */
+        WEG_GETIPPT,
+        /** Von selbst geschlossen, ohne Tipp. */
+        ABGELAUFEN,
+        /** Von einer anderen Meldung verdrängt oder der Dienst wurde beendet. */
+        VERDRAENGT,
+        /** Gezeigt, aber kein Schluss-Bescheid gekommen. */
+        UNBEKANNT,
+        /** 0.1.43.17: das Auto steht nicht mehr sicher, der Kern hat den Dialog sofort geschlossen. */
+        ABBRUCH_FAHRT,
+        /** 0.1.43.17: ein anderer Frage-Dialog ist gerade offen; dieser wurde gar nicht erst gezeigt. */
+        BELEGT;
+
+        /** Stand wirklich (lange genug) am Display: zählt für Telegram/Handy und als Versuch. */
+        public boolean gezeigt() {
+            return this != NICHT_GEZEIGT && !ohneVersuch();
+        }
+
+        /**
+         * 0.1.43.17 (E2E 0.1.43.16, 5b und Verdrängung): kostet keinen Versuch und gilt als nicht gezeigt. Der nächste
+         * Takt versucht es im sicheren Stand normal wieder.
+         */
+        public boolean ohneVersuch() {
+            return this == ABBRUCH_FAHRT || this == BELEGT || this == VERDRAENGT;
+        }
+
+        /** Antwort des Overlay-Dienstes auf den Schluss-Bescheid. */
+        public static DialogAusgang ausSchluss(String status) {
+            if ("SCHLUSS_OK".equals(status)) return OK;
+            if ("SCHLUSS_WEG".equals(status)) return WEG_GETIPPT;
+            if ("SCHLUSS_ABGELAUFEN".equals(status)) return ABGELAUFEN;
+            if ("SCHLUSS_VERDRAENGT".equals(status)) return VERDRAENGT;
+            return UNBEKANNT;
+        }
+    }
+
+    /** Spielraum über {@code timeoutSec} hinaus, bis der Schluss-Bescheid kommen muss. */
+    static final int SCHLUSS_SPIEL_S = 20;
+
+    /**
+     * 0.1.43.16: Dialog zeigen und warten, bis er zu ist; liefert, wie er ausging. Blockiert höchstens
+     * {@code timeoutSec + }{@value #SCHLUSS_SPIEL_S}{@code  s}, darum nur aus einem eigenen Takt-Faden aufrufen.
+     * Der Overlay-Dienst meldet den Schluss über denselben Ack-Weg (zweite Verbindung, gleicher Token).
+     */
+    public static DialogAusgang showDialogMitAusgang(
+            String title, String message, String button, String severity, int timeoutSec) {
+        return showDialogMitAusgang(title, message, button, severity, timeoutSec, null);
+    }
+
+    /** 0.1.43.17: höchstens ein Frage-Dialog zugleich (Rechte-Meldung und Wächter-Frage hintereinander statt verdrängt). */
+    static final java.util.concurrent.locks.ReentrantLock FRAGE = new java.util.concurrent.locks.ReentrantLock();
+    /** 0.1.43.17: so oft prüft der Kern bei offenem Dialog, ob das Auto noch sicher steht. */
+    static final int STAND_PRUEF_MS = 1000;
+    private static final ThreadLocal<java.util.function.BooleanSupplier> weiterSicher = new ThreadLocal<>();
+
+    /**
+     * 0.1.43.17 (E2E 0.1.43.16, 5b): wie oben, dazu prüft der Kern bei offenem Dialog etwa jede Sekunde {@code standSicher}
+     * (fail-closed: Ausnahme = nicht sicher). Fährt das Auto los, schließt er den Dialog sofort: {@link DialogAusgang#ABBRUCH_FAHRT}.
+     * Ist schon ein anderer Frage-Dialog offen: {@link DialogAusgang#BELEGT}, ohne etwas zu zeigen.
+     */
+    public static DialogAusgang showDialogMitAusgang(String title, String message, String button, String severity,
+            int timeoutSec, java.util.function.BooleanSupplier standSicher) {
+        if ((title == null || title.trim().isEmpty())
+                && (message == null || message.trim().isEmpty())) {
+            return DialogAusgang.NICHT_GEZEIGT;
+        }
+        if (!FRAGE.tryLock()) return DialogAusgang.BELEGT;
+        try {
+            weiterSicher.set(standSicher);
+            int t = Math.max(10, Math.min(300, timeoutSec));
+            String[] r = dispatch(ackArgs -> dialogCommand(title, message, button, severity, t, ackArgs + " --ez schlussAck true"),
+                    (t + SCHLUSS_SPIEL_S) * 1000);
+            if (!"DISPLAYED".equals(r[0])) return DialogAusgang.NICHT_GEZEIGT;
+            if (ABBRUCH_FAHRT.equals(r[1])) return DialogAusgang.ABBRUCH_FAHRT;
+            return DialogAusgang.ausSchluss(r[1]);
+        } finally {
+            weiterSicher.remove();
+            FRAGE.unlock();
+        }
+    }
+
+    static final String ABBRUCH_FAHRT = "ABBRUCH_FAHRT";
+
+    /**
      * F1-Band oben rechts: zwei Zeilen, Randfarbe nach {@code stufe} (passt|knapp|reicht_nicht),
      * {@code durationMs} sichtbar. Nur Anzeige, nicht berührbar.
      */
@@ -268,6 +360,24 @@ public final class MessageOverlayController {
     }
 
     private static DisplayResult dispatchAcknowledged(CommandFactory factory) {
+        String[] r = dispatch(factory, 0);
+        return "DISPLAYED".equals(r[0]) ? DisplayResult.displayed() : DisplayResult.failed(r[2]);
+    }
+
+    /**
+     * Befehl absetzen und auf die Quittung warten. {@code schlussWarteMs} > 0: danach auch auf den Schluss-Bescheid
+     * (zweite Verbindung, gleicher Token) warten. Liefert {Quittung (DISPLAYED|FAILED), Schluss (SCHLUSS_…|""), Grund}.
+     */
+    private static String[] dispatch(CommandFactory factory, int schlussWarteMs) {
+        DisplayResult quittung = quittung(factory, schlussWarteMs);
+        return quittung == null ? new String[] {"FAILED", "", "The car message service is unavailable"}
+                : new String[] {quittung.displayed ? "DISPLAYED" : "FAILED", letzterSchluss.get(), quittung.reason};
+    }
+
+    private static final ThreadLocal<String> letzterSchluss = ThreadLocal.withInitial(() -> "");
+
+    private static DisplayResult quittung(CommandFactory factory, int schlussWarteMs) {
+        letzterSchluss.set("");
         try (ServerSocket server = new ServerSocket()) {
             server.setReuseAddress(true);
             server.bind(new InetSocketAddress(
@@ -288,6 +398,15 @@ public final class MessageOverlayController {
                     return DisplayResult.failed(
                             "Message acknowledgement was rejected");
                 }
+                if (status.startsWith("SCHLUSS_")) {
+                    // Schluss kam vor der Quittung (sofort verdrängt): gezeigt war er trotzdem
+                    letzterSchluss.set(status);
+                    return DisplayResult.displayed();
+                }
+                if ("DISPLAYED".equals(status) && schlussWarteMs > 0) {
+                    letzterSchluss.set(schlussLesen(server, token, schlussWarteMs, weiterSicher.get(),
+                            MessageOverlayController::dismiss));
+                }
                 return "DISPLAYED".equals(status)
                         ? DisplayResult.displayed()
                         : DisplayResult.failed(
@@ -301,6 +420,51 @@ public final class MessageOverlayController {
         } catch (Throwable error) {
             logger.warn("Message acknowledgement failed: " + error.getMessage());
             return DisplayResult.failed("The car message service is unavailable");
+        }
+    }
+
+    /**
+     * Schluss-Bescheid des Dialogs abwarten (gleicher Token); "" = keiner gekommen. 0.1.43.17: mit {@code standSicher}
+     * wird höchstens {@value #STAND_PRUEF_MS} ms am Stück gewartet und dazwischen geprüft; nicht mehr sicher →
+     * {@code abbrechen} (Dialog schließen) und {@value #ABBRUCH_FAHRT}.
+     */
+    static String schlussLesen(ServerSocket server, String token, int warteMs,
+            java.util.function.BooleanSupplier standSicher, Runnable abbrechen) {
+        long ende = System.currentTimeMillis() + warteMs;
+        while (true) {
+            long rest = ende - System.currentTimeMillis();
+            if (rest <= 0) return "";
+            if (standSicher != null && !sicher(standSicher)) {
+                try {
+                    abbrechen.run();
+                } catch (Throwable ignored) {
+                }
+                return ABBRUCH_FAHRT;
+            }
+            try {
+                server.setSoTimeout((int) Math.max(1, standSicher == null ? rest : Math.min(rest, STAND_PRUEF_MS)));
+                try (Socket client = server.accept()) {
+                    client.setSoTimeout(1000);
+                    DataInputStream input = new DataInputStream(client.getInputStream());
+                    String t = input.readUTF();
+                    String status = input.readUTF();
+                    input.readUTF();
+                    if (token.equals(t) && status.startsWith("SCHLUSS_")) return status;
+                }
+            } catch (SocketTimeoutException timeout) {
+                if (standSicher == null) return "";
+                // nur der Prüftakt: weiter warten (Ende prüft die Schleife)
+            } catch (Throwable e) {
+                // fremde oder kaputte Verbindung: weiter warten bis zum Ende
+            }
+        }
+    }
+
+    private static boolean sicher(java.util.function.BooleanSupplier s) {
+        try {
+            return s.getAsBoolean();
+        } catch (Throwable t) {
+            return false;
         }
     }
 
