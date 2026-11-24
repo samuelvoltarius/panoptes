@@ -121,6 +121,8 @@ public final class AppUpdateDienst {
         default boolean aufnahmeLaeuft() { return true; }
         /** Gang P: TRUE/FALSE, null = unbekannt. */
         default Boolean gangP() { return null; }
+        /** 0.1.43.20: BYDs Stromverwaltung legt das System belegt gerade schlafen (zusätzliche Bremse, unbekannt = false). */
+        default boolean bydSchlaeftGleich() { return false; }
         /** Update-Hinweis zeigen; true = steht wirklich am Display. */
         default boolean zeigeHinweis(String griff, Freigabe f, String notizen, String zusatz) {
             return zeigeHinweis(griff, f, notizen);
@@ -747,7 +749,9 @@ public final class AppUpdateDienst {
     }
 
     private boolean vorgemerktFrei() {
-        return UpdateHinweis.installFrei(env.fahrsperre(), env.gangP(), env.waechterEreignis(), env.aufnahmeLaeuft());
+        // 0.1.43.20: nie mitten ins Einschlafen hinein installieren (BYD accmodemanager mSuspending=1); bremst nur
+        return UpdateHinweis.installFrei(env.fahrsperre(), env.gangP(), env.waechterEreignis(), env.aufnahmeLaeuft())
+                && !env.bydSchlaeftGleich();
     }
 
     /**
@@ -2224,6 +2228,11 @@ public final class AppUpdateDienst {
         @Override
         public boolean aufnahmeLaeuft() {
             return at.greenchili.surfmate.surveillance.ScreenDeterrent.aufnahmeLaeuft();
+        }
+
+        @Override
+        public boolean bydSchlaeftGleich() {
+            return at.greenchili.surfmate.monitor.BydDienstZustand.schlaeftGleich();
         }
 
         @Override

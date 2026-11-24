@@ -42,6 +42,7 @@ public final class WebHandyGuard {
             "/api/tacho/navi/fahrt",   // 0.1.37 „auch beim Fahren“: nur am Auto oder mit vollem Login
             "/api/tacho/groesse",   // 0.1.38.11 „Größe im Fahrerdisplay“ sendet sofort ans Fahrerdisplay: nur am Auto oder mit vollem Login
             "/api/tacho/eigen",   // 0.1.41 „Tacho gestalten“: aendert das Fahrerdisplay, nur am Auto oder mit vollem Login
+            "/api/tacho/sicht",   // 0.1.43.20 Pflichtfrage „Warnleuchten und Tempo sichtbar?“: nur am Auto oder mit vollem Login
             "/api/tacho/auswahl",   // 0.1.37 „Was zeigt der Tacho?“: nur mit Recht „tacho“ der Kopplung (tachoErlaubt)
             "/api/launcher/v1/layout",   // 0.1.38 Launcher-Layout: nur mit Recht „launcher“ (launcherErlaubt)
             "/api/ha/geraete",   // 0.1.39 HA-Geräte (Namen, Räume privat): nur am Auto oder mit vollem Login
@@ -58,6 +59,8 @@ public final class WebHandyGuard {
     public static final String[] GEHEIME_ABSCHNITTE = {
             "auth", "kopplungen", "update", "telegram", "bydCloud", "daemons", "einrichtung", "planner",
             "notzugang", "wireguard", "tailscale", "bruecke", "abrp", "ha", "genAi", "hotspot", "nativeShell",
+            // 0.1.43.20 Tacho-Sichtprüfung/Tester-Freigabe: nur über /api/tacho/sicht am Auto
+            "tachoSicht",
             // 0.1.38.8 Hupe/Licht/Aufsperren-Schalter: einschalten nur am Auto oder mit Login, aus geht übers Handy
             "fahrzeugAktionen"};
 

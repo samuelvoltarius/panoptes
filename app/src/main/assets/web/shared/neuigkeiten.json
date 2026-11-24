@@ -1481,6 +1481,65 @@
         "„Wat kan mijn instrumentenpaneel?” herkent het systeemonderdeel voor de weergave nu correct.",
         "Gebeurtenisclips (bijvoorbeeld na een noodstop) worden nu zonder vraag bewaard, ook als je direct daarna het contact uitzet. Na 30 dagen wist Panoptes ze vanzelf, tenzij je in de cliplijst op „Bewaren” tikt."
       ]
+    },
+    {
+      "version": "0.1.43.20",
+      "versionCode": 104,
+      "de": [
+        "Fahrtenbuch → Zahlen: Die neue Karte „Verbrauch laut BYD“ zeigt, was das Auto selbst je Fahrt, Tag, Woche und Monat gemessen hat, gleich neben den Werten von Panoptes. Panoptes liest das nur und schickt es nirgendwohin.",
+        "Ebenfalls unter Zahlen: wie viel du gegenüber einem Benziner oder Diesel sparst. Verbrauch und Spritpreis des Vergleichsautos trägst du selbst ein, der vorgeschlagene Preis ist nur ein Richtwert. Bei Plug-in-Hybriden bleibt die Karte weg.",
+        "Ladungen und Ladekosten kannst du jetzt als CSV-Tabelle speichern, zum Beispiel für Excel oder die Steuer. Das Fahrtenbuch geht jetzt auch für einen frei gewählten Zeitraum.",
+        "Neue Kachel „Meldungen des Autos“ auf der Startseite: Sie zeigt, ob das Auto gerade eine Warnung meldet, etwa zu Reifendruck oder ABS. Panoptes liest nur mit und löscht nichts. Gibt dein Auto die Meldungen nicht heraus, bleibt die Kachel weg.",
+        "Neue Knöpfe öffnen direkt die BYD-Seiten für Autostart, Berechtigungen und Softwarestand, in der Einrichtung und in den Einstellungen. Wichtig beim Autostart: Bei Panoptes den Schalter AUS lassen. AN heißt bei BYD: Start gesperrt.",
+        "Wo das Auto zwei Bewegungssensoren hat, nutzt die Ereignis-Erkennung jetzt beide: weniger Fehlalarme durch Rütteln, ein wirklich harter Stoß zählt aber immer. Neu erkannt werden Schleudern und Überschlag.",
+        "Sicherer Tacho: Panoptes zeigt nur noch dann etwas am Tacho, wenn Warnleuchten und Tempo sichtbar bleiben. Ist dein Modell dafür noch nicht geprüft, ist die Tacho-Anzeige pausiert. So schaltest du sie wieder ein: Apps & Display → Display, bei „Tacho“ auf „Für mein Auto freischalten“ tippen, im Stand.",
+        "Beim ersten Mal fragt Panoptes: „Warnleuchten und Tempo sichtbar?“ Bei „Nein“ oder ohne Antwort kommt sofort die BYD-Anzeige zurück.",
+        "Der Knopf heißt jetzt „Zurück zur BYD-Anzeige“ und holt die normale Tacho-Anzeige immer zurück."
+      ],
+      "en": [
+        "Logbook → Numbers: the new card “Consumption according to BYD” shows what the car itself measured per trip, day, week and month, right next to the Panoptes values. Panoptes only reads this and sends it nowhere.",
+        "Also under Numbers: how much you save compared to a petrol or diesel car. You enter the comparison car’s consumption and fuel price yourself; the suggested price is only a guide. For plug-in hybrids the card is hidden.",
+        "You can now save charging sessions and charging costs as a CSV table, for example for Excel or your taxes. The trip log now also works for a period of your choice.",
+        "New tile “Messages from the car” on the home page: it shows whether the car is currently reporting a warning, for example about tyre pressure or ABS. Panoptes only reads along and clears nothing. If your car does not give out these messages, the tile stays hidden.",
+        "New buttons open the BYD pages for autostart, permissions and software version directly, in the setup and in the settings. Important for autostart: leave the switch for Panoptes OFF. At BYD, ON means: start blocked.",
+        "Where the car has two motion sensors, event detection now uses both: fewer false alarms from shaking, but a really hard impact always counts. Skidding and rollover are now detected too.",
+        "Safer cluster: Panoptes now only shows something on the instrument cluster when warning lights and speed stay visible. If your model has not been checked for this yet, the cluster display is paused. To turn it back on: Apps & display → Display, under “Cluster” tap “Enable for my car”, while parked.",
+        "The first time, Panoptes asks: “Warning lights and speed visible?” On “No” or without an answer, the BYD display comes back right away.",
+        "The button is now called “Back to the BYD display” and always brings back the normal cluster display."
+      ],
+      "fr": [
+        "Carnet de trajets → Chiffres : la nouvelle carte « Consommation selon BYD » montre ce que la voiture a mesuré elle-même par trajet, jour, semaine et mois, juste à côté des valeurs de Panoptes. Panoptes ne fait que lire et n’envoie rien nulle part.",
+        "Aussi sous Chiffres : combien tu économises par rapport à une voiture essence ou diesel. Tu saisis toi-même la consommation et le prix du carburant de la voiture de comparaison ; le prix proposé n’est qu’une indication. Pour les hybrides rechargeables, la carte est masquée.",
+        "Tu peux maintenant enregistrer les recharges et les coûts de recharge en tableau CSV, par exemple pour Excel ou les impôts. Le carnet de trajets fonctionne aussi pour une période de ton choix.",
+        "Nouvelle tuile « Messages de la voiture » sur la page d’accueil : elle indique si la voiture signale en ce moment un avertissement, par exemple pression des pneus ou ABS. Panoptes ne fait que lire et n’efface rien. Si ta voiture ne fournit pas ces messages, la tuile reste masquée.",
+        "De nouveaux boutons ouvrent directement les pages BYD pour le démarrage auto, les autorisations et la version logicielle, dans la configuration et dans les réglages. Important pour le démarrage auto : laisse l’interrupteur de Panoptes sur ARRÊT. Chez BYD, MARCHE signifie : démarrage bloqué.",
+        "Quand la voiture a deux capteurs de mouvement, la détection d’événements utilise maintenant les deux : moins de fausses alertes dues aux secousses, mais un choc vraiment violent compte toujours. Le dérapage et le tonneau sont maintenant détectés aussi.",
+        "Compteur plus sûr : Panoptes n’affiche plus rien au compteur tant que les voyants et la vitesse ne restent pas visibles. Si ton modèle n’a pas encore été vérifié, l’affichage compteur est en pause. Pour le réactiver : Apps & écran → Écran, sous « Compteur » touche « Activer pour ma voiture », à l’arrêt.",
+        "La première fois, Panoptes demande : « Voyants et vitesse visibles ? » Sur « Non » ou sans réponse, l’affichage BYD revient aussitôt.",
+        "Le bouton s’appelle maintenant « Retour à l’affichage BYD » et ramène toujours l’affichage normal du compteur."
+      ],
+      "it": [
+        "Diario di viaggio → Numeri: la nuova scheda «Consumo secondo BYD» mostra cosa ha misurato l’auto stessa per viaggio, giorno, settimana e mese, accanto ai valori di Panoptes. Panoptes legge soltanto e non invia nulla.",
+        "Sempre in Numeri: quanto risparmi rispetto a un’auto a benzina o diesel. Consumo e prezzo del carburante dell’auto di confronto li inserisci tu; il prezzo proposto è solo indicativo. Per le ibride plug-in la scheda resta nascosta.",
+        "Ora puoi salvare ricariche e costi di ricarica come tabella CSV, per esempio per Excel o per le tasse. Il registro dei viaggi funziona ora anche per un periodo a tua scelta.",
+        "Nuovo riquadro «Messaggi dell’auto» nella pagina iniziale: mostra se l’auto sta segnalando un avviso, per esempio pressione pneumatici o ABS. Panoptes legge soltanto e non cancella nulla. Se la tua auto non fornisce questi messaggi, il riquadro resta nascosto.",
+        "Nuovi pulsanti aprono direttamente le pagine BYD per avvio automatico, permessi e versione software, nella configurazione e nelle impostazioni. Importante per l’avvio automatico: lascia SPENTO l’interruttore di Panoptes. Da BYD, ACCESO significa: avvio bloccato.",
+        "Dove l’auto ha due sensori di movimento, il rilevamento degli eventi ora li usa entrambi: meno falsi allarmi dovuti a scossoni, ma un urto davvero forte conta sempre. Ora vengono riconosciuti anche sbandata e ribaltamento.",
+        "Quadro più sicuro: Panoptes mostra qualcosa sul quadro strumenti solo se spie e velocità restano visibili. Se il tuo modello non è ancora stato verificato, la visualizzazione sul quadro è in pausa. Per riattivarla: App & display → Display, sotto “Quadro” tocca “Attiva per la mia auto”, da fermo.",
+        "La prima volta Panoptes chiede: “Spie e velocità visibili?” Con “No” o senza risposta torna subito il display BYD.",
+        "Il pulsante ora si chiama “Torna al display BYD” e riporta sempre la visualizzazione normale del quadro."
+      ],
+      "nl": [
+        "Ritboek → Cijfers: de nieuwe kaart „Verbruik volgens BYD” toont wat de auto zelf per rit, dag, week en maand heeft gemeten, direct naast de waarden van Panoptes. Panoptes leest dit alleen en stuurt het nergens heen.",
+        "Ook onder Cijfers: hoeveel je bespaart tegenover een benzine- of dieselauto. Verbruik en brandstofprijs van de vergelijkingsauto vul je zelf in; de voorgestelde prijs is alleen een richtwaarde. Bij plug-in-hybrides blijft de kaart weg.",
+        "Laadbeurten en laadkosten kun je nu opslaan als CSV-tabel, bijvoorbeeld voor Excel of de belasting. Het rittenboek werkt nu ook voor een zelfgekozen periode.",
+        "Nieuwe tegel „Meldingen van de auto” op de startpagina: die toont of de auto op dit moment een waarschuwing meldt, bijvoorbeeld over bandenspanning of ABS. Panoptes leest alleen mee en wist niets. Geeft je auto deze meldingen niet door, dan blijft de tegel weg.",
+        "Nieuwe knoppen openen direct de BYD-pagina’s voor autostart, rechten en softwareversie, in de installatie en in de instellingen. Belangrijk bij autostart: laat de schakelaar bij Panoptes UIT. Bij BYD betekent AAN: starten geblokkeerd.",
+        "Waar de auto twee bewegingssensoren heeft, gebruikt de gebeurtenisherkenning nu beide: minder valse alarmen door schudden, maar een echt harde klap telt altijd. Slippen en over de kop slaan worden nu ook herkend.",
+        "Veiligere teller: Panoptes toont alleen nog iets op de teller als waarschuwingslampjes en snelheid zichtbaar blijven. Is je model daarvoor nog niet gecontroleerd, dan is de tellerweergave gepauzeerd. Zo zet je het weer aan: Apps & scherm → Scherm, bij „Teller” tik op „Vrijgeven voor mijn auto”, terwijl je stilstaat.",
+        "De eerste keer vraagt Panoptes: „Waarschuwingslampjes en snelheid zichtbaar?” Bij „Nee” of zonder antwoord komt de BYD-weergave meteen terug.",
+        "De knop heet nu „Terug naar de BYD-weergave” en zet altijd de normale tellerweergave terug."
+      ]
     }
   ]
 }

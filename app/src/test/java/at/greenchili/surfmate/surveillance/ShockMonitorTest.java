@@ -59,7 +59,7 @@ public class ShockMonitorTest {
         int t = e.indexOf("public boolean triggerShockEvent(");
         assertTrue(t > 0 && e.indexOf("startRecording();", t) > t);
         String sc = src("src/main/java/at/greenchili/surfmate/roadsense/sidecar/RoadSenseImuSidecarService.kt");
-        assertTrue(sc.contains("enum class ImuRate { FAST, SLOW, PARK }"));
+        assertTrue(sc.contains("enum class ImuRate { FAST, SLOW, PARK, FAHRT }"));   // 0.1.43.20: FAHRT dazu
         assertTrue("25 Hz", sc.contains("PARK_SAMPLING_US = 40_000"));
         assertTrue("1 s Bündelung im Sensor-FIFO", sc.contains("PARK_REPORT_LATENCY_US = 1_000_000"));
         assertTrue("Leistung des Sensors wird geloggt", sc.contains("power=${activeAccel.power} mA"));

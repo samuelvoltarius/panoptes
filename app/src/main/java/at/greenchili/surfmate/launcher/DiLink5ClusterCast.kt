@@ -63,7 +63,6 @@ object DiLink5ClusterCast {
     private const val TASK_GUARD_AFTER_REANCHOR_MS = 15_000L
     private const val TASK_GUARD_MAX_MS = 90_000L
     private const val TASK_GUARD_UNKNOWN_RETRY_COUNT = 3
-    private const val TASK_GUARD_FORCE_RESTART_COUNT = 5
     private const val TASK_GUARD_MAX_FOREGROUND_TAKEOVERS = 5
     private const val MARKER_PENDING = "di5ClusterProjectionPending"
     private const val MARKER_POWERED = "di5ClusterProjectionPowered"
@@ -1792,6 +1791,12 @@ object DiLink5ClusterCast {
             var consecutivePlacementFailures = 0
             var consecutiveForeignPolls = 0
             var foregroundTakeovers = 0
+            // P1 (0.1.43.20): API 33 prueft "kein Task" erst per Activity-Dump gegen
+            // (Di5TaskBeleg); Zwangsneustart dort nur bei Beleg und hoechstens einmal.
+            val sdk = Build.VERSION.SDK_INT
+            var taskDumps = 0
+            var forcedRestarts = 0
+            var placementProvenWrongDisplay = false
             var lastObservedForeground: String? = live.pkg
             var lastForeignPackage: String? = null
             while (android.os.SystemClock.elapsedRealtime() < hardDeadline) {
@@ -1831,10 +1836,26 @@ object DiLink5ClusterCast {
 
                 var taskLocation: ClusterFreeformWindow.TaskLocation? = null
                 var placementNeedsCorrection = false
+                placementProvenWrongDisplay = false
                 if (live.kind == SessionKind.APP) {
-                    taskLocation = ClusterFreeformWindow.findTaskLocation(
-                        live.pkg, live.targetDisplayId
-                    )
+                    val beleg = Di5TaskBeleg.bewerte(
+                        sdk,
+                        ClusterFreeformWindow.findTaskLocation(
+                            live.pkg, live.targetDisplayId
+                        ),
+                        live.pkg,
+                        live.targetDisplayId,
+                        taskDumps
+                    ) { Di5TaskBeleg.liesActivityDump() }
+                    if (beleg.dumpGelesen) {
+                        taskDumps++
+                        logger.info(
+                            "DI5 task guardian: reflection found no task for " +
+                                    "${live.pkg}; activity dump says ${beleg.befund}"
+                        )
+                    }
+                    taskLocation = beleg.ort
+                    placementProvenWrongDisplay = beleg.belegtFalschesDisplay
                     when {
                         !taskLocation.known -> unknownTaskPolls++
                         taskLocation.taskId <= 0 -> {
@@ -1912,10 +1933,16 @@ object DiLink5ClusterCast {
                     var relaunched = false
                     val corrected: Boolean
                     if (live.kind == SessionKind.APP &&
-                        placementNeedsCorrection &&
-                        consecutivePlacementFailures >=
-                        TASK_GUARD_FORCE_RESTART_COUNT
+                        Di5TaskBeleg.zwangsneustartErlaubt(
+                            sdk,
+                            placementNeedsCorrection,
+                            consecutivePlacementFailures,
+                            placementProvenWrongDisplay,
+                            foregroundOurs,
+                            forcedRestarts
+                        )
                     ) {
+                        forcedRestarts++
                         relaunched =
                             AppLauncher.forceStopPackage(live.pkg) &&
                                     launchTarget(

@@ -89,7 +89,8 @@ public final class ShockMonitor {
                 && !at.greenchili.surfmate.camping.Tiermodus.aktiv();
         synchronized (lock) {
             if (soll && (!aktiv || e != stufe)) {
-                detector = new ShockDetector(e);
+                detector = new ShockDetector(e).mitZweitSensor(
+                        at.greenchili.surfmate.recording.ZweiSensoren.geraet());
                 detector.reset(now);
                 stufe = e;
                 aktiv = true;
@@ -149,8 +150,21 @@ public final class ShockMonitor {
         synchronized (lock) {
             ShockDetector det = detector;
             if (!aktiv || det == null) return;
+            // 0.1.43.20: zweiter Chip zuerst, damit sein Zeitraum zur Plausibilität schon da ist.
+            at.greenchili.surfmate.recording.ZweiSensoren z = at.greenchili.surfmate.recording.ZweiSensoren.geraet();
+            for (at.greenchili.surfmate.roadsense.detect.ImuAccelSample s : d.getAccel2()) {
+                z.beschl2(s.getTMs(), s.getAx(), s.getAy(), s.getAz());
+            }
+            int vorher = det.abgewiesen();
             for (at.greenchili.surfmate.roadsense.detect.ImuAccelSample s : d.getAccel()) {
                 if (det.feed(s.getTMs(), s.getAx(), s.getAy(), s.getAz())) spitze = det.letzteSpitze();
+            }
+            if (det.abgewiesen() > vorher) {
+                double[] w = det.letzteAbweisung();
+                logger.info(String.format(java.util.Locale.ROOT,
+                        "Erschütterung nur an einem Sensor – keine Aufnahme (haupt %.2f m/s², zweit %s, noetig %.2f m/s², verworfen %d)",
+                        w[0], Double.isNaN(w[1]) ? "keine Probe" : String.format(java.util.Locale.ROOT, "%.2f m/s²", w[1]),
+                        at.greenchili.surfmate.recording.ZweiSensoren.BESCHL_ANTEIL * w[0], det.abgewiesen() - vorher));
             }
         }
         if (spitze >= 0) ausloesen(spitze);

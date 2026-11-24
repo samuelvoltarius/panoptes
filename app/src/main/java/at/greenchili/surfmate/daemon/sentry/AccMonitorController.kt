@@ -152,10 +152,8 @@ class AccMonitorController(
     private fun getDrivingState(): Int {
         return try {
             val output = execShell("dumpsys byd_car_service 2>/dev/null | grep 'Current Driving State'")
-            if (output.contains(":")) {
-                val value = output.split(":")[1].trim()
-                value.toInt()
-            } else -1
+            // 0.1.43.20: ein Parser für alle (255/unlesbar → -1)
+            at.greenchili.surfmate.monitor.BydDienstZustand.fahrzustand(output) ?: -1
         } catch (e: Exception) {
             -1
         }

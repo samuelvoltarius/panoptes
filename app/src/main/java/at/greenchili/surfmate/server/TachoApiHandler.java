@@ -35,6 +35,10 @@ import java.net.URLDecoder;
  *       setzen nur im Stand, zeigt die Größe sofort ({@link at.greenchili.surfmate.tacho.TachoGroesse}).</li>
  *   <li>{@code GET  /api/tacho/auswahl}, {@code POST /api/tacho/auswahl} {@code {id}} – „Was zeigt der
  *       Tacho?“: Designs, Navi- und freigegebene Apps, {@code normal} ({@link TachoAuswahl}).</li>
+ *   <li>{@code GET/POST /api/tacho/sicht} {@code {antwort: ja|nein|unbekannt}}, {@code POST /api/tacho/sicht/neu},
+ *       {@code POST /api/tacho/sicht/tester} {@code {an}} (gerätegebunden, startet die Probe),
+ *       {@code POST /api/tacho/sicht/hinweis} (einmaliger „pausiert“-Hinweis gesehen) – 0.1.43.20 Kohorten-Gate und Pflichtfrage
+ *       „Warnleuchten und Tempo sichtbar?“ ({@link at.greenchili.surfmate.tacho.TachoSicht}); nein/Frist → 18 → 0.</li>
  *   <li>{@code PUT  /api/tacho/navi/warnleuchten} {@code {frei: ja|nein, paket}} – Antwort nach
  *       der Probe oder paketbezogener Widerruf.</li>
  * </ul>
@@ -110,7 +114,73 @@ public final class TachoApiHandler {
             HttpResponse.sendJson(out, r.optBoolean("ok") ? 200 : 400, r.toString());
             return true;
         }
-        // 0.1.37 „Tacho wieder normal“: stoppt jede Projektion (App, Spiegel, Karte), Instrumentenanzeige zurueck.
+        // 0.1.43.20 (P3/P4): Kohorten-Gate und Pflichtfrage „Warnleuchten und Tempo sichtbar?“. Nur am Auto bzw.
+        // mit Login (Kopplungen oben abgewiesen, Handy-Web per WebHandyGuard): antworten soll, wer den Tacho sieht.
+        if (p.equals("/api/tacho/sicht") && method.equals("GET")) {
+            // Die Seiten fragen alle paar Sekunden; ohne offene Frage nichts erheben (kein Hash, kein dumpsys).
+            if (!path.contains("voll=1") && !at.greenchili.surfmate.tacho.TachoSicht.offen()) {
+                HttpResponse.sendJson(out, "{\"ok\":true,\"offen\":false}");
+                return true;
+            }
+            at.greenchili.surfmate.tacho.TachoKohorte.Schluessel k =
+                    at.greenchili.surfmate.tacho.TachoKohorte.schluessel();
+            JSONObject r = at.greenchili.surfmate.tacho.TachoSicht.stand(k.id());
+            JSONObject kohorte = at.greenchili.surfmate.tacho.TachoKohorte.stand();
+            r.put("ok", true).put("kohorte", kohorte);
+            if (path.contains("voll=1")) {
+                // Tester-Knopf nur, wenn das Auto eine Projektion anbietet und nicht in der Liste steht.
+                JSONObject plattform = TachoFaehigkeit.bewerte(TachoFaehigkeit.erhebe()).optJSONObject("plattform");
+                at.greenchili.surfmate.tacho.TachoKohorte.Urteil u =
+                        at.greenchili.surfmate.tacho.TachoKohorte.urteil();
+                r.put("testerAngebot", at.greenchili.surfmate.tacho.TachoKohorte.testerAngebot(plattform))
+                        .put("testerAktiv", at.greenchili.surfmate.tacho.TachoSicht.testerFreigabe(k.id()))
+                        .put("inListe", at.greenchili.surfmate.tacho.TachoKohorte.inListe())
+                        .put("pausiertHinweis", at.greenchili.surfmate.tacho.TachoSicht.pausiertHinweisFaellig(
+                                at.greenchili.surfmate.tacho.TachoSicht.bisherGenutzt(), u));
+            }
+            HttpResponse.sendJson(out, r.toString());
+            return true;
+        }
+        if (p.equals("/api/tacho/sicht") && (method.equals("PUT") || method.equals("POST"))) {
+            JSONObject r = at.greenchili.surfmate.tacho.TachoSicht.beantworte(in.optString("antwort", ""));
+            HttpResponse.sendJson(out, r.optBoolean("ok") ? 200
+                    : "ungueltige_antwort".equals(r.optString("grund")) ? 400 : 409, r.toString());
+            return true;
+        }
+        if (p.equals("/api/tacho/sicht/neu") && method.equals("POST")) {
+            String bewegung = bewegungsGrund();
+            if (bewegung != null) {
+                HttpResponse.sendJson(out, 409, new JSONObject().put("ok", false)
+                        .put("grund", "nur_im_stand").put("detail", bewegung).toString());
+                return true;
+            }
+            JSONObject r = at.greenchili.surfmate.tacho.TachoSicht.zuruecksetzen(
+                    at.greenchili.surfmate.tacho.TachoKohorte.schluessel().id());
+            HttpResponse.sendJson(out, r.toString());
+            return true;
+        }
+        if (p.equals("/api/tacho/sicht/tester") && (method.equals("PUT") || method.equals("POST"))) {
+            boolean an = in.optBoolean("an", false);
+            if (an && bewegungsGrund() != null) {
+                HttpResponse.sendJson(out, 409, "{\"ok\":false,\"grund\":\"nur_im_stand\"}");
+                return true;
+            }
+            String id = at.greenchili.surfmate.tacho.TachoKohorte.schluessel().id();
+            boolean ok = at.greenchili.surfmate.tacho.TachoSicht.setzeTesterFreigabe(an, id);
+            JSONObject r = new JSONObject().put("ok", ok).put("an", an);
+            // Gleich danach prüfen: Probe-Projektion, das Gate öffnet die Pflichtfrage.
+            if (ok && an) r.put("pruefung", at.greenchili.surfmate.tacho.TachoSicht.starteSichtprobe(id));
+            if (!an) at.greenchili.surfmate.tacho.TachoNaviApp.tachoNormal();
+            HttpResponse.sendJson(out, r.toString());
+            return true;
+        }
+        if (p.equals("/api/tacho/sicht/hinweis") && method.equals("POST")) {
+            HttpResponse.sendJson(out, new JSONObject()
+                    .put("ok", at.greenchili.surfmate.tacho.TachoSicht.pausiertGesehen()).toString());
+            return true;
+        }
+        // 0.1.37 „Tacho wieder normal“, ab 0.1.43.20 „Zurück zur BYD-Anzeige“: stoppt jede Projektion (App,
+        // Spiegel, Karte) und schickt 18 → 0, Instrumentenanzeige zurueck.
         if (p.equals("/api/tacho/normal") && method.equals("POST")) {
             HttpResponse.sendJson(out, TachoNaviApp.tachoNormal().toString());
             return true;

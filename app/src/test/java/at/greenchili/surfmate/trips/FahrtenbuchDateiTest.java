@@ -114,6 +114,27 @@ public class FahrtenbuchDateiTest {
     }
 
     @Test
+    public void freierZeitraumVonBis() throws Exception {
+        long t = java.time.ZonedDateTime.of(2026, 10, 5, 8, 0, 0, 0, WIEN).toInstant().toEpochMilli();
+        long[] abgefragt = new long[2];
+        FahrtenbuchDatei.Quelle q = (von, bis, limit, offset) -> {
+            abgefragt[0] = von;
+            abgefragt[1] = bis;
+            return offset == 0 ? new JSONArray().put(fahrt(t, 12, 2)) : new JSONArray();
+        };
+        String r = rufe("/api/trips/datei?format=csv&von=2026-10-01&bis=2026-10-15&sprache=de", q);
+        assertTrue(r.startsWith("HTTP/1.1 200"));
+        assertTrue(r.contains("filename=\"fahrtenbuch-2026-10-01_2026-10-15.csv\""));
+        assertEquals(java.time.ZonedDateTime.of(2026, 10, 1, 0, 0, 0, 0, WIEN).toInstant().toEpochMilli(), abgefragt[0]);
+        assertEquals(java.time.ZonedDateTime.of(2026, 10, 16, 0, 0, 0, 0, WIEN).toInstant().toEpochMilli() - 1, abgefragt[1]);
+        assertTrue(r.contains("2026-10-05;08:00;"));
+        assertTrue(rufe("/api/trips/datei?von=2026-10-15&bis=2026-10-01", q).startsWith("HTTP/1.1 400"));
+        assertTrue(rufe("/api/trips/datei?von=2026-10-01&bis=2026-10-15&format=druck", q).contains("2026-10-01 – 2026-10-15"));
+        // Monat hat Vorrang und bleibt wie bisher
+        assertTrue(rufe("/api/trips/datei?monat=2026-10&von=x", q).contains("fahrtenbuch-2026-10.csv"));
+    }
+
+    @Test
     public void nurLesenFuerGekoppelteGeraete() {
         assertFalse(at.greenchili.surfmate.server.ExternGuard.blocks("GET", "/api/trips/datei?monat=2026-10"));
         assertTrue(at.greenchili.surfmate.server.ExternGuard.blocks("POST", "/api/trips/datei"));

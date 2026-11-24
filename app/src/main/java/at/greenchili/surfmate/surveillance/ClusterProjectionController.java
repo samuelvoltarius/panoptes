@@ -456,6 +456,8 @@ public final class ClusterProjectionController {
         if (maxCapLockout) return false;
         int st = projState;
         if (st == ST_OPEN || st == ST_OPENING) return true;
+        // 0.1.43.20 (P3): ungeprüfte Hardware → gar nicht erst öffnen (nichts geht hinaus).
+        if (!at.greenchili.surfmate.tacho.TachoKohorte.zulassungMoeglich()) return false;
         final int epoch;
         synchronized (this) {
             if (shuttingDown) return false;
@@ -789,7 +791,8 @@ public final class ClusterProjectionController {
                     return;
                 }
             }
-            final int sizeOp = sizeProfileOpcode;
+            // 0.1.43.20 (P2): Größen-Sperre – Profil nur, wenn Modell und Display nicht widersprechen.
+            final int sizeOp = at.greenchili.surfmate.tacho.TachoKohorte.profilNachSperre(sizeProfileOpcode);
             logger.info("projection open: " + (sizeOp != 0 ? sizeOp + "→" : "") + OP_FULLSCREEN_ON + "→" + OP_DI4_MODE);
             // Size-profile step is optional (0 = skip). Wrong profile = wrong cluster aspect.
             if (sizeOp != 0
@@ -828,6 +831,13 @@ public final class ClusterProjectionController {
 
     private boolean sendOpenInfo(
             int op, int epoch, String rejectionReason) {
+        // 0.1.43.20 (P3): Kohorten-Gate vor jedem öffnenden Befehl (Größe, 16, 35). Abgewiesen →
+        // forceClose, das nur den immer erlaubten Rückweg 18 → 0 schickt.
+        if (!at.greenchili.surfmate.tacho.TachoKohorte.darfSenden(op)) {
+            logger.warn("projection open opcode " + op + " refused by the cohort gate");
+            forceClose("cohort-gate");
+            return false;
+        }
         LegacyCommandResult result = sendInfoResult(op);
         if (result == LegacyCommandResult.ACCEPTED) return true;
         if (result == LegacyCommandResult.INDETERMINATE) {
@@ -1030,10 +1040,10 @@ public final class ClusterProjectionController {
             if (!isCurrentCloseEpoch(epoch)) return;
             // 0.1.38.11: die Größe frisch lesen – eine eben auf der Tacho-Seite gewählte gilt sofort auch fürs Restore
             loadTuning();
-            final int restoreProfile =
+            final int restoreProfile = at.greenchili.surfmate.tacho.TachoKohorte.profilNachSperre(
                     restoreProfileOpcode != 0
                             ? restoreProfileOpcode
-                            : sizeProfileOpcode;
+                            : sizeProfileOpcode);
             logger.info("projection close: " + OP_CLOSE + "→" + OP_REFRESH);
             LegacyCommandResult closeResult =
                     sendInfoResult(OP_CLOSE);
@@ -1440,10 +1450,10 @@ public final class ClusterProjectionController {
         projHandler.post(() -> {
             boolean restored = false;
             try {
-                int restoreProfile =
+                int restoreProfile = at.greenchili.surfmate.tacho.TachoKohorte.profilNachSperre(
                         restoreProfileOpcode != 0
                                 ? restoreProfileOpcode
-                                : sizeProfileOpcode;
+                                : sizeProfileOpcode);
                 boolean closeSent =
                         sendInfoResult(OP_CLOSE)
                                 == LegacyCommandResult.ACCEPTED;
@@ -1930,9 +1940,9 @@ public final class ClusterProjectionController {
                     && !isKnownLegacySizeProfile(restoreProfile)) {
                 restoreProfile = 0;
             }
-            return restoreProfile != 0
+            return at.greenchili.surfmate.tacho.TachoKohorte.profilNachSperre(restoreProfile != 0
                     ? restoreProfile
-                    : sizeProfile;
+                    : sizeProfile);
         } catch (Throwable failure) {
             logger.warn("legacy restore profile read failed: "
                     + failure.getMessage() + " — restoring with 18→0 only");
@@ -1966,23 +1976,12 @@ public final class ClusterProjectionController {
     }
 
     /**
-     * 0.1.38.11: nur noch ein VORSCHLAG fürs „Fehler melden“, nie gesendet. Ganze Wörter statt Teilstrings („han“
-     * traf sonst z. B. „Shanghai“), Seal U / DM-i ohne Vorschlag: 30 war dort falsch, 31 ist nicht belegt.
-     * 0 = kein Vorschlag.
+     * Nur ein VORSCHLAG fürs „Fehler melden“ und die Größen-Seite, nie gesendet. 0.1.43.20 (P2): keine Namensteile
+     * mehr (dmi/song/han/tang trafen ganze Modellfamilien mit verschiedenen Tacho-Größen). 31 nur bei exakt erkanntem
+     * Seal EU, 29 nur bei exakt erkanntem Atto 3 ({@code TachoKohorte.vorschlag}), sonst 0 = kein Vorschlag.
      */
     static int modellVorschlag(String modell) {
-        String lo = modell == null ? "" : modell.toLowerCase(java.util.Locale.US);
-        if (lo.contains("seal u") || lo.contains("seal-u") || lo.contains("sealu")
-                || wort(lo, "dm-i") || wort(lo, "dmi")) return 0;
-        if (wort(lo, "atto") || wort(lo, "yuan")) return 29;                    // 8.8"
-        if (wort(lo, "han") || wort(lo, "tang") || wort(lo, "song")) return 30; // 12.3"
-        if (wort(lo, "seal")) return 31;                                        // 10.25" (am Seal belegt)
-        return 0;
-    }
-
-    private static boolean wort(String text, String w) {
-        return java.util.regex.Pattern.compile("(^|[^a-z0-9])" + java.util.regex.Pattern.quote(w) + "([^a-z0-9]|$)")
-                .matcher(text).find();
+        return at.greenchili.surfmate.tacho.TachoKohorte.vorschlag(modell, "");
     }
 
     static String produktModell() {
@@ -2002,34 +2001,53 @@ public final class ClusterProjectionController {
         try {
             int p = bestaetigtesProfil(UnifiedConfigManager.getSurveillance(), UnifiedConfigManager.getBlindSpot());
             String g = produktModell();
-            o.put("profil", p).put("bestaetigt", p != 0).put("vorschlag", modellVorschlag(g))
+            org.json.JSONObject k = at.greenchili.surfmate.tacho.TachoKohorte.stand();
+            o.put("profil", p).put("bestaetigt", p != 0)
+                    .put("vorschlag", k.has("vorschlag") ? k.optInt("vorschlag") : modellVorschlag(g))
+                    .put("adasAlternative", k.optInt("adasAlternative", 0))
                     .put("geraet", g.length() > 40 ? g.substring(0, 40) : g);
         } catch (Throwable ignored) { }
         return o;
     }
 
     /**
-     * „Tacho wieder normal“ (0.1.38.11), wenn KEINE Projektion offen ist: dieselbe Folge wie beim Schließen
-     * (18 → 0 → bestätigtes Profil) auf dem Projektions-Thread, damit ein früher gesendetes falsches Profil
-     * zurückgeht. Ohne bestätigtes Profil wird nichts gesendet. Rückgabe: "gesendet", "projektion" (das Schließen
-     * stellt selbst wieder her), "kein_profil" oder "nicht_moeglich" (DiLink 5, Wiederherstellung läuft).
+     * Notknopf „Zurück zur BYD-Anzeige“ (bis 0.1.43.19 „Tacho wieder normal“), wenn KEINE Projektion offen ist:
+     * dieselbe Folge wie beim Schließen auf dem Projektions-Thread. 0.1.43.20 (P4): 18 → 0 geht IMMER hinaus, auch
+     * ohne bestätigtes Profil und auch nach einer abgebrochenen Wiederherstellung (18/0 sind der Rückweg und laufen
+     * durch denselben Marker-Schutz). Danach nur ein bestätigtes, zur Geometrie passendes Profil.
+     * Rückgabe: "gesendet", "kein_profil" (18 → 0 gesendet, keine Größe gewählt), "projektion" (das Schließen stellt
+     * selbst her), "nicht_noetig" (Single-OS: keine Projektion möglich) oder "nicht_moeglich" (DiLink 5: dort macht
+     * der Teardown von DiLink5ClusterCast den Rückweg, rohe 18/0 lehnt die Firmware ab).
      */
     public static String profilZuruecksetzen() {
-        if (at.greenchili.surfmate.camera.dilink5.DiLink5Platform.isSelected()
-                || isLegacyProjectionAdmissionBlocked()) return "nicht_moeglich";
+        if (at.greenchili.surfmate.camera.dilink5.DiLink5Platform.isSelected()) return "nicht_moeglich";
+        if (istSingleOs()) return "nicht_noetig";
         final ClusterProjectionController c = getInstance();
         if (c.projState != ST_CLOSED) return "projektion";
         final int profil = readLegacyRestoreProfileOpcode();
-        if (profil == 0) return "kein_profil";
         c.projHandler.post(() -> {
             if (c.projState != ST_CLOSED) return;
-            if (sendInfoStaticResult(OP_CLOSE) != LegacyCommandResult.ACCEPTED
+            LegacyCommandResult zu = sendInfoStaticResult(OP_CLOSE);
+            if (!sleepForLegacyRestore(CLOSE_STEP_DELAY_MS) || c.projState != ST_CLOSED) return;
+            LegacyCommandResult neu = sendInfoStaticResult(OP_REFRESH);
+            logger.info("Zurück zur BYD-Anzeige: 18=" + zu + " 0=" + neu);
+            if (profil == 0 || zu != LegacyCommandResult.ACCEPTED || neu != LegacyCommandResult.ACCEPTED
                     || !sleepForLegacyRestore(CLOSE_STEP_DELAY_MS) || c.projState != ST_CLOSED) return;
-            if (sendInfoStaticResult(OP_REFRESH) != LegacyCommandResult.ACCEPTED
-                    || !sleepForLegacyRestore(CLOSE_STEP_DELAY_MS) || c.projState != ST_CLOSED) return;
-            logger.info("Tacho wieder normal: 18→0→" + profil + " " + sendInfoStaticResult(profil));
+            logger.info("Zurück zur BYD-Anzeige: Profil " + profil + " " + sendInfoStaticResult(profil));
         });
-        return "gesendet";
+        return profil == 0 ? "kein_profil" : "gesendet";
+    }
+
+    private static boolean istSingleOs() {
+        try {
+            Object v = Class.forName("android.os.SystemProperties")
+                    .getMethod("get", String.class, String.class)
+                    .invoke(null, "ro.build.system.fission_single_os", "");
+            String s = v == null ? "" : String.valueOf(v).trim();
+            return "1".equals(s) || "true".equalsIgnoreCase(s);
+        } catch (Throwable t) {
+            return false;
+        }
     }
 
     /**
@@ -2186,6 +2204,14 @@ public final class ClusterProjectionController {
         if (!isPermittedLegacyContainerOpcode(op)) {
             logger.error("refusing AutoContainer opcode " + op
                     + " (not on the projection allow-list)");
+            return LegacyCommandResult.REJECTED;
+        }
+        // 0.1.43.20 (P3): 16/35 öffnen nur bei geprüfter Hardware; 18/0 und das Restore-Profil
+        // gehen immer (Rückweg).
+        if ((op == OP_FULLSCREEN_ON || op == OP_DI4_MODE)
+                && !at.greenchili.surfmate.tacho.TachoKohorte.darfSenden(op)) {
+            logger.error("refusing AutoContainer opcode " + op
+                    + " (cohort gate: hardware not verified)");
             return LegacyCommandResult.REJECTED;
         }
         synchronized (LEGACY_COMMAND_DISPATCH_LOCK) {
@@ -2446,6 +2472,12 @@ public final class ClusterProjectionController {
         }
         if (allowInactiveCleanup && !cleanupOpcode) {
             return DiLink5CommandResult.UNAVAILABLE;
+        }
+        // 0.1.43.20 (P3): 16 nur bei geprüfter Hardware; 18/0 immer.
+        if (op == OP_FULLSCREEN_ON
+                && !at.greenchili.surfmate.tacho.TachoKohorte.darfSenden(op)) {
+            logger.warn("DI5 sendInfo(1000,16) refused by the cohort gate");
+            return DiLink5CommandResult.REJECTED;
         }
 
         DiLink5CommandResult result =

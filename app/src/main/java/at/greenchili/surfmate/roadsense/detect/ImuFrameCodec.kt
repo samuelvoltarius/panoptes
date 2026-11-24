@@ -24,6 +24,10 @@ import org.json.JSONObject
  *  "g":[[tMs,gx,gy,gz], ...]}   // gyro samples, rad/s
  * ```
  *
+ * 0.1.43.20 (FIX_014320_IMU): optional `"a2"`/`"g2"` = Beschleunigung/Kreisel des ZWEITEN IMU-Chips (Surf:
+ * icm40607 neben smi230), gleiche Form; `"gc":1` = `a` und `g` stammen vom selben Chip (gleiche Achsen). Ältere
+ * Empfänger ignorieren die Felder, RoadSense liest weiter nur `a`/`g`.
+ *
  * Each sample carries its own `tMs`, so batching adds at most ~[TARGET_BATCH_MS]
  * of delivery latency but ZERO timing error — downstream timing (GravityFrame,
  * EventDetector, GPS back-projection) all key off the per-sample tMs, not arrival
@@ -46,30 +50,68 @@ object ImuFrameCodec {
     private const val KEY_COMMAND = "command"
     private const val KEY_ACCEL = "a"
     private const val KEY_GYRO = "g"
+    private const val KEY_ACCEL2 = "a2"
+    private const val KEY_GYRO2 = "g2"
+    private const val KEY_GLEICHER_CHIP = "gc"
+    private const val KEY_BEREICH1 = "r1"
 
     /**
      * Encode a batch into a single newline-terminated wire line (the daemon's
      * IPC reader is line-oriented, like the GPS sidecar). Either list may be
      * empty but not both (caller shouldn't send empty frames).
      */
-    fun encode(accel: List<ImuAccelSample>, gyro: List<ImuGyroSample>): String {
+    fun encode(accel: List<ImuAccelSample>, gyro: List<ImuGyroSample>): String =
+        encode(accel, gyro, emptyList(), emptyList(), false)
+
+    /** 0.1.43.20: mit zweitem Chip ([accel2]/[gyro2], leer = keiner), Kennzeichen [gleicherChip], Messbereich [bereich1]. */
+    @JvmOverloads
+    fun encode(
+        accel: List<ImuAccelSample>,
+        gyro: List<ImuGyroSample>,
+        accel2: List<ImuAccelSample>,
+        gyro2: List<ImuGyroSample>,
+        gleicherChip: Boolean,
+        bereich1: Float = Float.NaN,
+    ): String {
         val obj = JSONObject()
         obj.put(KEY_COMMAND, COMMAND)
+        obj.put(KEY_ACCEL, accelArray(accel))
+        obj.put(KEY_GYRO, gyroArray(gyro))
+        if (accel2.isNotEmpty()) obj.put(KEY_ACCEL2, accelArray(accel2))
+        if (gyro2.isNotEmpty()) obj.put(KEY_GYRO2, gyroArray(gyro2))
+        if (gleicherChip) obj.put(KEY_GLEICHER_CHIP, 1)
+        if (!bereich1.isNaN() && bereich1 > 0f) obj.put(KEY_BEREICH1, bereich1.toDouble())
+        return obj.toString() + "\n"
+    }
+
+    private fun accelArray(accel: List<ImuAccelSample>): JSONArray {
         val a = JSONArray()
         for (s in accel) {
             a.put(JSONArray().put(s.tMs).put(s.ax.toDouble()).put(s.ay.toDouble()).put(s.az.toDouble()))
         }
+        return a
+    }
+
+    private fun gyroArray(gyro: List<ImuGyroSample>): JSONArray {
         val g = JSONArray()
         for (s in gyro) {
             g.put(JSONArray().put(s.tMs).put(s.gx.toDouble()).put(s.gy.toDouble()).put(s.gz.toDouble()))
         }
-        obj.put(KEY_ACCEL, a)
-        obj.put(KEY_GYRO, g)
-        return obj.toString() + "\n"
+        return g
     }
 
     /** Decoded frame: the two sample lists pulled off the wire. */
-    data class Decoded(val accel: List<ImuAccelSample>, val gyro: List<ImuGyroSample>)
+    data class Decoded(
+        val accel: List<ImuAccelSample>,
+        val gyro: List<ImuGyroSample>,
+        /** 0.1.43.20: zweiter IMU-Chip (leer = nicht vorhanden / ältere App). */
+        val accel2: List<ImuAccelSample> = emptyList(),
+        val gyro2: List<ImuGyroSample> = emptyList(),
+        /** 0.1.43.20: [accel] und [gyro] vom selben Chip (gleiche Achsen). */
+        val gleicherChip: Boolean = false,
+        /** 0.1.43.20: Messbereich der Haupt-Beschleunigung (m/s², NaN = unbekannt) – für die harte Grenze. */
+        val bereich1: Double = Double.NaN,
+    )
 
     /**
      * Decode one wire line back into samples. Returns null if [line] is not an
@@ -91,9 +133,19 @@ object ImuFrameCodec {
      */
     fun decode(obj: JSONObject): Decoded? {
         if (obj.optString(KEY_COMMAND) != COMMAND) return null
+        return Decoded(
+            accel = accelListe(obj.optJSONArray(KEY_ACCEL)),
+            gyro = gyroListe(obj.optJSONArray(KEY_GYRO)),
+            accel2 = accelListe(obj.optJSONArray(KEY_ACCEL2)),
+            gyro2 = gyroListe(obj.optJSONArray(KEY_GYRO2)),
+            gleicherChip = obj.optInt(KEY_GLEICHER_CHIP, 0) == 1,
+            bereich1 = obj.optDouble(KEY_BEREICH1, Double.NaN),
+        )
+    }
 
+    private fun accelListe(quelle: JSONArray?): List<ImuAccelSample> {
         val accel = ArrayList<ImuAccelSample>()
-        obj.optJSONArray(KEY_ACCEL)?.let { arr ->
+        quelle?.let { arr ->
             // Enforce the per-sensor cap HERE (audit detection #11): the daemon
             // ingest consumes untrusted local-IPC bytes, and the sidecar-side cap in
             // RoadSenseImuSidecarService is no defence against a malformed/oversized
@@ -115,8 +167,12 @@ object ImuFrameCodec {
                 )
             }
         }
+        return accel
+    }
+
+    private fun gyroListe(quelle: JSONArray?): List<ImuGyroSample> {
         val gyro = ArrayList<ImuGyroSample>()
-        obj.optJSONArray(KEY_GYRO)?.let { arr ->
+        quelle?.let { arr ->
             val n = minOf(arr.length(), MAX_SAMPLES_PER_FRAME)
             gyro.ensureCapacity(n)
             for (i in 0 until n) {
@@ -132,6 +188,6 @@ object ImuFrameCodec {
                 )
             }
         }
-        return Decoded(accel, gyro)
+        return gyro
     }
 }

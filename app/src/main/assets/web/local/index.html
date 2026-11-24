@@ -340,9 +340,9 @@
                     <button class="act" type="button" onclick="Home.command(this,'/api/vehicle/find-car',{bestaetigt:true},'home.confirm_find')"><svg><use href="#i-pin"/></svg><span data-i18n="home.find">Finden</span></button>
                     <button class="act" type="button" onclick="Home.command(this,'/api/vehicle/trunk',{action:'open'},'home.confirm_trunk')"><svg><use href="#i-trunk"/></svg><span data-i18n="home.trunk">Kofferraum</span></button>
                 </div>
-                <!-- 0.1.37 „Tacho wieder normal“: nur wenn das Auto Apps am Fahrerdisplay kann oder gerade etwas läuft -->
+                <!-- 0.1.37 „Zurück zur BYD-Anzeige“: nur wenn das Auto Apps am Fahrerdisplay kann oder gerade etwas läuft -->
                 <div class="acts" id="hTachoNormal" hidden>
-                    <button class="act" type="button" style="color:var(--status-danger);border-color:var(--status-danger);" onclick="Home.tachoNormal(this)"><svg><use href="#i-nav"/></svg><span data-i18n="home.tacho_normal">Tacho wieder normal</span></button>
+                    <button class="act" type="button" style="color:var(--status-danger);border-color:var(--status-danger);" onclick="Home.tachoNormal(this)"><svg><use href="#i-nav"/></svg><span data-i18n="home.tacho_normal">Zurück zur BYD-Anzeige</span></button>
                 </div>
                 <!-- Eigene Knöpfe (GET /api/quick-controls), erst sichtbar, wenn es welche gibt -->
                 <div class="acts custom" id="hCustom" hidden></div>
@@ -393,6 +393,8 @@
                     <div class="stat"><div class="k" data-i18n="home.windows">Fenster</div><div class="v" id="sWin">--</div><div class="s" id="sWinS">&nbsp;</div></div>
                     <div class="stat"><div class="k" data-i18n="home.climate">Klima</div><div class="v" id="sClim">--</div><div class="s" id="sClimS">&nbsp;</div></div>
                     <div class="stat"><div class="k" data-i18n="home.tyres">Reifen</div><div class="v" id="sTyre">--</div><div class="s" id="sTyreS">&nbsp;</div></div>
+                    <!-- 0.1.43.20 Meldungen des Autos (nur lesen, GET /api/auto/meldungen); versteckt, wenn das Auto keine herausgibt -->
+                    <div class="stat" id="sMeldTile" hidden><div class="k" data-i18n="auto_meldungen.titel">Meldungen des Autos</div><div class="v" id="sMeld">--</div><div class="s" id="sMeldS">&nbsp;</div></div>
                     <a class="stat" href="events.html"><div class="k" data-i18n="home.guard_today">Wächter heute</div><div class="v" id="sGuard">--</div><div class="s" id="sGuardS">&nbsp;</div></a>
                     <div class="stat"><div class="k" data-i18n="home.soh">Akku-Gesundheit</div><div class="v" id="sSoh">--</div><div class="s" id="sSohS">&nbsp;</div></div>
                 </div>
@@ -412,17 +414,20 @@
 <script src="../shared/auth.js"></script>
 <script src="../shared/pwa-init.js?v=index2"></script>
 <script src="../shared/core.js?v=pn6"></script>
+<script src="../shared/tacho-sicht.js?v=1"></script>
 <script src="../shared/ladeverlust-hinweis.js?v=2"></script>
 <script src="../shared/klima-stufe.js?v=2"></script>
 <script src="../shared/panoptes-map.js?v=12"></script>
 <script src="../shared/laden-nachfrage.js?v=2"></script>
 <script src="../shared/gewohnheit-karte.js?v=1"></script>
 <script src="../shared/start-karte.js?v=1"></script>
+<script src="../shared/auto-meldungen.js?v=1"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         var go = function () {
             if (window.PanoptesStart) PanoptesStart.init(document.getElementById('hStart'));
             if (window.PanoptesNachfrage) PanoptesNachfrage.init(document.getElementById('hNachfrage'), { nurJetzt: true });
+            if (window.PanoptesAutoMeldungen) PanoptesAutoMeldungen.init(document.getElementById('sMeldTile'), document.getElementById('sMeld'), document.getElementById('sMeldS'));
             // 0.1.23 Gewohnheiten: die eine Vorschlags-/Probelauf-Karte (nur im Stand)
             if (window.PanoptesGewohnheit) PanoptesGewohnheit.init();
         };

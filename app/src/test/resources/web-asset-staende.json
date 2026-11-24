@@ -63,6 +63,10 @@
   "sha256": "2b153c830ff2114f2a7291d5b9aefe2920ac7a4e8be5eece314bf05ffb68af0a",
   "v": "12"
  },
+ "auto-meldungen.js": {
+  "sha256": "c9bc1729509278dfabe07de5fd363188ca4bc0a2cd849d707b5b62d559e84dec",
+  "v": "1"
+ },
  "automations.css": {
   "sha256": "974a057fd6a423a0fc0a001da7730bee7d16048f77e6268020af619896b8157d",
   "v": "av54"
@@ -159,6 +163,10 @@
   "sha256": "498622f4ea56320b3a70ed48f79b1c45bbbd4b96f679f5949ab87961c9b91d0c",
   "v": "pn9"
  },
+ "ersparnis.js": {
+  "sha256": "57c159a5457f6417089729de19664ca43efff4c4da581300aecbb870e759af14",
+  "v": "1"
+ },
  "ev-card-3d.js": {
   "sha256": "e312933456599e1ead0b997cb558eced54789729d74067f0307acb7faf45a2c7",
   "v": "2"
@@ -168,8 +176,8 @@
   "v": "zurueck14c"
  },
  "fahrt-statistik.js": {
-  "sha256": "5e5eeea882e01beaea25c5cdb51721fe5e7c340f4d27d756beef191ceaa87b73",
-  "v": "1"
+  "sha256": "6e02a468d5dee7d3f0cb1519b356731a552d52a7d20d765c5a03e6c410f84c48",
+  "v": "2"
  },
  "fahrzeug-foto.js": {
   "sha256": "6e69e803a5af0d069ff69e1ad8577f84a34204b8c56911b3cf9c56b25b2d640d",
@@ -403,6 +411,10 @@
   "sha256": "db3605029ced4a9d4e0bd199bf27f22d19843903e14a9e0a867fa4c3567438ae",
   "v": "1"
  },
+ "tacho-sicht.js": {
+  "sha256": "2e20dfcc8fb8ae4a1cd26714cd5fe19449407e6fa553fac224392b81d39cc133",
+  "v": "1"
+ },
  "theme.js": {
   "sha256": "0e0e39f8baa957875cc4b1a97f5fd0fe157c418fb54977caf37472ea55c971b7",
   "v": "14"
@@ -412,8 +424,8 @@
   "v": "12"
  },
  "trips.js": {
-  "sha256": "a511ca84ad45b8a0aa1db9fbff92d7a8d7ec034d8c312868a9c12c746b9f5778",
-  "v": "panoptes9"
+  "sha256": "1794e9c2f7f8efa0c33a4a176fdb5db934bf8e22925c41294c7a3a7d3a81133b",
+  "v": "panoptes10"
  },
  "ts-https.js": {
   "sha256": "da73861a8fb40bf6469626cc6714a33fbe0855a81045b1b2d4670c77ea36ce2a",

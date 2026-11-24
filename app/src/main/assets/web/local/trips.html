@@ -1443,6 +1443,11 @@
                         </div>
                     </div>
 
+                    <!-- 0.1.43.20: Ersparnis gegenüber Benzin/Diesel – gerechnet im Auto (GET /api/laden/ersparnis), nicht bei Hybrid -->
+                    <div data-tab="stats" style="margin-top:16px;">
+                        <div id="ersparnisCard" style="display:none;background:linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(34,197,94,0.03) 100%);border:1px solid rgba(34,197,94,0.18);border-radius:20px;padding:20px 18px;"></div>
+                    </div>
+
                     <!-- Top Row: Radar + Summary -->
                     <div class="top-row" data-tab="stats">
                         <div class="radar-card">
@@ -1479,6 +1484,16 @@
                                 <span data-i18n="trip.statistik.stand_titel">Verlust im Stand</span>
                             </div>
                             <div id="standverlustInhalt" style="width:100%;display:flex;flex-direction:column;"></div>
+                        </div>
+                    </div>
+                    <!-- 0.1.43.20: Verbrauch laut BYD (BYDs eigenes Fahrtenbuch, nur gelesen; still aus, wenn es keines gibt) -->
+                    <div class="top-row" data-tab="stats" id="bydVerbrauchZeile" style="display:none;">
+                        <div class="radar-card" id="bydVerbrauchKarte" style="align-items:stretch;">
+                            <div class="card-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;color:var(--brand-primary)"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                                <span data-i18n="trip.statistik.byd_titel">Verbrauch laut BYD</span>
+                            </div>
+                            <div id="bydVerbrauchInhalt" style="width:100%;display:flex;flex-direction:column;"></div>
                         </div>
                     </div>
 
@@ -1569,6 +1584,9 @@
                             <button class="btn btn-primary" type="button" id="fbCsv" style="min-height:48px;" data-i18n="fahrtenbuch_datei.tabelle">Als Tabelle speichern</button>
                             <button class="btn" type="button" id="fbDruck" style="min-height:48px;" data-i18n="fahrtenbuch_datei.drucken">Drucken / PDF</button>
                         </div>
+                        <!-- 0.1.43.20: freier Zeitraum (von/bis), gleiche Spalten -->
+                        <div style="margin-top:16px;font-size:15px;color:var(--text-secondary);" data-i18n="lade_export.zeitraum">Oder einen Zeitraum wählen</div>
+                        <div id="fbZeitraum" style="margin-top:8px;"></div>
                     </div>
                     <script>
                         (function () {
@@ -1581,6 +1599,7 @@
                             }
                             document.getElementById('fbCsv').onclick = function () { if (m.value) window.location.href = url('csv'); };
                             document.getElementById('fbDruck').onclick = function () { if (m.value) window.open(url('druck'), '_blank'); };
+                            if (window.PanoptesErsparnis) PanoptesErsparnis.lade_export(document.getElementById('fbZeitraum'), 'fahrten');
                         })();
                     </script>
 
@@ -1881,6 +1900,7 @@
                             <div class="detail-stat"><div class="detail-stat-value" id="detailElevLoss" style="color:var(--danger);">--</div><div class="detail-stat-label" data-i18n="trip.detail.elev_down">Bergab ↓</div></div>
                         </div>
                         <div style="margin-top:8px;text-align:center;"><span id="detailGradientPill" style="display:none;"></span></div>
+                        <div id="detailErsparnis" style="display:none;margin-top:8px;text-align:center;font-size:15px;color:var(--success, #22C55E);"></div>
                     </div>
 
                     <!-- 0.1.11: Verlaufsdatei fehlt (Kern: dateiFehlt/-Grund) – Fahrt bleibt, Karte/Kurven fehlen -->
@@ -2112,8 +2132,9 @@
     <script src="../shared/core.js?v=pn6"></script>
     <script src="../shared/settings-hydration.js?v=1"></script>
     <script src="../shared/storage-budget.js?v=8"></script>
-    <script src="../shared/trips.js?v=panoptes9"></script>
-    <script src="../shared/fahrt-statistik.js?v=1"></script>
+    <script src="../shared/ersparnis.js?v=1"></script>
+    <script src="../shared/trips.js?v=panoptes10"></script>
+    <script src="../shared/fahrt-statistik.js?v=2"></script>
     <script>
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('open');

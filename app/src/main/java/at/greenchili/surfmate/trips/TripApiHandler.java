@@ -98,6 +98,11 @@ public class TripApiHandler {
                 return handleVerbrauchTemperatur(params);
             }
 
+            // 0.1.43.20: GET /api/trips/byd-verbrauch?max=50 – BYDs eigenes Fahrtenbuch (nur lesen, bleibt im Auto)
+            if (path.equals("/api/trips/byd-verbrauch") && "GET".equals(method)) {
+                return handleBydVerbrauch(params);
+            }
+
             // 03.11.2026: GET /api/trips/standverlust?tage=90 – Verlust im Stand, Wächter an/aus getrennt
             if (path.equals("/api/trips/standverlust") && "GET".equals(method)) {
                 return handleStandverlust(params);
@@ -208,6 +213,30 @@ public class TripApiHandler {
         out.put("success", true);
         out.put("tage", tage);
         return out;
+    }
+
+    /**
+     * 0.1.43.20 „Verbrauch laut BYD“: BYDs Fahrtenbuch (/sdcard/energydata, nur gelesen) je Fahrt, Tag, Woche, Monat
+     * und gegen die eigenen Fahrten der letzten 90 Tage. Fehlt die Datei oder ist das Schema fremd: verfuegbar=false.
+     */
+    private JSONObject handleBydVerbrauch(Map<String, String> params) throws Exception {
+        int max = 50;
+        try {
+            String m = params == null ? null : params.get("max");
+            if (m != null) max = Math.max(1, Math.min(500, Integer.parseInt(m.trim())));
+        } catch (Exception ignored) {
+        }
+        java.util.List<BydFahrtenbuch.Fahrt> byd = BydFahrtenbuch.ausDatei();
+        java.util.List<BydFahrtenbuch.EigeneFahrt> eigene = new java.util.ArrayList<>();
+        TripDatabase db = manager != null ? manager.getDatabase() : null;
+        if (byd != null && !byd.isEmpty() && db != null) {
+            long bis = System.currentTimeMillis();
+            for (TripRecord r : db.getTripsBetween(bis - 90L * 86_400_000L, bis, 2000, 0)) {
+                double kwh = r.getResolvedEnergyKwh();   // 0 = Energie unbekannt → nicht vergleichen
+                if (kwh > 0) eigene.add(new BydFahrtenbuch.EigeneFahrt(r.id, r.startTime, r.endTime, r.distanceKm, kwh));
+            }
+        }
+        return BydFahrtenbuch.antwort(byd, eigene, max, java.time.ZoneId.systemDefault());
     }
 
     /** Verlust im Stand aus den Zündungs-Ereignissen der Akku-Datenbank (ohne Orte). */

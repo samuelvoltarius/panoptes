@@ -24,7 +24,9 @@ class RoadSenseImuSidecarResourceContractTest {
         assertTrue(slowBranch.contains("return"))
         // SLOW-Nachzügler werden weiter ignoriert; streamen dürfen nur FAST (RoadSense) und
         // PARK (Wächter-Erschütterung, nur Beschleunigung).
-        assertTrue(sensorCallback.contains("rate != ImuRate.FAST && rate != ImuRate.PARK) return"))
+        // 0.1.43.20: dazu FAHRT (Ereignis-Clip ohne RoadSense, 25 Hz mit Kreisel); im Stand weiter nur Beschleunigung.
+        assertTrue(sensorCallback.contains("rate != ImuRate.FAST && rate != ImuRate.PARK && rate != ImuRate.FAHRT) return"))
+        assertTrue(sensorCallback.contains("if (rate == ImuRate.PARK && event.sensor.type != Sensor.TYPE_ACCELEROMETER) return"))
         assertFalse(source.contains("SensorManager.SENSOR_DELAY_NORMAL"))
     }
 

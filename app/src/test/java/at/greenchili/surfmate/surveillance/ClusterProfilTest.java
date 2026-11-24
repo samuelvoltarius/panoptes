@@ -42,10 +42,12 @@ public class ClusterProfilTest {
         assertEquals(0, ClusterProjectionController.modellVorschlag("Song Plus DM-i"));
         assertEquals("„han“ nicht als Teilstring", 0, ClusterProjectionController.modellVorschlag("Shanghai Edition"));
         assertEquals(0, ClusterProjectionController.modellVorschlag("Chang An"));
-        assertEquals(30, ClusterProjectionController.modellVorschlag("Han EV"));
-        assertEquals(30, ClusterProjectionController.modellVorschlag("Tang"));
+        // 0.1.43.20 (P2): keine Namensteile mehr – Han/Tang/Song haben verschiedene Tacho-Größen
+        assertEquals(0, ClusterProjectionController.modellVorschlag("Han EV"));
+        assertEquals(0, ClusterProjectionController.modellVorschlag("Tang"));
         assertEquals(29, ClusterProjectionController.modellVorschlag("Atto 3"));
         assertEquals(29, ClusterProjectionController.modellVorschlag("yuan plus"));
+        assertEquals("Atto 2 ist nicht Atto 3", 0, ClusterProjectionController.modellVorschlag("Atto 2"));
         assertEquals(31, ClusterProjectionController.modellVorschlag("Seal"));
         assertEquals(0, ClusterProjectionController.modellVorschlag("Dolphin Surf"));
         assertEquals(0, ClusterProjectionController.modellVorschlag(null));
@@ -76,17 +78,21 @@ public class ClusterProfilTest {
     }
 
     @Test
-    public void tachoWiederNormalOhneProjektionSendetNurBestaetigtes() throws Exception {
+    public void zurueckZurBydAnzeigeSendetImmer18Dann0() throws Exception {
         String q = quelle();
         int a = q.indexOf("public static String profilZuruecksetzen() {");
         String f = q.substring(a, q.indexOf("// ── Cluster display presence", a));
-        assertTrue("DiLink 5 / laufende Wiederherstellung: nichts", f.contains("return \"nicht_moeglich\""));
+        assertTrue("DiLink 5: der DI5-Teardown macht den Rückweg", f.contains("return \"nicht_moeglich\""));
         assertTrue("offene Projektion: das Schließen stellt selbst her", f.contains("if (c.projState != ST_CLOSED) return \"projektion\";"));
         assertTrue(f.contains("final int profil = readLegacyRestoreProfileOpcode();"));
-        assertTrue("ohne bestätigtes Profil nichts senden", f.contains("if (profil == 0) return \"kein_profil\";"));
+        // 0.1.43.20 (P4): 18 → 0 auch ohne bestätigtes Profil; das Profil nur, wenn eines bestätigt ist
+        assertFalse("18/0 nie vom Profil abhängig", f.contains("if (profil == 0) return \"kein_profil\";"));
+        assertTrue(f.contains("return profil == 0 ? \"kein_profil\" : \"gesendet\";"));
         int z = f.indexOf("sendInfoStaticResult(OP_CLOSE)"), r = f.indexOf("sendInfoStaticResult(OP_REFRESH)"),
                 p = f.indexOf("sendInfoStaticResult(profil)");
         assertTrue("Reihenfolge 18 → 0 → Profil, wie beim Schließen", z > 0 && z < r && r < p);
+        assertTrue("Profil erst nach 18/0 und nur wenn gewählt",
+                f.indexOf("if (profil == 0 ||") > r && f.indexOf("if (profil == 0 ||") < p);
         assertTrue("auf dem Projektions-Thread (kein Rennen mit Öffnen/Schließen)", f.contains("c.projHandler.post("));
     }
 }

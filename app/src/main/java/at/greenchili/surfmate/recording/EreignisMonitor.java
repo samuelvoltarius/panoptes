@@ -39,7 +39,7 @@ public final class EreignisMonitor {
 
     private static volatile EreignisMonitor instance;
 
-    private final EreignisErkenner erkenner = new EreignisErkenner();
+    private final EreignisErkenner erkenner = new EreignisErkenner(ZweiSensoren.geraet());
     private ScheduledExecutorService exec;
     private volatile boolean aktiv;
     private long configGelesen = Long.MIN_VALUE / 2;
@@ -48,6 +48,7 @@ public final class EreignisMonitor {
     private boolean warFahrend;
     private boolean warAccAn;
     private volatile boolean sichertGerade;
+    private int abweisungenGeloggt;
 
     private EreignisMonitor() {}
 
@@ -154,7 +155,8 @@ public final class EreignisMonitor {
         sensorVonUns = true;
         try {
             at.greenchili.surfmate.roadsense.sidecar.RoadSenseImuSidecarService.Companion.start(
-                    at.greenchili.surfmate.roadsense.sidecar.RoadSenseImuSidecarService.ImuRate.PARK);
+                    // 0.1.43.20: FAHRT = 25 Hz wie PARK, dazu beide Kreisel und der zweite Chip
+                    at.greenchili.surfmate.roadsense.sidecar.RoadSenseImuSidecarService.ImuRate.FAHRT);
         } catch (Throwable ignored) {
         }
     }
@@ -192,9 +194,29 @@ public final class EreignisMonitor {
         }
         if (d == null) return;
         EreignisErkenner.Grund g = null;
+        // 0.1.43.20: zweiter Chip zuerst (Plausibilität), dann Hauptkreisel, dann Hauptbeschleunigung.
+        m.erkenner.gleicherChip(d.getGleicherChip());
+        m.erkenner.messbereich(d.getBereich1());
+        for (at.greenchili.surfmate.roadsense.detect.ImuAccelSample s : d.getAccel2()) {
+            EreignisErkenner.Grund x = m.erkenner.imu2(s.getTMs(), s.getAx(), s.getAy(), s.getAz());
+            if (x != null && g == null) g = x;
+        }
+        for (at.greenchili.surfmate.roadsense.detect.ImuGyroSample s : d.getGyro2()) {
+            EreignisErkenner.Grund x = m.erkenner.gyro2(s.getTMs(), s.getGx(), s.getGy(), s.getGz());
+            if (x != null && g == null) g = x;
+        }
+        for (at.greenchili.surfmate.roadsense.detect.ImuGyroSample s : d.getGyro()) {
+            EreignisErkenner.Grund x = m.erkenner.gyro(s.getTMs(), s.getGx(), s.getGy(), s.getGz());
+            if (x != null && g == null) g = x;
+        }
         for (at.greenchili.surfmate.roadsense.detect.ImuAccelSample s : d.getAccel()) {
             EreignisErkenner.Grund x = m.erkenner.imu(s.getTMs(), s.getAx(), s.getAy(), s.getAz());
             if (x != null && g == null) g = x;
+        }
+        int abw = m.erkenner.abweisungen();
+        if (abw != m.abweisungenGeloggt) {
+            m.abweisungenGeloggt = abw;
+            logger.info("Ereignis verworfen: " + m.erkenner.letzteAbweisung());   // mit Werten beider Chips
         }
         if (g != null) m.ausloesen(g);
     }
@@ -216,6 +238,8 @@ public final class EreignisMonitor {
                 g, erkenner.letzteKmh(),
                 g == EreignisErkenner.Grund.STOSS
                         ? String.format(java.util.Locale.ROOT, ", Stoß %.1f m/s²", erkenner.letzteSpitze()) : ""));
+        EreignisErkenner.Details det = erkenner.letzteDetails();
+        if (det != null) logger.info("Auslöser: " + det.regel + " (" + det.quelle + ")");
         Thread t = new Thread(() -> {
             try {
                 sichern(g, ereignisMs, ausloeser);
@@ -252,7 +276,9 @@ public final class EreignisMonitor {
 
     static org.json.JSONObject ausloeserInfo(EreignisErkenner.Grund g, EreignisErkenner.Details d, long ereignisMs,
                                              double kmh, String gang) {
-        String art = g == EreignisErkenner.Grund.STOSS ? AusloeserInfo.STOSS : AusloeserInfo.BREMSEN;
+        String art = g == EreignisErkenner.Grund.STOSS ? AusloeserInfo.STOSS
+                : g == EreignisErkenner.Grund.SCHLEUDERN ? AusloeserInfo.SCHLEUDERN
+                : g == EreignisErkenner.Grund.UEBERSCHLAG ? AusloeserInfo.UEBERSCHLAG : AusloeserInfo.BREMSEN;
         org.json.JSONObject o = AusloeserInfo.neu(ereignisMs, art,
                 d != null ? d.quelle : AusloeserInfo.QUELLE_UNBEKANNT, d != null ? d.regel : null);
         if (d != null) {

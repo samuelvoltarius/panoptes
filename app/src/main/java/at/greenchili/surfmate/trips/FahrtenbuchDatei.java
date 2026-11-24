@@ -19,7 +19,8 @@ import java.util.Locale;
  * 0.1.28 P9: Fahrtenbuch als Datei – CSV zum Speichern und eine Druckansicht (Drucken / PDF, wie der Monatsbericht).
  *
  * <ul>
- *   <li>{@code GET /api/trips/datei?monat=JJJJ-MM&format=csv|druck&sprache=de|en|fr|it|nl}</li>
+ *   <li>{@code GET /api/trips/datei?monat=JJJJ-MM&format=csv|druck&sprache=de|en|fr|it|nl}; ab 0.1.43.20 statt
+ *       {@code monat} auch {@code von=JJJJ-MM-TT&bis=JJJJ-MM-TT} (höchstens zehn Jahre)</li>
  *   <li>Dieselben Spalten wie das EV-Cockpit ({@code fahrtenbuch.py}: eine Wahrheit) und dieselbe Quelle
  *       ({@code GET /api/trips} mit Energie-Ergänzung). Keine Orte, keine Koordinaten.</li>
  *   <li>Die Datei entsteht im Auto und geht nur an den, der sie abruft (Browser am Auto, Panoptes-Web mit Login,
@@ -177,10 +178,24 @@ public final class FahrtenbuchDatei {
         }
         java.util.Map<String, String> a = abfrage(path);
         String monat = a.getOrDefault("monat", "");
-        long[] g = monat(monat, zone);
-        if (g == null) {
-            HttpResponse.sendJson(out, 400, "{\"ok\":false,\"grund\":\"monat\"}");
-            return true;
+        long[] g;
+        String marke;
+        if (monat.isEmpty() && (a.containsKey("von") || a.containsKey("bis"))) {
+            // 0.1.43.20: freier Datumsbereich (von/bis JJJJ-MM-TT), gleiche Spalten
+            g = at.greenchili.surfmate.charging.LadeCsv.bereich(a.get("von"), a.get("bis"), System.currentTimeMillis(), zone);
+            if (g == null) {
+                HttpResponse.sendJson(out, 400, "{\"ok\":false,\"grund\":\"zeitraum\"}");
+                return true;
+            }
+            DateTimeFormatter iso = DateTimeFormatter.ISO_LOCAL_DATE;
+            marke = Instant.ofEpochMilli(g[0]).atZone(zone).format(iso) + "_" + Instant.ofEpochMilli(g[1]).atZone(zone).format(iso);
+        } else {
+            g = monat(monat, zone);
+            if (g == null) {
+                HttpResponse.sendJson(out, 400, "{\"ok\":false,\"grund\":\"monat\"}");
+                return true;
+            }
+            marke = monat;
         }
         if (q == null) {
             HttpResponse.sendJson(out, 503, "{\"ok\":false,\"grund\":\"nicht_bereit\"}");
@@ -191,13 +206,14 @@ public final class FahrtenbuchDatei {
         JSONArray f = alle(q, g[0], g[1]);
         if ("druck".equals(a.get("format"))) {
             final String sp = sprache;
-            byte[] b = Messages.withLocale(sp, () -> druck(f, monat, sp, zone)).getBytes(StandardCharsets.UTF_8);
+            final String titel = marke.replace('_', ' ').replace(" ", " – ");
+            byte[] b = Messages.withLocale(sp, () -> druck(f, titel, sp, zone)).getBytes(StandardCharsets.UTF_8);
             HttpResponse.sendBinaryNoStore(out, "text/html; charset=utf-8", b, null);
             return true;
         }
         byte[] b = csv(f, sprache, zone);
         java.util.Map<String, String> k = new java.util.LinkedHashMap<>();
-        k.put("Content-Disposition", "attachment; filename=\"fahrtenbuch-" + monat + ".csv\"");
+        k.put("Content-Disposition", "attachment; filename=\"fahrtenbuch-" + marke + ".csv\"");
         HttpResponse.sendBinaryNoStore(out, "text/csv; charset=utf-8", b, k);
         return true;
     }

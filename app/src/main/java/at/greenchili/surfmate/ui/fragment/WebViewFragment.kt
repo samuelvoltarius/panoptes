@@ -1618,6 +1618,32 @@ class WebViewFragment : Fragment() {
             }
         }
 
+        /** 0.1.43.20 BYD-Hilfe-Knöpfe: welche BYD-Seiten es auf diesem Gerät gibt, als JSON-Liste (sonst "[]"). */
+        @android.webkit.JavascriptInterface
+        fun bydSeiten(): String {
+            return try {
+                val ctx = context?.applicationContext ?: return "[]"
+                org.json.JSONArray(at.greenchili.surfmate.einrichtung.BydSeiten.verfuegbar(ctx)).toString()
+            } catch (e: Exception) {
+                "[]"
+            }
+        }
+
+        /** 0.1.43.20: öffnet eine BYD-Seite aus der festen Liste (nur öffnen). "ok" | "unavailable" | "no_context" | "error". */
+        @android.webkit.JavascriptInterface
+        fun bydSeiteOeffnen(schluessel: String?): String {
+            return try {
+                val act = activity ?: return "no_context"
+                val k = schluessel?.trim() ?: return "unavailable"
+                if (k !in at.greenchili.surfmate.einrichtung.BydSeiten.ACTIONS.keys) return "unavailable"
+                if (at.greenchili.surfmate.einrichtung.BydSeiten.intent(act, k) == null) return "unavailable"
+                act.runOnUiThread { at.greenchili.surfmate.einrichtung.BydSeiten.oeffnen(act, k) }
+                "ok"
+            } catch (e: Exception) {
+                "error"
+            }
+        }
+
         /**
          * Navigate to a native destination named by the page. `dest` is matched
          * against an allowlist — a page must never be able to name an arbitrary

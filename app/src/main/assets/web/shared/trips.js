@@ -2714,6 +2714,7 @@ const TRIPS = {
     updateCostHero() {
         const card = document.getElementById('costHeroCard');
         if (!card) return;
+        this.updateErsparnis();
         const t = (k, fb, vars) => {
             let v = null;
             try { const x = BYD.i18n.t(k, vars); if (x && x !== k) v = x; } catch (e) {}
@@ -2770,6 +2771,21 @@ const TRIPS = {
                     } else ohne.style.display = 'none';
                 }
             });
+    },
+
+    /**
+     * 0.1.43.20: Ersparnis gegenüber Benzin/Diesel (ersparnis.js, gerechnet im Auto). Bei Hybrid ausgeblendet, weil
+     * dort ein Teil der km mit Sprit gefahren wird. Höchstens alle 10 s neu laden (updateCostHero läuft öfter).
+     */
+    updateErsparnis() {
+        const box = document.getElementById('ersparnisCard');
+        if (!box || !window.PanoptesErsparnis) return;
+        if (this.isPhev) { box.setAttribute('data-aus', '1'); box.style.display = 'none'; return; }
+        box.removeAttribute('data-aus');
+        const jetzt = Date.now();
+        if (this._ersparnisZeit && jetzt - this._ersparnisZeit < 10000) return;
+        this._ersparnisZeit = jetzt;
+        PanoptesErsparnis.karte(box);
     },
 
     /**
@@ -3446,6 +3462,13 @@ const TRIPS = {
             this.setEl('detailCost', recovered ? '--' : (detailAngabe ? detailAngabe.text : (detailCost > 0 ? detailCurrency + detailCost.toFixed(2) : '--')));
             try { const dc = document.getElementById('detailCost'); if (dc) dc.title = (!recovered && detailAngabe && detailAngabe.title) || ''; } catch (e) {}
             if (recovered) { this.renderCostBreakdown(null, detailCurrency); } else { this.renderCostBreakdown(trip, detailCurrency); }
+            // 0.1.43.20: „Gespart gegenüber Benzin“ nur mit bekanntem Strompreis und nicht bei Hybrid
+            if (window.PanoptesErsparnis) {
+                const kostenBekannt = !recovered && !(detailAngabe && detailAngabe.fehlt) && (detailCost > 0 || (detailAngabe && detailAngabe.text));
+                const istPhev = !!(trip.isPhev || trip.is_phev) || this.isPhev;
+                PanoptesErsparnis.fahrt(kostenBekannt && !istPhev ? (trip.distanceKm || trip.distance_km || 0) : 0,
+                    detailCost, document.getElementById('detailErsparnis'));
+            }
 
             // A recovered trip has no driving-DNA scores (not in telemetry), so
             // hide the whole breakdown card + recovered banner instead of drawing

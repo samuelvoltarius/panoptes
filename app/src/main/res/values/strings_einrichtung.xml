@@ -180,4 +180,9 @@
     <string name="einr_handy_unterwegs_text">Then the phone app works everywhere, also on mobile data. Without it, it only works when your phone is on the same Wi-Fi as the car.</string>
     <string name="einr_handy_unterwegs_ja">Yes, use on the go</string>
     <string name="einr_handy_nur_wlan">Only on the same Wi-Fi</string>
+    <!-- 0.1.43.20 BYD-Hilfe-Knöpfe (einrichtung/BydSeiten) -->
+    <string name="einr_byd_seiten_titel">Check at BYD</string>
+    <string name="einr_byd_seiten_text">Panoptes no longer starts by itself after a BYD update? Open the BYD autostart page and leave the switch for Panoptes OFF. At BYD, ON means: start blocked.</string>
+    <string name="einr_byd_autostart">Autostart at BYD</string>
+    <string name="einr_byd_rechte">Permissions at BYD</string>
 </resources>

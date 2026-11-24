@@ -35,8 +35,10 @@ public final class AusloeserInfo {
 
     public static final String BREMSEN = "bremsen", STOSS = "stoss", BEWEGUNG = "bewegung", PERSON = "person",
             MANUELL = "manuell", SONSTIGES = "sonstiges";
+    /** 0.1.43.20 (FIX_014320_IMU): Drehrate aus den Kreiseln. */
+    public static final String SCHLEUDERN = "schleudern", UEBERSCHLAG = "ueberschlag";
     public static final Set<String> ARTEN = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-            BREMSEN, STOSS, BEWEGUNG, PERSON, MANUELL, SONSTIGES)));
+            BREMSEN, STOSS, BEWEGUNG, PERSON, MANUELL, SONSTIGES, SCHLEUDERN, UEBERSCHLAG)));
 
     public static final String QUELLE_TEMPO = "tempo", QUELLE_TEMPO_SENSOR = "tempo+sensor", QUELLE_SENSOR = "sensor",
             QUELLE_TASTE = "taste", QUELLE_REGEL = "regel", QUELLE_UNBEKANNT = "unbekannt";

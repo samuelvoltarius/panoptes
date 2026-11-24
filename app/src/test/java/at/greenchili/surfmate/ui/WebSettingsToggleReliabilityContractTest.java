@@ -17,7 +17,7 @@ public class WebSettingsToggleReliabilityContractTest {
     public void immediateSavePagesLockUntilHydratedAndSerializeWrites() throws IOException {
         assertPageLock("recording.html", "recording.js?v=budget18");
         assertPageLock("road-sense.html", "road-sense.js?v=zugriff1");
-        assertPageLock("trips.html", "trips.js?v=panoptes9");
+        assertPageLock("trips.html", "trips.js?v=panoptes10");
         assertPageLock("abrp.html", "abrp.js?v=apikey1");
         assertPageLock("surveillance.html", "surveillance.js?v=survtoggle14");
         assertPageLock("byd-cloud.html", "surveillance.js?v=survtoggle14");

@@ -79,6 +79,53 @@ object ImuSource {
         return resolved
     }
 
+    // ── 0.1.43.20 (FIX_014320_IMU): zweiter IMU-Chip ───────────────────────────
+    //
+    // Der Surf hat zwei echte Bausteine: smi230 (-iner, Hauptsensor) und icm40607 (dumpsys sensorservice,
+    // Inventur 20.11.). Der zweite dient nur der Plausibilität (zwei Chips sehen einen echten Stoß beide). Er
+    // muss von einem ANDEREN Chip sein: auf dem Seal ist der gleichnamige Nicht-iner-Sensor eine Attrappe
+    // (smi130-accel, eingefrorene Werte), die darf nie mitreden.
+
+    /** Zweiter Chip: Beschleunigung und Kreisel (je null = nicht vorhanden). */
+    data class Zweit(val accelerometer: Sensor?, val gyroscope: Sensor?)
+
+    /** Chip-Kennung = Name bis zum ersten „-“ (smi230-accel-iner → smi230), klein. */
+    fun chip(name: String?): String = name?.substringBefore('-')?.trim()?.lowercase() ?: ""
+
+    /**
+     * Rein: Name eines Sensors aus [namen] auf einem anderen Chip als [primaer]; „-iner“ zuerst, nie „default“
+     * und nie ein Name ohne Chip-Kennung. Null = kein zweiter Chip (bisheriges Verhalten).
+     */
+    fun zweitName(namen: List<String>, primaer: String?): String? {
+        val pc = chip(primaer)
+        if (pc.isEmpty()) return null
+        val kandidaten = namen.filter { n ->
+            !n.equals(STUB_NAME, ignoreCase = true) && n.contains('-') && chip(n).isNotEmpty() && chip(n) != pc
+        }
+        return kandidaten.firstOrNull { it.contains(INERTIAL_MARKER, ignoreCase = true) } ?: kandidaten.firstOrNull()
+    }
+
+    /** 0.1.43.20: zweiten Chip zu [primaer] auflösen (Beschleunigung nach Chip des Haupt-Beschleunigungssensors). */
+    fun resolveZweit(sm: SensorManager, primaer: Resolved): Zweit {
+        val pa = primaer.accelerometer?.name
+        val accelListe = sm.getSensorList(Sensor.TYPE_ACCELEROMETER)
+        val gyroListe = sm.getSensorList(Sensor.TYPE_GYROSCOPE)
+        val an = zweitName(accelListe.map { it.name }, pa)
+        val gn = zweitName(gyroListe.map { it.name }, pa)
+        val zweit = Zweit(
+            accelerometer = accelListe.firstOrNull { it.name == an },
+            gyroscope = gyroListe.firstOrNull { it.name == gn },
+        )
+        Log.i(TAG, "zweiter Chip: accel=${zweit.accelerometer?.name ?: "none"} gyro=${zweit.gyroscope?.name ?: "none"}")
+        return zweit
+    }
+
+    /** 0.1.43.20: stammen Haupt-Beschleunigung und Haupt-Kreisel vom selben Chip (gleiche Achsen)? */
+    fun gleicherChip(primaer: Resolved): Boolean {
+        val a = chip(primaer.accelerometer?.name)
+        return a.isNotEmpty() && a == chip(primaer.gyroscope?.name)
+    }
+
     private fun pick(sm: SensorManager, type: Int): Sensor? {
         val list = sm.getSensorList(type)
         if (list.isEmpty()) return sm.getDefaultSensor(type)

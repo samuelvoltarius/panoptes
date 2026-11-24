@@ -74,6 +74,17 @@ public final class LadenApiHandler {
         String pathOnly = path.contains("?") ? path.substring(0, path.indexOf('?')) : path;
         if (!pathOnly.equals("/api/laden") && !pathOnly.startsWith("/api/laden/")) return false;
         String query = path.contains("?") ? path.substring(path.indexOf('?') + 1) : "";
+        if (pathOnly.equals(at.greenchili.surfmate.charging.LadeCsv.PFAD)) {
+            Object[] d = export(method, query, ECHT);
+            if (d.length == 2) {
+                HttpResponse.sendJson(out, (Integer) d[0], d[1].toString());
+            } else {
+                Map<String, String> k = new java.util.LinkedHashMap<>();
+                k.put("Content-Disposition", "attachment; filename=\"" + d[1] + "\"");
+                HttpResponse.sendBinaryNoStore(out, "text/csv; charset=utf-8", (byte[]) d[2], k);
+            }
+            return true;
+        }
         Object[] r = bearbeite(method, pathOnly, query, body, ECHT);
         if (r == null) return false;
         HttpResponse.sendJson(out, (Integer) r[0], r[1].toString());
@@ -144,6 +155,10 @@ public final class LadenApiHandler {
                 int anzahl = (int) zahl(param(query, "anzahl"), 50);
                 return ok(at.greenchili.surfmate.charging.LadeKosten.ladungen(u.sitzungen(von, bis), seite, anzahl, u.zeitzone()));
             }
+            case "/api/laden/ersparnis":   // 0.1.43.20 Ersparnis gegenüber Benzin/Diesel
+                if ("GET".equals(method)) return ersparnis(query, u);
+                if ("POST".equals(method) || "PUT".equals(method)) return ersparnisSetzen(body, u);
+                return fehler(405, "methode");
             case "/api/laden/nachfrage":
                 if ("GET".equals(method)) {
                     return ok(at.greenchili.surfmate.charging.LadeNachfrage.liste(
@@ -185,6 +200,96 @@ public final class LadenApiHandler {
             default:
                 return null;
         }
+    }
+
+    // ---------------------------------------------------------------- Ersparnis (0.1.43.20)
+
+    static JSONObject ersparnisVergleich(Umgebung u) throws Exception {
+        JSONObject cfg = u.config();
+        JSONObject a = cfg == null ? null : cfg.optJSONObject(at.greenchili.surfmate.charging.Ersparnis.ABSCHNITT);
+        return at.greenchili.surfmate.charging.Ersparnis.vergleich(a, u.standardWaehrung());
+    }
+
+    /**
+     * {@code GET /api/laden/ersparnis}: Vergleichswerte plus Monat und Jahr; mit {@code km=&strom=} eine einzelne Fahrt
+     * (die Kosten der Fahrt kommen aus der Fahrtenliste, gerechnet wird hier).
+     */
+    static Object[] ersparnis(String query, Umgebung u) throws Exception {
+        JSONObject v = ersparnisVergleich(u);
+        JSONObject o = new JSONObject().put("ok", true).put("vergleich", v);
+        String kmText = param(query, "km");
+        if (!kmText.isEmpty()) {
+            double km = dezimal(kmText), strom = dezimal(param(query, "strom"));
+            o.put("fahrt", at.greenchili.surfmate.charging.Ersparnis.rechne(km, strom, Double.isFinite(strom), v));
+            return ok(o);
+        }
+        long[] g = at.greenchili.surfmate.charging.LadeKosten.zeitraum(
+                at.greenchili.surfmate.charging.LadeKosten.GESAMT, u.jetzt(), u.zeitzone());
+        JSONObject gesamt = at.greenchili.surfmate.charging.LadeKosten.kosten(u.sitzungen(g[0], g[1]), u.km(g[0], g[1]),
+                at.greenchili.surfmate.charging.LadeKosten.GESAMT, g[0], g[1]);
+        for (String z : new String[] {at.greenchili.surfmate.charging.LadeKosten.MONAT,
+                at.greenchili.surfmate.charging.LadeKosten.JAHR}) {
+            long[] vb = at.greenchili.surfmate.charging.LadeKosten.zeitraum(z, u.jetzt(), u.zeitzone());
+            JSONObject k = at.greenchili.surfmate.charging.LadeKosten.kosten(u.sitzungen(vb[0], vb[1]), u.km(vb[0], vb[1]),
+                    z, vb[0], vb[1]);
+            o.put(z, at.greenchili.surfmate.charging.Ersparnis.ausKosten(k, gesamt, v));
+        }
+        o.put(at.greenchili.surfmate.charging.LadeKosten.GESAMT,
+                at.greenchili.surfmate.charging.Ersparnis.ausKosten(gesamt, gesamt, v));
+        return ok(o);
+    }
+
+    static Object[] ersparnisSetzen(String body, Umgebung u) throws Exception {
+        if (u.extern()) return fehler(403, "nur_mit_login");
+        JSONObject req;
+        try {
+            req = new JSONObject(body == null || body.isEmpty() ? "{}" : body);
+        } catch (Exception e) {
+            return fehler(400, "json");
+        }
+        JSONObject cfg = u.config();
+        JSONObject alt = cfg == null ? null : cfg.optJSONObject(at.greenchili.surfmate.charging.Ersparnis.ABSCHNITT);
+        String[] f = new String[1];
+        Map<String, Object> w = at.greenchili.surfmate.charging.Ersparnis.pruefe(req, alt, u.jetzt(), f);
+        if (w == null) return fehler(400, f[0]);
+        if (!u.schreibe(at.greenchili.surfmate.charging.Ersparnis.ABSCHNITT, w)) return fehler(500, "speichernFehlgeschlagen");
+        return ok(new JSONObject().put("ok", true).put("vergleich", ersparnisVergleich(u)));
+    }
+
+    private static double dezimal(String s) {
+        try {
+            return s == null || s.isEmpty() ? Double.NaN : Double.parseDouble(s.trim().replace(',', '.'));
+        } catch (Exception e) {
+            return Double.NaN;
+        }
+    }
+
+    // ---------------------------------------------------------------- CSV-Export (0.1.43.20)
+
+    /**
+     * {@code GET /api/laden/export}: {Status, JSON} bei Fehler, sonst {200, Dateiname, Bytes}. Nur mit Login
+     * (nicht in {@code ExternGuard}); die Datei geht nur an den, der sie abruft.
+     */
+    static Object[] export(String method, String query, Umgebung u) throws Exception {
+        if (!"GET".equals(method)) return fehler(405, "methode");
+        if (u.extern()) return fehler(403, "nur_mit_login");
+        String liste = param(query, "liste");
+        if (!at.greenchili.surfmate.charging.LadeCsv.LADUNGEN.equals(liste)
+                && !at.greenchili.surfmate.charging.LadeCsv.KOSTEN.equals(liste)) return fehler(400, "liste");
+        java.time.ZoneId zone = u.zeitzone().toZoneId();
+        long[] b = at.greenchili.surfmate.charging.LadeCsv.bereich(param(query, "von"), param(query, "bis"), u.jetzt(), zone);
+        if (b == null) return fehler(400, "zeitraum");
+        String sprache = param(query, "sprache").toLowerCase(java.util.Locale.ROOT);
+        if (!sprache.matches("de|en|fr|it|nl")) sprache = "de";
+        JSONArray s = u.sitzungen(b[0], b[1] + 1);
+        byte[] daten = at.greenchili.surfmate.charging.LadeCsv.LADUNGEN.equals(liste)
+                ? at.greenchili.surfmate.charging.LadeCsv.ladungen(s, sprache, zone)
+                : at.greenchili.surfmate.charging.LadeCsv.kosten(s, sprache, zone);
+        java.time.format.DateTimeFormatter iso = java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
+        String name = (at.greenchili.surfmate.charging.LadeCsv.LADUNGEN.equals(liste) ? "ladungen-" : "ladekosten-")
+                + java.time.Instant.ofEpochMilli(b[0]).atZone(zone).format(iso) + "_"
+                + java.time.Instant.ofEpochMilli(b[1]).atZone(zone).format(iso) + ".csv";
+        return new Object[] {200, name, daten};
     }
 
     // ---------------------------------------------------------------- PUT

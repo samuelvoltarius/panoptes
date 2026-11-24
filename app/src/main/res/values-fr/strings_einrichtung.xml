@@ -180,4 +180,9 @@
     <string name="einr_handy_unterwegs_text">L\'app mobile fonctionne alors partout, aussi en données mobiles. Sinon, seulement quand ton téléphone est sur le même Wi-Fi que la voiture.</string>
     <string name="einr_handy_unterwegs_ja">Oui, en déplacement</string>
     <string name="einr_handy_nur_wlan">Seulement sur le même Wi-Fi</string>
+    <!-- 0.1.43.20 BYD-Hilfe-Knöpfe (einrichtung/BydSeiten) -->
+    <string name="einr_byd_seiten_titel">Vérifier chez BYD</string>
+    <string name="einr_byd_seiten_text">Panoptes ne démarre plus tout seul après une mise à jour BYD ? Ouvrez la page de démarrage auto de BYD et laissez l’interrupteur de Panoptes sur ARRÊT. Chez BYD, MARCHE signifie : démarrage bloqué.</string>
+    <string name="einr_byd_autostart">Démarrage auto BYD</string>
+    <string name="einr_byd_rechte">Autorisations BYD</string>
 </resources>

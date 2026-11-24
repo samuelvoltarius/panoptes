@@ -1349,6 +1349,9 @@ public class HttpServer {
             return TelegramApiHandler.handle(method, path, body, out);
         }
         
+        // 0.1.43.20 Meldungen des Autos: nur lesend über BYDAutoInstrumentDevice.getMalfunctionInfo (kein UDS)
+        if (path.startsWith(at.greenchili.surfmate.byd.AutoMeldungen.PFAD)
+                && at.greenchili.surfmate.byd.AutoMeldungen.handle(method, path, out)) return true;
         // 0.1.28 P9 Fahrtenbuch als Datei (CSV / Druckansicht), entsteht im Auto
         if (path.startsWith(at.greenchili.surfmate.trips.FahrtenbuchDatei.PFAD)
                 && at.greenchili.surfmate.trips.FahrtenbuchDatei.handle(method, path, out,

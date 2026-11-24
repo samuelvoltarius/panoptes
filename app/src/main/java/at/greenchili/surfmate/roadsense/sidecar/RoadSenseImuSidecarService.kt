@@ -51,6 +51,10 @@ class RoadSenseImuSidecarService : Service(), SensorEventListener {
     private var sensorManager: SensorManager? = null
     private var accel: Sensor? = null
     private var gyro: Sensor? = null
+    // 0.1.43.20 (FIX_014320_IMU): zweiter IMU-Chip (Surf: icm40607 neben smi230) nur zur Plausibilität.
+    private var accel2: Sensor? = null
+    private var gyro2: Sensor? = null
+    private var gleicherChip = false
     private var ioThread: HandlerThread? = null
     private var ioHandler: android.os.Handler? = null
     // Applied operating mode. FAST means listeners are registered; SLOW is the
@@ -62,6 +66,8 @@ class RoadSenseImuSidecarService : Service(), SensorEventListener {
     // are delivered there), so no locking needed.
     private val accelBatch = ArrayList<ImuAccelSample>(16)
     private val gyroBatch = ArrayList<ImuGyroSample>(16)
+    private val accelBatch2 = ArrayList<ImuAccelSample>(16)
+    private val gyroBatch2 = ArrayList<ImuGyroSample>(16)
     private var batchStartMs = 0L
     @Volatile private var currentRate = ImuRate.FAST
 
@@ -78,8 +84,10 @@ class RoadSenseImuSidecarService : Service(), SensorEventListener {
      * FAST = RoadSense beim Fahren (~100 Hz, Accel + Gyro). SLOW = resident, Sensoren aus.
      * PARK = Wächter-Erschütterung im Parkmodus (Kern 21.10.2026): nur Beschleunigung, 25 Hz,
      * Hardware-FIFO mit 1 s Bündelung, damit der Prozessor nur einmal pro Sekunde geweckt wird.
+     * 0.1.43.20: PARK nimmt den zweiten Chip (nur Beschleunigung) dazu; FAHRT = Ereignis-Clip beim Fahren ohne
+     * RoadSense: wie PARK, aber mit beiden Kreiseln (Schleudern/Überschlag).
      */
-    enum class ImuRate { FAST, SLOW, PARK }
+    enum class ImuRate { FAST, SLOW, PARK, FAHRT }
 
     override fun onCreate() {
         super.onCreate()
@@ -96,6 +104,7 @@ class RoadSenseImuSidecarService : Service(), SensorEventListener {
         currentRate = when (rateName) {
             ImuRate.SLOW.name -> ImuRate.SLOW
             ImuRate.PARK.name -> ImuRate.PARK
+            ImuRate.FAHRT.name -> ImuRate.FAHRT
             else -> ImuRate.FAST
         }
         ioHandler?.post { applyRate(currentRate) }
@@ -139,6 +148,8 @@ class RoadSenseImuSidecarService : Service(), SensorEventListener {
         registeredRate = null
         accelBatch.clear()
         gyroBatch.clear()
+        accelBatch2.clear()
+        gyroBatch2.clear()
         batchStartMs = 0L
 
         if (accel == null) {
@@ -151,6 +162,14 @@ class RoadSenseImuSidecarService : Service(), SensorEventListener {
             }
             accel = resolved.accelerometer
             gyro = resolved.gyroscope
+            gleicherChip = ImuSource.gleicherChip(resolved)
+            try {
+                val z = ImuSource.resolveZweit(sm, resolved)
+                accel2 = z.accelerometer
+                gyro2 = z.gyroscope
+            } catch (t: Throwable) {
+                Log.w(TAG, "zweiter Chip nicht auflösbar: ${t.message}")
+            }
         }
 
         if (rate == ImuRate.SLOW) {
@@ -170,14 +189,21 @@ class RoadSenseImuSidecarService : Service(), SensorEventListener {
             return
         }
 
-        if (rate == ImuRate.PARK) {
+        if (rate == ImuRate.PARK || rate == ImuRate.FAHRT) {
             // Parkmodus: nur Beschleunigung, 25 Hz, Bündelung 1 s im Sensor-FIFO. Leistung wie
             // vom Gerät gemeldet loggen (Sensor.getPower, mA), damit der Verbrauch belegt ist.
+            // 0.1.43.20: dazu die Beschleunigung des zweiten Chips (Plausibilität); FAHRT zusätzlich beide Kreisel.
             sm.registerListener(this, activeAccel, PARK_SAMPLING_US, PARK_REPORT_LATENCY_US, ioHandler)
-            registeredRate = ImuRate.PARK
-            Log.i(TAG, "IMU sidecar registered: accel=${activeAccel.name} rate=PARK " +
-                "(${1_000_000 / PARK_SAMPLING_US} Hz, fifo=${activeAccel.fifoMaxEventCount}, " +
-                "power=${activeAccel.power} mA)")
+            accel2?.let { sm.registerListener(this, it, PARK_SAMPLING_US, PARK_REPORT_LATENCY_US, ioHandler) }
+            if (rate == ImuRate.FAHRT) {
+                gyro?.let { sm.registerListener(this, it, PARK_SAMPLING_US, PARK_REPORT_LATENCY_US, ioHandler) }
+                gyro2?.let { sm.registerListener(this, it, PARK_SAMPLING_US, PARK_REPORT_LATENCY_US, ioHandler) }
+            }
+            registeredRate = rate
+            Log.i(TAG, "IMU sidecar registered: accel=${activeAccel.name} accel2=${accel2?.name} " +
+                (if (rate == ImuRate.FAHRT) "gyro=${gyro?.name} gyro2=${gyro2?.name} " else "") +
+                "rate=$rate (${1_000_000 / PARK_SAMPLING_US} Hz, fifo=${activeAccel.fifoMaxEventCount}, " +
+                "power=${activeAccel.power} mA, power2=${accel2?.power} mA)")
             return
         }
 
@@ -196,30 +222,40 @@ class RoadSenseImuSidecarService : Service(), SensorEventListener {
         val maxReportLatencyUs = (ImuFrameCodec.TARGET_BATCH_MS * 1000L).toInt()
         sm.registerListener(this, activeAccel, delay, maxReportLatencyUs, ioHandler)
         gyro?.let { sm.registerListener(this, it, delay, maxReportLatencyUs, ioHandler) }
+        // 0.1.43.20: zweiter Chip nur mit 25 Hz (Plausibilität, nicht RoadSense), damit FAST nicht teurer wird.
+        accel2?.let { sm.registerListener(this, it, PARK_SAMPLING_US, maxReportLatencyUs, ioHandler) }
+        gyro2?.let { sm.registerListener(this, it, PARK_SAMPLING_US, maxReportLatencyUs, ioHandler) }
         registeredRate = ImuRate.FAST
-        Log.i(TAG, "IMU sidecar registered: accel=${accel?.name} gyro=${gyro?.name} rate=FAST")
+        Log.i(TAG, "IMU sidecar registered: accel=${accel?.name} gyro=${gyro?.name} " +
+            "accel2=${accel2?.name} gyro2=${gyro2?.name} rate=FAST")
     }
 
     override fun onSensorChanged(event: SensorEvent) {
         // unregisterListener can race with an already-queued callback. Once RELAXED
         // has been applied, ignore that tail event instead of recreating a batch.
         val rate = registeredRate
-        if (rate != ImuRate.FAST && rate != ImuRate.PARK) return
+        if (rate != ImuRate.FAST && rate != ImuRate.PARK && rate != ImuRate.FAHRT) return
         if (rate == ImuRate.PARK && event.sensor.type != Sensor.TYPE_ACCELEROMETER) return
         val tMs = wallClockFromElapsed(event.timestamp)
         if (batchStartMs == 0L) batchStartMs = tMs
+        // 0.1.43.20: nach Sensor zuordnen – der zweite Chip geht in eigene Listen (a2/g2).
+        val zweiter = event.sensor == accel2 || event.sensor == gyro2
         when (event.sensor.type) {
             Sensor.TYPE_ACCELEROMETER ->
-                accelBatch.add(ImuAccelSample(tMs, event.values[0], event.values[1], event.values[2]))
+                (if (zweiter) accelBatch2 else accelBatch)
+                    .add(ImuAccelSample(tMs, event.values[0], event.values[1], event.values[2]))
             Sensor.TYPE_GYROSCOPE ->
-                gyroBatch.add(ImuGyroSample(tMs, event.values[0], event.values[1], event.values[2]))
+                (if (zweiter) gyroBatch2 else gyroBatch)
+                    .add(ImuGyroSample(tMs, event.values[0], event.values[1], event.values[2]))
         }
         // Flush when the batch spans the target window OR a defensive cap is hit
         // (so a stall-then-burst can't build an unbounded list).
         val span = tMs - batchStartMs
         val overCap = accelBatch.size >= ImuFrameCodec.MAX_SAMPLES_PER_FRAME ||
-            gyroBatch.size >= ImuFrameCodec.MAX_SAMPLES_PER_FRAME
-        val window = if (rate == ImuRate.PARK) PARK_BATCH_MS else ImuFrameCodec.TARGET_BATCH_MS
+            gyroBatch.size >= ImuFrameCodec.MAX_SAMPLES_PER_FRAME ||
+            accelBatch2.size >= ImuFrameCodec.MAX_SAMPLES_PER_FRAME ||
+            gyroBatch2.size >= ImuFrameCodec.MAX_SAMPLES_PER_FRAME
+        val window = if (rate == ImuRate.PARK || rate == ImuRate.FAHRT) PARK_BATCH_MS else ImuFrameCodec.TARGET_BATCH_MS
         if (span >= window || overCap) flush()
     }
 
@@ -228,9 +264,12 @@ class RoadSenseImuSidecarService : Service(), SensorEventListener {
     /** Encode the current batch and ship it; runs on ioHandler's thread. */
     private fun flush() {
         if (accelBatch.isEmpty() && gyroBatch.isEmpty()) return
-        val line = ImuFrameCodec.encode(accelBatch, gyroBatch)
+        val line = ImuFrameCodec.encode(accelBatch, gyroBatch, accelBatch2, gyroBatch2, gleicherChip,
+            accel?.maximumRange ?: Float.NaN)
         accelBatch.clear()
         gyroBatch.clear()
+        accelBatch2.clear()
+        gyroBatch2.clear()
         batchStartMs = 0L
         sendLine(line)
     }

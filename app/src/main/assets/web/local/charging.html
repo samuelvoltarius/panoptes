@@ -1098,6 +1098,13 @@
                         <button type="button" class="load-more-btn" id="stationNachtragen" data-i18n="laden.saeule.nachtragen">Ladestationen nachtragen</button>
                     </div>
 
+                    <!-- 0.1.43.20: CSV-Export Ladevorgänge und Ladekosten (GET /api/laden/export), Datei bleibt beim Nutzer -->
+                    <div class="ch-card" data-tab="sessions" id="ladeExport" style="margin-top:16px;">
+                        <div class="ch-card-head"><h3 data-i18n="lade_export.titel">Als Tabelle speichern</h3></div>
+                        <p style="margin:8px 0 12px;color:var(--text-secondary);font-size:14px;" data-i18n="lade_export.hinweis">Für Excel oder die Steuer. Die Datei entsteht im Auto und bleibt bei dir.</p>
+                        <div id="ladeExportInhalt"></div>
+                    </div>
+
                     <!-- Settings tab -->
                     <div class="ch-card" data-tab="settings">
                         <h3 data-i18n="charge.settings_title">Ladeprotokoll</h3>
@@ -1400,6 +1407,7 @@
     <script src="../shared/laden-vorlieben.js?v=2"></script>
     <script src="../shared/laden-nachfrage.js?v=2"></script>
     <script src="../shared/nachbepreisung.js?v=1"></script>
+    <script src="../shared/ersparnis.js?v=1"></script>
     <script src="../shared/zusatzknoepfe.js?v=1"></script>
     <script>
         function toggleSidebar() {
@@ -1437,6 +1445,7 @@
                 });
             })();
             if (window.PanoptesNachbepreisung) PanoptesNachbepreisung.init(document.getElementById('nachbepreisen'));
+            if (window.PanoptesErsparnis) PanoptesErsparnis.lade_export(document.getElementById('ladeExportInhalt'), 'laden');
         });
     </script>
 </body>

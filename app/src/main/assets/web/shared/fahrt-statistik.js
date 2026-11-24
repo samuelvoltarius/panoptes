@@ -3,6 +3,7 @@
  *  1. Verbrauch gegen Außentemperatur (GET /api/trips/verbrauch-temperatur): ein Punkt je 5 °C, gewichtet nach Strecke.
  *     Fahrten ohne bekannte Außentemperatur zählen nicht mit und werden nur genannt.
  *  2. Verlust im Stand (GET /api/trips/standverlust): % und kWh je Tag, Wächter wach/aus getrennt, wenn belegt.
+ *  3. 0.1.43.20 Verbrauch laut BYD (GET /api/trips/byd-verbrauch): BYDs Fahrtenbuch, still aus ohne Datei.
  * Nur Lesen, keine Orte. Lädt erst, wenn eine Karte sichtbar wird.
  */
 (function () {
@@ -126,6 +127,62 @@
             t('trip.statistik.stand_hinweis', 'Aus „Zündung aus“ und „Zündung an“, ohne Ladezeiten, nur Parkzeiten ab {h} Stunden.', { h: h })));
     }
 
+    // 0.1.43.20 „Verbrauch laut BYD“ (GET /api/trips/byd-verbrauch): BYDs eigenes Fahrtenbuch, nur gelesen.
+    // Gibt es keines (oder ein fremdes Format), bleibt die Karte unsichtbar – ohne Fehlermeldung.
+    var bydArt = 'monat';
+    function bydWert(v) { return v == null ? '–' : zahl(v, 1) + ' kWh/100 km'; }
+    function byd(ziel, d) {
+        var zeile = document.getElementById('bydVerbrauchZeile');
+        if (!d || d.verfuegbar !== true || !d.gesamt || !d.gesamt.fahrten) { if (zeile) zeile.style.display = 'none'; return; }
+        if (zeile) zeile.style.display = '';
+        ziel.innerHTML = '';
+        var g = d.gesamt;
+        ziel.appendChild(el('div', 'font-family:\'JetBrains Mono\',monospace;font-size:30px;font-weight:700;margin-top:4px;', bydWert(g.kwhPro100km)));
+        ziel.appendChild(el('div', 'color:var(--text-secondary);font-size:14px;margin-bottom:10px;',
+            t('trip.statistik.byd_gesamt', '{fahrten} Fahrten, {km} km, {kwh} kWh', { fahrten: g.fahrten, km: zahl(g.km, 0), kwh: zahl(g.kwh, 0) })));
+
+        var knoepfe = el('div', 'display:flex;gap:8px;margin-bottom:8px;');
+        var tabelle = el('div', 'display:grid;grid-template-columns:1fr auto auto;gap:6px 14px;font-size:15px;');
+        [['tag', 'byd_tag', 'Tag', 'tage'], ['woche', 'byd_woche', 'Woche', 'wochen'], ['monat', 'byd_monat', 'Monat', 'monate']].forEach(function (a) {
+            var b = el('button', 'min-height:44px;padding:0 16px;font-size:15px;', t('trip.statistik.' + a[1], a[2]));
+            b.type = 'button';
+            b.className = 'btn' + (bydArt === a[0] ? ' btn-primary' : '');
+            b.onclick = function () { bydArt = a[0]; byd(ziel, d); };
+            knoepfe.appendChild(b);
+            if (bydArt !== a[0]) return;
+            (d[a[3]] || []).slice(0, 12).forEach(function (r) {
+                tabelle.appendChild(el('div', '', r.zeitraum));
+                tabelle.appendChild(el('div', 'text-align:right;color:var(--text-secondary);', zahl(r.km, 0) + ' km'));
+                tabelle.appendChild(el('div', 'text-align:right;font-family:\'JetBrains Mono\',monospace;font-weight:700;', bydWert(r.kwhPro100km)));
+            });
+        });
+        ziel.appendChild(knoepfe);
+        ziel.appendChild(tabelle);
+
+        var fahrten = (d.fahrten || []).slice(0, 10);
+        if (fahrten.length) {
+            ziel.appendChild(el('div', 'font-weight:700;font-size:15px;margin-top:14px;margin-bottom:6px;', t('trip.statistik.byd_fahrten', 'Letzte Fahrten')));
+            var liste = el('div', 'display:grid;grid-template-columns:1fr auto auto;gap:6px 14px;font-size:14px;');
+            fahrten.forEach(function (f) {
+                var wann = '';
+                try { wann = new Date(f.start).toLocaleString(undefined, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); }
+                catch (e) { wann = new Date(f.start).toISOString().slice(0, 16).replace('T', ' '); }
+                liste.appendChild(el('div', '', wann));
+                liste.appendChild(el('div', 'text-align:right;color:var(--text-secondary);', zahl(f.km, 1) + ' km'));
+                liste.appendChild(el('div', 'text-align:right;font-family:\'JetBrains Mono\',monospace;', bydWert(f.kwhPro100km)));
+            });
+            ziel.appendChild(liste);
+        }
+
+        var v = d.vergleich || {};
+        ziel.appendChild(el('div', 'font-size:14px;margin-top:12px;', v.paare
+            ? t('trip.statistik.byd_vergleich', 'Gleiche Fahrten ({n}): BYD {byd} kWh/100 km, Panoptes {pan} kWh/100 km.',
+                { n: v.paare, byd: zahl(v.bydKwhPro100km, 1), pan: zahl(v.panoptesKwhPro100km, 1) })
+            : t('trip.statistik.byd_vergleich_leer', 'Noch keine Fahrt, die Panoptes und BYD beide kennen.')));
+        ziel.appendChild(el('div', 'color:var(--text-muted);font-size:12px;margin-top:8px;',
+            t('trip.statistik.byd_hinweis', 'Aus BYDs eigenem Fahrtenbuch im Auto. Panoptes liest es nur und schickt es nirgendwohin.')));
+    }
+
     var geladen = false;
     function laden() {
         if (geladen) return;
@@ -134,6 +191,8 @@
         var v = document.getElementById('standverlustInhalt');
         if (k) holen('/api/trips/verbrauch-temperatur?tage=365').then(function (d) { kurve(k, d); });
         if (v) holen('/api/trips/standverlust?tage=90').then(function (d) { stand(v, d); });
+        var b = document.getElementById('bydVerbrauchInhalt');
+        if (b) holen('/api/trips/byd-verbrauch?max=10').then(function (d) { byd(b, d); });
     }
 
     function start() {
@@ -151,7 +210,7 @@
         }
     }
 
-    window.FAHRT_STATISTIK = { kurve: kurve, stand: stand };
+    window.FAHRT_STATISTIK = { kurve: kurve, stand: stand, byd: byd };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
     else start();
 })();

@@ -52,6 +52,10 @@ public final class TachoFaehigkeit {
         public String warnleuchtenFrei = "";
         /** 0.1.43.9 (T2): App-Fenster am Auto belegt: ja (Grenzen bestätigt), nein (abgelehnt), "" ungeprüft. */
         public String appFensterBelegt = "";
+        /** 0.1.43.20 (P3): Urteil des Kohorten-Gates; null = nicht erhoben (nur alte Aufrufer/Tests). */
+        public TachoKohorte.Urteil kohorte;
+        /** 0.1.43.20 (P3): Hardware-Schlüssel zum Melden (Modell, Firmware, Hashes, Panel; keine Kennung). */
+        public JSONObject kohorteSchluessel;
     }
 
     // ---------------------------------------------------------------- reine Auswertung
@@ -109,7 +113,13 @@ public final class TachoFaehigkeit {
         } else if (!shell) {
             sperre = "keine_shell_rechte";
             sperreGrund = "Panoptes hat noch keine Shell-Rechte. Schließe zuerst die Einrichtung ab.";
+        } else if (e.kohorte != null && !e.kohorte.oeffnenErlaubt()) {
+            // 0.1.43.20 (P3): nur geprüfte Hardware; 18/0 bleiben davon unberührt.
+            sperre = e.kohorte.code;
+            sperreGrund = e.kohorte.grund;
         }
+        if (e.kohorte != null) plattform.put("kohorte", e.kohorte.alsJson());
+        if (e.kohorteSchluessel != null) plattform.put("kohorteSchluessel", e.kohorteSchluessel);
 
         JSONObject res = new JSONObject();
         res.put("success", true);
@@ -296,6 +306,16 @@ public final class TachoFaehigkeit {
                         .append(dj.optString("groesse", "?")).append('\n');
             }
             sb.append("Tacho-Firmware: ").append(p.optString("tachoFirmware", "?")).append('\n');
+            JSONObject ks = p.optJSONObject("kohorteSchluessel");
+            if (ks != null) {
+                sb.append("Hardware-Schlüssel: ").append(ks.optString("id")).append(", Build ")
+                        .append(ks.optString("build", "?")).append(", libBydCluster ")
+                        .append(ks.optString("libBydCluster", "?")).append(", fissiond ")
+                        .append(ks.optString("fissiond", "?")).append('\n');
+            }
+            JSONObject ku = p.optJSONObject("kohorte");
+            if (ku != null) sb.append("Hardware geprüft: ").append(ku.optString("status")).append(" (")
+                    .append(ku.optString("code")).append(")\n");
         }
         for (String k : new String[] {"totwinkel", "karte", "andereApps", "appFenster"}) {
             JSONObject u = r.optJSONObject(k);
@@ -343,6 +363,16 @@ public final class TachoFaehigkeit {
         e.uid = run("id -u", 2);
         e.warnleuchtenFrei = TachoNaviApp.warnleuchtenFrei();
         e.appFensterBelegt = TachoAppFenster.belegt();
+        try {
+            e.kohorte = TachoKohorte.urteil();
+            e.kohorteSchluessel = TachoKohorte.schluessel().alsJson();
+        } catch (Throwable ignored) {
+            e.kohorte = null;
+        }
+        if (e.kohorte == null) {
+            e.kohorte = new TachoKohorte.Urteil(TachoKohorte.GESPERRT, "pruefung_fehlgeschlagen",
+                    "Panoptes konnte die Hardware nicht prüfen. Deshalb bleibt der Tacho aus.");
+        }
         return e;
     }
 

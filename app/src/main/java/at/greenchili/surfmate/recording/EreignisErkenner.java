@@ -16,12 +16,35 @@ package at.greenchili.surfmate.recording;
  *       wenn er dabei ruhig bleibt; außerdem ein Stoß ohne Tempoabfall (Auffahrunfall im Stand)
  *       ab {@link #STOSS_MS2} waagrecht. Senkrechte Schläge (Schlagloch) zählen nicht.</li>
  * </ul>
+ * 0.1.43.20 (FIX_014320_IMU): zweiter IMU-Chip und Kreisel.
+ * <ul>
+ *   <li><b>Zwei Chips</b> ({@link ZweiSensoren}): Ein Stoß, Schleudern oder Überschlag zählt nur, wenn der zweite
+ *       Chip ihn mitsah – sofern er bewährt ist und den Zeitraum geliefert hat. Sonst (fehlt, unbewährt, zu spät)
+ *       wie bisher mit einem Sensor; im Zweifel wird gesichert. Ein Tempo-Ereignis wird zusätzlich verworfen,
+ *       wenn auch der zweite Chip dabei ruhig blieb.</li>
+ *   <li><b>Schleudern</b>: Drehrate um die Hochachse ≥ {@link #SCHLEUDERN_RADS} über {@link #SCHLEUDERN_HALTEN_MS}
+ *       ab {@link #SCHLEUDERN_MIN_KMH}. Begründung: bei 30 km/h (8,3 m/s) entspricht 0,9 rad/s einem Kurvenradius
+ *       von 9,3 m und 7,5 m/s² Querbeschleunigung – mehr als im normalen Fahren (bis ~4 m/s²) und nahe der
+ *       Haftgrenze; schneller wird es nur strenger. Eine Kurve mit dem Radius gibt es bei 30 km/h nicht.</li>
+ *   <li><b>Überschlag</b>: Drehung um eine waagrechte Achse, aufsummiert über {@link #UEBERSCHLAG_FENSTER_MS},
+ *       ≥ {@link #UEBERSCHLAG_RAD} (40°). Wanken in der Kurve bleibt unter ~6°, Rampe/Bordstein ~10° über Sekunden,
+ *       ein Schlagloch wenige Grad, die sich wieder aufheben. Nur, wenn Beschleunigung und Kreisel vom selben Chip
+ *       kommen (gleiche Achsen), sonst ist „waagrecht“ nicht bestimmbar.</li>
+ * </ul>
+ * <b>Harte Grenze</b> (Koordination 24.11.): ab {@link #HART_MS2} (4 g) waagrecht am Hauptchip oder wenn eine waagrechte
+ * Achse des Hauptchips im Anschlag ist ({@link #SAETTIGUNG_ANTEIL} des Messbereichs) wird ein Stoß IMMER gesichert,
+ * auch wenn der zweite Chip ruhig war: Bei einem echten Unfall kann er sättigen oder ausfallen, und Fahrdaten der
+ * Kreisel fehlen noch. Verworfen wird nur darunter, und jede Verwerfung kommt mit den Werten beider Chips ins Log.
+ * Begründung 4 g: der bisherige Einzelstoß beginnt bei 25 m/s² (~2,5 g); Schlagloch und Bordstein bleiben in der
+ * Waagrechten am Headunit deutlich darunter (senkrechte Schläge zählen ohnehin nicht), ein Anprall, der die
+ * Karosserie verformt, liegt darüber. Weil der eingestellte Messbereich der Chips nicht bekannt ist (±2/4/8/16 g
+ * möglich, bei ±4 g sättigt er genau dort), zählt der Anschlag zusätzlich.
  * Danach Ruhezeit {@link #RUHE_MS} und höchstens {@link #MAX_PRO_STUNDE} pro Stunde.
  * Außerhalb einer Fahrstufe wird nichts ausgelöst und der Verlauf verworfen.
  */
 public final class EreignisErkenner {
 
-    public enum Grund { VERZOEGERUNG, STOSS }
+    public enum Grund { VERZOEGERUNG, STOSS, SCHLEUDERN, UEBERSCHLAG }
 
     /**
      * 0.1.36: Was genau ausgelöst hat (für {@code <clip>.ausloeser.json}): Regel, Quelle, auslösende Werte und die
@@ -39,6 +62,14 @@ public final class EreignisErkenner {
             this.grund = grund;
             this.quelle = quelle;
             this.regel = regel;
+        }
+
+        /** 0.1.43.20: gleiche Details mit anderer Quelle (z. B. {@code sensor+zweit}). */
+        Details mitQuelle(String q) {
+            Details d = new Details(grund, q, regel);
+            d.werte.putAll(werte);
+            d.schwellen.putAll(schwellen);
+            return d;
         }
 
         Details wert(String name, double v) {
@@ -99,6 +130,25 @@ public final class EreignisErkenner {
     static final long IMU_LUECKE_MS = 3_000L;
     static final long IMU_EINSCHWING_MS = 3_000L;
 
+    // ---------------------------------------------------------------- Kreisel und zweiter Chip (0.1.43.20)
+    static final double SCHLEUDERN_MIN_KMH = 30.0;
+    static final double SCHLEUDERN_RADS = 0.9;
+    static final long SCHLEUDERN_HALTEN_MS = 300L;
+    /** Längere Lücke zwischen zwei Kreisel-Proben unterbricht das Halten. */
+    static final long KREISEL_LUECKE_MS = 200L;
+    static final double UEBERSCHLAG_RAD = 0.7;
+    static final long UEBERSCHLAG_FENSTER_MS = 2_000L;
+    /** Bestätigungsfenster des zweiten Chips um einen Stoß (Takt 25 Hz = 40 ms, dazu Versatz). */
+    static final long STOSS_ZWEIT_RAND_MS = 150L;
+    /** So lange wartet eine Auslösung höchstens auf den zweiten Chip; danach wie mit einem Sensor. */
+    static final long ZWEIT_WARTE_MS = 1_500L;
+    /** Tempo-Ereignis: unter diesem Ausschlag blieb auch der zweite Chip ruhig (gedämpfter Chip, siehe ZweiSensoren). */
+    static final double ZWEIT_EINSPRUCH_MS2 = 0.5;
+    /** Harte Grenze: 4 g waagrecht – darüber nie verwerfen. */
+    public static final double HART_MS2 = 4 * 9.80665;
+    /** Anschlag: so viel des gemeldeten Messbereichs auf einer waagrechten Achse gilt als gesättigt. */
+    static final double SAETTIGUNG_ANTEIL = 0.95;
+
     // ---------------------------------------------------------------- Grenzen
     static final long RUHE_MS = 60_000L;
     static final int MAX_PRO_STUNDE = 6;
@@ -154,6 +204,75 @@ public final class EreignisErkenner {
     private int stundeIdx;
     private int stundeAnzahl;
 
+    // 0.1.43.20: zweiter Chip und Kreisel.
+    private final ZweiSensoren zwei;
+    private boolean gleicherChip;
+    private static final int DREH_VERLAUF = 256;
+    private final long[] dtz = new long[DREH_VERLAUF];
+    private final double[] dhx = new double[DREH_VERLAUF], dhy = new double[DREH_VERLAUF],
+            dhz = new double[DREH_VERLAUF], dbetrag = new double[DREH_VERLAUF];
+    private int dKopf, dAnzahl;
+    private long dLetzte = Long.MIN_VALUE;
+    private long schleudernSeit = Long.MIN_VALUE;
+    // Auslösung, die noch auf den zweiten Chip wartet.
+    private Grund offenGrund;
+    private Details offenDetails;
+    private long offenT, offenVon, offenBis;
+    private double offenWert;
+    private boolean offenDreh;
+    private String letzteAbweisung;
+    private int abweisungen;
+    /** Messbereich des Hauptchips (m/s², NaN = unbekannt). */
+    private double messbereich = Double.NaN;
+
+    public EreignisErkenner() {
+        this(new ZweiSensoren());
+    }
+
+    /** 0.1.43.20: mit gemeinsamer Zwei-Chip-Plausibilität (Gerät: {@link ZweiSensoren#geraet()}). */
+    public EreignisErkenner(ZweiSensoren zwei) {
+        this.zwei = zwei == null ? new ZweiSensoren() : zwei;
+    }
+
+    /** 0.1.43.20: kommen Haupt-Beschleunigung und Haupt-Kreisel vom selben Chip (gleiche Achsen)? */
+    public synchronized void gleicherChip(boolean ja) {
+        gleicherChip = ja;
+    }
+
+    /** 0.1.43.20: was zuletzt wegen des zweiten Chips verworfen wurde, mit Werten beider Chips (null = nichts). */
+    public synchronized String letzteAbweisung() {
+        return letzteAbweisung;
+    }
+
+    /** 0.1.43.20: Anzahl der Verwerfungen wegen des zweiten Chips (jede wird geloggt). */
+    public synchronized int abweisungen() {
+        return abweisungen;
+    }
+
+    /** 0.1.43.20: gemeldeter Messbereich des Hauptchips (m/s²; ≤ 0 oder NaN = unbekannt). */
+    public synchronized void messbereich(double r) {
+        messbereich = r > 0 ? r : Double.NaN;
+    }
+
+    private void abweisen(String regel, double haupt, double zweit, double noetig, String einheit) {
+        abweisungen++;
+        letzteAbweisung = String.format(java.util.Locale.ROOT,
+                "%s: zweiter Chip ruhig (haupt %.2f %s, zweit %s, noetig %.2f %s)", regel, haupt, einheit,
+                Double.isNaN(zweit) ? "keine Probe" : String.format(java.util.Locale.ROOT, "%.2f %s", zweit, einheit),
+                noetig, einheit);
+    }
+
+    /** Ist eine waagrechte Achse des Hauptchips im Anschlag? (Schwerkraft-Achse ausgenommen.) */
+    private boolean gesaettigt(float ax, float ay, float az) {
+        if (Double.isNaN(messbereich)) return false;
+        double g = Math.sqrt(gx * gx + gy * gy + gz * gz);
+        if (g < 1e-3) return false;
+        double grenze = SAETTIGUNG_ANTEIL * messbereich;
+        return (Math.abs(ax) >= grenze && Math.abs(gx) < 0.5 * g)
+                || (Math.abs(ay) >= grenze && Math.abs(gy) < 0.5 * g)
+                || (Math.abs(az) >= grenze && Math.abs(gz) < 0.5 * g);
+    }
+
     /**
      * Neue Tempo-Probe. {@code kmh} NaN oder negativ = kein Wert. {@code fahrstufe} = D/R/S/M.
      *
@@ -161,13 +280,17 @@ public final class EreignisErkenner {
      */
     public synchronized Grund tempo(long tMs, double kmh, boolean fahrstufe) {
         if (!fahrstufe) {
+            // 0.1.43.20: wartet eine Auslösung noch auf den zweiten Chip, jetzt entscheiden (im Zweifel sichern).
+            Grund offen = offenGrund != null ? offeneEntscheiden(tMs, true) : null;
             fahrbereit = false;
             warSchnell = false;
             letzteKmh = Double.NaN;
             verlaufLeeren();
-            return null;
+            return offen;
         }
         fahrbereit = true;
+        Grund offen = offeneEntscheiden(tMs);
+        if (offen != null) return offen;
         letzteKmh = (Double.isNaN(kmh) || kmh < 0) ? Double.NaN : kmh;
         if (!Double.isNaN(letzteKmh) && letzteKmh >= LANGSAM_KMH) warSchnell = true;
         if (Double.isNaN(kmh) || kmh < 0) {
@@ -192,7 +315,7 @@ public final class EreignisErkenner {
         if (wartet && tMs - warteBis > IMU_WARTE_MS) {
             // Sensor liefert nicht nach: nach dem Tempo allein entscheiden.
             wartet = false;
-            g = entscheide(warteBis, warteA, warteAltV, warteV, Double.NaN);
+            g = entscheide(warteBis, warteA, warteAltV, warteV, Double.NaN, warteVon, warteBis);
         }
         if (hatWartend) {
             boolean ausreisser = vAnzahl > 0
@@ -254,13 +377,13 @@ public final class EreignisErkenner {
                 warteAltV = altV;
                 return null;
             }
-            return entscheide(jetztT, a, altV, jetztV, imuSpitze(zeit(alt), jetztT));
+            return entscheide(jetztT, a, altV, jetztV, imuSpitze(zeit(alt), jetztT), zeit(alt), jetztT);
         }
-        return entscheide(jetztT, a, altV, jetztV, Double.NaN);
+        return entscheide(jetztT, a, altV, jetztV, Double.NaN, zeit(alt), jetztT);
     }
 
     /** {@code spitze} NaN = kein Sensor; sonst größter waagrechter Anteil im Zeitraum. */
-    private Grund entscheide(long tMs, double a, double altV, double jetztV, double spitze) {
+    private Grund entscheide(long tMs, double a, double altV, double jetztV, double spitze, long von, long bis) {
         Details d = new Details(Grund.VERZOEGERUNG, Double.isNaN(spitze) ? "tempo" : "tempo+sensor", "verzoegerung")
                 .wert("verzoegerungMs2", a).wert("kmhVorher", altV).wert("kmhNachher", jetztV)
                 .wert("sensorSpitzeMs2", spitze)
@@ -273,6 +396,16 @@ public final class EreignisErkenner {
         if (!Double.isNaN(spitze)) {
             if (spitze < IMU_EINSPRUCH_MS2) { treffer = 0; return null; }   // Sensor ruhig: Tempo-Fehler
             if (spitze < IMU_BESTAETIGUNG_MS2 && a > PLAUSIBEL_MS2) { treffer = 0; return null; }
+            // 0.1.43.20: auch der zweite Chip muss die Verzögerung sehen, wenn er bewährt ist und den Zeitraum hat.
+            // Eine Bremsung ≥ 5 m/s² über ≥ 0,5 s ist langsam genug für den gedämpften Chip (zeigt dann ≥ ~3 m/s²).
+            ZweiSensoren.Urteil u = zwei.beschlBestaetigt(von - 250, bis + 250, bis, ZWEIT_EINSPRUCH_MS2, 1.0);
+            d.wert("zweitSpitzeMs2", zwei.beschl2Spitze(von - 250, bis + 250));
+            if (u == ZweiSensoren.Urteil.NEIN) {
+                abweisen("verzoegerung", spitze, zwei.beschl2Spitze(von - 250, bis + 250), ZWEIT_EINSPRUCH_MS2, "m/s²");
+                treffer = 0;
+                return null;
+            }
+            if (u == ZweiSensoren.Urteil.JA) d = d.mitQuelle("tempo+sensor+zweit");
         }
         if (a > PLAUSIBEL_MS2) {
             pruefeRueckprall = true;
@@ -288,6 +421,9 @@ public final class EreignisErkenner {
 
     /** Neue Probe des Beschleunigungssensors (Gerätekoordinaten, m/s²). */
     public synchronized Grund imu(long tMs, float ax, float ay, float az) {
+        zwei.beschl1(tMs, ax, ay, az);
+        Grund offen = offeneEntscheiden(tMs);
+        if (offen != null) return offen;
         if (imuLetzteMs != Long.MIN_VALUE && (tMs - imuLetzteMs > IMU_LUECKE_MS || tMs < imuLetzteMs)) {
             hatSchwerkraft = false;
             iAnzahl = 0;
@@ -317,6 +453,8 @@ public final class EreignisErkenner {
             waagrecht = Math.sqrt(Math.max(0.0, quadrat));
         }
         if (tMs - imuErsteMs < IMU_EINSCHWING_MS) return null;
+        // Harte Grenze: darüber verwirft der zweite Chip nie (auch eine wartende Auslösung nicht).
+        boolean hart = waagrecht >= HART_MS2 || gesaettigt(ax, ay, az);
         it[iKopf] = tMs;
         ih[iKopf] = waagrecht;
         iKopf = (iKopf + 1) % IMU_VERLAUF;
@@ -325,8 +463,13 @@ public final class EreignisErkenner {
         if (!fahrbereit) return null;
         if (wartet && tMs >= warteBis) {
             wartet = false;
-            Grund g = entscheide(tMs, warteA, warteAltV, warteV, imuSpitze(warteVon, warteBis));
+            Grund g = entscheide(tMs, warteA, warteAltV, warteV, imuSpitze(warteVon, warteBis), warteVon, warteBis);
             if (g != null) return g;
+        }
+        if (offenGrund != null) {
+            if (!hart) return null;   // eine Auslösung wartet schon auf den zweiten Chip
+            offenGrund = null;        // harter Stoß: jetzt ohne Gegenprobe sichern
+            offenDetails = null;
         }
         boolean langsam = Double.isNaN(letzteKmh) || letzteKmh < LANGSAM_KMH;
         if (langsam) {
@@ -336,11 +479,17 @@ public final class EreignisErkenner {
                 stossHartErsterMs = Long.MIN_VALUE;
                 if (!Double.isNaN(letzteKmh) && letzteKmh <= STEHT_KMH) {
                     letzteSpitze = waagrecht;
-                    kandidat = stossDetails("stoss_im_stand", waagrecht, STOSS_EINZELN_MS2)
-                            .schwelle("stehtKmh", STEHT_KMH);
-                    return ausloesen(tMs, Grund.STOSS);       // stand schon: Auffahrunfall
+                    return pruefeZweit(Grund.STOSS, stossDetails("stoss_im_stand", waagrecht, STOSS_EINZELN_MS2)
+                            .schwelle("stehtKmh", STEHT_KMH), tMs, waagrecht, hart);   // stand schon: Auffahrunfall
                 }
                 // rollt noch: erst auslösen, wenn das Auto binnen STEHT_BINNEN_MS steht
+                if (!hart && zwei.beschlBestaetigt(tMs - STOSS_ZWEIT_RAND_MS, tMs + STOSS_ZWEIT_RAND_MS,
+                        tMs + STOSS_ZWEIT_RAND_MS, waagrecht, ZweiSensoren.BESCHL_ANTEIL) == ZweiSensoren.Urteil.NEIN) {
+                    abweisen("stoss_langsam", waagrecht,
+                            zwei.beschl2Spitze(tMs - STOSS_ZWEIT_RAND_MS, tMs + STOSS_ZWEIT_RAND_MS),
+                            ZweiSensoren.BESCHL_ANTEIL * waagrecht, "m/s²");
+                    return null;
+                }
                 stossKandidat = true;
                 stossKandidatMs = tMs;
                 stossKandidatSpitze = waagrecht;
@@ -351,19 +500,193 @@ public final class EreignisErkenner {
         }
         if (waagrecht >= STOSS_EINZELN_MS2) {
             letzteSpitze = waagrecht;
-            kandidat = stossDetails("stoss_einzeln", waagrecht, STOSS_EINZELN_MS2);
-            return ausloesen(tMs, Grund.STOSS);
+            return pruefeZweit(Grund.STOSS, stossDetails("stoss_einzeln", waagrecht, STOSS_EINZELN_MS2), tMs, waagrecht,
+                    hart);
         }
         if (waagrecht >= STOSS_MS2) {
             if (stossErsterMs != Long.MIN_VALUE && tMs - stossErsterMs <= STOSS_FENSTER_MS) {
                 stossErsterMs = Long.MIN_VALUE;
                 letzteSpitze = waagrecht;
-                kandidat = stossDetails("stoss_doppelt", waagrecht, STOSS_MS2);
-                return ausloesen(tMs, Grund.STOSS);
+                return pruefeZweit(Grund.STOSS, stossDetails("stoss_doppelt", waagrecht, STOSS_MS2), tMs, waagrecht,
+                        hart);
             }
             stossErsterMs = tMs;
         }
         return null;
+    }
+
+    // ---------------------------------------------------------------- 0.1.43.20: zweiter Chip, Kreisel
+
+    /** Probe des zweiten Beschleunigungssensors (eigene Achsen, m/s²). */
+    public synchronized Grund imu2(long tMs, float ax, float ay, float az) {
+        zwei.beschl2(tMs, ax, ay, az);
+        return offeneEntscheiden(tMs);
+    }
+
+    /** Probe des zweiten Kreisels (eigene Achsen, rad/s). */
+    public synchronized Grund gyro2(long tMs, float gx, float gy, float gz) {
+        zwei.dreh2(tMs, gx, gy, gz);
+        return offeneEntscheiden(tMs);
+    }
+
+    /** Probe des Hauptkreisels (rad/s; Achsen wie die Haupt-Beschleunigung, wenn {@link #gleicherChip}). */
+    public synchronized Grund gyro(long tMs, float gxr, float gyr, float gzr) {
+        zwei.dreh1(tMs, gxr, gyr, gzr);
+        Grund offen = offeneEntscheiden(tMs);
+        if (offen != null) return offen;
+        if (dLetzte != Long.MIN_VALUE && tMs <= dLetzte) return null;   // doppelt / Uhr rückwärts
+        if (dLetzte != Long.MIN_VALUE && tMs - dLetzte > IMU_LUECKE_MS) {
+            dAnzahl = 0;
+            schleudernSeit = Long.MIN_VALUE;
+        }
+        long dt = dLetzte == Long.MIN_VALUE ? 0L : tMs - dLetzte;
+        dLetzte = tMs;
+        double betrag = Math.sqrt((double) gxr * gxr + (double) gyr * gyr + (double) gzr * gzr);
+        double gB = Math.sqrt(gx * gx + gy * gy + gz * gz);
+        boolean rahmen = gleicherChip && hatSchwerkraft && gB > 1e-3;
+        double hoch, hx = 0, hy = 0, hz = 0;
+        if (rahmen) {
+            double ux = gx / gB, uy = gy / gB, uz = gz / gB;
+            double p = gxr * ux + gyr * uy + gzr * uz;
+            hoch = Math.abs(p);
+            hx = gxr - p * ux;
+            hy = gyr - p * uy;
+            hz = gzr - p * uz;
+        } else {
+            hoch = betrag;   // ohne gemeinsame Achsen: Betrag (Schleudern und Überschlag nicht trennbar)
+        }
+        dtz[dKopf] = tMs;
+        dhx[dKopf] = hx;
+        dhy[dKopf] = hy;
+        dhz[dKopf] = hz;
+        dbetrag[dKopf] = betrag;
+        dKopf = (dKopf + 1) % DREH_VERLAUF;
+        if (dAnzahl < DREH_VERLAUF) dAnzahl++;
+        if (!fahrbereit || offenGrund != null) return null;
+
+        if (rahmen) {
+            // Überschlag: waagrechte Drehung über das Fenster aufsummieren (Vektor, Hin und Zurück heben sich auf).
+            double sx = 0, sy = 0, sz = 0, maxB = 0;
+            long spaeter = Long.MIN_VALUE;
+            for (int i = 0; i < dAnzahl; i++) {
+                int j = (dKopf - 1 - i + DREH_VERLAUF) % DREH_VERLAUF;
+                long tt = dtz[j];
+                if (tMs - tt > UEBERSCHLAG_FENSTER_MS) break;
+                long schritt = spaeter == Long.MIN_VALUE ? Math.min(dt, KREISEL_LUECKE_MS)
+                        : Math.min(spaeter - tt, KREISEL_LUECKE_MS);
+                double s = schritt / 1000.0;
+                sx += dhx[j] * s;
+                sy += dhy[j] * s;
+                sz += dhz[j] * s;
+                if (dbetrag[j] > maxB) maxB = dbetrag[j];
+                spaeter = tt;
+            }
+            double winkel = Math.sqrt(sx * sx + sy * sy + sz * sz);
+            if (winkel >= UEBERSCHLAG_RAD) {
+                dAnzahl = 0;
+                Details d = new Details(Grund.UEBERSCHLAG, "sensor", "ueberschlag")
+                        .wert("winkelRad", winkel).wert("drehMaxRads", maxB).wert("kmh", letzteKmh)
+                        .schwelle("winkelRad", UEBERSCHLAG_RAD).schwelle("fensterMs", UEBERSCHLAG_FENSTER_MS);
+                return pruefeZweitDreh(Grund.UEBERSCHLAG, d, tMs, tMs - UEBERSCHLAG_FENSTER_MS, maxB);
+            }
+        }
+
+        boolean schnell = !Double.isNaN(letzteKmh) && letzteKmh >= SCHLEUDERN_MIN_KMH;
+        if (schnell && hoch >= SCHLEUDERN_RADS) {
+            if (schleudernSeit == Long.MIN_VALUE || dt > KREISEL_LUECKE_MS) schleudernSeit = tMs;
+            if (tMs - schleudernSeit >= SCHLEUDERN_HALTEN_MS) {
+                long seit = schleudernSeit;
+                schleudernSeit = Long.MIN_VALUE;
+                Details d = new Details(Grund.SCHLEUDERN, "sensor", rahmen ? "schleudern" : "schleudern_betrag")
+                        .wert("drehRads", hoch).wert("haltenMs", tMs - seit).wert("kmh", letzteKmh)
+                        .schwelle("drehRads", SCHLEUDERN_RADS).schwelle("haltenMs", SCHLEUDERN_HALTEN_MS)
+                        .schwelle("minKmh", SCHLEUDERN_MIN_KMH);
+                return pruefeZweitDreh(Grund.SCHLEUDERN, d, tMs, seit, SCHLEUDERN_RADS);
+            }
+        } else {
+            schleudernSeit = Long.MIN_VALUE;
+        }
+        return null;
+    }
+
+    /** Stoß: zweiter Chip im Fenster ±{@link #STOSS_ZWEIT_RAND_MS}; über der harten Grenze immer sichern. */
+    private Grund pruefeZweit(Grund g, Details d, long tMs, double spitze, boolean hart) {
+        if (hart) {
+            d.schwelle("hartMs2", HART_MS2).wert("hart", 1);
+            kandidat = mitZweit(d, tMs - STOSS_ZWEIT_RAND_MS, tMs + STOSS_ZWEIT_RAND_MS, false);
+            return ausloesen(tMs, g);
+        }
+        return pruefe(g, d, tMs, tMs - STOSS_ZWEIT_RAND_MS, tMs + STOSS_ZWEIT_RAND_MS, spitze, false);
+    }
+
+    /** Drehung: zweiter Kreisel im Zeitraum der Drehung. */
+    private Grund pruefeZweitDreh(Grund g, Details d, long tMs, long von, double rate) {
+        return pruefe(g, d, tMs, von, tMs + STOSS_ZWEIT_RAND_MS, rate, true);
+    }
+
+    private Grund pruefe(Grund g, Details d, long tMs, long von, long bis, double wert, boolean dreh) {
+        ZweiSensoren.Urteil u = urteil(von, bis, wert, dreh);
+        if (u == ZweiSensoren.Urteil.JA) {
+            kandidat = mitZweit(d, von, bis, dreh).mitQuelle(d.quelle + "+zweit");
+            return ausloesen(tMs, g);
+        }
+        if (u == ZweiSensoren.Urteil.NEIN) {
+            abweisen(d.regel, wert, dreh ? zwei.dreh2Spitze(von, bis) : zwei.beschl2Spitze(von, bis),
+                    (dreh ? ZweiSensoren.DREH_ANTEIL : ZweiSensoren.BESCHL_ANTEIL) * wert, dreh ? "rad/s" : "m/s²");
+            return null;
+        }
+        boolean entschieden = dreh ? zwei.drehEntschieden(bis) : zwei.beschlEntschieden(bis);
+        if (entschieden) {   // zweiter Chip fehlt / unbewährt: wie bisher mit einem Sensor
+            kandidat = d;
+            return ausloesen(tMs, g);
+        }
+        offenGrund = g;
+        offenDetails = d;
+        offenT = tMs;
+        offenVon = von;
+        offenBis = bis;
+        offenWert = wert;
+        offenDreh = dreh;
+        return null;
+    }
+
+    private ZweiSensoren.Urteil urteil(long von, long bis, double wert, boolean dreh) {
+        return dreh ? zwei.drehBestaetigt(von, bis, bis, wert, ZweiSensoren.DREH_ANTEIL)
+                : zwei.beschlBestaetigt(von, bis, bis, wert, ZweiSensoren.BESCHL_ANTEIL);
+    }
+
+    private Details mitZweit(Details d, long von, long bis, boolean dreh) {
+        return d.wert(dreh ? "zweitDrehRads" : "zweitSpitzeMs2",
+                dreh ? zwei.dreh2Spitze(von, bis) : zwei.beschl2Spitze(von, bis));
+    }
+
+    /** Wartende Auslösung entscheiden, sobald der zweite Chip den Zeitraum hat oder die Frist um ist. */
+    private Grund offeneEntscheiden(long jetzt) {
+        return offeneEntscheiden(jetzt, false);
+    }
+
+    private Grund offeneEntscheiden(long jetzt, boolean erzwingen) {
+        if (offenGrund == null) return null;
+        ZweiSensoren.Urteil u = urteil(offenVon, offenBis, offenWert, offenDreh);
+        boolean frist = erzwingen || jetzt - offenT > ZWEIT_WARTE_MS || jetzt < offenT;
+        if (u == ZweiSensoren.Urteil.UNBEKANNT && !frist
+                && !(offenDreh ? zwei.drehEntschieden(offenBis) : zwei.beschlEntschieden(offenBis))) {
+            return null;   // weiter warten
+        }
+        Grund g = offenGrund;
+        Details d = offenDetails;
+        offenGrund = null;
+        offenDetails = null;
+        if (u == ZweiSensoren.Urteil.NEIN) {
+            abweisen(d.regel, offenWert,
+                    offenDreh ? zwei.dreh2Spitze(offenVon, offenBis) : zwei.beschl2Spitze(offenVon, offenBis),
+                    (offenDreh ? ZweiSensoren.DREH_ANTEIL : ZweiSensoren.BESCHL_ANTEIL) * offenWert,
+                    offenDreh ? "rad/s" : "m/s²");
+            return null;
+        }
+        kandidat = u == ZweiSensoren.Urteil.JA
+                ? mitZweit(d, offenVon, offenBis, offenDreh).mitQuelle(d.quelle + "+zweit") : d;
+        return ausloesen(offenT, g);
     }
 
     /** Waagrechter Anteil (m/s²) des letzten Stoßes, der ausgelöst hat – fürs Log. */
@@ -430,6 +753,7 @@ public final class EreignisErkenner {
         stossErsterMs = Long.MIN_VALUE;
         stossHartErsterMs = Long.MIN_VALUE;
         stossKandidat = false;
+        schleudernSeit = Long.MIN_VALUE;
     }
 
     private void anhaengen(long t, double v) {

@@ -280,10 +280,17 @@
                         </div>
                         <div id="projectionTool" style="display:none;margin-top:18px;padding-top:16px;border-top:1px solid var(--outline-variant);">
                             <div class="sys-name" data-i18n="system.projection_title">Tacho &amp; Apps</div>
-                            <div class="sys-note" data-i18n="system.projection_lead">Apps auswählen, einmal freigeben und auf dem Fahrerdisplay anzeigen. „Tacho wieder normal“ holt die Tacho-Anzeige zurück.</div>
+                            <div class="sys-note" data-i18n="system.projection_lead">Apps auswählen, einmal freigeben und auf dem Fahrerdisplay anzeigen. „Zurück zur BYD-Anzeige“ holt die Tacho-Anzeige zurück.</div>
                             <div class="sys-actions">
                                 <button class="btn btn-primary" id="projectionOpenBtn" type="button" data-i18n="system.projection_action">Tacho &amp; Apps öffnen</button>
                             </div>
+                        </div>
+                        <!-- 0.1.43.20 BYD-Hilfe-Knöpfe: nur Seiten, die es auf diesem Auto gibt (AndroidBridge.bydSeiten) -->
+                        <div id="bydSeitenTool" style="display:none;margin-top:18px;padding-top:16px;border-top:1px solid var(--outline-variant);">
+                            <div class="sys-name" data-i18n="system.byd_seiten_title">Seiten von BYD</div>
+                            <div class="sys-note" data-i18n="system.byd_seiten_lead">Öffnet die Seite von BYD. Panoptes stellt dort nichts ein.</div>
+                            <div class="sys-actions" id="bydSeitenKnoepfe"></div>
+                            <div class="sys-note" id="bydAutostartHinweis" style="display:none;" data-i18n="system.byd_autostart_hinweis">Autostart: Bei Panoptes den Schalter AUS lassen. AN heißt bei BYD: Start gesperrt.</div>
                         </div>
                     </div>
                 </div>
@@ -699,6 +706,26 @@
                 document.getElementById('cameraMappingBtn').onclick = function () {
                     AndroidBridge.openCameraMapping();
                 };
+            }
+            // 0.1.43.20: BYD-Seiten (Autostart, Berechtigungen, Softwarestand) – Knopf nur, wenn die Seite auflöst
+            if (window.AndroidBridge && typeof AndroidBridge.bydSeiten === 'function') {
+                var bydListe = [];
+                try { bydListe = JSON.parse(String(AndroidBridge.bydSeiten() || '[]')); } catch (e) { bydListe = []; }
+                var bydText = { autostart: ['system.byd_autostart', 'Autostart bei BYD'],
+                    rechte: ['system.byd_rechte', 'Berechtigungen bei BYD'], version: ['system.byd_version', 'Softwarestand bei BYD'] };
+                var bydZiel = document.getElementById('bydSeitenKnoepfe');
+                (Array.isArray(bydListe) ? bydListe : []).forEach(function (k) {
+                    if (!bydText[k] || !bydZiel) return;
+                    var b = document.createElement('button');
+                    b.type = 'button';
+                    b.className = 'btn';
+                    var tx = BYD.i18n && BYD.i18n.t ? BYD.i18n.t(bydText[k][0]) : null;
+                    b.textContent = tx && tx !== bydText[k][0] ? tx : bydText[k][1];
+                    b.onclick = function () { try { AndroidBridge.bydSeiteOeffnen(k); } catch (e) {} };
+                    bydZiel.appendChild(b);
+                    if (k === 'autostart') { var h = document.getElementById('bydAutostartHinweis'); if (h) h.style.display = ''; }
+                });
+                if (bydZiel && bydZiel.children.length) document.getElementById('bydSeitenTool').style.display = '';
             }
             window.PanoptesProjectionAvailability = function (result) {
                 var tool = document.getElementById('projectionTool');
@@ -1150,7 +1177,7 @@
                     ereignisclip: self.t('system.handy_recht_ereignisclip', 'Unfall-Clips aufs Handy erlauben (nur auf Knopfdruck am Handy)'),
                     protokoll: self.t('system.handy_recht_protokoll', 'Sieht, was andere Geräte am Auto gemacht haben'),
                     dateien: self.t('dateien.recht_info', 'Dateien zwischen Handy und Auto austauschen (höchstens 200 MB, keine Apps)'),
-                    tacho: self.t('system.handy_recht_tacho', 'Wählen, was der Tacho zeigt, und „Tacho wieder normal“'),
+                    tacho: self.t('system.handy_recht_tacho', 'Wählen, was der Tacho zeigt, und „Zurück zur BYD-Anzeige“'),
                     signal: self.t('system.handy_recht_signal', 'Auto finden, Lichthupe, Warnblinker (nur mit Rückfrage, nur wenn unter Fahrzeug eingeschaltet)'),
                     launcher: self.t('system.recht_info_launcher', 'Startbildschirm im Auto einrichten (nur der Aufbau, keine Befehle ans Auto)'),
                     // 0.1.38.8 Besitzer-Handy: alles einstellen und koppeln wie am Display (nie Zugang, nie Fahrzeug-Aktionen)
@@ -1235,7 +1262,7 @@
                     standbild: [self.t('system.fremd_wort_standbild', 'Standbild bei Ereignis'),
                         self.t('system.fremd_recht_standbild', 'Ein Foto, wenn der Wächter etwas bemerkt. Kein Video.')],
                     tacho: [self.t('system.handy_wort_tacho', 'Tacho'),
-                        self.t('system.handy_recht_tacho', 'Wählen, was der Tacho zeigt, und „Tacho wieder normal“')],
+                        self.t('system.handy_recht_tacho', 'Wählen, was der Tacho zeigt, und „Zurück zur BYD-Anzeige“')],
                     launcher: [self.t('system.recht_wort_launcher', 'Launcher'),
                         self.t('system.recht_info_launcher', 'Startbildschirm im Auto einrichten (nur der Aufbau, keine Befehle ans Auto)')],
                     update: [self.t('system.handy_wort_update', 'Update'),

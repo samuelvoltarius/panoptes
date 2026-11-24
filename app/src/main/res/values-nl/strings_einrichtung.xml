@@ -180,4 +180,9 @@
     <string name="einr_handy_unterwegs_text">Dan werkt de telefoon-app overal, ook via mobiele data. Anders alleen als je telefoon op dezelfde wifi zit als de auto.</string>
     <string name="einr_handy_unterwegs_ja">Ja, onderweg gebruiken</string>
     <string name="einr_handy_nur_wlan">Alleen op dezelfde wifi</string>
+    <!-- 0.1.43.20 BYD-Hilfe-Knöpfe (einrichtung/BydSeiten) -->
+    <string name="einr_byd_seiten_titel">Bij BYD kijken</string>
+    <string name="einr_byd_seiten_text">Start Panoptes na een BYD-update niet meer vanzelf? Open de autostartpagina van BYD en laat de schakelaar bij Panoptes UIT. Bij BYD betekent AAN: starten geblokkeerd.</string>
+    <string name="einr_byd_autostart">Autostart bij BYD</string>
+    <string name="einr_byd_rechte">Machtigingen bij BYD</string>
 </resources>

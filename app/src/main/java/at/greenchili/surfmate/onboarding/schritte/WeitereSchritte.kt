@@ -58,6 +58,8 @@ class FreigabenSchritt(id: String, a: Assistent, private val host: AssistentHost
     private val usbAblauf = UsbFreigabeAblauf()
     private var usbZustand = UsbFreigabeAblauf.Zustand.BEREIT
     private var bydInfotainment = true
+    /** 0.1.43.20: BYD-Seiten, die es auf diesem Gerät wirklich gibt (sonst kein Knopf). */
+    private var bydSeiten: List<String> = emptyList()
 
     private fun autostartOk() = !SetupGuideDialog.autostartFehlt(a.activity)
     private fun anzeigeOk() = !SetupGuideDialog.ueberlagerungFehlt(a.activity)
@@ -77,6 +79,8 @@ class FreigabenSchritt(id: String, a: Assistent, private val host: AssistentHost
 
     override fun betreten() {
         bydInfotainment = host.istBydInfotainment()
+        bydSeiten = at.greenchili.surfmate.einrichtung.BydSeiten.verfuegbar(a.activity,
+            listOf(at.greenchili.surfmate.einrichtung.BydSeiten.AUTOSTART, at.greenchili.surfmate.einrichtung.BydSeiten.RECHTE))
         pruefe()
     }
 
@@ -108,6 +112,7 @@ class FreigabenSchritt(id: String, a: Assistent, private val host: AssistentHost
             if (fehlen.isEmpty()) zeichne() else a.activity.requestPermissions(fehlen.toTypedArray(), 4711)
         }
         usbZeile()
+        bydZeile()
         a.geaendert()
     }
 
@@ -148,6 +153,22 @@ class FreigabenSchritt(id: String, a: Assistent, private val host: AssistentHost
             if (usbZustand == UsbFreigabeAblauf.Zustand.WARTET) setTextColor(a.farbeAkzent)
             if (usbZustand == UsbFreigabeAblauf.Zustand.ZEIT_ABGELAUFEN) setTextColor(a.farbeWarnung)
         }, 4f)
+    }
+
+    /** 0.1.43.20: BYDs eigene Seiten zum Selbst-Nachsehen (öffnen nur, stellen nichts ein). Gibt es keine: nichts. */
+    private fun bydZeile() {
+        if (bydSeiten.isEmpty()) return
+        liste.dazu(a.text(t.res(R.string.einr_byd_seiten_titel), 19f, fett = true), 22f)
+        // Sperrliste (Fundgrube Teil 2, AutoStartEnabler): bei BYD heißt AN = Start gesperrt → Satz nur mit Autostart-Knopf
+        if (at.greenchili.surfmate.einrichtung.BydSeiten.AUTOSTART in bydSeiten) liste.dazu(a.text(t.res(R.string.einr_byd_seiten_text), 16f, leise = true), 4f)
+        val z = LinearLayout(a.activity).apply { orientation = LinearLayout.HORIZONTAL }
+        val abstand = (12 * a.activity.resources.displayMetrics.density).toInt()
+        for (k in bydSeiten) {
+            val text = if (k == at.greenchili.surfmate.einrichtung.BydSeiten.AUTOSTART) R.string.einr_byd_autostart else R.string.einr_byd_rechte
+            z.addView(a.knopf(t.res(text)) { at.greenchili.surfmate.einrichtung.BydSeiten.oeffnen(a.activity, k) },
+                LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { rightMargin = abstand })
+        }
+        liste.dazu(z, 8f)
     }
 
     private fun usbAnfordern() {
