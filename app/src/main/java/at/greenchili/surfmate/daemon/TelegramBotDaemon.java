@@ -2008,8 +2008,10 @@ public class TelegramBotDaemon {
                     String vText = Double.isNaN(volts) ? "?"
                             : String.format(java.util.Locale.forLanguageTag(LocaleManager.get()), "%.1f", volts);
                     // 0.1.28 P8: stufe niedrig = sehr schwach; vor bzw. fehlt = bisheriger Text
-                    String bKey = "niedrig".equals(cmd.optString("stufe", ""))
-                            ? "alerts.battery12v_sehr_niedrig" : "alerts.battery12v_low";
+                    // 0.1.43.21: dauer = 30 min lang unter 12,2 V im Stand (StandVerlauf12v)
+                    String bStufe = cmd.optString("stufe", "");
+                    String bKey = "niedrig".equals(bStufe) ? "alerts.battery12v_sehr_niedrig"
+                            : "dauer".equals(bStufe) ? "alerts.battery12v_dauer" : "alerts.battery12v_low";
                     boolean bOk = sendMessage(ownerChatId, tr(bKey, vText));
                     response.put("status", bOk ? "ok" : "error");
                     break;

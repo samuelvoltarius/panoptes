@@ -676,6 +676,14 @@ public final class Katalog {
         haMdns.gruppe = "system"; haMdns.reihenfolge = 51; haMdns.standard = false; haMdns.nurLesendExtern = true;
         haMdns.neustartNoetig = true; haMdns.erweitert = true;
         l.add(haMdns);
+        // 0.1.43.21: MQTT-Discovery nur ohne gekoppelte HA-Integration (sonst doppelte Entitäten), HaMqttDiscovery
+        Feld haDisc = new Feld(at.greenchili.surfmate.ha.HaMqttDiscovery.SCHLUESSEL, Feld.Typ.AUSWAHL);
+        haDisc.gruppe = "system"; haDisc.reihenfolge = 52; haDisc.standard = at.greenchili.surfmate.ha.HaMqttDiscovery.AUTOMATISCH;
+        haDisc.optionen.add(new Feld.Option(at.greenchili.surfmate.ha.HaMqttDiscovery.AUTOMATISCH, "settings.ha.mqttDiscovery.automatisch"));
+        haDisc.optionen.add(new Feld.Option(at.greenchili.surfmate.ha.HaMqttDiscovery.AN, "settings.ha.mqttDiscovery.an"));
+        haDisc.optionen.add(new Feld.Option(at.greenchili.surfmate.ha.HaMqttDiscovery.AUS, "settings.ha.mqttDiscovery.aus"));
+        haDisc.erweitert = true; haDisc.nurLesendExtern = true;
+        l.add(haDisc);
         // Haftungshinweise (DISCLAIMER.md): Web fragt, solange wert ≠ aktuell; Bestätigung mit Zeitstempel.
         Feld hinweise = new Feld("hinweise.version", Feld.Typ.TEXT);
         hinweise.gruppe = "system"; hinweise.reihenfolge = 90; hinweise.standard = null;

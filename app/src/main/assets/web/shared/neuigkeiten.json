@@ -1490,7 +1490,7 @@
         "Ebenfalls unter Zahlen: wie viel du gegenüber einem Benziner oder Diesel sparst. Verbrauch und Spritpreis des Vergleichsautos trägst du selbst ein, der vorgeschlagene Preis ist nur ein Richtwert. Bei Plug-in-Hybriden bleibt die Karte weg.",
         "Ladungen und Ladekosten kannst du jetzt als CSV-Tabelle speichern, zum Beispiel für Excel oder die Steuer. Das Fahrtenbuch geht jetzt auch für einen frei gewählten Zeitraum.",
         "Neue Kachel „Meldungen des Autos“ auf der Startseite: Sie zeigt, ob das Auto gerade eine Warnung meldet, etwa zu Reifendruck oder ABS. Panoptes liest nur mit und löscht nichts. Gibt dein Auto die Meldungen nicht heraus, bleibt die Kachel weg.",
-        "Neue Knöpfe öffnen direkt die BYD-Seiten für Autostart, Berechtigungen und Softwarestand, in der Einrichtung und in den Einstellungen. Wichtig beim Autostart: Bei Panoptes den Schalter AUS lassen. AN heißt bei BYD: Start gesperrt.",
+        "Neue Knöpfe öffnen direkt die BYD-Seiten für Autostart, Berechtigungen und Softwarestand, in der Einrichtung und in den Einstellungen. BYD-Autostart: nach dem Umstellen das Auto einmal aus- und einschalten und nachsehen, ob Panoptes startet.",
         "Wo das Auto zwei Bewegungssensoren hat, nutzt die Ereignis-Erkennung jetzt beide: weniger Fehlalarme durch Rütteln, ein wirklich harter Stoß zählt aber immer. Neu erkannt werden Schleudern und Überschlag.",
         "Sicherer Tacho: Panoptes zeigt nur noch dann etwas am Tacho, wenn Warnleuchten und Tempo sichtbar bleiben. Ist dein Modell dafür noch nicht geprüft, ist die Tacho-Anzeige pausiert. So schaltest du sie wieder ein: Apps & Display → Display, bei „Tacho“ auf „Für mein Auto freischalten“ tippen, im Stand.",
         "Beim ersten Mal fragt Panoptes: „Warnleuchten und Tempo sichtbar?“ Bei „Nein“ oder ohne Antwort kommt sofort die BYD-Anzeige zurück.",
@@ -1501,7 +1501,7 @@
         "Also under Numbers: how much you save compared to a petrol or diesel car. You enter the comparison car’s consumption and fuel price yourself; the suggested price is only a guide. For plug-in hybrids the card is hidden.",
         "You can now save charging sessions and charging costs as a CSV table, for example for Excel or your taxes. The trip log now also works for a period of your choice.",
         "New tile “Messages from the car” on the home page: it shows whether the car is currently reporting a warning, for example about tyre pressure or ABS. Panoptes only reads along and clears nothing. If your car does not give out these messages, the tile stays hidden.",
-        "New buttons open the BYD pages for autostart, permissions and software version directly, in the setup and in the settings. Important for autostart: leave the switch for Panoptes OFF. At BYD, ON means: start blocked.",
+        "New buttons open the BYD pages for autostart, permissions and software version directly, in the setup and in the settings. BYD autostart: after changing it, switch the car off and on once and check whether Panoptes starts.",
         "Where the car has two motion sensors, event detection now uses both: fewer false alarms from shaking, but a really hard impact always counts. Skidding and rollover are now detected too.",
         "Safer cluster: Panoptes now only shows something on the instrument cluster when warning lights and speed stay visible. If your model has not been checked for this yet, the cluster display is paused. To turn it back on: Apps & display → Display, under “Cluster” tap “Enable for my car”, while parked.",
         "The first time, Panoptes asks: “Warning lights and speed visible?” On “No” or without an answer, the BYD display comes back right away.",
@@ -1512,7 +1512,7 @@
         "Aussi sous Chiffres : combien tu économises par rapport à une voiture essence ou diesel. Tu saisis toi-même la consommation et le prix du carburant de la voiture de comparaison ; le prix proposé n’est qu’une indication. Pour les hybrides rechargeables, la carte est masquée.",
         "Tu peux maintenant enregistrer les recharges et les coûts de recharge en tableau CSV, par exemple pour Excel ou les impôts. Le carnet de trajets fonctionne aussi pour une période de ton choix.",
         "Nouvelle tuile « Messages de la voiture » sur la page d’accueil : elle indique si la voiture signale en ce moment un avertissement, par exemple pression des pneus ou ABS. Panoptes ne fait que lire et n’efface rien. Si ta voiture ne fournit pas ces messages, la tuile reste masquée.",
-        "De nouveaux boutons ouvrent directement les pages BYD pour le démarrage auto, les autorisations et la version logicielle, dans la configuration et dans les réglages. Important pour le démarrage auto : laisse l’interrupteur de Panoptes sur ARRÊT. Chez BYD, MARCHE signifie : démarrage bloqué.",
+        "De nouveaux boutons ouvrent directement les pages BYD pour le démarrage auto, les autorisations et la version logicielle, dans la configuration et dans les réglages. Démarrage auto BYD : après le changement, éteins et rallume la voiture une fois et vérifie si Panoptes démarre.",
         "Quand la voiture a deux capteurs de mouvement, la détection d’événements utilise maintenant les deux : moins de fausses alertes dues aux secousses, mais un choc vraiment violent compte toujours. Le dérapage et le tonneau sont maintenant détectés aussi.",
         "Compteur plus sûr : Panoptes n’affiche plus rien au compteur tant que les voyants et la vitesse ne restent pas visibles. Si ton modèle n’a pas encore été vérifié, l’affichage compteur est en pause. Pour le réactiver : Apps & écran → Écran, sous « Compteur » touche « Activer pour ma voiture », à l’arrêt.",
         "La première fois, Panoptes demande : « Voyants et vitesse visibles ? » Sur « Non » ou sans réponse, l’affichage BYD revient aussitôt.",
@@ -1523,7 +1523,7 @@
         "Sempre in Numeri: quanto risparmi rispetto a un’auto a benzina o diesel. Consumo e prezzo del carburante dell’auto di confronto li inserisci tu; il prezzo proposto è solo indicativo. Per le ibride plug-in la scheda resta nascosta.",
         "Ora puoi salvare ricariche e costi di ricarica come tabella CSV, per esempio per Excel o per le tasse. Il registro dei viaggi funziona ora anche per un periodo a tua scelta.",
         "Nuovo riquadro «Messaggi dell’auto» nella pagina iniziale: mostra se l’auto sta segnalando un avviso, per esempio pressione pneumatici o ABS. Panoptes legge soltanto e non cancella nulla. Se la tua auto non fornisce questi messaggi, il riquadro resta nascosto.",
-        "Nuovi pulsanti aprono direttamente le pagine BYD per avvio automatico, permessi e versione software, nella configurazione e nelle impostazioni. Importante per l’avvio automatico: lascia SPENTO l’interruttore di Panoptes. Da BYD, ACCESO significa: avvio bloccato.",
+        "Nuovi pulsanti aprono direttamente le pagine BYD per avvio automatico, permessi e versione software, nella configurazione e nelle impostazioni. Avvio automatico BYD: dopo la modifica spegni e riaccendi l’auto una volta e controlla se Panoptes parte.",
         "Dove l’auto ha due sensori di movimento, il rilevamento degli eventi ora li usa entrambi: meno falsi allarmi dovuti a scossoni, ma un urto davvero forte conta sempre. Ora vengono riconosciuti anche sbandata e ribaltamento.",
         "Quadro più sicuro: Panoptes mostra qualcosa sul quadro strumenti solo se spie e velocità restano visibili. Se il tuo modello non è ancora stato verificato, la visualizzazione sul quadro è in pausa. Per riattivarla: App & display → Display, sotto “Quadro” tocca “Attiva per la mia auto”, da fermo.",
         "La prima volta Panoptes chiede: “Spie e velocità visibili?” Con “No” o senza risposta torna subito il display BYD.",
@@ -1534,11 +1534,65 @@
         "Ook onder Cijfers: hoeveel je bespaart tegenover een benzine- of dieselauto. Verbruik en brandstofprijs van de vergelijkingsauto vul je zelf in; de voorgestelde prijs is alleen een richtwaarde. Bij plug-in-hybrides blijft de kaart weg.",
         "Laadbeurten en laadkosten kun je nu opslaan als CSV-tabel, bijvoorbeeld voor Excel of de belasting. Het rittenboek werkt nu ook voor een zelfgekozen periode.",
         "Nieuwe tegel „Meldingen van de auto” op de startpagina: die toont of de auto op dit moment een waarschuwing meldt, bijvoorbeeld over bandenspanning of ABS. Panoptes leest alleen mee en wist niets. Geeft je auto deze meldingen niet door, dan blijft de tegel weg.",
-        "Nieuwe knoppen openen direct de BYD-pagina’s voor autostart, rechten en softwareversie, in de installatie en in de instellingen. Belangrijk bij autostart: laat de schakelaar bij Panoptes UIT. Bij BYD betekent AAN: starten geblokkeerd.",
+        "Nieuwe knoppen openen direct de BYD-pagina’s voor autostart, rechten en softwareversie, in de installatie en in de instellingen. BYD-autostart: zet na het omzetten de auto één keer uit en aan en kijk of Panoptes start.",
         "Waar de auto twee bewegingssensoren heeft, gebruikt de gebeurtenisherkenning nu beide: minder valse alarmen door schudden, maar een echt harde klap telt altijd. Slippen en over de kop slaan worden nu ook herkend.",
         "Veiligere teller: Panoptes toont alleen nog iets op de teller als waarschuwingslampjes en snelheid zichtbaar blijven. Is je model daarvoor nog niet gecontroleerd, dan is de tellerweergave gepauzeerd. Zo zet je het weer aan: Apps & scherm → Scherm, bij „Teller” tik op „Vrijgeven voor mijn auto”, terwijl je stilstaat.",
         "De eerste keer vraagt Panoptes: „Waarschuwingslampjes en snelheid zichtbaar?” Bij „Nee” of zonder antwoord komt de BYD-weergave meteen terug.",
         "De knop heet nu „Terug naar de BYD-weergave” en zet altijd de normale tellerweergave terug."
+      ]
+    },
+    {
+      "version": "0.1.43.21",
+      "versionCode": 105,
+      "de": [
+        "Die Ersparnis gegenüber Benzin oder Diesel steht jetzt deutlich als Schätzung da, in der Karte und bei jeder Fahrt. Sie hängt von den Preisen und dem Vergleichsverbrauch ab, die du selbst einträgst.",
+        "In der CSV-Tabelle der Ladekosten stehen jetzt auch die gefahrenen Kilometer und die geschätzte Ersparnis je Monat.",
+        "Der Hinweis zum BYD-Autostart in der Einrichtung und in den Einstellungen passt sich jetzt deinem Modell an. Wo die Wirkung des Schalters nicht gemessen ist, stellt Panoptes am Autostart nichts selbst um. BYD-Autostart: nach dem Umstellen das Auto einmal aus- und einschalten und nachsehen, ob Panoptes startet.",
+        "Mehr Daten für Home Assistant: Ladekosten, Ersparnis, Ereignis-Clips und Meldungen des Autos. Das ist alles nur zum Lesen, Panoptes nimmt darüber keine neuen Befehle an. Kilometerstand und Gang kommen jetzt sauber an, ein unsinniger Verbrauchswert wird weggelassen statt falsch angezeigt.",
+        "Keine doppelten Einträge mehr in Home Assistant: Ist die Panoptes-Integration gekoppelt, legt Panoptes die Geräte nicht zusätzlich über MQTT an. Wer es anders will, findet in den erweiterten Einstellungen den Schalter „Home Assistant: Geräte über MQTT anlegen“.",
+        "Die Starterbatterie (12 V) wird im Stand jetzt laufend mitgeschrieben, 14 Tage lang, nur im Auto. Liegt sie 30 Minuten unter 12,2 V, bekommst du einmal eine Telegram-Nachricht. Die 12-V-Anzeige zeigt im Stand außerdem nicht mehr so oft „kein Wert“.",
+        "Die Verbindung ist stabiler: Hängt Tailscale, wartet Panoptes nicht mehr endlos, sondern bricht nach kurzer Zeit ab und versucht es neu.",
+        "Ehrlich gesagt: Das Neue ist mit automatischen Tests geprüft, im Auto aber noch nicht. Wenn bei dir etwas anders aussieht, sag uns bitte Bescheid."
+      ],
+      "en": [
+        "Your savings compared to petrol or diesel are now clearly marked as an estimate, in the card and for every trip. They depend on the prices and the comparison consumption you enter yourself.",
+        "The CSV table of charging costs now also contains the kilometres driven and the estimated savings per month.",
+        "The note about BYD autostart in the setup and in the settings now adapts to your model. Where the effect of the switch has not been measured, Panoptes changes nothing in autostart by itself. BYD autostart: after changing it, switch the car off and on once and check whether Panoptes starts.",
+        "More data for Home Assistant: charging costs, savings, event clips and messages from the car. All of this is read-only, Panoptes accepts no new commands through it. Odometer and gear now arrive cleanly, and a nonsensical consumption value is left out instead of shown wrongly.",
+        "No more duplicate entries in Home Assistant: when the Panoptes integration is paired, Panoptes no longer also creates the devices via MQTT. If you want it differently, you find the switch “Home Assistant: create devices via MQTT” in the advanced settings.",
+        "The starter battery (12 V) is now logged continuously while parked, for 14 days, only in the car. If it stays below 12.2 V for 30 minutes, you get one Telegram message. The 12 V display also shows “no value” less often while parked.",
+        "The connection is more stable: if Tailscale hangs, Panoptes no longer waits forever, it gives up after a short time and tries again.",
+        "To be honest: the new things are checked with automated tests, but not yet in the car. If something looks different for you, please let us know."
+      ],
+      "fr": [
+        "L’économie par rapport à l’essence ou au diesel est maintenant clairement indiquée comme estimation, dans la carte et pour chaque trajet. Elle dépend des prix et de la consommation de comparaison que tu saisis toi-même.",
+        "Le tableau CSV des coûts de recharge contient maintenant aussi les kilomètres parcourus et l’économie estimée par mois.",
+        "La remarque sur le démarrage auto BYD dans la configuration et dans les réglages s’adapte maintenant à ton modèle. Là où l’effet de l’interrupteur n’a pas été mesuré, Panoptes ne change rien lui-même au démarrage auto. Démarrage auto BYD : après le changement, éteins et rallume la voiture une fois et vérifie si Panoptes démarre.",
+        "Plus de données pour Home Assistant : coûts de recharge, économie, clips d’événements et messages de la voiture. Tout est en lecture seule, Panoptes n’accepte pas de nouvelles commandes par ce biais. Le kilométrage et le rapport arrivent maintenant proprement, et une valeur de consommation absurde est omise au lieu d’être affichée fausse.",
+        "Plus de doublons dans Home Assistant : quand l’intégration Panoptes est couplée, Panoptes ne crée plus en plus les appareils via MQTT. Si tu veux autre chose, tu trouves l’interrupteur « Home Assistant : créer les appareils via MQTT » dans les réglages avancés.",
+        "La batterie de démarrage (12 V) est maintenant enregistrée en continu à l’arrêt, pendant 14 jours, uniquement dans la voiture. Si elle reste 30 minutes sous 12,2 V, tu reçois un message Telegram, une seule fois. À l’arrêt, l’affichage 12 V indique aussi moins souvent « pas de valeur ».",
+        "La connexion est plus stable : si Tailscale se bloque, Panoptes n’attend plus indéfiniment, il abandonne après peu de temps et réessaie.",
+        "Pour être honnête : les nouveautés sont vérifiées par des tests automatiques, mais pas encore dans la voiture. Si quelque chose est différent chez toi, dis-le-nous."
+      ],
+      "it": [
+        "Il risparmio rispetto a benzina o diesel ora è indicato chiaramente come stima, nella scheda e per ogni viaggio. Dipende dai prezzi e dal consumo di confronto che inserisci tu.",
+        "La tabella CSV dei costi di ricarica ora contiene anche i chilometri percorsi e il risparmio stimato per mese.",
+        "L’avviso sull’avvio automatico BYD nella configurazione e nelle impostazioni ora si adatta al tuo modello. Dove l’effetto dell’interruttore non è stato misurato, Panoptes non cambia nulla da solo nell’avvio automatico. Avvio automatico BYD: dopo la modifica spegni e riaccendi l’auto una volta e controlla se Panoptes parte.",
+        "Più dati per Home Assistant: costi di ricarica, risparmio, clip degli eventi e messaggi dell’auto. È tutto in sola lettura, Panoptes non accetta nuovi comandi da lì. Chilometraggio e marcia ora arrivano puliti, e un valore di consumo assurdo viene omesso invece di essere mostrato sbagliato.",
+        "Niente più voci doppie in Home Assistant: se l’integrazione Panoptes è abbinata, Panoptes non crea più i dispositivi anche via MQTT. Se vuoi diversamente, trovi l’interruttore «Home Assistant: creare i dispositivi via MQTT» nelle impostazioni avanzate.",
+        "La batteria di avviamento (12 V) ora viene registrata di continuo da ferma, per 14 giorni, solo nell’auto. Se resta per 30 minuti sotto 12,2 V, ricevi un messaggio Telegram, una volta sola. Da ferma, l’indicazione 12 V mostra anche meno spesso «nessun valore».",
+        "La connessione è più stabile: se Tailscale si blocca, Panoptes non aspetta più all’infinito, ma rinuncia dopo poco e riprova.",
+        "A dire il vero: le novità sono verificate con test automatici, ma non ancora in auto. Se da te qualcosa sembra diverso, faccelo sapere."
+      ],
+      "nl": [
+        "De besparing tegenover benzine of diesel staat nu duidelijk als schatting vermeld, in de kaart en bij elke rit. Ze hangt af van de prijzen en het vergelijkingsverbruik die je zelf invult.",
+        "In de CSV-tabel van de laadkosten staan nu ook de gereden kilometers en de geschatte besparing per maand.",
+        "De tip over BYD-autostart in de installatie en in de instellingen past zich nu aan je model aan. Waar de werking van de schakelaar niet gemeten is, zet Panoptes zelf niets om bij autostart. BYD-autostart: zet na het omzetten de auto één keer uit en aan en kijk of Panoptes start.",
+        "Meer gegevens voor Home Assistant: laadkosten, besparing, gebeurtenisclips en meldingen van de auto. Alles is alleen-lezen, Panoptes neemt daarlangs geen nieuwe opdrachten aan. Kilometerstand en versnelling komen nu netjes door, en een onzinnige verbruikswaarde wordt weggelaten in plaats van fout getoond.",
+        "Geen dubbele items meer in Home Assistant: is de Panoptes-integratie gekoppeld, dan maakt Panoptes de apparaten niet ook nog via MQTT aan. Wil je het anders, dan vind je de schakelaar „Home Assistant: apparaten via MQTT aanmaken” in de geavanceerde instellingen.",
+        "De startaccu (12 V) wordt nu tijdens het parkeren doorlopend bijgehouden, 14 dagen lang, alleen in de auto. Blijft hij 30 minuten onder 12,2 V, dan krijg je één Telegram-bericht. De 12V-weergave toont tijdens het parkeren ook minder vaak „geen waarde”.",
+        "De verbinding is stabieler: hangt Tailscale, dan wacht Panoptes niet meer eindeloos, maar stopt na korte tijd en probeert het opnieuw.",
+        "Eerlijk gezegd: het nieuwe is gecontroleerd met automatische tests, maar nog niet in de auto. Ziet iets er bij jou anders uit, laat het ons dan weten."
       ]
     }
   ]

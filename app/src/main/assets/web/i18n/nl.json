@@ -5474,6 +5474,7 @@
     "byd_rechte": "Machtigingen bij BYD",
     "byd_version": "Softwareversie bij BYD",
     "byd_autostart_hinweis": "Autostart: laat de schakelaar bij Panoptes UIT. Bij BYD betekent AAN: starten geblokkeerd.",
+    "byd_autostart_hinweis_neutral": "Autostart: hoe de BYD-schakelaar werkt, verschilt per model. Zet de auto na het omzetten één keer uit en weer aan en kijk of Panoptes vanzelf start.",
     "projection_title": "Bestuurdersdisplay en apps",
     "projection_lead": "Kies apps, sta ze één keer toe en toon ze op het bestuurdersscherm. „Terug naar de BYD-weergave” brengt de meters terug.",
     "projection_action": "Bestuurdersdisplay en apps openen",
@@ -7191,7 +7192,9 @@
     "gespeichert": "Opgeslagen",
     "fehler": "Niet opgeslagen. Controleer de waarden.",
     "fahrt": "Bespaard tegenover {kraftstoff}: {betrag}",
-    "hinweis": "Berekend in de auto uit je laadkosten. Geen live prijzen van internet."
+    "hinweis": "Berekend in de auto uit je laadkosten. Geen live prijzen van internet.",
+    "schaetzung": "Schatting – hangt af van de prijzen die je hebt ingevoerd en het vergelijkingsverbruik.",
+    "schaetzung_kurz": "schatting"
   },
   "lade_export": {
     "titel": "Opslaan als tabel",

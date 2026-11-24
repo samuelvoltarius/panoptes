@@ -6,6 +6,7 @@
  *   PanoptesErsparnis.lade_export(el, art)  Datumsbereich + Knöpfe für den CSV-Export (art: laden | fahrten)
  *
  * Gerechnet wird im Auto (GET /api/laden/ersparnis), hier wird nur angezeigt. Keine Live-Preise.
+ * 0.1.43.21: Jeder Betrag ist als Schätzung gekennzeichnet (Karte unter dem Titel, Fahrt-Zeile, CSV-Kopfzeile).
  * Ohne API (älterer Kern) bleibt die Karte weg. ES5 (WebView 74).
  */
 (function () {
@@ -27,7 +28,9 @@
         ohne_richtwert: 'Für deine Währung gibt es keinen Richtwert. Trag deinen Preis ein.',
         speichern: 'Speichern', gespeichert: 'Gespeichert', fehler: 'Nicht gespeichert. Bitte Werte prüfen.',
         fahrt: 'Gespart gegenüber {kraftstoff}: {betrag}',
-        hinweis: 'Gerechnet im Auto aus deinen Ladekosten. Keine Live-Preise aus dem Netz.'
+        hinweis: 'Gerechnet im Auto aus deinen Ladekosten. Keine Live-Preise aus dem Netz.',
+        schaetzung: 'Schätzung – hängt von deinen eingetragenen Preisen und dem Vergleichsverbrauch ab.',
+        schaetzung_kurz: 'Schätzung'
     };
     var DE_EXPORT = {
         von: 'Von', bis: 'Bis', ladungen: 'Ladevorgänge speichern', kosten: 'Ladekosten je Monat speichern',
@@ -107,6 +110,10 @@
         };
         kopf.appendChild(sel);
         box.appendChild(kopf);
+        // 0.1.43.21: gut sichtbar, nicht klein unten – die Beträge sind eine Schätzung
+        var sch = el('div', 'font-size:14px;color:var(--text-secondary);margin:-6px 0 10px;', 'ⓘ ' + E('schaetzung'));
+        sch.id = 'ersparnisSchaetzung';
+        box.appendChild(sch);
 
         var r = d[z] || {};
         var wert = el('div', "font-family:'JetBrains Mono',monospace;font-size:34px;font-weight:700;line-height:1.1;");
@@ -210,7 +217,9 @@
         holen('/api/laden/ersparnis?km=' + encodeURIComponent(kmWert) + '&strom=' + encodeURIComponent(strom)).then(function (d) {
             if (!d || !d.ok || !d.fahrt || d.fahrt.ersparnis == null || d.fahrt.ersparnis <= 0) return;
             var w = (d.vergleich && d.vergleich.waehrung) || '€';
-            ziel.textContent = '🌱 ' + E('fahrt', { kraftstoff: kraftstoffName(d.vergleich), betrag: geld(d.fahrt.ersparnis, w) });
+            ziel.textContent = '🌱 ' + E('fahrt', { kraftstoff: kraftstoffName(d.vergleich), betrag: geld(d.fahrt.ersparnis, w) })
+                + ' (' + E('schaetzung_kurz') + ')';
+            ziel.title = E('schaetzung');
             ziel.style.display = '';
         });
     }

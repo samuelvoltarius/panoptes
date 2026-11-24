@@ -120,6 +120,48 @@ public class LadeCsvTest {
         assertEquals("2026-10,2,30,30,6.5,6.5,0,yes", zeilen(LadeCsv.kosten(a, "en", WIEN))[1]);
     }
 
+    static JSONObject benzin() throws Exception {
+        return Ersparnis.vergleich(new JSONObject().put("kraftstoff", "benzin").put("verbrauch", 6.5).put("preis", 1.7)
+                .put("preisStand", 5L), "€");
+    }
+
+    /** 0.1.43.21: Ersparnis je Monat steht nur mit Kopfzeile „Schätzung …“ in der Datei. */
+    @Test
+    public void kostenMitErsparnisUndSchaetzungsKopfzeile() throws Exception {
+        JSONObject ohne = ladung(3, t(2026, 11, 2, 9, 0), 5, 0.3, "x").put("tariffId", "").put("preisQuelle", "fehlt");
+        JSONArray a = new JSONArray().put(ladung(1, t(2026, 10, 3, 7, 30), 10, 0.25, "x"))
+                .put(ladung(2, t(2026, 10, 20, 7, 30), 20, 0.2, "x")).put(ohne);
+        long von = t(2026, 10, 1, 0, 0), bis = t(2026, 12, 1, 0, 0) - 1;
+        String[] z = zeilen(LadeCsv.kosten(a, "de", WIEN, benzin(), (v, b) -> 500, von, bis));
+        assertEquals("Ersparnis_Schaetzung ist eine Schätzung – hängt von deinen eingetragenen Preisen und dem "
+                + "Vergleichsverbrauch ab (Benzin 6,5 l/100 km, 1,7 €/l).", z[0]);
+        assertEquals(String.join(";", LadeCsv.KOPF_KOSTEN_DE) + ";km;Ersparnis_Schaetzung", z[1]);
+        // 500 km × 6,5 l/100 km × 1,70 € = 55,25 € Sprit, Strom 6,50 € → 48,75 €
+        assertEquals("2026-10;2;30;30;6,5;6,5;0;ja;500;48,75", z[2]);
+        // Monat ohne bepreiste Ladung: keine Zahl, nie 0
+        assertEquals("2026-11;1;5;5;0;0;1;nein;500;", z[3]);
+        // Englisch: Komma-Trenner → Kopfzeile in Anführungszeichen
+        String[] e = zeilen(LadeCsv.kosten(a, "en", WIEN, benzin(), (v, b) -> 500, von, bis));
+        assertTrue(e[0], e[0].startsWith("\"savings_estimate is an estimate") && e[0].endsWith("1.7 €/l).\""));
+        assertTrue(e[1].endsWith(",km,savings_estimate"));
+        // ohne Vergleich (Plug-in-Hybrid) wie bisher: keine Kopfzeile, keine Spalte
+        String[] h = zeilen(LadeCsv.kosten(a, "de", WIEN, null, (v, b) -> 500, von, bis));
+        assertEquals(String.join(";", LadeCsv.KOPF_KOSTEN_DE), h[0]);
+        assertFalse(String.join("\n", h).contains("Schätzung"));
+    }
+
+    @Test
+    public void monatsKmNurImBereich() {
+        long[] gefragt = new long[2];
+        LadeCsv.KmQuelle q = (v, b) -> { gefragt[0] = v; gefragt[1] = b; return 123; };
+        assertEquals(123, LadeCsv.monatsKm("2026-10", WIEN, q, t(2026, 10, 15, 0, 0), t(2026, 11, 24, 0, 0)), 1e-9);
+        assertEquals(t(2026, 10, 15, 0, 0), gefragt[0]);
+        assertEquals(t(2026, 11, 1, 0, 0) - 1, gefragt[1]);
+        assertTrue(Double.isNaN(LadeCsv.monatsKm("2026-12", WIEN, q, t(2026, 10, 1, 0, 0), t(2026, 11, 30, 0, 0))));
+        assertTrue(Double.isNaN(LadeCsv.monatsKm("x", WIEN, q, 0, Long.MAX_VALUE)));
+        assertTrue(Double.isNaN(LadeCsv.monatsKm("2026-10", WIEN, (v, b) -> -1, 0, Long.MAX_VALUE)));
+    }
+
     @Test
     public void datumsbereich() {
         long jetzt = t(2026, 11, 24, 12, 0);

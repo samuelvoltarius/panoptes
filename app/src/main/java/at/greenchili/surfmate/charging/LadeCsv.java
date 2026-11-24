@@ -108,8 +108,31 @@ public final class LadeCsv {
         return sb.toString().getBytes(StandardCharsets.UTF_8);
     }
 
-    /** Ladekosten je Monat (Monatssummen wie die Ladungsliste), älteste zuerst. */
+    /** Gefahrene km im Zeitraum [von, bis] (ms); Tests ersetzen die Quelle. */
+    public interface KmQuelle {
+        double km(long von, long bis);
+    }
+
+    /** 0.1.43.21: Kopfzeile vor der Tabelle, wenn die Ersparnis-Spalte dabei ist. */
+    static final String SCHAETZUNG_DE = "Ersparnis_Schaetzung ist eine Schätzung – hängt von deinen eingetragenen Preisen "
+            + "und dem Vergleichsverbrauch ab";
+    static final String SCHAETZUNG_EN = "savings_estimate is an estimate – depends on the prices you entered "
+            + "and the comparison consumption";
+
+    /** Ladekosten je Monat (Monatssummen wie die Ladungsliste), älteste zuerst. Ohne Ersparnis-Spalte. */
     public static byte[] kosten(JSONArray sitzungen, String sprache, ZoneId zone) throws Exception {
+        return kosten(sitzungen, sprache, zone, null, null, 0, 0);
+    }
+
+    /**
+     * Wie {@link #kosten(JSONArray, String, ZoneId)}; mit {@code vergleich} (aus {@link Ersparnis#vergleich}) und
+     * {@code kmQuelle} zusätzlich km und die geschätzte Ersparnis je Monat (Stromkosten abgerechnet gegen Liter × Spritpreis,
+     * km nur innerhalb von [bereichVon, bereichBis]) und eine erste Zeile, die sagt, dass es eine Schätzung ist.
+     * {@code vergleich == null} (z. B. Plug-in-Hybrid) = ohne Ersparnis, wie bisher.
+     */
+    public static byte[] kosten(JSONArray sitzungen, String sprache, ZoneId zone, JSONObject vergleich, KmQuelle kmQuelle,
+                                long bereichVon, long bereichBis) throws Exception {
+        boolean mitErsparnis = vergleich != null && kmQuelle != null;
         boolean en = englisch(sprache);
         char trenn = en ? ',' : ';', komma = en ? '.' : ',';
         JSONObject l = LadeKosten.ladungen(sitzungen, 0, 1, TimeZone.getTimeZone(zone));
@@ -117,7 +140,17 @@ public final class LadeCsv {
         List<JSONObject> monate = new ArrayList<>();
         for (int i = 0; m != null && i < m.length(); i++) monate.add(m.getJSONObject(i));
         monate.sort((x, y) -> x.optString("monat").compareTo(y.optString("monat")));
-        StringBuilder sb = kopf(en ? KOPF_KOSTEN_EN : KOPF_KOSTEN_DE, trenn);
+        StringBuilder sb;
+        if (mitErsparnis) {
+            sb = new StringBuilder("﻿");
+            sb.append(text(hinweis(vergleich, en, komma), trenn)).append("\r\n");
+            List<String> k = new ArrayList<>(java.util.Arrays.asList(en ? KOPF_KOSTEN_EN : KOPF_KOSTEN_DE));
+            k.add("km");
+            k.add(en ? "savings_estimate" : "Ersparnis_Schaetzung");
+            zeile(sb, k, trenn);
+        } else {
+            sb = kopf(en ? KOPF_KOSTEN_EN : KOPF_KOSTEN_DE, trenn);
+        }
         for (JSONObject x : monate) {
             List<String> z = new ArrayList<>();
             z.add(x.optString("monat"));
@@ -128,9 +161,43 @@ public final class LadeCsv {
             z.add(zahl(x.optDouble("kosten_abgerechnet", Double.NaN), 2, komma));
             z.add(String.valueOf(x.optInt("ohne_preis")));
             z.add(x.optBoolean("vollstaendig") ? (en ? "yes" : "ja") : (en ? "no" : "nein"));
+            if (mitErsparnis) {
+                double km = monatsKm(x.optString("monat"), zone, kmQuelle, bereichVon, bereichBis);
+                boolean bepreist = x.optInt("ladungen") > x.optInt("ohne_preis");
+                double strom = bepreist ? x.optDouble("kosten_abgerechnet", x.optDouble("kosten", Double.NaN)) : Double.NaN;
+                JSONObject r = Ersparnis.rechne(km, strom, x.optBoolean("vollstaendig"), vergleich);
+                z.add(Double.isFinite(km) ? zahl(km, 0, komma) : "");
+                z.add(r.isNull("ersparnis") ? "" : zahl(r.optDouble("ersparnis", Double.NaN), 2, komma));
+            }
             zeile(sb, z, trenn);
         }
         return sb.toString().getBytes(StandardCharsets.UTF_8);
+    }
+
+    /** Text der ersten Zeile mit dem Vergleichsauto, z. B. „… (Benzin 6,5 l/100 km, 1,65 €/l)“. */
+    static String hinweis(JSONObject v, boolean en, char komma) {
+        String kraft = "diesel".equals(v.optString("kraftstoff")) ? "Diesel" : (en ? "petrol" : "Benzin");
+        StringBuilder h = new StringBuilder(en ? SCHAETZUNG_EN : SCHAETZUNG_DE).append(" (").append(kraft).append(' ')
+                .append(zahl(v.optDouble("verbrauch", Double.NaN), 1, komma)).append(" l/100 km");
+        if (!v.isNull("preis")) {
+            h.append(", ").append(zahl(v.optDouble("preis", Double.NaN), 3, komma)).append(' ')
+                    .append(v.optString("waehrung", "")).append("/l");
+        }
+        return h.append(").").toString();
+    }
+
+    /** km im Monat „yyyy-MM“ (Zeitzone des Autos), beschnitten auf den Export-Bereich; NaN bei Fehler. */
+    static double monatsKm(String monat, ZoneId zone, KmQuelle q, long bereichVon, long bereichBis) {
+        try {
+            LocalDate erster = LocalDate.parse(monat + "-01");
+            long von = Math.max(bereichVon, erster.atStartOfDay(zone).toInstant().toEpochMilli());
+            long bis = Math.min(bereichBis, erster.plusMonths(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1);
+            if (bis < von) return Double.NaN;
+            double km = q.km(von, bis);
+            return Double.isFinite(km) && km >= 0 ? km : Double.NaN;
+        } catch (Exception e) {
+            return Double.NaN;
+        }
     }
 
     private static StringBuilder kopf(String[] k, char trenn) {

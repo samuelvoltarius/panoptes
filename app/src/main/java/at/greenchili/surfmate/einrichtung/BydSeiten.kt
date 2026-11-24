@@ -28,6 +28,39 @@ object BydSeiten {
         VERSION to "android.intent.action.BYD_VERSION_DETAILS",
     )
 
+    /**
+     * 0.1.43.21 (Koordination 24.11.): „AN heißt bei BYD: Start gesperrt“ ist nur auf DiLink 3 im Dolphin Surf gemessen.
+     * Nur dort gilt der feste Satz; überall sonst (anderes Modell, DiLink 4/5, Modell oder Stufe unbekannt) der neutrale,
+     * damit sich niemand Panoptes selbst aussperrt. Rein, ohne Android prüfbar.
+     */
+    @JvmStatic
+    fun autostartBelegt(dilink: Int?, modell: String?): Boolean = dilink == 3 && modell == "Dolphin Surf"
+
+    /** [autostartBelegt] für dieses Gerät (Plattform-Erkennung + echte Fahrzeugwahl); bei Fehlern false = neutral. */
+    @JvmStatic
+    fun autostartBelegt(): Boolean = autostartPlattform().first
+
+    /**
+     * 0.1.43.21: {belegt, Begründung fürs Log}. Liest die Fahrzeugwahl frisch (`forceReload`, die App liest sonst
+     * einen veralteten Stand je UID). Fehler beim Lesen = nicht belegt.
+     */
+    @JvmStatic
+    fun autostartPlattform(): Pair<Boolean, String> = try {
+        val dilink = at.greenchili.surfmate.rueckmeldung.AutoAngaben.dilink()
+        val modell = at.greenchili.surfmate.rueckmeldung.AutoAngaben.modell(at.greenchili.surfmate.config.UnifiedConfigManager.forceReload())
+        Pair(autostartBelegt(dilink, modell), autostartGrund(dilink, modell))
+    } catch (t: Throwable) {
+        Pair(false, "nicht belegt: Plattform nicht lesbar (" + t.javaClass.simpleName + ")")
+    }
+
+    /** Log-Text zur Entscheidung, z. B. „belegt: DiLink 3 + Dolphin Surf“ oder „nicht belegt: DiLink 5, Modell Seal“. */
+    @JvmStatic
+    fun autostartGrund(dilink: Int?, modell: String?): String {
+        val was = "DiLink " + (dilink?.toString() ?: "unbekannt") + ", Modell " + (modell ?: "unbekannt")
+        return if (autostartBelegt(dilink, modell)) "belegt: $was (AN = Start gesperrt gemessen)"
+        else "nicht belegt: $was (Bedeutung des BYD-Schalters nur auf DiLink 3 + Dolphin Surf gemessen)"
+    }
+
     /** Nur Seiten aus BYD-Paketen (keine fremde App, die sich auf dieselbe Action legt). */
     @JvmStatic
     fun istBydPaket(paket: String?): Boolean = paket != null && (paket.startsWith("com.byd.") || paket == "com.byd")

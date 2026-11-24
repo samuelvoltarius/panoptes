@@ -35,6 +35,16 @@ public final class HaZustand {
             String k = it.next();
             if (verboten(k) || !TelemetryFieldCatalog.isPublishable(k)) continue;
             Object v = roh.opt(k);
+            if ("consumption_50km".equals(k)) {   // 0.1.43.21: unplausibel (z. B. 309,6) → null statt falsch
+                double c = v instanceof Number ? at.greenchili.surfmate.mqtt.VerbrauchPlausibel.kwhJe100km(
+                        ((Number) v).doubleValue()) : Double.NaN;
+                try { t.put(k, Double.isNaN(c) ? JSONObject.NULL : (Object) c); } catch (Exception ignored) { }
+                continue;
+            }
+            if ("gear".equals(k)) {   // 0.1.43.21: nie „UNKNOWN“, nur P/R/N/D oder null
+                try { t.put(k, HaDaten.gang(v)); } catch (Exception ignored) { }
+                continue;
+            }
             if (v instanceof Number || v instanceof Boolean || v instanceof String) {
                 try { t.put(k, v); } catch (Exception ignored) { }
             }

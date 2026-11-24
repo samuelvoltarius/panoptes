@@ -547,6 +547,16 @@ public class MqttPublisherService implements MqttCallback {
 
         if (config.isHomeAssistant()) {
             if (!ensureConnected()) return false;
+            // 0.1.43.21: mit gekoppelter HA-Integration keine Discovery (doppelte Entitäten), eigenes Topic einmal leeren
+            at.greenchili.surfmate.ha.HaMqttDiscovery.Schritt ds = discoverySchritt();
+            if (ds == at.greenchili.surfmate.ha.HaMqttDiscovery.Schritt.LEEREN) {
+                if (!removeDiscovery(config.discoveryPrefix)) discoveryVerlauf.leerenFehlgeschlagen();
+                discoveryAnnounced = false;
+            } else if (ds == at.greenchili.surfmate.ha.HaMqttDiscovery.Schritt.WIEDER_SENDEN) {
+                discoveryAnnounced = false;
+            }
+            boolean discoveryErlaubt = ds == at.greenchili.surfmate.ha.HaMqttDiscovery.Schritt.SENDEN
+                    || ds == at.greenchili.surfmate.ha.HaMqttDiscovery.Schritt.WIEDER_SENDEN;
             // Re-announce if a discoverable field has appeared that the last bundle didn't cover
             // (fields populate at different times; the first publish doesn't have them all yet).
             if (discoveryAnnounced && !announcedKeys.containsAll(discoverableKeys(snapshot))) {
@@ -556,7 +566,7 @@ public class MqttPublisherService implements MqttCallback {
                     advertiseChargeCapControls)) {
                 discoveryAnnounced = false;
             }
-            if (!discoveryAnnounced) announceDiscovery(snapshot);
+            if (discoveryErlaubt && !discoveryAnnounced) announceDiscovery(snapshot);
 
             if (chargeCapTombstones.length > 0) {
                 if (!clearChargeCapState(chargeCapTombstones)) return false;
@@ -864,6 +874,38 @@ public class MqttPublisherService implements MqttCallback {
         } catch (Exception ignored) {}
     }
 
+    // ==================== 0.1.43.21 Discovery nur ohne gekoppelte HA-Integration ====================
+
+    private final at.greenchili.surfmate.ha.HaMqttDiscovery.Verlauf discoveryVerlauf =
+            new at.greenchili.surfmate.ha.HaMqttDiscovery.Verlauf();
+    private volatile long discoveryGeprueftMs;
+    private volatile Boolean discoveryErlaubtZuletzt;
+    private static final long DISCOVERY_PRUEFEN_MS = 60_000L;
+
+    /** Entscheidung höchstens 1×/min neu (Config + Kopplungen); unlesbar = letzte Entscheidung, sonst wie bisher. */
+    private at.greenchili.surfmate.ha.HaMqttDiscovery.Schritt discoverySchritt() {
+        long jetzt = System.currentTimeMillis();
+        Boolean erlaubt = discoveryErlaubtZuletzt;
+        if (erlaubt == null || jetzt - discoveryGeprueftMs >= DISCOVERY_PRUEFEN_MS || jetzt < discoveryGeprueftMs) {
+            try {
+                JSONObject root = at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig();
+                String modus = at.greenchili.surfmate.ha.HaMqttDiscovery.modus(root);
+                boolean gekoppelt = at.greenchili.surfmate.ha.HaMqttDiscovery.haGekoppelt(
+                        at.greenchili.surfmate.auth.Kopplungen.get().alle(jetzt));
+                boolean neu = at.greenchili.surfmate.ha.HaMqttDiscovery.senden(modus, gekoppelt);
+                if (!Boolean.valueOf(neu).equals(erlaubt)) {
+                    logger.info(at.greenchili.surfmate.ha.HaMqttDiscovery.protokoll(modus, gekoppelt, neu));
+                }
+                erlaubt = neu;
+            } catch (Throwable t) {
+                if (erlaubt == null) erlaubt = Boolean.TRUE;
+            }
+            discoveryErlaubtZuletzt = erlaubt;
+            discoveryGeprueftMs = jetzt;
+        }
+        return discoveryVerlauf.schritt(erlaubt);
+    }
+
     /** Publish the retained device-bundle discovery config (HA mode). */
     private void announceDiscovery(JSONObject snapshot) {
         try {
@@ -892,8 +934,8 @@ public class MqttPublisherService implements MqttCallback {
      * Remove the HA device (empty retained payload) so toggling discovery off or
      * deleting a connection doesn't orphan entities. Best-effort; needs a live client.
      */
-    public synchronized void removeDiscovery(String discoveryPrefix) {
-        if (client == null || !client.isConnected()) return;
+    public synchronized boolean removeDiscovery(String discoveryPrefix) {
+        if (client == null || !client.isConnected()) return false;
         try {
             String topic = HomeAssistantDiscovery.deviceConfigTopic(discoveryPrefix, deviceId);
             MqttMessage message = new MqttMessage(new byte[0]);
@@ -901,8 +943,10 @@ public class MqttPublisherService implements MqttCallback {
             message.setQos(1);
             client.publish(topic, message);
             logger.info("Removed HA discovery at " + topic);
+            return true;
         } catch (MqttException e) {
             logger.warn("HA discovery remove failed: " + e.getMessage());
+            return false;
         }
     }
 

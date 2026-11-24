@@ -1009,8 +1009,20 @@ open class MainActivity : AppCompatActivity() {
             }
             
             override fun onAuthGranted() {
+                // 0.1.43.21: nach einem Neuaufbau höchstens einmal den vollen Durchlauf wiederholen
+                val gen = at.greenchili.surfmate.launcher.AdbShellExecutor.verbindungsGeneration()
+                val durchlauf = at.greenchili.surfmate.launcher.NeuaufbauDurchlauf
+                    .zulassen(gen, System.currentTimeMillis())
                 runOnUiThread {
                     logsViewModel.info("ADB", "ADB authorization granted")
+                    if (!durchlauf) {
+                        at.greenchili.surfmate.logging.LauncherEreignisse.merken("DURCHLAUF_UEBERSPRUNGEN", "gen=$gen")
+                        logsViewModel.info("ADB", "Neuaufbau gen=$gen: Startdurchlauf schon wiederholt, " +
+                            "kein weiterer (Daemons holt die Wiederverbindung nach)")
+                        onboardingHost?.onDaemonAuthGranted()
+                            ?: run { at.greenchili.surfmate.onboarding.OnboardingState.get(this@MainActivity).daemonAuthorized = true }
+                        return@runOnUiThread
+                    }
                     logsViewModel.info("ADB", "Re-initializing daemons...")
 
                     // Advance the onboarding Step-0 (daemon auth) if it's waiting. This

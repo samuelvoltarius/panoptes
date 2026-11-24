@@ -248,6 +248,48 @@ class AdbShellExecutor(private val context: Context) {
         }
 
         fun isAuthPending(): Boolean = isAuthPending.get()
+
+        /** 0.1.43.21: Generation der aktuellen geteilten Verbindung (1 = erste, > 1 = Neuaufbau). */
+        @JvmStatic
+        fun verbindungsGeneration(): Long = connectionGeneration.get()
+
+        private val NAME_TEIL = Regex("^[A-Za-z][A-Za-z0-9._-]{0,23}$")
+
+        /**
+         * 0.1.43.21: kurzer Befehlsname fürs ADB_ABBRUCH-Protokoll – Programm (ohne Pfad) und bis zu zwei
+         * Unterbefehle, nie Argumente, Pfade, Adressen oder Werte. Geheime Befehle heißen „geheim“.
+         * Beispiel: `… tailscale --socket 127.0.0.1:41641 serve status --json` → „tailscale serve status“.
+         */
+        @JvmStatic
+        fun befehlsName(befehl: String?): String {
+            if (befehl.isNullOrBlank()) return "?"
+            if (befehl.startsWith("<sensitive:")) return "geheim"
+            // Unser Zeitlimit-Vorspann (runTailscaleCommand) zählt nicht zum Befehl
+            val rest = befehl.substringAfterLast(TAILSCALE_ZEITLIMIT_MARKE, befehl)
+            val teile = rest.trim().split(Regex("\\s+"))
+            var i = 0
+            while (i < teile.size && (teile[i].contains('=') || teile[i] == "\$T")) i++
+            if (i >= teile.size) return "?"
+            val programm = teile[i].trim('\'', '"').substringAfterLast('/')
+            if (!NAME_TEIL.matches(programm)) return "?"
+            val name = StringBuilder(programm)
+            var unter = 0
+            i++
+            while (i < teile.size && unter < 2) {
+                val w = teile[i]
+                if (w == "--socket") { i += 2; continue }
+                // Ab der ersten Option kommen nur noch Argumente (Werte, Ports, Namen): nicht ins Protokoll
+                if (w.startsWith("-")) break
+                if (!NAME_TEIL.matches(w)) break
+                name.append(' ').append(w)
+                unter++
+                i++
+            }
+            return name.toString()
+        }
+
+        /** Endet den Vorspann von [TailscaleLauncher.mitZeitlimit]; danach beginnt der eigentliche Befehl. */
+        const val TAILSCALE_ZEITLIMIT_MARKE = "fi; "
     }
 
     interface AdbAuthCallback {
@@ -345,7 +387,7 @@ class AdbShellExecutor(private val context: Context) {
                 logger.debug(TAG, "adb#$seq RUN [${Thread.currentThread().name}]")
                 val conn = acquireConnection()
                 val tConn = System.currentTimeMillis() - t0
-                val result = shellGuarded(conn, command, deadlineMs, seq)
+                val result = shellGuarded(conn, command, deadlineMs, seq, commandForLog)
                 logger.debug(TAG, "adb#$seq DONE conn=${tConn}ms total=${System.currentTimeMillis() - t0}ms exit=${result.exitCode}")
 
                 if (result.exitCode == 0) {
@@ -813,7 +855,7 @@ class AdbShellExecutor(private val context: Context) {
                 "(age=${ageMs}ms): $reason")
             // 0.1.38.1 (A6): ein adb-Abbruch kann einen laufenden Skript-Schreiber beenden (SIGHUP).
             at.greenchili.surfmate.logging.LauncherEreignisse.merken("ADB_ABBRUCH",
-                "gen=${conn.generation} alter=${ageMs}ms ${reason.take(80)}")
+                "gen=${conn.generation} alter=${ageMs}ms ${reason.take(120)}")
             closeAndWake(conn)
         } else {
             // Already replaced: still wake anything parked on the dead instance.
@@ -833,7 +875,8 @@ class AdbShellExecutor(private val context: Context) {
         conn: SharedConn,
         commandRaw: String,
         deadlineMs: Long,
-        seq: Int
+        seq: Int,
+        nameQuelle: String = commandRaw
     ): dadb.AdbShellResponse {
         // Relocate the daemon working dir inside the command on platforms whose
         // storage is locked (DiLink 5); no-op elsewhere. Single chokepoint so
@@ -844,7 +887,9 @@ class AdbShellExecutor(private val context: Context) {
         val watchdog = deadlineScheduler.schedule({
             if (settled.compareAndSet(false, true)) {
                 timedOut.set(true)
-                invalidateConnection(conn, "deadline ${deadlineMs}ms exceeded by adb#$seq")
+                // 0.1.43.21: Befehlsname mitloggen, damit die Ursache beim nächsten Mal belegt ist
+                invalidateConnection(conn, "deadline ${deadlineMs}ms exceeded by adb#$seq " +
+                    "cmd=${befehlsName(nameQuelle)}")
                 // Close THIS command's connection even when it is no longer the shared one.
                 // invalidateConnection is gen-guarded and skips the close if the holder was
                 // already cleared or replaced — which is exactly the case when the command
@@ -877,7 +922,8 @@ class AdbShellExecutor(private val context: Context) {
             if (genuineFailure) {
                 // Transport failure on a live watchdog: invalidate (no-op if
                 // another thread's failure got there first).
-                invalidateConnection(conn, "transport failure on adb#$seq: ${fehlerText(e)}")
+                invalidateConnection(conn, "transport failure on adb#$seq cmd=${befehlsName(nameQuelle)}: " +
+                    fehlerText(e))
                 throw e
             }
             // The exception is the consequence of our own deadline close.

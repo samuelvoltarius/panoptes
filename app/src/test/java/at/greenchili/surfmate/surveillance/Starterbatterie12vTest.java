@@ -204,7 +204,9 @@ public class Starterbatterie12vTest {
         assertTrue(g.contains("TelegramNotifier.notifyBattery12v(volt, Starterbatterie12v.telegramStufe(stufe))"));
         assertTrue(g.contains("warnung12vPruefen(now, cfg,"));
         String d = Quelltext.lies(Paths.get("src/main/java/at/greenchili/surfmate/daemon/TelegramBotDaemon.java"));
-        assertTrue(d.contains("\"alerts.battery12v_sehr_niedrig\" : \"alerts.battery12v_low\""));
+        // 0.1.43.21: dritte Stufe „dauer“ (StandVerlauf12v), vor bzw. ohne Stufe bleibt der bisherige Text
+        assertTrue(d.contains("\"niedrig\".equals(bStufe) ? \"alerts.battery12v_sehr_niedrig\""));
+        assertTrue(d.contains(": \"dauer\".equals(bStufe) ? \"alerts.battery12v_dauer\" : \"alerts.battery12v_low\";"));
         String s = Quelltext.lies(Paths.get("src/main/java/at/greenchili/surfmate/notifications/sinks/TelegramSink.java"));
         assertTrue(s.contains("event.category.equals(\"vehicle.health.battery12v\")"));
     }

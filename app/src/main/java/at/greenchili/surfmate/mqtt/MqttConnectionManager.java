@@ -745,6 +745,9 @@ public class MqttConnectionManager {
      * odometer at a stale high value for the life of the process, so the guard is deliberately
      * bounded instead of absolute.
      */
+    /** 0.1.43.21: höchstens 1×/h eine Zeile VERBRAUCH_50KM_UNPLAUSIBEL. */
+    private long verbrauchProtokollMs;
+
     private double publishableOdometerKm(double odoKm) {
         // One decimal: 0.1 km is the finest the register offers, so further digits are
         // conversion noise (a miles cluster's 0.1 mi quantum already lands on 0.16 km).
@@ -1214,7 +1217,19 @@ public class MqttConnectionManager {
                 if (!Double.isNaN(vd.currentTripConsumptionKwh)) payload.put("trip_kwh", vd.currentTripConsumptionKwh);
 
                 // Efficiency
-                if (!Double.isNaN(vd.last50KmConsumption)) payload.put("consumption_50km", vd.last50KmConsumption);
+                // 0.1.43.21: Rohwert von BYD, Einheit unbelegt → außerhalb 5–60 kWh/100 km null statt falsch (HA zeigte 309,6)
+                if (!Double.isNaN(vd.last50KmConsumption)) {
+                    double v50 = VerbrauchPlausibel.kwhJe100km(vd.last50KmConsumption);
+                    if (Double.isNaN(v50)) {
+                        payload.put("consumption_50km", JSONObject.NULL);
+                        if (now - verbrauchProtokollMs > 3_600_000L || now < verbrauchProtokollMs) {
+                            verbrauchProtokollMs = now;
+                            logger.info(VerbrauchPlausibel.protokoll(vd.last50KmConsumption));
+                        }
+                    } else {
+                        payload.put("consumption_50km", v50);
+                    }
+                }
 
                 // Driving time
                 if (!Double.isNaN(vd.drivingTimeHours)) payload.put("driving_time_hours", vd.drivingTimeHours);

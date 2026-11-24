@@ -623,7 +623,8 @@
       "charging_full": "🔌 *Ricarica terminata*",
       "charging_fault": "🚨 *Qualcosa è andato storto durante la ricarica*",
       "battery12v_low": "🪫 *Batteria da 12 V debole: {0} V*\nSe scende ancora, l’auto potrebbe non partire. Fai presto un giro o collegala alla corrente.",
-      "battery12v_sehr_niedrig": "🪫 *Batteria da 12 V molto debole: {0} V*\nNon si riprende più da sola. Presto l’auto potrebbe non partire. Fai un giro oggi o collegala alla corrente."
+      "battery12v_sehr_niedrig": "🪫 *Batteria da 12 V molto debole: {0} V*\nNon si riprende più da sola. Presto l’auto potrebbe non partire. Fai un giro oggi o collegala alla corrente.",
+      "battery12v_dauer": "🪫 *Batteria da 12 V sotto 12,2 V da 30 minuti: {0} V*\nL’auto è parcheggiata e al momento non la ricarica. Fai presto un giro o collegala alla corrente, altrimenti potrebbe non partire."
     },
     "charge": {
       "title": "🔋 *Ricarica*",
@@ -2257,6 +2258,13 @@
       "mdns": {
         "title": "Home Assistant: annuncio nel Wi-Fi",
         "help": "Panoptes si annuncia nello stesso Wi-Fi, così Home Assistant lo trova senza indirizzo. Vale dopo un riavvio. Di serie disattivato."
+      },
+      "mqttDiscovery": {
+        "title": "Home Assistant: creare i dispositivi via MQTT",
+        "help": "Automatico: Panoptes crea i dispositivi in Home Assistant via MQTT solo se l'integrazione Panoptes non è accoppiata. Così non ci sono doppioni. Acceso: sempre. Spento: mai.",
+        "automatisch": "Automatico",
+        "an": "Acceso",
+        "aus": "Spento"
       }
     },
     "fahrtenbuch": {
@@ -3079,6 +3087,7 @@
     "text": "I piccoli aggiornamenti di correzione ora arrivano da soli (solo da fermo, mai durante la guida). Panoptes continua ad annunciare prima gli aggiornamenti grandi. Cambiare: Impostazioni → Aggiornamenti.",
     "autostart_titel": "Avvio automatico",
     "autostart_fehlt": "Dopo l’aggiornamento Panoptes ha bisogno ancora una volta del permesso di avvio automatico. Tocca «Riattiva l’avvio automatico» nella pagina iniziale di Panoptes sul display dell’auto.",
+    "autostart_pruefen": "Dopo l’aggiornamento: l’effetto dell’interruttore di avvio automatico BYD cambia a seconda del modello. Panoptes non ha cambiato nulla. Spegni e riaccendi l’auto una volta e controlla che Panoptes si avvii da solo.",
     "launcher_home": "Dopo l’aggiornamento il launcher Panoptes non è più la tua schermata iniziale. Apri il launcher una volta e sceglilo di nuovo come schermata iniziale."
   },
   "pc": {

@@ -144,6 +144,10 @@ public class SetupGuideDialog {
             if (success) {
                 markAutoStartOkForCurrentInstall(context);
                 Toast.makeText(context, context.getString(R.string.setup_autostart_enabled), Toast.LENGTH_SHORT).show();
+            } else if (result == at.greenchili.surfmate.services.AutoStartEnabler.Result.NICHT_BELEGT) {
+                // 0.1.43.21: nicht belegte Plattform – nichts geklickt; BYD-Seite öffnen, neutral erklären
+                Toast.makeText(context, context.getString(R.string.einr_byd_seiten_text_neutral), Toast.LENGTH_LONG).show();
+                openAutoStartSettings(context);
             } else {
                 Toast.makeText(context, context.getString(R.string.setup_autostart_failed), Toast.LENGTH_LONG).show();
                 openAutoStartSettings(context);
@@ -467,10 +471,13 @@ public class SetupGuideDialog {
         }
         Log.w(TAG, "autostart auto-enable failed (result=" + result
                 + ") — falling back to manual settings");
+        // 0.1.43.21: nicht belegte Plattform – nichts geklickt, neutraler Text statt „Haken weg“
+        boolean neutral = result == at.greenchili.surfmate.services.AutoStartEnabler.Result.NICHT_BELEGT;
         step.markPending(context,
-                R.string.setup_autostart_body, R.string.setup_autostart_button);
+                neutral ? R.string.einr_byd_seiten_text_neutral : R.string.setup_autostart_body,
+                R.string.setup_autostart_button);
         Toast.makeText(context,
-                context.getString(R.string.setup_autostart_failed),
+                context.getString(neutral ? R.string.einr_byd_seiten_text_neutral : R.string.setup_autostart_failed),
                 Toast.LENGTH_LONG).show();
         openAutoStartSettings(context);
     }

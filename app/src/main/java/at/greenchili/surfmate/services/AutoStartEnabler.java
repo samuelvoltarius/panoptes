@@ -161,7 +161,21 @@ public class AutoStartEnabler {
         NOT_THIS_FIRMWARE,// appstartmanagement activity missing -> abort, no retry
         NO_DIALOG,        // dialog window never surfaced
         NO_ROW,           // SurfMate row / switch not found
-        FLIP_UNCONFIRMED  // clicked but state didn't confirm OFF
+        FLIP_UNCONFIRMED, // clicked but state didn't confirm OFF
+        NICHT_BELEGT      // 0.1.43.21: platform not proven (only DiLink 3 + Dolphin Surf) -> nothing clicked
+    }
+
+    /**
+     * 0.1.43.21 (Koordination 24.11.): Panoptes schaltet den BYD-Schalter nur dort von selbst, wo die Bedeutung
+     * „AN = Start gesperrt“ gemessen ist ({@code BydSeiten.autostartBelegt}: DiLink 3 + Dolphin Surf). Überall sonst
+     * wird nichts geklickt und kein Zustand verändert. Rein: null = weiter wie bisher, sonst {@link Result#NICHT_BELEGT}.
+     * Die Entscheidung samt Grund steht immer im Log.
+     */
+    public static Result vorab(boolean belegt, String grund) {
+        try {
+            android.util.Log.i(TAG, "Autostart-Klick: " + (belegt ? "erlaubt" : "kein Klick") + " – " + grund);
+        } catch (Throwable ignored) { }
+        return belegt ? null : Result.NICHT_BELEGT;
     }
 
     public Result attemptOnce() {

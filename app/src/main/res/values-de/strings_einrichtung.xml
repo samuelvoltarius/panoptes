@@ -183,6 +183,7 @@
     <!-- 0.1.43.20 BYD-Hilfe-Knöpfe (einrichtung/BydSeiten) -->
     <string name="einr_byd_seiten_titel">Bei BYD nachsehen</string>
     <string name="einr_byd_seiten_text">Startet Panoptes nach einem BYD-Update nicht mehr von selbst? Öffne die Autostart-Seite von BYD und lass bei Panoptes den Schalter AUS. AN heißt bei BYD: Start gesperrt.</string>
+    <string name="einr_byd_seiten_text_neutral">Startet Panoptes nach einem BYD-Update nicht mehr von selbst? Öffne die Autostart-Seite von BYD. Wie der Schalter dort wirkt, ist je nach Modell verschieden. Schalte das Auto nach dem Umstellen einmal aus und wieder ein und schau, ob Panoptes von selbst startet.</string>
     <string name="einr_byd_autostart">Autostart bei BYD</string>
     <string name="einr_byd_rechte">Berechtigungen bei BYD</string>
 </resources>

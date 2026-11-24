@@ -24,6 +24,7 @@ public class LadenErsparnisExportApiTest {
         boolean extern;
         JSONArray ladungen = new JSONArray();
         double kmJeTag = 40;
+        boolean phev;
         long letzteVon, letzteBis;
 
         public JSONObject config() {
@@ -55,6 +56,7 @@ public class LadenErsparnisExportApiTest {
             }
             return a;
         }
+        @Override public boolean phev() { return phev; }
         @Override public double km(long von, long bis) { return Math.max(0, (bis - von) / 86_400_000.0 * kmJeTag); }
     }
 
@@ -141,6 +143,15 @@ public class LadenErsparnisExportApiTest {
         String ks = new String((byte[]) k[2], StandardCharsets.UTF_8);
         assertTrue(ks.contains("2026-10;1;10;10;2,5;2,5;0;ja"));
         assertTrue(ks.contains("2026-11;1;20;20;4;4;0;ja"));
+        // 0.1.43.21: Ersparnis-Spalte nur mit Kopfzeile „Schätzung“
+        assertTrue(ks.startsWith("﻿Ersparnis_Schaetzung ist eine Schätzung"));
+        assertTrue(ks.contains(";km;Ersparnis_Schaetzung\r\n"));
+        // Plug-in-Hybrid: wie die Karte keine Ersparnis
+        u.phev = true;
+        String ph = new String((byte[]) LadenApiHandler.export("GET", "liste=kosten&von=2026-01-01&bis=2026-11-24", u)[2],
+                StandardCharsets.UTF_8);
+        assertFalse(ph.contains("Schätzung"));
+        assertFalse(ph.contains("Ersparnis_Schaetzung"));
     }
 
     @Test

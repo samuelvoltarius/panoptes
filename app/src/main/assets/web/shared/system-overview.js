@@ -19,7 +19,7 @@
     // 0.1.38.10: weitere Felder der Gruppe „system“ – EINE Liste Karte → Felder für system.html (store.zeichne nur:[…])
     // und das Sprungziel der Suche. Eine Karte ohne passendes Thema: „Weitere Einstellungen“.
     var KARTEN_FELDER = {
-        homeassistant: ['ha.positionTeilen', 'ha.mdns'],
+        homeassistant: ['ha.positionTeilen', 'ha.mdns', 'ha.mqttDiscovery'],   // 0.1.43.21 Discovery-Schalter
         planerKarte: ['planner.autoId', 'fahrtenbuch.planer'],
         datenschutz: ['wetter.online', 'community.enabled', 'gewohnheiten.an', 'gewohnheiten.aufbewahrungTage',
             'gewohnheiten.vergessen', 'sprache.befehle', 'sprache.weckwort'],   // 0.1.44 (P2): Mikrofon = Datenschutz

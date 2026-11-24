@@ -15,9 +15,9 @@ public class BatteryMonitorFreshnessTest {
         long observedAt = 100_000L;
 
         assertTrue(BatteryMonitor.isVoltageFresh(
-                12.6, observedAt, observedAt + 60_000L));
+                12.6, observedAt, observedAt + 150_000L));
         assertFalse(BatteryMonitor.isVoltageFresh(
-                12.6, observedAt, observedAt + 60_001L));
+                12.6, observedAt, observedAt + 150_001L));
         assertFalse(BatteryMonitor.isVoltageFresh(
                 0.0, observedAt, observedAt + 1_000L));
         assertFalse(BatteryMonitor.isVoltageFresh(

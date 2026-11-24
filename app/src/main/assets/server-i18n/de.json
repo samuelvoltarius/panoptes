@@ -858,7 +858,8 @@
       "charging_full": "🔌 *Laden fertig*",
       "charging_fault": "🚨 *Beim Laden ist etwas schiefgegangen*",
       "battery12v_low": "🪫 *Starterbatterie schwach: {0} V*\nWenn sie weiter fällt, startet das Auto vielleicht nicht. Fahr bald eine Runde oder lade es.",
-      "battery12v_sehr_niedrig": "🪫 *Starterbatterie sehr schwach: {0} V*\nSie erholt sich nicht mehr von selbst. Das Auto startet vielleicht bald nicht mehr. Fahr heute noch eine Runde oder lade es."
+      "battery12v_sehr_niedrig": "🪫 *Starterbatterie sehr schwach: {0} V*\nSie erholt sich nicht mehr von selbst. Das Auto startet vielleicht bald nicht mehr. Fahr heute noch eine Runde oder lade es.",
+      "battery12v_dauer": "🪫 *Starterbatterie seit 30 Minuten unter 12,2 V: {0} V*\nDas Auto steht und lädt sie gerade nicht nach. Fahr bald eine Runde oder lade es, sonst startet es vielleicht nicht."
     },
     "charge": {
       "title": "🔋 *Laden*",
@@ -2251,6 +2252,13 @@
       "mdns": {
         "title": "Home Assistant: im WLAN ankündigen",
         "help": "Panoptes meldet sich im gleichen WLAN, damit Home Assistant es ohne Adresse findet. Gilt nach einem Neustart. Standard aus."
+      },
+      "mqttDiscovery": {
+        "title": "Home Assistant: Geräte über MQTT anlegen",
+        "help": "Automatisch: Panoptes legt die Geräte in Home Assistant nur dann über MQTT an, wenn die Panoptes-Integration nicht gekoppelt ist. So entstehen keine doppelten Einträge. An: immer. Aus: nie.",
+        "automatisch": "Automatisch",
+        "an": "An",
+        "aus": "Aus"
       }
     },
     "fahrtenbuch": {
@@ -3073,6 +3081,7 @@
     "text": "Kleine Korrektur-Updates kommen ab jetzt von selbst (nur im Stand, nie während der Fahrt). Große Updates meldet Panoptes weiter vorher. Ändern: Einstellungen → Updates.",
     "autostart_titel": "Autostart",
     "autostart_fehlt": "Nach dem Update braucht Panoptes einmal die Autostart-Freigabe. Bitte am Auto-Display auf der Startseite von Panoptes „Autostart wieder einschalten“ antippen.",
+    "autostart_pruefen": "Nach dem Update: Wie der Autostart-Schalter bei BYD wirkt, ist je nach Modell verschieden. Panoptes hat dort nichts umgestellt. Schalte das Auto einmal aus und wieder ein und schau, ob Panoptes von selbst startet.",
     "launcher_home": "Nach dem Update ist der Panoptes Launcher nicht mehr dein Startbildschirm. Öffne den Launcher einmal und wähle ihn wieder als Startbildschirm."
   },
   "pc": {

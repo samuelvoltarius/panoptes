@@ -54,23 +54,76 @@ public final class AutostartNachUpdate {
     /** 0.1.38.8: Meldung „Autostart bitte einmal am Display erlauben“ (Tests ersetzen sie). */
     public interface Melder {
         void autostartFehlt();
+
+        /** 0.1.43.21: neutraler Hinweis „nach dem Umstellen einmal aus/ein, nachsehen“ (nicht belegte Plattform). */
+        default void autostartPruefen() { }
     }
+
+    /** 0.1.43.21: Ist die Bedeutung des BYD-Schalters auf diesem Auto belegt? Mit Grund fürs Log. */
+    public static final class Entscheidung {
+        final boolean belegt;
+        final String grund;
+
+        public Entscheidung(boolean belegt, String grund) {
+            this.belegt = belegt;
+            this.grund = grund == null ? "" : grund;
+        }
+    }
+
+    /** 0.1.43.21: Plattform-Prüfung (echt: {@code BydSeiten.autostartPlattform}; Tests ersetzen sie). */
+    public interface Plattform {
+        Entscheidung pruefe();
+    }
+
+    /** 0.1.43.21: Auto steht (Gang P, kein Tempo) – erst dann der neutrale Hinweis. */
+    public interface Stand {
+        boolean steht();
+    }
+
+    /** Ergebnis auf nicht belegter Plattform: nichts geklickt, nichts gesetzt. */
+    static final String NICHT_BELEGT = "NICHT_BELEGT";
 
     private final File updateOk;
     private final File merkDatei;
     private final Shell sh;
     private final Melder melder;
+    private final Plattform plattform;
+    private final Stand stand;
+    /** 0.1.43.21: Entscheidungs-Log (echt: DaemonLogger; Tests lesen mit). */
+    java.util.function.Consumer<String> log = t -> { };
     private long liveStand;
 
     AutostartNachUpdate(File updateOk, File merkDatei, Shell sh) {
         this(updateOk, merkDatei, sh, () -> { });
     }
 
+    /** Wie bisher (belegte Plattform, Surf). */
     AutostartNachUpdate(File updateOk, File merkDatei, Shell sh, Melder melder) {
+        this(updateOk, merkDatei, sh, melder, () -> new Entscheidung(true, "belegt"), () -> true);
+    }
+
+    AutostartNachUpdate(File updateOk, File merkDatei, Shell sh, Melder melder, Plattform plattform, Stand stand) {
         this.updateOk = updateOk;
         this.merkDatei = merkDatei;
         this.sh = sh;
         this.melder = melder;
+        this.plattform = plattform;
+        this.stand = stand;
+    }
+
+    private Entscheidung entscheide() {
+        try {
+            Entscheidung e = plattform.pruefe();
+            return e == null ? new Entscheidung(false, "nicht belegt: keine Angabe") : e;
+        } catch (Throwable t) {
+            return new Entscheidung(false, "nicht belegt: Plattform nicht lesbar (" + t.getClass().getSimpleName() + ")");
+        }
+    }
+
+    private void protokoll(String text) {
+        try {
+            log.accept(text);
+        } catch (Throwable ignored) { }
     }
 
     /**
@@ -143,11 +196,26 @@ public final class AutostartNachUpdate {
     public boolean pruefen(long jetzt) throws Exception {
         long marke = installMarke();
         JSONObject alt = merk();
+        // 0.1.43.21: schon als „nicht belegt“ entschieden → nur noch einmal der neutrale Hinweis, sobald das Auto steht
+        if (marke > 0L && alt.optLong("installMarke", 0L) == marke && NICHT_BELEGT.equals(alt.optString("ergebnis"))) {
+            return hinweisImStand(alt, jetzt);
+        }
         if (!faellig(marke, alt)) return false;
+        Entscheidung e = entscheide();
+        protokoll("Autostart nach Update: " + (e.belegt ? "Klick erlaubt" : "kein Klick") + " – " + e.grund);
+        if (!e.belegt) {
+            // Nichts klicken, kein ENABLE, keine Marke: der Zustand am Auto bleibt, wie er ist. Ohne „frei“ zeigt die
+            // Startseite keinen Knopf (zustand → frei:null).
+            JSONObject r = new JSONObject().put("installMarke", marke).put("zeit", jetzt).put("quelle", "update")
+                    .put("ergebnis", NICHT_BELEGT).put("entscheidung", e.grund).put("hinweis", false);
+            speichere(r);
+            hinweisImStand(r, jetzt);
+            return true;
+        }
         int versuche = alt.optLong("installMarke", 0L) == marke ? alt.optInt("versuche", 0) : 0;
         JSONObject r = auswerten(sh.run(ENABLE, 90));
         r.put("installMarke", marke).put("zeit", jetzt).put("quelle", "update")
-                .put("versuche", versuche + 1).put("weg", "sichtbar");
+                .put("versuche", versuche + 1).put("weg", "sichtbar").put("entscheidung", e.grund);
         // 0.1.38.8: endgültig nicht frei (kein weiterer Versuch fällig) → genau eine Meldung je Installation
         boolean melden = !r.optBoolean("frei", false) && !faellig(marke, r)
                 && !(alt.optLong("installMarke", 0L) == marke && alt.optBoolean("gemeldet", false));
@@ -162,8 +230,31 @@ public final class AutostartNachUpdate {
         return true;
     }
 
+    /** 0.1.43.21: neutraler Hinweis genau einmal je Installation, nur im Stand. true = jetzt gemeldet. */
+    private boolean hinweisImStand(JSONObject r, long jetzt) throws Exception {
+        if (r.optBoolean("hinweis", false)) return false;
+        boolean steht;
+        try {
+            steht = stand.steht();
+        } catch (Throwable t) {
+            steht = false;
+        }
+        if (!steht) return false;
+        speichere(r.put("hinweis", true).put("hinweisZeit", jetzt));
+        try {
+            melder.autostartPruefen();
+        } catch (Throwable ignored) { }
+        return true;
+    }
+
     /** Knopf „Autostart wieder einschalten“ (am Display): sofort versuchen, Ergebnis merken. */
     public JSONObject freigeben(long jetzt) throws Exception {
+        Entscheidung e = entscheide();
+        protokoll("Autostart-Knopf: " + (e.belegt ? "Klick erlaubt" : "kein Klick") + " – " + e.grund);
+        if (!e.belegt) {
+            // 0.1.43.21: auch auf Knopfdruck kein automatischer Klick auf nicht belegter Plattform; nichts gemerkt
+            return new JSONObject().put("frei", false).put("ergebnis", NICHT_BELEGT).put("entscheidung", e.grund);
+        }
         JSONObject r = auswerten(sh.run(ENABLE, 90));
         JSONObject alt = merk();
         r.put("installMarke", installMarke()).put("zeit", jetzt).put("quelle", "knopf")
@@ -207,7 +298,16 @@ public final class AutostartNachUpdate {
                 if (instanz == null) {
                     instanz = new AutostartNachUpdate(new File(AppUpdateDienst.NEU, ".update-ok"),
                             new File(AppUpdateDienst.NEU, "autostart_nach_update.json"), AutostartNachUpdate::shell,
-                            AutostartNachUpdate::meldeFehlt);
+                            new Melder() {
+                                public void autostartFehlt() { meldeFehlt(); }
+                                public void autostartPruefen() { meldePruefen(); }
+                            },
+                            () -> {
+                                kotlin.Pair<Boolean, String> p = at.greenchili.surfmate.einrichtung.BydSeiten.autostartPlattform();
+                                return new Entscheidung(p.getFirst(), p.getSecond());
+                            },
+                            AutostartNachUpdate::stehtEcht);
+                    instanz.log = t -> at.greenchili.surfmate.logging.DaemonLogger.getInstance("AutostartNachUpdate").info(t);
                 }
                 a = instanz;
             }
@@ -233,6 +333,32 @@ public final class AutostartNachUpdate {
                 }
             } catch (Throwable ignored) { }
         }, 60, 60, TimeUnit.SECONDS);
+    }
+
+    /** Gang P und kein Tempo, wie {@code LadenApiHandler} (byd.Stillstand). */
+    static boolean stehtEcht() {
+        try {
+            at.greenchili.surfmate.byd.BydVehicleData v = at.greenchili.surfmate.byd.BydDataCollector.getInstance().getData();
+            return v != null && v.gearMode == 1 && at.greenchili.surfmate.byd.Stillstand.tempoJetzt(v) < 1;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /** 0.1.43.21: neutraler Hinweis (nicht belegte Plattform), Telegram UPDATE + Handy-Push, einmal je Installation. */
+    static void meldePruefen() {
+        String titel = at.greenchili.surfmate.server.Messages.text("update_klein.autostart_titel", "Autostart");
+        String text = at.greenchili.surfmate.server.Messages.text("update_klein.autostart_pruefen",
+                "After the update: how the BYD autostart switch works differs between models. Panoptes changed nothing "
+                        + "there. Switch the car off and on once and check whether Panoptes starts by itself.");
+        at.greenchili.surfmate.telegram.TelegramNotifier.sendMessage(text, "UPDATE");
+        try {
+            at.greenchili.surfmate.notifications.NotificationBus.get().publish(
+                    new at.greenchili.surfmate.notifications.NotificationEvent("system.updates",
+                            at.greenchili.surfmate.notifications.NotificationEvent.Severity.INFO, titel, text,
+                            "update-autostart-pruefen", "/local/system.html",
+                            new org.json.JSONObject().put("art", "autostart_pruefen")));
+        } catch (Throwable ignored) { }
     }
 
     /** Telegram (Kategorie UPDATE) und Handy-Push {@code system.updates}, Text in der Nutzersprache. */

@@ -68,6 +68,8 @@ public final class LadenApiHandler {
         default JSONArray sitzungen(long von, long bis) { return new JSONArray(); }
         default double km(long von, long bis) { return 0; }
         default java.util.TimeZone zeitzone() { return java.util.TimeZone.getDefault(); }
+        /** 0.1.43.21: Plug-in-Hybrid → keine Ersparnis in der CSV (ein Teil der km mit Sprit, wie die Karte). */
+        default boolean phev() { return false; }
     }
 
     public static boolean handle(String method, String path, String body, OutputStream out) throws Exception {
@@ -284,7 +286,8 @@ public final class LadenApiHandler {
         JSONArray s = u.sitzungen(b[0], b[1] + 1);
         byte[] daten = at.greenchili.surfmate.charging.LadeCsv.LADUNGEN.equals(liste)
                 ? at.greenchili.surfmate.charging.LadeCsv.ladungen(s, sprache, zone)
-                : at.greenchili.surfmate.charging.LadeCsv.kosten(s, sprache, zone);
+                : at.greenchili.surfmate.charging.LadeCsv.kosten(s, sprache, zone,
+                        u.phev() ? null : ersparnisVergleich(u), u::km, b[0], b[1]);
         java.time.format.DateTimeFormatter iso = java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
         String name = (at.greenchili.surfmate.charging.LadeCsv.LADUNGEN.equals(liste) ? "ladungen-" : "ladekosten-")
                 + java.time.Instant.ofEpochMilli(b[0]).atZone(zone).format(iso) + "_"
@@ -690,6 +693,14 @@ public final class LadenApiHandler {
                         .getChargingSessionsV2Range(von, Math.max(von, bis - 1), 5000, 0);
             } catch (Throwable t) {
                 return new JSONArray();
+            }
+        }
+
+        public boolean phev() {
+            try {
+                return at.greenchili.surfmate.monitor.VehicleDataMonitor.getInstance().isPhev();
+            } catch (Throwable t) {
+                return false;
             }
         }
 

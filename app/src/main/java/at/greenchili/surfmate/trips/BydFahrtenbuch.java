@@ -121,6 +121,28 @@ public final class BydFahrtenbuch {
 
     static double pro100(double kwh, double km) { return km >= MIN_KM ? kwh / km * 100.0 : Double.NaN; }
 
+    /**
+     * 0.1.43.21 Nur Summen für Home Assistant im eigenen Netz (Koordination: das BYD-Fahrtenbuch geht nie an einen
+     * Server, an HA nur Summen): Fahrten mit Start in [von, bis), km, kWh, kWh/100 km. Keine einzelne Fahrt, keine Zeiten.
+     */
+    public static JSONObject summen(List<Fahrt> fahrten, long von, long bis) throws Exception {
+        int n = 0;
+        double km = 0, kwh = 0;
+        for (Fahrt f : fahrten == null ? java.util.Collections.<Fahrt>emptyList() : fahrten) {
+            if (f.startMs < von || f.startMs >= bis) continue;
+            n++;
+            km += f.km;
+            kwh += f.kwh;
+        }
+        double p = pro100(kwh, km);
+        JSONObject o = new JSONObject();
+        o.put("fahrten", n);
+        o.put("km", Math.round(km * 10) / 10.0);
+        o.put("kwh", Math.round(kwh * 10) / 10.0);
+        o.put("kwh_je_100km", Double.isFinite(p) ? (Object) (Math.round(p * 10) / 10.0) : JSONObject.NULL);
+        return o;
+    }
+
     // ==================================================================== Auswerten (rein)
 
     /** Summen je Zeitraum (Tag „2026-11-24“, Woche „2026-W48“, Monat „2026-11“), neueste zuerst. */

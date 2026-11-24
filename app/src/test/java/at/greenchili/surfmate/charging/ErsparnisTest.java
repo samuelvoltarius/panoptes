@@ -187,4 +187,28 @@ public class ErsparnisTest {
         // HUF/CZK: hohe Literpreise sind erlaubt
         assertNotNull(Ersparnis.pruefe(new JSONObject().put("preis", 620), null, 1, f));
     }
+
+    /** 0.1.43.21: „Schätzung“ sichtbar auf der Karte (unter dem Titel) und in der Fahrt-Zeile, in fünf Sprachen. */
+    @Test
+    public void schaetzungSichtbarInKarteUndFahrt() throws Exception {
+        java.io.File web = new java.io.File("src/main/assets/web");
+        if (!web.isDirectory()) web = new java.io.File("app/src/main/assets/web");
+        String js = new String(java.nio.file.Files.readAllBytes(new java.io.File(web, "shared/ersparnis.js").toPath()),
+                java.nio.charset.StandardCharsets.UTF_8);
+        assertTrue(js.contains("E('schaetzung')"));
+        assertTrue("Fahrt-Zeile", js.contains("E('schaetzung_kurz')"));
+        assertTrue(js.contains("ersparnisSchaetzung"));
+        for (String l : new String[] {"de", "en", "fr", "it", "nl"}) {
+            JSONObject g = new JSONObject(new String(java.nio.file.Files.readAllBytes(
+                    new java.io.File(web, "i18n/" + l + ".json").toPath()), java.nio.charset.StandardCharsets.UTF_8))
+                    .getJSONObject("ersparnis");
+            assertTrue(l, g.optString("schaetzung").length() > 20);
+            assertTrue(l, g.optString("schaetzung_kurz").length() > 3);
+        }
+        for (String seite : new String[] {"local/trips.html", "local/charging.html"}) {
+            String h = new String(java.nio.file.Files.readAllBytes(new java.io.File(web, seite).toPath()),
+                    java.nio.charset.StandardCharsets.UTF_8);
+            assertTrue(seite, h.contains("ersparnis.js?v=2"));
+        }
+    }
 }

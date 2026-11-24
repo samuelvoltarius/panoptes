@@ -102,6 +102,11 @@ public final class AutoMeldungen {
         return o;
     }
 
+    /** 0.1.43.21 für Home Assistant: derselbe Stand wie {@link #PFAD} (30 s Zwischenstand), nur lesen. */
+    public static JSONObject stand(long jetzt) throws Exception {
+        return lesen(jetzt);
+    }
+
     /** HTTP; false = nicht zuständig. */
     public static boolean handle(String method, String path, OutputStream out) throws Exception {
         String p = path.contains("?") ? path.substring(0, path.indexOf('?')) : path;

@@ -183,6 +183,7 @@
     <!-- 0.1.43.20 BYD-Hilfe-Knöpfe (einrichtung/BydSeiten) -->
     <string name="einr_byd_seiten_titel">Controlla da BYD</string>
     <string name="einr_byd_seiten_text">Panoptes non si avvia più da solo dopo un aggiornamento BYD? Apri la pagina di avvio automatico di BYD e lascia SPENTO l’interruttore di Panoptes. Da BYD, ACCESO significa: avvio bloccato.</string>
+    <string name="einr_byd_seiten_text_neutral">Panoptes non si avvia più da solo dopo un aggiornamento BYD? Apri la pagina di avvio automatico di BYD. L’effetto dell’interruttore cambia a seconda del modello. Dopo la modifica spegni e riaccendi l’auto una volta e controlla che Panoptes si avvii da solo.</string>
     <string name="einr_byd_autostart">Avvio automatico BYD</string>
     <string name="einr_byd_rechte">Autorizzazioni BYD</string>
 </resources>

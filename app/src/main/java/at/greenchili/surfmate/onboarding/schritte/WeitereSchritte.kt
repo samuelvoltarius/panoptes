@@ -60,6 +60,7 @@ class FreigabenSchritt(id: String, a: Assistent, private val host: AssistentHost
     private var bydInfotainment = true
     /** 0.1.43.20: BYD-Seiten, die es auf diesem Gerät wirklich gibt (sonst kein Knopf). */
     private var bydSeiten: List<String> = emptyList()
+    private var bydAutostartBelegt = false
 
     private fun autostartOk() = !SetupGuideDialog.autostartFehlt(a.activity)
     private fun anzeigeOk() = !SetupGuideDialog.ueberlagerungFehlt(a.activity)
@@ -81,6 +82,7 @@ class FreigabenSchritt(id: String, a: Assistent, private val host: AssistentHost
         bydInfotainment = host.istBydInfotainment()
         bydSeiten = at.greenchili.surfmate.einrichtung.BydSeiten.verfuegbar(a.activity,
             listOf(at.greenchili.surfmate.einrichtung.BydSeiten.AUTOSTART, at.greenchili.surfmate.einrichtung.BydSeiten.RECHTE))
+        bydAutostartBelegt = at.greenchili.surfmate.einrichtung.BydSeiten.autostartBelegt()
         pruefe()
     }
 
@@ -159,8 +161,12 @@ class FreigabenSchritt(id: String, a: Assistent, private val host: AssistentHost
     private fun bydZeile() {
         if (bydSeiten.isEmpty()) return
         liste.dazu(a.text(t.res(R.string.einr_byd_seiten_titel), 19f, fett = true), 22f)
-        // Sperrliste (Fundgrube Teil 2, AutoStartEnabler): bei BYD heißt AN = Start gesperrt → Satz nur mit Autostart-Knopf
-        if (at.greenchili.surfmate.einrichtung.BydSeiten.AUTOSTART in bydSeiten) liste.dazu(a.text(t.res(R.string.einr_byd_seiten_text), 16f, leise = true), 4f)
+        // Sperrliste (Fundgrube Teil 2, AutoStartEnabler): „AN = Start gesperrt“ nur auf DiLink 3 / Surf gemessen (0.1.43.21);
+        // sonst der neutrale Satz (umstellen, einmal aus/ein, nachsehen). Satz nur mit Autostart-Knopf.
+        if (at.greenchili.surfmate.einrichtung.BydSeiten.AUTOSTART in bydSeiten) {
+            val satz = if (bydAutostartBelegt) R.string.einr_byd_seiten_text else R.string.einr_byd_seiten_text_neutral
+            liste.dazu(a.text(t.res(satz), 16f, leise = true), 4f)
+        }
         val z = LinearLayout(a.activity).apply { orientation = LinearLayout.HORIZONTAL }
         val abstand = (12 * a.activity.resources.displayMetrics.density).toInt()
         for (k in bydSeiten) {

@@ -1629,6 +1629,14 @@ class WebViewFragment : Fragment() {
             }
         }
 
+        /** 0.1.43.21: true nur auf DiLink 3 / Dolphin Surf, wo „AN = Start gesperrt“ gemessen ist; sonst neutraler Hinweis. */
+        @android.webkit.JavascriptInterface
+        fun bydAutostartBelegt(): Boolean = try {
+            at.greenchili.surfmate.einrichtung.BydSeiten.autostartBelegt()
+        } catch (e: Exception) {
+            false
+        }
+
         /** 0.1.43.20: öffnet eine BYD-Seite aus der festen Liste (nur öffnen). "ok" | "unavailable" | "no_context" | "error". */
         @android.webkit.JavascriptInterface
         fun bydSeiteOeffnen(schluessel: String?): String {

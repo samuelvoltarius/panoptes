@@ -623,7 +623,8 @@
       "charging_full": "🔌 *Recharge terminée*",
       "charging_fault": "🚨 *Un problème est survenu pendant la recharge*",
       "battery12v_low": "🪫 *Batterie 12 V faible : {0} V*\nSi elle baisse encore, la voiture risque de ne pas démarrer. Faites bientôt un tour ou branchez-la.",
-      "battery12v_sehr_niedrig": "🪫 *Batterie 12 V très faible : {0} V*\nElle ne se rétablit plus d’elle-même. La voiture risque bientôt de ne plus démarrer. Faites un tour aujourd’hui ou branchez-la."
+      "battery12v_sehr_niedrig": "🪫 *Batterie 12 V très faible : {0} V*\nElle ne se rétablit plus d’elle-même. La voiture risque bientôt de ne plus démarrer. Faites un tour aujourd’hui ou branchez-la.",
+      "battery12v_dauer": "🪫 *Batterie 12 V sous 12,2 V depuis 30 minutes : {0} V*\nLa voiture est garée et ne la recharge pas en ce moment. Faites bientôt un tour ou branchez-la, sinon elle risque de ne pas démarrer."
     },
     "charge": {
       "title": "🔋 *Recharge*",
@@ -2257,6 +2258,13 @@
       "mdns": {
         "title": "Home Assistant : s'annoncer sur le Wi-Fi",
         "help": "Panoptes s'annonce sur le même Wi-Fi pour que Home Assistant le trouve sans adresse. Pris en compte après un redémarrage. Désactivé par défaut."
+      },
+      "mqttDiscovery": {
+        "title": "Home Assistant : créer les appareils via MQTT",
+        "help": "Automatique : Panoptes crée les appareils dans Home Assistant via MQTT uniquement si l'intégration Panoptes n'est pas couplée. Cela évite les doublons. Activé : toujours. Désactivé : jamais.",
+        "automatisch": "Automatique",
+        "an": "Activé",
+        "aus": "Désactivé"
       }
     },
     "fahrtenbuch": {
@@ -3079,6 +3087,7 @@
     "text": "Les petites mises à jour de correction arrivent désormais seules (seulement à l’arrêt, jamais en roulant). Panoptes continue d’annoncer les grandes mises à jour avant. Modifier : Réglages → Mises à jour.",
     "autostart_titel": "Démarrage auto",
     "autostart_fehlt": "Après la mise à jour, Panoptes a besoin une fois de l’autorisation de démarrage automatique. Touche « Réactiver le démarrage auto » sur la page d’accueil de Panoptes à l’écran de la voiture.",
+    "autostart_pruefen": "Après la mise à jour : l’effet de l’interrupteur de démarrage auto BYD varie selon le modèle. Panoptes n’y a rien changé. Éteignez puis rallumez la voiture une fois et vérifiez que Panoptes démarre tout seul.",
     "launcher_home": "Après la mise à jour, le launcher Panoptes n’est plus ton écran d’accueil. Ouvre le launcher une fois et choisis-le de nouveau comme écran d’accueil."
   },
   "pc": {

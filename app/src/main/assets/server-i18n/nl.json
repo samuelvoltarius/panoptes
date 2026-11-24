@@ -623,7 +623,8 @@
       "charging_full": "🔌 *Laden klaar*",
       "charging_fault": "🚨 *Er ging iets mis tijdens het laden*",
       "battery12v_low": "🪫 *12 V-accu laag: {0} V*\nAls hij verder zakt, start de auto misschien niet. Ga snel een stuk rijden of sluit hem aan.",
-      "battery12v_sehr_niedrig": "🪫 *12 V-accu zeer zwak: {0} V*\nHij herstelt niet meer vanzelf. De auto start straks misschien niet meer. Rijd vandaag een stuk of sluit hem aan."
+      "battery12v_sehr_niedrig": "🪫 *12 V-accu zeer zwak: {0} V*\nHij herstelt niet meer vanzelf. De auto start straks misschien niet meer. Rijd vandaag een stuk of sluit hem aan.",
+      "battery12v_dauer": "🪫 *12 V-accu al 30 minuten onder 12,2 V: {0} V*\nDe auto staat stil en laadt hem nu niet bij. Ga snel een stuk rijden of sluit hem aan, anders start hij misschien niet."
     },
     "charge": {
       "title": "🔋 *Laden*",
@@ -2257,6 +2258,13 @@
       "mdns": {
         "title": "Home Assistant: aankondigen op wifi",
         "help": "Panoptes kondigt zichzelf aan op hetzelfde wifi-netwerk, zodat Home Assistant het zonder adres vindt. Werkt na een herstart. Standaard uit."
+      },
+      "mqttDiscovery": {
+        "title": "Home Assistant: apparaten via MQTT aanmaken",
+        "help": "Automatisch: Panoptes maakt de apparaten in Home Assistant alleen via MQTT aan als de Panoptes-integratie niet gekoppeld is. Zo ontstaan er geen dubbele items. Aan: altijd. Uit: nooit.",
+        "automatisch": "Automatisch",
+        "an": "Aan",
+        "aus": "Uit"
       }
     },
     "fahrtenbuch": {
@@ -3079,6 +3087,7 @@
     "text": "Kleine correctie-updates komen voortaan vanzelf (alleen als de auto stilstaat, nooit tijdens het rijden). Grote updates meldt Panoptes nog steeds vooraf. Wijzigen: Instellingen → Updates.",
     "autostart_titel": "Autostart",
     "autostart_fehlt": "Na de update heeft Panoptes nog één keer de autostart-toestemming nodig. Tik op het display van de auto op de startpagina van Panoptes op „Automatisch starten weer aanzetten”.",
+    "autostart_pruefen": "Na de update: hoe de BYD-autostartschakelaar werkt, verschilt per model. Panoptes heeft daar niets veranderd. Zet de auto één keer uit en weer aan en kijk of Panoptes vanzelf start.",
     "launcher_home": "Na de update is de Panoptes-launcher niet meer je startscherm. Open de launcher één keer en kies hem opnieuw als startscherm."
   },
   "pc": {

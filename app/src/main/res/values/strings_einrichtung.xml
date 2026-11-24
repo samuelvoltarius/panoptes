@@ -183,6 +183,7 @@
     <!-- 0.1.43.20 BYD-Hilfe-Knöpfe (einrichtung/BydSeiten) -->
     <string name="einr_byd_seiten_titel">Check at BYD</string>
     <string name="einr_byd_seiten_text">Panoptes no longer starts by itself after a BYD update? Open the BYD autostart page and leave the switch for Panoptes OFF. At BYD, ON means: start blocked.</string>
+    <string name="einr_byd_seiten_text_neutral">Panoptes no longer starts by itself after a BYD update? Open the BYD autostart page. How the switch there works differs between models. After changing it, switch the car off and on once and check whether Panoptes starts by itself.</string>
     <string name="einr_byd_autostart">Autostart at BYD</string>
     <string name="einr_byd_rechte">Permissions at BYD</string>
 </resources>

@@ -55,6 +55,7 @@ public final class ExternGuard {
             "/api/neuigkeiten",
             "/api/bericht/monat",
             "/api/ha/v1/zustand",
+            "/api/ha/v1/daten",   // 0.1.43.21 Ladekosten, Ersparnis, Clips, Meldungen (nur lesen, nur Summen)
             "/api/ha/v1/regeln",
             "/api/ha/v1/ereignisse",
             "/api/camping",   // 0.1.16: Camping-Status (Panoptes-Funktion, keine Innentemperatur)

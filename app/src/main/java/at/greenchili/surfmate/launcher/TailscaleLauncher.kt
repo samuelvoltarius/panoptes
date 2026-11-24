@@ -31,6 +31,20 @@ class TailscaleLauncher(
         private const val DEPLOYMENT_STALE = "stale"
 
         private const val TAILSCALE_COMMUNICATION_PORT = "8632"
+
+        /** 0.1.43.21: Zeitlimit eines Tailscale-CLI-Aufrufs am Gerät (Sekunden, toybox `timeout`). */
+        const val CLI_ZEITLIMIT_S = 15
+        /** Rückfall-Frist im Executor, falls `timeout` am Gerät fehlt: etwas länger als das Gerätelimit. */
+        const val CLI_FRIST_MS = 20_000L
+
+        /**
+         * Setzt `timeout 15` vor den Befehl, wenn das Gerät es hat (Android 10 toybox), sonst bleibt er wie er
+         * ist. Gilt nur für das erste Programm; `|| echo done` usw. danach laufen ungebremst weiter.
+         */
+        @JvmStatic
+        fun mitZeitlimit(befehl: String): String =
+            "if command -v timeout >/dev/null 2>&1; then T='timeout $CLI_ZEITLIMIT_S'; else T=''; " +
+                AdbShellExecutor.TAILSCALE_ZEITLIMIT_MARKE + "\$T " + befehl
         /** Vorschlag für den Gerätenamen im Tailnet (änderbar im Assistenten). */
         const val DEFAULT_HOSTNAME = "panoptes"
         private val AUTH_KEY = Regex("^tskey-[A-Za-z0-9-]{8,200}$")
@@ -724,9 +738,16 @@ class TailscaleLauncher(
         }
     }
 
+    /**
+     * 0.1.43.21: jeder Tailscale-CLI-Aufruf mit Zeitlimit. Nimmt tailscaled den Socket an, antwortet aber nicht
+     * (Start, Neuaufbau, offline), hing der Aufruf bis zur 60-s-Frist der einen Steuer-Warteschlange und riss
+     * dann die ADB-Verbindung ab (ADB_ABBRUCH, PRUEF_ADB_12V_20261124). Jetzt beendet `timeout 15` (toybox) den
+     * Aufruf am Gerät; die Verbindung bleibt. Fehlt `timeout`, greift die Executor-Frist von 20 s als Rückfall.
+     */
     fun runTailscaleCommand(cmd: String, callback: AdbShellExecutor.ShellCallback) {
         adbShellExecutor.execute(
-            command = "$TAILSCALE_PATH --socket 127.0.0.1:$TAILSCALE_COMMUNICATION_PORT $cmd",
+            command = mitZeitlimit("$TAILSCALE_PATH --socket 127.0.0.1:$TAILSCALE_COMMUNICATION_PORT $cmd"),
+            deadlineMs = CLI_FRIST_MS,
             callback = callback
         )
     }

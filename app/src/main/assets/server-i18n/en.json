@@ -617,7 +617,8 @@
       "charging_full": "🔌 *Charging done*",
       "charging_fault": "🚨 *Something went wrong while charging*",
       "battery12v_low": "🪫 *12 V battery low: {0} V*\nIf it drops further, the car may not start. Go for a drive or plug it in soon.",
-      "battery12v_sehr_niedrig": "🪫 *12 V battery very weak: {0} V*\nIt no longer recovers by itself. The car may soon not start. Go for a drive today or plug it in."
+      "battery12v_sehr_niedrig": "🪫 *12 V battery very weak: {0} V*\nIt no longer recovers by itself. The car may soon not start. Go for a drive today or plug it in.",
+      "battery12v_dauer": "🪫 *12 V battery below 12.2 V for 30 minutes: {0} V*\nThe car is parked and is not topping it up right now. Go for a drive or plug it in soon, or it may not start."
     },
     "charge": {
       "title": "🔋 *Charging*",
@@ -2251,6 +2252,13 @@
       "mdns": {
         "title": "Home Assistant: announce on Wi-Fi",
         "help": "Panoptes announces itself on the same Wi-Fi so Home Assistant finds it without an address. Takes effect after a restart. Off by default."
+      },
+      "mqttDiscovery": {
+        "title": "Home Assistant: create devices via MQTT",
+        "help": "Automatic: Panoptes creates the devices in Home Assistant via MQTT only when the Panoptes integration is not paired. That avoids duplicate entries. On: always. Off: never.",
+        "automatisch": "Automatic",
+        "an": "On",
+        "aus": "Off"
       }
     },
     "fahrtenbuch": {
@@ -3073,6 +3081,7 @@
     "text": "Small fix updates now arrive on their own (only while parked, never while driving). Panoptes still tells you before big updates. To change: Settings → Updates.",
     "autostart_titel": "Autostart",
     "autostart_fehlt": "After the update Panoptes needs the autostart permission once more. Please tap “Turn autostart back on” on the Panoptes start page on the car display.",
+    "autostart_pruefen": "After the update: how the BYD autostart switch works differs between models. Panoptes changed nothing there. Switch the car off and on once and check whether Panoptes starts by itself.",
     "launcher_home": "After the update the Panoptes launcher is no longer your home screen. Open the launcher once and choose it again as home screen."
   },
   "pc": {

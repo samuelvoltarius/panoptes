@@ -5474,6 +5474,7 @@
     "byd_rechte": "Permissions at BYD",
     "byd_version": "Software version at BYD",
     "byd_autostart_hinweis": "Autostart: leave the switch for Panoptes OFF. At BYD, ON means: start blocked.",
+    "byd_autostart_hinweis_neutral": "Autostart: how the BYD switch works differs between models. After changing it, switch the car off and on once and check whether Panoptes starts by itself.",
     "projection_title": "Cluster & apps",
     "projection_lead": "Choose apps, approve them once and show them on the driver display. “Back to the BYD display” brings the gauges back.",
     "projection_action": "Open cluster & apps",
@@ -7191,7 +7192,9 @@
     "gespeichert": "Saved",
     "fehler": "Not saved. Please check the values.",
     "fahrt": "Saved compared to {kraftstoff}: {betrag}",
-    "hinweis": "Worked out in the car from your charging costs. No live prices from the internet."
+    "hinweis": "Worked out in the car from your charging costs. No live prices from the internet.",
+    "schaetzung": "Estimate – depends on the prices you entered and the comparison consumption.",
+    "schaetzung_kurz": "estimate"
   },
   "lade_export": {
     "titel": "Save as a table",

@@ -5474,6 +5474,7 @@
     "byd_rechte": "Berechtigungen bei BYD",
     "byd_version": "Softwarestand bei BYD",
     "byd_autostart_hinweis": "Autostart: Bei Panoptes den Schalter AUS lassen. AN heißt bei BYD: Start gesperrt.",
+    "byd_autostart_hinweis_neutral": "Autostart: Wie der Schalter bei BYD wirkt, ist je nach Modell verschieden. Nach dem Umstellen das Auto einmal aus- und einschalten und schauen, ob Panoptes von selbst startet.",
     "projection_title": "Tacho & Apps",
     "projection_lead": "Apps auswählen, einmal freigeben und auf dem Fahrerdisplay anzeigen. „Zurück zur BYD-Anzeige“ holt die Tacho-Anzeige zurück.",
     "projection_action": "Tacho & Apps öffnen",
@@ -7191,7 +7192,9 @@
     "gespeichert": "Gespeichert",
     "fehler": "Nicht gespeichert. Bitte Werte prüfen.",
     "fahrt": "Gespart gegenüber {kraftstoff}: {betrag}",
-    "hinweis": "Gerechnet im Auto aus deinen Ladekosten. Keine Live-Preise aus dem Netz."
+    "hinweis": "Gerechnet im Auto aus deinen Ladekosten. Keine Live-Preise aus dem Netz.",
+    "schaetzung": "Schätzung – hängt von deinen eingetragenen Preisen und dem Vergleichsverbrauch ab.",
+    "schaetzung_kurz": "Schätzung"
   },
   "lade_export": {
     "titel": "Als Tabelle speichern",

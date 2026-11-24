@@ -183,6 +183,7 @@
     <!-- 0.1.43.20 BYD-Hilfe-Knöpfe (einrichtung/BydSeiten) -->
     <string name="einr_byd_seiten_titel">Bij BYD kijken</string>
     <string name="einr_byd_seiten_text">Start Panoptes na een BYD-update niet meer vanzelf? Open de autostartpagina van BYD en laat de schakelaar bij Panoptes UIT. Bij BYD betekent AAN: starten geblokkeerd.</string>
+    <string name="einr_byd_seiten_text_neutral">Start Panoptes na een BYD-update niet meer vanzelf? Open de autostartpagina van BYD. Hoe de schakelaar daar werkt, verschilt per model. Zet de auto na het omzetten één keer uit en weer aan en kijk of Panoptes vanzelf start.</string>
     <string name="einr_byd_autostart">Autostart bij BYD</string>
     <string name="einr_byd_rechte">Machtigingen bij BYD</string>
 </resources>

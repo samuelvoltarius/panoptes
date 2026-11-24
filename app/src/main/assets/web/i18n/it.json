@@ -5474,6 +5474,7 @@
     "byd_rechte": "Autorizzazioni BYD",
     "byd_version": "Versione software BYD",
     "byd_autostart_hinweis": "Avvio automatico: lascia SPENTO l’interruttore di Panoptes. Da BYD, ACCESO significa: avvio bloccato.",
+    "byd_autostart_hinweis_neutral": "Avvio automatico: l’effetto dell’interruttore BYD cambia a seconda del modello. Dopo la modifica spegni e riaccendi l’auto una volta e controlla che Panoptes si avvii da solo.",
     "projection_title": "Cruscotto e app",
     "projection_lead": "Scegli le app, abilitale una volta e mostrale sul display del conducente. “Torna al display BYD” riporta gli strumenti.",
     "projection_action": "Apri cruscotto e app",
@@ -7191,7 +7192,9 @@
     "gespeichert": "Salvato",
     "fehler": "Non salvato. Controlla i valori.",
     "fahrt": "Risparmiato rispetto a {kraftstoff}: {betrag}",
-    "hinweis": "Calcolato nell'auto dai tuoi costi di ricarica. Nessun prezzo in tempo reale da Internet."
+    "hinweis": "Calcolato nell'auto dai tuoi costi di ricarica. Nessun prezzo in tempo reale da Internet.",
+    "schaetzung": "Stima – dipende dai prezzi che hai inserito e dal consumo di confronto.",
+    "schaetzung_kurz": "stima"
   },
   "lade_export": {
     "titel": "Salva come tabella",

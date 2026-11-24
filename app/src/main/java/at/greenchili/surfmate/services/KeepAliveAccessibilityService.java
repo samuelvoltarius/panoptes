@@ -361,7 +361,10 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
             Thread worker = new Thread(() -> {
                 AutoStartEnabler.Result result = null;
                 try {
-                    result = enabler.run();
+                    // 0.1.43.21: nur auf belegter Plattform klicken (DiLink 3 + Dolphin Surf), sonst nichts anfassen
+                    kotlin.Pair<Boolean, String> p = at.greenchili.surfmate.einrichtung.BydSeiten.autostartPlattform();
+                    result = AutoStartEnabler.vorab(p.getFirst(), p.getSecond());
+                    if (result == null) result = enabler.run();
                 } catch (Throwable t) {
                     Log.w(TAG, "runAutoStartEnabler worker threw: " + t);
                 }

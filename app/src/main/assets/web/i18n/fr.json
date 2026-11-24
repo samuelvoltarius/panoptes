@@ -5474,6 +5474,7 @@
     "byd_rechte": "Autorisations BYD",
     "byd_version": "Version logicielle BYD",
     "byd_autostart_hinweis": "Démarrage auto : laissez l’interrupteur de Panoptes sur ARRÊT. Chez BYD, MARCHE signifie : démarrage bloqué.",
+    "byd_autostart_hinweis_neutral": "Démarrage auto : l’effet de l’interrupteur BYD varie selon le modèle. Après le changement, éteignez puis rallumez la voiture une fois et vérifiez que Panoptes démarre tout seul.",
     "projection_title": "Combiné et applis",
     "projection_lead": "Choisir des apps, les autoriser une fois et les afficher sur l’écran conducteur. « Retour à l’affichage BYD » ramène les compteurs.",
     "projection_action": "Ouvrir le combiné et les applis",
@@ -7191,7 +7192,9 @@
     "gespeichert": "Enregistré",
     "fehler": "Non enregistré. Vérifiez les valeurs.",
     "fahrt": "Économie par rapport au {kraftstoff} : {betrag}",
-    "hinweis": "Calculé dans la voiture à partir de vos coûts de recharge. Pas de prix en direct d'Internet."
+    "hinweis": "Calculé dans la voiture à partir de vos coûts de recharge. Pas de prix en direct d'Internet.",
+    "schaetzung": "Estimation – dépend des prix que vous avez saisis et de la consommation de comparaison.",
+    "schaetzung_kurz": "estimation"
   },
   "lade_export": {
     "titel": "Enregistrer en tableau",

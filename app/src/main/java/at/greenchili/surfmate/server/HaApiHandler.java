@@ -45,6 +45,10 @@ public final class HaApiHandler {
             HttpResponse.sendJson(out, zustand(pos).toString());
             return true;
         }
+        if (pathOnly.equals(DATEN_PFAD) && method.equals("GET")) {
+            HttpResponse.sendJson(out, daten().toString());
+            return true;
+        }
         if (pathOnly.equals("/api/ha/v1/regeln") && method.equals("GET")) {
             HttpResponse.sendJson(out, regeln().toString());
             return true;
@@ -99,6 +103,7 @@ public final class HaApiHandler {
                 roh = m == null ? null : m.getLatestTelemetry();
             } catch (Throwable ignored) { }
             JSONObject t = HaZustand.telemetrie(roh);
+            kilometerNieKleiner(t);
             z.put("telemetrie", t);
             z.put("felder", HaZustand.felder(t));
             JSONObject gs = HaZustand.gesundheit(at.greenchili.surfmate.gesundheit.GesundheitsDienst.status());
@@ -134,6 +139,178 @@ public final class HaApiHandler {
             z.put("cloud", new JSONObject().put("eingerichtet", cloud));
         } catch (Exception ignored) { }
         return z;
+    }
+
+    // ------------------------------------------------------------------ daten (0.1.43.21)
+
+    /** {@code GET /api/ha/v1/daten}: Ladekosten, Ersparnis (Schätzung), Ereignis-Clips, Meldungen, BYD-Summen. */
+    static final String DATEN_PFAD = "/api/ha/v1/daten";
+    /** Höchstens so oft neu gerechnet (Ladungen aus der Datenbank, Clip-Ordner, Meldungen 30 s). */
+    static final long DATEN_MS = 30_000L;
+    static final String SCHAETZUNG_RUECKFALL =
+            "Schätzung – hängt von deinen eingetragenen Preisen und dem Vergleichsverbrauch ab.";
+    private static JSONObject datenLetzte;
+    private static long datenZeit;
+    private static final at.greenchili.surfmate.ha.HaDaten.MeldungsVerlauf MELDUNGEN =
+            new at.greenchili.surfmate.ha.HaDaten.MeldungsVerlauf();
+
+    interface Teil { Object hol() throws Exception; }
+
+    /** Ein Block; Fehler → null (die anderen Blöcke bleiben). */
+    static Object teil(Teil t) {
+        try {
+            Object o = t.hol();
+            return o == null ? JSONObject.NULL : o;
+        } catch (Throwable e) {
+            return JSONObject.NULL;
+        }
+    }
+
+    static synchronized JSONObject daten() {
+        long jetzt = System.currentTimeMillis();
+        if (datenLetzte != null && jetzt >= datenZeit && jetzt - datenZeit < DATEN_MS) return datenLetzte;
+        JSONObject d = new JSONObject();
+        try {
+            final LadenApiHandler.Umgebung u = LadenApiHandler.ECHT;
+            final JSONObject katalog = katalog();
+            final java.util.TimeZone tz = u.zeitzone();
+            d.put("version", at.greenchili.surfmate.ha.HaDaten.VERSION);
+            d.put("stand", jetzt);
+            d.put("laden", teil(() -> laden(u, jetzt)));
+            d.put("ersparnis", teil(() -> {
+                String h = at.greenchili.surfmate.ha.HaDaten.text(katalog, "ersparnis.schaetzung");
+                return at.greenchili.surfmate.ha.HaDaten.ersparnis((JSONObject) LadenApiHandler.ersparnis("", u)[1],
+                        u.phev(), h == null ? SCHAETZUNG_RUECKFALL : h);
+            }));
+            d.put("clips", teil(() -> at.greenchili.surfmate.ha.HaDaten.clips(ereignisClips(), jetzt, tz.toZoneId())));
+            d.put("meldungen", teil(() -> MELDUNGEN.aktualisieren(at.greenchili.surfmate.byd.AutoMeldungen.stand(jetzt),
+                    jetzt, s -> at.greenchili.surfmate.ha.HaDaten.text(katalog, "auto_meldungen.typ." + s))));
+            d.put("byd_verbrauch", teil(() -> bydVerbrauch(jetzt, tz)));
+        } catch (Exception ignored) { }
+        datenLetzte = d;
+        datenZeit = jetzt;
+        return d;
+    }
+
+    /** Ladekosten: letzte Ladung, dieser Monat, dieses Jahr (abgerechnet wie die Kachel „Ø Kosten“). */
+    static JSONObject laden(LadenApiHandler.Umgebung u, long jetzt) throws Exception {
+        long[] m = at.greenchili.surfmate.charging.LadeKosten.zeitraum(
+                at.greenchili.surfmate.charging.LadeKosten.MONAT, jetzt, u.zeitzone());
+        long[] j = at.greenchili.surfmate.charging.LadeKosten.zeitraum(
+                at.greenchili.surfmate.charging.LadeKosten.JAHR, jetzt, u.zeitzone());
+        JSONArray jahr = u.sitzungen(j[0], j[1]);
+        JSONObject letzte = at.greenchili.surfmate.charging.LadeSummen.letzte(jahr);
+        if (letzte == null) {
+            letzte = at.greenchili.surfmate.charging.LadeSummen.letzte(u.sitzungen(jetzt - 400L * 86_400_000L, jetzt));
+        }
+        JSONObject o = new JSONObject();
+        String w = u.standardWaehrung();
+        o.put("waehrung", w == null || w.isEmpty() ? JSONObject.NULL : w);
+        o.put("letzte", letzte == null ? JSONObject.NULL : letzte);
+        o.put("monat", at.greenchili.surfmate.charging.LadeSummen.zeitraum(u.sitzungen(m[0], m[1]), m[0], m[1]));
+        o.put("jahr", at.greenchili.surfmate.charging.LadeSummen.zeitraum(jahr, j[0], j[1]));
+        return o;
+    }
+
+    /** Ereignis-Clips auf allen Datenträgern; Dauer nur für den neuesten (Kopf des MP4 lesen). */
+    static java.util.List<at.greenchili.surfmate.ha.HaDaten.Clip> ereignisClips() {
+        java.util.List<at.greenchili.surfmate.ha.HaDaten.Clip> l = new java.util.ArrayList<>();
+        at.greenchili.surfmate.storage.StorageManager sm = at.greenchili.surfmate.storage.StorageManager.getInstance();
+        java.io.File neuester = null;
+        java.util.List<java.io.File> alle = new java.util.ArrayList<>();
+        for (java.io.File dir : sm.getAllEreignisDirs()) {
+            if (dir == null || !dir.isDirectory()) continue;
+            java.io.File[] files = sm.listMp4Files(dir);
+            if (files == null) continue;
+            for (java.io.File f : files) {
+                if (!f.isFile() || !at.greenchili.surfmate.recording.EreignisClip.istEreignis(f.getName())) continue;
+                alle.add(f);
+                if (neuester == null || f.lastModified() > neuester.lastModified()) neuester = f;
+            }
+        }
+        for (java.io.File f : alle) {
+            boolean behalten = at.greenchili.surfmate.storage.Aufbewahrung.istBehalten(f.getName());
+            if (f != neuester) {
+                l.add(new at.greenchili.surfmate.ha.HaDaten.Clip(f.lastModified(), null, null, behalten));
+                continue;
+            }
+            JSONObject a = at.greenchili.surfmate.recording.AusloeserInfo.lies(f);
+            long zeit = a != null && a.optLong("zeit", 0) > 0 ? a.optLong("zeit") : f.lastModified();
+            String grund = a == null ? null : a.optString("art", null);
+            l.add(new at.greenchili.surfmate.ha.HaDaten.Clip(zeit, grund,
+                    at.greenchili.surfmate.ha.HaDaten.dauerSek(f), behalten));
+        }
+        return l;
+    }
+
+    /** BYD-Fahrtenbuch: NUR Summen für Monat und Jahr (nie einzelne Fahrten, nie an einen Server). */
+    static JSONObject bydVerbrauch(long jetzt, java.util.TimeZone tz) throws Exception {
+        java.util.List<at.greenchili.surfmate.trips.BydFahrtenbuch.Fahrt> f =
+                at.greenchili.surfmate.trips.BydFahrtenbuch.ausDatei();
+        JSONObject o = new JSONObject();
+        o.put("verfuegbar", f != null);
+        if (f == null) return o;
+        long[] m = at.greenchili.surfmate.charging.LadeKosten.zeitraum(
+                at.greenchili.surfmate.charging.LadeKosten.MONAT, jetzt, tz);
+        long[] j = at.greenchili.surfmate.charging.LadeKosten.zeitraum(
+                at.greenchili.surfmate.charging.LadeKosten.JAHR, jetzt, tz);
+        o.put("monat", at.greenchili.surfmate.trips.BydFahrtenbuch.summen(f, m[0], jetzt + 1));
+        o.put("jahr", at.greenchili.surfmate.trips.BydFahrtenbuch.summen(f, j[0], jetzt + 1));
+        return o;
+    }
+
+    private static String katalogSprache;
+    private static JSONObject katalogInhalt;
+
+    /** i18n-Katalog der eingestellten Sprache (wie die Web-Oberfläche), Rückfall de; null = nicht lesbar. */
+    static synchronized JSONObject katalog() {
+        String lang;
+        try { lang = LocaleManager.get(); } catch (Throwable t) { lang = LocaleManager.PRODUCT_DEFAULT_LANG; }
+        if (lang != null && lang.equals(katalogSprache) && katalogInhalt != null) return katalogInhalt;
+        for (String s : new String[] {lang, LocaleManager.PRODUCT_DEFAULT_LANG}) {
+            if (s == null || !LocaleManager.SUPPORTED.contains(s)) continue;
+            try {
+                java.io.File f = new java.io.File(HttpServer.webRoot(), "i18n/" + s + ".json");
+                if (!f.isFile() || f.length() > 4L * 1024 * 1024) continue;
+                katalogInhalt = new JSONObject(new String(java.nio.file.Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8));
+                katalogSprache = lang;
+                return katalogInhalt;
+            } catch (Throwable ignored) { }
+        }
+        return null;
+    }
+
+    // ------------------------------------------------------------------ Kilometerstand (0.1.43.21)
+
+    private static at.greenchili.surfmate.ha.HaDaten.Kilometer kilometer;
+    private static double kmGespeichert = Double.NaN;
+
+    /** {@code odometer} in telemetrie wird nie kleiner (HA total_increasing); höchster Wert in ha_kilometer.txt. */
+    static synchronized void kilometerNieKleiner(JSONObject t) {
+        try {
+            java.io.File datei = new java.io.File(at.greenchili.surfmate.util.DaemonStorage.path("ha_kilometer.txt"));
+            if (kilometer == null) {
+                double g = Double.NaN;
+                try {
+                    if (datei.isFile() && datei.length() < 64) {
+                        g = Double.parseDouble(new String(java.nio.file.Files.readAllBytes(datei.toPath()),
+                                StandardCharsets.UTF_8).trim());
+                    }
+                } catch (Throwable ignored) { }
+                kilometer = new at.greenchili.surfmate.ha.HaDaten.Kilometer(g);
+                kmGespeichert = kilometer.hoechster();
+            }
+            Object v = t.opt("odometer");
+            if (!(v instanceof Number)) return;
+            double w = kilometer.melde(((Number) v).doubleValue());
+            if (!Double.isFinite(w)) return;
+            t.put("odometer", w);
+            if (!(Math.abs(w - kmGespeichert) < 1.0)) {
+                java.io.File tmp = new java.io.File(datei.getPath() + ".tmp");
+                java.nio.file.Files.write(tmp.toPath(), String.valueOf(w).getBytes(StandardCharsets.UTF_8));
+                if (tmp.renameTo(datei)) kmGespeichert = w;
+            }
+        } catch (Throwable ignored) { }
     }
 
     private static Object nullSafe(Object o) { return o == null ? JSONObject.NULL : o; }

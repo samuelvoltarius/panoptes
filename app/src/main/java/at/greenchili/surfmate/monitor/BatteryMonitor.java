@@ -21,7 +21,17 @@ import org.json.JSONObject;
 public class BatteryMonitor {
 
     private static final long BATTERY_FETCH_INTERVAL_MS = 30_000L;
-    private static final long BATTERY_VOLTAGE_STALE_MS = 60_000L;
+    /**
+     * 0.1.43.21: 150 s statt 60 s. Im Stand fragt Panoptes die Fahrzeugdaten nur etwa alle 90 s ab
+     * ({@code VehicleDataMonitor}, „90-second parked poll“); mit 60 s galt ein ganz normaler Wert oft schon als
+     * veraltet und die Anzeige zeigte „kein Wert“ (PRUEF_ADB_12V_20261124, v12AlterMs 76175).
+     */
+    static final long BATTERY_VOLTAGE_STALE_MS = 150_000L;
+
+    /** Statuswerte im Feld {@code wert}: noch nie ein Messwert seit dem Kern-Start, frisch oder veraltet. */
+    static final String WERT_NOCH_KEINER = "noch_kein_wert";
+    static final String WERT_FRISCH = "frisch";
+    static final String WERT_VERALTET = "veraltet";
 
     private static volatile double lastBatteryVoltage = 0.0;
     private static volatile String lastBatteryLevel = "UNKNOWN";
@@ -92,7 +102,8 @@ public class BatteryMonitor {
                     lastBatterySoc = batterySoc.optDouble("socPercent", 0.0);
                 }
 
-                CameraDaemon.log("Battery updated: " + lastBatteryVoltage + "V (" + lastBatteryLevel + "), SOC: " + lastBatterySoc + "%");
+                // 0.1.43.21: nach dem Kern-Start nicht „0.0V“ melden, sondern ehrlich „noch kein Wert“
+                CameraDaemon.log(logZeile(lastBatteryVoltage, lastBatteryUpdate, lastBatteryLevel, lastBatterySoc));
             }
         } catch (Exception e) {
             CameraDaemon.log("Battery info fetch: " + e.getMessage());
@@ -127,10 +138,25 @@ public class BatteryMonitor {
                     voltageFresh ? lastBatteryLevel : "UNKNOWN");
             battery.put("soc", lastBatterySoc);
             battery.put("lastUpdate", lastBatteryUpdate);
+            battery.put("wert", wertStatus(voltageFresh, lastBatteryUpdate));
         } catch (Exception e) {
             // Ignore
         }
         return battery;
+    }
+
+    /** Feld {@code wert}: noch kein Wert (seit Kern-Start nie gemessen), frisch oder veraltet. */
+    static String wertStatus(boolean frisch, long observedAtMs) {
+        if (observedAtMs <= 0L) return WERT_NOCH_KEINER;
+        return frisch ? WERT_FRISCH : WERT_VERALTET;
+    }
+
+    /** Protokollzeile nach einer Abfrage; ohne je einen Messwert „noch kein Wert“ statt 0.0 V. */
+    static String logZeile(double volt, long observedAtMs, String level, double soc) {
+        if (observedAtMs <= 0L || !(volt > 0.0)) {
+            return "Battery: noch kein Wert" + (soc > 0.0 ? " (SOC: " + soc + "%)" : "");
+        }
+        return "Battery updated: " + volt + "V (" + level + "), SOC: " + soc + "%";
     }
 
     static boolean isVoltageFresh(

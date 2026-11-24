@@ -211,6 +211,14 @@ public final class GuardStopMonitor {
             in.socPercent = d.socPercent > 0 && d.socPercent <= 100 ? d.socPercent : Double.NaN;
             v12.offer(d.voltage12v, d.voltage12vAtMs, parkedSinceMs);
         }
+        // 0.1.43.21: 12-V/SOC-Verlauf im Stand + Warnung bei 30 min unter 12,2 V (nur lesen und melden, kein
+        // Einfluss auf den Wächter-Stopp)
+        try {
+            StandVerlauf12v.instanz().takt(now, parkedSinceMs,
+                    d != null ? d.voltage12v : Double.NaN, d != null ? d.voltage12vAtMs : 0L,
+                    d != null ? d.socPercent : Double.NaN);
+        } catch (Throwable ignored) {
+        }
         // Auch bei abgeschalteter Stopp-Regel auswerten: Die Warnung hängt nicht daran (GuardStopPolicy prüft v12Below selbst).
         double[] v12Schwellen = Starterbatterie12v.schwellen(cfg.v12Below, cfg.v12Resume, chemie);
         in.v12 = v12.evaluate(v12Schwellen[0], v12Schwellen[1], now);

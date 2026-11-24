@@ -290,7 +290,7 @@
                             <div class="sys-name" data-i18n="system.byd_seiten_title">Seiten von BYD</div>
                             <div class="sys-note" data-i18n="system.byd_seiten_lead">Öffnet die Seite von BYD. Panoptes stellt dort nichts ein.</div>
                             <div class="sys-actions" id="bydSeitenKnoepfe"></div>
-                            <div class="sys-note" id="bydAutostartHinweis" style="display:none;" data-i18n="system.byd_autostart_hinweis">Autostart: Bei Panoptes den Schalter AUS lassen. AN heißt bei BYD: Start gesperrt.</div>
+                            <div class="sys-note" id="bydAutostartHinweis" style="display:none;" data-i18n="system.byd_autostart_hinweis_neutral">Autostart: Wie der Schalter bei BYD wirkt, ist je nach Modell verschieden. Nach dem Umstellen das Auto einmal aus- und einschalten und schauen, ob Panoptes von selbst startet.</div>
                         </div>
                     </div>
                 </div>
@@ -671,7 +671,7 @@
     <script src="../shared/auth.js"></script>
     <script src="../shared/core.js?v=pn6"></script>
     <script src="../shared/system.js?v=4"></script>
-    <script src="../shared/system-overview.js?v=11"></script>
+    <script src="../shared/system-overview.js?v=12"></script>
     <script src="../shared/zugangscode.js?v=1"></script>
     <script src="../shared/vendor/qrcode-generator-1.4.4.js"></script>
     <script src="../shared/einstellungen.js?v=pn9"></script>
@@ -723,7 +723,18 @@
                     b.textContent = tx && tx !== bydText[k][0] ? tx : bydText[k][1];
                     b.onclick = function () { try { AndroidBridge.bydSeiteOeffnen(k); } catch (e) {} };
                     bydZiel.appendChild(b);
-                    if (k === 'autostart') { var h = document.getElementById('bydAutostartHinweis'); if (h) h.style.display = ''; }
+                    if (k === 'autostart') {
+                        // 0.1.43.21: fester Satz „Schalter AUS lassen“ nur auf DiLink 3 / Dolphin Surf (gemessen), sonst neutral
+                        var h = document.getElementById('bydAutostartHinweis');
+                        var belegt = false;
+                        try { belegt = typeof AndroidBridge.bydAutostartBelegt === 'function' && AndroidBridge.bydAutostartBelegt() === true; } catch (e) { belegt = false; }
+                        if (h && belegt) {
+                            h.setAttribute('data-i18n', 'system.byd_autostart_hinweis');
+                            var hx = BYD.i18n && BYD.i18n.t ? BYD.i18n.t('system.byd_autostart_hinweis') : null;
+                            h.textContent = hx && hx !== 'system.byd_autostart_hinweis' ? hx : 'Autostart: Bei Panoptes den Schalter AUS lassen. AN heißt bei BYD: Start gesperrt.';
+                        }
+                        if (h) h.style.display = '';
+                    }
                 });
                 if (bydZiel && bydZiel.children.length) document.getElementById('bydSeitenTool').style.display = '';
             }
