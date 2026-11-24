@@ -848,6 +848,13 @@ public class TelegramNotifier {
             // reply — the daemon uploads regardless, and a later daemon write to
             // our closed socket fails harmlessly on its side.
             try { socket.shutdownOutput(); } catch (Exception ignored) {}
+            // 0.1.43.19: kurz offen bleiben (höchstens 2 s, bis zur Antwort oder zum Schließen durch den Daemon).
+            // Der Daemon prüft gleich nach accept, wem die Verbindung gehört; ein sofort geschlossener Socket steht
+            // in der Tabelle mit uid 0 da und würde abgelehnt.
+            try {
+                socket.setSoTimeout(2000);
+                socket.getInputStream().read();
+            } catch (Exception ignored) {}
         } catch (java.net.ConnectException e) {
             Log.d(TAG, "Telegram daemon not running (video send dropped)");
         } catch (Exception e) {

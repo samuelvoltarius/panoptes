@@ -145,6 +145,15 @@ public class AacIngestServer implements Runnable {
                     continue;
                 }
 
+                // 0.1.43.19 (SICHERHEIT_SHELLWEGE): nur die App (und uid 2000 ausser tailscaled) darf Ton in die
+                // Aufnahme einspeisen. VOR dem Verdrängen des bisherigen Klienten prüfen, sonst könnte eine fremde
+                // Verbindung den echten Ton-Klienten abwerfen. Ablehnen ohne Inhalt im Log.
+                if (!IpcAufrufer.verbindungErlaubt(client, IpcAufrufer.Kreis.SHELL_ODER_APP)) {
+                    logger.warn("AAC " + PORT + ": Verbindung abgelehnt (uid=" + IpcAufrufer.uidFuerProtokoll(client) + ")");
+                    try { client.close(); } catch (IOException ignored) {}
+                    continue;
+                }
+
                 // Evict the previous client cleanly. Critical ordering:
                 // PUBLISH the new client+worker as the active pair BEFORE
                 // closing/interrupting/joining the old one. The old

@@ -390,6 +390,8 @@ public final class EinstellungenApiHandler {
             res.put("behalten", Aufbewahrung.liste(root, System.currentTimeMillis()));
             res.put("stunden", Aufbewahrung.maxAlterMs(root) / 3_600_000L);
             res.put("tage", Aufbewahrung.behaltenTage(root));
+            // 0.1.43.19: Ereignis-Clips werden nach so vielen Tagen gelöscht (außer behalten)
+            res.put("ereignisTage", at.greenchili.surfmate.recording.EreignisClip.LOESCHEN_TAGE);
             HttpResponse.sendJson(out, res.toString());
             return true;
         }

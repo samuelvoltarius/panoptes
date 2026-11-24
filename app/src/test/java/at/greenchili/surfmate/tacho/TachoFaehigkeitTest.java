@@ -170,6 +170,24 @@ public class TachoFaehigkeitTest {
         assertFalse(TachoFaehigkeit.enthaeltDienst("0\tMyAutoContainerProxy: [x]\n", "AutoContainer"));
     }
 
+    /** 0.1.43.19 (TACHO_WEG §5): das Tacho-Gegenstück heißt „AutoContainerNative“, nicht „AutoContainerServiceNative“. */
+    @Test
+    public void tachoGegenstueckHeisstAutoContainerNative() throws Exception {
+        assertEquals("AutoContainerNative", TachoFaehigkeit.AUTO_CONTAINER_NATIVE);
+        TachoFaehigkeit.Eingaben mit = surf();
+        mit.dienste = DIENSTE_MIT_AC + "3\tAutoContainerNative: [android.autocontainer.IAutoContainerNative]\n";
+        JSONObject r = TachoFaehigkeit.bewerte(mit);
+        assertTrue(r.getJSONObject("plattform").getBoolean("autoContainerNative"));
+        assertFalse("kein Hinweis „ohne Gegenstück“", r.has("hinweis"));
+
+        JSONObject ohne = TachoFaehigkeit.bewerte(surf());
+        assertFalse(ohne.getJSONObject("plattform").getBoolean("autoContainerNative"));
+        assertTrue(ohne.has("hinweis"));
+        // „AutoContainer:“ allein zählt nicht als Gegenstück, und umgekehrt
+        assertFalse(TachoFaehigkeit.enthaeltDienst(DIENSTE_MIT_AC, TachoFaehigkeit.AUTO_CONTAINER_NATIVE));
+        assertFalse(TachoFaehigkeit.enthaeltDienst("0\tAutoContainerNative: [x]\n", "AutoContainer"));
+    }
+
     /** Teil 1 darf keinen einzigen Schreibweg enthalten: kein service call, kein am, kein Binden. */
     @Test
     public void erhebungIstNurLesend() throws IOException {

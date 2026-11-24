@@ -2205,6 +2205,9 @@
     "keep_unsaved": "Enregistrement impossible. Veuillez réessayer.",
     "keep_fail": "Cela n'a pas fonctionné.",
     "keep_released_size": "N'est plus conservé. Il ne sera supprimé que lorsque l'espace de stockage sera presque plein.",
+    "keep_ereignis_rest": "Garder · sinon supprimé dans {tage} jours",
+    "keep_ereignis_kept": "Gardé jusqu’à ce que tu le supprimes",
+    "keep_released_ereignis": "N’est plus gardé. Il sera supprimé automatiquement {tage} jours après l’enregistrement.",
     "tab_ereignisse": "Événements",
     "title_ereignis": "{prefix} Événements",
     "badge_ereignis": "Événement"
@@ -5836,7 +5839,8 @@
       "confirm": "Conserver",
       "reminder": "Cet enregistrement date de {keepDays} jours. En avez-vous encore besoin ?",
       "reminder_yes": "Le conserver",
-      "reminder_no": "Supprimer"
+      "reminder_no": "Supprimer",
+      "body_ereignis": "Les clips d’événement sont supprimés automatiquement après {tage} jours. Avec « Garder », ce clip reste jusqu’à ce que tu le supprimes toi-même. Seulement si tu en as besoin pour un dommage ou un accident."
     },
     "audio": {
       "label": "Enregistrer le son",

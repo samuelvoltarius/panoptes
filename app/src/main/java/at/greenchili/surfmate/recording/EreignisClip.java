@@ -22,8 +22,11 @@ import java.util.Set;
  *   <li>Ablage: {@code <recordings>/ereignisse/ereignis_JJJJMMTT_HHMMSS.mp4}. Der Größen-Aufräumer
  *       der Aufnahmen liest nur die oberste Ebene und nur {@code cam*}; der Unterordner ist damit
  *       vor dem Überschreiben geschützt. Eigene Grenze {@link #GRENZE_BYTES}, älteste zuerst.</li>
- *   <li>Aufbewahrung wie alle Clips ({@code surveillance.clipRetentionHours}, empfohlen 72 h),
- *       außer „behalten“.</li>
+ *   <li>0.1.43.19 („Es hilft mir nichts, wenn ich nach einem Unfall nicht mehr drücken kann“, Entscheidung
+ *       30 Tage): jeder Ereignis-Clip ist sofort und ohne Rückfrage gesichert und wird nach {@link #LOESCHEN_TAGE}
+ *       Tagen automatisch gelöscht (statt 72 h), außer er ist in der Clip-Liste von Hand „behalten“ – dann bleibt er,
+ *       bis man ihn von Hand löscht. Obergrenze {@link #grenze}: ist sie erreicht, ersetzt der neue Clip die ältesten
+ *       (zuerst nicht markierte, markierte zuletzt; geloggt), nie den neuesten.</li>
  *   <li>Nie hochladen: kein Upload-, Brücken- oder Telegram-Videoweg nimmt {@link #PRAEFIX}.</li>
  * </ul>
  */
@@ -125,9 +128,14 @@ public final class EreignisClip {
     }
 
     /**
-     * Was beim Pflegen gelöscht wird: zuerst abgelaufene (älter als {@code maxAlterMs}, 0 = nie),
-     * dann – solange über {@code grenze} – die ältesten. Behaltene Clips nie; liegen nur noch
-     * behaltene über der Grenze, bleibt es dabei (ein Unfallclip wird nicht still gelöscht).
+     * Was beim Pflegen gelöscht wird, älteste zuerst:
+     * <ol>
+     *   <li>nicht behaltene, die abgelaufen sind (älter als {@code maxAlterMs}, 0 = nie) oder solange über
+     *       {@code grenze} (heute nur Alt-Clips von vor 0.1.43.20),</li>
+     *   <li>0.1.43.20: ist es danach immer noch zu viel, die ältesten behaltenen. Ereignis-Clips sind automatisch
+     *       behalten; ohne Grenze für sie würden sie die normale Aufnahme abwürgen.</li>
+     * </ol>
+     * Der neueste Clip fällt nie der Grenze zum Opfer.
      */
     public static List<Datei> zuLoeschen(List<Datei> dateien, long jetzt, long maxAlterMs,
                                          Set<String> behalten, long grenze) {
@@ -136,18 +144,50 @@ public final class EreignisClip {
         Collections.sort(sortiert, (a, b) -> Long.compare(a.zeit, b.zeit));
         long summe = 0;
         for (Datei d : sortiert) summe += Math.max(0, d.groesse);
+        Datei neuester = sortiert.isEmpty() ? null : sortiert.get(sortiert.size() - 1);
 
         List<Datei> weg = new ArrayList<>();
         for (Datei d : sortiert) {
             if (behalten.contains(stamm(d.name))) continue;
             boolean abgelaufen = maxAlterMs > 0 && d.zeit > 0 && jetzt - d.zeit > maxAlterMs;
-            boolean zuViel = summe > grenze;
-            if (abgelaufen || zuViel) {
+            if (abgelaufen || (summe > grenze && d != neuester)) {
                 weg.add(d);
                 summe -= Math.max(0, d.groesse);
             }
         }
+        for (Datei d : sortiert) {
+            if (summe <= grenze) break;
+            if (d == neuester || weg.contains(d) || !behalten.contains(stamm(d.name))) continue;
+            weg.add(d);
+            summe -= Math.max(0, d.groesse);
+        }
         return weg;
+    }
+
+    /** Untergrenze der Obergrenze: auch auf kleinem Speicher passen so einige Clips (~75 MB je 40-s-Clip). */
+    public static final long MIN_GRENZE_BYTES = 512L * 1024 * 1024;
+    /** Höchstens dieser Anteil des Datenträgers für Ereignis-Clips, damit die normale Aufnahme Platz behält. */
+    public static final int GRENZE_PROZENT = 20;
+
+    /**
+     * 0.1.43.20: Obergrenze des Ereignis-Ordners: {@link #GRENZE_BYTES}, auf kleinem Datenträger höchstens
+     * {@link #GRENZE_PROZENT} % davon (nie unter {@link #MIN_GRENZE_BYTES}). {@code gesamtBytes} ≤ 0 = unbekannt.
+     */
+    public static long grenze(long gesamtBytes) {
+        if (gesamtBytes <= 0) return GRENZE_BYTES;
+        long anteil = gesamtBytes / 100 * GRENZE_PROZENT;
+        return Math.min(GRENZE_BYTES, Math.max(MIN_GRENZE_BYTES, anteil));
+    }
+
+    /** 0.1.43.19 (Projektinhaber): Ereignis-Clips werden nach so vielen Tagen gelöscht, außer von Hand behalten. */
+    public static final int LOESCHEN_TAGE = 30;
+    public static final long LOESCHEN_MS = LOESCHEN_TAGE * 86_400_000L;
+
+    /** Restliche ganze Tage bis zum automatischen Löschen (aufgerundet, ≥ 0). */
+    public static int restTage(long clipZeit, long jetzt) {
+        long rest = clipZeit + LOESCHEN_MS - jetzt;
+        if (rest <= 0) return 0;
+        return (int) ((rest + 86_400_000L - 1) / 86_400_000L);
     }
 
     public static String stamm(String name) {

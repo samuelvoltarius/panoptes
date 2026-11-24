@@ -2205,6 +2205,9 @@
     "keep_unsaved": "Salvataggio non riuscito. Riprova.",
     "keep_fail": "Non ha funzionato.",
     "keep_released_size": "Non più conservata. Verrà eliminata solo quando lo spazio sta per finire.",
+    "keep_ereignis_rest": "Tieni · altrimenti eliminato tra {tage} giorni",
+    "keep_ereignis_kept": "Tenuto finché non lo elimini",
+    "keep_released_ereignis": "Non più tenuto. Verrà eliminato automaticamente {tage} giorni dopo la registrazione.",
     "tab_ereignisse": "Eventi",
     "title_ereignis": "{prefix} Eventi",
     "badge_ereignis": "Evento"
@@ -5836,7 +5839,8 @@
       "confirm": "Conserva",
       "reminder": "Questa registrazione ha {keepDays} giorni. Ti serve ancora?",
       "reminder_yes": "Continua a conservarla",
-      "reminder_no": "Elimina"
+      "reminder_no": "Elimina",
+      "body_ereignis": "I clip degli eventi vengono eliminati automaticamente dopo {tage} giorni. Con «Tieni» questo clip resta finché non lo elimini tu. Solo se ti serve per un danno o un incidente."
     },
     "audio": {
       "label": "Registra l’audio",

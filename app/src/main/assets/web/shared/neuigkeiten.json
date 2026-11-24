@@ -1452,6 +1452,35 @@
         "Bij stilstand herstart Panoptes de camera’s minder vaak onnodig.",
         "Lijkt de cameradienst dubbel te draaien, dan controleert Panoptes dat eerst nog een keer voordat hij hem herstart."
       ]
+    },
+    {
+      "version": "0.1.43.19",
+      "versionCode": 103,
+      "de": [
+        "Sicherheitsverbesserung bei internen Schnittstellen.",
+        "„Was kann mein Tacho?“ erkennt den Systembaustein für die Tacho-Anzeige jetzt richtig.",
+        "Ereignis-Clips (etwa nach einer Vollbremsung) werden jetzt ohne Rückfrage gesichert, auch wenn du gleich danach die Zündung ausschaltest. Nach 30 Tagen löscht Panoptes sie von selbst, außer du tippst in der Clip-Liste auf „Behalten“."
+      ],
+      "en": [
+        "Security improvement for internal interfaces.",
+        "“What can my instrument cluster do?” now correctly detects the system component for the cluster display.",
+        "Event clips (for example after hard braking) are now saved without asking, even if you switch off the ignition right afterwards. After 30 days Panoptes deletes them by itself, unless you tap “Keep” in the clip list."
+      ],
+      "fr": [
+        "Amélioration de la sécurité des interfaces internes.",
+        "« Que peut faire mon combiné d’instruments ? » détecte désormais correctement le composant système de l’affichage.",
+        "Les clips d’événement (par exemple après un freinage d’urgence) sont maintenant sauvegardés sans question, même si tu coupes le contact juste après. Après 30 jours, Panoptes les supprime tout seul, sauf si tu touches « Garder » dans la liste des clips."
+      ],
+      "it": [
+        "Miglioramento della sicurezza delle interfacce interne.",
+        "«Cosa può fare il mio quadro strumenti?» ora riconosce correttamente il componente di sistema per il display.",
+        "Le clip di evento (per esempio dopo una frenata brusca) ora vengono salvate senza chiedere, anche se subito dopo spegni l’auto. Dopo 30 giorni Panoptes le cancella da solo, a meno che nell’elenco delle clip tocchi «Tieni»."
+      ],
+      "nl": [
+        "Beveiligingsverbetering bij interne interfaces.",
+        "„Wat kan mijn instrumentenpaneel?” herkent het systeemonderdeel voor de weergave nu correct.",
+        "Gebeurtenisclips (bijvoorbeeld na een noodstop) worden nu zonder vraag bewaard, ook als je direct daarna het contact uitzet. Na 30 dagen wist Panoptes ze vanzelf, tenzij je in de cliplijst op „Bewaren” tikt."
+      ]
     }
   ]
 }

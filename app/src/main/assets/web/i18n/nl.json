@@ -2205,6 +2205,9 @@
     "keep_unsaved": "Opslaan is niet gelukt. Probeer het nog eens.",
     "keep_fail": "Dat is niet gelukt.",
     "keep_released_size": "Niet meer bewaard. Ze wordt alleen verwijderd als de opslag bijna vol is.",
+    "keep_ereignis_rest": "Bewaren · anders verwijderd over {tage} dagen",
+    "keep_ereignis_kept": "Bewaard tot je hem verwijdert",
+    "keep_released_ereignis": "Niet meer bewaard. Hij wordt {tage} dagen na de opname automatisch verwijderd.",
     "tab_ereignisse": "Gebeurtenissen",
     "title_ereignis": "{prefix} Gebeurtenissen",
     "badge_ereignis": "Gebeurtenis"
@@ -5836,7 +5839,8 @@
       "confirm": "Bewaren",
       "reminder": "Deze opname is {keepDays} dagen oud. Heb je haar nog nodig?",
       "reminder_yes": "Blijven bewaren",
-      "reminder_no": "Verwijderen"
+      "reminder_no": "Verwijderen",
+      "body_ereignis": "Gebeurtenisclips worden na {tage} dagen automatisch verwijderd. Met „Bewaren” blijft deze clip tot je hem zelf verwijdert. Alleen als je hem nodig hebt voor schade of een ongeluk."
     },
     "audio": {
       "label": "Geluid opnemen",

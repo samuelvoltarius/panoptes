@@ -21,8 +21,9 @@ import java.util.concurrent.TimeUnit;
  *   <li>Auslösung → {@link ManualClipService#requestEreignisClip} (20 s davor, 20 s danach). Ist der
  *       Ring gerade belegt (Replay läuft), wird bis {@link #NACHHER_WARTEN_S} s nachgefasst, mit
  *       verschobenem Fenster, damit der Zeitpunkt gleich bleibt.</li>
- *   <li>Danach: kurze Meldung „Ereignis gesichert“ am Display (ohne Ton, ohne Licht), offene Frage
- *       „Behalten?“ für das Aussteigen bzw. den nächsten Start, optional Telegram nur als Text.</li>
+ *   <li>Danach: kurze Meldung „Ereignis gesichert“ am Display (ohne Ton, ohne Licht, verschwindet von selbst),
+ *       optional Telegram nur als Text. 0.1.43.19: keine Frage „Behalten?“ mehr (nach einem Unfall kann niemand
+ *       tippen); der Clip bleibt 30 Tage, länger nur mit „Behalten“ in der Clip-Liste.</li>
  * </ul>
  * Am Auto wird nichts geschaltet; es entsteht nur eine Videodatei im eigenen Ordner.
  */
@@ -104,8 +105,9 @@ public final class EreignisMonitor {
         boolean fahrend = rmm != null && accAn
                 && RecordingModeManager.isDrivingGear(rmm.getCurrentGear());
 
-        // „Behalten?“ beim Aussteigen (Fahrstufe → P) und beim nächsten Start (ACC an im Stand).
-        if ((warFahrend && !fahrend && accAn) || (!warAccAn && accAn && !fahrend)) frageZeigen();
+        // 0.1.43.20: kein Fenster „Behalten?“ mehr; offene Fragen älterer Versionen beim Aussteigen bzw. nächsten
+        // Start still übernehmen (dauerhaft behalten).
+        if ((warFahrend && !fahrend && accAn) || (!warAccAn && accAn && !fahrend)) offeneUebernehmen();
         warAccAn = accAn;
 
         if (!aktiv) {
@@ -325,7 +327,9 @@ public final class EreignisMonitor {
         logger.info("Ereignis gesichert (" + g + "): " + datei.getName());
         if (!AusloeserInfo.schreibe(datei, ausloeser)) logger.warn("Auslöser-Datei nicht geschrieben: " + datei.getName());
         else logger.info("Auslöser: " + AusloeserInfo.lies(datei));
-        EreignisClip.frageMerken(EreignisClip.stamm(datei.getName()), ereignisMs);
+        // 0.1.43.19: gesichert ohne Rückfrage und ohne Tippen; bleibt 30 Tage, als neuester nie von der Obergrenze
+        // getroffen. Behalten über 30 Tage nur von Hand in der Clip-Liste.
+        logger.info("Ereignis-Clip gesichert (ohne Rückfrage, " + EreignisClip.LOESCHEN_TAGE + " Tage): " + datei.getName());
         EreignisAblage.pflege();
         meldungAmDisplay(ereignisMs);
         try {
@@ -351,8 +355,8 @@ public final class EreignisMonitor {
                 "--el", "zeit", String.valueOf(ereignisMs)});
     }
 
-    /** Offene „Behalten?“-Frage am Display, wenn es eine gibt. */
-    private static void frageZeigen() {
+    /** 0.1.43.19: offene „Behalten?“-Fragen älterer Versionen ohne Fenster übernehmen (Clip bleibt 30 Tage). */
+    private static void offeneUebernehmen() {
         try {
             if (EreignisClip.offen(at.greenchili.surfmate.config.UnifiedConfigManager.loadConfig()).length() == 0) {
                 return;
@@ -360,7 +364,7 @@ public final class EreignisMonitor {
         } catch (Throwable t) {
             return;
         }
-        amAufruf(new String[] {"am", "start", "-n", AKTIVITAET});
+        EreignisAblage.pflege();
     }
 
     private static void amAufruf(String[] cmd) {

@@ -2205,6 +2205,9 @@
     "keep_unsaved": "Could not be saved. Please try again.",
     "keep_fail": "That did not work.",
     "keep_released_size": "No longer kept. It will only be deleted when storage runs low.",
+    "keep_ereignis_rest": "Keep · otherwise deleted in {tage} days",
+    "keep_ereignis_kept": "Kept until you delete it",
+    "keep_released_ereignis": "No longer kept. It is deleted automatically {tage} days after recording.",
     "tab_ereignisse": "Events",
     "title_ereignis": "{prefix} Events",
     "badge_ereignis": "Event"
@@ -5836,7 +5839,8 @@
       "confirm": "Keep",
       "reminder": "This clip is {keepDays} days old. Do you still need it?",
       "reminder_yes": "Keep it",
-      "reminder_no": "Delete"
+      "reminder_no": "Delete",
+      "body_ereignis": "Event clips are deleted automatically after {tage} days. With “Keep”, this clip stays until you delete it yourself. Please only if you need it for damage or an accident."
     },
     "audio": {
       "label": "Record sound",

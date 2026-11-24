@@ -106,6 +106,15 @@ public class BydEventDaemon {
                 while (running && !serverSocket.isClosed()) {
                     try {
                         Socket client = serverSocket.accept();
+                        // 0.1.43.19 (SICHERHEIT_SHELLWEGE): Tür-/Lade-/Radar-Ereignisse nur an eigene Aufrufer
+                        // (uid 1000, uid 2000 ausser tailscaled, App). Ablehnen ohne Inhalt im Log.
+                        if (!at.greenchili.surfmate.server.IpcAufrufer.verbindungErlaubt(
+                                client, at.greenchili.surfmate.server.IpcAufrufer.Kreis.LOKAL)) {
+                            logger.warn("TCP " + TCP_PORT + ": Verbindung abgelehnt (uid="
+                                    + at.greenchili.surfmate.server.IpcAufrufer.uidFuerProtokoll(client) + ")");
+                            try { client.close(); } catch (Exception ignored) {}
+                            continue;
+                        }
                         logger.info("Client connected from " + client.getRemoteSocketAddress());
                         ClientHandler handler = new ClientHandler(client);
                         clients.add(handler);

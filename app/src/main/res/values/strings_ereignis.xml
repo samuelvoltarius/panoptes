@@ -5,8 +5,8 @@
     <string name="ereignis_frage" formatted="true">Event at %1$s saved – keep it?</string>
     <string name="ereignis_behalten">Keep</string>
     <string name="ereignis_nein">No thanks</string>
-    <string name="ereignis_erklaerung" formatted="true">If you do not keep it, the clip is deleted automatically after %1$d hours.</string>
-    <string name="ereignis_pflichttext_b" formatted="true">You keep this clip for up to %1$d days. Please only if you need it for damage or an accident.</string>
+    <string name="ereignis_erklaerung" formatted="true">The clip is deleted automatically after %1$d days unless you keep it.</string>
+    <string name="ereignis_pflichttext_b" formatted="true">Event clips are deleted automatically after %1$d days. With “Keep” this clip stays until you delete it yourself. Please only if you need it for damage or an accident.</string>
     <string name="ereignis_gespeichert">Will be kept.</string>
     <string name="ereignis_fehler">That did not work. Please try again.</string>
     <string name="recordings_segment_ereignisse">Events</string>

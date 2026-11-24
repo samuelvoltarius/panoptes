@@ -411,7 +411,7 @@
     "weiteres_geraet_titel": "Cockpit „{0}“ möchte ein Handy verbinden",
     "weiteres_geraet_text": "Prüfzahl {0}",
     "ereignis_title": "Ereignis um {0} gesichert",
-    "ereignis_body": "Vollbremsung oder Stoß. Das Video ist nur im Auto gespeichert. Behalten?",
+    "ereignis_body": "Vollbremsung oder Stoß. Das Video ist 30 Tage gesichert, nur im Auto. In der Clip-Liste kannst du es behalten oder löschen.",
     "battery12v_vor_title": "Starterbatterie wird schwächer: {0} V",
     "battery12v_vor_body": "Wenn sie weiter fällt, startet das Auto vielleicht nicht. Fahr bald eine Runde oder lade es.",
     "battery12v_niedrig_title": "Starterbatterie sehr schwach: {0} V",

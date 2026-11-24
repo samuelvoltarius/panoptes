@@ -124,11 +124,15 @@ public final class Aufbewahrung {
         for (Map.Entry<String, Long> x : e) {
             JSONObject o = new JSONObject();
             try {
-                long bis = x.getValue() + tage * 86_400_000L;
+                // 0.1.43.19 (Projektinhaber): behaltene Ereignis-Clips bleiben, bis man sie von Hand löscht – keine Frist,
+                // keine Rückfrage. Übrige Clips wie bisher keepDays mit Rückfrage.
+                boolean ereignis = x.getKey().startsWith("ereignis_");
+                long bis = ereignis ? 0L : x.getValue() + tage * 86_400_000L;
                 o.put("datei", x.getKey());
                 o.put("seit", x.getValue());
                 o.put("bis", bis);
-                o.put("rueckfrage", now >= bis);
+                o.put("unbefristet", ereignis);
+                o.put("rueckfrage", !ereignis && now >= bis);
             } catch (Exception ignored) {
             }
             out.put(o);

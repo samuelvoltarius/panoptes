@@ -22,10 +22,22 @@ import java.io.File;
  * Fail-closed: unlesbare Tabelle, unbekannte uid oder uid 0 (so stehen auch geschlossene Sockets in TIME_WAIT da)
  * → abgelehnt. Notschalter: Datei {@value #NOTSCHALTER} im Daemon-Verzeichnis (nur uid 2000 kann sie anlegen) schaltet
  * die Prüfung ab, falls ein eigenes Werkzeug doch einmal ausgesperrt würde.
+ *
+ * <p>0.1.43.19 (SICHERHEIT_SHELLWEGE K1): dieselbe Prüfung für die übrigen Loopback-Server der Daemons, gleich nach
+ * {@code accept()} und vor dem ersten gelesenen Byte ({@link #verbindungErlaubt}). Zwei Kreise ({@link Kreis}):
+ * <ul>
+ *   <li>{@link Kreis#SHELL_ODER_APP}: uid 2000 außer tailscaled und die App-uid – 19976 {@code TcpCommandServer},
+ *       19978 {@code AacIngestServer} (beide im Kamera-Daemon; kein Aufrufer mit uid 1000).</li>
+ *   <li>{@link Kreis#LOKAL}: wie {@link Stufe#LOKAL} (dazu uid 1000) – 19978 {@code BydEventDaemon},
+ *       19979 {@code SentryDaemon}, 19980 {@code TelegramBotDaemon}.</li>
+ * </ul>
  */
-final class IpcAufrufer {
+public final class IpcAufrufer {
 
     enum Stufe { FREI, LOKAL, APP_SYSTEM }
+
+    /** 0.1.43.19: Wer darf sich mit einem Loopback-Server verbinden? */
+    public enum Kreis { SHELL_ODER_APP, LOKAL }
 
     static final int SYSTEM_UID = 1000;
     static final int SHELL_UID = 2000;
@@ -73,6 +85,43 @@ final class IpcAufrufer {
     /** Prüfung einer Verbindung (einmal je Verbindung, beim ersten geprüften Befehl). */
     static boolean vertraut(int clientPort, int serverPort) {
         return vertraut(clientPort, serverPort, quelle);
+    }
+
+    /**
+     * 0.1.43.19: Prüfung einer frisch angenommenen Verbindung (vor dem ersten Lesen). {@code false} → Aufrufer trennt
+     * sofort und protokolliert nur Server und uid, nie den Inhalt. Fail-closed wie {@link #vertraut(int, int)}.
+     */
+    public static boolean verbindungErlaubt(java.net.Socket client, Kreis kreis) {
+        if (client == null) return false;
+        return vertraut(client.getPort(), client.getLocalPort(), quelle, kreis);
+    }
+
+    /** 0.1.43.19: uid des Gegenübers fürs Ablehnungs-Protokoll (-1 = unbekannt). Nie Befehlsinhalt loggen. */
+    public static int uidFuerProtokoll(java.net.Socket client) {
+        try {
+            return client == null ? -1 : quelle.uid(client.getPort(), client.getLocalPort());
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
+    /** 0.1.43.19: wie {@link #vorwaermen()}, für Daemons außerhalb dieses Pakets. */
+    public static void vorwaermenFuerServer() {
+        vorwaermen();
+    }
+
+    static boolean vertraut(int clientPort, int serverPort, Quelle q, Kreis kreis) {
+        if (kreis == Kreis.LOKAL) return vertraut(clientPort, serverPort, q);
+        try {
+            if (q.notschalter()) return true;
+            int uid = q.uid(clientPort, serverPort);
+            if (uid == SHELL_UID) return !q.gehoertTailscaled(clientPort, serverPort);
+            if (uid < 10_000) return false;   // auch uid 1000, 0 (TIME_WAIT) und -1 (nicht gefunden)
+            if (lokalErlaubt(uid, false, q.appUid(false))) return true;
+            return lokalErlaubt(uid, false, q.appUid(true));
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     static boolean vertraut(int clientPort, int serverPort, Quelle q) {

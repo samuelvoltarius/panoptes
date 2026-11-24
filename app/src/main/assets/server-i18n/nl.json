@@ -417,7 +417,7 @@
     "weiteres_geraet_titel": "Cockpit „{0}” wil een telefoon verbinden",
     "weiteres_geraet_text": "Controlegetal {0}",
     "ereignis_title": "Gebeurtenis om {0} opgeslagen",
-    "ereignis_body": "Hard remmen of een stoot. De video staat alleen in de auto. Bewaren?",
+    "ereignis_body": "Hard remmen of een stoot. De video is 30 dagen opgeslagen, alleen in de auto. In de cliplijst kun je hem bewaren of verwijderen.",
     "battery12v_vor_title": "12 V-accu wordt zwakker: {0} V",
     "battery12v_vor_body": "Als hij verder zakt, start de auto misschien niet. Ga snel een stuk rijden of sluit hem aan.",
     "battery12v_niedrig_title": "12 V-accu zeer zwak: {0} V",

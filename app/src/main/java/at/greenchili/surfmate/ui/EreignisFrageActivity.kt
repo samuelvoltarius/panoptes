@@ -109,8 +109,9 @@ class EreignisFrageActivity : Activity() {
         val o = offen.optJSONObject(index) ?: run { index--; zeigen(); return }
         val zeit = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(o.optLong("zeit", System.currentTimeMillis())))
         titel.text = getString(R.string.ereignis_frage, zeit)
-        val b = StringBuilder(getString(R.string.ereignis_pflichttext_b, tage))
-        if (stunden > 0) b.append("\n\n").append(getString(R.string.ereignis_erklaerung, stunden.toInt()))
+        // 0.1.43.19: Ereignis-Clips 30 Tage (Fenster wird nicht mehr gestartet, Texte bleiben stimmig)
+        val b = StringBuilder(getString(R.string.ereignis_pflichttext_b,
+            at.greenchili.surfmate.recording.EreignisClip.LOESCHEN_TAGE))
         text.text = b
         behalten.isEnabled = true
         nein.isEnabled = true

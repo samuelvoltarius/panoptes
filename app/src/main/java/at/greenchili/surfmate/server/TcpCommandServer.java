@@ -81,14 +81,23 @@ public class TcpCommandServer {
     }
 
     private void handleClient(Socket client) {
+        // 0.1.43.19 (SICHERHEIT_SHELLWEGE K1): „lauscht nur auf 127.0.0.1“ reicht nicht, jede App am Gerät erreicht
+        // Loopback. Vor dem ersten gelesenen Byte prüfen, wer verbunden ist: nur uid 2000 (eigene Daemons, adb shell)
+        // außer tailscaled und die App-uid. Sonst sofort trennen, Protokoll ohne Inhalt. Fail-closed.
+        if (!IpcAufrufer.verbindungErlaubt(client, IpcAufrufer.Kreis.SHELL_ODER_APP)) {
+            CameraDaemon.log("TCP " + port + ": Verbindung abgelehnt (uid=" + IpcAufrufer.uidFuerProtokoll(client) + ")");
+            try { client.close(); } catch (Exception e) {}
+            return;
+        }
         try {
             BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
             PrintWriter writer = new PrintWriter(new OutputStreamWriter(client.getOutputStream()), true);
 
             String line;
             while ((line = reader.readLine()) != null) {
-                CameraDaemon.log("TCP received: " + line);
-                
+                // 0.1.43.19: nie die ganze Zeile protokollieren (kann Zugangsdaten enthalten), nur den Befehlsnamen
+                // in processCommand.
+
                 try {
                     JSONObject cmd = new JSONObject(line);
                     JSONObject response = processCommand(cmd);
@@ -110,8 +119,8 @@ public class TcpCommandServer {
     private JSONObject processCommand(JSONObject cmd) throws Exception {
         String action = cmd.optString("cmd", "");
         JSONObject response = new JSONObject();
-        
-        CameraDaemon.log("Processing command: " + action);
+
+        CameraDaemon.log("Processing command: " + befehlFuerProtokoll(action));
 
         switch (action) {
             case "start":
@@ -496,50 +505,26 @@ public class TcpCommandServer {
                 break;
 
             case "shell":
-                // Execute shell command (used by SentryDaemon to run commands as UID 2000)
-                String shellCmd = cmd.optString("command", "");
-                CameraDaemon.log("Shell command received: " + shellCmd);
-                if (!shellCmd.isEmpty()) {
-                    try {
-                        Process process = Runtime.getRuntime().exec(new String[]{"sh", "-c", shellCmd});
-                        int exitCode = process.waitFor();
-                        java.io.BufferedReader reader = new java.io.BufferedReader(
-                            new java.io.InputStreamReader(process.getInputStream()));
-                        StringBuilder output = new StringBuilder();
-                        String outputLine;
-                        while ((outputLine = reader.readLine()) != null) {
-                            output.append(outputLine).append("\n");
-                        }
-                        // Also read stderr
-                        java.io.BufferedReader errReader = new java.io.BufferedReader(
-                            new java.io.InputStreamReader(process.getErrorStream()));
-                        StringBuilder errOutput = new StringBuilder();
-                        while ((outputLine = errReader.readLine()) != null) {
-                            errOutput.append(outputLine).append("\n");
-                        }
-                        
-                        response.put("status", "ok");
-                        response.put("output", output.toString().trim());
-                        response.put("stderr", errOutput.toString().trim());
-                        response.put("exitCode", exitCode);
-                        CameraDaemon.log("Shell command completed: exitCode=" + exitCode + ", output=" + output.toString().trim());
-                    } catch (Exception e) {
-                        CameraDaemon.log("Shell command failed: " + e.getMessage());
-                        response.put("status", "error");
-                        response.put("message", "Shell exec failed: " + e.getMessage());
-                    }
-                } else {
-                    response.put("status", "error");
-                    response.put("message", "No command specified");
-                }
+                // 0.1.43.19 (SICHERHEIT_SHELLWEGE K1): freier Shell-Befehl als uid 2000 entfernt. Im Repo gibt es keinen
+                // Aufrufer (der alte Kommentar nannte SentryDaemon, der schickt ihn nicht); als uid 2000 reichte er über
+                // FissionHostSvc bis root im Host. Keine benannte Ersatz-Aktion nötig. Inhalt wird nicht protokolliert.
+                response.put("status", "error");
+                response.put("message", "Unknown command: shell");
                 break;
 
             default:
                 response.put("status", "error");
-                response.put("message", "Unknown command: " + action);
+                response.put("message", "Unknown command: " + befehlFuerProtokoll(action));
         }
         
         return response;
+    }
+
+    /** 0.1.43.19: Befehlsname fürs Protokoll, gekürzt und nur aus harmlosen Zeichen (nie Nutzdaten). */
+    static String befehlFuerProtokoll(String action) {
+        if (action == null) return "";
+        String s = action.length() > 40 ? action.substring(0, 40) : action;
+        return s.replaceAll("[^A-Za-z0-9_.-]", "?");
     }
 
     // ==================== STATUS HELPERS ====================

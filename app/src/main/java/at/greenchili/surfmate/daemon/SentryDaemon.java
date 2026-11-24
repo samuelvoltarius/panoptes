@@ -718,8 +718,17 @@ public class SentryDaemon {
                 while (running) {
                     try {
                         java.net.Socket client = controlSocket.accept();
+                        // 0.1.43.19 (SICHERHEIT_SHELLWEGE): nur eigene Aufrufer (uid 1000, uid 2000 außer tailscaled,
+                        // App). STOP beendet den Dienst; eine fremde App darf das nicht. Ablehnen ohne Inhalt im Log.
+                        if (!at.greenchili.surfmate.server.IpcAufrufer.verbindungErlaubt(
+                                client, at.greenchili.surfmate.server.IpcAufrufer.Kreis.LOKAL)) {
+                            log("Control " + CONTROL_PORT + ": Verbindung abgelehnt (uid="
+                                    + at.greenchili.surfmate.server.IpcAufrufer.uidFuerProtokoll(client) + ")");
+                            try { client.close(); } catch (Exception ignored) {}
+                            continue;
+                        }
                         client.setSoTimeout(5000);
-                        
+
                         BufferedReader reader = new BufferedReader(
                             new InputStreamReader(client.getInputStream()));
                         java.io.PrintWriter writer = new java.io.PrintWriter(

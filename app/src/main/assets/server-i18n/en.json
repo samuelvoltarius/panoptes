@@ -411,7 +411,7 @@
     "weiteres_geraet_titel": "Cockpit “{0}” wants to connect a phone",
     "weiteres_geraet_text": "Check number {0}",
     "ereignis_title": "Event at {0} saved",
-    "ereignis_body": "Hard braking or a bump. The video is stored in the car only. Keep it?",
+    "ereignis_body": "Hard braking or a bump. The video is saved for 30 days, in the car only. In the clip list you can keep or delete it.",
     "battery12v_vor_title": "12 V battery getting weaker: {0} V",
     "battery12v_vor_body": "If it drops further, the car may not start. Go for a drive or plug it in soon.",
     "battery12v_niedrig_title": "12 V battery very weak: {0} V",

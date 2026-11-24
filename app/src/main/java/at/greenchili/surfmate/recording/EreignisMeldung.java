@@ -25,7 +25,7 @@ public final class EreignisMeldung {
     public static final String TELEGRAM_KATEGORIE = "EREIGNIS";
     /** Push-Kategorie in {@code notifications-categories.json}. */
     public static final String PUSH_KATEGORIE = "ereignis.gesichert";
-    /** Tippen öffnet die Wächter-Seite mit der Frage „Behalten?“. */
+    /** Tippen öffnet die Wächter-Seite (0.1.43.19: ohne Frage, der Clip ist 30 Tage gesichert). */
     public static final String ZIEL_URL = "/local/waechter.html";
     /** Feld {@code data.ziel} für die Handy-App (Tippen → zum Ereignis). */
     public static final String ZIEL = "ereignis";
@@ -55,7 +55,7 @@ public final class EreignisMeldung {
                 at.greenchili.surfmate.server.Messages.text("notifications.ereignis_title",
                         "Event at {0} saved", zeit),
                 at.greenchili.surfmate.server.Messages.text("notifications.ereignis_body",
-                        "Hard braking or a bump. The video is stored in the car only. Keep it?"),
+                        "Hard braking or a bump. The video is saved for 30 days, in the car only. In the clip list you can keep or delete it."),
                 "ereignis-" + ereignisMs, ZIEL_URL, data);
     }
 }

@@ -119,12 +119,14 @@ public class EreignisClipTest {
         assertFalse(weg.contains("ereignis_20261029_000005.mp4"));
     }
 
+    /** 0.1.43.20: auch behaltene Ereignis-Clips unterliegen der Grenze (sonst würgen sie die Aufnahme ab); der neueste bleibt. */
     @Test
-    public void nurBehalteneUeberGrenzeBleiben() {
+    public void nurBehalteneUeberGrenzeAeltesterWirdErsetzt() {
         long jetzt = 100 * H;
         List<EreignisClip.Datei> l = Arrays.asList(d("000001", 1500, jetzt - 3 * H), d("000002", 1500, jetzt - 2 * H));
         HashSet<String> behalten = new HashSet<>(Arrays.asList("ereignis_20261029_000001", "ereignis_20261029_000002"));
-        assertTrue(EreignisClip.zuLoeschen(l, jetzt, 0, behalten, EreignisClip.GRENZE_BYTES).isEmpty());
+        assertEquals(Arrays.asList("ereignis_20261029_000001.mp4"),
+                namen(EreignisClip.zuLoeschen(l, jetzt, 0, behalten, EreignisClip.GRENZE_BYTES)));
     }
 
     @Test

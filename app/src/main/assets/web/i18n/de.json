@@ -2205,6 +2205,9 @@
     "keep_unsaved": "Konnte nicht gespeichert werden. Bitte noch einmal versuchen.",
     "keep_fail": "Das hat nicht geklappt.",
     "keep_released_size": "Nicht mehr behalten. Sie wird nur gelöscht, wenn der Speicher knapp wird.",
+    "keep_ereignis_rest": "Behalten · sonst gelöscht in {tage} Tagen",
+    "keep_ereignis_kept": "Behalten, bis du ihn löschst",
+    "keep_released_ereignis": "Nicht mehr behalten. Er wird {tage} Tage nach der Aufnahme automatisch gelöscht.",
     "tab_ereignisse": "Ereignisse",
     "title_ereignis": "{prefix} Ereignisse",
     "badge_ereignis": "Ereignis"
@@ -5836,7 +5839,8 @@
       "confirm": "Behalten",
       "reminder": "Diese Aufnahme ist {keepDays} Tage alt. Brauchst du sie noch?",
       "reminder_yes": "Weiter behalten",
-      "reminder_no": "Löschen"
+      "reminder_no": "Löschen",
+      "body_ereignis": "Ereignis-Clips werden nach {tage} Tagen automatisch gelöscht. Mit „Behalten“ bleibt dieser Clip, bis du ihn selbst löschst. Bitte nur, wenn du ihn für einen Schaden oder Unfall brauchst."
     },
     "audio": {
       "label": "Ton aufnehmen",

@@ -5,8 +5,8 @@
     <string name="ereignis_frage" formatted="true">Ereignis von %1$s gesichert – behalten?</string>
     <string name="ereignis_behalten">Behalten</string>
     <string name="ereignis_nein">Nein danke</string>
-    <string name="ereignis_erklaerung" formatted="true">Ohne „Behalten“ wird der Clip nach %1$d Stunden automatisch gelöscht.</string>
-    <string name="ereignis_pflichttext_b" formatted="true">Du behältst diesen Clip bis zu %1$d Tage. Bitte nur, wenn du ihn für einen Schaden oder Unfall brauchst.</string>
+    <string name="ereignis_erklaerung" formatted="true">Ohne „Behalten“ wird der Clip nach %1$d Tagen automatisch gelöscht.</string>
+    <string name="ereignis_pflichttext_b" formatted="true">Ereignis-Clips werden nach %1$d Tagen automatisch gelöscht. Mit „Behalten“ bleibt dieser Clip, bis du ihn selbst löschst. Bitte nur, wenn du ihn für einen Schaden oder Unfall brauchst.</string>
     <string name="ereignis_gespeichert">Wird behalten.</string>
     <string name="ereignis_fehler">Das hat nicht geklappt. Bitte noch einmal versuchen.</string>
     <string name="recordings_segment_ereignisse">Ereignisse</string>

@@ -417,7 +417,7 @@
     "weiteres_geraet_titel": "Cockpit «{0}» vuole collegare un telefono",
     "weiteres_geraet_text": "Numero di controllo {0}",
     "ereignis_title": "Evento delle {0} salvato",
-    "ereignis_body": "Frenata brusca o urto. Il video è salvato solo nell’auto. Tenerlo?",
+    "ereignis_body": "Frenata brusca o urto. Il video è salvato per 30 giorni, solo nell’auto. Nell’elenco dei clip puoi tenerlo o eliminarlo.",
     "battery12v_vor_title": "La batteria da 12 V si indebolisce: {0} V",
     "battery12v_vor_body": "Se scende ancora, l’auto potrebbe non partire. Fai presto un giro o collegala alla corrente.",
     "battery12v_niedrig_title": "Batteria da 12 V molto debole: {0} V",

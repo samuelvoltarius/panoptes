@@ -417,7 +417,7 @@
     "weiteres_geraet_titel": "Cockpit « {0} » veut connecter un téléphone",
     "weiteres_geraet_text": "Numéro de contrôle {0}",
     "ereignis_title": "Événement de {0} enregistré",
-    "ereignis_body": "Freinage brusque ou choc. La vidéo est enregistrée uniquement dans la voiture. La garder ?",
+    "ereignis_body": "Freinage brusque ou choc. La vidéo est conservée 30 jours, uniquement dans la voiture. Dans la liste des clips, tu peux la garder ou la supprimer.",
     "battery12v_vor_title": "La batterie 12 V faiblit : {0} V",
     "battery12v_vor_body": "Si elle baisse encore, la voiture risque de ne pas démarrer. Faites bientôt un tour ou branchez-la.",
     "battery12v_niedrig_title": "Batterie 12 V très faible : {0} V",

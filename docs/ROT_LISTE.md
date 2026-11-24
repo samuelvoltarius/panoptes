@@ -3,7 +3,7 @@
 Diese Liste gehört zu den Release-Notizen („So wurde geprüft“). Sie nennt die Tests, die beim Freigabestand
 fehlschlagen, und warum. Maßstab für eine Freigabe ist: kein Test ist neu rot gegenüber dem Vorgänger.
 
-## Stand 0.1.43.18
+## Stand 0.1.43.19
 
 | Bereich | Rot | Übersprungen |
 |---|---:|---:|
@@ -15,7 +15,8 @@ unter Windows), und meldet sich deshalb ab statt rot zu werden. Auf Linux und An
 
 ## Verlauf
 
-- 0.1.43.18: 5846 Tests in der App (29 neu) und 342 im Launcher, keiner rot. Übersprungen sind wieder 24 (Windows), wie in 0.1.43.17. Der Launcher ist unverändert (0.1.43.12).
+- 0.1.43.19: 5862 Tests in der App (10 neu) und 342 im Launcher, keiner rot. Übersprungen sind wieder 24 (Windows), wie in 0.1.43.18. Der Launcher ist unverändert (0.1.43.12).
+- 0.1.43.18 (mit Nachfix 0.1.43.18b): 5852 Tests in der App (35 neu gegenüber 0.1.43.17) und 342 im Launcher, keiner rot. Übersprungen sind wieder 24 (Windows), wie in 0.1.43.17. Der Launcher ist unverändert (0.1.43.12).
 - 0.1.43.17: 5817 Tests in der App (19 neu) und 342 im Launcher, keiner rot. Übersprungen sind wieder 24 (Windows), wie in 0.1.43.16. Der Launcher ist unverändert (0.1.43.12).
 - 0.1.43.16: 5798 Tests in der App (10 neu) und 342 im Launcher, keiner rot. Übersprungen sind wieder 24 (Windows), wie in 0.1.43.15. Der Launcher ist unverändert (0.1.43.12).
 - 0.1.43.15: 5788 Tests in der App (9 neu) und 342 im Launcher, keiner rot. Übersprungen sind wieder 24 (Windows), wie in 0.1.43.14. Der Launcher ist unverändert (0.1.43.12).

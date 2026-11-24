@@ -4,6 +4,8 @@
  * Aufnahmen werden nach der eingestellten Frist (Standard 72 h) gelöscht. „Behalten“ hebt eine
  * einzelne Aufnahme bis zu keepDays Tage auf. Vor dem Behalten erscheint immer der Pflichttext B.
  * Nach Ablauf fragt Panoptes nach (rueckfrage): „Weiter behalten“ oder „Löschen“.
+ * 0.1.43.19: Ereignis-Clips (ereignis_*) werden nach ereignisTage (30) Tagen gelöscht; die Liste zeigt die Resttage.
+ * Behalten gilt bei ihnen unbefristet (bis man sie von Hand löscht), ohne Rückfrage.
  *
  *   PanoptesKeep.init({ banner: el, knopf: el, box: el })   // Seite einmal
  *   PanoptesKeep.setClip('event_20261021_021120.mp4')       // beim Öffnen einer Aufnahme
@@ -30,8 +32,24 @@
         'events.keep_released': 'Wird mit dem nächsten Aufräumen gelöscht, wenn sie älter als {stunden} Stunden ist.',
         'events.keep_released_size': 'Nicht mehr behalten. Sie wird nur gelöscht, wenn der Speicher knapp wird.',
         'events.keep_unsaved': 'Konnte nicht gespeichert werden. Bitte noch einmal versuchen.',
-        'events.keep_fail': 'Das hat nicht geklappt.'
+        'events.keep_fail': 'Das hat nicht geklappt.',
+        'events.keep_ereignis_rest': 'Behalten · sonst gelöscht in {tage} Tagen',
+        'events.keep_ereignis_kept': 'Behalten, bis du ihn löschst',
+        'events.keep_released_ereignis': 'Nicht mehr behalten. Er wird {tage} Tage nach der Aufnahme automatisch gelöscht.',
+        'guardLegal.keep.body_ereignis': 'Ereignis-Clips werden nach {tage} Tagen automatisch gelöscht. Mit „Behalten“ bleibt dieser Clip, bis du ihn selbst löschst. Bitte nur, wenn du ihn für einen Schaden oder Unfall brauchst.'
     };
+
+    /** 0.1.43.19: Ereignis-Clip? */
+    function istEreignis(datei) { return /^ereignis_/.test(stamm(datei)); }
+
+    /** 0.1.43.19: Resttage bis zum automatischen Löschen aus dem Namen ereignis_JJJJMMTT_HHMMSS (Ortszeit). */
+    function restTage(datei, tage, jetzt) {
+        var m = /^ereignis_(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})/.exec(stamm(datei));
+        if (!m) return tage;
+        var t0 = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]).getTime();
+        var rest = t0 + tage * 86400000 - (jetzt || Date.now());
+        return rest <= 0 ? 0 : Math.ceil(rest / 86400000);
+    }
 
     function t(k, vars) {
         var s = null;
@@ -92,7 +110,7 @@
     }
 
     var K = {
-        liste: {}, tage: 30, stunden: 72, da: false, clip: null, ui: null,
+        liste: {}, tage: 30, stunden: 72, ereignisTage: 30, da: false, clip: null, ui: null,
 
         laden: function () {
             var self = this;
@@ -101,6 +119,7 @@
                     if (!d || !Array.isArray(d.behalten)) { self.da = false; self.zeichne(); return; }
                     self.da = true;
                     self.tage = d.tage || self.tage;
+                    self.ereignisTage = Number(d.ereignisTage) || self.ereignisTage;
                     self.stunden = Number(d.stunden) || 0;   // 0 = keine Löschung nach Alter
                     self.liste = {};
                     d.behalten.forEach(function (b) { self.liste[stamm(b.datei)] = b; });
@@ -124,7 +143,12 @@
             var k = this.liste[stamm(this.clip)];
             b.className = 'pn-keep-btn' + (k ? ' on' : '');
             b.disabled = false;
-            b.textContent = k ? t('events.keep_kept', { datum: datum(k.bis) }) : t('events.keep_btn');
+            if (istEreignis(this.clip)) {
+                b.textContent = k ? t('events.keep_ereignis_kept')
+                    : t('events.keep_ereignis_rest', { tage: restTage(this.clip, this.ereignisTage) });
+            } else {
+                b.textContent = k ? t('events.keep_kept', { datum: datum(k.bis) }) : t('events.keep_btn');
+            }
             b.onclick = function () { k ? self.frage(true) : self.frage(false); };
         },
 
@@ -135,7 +159,9 @@
             var p = el('div', 'pn-keep-box');
             var row = el('div', 'pn-keep-row');
             if (!behalten) {
-                p.appendChild(el('p', null, t('guardLegal.keep.body', { keepDays: this.tage })));
+                p.appendChild(el('p', null, istEreignis(datei)
+                    ? t('guardLegal.keep.body_ereignis', { tage: this.ereignisTage })
+                    : t('guardLegal.keep.body', { keepDays: this.tage })));
                 var ok = el('button', 'lime', t('guardLegal.keep.confirm'));
                 ok.type = 'button';
                 ok.onclick = function () { ok.disabled = true; self.behalte(datei); };
@@ -169,7 +195,8 @@
         freigeben: function (datei) {
             var self = this;
             return post('/api/aufnahmen/freigeben', datei).then(function (d) {
-                if (d.ok) toast(self.stunden > 0 ? t('events.keep_released', { stunden: self.stunden }) : t('events.keep_released_size'), 'success');
+                if (d.ok) toast(istEreignis(datei) ? t('events.keep_released_ereignis', { tage: self.ereignisTage })
+                    : self.stunden > 0 ? t('events.keep_released', { stunden: self.stunden }) : t('events.keep_released_size'), 'success');
                 else toast(d.grund === 'nicht_gespeichert' ? t('events.keep_unsaved') : t('events.keep_fail'), 'error');
             }, function () { toast(t('events.keep_fail'), 'error'); }).then(function () {
                 if (self.ui.box) { self.ui.box.hidden = true; self.ui.box.innerHTML = ''; }
@@ -211,5 +238,6 @@
         }
     };
 
+    K._restTage = restTage;   // für Tests
     window.PanoptesKeep = K;
 })();

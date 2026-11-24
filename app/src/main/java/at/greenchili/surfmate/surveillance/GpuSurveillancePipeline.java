@@ -581,7 +581,19 @@ public class GpuSurveillancePipeline {
      */
     public void setRecorderLaneEnabled(boolean enabled) {
         PanoramicCameraGpu cam = camera;
+        // 0.1.43.20: Aufnahme-Spur aus (nur Totwinkel warm halten) beendet den Ring → Ereignis-Clip vorher sichern.
+        if (!enabled && cam != null) ereignisVorAbbauSichern("recorderLane.aus");
         if (cam != null) cam.setRecorderLaneEnabled(enabled);
+    }
+
+    /** 0.1.43.20: siehe {@link at.greenchili.surfmate.recording.ManualClipService#ereignisVorAbbauSichern}. */
+    private static void ereignisVorAbbauSichern(String grund) {
+        try {
+            at.greenchili.surfmate.recording.ManualClipService.getInstance().ereignisVorAbbauSichern(
+                    grund, at.greenchili.surfmate.recording.ManualClipService.EREIGNIS_ABBAU_WARTEN_MS);
+        } catch (Throwable ignored) {
+            // nie den Abbau blockieren
+        }
     }
 
     /**
@@ -3200,6 +3212,11 @@ public class GpuSurveillancePipeline {
      * EGL — corrupting both lanes.
      */
     public void stop() {
+        // 0.1.43.20: läuft ein Ereignis-Clip noch im Nachlauf (Zündung aus / Schalten nach P kurz nach dem Bremsen),
+        // erst sichern, dann abbauen. Außerhalb des Monitors, ohne laufenden Ereignis-Clip sofort zurück.
+        if (running) {
+            ereignisVorAbbauSichern("pipeline.stop");
+        }
         synchronized (this) {
             if (!running) {
                 return;

@@ -370,6 +370,34 @@ public final class ManualClipService {
                 fertig != null ? fertig : datei -> { });
     }
 
+    // ---------------------------------------------------------------- 0.1.43.20: Ereignis-Clip vor dem Abbau sichern
+
+    /** Halt für den laufenden Ereignis-Clip (rein, siehe {@link EreignisHalt}). */
+    private final EreignisHalt ereignisHalt = new EreignisHalt();
+    /** Höchstens so lange wartet ein Abbau auf den Export des Ereignis-Clips. */
+    public static final long EREIGNIS_ABBAU_WARTEN_MS = EreignisHalt.ABBAU_WARTEN_MS;
+
+    /**
+     * 0.1.43.20 (Projektinhaber „nach einem Unfall kann ich nicht mehr drücken“): Wird die Kamera abgebaut, während ein
+     * Ereignis-Clip noch seinen Nachlauf sammelt (Zündung aus, Schalten nach P, Aufnahme-Spur aus), ging bisher der
+     * GANZE Clip verloren, auch die 20 s davor. Jetzt: Nachlauf sofort beenden, mit dem bis jetzt Aufgenommenen sichern
+     * und erst dann abbauen (höchstens {@code maxWarteMs}). Ohne laufenden Ereignis-Clip sofort zurück.
+     *
+     * @return true, wenn kein Ereignis-Clip (mehr) aussteht
+     */
+    public boolean ereignisVorAbbauSichern(String grund, long maxWarteMs) {
+        if (!ereignisHalt.laeuft()) return true;
+        logger.info("Ereignis-Clip: Abbau (" + grund + ") – Nachlauf wird jetzt abgeschlossen und gesichert");
+        boolean frei = ereignisHalt.vorAbbauSichern(maxWarteMs);
+        if (!frei) logger.warn("Ereignis-Clip: Abbau (" + grund + ") wartet nicht länger, Export läuft noch");
+        return frei;
+    }
+
+    /** Rein: siehe {@link EreignisHalt#ende}. */
+    static long ereignisEnde(long gewuenschtesEndeUs, long letztePtsUs, long startPtsUs, long minSpanUs) {
+        return EreignisHalt.ende(gewuenschtesEndeUs, letztePtsUs, startPtsUs, minSpanUs);
+    }
+
     private RequestResult requestClip(int beforeSeconds, int afterSeconds, EreignisFertig ereignis) {
         final ManualClipWindow window;
         try {
@@ -517,8 +545,27 @@ public final class ManualClipService {
                                  boolean startTruncated,
                                  EreignisFertig ereignis) {
         File gesichert = null;
+        if (ereignis != null) ereignisHalt.beginnen();
         try {
-            if (!awaitPostRoll(requestedEncoder, endPtsUs, window.getAfterSeconds())) {
+            if (ereignis != null) {
+                // 0.1.43.20: Nachlauf, der nicht vollständig ankommt (Abbau steht an, Zündung aus, Encoder steht),
+                // verwirft den Clip nicht mehr: gesichert wird bis zum letzten Bild im Ring.
+                boolean voll = awaitPostRoll(requestedEncoder, endPtsUs, window.getAfterSeconds(), ereignisHalt.vorzeitig());
+                if (!voll) {
+                    long ende = currentEncoder() == requestedEncoder
+                            ? ereignisEnde(endPtsUs, requestedEncoder.getLatestPreRecordPtsUs(), startPtsUs,
+                                    MIN_EXPORT_SPAN_US)
+                            : Long.MIN_VALUE;
+                    if (ende == Long.MIN_VALUE) {
+                        logger.warn("Ereignis-Clip: Kamera vor dem Sichern weg, nichts im Ring");
+                        fehlgeschlagen(ereignis, "POST_ROLL");
+                        return;
+                    }
+                    logger.info("Ereignis-Clip: Nachlauf gekürzt um "
+                            + Math.max(0L, (endPtsUs - ende) / 1_000_000L) + " s, wird jetzt gesichert");
+                    endPtsUs = ende;
+                }
+            } else if (!awaitPostRoll(requestedEncoder, endPtsUs, window.getAfterSeconds(), null)) {
                 logger.warn("Instant replay cancelled: encoder changed or post-roll did not arrive");
                 fehlgeschlagen(ereignis, "POST_ROLL");
                 return;
@@ -580,6 +627,7 @@ public final class ManualClipService {
             requestedEncoder.releaseManualClipReservation();
             requestInFlight.set(false);
             if (ereignis != null) {
+                ereignisHalt.beenden();
                 try {
                     ereignis.fertig(gesichert);
                 } catch (Throwable t) {
@@ -596,7 +644,8 @@ public final class ManualClipService {
 
     private boolean awaitPostRoll(HardwareEventRecorderGpu encoder,
                                   long endPtsUs,
-                                  int afterSeconds) {
+                                  int afterSeconds,
+                                  AtomicBoolean vorzeitig) {
         if (afterSeconds <= 0) return true;
         // Monotonic deadline. The previous System.currentTimeMillis() bound
         // expired mid-wait whenever the head unit's GPS/NTP resync jumped the
@@ -607,6 +656,7 @@ public final class ManualClipService {
         while (System.nanoTime() < deadlineNs) {
             if (currentEncoder() != encoder || !isEncoderReady(encoder)) return false;
             if (encoder.getLatestPreRecordPtsUs() >= endPtsUs) return true;
+            if (vorzeitig != null && vorzeitig.get()) return false;   // 0.1.43.20: Abbau steht an → jetzt sichern
             try {
                 Thread.sleep(50L);
             } catch (InterruptedException e) {

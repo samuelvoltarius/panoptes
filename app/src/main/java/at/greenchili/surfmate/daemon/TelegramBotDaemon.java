@@ -1218,10 +1218,21 @@ public class TelegramBotDaemon {
                     serverSocket.bind(new InetSocketAddress(
                             InetAddress.getByName("127.0.0.1"), IPC_PORT), 5);
                     log("IPC server listening on 127.0.0.1:" + IPC_PORT);
+                    at.greenchili.surfmate.server.IpcAufrufer.vorwaermenFuerServer();
 
                     while (running) {
                         try {
                             Socket client = serverSocket.accept();
+                            // 0.1.43.19 (SICHERHEIT_SHELLWEGE): nur eigene Aufrufer (uid 1000, uid 2000 außer tailscaled,
+                            // App), gleich nach accept, solange der Klient noch verbunden ist. Sonst könnte jede App
+                            // dem Besitzer beliebige Nachrichten oder Dateien schicken lassen. Ablehnen ohne Inhalt im Log.
+                            if (!at.greenchili.surfmate.server.IpcAufrufer.verbindungErlaubt(
+                                    client, at.greenchili.surfmate.server.IpcAufrufer.Kreis.LOKAL)) {
+                                log("IPC " + IPC_PORT + ": Verbindung abgelehnt (uid="
+                                        + at.greenchili.surfmate.server.IpcAufrufer.uidFuerProtokoll(client) + ")");
+                                try { client.close(); } catch (Exception ignored) {}
+                                continue;
+                            }
                             // Dispatch off the accept thread so a slow handler
                             // (e.g. sendPhoto sleeping 30s on 429 retry) can't
                             // block subsequent IPC commands.

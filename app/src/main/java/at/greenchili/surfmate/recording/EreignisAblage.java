@@ -29,12 +29,16 @@ public final class EreignisAblage {
             StorageManager sm = StorageManager.getInstance();
             List<EreignisClip.Datei> dateien = new ArrayList<>();
             org.json.JSONObject config = UnifiedConfigManager.loadConfig();
-            // Eine noch unbeantwortete „Behalten?“-Frage schützt den frisch gesicherten Clip.
-            // Erst „Nein danke“ entfernt diesen temporären Schutz; „Behalten“ legt den
-            // dauerhaften Aufbewahrungs-Merker an.
-            Set<String> behalten = new HashSet<>(EreignisClip.offeneStaemme(config));
+            // 0.1.43.19: keine Rückfrage mehr. Offene „Behalten?“-Fragen aus älteren Versionen fallen weg; die Clips
+            // bleiben 30 Tage (wie jeder Ereignis-Clip), behalten nur, wer in der Clip-Liste „Behalten“ wählt.
+            for (String s : EreignisClip.offeneStaemme(config)) {
+                if (EreignisClip.frageErledigt(s)) logger.info("Offene Frage übernommen, Clip bleibt 30 Tage: " + s);
+            }
+            Set<String> behalten = new HashSet<>();
+            long gesamt = 0;
             for (File dir : sm.getAllEreignisDirs()) {
                 if (dir == null || !dir.isDirectory()) continue;
+                try { gesamt = Math.max(gesamt, dir.getTotalSpace()); } catch (Throwable ignored) { }
                 File[] files = sm.listMp4Files(dir);
                 if (files == null) continue;
                 for (File f : files) {
@@ -43,17 +47,31 @@ public final class EreignisAblage {
                     if (Aufbewahrung.istBehalten(f.getName())) behalten.add(EreignisClip.stamm(f.getName()));
                 }
             }
-            long maxAlter = Aufbewahrung.maxAlterMs(config);
+            // 0.1.43.19: eigene Frist 30 Tage (nicht die 72 h der übrigen Clips); von Hand behaltene nie nach Alter
+            long maxAlter = EreignisClip.LOESCHEN_MS;
+            long grenze = EreignisClip.grenze(gesamt);
             List<EreignisClip.Datei> weg = EreignisClip.zuLoeschen(
-                    dateien, System.currentTimeMillis(), maxAlter, behalten,
-                    EreignisClip.GRENZE_BYTES);
+                    dateien, System.currentTimeMillis(), maxAlter, behalten, grenze);
             for (EreignisClip.Datei d : weg) {
                 File f = (File) d.bezug;
+                String stamm = EreignisClip.stamm(f.getName());
+                boolean warBehalten = behalten.contains(stamm);
                 if (f.delete()) {
                     geloescht++;
                     AusloeserInfo.loesche(f);
                     try { RecordingsIndex.getInstance().removeByPath(f.getAbsolutePath()); } catch (Throwable ignored) {}
-                    EreignisClip.frageErledigt(EreignisClip.stamm(f.getName()));
+                    EreignisClip.frageErledigt(stamm);
+                    if (warBehalten) Aufbewahrung.freigeben(stamm);
+                    boolean abgelaufen = !warBehalten && d.zeit > 0
+                            && System.currentTimeMillis() - d.zeit > EreignisClip.LOESCHEN_MS;
+                    if (abgelaufen) {
+                        logger.info("Ereignis-Clip nach " + EreignisClip.LOESCHEN_TAGE + " Tagen gelöscht: " + f.getName());
+                    } else {
+                        // Obergrenze erreicht → ältester gesicherter Ereignis-Clip ersetzt, immer geloggt
+                        logger.info("Ereignis-Ordner voll (Grenze " + (grenze / (1024 * 1024))
+                                + " MB): ältesten gesicherten Ereignis-Clip ersetzt" + (warBehalten ? " (behalten)" : "")
+                                + ": " + f.getName());
+                    }
                 }
             }
             if (geloescht > 0) logger.info("Ereignis-Ordner gepflegt: " + geloescht + " Clip(s) gelöscht");

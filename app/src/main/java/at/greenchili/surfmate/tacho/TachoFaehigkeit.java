@@ -152,8 +152,12 @@ public final class TachoFaehigkeit {
         }
         res.put("appFenster", appFenster(res.optJSONObject("andereApps"), e));
         // Ehrlicher Zusatz für Single-OS-Autos mit dem XDJA-Baustein. Surf, Bindversuch A/B 30.10. (Deploy (2)):
-        // der Dienst läuft, aber sein Gegenstück im Tacho (AutoContainerServiceNative) fehlt → kein Bild möglich.
-        boolean nativ = enthaeltDienst(dienste, "AutoContainerServiceNative");
+        // der Dienst läuft, aber sein Gegenstück im Tacho fehlt → kein Bild möglich.
+        // 0.1.43.19 (TACHO_WEG §5): der Binder heißt „AutoContainerNative“ (bereitgestellt von
+        // AutoContainerNativeService in libwindowsurface_android.so); bisher wurde nach „AutoContainerServiceNative“
+        // gesucht, den es nicht gibt. Der alte Name bleibt als zweite Möglichkeit, falls eine Firmware ihn so meldet.
+        boolean nativ = enthaeltDienst(dienste, AUTO_CONTAINER_NATIVE)
+                || enthaeltDienst(dienste, "AutoContainerServiceNative");
         plattform.put("autoContainerNative", nativ);
         if (singleOs && e.xdjaInstalliert && e.xdjaAutoDisplay && !nativ) {
             res.put("hinweis", "Auf deinem Auto gibt es einen Systembaustein für die Tacho-Anzeige, "
@@ -245,6 +249,9 @@ public final class TachoFaehigkeit {
         if (groesse != null) d.put("groesse", groesse);
         return d;
     }
+
+    /** 0.1.43.19: Name des Tacho-Gegenstücks in {@code service list} (TACHO_WEG §5). */
+    static final String AUTO_CONTAINER_NATIVE = "AutoContainerNative";
 
     static boolean enthaeltDienst(String serviceList, String name) {
         for (String zeile : serviceList.split("\n")) {
