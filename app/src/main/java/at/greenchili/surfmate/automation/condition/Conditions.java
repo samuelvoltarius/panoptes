@@ -558,7 +558,9 @@ public class Conditions {
         //  - DRIVER: no sensor exists; presence is INFERRED from the seatbelt-reminder mask
         //    (bit 0) + the driver belt, and is POSITIVE-ONLY — it publishes "occupied" and never
         //    "empty" (an unbuckled-but-present driver reads identically to an empty seat; see
-        //    BydDataCollector.readDriverOccupancyNow).
+        //    BydDataCollector.readDriverOccupancyNow). Since Upstream #862: if the driver door
+        //    opens and that evidence disappears (2 reads), the prior state silently becomes
+        //    UNKNOWN, so the next confirmed presence is a new edge.
         // The schema carries ONE value enum per condition, so "empty" is still offered for the
         // driver seat in the picker. A driver+empty rule parses and loads, but can only ever be
         // satisfied while the state is unseeded — it is documented as unsupported in the

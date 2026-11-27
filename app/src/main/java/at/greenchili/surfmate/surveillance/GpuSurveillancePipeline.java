@@ -3751,8 +3751,8 @@ public class GpuSurveillancePipeline {
                     // records nothing because the old code (a) logged a false
                     // "Normal recording started" and (b) never retried.
                     // Defer + retry until storage settles.
-                    logger.warn("Recording did not start — storage not write-ready "
-                        + "(USB still mounting?); deferring and scheduling retry");
+                    logger.warn("Recording did not start — camera warming up or "
+                        + "storage not write-ready; deferring and scheduling retry");
                     pendingRecordingDir = outputDir;
                     pendingRecordingPrefix = prefix;
                     recordingMode = true;
@@ -3801,6 +3801,21 @@ public class GpuSurveillancePipeline {
         }
     }
     
+    /** 0.1.43.22 (Maintainer d50b89966): Anstoß vom Drainer, startet die zurückgestellte Fahrt-Aufnahme abseits des Drainers. */
+    private Runnable freshFrameKickoff() {
+        return () -> {
+            Thread kick = new Thread(() -> {
+                try {
+                    checkPendingRecording();
+                } catch (Exception e) {
+                    logger.warn("Fresh-frame recording start failed: " + e.getMessage());
+                }
+            }, "FreshFrameKickoff");
+            kick.setDaemon(true);
+            kick.start();
+        };
+    }
+
     /**
      * Called when the encoder format becomes available (probe complete, first frame encoded).
      * Starts any pending recording that was deferred because the encoder wasn't ready.
@@ -4791,6 +4806,20 @@ public class GpuSurveillancePipeline {
             } catch (Throwable ignored) {}
             if (camera != null && running && !persistentCamera) {
                 camera.reopenCamera();
+                // upstream #674 + Nachbesserung Maintainer (d50b89966, 17.11.): die neu geöffnete
+                // Kamera bleibt im Anlauf dunkel. Das erste cam_*-Video öffnet erst nach zwei frisch
+                // codierten Bildern (ohne geparkten Vorlauf) und wird dann sofort angestoßen.
+                // "Live-Sekundär behalten" aus #674 bewusst NICHT: der Maintainer hat es
+                // zurückgenommen, die BYD-App könnte sonst ohne Bild bleiben.
+                HardwareEventRecorderGpu reopenedEncoder = encoder;
+                if (reopenedEncoder != null) {
+                    try {
+                        reopenedEncoder.requireFreshFrameForNextDriveClip(
+                                FrischBildSperre.MIN_BILDER, freshFrameKickoff());
+                    } catch (Throwable t) {
+                        logger.warn("onAccOn: fresh-frame barrier failed: " + t.getMessage());
+                    }
+                }
                 logger.info("ACC ON transition complete - all recordings finalized, camera reopened");
             } else if (persistentCamera) {
                 logger.info("ACC ON transition complete - DiLink camera stays alive (no reopen)");

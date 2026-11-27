@@ -7,6 +7,8 @@ Panoptes' own source code is licensed under the MIT License (see [LICENSE](LICEN
 Panoptes is based on **OverDrive** by Yash Srivastava, published under the MIT License. Its copyright
 and permission notice is retained in [LICENSE](LICENSE) and in the app (`app/src/main/assets/licenses/LICENSES.txt`).
 
+Since 0.1.43.22 Panoptes also carries later fixes from the OverDrive repository (https://github.com/yash-srivastava/Overdrive-release), contributed there under the same MIT License: pull requests #594, #595, #598, #627, #648, #649, #650, #651, #652, #653, #654, #656, #657, #689, #708, #771, #776, #788, #818 and #823 (the last two in the final form of the upstream main branch), and #674 together with the maintainer's revision of it in commit `d50b89966`. They were adapted to Panoptes' package names; the OverDrive copyright and permission notice above covers them.
+
 The OEM navigation-payload layout, BYD cluster icon mapping and AutoContainer message contract are
 derived from **BYD DashCast** by Cedric Carre (https://github.com/Kiroha/byd-dashcast,
 reviewed commit `174fcf89a2ec22a5cdfa11b844d240e001b1f6c3`), MIT License. The inactive multi-app
@@ -128,7 +130,20 @@ from the fixed official source and only with the fixed SHA-256 below; a mismatch
 
 ## Source-derived work
 
+- **OverDrive upstream changes ported in 0.1.43.22** (Yash Srivastava and contributors, MIT License, the same
+  OverDrive notice as above; [yash-srivastava/Overdrive-release](https://github.com/yash-srivastava/Overdrive-release)):
+  PR #516 (device ID never logged in clear; Panoptes logs a short SHA-256 prefix instead of the first/last characters),
+  PR #475 (cellular relay part only: client and destination restrictions; the sing-box part does not apply),
+  PR #686 (`network/RelayAdmissionGate.kt` taken over, proxy headers stripped before the origin, live tunnels closed
+  on stop), the relay listener of upstream `main` (`d50b89966`: loopback plus the hotspot address via
+  `bindHotspot`, never the wildcard), PR #412 (bounded initial request-body buffer), PR #1126 (auto-start switch
+  read fresh and only when checkable, `STILL_ON`, automatic attempt only when parked with the screen on, last
+  verified state per install; adapted to Panoptes' own post-update flow).
 - **Bangcle / white-box AES port**: derived from reverse-engineering work by [Niek/BYD-re](https://github.com/Niek/BYD-re) and [jkaberg/pyBYD](https://github.com/jkaberg/pyBYD).
+- **OverDrive changes ported after the fork** (MIT, Copyright (c) Yash Srivastava and OverDrive contributors, notice retained in [LICENSE](LICENSE)); each ported file names its source PR in a header comment:
+  - PR #733 (merge `8310103`) and its follow-up in the v65.0 sync (`4aba33b`): isolated evaluation of each automation rule, the bounded execution history `automation/AutomationExecutionHistory.java`, and per-signal workers with health records in `automation/condition/ConditionalPoller.java`. Service Mode parts of that sync were not taken over.
+  - PR #373 (merge `54fc937`): AC fan one level faster/slower (`stepAcFan` automation action, `ac_fan_step` key mapping, `step_fan` climate endpoint, `BydDataCollector.stepAcFanLevel`). Texts in de/en/fr/it/nl written for Panoptes.
+  - PR #862 (merge `1e818d5`) in its final form from the v65.0 sync (`4aba33b`): driver seat occupancy re-arms after the driver door opens and positive evidence is lost (`automation/condition/DriverOccupancySession.java`, hooks in `BydEvent`, `DoorEvent`, `BydDataCollector`). Texts in de/en/fr/it/nl written for Panoptes.
 
 ## Wallbox adapters: specifications and data (Panoptes 0.1.11+)
 

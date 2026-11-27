@@ -34,7 +34,7 @@ public class AutomationPickerGroupingAssetTest {
         assertTrue(keyMapping.contains(
                 "action.textContent = describeAction(b.action) || b.label || '';"));
         assertTrue(automationsPage.contains("automations.js?v=av75"));
-        assertTrue(keyMappingPage.contains("key-mapping.js?v=39"));
+        assertTrue(keyMappingPage.contains("key-mapping.js?v=40"));
     }
 
     @Test

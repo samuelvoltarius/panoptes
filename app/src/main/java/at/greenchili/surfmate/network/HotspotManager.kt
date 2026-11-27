@@ -71,6 +71,8 @@ object HotspotManager {
     private var callbackThread: HandlerThread? = null
 
     @Volatile private var appContext: Context? = null
+    /** 0.1.43.22: Relay läuft, hat aber noch keine Hotspot-Adresse zum Binden (Sampler versucht es erneut). */
+    @Volatile private var relayAwaitingAddress = false
     private val started = AtomicBoolean(false)
     private val bootAutoStartArmed = AtomicBoolean(false)
 
@@ -235,6 +237,8 @@ object HotspotManager {
         // PDN. Report the exact host:port to enter as the client's WiFi proxy.
         out.put("relayPort", CellularRelay.PORT)
         out.put("relayRunning", CellularRelay.isRunning())
+        // 0.1.43.22 (#475/#686): Client-Filter, Grenzen und Abweisungen zum Zurücklesen
+        try { out.put("relay", CellularRelay.status()) } catch (t: Throwable) { }
         // What the radio actually broadcasts, plus whether this firmware lets us
         // change it. The AP name is owned by the OEM unless the write is permitted,
         // so the UI must show the real name rather than an intent we couldn't apply.
@@ -334,9 +338,15 @@ object HotspotManager {
         val apUp = synchronized(lock) { apState == AP_ENABLED || apState == AP_ENABLING }
         val ctx = appContext
         if (wanted && apUp && ctx != null) {
-            if (!CellularRelay.isRunning()) CellularRelay.start(ctx)
-        } else if (CellularRelay.isRunning()) {
-            CellularRelay.stop()
+            // 0.1.43.22 (#475): Relay nimmt nur Clients aus dem Hotspot-Subnetz (+ Loopback) an
+            if (!CellularRelay.isRunning()) CellularRelay.start(ctx) { relayClientPrefix() }
+            // 0.1.43.22 (Upstream v65 bindHotspot): Hotspot-Geräte erreichen den Relay auf der eigenen
+            // AP-Adresse; beim Hochfahren hat das AP noch keine → der Sampler versucht es erneut.
+            CellularRelay.bindHotspot(relayBindAddress())
+            relayAwaitingAddress = CellularRelay.isRunning() && !CellularRelay.isHotspotBound()
+        } else {
+            relayAwaitingAddress = false
+            if (CellularRelay.isRunning()) CellularRelay.stop()
         }
     }
 
@@ -768,6 +778,7 @@ object HotspotManager {
             // us — establish the session baseline before measuring.
             if (!wasEnabled && startedAtMs == 0L) beginSession()
             if (tetherIface == null) resolveTetherIface()
+            if (relayAwaitingAddress) syncClientRelay()
             sampleCounters()
             enrichClientIps()
             enforceDataCap()
@@ -1246,6 +1257,36 @@ object HotspotManager {
      */
     private fun currentApPrefix(): String =
         (apSubnetPrefix() ?: AP_GATEWAY.substringBeforeLast('.')) + "."
+
+    /**
+     * 0.1.43.22 (#475): Subnetz-Präfix ("192.168.c.") für die Client-Prüfung des [CellularRelay].
+     * Wie bei der Client-Liste: live vom Hotspot-Interface, sonst das Standard-Subnetz von [AP_GATEWAY].
+     */
+    internal fun relayClientPrefix(): String = currentApPrefix()
+
+    /**
+     * 0.1.43.22 (Upstream v65 `clientTunnelBindAddress`): eigene IPv4 des Hotspot-Interfaces, nur wenn das AP
+     * wirklich dient und Android das Interface als getethert meldet; sonst null (dann nur Loopback).
+     */
+    private fun relayBindAddress(): String? {
+        if (synchronized(lock) { apState } != AP_ENABLED) return null
+        val ctx = appContext ?: return null
+        return try {
+            val cm = ctx.getSystemService(Context.CONNECTIVITY_SERVICE)
+            @Suppress("UNCHECKED_CAST")
+            val tethered = cm?.javaClass?.getMethod("getTetheredIfaces")?.invoke(cm) as? Array<String>
+            val iface = tethered?.firstOrNull { name -> AP_IFACE_HINTS.any { name.startsWith(it) } }
+                ?: return null
+            java.net.NetworkInterface.getByName(iface)
+                ?.inetAddresses
+                ?.toList()
+                ?.filterIsInstance<java.net.Inet4Address>()
+                ?.firstOrNull { !it.isLoopbackAddress && !it.isAnyLocalAddress && !it.isLinkLocalAddress }
+                ?.hostAddress
+        } catch (t: Throwable) {
+            null
+        }
+    }
 
     /** First three octets of the tethered iface's IPv4 address, or null. */
     private fun apSubnetPrefix(): String? {

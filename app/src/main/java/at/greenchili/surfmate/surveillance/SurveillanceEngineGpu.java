@@ -1077,6 +1077,8 @@ public class SurveillanceEngineGpu {
     // post-suppression refresh paths); without this the deque could throw
     // ConcurrentModificationException and mask/deque could decohere.
     private final Object aiQuadrantQueueLock = new Object();
+    // upstream #818 (Endfassung): Frame thread: quadrant of the last motion AI dispatch; -1 after enable.
+    private int lastAiDispatchQuadrant = -1;
 
     private void aiQuadrantQueueAdd(int q) {
         if (q < 0 || q >= MotionPipelineV2.NUM_QUADRANTS) return;
@@ -1100,6 +1102,16 @@ public class SurveillanceEngineGpu {
         synchronized (aiQuadrantQueueLock) {
             aiQuadrantQueue.clear();
             aiQuadrantQueueMask = 0;
+        }
+    }
+
+    /** upstream #818: Moves an already-queued quadrant to the head; no-op when it isn't queued. */
+    private void aiQuadrantQueuePromote(int q) {
+        if (q < 0 || q >= MotionPipelineV2.NUM_QUADRANTS) return;
+        synchronized (aiQuadrantQueueLock) {
+            if ((aiQuadrantQueueMask & (1 << q)) == 0) return;
+            aiQuadrantQueue.remove(Integer.valueOf(q));
+            aiQuadrantQueue.addFirst(q);
         }
     }
 
@@ -4843,10 +4855,11 @@ public class SurveillanceEngineGpu {
                     }
                 }
 
-                // Staggered YOLO: queue active quadrants for AI detection
+                // Staggered YOLO: queue active quadrants for AI detection.
+                // upstream #818 (Endfassung): queued quadrants persist across ticks; the highest
+                // threat goes first unless it had the last pass. A clear-and-refill on every
+                // motion tick let sustained motion in one camera starve a vehicle in another.
                 if (useObjectDetection && !isAiRunning.get()) {
-                    aiQuadrantQueueClear();
-                    // Add quadrants sorted by threat level (highest first)
                     int bestQ = pipelineV2.getHighestThreatQuadrant();
                     if (bestQ >= 0) aiQuadrantQueueAdd(bestQ);
                     for (int q = 0; q < MotionPipelineV2.NUM_QUADRANTS; q++) {
@@ -4854,6 +4867,7 @@ public class SurveillanceEngineGpu {
                             aiQuadrantQueueAdd(q);
                         }
                     }
+                    if (bestQ >= 0 && lastAiDispatchQuadrant != bestQ) aiQuadrantQueuePromote(bestQ);
                     // FIX: Check cooldown before consuming queue item
                     if (!aiQuadrantQueueIsEmpty() && (System.currentTimeMillis() - lastAiTimeMs) >= AI_COOLDOWN_MS) {
                         runAiOnQuadrant(smallRgbFrame, aiQuadrantQueuePoll());
@@ -5675,6 +5689,7 @@ public class SurveillanceEngineGpu {
         if (cropData == null) { noteAiSkip("cropNull"); return; }
 
         isAiRunning.set(true);
+        lastAiDispatchQuadrant = quadrant;   // upstream #818
         // Latch the MONOTONIC time at which this inference claimed the AI lane,
         // so the watchdog (see maybeRepairStuckAiLane) can tell a legitimately
         // long-running detect() from a permanently leaked flag. Deliberately
@@ -9079,7 +9094,7 @@ public class SurveillanceEngineGpu {
             }
             File tmpFile = new File(outFile.getAbsolutePath() + ".tmp");
             try (java.io.FileOutputStream fos = new java.io.FileOutputStream(tmpFile)) {
-                frame.compress(android.graphics.Bitmap.CompressFormat.JPEG, 85, fos);
+                frame.compress(android.graphics.Bitmap.CompressFormat.JPEG, 92, fos);
                 try { fos.getFD().sync(); } catch (Throwable ignored) {}
             } finally {
                 frame.recycle();
@@ -12153,6 +12168,7 @@ public class SurveillanceEngineGpu {
         salienceConfirmedDuringSequence = false;
         salienceQuadrant = -1;
         salienceConfirmedAtMs = 0;
+        lastAiDispatchQuadrant = -1;   // upstream #818
         // Post-park vigilance: fresh arm session → no latch, no spent budget (I2).
         // The ANCHORS deliberately survive (they live in DetectionBaseline and are
         // TTL'd by addedAtMs), but baseline.reset() on disable clears those too, and

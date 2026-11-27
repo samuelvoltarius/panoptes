@@ -36,13 +36,14 @@ public class AutoStartCheckReceiver extends BroadcastReceiver {
         if (ACTION_STATUS.equals(action)) {
             boolean fehlt = report(app, "status");
             // 0.1.21: Ergebnis an „am broadcast“ zurück (Daemon: AutostartNachUpdate) – result 1 = frei
-            setResult(fehlt ? 0 : 1, "autostartMissing=" + fehlt, null);
+            // 0.1.43.22 (#1126): dazu der zuletzt am Schalter GELESENE Zustand (nicht geschlossen aus Daemon/Update)
+            setResult(fehlt ? 0 : 1, "autostartMissing=" + fehlt + " " + geprueft(app), null);
         } else if (ACTION_ENABLE.equals(action)) {
             KeepAliveAccessibilityService service = KeepAliveAccessibilityService.getInstance();
             if (service == null) {
                 Log.i(LOG_TAG, "ergebnis=NO_SERVICE (Bedienungshilfe nicht verbunden)");
                 report(app, "status");
-                setResult(0, "ergebnis=NO_SERVICE ok=false", null);
+                setResult(0, "ergebnis=NO_SERVICE ok=false " + geprueft(app), null);
                 return;
             }
             final PendingResult pending = goAsync();
@@ -54,12 +55,19 @@ public class AutoStartCheckReceiver extends BroadcastReceiver {
                     boolean fehlt = report(app, "nachher");
                     pending.setResult(success && !fehlt ? 1 : 0,
                             "ergebnis=" + (result == null ? "NONE" : result.name()) + " ok=" + success
-                                    + " autostartMissing=" + fehlt, null);
+                                    + " autostartMissing=" + fehlt + " " + geprueft(app), null);
                 } finally {
                     pending.finish();
                 }
             });
         }
+    }
+
+    /** 0.1.43.22 (#1126): zuletzt geprüfter Schalter-Zustand dieser Installation, auch ins Log. */
+    private static String geprueft(Context context) {
+        String d = at.greenchili.surfmate.services.AutostartBeobachtung.lies(context).alsDaten();
+        Log.i(LOG_TAG, d);
+        return d;
     }
 
     /** Loggt den Stand; liefert autostartMissing (bei Fehler true). */

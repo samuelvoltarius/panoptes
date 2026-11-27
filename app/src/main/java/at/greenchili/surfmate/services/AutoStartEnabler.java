@@ -161,8 +161,9 @@ public class AutoStartEnabler {
         NOT_THIS_FIRMWARE,// appstartmanagement activity missing -> abort, no retry
         NO_DIALOG,        // dialog window never surfaced
         NO_ROW,           // SurfMate row / switch not found
-        FLIP_UNCONFIRMED, // clicked but state didn't confirm OFF
-        NICHT_BELEGT      // 0.1.43.21: platform not proven (only DiLink 3 + Dolphin Surf) -> nothing clicked
+        FLIP_UNCONFIRMED, // clicked (or not read) but state couldn't be read back
+        NICHT_BELEGT,     // 0.1.43.21: platform not proven (only DiLink 3 + Dolphin Surf) -> nothing clicked
+        STILL_ON          // 0.1.43.22 (Upstream #1126): a fresh read positively confirmed the block is still ON
     }
 
     /**
@@ -218,6 +219,17 @@ public class AutoStartEnabler {
         }
 
         // (f) Read + flip.
+        // 0.1.43.22 (Upstream #1126): vor dem Lesen frisch auslesen und nur einem checkbaren Knoten glauben.
+        // Ein nicht checkbarer Knoten liefert isChecked()=false – das wäre ein falsches ALREADY_OFF
+        // („Start erlaubt“), obwohl der Sperr-Schalter (AN = gesperrt) gar nicht gelesen wurde.
+        if (!surfmateSwitch.refresh()) {
+            AccessibilityNodeInfo freshRoot = findDialogRoot();
+            surfmateSwitch = freshRoot != null ? findSurfMateSwitch(freshRoot) : null;
+        }
+        if (surfmateSwitch == null || !surfmateSwitch.isCheckable()) {
+            log("SurfMate switch not readable (null or not checkable) — no click, FLIP_UNCONFIRMED");
+            return Result.FLIP_UNCONFIRMED;
+        }
         boolean checkedBefore = surfmateSwitch.isChecked();
         log("SurfMate switch found: isChecked(before)=" + checkedBefore
                 + " (ON=blocked, OFF=autostart-allowed)");
@@ -235,21 +247,22 @@ public class AutoStartEnabler {
         // produced false FLIP_UNCONFIRMED results even though the switch had visibly flipped
         // (observed 2026-07-07: switch flipped correctly but the button reported failure).
         sleep(CLICK_CONFIRM_DELAY_MS);
-        if (surfmateSwitch.refresh() && !surfmateSwitch.isChecked()) {
+        if (surfmateSwitch.refresh() && surfmateSwitch.isCheckable() && !surfmateSwitch.isChecked()) {
             log("confirmed via refresh(): switch now OFF");
             return Result.SUCCESS;
         }
         // Fallback: best-effort re-scan of the dialog.
         AccessibilityNodeInfo freshRoot = findDialogRoot();
         AccessibilityNodeInfo freshSwitch = (freshRoot != null) ? findSurfMateSwitch(freshRoot) : null;
-        if (freshSwitch != null) {
+        if (freshSwitch != null && freshSwitch.isCheckable()) {
             boolean checkedAfter = freshSwitch.isChecked();
             log("SurfMate switch isChecked(after re-scan)=" + checkedAfter);
             if (!checkedAfter) {
                 return Result.SUCCESS;
             }
             // Positively still ON after a good re-read -> the click genuinely didn't take.
-            return Result.FLIP_UNCONFIRMED;
+            // 0.1.43.22 (#1126): eigenes Ergebnis, damit „gesperrt“ von „nicht lesbar“ unterscheidbar ist.
+            return Result.STILL_ON;
         }
         // A dispatched click is not evidence of a flip. Claiming success here would show a
         // permanent green check while autostart may still be blocked, so require confirmation.

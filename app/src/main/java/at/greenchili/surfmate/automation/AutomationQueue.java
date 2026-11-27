@@ -1560,9 +1560,10 @@ public class AutomationQueue {
      * Synchronized on {@link #lock} so the DelayQueue and its queueItems shadow-set stay consistent.
      *
      * @param id The id of the item to remove from the queue if it exists
+     * @return true when pending work was actually removed
      */
-    public static void removeFromQueue(String id) {
-        if (id == null) return;
+    public static boolean removeFromQueue(String id) {
+        if (id == null) return false;
         java.util.List<String> replay;
         synchronized (lock) {
             java.util.ArrayList<DelayedAutomation> removedItems =
@@ -1596,7 +1597,7 @@ public class AutomationQueue {
                             return match;
                         });
             }
-            if (!removed) return;
+            if (!removed) return false;
             for (DelayedAutomation removedItem : removedItems) {
                 queueItems.remove(removedItem.getQueueKey());
             }
@@ -1604,6 +1605,7 @@ public class AutomationQueue {
             lock.notifyAll();
         }
         logQueuedReplacementReplays(replay);
+        return true;
     }
 
     /**

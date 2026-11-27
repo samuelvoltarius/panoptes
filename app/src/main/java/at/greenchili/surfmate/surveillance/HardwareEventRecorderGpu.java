@@ -326,6 +326,21 @@ public class HardwareEventRecorderGpu {
     // untouched for the RMM wedge ticker's existing consumers.
     private volatile long lastEncodedFrameElapsedMs = 0L;
 
+    // One-shot ACC ON barrier for the next cam_* file. It remains armed until
+    // a coded frame arrives after the surveillance-to-drive transition.
+    private final java.util.concurrent.atomic.AtomicLong driveFrameBarrierMs =
+            new java.util.concurrent.atomic.AtomicLong(0L);
+    // 0.1.43.22 Nachbesserung (Maintainer d50b89966): Zählsperre statt Zeitstempel (MIN_BILDER neu codierte
+    // Bilder), Verfall nach 90 s, einmaliger Anstoß auf dem Drainer, sobald die Bilder da sind. Regeln in
+    // FrischBildSperre (rein, JVM-getestet).
+    private volatile long codedFrameCount = 0L;
+    private volatile long driveBarrierBaseCount = 0L;
+    private volatile int driveBarrierMinFrames = FrischBildSperre.MIN_BILDER;
+    private volatile long driveFreshTargetCount = Long.MAX_VALUE;
+    private volatile boolean driveBarrierExpiryLogged = false;
+    private final java.util.concurrent.atomic.AtomicReference<Runnable> driveFreshListener =
+            new java.util.concurrent.atomic.AtomicReference<>();
+
     // FIX (false-GREEN: "REC/MIC green but no video file"): timestamp of the
     // last VIDEO sample actually written to the muxer (disk). Distinct from
     // lastEncodedFrameMs, which is stamped on every coded frame dequeued from
@@ -3034,6 +3049,14 @@ public class HardwareEventRecorderGpu {
                 return true;
             }
 
+            final long driveBarrier = outputPath != null
+                    && FrischBildSperre.betrifft(new File(outputPath).getName())
+                    ? driveFrameBarrierMs.get() : 0L;
+            if (driveBarrierBlocks(driveBarrier)) {
+                logger.info("ACC ON drive muxer deferred: waiting for first fresh encoded frame");
+                return false;
+            }
+
             // A manual replay may already own the ring's single range cursor.
             // Do not cancel it: the event muxer still starts immediately and
             // records live frames, while beginFlushRange below simply skips
@@ -3176,8 +3199,19 @@ public class HardwareEventRecorderGpu {
                 return false;
             }
 
+            // Consume the one-shot barrier only after a valid muxer exists.
+            // A failed open must leave the barrier armed for the retry path.
+            final boolean firstPostSentryDriveClip = driveBarrier > 0L;
+            if (firstPostSentryDriveClip) {
+                if (driveFrameBarrierMs.compareAndSet(driveBarrier, 0L)) {
+                    driveFreshListener.set(null);   // erledigt, ein später Anstoß fände nichts mehr zu tun
+                }
+                requestSyncFrame();                  // Live-Start ohne Vorlauf: nächstes Bild als IDR
+                logger.info("First ACC ON drive muxer: starting live-only (no parked pre-roll)");
+            }
+
             boolean videoPreRecordCursorAcquired = false;
-            if (!manualClipExportInProgress
+            if (!firstPostSentryDriveClip && !manualClipExportInProgress
                     && savedFormat != null && preRecordBuffer != null) {
                 // SOTA: streaming flush. beginFlush() takes a seqlock-validated
                 // snapshot and pins the byte-arena read frontier. The drainer
@@ -4316,6 +4350,73 @@ public class HardwareEventRecorderGpu {
      */
     public long getLastEncodedFrameElapsedMs() {
         return lastEncodedFrameElapsedMs;
+    }
+
+    /** Keep the first drive file closed until coded video arrives after ACC ON. */
+    public void requireFreshFrameForNextDriveClip() {
+        requireFreshFrameForNextDriveClip(FrischBildSperre.MIN_BILDER, null);
+    }
+
+    /**
+     * 0.1.43.22 (Nachbesserung Maintainer d50b89966): wie oben, aber der erste cam_*-Start wartet auf
+     * {@code minFrames} NACH diesem Aufruf codierte Bilder; {@code onFresh} läuft dann einmal auf dem Drainer
+     * (kurz halten, z. B. nur einen Thread starten). Fordert sofort ein IDR an, damit das erste neue Bild ein
+     * Schlüsselbild ist.
+     */
+    public void requireFreshFrameForNextDriveClip(int minFrames, Runnable onFresh) {
+        int frames = Math.max(1, minFrames);
+        long base = codedFrameCount;
+        driveBarrierBaseCount = base;
+        driveBarrierMinFrames = frames;
+        driveFreshTargetCount = base + frames;
+        driveBarrierExpiryLogged = false;
+        driveFreshListener.set(onFresh);
+        driveFrameBarrierMs.set(android.os.SystemClock.elapsedRealtime());
+        requestSyncFrame();
+        logger.info("ACC ON drive frame barrier armed (waits for " + frames
+                + " fresh encoded frames, max " + (FrischBildSperre.VERFALL_MS / 1000) + "s)");
+    }
+
+    /**
+     * Returns true while the first post-ACC cam_* file must wait for a new
+     * encoded frame. The caller can defer the start without reporting a
+     * storage write fault or creating an empty MP4.
+     */
+    public boolean isWaitingForFreshDriveFrame(String outputPath) {
+        long barrier = driveFrameBarrierMs.get();
+        return barrier > 0L
+                && outputPath != null
+                && FrischBildSperre.betrifft(new File(outputPath).getName())
+                && driveBarrierBlocks(barrier);
+    }
+
+    /** true = der erste cam_*-Start muss noch warten. Verfall wird einmal geloggt, die Sperre erst beim Start verbraucht. */
+    private boolean driveBarrierBlocks(long barrier) {
+        if (barrier <= 0L) return false;
+        int r = FrischBildSperre.pruefe(barrier, driveBarrierBaseCount, driveBarrierMinFrames,
+                android.os.SystemClock.elapsedRealtime(), codedFrameCount);
+        if (r == FrischBildSperre.WARTEN) return true;
+        if (r == FrischBildSperre.VERFALLEN && !driveBarrierExpiryLogged) {
+            driveBarrierExpiryLogged = true;
+            logger.warn("ACC ON drive frame barrier expired ("
+                    + (FrischBildSperre.VERFALL_MS / 1000) + "s without fresh frame) - starting anyway");
+        }
+        return false;
+    }
+
+    /** Drainer, nach jedem codierten Bild: erfüllten Anstoß genau einmal ausführen. */
+    private void dispatchDriveFreshListener() {
+        Runnable listener = driveFreshListener.get();
+        if (listener == null || codedFrameCount < driveFreshTargetCount
+                || !driveFreshListener.compareAndSet(listener, null)) {
+            return;
+        }
+        logger.info("ACC ON: fresh encoded frames arrived - kicking deferred drive recording");
+        try {
+            listener.run();
+        } catch (Throwable t) {
+            logger.warn("ACC ON fresh-frame kickoff failed: " + t.getMessage());
+        }
     }
 
     /**
@@ -5859,6 +5960,8 @@ public class HardwareEventRecorderGpu {
                     // already filtered above).
                     lastEncodedFrameMs = System.currentTimeMillis();
                     lastEncodedFrameElapsedMs = android.os.SystemClock.elapsedRealtime();
+                    codedFrameCount++;               // 0.1.43.22: Zählsperre erstes Fahrt-Video
+                    dispatchDriveFreshListener();
                     // ALWAYS add to circular buffer (for pre-record) - unless stream-only mode
                     if (usePreRecordBuffer && preRecordBuffer != null) {
                         preRecordBuffer.add(outputBuffer, bufferInfo);

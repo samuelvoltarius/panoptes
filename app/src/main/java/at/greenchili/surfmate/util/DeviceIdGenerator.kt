@@ -175,11 +175,13 @@ object DeviceIdGenerator {
             return
         }
         
-        executor.execute(
+        // 0.1.43.22 (#516): Der Befehl enthält die ID → nicht im Klartext ins ADB-Protokoll
+        executor.executeSensitive(
             command = "echo '$id' > $ID_FILE",
+            description = "device-id-datei",
             callback = object : AdbShellExecutor.ShellCallback {
                 override fun onSuccess(output: String) {
-                    Log.d(TAG, "Device ID saved to file via ADB: $id")
+                    Log.d(TAG, "Device ID saved to file via ADB: " + GeraeteIdLog.kurz(id))
                 }
                 override fun onError(error: String) {
                     Log.w(TAG, "Failed to save device ID via ADB: $error")
@@ -211,13 +213,13 @@ object DeviceIdGenerator {
         
         val id = generateDeviceId(context)
         if (!erzwingen && istSchonGeschrieben(context, id)) {
-            Log.i(TAG, "Device ID bereits in der Datei (Merker), kein ADB-Aufruf: $id")
+            Log.i(TAG, "Device ID bereits in der Datei (Merker), kein ADB-Aufruf: " + GeraeteIdLog.kurz(id))
             return true
         }
         return try {
-            val result = executor.executeSync("echo '$id' > $ID_FILE", SYNC_FRIST_MS)
+            val result = executor.executeSyncSensitive("echo '$id' > $ID_FILE", "device-id-datei", SYNC_FRIST_MS)
             if (result.exitCode == 0) {
-                Log.i(TAG, "Device ID synced to file (sync): $id")
+                Log.i(TAG, "Device ID synced to file (sync): " + GeraeteIdLog.kurz(id))
                 merkeGeschrieben(context, id)
                 true
             } else {

@@ -403,11 +403,22 @@ class AdbShellExecutor(private val context: Context) {
     }
 
     @JvmOverloads
-    fun executeSync(command: String, deadlineMs: Long = DEFAULT_DEADLINE_MS): ShellResult {
-        logger.debug(TAG, "Executing sync: $command")
+    fun executeSync(command: String, deadlineMs: Long = DEFAULT_DEADLINE_MS): ShellResult =
+        executeSyncInternal(command, command, deadlineMs)
+
+    /**
+     * 0.1.43.22 (#516): [executeSync] ohne den Befehl im Protokoll (z. B. wenn er die Geräte-ID,
+     * den Schlüssel-Keim der Zugangsdaten, enthält). Gleiche Ausführung wie [executeSync].
+     */
+    @JvmOverloads
+    fun executeSyncSensitive(command: String, description: String, deadlineMs: Long = DEFAULT_DEADLINE_MS): ShellResult =
+        executeSyncInternal(command, "<sensitive:$description>", deadlineMs)
+
+    private fun executeSyncInternal(command: String, commandForLog: String, deadlineMs: Long): ShellResult {
+        logger.debug(TAG, "Executing sync: $commandForLog")
         val seq = cmdSeq.incrementAndGet()
         val conn = acquireConnection()
-        val result = shellGuarded(conn, command, deadlineMs, seq)
+        val result = shellGuarded(conn, command, deadlineMs, seq, commandForLog)
         return ShellResult(result.exitCode, result.allOutput)
     }
 

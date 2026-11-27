@@ -80,6 +80,14 @@ public final class AutostartNachUpdate {
         boolean steht();
     }
 
+    /**
+     * 0.1.43.22 (Upstream #1126): Bildschirm an (PowerManager.isInteractive). null = unbekannt. Vor dem AUTOMATISCHEN
+     * Klick nach einem Update müssen Stand UND Bildschirm bestätigt sein; sonst wird verschoben, ohne Versuch zu zählen.
+     */
+    public interface Bildschirm {
+        Boolean interaktiv();
+    }
+
     /** Ergebnis auf nicht belegter Plattform: nichts geklickt, nichts gesetzt. */
     static final String NICHT_BELEGT = "NICHT_BELEGT";
 
@@ -89,6 +97,9 @@ public final class AutostartNachUpdate {
     private final Melder melder;
     private final Plattform plattform;
     private final Stand stand;
+    private final Bildschirm bildschirm;
+    /** 0.1.43.22: „verschoben“ nur einmal je Wartephase ins Log, nicht jede Minute. */
+    private boolean verschobenGemeldet;
     /** 0.1.43.21: Entscheidungs-Log (echt: DaemonLogger; Tests lesen mit). */
     java.util.function.Consumer<String> log = t -> { };
     private long liveStand;
@@ -103,6 +114,12 @@ public final class AutostartNachUpdate {
     }
 
     AutostartNachUpdate(File updateOk, File merkDatei, Shell sh, Melder melder, Plattform plattform, Stand stand) {
+        this(updateOk, merkDatei, sh, melder, plattform, stand, () -> Boolean.TRUE);
+    }
+
+    AutostartNachUpdate(File updateOk, File merkDatei, Shell sh, Melder melder, Plattform plattform, Stand stand,
+            Bildschirm bildschirm) {
+        this.bildschirm = bildschirm;
         this.updateOk = updateOk;
         this.merkDatei = merkDatei;
         this.sh = sh;
@@ -142,7 +159,16 @@ public final class AutostartNachUpdate {
         Matcher f = Pattern.compile("autostartMissing=(true|false)").matcher(daten);
         boolean frei = "1".equals(m.group(1));
         if (f.find()) frei = "false".equals(f.group(1));
-        return o.put("frei", frei).put("ergebnis", ergebnis);
+        o.put("frei", frei).put("ergebnis", ergebnis);
+        // 0.1.43.22 (Upstream #1126): zuletzt am BYD-Schalter gelesener Zustand (App: AutostartBeobachtung).
+        // Ändert „frei“ nicht; nur zum Zurücklesen (Status, Deploy).
+        Matcher g = Pattern.compile("geprueft=(erlaubt|gesperrt|unbekannt)").matcher(daten);
+        if (g.find()) {
+            o.put("geprueft", g.group(1));
+            Matcher gz = Pattern.compile("geprueftZeit=(\\d{1,15})").matcher(daten);
+            o.put("geprueftZeit", gz.find() ? Long.parseLong(gz.group(1)) : 0L);
+        }
+        return o;
     }
 
     /**
@@ -202,6 +228,19 @@ public final class AutostartNachUpdate {
         }
         if (!faellig(marke, alt)) return false;
         Entscheidung e = entscheide();
+        // 0.1.43.22 (Upstream #1126): automatisch nur im bestätigten Stand und bei eingeschaltetem Bildschirm.
+        // Unbekannt zählt wie nein. Verschieben kostet keinen Versuch und speichert nichts.
+        if (e.belegt) {
+            String warum = warumNichtBereit();
+            if (warum != null) {
+                if (!verschobenGemeldet) {
+                    verschobenGemeldet = true;
+                    protokoll("Autostart nach Update: verschoben – " + warum + " (kein Versuch gezählt)");
+                }
+                return false;
+            }
+            verschobenGemeldet = false;
+        }
         protokoll("Autostart nach Update: " + (e.belegt ? "Klick erlaubt" : "kein Klick") + " – " + e.grund);
         if (!e.belegt) {
             // Nichts klicken, kein ENABLE, keine Marke: der Zustand am Auto bleibt, wie er ist. Ohne „frei“ zeigt die
@@ -228,6 +267,41 @@ public final class AutostartNachUpdate {
             } catch (Throwable ignored) { }
         }
         return true;
+    }
+
+    /** 0.1.43.22: null = bereit (Stand + Bildschirm bestätigt), sonst der Grund. Fehler = nicht bereit. */
+    String warumNichtBereit() {
+        boolean steht;
+        try {
+            steht = stand.steht();
+        } catch (Throwable t) {
+            steht = false;
+        }
+        if (!steht) return "Stand nicht bestätigt";
+        Boolean an;
+        try {
+            an = bildschirm.interaktiv();
+        } catch (Throwable t) {
+            an = null;
+        }
+        if (an == null) return "Bildschirm unbekannt";
+        if (!an) return "Bildschirm aus";
+        return null;
+    }
+
+    /** Rein: {@code dumpsys power} → interaktiv? Awake = ja, Asleep/Dozing/Dreaming = nein, sonst unbekannt. */
+    static Boolean interaktivAus(String dumpsys) {
+        if (dumpsys == null) return null;
+        Matcher m = Pattern.compile("mWakefulness=(\\w+)").matcher(dumpsys);
+        if (m.find()) {
+            String w = m.group(1);
+            if ("Awake".equals(w)) return Boolean.TRUE;
+            if ("Asleep".equals(w) || "Dozing".equals(w) || "Dreaming".equals(w)) return Boolean.FALSE;
+            return null;
+        }
+        Matcher i = Pattern.compile("mInteractive=(true|false)").matcher(dumpsys);
+        if (i.find()) return Boolean.valueOf(i.group(1));
+        return null;
     }
 
     /** 0.1.43.21: neutraler Hinweis genau einmal je Installation, nur im Stand. true = jetzt gemeldet. */
@@ -278,12 +352,19 @@ public final class AutostartNachUpdate {
         if (!m.optBoolean("frei", false) && jetzt - liveStand >= LIVE_CACHE_MS) {
             liveStand = jetzt;
             JSONObject live = auswerten(sh.run(STATUS, 10));
+            if (live.has("geprueft")) {
+                m.put("geprueft", live.getString("geprueft")).put("geprueftZeit", live.optLong("geprueftZeit", 0L));
+            }
             if (live.optBoolean("frei", false)) {
                 speichere(m.put("frei", true).put("zeit", jetzt).put("quelle", "live").put("ergebnis", "ALREADY_OFF"));
+            } else if (live.has("geprueft")) {
+                speichere(m);
             }
         }
         JSONObject o = new JSONObject().put("frei", m.optBoolean("frei", false)).put("zeit", m.optLong("zeit", 0L))
                 .put("ergebnis", m.optString("ergebnis", "")).put("quelle", m.optString("quelle", ""));
+        // 0.1.43.22 (#1126): „zuletzt geprüft“ = am Schalter gelesen (AN = gesperrt), nicht aus „frei“ geschlossen
+        o.put("geprueft", m.optString("geprueft", "unbekannt")).put("geprueftZeit", m.optLong("geprueftZeit", 0L));
         return o.put("aktuell", m.optLong("installMarke", -1L) == installMarke());
     }
 
@@ -306,7 +387,8 @@ public final class AutostartNachUpdate {
                                 kotlin.Pair<Boolean, String> p = at.greenchili.surfmate.einrichtung.BydSeiten.autostartPlattform();
                                 return new Entscheidung(p.getFirst(), p.getSecond());
                             },
-                            AutostartNachUpdate::stehtEcht);
+                            AutostartNachUpdate::stehtEcht,
+                            () -> interaktivAus(shell("dumpsys power | grep -m2 -E 'mWakefulness=|mInteractive='", 10)));
                     instanz.log = t -> at.greenchili.surfmate.logging.DaemonLogger.getInstance("AutostartNachUpdate").info(t);
                 }
                 a = instanz;

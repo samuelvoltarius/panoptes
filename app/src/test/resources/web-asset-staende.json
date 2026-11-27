@@ -172,8 +172,8 @@
   "v": "2"
  },
  "events.js": {
-  "sha256": "c1177f5c729d6cee68322db0568a32b05acebcf3b03fa4360d159d9d40885347",
-  "v": "zurueck14c"
+  "sha256": "158442de146a39648291a4753365b3b43b77b3e0307a597d1e3f1381c56dc9b2",
+  "v": "zurueck14d"
  },
  "fahrt-statistik.js": {
   "sha256": "6e02a468d5dee7d3f0cb1519b356731a552d52a7d20d765c5a03e6c410f84c48",
@@ -212,8 +212,8 @@
   "v": "6"
  },
  "key-mapping.js": {
-  "sha256": "09b84e834ff8490c55b6b5b37a82a367e27d3624ec17c2c4568a6b255bb9bb7f",
-  "v": "39"
+  "sha256": "d2ff2f3563eadf1a9e51a286f45a178351a5e640a89fb271a2e27e87a8862d14",
+  "v": "40"
  },
  "klima-stufe.js": {
   "sha256": "80810121d8d3ceb23e69324b0897b2313add612898ac202523d7869a3f9f339f",

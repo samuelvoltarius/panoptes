@@ -257,7 +257,7 @@ public class AuthManager {
         cachedState = state;
         cachedConfigMtime = UnifiedConfigManager.getLastModified();
         stateVersion++;
-        log("Auth initialized. Device: " + state.deviceId);
+        log("Auth initialized. Device: " + at.greenchili.surfmate.util.GeraeteIdLog.kurz(state.deviceId));
         ipcSelbstpruefung(state.deviceSecret);
         return state;
     }
@@ -798,7 +798,7 @@ public class AuthManager {
         // file via ADB shell on app launch; the next reconcile in
         // getState() picks up the canonical ID from the unified config.
         String tempId = "byd-" + generateSecret(8);
-        log("Device ID file not found, using temporary ID: " + tempId);
+        log("Device ID file not found, using temporary ID: " + at.greenchili.surfmate.util.GeraeteIdLog.kurz(tempId));
         return tempId;
     }
 

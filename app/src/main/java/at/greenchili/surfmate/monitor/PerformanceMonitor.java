@@ -37,7 +37,7 @@ public class PerformanceMonitor {
     private static final DaemonLogger logger = DaemonLogger.getInstance(TAG);
     
     // Singleton
-    private static PerformanceMonitor instance;
+    private static volatile PerformanceMonitor instance;
     private static final Object lock = new Object();
     
     // Configuration
@@ -99,6 +99,11 @@ public class PerformanceMonitor {
     // Scheduler
     private ScheduledExecutorService scheduler;
     private volatile boolean isRunning = false;
+    // upstream #823 (Endfassung v65): shutdownNow() wartet nicht auf eine laufende procfs/sysfs-Probe. Die Epoche
+    // verhindert, dass eine alte Probe nach dem Trennen (oder parallel zu einer neuen Sitzung) noch veröffentlicht.
+    private volatile long monitoringEpoch = 0;
+    private long sampledEpoch = -1;
+    private final Object samplingLock = new Object();
     
     // SOTA: Client connection tracking for on-demand polling
     private final java.util.concurrent.ConcurrentHashMap<String, Long> activeClients = new java.util.concurrent.ConcurrentHashMap<>();
@@ -129,9 +134,15 @@ public class PerformanceMonitor {
         logger.info("PerformanceMonitor initialized (PID: " + pid + ", UID: " + uid + ")");
     }
     
-    public void start() {
+    public synchronized void start() {
         if (isRunning) return;
+        // upstream #823: eine neue Sitzung beginnt mit leerem Verlauf; die Zähler setzt die erste Probe zurück.
+        synchronized (history) {
+            history.clear();
+        }
+        latestSnapshot.set(null);
         isRunning = true;
+        final long epoch = ++monitoringEpoch;
         
         scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "PerfMonitor");
@@ -139,12 +150,15 @@ public class PerformanceMonitor {
             return t;
         });
         
-        scheduler.scheduleAtFixedRate(this::collectMetrics, 0, SAMPLE_INTERVAL_MS, TimeUnit.MILLISECONDS);
+        // Fester Abstand: eine Probe, die länger als der Takt dauert, läuft nicht Rücken an Rücken.
+        scheduler.scheduleWithFixedDelay(() -> collectMetrics(epoch),
+                0, SAMPLE_INTERVAL_MS, TimeUnit.MILLISECONDS);
         logger.info("Performance monitoring started");
     }
     
-    public void stop() {
+    public synchronized void stop() {
         isRunning = false;
+        ++monitoringEpoch;
         if (scheduler != null) {
             scheduler.shutdownNow();
             scheduler = null;
@@ -158,7 +172,7 @@ public class PerformanceMonitor {
      * Register a client connection. Starts monitoring if this is the first client.
      * @param clientId Unique identifier for the client (e.g., session ID or IP:port)
      */
-    public void clientConnected(String clientId) {
+    public synchronized void clientConnected(String clientId) {
         if (clientId == null || clientId.isEmpty()) {
             clientId = "anonymous-" + System.currentTimeMillis();
         }
@@ -193,7 +207,7 @@ public class PerformanceMonitor {
      * Unregister a client connection. Stops monitoring if this was the last client.
      * @param clientId Client identifier
      */
-    public void clientDisconnected(String clientId) {
+    public synchronized void clientDisconnected(String clientId) {
         if (clientId == null) return;
         
         Long removed = activeClients.remove(clientId);
@@ -212,7 +226,7 @@ public class PerformanceMonitor {
     /**
      * Start the client cleanup scheduler to remove stale clients.
      */
-    private void startClientCleanup() {
+    private synchronized void startClientCleanup() {
         if (clientCleanupScheduler != null) return;
         
         clientCleanupScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
@@ -228,7 +242,7 @@ public class PerformanceMonitor {
     /**
      * Stop the client cleanup scheduler.
      */
-    private void stopClientCleanup() {
+    private synchronized void stopClientCleanup() {
         if (clientCleanupScheduler != null) {
             clientCleanupScheduler.shutdownNow();
             clientCleanupScheduler = null;
@@ -249,8 +263,16 @@ public class PerformanceMonitor {
         }
         
         for (String clientId : staleClients) {
-            logger.debug("Removing stale client: " + clientId);
-            clientDisconnected(clientId);
+            // A heartbeat may have refreshed this client after the scan.
+            // Compare-and-remove under the same lock as connect/disconnect so
+            // an old cleanup pass cannot evict a live dashboard session.
+            synchronized (this) {
+                Long lastSeen = activeClients.get(clientId);
+                if (lastSeen != null && now - lastSeen > CLIENT_TIMEOUT_MS) {
+                    logger.debug("Removing stale client: " + clientId);
+                    clientDisconnected(clientId);
+                }
+            }
         }
     }
     
@@ -270,43 +292,60 @@ public class PerformanceMonitor {
     
     // ==================== METRICS COLLECTION ====================
     
-    private void collectMetrics() {
-        try {
-            PerformanceSnapshot snapshot = new PerformanceSnapshot();
-            snapshot.timestamp = System.currentTimeMillis();
-            
-            // CPU metrics
-            collectCpuMetrics(snapshot);
-            
-            // Memory metrics
-            collectMemoryMetrics(snapshot);
-            
-            // GPU metrics (estimated from thermal/frequency)
-            collectGpuMetrics(snapshot);
-            
-            // App-specific metrics
-            collectAppMetrics(snapshot);
-            
-            // Store in history
-            synchronized (history) {
-                history.addLast(snapshot);
-                while (history.size() > HISTORY_SIZE) {
-                    history.removeFirst();
-                }
+    private void collectMetrics(long epoch) {
+        // upstream #823 (Endfassung v65): alte und neue Proben serialisieren, Arbeit nach dem Trennen verwerfen.
+        synchronized (samplingLock) {
+            if (!isRunning || monitoringEpoch != epoch) return;
+            if (sampledEpoch != epoch) {
+                // Jiffy-Differenzen gelten nur innerhalb einer Sitzung; nie über die Pause mitteln.
+                lastCpuTime = 0;
+                lastIdleTime = 0;
+                lastAppCpuTime = 0;
+                lastCpuTimeForApp = 0;
+                lastGpuBusy = -1;
+                lastGpuTotal = -1;
+                sampledEpoch = epoch;
             }
-            latestSnapshot.set(snapshot);
-            
-        } catch (Exception e) {
-            logger.error("Failed to collect metrics", e);
+            try {
+                PerformanceSnapshot snapshot = new PerformanceSnapshot();
+                snapshot.timestamp = System.currentTimeMillis();
+
+                // CPU metrics
+                collectCpuMetrics(snapshot);
+
+                // Memory metrics
+                collectMemoryMetrics(snapshot);
+
+                // GPU metrics (estimated from thermal/frequency)
+                collectGpuMetrics(snapshot);
+
+                // App-specific metrics
+                collectAppMetrics(snapshot);
+
+                // stop()/start() halten diesen Monitor: letzte Epochen-Prüfung und Veröffentlichung unter demselben Lock.
+                synchronized (this) {
+                    if (!isRunning || monitoringEpoch != epoch) return;
+                    synchronized (history) {
+                        history.addLast(snapshot);
+                        while (history.size() > HISTORY_SIZE) {
+                            history.removeFirst();
+                        }
+                    }
+                    latestSnapshot.set(snapshot);
+                }
+            } catch (Exception e) {
+                logger.error("Failed to collect metrics", e);
+            }
         }
     }
-    
+
     private void collectCpuMetrics(PerformanceSnapshot snapshot) {
         try {
             // Read /proc/stat for system CPU
-            RandomAccessFile reader = new RandomAccessFile("/proc/stat", "r");
-            String line = reader.readLine();
-            reader.close();
+            String line;
+            try (RandomAccessFile reader = new RandomAccessFile("/proc/stat", "r")) {   // upstream #823: immer schließen
+                line = reader.readLine();
+            }
             
             if (line != null && line.startsWith("cpu ")) {
                 String[] parts = line.split("\\s+");
@@ -335,9 +374,10 @@ public class PerformanceMonitor {
             }
             
             // Read /proc/[pid]/stat for app CPU
-            RandomAccessFile appReader = new RandomAccessFile("/proc/" + pid + "/stat", "r");
-            String appLine = appReader.readLine();
-            appReader.close();
+            String appLine;
+            try (RandomAccessFile appReader = new RandomAccessFile("/proc/" + pid + "/stat", "r")) {
+                appLine = appReader.readLine();
+            }
             
             if (appLine != null) {
                 String[] parts = appLine.split("\\s+");

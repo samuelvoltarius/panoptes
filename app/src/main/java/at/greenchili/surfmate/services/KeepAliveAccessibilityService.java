@@ -368,6 +368,8 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                 } catch (Throwable t) {
                     Log.w(TAG, "runAutoStartEnabler worker threw: " + t);
                 }
+                // 0.1.43.22 (#1126): zuletzt gelesenen Schalter-Zustand je Installation merken (nur wenn gelaufen)
+                AutostartBeobachtung.merke(getApplicationContext(), result);
                 final AutoStartEnabler.Result fResult = result;
                 final boolean success = result == AutoStartEnabler.Result.SUCCESS
                         || result == AutoStartEnabler.Result.ALREADY_OFF;

@@ -45,7 +45,7 @@ public class AufnahmenPlayerZurueckTest {
             JSONObject ev = new JSONObject(lies("src/main/assets/web/i18n/" + l + ".json")).getJSONObject("events");
             assertFalse(l, ev.optString("aufnahme_fehlt").isEmpty());
         }
-        assertTrue("Zwischenspeicher neu", lies("src/main/assets/web/local/events.html").contains("events.js?v=zurueck14c"));
+        assertTrue("Zwischenspeicher neu", lies("src/main/assets/web/local/events.html").contains("events.js?v=zurueck14d"));
         // ohne offenen Player: bleibender Hinweis über der Liste (BYD.core.showToast gibt es nicht)
         assertTrue(e.contains("h.id = 'aufnahmeFehltHinweis';") && e.contains("list.parentNode.insertBefore(h, list);"));
         assertFalse(e.contains("BYD.core.showToast(satz"));
@@ -84,7 +84,7 @@ public class AufnahmenPlayerZurueckTest {
         assertTrue(e.contains("d.className = 'aufnahme-fehlt';") && e.contains("h.className = 'aufnahme-fehlt-hinweis';"));
         String html = lies("src/main/assets/web/local/events.html");
         assertTrue(html.contains(".aufnahme-fehlt-hinweis {") && html.contains(".aufnahme-fehlt {"));
-        assertTrue(html.contains("events.js?v=zurueck14c"));
+        assertTrue(html.contains("events.js?v=zurueck14d"));
         for (String l : new String[] {"de", "en", "fr", "it", "nl"}) {
             JSONObject ev = new JSONObject(lies("src/main/assets/web/i18n/" + l + ".json")).getJSONObject("events");
             assertFalse(l, ev.optString("aufnahme_fehlt").trim().isEmpty());

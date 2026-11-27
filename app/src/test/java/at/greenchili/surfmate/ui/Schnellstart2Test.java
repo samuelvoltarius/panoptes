@@ -28,7 +28,8 @@ public class Schnellstart2Test {
     public void geraeteIdKeinLangesWartenVorDemStart() throws Exception {
         String d = quelle("src/main/java/at/greenchili/surfmate/util/DeviceIdGenerator.kt");
         assertTrue("kurze Frist statt 60 s", d.contains("const val SYNC_FRIST_MS = 8_000L"));
-        assertTrue(d.contains("executor.executeSync(\"echo '$id' > $ID_FILE\", SYNC_FRIST_MS)"));
+        // 0.1.43.22 (#516): gleicher Aufruf, nur ohne die ID im ADB-Protokoll
+        assertTrue(d.contains("executor.executeSyncSensitive(\"echo '$id' > $ID_FILE\", \"device-id-datei\", SYNC_FRIST_MS)"));
         assertTrue("schon geschrieben → kein ADB-Aufruf", d.contains("istSchonGeschrieben(context, id)"));
         assertTrue(d.contains("fun syncDeviceIdToFileSync(context: Context, erzwingen: Boolean = false)"));
         String m = quelle("src/main/java/at/greenchili/surfmate/ui/MainActivity.kt");

@@ -87,6 +87,11 @@ public final class DoorEvent {
             Automations.update(key, open ? "open" : "closed", true);
         }
 
+        // Feed the driver presence lifecycle even when no door automation is configured.
+        // An open door is only a possible departure; BydEvent waits for lost positive
+        // evidence before invalidating the old occupied value (Upstream #862).
+        if (area == AREA_1) BydEvent.observeDriverDoorState(state);
+
         // Recompute the "any opening open" aggregate from the tracked per-area states.
         areaState.put(area, state);
         boolean anyOpen = false;
@@ -103,6 +108,11 @@ public final class DoorEvent {
 
     /** Whether a door getter poll is currently useful. */
     public static boolean shouldPoll() {
+        return hasDoorReferences() || Automations.isEventReferenced(BydEvent.OCCUPANT_DRIVER);
+    }
+
+    /** Non-door references can request the driver door alone; avoid six unneeded HAL reads. */
+    public static boolean hasDoorReferences() {
         return Automations.isEventReferenced(DOOR_DRIVER)
                 || Automations.isEventReferenced(DOOR_PASSENGER)
                 || Automations.isEventReferenced(DOOR_REAR_LEFT)

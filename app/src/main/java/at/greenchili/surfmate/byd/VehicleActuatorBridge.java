@@ -212,6 +212,12 @@ public final class VehicleActuatorBridge {
                         .ClimateStepTempCommand) {
             ((at.greenchili.surfmate.byd.routing.VehicleCommandRouter.ClimateStepTempCommand) command)
                     .resultSetpoint = resultSetpoint;
+        } else if (command
+                instanceof at.greenchili.surfmate.byd.routing.VehicleCommandRouter
+                        .ClimateStepFanCommand) {
+            // Same result slot: the fan step reports the level it wrote.
+            ((at.greenchili.surfmate.byd.routing.VehicleCommandRouter.ClimateStepFanCommand) command)
+                    .resultLevel = resultSetpoint;
         }
     }
 

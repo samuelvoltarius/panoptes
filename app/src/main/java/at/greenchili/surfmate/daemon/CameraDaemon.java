@@ -735,7 +735,7 @@ public class CameraDaemon {
         generateDeviceId();
 
         log("Output dir: " + outputDir);
-        log("Device ID: " + deviceId);
+        log("Device ID: " + at.greenchili.surfmate.util.GeraeteIdLog.kurz(deviceId));
 
         // Camera scan disabled — opening/closing all camera IDs can briefly
         // disrupt the BYD dashcam. Camera ID is auto-detected in GpuSurveillancePipeline.init()
@@ -10104,7 +10104,7 @@ public class CameraDaemon {
                 reader.close();
                 if (fileId != null && !fileId.isEmpty() && fileId.startsWith("byd-")) {
                     deviceId = fileId;
-                    log("Device ID loaded from file: " + deviceId);
+                    log("Device ID loaded from file: " + at.greenchili.surfmate.util.GeraeteIdLog.kurz(deviceId));
                     return;
                 }
             }
@@ -10128,7 +10128,7 @@ public class CameraDaemon {
         }
         deviceId = hex.toString();
         saveDeviceId(deviceId);
-        log("Device ID generated randomly: " + deviceId);
+        log("Device ID generated randomly: " + at.greenchili.surfmate.util.GeraeteIdLog.kurz(deviceId));
     }
 
     private static void saveDeviceId(String id) {

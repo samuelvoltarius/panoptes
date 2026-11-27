@@ -286,7 +286,7 @@ public class AuthApiHandler {
                     response.put("deviceId", state.deviceId);
                     response.put("expiresIn", AuthManager.JWT_EXPIRY_SECONDS);
 
-                    log("Token validated for device: " + state.deviceId);
+                    log("Token validated for device: " + at.greenchili.surfmate.util.GeraeteIdLog.kurz(state.deviceId));
                 }
             } else {
                 response.put("success", false);

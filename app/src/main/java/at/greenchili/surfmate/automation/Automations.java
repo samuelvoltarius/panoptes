@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 public class Automations {
     private static final DaemonLogger logger = DaemonLogger.getInstance("Automations");
@@ -532,6 +533,11 @@ public class Automations {
      * sample after a rule is enabled so stale state cannot make saving the rule look like a
      * physical vehicle edge.
      */
+    /** Whether the calling thread is inside {@link #runSilentSeed} (diagnostics/tests). */
+    public static boolean isSilentSeedActive() {
+        return Boolean.TRUE.equals(SILENT_SEED.get());
+    }
+
     public static void runSilentSeed(Runnable sampler) {
         if (sampler == null) return;
         boolean previous = SILENT_SEED.get();
@@ -1194,7 +1200,29 @@ public class Automations {
      * explicit assistant diagnosis. Action parameters are intentionally omitted.
      */
     public static JSONObject diagnosticContext(String query) {
-        return AutomationDiagnostics.build(automations, conditionState, query);
+        JSONObject context = AutomationDiagnostics.build(automations, conditionState, query);
+        // Upstream OverDrive #733: recent trigger/execution outcomes for the diagnosis.
+        try {
+            context.put("recentExecutions", AutomationExecutionHistory.snapshot(30));
+        } catch (Exception ignored) { }
+        return context;
+    }
+
+    /** Read-only copy of the bounded execution history, newest first (Upstream #733). */
+    public static org.json.JSONArray recentExecutions(int limit) {
+        return AutomationExecutionHistory.snapshot(limit);
+    }
+
+    /**
+     * Record a signal-poller health transition (failed / recovered) without exposing OEM
+     * exception messages: only the exception's class name is kept (Upstream #733).
+     */
+    public static void recordPollerHealth(
+            String signal, String status, long durationMs, Throwable failure) {
+        String detail = signal == null ? "unknown signal" : signal;
+        if (failure != null) detail += ": " + failure.getClass().getSimpleName();
+        AutomationExecutionHistory.record("signal:" + (signal == null ? "unknown" : signal),
+                "poller", status, durationMs, detail);
     }
 
     /**
@@ -1353,26 +1381,68 @@ public class Automations {
      * @param oldValue The value of the event before this change
      */
     private static void stateChanged(EventData key, Value oldValue) {
-        // Don't trigger events when we don't know the previous value
-        if (oldValue != null) {
-            for (Map.Entry<String, Automation> automation : automations.entrySet()) {
-                Automation a = automation.getValue();
-                if (!a.isDisabled() && a.isTriggered(key)) {
-                    // Enqueue when the conditions are met, OR when they aren't but an
-                    // else branch exists — the else branch must fire after the same
-                    // delay. The final decision (primary vs else) is re-made at fire
-                    // time in triggerActions, so a condition that flips during the
-                    // delay window is honoured. Only when conditions currently fail
-                    // AND there is no else branch do we remove any pending item.
-                    if (a.conditionsMet(conditionState) || a.hasElseActions()) {
-                        logger.info("Adding automation to queue: " + automation.getKey());
-                        AutomationQueue.addToQueue(automation.getKey(), a.getDelay());
-                    } else {
-                        logger.info("Removing automation from queue: " + automation.getKey());
-                        AutomationQueue.removeFromQueue(automation.getKey());
+        evaluateTriggeredRules(automations, key, oldValue);
+    }
+
+    /** Trigger evaluation over [rules]; package-local so tests can pass their own map. */
+    static void evaluateTriggeredRules(
+            Map<String, Automation> rules, EventData key, Value oldValue) {
+        // Don't trigger events when we don't know the previous value.
+        if (oldValue == null || rules == null) return;
+        for (Map.Entry<String, Automation> automation : rules.entrySet()) {
+            String id = automation.getKey();
+            Automation a = automation.getValue();
+            long evaluationStartedAt = System.nanoTime();
+            // Upstream OverDrive #733: each rule is evaluated in isolation. A broken
+            // definition (exception or Error in isTriggered/conditionsMet) is recorded and
+            // logged, and the loop continues with the next rule.
+            runIsolatedAutomationEvaluation(id, () -> {
+                if (a == null || a.isDisabled() || !a.isTriggered(key)) return;
+                // Enqueue when the conditions are met, OR when they aren't but an
+                // else branch exists — the else branch must fire after the same
+                // delay. The final decision (primary vs else) is re-made at fire
+                // time in triggerActions, so a condition that flips during the
+                // delay window is honoured. Only when conditions currently fail
+                // AND there is no else branch do we remove any pending item.
+                boolean conditionsMet = a.conditionsMet(conditionState);
+                if (conditionsMet || a.hasElseActions()) {
+                    logger.info("Adding automation to queue: " + id);
+                    AutomationQueue.addToQueue(id, a.getDelay());
+                    AutomationExecutionHistory.record(id, "trigger", "queued",
+                            TimeUnit.NANOSECONDS.toMillis(
+                                    System.nanoTime() - evaluationStartedAt),
+                            "Signal " + key.getType() + (conditionsMet
+                                    ? " matched conditions" : " selected else branch"));
+                } else {
+                    logger.info("Removing automation from queue: " + id);
+                    if (AutomationQueue.removeFromQueue(id)) {
+                        AutomationExecutionHistory.record(id, "trigger", "conditions_not_met",
+                                TimeUnit.NANOSECONDS.toMillis(
+                                        System.nanoTime() - evaluationStartedAt),
+                                "Signal " + key.getType() + " did not satisfy conditions");
                     }
                 }
-            }
+            });
+        }
+    }
+
+    /**
+     * Isolate one rule's trigger evaluation so a bad definition cannot starve its peers
+     * (Upstream OverDrive #733). Fatal VM errors are rethrown; everything else is recorded.
+     */
+    static void runIsolatedAutomationEvaluation(String id, Runnable evaluation) {
+        long startedAt = System.nanoTime();
+        try {
+            evaluation.run();
+        } catch (ThreadDeath | VirtualMachineError fatal) {
+            throw fatal;
+        } catch (Throwable failure) {
+            AutomationExecutionHistory.record(id, "trigger", "failed",
+                    TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt),
+                    failure.getClass().getSimpleName());
+            try {
+                logger.error("Automation trigger evaluation failed for " + id, failure);
+            } catch (Throwable ignored) { }
         }
     }
 
@@ -1934,6 +2004,8 @@ public class Automations {
         private int nextAction;
         private boolean recorded;
         private AutomationAction deferredAction;
+        // The deferral last written to the execution history (a Wait Until yields every tick).
+        private AutomationAction historyDeferredAction;
         private boolean deferredActionCompleted;
         private long resumeAtNanos;
         private AutomationAction pendingWaitAction;
@@ -2073,6 +2145,7 @@ public class Automations {
      */
     static boolean triggerQueuedActions(String id, QueueActionCursor cursor) {
         if (cursor == null) return triggerActions(id, true);
+        long executionStartedAt = System.nanoTime();
         if (cursor.actions == null) {
             Automation automation = automations.get(id);
             if (automation == null) return true;
@@ -2118,6 +2191,8 @@ public class Automations {
         ACTIVE_QUEUED_DEFINITION.set(cursor.automation);
         ACTIVE_QUEUED_AUTOMATION_ID.set(id);
         ACTIVE_QUEUED_DEFINITION_REVISION.set(cursor.automationRevision);
+        boolean allActionsSucceeded = true;
+        boolean chainWasAborted = false;
         try {
             while (cursor.nextAction < cursor.actions.size()) {
                 if (Thread.currentThread().isInterrupted()) return false;
@@ -2147,6 +2222,12 @@ public class Automations {
                             + (skipped > 0
                                     ? " — the remaining " + skipped + " action(s) were NOT run"
                                     : " — it was the last action"), t);
+                    AutomationExecutionHistory.record(id, "execution", "action_threw",
+                            TimeUnit.NANOSECONDS.toMillis(
+                                    System.nanoTime() - executionStartedAt),
+                            "Action " + (cursor.nextAction + 1) + " ("
+                                    + automationAction.getType() + ") threw "
+                                    + t.getClass().getSimpleName());
                     return true;
                 }
                 boolean actionBoundaryCompleted =
@@ -2154,6 +2235,8 @@ public class Automations {
                                 > completedBefore;
                 if (!ownsQueuedDefinition(id, cursor)) return true;
                 if (chainAborted()) {
+                    allActionsSucceeded = false;
+                    chainWasAborted = true;
                     cursor.nextAction = cursor.actions.size();
                     break;
                 }
@@ -2162,6 +2245,14 @@ public class Automations {
                             && !action.hasChildActions()
                             && !"actionGroup".equals(automationAction.getType())) {
                         cursor.nextAction++;
+                    }
+                    // A Wait Until yields every tick: record each deferral only once.
+                    if (cursor.historyDeferredAction != cursor.deferredAction) {
+                        cursor.historyDeferredAction = cursor.deferredAction;
+                        AutomationExecutionHistory.record(id, "execution", "deferred",
+                                TimeUnit.NANOSECONDS.toMillis(
+                                        System.nanoTime() - executionStartedAt),
+                                "Action chain yielded and will resume at its saved cursor");
                     }
                     return false;
                 }
@@ -2173,9 +2264,14 @@ public class Automations {
                             && !"actionGroup".equals(automationAction.getType())) {
                         cursor.nextAction++;
                     }
+                    AutomationExecutionHistory.record(id, "execution", "interrupted",
+                            TimeUnit.NANOSECONDS.toMillis(
+                                    System.nanoTime() - executionStartedAt),
+                            "Action chain interrupted; completed actions remain checkpointed");
                     return false;
                 }
                 if (!actionSucceeded) {
+                    allActionsSucceeded = false;
                     // A REFUSED action is not an aborted chain. Vehicle-control and HTTP-backed
                     // actions report routine failures honestly: unsupported hardware, a driving
                     // safety block, an endpoint refusal, rate limiting, or an unreachable vehicle.
@@ -2196,6 +2292,12 @@ public class Automations {
                             + (remaining > 0
                                     ? " — continuing with the remaining " + remaining + " action(s)"
                                     : " — it was the last action"));
+                    AutomationExecutionHistory.record(id, "action", "refused",
+                            TimeUnit.NANOSECONDS.toMillis(
+                                    System.nanoTime() - executionStartedAt),
+                            "Action " + (cursor.nextAction + 1) + " ("
+                                    + automationAction.getType()
+                                    + ") was refused; later actions continue");
                     cursor.nextAction++;
                     continue;
                 }
@@ -2213,6 +2315,12 @@ public class Automations {
                 && (cursor.automation.getTriggerCount() % STATS_PERSIST_EVERY) == 0) {
             saveToFile();
         }
+        AutomationExecutionHistory.record(id, "execution",
+                chainWasAborted ? "aborted"
+                        : allActionsSucceeded ? "completed" : "completed_with_failures",
+                TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - executionStartedAt),
+                chainWasAborted ? "The chain was aborted; the remaining actions were not run"
+                        : "All remaining actions reached a terminal state");
         return true;
     }
 
@@ -2293,11 +2401,24 @@ public class Automations {
             if (!explicit) {
                 CURRENT_EXECUTION_TOKEN.set(EXECUTION_TOKEN_SEQ.incrementAndGet());
             }
+            long executionStartedAt = System.nanoTime();
             try {
                 if (runElse) automation.triggerElseActions();
                 else automation.triggerActions();
+                boolean succeeded = ACTION_CHAIN_SUCCEEDED.get();
+                AutomationExecutionHistory.record(id, "execution",
+                        succeeded ? "completed" : "action_failed",
+                        TimeUnit.NANOSECONDS.toMillis(
+                                System.nanoTime() - executionStartedAt),
+                        runElse ? "Else branch" : "Primary branch");
+            } catch (ThreadDeath | VirtualMachineError fatal) {
+                throw fatal;
             } catch (Throwable t) {
-                logger.error("Automation action threw while triggering: " + id);
+                AutomationExecutionHistory.record(id, "execution", "failed",
+                        TimeUnit.NANOSECONDS.toMillis(
+                                System.nanoTime() - executionStartedAt),
+                        t.getClass().getSimpleName());
+                logger.error("Automation action threw while triggering: " + id, t);
             } finally {
                 EXPLICIT_RUN.set(previousExplicit);
                 if (!explicit) {

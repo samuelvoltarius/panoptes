@@ -1594,6 +1594,65 @@
         "De verbinding is stabieler: hangt Tailscale, dan wacht Panoptes niet meer eindeloos, maar stopt na korte tijd en probeert het opnieuw.",
         "Eerlijk gezegd: het nieuwe is gecontroleerd met automatische tests, maar nog niet in de auto. Ziet iets er bij jou anders uit, laat het ons dan weten."
       ]
+    },
+    {
+      "version": "0.1.43.22",
+      "versionCode": 106,
+      "de": [
+        "Mehr Sicherheit beim Mobilfunk-Proxy für Hotspot-Geräte: Er nimmt nur noch Geräte aus dem eigenen Hotspot an und lässt keine Verbindung mehr zu Panoptes selbst durch. Damit ist ein Weg an der Anmeldung vorbei geschlossen.",
+        "Die Geräte-ID steht nicht mehr im Protokoll. Dort erscheint nur noch ein kurzes Kennzeichen, aus dem sich die ID nicht zurückrechnen lässt.",
+        "Nach einem Update legt Panoptes den BYD-Autostart-Schalter nur noch selbst um, wenn das Auto steht (Gang P) und der Bildschirm an ist. Panoptes merkt sich außerdem, wie der Schalter zuletzt gelesen wurde.",
+        "Automationen laufen getrennt: Eine fehlerhafte Regel hält die anderen nicht mehr auf. Ein Protokoll der letzten Ausführungen hilft bei der Fehlersuche. Die Fahrer-Belegung wird nach dem Öffnen der Fahrertür neu bewertet, nach dem Aus- und Wiedereinsteigen löst „Besetzt“ also wieder aus.",
+        "Neue Taste und Automations-Aktion: Lüfter eine Stufe schneller oder langsamer. Das wirkt nur, wenn die Klimaanlage läuft.",
+        "Der Wächter prüft mit der KI alle Bildbereiche der Reihe nach, keiner wird mehr übergangen. Die Bilder in den Benachrichtigungen sind schärfer und in voller Größe.",
+        "Kamera und Aufnahmen laufen stabiler: weniger Speicherverbrauch bei Vorschaubildern, sauberes Aufräumen nach Fehlern, kein Hänger beim Leistungsmonitor.",
+        "Bei Zündung an gibt Panoptes die Kamera schneller an die BYD-App weiter. Die Fahrtaufnahme beginnt erst mit frischen Bildern, also ohne schwarzen Anfang und ohne alte Bilder vom Parken.",
+        "Ehrlich gesagt: Das Neue ist mit automatischen Tests geprüft, im Auto aber noch nicht. Wenn bei dir etwas anders aussieht, sag uns bitte Bescheid."
+      ],
+      "en": [
+        "Better security for the mobile data proxy for hotspot devices: it now only accepts devices on your own hotspot and no longer lets connections through to Panoptes itself. This closes a way around the login.",
+        "The device ID no longer appears in the log. Only a short tag is shown, and the ID cannot be worked out from it.",
+        "After an update, Panoptes only flips the BYD autostart switch by itself when the car is parked (gear P) and the screen is on. Panoptes also remembers how the switch was last read.",
+        "Automations run separately: one faulty rule no longer holds up the others. A log of the latest runs helps with troubleshooting. Driver occupancy is re-checked after the driver door opens, so “Occupied” triggers again after you get out and back in.",
+        "New key and automation action: fan one step faster or slower. It only works while the climate control is running.",
+        "The sentry checks all image areas with the AI in turn, none is skipped any more. Pictures in notifications are sharper and full size.",
+        "Camera and recordings are more stable: less memory used for thumbnails, clean tidy-up after errors, no freeze in the performance monitor.",
+        "When the ignition comes on, Panoptes hands the camera over to the BYD app faster. The drive recording only starts with fresh frames, so no black start and no old frames from parking.",
+        "To be honest: the new parts are checked with automated tests, but not yet in the car. If something looks different for you, please let us know."
+      ],
+      "fr": [
+        "Plus de sécurité pour le proxy mobile des appareils en point d’accès : il n’accepte plus que les appareils de votre propre point d’accès et ne laisse plus passer de connexion vers Panoptes lui-même. Un moyen de contourner la connexion est ainsi fermé.",
+        "L’identifiant de l’appareil n’apparaît plus dans le journal. Seul un court repère s’affiche, et on ne peut pas en retrouver l’identifiant.",
+        "Après une mise à jour, Panoptes ne bascule plus lui-même l’interrupteur de démarrage automatique BYD que si la voiture est à l’arrêt (rapport P) et l’écran allumé. Panoptes retient aussi le dernier état lu de l’interrupteur.",
+        "Les automatisations tournent séparément : une règle défaillante ne bloque plus les autres. Un journal des dernières exécutions aide à trouver les erreurs. L’occupation du siège conducteur est réévaluée après l’ouverture de la portière conducteur, « Occupé » se déclenche donc de nouveau quand vous descendez puis remontez.",
+        "Nouvelle touche et nouvelle action d’automatisation : ventilation un cran plus rapide ou plus lente. Cela ne fonctionne que si la climatisation est en marche.",
+        "La surveillance vérifie avec l’IA toutes les zones de l’image à tour de rôle, aucune n’est plus oubliée. Les images des notifications sont plus nettes et en pleine taille.",
+        "Caméra et enregistrements plus stables : moins de mémoire pour les miniatures, nettoyage propre après une erreur, plus de blocage du moniteur de performances.",
+        "Au contact, Panoptes cède la caméra plus vite à l’application BYD. L’enregistrement du trajet ne commence qu’avec des images fraîches, donc sans début noir ni anciennes images du stationnement.",
+        "Pour être honnête : les nouveautés sont vérifiées par des tests automatiques, mais pas encore dans la voiture. Si quelque chose vous semble différent, dites-le-nous."
+      ],
+      "it": [
+        "Più sicurezza per il proxy dati mobili dei dispositivi in hotspot: ora accetta solo i dispositivi del tuo hotspot e non lascia più passare connessioni verso Panoptes stesso. Così è chiusa una via per aggirare l’accesso.",
+        "L’ID del dispositivo non compare più nel registro. Si vede solo una breve sigla, dalla quale l’ID non si può ricavare.",
+        "Dopo un aggiornamento, Panoptes sposta da solo l’interruttore di avvio automatico BYD solo se l’auto è ferma (marcia P) e lo schermo è acceso. Panoptes ricorda anche come è stato letto l’interruttore l’ultima volta.",
+        "Le automazioni girano separate: una regola difettosa non blocca più le altre. Un registro delle ultime esecuzioni aiuta a trovare gli errori. L’occupazione del posto guida viene rivalutata dopo l’apertura della portiera del conducente, quindi «Occupato» scatta di nuovo quando scendi e risali.",
+        "Nuovo tasto e nuova azione di automazione: ventola di un livello più veloce o più lenta. Funziona solo con il clima acceso.",
+        "La sorveglianza controlla con l’IA tutte le zone dell’immagine a turno, nessuna viene più saltata. Le immagini nelle notifiche sono più nitide e a grandezza piena.",
+        "Telecamera e registrazioni più stabili: meno memoria per le anteprime, pulizia corretta dopo gli errori, nessun blocco nel monitor delle prestazioni.",
+        "All’accensione, Panoptes passa la telecamera più in fretta all’app BYD. La registrazione del viaggio inizia solo con immagini fresche, quindi senza inizio nero e senza vecchie immagini del parcheggio.",
+        "A dire il vero: le novità sono verificate con test automatici, ma non ancora in auto. Se da te qualcosa sembra diverso, faccelo sapere."
+      ],
+      "nl": [
+        "Meer veiligheid voor de mobiele proxy voor hotspot-apparaten: hij accepteert nu alleen apparaten op je eigen hotspot en laat geen verbindingen naar Panoptes zelf meer door. Daarmee is een weg om de aanmelding heen gesloten.",
+        "De apparaat-ID staat niet meer in het logboek. Er verschijnt alleen nog een kort kenmerk, waaruit de ID niet terug te rekenen is.",
+        "Na een update zet Panoptes de BYD-autostartschakelaar alleen nog zelf om als de auto stilstaat (stand P) en het scherm aan is. Panoptes onthoudt ook hoe de schakelaar het laatst gelezen is.",
+        "Automatiseringen draaien apart: één foute regel houdt de andere niet meer op. Een logboek van de laatste uitvoeringen helpt bij het zoeken naar fouten. De bezetting van de bestuurdersstoel wordt na het openen van het bestuurdersportier opnieuw beoordeeld, dus „Bezet” reageert weer na uit- en weer instappen.",
+        "Nieuwe toets en automatiseringsactie: ventilator één stand sneller of langzamer. Dat werkt alleen als de airco aan staat.",
+        "De bewaking controleert met de AI alle beelddelen om de beurt, er wordt er geen meer overgeslagen. De beelden in meldingen zijn scherper en op volle grootte.",
+        "Camera en opnames lopen stabieler: minder geheugen voor voorbeeldbeelden, netjes opruimen na fouten, geen vastloper in de prestatiemonitor.",
+        "Bij contact aan geeft Panoptes de camera sneller door aan de BYD-app. De ritopname begint pas met verse beelden, dus zonder zwart begin en zonder oude beelden van het parkeren.",
+        "Eerlijk gezegd: het nieuwe is gecontroleerd met automatische tests, maar nog niet in de auto. Ziet iets er bij jou anders uit, laat het ons dan weten."
+      ]
     }
   ]
 }

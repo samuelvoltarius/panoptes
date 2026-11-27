@@ -46,7 +46,9 @@ public class RecordingIdApiContractTest {
                 .contains("removeByPath(absMp4Path)"));
         assertFalse(methodBody(api, "private static void deleteSidecars")
                 .contains("remove(filename)"));
-        assertTrue(watcher.contains("removeByPath(new File(dir, path).getAbsolutePath())"));
+        // upstream #689 (Endfassung upstream/main): Pfad wird beim Einreihen absolut gemacht, die Queue entfernt per Pfad
+        assertTrue(watcher.contains("queue.submit(new File(dir, path).getAbsolutePath(),"));
+        assertTrue(watcher.contains("removeByPath(mp4Path)"));
         assertFalse(storage.contains("remove(file.getName())"));
         assertTrue(methodBody(api, "private static void deleteSidecars")
                 .contains("RecordingIdentity.fromPath(mp4File.getAbsolutePath()).recordingId"));

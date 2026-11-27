@@ -353,6 +353,10 @@ public class VehicleActuatorService extends Service {
                 result.putInt(
                         VehicleActuatorBridge.DILINK5_RESULT_SETPOINT,
                         ((VehicleCommandRouter.ClimateStepTempCommand) command).resultSetpoint);
+            } else if (command instanceof VehicleCommandRouter.ClimateStepFanCommand) {
+                result.putInt(
+                        VehicleActuatorBridge.DILINK5_RESULT_SETPOINT,
+                        ((VehicleCommandRouter.ClimateStepFanCommand) command).resultLevel);
             }
             return result;
         }

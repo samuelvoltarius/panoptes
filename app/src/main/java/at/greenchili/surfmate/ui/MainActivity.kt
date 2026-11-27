@@ -258,7 +258,7 @@ open class MainActivity : AppCompatActivity() {
             // Generate device ID early - this syncs to file for daemon compatibility
             // Must happen BEFORE any daemon starts
             val deviceId = at.greenchili.surfmate.util.DeviceIdGenerator.generateDeviceId(this)
-            android.util.Log.i("MainActivity", "Device ID initialized: $deviceId")
+            android.util.Log.i("MainActivity", "Device ID initialized: " + at.greenchili.surfmate.util.GeraeteIdLog.kurz(deviceId))
 
             // Apply BYD whitelist (ACC + data cache) to prevent background killing
             // CRITICAL: Run on background thread to avoid blocking UI on boot

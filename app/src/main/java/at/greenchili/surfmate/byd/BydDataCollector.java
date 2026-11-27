@@ -760,9 +760,8 @@ public class BydDataCollector {
                 return true;
             case "occupantDriver":
                 if (value != 1) return false;
-                at.greenchili.surfmate.automation.Automations.update(
-                        at.greenchili.surfmate.automation.condition.BydEvent.OCCUPANT_DRIVER,
-                        "occupied");
+                at.greenchili.surfmate.automation.condition.BydEvent
+                        .publishDriverOccupancy(value);
                 return true;
             default:
                 return false;
@@ -3353,7 +3352,10 @@ public class BydDataCollector {
             t.setDaemon(true);
             return t;
         });
-        pollScheduler.scheduleAtFixedRate(() -> {
+        // A broad HAL sweep can exceed its interval on slow head units.
+        // Leave an idle gap instead of running overdue sweeps back-to-back.
+        // The separate fast/event-driven telemetry paths are unchanged.
+        pollScheduler.scheduleWithFixedDelay(() -> {
             try {
                 if (!collectAllFromScheduler(schedulerGeneration)) return;
                 // Log when data actually changes
@@ -3865,7 +3867,10 @@ public class BydDataCollector {
                 t.setDaemon(true);
                 return t;
             });
-            pollScheduler.scheduleAtFixedRate(() -> {
+            // A broad HAL sweep can exceed its interval on slow head units.
+            // Leave an idle gap instead of running overdue sweeps back-to-back.
+            // The separate fast/event-driven telemetry paths are unchanged.
+            pollScheduler.scheduleWithFixedDelay(() -> {
                 try {
                     if (!collectAllFromScheduler(schedulerGeneration)) return;
                     BydVehicleData d = snapshot.get();
@@ -10849,7 +10854,12 @@ public class BydDataCollector {
         if (!isDiLink5ProducerActive()
                 && !at.greenchili.surfmate.automation.condition.DoorEvent.shouldPoll()) return;
         boolean rightHandDrive = isRightHandDriveForDoorMapping();
-        for (int area = 1; area <= 7; area++) {
+        // When only driver occupancy needs the door lifecycle, sample just area 1. DiLink 5
+        // producer must still fill all seven bridge areas, regardless of automation rules (#862).
+        int lastArea = isDiLink5ProducerActive()
+                || at.greenchili.surfmate.automation.condition.DoorEvent.hasDoorReferences()
+                ? 7 : BodyworkConstants.AREA_FRONT_DRIVER;
+        for (int area = 1; area <= lastArea; area++) {
             try {
                 int raw = readDoorOpenState(area, rightHandDrive);
                 // Only 0 (closed) / 1 (open) are meaningful; HAL sentinels are unavailable → skip so
@@ -14312,6 +14322,91 @@ public class BydDataCollector {
             logger.debug("setAcFanLevel failed: " + e.getMessage());
             return false;
         }
+    }
+
+    // ---- Lüfter eine Stufe ± (Upstream OverDrive #373, MIT, Copyright (c) Yash Srivastava and
+    // OverDrive contributors; für Panoptes angepasst: testbare Kernlogik, nur lokaler HAL-Weg).
+
+    /** Fan levels a write accepts — the same 1..7 band {@link #setAcFanLevel} enforces. */
+    public static final int AC_FAN_LEVEL_MIN = 1, AC_FAN_LEVEL_MAX = 7;
+
+    /**
+     * Live fan level (0..7), or {@link BydVehicleData#UNAVAILABLE} on a miss. Read fresh rather
+     * than from the snapshot for the same reason as {@link #readAcSetpointNow}: a step built on a
+     * stale level moves the fan to somewhere the user never was. 0 (fan stopped) is returned as 0
+     * so the caller can tell "off" from "unreadable"; both refuse a step.
+     */
+    public int readAcFanLevelNow() {
+        if (isDiLink5BridgeConsumer()) {
+            BydVehicleData bridge = diLink5AutomationFallback();
+            int fallback = bridge == null ? BydVehicleData.UNAVAILABLE : bridge.acFanLevel;
+            return fallback >= 0 && fallback <= AC_FAN_LEVEL_MAX ? fallback : BydVehicleData.UNAVAILABLE;
+        }
+        if (acDevice != null) {
+            try {
+                Object val = BydDeviceHelper.callGetter(acDevice, "getAcWindLevel");
+                if (val instanceof Number) {
+                    int raw = ((Number) val).intValue();
+                    if (raw >= 0 && raw <= AC_FAN_LEVEL_MAX) return raw;
+                }
+            } catch (Throwable t) {
+                logger.debug("readAcFanLevelNow error: " + t.getMessage());
+            }
+        }
+        BydVehicleData bridge = diLink5AutomationFallback();
+        int fallback = bridge == null ? BydVehicleData.UNAVAILABLE : bridge.acFanLevel;
+        return fallback >= 0 && fallback <= AC_FAN_LEVEL_MAX ? fallback : BydVehicleData.UNAVAILABLE;
+    }
+
+    /**
+     * Target level for a relative fan step, or {@link BydVehicleData#UNAVAILABLE} when [current]
+     * is not a running fan (0 = stopped, or unreadable). Clamped to 1..7: "slower" at 1 stays at
+     * 1 rather than switching the fan off, and "faster" at 7 stays at 7.
+     */
+    static int nextAcFanLevel(int current, int delta) {
+        if (current < AC_FAN_LEVEL_MIN || current > AC_FAN_LEVEL_MAX) return BydVehicleData.UNAVAILABLE;
+        long target = (long) current + delta;
+        return (int) Math.max(AC_FAN_LEVEL_MIN, Math.min(AC_FAN_LEVEL_MAX, target));
+    }
+
+    /**
+     * Relative fan step: read the AC power state and the level, add [delta], clamp to 1..7,
+     * write through {@link #setAcFanLevel} (named SDK path, then the DiLink 3.0 generic feature
+     * write). Local HAL only — never a cloud command. Returns the new level, or
+     * {@link BydVehicleData#UNAVAILABLE} when the AC is off/unreadable, the level couldn't be
+     * read, or the write failed.
+     *
+     * <p>Refuses while the AC is off: a fan write can switch the climate on, and a key press
+     * meant as "a bit more air" must not start the AC. Already at the end of the range is a
+     * SUCCESS with the unchanged level and no write (pressing "slower" at 1 is a no-op, like the
+     * temperature step at its limit).
+     */
+    public int stepAcFanLevel(int delta) {
+        return stepAcFanLevel(delta, this::readAcPowerNow, this::readAcFanLevelNow,
+                this::setAcFanLevel);
+    }
+
+    /** Testable core of {@link #stepAcFanLevel(int)}; the suppliers stand in for the HAL. */
+    static int stepAcFanLevel(int delta, java.util.function.IntSupplier acPower,
+            java.util.function.IntSupplier fanLevel, java.util.function.IntPredicate write) {
+        int power = acPower.getAsInt();
+        if (power != 1) {
+            logger.warn("stepAcFanLevel: AC is not on (state " + power + ") — refusing to step");
+            return BydVehicleData.UNAVAILABLE;
+        }
+        int current = fanLevel.getAsInt();
+        int target = nextAcFanLevel(current, delta);
+        if (target == BydVehicleData.UNAVAILABLE) {
+            logger.warn("stepAcFanLevel: fan level " + current + " is not a running fan — refusing to step");
+            return BydVehicleData.UNAVAILABLE;
+        }
+        if (target == current) {
+            logger.info("stepAcFanLevel: already at limit (" + current + ") — no write");
+            return current;
+        }
+        if (!write.test(target)) return BydVehicleData.UNAVAILABLE;
+        logger.info("stepAcFanLevel: " + current + " -> " + target + " (delta " + delta + ")");
+        return target;
     }
 
     public boolean setAcWindMode(int mode) {
